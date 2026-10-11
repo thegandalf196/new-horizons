@@ -14,6 +14,8 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -1200,7 +1202,235 @@ protected:
 			result.push_back(bonus->toJsonNode());
 		return result;
 	}
+
+	static std::string firstOrderedMismatch(const std::vector<JsonNode> & actual,
+		const std::vector<JsonNode> & expected)
+	{
+		std::string result = "actual size=" + std::to_string(actual.size())
+			+ ", expected size=" + std::to_string(expected.size());
+		const auto common = std::min(actual.size(), expected.size());
+		size_t index = 0;
+		while(index < common && actual[index] == expected[index])
+			++index;
+		if(index == common && actual.size() == expected.size())
+			return result + "; equal";
+		return result + "; first mismatch index=" + std::to_string(index)
+			+ "; actual=" + (index < actual.size() ? actual[index].toString() : "<absent>")
+			+ "; expected=" + (index < expected.size() ? expected[index].toString() : "<absent>");
+	}
+
+	static void expectSameBonusMultiset(const std::vector<JsonNode> & actual,
+		const std::vector<JsonNode> & expected)
+	{
+		ASSERT_EQ(actual.size(), expected.size());
+		std::vector<bool> matched(expected.size(), false);
+		for(const auto & bonus : actual)
+		{
+			size_t index = 0;
+			while(index < expected.size() && (matched[index] || bonus != expected[index]))
+				++index;
+			ASSERT_LT(index, expected.size()) << "Unmatched full bonus metadata: " << bonus.toString();
+			matched[index] = true;
+		}
+	}
+
+	void expectGamblerRemovalParity(bool withPenalty, bool timeStopped)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepare());
+		const auto shared = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+			BonusSource::SPELL_EFFECT, 3, BonusSourceID(SpellID(SpellID::HASTE)));
+		shared->turnsRemain = 2;
+		ordinary->addNewBonus(shared);
+		attackerSideHero->addNewBonus(shared);
+		const auto liveState = ordinary->acquireState()->save();
+		auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		const auto original = parent->getForUpdate(ordinary->unitId());
+		const auto penalty = newHorizonsCombatSkills::gamblerLuckPenalty();
+		std::vector<Bonus> effects;
+		if(withPenalty)
+			effects.push_back(penalty);
+		// Each predicate field matters; a different source ID alone does not.
+		for(unsigned field = 0; field < 5; ++field)
+		{
+			auto nearMiss = penalty;
+			switch(field)
+			{
+				case 0: nearMiss.duration = BonusDuration::ONE_BATTLE; break;
+				case 1: nearMiss.type = BonusType::STACKS_SPEED; break;
+				case 2: nearMiss.source = BonusSource::OTHER; break;
+				case 3: ++nearMiss.val; break;
+				case 4: nearMiss.stacking.clear(); break;
+			}
+			ASSERT_FALSE(newHorizonsCombatSkills::isGamblerLuckPenalty(&nearMiss));
+			effects.push_back(nearMiss);
+		}
+		effects.emplace_back(BonusDuration::STACK_GETS_TURN, BonusType::STACKS_SPEED,
+			BonusSource::OTHER, 7, BonusSourceID()); // Ordinary expiry is not Gambler removal.
+		const SpellID confusion(SpellID::decode("new-horizons:confusion"));
+		ASSERT_GE(confusion.getNum(), 0);
+		effects.push_back(newHorizonsConfusionControl::pendingMarker(confusion, PlayerColor(1), false));
+		Bonus guardian(BonusDuration::N_TURNS, BonusType::GUARDIAN_SPIRIT,
+			BonusSource::SPELL_EFFECT, 17, BonusSourceID(SpellID(SpellID::HASTE)));
+		guardian.turnsRemain = 2;
+		effects.push_back(guardian);
+		original->addUnitBonus(effects);
+		if(timeStopped)
+		{
+			const SpellID stop(SpellID::decode("new-horizons:timeStop"));
+			ASSERT_GE(stop.getNum(), 0);
+			original->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
+				BonusSource::SPELL_EFFECT, 0, BonusSourceID(stop))});
+		}
+		ASSERT_EQ(original->isTimeStopped(), timeStopped);
+		ASSERT_EQ(original->guardianSpiritHitPoints, 17);
+		ASSERT_EQ(original->guardianSpiritRoundsRemaining, 2);
+		ASSERT_TRUE(original->hasBonusOfType(BonusType::CONFUSION_PENDING));
+		const CSelector all([](const Bonus *) { return true; });
+		const CSelector gambler(newHorizonsCombatSkills::isGamblerLuckPenalty);
+		const auto stacked = original->getAllBonuses(all);
+		const auto raw = original->getUnstackedBonuses(all);
+		const auto beforeStacked = values(stacked);
+		const auto beforeRaw = values(raw);
+		const auto state = original->save();
+		const auto parentVersion = original->getTreeVersion();
+		auto generic = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		auto dedicated = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		const auto control = generic->getForUpdate(ordinary->unitId());
+		const auto actor = dedicated->getForUpdate(ordinary->unitId());
+		const auto untouched = sibling->getForUpdate(ordinary->unitId());
+		const auto siblingVersion = untouched->getTreeVersion();
+		const auto retainedStacked = actor->getAllBonuses(all);
+		const auto retainedRaw = actor->getUnstackedBonuses(all);
+		const auto actorBeforeStacked = values(retainedStacked);
+		const auto actorBeforeRaw = values(retainedRaw);
+		const auto controlBeforeStacked = values(control->getAllBonuses(all));
+		const auto controlRaw = control->getUnstackedBonuses(all);
+		const auto controlBeforeRaw = values(controlRaw);
+		const auto siblingBeforeStacked = values(untouched->getAllBonuses(all));
+		const auto siblingBeforeRaw = values(untouched->getUnstackedBonuses(all));
+		// Constructor capture can relocate spell records relative to local ADDs.
+		// Cross-model preservation is full metadata plus multiplicity; ordering
+		// remains strict within each model and between the two equivalent paths.
+		for(const auto & snapshot : {actorBeforeStacked, controlBeforeStacked, siblingBeforeStacked})
+		{
+			ASSERT_NO_FATAL_FAILURE(expectSameBonusMultiset(snapshot, beforeStacked));
+		}
+		for(const auto & snapshot : {actorBeforeRaw, controlBeforeRaw, siblingBeforeRaw})
+		{
+			ASSERT_NO_FATAL_FAILURE(expectSameBonusMultiset(snapshot, beforeRaw));
+		}
+		ASSERT_EQ(actorBeforeStacked, controlBeforeStacked);
+		ASSERT_EQ(actorBeforeRaw, controlBeforeRaw);
+		std::vector<JsonNode> expectedRaw;
+		for(const auto & bonus : *controlRaw)
+			if(!gambler(bonus.get()))
+				expectedRaw.push_back(bonus->toJsonNode());
+		RecordProperty("preRemovalChildStackedVersusOriginal",
+			firstOrderedMismatch(values(retainedStacked), beforeStacked));
+		RecordProperty("preRemovalChildRawVersusOriginal",
+			firstOrderedMismatch(values(retainedRaw), beforeRaw));
+		ASSERT_EQ(actor->getUnstackedBonuses(gambler)->size(), withPenalty ? 1u : 0u);
+		const auto controlVersion = control->getTreeVersion();
+		const auto actorVersion = actor->getTreeVersion();
+		control->removeUnitBonus(gambler);
+		actor->removeGamblerLuckPenalty();
+		EXPECT_EQ(control->getTreeVersion(), controlVersion + 1);
+		EXPECT_EQ(actor->getTreeVersion(), actorVersion + 1);
+		EXPECT_TRUE(actor->getUnstackedBonuses(gambler)->empty());
+		EXPECT_TRUE(control->getUnstackedBonuses(gambler)->empty());
+		const auto afterStacked = values(control->getAllBonuses(all));
+		const auto afterRaw = values(control->getUnstackedBonuses(all));
+		EXPECT_EQ(afterRaw, expectedRaw) << firstOrderedMismatch(afterRaw, expectedRaw);
+		EXPECT_EQ(values(actor->getAllBonuses(all)), afterStacked);
+		EXPECT_EQ(values(actor->getUnstackedBonuses(all)), afterRaw);
+		EXPECT_EQ(controlBeforeRaw.size() - afterRaw.size(), withPenalty ? 1u : 0u);
+		for(const auto & unit : {control, actor})
+		{
+			EXPECT_EQ(unit->save(), state);
+			EXPECT_EQ(unit->guardianSpiritHitPoints, 17);
+			EXPECT_EQ(unit->guardianSpiritRoundsRemaining, 2);
+			EXPECT_TRUE(unit->hasBonusOfType(BonusType::CONFUSION_PENDING));
+			EXPECT_EQ(unit->isTimeStopped(), timeStopped);
+			const auto aliases = unit->getUnstackedBonuses(CSelector([](const Bonus * bonus)
+			{
+				return bonus->source == BonusSource::SPELL_EFFECT && bonus->type == BonusType::STACKS_SPEED
+					&& bonus->sid == BonusSourceID(SpellID(SpellID::HASTE));
+			}));
+			ASSERT_EQ(aliases->size(), 2u);
+			EXPECT_EQ((*aliases)[0].get(), (*aliases)[1].get());
+			EXPECT_EQ((*aliases)[0]->turnsRemain, 2);
+		}
+		// Nested no-match removal still captures and invalidates once. Neither
+		// parent, sibling, nor retained older query owners may be mutated.
+		auto nestedGeneric = std::make_shared<HypotheticBattle>(environment.get(), generic);
+		auto nestedDedicated = std::make_shared<HypotheticBattle>(environment.get(), dedicated);
+		const auto nestedControl = nestedGeneric->getForUpdate(ordinary->unitId());
+		const auto nestedActor = nestedDedicated->getForUpdate(ordinary->unitId());
+		const auto nestedControlBeforeStacked = values(nestedControl->getAllBonuses(all));
+		const auto nestedControlBeforeRaw = values(nestedControl->getUnstackedBonuses(all));
+		const auto nestedActorBeforeStacked = values(nestedActor->getAllBonuses(all));
+		const auto nestedActorBeforeRaw = values(nestedActor->getUnstackedBonuses(all));
+		for(const auto & snapshot : {nestedControlBeforeStacked, nestedActorBeforeStacked})
+		{
+			ASSERT_NO_FATAL_FAILURE(expectSameBonusMultiset(snapshot, afterStacked));
+			ASSERT_EQ(snapshot, afterStacked) << firstOrderedMismatch(snapshot, afterStacked);
+		}
+		for(const auto & snapshot : {nestedControlBeforeRaw, nestedActorBeforeRaw})
+		{
+			ASSERT_NO_FATAL_FAILURE(expectSameBonusMultiset(snapshot, afterRaw));
+			ASSERT_EQ(snapshot, afterRaw) << firstOrderedMismatch(snapshot, afterRaw);
+		}
+		const auto nestedControlVersion = nestedControl->getTreeVersion();
+		const auto nestedActorVersion = nestedActor->getTreeVersion();
+		nestedControl->removeUnitBonus(gambler);
+		nestedActor->removeGamblerLuckPenalty();
+		EXPECT_EQ(nestedControl->getTreeVersion(), nestedControlVersion + 1);
+		EXPECT_EQ(nestedActor->getTreeVersion(), nestedActorVersion + 1);
+		for(const auto & unit : {control, actor, nestedControl, nestedActor})
+		{
+			EXPECT_EQ(values(unit->getAllBonuses(all)), afterStacked);
+			EXPECT_EQ(values(unit->getUnstackedBonuses(all)), afterRaw);
+			EXPECT_EQ(unit->save(), state);
+		}
+		for(const auto & unit : {original, untouched})
+		{
+			const auto currentStacked = values(unit->getAllBonuses(all));
+			const auto currentRaw = values(unit->getUnstackedBonuses(all));
+			const auto role = unit == original ? "original" : "untouched sibling";
+			const auto & expectedStacked = unit == original ? beforeStacked : siblingBeforeStacked;
+			const auto & expectedRawView = unit == original ? beforeRaw : siblingBeforeRaw;
+			EXPECT_EQ(currentStacked, expectedStacked)
+				<< role << ": " << firstOrderedMismatch(currentStacked, expectedStacked);
+			EXPECT_EQ(currentRaw, expectedRawView)
+				<< role << ": " << firstOrderedMismatch(currentRaw, expectedRawView);
+			EXPECT_EQ(unit->save(), state);
+		}
+		EXPECT_EQ(original->getTreeVersion(), parentVersion);
+		EXPECT_EQ(untouched->getTreeVersion(), siblingVersion);
+		EXPECT_EQ(values(retainedStacked), actorBeforeStacked)
+			<< firstOrderedMismatch(values(retainedStacked), actorBeforeStacked);
+		EXPECT_EQ(values(retainedRaw), actorBeforeRaw)
+			<< firstOrderedMismatch(values(retainedRaw), actorBeforeRaw);
+		EXPECT_EQ(values(controlRaw), controlBeforeRaw);
+		EXPECT_EQ(values(stacked), beforeStacked);
+		EXPECT_EQ(values(raw), beforeRaw);
+		EXPECT_EQ(shared->turnsRemain, 2);
+		EXPECT_EQ(ordinary->acquireState()->save(), liveState);
+		EXPECT_TRUE(callback->actions.empty());
+		EXPECT_TRUE(callback->heroActions.empty());
+	}
 };
+
+TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DedicatedGamblerRemovalMatchesGenericWithControlStateAndRawAliases)
+{
+	ASSERT_NO_FATAL_FAILURE(expectGamblerRemovalParity(true, false));
+}
+
+TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DedicatedGamblerNoMatchMatchesGenericWhileTimeStopped)
+{
+	ASSERT_NO_FATAL_FAILURE(expectGamblerRemovalParity(false, true));
+}
 
 TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)
 {

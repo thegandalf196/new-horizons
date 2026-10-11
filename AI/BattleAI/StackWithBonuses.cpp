@@ -795,21 +795,38 @@ bool StackWithBonuses::removeFirstPhysicalAffliction()
 
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 {
+	removeUnitBonusImpl(selector, true);
+}
+
+void StackWithBonuses::removeGamblerLuckPenalty()
+{
+	// This exact Luck/Secondary Skill predicate cannot affect Confusion,
+	// Guardian Spirit or Polymorph control state.
+	removeUnitBonusImpl(CSelector(newHorizonsCombatSkills::isGamblerLuckPenalty), false);
+}
+
+void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState)
+{
 	captureLocalSpellEffects();
-	const bool timeStopped = isTimeStopped();
+	const bool timeStopped = mayAffectControlState && isTimeStopped();
 	const CSelector effectiveSelector([&selector, timeStopped](const Bonus * bonus)
 	{
 		return selector(bonus) && !(timeStopped && bonus
 			&& (bonus->type == BonusType::CONFUSION_PENDING || battle::isPolymorphMarker(bonus)));
 	});
-	const auto confusionMarkers = getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
-	const bool removesConfusion = std::ranges::any_of(*confusionMarkers, [&](const auto & marker)
+	bool removesConfusion = false;
+	bool removesGuardianSpirit = false;
+	if(mayAffectControlState)
 	{
-		return newHorizonsConfusionControl::isPendingMarker(marker.get()) && effectiveSelector(marker.get());
-	});
-	const auto guardianSpiritBonuses = getBonuses(guardianSpiritSelector());
-	const bool removesGuardianSpirit = std::ranges::any_of(*guardianSpiritBonuses,
-		[&](const auto & bonus) { return bonus && effectiveSelector(bonus.get()); });
+		const auto confusionMarkers = getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
+		removesConfusion = std::ranges::any_of(*confusionMarkers, [&](const auto & marker)
+		{
+			return newHorizonsConfusionControl::isPendingMarker(marker.get()) && effectiveSelector(marker.get());
+		});
+		const auto guardianSpiritBonuses = getBonuses(guardianSpiritSelector());
+		removesGuardianSpirit = std::ranges::any_of(*guardianSpiritBonuses,
+			[&](const auto & bonus) { return bonus && effectiveSelector(bonus.get()); });
+	}
 
 	// Parent models materialize fresh bonus pointers. Capture effect values before
 	// suppressing them, including non-timed spells and legacy battle-long effects.
@@ -2705,10 +2722,7 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 		// including Second Wind, without expiring unrelated bonuses early.
 		{
 			LifecycleTimingScope measurement(timing ? &timing->activationGamblerRemoval : nullptr);
-			unit->removeUnitBonus(CSelector([](const Bonus * bonus)
-			{
-				return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
-			}));
+			unit->removeGamblerLuckPenalty();
 		}
 
 		const auto activationSide = playerToSide(battleGetOwner(unit.get()));

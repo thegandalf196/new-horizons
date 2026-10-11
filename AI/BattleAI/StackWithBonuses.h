@@ -151,6 +151,7 @@ public:
 	bool removeFirstPhysicalAffliction();
 
 	void removeUnitBonus(const CSelector & selector);
+	void removeGamblerLuckPenalty();
 	/// Freeze the current bonus inputs for a retained pre-damage scoring snapshot.
 	void freezeDamageScoringBonusSnapshot();
 	void applyNoQuarter(int32_t moraleActivationsRemaining, bool appliedByEnemy = false);
@@ -162,6 +163,7 @@ public:
 	std::string getDescription() const override;
 
 private:
+	void removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState);
 	TConstBonusListPtr mergeBonuses(const CSelector & selector, const std::string & cachingStr,
 		bool unstacked) const;
 	void setOriginalBearer(const IBonusBearer * bearer);
