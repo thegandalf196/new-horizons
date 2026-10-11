@@ -69,6 +69,11 @@ public:
 			throw std::runtime_error("Cannot discard existing delayed-activation queue flags");
 	}
 	void localInit(BattleInfo * battleInfo);
+	void validateTimeStopSerialization(bool supported) const
+	{
+		if(timeStopTurnConsumed() && !supported)
+			throw std::runtime_error("Cannot discard consumed Time Stop queue slot in an older format");
+	}
 	void afterNewRound(bool isFirstRound = false, bool deferBattleFormRestoration = false, bool pauseBattleForm = false);
 	bool acceptsBonus(const Bonus & bonus) const override;
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = {}) const override;
@@ -199,6 +204,8 @@ public:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving) validateMoraleActivationSerialization(h);
 		validateHeroicSpiritSerialization(h);
 		if(h.saving)
@@ -343,6 +350,10 @@ public:
 			heroicSpiritRetaliation = false;
 			heroicSpiritMoralePending = false;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT))
+			h & timeStopTurnConsumedFlag;
+		else if(!h.saving)
+			timeStopTurnConsumedFlag = false;
 	}
 
 private:

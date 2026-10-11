@@ -265,11 +265,14 @@ public:
 	void validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const;
 	void validateCanonicalSpellClausesSerialization(bool supported) const;
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
+	void validateTimeStopSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving)
 			validateCombatScalarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));

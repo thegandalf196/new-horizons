@@ -1945,6 +1945,13 @@ void CGameState::validateOpportunistSerialization(bool supported) const
 			battle->validateOpportunistSerialization(supported);
 }
 
+void CGameState::validateTimeStopSerialization(bool supported) const
+{
+	for(const auto & battle : currentBattles)
+		if(battle)
+			battle->validateTimeStopSerialization(supported);
+}
+
 void CGameState::validateCrossSchoolFormulaSerialization(bool supported) const
 {
 	for(const auto & battle : currentBattles)
