@@ -470,5 +470,128 @@ class PrivateLaunchTest(unittest.TestCase):
         self.assertIn("did not prove", proof["original_error"]["message"])
 
 
+    def test_fullgame_admission_is_wired_without_spawning_in_verify_only(self):
+        argv=self._wine_args()
+        pe=self.root/'new-horizons.exe'
+        pe.write_bytes((self.root/'nhSdl3GrayscaleMaskRuntimeTest.exe').read_bytes())
+        wine=self.root/'usr/wine';wine.parent.mkdir();wine.write_bytes(b'\x7fELFsynthetic');wine.chmod(0o700)
+        server=wine.parent/'wineserver';server.write_bytes(b'\x7fELFserver');server.chmod(0o700)
+        pins={}
+        for name in ('VCMI_lib.dll','SDL3.dll','SDL3_image.dll','SDL3_mixer.dll','SDL3_ttf.dll'):
+            path=self.root/name;path.write_bytes(name.encode());pins[name]=hashlib.sha256(path.read_bytes()).hexdigest()
+        receipt=self.root/'full-dlls.json';receipt.write_text(json.dumps(pins))
+        args=['--guard',str(self.guard),'--wine-fullgame',str(pe),
+              '--wine-test-sha256',hashlib.sha256(pe.read_bytes()).hexdigest(),
+              '--wine-binary',str(wine),'--wine-sha256',hashlib.sha256(wine.read_bytes()).hexdigest(),
+              '--wine-server-sha256',hashlib.sha256(server.read_bytes()).hexdigest(),
+              '--wine-input-sha256',hashlib.sha256(HELPER_PATH.with_name('nh-private-input.py').read_bytes()).hexdigest(),
+              '--wine-dll-manifest',str(receipt),'--wine-dll-manifest-sha256',hashlib.sha256(receipt.read_bytes()).hexdigest(),
+              '--wine-run-root',str(self.root/'wine-run')]
+        with self._patch_boundaries(),mock.patch.object(HELPER.subprocess,'Popen') as popen:
+            self.assertEqual(HELPER.main([*args,'--verify-only']),0)
+            popen.assert_not_called()
+            self.assertEqual(list((self.root/'wine-run').iterdir()),[])
+            parsed=HELPER._parser().parse_args(args)
+            with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(parsed,['--disable-video'])
+            parsed.wine_input_sha256='0'*64
+            with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(parsed,[])
+            popen.assert_not_called()
+
+
+class WineFullgameAdmissionTest(unittest.TestCase):
+    def witness(self, *, nonce="a"*64, local=r"Z:\private\localappdata", pid="24"):
+        exe=r"Z:\package\new-horizons.exe"
+        facade=r"Z:\package\VCMI_lib.dll"
+        suffixes=(r"\HeroesIII-NewHorizons\content", r"\HeroesIII-NewHorizons\config",
+                  r"\HeroesIII-NewHorizons\cache", r"\HeroesIII-NewHorizons\logs",r"\new-horizons\Saves")
+        lines=["NH_WINE_PRE_SDL_V1",nonce,pid,exe,facade,local,"dummy","dummy","windows","windows",
+               *[local+s for s in suffixes],""]
+        return "\n".join(lines).encode("utf-16-le"),dict(nonce=nonce,executable=exe,facade=facade,localappdata=local)
+
+    def test_exact_witness_new_save_route_has_no_input_authority(self):
+        payload,args=self.witness()
+        proof=HELPER.parse_wine_fullgame_witness(payload,**args)
+        self.assertEqual(proof['windows_pid'],24)
+        self.assertFalse(proof['input_authorized'])
+
+    def test_wrong_audio_nonce_encoding_and_pid_are_refused(self):
+        payload,args=self.witness()
+        for bad in (payload.replace('dummy'.encode('utf-16-le'),'pulse'.encode('utf-16-le')),
+                    payload[:-1],payload+b'xx',payload.replace(('a'*64).encode('utf-16-le'),('b'*64).encode('utf-16-le'))):
+            with self.assertRaises(HELPER.Refusal):HELPER.parse_wine_fullgame_witness(bad,**args)
+        bad,args=self.witness(pid=str(2**32))
+        with self.assertRaises(HELPER.Refusal):HELPER.parse_wine_fullgame_witness(bad,**args)
+
+    def test_long_path_is_rejected_before_any_profile_write(self):
+        payload,args=self.witness(local='Z:\\'+'x'*250+r'\localappdata')
+        with mock.patch.object(HELPER.Path,'mkdir') as mkdir:
+            with self.assertRaises(HELPER.Refusal):HELPER.parse_wine_fullgame_witness(payload,**args)
+            mkdir.assert_not_called()
+
+    def test_identity_cannot_match_missing_or_foreign_values(self):
+        valid=dict(pid=2,start_ticks=3,uid=os.getuid(),boot_id='d916fa5f-9d12-4f87-a813-9581d728ef55')
+        HELPER.validate_wine_identity(valid,owner_uid=os.getuid())
+        for key,bad in [('pid',None),('start_ticks',False),('uid',os.getuid()+1),('boot_id','')]:
+            with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_identity({**valid,key:bad},owner_uid=os.getuid())
+
+    def test_maps_require_exact_six_selected_files_and_reject_alternative(self):
+        names=['new-horizons.exe','VCMI_lib.dll','SDL3.dll','SDL3_image.dll','SDL3_mixer.dll','SDL3_ttf.dll']
+        expected=[dict(path='/selected/'+name,device='00:01',inode=i+1,sha256='a'*64) for i,name in enumerate(names)]
+        HELPER.validate_wine_mapping_rows(expected,expected)
+        with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_mapping_rows(expected[:-1],expected)
+        with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_mapping_rows([*expected,{**expected[1],'path':'/other/VCMI_lib.dll'}],expected)
+        with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_mapping_rows([*expected,{**expected[2],'path':'/other/sdl3.dll'}],expected)
+
+    def test_whole_runtime_context_is_plan_bound_and_rechecked(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)/'run';root.mkdir(mode=0o700)
+            for name in ('home','prefix','data','config','cache','state','runtime','localappdata'):
+                (root/name).mkdir(mode=0o700)
+            exe=str(Path(temp)/'new-horizons.exe')
+            dlls={name:'a'*64 for name in ('VCMI_lib.dll','SDL3.dll','SDL3_image.dll','SDL3_mixer.dll','SDL3_ttf.dll')}
+            identity=dict(pid=2,start_ticks=3,uid=os.getuid(),boot_id='d916fa5f-9d12-4f87-a813-9581d728ef55')
+            stopped={**identity,'state':'T'}
+            loader=dict(exe='/usr/wine',sha256='b'*64,argv=['/usr/wine',exe])
+            current={**identity,**loader,'state':'S'}
+            plan=dict(root=str(root),executable=exe,dlls=dlls,executable_sha256='a'*64,
+                      launch_nonce='a'*64,stopped_identity=stopped,loader_identity=loader)
+            required={key:str(root/name) for key,name in (('HOME','home'),('WINEHOME','home'),('WINEPREFIX','prefix'),
+                     ('XDG_DATA_HOME','data'),('XDG_CONFIG_HOME','config'),('XDG_CACHE_HOME','cache'),
+                     ('XDG_STATE_HOME','state'),('XDG_RUNTIME_DIR','runtime'))}
+            local='Z:'+str(root/'localappdata').replace('/','\\');required['LOCALAPPDATA']=local
+            wexe='Z:'+exe.replace('/','\\');wfacade='Z:'+str(Path(exe).parent/'VCMI_lib.dll').replace('/','\\')
+            suffixes=(r'\HeroesIII-NewHorizons\content',r'\HeroesIII-NewHorizons\config',r'\HeroesIII-NewHorizons\cache',r'\HeroesIII-NewHorizons\logs',r'\new-horizons\Saves')
+            witness='\n'.join(['NH_WINE_PRE_SDL_V1','a'*64,'24',wexe,wfacade,local,'dummy','dummy','windows','windows',*[local+s for s in suffixes],'']).encode('utf-16-le')
+            paths=[exe,*[str(Path(exe).parent/name) for name in dlls]]
+            maps=[dict(path=path,sha256='a'*64,inode=i+1,device='00:01') for i,path in enumerate(paths)]
+            context=dict(before=current,after=current,stopped=stopped,loader=loader,nonce='a'*64,
+                environment={**required,'DISPLAY':':191','SDL_VIDEODRIVER':'windows','SDL_VIDEO_DRIVER':'windows','SDL_AUDIODRIVER':'dummy','SDL_AUDIO_DRIVER':'dummy'},
+                required_environment=required,mappings=maps,expected_mappings=maps,witness=witness,
+                win32_executable=wexe,win32_facade=wfacade,win32_localappdata=local,
+                supervisor_ready_before_resume=True,owned_service_graph_verified=True,age_after_io=1)
+            self.assertFalse(HELPER.verify_wine_runtime(context,plan=plan)['input_authorized'])
+            for change in ({'nonce':'c'*64},{'loader':{**loader,'sha256':'c'*64}},
+                           {'required_environment':{**required,'HOME':'/foreign'}},{'age_after_io':600}):
+                with self.assertRaises(HELPER.Refusal):HELPER.verify_wine_runtime({**context,**change},plan=plan)
+            root.chmod(0o755)
+            with self.assertRaises(HELPER.Refusal):HELPER.verify_wine_runtime(context,plan=plan)
+
+    def test_actual_environment_requires_silent_windows_and_private_routes(self):
+        required={k:'/private/'+k for k in ('HOME','WINEHOME','WINEPREFIX','LOCALAPPDATA','XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','XDG_STATE_HOME','XDG_RUNTIME_DIR')}
+        actual={**required,'DISPLAY':':191','SDL_VIDEODRIVER':'windows','SDL_VIDEO_DRIVER':'windows','SDL_AUDIODRIVER':'dummy','SDL_AUDIO_DRIVER':'dummy'}
+        HELPER.validate_wine_environment(actual,required)
+        for key,value in [('SDL_AUDIO_DRIVER','pulse'),('WAYLAND_DISPLAY','wayland-0'),('LOCALAPPDATA','/host')]:
+            with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_environment({**actual,key:value},required)
+
+    def test_fresh_root_no_symlink_no_reuse(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)/'run';root.mkdir(mode=0o700)
+            HELPER.validate_wine_private_root(root,uid=os.getuid())
+            (root/'old').write_text('old')
+            with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_private_root(root,uid=os.getuid())
+            alias=Path(temp)/'alias';alias.symlink_to(root)
+            with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_private_root(alias,uid=os.getuid())
+
+
 if __name__ == "__main__":
     unittest.main()
