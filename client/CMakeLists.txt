@@ -238,6 +238,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleConsole.h
 	battle/BattleEffectsController.h
 	battle/BattleFieldController.h
+	battle/BattleFieldReachability.h
 	battle/BattleHero.h
 	battle/BattleHeroActionWindow.h
 	battle/MagicArrowOverchargeWindow.h
