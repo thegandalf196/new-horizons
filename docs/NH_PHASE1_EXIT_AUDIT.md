@@ -128,8 +128,13 @@ neutral-spell targeting predicate had incorrectly classified hostile casts as
 friendly; the runtime now uses the same current-controller alignment as the AI.
 Three consumed-slot serialization tests and fourteen Time Stop tests also pass.
 These native tests embed the engine; they do not certify the shipped shared-library
-boundary or rendered presentation. Four existing Spell Lock tests still fail on
-action-allowance metadata or an invalid mocked spell ID and remain under diagnosis.
+boundary or rendered presentation. The eight existing Spell Lock cases now pass
+after repairing stale fixtures: seals use an ordinary paid cast and its earned
+Metamagic allowance, an accepted Order coexists with both seals before a real
+round transition, and the AI mock supplies the matching spell identity. The
+combined serialization, Time Stop, Plague and Spell Lock gate passes all thirty-six
+cases without skips. Earlier failing results remain recorded privately; this
+fixture repair does not bypass production action validation.
 Automatic-action Plague completion and detached AI damage/spread parity remain
 separate unresolved work. Controlled-target cleansing transitions require focused
 coverage; the ordinary friendly/hostile casts do not establish that interaction.

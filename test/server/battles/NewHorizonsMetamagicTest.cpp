@@ -293,6 +293,26 @@ protected:
 		event.cast(gameHandler->spellcastEnvironment(), {spells::Destination(target)});
 	}
 
+	void castLegalSpellLockPair()
+	{
+		const auto skill = SecondarySkill::decode(sorceryMagicSkill);
+		ASSERT_GE(skill, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::EXPERT,
+			ChangeValueMode::ABSOLUTE);
+		attackerSideHero->addSpellToSpellbook(spellLockSpell());
+		const auto ordinary = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, spellLockSpell());
+		ASSERT_TRUE(ordinary.has_value());
+		ASSERT_EQ(ordinary->source, HeroActionAllowanceState::GrantSource::ROUND);
+		ASSERT_TRUE(cast(spellLockSpell(), attacker));
+		ASSERT_EQ(battle()->getMetamagicPendingCount(BattleSide::ATTACKER), 1);
+		const auto extra = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, spellLockSpell());
+		ASSERT_TRUE(extra.has_value());
+		ASSERT_EQ(extra->source, HeroActionAllowanceState::GrantSource::METAMAGIC);
+		ASSERT_TRUE(cast(spellLockSpell(), defender, true));
+		ASSERT_EQ(battle()->getMetamagicPendingCount(BattleSide::ATTACKER), 0);
+		ASSERT_EQ(battle()->getMetamagicUsesConsumed(BattleSide::ATTACKER), 1);
+	}
+
 	void expectAppliedSpellLockDuration(const CStack * target, int32_t expectedDuration)
 	{
 		const auto source = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLockSpell()));
@@ -1593,8 +1613,7 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockRemovesOnlyTheOpposingMagicalPolarity)
 	addEffect(defender, SpellID(SpellID::SLOW), BonusType::STACKS_SPEED, -3);
 
 	setSpellLockDurationTestPower();
-	applySpellLockScript(attacker);
-	applySpellLockScript(defender);
+	ASSERT_NO_FATAL_FAILURE(castLegalSpellLockPair());
 
 	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 3);
 	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::SLOW)), 0);
@@ -1617,8 +1636,11 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockBlocksRealCastsAcrossTargetCategories)
 	};
 	addEffect(attacker, SpellID(SpellID::HASTE), BonusType::STACKS_SPEED, 3);
 	addEffect(defender, SpellID(SpellID::SLOW), BonusType::STACKS_SPEED, -3);
-	applySpellLockScript(attacker);
-	applySpellLockScript(defender);
+	ASSERT_NO_FATAL_FAILURE(castLegalSpellLockPair());
+	// Earn a fresh ordinary action, so rejection below witnesses the target
+	// seal rather than an exhausted Metamagic/hero budget.
+	advanceRound();
+	ASSERT_TRUE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::HASTE).has_value());
 
 	const auto attackerHealth = attacker->getAvailableHealth();
 	const auto defenderHealth = defender->getAvailableHealth();
@@ -1633,7 +1655,18 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockBlocksRealCastsAcrossTargetCategories)
 		const auto mechanics = spell.toSpell()->battleMechanics(&event);
 		EXPECT_FALSE(mechanics->isReceptive(target)) << spell.getNum();
 		EXPECT_FALSE(mechanics->canBeCastAt(aimedAt)) << spell.getNum();
-		event.cast(gameHandler->spellcastEnvironment(), std::move(aimedAt));
+		BattleAction request;
+		request.actionType = EActionType::HERO_SPELL;
+		request.side = BattleSide::ATTACKER;
+		request.spell = spell;
+		request.setTarget(aimedAt);
+		const auto allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+		const auto normal = attackerSideHero->getNormalSpellPoints();
+		const auto buffer = attackerSideHero->getBufferSpellPoints();
+		EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), request));
+		EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
+		EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normal);
+		EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), buffer);
 	};
 
 	// Beneficial, hostile, direct damage, dispel, and unit-plus-location
@@ -1679,11 +1712,29 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockFreezesOnlyPreservedMagicAndOtherRound
 		BonusSource::SPELL_EFFECT, -3, BonusSourceID(SpellID(SpellID::SLOW)));
 	slow->turnsRemain = 3;
 	defender->addNewBonus(slow);
-	applySpellLockScript(attacker);
-	applySpellLockScript(defender);
-
-	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	ASSERT_TRUE(battle()->getHeroOrderState(BattleSide::ATTACKER));
+	ASSERT_NO_FATAL_FAILURE(castLegalSpellLockPair());
+	const auto sealedRound = battle()->getRound();
+	// The attacker spent its ordinary action and earned Metamagic followup on
+	// the two seals. Defend hands the creature turn to the defender, whose
+	// ordinary Hero Action remains unused; no budget reset is needed.
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), attacker->unitId());
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+		battle()->sideToPlayer(BattleSide::ATTACKER), BattleAction::makeDefend(attacker)));
+	ASSERT_EQ(battle()->getRound(), sealedRound);
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), defender->unitId());
+	ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()),
+		battle()->sideToPlayer(BattleSide::DEFENDER));
+	const auto orderAllowance = battle()->battleGetOrderActionAllowance(BattleSide::DEFENDER);
+	ASSERT_TRUE(orderAllowance.has_value());
+	ASSERT_EQ(orderAllowance->source, HeroActionAllowanceState::GrantSource::ROUND);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+		battle()->sideToPlayer(BattleSide::DEFENDER),
+		BattleAction::makeHeroCommand(BattleSide::DEFENDER, HeroCommand::CHARGE)));
+	ASSERT_TRUE(battle()->getHeroOrderState(BattleSide::DEFENDER));
+	ASSERT_EQ(spellLockTurns(attacker), 3);
+	ASSERT_EQ(spellLockTurns(defender), 3);
 	const auto nonmagicalTurns = [&]()
 	{
 		const auto bonuses = attacker->getBonuses(Selector::type()(BonusType::PRIMARY_SKILL));
@@ -1698,19 +1749,16 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockFreezesOnlyPreservedMagicAndOtherRound
 	const auto nonmagicalSpellTurns = [&]() { return effectTurns(attacker, bindSpell); };
 	const auto nextRound = [&]()
 	{
-		BattleNextRound next;
-		next.battleID = BattleID(0);
-		gameHandler->sendAndApply(next);
+		const auto before = battle()->getRound();
+		ASSERT_NO_FATAL_FAILURE(endRound());
+		ASSERT_EQ(battle()->getRound(), before + 1);
 	};
-	// The transition out of setup round 0 intentionally skips duration aging.
-	while(battle()->getRound() == 0)
-		nextRound();
-	EXPECT_FALSE(battle()->getHeroOrderState(BattleSide::ATTACKER));
 	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 3);
 	EXPECT_EQ(nonmagicalTurns(), 4);
 	EXPECT_EQ(nonmagicalSpellTurns(), 4);
 
-	nextRound();
+	ASSERT_NO_FATAL_FAILURE(nextRound());
+	EXPECT_FALSE(battle()->getHeroOrderState(BattleSide::DEFENDER));
 	EXPECT_EQ(spellLockTurns(attacker), 2);
 	EXPECT_EQ(spellLockTurns(defender), 2);
 	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 3);
@@ -1718,13 +1766,13 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockFreezesOnlyPreservedMagicAndOtherRound
 	EXPECT_EQ(nonmagicalTurns(), 3);
 	EXPECT_EQ(nonmagicalSpellTurns(), 3);
 
-	nextRound();
+	ASSERT_NO_FATAL_FAILURE(nextRound());
 	EXPECT_EQ(spellLockTurns(attacker), 1);
 	EXPECT_EQ(spellLockTurns(defender), 1);
 	EXPECT_EQ(nonmagicalTurns(), 2);
 	EXPECT_EQ(nonmagicalSpellTurns(), 2);
 
-	nextRound();
+	ASSERT_NO_FATAL_FAILURE(nextRound());
 	EXPECT_EQ(spellLockTurns(attacker), 0);
 	EXPECT_EQ(spellLockTurns(defender), 0);
 	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 3);
@@ -1732,7 +1780,7 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockFreezesOnlyPreservedMagicAndOtherRound
 	EXPECT_EQ(nonmagicalTurns(), 1);
 	EXPECT_EQ(nonmagicalSpellTurns(), 1);
 
-	nextRound();
+	ASSERT_NO_FATAL_FAILURE(nextRound());
 	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 2);
 	EXPECT_EQ(effectTurns(defender, SpellID(SpellID::SLOW)), 2);
 	EXPECT_EQ(nonmagicalTurns(), 0);
