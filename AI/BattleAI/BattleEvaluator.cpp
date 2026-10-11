@@ -3618,6 +3618,67 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	return baseValue + moraleValue;
 }
 
+// Defend and direct creature-cast candidates use HP. The zero-HP beneficial
+// fallback uses future DPS; keep both receipt values separate until selected.
+// Only completed actions reach this adapter; cast-only friendly-fire admission
+// is deliberately evaluated before it. Receipts retain pre-hit allegiance and
+// finalized damage even when restoration leaves the same post-hit health.
+std::pair<float, float> completeProjectedPlagueValue(HypotheticBattle & battle, uint32_t unitId,
+	PlayerColor perspective, const std::shared_ptr<HypotheticBattle> & scoringBattle = nullptr)
+{
+	const auto * active = battle.battleActiveUnit();
+	auto actor = battle.getForUpdate(unitId);
+	if(!active || active->unitId() != unitId || !actor || actor->isTimeStopped() || battle.battleIsFinished()
+		|| actor->pursuitMovementRemaining > 0 || battle.battleHasPendingRangedFollowUp(actor.get()))
+		return {};
+	if(actor->hasBonusOfType(BonusType::PUPPET_MASTER_CONTROL))
+	{
+		actor->removeUnitBonus(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+		if(actor->alive())
+			actor->addUnitBonus(std::vector<Bonus>{newHorizonsPuppetMaster::lucidityMarker()});
+	}
+	actor->removeUnitBonus(CSelector([](const Bonus * bonus)
+	{
+		return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
+	}));
+	actor->consumeNoQuarterActivation();
+	const auto firstPlague = battle.getProjectedPlagueHits().size();
+	const auto firstBurst = battle.getProjectedPrimalBurstHits().size();
+	const auto spawnsBefore = battle.getElementalRebirthSpawnUnitIds();
+	newHorizonsPlague::completeActivation(battle, *battle.getServerCallback(), unitId);
+	std::pair<float, float> value{};
+	DamageCache cache;
+	const auto addHit = [&](const auto & hit, int64_t damage)
+	{
+		const auto loss = std::min(std::max<int64_t>(0, damage), hit.preHitTarget->getAvailableHealth());
+		const float sign = hit.targetController == perspective ? -1.0f : 1.0f;
+		value.first += sign * static_cast<float>(loss);
+		if(scoringBattle)
+			value.second += sign * AttackPossibility::calculateDamageReduce(nullptr,
+				hit.preHitTarget.get(), static_cast<uint64_t>(loss), cache, scoringBattle);
+	};
+	const auto & plague = battle.getProjectedPlagueHits();
+	for(size_t i = firstPlague; i < plague.size(); ++i)
+		addHit(plague[i], plague[i].finalizedDamage);
+	const auto & burst = battle.getProjectedPrimalBurstHits();
+	for(size_t i = firstBurst; i < burst.size(); ++i)
+		addHit(burst[i], burst[i].actualDamage);
+	for(const auto id : battle.getElementalRebirthSpawnUnitIds())
+		if(!spawnsBefore.contains(id))
+		{
+			const auto * spawned = battle.battleGetUnitByID(id);
+			if(spawned && spawned->alive())
+			{
+				const float sign = battle.battleGetOwner(spawned) == perspective ? 1.0f : -1.0f;
+				value.first += sign * static_cast<float>(spawned->getAvailableHealth());
+				if(scoringBattle)
+					value.second += sign * AttackPossibility::calculateDamageReduce(nullptr, spawned,
+						static_cast<uint64_t>(spawned->getAvailableHealth()), cache, scoringBattle);
+			}
+		}
+	return value;
+}
+
 bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack,
 	DamageCache & damageCache)
@@ -3666,6 +3727,11 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		holdFastMoraleValue = holdFastMoraleGrantValue(
 			*battle, stack, projectedTarget.get(), damageCache, defendedPreview);
 	}
+	const float completionValue = completeProjectedPlagueValue(*defendedPreview,
+		stack->unitId(), battle->battleGetOwner(stack)).first;
+	projectedTarget = defendedPreview->getForUpdate(stack->unitId());
+	if(!projectedTarget->alive())
+		return completionValue >= std::max<int64_t>(1, stack->getAvailableHealth() / 20);
 	struct IncomingThreat
 	{
 		const battle::Unit * enemy = nullptr;
@@ -3968,11 +4034,11 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		incomingAfterDefend += threat.afterFirstPerAttack
 			+ threat.afterPerAttack * std::max(0, threat.attackCount - 1);
 	}
-	const float currentHealth = static_cast<float>(stack->getAvailableHealth());
+	const float currentHealth = static_cast<float>(projectedTarget->getAvailableHealth());
 	const float damagePrevented = std::max(0.0f,
 		std::min(currentHealth, incomingBeforeDefend) - std::min(currentHealth, incomingAfterDefend));
 
-	int64_t remainingHealth = stack->getAvailableHealth();
+	int64_t remainingHealth = projectedTarget->getAvailableHealth();
 	int64_t reflectedDamage = 0;
 	int64_t swampRenewalDamage = 0;
 	for(const auto & threat : threats)
@@ -4013,7 +4079,8 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		sharedCoverDamagePrevented += std::max(0.0f,
 			std::min<float>(threat.ally->getAvailableHealth(), threat.beforeTotal)
 			- std::min<float>(threat.ally->getAvailableHealth(), threat.afterTotal));
-	const float defendValueWithSharedCover = defendValue + sharedCoverDamagePrevented + swampRenewalValue;
+	const float defendValueWithSharedCover = defendValue + sharedCoverDamagePrevented + swampRenewalValue
+		+ completionValue;
 	// Require a visible benefit to beat the existing Wait fallback.  Damage
 	// prevented, the one available pre-emptive strike and reflected damage all
 	// use the same health-value scale.
@@ -4164,16 +4231,18 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 			PossibleSpellcast ps;
 			ps.dest = target;
 			ps.spell = spell;
-			evaluateCreatureSpellcast(stack, ps);
+			const auto completion = evaluateCreatureCastBeforeCompletion(stack, ps);
 			const auto ability = stack->getBonus(Selector::typeSubtype(BonusType::SPELLCASTER,
 				BonusSubtypeID(spellID)));
 			// Only fill the existing zero-HP blind spot for an ordinary friendly
 			// single-target buff. Damage, healing, summons and weighted abilities
 			// retain their existing scoring and selection policies.
+			bool beneficialFallback = false;
 			if(ps.value == 0 && spell->isPositive() && ability && !ability->parameters
 				&& target.size() == 1 && target.front().unitValue
 				&& cb->getBattle(battleID)->battleMatchActionController(stack, target.front().unitValue, true))
 			{
+				beneficialFallback = true;
 				if(!beneficialBaseline)
 				{
 					auto baseline = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
@@ -4183,6 +4252,9 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 				ps.value = beneficialCreatureOutcomeValue(stack, target.front().unitValue, spell,
 					creatureAbilitySpellLevel(stack, spell, ability->val), *beneficialBaseline);
 			}
+			// The zero-HP fallback is future-DPS-valued; do not mix raw HP into it.
+			// Admission and the cast-only zero survive until this lane is chosen.
+			ps.value += beneficialFallback ? completion.second : completion.first;
 			possibleCasts.push_back(ps);
 		}
 	}
@@ -4345,6 +4417,22 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 			timing ? &timing->movementDetails : nullptr);
 	});
 	float score = EvaluationResult::INEFFECTIVE_SCORE;
+	// Resolve one explicit movement action before comparing its future-DPS value.
+	// This cache is local to this decision; reuse the same action if selected.
+	std::optional<BattleAction> completedMovement;
+	if(newHorizonsPlague::hasPlague(stack) && !targets->berserk && !moveTarget.positions.empty())
+	{
+		std::pair<float, float> completionValue{};
+		const bool actionMadeBeforePreview = activeActionMade;
+		completedMovement = measureSelectionStage(timing ? &timing->movementSearch : nullptr, [&]()
+		{
+			return goTowardsNearest(stack, moveTarget.positions, *targets,
+				timing ? &timing->movementDetails : nullptr, &completionValue);
+		});
+		activeActionMade = actionMadeBeforePreview;
+		if(completedMovement->actionType == EActionType::WALK)
+			moveTarget.score += completionValue.second;
+	}
 	auto enemyMellee = hb->getUnitsIf([this](const battle::Unit* u) -> bool
 		{
 			return u->unitSide() == BattleSide::ATTACKER && !hb->battleCanShoot(u);
@@ -4491,6 +4579,12 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 
 			return measureSelectionStage(timing ? &timing->movementSearch : nullptr, [&]()
 			{
+				if(completedMovement)
+				{
+					if(completedMovement->actionType == EActionType::WALK_AND_ATTACK)
+						activeActionMade = true;
+					return *completedMovement;
+				}
 				return goTowardsNearest(stack, moveTarget.positions, *targets,
 					timing ? &timing->movementDetails : nullptr);
 			});
@@ -4544,8 +4638,41 @@ uint64_t timeElapsed(std::chrono::time_point<std::chrono::steady_clock> start)
 	return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 }
 
-BattleAction BattleEvaluator::moveOrAttack(const CStack * stack, const BattleHex & hex, const PotentialTargets & targets)
+BattleEvaluator::MovementCompletionProjection BattleEvaluator::projectOrdinaryMoveCompletion(
+	const Environment * environment, const std::shared_ptr<HypotheticBattle> & parent,
+	const BattleAction & action, PlayerColor perspective)
 {
+	MovementCompletionProjection result;
+	if(!parent || action.actionType != EActionType::WALK)
+		return result;
+	const auto * actor = parent->battleGetUnitByID(action.stackNumber);
+	const auto * active = parent->battleActiveUnit();
+	if(!actor || !active || active->unitId() != actor->unitId() || !actor->canMove()
+		|| parent->battleTacticDist() != 0
+		|| actor->isTimeStopped() || actor->acquireState()->pursuitMovementRemaining > 0
+		|| parent->battleHasPendingRangedFollowUp(actor) || parent->battleIsFinished())
+		return result;
+	const auto destination = action.getTarget(parent.get());
+	if(destination.size() != 1 || !destination.front().hexValue.isAvailable()
+		|| destination.front().hexValue == actor->getPosition())
+		return result;
+	const auto available = parent->battleGetAvailableHexes(actor, false);
+	if(!available.contains(destination.front().hexValue))
+		return result;
+	result.battle = std::make_shared<HypotheticBattle>(environment, parent);
+	result.battle->projectVoluntaryMovement(actor->unitId(), destination.front().hexValue);
+	const auto * moved = result.battle->battleGetUnitByID(actor->unitId());
+	result.arrivedAlive = moved && moved->alive() && moved->getPosition() == destination.front().hexValue;
+	if(result.arrivedAlive && newHorizonsPlague::hasPlague(moved))
+		result.value = completeProjectedPlagueValue(*result.battle, actor->unitId(), perspective, result.battle);
+	return result;
+}
+
+BattleAction BattleEvaluator::moveOrAttack(const CStack * stack, const BattleHex & hex, const PotentialTargets & targets,
+	std::pair<float, float> * movementCompletionValue)
+{
+	if(movementCompletionValue)
+		*movementCompletionValue = {};
 	auto additionalScore = 0;
 	std::optional<AttackPossibility> attackOnTheWay;
 
@@ -4573,18 +4700,26 @@ BattleAction BattleEvaluator::moveOrAttack(const CStack * stack, const BattleHex
 		{
 			// Pure movement has no attack preview to carry an Overwatch death.
 			// Reject a deterministically lethal route without spending live ammo/RNG.
-			auto movement = std::make_shared<HypotheticBattle>(env.get(), hb);
-			movement->projectVoluntaryMovement(stack->unitId(), hex);
-			if(!movement->battleGetUnitByID(stack->unitId())->alive())
+			const auto action = BattleAction::makeMove(stack, hex);
+			auto movement = projectOrdinaryMoveCompletion(env.get(), hb, action, playerID);
+			if(!movement.battle)
 				return BattleAction::makeDefend(stack);
-			return BattleAction::makeMove(stack, hex);
+			// A legal completion may die to Plague. Only an interrupted route
+			// (Overwatch death before arrival) retains the existing admission veto.
+			if(!movement.arrivedAlive)
+				return BattleAction::makeDefend(stack);
+			if(movementCompletionValue)
+				*movementCompletionValue = movement.value;
+			return action;
 		}
 	}
 }
 
 BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets,
-	BattleMovementTiming * timing)
+	BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)
 {
+	if(movementCompletionValue)
+		*movementCompletionValue = {};
 	SelectionStageScope measurement(timing ? &timing->goTowards : nullptr);
 	auto reachability = cb->getBattle(battleID)->getReachability(stack);
 	auto avHexes = cb->getBattle(battleID)->battleGetAvailableHexes(reachability, stack, false);
@@ -4631,7 +4766,7 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 	{
 		if(avHexes.contains(hex))
 		{
-			return moveOrAttack(stack, hex, targets);
+			return moveOrAttack(stack, hex, targets, movementCompletionValue);
 		}
 
 		if(stack->coversPos(hex))
@@ -4681,7 +4816,7 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 			return blocksOurStacks ? BLOCKED_STACK_PENALTY + distance : distance;
 		});
 
-		return moveOrAttack(stack, *nearestAvailableHex, targets);
+		return moveOrAttack(stack, *nearestAvailableHex, targets, movementCompletionValue);
 	}
 	else
 	{
@@ -4700,7 +4835,7 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 					return scoreEvaluator.checkPositionBlocksOurStacks(*hb, stack, currentDest);
 				}))
 			{
-				return moveOrAttack(stack, currentDest, targets);
+				return moveOrAttack(stack, currentDest, targets, movementCompletionValue);
 			}
 
 			currentDest = reachability.predecessors[currentDest.toInt()];
@@ -6650,10 +6785,18 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 //Below method works only for offensive spells
 void BattleEvaluator::evaluateCreatureSpellcast(const CStack * stack, PossibleSpellcast & ps)
 {
+	const auto completion = evaluateCreatureCastBeforeCompletion(stack, ps);
+	ps.value += completion.first;
+}
+
+std::pair<float, float> BattleEvaluator::evaluateCreatureCastBeforeCompletion(const CStack * stack,
+	PossibleSpellcast & ps)
+{
 	using ValueMap = PossibleSpellcast::ValueMap;
 
 	RNGStub rngStub;
-	HypotheticBattle state(env.get(), cb->getBattle(battleID));
+	auto projected = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
+	auto & state = *projected;
 	TStacks all = cb->getBattle(battleID)->battleGetAllStacks(false);
 
 	ValueMap healthOfStack;
@@ -6665,7 +6808,23 @@ void BattleEvaluator::evaluateCreatureSpellcast(const CStack * stack, PossibleSp
 	}
 
 
+	// Spell mechanics validate the effect, not the actor action boundary.
+	// Authoritative creature-cast admission rejects Time Stop before any cast.
+	const auto * projectedCaster = state.battleGetUnitByID(stack->unitId());
+	if(!projectedCaster || projectedCaster->isTimeStopped())
+	{
+		ps.value = -1;
+		return {};
+	}
+
 	spells::BattleCast cast(&state, stack, spells::Mode::CREATURE_ACTIVE, ps.spell);
+	const auto mechanics = ps.spell->battleMechanics(&cast);
+	if(!ps.spell->canBeCast(&state, spells::Mode::CREATURE_ACTIVE, stack)
+		|| !mechanics->canBeCastAt(ps.dest))
+	{
+		ps.value = -1;
+		return {};
+	}
 	cast.castEval(state.getServerCallback(), ps.dest);
 
 	for(auto unit : all)
@@ -6690,7 +6849,7 @@ void BattleEvaluator::evaluateCreatureSpellcast(const CStack * stack, PossibleSp
 		if(healthDiff < 0)
 		{
 			ps.value = -1;
-			return; //do not damage own units at all
+			return {}; //do not damage own units at all
 		}
 
 		totalGain += healthDiff;
@@ -6708,7 +6867,12 @@ void BattleEvaluator::evaluateCreatureSpellcast(const CStack * stack, PossibleSp
 		totalGain += state.battleGetOwner(unit) == playerID ? health : -health;
 	}
 
+	// A free creature cast keeps its activation. Cast-only collateral has already
+	// passed the existing rejection above; an obligatory Plague loss is instead
+	// a signed completion cost, not a reason to reject every offensive spell.
 	ps.value = totalGain;
+	return ps.spell->canCastWithoutSkip() ? std::pair<float, float>{}
+		: completeProjectedPlagueValue(state, stack->unitId(), playerID, projected);
 }
 
 void BattleEvaluator::print(const std::string & text) const

@@ -690,6 +690,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsTimeStopAITest.cpp
 		battleAI/NewHorizonsSpellLockAITest.cpp
 		battleAI/NewHorizonsPlagueCompletionAITest.cpp
+		battleAI/NewHorizonsPlagueActionCompletionAITest.cpp
+		battleAI/NewHorizonsPlagueMovementCompletionAITest.cpp
 		battleAI/NewHorizonsHexSnapshotAITest.cpp
 		battleAI/NewHorizonsNaturesWrathAITest.cpp
 		battleAI/NewHorizonsPandemoniumAITest.cpp
