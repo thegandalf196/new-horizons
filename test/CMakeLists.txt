@@ -245,6 +245,7 @@ set(test_SRCS
 		server/battles/NewHorizonsHexOfPainTest.cpp
 		server/battles/NewHorizonsShadowGiftTest.cpp
 		server/battles/NewHorizonsPlagueTest.cpp
+		server/battles/NewHorizonsPlagueControlSpellLockTest.cpp
 		server/battles/NewHorizonsPuppetMasterTest.cpp
 		server/battles/NewHorizonsForcedMarchTest.cpp
 		server/battles/NewHorizonsForgetfulnessTest.cpp
@@ -689,6 +690,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsTimeStopAITest.cpp
 		battleAI/NewHorizonsSpellLockAITest.cpp
 		battleAI/NewHorizonsPlagueCompletionAITest.cpp
+		battleAI/NewHorizonsHexSnapshotAITest.cpp
 		battleAI/NewHorizonsNaturesWrathAITest.cpp
 		battleAI/NewHorizonsPandemoniumAITest.cpp
 		battleAI/NewHorizonsRealityWarpAITest.cpp
