@@ -116,6 +116,7 @@ void ScalableImageParameters::preparePalette(const SDL_Palette * originalPalette
 	{
 		case EImageBlitMode::SIMPLE:
 		case EImageBlitMode::WITH_SHADOW:
+		case EImageBlitMode::WITH_SHADOW_HIDE_SELECTION:
 		case EImageBlitMode::ONLY_SHADOW_HIDE_FLAG_COLOR:
 		case EImageBlitMode::ONLY_SHADOW_HIDE_SELECTION:
 		case EImageBlitMode::WITH_SHADOW_AND_FLAG_COLOR:
@@ -148,6 +149,7 @@ void ScalableImageParameters::preparePalette(const SDL_Palette * originalPalette
 			break;
 		case EImageBlitMode::ONLY_SHADOW_HIDE_SELECTION:
 		case EImageBlitMode::ONLY_BODY_HIDE_SELECTION:
+		case EImageBlitMode::WITH_SHADOW_HIDE_SELECTION:
 		case EImageBlitMode::GRAYSCALE_BODY_HIDE_SELECTION:
 			setOverlayColor(originalPalette, Colors::TRANSPARENCY, true);
 			break;
@@ -212,7 +214,7 @@ void ScalableImageParameters::setShadowTransparency(const SDL_Palette * original
 void ScalableImageParameters::adjustPalette(const SDL_Palette * originalPalette, EImageBlitMode blitMode, const ColorFilter & shifter, uint32_t colorsToSkipMask)
 {
 	// If shadow is enabled, following colors must be skipped unconditionally
-	if (blitMode == EImageBlitMode::WITH_SHADOW || blitMode == EImageBlitMode::WITH_SHADOW_AND_SELECTION || blitMode == EImageBlitMode::WITH_SHADOW_AND_FLAG_COLOR)
+	if (blitMode == EImageBlitMode::WITH_SHADOW || blitMode == EImageBlitMode::WITH_SHADOW_HIDE_SELECTION || blitMode == EImageBlitMode::WITH_SHADOW_AND_SELECTION || blitMode == EImageBlitMode::WITH_SHADOW_AND_FLAG_COLOR)
 		colorsToSkipMask |= (1 << 0) + (1 << 1) + (1 << 4);
 
 	// Note: here we skip first colors in the palette that are predefined in H3 images
@@ -647,6 +649,7 @@ void ScalableImageShared::loadScaledImages(int8_t scalingFactor, PlayerColor col
 
 			case EImageBlitMode::WITH_SHADOW_AND_SELECTION:
 			case EImageBlitMode::ONLY_BODY_HIDE_SELECTION:
+			case EImageBlitMode::WITH_SHADOW_HIDE_SELECTION:
 				scaled[scalingFactor].body[0] = loadOrGenerateImage(EImageBlitMode::ONLY_BODY_HIDE_SELECTION, scalingFactor, PlayerColor::CANNOT_DETERMINE, scaled[1].body[0]);
 				break;
 			case EImageBlitMode::WITH_SHADOW_AND_FLAG_COLOR:
@@ -673,6 +676,7 @@ void ScalableImageShared::loadScaledImages(int8_t scalingFactor, PlayerColor col
 
 			case EImageBlitMode::WITH_SHADOW_AND_SELECTION:
 			case EImageBlitMode::ONLY_BODY_HIDE_SELECTION:
+			case EImageBlitMode::WITH_SHADOW_HIDE_SELECTION:
 				scaled[scalingFactor].playerColored[1+color.getNum()] = loadOrGenerateImage(EImageBlitMode::ONLY_BODY_HIDE_SELECTION, scalingFactor, color, scaled[1].playerColored[1+color.getNum()]);
 				break;
 			case EImageBlitMode::WITH_SHADOW_AND_FLAG_COLOR:
@@ -694,6 +698,7 @@ void ScalableImageShared::loadScaledImages(int8_t scalingFactor, PlayerColor col
 			case EImageBlitMode::WITH_SHADOW:
 			case EImageBlitMode::ONLY_SHADOW_HIDE_SELECTION:
 			case EImageBlitMode::WITH_SHADOW_AND_SELECTION:
+			case EImageBlitMode::WITH_SHADOW_HIDE_SELECTION:
 				scaled[scalingFactor].shadow[0] = loadOrGenerateImage(EImageBlitMode::ONLY_SHADOW_HIDE_SELECTION, scalingFactor, PlayerColor::CANNOT_DETERMINE, scaled[1].shadow[0]);
 				break;
 			case EImageBlitMode::ONLY_SHADOW_HIDE_FLAG_COLOR:
@@ -737,6 +742,7 @@ void ScalableImageShared::prepareEffectImage()
 		switch(locator.layer)
 		{
 			case EImageBlitMode::WITH_SHADOW_AND_SELECTION:
+			case EImageBlitMode::WITH_SHADOW_HIDE_SELECTION:
 				scaled[scalingFactor].bodyGrayscale[0] = loadOrGenerateImage(EImageBlitMode::GRAYSCALE_BODY_HIDE_SELECTION, scalingFactor, PlayerColor::CANNOT_DETERMINE, scaled[1].bodyGrayscale[0]);
 				break;
 			default:
