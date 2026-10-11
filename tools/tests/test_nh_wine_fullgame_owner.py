@@ -22,6 +22,7 @@ class Backend:
         self.identities = {2: {'pid': 2, 'start_ticks': 20, 'uid': self.uid, 'boot_id': self.boot,
                               'state': 'S', 'ppid': 1, 'exe': '/pinned/wine', 'sha256': 'a' * 64, 'argv': ['wine', 'game']}}
         self.sent, self.waits, self.closed = [], [], []
+        self.exited_fds = set()
         self.env = {'WINEPREFIX': '/private/prefix'}
 
     def children(self, pid): return self.tree.get(pid, set())
@@ -35,6 +36,7 @@ class Backend:
         if pid not in self.identities: raise FileNotFoundError(pid)
         return {key: self.identities[pid][key] for key in ('pid', 'start_ticks', 'uid', 'boot_id', 'state', 'ppid')}
     def pidfd(self, pid): return pid + 100
+    def exited(self, fd): return fd in self.exited_fds
     def close(self, fd): self.closed.append(fd)
     def send(self, fd, sig): self.sent.append((fd, sig))
     def reap(self):
@@ -56,6 +58,99 @@ class Tests(unittest.TestCase):
     def test_descendant_adopted_with_pidfd(self):
         self.assertEqual(self.o.adopt(), {2})
         self.assertEqual(self.o.ledger[2]['pidfd'], 102)
+
+    def test_absent_descendant_without_ready_pidfd_is_not_parent_reaped(self):
+        self.o.adopt();self.backend.identities.pop(2);self.o.reap()
+        self.assertFalse(self.o.parent_reaped)
+        self.assertFalse(self.o.graph_drained())
+
+    def test_ready_absent_descendant_has_separate_proof_not_exit_status(self):
+        self.o.adopt();self.backend.exited_fds.add(102);self.backend.identities.pop(2);self.o.reap()
+        self.assertTrue(self.o.graph_drained())
+        self.assertEqual(self.o.reaped,{})
+        self.assertEqual(self.o.parent_reaped[2]['proof'],'retained-pidfd-exited-and-absent')
+        self.assertEqual(self.o.signal_fds,())
+
+    def test_live_or_zombie_same_identity_is_not_parent_reaped(self):
+        self.o.adopt();self.backend.exited_fds.add(102)
+        for state in ('S','Z'):
+            self.backend.identities[2]['state']=state;self.o.reap()
+            self.assertFalse(self.o.graph_drained())
+            self.assertFalse(self.o.parent_reaped)
+
+    def test_ready_old_pidfd_and_reused_pid_finishes_only_old_lifetime(self):
+        self.o.adopt();self.backend.exited_fds.add(102)
+        original=copy.deepcopy(self.o.ledger[2]['identity'])
+        self.backend.identities[2]['start_ticks']=999
+        self.backend.identities[2]['ppid']=99
+        self.backend.tree={1:set()}
+        self.o.reap()
+        self.assertEqual(self.o.parent_reaped[2]['identity'],original)
+        self.assertEqual(self.o.parent_reaped[2]['proof'],'retained-pidfd-exited-and-numeric-pid-reused')
+        self.o.signal_owned(signal.SIGTERM)
+        self.assertFalse(self.backend.sent)
+
+    def test_unreadable_descendant_is_not_parent_reaped(self):
+        self.o.adopt();self.backend.exited_fds.add(102)
+        with mock.patch.object(self.backend,'kernel_snapshot',side_effect=PermissionError()):self.o.reap()
+        self.assertFalse(self.o.parent_reaped)
+
+    def test_pidfd_readiness_requires_exit_not_error_or_invalid_fd(self):
+        backend=owner.Linux.__new__(owner.Linux)
+        with mock.patch.object(owner.select,'poll') as factory:
+            for flags in (owner.select.POLLIN,owner.select.POLLHUP):
+                factory.return_value.poll.return_value=[(102,flags)]
+                self.assertTrue(backend.exited(102))
+            factory.return_value.poll.return_value=[]
+            self.assertFalse(backend.exited(102))
+            for flags in (owner.select.POLLERR,owner.select.POLLNVAL,owner.select.POLLIN|owner.select.POLLERR):
+                factory.return_value.poll.return_value=[(102,flags)]
+                with self.assertRaises(owner.Refusal):backend.exited(102)
+
+    def test_direct_process_requires_actual_wait_status_even_when_absent(self):
+        self.o.adopt();process=mock.Mock();self.o.processes[2]=process
+        self.backend.exited_fds.add(102);self.backend.identities.pop(2);self.o.reap()
+        self.assertFalse(self.o.graph_drained())
+        self.assertFalse(self.o.parent_reaped)
+        self.backend.waits=[(2,86)];self.o.reap()
+        self.assertTrue(self.o.graph_drained())
+        self.assertEqual(process.returncode,86)
+        self.assertEqual(self.o.reaped[2],86)
+
+    def test_bootstrap_selects_only_owned_game_with_complete_exact_mappings(self):
+        self.o.adopt()
+        self.backend.tree[2] = {3}
+        self.backend.identities[3] = {**self.backend.identities[2], 'pid':3, 'start_ticks':30, 'ppid':2}
+        self.o.adopt()
+        expected = [dict(path='/selected/'+name,sha256='a'*64,inode=i+1,device='00:01')
+                    for i,name in enumerate(('new-horizons.exe','VCMI_lib.dll','SDL3.dll','SDL3_image.dll','SDL3_mixer.dll','SDL3_ttf.dll'))]
+        self.backend.mappings = mock.Mock(return_value=expected)
+        self.assertEqual(owner.owned_game_candidates(self.o,2,expected),[self.backend.identities[3]])
+        self.backend.mappings.return_value = expected[:-1]
+        self.assertEqual(owner.owned_game_candidates(self.o,2,expected),[])
+        self.backend.mappings.return_value = [*expected,{**expected[0],'path':'/other/new-horizons.exe'}]
+        self.assertEqual(owner.owned_game_candidates(self.o,2,expected),[])
+        self.backend.mappings.return_value = [*expected,{**expected[0],'sha256':'b'*64}]
+        self.assertEqual(owner.owned_game_candidates(self.o,2,expected),[])
+        # A process outside the retained kernel graph is never inspected.
+        self.backend.identities[4] = {**self.backend.identities[3], 'pid':4, 'ppid':99}
+        self.assertNotIn(4,[call.args[0] for call in self.backend.mappings.call_args_list])
+
+    def test_bootstrap_child_reuse_and_ambiguity_refuse_without_losing_cleanup(self):
+        self.o.adopt()
+        self.backend.tree[2] = {3,4}
+        for pid in (3,4):
+            self.backend.identities[pid] = {**self.backend.identities[2],'pid':pid,'start_ticks':pid*10,'ppid':2}
+        self.o.adopt()
+        expected=[dict(path='/selected/new-horizons.exe',sha256='a'*64,inode=1,device='00:01')]
+        self.backend.mappings=mock.Mock(return_value=expected)
+        with self.assertRaisesRegex(owner.Refusal,'Multiple'):
+            owner.owned_game_candidates(self.o,2,expected)
+        self.backend.identities[3]['start_ticks']=999
+        with self.assertRaisesRegex(owner.Refusal,'changed'):
+            owner.owned_game_candidates(self.o,2,expected)
+        self.assertEqual(set(self.o.ledger),{2,3,4})
+        self.assertEqual(len(self.o.signal_fds),3)
 
     def test_daemon_reparented_to_subreaper_is_adopted(self):
         self.o.adopt()
