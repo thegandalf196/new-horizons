@@ -128,6 +128,17 @@ protected:
 		EXPECT_LE(selectionClassified, timing.stackActionSelection.totalMicroseconds);
 		EXPECT_EQ(selectionClassified + timing.selectionRemainderMicroseconds,
 			timing.stackActionSelection.totalMicroseconds);
+		const uint64_t movementClassified = timing.movementFindMove.totalMicroseconds
+			+ timing.movementGoTowards.totalMicroseconds;
+		EXPECT_LE(movementClassified, timing.selectionMovementSearch.totalMicroseconds);
+		EXPECT_EQ(movementClassified + timing.movementRemainderMicroseconds,
+			timing.selectionMovementSearch.totalMicroseconds);
+		EXPECT_EQ(timing.movementFindMove.calls + timing.movementGoTowards.calls,
+			timing.selectionMovementSearch.calls);
+		EXPECT_LE(timing.movementFindMoveExchangeSubset.totalMicroseconds,
+			timing.movementFindMove.totalMicroseconds);
+		EXPECT_LE(timing.movementGoBlockingSubset.totalMicroseconds,
+			timing.movementGoTowards.totalMicroseconds);
 	}
 
 	void expectSameSelectionWithAndWithoutTiming(bool adjacentEnemy)
@@ -162,6 +173,19 @@ protected:
 		}
 		EXPECT_EQ(timing.creatureSpell.calls, 1u);
 		EXPECT_GE(timing.movementSearch.calls, 1u);
+		EXPECT_EQ(timing.movementDetails.findMove.calls, 1u);
+		EXPECT_EQ(timing.movementDetails.findMove.calls + timing.movementDetails.goTowards.calls,
+			timing.movementSearch.calls);
+		EXPECT_LE(timing.movementDetails.findMove.totalMicroseconds + timing.movementDetails.goTowards.totalMicroseconds,
+			timing.movementSearch.totalMicroseconds);
+		EXPECT_LE(timing.movementDetails.findMoveExchange.totalMicroseconds,
+			timing.movementDetails.findMove.totalMicroseconds);
+		EXPECT_LE(timing.movementDetails.goTowardsBlocking.totalMicroseconds,
+			timing.movementDetails.goTowards.totalMicroseconds);
+		if(!adjacentEnemy)
+		{
+			EXPECT_GE(timing.movementDetails.findMoveExchange.calls, 1u);
+		}
 		if(adjacentEnemy)
 		{
 			EXPECT_GE(timing.targetExchange.calls, 1u);
@@ -208,6 +232,10 @@ TEST_F(NewHorizonsBattleAITimingTest, HealingTentEarlyReturnCountsOnceAndPreserv
 	EXPECT_EQ(timing.selectionCreatureSpell.calls, 0u);
 	EXPECT_EQ(timing.selectionMovementSearch.calls, 0u);
 	EXPECT_EQ(timing.selectionTargetExchange.calls, 0u);
+	EXPECT_EQ(timing.movementFindMove.calls, 0u);
+	EXPECT_EQ(timing.movementGoTowards.calls, 0u);
+	EXPECT_EQ(timing.movementFindMoveExchangeSubset.calls, 0u);
+	EXPECT_EQ(timing.movementGoBlockingSubset.calls, 0u);
 	expectStageClosure(timing);
 }
 
@@ -271,6 +299,15 @@ TEST_F(NewHorizonsBattleAITimingTest, ResetKeepsOldInFlightScopeOutOfNewBattleCo
 	EXPECT_EQ(summary().selectionMovementSearch.calls, 0u);
 	EXPECT_EQ(summary().selectionTargetExchange.calls, 0u);
 	EXPECT_EQ(summary().selectionRemainderMicroseconds, 0u);
+	EXPECT_EQ(summary().movementFindMove.calls, 0u);
+	EXPECT_EQ(summary().movementGoTowards.calls, 0u);
+	EXPECT_EQ(summary().movementFindMoveExchangeSubset.calls, 0u);
+	EXPECT_EQ(summary().movementGoBlockingSubset.calls, 0u);
+	EXPECT_EQ(summary().movementFindMove.totalMicroseconds, 0u);
+	EXPECT_EQ(summary().movementGoTowards.totalMicroseconds, 0u);
+	EXPECT_EQ(summary().movementFindMoveExchangeSubset.totalMicroseconds, 0u);
+	EXPECT_EQ(summary().movementGoBlockingSubset.totalMicroseconds, 0u);
+	EXPECT_EQ(summary().movementRemainderMicroseconds, 0u);
 	EXPECT_FALSE(summary().finished);
 	callback->onSubmit = {};
 	ai->activeStack(BattleID(0), tent);
@@ -376,4 +413,77 @@ TEST_F(NewHorizonsBattleAITimingTest, OrdinaryThrowingSubmissionRetainsClosedSel
 	EXPECT_GE(timing.selectionMovementSearch.calls, 1u);
 	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
 	expectStageClosure(timing);
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, LongGroundMovementTimingPreservesUntimedDestinationAndLiveState)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache cache;
+	cache.buildDamageCache(model, BattleSide::ATTACKER);
+	PotentialTargets targets(ordinary, cache, model);
+	BattleHexArray destinations;
+	destinations.insert(BattleHex(11, 5));
+	ASSERT_FALSE(ordinary->hasBonusOfType(BonusType::FLYING));
+	const auto reachability = battle()->getReachability(ordinary);
+	ASSERT_TRUE(reachability.isReachable(BattleHex(11, 5)));
+	ASSERT_FALSE(battle()->battleGetAvailableHexes(reachability, ordinary, false).contains(BattleHex(11, 5)));
+	const auto ourHealth = ordinary->getAvailableHealth();
+	const auto enemyHealth = enemy->getAvailableHealth();
+	const auto ourPosition = ordinary->getPosition();
+	const auto enemyPosition = enemy->getPosition();
+	BattleEvaluator control(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	BattleEvaluator measured(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	const auto expected = control.goTowardsNearest(ordinary, destinations, targets);
+	BattleMovementTiming timing;
+	const auto actual = measured.goTowardsNearest(ordinary, destinations, targets, &timing);
+	EXPECT_EQ(actual.actionType, EActionType::WALK);
+	EXPECT_EQ(actual.side, expected.side);
+	EXPECT_EQ(actual.stackNumber, expected.stackNumber);
+	EXPECT_EQ(actual.actionType, expected.actionType);
+	EXPECT_EQ(actual.spell, expected.spell);
+	EXPECT_EQ(actual.perfectMoment, expected.perfectMoment);
+	EXPECT_EQ(actual.archerySkirmisherAttack, expected.archerySkirmisherAttack);
+	const auto actualTargets = actual.getTarget(battle());
+	const auto expectedTargets = expected.getTarget(battle());
+	ASSERT_EQ(actualTargets.size(), expectedTargets.size());
+	for(size_t index = 0; index < actualTargets.size(); ++index)
+	{
+		EXPECT_EQ(actualTargets[index].hexValue, expectedTargets[index].hexValue);
+		EXPECT_EQ(actualTargets[index].unitValue, expectedTargets[index].unitValue);
+	}
+	EXPECT_EQ(timing.findMove.calls, 0u);
+	EXPECT_EQ(timing.goTowards.calls, 1u);
+	EXPECT_EQ(timing.findMoveExchange.calls, 0u);
+	EXPECT_GE(timing.goTowardsBlocking.calls, 1u);
+	EXPECT_LE(timing.goTowardsBlocking.totalMicroseconds, timing.goTowards.totalMicroseconds);
+	EXPECT_EQ(ordinary->getAvailableHealth(), ourHealth);
+	EXPECT_EQ(enemy->getAvailableHealth(), enemyHealth);
+	EXPECT_EQ(ordinary->getPosition(), ourPosition);
+	EXPECT_EQ(enemy->getPosition(), enemyPosition);
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_TRUE(callback->heroActions.empty());
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, EmptyMovementDestinationClosesParentWithoutBlockingQueries)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache cache;
+	cache.buildDamageCache(model, BattleSide::ATTACKER);
+	PotentialTargets targets(ordinary, cache, model);
+	BattleEvaluator evaluator(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	BattleMovementTiming timing;
+	const auto actual = evaluator.goTowardsNearest(ordinary, BattleHexArray{}, targets, &timing);
+	EXPECT_EQ(actual.actionType, EActionType::DEFEND);
+	EXPECT_EQ(actual.stackNumber, ordinary->unitId());
+	EXPECT_EQ(timing.goTowards.calls, 1u);
+	EXPECT_EQ(timing.findMove.calls, 0u);
+	EXPECT_EQ(timing.findMoveExchange.calls, 0u);
+	EXPECT_EQ(timing.goTowardsBlocking.calls, 0u);
+	EXPECT_EQ(timing.goTowardsBlocking.totalMicroseconds, 0u);
+	EXPECT_TRUE(callback->actions.empty());
 }

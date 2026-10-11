@@ -24,9 +24,38 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 
 #include <tbb/parallel_for.h>
+#include <chrono>
+#include <utility>
 
 namespace
 {
+class MovementExchangeScope
+{
+	using Clock = std::chrono::steady_clock;
+	BattleMovementTiming::StageTiming * timing;
+	Clock::time_point started;
+public:
+	explicit MovementExchangeScope(BattleMovementTiming::StageTiming * timing)
+		: timing(timing), started(timing ? Clock::now() : Clock::time_point{})
+	{}
+	~MovementExchangeScope()
+	{
+		if(timing)
+		{
+			++timing->calls;
+			timing->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
+				Clock::now() - started).count();
+		}
+	}
+};
+
+template<typename Callable>
+decltype(auto) measureMovementExchange(BattleMovementTiming * timing, Callable && action)
+{
+	MovementExchangeScope measurement(timing ? &timing->findMoveExchange : nullptr);
+	return std::forward<Callable>(action)();
+}
+
 bool projectDefiant(HypotheticBattle & battle, const BattleAttackInfo & attack,
 	newHorizonsArmorer::DefiantDenialCause cause)
 {
@@ -1254,8 +1283,10 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 	const battle::Unit * activeStack,
 	PotentialTargets & targets,
 	DamageCache & damageCache,
-	std::shared_ptr<HypotheticBattle> hb)
+	std::shared_ptr<HypotheticBattle> hb,
+	BattleMovementTiming * timing)
 {
+	MovementExchangeScope measurement(timing ? &timing->findMove : nullptr);
 	MoveTarget result;
 	if(targets.berserk)
 	{
@@ -1342,7 +1373,10 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 
 			attack.shootersBlockedDmg = 0; // we do not want to count on it, it is not for sure
 
-			auto score = calculateExchange(attack, turnsToReach, targets, damageCache, hb);
+			auto score = measureMovementExchange(timing, [&]()
+			{
+				return calculateExchange(attack, turnsToReach, targets, damageCache, hb);
+			});
 
 			score.enemyDamageReduce *= multiplier;
 
@@ -1389,13 +1423,16 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 								adjacentStacks.push_back(defenderToBypass);
 								vstd::removeDuplicates(adjacentStacks);
 
-								auto bypassScore = calculateExchange(
-									attackBypass,
-									dists.distances[attackHex.toInt()],
-									targets,
-									damageCache,
-									hb,
-									adjacentStacks);
+								auto bypassScore = measureMovementExchange(timing, [&]()
+								{
+									return calculateExchange(
+										attackBypass,
+										dists.distances[attackHex.toInt()],
+										targets,
+										damageCache,
+										hb,
+										adjacentStacks);
+								});
 
 								if(scoreValue(bypassScore) > result.score)
 								{

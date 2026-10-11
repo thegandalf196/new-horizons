@@ -4295,14 +4295,15 @@ float BattleEvaluator::beneficialCreatureSpellOutcomeValue(const CStack * caster
 
 namespace
 {
+template<typename StageTiming>
 class SelectionStageScope
 {
 	using Clock = std::chrono::steady_clock;
-	BattleEvaluator::SelectionTiming::StageTiming * timing;
+	StageTiming * timing;
 	Clock::time_point started;
 
 public:
-	explicit SelectionStageScope(BattleEvaluator::SelectionTiming::StageTiming * timing)
+	explicit SelectionStageScope(StageTiming * timing)
 		: timing(timing), started(timing ? Clock::now() : Clock::time_point{})
 	{}
 
@@ -4317,8 +4318,8 @@ public:
 	}
 };
 
-template<typename Callable>
-decltype(auto) measureSelectionStage(BattleEvaluator::SelectionTiming::StageTiming * timing,
+template<typename StageTiming, typename Callable>
+decltype(auto) measureSelectionStage(StageTiming * timing,
 	Callable && action)
 {
 	SelectionStageScope measurement(timing);
@@ -4340,7 +4341,8 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 
 	auto moveTarget = measureSelectionStage(timing ? &timing->movementSearch : nullptr, [&]()
 	{
-		return scoreEvaluator.findMoveTowardsUnreachable(stack, *targets, damageCache, hb);
+		return scoreEvaluator.findMoveTowardsUnreachable(stack, *targets, damageCache, hb,
+			timing ? &timing->movementDetails : nullptr);
 	});
 	float score = EvaluationResult::INEFFECTIVE_SCORE;
 	auto enemyMellee = hb->getUnitsIf([this](const battle::Unit* u) -> bool
@@ -4489,7 +4491,8 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 
 			return measureSelectionStage(timing ? &timing->movementSearch : nullptr, [&]()
 			{
-				return goTowardsNearest(stack, moveTarget.positions, *targets);
+				return goTowardsNearest(stack, moveTarget.positions, *targets,
+					timing ? &timing->movementDetails : nullptr);
 			});
 		}
 		else
@@ -4516,7 +4519,8 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 			else
 				return measureSelectionStage(timing ? &timing->movementSearch : nullptr, [&]()
 				{
-					return goTowardsNearest(stack, brokenWallMoat, *targets);
+					return goTowardsNearest(stack, brokenWallMoat, *targets,
+						timing ? &timing->movementDetails : nullptr);
 				});
 		}
 	}
@@ -4578,8 +4582,10 @@ BattleAction BattleEvaluator::moveOrAttack(const CStack * stack, const BattleHex
 	}
 }
 
-BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets)
+BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets,
+	BattleMovementTiming * timing)
 {
+	SelectionStageScope measurement(timing ? &timing->goTowards : nullptr);
 	auto reachability = cb->getBattle(battleID)->getReachability(stack);
 	auto avHexes = cb->getBattle(battleID)->battleGetAvailableHexes(reachability, stack, false);
 
@@ -4658,7 +4664,7 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 		}
 		// Flying stack doesn't go hex by hex, so we can't backtrack using predecessors.
 		// We just check all available hexes and pick the one closest to the target.
-		auto nearestAvailableHex = vstd::minElementByFun(avHexes, [this, &bestNeighbour, &stack, &obstacleHexes](const BattleHex & hex) -> int
+		auto nearestAvailableHex = vstd::minElementByFun(avHexes, [this, &bestNeighbour, &stack, &obstacleHexes, timing](const BattleHex & hex) -> int
 		{
 			const int NEGATIVE_OBSTACLE_PENALTY = 100; // avoid landing on negative obstacle (moat, fire wall, etc)
 			const int BLOCKED_STACK_PENALTY = 100; // avoid landing on moat
@@ -4668,7 +4674,11 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 			if(obstacleHexes.contains(hex))
 				distance += NEGATIVE_OBSTACLE_PENALTY;
 
-			return scoreEvaluator.checkPositionBlocksOurStacks(*hb, stack, hex) ? BLOCKED_STACK_PENALTY + distance : distance;
+			const bool blocksOurStacks = measureSelectionStage(timing ? &timing->goTowardsBlocking : nullptr, [&]()
+			{
+				return scoreEvaluator.checkPositionBlocksOurStacks(*hb, stack, hex);
+			});
+			return blocksOurStacks ? BLOCKED_STACK_PENALTY + distance : distance;
 		});
 
 		return moveOrAttack(stack, *nearestAvailableHex, targets);
@@ -4685,7 +4695,10 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 			}
 
 			if(avHexes.contains(currentDest)
-				&& !scoreEvaluator.checkPositionBlocksOurStacks(*hb, stack, currentDest))
+				&& !measureSelectionStage(timing ? &timing->goTowardsBlocking : nullptr, [&]()
+				{
+					return scoreEvaluator.checkPositionBlocksOurStacks(*hb, stack, currentDest);
+				}))
 			{
 				return moveOrAttack(stack, currentDest, targets);
 			}

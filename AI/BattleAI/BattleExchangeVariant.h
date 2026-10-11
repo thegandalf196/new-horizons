@@ -146,6 +146,20 @@ public:
 	void update(const std::vector<battle::Units> & turnOrder, std::shared_ptr<HypotheticBattle> hb);
 };
 
+/// Optional call-local wall diagnostics; child times are nonadditive subsets.
+struct DLL_LINKAGE BattleMovementTiming
+{
+	struct DLL_LINKAGE StageTiming
+	{
+		uint64_t calls = 0;
+		uint64_t totalMicroseconds = 0;
+	};
+	StageTiming findMove;
+	StageTiming goTowards;
+	StageTiming findMoveExchange;
+	StageTiming goTowardsBlocking;
+};
+
 class BattleExchangeEvaluator
 {
 private:
@@ -207,7 +221,8 @@ public:
 		const battle::Unit * activeStack,
 		PotentialTargets & targets,
 		DamageCache & damageCache,
-		std::shared_ptr<HypotheticBattle> hb);
+		std::shared_ptr<HypotheticBattle> hb,
+		BattleMovementTiming * timing = nullptr);
 
 	battle::Units getAdjacentUnits(const battle::Unit * unit) const;
 
