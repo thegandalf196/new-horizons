@@ -224,6 +224,14 @@ outside units. Review copies: Downloads/provisory/wisp-active-turn-20261008.2X6U
 This proves the outline correction's private rendered path, not new artwork
 approval, SDL3, Conflux portrait placement, dwelling UI or normal delivery.
 
+Packed binding correction,2026-10-11: both selected Wisp animation descriptors
+now ship the existing threshold64 setting in all32 groups. The previous pack
+omitted that setting despite the private rendered checks above. All sprite
+pixels remain unchanged. Package/member verification, binding-negative tests
+and the production outline-mask driver pass for110 distinct authored frames.
+Post-correction SDL3/Windows active-turn and hover rendering remains pending;
+this does not change the artwork's Provisional approval status.
+
 UP308,2026-10-08: Confusion's inactive registered identity uses borrowed
 Hypnotize book/scroll/effect symbols and animation/sound references solely for
 the private functional fixture. Confusion-specific artwork is **Not done**;
