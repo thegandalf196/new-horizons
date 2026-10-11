@@ -64,6 +64,9 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/IGameSettings.h"
 
+#include <chrono>
+#include <utility>
+
 
 // TODO: remove
 // Eventually only IBattleInfoCallback and battle::Unit should be used,
@@ -4290,15 +4293,55 @@ float BattleEvaluator::beneficialCreatureSpellOutcomeValue(const CStack * caster
 		beneficialCreaturePressure(baseline, caster->unitId(), cache));
 }
 
-BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
+namespace
+{
+class SelectionStageScope
+{
+	using Clock = std::chrono::steady_clock;
+	BattleEvaluator::SelectionTiming::StageTiming * timing;
+	Clock::time_point started;
+
+public:
+	explicit SelectionStageScope(BattleEvaluator::SelectionTiming::StageTiming * timing)
+		: timing(timing), started(timing ? Clock::now() : Clock::time_point{})
+	{}
+
+	~SelectionStageScope()
+	{
+		if(timing)
+		{
+			++timing->calls;
+			timing->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
+				Clock::now() - started).count();
+		}
+	}
+};
+
+template<typename Callable>
+decltype(auto) measureSelectionStage(BattleEvaluator::SelectionTiming::StageTiming * timing,
+	Callable && action)
+{
+	SelectionStageScope measurement(timing);
+	return std::forward<Callable>(action)();
+}
+}
+
+BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionTiming * timing)
 {
 #if BATTLE_TRACE_LEVEL >= 1
 	logAi->trace("Select stack action");
 #endif
 	//evaluate casting spell for spellcasting stack
-	std::optional<PossibleSpellcast> bestSpellcast = findBestCreatureSpell(stack);
+	std::optional<PossibleSpellcast> bestSpellcast = measureSelectionStage(
+		timing ? &timing->creatureSpell : nullptr, [&]()
+	{
+		return findBestCreatureSpell(stack);
+	});
 
-	auto moveTarget = scoreEvaluator.findMoveTowardsUnreachable(stack, *targets, damageCache, hb);
+	auto moveTarget = measureSelectionStage(timing ? &timing->movementSearch : nullptr, [&]()
+	{
+		return scoreEvaluator.findMoveTowardsUnreachable(stack, *targets, damageCache, hb);
+	});
 	float score = EvaluationResult::INEFFECTIVE_SCORE;
 	auto enemyMellee = hb->getUnitsIf([this](const battle::Unit* u) -> bool
 		{
@@ -4321,7 +4364,10 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 		logAi->trace("Evaluating attack for %s", stack->getDescription());
 #endif
 
-		auto evaluationResult = scoreEvaluator.findBestTarget(stack, *targets, damageCache, hb, siegeDefense);
+		auto evaluationResult = measureSelectionStage(timing ? &timing->targetExchange : nullptr, [&]()
+		{
+			return scoreEvaluator.findBestTarget(stack, *targets, damageCache, hb, siegeDefense);
+		});
 		auto & bestAttack = evaluationResult.bestAttack;
 
 		cachedAttack.ap = bestAttack;
@@ -4404,7 +4450,10 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 						BattleAttackInfo bai(stack, stack, 0, false);
 						AttackPossibility apDefend(stack->getPosition(), stack->getPosition(), bai);
 
-						float defenseValue = scoreEvaluator.evaluateExchange(apDefend, 0, *targets, damageCache, hb);
+						float defenseValue = measureSelectionStage(timing ? &timing->targetExchange : nullptr, [&]()
+						{
+							return scoreEvaluator.evaluateExchange(apDefend, 0, *targets, damageCache, hb);
+						});
 
 						if((defenseValue > score && score <= 0) || (defenseValue > 2 * score && score > 0))
 						{
@@ -4438,7 +4487,10 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 				moveTarget.cachedAttack->attack.defender->getPosition(),
 				moveTarget.score);
 
-			return goTowardsNearest(stack, moveTarget.positions, *targets);
+			return measureSelectionStage(timing ? &timing->movementSearch : nullptr, [&]()
+			{
+				return goTowardsNearest(stack, moveTarget.positions, *targets);
+			});
 		}
 		else
 		{
@@ -4462,14 +4514,21 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 			if(stack->doubleWide() && vstd::contains(brokenWallMoat, stack->getPosition()))
 				return BattleAction::makeMove(stack, stack->getPosition().cloneInDirection(BattleHex::RIGHT));
 			else
-				return goTowardsNearest(stack, brokenWallMoat, *targets);
+				return measureSelectionStage(timing ? &timing->movementSearch : nullptr, [&]()
+				{
+					return goTowardsNearest(stack, brokenWallMoat, *targets);
+				});
 		}
 	}
 
 	if(stack->acquireState()->waitedThisTurn)
 		return BattleAction::makeDefend(stack);
 
-	if(defensiveStanceMakesDefendWorthwhile(env.get(), hb, stack, damageCache))
+	const bool worthwhileDefense = measureSelectionStage(timing ? &timing->targetExchange : nullptr, [&]()
+	{
+		return defensiveStanceMakesDefendWorthwhile(env.get(), hb, stack, damageCache);
+	});
+	if(worthwhileDefense)
 		return BattleAction::makeDefend(stack);
 	return BattleAction::makeWait(stack);
 }

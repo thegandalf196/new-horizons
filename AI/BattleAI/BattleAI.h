@@ -81,6 +81,11 @@ public:
 		uint64_t activeStackMaxMicroseconds = 0;
 		StageTiming evaluatorConstruction;
 		StageTiming stackActionSelection;
+		/// Disjoint subsets of stackActionSelection, not additional callback time.
+		StageTiming selectionCreatureSpell;
+		StageTiming selectionMovementSearch;
+		StageTiming selectionTargetExchange;
+		uint64_t selectionRemainderMicroseconds = 0;
 		/// Includes Hero Action evaluation and any submission performed inside it.
 		StageTiming heroAction;
 		StageTiming directUnitSubmission;

@@ -10,6 +10,7 @@
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleAI.h"
+#include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/callback/CBattleCallback.h"
@@ -67,11 +68,12 @@ class NewHorizonsBattleAITimingTest : public HeroCommandFixture
 protected:
 	CStack * tent = nullptr;
 	CStack * ordinary = nullptr;
+	CStack * enemy = nullptr;
 	std::shared_ptr<TimingEnvironment> environment;
 	std::shared_ptr<TimingCallback> callback;
 	std::unique_ptr<CBattleAI> ai;
 
-	void prepare(bool spellbook = false)
+	void prepare(bool spellbook = false, bool adjacentEnemy = false)
 	{
 		useCommands = false;
 		startGame();
@@ -89,7 +91,8 @@ protected:
 		gameHandler->sendAndApply(remove);
 		tent = addStack(BattleSide::ATTACKER, creatureByName("core:firstAidTent"), BattleHex(2, 2), 1);
 		ordinary = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(5, 5), 100);
-		addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 5), 100);
+		enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"),
+			adjacentEnemy ? BattleHex(6, 5) : BattleHex(13, 5), 100);
 		beginCombat();
 		ASSERT_TRUE(tent->isFirstAidTent());
 		ASSERT_TRUE(tent->hasBonusOfType(BonusType::SIEGE_WEAPON));
@@ -120,6 +123,58 @@ protected:
 			+ timing.directUnitSubmission.totalMicroseconds;
 		EXPECT_LE(classified, timing.activeStackTotalMicroseconds);
 		EXPECT_EQ(classified + timing.unclassifiedMicroseconds, timing.activeStackTotalMicroseconds);
+		const uint64_t selectionClassified = timing.selectionCreatureSpell.totalMicroseconds
+			+ timing.selectionMovementSearch.totalMicroseconds + timing.selectionTargetExchange.totalMicroseconds;
+		EXPECT_LE(selectionClassified, timing.stackActionSelection.totalMicroseconds);
+		EXPECT_EQ(selectionClassified + timing.selectionRemainderMicroseconds,
+			timing.stackActionSelection.totalMicroseconds);
+	}
+
+	void expectSameSelectionWithAndWithoutTiming(bool adjacentEnemy)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepare(false, adjacentEnemy));
+		const auto ourHealth = ordinary->getAvailableHealth();
+		const auto enemyHealth = enemy->getAvailableHealth();
+		const auto ourPosition = ordinary->getPosition();
+		const auto enemyPosition = enemy->getPosition();
+		const auto normalSpellPoints = attackerSideHero->getNormalSpellPoints();
+		const auto bufferSpellPoints = attackerSideHero->getBufferSpellPoints();
+		BattleEvaluator control(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+			BattleSide::ATTACKER, 1.0f, 2);
+		BattleEvaluator measured(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+			BattleSide::ATTACKER, 1.0f, 2);
+		const auto expected = control.selectStackAction(ordinary);
+		BattleEvaluator::SelectionTiming timing;
+		const auto actual = measured.selectStackAction(ordinary, &timing);
+		EXPECT_EQ(actual.side, expected.side);
+		EXPECT_EQ(actual.stackNumber, expected.stackNumber);
+		EXPECT_EQ(actual.actionType, expected.actionType);
+		EXPECT_EQ(actual.spell, expected.spell);
+		EXPECT_EQ(actual.perfectMoment, expected.perfectMoment);
+		EXPECT_EQ(actual.archerySkirmisherAttack, expected.archerySkirmisherAttack);
+		const auto actualTargets = actual.getTarget(battle());
+		const auto expectedTargets = expected.getTarget(battle());
+		ASSERT_EQ(actualTargets.size(), expectedTargets.size());
+		for(size_t index = 0; index < actualTargets.size(); ++index)
+		{
+			EXPECT_EQ(actualTargets[index].hexValue, expectedTargets[index].hexValue);
+			EXPECT_EQ(actualTargets[index].unitValue, expectedTargets[index].unitValue);
+		}
+		EXPECT_EQ(timing.creatureSpell.calls, 1u);
+		EXPECT_GE(timing.movementSearch.calls, 1u);
+		if(adjacentEnemy)
+		{
+			EXPECT_GE(timing.targetExchange.calls, 1u);
+		}
+		EXPECT_EQ(ordinary->getAvailableHealth(), ourHealth);
+		EXPECT_EQ(enemy->getAvailableHealth(), enemyHealth);
+		EXPECT_EQ(ordinary->getPosition(), ourPosition);
+		EXPECT_EQ(enemy->getPosition(), enemyPosition);
+		EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalSpellPoints);
+		EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferSpellPoints);
+		EXPECT_TRUE(callback->actions.empty());
+		EXPECT_TRUE(callback->heroActions.empty());
+		EXPECT_EQ(callback->retreatDecisionCalls, 0u);
 	}
 };
 
@@ -150,6 +205,9 @@ TEST_F(NewHorizonsBattleAITimingTest, HealingTentEarlyReturnCountsOnceAndPreserv
 	EXPECT_EQ(timing.stackActionSelection.calls, 0u);
 	EXPECT_EQ(timing.heroAction.calls, 0u);
 	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
+	EXPECT_EQ(timing.selectionCreatureSpell.calls, 0u);
+	EXPECT_EQ(timing.selectionMovementSearch.calls, 0u);
+	EXPECT_EQ(timing.selectionTargetExchange.calls, 0u);
 	expectStageClosure(timing);
 }
 
@@ -209,6 +267,10 @@ TEST_F(NewHorizonsBattleAITimingTest, ResetKeepsOldInFlightScopeOutOfNewBattleCo
 	EXPECT_EQ(summary().directUnitSubmission.calls, 0u);
 	EXPECT_EQ(summary().directUnitSubmission.totalMicroseconds, 0u);
 	EXPECT_EQ(summary().unclassifiedMicroseconds, 0u);
+	EXPECT_EQ(summary().selectionCreatureSpell.calls, 0u);
+	EXPECT_EQ(summary().selectionMovementSearch.calls, 0u);
+	EXPECT_EQ(summary().selectionTargetExchange.calls, 0u);
+	EXPECT_EQ(summary().selectionRemainderMicroseconds, 0u);
 	EXPECT_FALSE(summary().finished);
 	callback->onSubmit = {};
 	ai->activeStack(BattleID(0), tent);
@@ -260,6 +322,8 @@ TEST_F(NewHorizonsBattleAITimingTest, OrdinaryCallbackClassifiesConstructionSele
 	EXPECT_EQ(timing.activeStackCalls, 1u);
 	EXPECT_EQ(timing.evaluatorConstruction.calls, 1u);
 	EXPECT_EQ(timing.stackActionSelection.calls, 1u);
+	EXPECT_EQ(timing.selectionCreatureSpell.calls, 1u);
+	EXPECT_GE(timing.selectionMovementSearch.calls, 1u);
 	EXPECT_EQ(timing.heroAction.calls, 0u);
 	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
 	EXPECT_FALSE(callback->waitTillRealize);
@@ -284,5 +348,32 @@ TEST_F(NewHorizonsBattleAITimingTest, HeroActionStageIncludesInternalSubmissionW
 	// a second time in the separately measured direct unit submission stage.
 	EXPECT_EQ(timing.directUnitSubmission.calls, callback->actions.size());
 	EXPECT_FALSE(callback->waitTillRealize);
+	expectStageClosure(timing);
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, DistantSelectionTimingPreservesUntimedDecisionAndLiveState)
+{
+	ASSERT_NO_FATAL_FAILURE(expectSameSelectionWithAndWithoutTiming(false));
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, AdjacentSelectionTimingPreservesUntimedDecisionAndLiveState)
+{
+	ASSERT_NO_FATAL_FAILURE(expectSameSelectionWithAndWithoutTiming(true));
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, OrdinaryThrowingSubmissionRetainsClosedSelectionPartition)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ai->autobattlePreferences.enableSpellsUsage = false;
+	callback->onSubmit = []() { throw std::runtime_error("Expected diagnostic fixture failure"); };
+	EXPECT_THROW(ai->activeStack(BattleID(0), ordinary), std::runtime_error);
+	ASSERT_EQ(callback->actions.size(), 1u);
+	EXPECT_EQ(callback->retreatDecisionCalls, 1u);
+	const auto timing = summary();
+	EXPECT_EQ(timing.activeStackInFlight, 0u);
+	EXPECT_EQ(timing.stackActionSelection.calls, 1u);
+	EXPECT_EQ(timing.selectionCreatureSpell.calls, 1u);
+	EXPECT_GE(timing.selectionMovementSearch.calls, 1u);
+	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
 	expectStageClosure(timing);
 }
