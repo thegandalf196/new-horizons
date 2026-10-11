@@ -24,6 +24,7 @@
 #include "../../../lib/battle/BattleLayout.h"
 #include "../../../lib/networkPacks/StackLocation.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
+#include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/networkPacks/PacksForLobby.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/serializer/JsonSerializer.h"
@@ -737,4 +738,110 @@ TEST_F(NewHorizonsRecruitmentTrainingTest, StrategicStackBinaryAndJsonPreserveTr
 	JsonDeserializer invalid(nullptr, malformed);
 	EXPECT_THROW(fromJson.serializeJson(invalid), std::runtime_error);
 	EXPECT_EQ(fromJson.getTrainingReceipt(), receipt);
+}
+
+TEST_F(NewHorizonsRecruitmentTrainingTest, ClassifierMatchesOriginalPredicateForAllShapesAndUngatedMetadata)
+{
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	const SecondarySkill training(SecondarySkill::decode(newHorizonsTraining::SKILL));
+	const SecondarySkill diplomacy(SecondarySkill::decode(newHorizonsTraining::DIPLOMACY));
+	ASSERT_GE(training.getNum(), 0);
+	ASSERT_GE(diplomacy.getNum(), 0);
+	const auto originalMercenaryPredicate = [](const Bonus * bonus)
+	{
+		return bonus && bonus->source == BonusSource::SECONDARY_SKILL && bonus->sid.toString() == newHorizonsTraining::DIPLOMACY
+			&& bonus->stacking == newHorizonsTraining::MERCENARY_BONUS && bonus->type == BonusType::MORALE && bonus->val == 1
+			&& bonus->valType == BonusValueType::ADDITIVE_VALUE && bonus->duration == BonusDuration::ONE_BATTLE;
+	};
+	const auto originalPredicate = [&originalMercenaryPredicate](const Bonus * bonus)
+	{
+		if(originalMercenaryPredicate(bonus)) return true;
+		if(!bonus || bonus->source != BonusSource::SECONDARY_SKILL || bonus->sid.toString() != newHorizonsTraining::SKILL
+			|| bonus->valType != BonusValueType::ADDITIVE_VALUE)
+			return false;
+		if(bonus->stacking == "new-horizons:fieldInstructor")
+			return bonus->type == BonusType::PRIMARY_SKILL && bonus->subtype == BonusSubtypeID(PrimarySkill::ATTACK)
+				&& bonus->val == 1 && bonus->duration == BonusDuration::PERMANENT;
+		if(bonus->stacking == "new-horizons:drillSergeant")
+			return bonus->type == BonusType::MORALE && bonus->val == 1 && bonus->duration == BonusDuration::ONE_BATTLE;
+		return bonus->stacking == "new-horizons:reinforcementDrill"
+			&& bonus->type == BonusType::STACKS_INITIATIVE_FLAT && bonus->val == 2
+			&& bonus->duration == BonusDuration::N_TURNS && bonus->turnsRemain >= 0 && bonus->turnsRemain <= 1;
+	};
+	EXPECT_FALSE(newHorizonsTraining::isTrainingBonus(nullptr));
+	EXPECT_EQ(newHorizonsTraining::isTrainingBonus(nullptr), originalPredicate(nullptr));
+	EXPECT_EQ(newHorizonsTraining::isMercenaryBonus(nullptr), originalMercenaryPredicate(nullptr));
+	Bonus mercenary(BonusDuration::ONE_BATTLE, BonusType::MORALE,
+		BonusSource::SECONDARY_SKILL, 1, BonusSourceID(diplomacy));
+	mercenary.stacking = newHorizonsTraining::MERCENARY_BONUS;
+	Bonus instructor(BonusDuration::PERMANENT, BonusType::PRIMARY_SKILL,
+		BonusSource::SECONDARY_SKILL, 1, BonusSourceID(training));
+	instructor.subtype = BonusSubtypeID(PrimarySkill::ATTACK);
+	instructor.stacking = "new-horizons:fieldInstructor";
+	Bonus sergeant(BonusDuration::ONE_BATTLE, BonusType::MORALE,
+		BonusSource::SECONDARY_SKILL, 1, BonusSourceID(training));
+	sergeant.stacking = "new-horizons:drillSergeant";
+	Bonus reinforcement(BonusDuration::N_TURNS, BonusType::STACKS_INITIATIVE_FLAT,
+		BonusSource::SECONDARY_SKILL, 2, BonusSourceID(training));
+	reinforcement.turnsRemain = 1;
+	reinforcement.stacking = "new-horizons:reinforcementDrill";
+	for(const auto & positive : {mercenary, instructor, sergeant, reinforcement})
+	{
+		SCOPED_TRACE(positive.stacking);
+		ASSERT_TRUE(originalPredicate(&positive));
+		EXPECT_TRUE(newHorizonsTraining::isTrainingBonus(&positive));
+		EXPECT_EQ(newHorizonsTraining::isMercenaryBonus(&positive), originalMercenaryPredicate(&positive));
+		std::vector<std::pair<std::string, Bonus>> rejected;
+		const auto add = [&](std::string name, const auto & mutate)
+		{
+			auto bonus = positive;
+			mutate(bonus);
+			rejected.emplace_back(std::move(name), std::move(bonus));
+		};
+		add("source", [](Bonus & bonus) { bonus.source = BonusSource::OTHER; });
+		add("type", [](Bonus & bonus) { bonus.type = BonusType::STACKS_SPEED; });
+		add("value type", [](Bonus & bonus) { bonus.valType = BonusValueType::PERCENT_TO_ALL; });
+		add("value", [](Bonus & bonus) { ++bonus.val; });
+		add("empty stacking", [](Bonus & bonus) { bonus.stacking.clear(); });
+		add("wrong stacking", [](Bonus & bonus) { bonus.stacking = "new-horizons:unrelatedTraining"; });
+		add("spell SID", [](Bonus & bonus) { bonus.sid = BonusSourceID(SpellID(SpellID::HASTE)); });
+		add("other skill SID", [training, diplomacy](Bonus & bonus)
+		{
+			bonus.sid = BonusSourceID(bonus.sid == BonusSourceID(training) ? diplomacy : training);
+		});
+		add("duration", [](Bonus & bonus) { bonus.duration = BonusDuration::ONE_DAY; });
+		if(positive.stacking == instructor.stacking)
+		{
+			add("subtype", [](Bonus & bonus) { bonus.subtype = BonusSubtypeID(PrimarySkill::DEFENSE); });
+		}
+		if(positive.stacking == reinforcement.stacking)
+		{
+			add("negative turns", [](Bonus & bonus) { bonus.turnsRemain = -1; });
+			add("too many turns", [](Bonus & bonus) { bonus.turnsRemain = 2; });
+			auto zeroTurns = positive;
+			zeroTurns.turnsRemain = 0;
+			ASSERT_TRUE(originalPredicate(&zeroTurns));
+			EXPECT_TRUE(newHorizonsTraining::isTrainingBonus(&zeroTurns));
+		}
+		for(const auto & [name, bonus] : rejected)
+		{
+			SCOPED_TRACE(name);
+			EXPECT_FALSE(originalPredicate(&bonus));
+			EXPECT_EQ(newHorizonsTraining::isTrainingBonus(&bonus), originalPredicate(&bonus));
+			EXPECT_EQ(newHorizonsTraining::isMercenaryBonus(&bonus), originalMercenaryPredicate(&bonus));
+		}
+		auto ungated = positive;
+		JsonNode parameters;
+		parameters["classifierProbe"].Bool() = true;
+		ungated.parameters = std::make_shared<BonusParameters>(parameters);
+		ungated.statusIdentity = "training";
+		ungated.statusTags = {BonusStatusTag::DEBUFF};
+		ungated.appliedByEnemy = true;
+		ungated.spellCasterOwner = PlayerColor(1);
+		if(positive.stacking != instructor.stacking)
+			ungated.subtype = BonusSubtypeID(PrimarySkill::DEFENSE);
+		ASSERT_TRUE(originalPredicate(&ungated));
+		EXPECT_TRUE(newHorizonsTraining::isTrainingBonus(&ungated));
+		EXPECT_EQ(newHorizonsTraining::isMercenaryBonus(&ungated), originalMercenaryPredicate(&ungated));
+	}
 }
