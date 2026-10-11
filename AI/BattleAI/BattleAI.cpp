@@ -212,6 +212,22 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->directUnitSubmission.calls),
 			static_cast<unsigned long long>(result->directUnitSubmission.totalMicroseconds),
 			static_cast<unsigned long long>(result->unclassifiedMicroseconds));
+		const auto logSubsets = [](const char * context, const StageTiming & expiry,
+			const StageTiming & gambler, const StageTiming & roundTimed)
+		{
+			logAi->info("BattleAI nested lifecycle timing context=%s activation_expiry_removal_calls=%llu"
+				" activation_expiry_removal_us=%llu activation_gambler_removal_calls=%llu"
+				" activation_gambler_removal_us=%llu round_timed_updates_calls=%llu round_timed_updates_us=%llu",
+				context, static_cast<unsigned long long>(expiry.calls), static_cast<unsigned long long>(expiry.totalMicroseconds),
+				static_cast<unsigned long long>(gambler.calls), static_cast<unsigned long long>(gambler.totalMicroseconds),
+				static_cast<unsigned long long>(roundTimed.calls), static_cast<unsigned long long>(roundTimed.totalMicroseconds));
+		};
+		logSubsets("movement", result->movementExchangeActivationExpiryRemoval,
+			result->movementExchangeActivationGamblerRemoval, result->movementExchangeRoundTimedUpdates);
+		logSubsets("best_target_waited", result->bestTargetWaitedActivationExpiryRemoval,
+			result->bestTargetWaitedActivationGamblerRemoval, result->bestTargetWaitedRoundTimedUpdates);
+		logSubsets("best_target_normal", result->bestTargetNormalActivationExpiryRemoval,
+			result->bestTargetNormalActivationGamblerRemoval, result->bestTargetNormalRoundTimedUpdates);
 	}
 };
 
@@ -320,6 +336,9 @@ public:
 			accumulateSelection(state->summary.movementExchangeActivationStart, exchange.activationStart);
 			accumulateSelection(state->summary.movementExchangeActivationEnd, exchange.activationEnd);
 			accumulateSelection(state->summary.movementExchangeRoundAdvance, exchange.roundAdvance);
+			accumulateSelection(state->summary.movementExchangeActivationExpiryRemoval, exchange.lifecycleSubsets.activationExpiryRemoval);
+			accumulateSelection(state->summary.movementExchangeActivationGamblerRemoval, exchange.lifecycleSubsets.activationGamblerRemoval);
+			accumulateSelection(state->summary.movementExchangeRoundTimedUpdates, exchange.lifecycleSubsets.roundTimedUpdates);
 			state->summary.movementExchangeRemainderMicroseconds += exchange.remainderMicroseconds;
 			accumulateSelection(state->summary.movementGoBlockingSubset, movement.goTowardsBlocking);
 			state->summary.movementRemainderMicroseconds += selectionTotals.movementSearch.totalMicroseconds
@@ -336,6 +355,9 @@ public:
 			accumulateSelection(state->summary.bestTargetWaitedActivationStart, bestTarget.waitedDetails.activationStart);
 			accumulateSelection(state->summary.bestTargetWaitedActivationEnd, bestTarget.waitedDetails.activationEnd);
 			accumulateSelection(state->summary.bestTargetWaitedRoundAdvance, bestTarget.waitedDetails.roundAdvance);
+			accumulateSelection(state->summary.bestTargetWaitedActivationExpiryRemoval, bestTarget.waitedDetails.lifecycleSubsets.activationExpiryRemoval);
+			accumulateSelection(state->summary.bestTargetWaitedActivationGamblerRemoval, bestTarget.waitedDetails.lifecycleSubsets.activationGamblerRemoval);
+			accumulateSelection(state->summary.bestTargetWaitedRoundTimedUpdates, bestTarget.waitedDetails.lifecycleSubsets.roundTimedUpdates);
 			state->summary.bestTargetWaitedRemainderMicroseconds += bestTarget.waitedDetails.remainderMicroseconds;
 			accumulateSelection(state->summary.bestTargetNormalExchange, bestTarget.normalExchange);
 			accumulateSelection(state->summary.bestTargetNormalBody, bestTarget.normalDetails.body);
@@ -346,6 +368,9 @@ public:
 			accumulateSelection(state->summary.bestTargetNormalActivationStart, bestTarget.normalDetails.activationStart);
 			accumulateSelection(state->summary.bestTargetNormalActivationEnd, bestTarget.normalDetails.activationEnd);
 			accumulateSelection(state->summary.bestTargetNormalRoundAdvance, bestTarget.normalDetails.roundAdvance);
+			accumulateSelection(state->summary.bestTargetNormalActivationExpiryRemoval, bestTarget.normalDetails.lifecycleSubsets.activationExpiryRemoval);
+			accumulateSelection(state->summary.bestTargetNormalActivationGamblerRemoval, bestTarget.normalDetails.lifecycleSubsets.activationGamblerRemoval);
+			accumulateSelection(state->summary.bestTargetNormalRoundTimedUpdates, bestTarget.normalDetails.lifecycleSubsets.roundTimedUpdates);
 			state->summary.bestTargetNormalRemainderMicroseconds += bestTarget.normalDetails.remainderMicroseconds;
 			state->summary.bestTargetRemainderMicroseconds += selectionTotals.bestTarget.totalMicroseconds
 				- bestTarget.waitedExchange.totalMicroseconds - bestTarget.normalExchange.totalMicroseconds;

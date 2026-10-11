@@ -99,6 +99,10 @@ public:
 		StageTiming movementExchangeActivationStart;
 		StageTiming movementExchangeActivationEnd;
 		StageTiming movementExchangeRoundAdvance;
+		/// Nested lifecycle subsets; excluded from disjoint exchange body closure.
+		StageTiming movementExchangeActivationExpiryRemoval;
+		StageTiming movementExchangeActivationGamblerRemoval;
+		StageTiming movementExchangeRoundTimedUpdates;
 		uint64_t movementExchangeRemainderMicroseconds = 0;
 		StageTiming movementGoBlockingSubset;
 		StageTiming selectionTargetExchange;
@@ -114,6 +118,9 @@ public:
 		StageTiming bestTargetWaitedActivationStart;
 		StageTiming bestTargetWaitedActivationEnd;
 		StageTiming bestTargetWaitedRoundAdvance;
+		StageTiming bestTargetWaitedActivationExpiryRemoval;
+		StageTiming bestTargetWaitedActivationGamblerRemoval;
+		StageTiming bestTargetWaitedRoundTimedUpdates;
 		uint64_t bestTargetWaitedRemainderMicroseconds = 0;
 		StageTiming bestTargetNormalExchange;
 		StageTiming bestTargetNormalBody;
@@ -124,6 +131,9 @@ public:
 		StageTiming bestTargetNormalActivationStart;
 		StageTiming bestTargetNormalActivationEnd;
 		StageTiming bestTargetNormalRoundAdvance;
+		StageTiming bestTargetNormalActivationExpiryRemoval;
+		StageTiming bestTargetNormalActivationGamblerRemoval;
+		StageTiming bestTargetNormalRoundTimedUpdates;
 		uint64_t bestTargetNormalRemainderMicroseconds = 0;
 		/// Clone/reachability/filter/comparison and wrapper overhead.
 		uint64_t bestTargetRemainderMicroseconds = 0;
