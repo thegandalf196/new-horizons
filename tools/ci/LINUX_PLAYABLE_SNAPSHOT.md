@@ -53,6 +53,16 @@ candidate=$(python3 tools/ci/linux_playable_snapshot.py freeze --no-promote \
 ```
 
 Validate that exact candidate with the managed launcher and a private profile.
+When a comparison build needs non-system shared libraries, repeat
+`--runtime-library "$nh_provider_stage/libSDL3.so.0"` for each required provider.
+Inputs must be regular ELF shared-object files with unique safe basenames;
+copy resolved provider bytes under their SONAME names into local staging first.
+These files participate in the snapshot's checksum and copy-time mutation checks.
+The helper's structural ELF check does not establish architecture, SONAME,
+dependency compatibility or runtime selection: verify those separately, including
+actual loaded paths during acceptance. Do not use a mutable SDK library path to
+mask a missing frozen provider. Omitting this option preserves the usual payload.
+
 When replacing an existing candidate, add
 `--retain-resources-from /absolute/path/to/verified/previous/snapshot` to `freeze`.
 This verifies the previous snapshot and refuses missing curated resource paths
