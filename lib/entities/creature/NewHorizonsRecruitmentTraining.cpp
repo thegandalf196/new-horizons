@@ -33,9 +33,10 @@ bool containsMercenaryBonus(const JsonNode & node)
 }
 bool isMercenaryBonus(const Bonus * bonus)
 {
-	return bonus && bonus->source == BonusSource::SECONDARY_SKILL && bonus->sid.toString() == DIPLOMACY
+	return bonus && bonus->source == BonusSource::SECONDARY_SKILL
 		&& bonus->stacking == MERCENARY_BONUS && bonus->type == BonusType::MORALE && bonus->val == 1
-		&& bonus->valType == BonusValueType::ADDITIVE_VALUE && bonus->duration == BonusDuration::ONE_BATTLE;
+		&& bonus->valType == BonusValueType::ADDITIVE_VALUE && bonus->duration == BonusDuration::ONE_BATTLE
+		&& bonus->sid.toString() == DIPLOMACY;
 }
 
 bool containsTrainingBonus(const JsonNode & node)
@@ -61,17 +62,20 @@ bool containsTrainingBonus(const JsonNode & node)
 bool isTrainingBonus(const Bonus * bonus)
 {
 	if(isMercenaryBonus(bonus)) return true;
-	if(!bonus || bonus->source != BonusSource::SECONDARY_SKILL || bonus->sid.toString() != SKILL
+	if(!bonus || bonus->source != BonusSource::SECONDARY_SKILL
 		|| bonus->valType != BonusValueType::ADDITIVE_VALUE)
 		return false;
+	bool eligible;
 	if(bonus->stacking == "new-horizons:fieldInstructor")
-		return bonus->type == BonusType::PRIMARY_SKILL && bonus->subtype == BonusSubtypeID(PrimarySkill::ATTACK)
+		eligible = bonus->type == BonusType::PRIMARY_SKILL && bonus->subtype == BonusSubtypeID(PrimarySkill::ATTACK)
 			&& bonus->val == 1 && bonus->duration == BonusDuration::PERMANENT;
-	if(bonus->stacking == "new-horizons:drillSergeant")
-		return bonus->type == BonusType::MORALE && bonus->val == 1 && bonus->duration == BonusDuration::ONE_BATTLE;
-	return bonus->stacking == "new-horizons:reinforcementDrill"
-		&& bonus->type == BonusType::STACKS_INITIATIVE_FLAT && bonus->val == 2
-		&& bonus->duration == BonusDuration::N_TURNS && bonus->turnsRemain >= 0 && bonus->turnsRemain <= 1;
+	else if(bonus->stacking == "new-horizons:drillSergeant")
+		eligible = bonus->type == BonusType::MORALE && bonus->val == 1 && bonus->duration == BonusDuration::ONE_BATTLE;
+	else
+		eligible = bonus->stacking == "new-horizons:reinforcementDrill"
+			&& bonus->type == BonusType::STACKS_INITIATIVE_FLAT && bonus->val == 2
+			&& bonus->duration == BonusDuration::N_TURNS && bonus->turnsRemain >= 0 && bonus->turnsRemain <= 1;
+	return eligible && bonus->sid.toString() == SKILL;
 }
 
 Batch captureEntry(const BattleInfo & battle, int32_t day, int32_t week)
