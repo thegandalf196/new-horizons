@@ -121,9 +121,18 @@ rendering does not certify them.
 
 ## Phase 2 backlog and limits
 
-The known Plague/Spell Lock activation-end countdown defect remains: ticking and
-spreading work, but duration does not pause under the seal. Prioritize its lifetime
-adapter and a focused regression during stabilization.
+The authoritative Plague/Spell Lock activation-end countdown adapter now passes
+eleven focused native Plague tests. Hostile seals preserve Plague and pause its
+countdown while damage and spreading continue; friendly seals cleanse it. A
+neutral-spell targeting predicate had incorrectly classified hostile casts as
+friendly; the runtime now uses the same current-controller alignment as the AI.
+Three consumed-slot serialization tests and fourteen Time Stop tests also pass.
+These native tests embed the engine; they do not certify the shipped shared-library
+boundary or rendered presentation. Four existing Spell Lock tests still fail on
+action-allowance metadata or an invalid mocked spell ID and remain under diagnosis.
+Automatic-action Plague completion and detached AI damage/spread parity remain
+separate unresolved work. Controlled-target cleansing transitions require focused
+coverage; the ordinary friendly/hostile casts do not establish that interaction.
 
 Other recorded interaction risks include composite percentage rounding,
 Counterfire/Crossfire ownership provenance, Inspirational aura expiry, Deep Flank

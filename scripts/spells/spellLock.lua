@@ -25,7 +25,7 @@ local function duration(mechanics)
 end
 
 local function opposingBonuses(mechanics, unit)
-	local friendly = mechanics:ownerMatches(unit)
+	local friendly = mechanics:currentControllerIsCaster(unit)
 	return unit:getBonuses({}):filter(function(bonus)
 		if bonus:getSource() ~= ENUM.BonusSource.spellEffect then return false end
 		if bonus:getSourceID() == SPELL_KEY then return false end
@@ -47,7 +47,7 @@ function Script:apply(mechanics, server, target)
 		local unit = destination.unit
 		if unit == nil or not unit:isAlive() then goto continue end
 
-		local friendly = mechanics:ownerMatches(unit)
+		local friendly = mechanics:currentControllerIsCaster(unit)
 		local removable = opposingBonuses(mechanics, unit)
 		if removable:size() > 0 then
 			server:removeUnitBonuses(battle, unit, removable)

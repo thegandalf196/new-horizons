@@ -14,6 +14,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSorcery.h"
 
 namespace
 {
@@ -45,8 +46,11 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
-		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		// Current saved rules take precedence over the legacy combat curve.
+		// Pin only successful Morale for these activation-lifecycle witnesses.
+		magicRules["morale"]["goodChance"] = certainMorale();
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		map->overrideGameSetting(EGameSettings::COMBAT_GOOD_MORALE_CHANCE, certainMorale());
@@ -153,6 +157,20 @@ protected:
 				return false;
 		}
 		return false;
+	}
+
+	void configureSpellLock(CGHeroInstance * hero, int32_t power = 100)
+	{
+		const auto skill = SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL);
+		ASSERT_GE(skill, 0);
+		hero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		hero->setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
+		hero->addSpellToSpellbook(SpellID(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL)));
+	}
+
+	bool castSpellLock(CGHeroInstance * hero, const CStack * target)
+	{
+		return castOn(hero, SpellID(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL)), target);
 	}
 
 	bool finishTargetTurn(CStack * stack, bool waitFirst = false, int32_t * completedRound = nullptr)
@@ -383,6 +401,100 @@ TEST_F(NewHorizonsPlagueTest, MarkerSaveRoundTripAndOrdinaryDispelRemoveTheStatu
 
 	ASSERT_TRUE(castOn(defenderSideHero, SpellID::DISPEL, afflicted));
 	EXPECT_FALSE(newHorizonsPlague::hasPlague(afflicted));
+}
+
+TEST_F(NewHorizonsPlagueTest, HostileSpellLockPausesPlagueButStillDamagesAndSpreads)
+{
+	prepare(true);
+	ASSERT_TRUE(castOn(attackerSideHero, plagueSpell(), afflicted));
+	// A new Hero Action is earned in the next round, not fabricated by a reset.
+	advanceRound();
+	configureSpellLock(attackerSideHero);
+	ASSERT_TRUE(castSpellLock(attackerSideHero, afflicted));
+	auto marker = plagueStatus(afflicted);
+	ASSERT_NE(marker, nullptr);
+	ASSERT_TRUE(newHorizonsSorcery::durationPausedBySpellLock(*afflicted, *marker));
+	const auto remaining = marker->turnsRemain;
+	ASSERT_TRUE(activateTarget(afflicted));
+	const auto round = battle()->battleGetRound();
+	const auto health = afflicted->getAvailableHealth();
+	const auto firstInjury = server.injuries.size();
+	ASSERT_TRUE(issue(afflicted, BattleAction::makeDefend(afflicted)));
+	marker = plagueStatus(afflicted);
+	ASSERT_NE(marker, nullptr);
+	EXPECT_EQ(marker->turnsRemain, remaining);
+	EXPECT_EQ(marker->parameters->toCustom<JsonNode>()["lastProcessedRound"].Integer(), round);
+	EXPECT_EQ(damageTo(afflicted->unitId(), firstInjury), expectedLegalCastDamage());
+	EXPECT_EQ(afflicted->getAvailableHealth(), health - expectedLegalCastDamage());
+	EXPECT_TRUE(newHorizonsPlague::hasPlague(friendlyVictim));
+}
+
+TEST_F(NewHorizonsPlagueTest, LockedPlagueMoraleExtraCannotProcessTheSameRoundTwice)
+{
+	prepare(false, true);
+	ASSERT_TRUE(castOn(attackerSideHero, plagueSpell(), afflicted));
+	advanceRound();
+	configureSpellLock(attackerSideHero);
+	ASSERT_TRUE(castSpellLock(attackerSideHero, afflicted));
+	ASSERT_TRUE(activateTarget(afflicted));
+	const auto firstInjury = server.injuries.size();
+	auto marker = plagueStatus(afflicted);
+	ASSERT_NE(marker, nullptr);
+	const auto remaining = marker->turnsRemain;
+	ASSERT_TRUE(issue(afflicted, BattleAction::makeMove(afflicted, BattleHex(13, 5))));
+	ASSERT_TRUE(afflicted->hadMorale);
+	marker = plagueStatus(afflicted);
+	ASSERT_NE(marker, nullptr);
+	const auto parameters = marker->parameters->toCustom<JsonNode>();
+	EXPECT_EQ(marker->turnsRemain, remaining);
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), afflicted->unitId());
+	ASSERT_TRUE(issue(afflicted, BattleAction::makeDefend(afflicted)));
+	marker = plagueStatus(afflicted);
+	ASSERT_NE(marker, nullptr);
+	EXPECT_EQ(marker->turnsRemain, remaining);
+	EXPECT_EQ(marker->parameters->toCustom<JsonNode>(), parameters);
+	EXPECT_EQ(damageTo(afflicted->unitId(), firstInjury), expectedLegalCastDamage());
+}
+
+TEST_F(NewHorizonsPlagueTest, LockedLastPlagueTickRemainsUntilTheSealExpires)
+{
+	prepare();
+	ASSERT_TRUE(castOn(attackerSideHero, plagueSpell(), afflicted));
+	ASSERT_TRUE(finishTargetTurn(afflicted));
+	ASSERT_TRUE(finishTargetTurn(afflicted));
+	ASSERT_NE(plagueStatus(afflicted), nullptr);
+	ASSERT_EQ(plagueStatus(afflicted)->turnsRemain, 1);
+	advanceRound();
+	configureSpellLock(attackerSideHero, 0);
+	ASSERT_TRUE(castSpellLock(attackerSideHero, afflicted));
+	ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*afflicted));
+	ASSERT_TRUE(activateTarget(afflicted));
+	const auto firstInjury = server.injuries.size();
+	ASSERT_TRUE(issue(afflicted, BattleAction::makeDefend(afflicted)));
+	ASSERT_NE(plagueStatus(afflicted), nullptr);
+	EXPECT_EQ(plagueStatus(afflicted)->turnsRemain, 1);
+	EXPECT_EQ(damageTo(afflicted->unitId(), firstInjury), expectedLegalCastDamage());
+	advanceRound();
+	ASSERT_FALSE(newHorizonsSorcery::isSpellLocked(*afflicted));
+	ASSERT_TRUE(finishTargetTurn(afflicted));
+	EXPECT_EQ(plagueStatus(afflicted), nullptr);
+}
+
+TEST_F(NewHorizonsPlagueTest, FriendlySpellLockCleansesPlagueRatherThanPausingHostileMagic)
+{
+	prepare();
+	ASSERT_TRUE(castOn(attackerSideHero, plagueSpell(), afflicted));
+	configureSpellLock(defenderSideHero);
+	ASSERT_TRUE(castSpellLock(defenderSideHero, afflicted));
+	EXPECT_EQ(plagueStatus(afflicted), nullptr);
+	ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*afflicted));
+	ASSERT_TRUE(activateTarget(afflicted));
+	const auto firstInjury = server.injuries.size();
+	const auto health = afflicted->getAvailableHealth();
+	ASSERT_TRUE(issue(afflicted, BattleAction::makeDefend(afflicted)));
+	EXPECT_EQ(damageTo(afflicted->unitId(), firstInjury), 0);
+	EXPECT_EQ(afflicted->getAvailableHealth(), health);
 }
 
 TEST_F(NewHorizonsPlagueTest, IndependentMagicalReductionSourcesComposeMultiplicatively)

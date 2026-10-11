@@ -1,5 +1,21 @@
 # New Horizons provisional rule review
 
+## Spell Lock — allegiance at cast time
+
+Friendly/hostile preservation follows the target's current controller when the
+accepted cast begins, matching existing Spell Lock AI evaluation. Capture this
+polarity before cleansing: removing an effect such as Hypnotize must not change
+the seal's polarity partway through that cast. The canonical friendly/enemy rule
+does not separately specify controlled-target transitions; this interpretation
+also follows the accepted current-controller treatment of Reality Warp.
+
+Implementation: `scripts/spells/spellLock.lua` uses the existing
+`currentControllerIsCaster` binding for both removal and preservation. Eleven
+focused native Plague tests pass, including ordinary hostile preservation and
+friendly cleansing. Hypnotize removal, subsequent controller changes and
+Pandemonium debuff classification still need focused interaction coverage; those
+ordinary casts do not verify these cases.
+
 ## Deep Flank — ordinary elemental primary shots (amends physical-only reading)
 
 The earlier root-provisional physical-only interpretation is superseded on

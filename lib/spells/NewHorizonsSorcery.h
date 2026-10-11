@@ -10,9 +10,20 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
+
+class IBonusBearer;
+struct Bonus;
 
 namespace newHorizonsSorcery
 {
+/// Only an active, authenticated Spell Lock seal pauses preserved magical
+/// effects. Callers retain ownership of their round/activation processing clock.
+DLL_LINKAGE bool isSpellLocked(const IBonusBearer & bearer);
+DLL_LINKAGE std::optional<bool> spellLockPreservesBeneficial(const IBonusBearer & bearer);
+DLL_LINKAGE bool isPreservedSpellLockEffect(const Bonus * bonus, bool preserveBeneficial);
+DLL_LINKAGE bool durationPausedBySpellLock(const IBonusBearer & bearer, const Bonus & bonus);
+
 // These identifiers are intentionally kept here, next to the canonical
 // formulas.  The content and Lua layers use the same scoped spell names.
 inline constexpr const char * PHANTOM_ARMY_SPELL = "new-horizons:phantomArmy";

@@ -34,6 +34,7 @@
 #include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/callback/GameRandomizer.h"
@@ -2153,10 +2154,11 @@ void applyPlagueEndOfActivation(CGameHandler * gameHandler, const CBattleInfoCal
 	}
 	SetStackEffect statusUpdate;
 	statusUpdate.battleID = battle.getBattle()->getBattleID();
-	if(stack->alive() && marker->turnsRemain > 1)
+	const bool durationPaused = newHorizonsSorcery::durationPausedBySpellLock(*stack, *marker);
+	if(stack->alive() && (marker->turnsRemain > 1 || (durationPaused && marker->turnsRemain > 0)))
 	{
 		Bonus nextStatus(*marker);
-		nextStatus.turnsRemain = marker->turnsRemain - 1;
+		nextStatus.turnsRemain = marker->turnsRemain - (durationPaused ? 0 : 1);
 		JsonNode nextParameters;
 		if(marker->parameters)
 		{
