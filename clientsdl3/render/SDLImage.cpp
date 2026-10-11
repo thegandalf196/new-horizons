@@ -33,8 +33,54 @@
 #include <SDL3/SDL_surface.h>
 #include <SDL3/SDL_version.h>
 
-class SDLImageLoader;
 
+namespace
+{
+bool renderLoadTimingsEnabled()
+{
+	static const bool requested = []
+	{
+		const char * value = std::getenv("NH_RENDER_LOAD_TIMINGS");
+		return value && std::string_view(value) == "1";
+	}();
+	return requested && logGlobal->isDebugEnabled();
+}
+
+// Per-TU cap: at most 1024 event records, plus one overflow notice.
+// The counter retains the total attempted events, including dropped records.
+bool reserveRenderLoadTiming()
+{
+	if(!renderLoadTimingsEnabled())
+		return false;
+	static std::atomic<uint64_t> attempts{0};
+	const auto index = attempts.fetch_add(1, std::memory_order_relaxed);
+	if(index == 1024)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING cap=1024 reached; subsequent events counted but not timed");
+	return index < 1024;
+}
+
+using RenderLoadClock = std::chrono::steady_clock;
+struct RenderLoadTiming
+{
+	bool active = reserveRenderLoadTiming();
+	RenderLoadClock::time_point start = active ? RenderLoadClock::now() : RenderLoadClock::time_point{};
+	long long elapsed() const
+	{
+		return active ? std::chrono::duration_cast<std::chrono::microseconds>(RenderLoadClock::now() - start).count() : 0;
+	}
+};
+
+// Resource identities only: never emit absolute paths or arbitrary input names.
+std::string renderResourceLabel(const std::string & name)
+{
+	if(name.find("..") != std::string::npos || name.find(':') != std::string::npos
+		|| (!name.empty() && (name.front() == '/' || name.front() == '\\')))
+		return "<non-resource>";
+	return name;
+}
+}
+
+class SDLImageLoader;
 int IImage::width() const
 {
 	return dimensions().x;
@@ -53,6 +99,9 @@ SDLImageShared::SDLImageShared(const CDefFile * data, size_t frame, size_t group
 {
 	SDLImageLoader loader(this);
 	data->loadFrame(frame, group, loader);
+	if(reserveRenderLoadTiming())
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=bindDef image=%p surface=%p resource=%s group=%d frame=%d",
+			static_cast<void *>(this), static_cast<void *>(surf), renderResourceLabel(data->getName(frame, group)), group, frame);
 
 	try
 	{
@@ -92,6 +141,9 @@ SDLImageShared::SDLImageShared(const ImagePath & filename, bool optimizeImage)
 	originalPalette(nullptr)
 {
 	surf = BitmapHandler::loadBitmap(filename);
+	if(reserveRenderLoadTiming())
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=bindBitmap image=%p surface=%p resource=%s",
+			static_cast<void *>(this), static_cast<void *>(surf), renderResourceLabel(filename.getName()));
 
 	if(surf == nullptr)
 	{
@@ -201,12 +253,22 @@ SDL_Texture * SDLImageShared::getTexture(SDL_Palette * palette) const
 	if(texture && textureGeneration == GpuResources::get().generation() && texturePalette == effectivePalette && texturePaletteVersion == effectivePaletteVersion)
 		return texture;
 
+	const bool hadTexture = texture != nullptr;
+	const bool generationChanged = textureGeneration != GpuResources::get().generation();
+	const bool paletteChanged = texturePalette != effectivePalette;
+	const bool paletteVersionChanged = texturePaletteVersion != effectivePaletteVersion;
 	dropTexture();
 
 	if(effectivePalette)
 		SDL_SetSurfacePalette(surf, palette);
 
+	RenderLoadTiming uploadTiming;
 	texture = SDL_CreateTextureFromSurface(renderer, surf);
+	if(uploadTiming.active)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=textureCreateCpu image=%p surface=%p texture=%p width=%d height=%d generation=%d palette=%p paletteVersion=%d hadTexture=%d generationChanged=%d paletteChanged=%d paletteVersionChanged=%d us=%d",
+			static_cast<const void *>(this), static_cast<void *>(surf), static_cast<void *>(texture), surf->w, surf->h,
+			GpuResources::get().generation(), static_cast<void *>(effectivePalette), effectivePaletteVersion,
+			hadTexture, generationChanged, paletteChanged, paletteVersionChanged, uploadTiming.elapsed());
 
 	if(CSDL_Ext::getPalette(surf))
 		SDL_SetSurfacePalette(surf, originalPalette);
@@ -365,12 +427,18 @@ void SDLImageShared::optimizeSurface()
 
 	SDLImageOptimizer optimizer(surf, Rect(margins, fullSize));
 
+	RenderLoadTiming cropTiming;
+	const void * inputSurface = surf;
 	optimizer.optimizeSurface(surf);
 	SDL_DestroySurface(surf);
 
 	surf = optimizer.acquireResultSurface();
 	margins = optimizer.getResultDimensions().topLeft();
 	fullSize = optimizer.getResultDimensions().dimensions();
+	if(cropTiming.active)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=imageCrop image=%p input=%p output=%p width=%d height=%d margins=%d,%d full=%d,%d us=%d",
+			static_cast<void *>(this), inputSurface, static_cast<void *>(surf), surf ? surf->w : 0, surf ? surf->h : 0,
+			margins.x, margins.y, fullSize.x, fullSize.y, cropTiming.elapsed());
 }
 
 std::shared_ptr<const ISharedImage> SDLImageShared::scaleInteger(int factor, SDL_Palette * palette, EImageBlitMode mode) const
@@ -407,15 +475,33 @@ std::shared_ptr<SDLImageShared> SDLImageShared::createScaled(const SDLImageShare
 	auto self = std::make_shared<SDLImageShared>(nullptr);
 	self->upscalingInProgress = true;
 
+	RenderLoadTiming prepTiming;
 	auto scaler = std::make_shared<SDLImageScaler>(from->surf, Rect(from->margins, from->fullSize), true);
+	if(prepTiming.active)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=scalerPrep sourceImage=%p resultImage=%p scaler=%p requestedFactor=%d algorithm=%d us=%d",
+			static_cast<const void *>(from), static_cast<void *>(self.get()), static_cast<void *>(scaler.get()),
+			integerScaleFactor, static_cast<int>(algorithm), prepTiming.elapsed());
+	const bool traceQueue = reserveRenderLoadTiming();
+	const auto queuedAt = traceQueue ? RenderLoadClock::now() : RenderLoadClock::time_point{};
 
-	const auto & scalingTask = [self, algorithm, scaler]()
+	const auto & scalingTask = [self, algorithm, scaler, traceQueue, queuedAt]()
 	{
+		if(traceQueue)
+			logGlobal->debug("NH_RENDER_LOAD_TIMING stage=scaleQueue resultImage=%p scaler=%p us=%d",
+				static_cast<void *>(self.get()), static_cast<void *>(scaler.get()),
+				std::chrono::duration_cast<std::chrono::microseconds>(RenderLoadClock::now() - queuedAt).count());
+		RenderLoadTiming taskTiming;
 		scaler->scaleSurfaceIntegerFactor(ENGINE->screenHandler().getScalingFactor(), algorithm);
 		self->surf = scaler->acquireResultSurface();
 		self->fullSize = scaler->getResultDimensions().dimensions();
 		self->margins = scaler->getResultDimensions().topLeft();
+		const int outputWidth = taskTiming.active && self->surf ? self->surf->w : 0;
+		const int outputHeight = taskTiming.active && self->surf ? self->surf->h : 0;
 		self->upscalingInProgress = false;
+		if(taskTiming.active)
+			logGlobal->debug("NH_RENDER_LOAD_TIMING stage=scaleTask resultImage=%p scaler=%p width=%d height=%d us=%d",
+				static_cast<void *>(self.get()), static_cast<void *>(scaler.get()),
+				outputWidth, outputHeight, taskTiming.elapsed());
 	};
 
 	if(settings["video"]["asyncUpscaling"].Bool() && from->getAsyncUpscale())

@@ -27,6 +27,27 @@ scope and is superseded by this stopping point wherever it calls for more work.
 
 ## Questions and measurements
 
+### SDL3 resource-loading diagnostics
+
+Set `NH_RENDER_LOAD_TIMINGS=1` and enable the global DEBUG log level to collect
+`NH_RENDER_LOAD_TIMING` records. These diagnostics are disabled by default.
+They cover resource reads, SDL image decoding, image/surface bindings, cropping,
+scaler preparation, asynchronous queue wait, scaling kernels and texture-cache
+miss creation. Successful texture-cache hits do not emit records.
+
+Each of the three instrumented translation units admits at most 1,024 records
+and emits one overflow notice. A notice means later loading events are omitted;
+do not treat a capped trace as a complete count. Resource labels are virtual
+identities, not workstation paths. Pointer values correlate objects only within
+one process.
+
+Durations are microseconds of steady-clock wall time. Nested stages overlap;
+do not add them as independent costs. Texture creation measures the CPU call,
+not GPU completion or frame presentation. Logs and capture add observer overhead:
+compare equivalent instrumentation-off runs before attributing a regression.
+These records do not by themselves measure animation cadence, frame rate, cold
+OS caches or performance on another platform.
+
 1. Transport: serialization, queue delay, dispatch/execution, response delay and
    total round-trip cost. Separate transport-only measurements from gameplay work.
 2. Input: OS injection/event receipt, command submission, authoritative application,

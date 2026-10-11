@@ -18,6 +18,45 @@
 #include <tbb/parallel_for.h>
 #include <SDL3/SDL_surface.h>
 
+
+namespace
+{
+bool renderLoadTimingsEnabled()
+{
+	static const bool requested = []
+	{
+		const char * value = std::getenv("NH_RENDER_LOAD_TIMINGS");
+		return value && std::string_view(value) == "1";
+	}();
+	return requested && logGlobal->isDebugEnabled();
+}
+
+// Per-TU cap: at most 1024 event records, plus one overflow notice.
+// The counter retains the total attempted events, including dropped records.
+bool reserveRenderLoadTiming()
+{
+	if(!renderLoadTimingsEnabled())
+		return false;
+	static std::atomic<uint64_t> attempts{0};
+	const auto index = attempts.fetch_add(1, std::memory_order_relaxed);
+	if(index == 1024)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING cap=1024 reached; subsequent events counted but not timed");
+	return index < 1024;
+}
+
+using RenderLoadClock = std::chrono::steady_clock;
+struct RenderLoadTiming
+{
+	bool active = reserveRenderLoadTiming();
+	RenderLoadClock::time_point start = active ? RenderLoadClock::now() : RenderLoadClock::time_point{};
+	long long elapsed() const
+	{
+		return active ? std::chrono::duration_cast<std::chrono::microseconds>(RenderLoadClock::now() - start).count() : 0;
+	}
+};
+
+}
+
 SDLImageOptimizer::SDLImageOptimizer(SDL_Surface * surf, const Rect & virtualDimensions)
 	: surf(surf)
 	, virtualDimensions(virtualDimensions)
@@ -142,10 +181,15 @@ void SDLImageScaler::scaleSurface(Point targetDimensions, EScalingAlgorithm algo
 	const uint32_t * srcPixels = static_cast<const uint32_t*>(intermediate->pixels);
 	uint32_t * dstPixels = static_cast<uint32_t*>(ret->pixels);
 
+	RenderLoadTiming resizeTiming;
 	if (algorithm == EScalingAlgorithm::NEAREST)
 		xbrz::nearestNeighborScale(srcPixels, intermediate->w, intermediate->h, dstPixels, ret->w, ret->h);
 	else
 		xbrz::bilinearScale(srcPixels, intermediate->w, intermediate->h, dstPixels, ret->w, ret->h);
+	if(resizeTiming.active)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=resizeKernel scaler=%p input=%p output=%p algorithm=%d width=%d height=%d us=%d",
+			static_cast<void *>(this), static_cast<void *>(intermediate), static_cast<void *>(ret),
+			static_cast<int>(algorithm), ret->w, ret->h, resizeTiming.elapsed());
 }
 
 void SDLImageScaler::scaleSurfaceIntegerFactor(int factor, EScalingAlgorithm algorithm)
@@ -169,6 +213,7 @@ void SDLImageScaler::scaleSurfaceIntegerFactor(int factor, EScalingAlgorithm alg
 	const uint32_t * srcPixels = static_cast<const uint32_t*>(intermediate->pixels);
 	uint32_t * dstPixels = static_cast<uint32_t*>(ret->pixels);
 
+	RenderLoadTiming kernelTiming;
 	switch (algorithm)
 	{
 		case EScalingAlgorithm::NEAREST:
@@ -202,6 +247,10 @@ void SDLImageScaler::scaleSurfaceIntegerFactor(int factor, EScalingAlgorithm alg
 		default:
 			throw std::runtime_error("invalid scaling algorithm!");
 	}
+	if(kernelTiming.active)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=scaleKernel scaler=%p input=%p output=%p factor=%d algorithm=%d width=%d height=%d us=%d",
+			static_cast<void *>(this), static_cast<void *>(intermediate), static_cast<void *>(ret), factor,
+			static_cast<int>(algorithm), newWidth, newHight, kernelTiming.elapsed());
 }
 
 SDLImageScaler::SDLImageScaler(SDL_Surface * surf)
@@ -214,9 +263,14 @@ SDLImageScaler::SDLImageScaler(SDL_Surface * surf, const Rect & virtualDimension
 	if (optimizeImage)
 	{
 		SDLImageOptimizer optimizer(surf, virtualDimensions);
+		RenderLoadTiming cropTiming;
 		optimizer.optimizeSurface(nullptr);
 		intermediate = optimizer.acquireResultSurface();
 		virtualDimensionsInput = optimizer.getResultDimensions();
+		if(cropTiming.active)
+			logGlobal->debug("NH_RENDER_LOAD_TIMING stage=scalerCrop scaler=%p input=%p output=%p width=%d height=%d us=%d",
+				static_cast<void *>(this), static_cast<void *>(surf), static_cast<void *>(intermediate),
+				intermediate ? intermediate->w : 0, intermediate ? intermediate->h : 0, cropTiming.elapsed());
 	}
 	else
 	{
@@ -228,7 +282,11 @@ SDLImageScaler::SDLImageScaler(SDL_Surface * surf, const Rect & virtualDimension
 	if (intermediate == surf)
 	{
 		SDL_DestroySurface(intermediate);
+		RenderLoadTiming conversionTiming;
 		intermediate = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_ARGB8888);
+		if(conversionTiming.active)
+			logGlobal->debug("NH_RENDER_LOAD_TIMING stage=scalerArgb scaler=%p input=%p output=%p us=%d",
+				static_cast<void *>(this), static_cast<void *>(surf), static_cast<void *>(intermediate), conversionTiming.elapsed());
 	}
 
 	if (intermediate == surf)

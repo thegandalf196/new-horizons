@@ -19,6 +19,53 @@
 
 #include <SDL3_image/SDL_image.h>
 
+
+namespace
+{
+bool renderLoadTimingsEnabled()
+{
+	static const bool requested = []
+	{
+		const char * value = std::getenv("NH_RENDER_LOAD_TIMINGS");
+		return value && std::string_view(value) == "1";
+	}();
+	return requested && logGlobal->isDebugEnabled();
+}
+
+// Per-TU cap: at most 1024 event records, plus one overflow notice.
+// The counter retains the total attempted events, including dropped records.
+bool reserveRenderLoadTiming()
+{
+	if(!renderLoadTimingsEnabled())
+		return false;
+	static std::atomic<uint64_t> attempts{0};
+	const auto index = attempts.fetch_add(1, std::memory_order_relaxed);
+	if(index == 1024)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING cap=1024 reached; subsequent events counted but not timed");
+	return index < 1024;
+}
+
+using RenderLoadClock = std::chrono::steady_clock;
+struct RenderLoadTiming
+{
+	bool active = reserveRenderLoadTiming();
+	RenderLoadClock::time_point start = active ? RenderLoadClock::now() : RenderLoadClock::time_point{};
+	long long elapsed() const
+	{
+		return active ? std::chrono::duration_cast<std::chrono::microseconds>(RenderLoadClock::now() - start).count() : 0;
+	}
+};
+
+// Resource identities only: never emit absolute paths or arbitrary input names.
+std::string renderResourceLabel(const std::string & name)
+{
+	if(name.find("..") != std::string::npos || name.find(':') != std::string::npos
+		|| (!name.empty() && (name.front() == '/' || name.front() == '\\')))
+		return "<non-resource>";
+	return name;
+}
+}
+
 namespace BitmapHandler
 {
 	SDL_Surface * loadH3PCX(ui8 * data, size_t size);
@@ -116,7 +163,11 @@ SDL_Surface * BitmapHandler::loadBitmapFromDir(const ImagePath & path)
 	SDL_Surface * ret=nullptr;
 
 	try {
+		RenderLoadTiming readTiming;
 		auto readFile = CResourceHandler::get()->load(path)->readAll();
+		if(readTiming.active)
+			logGlobal->debug("NH_RENDER_LOAD_TIMING stage=resourceRead resource=%s bytes=%d us=%d",
+				renderResourceLabel(path.getName()), readFile.second, readTiming.elapsed());
 
 		if (isPCX(readFile.first.get()))
 		{//H3-style PCX
@@ -129,10 +180,15 @@ SDL_Surface * BitmapHandler::loadBitmapFromDir(const ImagePath & path)
 		}
 		else
 		{ //loading via SDL_Image
+			RenderLoadTiming decodeTiming;
 			ret = IMG_Load_IO(
 					  //create SDL_IOStream with our data (will be deleted by SDL)
 					  SDL_IOFromConstMem((void*)readFile.first.get(), readFile.second),
-					  true); // mark it for auto-deleting
+				  true); // mark it for auto-deleting
+			if(decodeTiming.active)
+				logGlobal->debug("NH_RENDER_LOAD_TIMING stage=decode resource=%s surface=%p width=%d height=%d us=%d",
+					renderResourceLabel(path.getName()), static_cast<void *>(ret),
+					ret ? ret->w : 0, ret ? ret->h : 0, decodeTiming.elapsed());
 			if (!ret)
 			{
 				logGlobal->error("Failed to open %s via SDL_Image", path.getOriginalName());
