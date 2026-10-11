@@ -4048,7 +4048,7 @@ CBlacksmithDialog::CBlacksmithDialog(bool possible, ArtifactID aid, ArtifactID e
 	animBG->needRefresh = true;
 
 	const CCreature * creature = aid.toArtifact()->getWarMachine().toCreature();
-	anim = std::make_shared<CCreatureAnim>(64, 50, creature->animDefName);
+	anim = std::make_shared<CCreatureAnim>(64, 50, creature->animDefName, CShowableAnim::CREATURE_PREVIEW_MODE);
 	anim->clipRect(113,125,200,150);
 
 	MetaString titleString;

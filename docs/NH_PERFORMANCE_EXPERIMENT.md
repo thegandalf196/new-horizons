@@ -55,6 +55,42 @@ compare equivalent instrumentation-off runs before attributing a regression.
 These records do not by themselves measure animation cadence, frame rate, cold
 OS caches or performance on another platform.
 
+### Creature-preview surface regression
+
+Creature previews use a shadow-preserving mode without generating a selection
+outline that their drawing path hides. Battle animations retain their selection
+mode. The SDL3-only, opt-in CPU-surface regression compares the former transparent
+selection palette with the preview palette, including conditional reserved
+colors, shadows, palette shifts and effects. Synthetic indexed and RGBA surfaces
+exercise native and 2x drawing, clipping and flips; every comparison requires
+non-background output as well as identical pixels.
+
+With an existing SDL3 build configured and its dependencies available:
+
+```sh
+cmake -S . -B build/new-horizons-linux -DENABLE_NH_PREVIEW_SURFACE_REGRESSION=ON
+cmake --build build/new-horizons-linux --target nhCreaturePreviewSurfaceRuntimeTest --parallel 4
+env -u DISPLAY -u WAYLAND_DISPLAY SDL_AUDIODRIVER=dummy SDL_AUDIO_DRIVER=dummy \
+  SDL_VIDEODRIVER=dummy SDL_VIDEO_DRIVER=dummy \
+  build/new-horizons-linux/bin/nhCreaturePreviewSurfaceRuntimeTest
+```
+
+The test does not initialize video or audio. It establishes lower-level CPU
+surface/palette equivalence, not composed-layer generation, cache rebuilding,
+actual DEF loading, GPU rendering or performance. Its resource-backed player
+palette hook is not exercised by the standalone executable. Actual Fort and
+battle presentation, SDL2 behavior and Windows performance require separate
+checks. Enabling this test does not select the normal playable snapshot.
+
+Focused validation passes all 58 CPU-surface comparisons and SDL2 syntax checks
+for the changed backend and shared preview code. In one bounded native-resolution
+Linux SDL3 Fort comparison, the same 34 Cabir and 47 Magi frame resources each
+changed from two reads/decodes to one; neither trace reached its diagnostic cap.
+The seven Academy portraits remained present and the game quit normally. This
+establishes removal of duplicate loading for those observed frames, not an FPS
+gain or a Windows fix. Individual crop timings did not establish a speedup;
+preview poses, scheduling and operating-system cache state were not controlled.
+
 1. Transport: serialization, queue delay, dispatch/execution, response delay and
    total round-trip cost. Separate transport-only measurements from gameplay work.
 2. Input: OS injection/event receipt, command submission, authoritative application,

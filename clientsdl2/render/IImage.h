@@ -62,6 +62,9 @@ enum class EImageBlitMode : uint8_t
 	/// RGBA, contains only overlay
 	ONLY_SELECTION,
 	ONLY_FLAG_COLOR,
+
+	/// Creature preview: preserve shadows, hide indexed selection colors, no overlay layer.
+	WITH_SHADOW_HIDE_SELECTION,
 };
 
 enum class EScalingAlgorithm : int8_t

@@ -1141,7 +1141,7 @@ CCreaturePic::CCreaturePic(int x, int y, const CCreature * cre, bool Big, bool A
 		bg = std::make_shared<CPicture>((*LIBRARY->townh)[faction]->creatureBg130);
 	else
 		bg = std::make_shared<CPicture>((*LIBRARY->townh)[faction]->creatureBg120);
-	anim = std::make_shared<CCreatureAnim>(0, 0, cre->animDefName);
+	anim = std::make_shared<CCreatureAnim>(0, 0, cre->animDefName, CShowableAnim::CREATURE_PREVIEW_MODE);
 	anim->clipRect(cre->isDoubleWide()?170:150, 155, bg->pos.w, bg->pos.h);
 	anim->startPreview(cre->hasBonusOfType(BonusType::SIEGE_WEAPON));
 

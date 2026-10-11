@@ -146,3 +146,10 @@ endif()
 
 vcmi_set_output_dir(vcmisdl3 "")
 enable_pch(vcmisdl3)
+
+option(ENABLE_NH_PREVIEW_SURFACE_REGRESSION "Build surface-only creature preview equivalence regression" OFF)
+if(ENABLE_NH_PREVIEW_SURFACE_REGRESSION)
+	add_executable(nhCreaturePreviewSurfaceRuntimeTest ../client/tests/CreaturePreviewPaletteRuntimeTest.cpp)
+	target_link_libraries(nhCreaturePreviewSurfaceRuntimeTest PRIVATE vcmisdl3 vcmiclientcommon vcmi)
+	vcmi_set_output_dir(nhCreaturePreviewSurfaceRuntimeTest "")
+endif()
