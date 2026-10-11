@@ -55,6 +55,24 @@ compare equivalent instrumentation-off runs before attributing a regression.
 These records do not by themselves measure animation cadence, frame rate, cold
 OS caches or performance on another platform.
 
+### Battle animation diagnostics
+
+The same opt-in settings enable a separate `BattleAnimation` record budget.
+`animationAdvance` records active animation frame progression and elapsed update
+time; `animationDrawReturn` records the selected frame and CPU draw-call duration.
+`projectileAdvance` records flight progress and removal eligibility;
+`projectileDrawReturn` records missile draw attempts, selected directional frames
+and visible progress. Idle, dead and Frozen creature poses are not sampled.
+The budget uses the same default and maximum limits described above.
+
+`steady_us` orders these events within one process. A draw return is not a
+presented frame or GPU completion; `imageAvailable` means the image lookup
+succeeded, not that a pixel reached the display. Pointer identities can be reused
+after object destruction. Compare first-use and repeated attacks at unchanged
+animation speed alongside resource-loading records. Large frame steps establish
+elapsed-time catch-up, not its cause. Capped traces and logging overhead must be
+accounted for before drawing performance conclusions.
+
 ### Creature-preview surface regression
 
 Creature previews use a shadow-preserving mode without generating a selection

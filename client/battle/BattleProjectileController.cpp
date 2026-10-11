@@ -48,6 +48,8 @@ static double calculateCatapultParabolaY(const Point & from, const Point & dest,
 
 void ProjectileMissile::show(Canvas & canvas)
 {
+	const bool trace = BattleAnimationTiming::reserve();
+	const auto started = trace ? BattleAnimationTiming::steadyMicroseconds() : 0;
 	size_t group = reverse ? 1 : 0;
 	auto image = animation->getImage(frameNum, group, true);
 
@@ -60,6 +62,13 @@ void ProjectileMissile::show(Canvas & canvas)
 		};
 
 		canvas.draw(image, pos);
+	}
+	if(trace)
+	{
+		const auto returned = BattleAnimationTiming::steadyMicroseconds();
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=projectileDrawReturn projectile=%p shooter=%d steady_us=%lld progress=%.3f visibleProgress=%.3f frame=%d group=%llu imageAvailable=%d us=%lld",
+			static_cast<void *>(this), shooterID, returned, progress, visibility.visibleProgress(progress), frameNum,
+			static_cast<unsigned long long>(group), image != nullptr, returned - started);
 	}
 }
 
@@ -257,7 +266,15 @@ void BattleProjectileController::tick(uint32_t msPassed)
 	for ( auto projectile: projectiles)
 	{
 		if ( projectile->playing )
+		{
+			const bool trace = BattleAnimationTiming::reserve();
+			const float previous = trace ? projectile->progress : 0.f;
 			projectile->tick(msPassed);
+			if(trace)
+				logGlobal->debug("NH_RENDER_LOAD_TIMING stage=projectileAdvance projectile=%p shooter=%d steady_us=%lld dt_ms=%u before=%.3f progress=%.3f removable=%d",
+					static_cast<void *>(projectile.get()), projectile->shooterID, BattleAnimationTiming::steadyMicroseconds(),
+					msPassed, previous, projectile->progress, projectile->visibility.canRemove(projectile->progress));
+		}
 	}
 
 	vstd::erase_if(projectiles, [&](const std::shared_ptr<ProjectileBase> & projectile){
