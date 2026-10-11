@@ -1674,14 +1674,6 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 		}
 	}
 
-	auto melleeAttackers = ourStacks;
-
-	vstd::removeDuplicates(melleeAttackers);
-	vstd::erase_if(melleeAttackers, [&](const battle::Unit * u) -> bool
-		{
-			return cb->battleCanShoot(u);
-		});
-
 	bool canUseAp = true;
 
 	std::set<uint32_t> blockedShooters;
