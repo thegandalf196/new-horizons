@@ -271,6 +271,7 @@ jobs:
           -DENABLE_CCACHE=ON
           -DENABLE_NH_SDL3_MASK_REGRESSION=ON
           -DENABLE_NH_ART_CACHE_REGRESSION=ON
+          -DENABLE_NH_PREVIEW_SURFACE_REGRESSION=ON
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
@@ -303,11 +304,73 @@ jobs:
 
       - name: Compile Windows x64 client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
-        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest nhArtStartupRuntimeTest --parallel 4
+        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest nhArtStartupRuntimeTest nhImageOptimizerRuntimeTest nhCreaturePreviewSurfaceRuntimeTest --parallel 4
 
       - name: Stage upstream runtime and resources
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
         run: cmake --install build/new-horizons-windows-x64
+
+      - name: Verify crop and preview surface equivalence with shipping SDL3 (CPU only)
+        if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
+        shell: python
+        run: |
+          import os, pathlib, shutil, subprocess, tempfile
+
+          root = pathlib.Path('build/new-horizons-windows-x64').resolve()
+          names = ('nhImageOptimizerRuntimeTest', 'nhCreaturePreviewSurfaceRuntimeTest')
+          destinations = [root / 'install' / (name + '.exe') for name in names]
+          for destination in destinations:
+              if destination.exists() or destination.is_symlink():
+                  raise RuntimeError('Refusing to overwrite an existing surface-test executable')
+          task = pathlib.Path(tempfile.mkdtemp(prefix='surface-regression-', dir=root))
+          profile = task / 'profile'
+          profile.mkdir(mode=0o700)
+          env = os.environ.copy()
+          env['HOME'] = str(profile)
+          for key, leaf in (
+              ('XDG_CONFIG_HOME', 'config'), ('XDG_DATA_HOME', 'data'),
+              ('XDG_CACHE_HOME', 'cache'), ('XDG_STATE_HOME', 'state'),
+              ('XDG_RUNTIME_DIR', 'runtime'),
+          ):
+              directory = profile / leaf
+              directory.mkdir(mode=0o700)
+              env[key] = str(directory)
+          for key in ('DISPLAY', 'WAYLAND_DISPLAY', 'PULSE_SERVER', 'PIPEWIRE_REMOTE', 'PIPEWIRE_RUNTIME_DIR'):
+              env.pop(key, None)
+          for key in ('SDL_VIDEODRIVER', 'SDL_VIDEO_DRIVER', 'SDL_AUDIODRIVER', 'SDL_AUDIO_DRIVER'):
+              env[key] = 'dummy'
+          # Retain Windows SYSTEMROOT/PATH for the native loader. The test EXEs
+          # reside beside the installed shipping facade and SDL3 providers.
+          created = []
+          try:
+              for name, destination in zip(names, destinations):
+                  with (root / 'bin' / (name + '.exe')).open('rb') as source:
+                      with destination.open('xb') as target:
+                          created.append(destination)
+                          shutil.copyfileobj(source, target)
+                  with (task / (name + '.stdout.log')).open('wb') as stdout:
+                      with (task / (name + '.stderr.log')).open('wb') as stderr:
+                          result = subprocess.run(
+                              [str(destination)], cwd=task, env=env,
+                              stdout=stdout, stderr=stderr, timeout=30, check=False,
+                          )
+                  print((task / (name + '.stdout.log')).read_text(encoding='utf-8', errors='replace'))
+                  print((task / (name + '.stderr.log')).read_text(encoding='utf-8', errors='replace'))
+                  result.check_returncode()
+          finally:
+              for destination in created:
+                  destination.unlink()
+
+      - name: Retain crop and preview surface regression logs, including failures
+        if: ${{ always() && !inputs.preflight_only && inputs.repack_run_id == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Surface-regression-${{ github.sha }}
+          path: |
+            build/new-horizons-windows-x64/surface-regression-*/*.stdout.log
+            build/new-horizons-windows-x64/surface-regression-*/*.stderr.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Verify selected masks and palette updates with shipping SDL3 (CPU only)
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
