@@ -79,6 +79,7 @@ protected:
 
 		ON_CALL(mechanics, battle()).WillByDefault(Return(&battle));
 		ON_CALL(mechanics, getSpell()).WillByDefault(Return(spell.toSpell()));
+		ON_CALL(mechanics, getSpellId()).WillByDefault(Return(spell));
 		ON_CALL(mechanics, getCasterColor()).WillByDefault(Return(PlayerColor(0)));
 		ON_CALL(mechanics, getTargetTypes()).WillByDefault(Return(
 			std::vector<spells::AimType>{spells::AimType::CREATURE}));
