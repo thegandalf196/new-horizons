@@ -806,7 +806,8 @@ float BattleExchangeVariant::trackAttack(
 	DamageCache & damageCache,
 	std::shared_ptr<HypotheticBattle> hb,
 	bool evaluateOnly,
-	bool allowRetaliation)
+	bool allowRetaliation,
+	std::optional<bool> * readyOverwatch)
 {
 	if(!attacker || attacker->armorerLastStandEndedActivation)
 		return 0;
@@ -814,11 +815,22 @@ float BattleExchangeVariant::trackAttack(
 	// Future exchange actors need the same move-before-hit reaction forecast
 	// as the selected action. Leave the historical shortcut unchanged when no
 	// ready reactor is involved, and never mutate evaluateOnly's parent branch.
+	const auto hasReadyOverwatch = [&]()
+	{
+		// Applied attacks always inspect their current branch. A probe may share
+		// this existence query, but never reactor/path/target legality results.
+		if(evaluateOnly && readyOverwatch && readyOverwatch->has_value())
+			return readyOverwatch->value();
+		const bool ready = std::ranges::any_of(hb->battleAliveUnits(), [&](const battle::Unit * unit)
+			{ return hb->battleOverwatchReady(unit); });
+		if(evaluateOnly && readyOverwatch)
+			*readyOverwatch = ready;
+		return ready;
+	};
 	if(!shooting && allowRetaliation
 		&& !attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
 		&& !attacker->hasBonusOfType(BonusType::CONFUSION_PENDING)
-		&& std::ranges::any_of(hb->battleAliveUnits(), [&](const battle::Unit * unit)
-			{ return hb->battleOverwatchReady(unit); }))
+		&& hasReadyOverwatch())
 	{
 		const auto reachable = hb->getReachability(attacker.get());
 		const auto available = hb->battleGetAvailableHexes(reachable, attacker.get(), true);
@@ -1881,13 +1893,13 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 #if BATTLE_TRACE_LEVEL>=2
 				logAi->trace("Best target selector for %s", attacker->getDescription());
 #endif
-				auto estimateAttack = [&](const battle::Unit * u) -> float
+				auto estimateAttack = [&](const battle::Unit * u, std::optional<bool> & readyOverwatch) -> float
 				{
 					auto stackWithBonuses = exchangeBattle->getForUpdate(u->unitId());
 					const auto score = measurement.measure(&BattleMovementTiming::ExchangeTiming::targetProbes, [&]()
 					{
 						return v.trackAttack(attacker, stackWithBonuses, shooting, isOur,
-							damageCache, exchangeBattle, true);
+							damageCache, exchangeBattle, true, true, &readyOverwatch);
 					});
 
 #if BATTLE_TRACE_LEVEL>=2
@@ -1906,11 +1918,14 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 					if(candidates.size() == 1)
 						return best;
 
-					float bestScore = estimateAttack(best);
+					// evaluateOnly keeps this branch's readiness unchanged. End the
+					// hint's lifetime before any applied attack, turn or round boundary.
+					std::optional<bool> readyOverwatch;
+					float bestScore = estimateAttack(best, readyOverwatch);
 					for(size_t index = 1; index < candidates.size(); ++index)
 					{
 						const auto * candidate = candidates[index];
-						const float candidateScore = estimateAttack(candidate);
+						const float candidateScore = estimateAttack(candidate, readyOverwatch);
 						if(candidateScore > bestScore)
 						{
 							best = candidate;

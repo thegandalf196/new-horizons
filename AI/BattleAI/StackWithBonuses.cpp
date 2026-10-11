@@ -1295,7 +1295,7 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 		|| capturedLuckSerendipitySide == BattleSide::DEFENDER
 		? capturedLuckSerendipitySide : playerToSide(battleGetActionController(attack.attacker));
 	// Resolve before consuming the one-strike bonus; UNKNOWN remains unknown.
-	const auto serendipityOutcome = resolvedLuck.value_or(captureFortuneStrikeOutcome(attack));
+	const auto serendipityOutcome = resolvedLuck ? *resolvedLuck : captureFortuneStrikeOutcome(attack);
 	if(serendipitySide == BattleSide::ATTACKER || serendipitySide == BattleSide::DEFENDER)
 	{
 		auto token = luckSerendipityStates.at(serendipitySide);
@@ -1307,7 +1307,7 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	const auto perfectFortuneSide = capturedPerfectFortune.value_or(false)
 		&& (capturedPerfectFortuneSide == BattleSide::ATTACKER || capturedPerfectFortuneSide == BattleSide::DEFENDER)
 		? capturedPerfectFortuneSide : playerToSide(battleGetActionController(attack.attacker));
-	const bool perfectFortune = capturedPerfectFortune.value_or(battleCanTriggerPerfectFortune(attack));
+	const bool perfectFortune = capturedPerfectFortune ? *capturedPerfectFortune : battleCanTriggerPerfectFortune(attack);
 	if(perfectFortune && (perfectFortuneSide == BattleSide::ATTACKER || perfectFortuneSide == BattleSide::DEFENDER)
 		&& perfectFortuneStates.at(perfectFortuneSide).available())
 		perfectFortuneStates.at(perfectFortuneSide).used = true;
