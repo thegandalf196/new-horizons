@@ -173,6 +173,7 @@ struct DLL_LINKAGE BattleMovementTiming
 		StageTiming activationEnd;
 		StageTiming roundAdvance;
 		/// Nested subsets of activationStart and roundAdvance, excluded from body closure.
+		/// Includes contextual effect-work children, all excluded from body closure.
 		HypotheticLifecycleTiming lifecycleSubsets;
 		uint64_t remainderMicroseconds = 0;
 	};

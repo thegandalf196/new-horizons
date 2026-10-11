@@ -14,6 +14,7 @@
 #include "PossibleSpellcast.h"
 #include "PotentialTargets.h"
 #include "TacticsHandler.h"
+#include "StackWithBonuses.h"
 
 class CSpell;
 class CBattleInfoCallback;
@@ -103,6 +104,9 @@ public:
 		StageTiming movementExchangeActivationExpiryRemoval;
 		StageTiming movementExchangeActivationGamblerRemoval;
 		StageTiming movementExchangeRoundTimedUpdates;
+		HypotheticLifecycleTiming::EffectWorkTiming movementExchangeActivationExpiryWork;
+		HypotheticLifecycleTiming::EffectWorkTiming movementExchangeActivationGamblerWork;
+		HypotheticLifecycleTiming::EffectWorkTiming movementExchangeRoundTimedWork;
 		uint64_t movementExchangeRemainderMicroseconds = 0;
 		StageTiming movementGoBlockingSubset;
 		StageTiming selectionTargetExchange;
@@ -121,6 +125,9 @@ public:
 		StageTiming bestTargetWaitedActivationExpiryRemoval;
 		StageTiming bestTargetWaitedActivationGamblerRemoval;
 		StageTiming bestTargetWaitedRoundTimedUpdates;
+		HypotheticLifecycleTiming::EffectWorkTiming bestTargetWaitedActivationExpiryWork;
+		HypotheticLifecycleTiming::EffectWorkTiming bestTargetWaitedActivationGamblerWork;
+		HypotheticLifecycleTiming::EffectWorkTiming bestTargetWaitedRoundTimedWork;
 		uint64_t bestTargetWaitedRemainderMicroseconds = 0;
 		StageTiming bestTargetNormalExchange;
 		StageTiming bestTargetNormalBody;
@@ -134,6 +141,9 @@ public:
 		StageTiming bestTargetNormalActivationExpiryRemoval;
 		StageTiming bestTargetNormalActivationGamblerRemoval;
 		StageTiming bestTargetNormalRoundTimedUpdates;
+		HypotheticLifecycleTiming::EffectWorkTiming bestTargetNormalActivationExpiryWork;
+		HypotheticLifecycleTiming::EffectWorkTiming bestTargetNormalActivationGamblerWork;
+		HypotheticLifecycleTiming::EffectWorkTiming bestTargetNormalRoundTimedWork;
 		uint64_t bestTargetNormalRemainderMicroseconds = 0;
 		/// Clone/reachability/filter/comparison and wrapper overhead.
 		uint64_t bestTargetRemainderMicroseconds = 0;

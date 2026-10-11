@@ -42,9 +42,25 @@ struct DLL_LINKAGE HypotheticLifecycleTiming
 		uint64_t calls = 0;
 		uint64_t totalMicroseconds = 0;
 	};
+	struct DLL_LINKAGE EffectWorkTiming
+	{
+		StageTiming stackedQuery;
+		StageTiming rawQuery;
+		/// Inclusive snapshot filtering, copies, alias reconstruction and overlay cleanup.
+		StageTiming snapshotMaterialization;
+		StageTiming selectiveRemovalQuery;
+		/// Inclusive filtering, invalidation and control-state restoration.
+		StageTiming removalMutation;
+		/// Inclusive aging, expiry, invalidation and capacity/control restoration.
+		StageTiming roundAging;
+	};
 	StageTiming activationExpiryRemoval;
 	StageTiming activationGamblerRemoval;
 	StageTiming roundTimedUpdates;
+	// Finer disjoint work regions nested within the corresponding parents above.
+	EffectWorkTiming activationExpiryWork;
+	EffectWorkTiming activationGamblerWork;
+	EffectWorkTiming roundTimedWork;
 };
 
 /// Detached projection result captured before one-strike Luck modifiers expire.
@@ -151,19 +167,23 @@ public:
 	bool removeFirstPhysicalAffliction();
 
 	void removeUnitBonus(const CSelector & selector);
+	void removeUnitBonus(const CSelector & selector, HypotheticLifecycleTiming::EffectWorkTiming * timing);
 	void removeGamblerLuckPenalty();
+	void removeGamblerLuckPenalty(HypotheticLifecycleTiming::EffectWorkTiming * timing);
 	/// Freeze the current bonus inputs for a retained pre-damage scoring snapshot.
 	void freezeDamageScoringBonusSnapshot();
 	void applyNoQuarter(int32_t moraleActivationsRemaining, bool appliedByEnemy = false);
 	void consumeNoQuarterActivation();
 	void clearNoQuarterRoundBlocker();
 	void advanceTimedRound();
+	void advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTiming * timing);
 
 	void spendMana(ServerCallback * server, const int spellCost) const override;
 	std::string getDescription() const override;
 
 private:
-	void removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState);
+	void removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState,
+		HypotheticLifecycleTiming::EffectWorkTiming * timing);
 	TConstBonusListPtr mergeBonuses(const CSelector & selector, const std::string & cachingStr,
 		bool unstacked) const;
 	void setOriginalBearer(const IBonusBearer * bearer);
@@ -184,6 +204,7 @@ private:
 	// retaining detached projections; it does not make the group an affliction.
 	std::set<std::pair<BonusSource, BonusSourceID>> capturedPhysicalAfflictionGroups;
 	void captureEffects();
+	void captureEffects(HypotheticLifecycleTiming::EffectWorkTiming * timing);
 	void captureLocalSpellEffects();
 	std::optional<std::vector<Bonus>> exactLocalSpellEffects;
 	// New hypothetical units own a detached CStack as their creature/army bonus

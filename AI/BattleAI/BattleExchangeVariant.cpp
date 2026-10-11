@@ -112,6 +112,22 @@ public:
 			aggregate.totalMicroseconds += sample.totalMicroseconds;
 		}
 		timing->body.totalMicroseconds += local.body.totalMicroseconds;
+		for(auto context : {&HypotheticLifecycleTiming::activationExpiryWork,
+			&HypotheticLifecycleTiming::activationGamblerWork, &HypotheticLifecycleTiming::roundTimedWork})
+		{
+			for(auto stage : {&HypotheticLifecycleTiming::EffectWorkTiming::stackedQuery,
+				&HypotheticLifecycleTiming::EffectWorkTiming::rawQuery,
+				&HypotheticLifecycleTiming::EffectWorkTiming::snapshotMaterialization,
+				&HypotheticLifecycleTiming::EffectWorkTiming::selectiveRemovalQuery,
+				&HypotheticLifecycleTiming::EffectWorkTiming::removalMutation,
+				&HypotheticLifecycleTiming::EffectWorkTiming::roundAging})
+			{
+				const auto & sample = (local.lifecycleSubsets.*context).*stage;
+				auto & aggregate = (timing->lifecycleSubsets.*context).*stage;
+				aggregate.calls += sample.calls;
+				aggregate.totalMicroseconds += sample.totalMicroseconds;
+			}
+		}
 		timing->remainderMicroseconds += local.body.totalMicroseconds - classified;
 	}
 };

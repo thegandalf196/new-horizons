@@ -228,6 +228,33 @@ struct CBattleAI::TimingState
 			result->bestTargetWaitedActivationGamblerRemoval, result->bestTargetWaitedRoundTimedUpdates);
 		logSubsets("best_target_normal", result->bestTargetNormalActivationExpiryRemoval,
 			result->bestTargetNormalActivationGamblerRemoval, result->bestTargetNormalRoundTimedUpdates);
+		const auto logEffectWork = [](const char * context, const char * lifecycle,
+			const HypotheticLifecycleTiming::EffectWorkTiming & work)
+		{
+			for(const auto & [name, member] : {
+				std::pair{"stacked_query", &HypotheticLifecycleTiming::EffectWorkTiming::stackedQuery},
+				std::pair{"raw_query", &HypotheticLifecycleTiming::EffectWorkTiming::rawQuery},
+				std::pair{"snapshot_materialization", &HypotheticLifecycleTiming::EffectWorkTiming::snapshotMaterialization},
+				std::pair{"selective_removal_query", &HypotheticLifecycleTiming::EffectWorkTiming::selectiveRemovalQuery},
+				std::pair{"removal_mutation", &HypotheticLifecycleTiming::EffectWorkTiming::removalMutation},
+				std::pair{"round_aging", &HypotheticLifecycleTiming::EffectWorkTiming::roundAging},
+			})
+			{
+				const auto & stage = work.*member;
+				logAi->info("BattleAI nested effect work context=%s lifecycle=%s stage=%s calls=%llu us=%llu",
+					context, lifecycle, name, static_cast<unsigned long long>(stage.calls),
+					static_cast<unsigned long long>(stage.totalMicroseconds));
+			}
+		};
+		logEffectWork("movement", "activation_expiry", result->movementExchangeActivationExpiryWork);
+		logEffectWork("movement", "activation_gambler", result->movementExchangeActivationGamblerWork);
+		logEffectWork("movement", "round_timed", result->movementExchangeRoundTimedWork);
+		logEffectWork("best_target_waited", "activation_expiry", result->bestTargetWaitedActivationExpiryWork);
+		logEffectWork("best_target_waited", "activation_gambler", result->bestTargetWaitedActivationGamblerWork);
+		logEffectWork("best_target_waited", "round_timed", result->bestTargetWaitedRoundTimedWork);
+		logEffectWork("best_target_normal", "activation_expiry", result->bestTargetNormalActivationExpiryWork);
+		logEffectWork("best_target_normal", "activation_gambler", result->bestTargetNormalActivationGamblerWork);
+		logEffectWork("best_target_normal", "round_timed", result->bestTargetNormalRoundTimedWork);
 	}
 };
 
@@ -322,6 +349,20 @@ public:
 				aggregate.totalMicroseconds += local.totalMicroseconds;
 			};
 			accumulateSelection(state->summary.selectionCreatureSpell, selectionTotals.creatureSpell);
+			const auto accumulateEffectWork = [](HypotheticLifecycleTiming::EffectWorkTiming & aggregate,
+				const HypotheticLifecycleTiming::EffectWorkTiming & sample)
+			{
+				for(auto member : {&HypotheticLifecycleTiming::EffectWorkTiming::stackedQuery,
+					&HypotheticLifecycleTiming::EffectWorkTiming::rawQuery,
+					&HypotheticLifecycleTiming::EffectWorkTiming::snapshotMaterialization,
+					&HypotheticLifecycleTiming::EffectWorkTiming::selectiveRemovalQuery,
+					&HypotheticLifecycleTiming::EffectWorkTiming::removalMutation,
+					&HypotheticLifecycleTiming::EffectWorkTiming::roundAging})
+				{
+					(aggregate.*member).calls += (sample.*member).calls;
+					(aggregate.*member).totalMicroseconds += (sample.*member).totalMicroseconds;
+				}
+			};
 			accumulateSelection(state->summary.selectionMovementSearch, selectionTotals.movementSearch);
 			const auto & movement = selectionTotals.movementDetails;
 			accumulateSelection(state->summary.movementFindMove, movement.findMove);
@@ -339,6 +380,9 @@ public:
 			accumulateSelection(state->summary.movementExchangeActivationExpiryRemoval, exchange.lifecycleSubsets.activationExpiryRemoval);
 			accumulateSelection(state->summary.movementExchangeActivationGamblerRemoval, exchange.lifecycleSubsets.activationGamblerRemoval);
 			accumulateSelection(state->summary.movementExchangeRoundTimedUpdates, exchange.lifecycleSubsets.roundTimedUpdates);
+			accumulateEffectWork(state->summary.movementExchangeActivationExpiryWork, exchange.lifecycleSubsets.activationExpiryWork);
+			accumulateEffectWork(state->summary.movementExchangeActivationGamblerWork, exchange.lifecycleSubsets.activationGamblerWork);
+			accumulateEffectWork(state->summary.movementExchangeRoundTimedWork, exchange.lifecycleSubsets.roundTimedWork);
 			state->summary.movementExchangeRemainderMicroseconds += exchange.remainderMicroseconds;
 			accumulateSelection(state->summary.movementGoBlockingSubset, movement.goTowardsBlocking);
 			state->summary.movementRemainderMicroseconds += selectionTotals.movementSearch.totalMicroseconds
@@ -358,6 +402,9 @@ public:
 			accumulateSelection(state->summary.bestTargetWaitedActivationExpiryRemoval, bestTarget.waitedDetails.lifecycleSubsets.activationExpiryRemoval);
 			accumulateSelection(state->summary.bestTargetWaitedActivationGamblerRemoval, bestTarget.waitedDetails.lifecycleSubsets.activationGamblerRemoval);
 			accumulateSelection(state->summary.bestTargetWaitedRoundTimedUpdates, bestTarget.waitedDetails.lifecycleSubsets.roundTimedUpdates);
+			accumulateEffectWork(state->summary.bestTargetWaitedActivationExpiryWork, bestTarget.waitedDetails.lifecycleSubsets.activationExpiryWork);
+			accumulateEffectWork(state->summary.bestTargetWaitedActivationGamblerWork, bestTarget.waitedDetails.lifecycleSubsets.activationGamblerWork);
+			accumulateEffectWork(state->summary.bestTargetWaitedRoundTimedWork, bestTarget.waitedDetails.lifecycleSubsets.roundTimedWork);
 			state->summary.bestTargetWaitedRemainderMicroseconds += bestTarget.waitedDetails.remainderMicroseconds;
 			accumulateSelection(state->summary.bestTargetNormalExchange, bestTarget.normalExchange);
 			accumulateSelection(state->summary.bestTargetNormalBody, bestTarget.normalDetails.body);
@@ -371,6 +418,9 @@ public:
 			accumulateSelection(state->summary.bestTargetNormalActivationExpiryRemoval, bestTarget.normalDetails.lifecycleSubsets.activationExpiryRemoval);
 			accumulateSelection(state->summary.bestTargetNormalActivationGamblerRemoval, bestTarget.normalDetails.lifecycleSubsets.activationGamblerRemoval);
 			accumulateSelection(state->summary.bestTargetNormalRoundTimedUpdates, bestTarget.normalDetails.lifecycleSubsets.roundTimedUpdates);
+			accumulateEffectWork(state->summary.bestTargetNormalActivationExpiryWork, bestTarget.normalDetails.lifecycleSubsets.activationExpiryWork);
+			accumulateEffectWork(state->summary.bestTargetNormalActivationGamblerWork, bestTarget.normalDetails.lifecycleSubsets.activationGamblerWork);
+			accumulateEffectWork(state->summary.bestTargetNormalRoundTimedWork, bestTarget.normalDetails.lifecycleSubsets.roundTimedWork);
 			state->summary.bestTargetNormalRemainderMicroseconds += bestTarget.normalDetails.remainderMicroseconds;
 			state->summary.bestTargetRemainderMicroseconds += selectionTotals.bestTarget.totalMicroseconds
 				- bestTarget.waitedExchange.totalMicroseconds - bestTarget.normalExchange.totalMicroseconds;

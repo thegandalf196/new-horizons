@@ -32,6 +32,28 @@
 
 namespace
 {
+void expectEffectWorkBounds(const HypotheticLifecycleTiming::EffectWorkTiming & work,
+	uint64_t parentCalls, uint64_t parentMicroseconds, bool removal)
+{
+	uint64_t measured = 0;
+	for(const auto * stage : {&work.stackedQuery, &work.rawQuery, &work.snapshotMaterialization,
+		&work.selectiveRemovalQuery, &work.removalMutation, &work.roundAging})
+	{
+		measured += stage->totalMicroseconds;
+		EXPECT_LE(stage->calls, parentCalls);
+		if(parentCalls == 0)
+			EXPECT_EQ(stage->totalMicroseconds, 0u);
+	}
+	EXPECT_LE(measured, parentMicroseconds);
+	EXPECT_EQ(work.stackedQuery.calls, parentCalls);
+	EXPECT_EQ(work.rawQuery.calls, parentCalls);
+	EXPECT_EQ(work.snapshotMaterialization.calls, parentCalls);
+	EXPECT_EQ(work.selectiveRemovalQuery.calls, removal ? parentCalls : 0u);
+	EXPECT_EQ(work.removalMutation.calls, removal ? parentCalls : 0u);
+	if(removal)
+		EXPECT_EQ(work.roundAging.calls, 0u);
+}
+
 class TimingEnvironment final : public Environment
 {
 	std::shared_ptr<CGameState> state;
@@ -144,6 +166,24 @@ protected:
 			timing.bestTargetWaitedRoundTimedUpdates, timing.bestTargetWaitedActivationStart, timing.bestTargetWaitedRoundAdvance);
 		subsets(timing.bestTargetNormalActivationExpiryRemoval, timing.bestTargetNormalActivationGamblerRemoval,
 			timing.bestTargetNormalRoundTimedUpdates, timing.bestTargetNormalActivationStart, timing.bestTargetNormalRoundAdvance);
+		expectEffectWorkBounds(timing.movementExchangeActivationExpiryWork, timing.movementExchangeActivationExpiryRemoval.calls,
+			timing.movementExchangeActivationExpiryRemoval.totalMicroseconds, true);
+		expectEffectWorkBounds(timing.movementExchangeActivationGamblerWork, timing.movementExchangeActivationGamblerRemoval.calls,
+			timing.movementExchangeActivationGamblerRemoval.totalMicroseconds, true);
+		expectEffectWorkBounds(timing.movementExchangeRoundTimedWork, timing.movementExchangeRoundTimedUpdates.calls,
+			timing.movementExchangeRoundTimedUpdates.totalMicroseconds, false);
+		expectEffectWorkBounds(timing.bestTargetWaitedActivationExpiryWork, timing.bestTargetWaitedActivationExpiryRemoval.calls,
+			timing.bestTargetWaitedActivationExpiryRemoval.totalMicroseconds, true);
+		expectEffectWorkBounds(timing.bestTargetWaitedActivationGamblerWork, timing.bestTargetWaitedActivationGamblerRemoval.calls,
+			timing.bestTargetWaitedActivationGamblerRemoval.totalMicroseconds, true);
+		expectEffectWorkBounds(timing.bestTargetWaitedRoundTimedWork, timing.bestTargetWaitedRoundTimedUpdates.calls,
+			timing.bestTargetWaitedRoundTimedUpdates.totalMicroseconds, false);
+		expectEffectWorkBounds(timing.bestTargetNormalActivationExpiryWork, timing.bestTargetNormalActivationExpiryRemoval.calls,
+			timing.bestTargetNormalActivationExpiryRemoval.totalMicroseconds, true);
+		expectEffectWorkBounds(timing.bestTargetNormalActivationGamblerWork, timing.bestTargetNormalActivationGamblerRemoval.calls,
+			timing.bestTargetNormalActivationGamblerRemoval.totalMicroseconds, true);
+		expectEffectWorkBounds(timing.bestTargetNormalRoundTimedWork, timing.bestTargetNormalRoundTimedUpdates.calls,
+			timing.bestTargetNormalRoundTimedUpdates.totalMicroseconds, false);
 		EXPECT_EQ(timing.bestTargetWaitedExchange.totalMicroseconds
 			+ timing.bestTargetNormalExchange.totalMicroseconds + timing.bestTargetRemainderMicroseconds,
 			timing.selectionBestTarget.totalMicroseconds);
@@ -871,6 +911,12 @@ protected:
 		EXPECT_EQ(nested.activationExpiryRemoval.calls, nested.activationGamblerRemoval.calls);
 		EXPECT_LE(nested.activationExpiryRemoval.calls, exchange.activationStart.calls);
 		EXPECT_LE(nested.roundTimedUpdates.totalMicroseconds, exchange.roundAdvance.totalMicroseconds);
+		expectEffectWorkBounds(nested.activationExpiryWork, nested.activationExpiryRemoval.calls,
+			nested.activationExpiryRemoval.totalMicroseconds, true);
+		expectEffectWorkBounds(nested.activationGamblerWork, nested.activationGamblerRemoval.calls,
+			nested.activationGamblerRemoval.totalMicroseconds, true);
+		expectEffectWorkBounds(nested.roundTimedWork, nested.roundTimedUpdates.calls,
+			nested.roundTimedUpdates.totalMicroseconds, false);
 	}
 
 	void expectBestTargetClosure(const BattleBestTargetTiming & timing) const
@@ -1781,8 +1827,7 @@ protected:
 			const auto prefix = "decision" + std::to_string(decisions++) + "_";
 			RecordProperty(prefix + "action", std::to_string(static_cast<int>(action.actionType)));
 			RecordProperty(prefix + "wallUs", std::to_string(after.activeStackTotalMicroseconds - before.activeStackTotalMicroseconds));
-			const auto stage = [&](const char * name, const CBattleAI::StageTiming & previous,
-				const CBattleAI::StageTiming & current)
+			const auto stage = [&](const char * name, const auto & previous, const auto & current)
 			{
 				RecordProperty(prefix + name + "Us", std::to_string(current.totalMicroseconds - previous.totalMicroseconds));
 				RecordProperty(prefix + name + "Calls", std::to_string(current.calls - previous.calls));
@@ -1820,6 +1865,32 @@ protected:
 			stage("normalActivationGamblerRemoval", before.bestTargetNormalActivationGamblerRemoval, after.bestTargetNormalActivationGamblerRemoval);
 			stage("normalRoundTimedUpdates", before.bestTargetNormalRoundTimedUpdates, after.bestTargetNormalRoundTimedUpdates);
 			stage("submission", before.directUnitSubmission, after.directUnitSubmission);
+			const auto effectWork = [&](const char * context,
+				const HypotheticLifecycleTiming::EffectWorkTiming & previous,
+				const HypotheticLifecycleTiming::EffectWorkTiming & current)
+			{
+				for(const auto & [name, member] : {
+					std::pair{"stackedQuery", &HypotheticLifecycleTiming::EffectWorkTiming::stackedQuery},
+					std::pair{"rawQuery", &HypotheticLifecycleTiming::EffectWorkTiming::rawQuery},
+					std::pair{"snapshotMaterialization", &HypotheticLifecycleTiming::EffectWorkTiming::snapshotMaterialization},
+					std::pair{"selectiveRemovalQuery", &HypotheticLifecycleTiming::EffectWorkTiming::selectiveRemovalQuery},
+					std::pair{"removalMutation", &HypotheticLifecycleTiming::EffectWorkTiming::removalMutation},
+					std::pair{"roundAging", &HypotheticLifecycleTiming::EffectWorkTiming::roundAging},
+				})
+				{
+					const std::string key = std::string(context) + "_" + name;
+					stage(key.c_str(), previous.*member, current.*member);
+				}
+			};
+			effectWork("movementActivationExpiry", before.movementExchangeActivationExpiryWork, after.movementExchangeActivationExpiryWork);
+			effectWork("movementActivationGambler", before.movementExchangeActivationGamblerWork, after.movementExchangeActivationGamblerWork);
+			effectWork("movementRoundTimed", before.movementExchangeRoundTimedWork, after.movementExchangeRoundTimedWork);
+			effectWork("waitedActivationExpiry", before.bestTargetWaitedActivationExpiryWork, after.bestTargetWaitedActivationExpiryWork);
+			effectWork("waitedActivationGambler", before.bestTargetWaitedActivationGamblerWork, after.bestTargetWaitedActivationGamblerWork);
+			effectWork("waitedRoundTimed", before.bestTargetWaitedRoundTimedWork, after.bestTargetWaitedRoundTimedWork);
+			effectWork("normalActivationExpiry", before.bestTargetNormalActivationExpiryWork, after.bestTargetNormalActivationExpiryWork);
+			effectWork("normalActivationGambler", before.bestTargetNormalActivationGamblerWork, after.bestTargetNormalActivationGamblerWork);
+			effectWork("normalRoundTimed", before.bestTargetNormalRoundTimedWork, after.bestTargetNormalRoundTimedWork);
 			RecordProperty(prefix + "bestTargetRemainderUs", std::to_string(after.bestTargetRemainderMicroseconds - before.bestTargetRemainderMicroseconds));
 			expectStageClosure(after);
 			EXPECT_EQ(after.activeStackCalls - before.activeStackCalls, 1u);
