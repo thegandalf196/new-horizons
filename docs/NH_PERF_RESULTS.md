@@ -1,5 +1,25 @@
 # New Horizons performance experiment — measured results
 
+## Lazy attack-probe snapshot checkpoint (2026-10-11)
+
+BattleAI now copies the probe's post-attack attacker state only when Hex of
+Pain or eligible melee Cleave consumes it. Ordinary melee and ranged probes
+skip that unused copy. Applied attacks retain their original state updates;
+Hex, Cleave, shots and Wait-premium handling remain unchanged. Candidate
+enumeration, forecast depth, scoring and rendering are not redesigned.
+
+All 31 focused native cases passed: the existing 24 timing/parity cases plus
+seven attack-snapshot cases. The latter assert exact scores, state isolation
+and snapshot counts for ordinary melee/ranged probes, active Hex, applied
+attacks and lethal melee Cleave. Build and binary privacy checks passed, with
+unchanged source, binary and test-resource inventories during execution.
+This is bounded correctness evidence, not complete combat integration.
+
+The pre-change runtime was preserved outside the disposable build directory
+for a matched saved-game comparison. No measured turn-time improvement is
+established yet, and no Windows performance or graphical acceptance follows
+from the native tests. Artwork package bytes are unchanged.
+
 ## Target-selection timing partition (2026-10-11)
 
 The existing target-exchange aggregate now separates best-target selection,

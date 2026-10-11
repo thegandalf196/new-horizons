@@ -938,8 +938,14 @@ float BattleExchangeVariant::trackAttack(
 	const auto defenderRebirthSource = defenderWasAlive
 		? hb->captureElementalRebirthSource(*defender) : std::nullopt;
 	const bool defenderMayRebirth = hb->hasReadyNativeRebirth(defender.get());
-	auto projectedAttacker = evaluateOnly ? attacker->acquireState()
-		: std::static_pointer_cast<battle::CUnitState>(attacker);
+	// Only Hex and Cleave consume the probe's post-attack attacker state.
+	// Ordinary applied attacks must still spend shots/Wait bonuses as before.
+	const bool needsProbeState = evaluateOnly
+		&& (newHorizonsHexOfPainAI::hasEffect(attacker.get())
+			|| (!shooting && hb->battleCanTriggerCleave(attacker.get())));
+	auto projectedAttacker = !evaluateOnly
+		? std::static_pointer_cast<battle::CUnitState>(attacker)
+		: needsProbeState ? attacker->acquireState() : nullptr;
 
 	if(!evaluateOnly)
 	{
@@ -987,7 +993,8 @@ float BattleExchangeVariant::trackAttack(
 		if(relentlessAssaultTargetUnitId)
 			projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
 	}
-	projectedAttacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
+	if(projectedAttacker)
+		projectedAttacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
 	if(!evaluateOnly && shooting && projectedAttack.physicalDamage
 		&& attacker->rangedFollowUpDamagePercent > 0)
 		attacker->rangedFollowUpDamagePercent = 0;
@@ -1026,7 +1033,7 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.enemyDamageReduce += value;
 		attackerValue[actorBeforeTrigger->unitId()].value -= value;
 	};
-	if(newHorizonsHexOfPainAI::hasEffect(projectedAttacker.get()))
+	if(projectedAttacker && newHorizonsHexOfPainAI::hasEffect(projectedAttacker.get()))
 	{
 		const auto mainHexScoringActor = projectedAttacker->acquireState();
 		const auto mainHexDamage = projectHexOfPain(projectedAttacker.get(), defender.get(), shooting, false,
@@ -1038,7 +1045,7 @@ float BattleExchangeVariant::trackAttack(
 		&& (evaluateOnly
 			? projectedAttackDamage.healthLoss >= defenderHealthBeforeAttack
 			: !defender->alive());
-	if(!shooting && projectedAttacker->alive() && projectedEnemyKill
+	if(!shooting && projectedAttacker && projectedAttacker->alive() && projectedEnemyKill
 		&& hb->battleMatchOwner(attacker.get(), defender.get())
 		&& hb->battleCanTriggerCleave(projectedAttacker.get()))
 	{
