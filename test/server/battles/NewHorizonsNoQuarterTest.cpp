@@ -7,6 +7,7 @@
 #include "BattleTestFixture.h"
 #include "FullGameSnapshotTypes.h"
 
+
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/CSkillHandler.h"
@@ -20,6 +21,7 @@
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/serializer/ESerializationVersion.h"
+#include "../../../lib/callback/GameRandomizer.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
 
@@ -117,6 +119,24 @@ protected:
 		return bonuses && !bonuses->empty();
 	}
 
+	void healToCurrentCapacity(CStack * stack)
+	{
+		auto state = stack->acquireState();
+		int64_t amount = stack->getTotalHealth() - stack->getAvailableHealth();
+		ASSERT_GT(amount, 0);
+		const int64_t restored = state->heal(amount, EHealLevel::HEAL,
+			EHealPower::PERMANENT).healedHealthPoints;
+		ASSERT_GT(restored, 0);
+		BattleUnitsChanged update;
+		update.battleID = BattleID(0);
+		UnitChanges change(stack->unitId(), UnitChanges::EOperation::UPDATE);
+		change.data = state->save();
+		change.healthDelta = restored;
+		update.changedStacks.push_back(std::move(change));
+		gameHandler->sendAndApply(update);
+		ASSERT_EQ(stack->getAvailableHealth(), stack->getTotalHealth());
+	}
+
 	bool hasNoQuarterRetaliationBlock(const CStack * stack) const
 	{
 		const auto bonuses = stack->getAllBonuses(CSelector([](const Bonus * bonus)
@@ -133,6 +153,273 @@ protected:
 			battle()->sideToPlayer(shooter->unitSide()), BattleAction::makeShotAttack(shooter, target));
 	}
 };
+
+class NoQuarterLifetimeRecordingServer : public RecordingGameServer
+{
+public:
+	std::function<void()> afterUnitUpdate;
+
+	void applyPack(CPackForClient & pack) override
+	{
+		RecordingGameServer::applyPack(pack);
+		if(dynamic_cast<const BattleUnitsChanged *>(&pack) && afterUnitUpdate)
+			afterUnitUpdate();
+	}
+};
+
+class NewHorizonsNoQuarterLifetimeTest : public NewHorizonsNoQuarterTest
+{
+protected:
+	NoQuarterLifetimeRecordingServer lifetimeServer;
+
+	void TearDown() override
+	{
+		lifetimeServer.afterUnitUpdate = {};
+		NewHorizonsNoQuarterTest::TearDown();
+	}
+
+	CStack * prepareCodecLifetime(int32_t remaining)
+	{
+		startBattleWithNoQuarter(BattleSide::ATTACKER);
+		auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(93), 10);
+		// Explicitly synthetic codec fixture: gameplay production is witnessed separately.
+		battle()->addOrUpdateUnitBonus(target, newHorizonsOffense::noQuarterMoralePenalty(true), true);
+		target->noQuarterMoraleActivationsRemaining = remaining;
+		return target;
+	}
+
+	std::vector<std::byte> saveBattle()
+	{
+		CMemorySerializer writer;
+		writer.oser & *battle();
+		return writer.extractBuffer();
+	}
+
+	std::vector<std::byte> replaceLifetimeTail(std::vector<std::byte> bytes,
+		uint32_t originalId, uint32_t count, const std::vector<std::pair<uint32_t, int32_t>> & entries)
+	{
+		CMemorySerializer expected;
+		expected.oser & uint32_t(1);
+		expected.oser & originalId;
+		expected.oser & int32_t(1);
+		const auto tail = expected.extractBuffer();
+		if(bytes.size() < tail.size() || !std::equal(tail.rbegin(), tail.rend(), bytes.rbegin()))
+			throw std::logic_error("Unexpected No Quarter serialized tail");
+		bytes.resize(bytes.size() - tail.size());
+		CMemorySerializer replacement;
+		replacement.oser & count;
+		for(const auto & entry : entries)
+		{
+			replacement.oser & entry.first;
+			replacement.oser & entry.second;
+		}
+		const auto replacementBytes = replacement.extractBuffer();
+		bytes.insert(bytes.end(), replacementBytes.begin(), replacementBytes.end());
+		return bytes;
+	}
+};
+}
+
+TEST_F(NewHorizonsNoQuarterLifetimeTest, SyntheticOneAndTwoActivationLifetimesRoundTripThroughBattleAndStart)
+{
+	auto * target = prepareCodecLifetime(1);
+	for(int32_t remaining : {1, 2})
+	{
+		target->noQuarterMoraleActivationsRemaining = remaining;
+		const auto copy = CMemorySerializer::deepCopy(*battle(), gameState().get());
+		ASSERT_NE(copy->getStack(target->unitId(), false), nullptr);
+		EXPECT_EQ(copy->getStack(target->unitId(), false)->noQuarterMoraleActivationsRemaining, remaining);
+		BattleStart outgoing;
+		outgoing.battleID = BattleID(0);
+		outgoing.info = CMemorySerializer::deepCopy(*battle(), gameState().get());
+		CMemorySerializer wire;
+		wire.oser & outgoing;
+		wire.iser.cb = gameState().get();
+		BattleStart incoming;
+		wire.iser & incoming;
+		ASSERT_NE(incoming.info, nullptr);
+		EXPECT_EQ(incoming.info->getStack(target->unitId(), false)->noQuarterMoraleActivationsRemaining, remaining);
+		auto * rebound = incoming.info->getStack(target->unitId(), false);
+		rebound->localInit(incoming.info.get());
+		EXPECT_EQ(rebound->noQuarterMoraleActivationsRemaining, remaining);
+		EXPECT_EQ(rebound->veteranPhysicalDamageSinceActivation, 0);
+	}
+}
+
+TEST_F(NewHorizonsNoQuarterLifetimeTest, LifetimeRejectsPreviousWritersBeforeBattleAndStartPrefixes)
+{
+	prepareCodecLifetime(1);
+	CMemorySerializer oldBattle;
+	oldBattle.oser.version = ESerializationVersion::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT;
+	EXPECT_THROW(oldBattle.oser & *battle(), std::runtime_error);
+	EXPECT_TRUE(oldBattle.extractBuffer().empty());
+	BattleStart outgoing;
+	outgoing.battleID = BattleID(0);
+	outgoing.info = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	CMemorySerializer oldStart;
+	oldStart.oser.version = ESerializationVersion::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT;
+	EXPECT_THROW(oldStart.oser & outgoing, std::runtime_error);
+	EXPECT_TRUE(oldStart.extractBuffer().empty());
+}
+
+TEST_F(NewHorizonsNoQuarterLifetimeTest, AmbiguousLegacyPenaltyValidationRejectsInsteadOfInventingLifetime)
+{
+	auto * target = prepareCodecLifetime(2);
+	// Explicit policy validation, not a fabricated historical wire: the old
+	// decoder sees a Morale penalty and default zero without the new sidecar.
+	target->noQuarterMoraleActivationsRemaining = 0;
+	EXPECT_THROW(battle()->validateNoQuarterLifetimeSerialization(false), std::runtime_error);
+	EXPECT_EQ(target->noQuarterMoraleActivationsRemaining, 0);
+	EXPECT_TRUE(hasNoQuarterMorale(target));
+}
+
+TEST_F(NewHorizonsNoQuarterLifetimeTest, PreviousRetaliationOnlyPayloadRemainsWritableAndResetsReusedLifetime)
+{
+	startBattleWithNoQuarter(BattleSide::ATTACKER);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(93), 10);
+	battle()->addOrUpdateUnitBonus(target, newHorizonsOffense::noQuarterRetaliationBonus(), true);
+	CMemorySerializer oldWire;
+	oldWire.oser.version = ESerializationVersion::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT;
+	oldWire.iser.version = oldWire.oser.version;
+	oldWire.oser & *battle();
+	// Reuse a receiver that really decoded a current nonzero lifetime first.
+	battle()->addOrUpdateUnitBonus(target, newHorizonsOffense::noQuarterMoralePenalty(true), true);
+	target->noQuarterMoraleActivationsRemaining = 2;
+	auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_EQ(restored->getStack(target->unitId(), false)->noQuarterMoraleActivationsRemaining, 2);
+	oldWire.iser.cb = gameState().get();
+	oldWire.iser & *restored;
+	ASSERT_NE(restored->getStack(target->unitId(), false), nullptr);
+	// Decode retains local retaliation state before runtime graph rebinding.
+	ASSERT_TRUE(restored->hasNoQuarterState());
+	BattleStart outgoing;
+	outgoing.battleID = BattleID(0);
+	outgoing.info = std::move(restored);
+	CMemorySerializer unsupportedStart;
+	unsupportedStart.oser.version = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_NO_QUARTER) - 1);
+	EXPECT_THROW(unsupportedStart.oser & outgoing, std::runtime_error);
+	EXPECT_TRUE(unsupportedStart.extractBuffer().empty());
+	restored = std::move(outgoing.info);
+	restored->getStack(target->unitId(), false)->localInit(restored.get());
+	EXPECT_EQ(restored->getStack(target->unitId(), false)->noQuarterMoraleActivationsRemaining, 0);
+	EXPECT_TRUE(hasNoQuarterRetaliationBlock(restored->getStack(target->unitId(), false)));
+	EXPECT_FALSE(hasNoQuarterMorale(restored->getStack(target->unitId(), false)));
+}
+
+TEST_F(NewHorizonsNoQuarterLifetimeTest, CurrentReaderRejectsOutOfRangeAndMissingLifetimeEntries)
+{
+	auto * target = prepareCodecLifetime(1);
+	const auto original = saveBattle();
+	for(int32_t malformed : {0, 3})
+	{
+		auto bytes = replaceLifetimeTail(original, target->unitId(), 1, {{target->unitId(), malformed}});
+		CMemorySerializer wire(std::move(bytes));
+		wire.iser.cb = gameState().get();
+		BattleInfo restored(gameState().get());
+		EXPECT_THROW(wire.iser & restored, std::runtime_error);
+	}
+}
+
+TEST_F(NewHorizonsNoQuarterLifetimeTest, CurrentReaderRejectsCountOverflowDuplicateAndUnknownIds)
+{
+	auto * target = prepareCodecLifetime(1);
+	const auto original = saveBattle();
+	for(int scenario : {0, 1, 2, 3})
+	{
+		std::vector<std::byte> bytes;
+		if(scenario == 0)
+		{
+			bytes = replaceLifetimeTail(original, target->unitId(), std::numeric_limits<uint32_t>::max(), {});
+		}
+		else if(scenario == 1)
+		{
+			bytes = replaceLifetimeTail(original, target->unitId(), 2,
+				{{target->unitId(), 1}, {target->unitId(), 1}});
+		}
+		else if(scenario == 2)
+		{
+			bytes = replaceLifetimeTail(original, target->unitId(), 1,
+				{{std::numeric_limits<uint32_t>::max(), 1}});
+		}
+		else
+			bytes = replaceLifetimeTail(original, target->unitId(), 0, {});
+		CMemorySerializer wire(std::move(bytes));
+		wire.iser.cb = gameState().get();
+		BattleInfo restored(gameState().get());
+		EXPECT_THROW(wire.iser & restored, std::runtime_error);
+	}
+}
+
+TEST_F(NewHorizonsNoQuarterLifetimeTest, AuthenticActiveRetaliationOneAndTwoLifetimesRoundTripWithPhysicalHistoryAndExpire)
+{
+	startGame();
+	lifetimeServer.gameState = gameState();
+	gameHandler = std::make_shared<CGameHandler>(lifetimeServer, gameState());
+	gameHandler->randomizer->setSeed(seed);
+	enableNoQuarter(BattleSide::DEFENDER);
+	startBattle();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(92), 1);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:gnoll"), BattleHex(93), 1);
+	defender->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::STACK_HEALTH, BonusSource::OTHER, 1000, BonusSourceID()));
+	ASSERT_NO_FATAL_FAILURE(healToCurrentCapacity(defender));
+	forceMaximumDamage(defender);
+	beginCombat();
+	const int64_t threshold = attacker->getTotalHealth() / 4;
+	const int64_t damage = battle()->calculateDmgRange(BattleAttackInfo(defender, attacker, 0, false)).damage.max;
+	ASSERT_GT(damage, 0);
+	setAvailableHealth(attacker, threshold + damage - 1);
+	bool sawTwo = false;
+	lifetimeServer.afterUnitUpdate = [&]()
+	{
+		if(sawTwo || attacker->noQuarterMoraleActivationsRemaining != 2)
+			return;
+		sawTwo = true;
+		EXPECT_TRUE(hasNoQuarterMorale(attacker));
+		EXPECT_TRUE(battle()->hasVeteranDamageHistory());
+		const auto copy = CMemorySerializer::deepCopy(*battle(), gameState().get());
+		ASSERT_NE(copy->getStack(attacker->unitId(), false), nullptr);
+		EXPECT_EQ(copy->getStack(attacker->unitId(), false)->noQuarterMoraleActivationsRemaining, 2);
+		EXPECT_EQ(copy->getStack(attacker->unitId(), false)->veteranPhysicalDamageSinceActivation,
+			attacker->veteranPhysicalDamageSinceActivation);
+		EXPECT_EQ(copy->getStack(defender->unitId(), false)->veteranPhysicalDamageSinceActivation,
+			defender->veteranPhysicalDamageSinceActivation);
+		BattleStart outgoing;
+		outgoing.battleID = BattleID(0);
+		outgoing.info = CMemorySerializer::deepCopy(*battle(), gameState().get());
+		CMemorySerializer wire;
+		wire.oser & outgoing;
+		wire.iser.cb = gameState().get();
+		BattleStart incoming;
+		wire.iser & incoming;
+		ASSERT_NE(incoming.info, nullptr);
+		EXPECT_EQ(incoming.info->getStack(attacker->unitId(), false)->noQuarterMoraleActivationsRemaining, 2);
+		EXPECT_EQ(incoming.info->getStack(attacker->unitId(), false)->veteranPhysicalDamageSinceActivation,
+			attacker->veteranPhysicalDamageSinceActivation);
+		auto * rebound = incoming.info->getStack(attacker->unitId(), false);
+		rebound->localInit(incoming.info.get());
+		EXPECT_EQ(rebound->noQuarterMoraleActivationsRemaining, 2);
+		EXPECT_EQ(rebound->veteranPhysicalDamageSinceActivation,
+			attacker->veteranPhysicalDamageSinceActivation);
+		CMemorySerializer oldWriter;
+		oldWriter.oser.version = ESerializationVersion::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT;
+		EXPECT_THROW(oldWriter.oser & outgoing, std::runtime_error);
+		EXPECT_TRUE(oldWriter.extractBuffer().empty());
+	};
+	ASSERT_TRUE(attack(attacker, defender->getPosition()));
+	ASSERT_TRUE(sawTwo);
+	EXPECT_EQ(attacker->noQuarterMoraleActivationsRemaining, 1);
+	const auto completedCopy = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(completedCopy->getStack(attacker->unitId(), false), nullptr);
+	EXPECT_EQ(completedCopy->getStack(attacker->unitId(), false)->noQuarterMoraleActivationsRemaining, 1);
+	EXPECT_EQ(completedCopy->getStack(attacker->unitId(), false)->veteranPhysicalDamageSinceActivation,
+		attacker->veteranPhysicalDamageSinceActivation);
+	setActiveStack(attacker, BattleUnitTurnReason::TURN_QUEUE);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+		battle()->sideToPlayer(attacker->unitSide()), BattleAction::makeDefend(attacker)));
+	EXPECT_EQ(attacker->noQuarterMoraleActivationsRemaining, 0);
+	EXPECT_FALSE(hasNoQuarterMorale(attacker));
 }
 
 TEST_F(NewHorizonsNoQuarterTest, ThresholdIsStrictAndIntegerSafe)
@@ -213,6 +500,7 @@ TEST_F(NewHorizonsNoQuarterTest, RetaliationCanTriggerOnTheActiveStackAndMoraleE
 	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:gnoll"), BattleHex(93), 1);
 	defender->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
 		BonusType::STACK_HEALTH, BonusSource::OTHER, 1000, BonusSourceID()));
+	ASSERT_NO_FATAL_FAILURE(healToCurrentCapacity(defender));
 	forceMaximumDamage(defender);
 	beginCombat();
 
@@ -480,17 +768,27 @@ TEST_F(NewHorizonsNoQuarterTest, BulwarkPreemptivePhysicalHitCanTriggerNoQuarter
 	startBattle();
 	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(80), 100);
 	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(81), 100);
-	defender->defending = true;
+	// Queue the defender first without changing either stack's movement or damage.
+	defender->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::STACKS_INITIATIVE_FLAT, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_GT(defender->getInitiative(), attacker->getInitiative());
 	forceMaximumDamage(defender);
+	beginCombat();
+	ASSERT_EQ(battle()->battleActiveUnit(), defender);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+		battle()->sideToPlayer(defender->unitSide()), BattleAction::makeDefend(defender)));
+	ASSERT_TRUE(defender->defended());
+	ASSERT_EQ(battle()->battleActiveUnit(), attacker);
 	BattleAttackInfo preemptive(defender, attacker, 0, false);
 	preemptive.preemptiveDamagePercent = newHorizonsBulwark::preemptivePercent(1);
 	const int64_t preemptiveDamage = battle()->calculateDmgRange(preemptive).damage.max;
 	ASSERT_GT(preemptiveDamage, 0);
 	setAvailableHealth(attacker, attacker->getTotalHealth() / 4 + preemptiveDamage - 1);
-	beginCombat();
 
 	server.attacks.clear();
-	ASSERT_TRUE(attack(attacker, defender->getPosition()));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+		battle()->sideToPlayer(attacker->unitSide()), BattleAction::makeMeleeAttack(
+			attacker, defender->getPosition(), attacker->getPosition())));
 	ASSERT_FALSE(server.attacks.empty());
 	EXPECT_EQ(server.attacks.front().stackAttacking, defender->unitId());
 	EXPECT_TRUE(hasNoQuarterRetaliationBlock(attacker));
@@ -509,12 +807,15 @@ TEST_F(NewHorizonsNoQuarterTest, SerializedStateAndEffectPacketsRejectOlderWrite
 	setAvailableHealth(target, quarter + damage - 1);
 	ASSERT_TRUE(attack(attacker, target->getPosition()));
 	ASSERT_TRUE(battle()->hasNoQuarterState());
+	const auto physicalHistory = target->veteranPhysicalDamageSinceActivation;
+	ASSERT_GT(physicalHistory, 0);
 
 	const auto restoredBattle = CMemorySerializer::deepCopy(*battle(), gameState().get());
 	ASSERT_TRUE(restoredBattle->hasNoQuarterState());
 	const auto * restoredStack = restoredBattle->getStack(target->unitId(), false);
 	ASSERT_NE(restoredStack, nullptr);
 	EXPECT_EQ(restoredStack->noQuarterMoraleActivationsRemaining, 1);
+	EXPECT_EQ(restoredStack->veteranPhysicalDamageSinceActivation, physicalHistory);
 
 	BattleStart outgoing;
 	outgoing.battleID = BattleID(0);
@@ -528,6 +829,11 @@ TEST_F(NewHorizonsNoQuarterTest, SerializedStateAndEffectPacketsRejectOlderWrite
 	current.iser & incoming;
 	ASSERT_NE(incoming.info, nullptr);
 	EXPECT_TRUE(incoming.info->hasNoQuarterState());
+	const auto * incomingStack = incoming.info->getStack(target->unitId(), false);
+	ASSERT_NE(incomingStack, nullptr);
+	EXPECT_EQ(incomingStack->noQuarterMoraleActivationsRemaining, 1);
+	EXPECT_EQ(incomingStack->veteranPhysicalDamageSinceActivation, physicalHistory);
+	EXPECT_EQ(target->veteranPhysicalDamageSinceActivation, physicalHistory);
 
 	BattleUnitsChanged statePacket;
 	statePacket.battleID = BattleID(0);
@@ -568,11 +874,12 @@ TEST_F(NewHorizonsNoQuarterTest, SerializedStateAndEffectPacketsRejectOlderWrite
 	EXPECT_TRUE(oldAttackWriter.extractBuffer().empty());
 
 	CMemorySerializer oldBattleWriter;
-	oldBattleWriter.oser.version = ESerializationVersion::NEW_HORIZONS_RELENTLESS_ASSAULT;
+	oldBattleWriter.oser.version = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT) - 1);
 	EXPECT_THROW(oldBattleWriter.oser & *battle(), std::runtime_error);
 	EXPECT_TRUE(oldBattleWriter.extractBuffer().empty());
 	CMemorySerializer oldStartWriter;
-	oldStartWriter.oser.version = ESerializationVersion::NEW_HORIZONS_RELENTLESS_ASSAULT;
+	oldStartWriter.oser.version = oldBattleWriter.oser.version;
 	EXPECT_THROW(oldStartWriter.oser & outgoing, std::runtime_error);
 	EXPECT_TRUE(oldStartWriter.extractBuffer().empty());
 

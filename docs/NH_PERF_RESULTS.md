@@ -1,5 +1,35 @@
 # New Horizons performance experiment — measured results
 
+## Battle-AI exchange cost breakdown (2026-10-11)
+
+A bounded Linux replay of a supplied Normal-difficulty save completed one day
+transition and quit normally. The two AI turns took 7,458 and 4,113 ms. This is
+one sample with uncontrolled OS cache/background load, not a speedup benchmark
+or a native Windows measurement. Its observed 81 battle actions and seven round
+boundaries match the preceding replay in order and payload; this is not full
+game-state equality. The immutable candidate used client SHA-256
+`62a93589a0e43944fd8b0578c85726a596766ddbd96320619902b076b7ebd607`
+and library `9db051dfd5c064e3d1e66bc6eab6936089fd562d3823f95a55b11dfa660015b3`.
+It contained reviewed work atop `c5e99d8cc`, not a clean-commit build.
+
+The opt-in profiler partitions exchange-body wall time into disjoint scopes:
+
+| Battle actor | Membership | Projection setup | Target probes | Applied attacks | Remainder | Body total |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Blue | 48.068 ms | 53.863 ms | 1,840.770 ms | 493.187 ms | 1,113.826 ms | 3,549.714 ms |
+| Tan | 18.296 ms | 20.351 ms | 1,412.995 ms | 274.947 ms | 423.470 ms | 2,150.059 ms |
+| Second neutral opponent | 15.306 ms | 25.937 ms | 290.178 ms | 234.942 ms | 639.720 ms | 1,206.083 ms |
+
+All four callback/selection/movement/body partitions close; body time stays
+within the enclosing exchange and movement-search scopes. Nested scopes must
+not be added to their parents, nor overlapping opposing battle-wall totals to
+turn time. Remainder is subtractive, not an independently measured function.
+Target probes are the largest classified cost for Blue and Tan; the substantial
+remainder still needs attribution. These results do not establish SDL/NHART
+overhead, CPU time, FPS, cache validity or a higher hardware requirement.
+Original save and all 808 frozen candidate files remained unchanged. Testing
+used an isolated silent display; no video recording or concurrent build ran.
+
 ## Instrumentation-off baseline (2026-09-05)
 
 **Five independent real-game starts completed**,22:29:19–22:38:13 UTC, during

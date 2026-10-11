@@ -539,7 +539,10 @@ bool BattleProcessor::makeAutomaticBattleAction(const CBattleInfoCallback & batt
 	const BattleID battleID = battle.getBattle()->getBattleID();
 	const bool result = actionsProcessor->makeAutomaticBattleAction(battle, ba);
 	if(result)
+	{
 		expireStackActivationBonuses(battleID, ba);
+		flowProcessor->onAutomaticUnitActionCompleted(battleID, ba);
+	}
 	return result;
 }
 

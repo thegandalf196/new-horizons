@@ -84,6 +84,11 @@ struct CBattleAI::TimingState
 			" select_movement_search_calls=%llu select_movement_search_us=%llu"
 			" move_find_calls=%llu move_find_us=%llu move_go_calls=%llu move_go_us=%llu move_remainder_us=%llu"
 			" move_find_exchange_subset_calls=%llu move_find_exchange_subset_us=%llu"
+			" exchange_body_subset_calls=%llu exchange_body_subset_us=%llu"
+			" exchange_membership_calls=%llu exchange_membership_us=%llu"
+			" exchange_projection_setup_calls=%llu exchange_projection_setup_us=%llu"
+			" exchange_target_probe_calls=%llu exchange_target_probe_us=%llu"
+			" exchange_applied_attack_calls=%llu exchange_applied_attack_us=%llu exchange_remainder_us=%llu"
 			" move_go_blocking_subset_calls=%llu move_go_blocking_subset_us=%llu"
 			" select_target_exchange_calls=%llu select_target_exchange_us=%llu select_remainder_us=%llu"
 			" hero_action_including_submit_calls=%llu hero_action_including_submit_us=%llu"
@@ -108,6 +113,17 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->movementRemainderMicroseconds),
 			static_cast<unsigned long long>(result->movementFindMoveExchangeSubset.calls),
 			static_cast<unsigned long long>(result->movementFindMoveExchangeSubset.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeBody.calls),
+			static_cast<unsigned long long>(result->movementExchangeBody.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeMembership.calls),
+			static_cast<unsigned long long>(result->movementExchangeMembership.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeProjectionSetup.calls),
+			static_cast<unsigned long long>(result->movementExchangeProjectionSetup.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeTargetProbes.calls),
+			static_cast<unsigned long long>(result->movementExchangeTargetProbes.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeAppliedAttacks.calls),
+			static_cast<unsigned long long>(result->movementExchangeAppliedAttacks.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeRemainderMicroseconds),
 			static_cast<unsigned long long>(result->movementGoBlockingSubset.calls),
 			static_cast<unsigned long long>(result->movementGoBlockingSubset.totalMicroseconds),
 			static_cast<unsigned long long>(result->selectionTargetExchange.calls),
@@ -217,6 +233,13 @@ public:
 			accumulateSelection(state->summary.movementFindMove, movement.findMove);
 			accumulateSelection(state->summary.movementGoTowards, movement.goTowards);
 			accumulateSelection(state->summary.movementFindMoveExchangeSubset, movement.findMoveExchange);
+			const auto & exchange = movement.findMoveExchangeDetails;
+			accumulateSelection(state->summary.movementExchangeBody, exchange.body);
+			accumulateSelection(state->summary.movementExchangeMembership, exchange.membership);
+			accumulateSelection(state->summary.movementExchangeProjectionSetup, exchange.projectionSetup);
+			accumulateSelection(state->summary.movementExchangeTargetProbes, exchange.targetProbes);
+			accumulateSelection(state->summary.movementExchangeAppliedAttacks, exchange.appliedAttacks);
+			state->summary.movementExchangeRemainderMicroseconds += exchange.remainderMicroseconds;
 			accumulateSelection(state->summary.movementGoBlockingSubset, movement.goTowardsBlocking);
 			state->summary.movementRemainderMicroseconds += selectionTotals.movementSearch.totalMicroseconds
 				- movement.findMove.totalMicroseconds - movement.goTowards.totalMicroseconds;

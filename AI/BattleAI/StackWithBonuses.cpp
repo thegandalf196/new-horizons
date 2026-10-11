@@ -28,6 +28,7 @@
 #include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
@@ -39,6 +40,7 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
+#include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/modding/IdentifierStorage.h"
 #include "../../lib/modding/ModScope.h"
@@ -103,6 +105,23 @@ bool timedProjectionEffect(const Bonus * bonus,
 	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory)
 {
 	return Bonus::NTurns(bonus) && isCapturedProjectionEffect(bonus, groupHistory);
+}
+
+bool hasTimedMagicalSpellEffects(const IBonusBearer & bearer)
+{
+	return newHorizonsSorcery::isSpellLocked(bearer) || bearer.hasBonus(CSelector([](const Bonus * bonus)
+	{
+		return bonus && bonus->turnsRemain > 0
+			&& (newHorizonsSorcery::isPreservedSpellLockEffect(bonus, true)
+				|| newHorizonsSorcery::isPreservedSpellLockEffect(bonus, false));
+	}));
+}
+
+bool isActivationClockPlague(const Bonus * bonus)
+{
+	static const SpellID plague(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)));
+	return bonus && bonus->source == BonusSource::SPELL_EFFECT
+		&& bonus->sid == BonusSourceID(plague) && bonus->type == BonusType::COMBAT_EVENT_TRIGGER;
 }
 
 bool isGuardianSpiritBonus(const Bonus * bonus)
@@ -291,10 +310,13 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	localInit(Owner);
 
 	battle::CUnitState::operator=(*Stack);
+	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
+	if(snapshotSpellTimers)
+		captureLocalSpellEffects();
 	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
 		|| hasElementalMemory(*this)
 		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
-		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)))
+		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers)
 		captureEffects();
 }
 
@@ -318,10 +340,13 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
+	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
+	if(snapshotSpellTimers)
+		captureLocalSpellEffects();
 	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
 		|| hasElementalMemory(*this)
 		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
-		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)))
+		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers)
 		captureEffects();
 }
 
@@ -952,14 +977,24 @@ void StackWithBonuses::advanceTimedRound()
 		++treeVersionLocal;
 		return;
 	}
-	const auto age = [this](std::vector<Bonus> & bonuses)
+	// Read the seal and polarity before its own final round expires. These
+	// immutable values apply equally to stacked, source-local and raw aliases.
+	const auto preservedPolarity = newHorizonsSorcery::spellLockPreservesBeneficial(*this);
+	const bool sealed = newHorizonsSorcery::isSpellLocked(*this) && preservedPolarity.has_value();
+	const auto roundTimed = [this, sealed, preservedPolarity](const Bonus * bonus)
+	{
+		return timedProjectionEffect(bonus, capturedPhysicalAfflictionGroups)
+			&& !isActivationClockPlague(bonus)
+			&& !(sealed && newHorizonsSorcery::isPreservedSpellLockEffect(bonus, *preservedPolarity));
+	};
+	const auto age = [&roundTimed](std::vector<Bonus> & bonuses)
 	{
 		for(auto & bonus : bonuses)
-			if(timedProjectionEffect(&bonus, capturedPhysicalAfflictionGroups) && bonus.turnsRemain > 0)
+			if(roundTimed(&bonus) && bonus.turnsRemain > 0)
 				--bonus.turnsRemain;
-		vstd::erase_if(bonuses, [this](const Bonus & bonus)
+		vstd::erase_if(bonuses, [&roundTimed](const Bonus & bonus)
 		{
-			return timedProjectionEffect(&bonus, capturedPhysicalAfflictionGroups) && bonus.turnsRemain <= 0;
+			return roundTimed(&bonus) && bonus.turnsRemain <= 0;
 		});
 	};
 	age(*projectedEffects);
@@ -972,7 +1007,7 @@ void StackWithBonuses::advanceTimedRound()
 		std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> branchCopies;
 		for(auto & bonus : *projectedUnstackedEffects)
 		{
-			if(!bonus || !timedProjectionEffect(bonus.get(), capturedPhysicalAfflictionGroups)
+			if(!bonus || !roundTimed(bonus.get())
 				|| bonus->turnsRemain <= 0)
 				continue;
 			auto [copy, inserted] = branchCopies.try_emplace(bonus.get());
@@ -983,9 +1018,9 @@ void StackWithBonuses::advanceTimedRound()
 		for(const auto & copy : branchCopies)
 			if(copy.second->turnsRemain > 0)
 				--copy.second->turnsRemain;
-		vstd::erase_if(*projectedUnstackedEffects, [this](const std::shared_ptr<Bonus> & bonus)
+		vstd::erase_if(*projectedUnstackedEffects, [&roundTimed](const std::shared_ptr<Bonus> & bonus)
 		{
-			return !bonus || (timedProjectionEffect(bonus.get(), capturedPhysicalAfflictionGroups)
+			return !bonus || (roundTimed(bonus.get())
 				&& bonus->turnsRemain <= 0);
 		});
 	}
@@ -1039,6 +1074,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	{
 		elementalRebirthSpawnUnitIds = parent->elementalRebirthSpawnUnitIds;
 		projectedPrimalBurstHits = parent->projectedPrimalBurstHits;
+		projectedPlagueHits = parent->projectedPlagueHits;
 		bloodrageFirstBloodUsed = parent->bloodrageFirstBloodUsed;
 	}
 	else if(const auto * concrete = dynamic_cast<const BattleInfo *>(realBattle->getBattle()))
@@ -1126,6 +1162,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	// Likewise, capture current Morale origin before the parent can advance.
 	for(const auto * unit : realBattle->battleGetAllUnits(false))
 		if(unit->unitId() == static_cast<uint32_t>(activeUnitId)
+			|| hasTimedMagicalSpellEffects(*unit)
 			|| newHorizonsFrozen::isFrozen(*unit)
 			|| (dynamic_cast<const battle::CUnitState *>(unit)
 				&& dynamic_cast<const battle::CUnitState *>(unit)->moraleExtraActivation))
@@ -2531,6 +2568,19 @@ bool HypotheticBattle::projectEarnedMoraleActivation(uint32_t unitId)
 
 void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
+	nextTurnImpl(unitId, reason, false);
+}
+
+void HypotheticBattle::nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason)
+{
+	const auto * unit = battleGetUnitByID(unitId);
+	if(!unit || !newHorizonsFrozen::forfeitsNormalActivation(*unit, reason))
+		throw std::invalid_argument("Deferred Frozen thaw requires a Frozen normal forfeiture");
+	nextTurnImpl(unitId, reason, true);
+}
+
+void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw)
+{
 	if(reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
 	{
 		activeUnitId = static_cast<int32_t>(unitId);
@@ -2704,7 +2754,8 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	if(frozenNormalSlot)
 	{
 		unit->movedThisRound = true;
-		unit->removeUnitBonus(newHorizonsFrozen::removalPlan(*unit));
+		if(!deferFrozenThaw)
+			unit->removeUnitBonus(newHorizonsFrozen::removalPlan(*unit));
 	}
 }
 
@@ -3571,6 +3622,19 @@ void HypotheticBattle::HypotheticServerCallback::apply(SetStackEffect & pack)
 
 void HypotheticBattle::HypotheticServerCallback::apply(StacksInjured & pack)
 {
+	std::vector<ProjectedPlagueHit> plagueHits;
+	static const SpellID plagueSpell(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)));
+	for(const auto & hit : pack.stacks)
+	{
+		if(!(hit.flags & BattleStackAttacked::SPELL_EFFECT) || hit.spellID != plagueSpell || hit.damageAmount <= 0)
+			continue;
+		const auto target = owner->getForUpdate(hit.stackAttacked);
+		if(!target || !target->alive())
+			continue;
+		auto snapshot = std::make_shared<StackWithBonuses>(owner, target.get());
+		snapshot->freezeDamageScoringBonusSnapshot();
+		plagueHits.push_back({snapshot, owner->battleGetOwner(target.get()), hit.damageAmount});
+	}
 	struct PendingRebirth
 	{
 		newHorizonsElementalRebirth::DeathSnapshot snapshot;
@@ -3599,6 +3663,8 @@ void HypotheticBattle::HypotheticServerCallback::apply(StacksInjured & pack)
 		owner->projectElementalRebirth(unit.get(), pending.snapshot, hitKilled,
 			pending.cloneKilled, pending.nativeRebirth);
 	}
+	// Publish only after successful state application and its existing rebirth handling.
+	owner->projectedPlagueHits.insert(owner->projectedPlagueHits.end(), plagueHits.begin(), plagueHits.end());
 }
 
 void HypotheticBattle::HypotheticServerCallback::apply(BattleObstaclesChanged & pack)

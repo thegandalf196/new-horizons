@@ -90,6 +90,13 @@ public:
 		uint64_t movementRemainderMicroseconds = 0;
 		/// Nested, nonadditive subsets of their corresponding movement functions.
 		StageTiming movementFindMoveExchangeSubset;
+		/// Disjoint regions inside the measured findMove calculateExchange body.
+		StageTiming movementExchangeBody;
+		StageTiming movementExchangeMembership;
+		StageTiming movementExchangeProjectionSetup;
+		StageTiming movementExchangeTargetProbes;
+		StageTiming movementExchangeAppliedAttacks;
+		uint64_t movementExchangeRemainderMicroseconds = 0;
 		StageTiming movementGoBlockingSubset;
 		StageTiming selectionTargetExchange;
 		uint64_t selectionRemainderMicroseconds = 0;

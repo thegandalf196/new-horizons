@@ -22,6 +22,7 @@
 #include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsPlague.h"
 
 #include <tbb/parallel_for.h>
 #include <chrono>
@@ -40,12 +41,64 @@ public:
 	{}
 	~MovementExchangeScope()
 	{
+		finish();
+	}
+	void finish()
+	{
 		if(timing)
 		{
 			++timing->calls;
 			timing->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
 				Clock::now() - started).count();
+			timing = nullptr;
 		}
+	}
+};
+
+class ExchangeTimingScope
+{
+	using Clock = std::chrono::steady_clock;
+	using ExchangeTiming = BattleMovementTiming::ExchangeTiming;
+	using StageTiming = BattleMovementTiming::StageTiming;
+	ExchangeTiming * timing;
+	ExchangeTiming local;
+	Clock::time_point started;
+public:
+	explicit ExchangeTimingScope(ExchangeTiming * timing)
+		: timing(timing), started(timing ? Clock::now() : Clock::time_point{})
+	{}
+	ExchangeTimingScope(const ExchangeTimingScope &) = delete;
+	ExchangeTimingScope & operator=(const ExchangeTimingScope &) = delete;
+	StageTiming * stage(StageTiming ExchangeTiming::* member)
+	{
+		return timing ? &(local.*member) : nullptr;
+	}
+	template<typename Callable>
+	decltype(auto) measure(StageTiming ExchangeTiming::* member, Callable && action)
+	{
+		MovementExchangeScope measurement(stage(member));
+		return std::forward<Callable>(action)();
+	}
+	~ExchangeTimingScope()
+	{
+		if(!timing)
+			return;
+		local.body.calls = 1;
+		local.body.totalMicroseconds = std::chrono::duration_cast<std::chrono::microseconds>(
+			Clock::now() - started).count();
+		uint64_t classified = 0;
+		for(auto member : {&ExchangeTiming::membership, &ExchangeTiming::projectionSetup,
+			&ExchangeTiming::targetProbes, &ExchangeTiming::appliedAttacks})
+		{
+			const auto & sample = local.*member;
+			auto & aggregate = (*timing).*member;
+			aggregate.calls += sample.calls;
+			aggregate.totalMicroseconds += sample.totalMicroseconds;
+			classified += sample.totalMicroseconds;
+		}
+		timing->body.calls += local.body.calls;
+		timing->body.totalMicroseconds += local.body.totalMicroseconds;
+		timing->remainderMicroseconds += local.body.totalMicroseconds - classified;
 	}
 };
 
@@ -313,6 +366,30 @@ MoveTarget::MoveTarget()
 	: positions(), cachedAttack(), score(EvaluationResult::INEFFECTIVE_SCORE)
 {
 	turnsToReach = 1;
+}
+
+void BattleExchangeVariant::completePlagueActivation(uint32_t unitId, PlayerColor referenceController,
+	bool referenceActorIsOurs, DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb)
+{
+	const auto firstHit = hb->getProjectedPlagueHits().size();
+	const auto rebirthBefore = hb->getElementalRebirthSpawnUnitIds();
+	const auto firstPrimalBurstHit = hb->getProjectedPrimalBurstHits().size();
+	const auto actor = hb->getForUpdate(unitId);
+	newHorizonsPlague::completeActivation(*hb, *hb->getServerCallback(), unitId);
+	const auto & hits = hb->getProjectedPlagueHits();
+	for(size_t index = firstHit; index < hits.size(); ++index)
+	{
+		const auto & hit = hits[index];
+		const auto value = AttackPossibility::calculateDamageReduce(nullptr, hit.preHitTarget.get(),
+			static_cast<uint64_t>(hit.finalizedDamage), damageCache, hb);
+		const bool targetIsOurs = (hit.targetController == referenceController) == referenceActorIsOurs;
+		if(targetIsOurs)
+			dpsScore.ourDamageReduce += value;
+		else
+			dpsScore.enemyDamageReduce += value;
+	}
+	accountForNewElementalRebirthSpawns(rebirthBefore, actor.get(), referenceActorIsOurs, damageCache, hb);
+	accountForNewPrimalBurstHits(firstPrimalBurstHit, referenceController, referenceActorIsOurs, damageCache, hb);
 }
 
 float BattleExchangeVariant::trackAttack(
@@ -1375,7 +1452,8 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 
 			auto score = measureMovementExchange(timing, [&]()
 			{
-				return calculateExchange(attack, turnsToReach, targets, damageCache, hb);
+				return calculateExchange(attack, turnsToReach, targets, damageCache, hb, {},
+					timing ? &timing->findMoveExchangeDetails : nullptr);
 			});
 
 			score.enemyDamageReduce *= multiplier;
@@ -1431,7 +1509,8 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 										targets,
 										damageCache,
 										hb,
-										adjacentStacks);
+										adjacentStacks,
+										timing ? &timing->findMoveExchangeDetails : nullptr);
 								});
 
 								if(scoreValue(bypassScore) > result.score)
@@ -1623,8 +1702,10 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 	PotentialTargets & targets,
 	DamageCache & damageCache,
 	std::shared_ptr<HypotheticBattle> hb,
-	const battle::Units & additionalUnits) const
+	const battle::Units & additionalUnits,
+	BattleMovementTiming::ExchangeTiming * timing) const
 {
+	ExchangeTimingScope measurement(timing);
 #if BATTLE_TRACE_LEVEL>=1
 	logAi->trace("Battle exchange at %d", ap.attack.shooting ? ap.dest.toInt() : ap.from.toInt());
 #endif
@@ -1642,13 +1723,17 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 	if(hb->battleGetUnitByID(ap.attack.defender->unitId())->alive())
 		enemyStacks.push_back(ap.attack.defender);
 
-	ReachabilityData exchangeUnits = getExchangeUnits(ap, turn, targets, hb, additionalUnits);
+	ReachabilityData exchangeUnits = measurement.measure(&BattleMovementTiming::ExchangeTiming::membership, [&]()
+	{
+		return getExchangeUnits(ap, turn, targets, hb, additionalUnits);
+	});
 
 	if(exchangeUnits.units.empty())
 	{
 		return BattleScore();
 	}
 
+	MovementExchangeScope setupMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::projectionSetup));
 	auto exchangeBattle = std::make_shared<HypotheticBattle>(env.get(), hb);
 	BattleExchangeVariant v;
 
@@ -1674,6 +1759,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 		}
 	}
 
+	setupMeasurement.finish();
 	bool canUseAp = true;
 
 	std::set<uint32_t> blockedShooters;
@@ -1717,7 +1803,12 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			const bool frozenForfeits = !initialChosenUnit
 				&& newHorizonsFrozen::forfeitsNormalActivation(*attacker, BattleUnitTurnReason::TURN_QUEUE);
 			if(!initialChosenUnit)
-				exchangeBattle->nextTurn(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+			{
+				if(frozenForfeits)
+					exchangeBattle->nextTurnPreservingFrozenForfeit(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+				else
+					exchangeBattle->nextTurn(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+			}
 			bool fortuneActivation = true;
 			auto finishFortuneActivation = [&]()
 			{
@@ -1730,8 +1821,25 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			};
 			if(frozenForfeits)
 			{
+				const auto frozen = newHorizonsFrozen::removalPlan(*attacker);
+				attacker->removeUnitBonus(CSelector([](const Bonus * bonus)
+				{
+					return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
+				}));
+				attacker->consumeNoQuarterActivation();
+				v.completePlagueActivation(attacker->unitId(), exchangeBattle->battleGetOwner(attacker.get()),
+					isOur, damageCache, exchangeBattle);
+				const auto current = exchangeBattle->getForUpdate(attacker->unitId());
+				if(current->alive() && !current->isGhost() && !current->isTimeStopped()
+					&& newHorizonsFrozen::isFrozen(*current))
+					current->removeUnitBonus(frozen);
 				finishFortuneActivation();
 				continue;
+			}
+			if(attacker->armorerLastStandEndedActivation)
+			{
+				finishFortuneActivation();
+				continue; // No trackAttack application can occur for this actor.
 			}
 
 			if(isMovingTurm && !shooting
@@ -1754,14 +1862,11 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				auto estimateAttack = [&](const battle::Unit * u) -> float
 				{
 					auto stackWithBonuses = exchangeBattle->getForUpdate(u->unitId());
-					auto score = v.trackAttack(
-						attacker,
-						stackWithBonuses,
-						shooting,
-						isOur,
-						damageCache,
-						exchangeBattle,
-						true);
+					const auto score = measurement.measure(&BattleMovementTiming::ExchangeTiming::targetProbes, [&]()
+					{
+						return v.trackAttack(attacker, stackWithBonuses, shooting, isOur,
+							damageCache, exchangeBattle, true);
+					});
 
 #if BATTLE_TRACE_LEVEL>=2
 					logAi->trace("Best target selector %s->%s score = %2f", attacker->getDescription(), stackWithBonuses->getDescription(), score);
@@ -1857,13 +1962,19 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			if(canUseAp && activeUnit->unitId() == ap.attack.attacker->unitId()
 				&& targetUnit->unitId() == ap.attack.defender->unitId())
 			{
-				v.trackAttack(ap, exchangeBattle, damageCache);
+				measurement.measure(&BattleMovementTiming::ExchangeTiming::appliedAttacks, [&]()
+				{
+					return v.trackAttack(ap, exchangeBattle, damageCache);
+				});
 			}
 			else
 			{
 				for(int i = 0; i < totalAttacks; i++)
 				{
-					v.trackAttack(attacker, defender, shooting, isOur, damageCache, exchangeBattle, false, i == 0);
+					measurement.measure(&BattleMovementTiming::ExchangeTiming::appliedAttacks, [&]()
+					{
+						return v.trackAttack(attacker, defender, shooting, isOur, damageCache, exchangeBattle, false, i == 0);
+					});
 
 					if(!attacker->alive() || !defender->alive())
 						break;
@@ -1872,6 +1983,18 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 
 			if(!shooting)
 				blockedShooters.insert(defender->unitId());
+			// Only the applied attack is a completed action; speculative
+			// movement/no-target exits above must not run affliction ticks.
+			if(!attacker->isTimeStopped() && attacker->pursuitMovementRemaining == 0
+				&& !exchangeBattle->battleHasPendingRangedFollowUp(attacker.get()))
+			{
+				attacker->removeUnitBonus(CSelector([](const Bonus * bonus)
+				{
+					return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
+				}));
+				v.completePlagueActivation(attacker->unitId(), exchangeBattle->battleGetOwner(attacker.get()),
+					isOur, damageCache, exchangeBattle);
+			}
 			finishFortuneActivation();
 
 			canUseAp = false;

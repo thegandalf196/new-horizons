@@ -201,6 +201,13 @@ struct ProjectedPrimalBurstHit
 	int64_t actualDamage = 0;
 };
 
+struct ProjectedPlagueHit
+{
+	std::shared_ptr<const StackWithBonuses> preHitTarget;
+	PlayerColor targetController;
+	int64_t finalizedDamage = 0;
+};
+
 struct ProjectedOverwatchHit
 {
 	uint32_t shooterId = 0;
@@ -505,6 +512,8 @@ public:
 
 	void nextRound() override;
 	void nextTurn(uint32_t unitId, BattleUnitTurnReason reason) override;
+	/// Begin a proven Frozen normal forfeiture without thawing before its end effects.
+	void nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason);
 	/// Explicit accepted positive-Morale projection, not an RNG or reason-based grant.
 	bool projectEarnedMoraleActivation(uint32_t unitId);
 
@@ -537,6 +546,7 @@ public:
 		const newHorizonsElementalRebirth::DeathSnapshot & snapshot, bool hitKilled,
 		bool cloneKilled, bool nativeRebirth);
 	const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const { return elementalRebirthSpawnUnitIds; }
+	const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const { return projectedPlagueHits; }
 	bool isElementalRebirthSpawn(uint32_t unitId) const { return elementalRebirthSpawnUnitIds.contains(unitId); }
 	const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const
 	{
@@ -567,11 +577,14 @@ public:
 
 private:
 	/// IDs created by this branch's Elemental Rebirth projection; never serialized.
+	void nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw);
 	newHorizonsCrisisCommand::State crisisCommand;
 	std::set<uint32_t> elementalRebirthSpawnUnitIds;
 	/// Actual magical HP losses from the accepted projected Primal Burst batches.
 	/// Pre-hit snapshots are owned so branch copies don't borrow mutable/live units.
 	std::vector<ProjectedPrimalBurstHit> projectedPrimalBurstHits;
+	/// AI-only finalized injury receipts; immutable targets are copied with branches.
+	std::vector<ProjectedPlagueHit> projectedPlagueHits;
 	BattleDeploymentState deploymentState;
 	BattleSideArray<RapidResponseState> rapidResponseStates;
 	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;

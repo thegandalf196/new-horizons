@@ -104,6 +104,9 @@ public:
 		bool allowRetaliation = true);
 
 	const BattleScore & getScore() const { return dpsScore; }
+	/// Complete an already applied action and score only its newly finalized Plague injury.
+	void completePlagueActivation(uint32_t unitId, PlayerColor referenceController, bool referenceActorIsOurs,
+		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb);
 
 private:
 	void accountForNewElementalRebirthSpawns(const std::set<uint32_t> & idsBefore,
@@ -154,9 +157,21 @@ struct DLL_LINKAGE BattleMovementTiming
 		uint64_t calls = 0;
 		uint64_t totalMicroseconds = 0;
 	};
+	/// Disjoint regions within one calculateExchange body, not additional movement time.
+	struct DLL_LINKAGE ExchangeTiming
+	{
+		StageTiming body;
+		StageTiming membership;
+		StageTiming projectionSetup;
+		StageTiming targetProbes;
+		/// Counts trackAttack invocations; the initial AP invocation may replay multiple strikes.
+		StageTiming appliedAttacks;
+		uint64_t remainderMicroseconds = 0;
+	};
 	StageTiming findMove;
 	StageTiming goTowards;
 	StageTiming findMoveExchange;
+	ExchangeTiming findMoveExchangeDetails;
 	StageTiming goTowardsBlocking;
 };
 
@@ -178,7 +193,8 @@ private:
 		PotentialTargets & targets,
 		DamageCache & damageCache,
 		std::shared_ptr<HypotheticBattle> hb,
-		const battle::Units & additionalUnits = {}) const;
+		const battle::Units & additionalUnits = {},
+		BattleMovementTiming::ExchangeTiming * timing = nullptr) const;
 
 	bool canBeHitThisTurn(const AttackPossibility & ap);
 

@@ -15,6 +15,7 @@
 
 class CBattleInfoCallback;
 class JsonNode;
+class ServerCallback;
 struct Bonus;
 
 namespace battle
@@ -24,6 +25,12 @@ class Unit;
 
 namespace newHorizonsPlague
 {
+/// Applies the existing end-of-completed-activation affliction packets in order.
+/// Callers establish actual completion (not Wait, a free cast, or a continuation).
+/// The current marker deduplicates same-round extras; Time Stop remains paused.
+DLL_LINKAGE void completeActivation(const CBattleInfoCallback & battle,
+	ServerCallback & server, uint32_t unitId);
+
 constexpr std::string_view SPELL_ID = "new-horizons:plague";
 inline constexpr auto SKILL = "new-horizons:shadowMagic";
 inline constexpr auto PLAGUEBEARER = "new-horizons:shadowMagic.plaguebearer";

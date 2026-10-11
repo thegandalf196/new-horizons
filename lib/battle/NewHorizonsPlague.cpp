@@ -16,6 +16,10 @@
 #include "../spells/CSpell.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSorcery.h"
+#include "../spells/NewHorizonsOverwhelmingFormula.h"
+#include "../networkPacks/SetStackEffect.h"
+#include <vcmi/ServerCallback.h>
 #include "../bonuses/BonusParameters.h"
 #include <cmath>
 #include <limits>
@@ -161,9 +165,14 @@ bool isSpreadRecipientReceptive(const CBattleInfoCallback & battle, BattleSide c
 {
 	if(!recipient || !recipient->alive() || !recipient->isValidTarget(false) || recipient->isInvincible())
 		return false;
+	const auto * battleInfo = battle.getBattle();
+	if(!battleInfo || (casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER))
+		return false;
 
 	const auto * spell = plagueSpell();
-	const auto * caster = battle.battleGetFightingHero(casterSide);
+	// Internal rule resolution needs the captured caster even when the public
+	// player-scoped hero accessor deliberately hides the opposing side.
+	const auto * caster = battleInfo->getSideHero(casterSide);
 	if(!spell || !caster)
 		return false;
 
@@ -182,6 +191,186 @@ int64_t rawTickDamage(const int32_t rawSpellPower, const int32_t coefficientBasi
 		/ (10 * SPELL_POWER_COEFFICIENT_BASIS_POINTS);
 }
 
+void completeActivation(const CBattleInfoCallback & battle, ServerCallback & server, uint32_t unitId)
+{
+	const auto * stack = battle.battleGetUnitByID(unitId);
+	if(!stack || stack->isTimeStopped())
+		return;
+	const auto bonuses = stack->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(plagueSpellId())).And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER)));
+	const auto marker = bonuses->empty() ? std::shared_ptr<const Bonus>{} : bonuses->front();
+	if(!marker)
+		return; // Dispel or natural completion has removed the authoritative status.
+
+	BattleSide casterSide = stack->unitSide();
+	int32_t spreadAttempts = 0;
+	int32_t lastProcessedRound = -1;
+	int32_t sourceUnitId = -1;
+	JsonNode parameters;
+	if(marker->parameters)
+	{
+		try
+		{
+			parameters = marker->parameters->toCustom<JsonNode>();
+			if(parameters.isStruct())
+			{
+				if(parameters["casterSide"].isNumber())
+					casterSide = static_cast<BattleSide>(parameters["casterSide"].Integer());
+				if(parameters["spreadAttempts"].isNumber())
+					spreadAttempts = std::max<int32_t>(0, parameters["spreadAttempts"].Integer());
+				if(parameters["lastProcessedRound"].isNumber())
+					lastProcessedRound = parameters["lastProcessedRound"].Integer();
+				if(parameters["sourceUnitId"].isNumber())
+					sourceUnitId = parameters["sourceUnitId"].Integer();
+			}
+		}
+		catch(const std::exception &)
+		{
+			// A legacy or malformed marker retains the safe defaults above.
+		}
+	}
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		casterSide = stack->unitSide();
+	const auto currentRound = battle.battleGetRound();
+	if(lastProcessedRound >= currentRound)
+		return; // Morale/Second Wind and other extra activations still tick once per round.
+
+	const auto rawDamage = std::max<int64_t>(0, marker->val);
+	const auto adjustedDamage = newHorizonsPlague::adjustedTickDamage(
+		battle, casterSide, stack, rawDamage, &parameters["mdrPenetration"]);
+	int64_t actualDamage = 0;
+	if(stack->alive() && adjustedDamage > 0)
+	{
+		auto state = stack->acquireState();
+		BattleStackAttacked hit;
+		const auto * source = sourceUnitId >= 0 ? battle.battleGetUnitByID(static_cast<uint32_t>(sourceUnitId)) : nullptr;
+		if(!source || source->unitSide() != casterSide)
+			for(const auto * candidate : battle.battleGetAllUnits(true))
+				if(candidate && candidate->unitSide() == casterSide)
+				{
+					source = candidate;
+					break;
+				}
+		hit.attackerID = source ? source->unitId() : stack->unitId();
+		hit.stackAttacked = stack->unitId();
+		hit.damageAmount = adjustedDamage;
+		hit.flags = BattleStackAttacked::SPELL_EFFECT;
+		hit.spellID = plagueSpellId();
+		CStack::prepareAttacked(hit, *server.getRNG(), state,
+			false, false, battle::DamageProvenance::SPELL);
+		actualDamage = hit.damageAmount;
+		StacksInjured injury;
+		injury.battleID = battle.getBattle()->getBattleID();
+		injury.stacks.push_back(hit);
+		if(auto claim = spells::overwhelmingFormulaClaim(battle, plagueSpellId().toSpell(),
+			parameters["mdrPenetration"], injury.stacks))
+			server.apply(*claim);
+		server.apply(injury);
+		// A detached callback may replace a borrowed source view with its own
+		// post-hit state. Read alive/position/countdown from that current owner.
+		stack = battle.battleGetUnitByID(unitId);
+		if(!stack)
+			return;
+	}
+
+	BattleLogMessage tickLog;
+	tickLog.battleID = battle.getBattle()->getBattleID();
+	MetaString tickLine;
+	tickLine.appendRawString("Plague deals ");
+	tickLine.appendNumber(actualDamage);
+	tickLine.appendRawString(" magical damage to %s.");
+	stack->addNameReplacement(tickLine, stack->getCount());
+	tickLog.lines.push_back(std::move(tickLine));
+	server.apply(tickLog);
+
+	// Damage precedes each tick's captured propagation allowance. A lethal
+	// final tick still propagates before its source status is discarded.
+	const auto propagationLimit = newHorizonsPlague::capturedPropagationLimit(*marker);
+	for(int32_t recipient = 0; recipient < propagationLimit; ++recipient)
+	{
+		const auto spreadTargetId = newHorizonsPlague::selectNextSpreadTarget(battle, stack,
+			[&battle, casterSide](const battle::Unit * candidate)
+			{
+				return newHorizonsPlague::isSpreadRecipientReceptive(battle, casterSide, candidate);
+			});
+		if(!spreadTargetId) break;
+		if(spreadTargetId)
+		{
+			const auto * spreadTarget = battle.battleGetUnitByID(*spreadTargetId);
+			if(spreadTarget)
+			{
+				Bonus infection(*marker);
+				infection.turnsRemain = 3;
+				const auto infectionRound = battle.battleGetRound();
+				if(infection.parameters)
+				{
+					try
+					{
+						JsonNode spreadParameters = infection.parameters->toCustom<JsonNode>();
+						spreadParameters["spreadAttempts"].Integer() = 0;
+						spreadParameters["lastProcessedRound"].Integer() = infectionRound - 1;
+						infection.parameters = std::make_shared<BonusParameters>(spreadParameters);
+					}
+					catch(const std::exception &)
+					{
+						// Keep inherited parameters when loading a malformed legacy marker.
+					}
+				}
+				SetStackEffect addInfection;
+				addInfection.battleID = battle.getBattle()->getBattleID();
+				addInfection.toAdd.emplace_back(spreadTarget->unitId(), std::vector<Bonus>{infection});
+				server.apply(addInfection);
+				if(!newHorizonsPlague::hasPlague(battle.battleGetUnitByID(*spreadTargetId)))
+					break; // Advance only after the authoritative infection is present.
+
+				BattleLogMessage spreadLog;
+				spreadLog.battleID = battle.getBattle()->getBattleID();
+				MetaString spreadLine;
+				spreadLine.appendRawString(casterSide == spreadTarget->unitSide()
+					? "Plague spreads to a friendly stack, %s."
+					: "Plague spreads to an enemy stack, %s.");
+				spreadTarget->addNameReplacement(spreadLine, spreadTarget->getCount());
+				spreadLog.lines.push_back(std::move(spreadLine));
+				server.apply(spreadLog);
+			}
+		}
+
+	}
+	SetStackEffect statusUpdate;
+	statusUpdate.battleID = battle.getBattle()->getBattleID();
+	const bool durationPaused = newHorizonsSorcery::durationPausedBySpellLock(*stack, *marker);
+	if(stack->alive() && (marker->turnsRemain > 1 || (durationPaused && marker->turnsRemain > 0)))
+	{
+		Bonus nextStatus(*marker);
+		nextStatus.turnsRemain = marker->turnsRemain - (durationPaused ? 0 : 1);
+		JsonNode nextParameters;
+		if(marker->parameters)
+		{
+			try
+			{
+				nextParameters = marker->parameters->toCustom<JsonNode>();
+			}
+			catch(const std::exception &)
+			{
+			}
+		}
+		nextParameters["casterSide"].Integer() = static_cast<int32_t>(casterSide);
+		nextParameters["spreadAttempts"].Integer() = spreadAttempts < std::numeric_limits<int32_t>::max()
+			? spreadAttempts + 1 : spreadAttempts;
+		nextParameters["lastProcessedRound"].Integer() = currentRound;
+		if(sourceUnitId >= 0)
+			nextParameters["sourceUnitId"].Integer() = sourceUnitId;
+		nextStatus.parameters = std::make_shared<BonusParameters>(nextParameters);
+		// updateUnitBonus only extends turnsRemain and leaves parameters untouched.
+		// Remove+add is therefore required to persist the round marker and countdown.
+		statusUpdate.toRemove.emplace_back(stack->unitId(), std::vector<Bonus>{*marker});
+		statusUpdate.toAdd.emplace_back(stack->unitId(), std::vector<Bonus>{std::move(nextStatus)});
+	}
+	else
+		statusUpdate.toRemove.emplace_back(stack->unitId(), std::vector<Bonus>{*marker});
+	server.apply(statusUpdate);
+}
+
 int64_t adjustedTickDamage(const CBattleInfoCallback & battle, BattleSide casterSide,
 	const battle::Unit * target, const int64_t rawDamage, const JsonNode * capturedPenetration)
 {
@@ -191,10 +380,13 @@ int64_t adjustedTickDamage(const CBattleInfoCallback & battle, BattleSide caster
 	if(!spell)
 		return 0;
 
-	const spells::Caster * caster = battle.battleGetFightingHero(casterSide);
+	const auto * battleInfo = battle.getBattle();
+	if(!battleInfo || (casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER))
+		return rawDamage;
+	const spells::Caster * caster = battleInfo->getSideHero(casterSide);
 	if(!caster)
 	{
-		for(const auto * unit : battle.battleGetAllStacks(true))
+		for(const auto * unit : battle.battleGetAllUnits(true))
 			if(unit && unit->unitSide() == casterSide)
 			{
 				caster = unit;

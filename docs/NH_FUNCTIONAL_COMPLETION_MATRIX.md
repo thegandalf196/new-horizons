@@ -1,12 +1,13 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-10-10
+Updated: 2026-10-11
 
 Current phase: **Phase 2 — Stabilization and Integration**. The root adopted
 the [Phase 1 exit audit](NH_PHASE1_EXIT_AUDIT.md) after independent clause/evidence
-reconciliation and the repaired Frozen principal path. The source-pinned 0.85
-Windows/Linux preview is published; actual public player downloads match their
-accepted hashes. Earlier pending/withdrawn entries below remain historical.
+reconciliation and the repaired Frozen principal path. The original source-pinned
+0.85 Windows/Linux preview was subsequently withdrawn. Its download-verification
+evidence and earlier pending/withdrawn entries below remain historical, not a
+description of a currently available release.
 Counts are implementation accounting, not blanket integration certification.
 
 Runtime finding and repair: a separate ordinary probe verifies the full
@@ -327,11 +328,13 @@ framework families and six specialty families with retained-baseline and
 conditional-source exceptions kept explicit. No additional principal omission
 is demonstrated in that scope; unauthored replacement armies are not invented.
 
-Deferred Phase2 defect: Plague's independent activation-end countdown bypasses
-Spell Lock's preserved-duration pause. Its ordinary damage/spread and Spell
-Lock's ordinary filtering exist; the missing lifetime adapter is recorded, not
-hidden by the spell totals. Future focused control must keep the locked Plague
-tick but pause its remaining duration, then resume after the seal expires.
+The Plague/Spell Lock countdown defect is repaired. A shared activation-completion
+adapter preserves hostile-locked duration while applying damage and propagation
+once per round, including automatic normal-slot forfeitures. The current focused
+39-case native gate passes server completion, detached attack/Frozen completion,
+captured mitigation, lethal propagation and timer isolation. This is not complete
+AI action coverage: Defend/creature-cast and explicit movement projections,
+compound control and whole-game save/resume remain separate integration work.
 
 New principal crash found by the Frozen acceptance setup: a bare creature popup
 before gameplay unconditionally dereferences the absent player interface while

@@ -1701,12 +1701,91 @@ bool BattleInfo::hasNoQuarterState() const
 			return false;
 		if(stack->noQuarterMoraleActivationsRemaining > 0)
 			return true;
-		const auto bonuses = stack->getAllBonuses(CSelector([](const Bonus * bonus)
+		// BattleStart preflight also runs on decoded, still-unbound descriptors.
+		const auto & exported = stack->getExportedBonusList();
+		return std::any_of(exported.begin(), exported.end(), [](const auto & bonus)
 		{
-			return newHorizonsOffense::isNoQuarterBonus(bonus);
-		}));
-		return bonuses && !bonuses->empty();
+			return bonus && newHorizonsOffense::isNoQuarterBonus(bonus.get());
+		});
 	});
+}
+
+void BattleInfo::validateNoQuarterLifetimeSerialization(bool supported) const
+{
+	std::set<uint32_t> ids;
+	for(const auto & stack : stacks)
+	{
+		if(!stack)
+			throw std::runtime_error("Null unit in No Quarter lifetime context");
+		if(!ids.insert(stack->unitId()).second)
+			throw std::runtime_error("Duplicate unit in No Quarter lifetime context");
+		const int32_t remaining = stack->noQuarterMoraleActivationsRemaining;
+		// This receipt belongs to the stack's serialized local marker. Decoded
+		// BattleStart descriptors need not have exported their bonus graph yet.
+		const auto & exported = stack->getExportedBonusList();
+		const auto penaltyCount = std::count_if(exported.begin(), exported.end(), [](const auto & bonus)
+		{
+			return bonus && newHorizonsOffense::isNoQuarterMoralePenalty(bonus.get());
+		});
+		const bool hasPenalty = penaltyCount != 0;
+		if(remaining < 0 || remaining > 2 || (remaining > 0) != hasPenalty
+			|| (hasPenalty && penaltyCount != 1))
+			throw std::runtime_error("Ambiguous No Quarter Morale activation lifetime");
+		if(!supported && remaining != 0)
+			throw std::runtime_error("Cannot discard No Quarter Morale activation lifetime");
+	}
+}
+
+void BattleInfo::validateVeteranDamageHistorySerialization(bool supported) const
+{
+	for(const auto & stack : stacks)
+	{
+		if(!stack)
+			throw std::runtime_error("Null unit in Veteran snapshot context");
+		stack->validateVeteranDamageHistorySerialization(supported);
+	}
+}
+
+std::map<uint32_t, int32_t> BattleInfo::collectNoQuarterLifetimes() const
+{
+	validateNoQuarterLifetimeSerialization(true);
+	std::map<uint32_t, int32_t> result;
+	for(const auto & stack : stacks)
+		if(stack->noQuarterMoraleActivationsRemaining > 0
+			&& !result.emplace(stack->unitId(), stack->noQuarterMoraleActivationsRemaining).second)
+			throw std::runtime_error("Duplicate No Quarter lifetime unit");
+	return result;
+}
+
+void BattleInfo::restoreNoQuarterLifetimes(const std::map<uint32_t, int32_t> & lifetimes)
+{
+	// Validate the complete sidecar against decoded bonuses before changing any unit.
+	for(const auto & entry : lifetimes)
+		if(entry.second < 1 || entry.second > 2 || !getStack(entry.first, false))
+			throw std::runtime_error("Invalid No Quarter lifetime unit reference");
+	std::set<uint32_t> ids;
+	for(const auto & stack : stacks)
+	{
+		if(!stack)
+			throw std::runtime_error("Null unit in No Quarter lifetime context");
+		if(!ids.insert(stack->unitId()).second)
+			throw std::runtime_error("Duplicate unit in No Quarter lifetime context");
+		// Validate decoded local markers without exporting/rebinding the graph.
+		const auto & exported = stack->getExportedBonusList();
+		const auto penaltyCount = std::count_if(exported.begin(), exported.end(), [](const auto & bonus)
+		{
+			return bonus && newHorizonsOffense::isNoQuarterMoralePenalty(bonus.get());
+		});
+		const bool hasPenalty = penaltyCount != 0;
+		if(hasPenalty != (lifetimes.count(stack->unitId()) != 0)
+			|| (hasPenalty && penaltyCount != 1))
+			throw std::runtime_error("Saved No Quarter penalty has no unambiguous activation lifetime");
+	}
+	for(const auto & stack : stacks)
+	{
+		const auto found = lifetimes.find(stack->unitId());
+		stack->noQuarterMoraleActivationsRemaining = found == lifetimes.end() ? 0 : found->second;
+	}
 }
 
 bool BattleInfo::hasRageThroughPainState() const
