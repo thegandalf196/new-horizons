@@ -35,8 +35,15 @@ They cover resource reads, SDL image decoding, image/surface bindings, cropping,
 scaler preparation, asynchronous queue wait, scaling kernels and texture-cache
 miss creation. Successful texture-cache hits do not emit records.
 
-Each of the three instrumented translation units admits at most 1,024 records
-and emits one overflow notice. A notice means later loading events are omitted;
+Each of the three instrumented translation units defaults to at most 1,024
+records and emits one overflow notice identifying its translation unit and actual
+cap. For an explicitly larger diagnostic window, set `NH_RENDER_LOAD_TIMING_LIMIT`
+to an ASCII decimal integer from 1 through 16,384; missing, empty, zero, signed,
+whitespace-containing, nondecimal or out-of-range values fall back to 1,024.
+The limit is cached per translation unit only after diagnostics are enabled;
+disabled draws do not parse it, increment event counters or sample timing clocks.
+The opt-in and global DEBUG requirement remain unchanged. No default rendering,
+asset or caching behavior changes. A notice means later loading events are omitted;
 do not treat a capped trace as a complete count. Resource labels are virtual
 identities, not workstation paths. Pointer values correlate objects only within
 one process.
