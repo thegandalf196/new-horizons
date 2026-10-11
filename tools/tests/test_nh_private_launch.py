@@ -4,6 +4,7 @@ import importlib.util
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import socket
 import struct
@@ -624,6 +625,44 @@ class WineFullgameAdmissionTest(unittest.TestCase):
             with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_private_root(root,uid=os.getuid())
             alias=Path(temp)/'alias';alias.symlink_to(root)
             with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_private_root(alias,uid=os.getuid())
+
+
+class PrivateWineWitnessDiagnosticContractTest(unittest.TestCase):
+    """Source contracts only; these do not execute Win32 APIs or launch a PE."""
+
+    def setUp(self):
+        self.source = (Path(__file__).resolve().parents[2] /
+                       'clientapp/PrivateWineStartupWitness.h').read_text()
+
+    def test_no_optin_returns_before_diagnostics_or_filesystem(self):
+        body = self.source.split('inline int verifyBeforeSDL()', 1)[1]
+        early = body.split('auto stage = RefusalStage::nonce;', 1)[0]
+        self.assertIn('enabled == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND', early)
+        self.assertIn('return 0;', early)
+        for forbidden in ('refusal(', 'fprintf', 'CreateFile', 'VCMIDirs::get', 'Sleep('):
+            self.assertNotIn(forbidden, early)
+
+    def test_fixed_stage_codes_cover_every_phase_and_all_refusals(self):
+        stages = ['nonce', 'local', 'audioVideo', 'executable', 'facade', 'gate',
+                  'configRead', 'configShape', 'expansion', 'resolvedDirs',
+                  'proofCreate', 'proofWrite', 'ack']
+        enum = self.source.split('enum class RefusalStage', 1)[1].split('};', 1)[0]
+        self.assertEqual(re.findall(r'(\w+)\s*=\s*(\d+)', enum),
+                         [(name, str(index)) for index, name in enumerate(stages, 1)])
+        body = self.source.split('inline int verifyBeforeSDL()', 1)[1]
+        self.assertEqual(re.findall(r'stage = RefusalStage::(\w+)', body), stages)
+        self.assertNotIn('return 86;', body)
+        self.assertIn('return accepted ? 0 : refusal(stage);', body)
+        self.assertTrue(body.rstrip().endswith('return refusal(stage);\n}\n}\n#endif'))
+
+    def test_stderr_contains_only_fixed_stage_code_not_private_values(self):
+        diagnostic = self.source.split('inline int refusal(RefusalStage stage)', 1)[1].split('\n}', 1)[0]
+        self.assertIn('"NH_WINE_PRE_SDL_REFUSAL stage=%u\\n", static_cast<unsigned int>(stage)', diagnostic)
+        self.assertEqual(self.source.count('std::fprintf('), 1)
+        self.assertIn('std::fflush(stderr);', diagnostic)
+        self.assertIn('return 86;', diagnostic)
+        for forbidden in ('nonce', 'environment(', 'GetLastError', '.what()', 'wstring', '%s', '%ls'):
+            self.assertNotIn(forbidden, diagnostic)
 
 
 if __name__ == "__main__":

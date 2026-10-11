@@ -8,11 +8,38 @@
 #include "../lib/VCMIDirs.h"
 #include <fstream>
 #include <array>
+#include <cstdio>
 #include <stdexcept>
 #include <string>
 
 namespace privateWineStartup
 {
+// Fixed private-protocol codes, not API diagnoses. In particular, an exception
+// identifies only the phase being checked. Never print paths, values or nonce.
+enum class RefusalStage : unsigned int
+{
+	nonce = 1,
+	local = 2,
+	audioVideo = 3,
+	executable = 4,
+	facade = 5,
+	gate = 6,
+	configRead = 7,
+	configShape = 8,
+	expansion = 9,
+	resolvedDirs = 10,
+	proofCreate = 11,
+	proofWrite = 12,
+	ack = 13
+};
+
+inline int refusal(RefusalStage stage)
+{
+	std::fprintf(stderr, "NH_WINE_PRE_SDL_REFUSAL stage=%u\n", static_cast<unsigned int>(stage));
+	std::fflush(stderr);
+	return 86;
+}
+
 inline std::wstring environment(const wchar_t * name)
 {
 	wchar_t buffer[2048];
@@ -80,45 +107,53 @@ inline int verifyBeforeSDL()
 	const DWORD enabled = GetEnvironmentVariableW(L"NH_PRIVATE_WINE_NONCE", nullptr, 0);
 	if(enabled == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND)
 		return 0;
+	auto stage = RefusalStage::nonce;
 	try
 	{
 		const auto nonce = environment(L"NH_PRIVATE_WINE_NONCE");
 		if(nonce.size() != 64 || nonce.find_first_not_of(L"0123456789abcdef") != std::wstring::npos)
-			return 86;
+			return refusal(stage);
+		stage = RefusalStage::local;
 		const auto local = environment(L"LOCALAPPDATA");
 		const auto expected = environment(L"NH_PRIVATE_WINE_LOCALAPPDATA");
 		if(!boundedPath(local) || local != expected || local.size() < 20 || local.substr(0, 3) != L"Z:\\"
 			|| local.find(L"..") != std::wstring::npos || local.back() == L'\\'
 			|| local.substr(local.size() - 13) != L"\\localappdata")
-			return 86;
+			return refusal(stage);
+		stage = RefusalStage::audioVideo;
 		if(environment(L"SDL_AUDIODRIVER") != L"dummy" || environment(L"SDL_AUDIO_DRIVER") != L"dummy"
 			|| environment(L"SDL_VIDEODRIVER") != L"windows" || environment(L"SDL_VIDEO_DRIVER") != L"windows")
-			return 86;
+			return refusal(stage);
+		stage = RefusalStage::executable;
 		const auto executable = modulePath(nullptr);
 		HMODULE facade = GetModuleHandleW(L"VCMI_lib.dll");
 		if(!facade || !boundedPath(executable) || executable != environment(L"NH_PRIVATE_WINE_EXECUTABLE"))
-			return 86;
+			return refusal(stage);
+		stage = RefusalStage::facade;
 		const auto library = modulePath(facade);
 		if(!boundedPath(library) || library != environment(L"NH_PRIVATE_WINE_FACADE")
 			|| !plainFile(boost::filesystem::path(executable)) || !plainFile(boost::filesystem::path(library)))
-			return 86;
+			return refusal(stage);
+		stage = RefusalStage::gate;
 		const boost::filesystem::path gate = boost::filesystem::path(local) / L".nh-private-wine-gate";
 		if(!boundedPath((gate / L"proof.utf16le").wstring())
 			|| !boundedPath((gate / L"approved.utf16le").wstring()) || !plainAncestors(gate))
-			return 86;
+			return refusal(stage);
 
 		// Verify shipped routes before VCMIDirs::get() can create anything.
+		stage = RefusalStage::configRead;
 		const auto config = boost::filesystem::path(executable).parent_path() / "config" / "dirs.json";
 		if(!boundedPath(config.wstring()) || !plainFile(config))
-			return 86;
+			return refusal(stage);
 		std::ifstream input(config.c_str(), std::ios::binary);
 		if(!input)
-			return 86;
+			return refusal(stage);
 		std::array<char, 4097> configBytes;
 		input.read(configBytes.data(), configBytes.size());
 		const auto length = input.gcount();
 		if(length <= 0 || length > 4096 || input.bad())
-			return 86;
+			return refusal(stage);
+		stage = RefusalStage::configShape;
 		const std::string bytes(configBytes.data(), static_cast<size_t>(length));
 		const JsonNode routes(reinterpret_cast<const std::byte *>(bytes.data()), bytes.size(), "private-wine-dirs");
 		const std::array<std::pair<const char *, const char *>, 5> required = {{
@@ -129,21 +164,23 @@ inline int verifyBeforeSDL()
 			{"userSavePath", "%LOCALAPPDATA%\\new-horizons\\Saves"}
 		}};
 		if(!routes.isStruct() || routes.Struct().size() != required.size())
-			return 86;
+			return refusal(stage);
 		for(const auto & [key, value] : required)
 			if(!routes[key].isString() || routes[key].String() != value)
-				return 86;
+				return refusal(stage);
 		const std::array<std::wstring, 5> suffixes = {
 			L"\\HeroesIII-NewHorizons\\content", L"\\HeroesIII-NewHorizons\\config",
 			L"\\HeroesIII-NewHorizons\\cache", L"\\HeroesIII-NewHorizons\\logs", L"\\new-horizons\\Saves"};
 		// The owner precreates these paths; reject aliases before init() writes.
+		stage = RefusalStage::expansion;
 		for(size_t i = 0; i < suffixes.size(); ++i)
 			if(!exactBoundedExpansion(required[i].second, local + suffixes[i])
 				|| !plainAncestors(boost::filesystem::path(local + suffixes[i])))
-				return 86;
+				return refusal(stage);
 		// Later extraction uses this derived cache path, not a dirs.json route.
 		if(!boundedPath(local + suffixes[2] + L"\\extracted"))
-			return 86;
+			return refusal(stage);
+		stage = RefusalStage::resolvedDirs;
 		const auto & dirs = VCMIDirs::get();
 		const std::array<boost::filesystem::path, 5> paths = {
 			dirs.userDataPath(), dirs.userConfigPath(), dirs.userCachePath(), dirs.userLogsPath(), dirs.userSavePath()};
@@ -152,23 +189,26 @@ inline int verifyBeforeSDL()
 		for(size_t i = 0; i < paths.size(); ++i)
 		{
 			if(paths[i].wstring() != local + suffixes[i] || !plainAncestors(paths[i]))
-				return 86;
+				return refusal(stage);
 			proof += paths[i].wstring() + L"\n";
 		}
 		const auto destination = gate / L"proof.utf16le";
+		stage = RefusalStage::proofCreate;
 		if(proof.size() * sizeof(wchar_t) > 8192)
-			return 86;
+			return refusal(stage);
 		HANDLE file = CreateFileW(destination.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW,
 			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
 		if(file == INVALID_HANDLE_VALUE)
-			return 86;
+			return refusal(stage);
+		stage = RefusalStage::proofWrite;
 		DWORD written = 0;
 		const DWORD count = static_cast<DWORD>(proof.size() * sizeof(wchar_t));
 		const bool success = WriteFile(file, proof.data(), count, &written, nullptr) && written == count && FlushFileBuffers(file);
 		CloseHandle(file);
 		if(!success)
-			return 86;
+			return refusal(stage);
 		// Owner authorizes only after exact post-loader PE/DLL and ancestry checks.
+		stage = RefusalStage::ack;
 		const auto approval = gate / L"approved.utf16le";
 		const ULONGLONG deadline = GetTickCount64() + 5000;
 		while(GetTickCount64() < deadline)
@@ -186,16 +226,16 @@ inline int verifyBeforeSDL()
 					&& ReadFile(ack, buffer, sizeof(buffer), &read, nullptr) && read == 128
 					&& std::wstring(buffer, 64) == nonce;
 				CloseHandle(ack);
-				return accepted ? 0 : 86;
+				return accepted ? 0 : refusal(stage);
 			}
 			Sleep(10);
 		}
 	}
 	catch(...)
 	{
-		// No paths or normal-startup log messages from this private protocol.
+		// Stage only: exception text can contain private paths or input values.
 	}
-	return 86;
+	return refusal(stage);
 }
 }
 #endif
