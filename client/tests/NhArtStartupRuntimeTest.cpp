@@ -18,7 +18,7 @@ namespace
 {
 using Bytes = std::vector<ui8>;
 constexpr size_t EXPECTED_RESOURCES = 3137;
-constexpr const char * EXPECTED_PACK_SHA256 = "1a91c08b1efa146af5d8f7df0d8a99a5739c94e280fedb13e8fd4d11ae555fc8";
+constexpr const char * EXPECTED_PACK_SHA256 = "45583f1f3e133ec81b849b52cd8d5df1decfd84e740b15244c46e277b1d426c5";
 
 void require(bool valid, const std::string & message)
 {
