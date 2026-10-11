@@ -34,6 +34,19 @@ class HypotheticBattle;
 class CSpell;
 class CStack;
 
+/// Optional nested diagnostics, never additional disjoint exchange body time.
+struct DLL_LINKAGE HypotheticLifecycleTiming
+{
+	struct DLL_LINKAGE StageTiming
+	{
+		uint64_t calls = 0;
+		uint64_t totalMicroseconds = 0;
+	};
+	StageTiming activationExpiryRemoval;
+	StageTiming activationGamblerRemoval;
+	StageTiming roundTimedUpdates;
+};
+
 /// Detached projection result captured before one-strike Luck modifiers expire.
 /// UNKNOWN preserves probabilistic damage without inventing a sampled outcome.
 enum class ProjectedLuckOutcome : uint8_t
@@ -513,9 +526,12 @@ public:
 	battle::Units getUnitsIf(const battle::UnitFilter & predicate) const override;
 
 	void nextRound() override;
+	void nextRound(HypotheticLifecycleTiming * timing);
 	void nextTurn(uint32_t unitId, BattleUnitTurnReason reason) override;
+	void nextTurn(uint32_t unitId, BattleUnitTurnReason reason, HypotheticLifecycleTiming * timing);
 	/// Begin a proven Frozen normal forfeiture without thawing before its end effects.
-	void nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason);
+	void nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason,
+		HypotheticLifecycleTiming * timing = nullptr);
 	/// Explicit accepted positive-Morale projection, not an RNG or reason-based grant.
 	bool projectEarnedMoraleActivation(uint32_t unitId);
 
@@ -579,7 +595,8 @@ public:
 
 private:
 	/// IDs created by this branch's Elemental Rebirth projection; never serialized.
-	void nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw);
+	void nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw,
+		HypotheticLifecycleTiming * timing);
 	newHorizonsCrisisCommand::State crisisCommand;
 	std::set<uint32_t> elementalRebirthSpawnUnitIds;
 	/// Actual magical HP losses from the accepted projected Primal Burst batches.

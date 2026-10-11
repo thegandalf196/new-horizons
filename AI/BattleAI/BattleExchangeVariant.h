@@ -172,6 +172,8 @@ struct DLL_LINKAGE BattleMovementTiming
 		/// Expiry/affliction completion and fortune/Swift end regions; not an activation count.
 		StageTiming activationEnd;
 		StageTiming roundAdvance;
+		/// Nested subsets of activationStart and roundAdvance, excluded from body closure.
+		HypotheticLifecycleTiming lifecycleSubsets;
 		uint64_t remainderMicroseconds = 0;
 	};
 	StageTiming findMove;

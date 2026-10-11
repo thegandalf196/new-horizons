@@ -51,6 +51,7 @@
 #include <vcmi/events/EventBus.h>
 
 #include <unordered_map>
+#include <chrono>
 
 #include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/CObstacleInstance.h"
@@ -62,6 +63,26 @@
 
 namespace
 {
+class LifecycleTimingScope
+{
+	using Clock = std::chrono::steady_clock;
+	HypotheticLifecycleTiming::StageTiming * timing;
+	Clock::time_point started;
+public:
+	explicit LifecycleTimingScope(HypotheticLifecycleTiming::StageTiming * timing)
+		: timing(timing), started(timing ? Clock::now() : Clock::time_point{})
+	{}
+	~LifecycleTimingScope()
+	{
+		if(timing)
+		{
+			++timing->calls;
+			timing->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
+				Clock::now() - started).count();
+		}
+	}
+};
+
 bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell)
 {
 	const auto schools = battle.battleGetSpellSchools(spell);
@@ -2480,6 +2501,11 @@ IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 
 void HypotheticBattle::nextRound()
 {
+	nextRound(nullptr);
+}
+
+void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
+{
 	if(deploymentState.independent && deploymentState.activeSide() != BattleSide::NONE)
 		throw std::runtime_error("Cannot advance a battle round with unresolved deployment phase");
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -2533,7 +2559,10 @@ void HypotheticBattle::nextRound()
 			pendingFormRestoration.push_back(unit->unitId());
 		forUpdate->clearNoQuarterRoundBlocker();
 		if(!firstRound && !forUpdate->isTimeStopped())
+		{
+			LifecycleTimingScope measurement(timing ? &timing->roundTimedUpdates : nullptr);
 			forUpdate->advanceTimedRound();
+		}
 		forUpdate->afterNewRound(firstRound, true, formPaused);
 		if(forUpdate->ghostPending)
 			pendingRemoval.push_back(unit->unitId());
@@ -2587,18 +2616,25 @@ bool HypotheticBattle::projectEarnedMoraleActivation(uint32_t unitId)
 
 void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
-	nextTurnImpl(unitId, reason, false);
+	nextTurn(unitId, reason, nullptr);
 }
 
-void HypotheticBattle::nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason)
+void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason, HypotheticLifecycleTiming * timing)
+{
+	nextTurnImpl(unitId, reason, false, timing);
+}
+
+void HypotheticBattle::nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason,
+	HypotheticLifecycleTiming * timing)
 {
 	const auto * unit = battleGetUnitByID(unitId);
 	if(!unit || !newHorizonsFrozen::forfeitsNormalActivation(*unit, reason))
 		throw std::invalid_argument("Deferred Frozen thaw requires a Frozen normal forfeiture");
-	nextTurnImpl(unitId, reason, true);
+	nextTurnImpl(unitId, reason, true, timing);
 }
 
-void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw)
+void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw,
+	HypotheticLifecycleTiming * timing)
 {
 	if(reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
 	{
@@ -2659,15 +2695,21 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 	{
 		unit->moraleExtraActivation = getMoraleExtraDamagePercent() != 100 && reason == BattleUnitTurnReason::MORALE;
 		newHorizonsHeroicSpirit::beginActivation(*unit, reason);
-		unit->removeUnitBonus(CSelector(Bonus::UntilNextCreatureActivation));
+		{
+			LifecycleTimingScope measurement(timing ? &timing->activationExpiryRemoval : nullptr);
+			unit->removeUnitBonus(CSelector(Bonus::UntilNextCreatureActivation));
+		}
 
 		// STACK_GETS_TURN is deliberately not globally broadened for HERO_COMMAND
 		// transitions. Gambler's own penalty ends on every genuine activation,
 		// including Second Wind, without expiring unrelated bonuses early.
-		unit->removeUnitBonus(CSelector([](const Bonus * bonus)
 		{
-			return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
-		}));
+			LifecycleTimingScope measurement(timing ? &timing->activationGamblerRemoval : nullptr);
+			unit->removeUnitBonus(CSelector([](const Bonus * bonus)
+			{
+				return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
+			}));
+		}
 
 		const auto activationSide = playerToSide(battleGetOwner(unit.get()));
 		const auto * veteranHero = activationSide == BattleSide::ATTACKER || activationSide == BattleSide::DEFENDER

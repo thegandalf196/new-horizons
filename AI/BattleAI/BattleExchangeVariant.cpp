@@ -73,6 +73,10 @@ public:
 	{
 		return timing ? &(local.*member) : nullptr;
 	}
+	HypotheticLifecycleTiming * lifecycleSubsets()
+	{
+		return timing ? &local.lifecycleSubsets : nullptr;
+	}
 	template<typename Callable>
 	decltype(auto) measure(StageTiming ExchangeTiming::* member, Callable && action)
 	{
@@ -98,6 +102,15 @@ public:
 			classified += sample.totalMicroseconds;
 		}
 		timing->body.calls += local.body.calls;
+		// Nested subsets are aggregated separately, never added to classified body time.
+		for(auto member : {&HypotheticLifecycleTiming::activationExpiryRemoval,
+			&HypotheticLifecycleTiming::activationGamblerRemoval, &HypotheticLifecycleTiming::roundTimedUpdates})
+		{
+			const auto & sample = local.lifecycleSubsets.*member;
+			auto & aggregate = timing->lifecycleSubsets.*member;
+			aggregate.calls += sample.calls;
+			aggregate.totalMicroseconds += sample.totalMicroseconds;
+		}
 		timing->body.totalMicroseconds += local.body.totalMicroseconds;
 		timing->remainderMicroseconds += local.body.totalMicroseconds - classified;
 	}
@@ -1841,9 +1854,11 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			{
 				MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationStart));
 				if(frozenForfeits)
-					exchangeBattle->nextTurnPreservingFrozenForfeit(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+					exchangeBattle->nextTurnPreservingFrozenForfeit(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE,
+						measurement.lifecycleSubsets());
 				else
-					exchangeBattle->nextTurn(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+					exchangeBattle->nextTurn(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE,
+						measurement.lifecycleSubsets());
 			}
 			bool fortuneActivation = true;
 			auto finishFortuneActivation = [&]()
@@ -2055,7 +2070,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 
 		measurement.measure(&BattleMovementTiming::ExchangeTiming::roundAdvance, [&]()
 		{
-			exchangeBattle->nextRound();
+			exchangeBattle->nextRound(measurement.lifecycleSubsets());
 		});
 	}
 

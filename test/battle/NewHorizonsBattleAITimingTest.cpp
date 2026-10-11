@@ -127,6 +127,21 @@ protected:
 
 	void expectStageClosure(const CBattleAI::TimingSummary & timing) const
 	{
+		const auto subsets = [](const CBattleAI::StageTiming & expiry, const CBattleAI::StageTiming & gambler,
+			const CBattleAI::StageTiming & roundTimed, const CBattleAI::StageTiming & activation,
+			const CBattleAI::StageTiming & round)
+		{
+			EXPECT_LE(expiry.totalMicroseconds + gambler.totalMicroseconds, activation.totalMicroseconds);
+			EXPECT_EQ(expiry.calls, gambler.calls);
+			EXPECT_LE(expiry.calls, activation.calls);
+			EXPECT_LE(roundTimed.totalMicroseconds, round.totalMicroseconds);
+		};
+		subsets(timing.movementExchangeActivationExpiryRemoval, timing.movementExchangeActivationGamblerRemoval,
+			timing.movementExchangeRoundTimedUpdates, timing.movementExchangeActivationStart, timing.movementExchangeRoundAdvance);
+		subsets(timing.bestTargetWaitedActivationExpiryRemoval, timing.bestTargetWaitedActivationGamblerRemoval,
+			timing.bestTargetWaitedRoundTimedUpdates, timing.bestTargetWaitedActivationStart, timing.bestTargetWaitedRoundAdvance);
+		subsets(timing.bestTargetNormalActivationExpiryRemoval, timing.bestTargetNormalActivationGamblerRemoval,
+			timing.bestTargetNormalRoundTimedUpdates, timing.bestTargetNormalActivationStart, timing.bestTargetNormalRoundAdvance);
 		EXPECT_EQ(timing.bestTargetWaitedExchange.totalMicroseconds
 			+ timing.bestTargetNormalExchange.totalMicroseconds + timing.bestTargetRemainderMicroseconds,
 			timing.selectionBestTarget.totalMicroseconds);
@@ -494,7 +509,11 @@ TEST_F(NewHorizonsBattleAITimingTest, OrdinaryResetExcludesOldTargetPartitionFro
 		&reset.movementExchangeRoundAdvance, &reset.bestTargetWaitedActivationStart,
 		&reset.bestTargetWaitedActivationEnd, &reset.bestTargetWaitedRoundAdvance,
 		&reset.bestTargetNormalActivationStart, &reset.bestTargetNormalActivationEnd,
-		&reset.bestTargetNormalRoundAdvance})
+		&reset.bestTargetNormalRoundAdvance, &reset.movementExchangeActivationExpiryRemoval,
+		&reset.movementExchangeActivationGamblerRemoval, &reset.movementExchangeRoundTimedUpdates,
+		&reset.bestTargetWaitedActivationExpiryRemoval, &reset.bestTargetWaitedActivationGamblerRemoval,
+		&reset.bestTargetWaitedRoundTimedUpdates, &reset.bestTargetNormalActivationExpiryRemoval,
+		&reset.bestTargetNormalActivationGamblerRemoval, &reset.bestTargetNormalRoundTimedUpdates})
 	{
 		EXPECT_EQ(stage->calls, 0u);
 		EXPECT_EQ(stage->totalMicroseconds, 0u);
@@ -841,12 +860,24 @@ TEST_F(NewHorizonsExchangeReadParityTest, FrozenNoQuarterControllerAndFocusFireF
 class NewHorizonsExchangeTimingTest : public NewHorizonsBattleAITimingTest
 {
 protected:
+	void expectLifecycleSubsets(const BattleMovementTiming::ExchangeTiming & exchange) const
+	{
+		const auto & nested = exchange.lifecycleSubsets;
+		EXPECT_LE(nested.activationExpiryRemoval.totalMicroseconds + nested.activationGamblerRemoval.totalMicroseconds,
+			exchange.activationStart.totalMicroseconds);
+		// These count measured calls, not completed activations or rounds.
+		EXPECT_EQ(nested.activationExpiryRemoval.calls, nested.activationGamblerRemoval.calls);
+		EXPECT_LE(nested.activationExpiryRemoval.calls, exchange.activationStart.calls);
+		EXPECT_LE(nested.roundTimedUpdates.totalMicroseconds, exchange.roundAdvance.totalMicroseconds);
+	}
+
 	void expectBestTargetClosure(const BattleBestTargetTiming & timing) const
 	{
 		for(const auto pair : {std::pair{&timing.waitedExchange, &timing.waitedDetails},
 			std::pair{&timing.normalExchange, &timing.normalDetails}})
 		{
 			const auto & exchange = *pair.second;
+			expectLifecycleSubsets(exchange);
 			EXPECT_EQ(exchange.body.calls, pair.first->calls);
 			EXPECT_LE(exchange.body.totalMicroseconds, pair.first->totalMicroseconds);
 			EXPECT_EQ(exchange.membership.totalMicroseconds + exchange.projectionSetup.totalMicroseconds
@@ -874,6 +905,7 @@ protected:
 	void expectExchangeClosure(const BattleMovementTiming & timing) const
 	{
 		const auto & exchange = timing.findMoveExchangeDetails;
+		expectLifecycleSubsets(exchange);
 		const uint64_t classified = exchange.membership.totalMicroseconds
 			+ exchange.projectionSetup.totalMicroseconds + exchange.targetProbes.totalMicroseconds
 			+ exchange.appliedAttacks.totalMicroseconds + exchange.activationStart.totalMicroseconds
@@ -942,6 +974,9 @@ TEST_F(NewHorizonsExchangeTimingTest, BestTargetWaitAndNormalPartitionAndMatchNu
 		EXPECT_GT(exchange->activationStart.calls, 0u);
 		EXPECT_GT(exchange->activationEnd.calls, 0u);
 		EXPECT_GT(exchange->roundAdvance.calls, 0u);
+		EXPECT_GT(exchange->lifecycleSubsets.activationExpiryRemoval.calls, 0u);
+		EXPECT_GT(exchange->lifecycleSubsets.activationGamblerRemoval.calls, 0u);
+		EXPECT_GT(exchange->lifecycleSubsets.roundTimedUpdates.calls, 0u);
 	}
 	expectBestTargetClosure(timing);
 	for(const auto & [id, snapshot] : before)
@@ -983,6 +1018,13 @@ TEST_F(NewHorizonsExchangeTimingTest, BestTargetAlreadyWaitedSkipsWaitBuckets)
 		EXPECT_EQ(stage->totalMicroseconds, 0u);
 	}
 	ASSERT_GT(timing.normalExchange.calls, 0u);
+	for(const auto * stage : {&timing.waitedDetails.lifecycleSubsets.activationExpiryRemoval,
+		&timing.waitedDetails.lifecycleSubsets.activationGamblerRemoval,
+		&timing.waitedDetails.lifecycleSubsets.roundTimedUpdates})
+	{
+		EXPECT_EQ(stage->calls, 0u);
+		EXPECT_EQ(stage->totalMicroseconds, 0u);
+	}
 	expectBestTargetClosure(timing);
 }
 
@@ -1038,6 +1080,9 @@ TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAn
 	EXPECT_GT(timing.findMoveExchangeDetails.activationStart.calls, 0u);
 	EXPECT_GT(timing.findMoveExchangeDetails.activationEnd.calls, 0u);
 	EXPECT_GT(timing.findMoveExchangeDetails.roundAdvance.calls, 0u);
+	EXPECT_GT(timing.findMoveExchangeDetails.lifecycleSubsets.activationExpiryRemoval.calls, 0u);
+	EXPECT_GT(timing.findMoveExchangeDetails.lifecycleSubsets.activationGamblerRemoval.calls, 0u);
+	EXPECT_GT(timing.findMoveExchangeDetails.lifecycleSubsets.roundTimedUpdates.calls, 0u);
 	EXPECT_EQ(timing.findMoveExchangeDetails.membership.calls, timing.findMoveExchangeDetails.body.calls);
 	EXPECT_EQ(timing.findMoveExchangeDetails.projectionSetup.calls, timing.findMoveExchangeDetails.body.calls);
 	expectExchangeClosure(timing);
@@ -1086,6 +1131,12 @@ TEST_F(NewHorizonsExchangeTimingTest, AdjacentTargetsReturnBeforeExchangeAndKeep
 		EXPECT_EQ(stage->totalMicroseconds, 0u);
 	}
 	EXPECT_EQ(exchange.remainderMicroseconds, 0u);
+	for(const auto * stage : {&exchange.lifecycleSubsets.activationExpiryRemoval,
+		&exchange.lifecycleSubsets.activationGamblerRemoval, &exchange.lifecycleSubsets.roundTimedUpdates})
+	{
+		EXPECT_EQ(stage->calls, 0u);
+		EXPECT_EQ(stage->totalMicroseconds, 0u);
+	}
 	expectExchangeClosure(timing);
 	EXPECT_TRUE(callback->actions.empty());
 }
@@ -1516,6 +1567,9 @@ protected:
 			stage("movementActivationStart", before.movementExchangeActivationStart, after.movementExchangeActivationStart);
 			stage("movementActivationEnd", before.movementExchangeActivationEnd, after.movementExchangeActivationEnd);
 			stage("movementRoundAdvance", before.movementExchangeRoundAdvance, after.movementExchangeRoundAdvance);
+			stage("movementActivationExpiryRemoval", before.movementExchangeActivationExpiryRemoval, after.movementExchangeActivationExpiryRemoval);
+			stage("movementActivationGamblerRemoval", before.movementExchangeActivationGamblerRemoval, after.movementExchangeActivationGamblerRemoval);
+			stage("movementRoundTimedUpdates", before.movementExchangeRoundTimedUpdates, after.movementExchangeRoundTimedUpdates);
 			stage("bestTarget", before.selectionBestTarget, after.selectionBestTarget);
 			stage("waitedExchange", before.bestTargetWaitedExchange, after.bestTargetWaitedExchange);
 			stage("normalExchange", before.bestTargetNormalExchange, after.bestTargetNormalExchange);
@@ -1529,6 +1583,12 @@ protected:
 			stage("normalActivationStart", before.bestTargetNormalActivationStart, after.bestTargetNormalActivationStart);
 			stage("normalActivationEnd", before.bestTargetNormalActivationEnd, after.bestTargetNormalActivationEnd);
 			stage("normalRoundAdvance", before.bestTargetNormalRoundAdvance, after.bestTargetNormalRoundAdvance);
+			stage("waitedActivationExpiryRemoval", before.bestTargetWaitedActivationExpiryRemoval, after.bestTargetWaitedActivationExpiryRemoval);
+			stage("waitedActivationGamblerRemoval", before.bestTargetWaitedActivationGamblerRemoval, after.bestTargetWaitedActivationGamblerRemoval);
+			stage("waitedRoundTimedUpdates", before.bestTargetWaitedRoundTimedUpdates, after.bestTargetWaitedRoundTimedUpdates);
+			stage("normalActivationExpiryRemoval", before.bestTargetNormalActivationExpiryRemoval, after.bestTargetNormalActivationExpiryRemoval);
+			stage("normalActivationGamblerRemoval", before.bestTargetNormalActivationGamblerRemoval, after.bestTargetNormalActivationGamblerRemoval);
+			stage("normalRoundTimedUpdates", before.bestTargetNormalRoundTimedUpdates, after.bestTargetNormalRoundTimedUpdates);
 			stage("submission", before.directUnitSubmission, after.directUnitSubmission);
 			RecordProperty(prefix + "bestTargetRemainderUs", std::to_string(after.bestTargetRemainderMicroseconds - before.bestTargetRemainderMicroseconds));
 			expectStageClosure(after);
