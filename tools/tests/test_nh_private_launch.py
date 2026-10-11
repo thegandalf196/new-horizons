@@ -511,6 +511,11 @@ class PrivateLaunchTest(unittest.TestCase):
             popen.assert_not_called()
             self.assertEqual(list((self.root/'wine-run').iterdir()),[])
             parsed=HELPER._parser().parse_args(args)
+            self.assertEqual(HELPER.wine_fullgame_plan(parsed,[])['render_timings'],{'enabled':False,'limit':None})
+            metric=HELPER._parser().parse_args([*args,'--wine-render-load-timings'])
+            self.assertEqual(HELPER.wine_fullgame_plan(metric,[])['render_timings'],{'enabled':True,'limit':1024})
+            metric=HELPER._parser().parse_args([*args,'--wine-render-load-timings','--wine-render-load-timing-limit','16384'])
+            self.assertEqual(HELPER.wine_fullgame_plan(metric,[])['render_timings'],{'enabled':True,'limit':16384})
             bootstrap=self.root/'nh-wine-bootstrap.exe'
             bootstrap.write_bytes(pe.read_bytes()+'NH_WINE_BOOTSTRAP_V1'.encode('utf-16-le'))
             bootstrap_pin=hashlib.sha256(bootstrap.read_bytes()).hexdigest()
@@ -557,8 +562,63 @@ class PrivateLaunchTest(unittest.TestCase):
                 self.assertEqual(exit.exception.code,2)
                 popen.assert_not_called()
 
+    def test_render_timing_options_refused_outside_fullgame_without_spawn(self):
+        surface_args = self._wine_args()
+        for args in (self._args('--wine-render-load-timings'),
+                     self._args('--wine-render-load-timing-limit','1024'),
+                     [*surface_args,'--wine-render-load-timings'],
+                     [*surface_args,'--wine-render-load-timing-limit','1024']):
+            with self._patch_boundaries(), self._wine_pin(), mock.patch.object(HELPER.subprocess,'Popen') as popen:
+                with self.assertRaises(SystemExit) as exit:HELPER.main(args)
+                self.assertEqual(exit.exception.code,2)
+                popen.assert_not_called()
+
 
 class WineFullgameAdmissionTest(unittest.TestCase):
+    def test_render_timing_admission_defaults_and_canonical_bounds(self):
+        parse=lambda *args:HELPER._parser().parse_args(['--guard','synthetic-guard',*args])
+        self.assertEqual(HELPER.render_timing_contract(parse()),{'enabled':False,'limit':None})
+        self.assertEqual(HELPER.render_timing_contract(parse('--wine-render-load-timings')),{'enabled':True,'limit':1024})
+        for value in ('1','1024','16384'):
+            self.assertEqual(HELPER.render_timing_contract(parse('--wine-render-load-timings','--wine-render-load-timing-limit',value)),
+                             {'enabled':True,'limit':int(value)})
+
+    def test_render_timing_bad_limit_or_unrequested_limit_refuses_without_spawn(self):
+        with mock.patch.object(HELPER.subprocess,'Popen') as popen:
+            for value in ('0','16385','-1','+1','01','',' 2','2.0','\u0661'):
+                args=HELPER._parser().parse_args(['--guard','synthetic-guard','--wine-render-load-timings',
+                    '--wine-render-load-timing-limit='+value])
+                with self.assertRaises(HELPER.Refusal):HELPER.render_timing_contract(args)
+            args=HELPER._parser().parse_args(['--guard','synthetic-guard','--wine-render-load-timing-limit','1024'])
+            with self.assertRaises(HELPER.Refusal):HELPER.render_timing_contract(args)
+            popen.assert_not_called()
+
+    def test_owner_render_timing_factory_emits_only_explicit_two_keys(self):
+        path=HELPER_PATH.with_name('nh_wine_fullgame_owner.py')
+        spec=importlib.util.spec_from_file_location('render_timing_owner_test',path)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        self.assertEqual(module.render_timing_environment({}),{})
+        self.assertEqual(module.render_timing_environment({'render_timings':{'enabled':False,'limit':None}}),{})
+        self.assertEqual(module.render_timing_environment({'render_timings':{'enabled':True,'limit':16384}}),
+                         {'NH_RENDER_LOAD_TIMINGS':'1','NH_RENDER_LOAD_TIMING_LIMIT':'16384'})
+        for contract in ({'enabled':1,'limit':1024},{'enabled':True,'limit':True},{'enabled':True,'limit':0},
+                         {'enabled':True,'limit':16385},{'enabled':False,'limit':1024},
+                         {'enabled':True,'limit':1024,'arbitrary':'environment'}):
+            with self.assertRaises(module.Refusal):module.render_timing_environment({'render_timings':contract})
+
+    def test_actual_render_timing_environment_missing_wrong_or_disabled_leak_refuses(self):
+        enabled={'enabled':True,'limit':1024}
+        actual={'NH_RENDER_LOAD_TIMINGS':'1','NH_RENDER_LOAD_TIMING_LIMIT':'1024'}
+        HELPER.validate_render_timing_environment(actual,enabled)
+        for changed in ({},{'NH_RENDER_LOAD_TIMINGS':'1'},{'NH_RENDER_LOAD_TIMING_LIMIT':'1024'},
+                        {**actual,'NH_RENDER_LOAD_TIMINGS':'0'},{**actual,'NH_RENDER_LOAD_TIMING_LIMIT':'01024'},
+                        {**actual,'NH_RENDER_LOAD_TIMING_LIMIT':'16384'}):
+            with self.assertRaises(HELPER.Refusal):HELPER.validate_render_timing_environment(changed,enabled)
+        disabled={'enabled':False,'limit':None}
+        HELPER.validate_render_timing_environment({},disabled)
+        for leaked in (actual,{'NH_RENDER_LOAD_TIMINGS':''},{'NH_RENDER_LOAD_TIMING_LIMIT':''}):
+            with self.assertRaises(HELPER.Refusal):HELPER.validate_render_timing_environment(leaked,disabled)
+
     def witness(self, *, nonce="a"*64, local=r"Z:\private\localappdata", pid="24"):
         exe=r"Z:\package\new-horizons.exe"
         facade=r"Z:\package\VCMI_lib.dll"
@@ -630,6 +690,15 @@ class WineFullgameAdmissionTest(unittest.TestCase):
                 win32_executable=wexe,win32_facade=wfacade,win32_localappdata=local,
                 supervisor_ready_before_resume=True,owned_service_graph_verified=True,age_after_io=1)
             self.assertFalse(HELPER.verify_wine_runtime(context,plan=plan)['input_authorized'])
+            timed_plan={**plan,'render_timings':{'enabled':True,'limit':1024}}
+            with self.assertRaises(HELPER.Refusal):HELPER.verify_wine_runtime(context,plan=timed_plan)
+            timed_context={**context,'environment':{**context['environment'],
+                'NH_RENDER_LOAD_TIMINGS':'1','NH_RENDER_LOAD_TIMING_LIMIT':'1024'}}
+            self.assertFalse(HELPER.verify_wine_runtime(timed_context,plan=timed_plan)['input_authorized'])
+            with self.assertRaises(HELPER.Refusal):HELPER.verify_wine_runtime(timed_context,plan=plan)
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.verify_wine_runtime({**timed_context,'environment':{**timed_context['environment'],
+                    'NH_RENDER_LOAD_TIMING_LIMIT':'16384'}},plan=timed_plan)
             bootstrap_path=str(Path(temp)/'nh-wine-bootstrap.exe')
             bootstrap_map=dict(path=bootstrap_path,sha256='c'*64,inode=20,device='00:01')
             bootstrap_loader={**loader,'argv':['/usr/wine',bootstrap_path]}

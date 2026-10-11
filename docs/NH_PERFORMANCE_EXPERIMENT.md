@@ -55,6 +55,16 @@ compare equivalent instrumentation-off runs before attributing a regression.
 These records do not by themselves measure animation cadence, frame rate, cold
 OS caches or performance on another platform.
 
+For guarded full-game Wine tests, explicitly opt in with
+`--wine-render-load-timings`, optionally adding
+`--wine-render-load-timing-limit 16384`. The launcher accepts canonical decimal
+limits from 1 through 16,384; the enabled default is 1,024. Both options are
+full-game-only, and a limit without opt-in is rejected. The owner forwards only
+the two fixed diagnostic variables and verifies their actual Unix readbacks
+before each gesture. Disabled runs do not inherit diagnostic variables.
+The existing Win32 startup witness does not independently report this cap;
+trace activation is not proof of uncapped coverage or improved performance.
+
 ### Battle animation diagnostics
 
 The same opt-in settings enable a separate `BattleAnimation` record budget.
