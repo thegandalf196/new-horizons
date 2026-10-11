@@ -84,6 +84,13 @@ public:
 		/// Disjoint subsets of stackActionSelection, not additional callback time.
 		StageTiming selectionCreatureSpell;
 		StageTiming selectionMovementSearch;
+		/// Disjoint subsets of selectionMovementSearch, plus wrapper overhead.
+		StageTiming movementFindMove;
+		StageTiming movementGoTowards;
+		uint64_t movementRemainderMicroseconds = 0;
+		/// Nested, nonadditive subsets of their corresponding movement functions.
+		StageTiming movementFindMoveExchangeSubset;
+		StageTiming movementGoBlockingSubset;
 		StageTiming selectionTargetExchange;
 		uint64_t selectionRemainderMicroseconds = 0;
 		/// Includes Hero Action evaluation and any submission performed inside it.

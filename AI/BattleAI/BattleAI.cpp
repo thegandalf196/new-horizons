@@ -82,6 +82,9 @@ struct CBattleAI::TimingState
 			" evaluator_construct_calls=%llu evaluator_construct_us=%llu stack_select_calls=%llu stack_select_us=%llu"
 			" select_creature_spell_calls=%llu select_creature_spell_us=%llu"
 			" select_movement_search_calls=%llu select_movement_search_us=%llu"
+			" move_find_calls=%llu move_find_us=%llu move_go_calls=%llu move_go_us=%llu move_remainder_us=%llu"
+			" move_find_exchange_subset_calls=%llu move_find_exchange_subset_us=%llu"
+			" move_go_blocking_subset_calls=%llu move_go_blocking_subset_us=%llu"
 			" select_target_exchange_calls=%llu select_target_exchange_us=%llu select_remainder_us=%llu"
 			" hero_action_including_submit_calls=%llu hero_action_including_submit_us=%llu"
 			" direct_unit_submit_calls=%llu direct_unit_submit_us=%llu unclassified_us=%llu",
@@ -98,6 +101,15 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->selectionCreatureSpell.totalMicroseconds),
 			static_cast<unsigned long long>(result->selectionMovementSearch.calls),
 			static_cast<unsigned long long>(result->selectionMovementSearch.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementFindMove.calls),
+			static_cast<unsigned long long>(result->movementFindMove.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementGoTowards.calls),
+			static_cast<unsigned long long>(result->movementGoTowards.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementRemainderMicroseconds),
+			static_cast<unsigned long long>(result->movementFindMoveExchangeSubset.calls),
+			static_cast<unsigned long long>(result->movementFindMoveExchangeSubset.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementGoBlockingSubset.calls),
+			static_cast<unsigned long long>(result->movementGoBlockingSubset.totalMicroseconds),
 			static_cast<unsigned long long>(result->selectionTargetExchange.calls),
 			static_cast<unsigned long long>(result->selectionTargetExchange.totalMicroseconds),
 			static_cast<unsigned long long>(result->selectionRemainderMicroseconds),
@@ -194,13 +206,20 @@ public:
 				classifiedMicroseconds += local.totalMicroseconds;
 			}
 			const auto accumulateSelection = [](StageTiming & aggregate,
-				const BattleEvaluator::SelectionTiming::StageTiming & local)
+				const auto & local)
 			{
 				aggregate.calls += local.calls;
 				aggregate.totalMicroseconds += local.totalMicroseconds;
 			};
 			accumulateSelection(state->summary.selectionCreatureSpell, selectionTotals.creatureSpell);
 			accumulateSelection(state->summary.selectionMovementSearch, selectionTotals.movementSearch);
+			const auto & movement = selectionTotals.movementDetails;
+			accumulateSelection(state->summary.movementFindMove, movement.findMove);
+			accumulateSelection(state->summary.movementGoTowards, movement.goTowards);
+			accumulateSelection(state->summary.movementFindMoveExchangeSubset, movement.findMoveExchange);
+			accumulateSelection(state->summary.movementGoBlockingSubset, movement.goTowardsBlocking);
+			state->summary.movementRemainderMicroseconds += selectionTotals.movementSearch.totalMicroseconds
+				- movement.findMove.totalMicroseconds - movement.goTowards.totalMicroseconds;
 			accumulateSelection(state->summary.selectionTargetExchange, selectionTotals.targetExchange);
 			const uint64_t selectionClassifiedMicroseconds = selectionTotals.creatureSpell.totalMicroseconds
 				+ selectionTotals.movementSearch.totalMicroseconds + selectionTotals.targetExchange.totalMicroseconds;

@@ -58,6 +58,7 @@ public:
 		};
 		StageTiming creatureSpell;
 		StageTiming movementSearch;
+		BattleMovementTiming movementDetails;
 		/// Counts measured call sites, not the number of candidate exchanges.
 		StageTiming targetExchange;
 	};
@@ -71,7 +72,8 @@ public:
 	/// One detached outcome in the same forecast scale, exposed for deterministic parity tests.
 	float beneficialCreatureSpellOutcomeValue(const CStack * caster, const battle::Unit * recipient,
 		const CSpell * spell) const;
-	BattleAction goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets);
+	BattleAction goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets,
+		BattleMovementTiming * timing = nullptr);
 	std::vector<BattleHex> getBrokenWallMoatHexes() const;
 	bool hasWorkingTowers() const;
 	void evaluateCreatureSpellcast(const CStack * stack, PossibleSpellcast & ps); //for offensive damaging spells only
