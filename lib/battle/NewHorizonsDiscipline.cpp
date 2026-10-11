@@ -106,12 +106,14 @@ TConstBonusListPtr veteranCohesionBonuses(TConstBonusListPtr original, const CSe
 			&& bonus->val == 2 && bonus->valType == BonusValueType::ADDITIVE_VALUE
 			&& bonus->stacking == VETERAN_COHESION && !bonus->parameters && !bonus->hasStatusMetadata();
 	};
+	const bool inherited = std::any_of(original->begin(), original->end(), [&](const auto & bonus)
+	{ return isPersonalModifier(bonus.get()); });
+	if(!inherited && !earned)
+		return original;
 	Bonus modifier(BonusDuration::ONE_BATTLE, BonusType::MORALE, BonusSource::SECONDARY_SKILL,
 		2, disciplineSkillSource());
 	modifier.stacking = VETERAN_COHESION;
 	modifier.description.appendRawString("Veteran Cohesion: +2 Morale for the rest of combat");
-	const bool inherited = std::any_of(original->begin(), original->end(), [&](const auto & bonus)
-	{ return isPersonalModifier(bonus.get()); });
 	if(!inherited && (!earned || !selector(&modifier)))
 		return original;
 	auto result = std::make_shared<BonusList>();

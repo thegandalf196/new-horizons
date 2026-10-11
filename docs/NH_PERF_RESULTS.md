@@ -1,5 +1,43 @@
 # New Horizons performance experiment — measured results
 
+## Inactive Veteran Cohesion construction checkpoint (2026-10-11)
+
+Inactive bonus queries with no inherited Veteran Cohesion modifier now return
+the original list before constructing the unused modifier and its description.
+Inherited removal, earned modifiers, selector call order and list ownership
+remain unchanged. This removes unnecessary work; it is not yet a measured
+turn-time improvement. No forecast depth, scoring, artwork or gameplay value
+changes are included.
+
+All thirteen focused native cases passed with no skipped or disabled cases:
+ten Veteran Cohesion cases and three adjacent Armorer Veteran AI cases. The
+four new helper controls cover inactive pointer identity, inherited removal,
+earned metadata/replacement and selector call counts. Existing live/detached
+lifecycle and serialization controls remain. Build and binary privacy checks
+passed; sources, binaries and test resources were unchanged during execution.
+These are statically linked engine tests, not shipping-library gameplay or
+exhaustive combat integration acceptance. Artwork package bytes are unchanged.
+
+## Subsequent saved-game observations (2026-10-11)
+
+A matched Linux pair before/after the lazy attack-probe change completed the
+same 41 ordered battle actions and three round boundaries. Tan's turn took
+9,723/9,760 ms, respectively: this pair demonstrates **no overall speedup**.
+Every recorded consumer-call count matched and the timing partitions closed;
+that is not complete game-state equivalence. An intervening attempt timed out
+before End Turn and is excluded from the comparison.
+
+Two further supplied-save scenarios with the same candidate completed normal
+day transitions and Quit. Their Blue/Tan turns took 5,600/66 ms and 7,282/4,040 ms.
+The latter contained two battles lasting approximately 7.226 and 3.990 seconds,
+so battle resolution dominated both turns. These are distinct single-run Linux
+observations, not matched Windows measurements or evidence of a reliable gain.
+All successful runs used silent isolated displays and fresh private profiles,
+without concurrent builds or heavy tests. Input isolation, unchanged runtime
+resources/saves and owned-process cleanup were checked. OS cache was not
+controlled. Remaining-movement warnings and slow-turn warnings were retained;
+no error-level messages occurred. Windows performance remains unresolved.
+
 ## Lazy attack-probe snapshot checkpoint (2026-10-11)
 
 BattleAI now copies the probe's post-attack attacker state only when Hex of
@@ -50,8 +88,8 @@ using the existing exchange-body timing rather than changing the AI search.
 All 24 focused native cases passed, including exact timed/untimed score and
 state parity, both candidate branches and already-waited admission. Source,
 binaries and test resources were unchanged during the run; the build and
-binary privacy check passed. New counters have not yet been exercised in a
-saved-game replay, and no speedup is established.
+binary privacy check passed. Subsequent saved-game runs exercised these counters
+with closed partitions, as recorded above; no speedup is established.
 
 ## Completed-activation forecast checkpoint (2026-10-11)
 

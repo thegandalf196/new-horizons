@@ -83,7 +83,9 @@ protected:
 		ASSERT_NO_FATAL_FAILURE(select(newHorizonsDiscipline::STEADFAST));
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		if(perk)
+		{
 			ASSERT_NO_FATAL_FAILURE(select(newHorizonsDiscipline::VETERAN_COHESION));
+		}
 		attackerSideHero->clearSlots();
 		defenderSideHero->clearSlots();
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName(creature), count));
@@ -130,6 +132,83 @@ protected:
 		gameHandler->sendAndApply(packet);
 	}
 };
+}
+
+TEST_F(NewHorizonsVeteranCohesionTest, InactiveBonusQueryReturnsOriginalWithoutCallingSelector)
+{
+	auto original = std::make_shared<BonusList>();
+	auto unrelated = std::make_shared<Bonus>();
+	unrelated->type = BonusType::PRIMARY_SKILL;
+	unrelated->val = 7;
+	original->push_back(unrelated);
+	int selectorCalls = 0;
+	const CSelector selector([&](const Bonus *) { ++selectorCalls; return true; });
+	const auto result = newHorizonsDiscipline::veteranCohesionBonuses(original, selector, false);
+	EXPECT_EQ(result, original);
+	ASSERT_EQ(result->size(), 1u);
+	EXPECT_EQ(result->front(), unrelated);
+	EXPECT_EQ(selectorCalls, 0);
+}
+
+TEST_F(NewHorizonsVeteranCohesionTest, InheritedPersonalBonusIsRemovedWithoutMutatingInput)
+{
+	auto original = std::make_shared<BonusList>();
+	auto unrelated = std::make_shared<Bonus>();
+	unrelated->type = BonusType::PRIMARY_SKILL;
+	original->push_back(unrelated);
+	const auto inherited = newHorizonsDiscipline::veteranCohesionBonuses(original, Selector::all, true);
+	ASSERT_EQ(inherited->size(), 2u);
+	const auto result = newHorizonsDiscipline::veteranCohesionBonuses(inherited, Selector::all, false);
+	EXPECT_NE(result, inherited);
+	ASSERT_EQ(result->size(), 1u);
+	EXPECT_EQ(result->front(), unrelated);
+	EXPECT_EQ(inherited->size(), 2u);
+	EXPECT_EQ(original->size(), 1u);
+}
+
+TEST_F(NewHorizonsVeteranCohesionTest, EarnedBonusRetainsExactMetadataAndReplacesInheritedCopyOnce)
+{
+	auto original = std::make_shared<BonusList>();
+	int selectorCalls = 0;
+	const CSelector accept([&](const Bonus *) { ++selectorCalls; return true; });
+	const auto first = newHorizonsDiscipline::veteranCohesionBonuses(original, accept, true);
+	EXPECT_EQ(selectorCalls, 2);
+	ASSERT_EQ(first->size(), 1u);
+	const auto & modifier = first->front();
+	EXPECT_EQ(modifier->type, BonusType::MORALE);
+	EXPECT_EQ(modifier->source, BonusSource::SECONDARY_SKILL);
+	EXPECT_EQ(modifier->sid, BonusSourceID(SecondarySkill(SecondarySkill::decode(newHorizonsDiscipline::SKILL))));
+	EXPECT_EQ(modifier->duration, BonusDuration::ONE_BATTLE);
+	EXPECT_EQ(modifier->val, 2);
+	EXPECT_EQ(modifier->valType, BonusValueType::ADDITIVE_VALUE);
+	EXPECT_EQ(modifier->stacking, newHorizonsDiscipline::VETERAN_COHESION);
+	EXPECT_FALSE(modifier->parameters);
+	EXPECT_FALSE(modifier->hasStatusMetadata());
+	EXPECT_EQ(modifier->description.toString(LIBRARY->staticTexts()), "Veteran Cohesion: +2 Morale for the rest of combat");
+	selectorCalls = 0;
+	const auto replaced = newHorizonsDiscipline::veteranCohesionBonuses(first, accept, true);
+	EXPECT_EQ(selectorCalls, 1);
+	ASSERT_EQ(replaced->size(), 1u);
+	EXPECT_NE(replaced->front(), modifier);
+	EXPECT_EQ(replaced->front()->val, 2);
+	EXPECT_EQ(first->size(), 1u);
+	EXPECT_TRUE(original->empty());
+}
+
+TEST_F(NewHorizonsVeteranCohesionTest, RejectingSelectorPreservesCallSemanticsAndRemovesInheritedCopy)
+{
+	auto original = std::make_shared<BonusList>();
+	int selectorCalls = 0;
+	const CSelector reject([&](const Bonus *) { ++selectorCalls; return false; });
+	const auto result = newHorizonsDiscipline::veteranCohesionBonuses(original, reject, true);
+	EXPECT_EQ(result, original);
+	EXPECT_EQ(selectorCalls, 1);
+	const auto inherited = newHorizonsDiscipline::veteranCohesionBonuses(original, Selector::all, true);
+	selectorCalls = 0;
+	const auto removed = newHorizonsDiscipline::veteranCohesionBonuses(inherited, reject, true);
+	EXPECT_TRUE(removed->empty());
+	EXPECT_EQ(selectorCalls, 1);
+	EXPECT_EQ(inherited->size(), 1u);
 }
 
 TEST_F(NewHorizonsVeteranCohesionTest, LiveStrictHalfUsesBattleStartBasisAndHealingNeverRearms)
