@@ -533,6 +533,21 @@ def run_fullgame(plan, *, verify_xvfb, verify_runtime):
     return status
 
 
+def render_timing_environment(plan):
+    """Only the explicitly admitted diagnostic keys, never ambient inheritance."""
+    contract = plan.get('render_timings', {'enabled': False, 'limit': None})
+    if (not isinstance(contract, dict) or set(contract) != {'enabled', 'limit'}
+            or type(contract['enabled']) is not bool):
+        raise Refusal('Invalid render timing contract')
+    if not contract['enabled']:
+        if contract['limit'] is not None:
+            raise Refusal('Disabled render timing contract has a limit')
+        return {}
+    if type(contract['limit']) is not int or not 1 <= contract['limit'] <= 16384:
+        raise Refusal('Invalid admitted render timing limit')
+    return {'NH_RENDER_LOAD_TIMINGS': '1', 'NH_RENDER_LOAD_TIMING_LIMIT': str(contract['limit'])}
+
+
 def owned_game_candidates(owner, bootstrap_pid, expected):
     """Exact mapped package among retained kernel descendants, not PID/name discovery."""
     matches = []
@@ -564,6 +579,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
         raise Refusal('Selected PE lacks compiled private startup witness; no Wine fork')
     if any(key in plan for key in ('launch_nonce', 'stopped_identity', 'loader_identity', 'game_identity', 'bootstrap_mapping')):
         raise Refusal('Launch binding already populated; no second launch')
+    timing_env = render_timing_environment(plan)
     input_script = Path(plan['input_program'])
     if input_script != Path(__file__).with_name('nh-private-input.py').resolve(strict=True):
         raise Refusal('Input provider is not exact adjacent maintained program')
@@ -607,6 +623,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     for name in ('config', 'data', 'cache', 'state'):
         env['XDG_' + name.upper() + '_HOME'] = str(root / name)
     env['XDG_RUNTIME_DIR'] = str(root / 'runtime')
+    env.update(timing_env)
     backend = Linux()
     backend.subreaper()  # BEFORE thread/Popen and before any Wine service fork.
     owner = Owner(backend, env, lambda: verify_xvfb(plan['guard']))

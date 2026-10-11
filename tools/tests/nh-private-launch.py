@@ -163,6 +163,37 @@ def validate_wine_environment(actual, required):
         raise Refusal("Wine host/injection route refused")
 
 
+def render_timing_contract(args):
+    enabled = args.wine_render_load_timings
+    text = args.wine_render_load_timing_limit
+    if not enabled:
+        if text is not None:
+            raise Refusal("Render timing limit requires explicit timing opt-in")
+        return {"enabled": False, "limit": None}
+    if text is None:
+        return {"enabled": True, "limit": 1024}
+    try:
+        limit = int(text)
+    except (TypeError, ValueError) as error:
+        raise Refusal("Invalid render timing limit") from error
+    if str(limit) != text or not 1 <= limit <= 16384:
+        raise Refusal("Render timing limit must be canonical decimal1..16384")
+    return {"enabled": True, "limit": limit}
+
+
+def validate_render_timing_environment(actual, contract):
+    if (not isinstance(contract, dict) or set(contract) != {"enabled", "limit"}
+            or type(contract["enabled"]) is not bool):
+        raise Refusal("Invalid render timing contract")
+    keys = ("NH_RENDER_LOAD_TIMINGS", "NH_RENDER_LOAD_TIMING_LIMIT")
+    if not contract["enabled"]:
+        if contract["limit"] is not None or any(key in actual for key in keys):
+            raise Refusal("Unrequested render timing environment")
+    elif (type(contract["limit"]) is not int or not 1 <= contract["limit"] <= 16384
+            or actual.get(keys[0]) != "1" or actual.get(keys[1]) != str(contract["limit"])):
+        raise Refusal("Actual render timing environment differs from admitted opt-in")
+
+
 def verify_wine_runtime(context, *, plan):
     """Repeated owner-acquired proof; no input or acknowledgement is sent here."""
     uid = os.getuid()
@@ -213,6 +244,8 @@ def verify_wine_runtime(context, *, plan):
                 or any(parent.is_symlink() for parent in directory.parents)):
             raise Refusal("Runtime private profile directory changed")
     validate_wine_environment(context["environment"], expected_environment)
+    validate_render_timing_environment(context["environment"],
+        plan.get("render_timings", {"enabled": False, "limit": None}))
     required_dlls = {"VCMI_lib.dll", "SDL3.dll", "SDL3_image.dll", "SDL3_mixer.dll", "SDL3_ttf.dll"}
     pinned = {str(Path(plan["executable"]).parent/name): pin for name,pin in plan["dlls"].items() if name in required_dlls}
     pinned[plan["executable"]] = plan["executable_sha256"]
@@ -236,6 +269,7 @@ def wine_fullgame_plan(args, client_args):
     if client_args or args.wine_surface_test or any((args.snapshot, args.profile, args.assets, args.debugger_log,
             args.wine_fixtures, args.wine_fixture_manifest, args.wine_fixture_manifest_sha256)):
         raise Refusal("Full-game Wine mode cannot mix other launch routes or arguments")
+    timings = render_timing_contract(args)
     for ancestor in (args.wine_fullgame, *args.wine_fullgame.parents):
         if ancestor.is_symlink():
             raise Refusal("Player package has symlink ancestor")
@@ -314,7 +348,7 @@ def wine_fullgame_plan(args, client_args):
             "server_sha256": args.wine_server_sha256, "input_deadline": 600,
             "input_program": str(input_program), "input_sha256": args.wine_input_sha256,
             "content": content, "bootstrap": str(bootstrap) if bootstrap else None,
-            "bootstrap_sha256": args.wine_bootstrap_sha256}
+            "bootstrap_sha256": args.wine_bootstrap_sha256, "render_timings": timings}
 
 
 def _decimal(value, name):
@@ -440,6 +474,9 @@ def _parser():
     parser.add_argument("--wine-input-sha256", help="required full-game-only pin of adjacent maintained input helper")
     parser.add_argument("--wine-bootstrap", type=Path, help="optional pinned SDL-free Win32 child-environment bootstrap")
     parser.add_argument("--wine-bootstrap-sha256")
+    parser.add_argument("--wine-render-load-timings", action="store_true",
+                        help="full-game-only bounded existing render-load diagnostics")
+    parser.add_argument("--wine-render-load-timing-limit", metavar="1..16384")
     parser.add_argument("--wine-content-manifest", type=Path,
                         help="required full-game-only explicit purchaser-content and fixture manifest")
     parser.add_argument("--wine-content-manifest-sha256")
@@ -663,7 +700,7 @@ def main(argv=None):
             except owner.Refusal as error:
                 raise Refusal(str(error)) from error
         if args.wine_surface_test is not None:
-            if args.wine_input_sha256 or args.wine_server_sha256 or args.wine_content_manifest or args.wine_content_manifest_sha256 or args.wine_bootstrap or args.wine_bootstrap_sha256:
+            if args.wine_input_sha256 or args.wine_server_sha256 or args.wine_content_manifest or args.wine_content_manifest_sha256 or args.wine_bootstrap or args.wine_bootstrap_sha256 or args.wine_render_load_timings or args.wine_render_load_timing_limit is not None:
                 raise Refusal("Full-game-only options misplaced in surface mode")
             return run_wine_surface(args, client_args)
         if any((args.wine_test_sha256, args.wine_sha256, args.wine_binary, args.wine_fixtures,
@@ -671,7 +708,8 @@ def main(argv=None):
                 args.wine_dll_manifest, args.wine_dll_manifest_sha256,
                 args.wine_run_root, args.wine_server_sha256, args.wine_input_sha256,
                 args.wine_content_manifest, args.wine_content_manifest_sha256,
-                args.wine_bootstrap, args.wine_bootstrap_sha256)):
+                args.wine_bootstrap, args.wine_bootstrap_sha256,
+                args.wine_render_load_timings, args.wine_render_load_timing_limit is not None)):
             raise Refusal("Wine options require --wine-surface-test")
         if any(value is None for value in (args.snapshot, args.profile, args.assets)):
             raise Refusal("Game mode requires --snapshot, --profile and --assets")
