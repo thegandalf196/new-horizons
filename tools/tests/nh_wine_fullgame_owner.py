@@ -12,6 +12,7 @@ Caller owns display/capture cleanup and the independent640s outer deadline.
 import ctypes
 import copy
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -400,7 +401,62 @@ def finish_owner(owner, supervisor):
                     owner.errors.append('pidfd close failed: ' + str(error))
 
 
+def content_module():
+    """Only the maintained adjacent module; never PYTHONPATH resolution."""
+    path = Path(__file__).with_name('nh_wine_profile.py')
+    if path.is_symlink() or not path.is_file():
+        raise Refusal('Maintained adjacent content module missing or unsafe')
+    spec = importlib.util.spec_from_file_location('_nh_wine_profile_owned', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def run_fullgame(plan, *, verify_xvfb, verify_runtime):
+    """Admission/content verification outside the timed Wine ownership window."""
+    if not isinstance(plan.get('content'), dict):
+        raise Refusal('Pinned private content manifest missing; no Wine fork')
+    profile = content_module()
+    state = {'staged': False}
+    failure = None
+    status = None
+    final_errors = []
+    initial_originals_verified = False
+    final_originals_verified = False
+    try:
+        profile.verify_original_content(plan['content'])
+        initial_originals_verified = True
+        status = run_staged_fullgame(plan, profile, state, verify_xvfb=verify_xvfb, verify_runtime=verify_runtime)
+    except Exception as error:
+        failure = error
+    finally:
+        # Even an admission/runtime refusal must retain an original-byte audit.
+        # No huge source hashes are included in input proofs or timing samples.
+        if state['staged']:
+            try:
+                profile.verify_staged_content(plan['content'], Path(plan['root']), verify_copy_bytes=False)
+            except Exception as error:
+                final_errors.append('Final immutable map/link verification failed: ' + str(error))
+        try:
+            profile.verify_original_content(plan['content'])
+            final_originals_verified = True
+        except Exception as error:
+            final_errors.append('Final original-content verification failed: ' + str(error))
+        (Path(plan['root']) / 'content-final.json').write_text(json.dumps({
+            'staged': state['staged'], 'final_errors': final_errors,
+            'runtime_failure': str(failure) if failure is not None else None,
+            'initial_originals_verified': initial_originals_verified,
+            'final_originals_verified': final_originals_verified,
+            'originals_unchanged': initial_originals_verified and final_originals_verified
+        }, indent=2))
+    if final_errors:
+        raise Refusal('Final content verification failed; retained private receipt') from failure
+    if failure is not None:
+        raise failure
+    return status
+
+
+def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_runtime):
     """Maintained helper entry. Missing witness-capable artifact refuses pre-fork."""
     executable = Path(plan['executable'])
     image = executable.read_bytes()
@@ -431,6 +487,9 @@ def run_fullgame(plan, *, verify_xvfb, verify_runtime):
     for name in ('content', 'config', 'cache', 'logs'):
         (root / 'localappdata/HeroesIII-NewHorizons' / name).mkdir(mode=0o700, parents=True)
     (root / 'localappdata/new-horizons/Saves').mkdir(mode=0o700, parents=True)
+    profile.stage_content(plan['content'], root)
+    content_state['staged'] = True
+    profile.verify_staged_content(plan['content'], root, verify_copy_bytes=True)
     gate = root / 'localappdata/.nh-private-wine-gate'
     gate.mkdir(mode=0o700)
     windows = lambda path: 'Z:' + str(path).replace('/', '\\')
@@ -464,6 +523,7 @@ def run_fullgame(plan, *, verify_xvfb, verify_runtime):
             plan['stopped_identity'] = copy.deepcopy(stopped)
             plan['loader_identity'] = {'exe': str(plan['wine']), 'sha256': plan['wine_sha256'], 'argv': list(command)}
             def context():
+                profile.verify_staged_content(plan['content'], root, verify_copy_bytes=False)
                 before = backend.snapshot(process.pid)
                 mappings = backend.mappings(process.pid, {p['path'] for p in expected})
                 fd = os.open(gate / 'proof.utf16le', os.O_RDONLY | os.O_NOFOLLOW)

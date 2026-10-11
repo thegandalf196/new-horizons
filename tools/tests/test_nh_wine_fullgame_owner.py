@@ -2,6 +2,7 @@
 """Pure ownership/gesture controls: no fork, prctl, Wine, Xvfb or XTest."""
 import copy
 import importlib.util
+import json
 from pathlib import Path
 import signal
 import tempfile
@@ -295,7 +296,9 @@ class Tests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             pe = Path(name)/'new-horizons.exe'; pe.write_bytes(b'MZ old artifact')
             with mock.patch.object(owner.subprocess, 'Popen') as popen:
-                with self.assertRaises(owner.Refusal): owner.run_fullgame({'executable': str(pe)}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+                with self.assertRaises(owner.Refusal):
+                    owner.run_staged_fullgame({'executable': str(pe)}, mock.Mock(), {},
+                                             verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
                 popen.assert_not_called()
 
     def test_admitted_input_hash_required_before_fork(self):
@@ -306,7 +309,7 @@ class Tests(unittest.TestCase):
                     'input_sha256': '0' * 64}
             with mock.patch.object(owner.subprocess, 'Popen') as popen:
                 with self.assertRaisesRegex(owner.Refusal, 'admitted pin'):
-                    owner.run_fullgame(plan, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+                    owner.run_staged_fullgame(plan, mock.Mock(), {}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
                 popen.assert_not_called()
 
     def test_launch_binding_cannot_be_reminted(self):
@@ -315,7 +318,7 @@ class Tests(unittest.TestCase):
             pe.write_bytes('NH_WINE_PRE_SDL_V1 NH_PRIVATE_WINE_NONCE'.encode('utf-16-le'))
             with mock.patch.object(owner.subprocess, 'Popen') as popen:
                 with self.assertRaisesRegex(owner.Refusal, 'second launch'):
-                    owner.run_fullgame({'executable': str(pe), 'launch_nonce': 'a'*64},
+                    owner.run_staged_fullgame({'executable': str(pe), 'launch_nonce': 'a'*64}, mock.Mock(), {},
                                        verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
                 popen.assert_not_called()
 
@@ -329,22 +332,77 @@ class Tests(unittest.TestCase):
             wine = base/'wine'; wine.write_bytes(b'pure wine fixture')
             server = base/'server'; server.write_bytes(b'pure server fixture')
             program = Path(owner.__file__).with_name('nh-private-input.py').resolve()
-            plan = {'executable': str(pe), 'root': str(root), 'input_program': str(program),
+            plan = {'executable': str(pe), 'root': str(root), 'content': {}, 'input_program': str(program),
                     'input_sha256': owner.file_proof(program)['sha256'],
                     'executable_sha256': owner.file_proof(pe)['sha256'],
                     'dlls': {item: owner.file_proof(base/item)['sha256'] for item in names},
                     'wine': str(wine), 'wine_sha256': owner.file_proof(wine)['sha256'],
                     'server': str(server), 'server_sha256': owner.file_proof(server)['sha256']}
-            with mock.patch.object(owner, 'Linux', side_effect=owner.Refusal('pure stop before backend')), \
+            profile = mock.Mock()
+            def staged(content, destination):
+                for item in ('HeroesIII-NewHorizons/content', 'HeroesIII-NewHorizons/config',
+                             'HeroesIII-NewHorizons/cache', 'HeroesIII-NewHorizons/logs', 'new-horizons/Saves'):
+                    self.assertTrue((destination/'localappdata'/item).is_dir())
+            profile.stage_content.side_effect = staged
+            def backend():
+                profile.stage_content.assert_called_once_with({}, root)
+                profile.verify_staged_content.assert_called_once_with({}, root, verify_copy_bytes=True)
+                raise owner.Refusal('pure stop before backend')
+            with mock.patch.object(owner, 'Linux', side_effect=backend), \
                  mock.patch.object(owner.subprocess, 'Popen') as popen:
                 with self.assertRaisesRegex(owner.Refusal, 'pure stop'):
-                    owner.run_fullgame(plan, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+                    owner.run_staged_fullgame(plan, profile, {}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
                 popen.assert_not_called()
             for item in ('HeroesIII-NewHorizons/content', 'HeroesIII-NewHorizons/config',
                          'HeroesIII-NewHorizons/cache', 'HeroesIII-NewHorizons/logs', 'new-horizons/Saves'):
                 path = root/'localappdata'/item
                 self.assertTrue(path.is_dir())
                 self.assertEqual(path.stat().st_mode & 0o777, 0o700)
+
+    def test_missing_content_refuses_before_module_backend_or_fork(self):
+        with mock.patch.object(owner, 'content_module') as module, \
+             mock.patch.object(owner, 'Linux') as backend, \
+             mock.patch.object(owner.subprocess, 'Popen') as popen:
+            with self.assertRaisesRegex(owner.Refusal, 'manifest missing'):
+                owner.run_fullgame({}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+            module.assert_not_called(); backend.assert_not_called(); popen.assert_not_called()
+
+    def test_final_original_and_immutable_verification_on_runtime_refusal(self):
+        with tempfile.TemporaryDirectory() as name:
+            profile = mock.Mock(); plan = {'content': {'admitted': True}, 'root': name}
+            def runtime(plan, module, state, **kwargs):
+                state['staged'] = True
+                raise owner.Refusal('retained runtime refusal')
+            with mock.patch.object(owner, 'content_module', return_value=profile), \
+                 mock.patch.object(owner, 'run_staged_fullgame', side_effect=runtime):
+                with self.assertRaisesRegex(owner.Refusal, 'retained runtime refusal'):
+                    owner.run_fullgame(plan, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+            self.assertEqual(profile.verify_original_content.call_count, 2)
+            profile.verify_staged_content.assert_called_once_with(plan['content'], Path(name), verify_copy_bytes=False)
+            self.assertTrue((Path(name)/'content-final.json').is_file())
+
+    def test_failed_initial_original_admission_still_verifies_final_originals(self):
+        with tempfile.TemporaryDirectory() as name:
+            profile = mock.Mock(); profile.verify_original_content.side_effect = [owner.Refusal('bad original'), None]
+            with mock.patch.object(owner, 'content_module', return_value=profile), \
+                 mock.patch.object(owner, 'run_staged_fullgame') as runtime:
+                with self.assertRaisesRegex(owner.Refusal, 'bad original'):
+                    owner.run_fullgame({'content': {}, 'root': name}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+                runtime.assert_not_called()
+            self.assertEqual(profile.verify_original_content.call_count, 2)
+            profile.verify_staged_content.assert_not_called()
+            receipt = json.loads((Path(name)/'content-final.json').read_text())
+            self.assertFalse(receipt['initial_originals_verified'])
+            self.assertTrue(receipt['final_originals_verified'])
+            self.assertFalse(receipt['originals_unchanged'])
+
+    def test_final_original_failure_cannot_be_reported_success(self):
+        with tempfile.TemporaryDirectory() as name:
+            profile = mock.Mock(); profile.verify_original_content.side_effect = [None, owner.Refusal('changed original')]
+            with mock.patch.object(owner, 'content_module', return_value=profile), \
+                 mock.patch.object(owner, 'run_staged_fullgame', return_value=0):
+                with self.assertRaisesRegex(owner.Refusal, 'Final content'):
+                    owner.run_fullgame({'content': {}, 'root': name}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
 
 
 if __name__ == '__main__':
