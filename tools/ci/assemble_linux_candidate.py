@@ -113,9 +113,15 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
     with tarfile.open(engine_source, 'r:gz') as archive:
         for member in archive.getmembers():
             name = member.name
-            if not name.startswith(prefix) or '..' in PurePosixPath(name).parts or '\\' in name:
-                raise RuntimeError('Unsafe or wrong source archive root')
-            relative = name[len(prefix):]
+            # tarfile strips the trailing slash from a standard Git root directory.
+            if name in (prefix[:-1], prefix):
+                if not member.isdir():
+                    raise RuntimeError('Source archive root must be a directory')
+                relative = ''
+            else:
+                if not name.startswith(prefix) or '..' in PurePosixPath(name).parts or '\\' in name:
+                    raise RuntimeError('Unsafe or wrong source archive root')
+                relative = name[len(prefix):]
             if relative in source_files:
                 raise RuntimeError('Duplicate source archive member')
             source_files[relative] = member
