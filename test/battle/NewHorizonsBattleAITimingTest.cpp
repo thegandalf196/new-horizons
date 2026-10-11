@@ -13,10 +13,15 @@
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/gameState/CGameState.h"
 
+#include <bit>
+#include <cmath>
 #include <functional>
+#include <map>
 #include <stdexcept>
 
 namespace
@@ -486,4 +491,184 @@ TEST_F(NewHorizonsBattleAITimingTest, EmptyMovementDestinationClosesParentWithou
 	EXPECT_EQ(timing.goTowardsBlocking.calls, 0u);
 	EXPECT_EQ(timing.goTowardsBlocking.totalMicroseconds, 0u);
 	EXPECT_TRUE(callback->actions.empty());
+}
+
+class NewHorizonsExchangeReadParityTest : public NewHorizonsBattleAITimingTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		// These two controls exercise current commands, including the dynamic
+		// Focus Fire damage guard, rather than the legacy timing-only profile.
+		useCommands = true;
+		HeroCommandFixture::mapLoaded(loaded);
+	}
+
+	void expectUnusedReadParity(bool stateful)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+		auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 50);
+		auto * enemyShooter = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 7), 50);
+		auto * controlled = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(6, 6), 50);
+		ASSERT_TRUE(shooter->canShoot());
+		ASSERT_TRUE(enemyShooter->canShoot());
+		ASSERT_FALSE(ordinary->canShoot());
+		ASSERT_TRUE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE));
+
+		auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		std::map<uint32_t, JsonNode> liveBefore;
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+		{
+			const auto * live = dynamic_cast<const battle::CUnitState *>(unit);
+			ASSERT_NE(live, nullptr);
+			const auto snapshot = live->acquireState();
+			liveBefore.emplace(unit->unitId(), snapshot->save());
+			parent->getForUpdate(unit->unitId());
+		}
+		if(stateful)
+		{
+			auto projectedEnemy = parent->getForUpdate(enemy->unitId());
+			ASSERT_GE(parent->battleGetRound(), 1);
+			ASSERT_TRUE(newHorizonsFrozen::canApply(*projectedEnemy, parent->battleGetRound()))
+				<< "round=" << parent->battleGetRound()
+				<< " previous application=" << projectedEnemy->frozenLastAppliedRound();
+			// addUnitBonus prepares and commits the Frozen receipt itself.
+			projectedEnemy->addUnitBonus({newHorizonsFrozen::makeFrozenMarker(
+				BonusSourceID(creatureByName("core:iceElemental")), parent->battleGetRound())});
+			ASSERT_EQ(projectedEnemy->frozenLastAppliedRound(), parent->battleGetRound());
+			projectedEnemy->applyNoQuarter(1, true);
+			parent->getForUpdate(controlled->unitId())->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE,
+				BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID())});
+			FocusFireState mark;
+			mark.targetUnitId = enemy->unitId();
+			mark.recipientUnitIds = {shooter->unitId()};
+			mark.issuedRound = parent->battleGetRound();
+			mark.rangedDamagePercent = 30;
+			parent->setFocusFireState(BattleSide::ATTACKER, mark);
+			HeroOrderState order;
+			order.command = HeroCommand::FOCUS_FIRE;
+			order.issuedRound = parent->battleGetRound();
+			order.primaryTargetUnitId = enemy->unitId();
+			parent->setHeroOrderState(BattleSide::ATTACKER, order);
+			ASSERT_EQ(parent->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::FOCUS_FIRE),
+				std::optional<HeroOrderState>(order));
+			ASSERT_TRUE(order.scheduledFor(shooter->unitId(), parent->battleGetRound()));
+			ASSERT_TRUE(parent->battleIsFocusFireRecipient(parent->battleGetUnitByID(shooter->unitId()),
+				BattleSide::ATTACKER));
+			ASSERT_TRUE(parent->battleIsFocusFireTargetActive(BattleSide::ATTACKER));
+			ASSERT_TRUE(newHorizonsFrozen::isFrozen(*projectedEnemy));
+			ASSERT_TRUE(projectedEnemy->hasBonus(CSelector(newHorizonsOffense::isNoQuarterBonus)));
+			ASSERT_NE(parent->battleGetActionController(parent->battleGetUnitByID(controlled->unitId())),
+				battle()->battleGetActionController(controlled));
+			ASSERT_GT(parent->battleTargetedRangedCommandPercent(parent->battleGetUnitByID(shooter->unitId()),
+				projectedEnemy.get(), true), 0);
+		}
+
+		std::map<uint32_t, JsonNode> parentBefore;
+		for(const auto * unit : parent->battleGetAllUnits(false))
+			parentBefore.emplace(unit->unitId(), parent->getForUpdate(unit->unitId())->save());
+		const auto markBefore = parent->getFocusFireState(BattleSide::ATTACKER);
+		const auto ordersBefore = parent->getHeroOrderStates(BattleSide::ATTACKER);
+		std::optional<float> expectedScore;
+		std::optional<BattleAction> expectedAction;
+		for(const bool unusedReads : {false, true})
+		{
+			auto branch = std::make_shared<HypotheticBattle>(environment.get(), parent);
+			for(const auto & [id, snapshot] : parentBefore)
+				branch->getForUpdate(id);
+			const auto * actor = branch->battleGetUnitByID(ordinary->unitId());
+			DamageCache cache;
+			cache.buildDamageCache(branch, BattleSide::ATTACKER);
+			PotentialTargets targets(actor, cache, branch);
+			ASSERT_FALSE(targets.possibleAttacks.empty());
+			const auto attack = std::ranges::find_if(targets.possibleAttacks, [this](const AttackPossibility & candidate)
+			{
+				return candidate.attack.defender->unitId() == enemy->unitId();
+			});
+			ASSERT_NE(attack, targets.possibleAttacks.end());
+			BattleExchangeEvaluator exchange(callback->getBattle(BattleID(0)), environment, 1.0f, 2);
+			exchange.updateReachabilityMap(branch);
+			const auto units = exchange.getExchangeUnits(*attack, 0, targets, branch);
+			ASSERT_EQ(units.units.size(), 2u); // Normal's two-round forecast, not a shortened search.
+			if(unusedReads)
+			{
+				// Reference only the deleted preprocessing. It never supplies a
+				// target/score; the two-binary XML comparison checks the actual
+				// old-versus-new production algorithm independently of this oracle.
+				battle::Units ourStacks;
+				for(const auto & [turn, queue] : units.units)
+					for(const auto * unit : queue)
+						if(!unit->isTurret() && branch->battleMatchOwner(attack->attack.attacker, unit, true)
+							&& branch->getForUpdate(unit->unitId())->alive() && !vstd::contains(ourStacks, unit))
+							ourStacks.push_back(unit);
+				ASSERT_FALSE(ourStacks.empty());
+				auto meleeAttackers = ourStacks;
+				vstd::removeDuplicates(meleeAttackers);
+				vstd::erase_if(meleeAttackers, [this](const battle::Unit * unit)
+				{
+					return callback->getBattle(BattleID(0))->battleCanShoot(unit);
+				});
+				ASSERT_FALSE(meleeAttackers.empty());
+				ASSERT_LT(meleeAttackers.size(), ourStacks.size()); // Both melee and shooting queries occur.
+			}
+			const float score = exchange.evaluateExchange(*attack, 0, targets, cache, branch);
+			ASSERT_TRUE(std::isfinite(score));
+			ASSERT_NE(score, EvaluationResult::INEFFECTIVE_SCORE);
+			BattleEvaluator selector(environment, callback, branch, cache, actor, PlayerColor(0), BattleID(0),
+				BattleSide::ATTACKER, 1.0f, 2);
+			const auto action = selector.selectStackAction(ordinary);
+			ASSERT_EQ(action.stackNumber, ordinary->unitId());
+			if(expectedScore)
+			{
+				EXPECT_EQ(std::bit_cast<uint32_t>(score), std::bit_cast<uint32_t>(*expectedScore));
+				EXPECT_EQ(action.toString(), expectedAction->toString());
+				EXPECT_EQ(action.perfectMoment, expectedAction->perfectMoment);
+				EXPECT_EQ(action.archerySkirmisherAttack, expectedAction->archerySkirmisherAttack);
+			}
+			else
+			{
+				expectedScore = score;
+				expectedAction = action;
+				RecordProperty("exchangeScoreBits", std::to_string(std::bit_cast<uint32_t>(score)));
+				RecordProperty("selectedAction", action.toString());
+				RecordProperty("perfectMoment", action.perfectMoment ? "true" : "false");
+				RecordProperty("archerySkirmisherAttack", action.archerySkirmisherAttack ? "true" : "false");
+			}
+			for(const auto & [id, snapshot] : parentBefore)
+				EXPECT_EQ(branch->getForUpdate(id)->save(), snapshot);
+			EXPECT_EQ(branch->getFocusFireState(BattleSide::ATTACKER), markBefore);
+			EXPECT_EQ(branch->getHeroOrderStates(BattleSide::ATTACKER), ordersBefore);
+		}
+		for(const auto & [id, snapshot] : parentBefore)
+			EXPECT_EQ(parent->getForUpdate(id)->save(), snapshot);
+		EXPECT_EQ(parent->getFocusFireState(BattleSide::ATTACKER), markBefore);
+		EXPECT_EQ(parent->getHeroOrderStates(BattleSide::ATTACKER), ordersBefore);
+		if(stateful)
+		{
+			EXPECT_TRUE(newHorizonsFrozen::isFrozen(*parent->battleGetUnitByID(enemy->unitId())));
+			EXPECT_TRUE(parent->battleGetUnitByID(enemy->unitId())->hasBonus(CSelector(newHorizonsOffense::isNoQuarterBonus)));
+			EXPECT_NE(parent->battleGetActionController(parent->battleGetUnitByID(controlled->unitId())),
+				battle()->battleGetActionController(controlled));
+		}
+		for(const auto & [id, snapshot] : liveBefore)
+		{
+			const auto * live = dynamic_cast<const battle::CUnitState *>(battle()->battleGetUnitByID(id));
+			ASSERT_NE(live, nullptr);
+			const auto current = live->acquireState();
+			EXPECT_EQ(current->save(), snapshot);
+		}
+		EXPECT_TRUE(callback->actions.empty());
+		EXPECT_TRUE(callback->heroActions.empty());
+		EXPECT_EQ(callback->retreatDecisionCalls, 0u);
+	}
+};
+
+TEST_F(NewHorizonsExchangeReadParityTest, MixedMeleeShootersNormalTwoRoundScoreAndActionMatchUnusedReads)
+{
+	ASSERT_NO_FATAL_FAILURE(expectUnusedReadParity(false));
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, FrozenNoQuarterControllerAndFocusFireForecastMatchUnusedReads)
+{
+	ASSERT_NO_FATAL_FAILURE(expectUnusedReadParity(true));
 }
