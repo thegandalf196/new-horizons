@@ -10,6 +10,11 @@
 #include "StdInc.h"
 #include "NewHorizonsSorcery.h"
 #include "ISpellMechanics.h"
+#include "../bonuses/IBonusBearer.h"
+#include "../bonuses/Bonus.h"
+#include "../bonuses/BonusList.h"
+#include "../bonuses/BonusSelector.h"
+#include "CSpell.h"
 
 #include <algorithm>
 #include <array>
@@ -17,6 +22,57 @@
 
 namespace newHorizonsSorcery
 {
+bool isSpellLocked(const IBonusBearer & stack)
+{
+	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	const auto bonuses = stack.getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock))
+		.And(Selector::type()(BonusType::MAGIC_RESISTANCE)));
+	return bonuses && vstd::contains_if(*bonuses, [](const std::shared_ptr<Bonus> & bonus)
+	{
+		return bonus && Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0;
+	});
+}
+
+std::optional<bool> spellLockPreservesBeneficial(const IBonusBearer & stack)
+{
+	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	const auto bonuses = stack.getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock))
+		.And(Selector::type()(BonusType::NONE)));
+	if(!bonuses)
+		return std::nullopt;
+
+	for(const auto & bonus : *bonuses)
+		if(bonus && Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0)
+			return bonus->val > 0;
+	return std::nullopt;
+}
+
+bool isPreservedSpellLockEffect(const Bonus * bonus, bool preserveBeneficial)
+{
+	if(!bonus || bonus->source != BonusSource::SPELL_EFFECT || !Bonus::NTurns(bonus))
+		return false;
+
+	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	const auto sourceSpellID = bonus->sid.as<SpellID>();
+	if(!sourceSpellID.hasValue() || sourceSpellID == spellLock)
+		return false;
+
+	const auto * sourceSpell = sourceSpellID.toSpell();
+	if(!sourceSpell || sourceSpell->isAdventure() || !sourceSpell->isMagical())
+		return false;
+
+	// Spell Lock removes only the opposing polarity. Neutral magical effects
+	// survive either alignment and their timers are frozen as well.
+	return preserveBeneficial ? !sourceSpell->isNegative() : !sourceSpell->isPositive();
+}
+
+bool durationPausedBySpellLock(const IBonusBearer & bearer, const Bonus & bonus)
+{
+	const auto beneficial = spellLockPreservesBeneficial(bearer);
+	return isSpellLocked(bearer) && beneficial.has_value()
+		&& isPreservedSpellLockEffect(&bonus, *beneficial);
+}
+
 namespace
 {
 void validateSpellPower(int32_t spellPower)
