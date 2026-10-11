@@ -53,13 +53,94 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
                 if path.is_dir() and not path.is_symlink():
                     make_removable(path)
 
-    def freeze_candidate(self, retain_resources_from=None):
+    def freeze_candidate(self, retain_resources_from=None, runtime_libraries=()):
         output = io.StringIO()
         with redirect_stdout(output):
             freeze(SimpleNamespace(client=self.client, resources=self.resources,
                                    store=self.store, promote=False,
+                                   runtime_libraries=runtime_libraries,
                                    retain_resources_from=retain_resources_from))
         return Path(output.getvalue().strip())
+
+    def runtime_library(self, name='libSDL3.so.0', directory=None):
+        directory = directory or self.root / 'providers'
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / name
+        # Synthetic ELF64 little-endian ET_DYN header, never executed.
+        header = bytearray(64)
+        header[:7] = b'\x7fELF\x02\x01\x01'
+        header[16:18] = (3).to_bytes(2, 'little')
+        header[20:24] = (1).to_bytes(4, 'little')
+        path.write_bytes(header + b'synthetic provider')
+        return path
+
+    def test_four_explicit_runtime_providers_are_hashed_readonly_and_unselected(self):
+        providers = [self.runtime_library(name) for name in (
+            'libSDL3.so.0', 'libSDL3_image.so.0', 'libSDL3_mixer.so.0', 'libSDL3_ttf.so.0')]
+        candidate = self.freeze_candidate(runtime_libraries=providers)
+        metadata = verify_snapshot(candidate)
+        for provider in providers:
+            copied = candidate / provider.name
+            self.assertEqual(copied.read_bytes(), provider.read_bytes())
+            self.assertEqual(metadata['files'][provider.name], hashlib.sha256(provider.read_bytes()).hexdigest())
+            self.assertEqual(copied.stat().st_mode & 0o222, 0)
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_runtime_provider_missing_is_refused(self):
+        with self.assertRaisesRegex(RuntimeError, 'regular non-symlink'):
+            self.freeze_candidate(runtime_libraries=[self.root / 'libMissing.so'])
+
+    def test_runtime_provider_symlink_is_refused(self):
+        provider = self.runtime_library()
+        link = provider.with_name('libLink.so.0')
+        link.symlink_to(provider)
+        with self.assertRaisesRegex(RuntimeError, 'regular non-symlink'):
+            self.freeze_candidate(runtime_libraries=[link])
+
+    def test_runtime_provider_unsafe_basename_is_refused(self):
+        for name in ('provider.so', 'libBad.so.notnumeric', 'libBad.so.1;bad'):
+            with self.subTest(name=name), self.assertRaisesRegex(RuntimeError, 'safe lib'):
+                self.freeze_candidate(runtime_libraries=[self.runtime_library(name)])
+
+    def test_runtime_provider_non_elf_or_executable_header_is_refused(self):
+        provider = self.runtime_library()
+        for payload in (b'not ELF', b'\x7fELF', provider.read_bytes()[:16] + b'\x02\x00' + provider.read_bytes()[18:]):
+            provider.write_bytes(payload)
+            with self.subTest(payload=payload), self.assertRaisesRegex(RuntimeError, 'ELF shared-object'):
+                self.freeze_candidate(runtime_libraries=[provider])
+
+    def test_runtime_provider_basename_collisions_are_refused(self):
+        provider = self.runtime_library()
+        duplicate = self.runtime_library(directory=self.root / 'other-providers')
+        for providers in ([self.runtime_library('libvcmi.so')], [provider, duplicate], [provider, provider]):
+            with self.subTest(providers=providers), self.assertRaisesRegex(RuntimeError, 'basename collision'):
+                self.freeze_candidate(runtime_libraries=providers)
+
+    def test_runtime_provider_change_during_copy_is_refused(self):
+        provider = self.runtime_library()
+        write_payload = snapshot_tools.write_payload
+
+        def copy_then_change(files, target):
+            write_payload(files, target)
+            provider.write_bytes(provider.read_bytes() + b'changed after copy')
+
+        with mock.patch.object(snapshot_tools, 'write_payload', side_effect=copy_then_change):
+            with self.assertRaisesRegex(RuntimeError, 'changed while'):
+                self.freeze_candidate(runtime_libraries=[provider])
+        self.assertFalse(list(self.store.glob('snapshot-*')))
+        self.assertFalse(list(self.store.glob('.snapshot-*')))
+
+    def test_cli_accepts_repeated_runtime_library_options(self):
+        providers = [self.runtime_library('libOne.so'), self.runtime_library('libTwo.so.1.2')]
+        script = Path(__file__).resolve().parents[1] / 'ci/linux_playable_snapshot.py'
+        command = [sys.executable, str(script), 'freeze', '--client', str(self.client),
+                   '--resources', str(self.resources), '--store', str(self.store), '--no-promote']
+        for provider in providers:
+            command.extend(['--runtime-library', str(provider)])
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        metadata = verify_snapshot(Path(result.stdout.strip()))
+        self.assertTrue(all(provider.name in metadata['files'] for provider in providers))
 
     def promote_candidate(self, snapshot):
         output = io.StringIO()
