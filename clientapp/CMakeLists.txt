@@ -5,6 +5,7 @@ set(clientapp_SRCS
 
 set(clientapp_HEADERS
 		StdInc.h
+		PrivateWineStartupWitness.h
 )
 
 option(ENABLE_NH_ART_CACHE_REGRESSION "Build the CPU-only NHART startup and payload regression" OFF)

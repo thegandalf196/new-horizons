@@ -12,6 +12,7 @@
 
 #include "StdInc.h"
 #include "../Global.h"
+#include "PrivateWineStartupWitness.h"
 #include <vstd/DateUtils.h>
 
 #include "../client/ClientCommandManager.h"
@@ -145,6 +146,10 @@ int SDL_main(int argc, char *argv[])
 int main(int argc, char * argv[])
 #endif
 {
+#ifdef VCMI_WINDOWS
+	if(const int result = privateWineStartup::verifyBeforeSDL(); result != 0)
+		return result;
+#endif
 #ifdef SDL_MAIN_HANDLED
 	// entry point is provided by VCMI, so SDL has to be told that it already ran
 	SDL_SetMainReady();

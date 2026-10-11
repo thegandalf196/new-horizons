@@ -23,7 +23,9 @@ Only these optional client arguments are accepted after --:
 """
 import argparse
 import hashlib
+import importlib.util
 import json
+import ntpath
 import os
 from pathlib import Path
 import stat
@@ -32,6 +34,7 @@ import struct
 import subprocess
 import sys
 import time
+import uuid
 
 
 PRIVATE_DISPLAY = ":191"
@@ -45,6 +48,219 @@ WINE_STOP_EXEC = "import os,signal,sys;os.kill(os.getpid(),signal.SIGSTOP);os.ex
 
 class Refusal(Exception):
     """A fail-closed validation error."""
+
+
+def validate_wine_identity(row, *, owner_uid):
+    """Mandatory identity for one explicitly tracked process, not name discovery."""
+    if type(owner_uid) is not int or owner_uid < 0 or not isinstance(row, dict):
+        raise Refusal("Invalid Wine ownership record")
+    if any(type(row.get(k)) is not int or row[k] <= 0 for k in ("pid", "start_ticks")):
+        raise Refusal("Wine PID/start identity missing")
+    if type(row.get("uid")) is not int or row["uid"] != owner_uid:
+        raise Refusal("Wine process is not owned")
+    try:
+        boot = uuid.UUID(row.get("boot_id", ""))
+    except (ValueError, AttributeError, TypeError) as error:
+        raise Refusal("Invalid Wine boot identity") from error
+    if boot.int == 0 or str(boot) != row["boot_id"]:
+        raise Refusal("Invalid Wine boot identity")
+
+
+def validate_wine_exec_transition(stopped, actual, loader, *, owner_uid):
+    for row in (stopped, actual):
+        validate_wine_identity(row, owner_uid=owner_uid)
+    if (stopped.get("state") != "T" or actual.get("state") not in ("R", "S", "D", "I")
+            or not isinstance(loader, dict) or not isinstance(loader.get("argv"), list)
+            or not loader["argv"] or not Path(loader.get("exe", "")).is_absolute()
+            or not _is_sha(loader.get("sha256"))):
+        raise Refusal("Unproven Wine loader transition")
+    if any(stopped[k] != actual[k] for k in ("pid", "start_ticks", "uid", "boot_id")):
+        raise Refusal("Wine identity changed across exec")
+    if any(actual.get(k) != loader[k] for k in ("exe", "sha256", "argv")):
+        raise Refusal("Wine loader does not match exact pinned transition")
+
+
+def _is_sha(value):
+    return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+
+
+def parse_wine_fullgame_witness(payload, *, nonce, executable, facade, localappdata):
+    """Win32 before-engine-SDL proof, not DLL-initializer or input authority."""
+    if not _is_sha(nonce) or not isinstance(payload, bytes) or len(payload) > 8192 or len(payload) % 2:
+        raise Refusal("Invalid Win32 witness")
+    try:
+        lines = payload.decode("utf-16-le", errors="strict").split("\n")
+        suffixes = (r"\HeroesIII-NewHorizons\content", r"\HeroesIII-NewHorizons\config",
+                    r"\HeroesIII-NewHorizons\cache", r"\HeroesIII-NewHorizons\logs", r"\new-horizons\Saves")
+        paths = [executable, facade, localappdata,
+                 ntpath.join(ntpath.dirname(executable), "config", "dirs.json"),
+                 localappdata + r"\.nh-private-wine-gate\proof.utf16le",
+                 localappdata + r"\.nh-private-wine-gate\approved.utf16le",
+                 localappdata + suffixes[2] + r"\extracted",
+                 *[localappdata + s for s in suffixes]]
+        if any(not isinstance(p, str) or not p or len(p.encode("utf-16-le")) // 2 >= 260
+               or any(c in p for c in ("\n", "\r", "\0")) or ".." in p.split("\\") for p in paths):
+            raise Refusal("Win32 paths exceed current resolver contract")
+    except UnicodeError as error:
+        raise Refusal("Invalid Win32 witness encoding") from error
+    if (len(lines) != 16 or lines[-1] != "" or any("\r" in x or "\0" in x for x in lines)
+            or lines[:2] != ["NH_WINE_PRE_SDL_V1", nonce]
+            or not localappdata.startswith("Z:\\") or not localappdata.endswith(r"\localappdata")
+            or lines[3:10] != [executable, facade, localappdata, "dummy", "dummy", "windows", "windows"]
+            or lines[10:15] != [localappdata + s for s in suffixes]):
+        raise Refusal("Win32 witness environment/challenge mismatch")
+    pid = _decimal(lines[2], "Win32 PID")
+    if pid > 0xffffffff:
+        raise Refusal("Win32 PID exceeds uint32")
+    return {"windows_pid": pid, "nonce": nonce,
+            "verified_win32_before_engine_sdl_init_environment": True, "input_authorized": False}
+
+
+def validate_wine_private_root(root, *, uid):
+    if not root.is_absolute() or ".." in root.parts:
+        raise Refusal("Wine root must be an absolute plain path")
+    for path in (root, *root.parents):
+        if path.is_symlink():
+            raise Refusal("Wine root has symlink ancestor")
+    info = root.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != uid or stat.S_IMODE(info.st_mode) != 0o700:
+        raise Refusal("Wine root must be owned0700")
+    repository = Path(__file__).resolve().parents[2]
+    if root == Path.home() or root == Path("/") or root.is_relative_to(repository) or any(root.iterdir()):
+        raise Refusal("Wine root must be fresh outside checkout")
+
+
+def validate_wine_mapping_rows(rows, expected):
+    """Same-open-file hash/stat proofs supplied by the owner, never basename matching."""
+    required = {"new-horizons.exe", "VCMI_lib.dll", "SDL3.dll", "SDL3_image.dll", "SDL3_mixer.dll", "SDL3_ttf.dll"}
+    if not isinstance(expected, list) or not required <= {Path(x.get("path", "")).name for x in expected}:
+        raise Refusal("PE/facade/four-provider mappings required")
+    for artifact in expected:
+        if (not Path(artifact.get("path", "")).is_absolute() or not _is_sha(artifact.get("sha256"))
+                or type(artifact.get("inode")) is not int or artifact["inode"] <= 0
+                or not isinstance(artifact.get("device"), str) or not artifact["device"]):
+            raise Refusal("Invalid selected mapped-file proof")
+        matches = [r for r in rows if r.get("path") == artifact["path"]]
+        if not matches or any(any(r.get(k) != artifact[k] for k in ("sha256", "inode", "device")) for r in matches):
+            raise Refusal("Selected Wine mapping changed/missing")
+    selected = {x["path"] for x in expected}
+    if any(Path(r.get("path", "")).name.casefold() in {name.casefold() for name in required}
+           and r.get("path") not in selected for r in rows):
+        raise Refusal("Alternative selected PE/provider mapping")
+
+
+def validate_wine_environment(actual, required):
+    fixed = {"DISPLAY": PRIVATE_DISPLAY, "SDL_VIDEODRIVER": "windows", "SDL_VIDEO_DRIVER": "windows",
+             "SDL_AUDIODRIVER": "dummy", "SDL_AUDIO_DRIVER": "dummy"}
+    for key in ("HOME", "WINEHOME", "WINEPREFIX", "LOCALAPPDATA", "XDG_DATA_HOME", "XDG_CONFIG_HOME",
+                "XDG_CACHE_HOME", "XDG_STATE_HOME", "XDG_RUNTIME_DIR"):
+        if not required.get(key) or actual.get(key) != required[key]:
+            raise Refusal("Actual Wine private profile differs")
+    if any(actual.get(k) != v for k,v in fixed.items()):
+        raise Refusal("Actual Wine silent/display route differs")
+    if any(actual.get(k) for k in ("WAYLAND_DISPLAY", "LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH",
+                                   "PULSE_SERVER", "PIPEWIRE_REMOTE", "WINELOADER", "WINESERVER")):
+        raise Refusal("Wine host/injection route refused")
+
+
+def verify_wine_runtime(context, *, plan):
+    """Repeated owner-acquired proof; no input or acknowledgement is sent here."""
+    uid = os.getuid()
+    if (not _is_sha(plan.get("launch_nonce")) or context.get("nonce") != plan["launch_nonce"]
+            or not isinstance(plan.get("stopped_identity"), dict) or context.get("stopped") != plan["stopped_identity"]
+            or not isinstance(plan.get("loader_identity"), dict) or context.get("loader") != plan["loader_identity"]):
+        raise Refusal("Runtime proof differs from retained launch challenge/identity")
+    before, after = context["before"], context["after"]
+    validate_wine_identity(before, owner_uid=uid)
+    validate_wine_identity(after, owner_uid=uid)
+    if any(before[k] != after[k] for k in ("pid", "start_ticks", "uid", "boot_id")):
+        raise Refusal("Wine process changed around runtime proof")
+    validate_wine_exec_transition(context["stopped"], after, context["loader"], owner_uid=uid)
+    root = Path(plan["root"])
+    expected_environment = {key: str(root/name) for key,name in (
+        ("HOME", "home"), ("WINEHOME", "home"), ("WINEPREFIX", "prefix"),
+        ("XDG_DATA_HOME", "data"), ("XDG_CONFIG_HOME", "config"),
+        ("XDG_CACHE_HOME", "cache"), ("XDG_STATE_HOME", "state"), ("XDG_RUNTIME_DIR", "runtime"))}
+    win32_local = "Z:" + str(root/"localappdata").replace("/", "\\")
+    expected_environment["LOCALAPPDATA"] = win32_local
+    if context["required_environment"] != expected_environment:
+        raise Refusal("Runtime profile pins differ from admitted private root")
+    for directory in {root, *[root/name for name in ("home", "prefix", "data", "config", "cache", "state", "runtime", "localappdata")]}:
+        info = directory.lstat()
+        if (not stat.S_ISDIR(info.st_mode) or info.st_uid != uid or stat.S_IMODE(info.st_mode) & 0o022
+                or (directory == root and stat.S_IMODE(info.st_mode) != 0o700)
+                or any(parent.is_symlink() for parent in directory.parents)):
+            raise Refusal("Runtime private profile directory changed")
+    validate_wine_environment(context["environment"], expected_environment)
+    required_dlls = {"VCMI_lib.dll", "SDL3.dll", "SDL3_image.dll", "SDL3_mixer.dll", "SDL3_ttf.dll"}
+    pinned = {str(Path(plan["executable"]).parent/name): pin for name,pin in plan["dlls"].items() if name in required_dlls}
+    pinned[plan["executable"]] = plan["executable_sha256"]
+    if {r.get("path"):r.get("sha256") for r in context["expected_mappings"]} != pinned:
+        raise Refusal("Runtime map pins differ from admitted package")
+    validate_wine_mapping_rows(context["mappings"], context["expected_mappings"])
+    if (context["win32_executable"] != "Z:"+plan["executable"].replace("/", "\\")
+            or context["win32_facade"] != "Z:"+str(Path(plan["executable"]).parent/"VCMI_lib.dll").replace("/", "\\")
+            or context["win32_localappdata"] != win32_local):
+        raise Refusal("Win32 witness paths differ from admitted package/profile")
+    proof = parse_wine_fullgame_witness(context["witness"], nonce=context["nonce"],
+        executable=context["win32_executable"], facade=context["win32_facade"], localappdata=context["win32_localappdata"])
+    if (context.get("supervisor_ready_before_resume") is not True or context.get("owned_service_graph_verified") is not True
+            or type(context.get("age_after_io")) not in (int,float) or not 0 <= context["age_after_io"] < 600):
+        raise Refusal("Wine cleanup/service/input deadline gate missing")
+    return proof
+
+
+def wine_fullgame_plan(args, client_args):
+    """Real admission wiring only. No process creation, profile writes or ack."""
+    if client_args or args.wine_surface_test or any((args.snapshot, args.profile, args.assets, args.debugger_log,
+            args.wine_fixtures, args.wine_fixture_manifest, args.wine_fixture_manifest_sha256)):
+        raise Refusal("Full-game Wine mode cannot mix other launch routes or arguments")
+    for ancestor in (args.wine_fullgame, *args.wine_fullgame.parents):
+        if ancestor.is_symlink():
+            raise Refusal("Player package has symlink ancestor")
+    if not args.wine_fullgame.is_absolute():
+        raise Refusal("Player path must be absolute")
+    executable = _pinned_file(args.wine_fullgame, args.wine_test_sha256)
+    if executable.name != "new-horizons.exe":
+        raise Refusal("Full-game Wine requires selected player PE")
+    image = executable.read_bytes()
+    if len(image) < 64 or image[:2] != b"MZ":
+        raise Refusal("Player is not a PE")
+    offset = struct.unpack_from("<I", image, 60)[0]
+    if (offset + 24 > len(image) or image[offset:offset+4] != b"PE\0\0"
+            or struct.unpack_from("<H", image, offset+4)[0] != 0x8664
+            or not struct.unpack_from("<H", image, offset+22)[0] & 2):
+        raise Refusal("Player must be executable AMD64 PE")
+    receipt = _pinned_file(args.wine_dll_manifest, args.wine_dll_manifest_sha256)
+    dlls = json.loads(receipt.read_text())
+    required = {"VCMI_lib.dll", "SDL3.dll", "SDL3_image.dll", "SDL3_mixer.dll", "SDL3_ttf.dll"}
+    if not isinstance(dlls, dict) or not required <= set(dlls):
+        raise Refusal("Full-game manifest lacks facade/four SDL providers")
+    for name, pin in dlls.items():
+        if not isinstance(name, str) or Path(name).name != name or not name.endswith(".dll"):
+            raise Refusal("Unsafe full-game DLL receipt")
+        _pinned_file(executable.parent/name, pin)
+    wine = _pinned_file(args.wine_binary, args.wine_sha256)
+    if not wine.is_relative_to(WINE_INSTALL_ROOT) or wine.name not in ("wine", "wine64") or wine.read_bytes()[:4] != b"\x7fELF" or not os.access(wine, os.X_OK):
+        raise Refusal("Full-game Wine loader must be installed pinned ELF")
+    server = _pinned_file(wine.parent/"wineserver", args.wine_server_sha256)
+    if not os.access(server, os.X_OK):
+        raise Refusal("Pinned prefix server is not executable")
+    input_program = _pinned_file(Path(__file__).with_name("nh-private-input.py"), args.wine_input_sha256)
+    if args.wine_run_root is None:
+        raise Refusal("Fresh private full-game root required")
+    validate_wine_private_root(args.wine_run_root, uid=os.getuid())
+    # Root remains untouched, and even the future expanded profile must fit MAX_PATH.
+    local = "Z:" + str(args.wine_run_root).replace("/", "\\") + r"\localappdata"
+    bounded = [local+r"\HeroesIII-NewHorizons\cache\extracted",
+               "Z:"+str(executable.parent/"config/dirs.json").replace("/", "\\")]
+    if any(len(path.encode("utf-16-le"))//2 >= 260 for path in bounded):
+        raise Refusal("Private profile exceeds existing Win32 path bound")
+    return {"executable": str(executable), "wine": str(wine), "server": str(server),
+            "root": str(args.wine_run_root), "guard": str(args.guard), "dlls": dlls,
+            "executable_sha256": args.wine_test_sha256, "wine_sha256": args.wine_sha256,
+            "server_sha256": args.wine_server_sha256, "input_deadline": 600,
+            "input_program": str(input_program), "input_sha256": args.wine_input_sha256}
 
 
 def _decimal(value, name):
@@ -164,6 +380,10 @@ def _parser():
                         help="new exclusive gdb log inside the managed private profile")
     parser.add_argument("--wine-surface-test", type=Path,
                         help="only the numerical mask regression PE, never the game")
+    parser.add_argument("--wine-fullgame", type=Path,
+                        help="guarded full-game route requiring a witness-capable PE and private ownership checks; not gameplay-certified")
+    parser.add_argument("--wine-server-sha256")
+    parser.add_argument("--wine-input-sha256", help="required full-game-only pin of adjacent maintained input helper")
     parser.add_argument("--wine-test-sha256")
     parser.add_argument("--wine-sha256")
     parser.add_argument("--wine-binary", type=Path)
@@ -367,12 +587,30 @@ def main(argv=None):
     try:
         # Refuse before creating any child process, even the managed wrapper.
         verify_owned_xvfb(args.guard)
+        if args.wine_fullgame is not None:
+            plan = wine_fullgame_plan(args, client_args)
+            if args.verify_only:
+                return 0
+            # Kept separate from native/surface modes; never fall back if owner absent.
+            owner_path = Path(__file__).with_name("nh_wine_fullgame_owner.py")
+            if owner_path.is_symlink() or not owner_path.is_file():
+                raise Refusal("Adjacent full-game Wine ownership dispatcher unavailable")
+            spec = importlib.util.spec_from_file_location("nh_wine_fullgame_owner_guarded", owner_path)
+            owner = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(owner)
+            try:
+                return owner.run_fullgame(plan, verify_xvfb=verify_owned_xvfb,
+                    verify_runtime=lambda context: verify_wine_runtime(context, plan=plan))
+            except owner.Refusal as error:
+                raise Refusal(str(error)) from error
         if args.wine_surface_test is not None:
+            if args.wine_input_sha256 or args.wine_server_sha256:
+                raise Refusal("Full-game-only options misplaced in surface mode")
             return run_wine_surface(args, client_args)
         if any((args.wine_test_sha256, args.wine_sha256, args.wine_binary, args.wine_fixtures,
                 args.wine_fixture_manifest, args.wine_fixture_manifest_sha256,
                 args.wine_dll_manifest, args.wine_dll_manifest_sha256,
-                args.wine_run_root)):
+                args.wine_run_root, args.wine_server_sha256, args.wine_input_sha256)):
             raise Refusal("Wine options require --wine-surface-test")
         if any(value is None for value in (args.snapshot, args.profile, args.assets)):
             raise Refusal("Game mode requires --snapshot, --profile and --assets")
