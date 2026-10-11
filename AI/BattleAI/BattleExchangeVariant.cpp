@@ -935,7 +935,7 @@ float BattleExchangeVariant::trackAttack(
 	float attackerDamageReduce = 0;
 	const bool defenderWasAlive = defender->alive();
 	const int64_t defenderHealthBeforeAttack = defender->getAvailableHealth();
-	const auto defenderRebirthSource = defenderWasAlive
+	const auto defenderRebirthSource = !evaluateOnly && defenderWasAlive
 		? hb->captureElementalRebirthSource(*defender) : std::nullopt;
 	const bool defenderMayRebirth = hb->hasReadyNativeRebirth(defender.get());
 	// Only Hex and Cleave consume the probe's post-attack attacker state.
