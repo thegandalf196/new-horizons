@@ -658,11 +658,49 @@ class PrivateWineWitnessDiagnosticContractTest(unittest.TestCase):
     def test_stderr_contains_only_fixed_stage_code_not_private_values(self):
         diagnostic = self.source.split('inline int refusal(RefusalStage stage)', 1)[1].split('\n}', 1)[0]
         self.assertIn('"NH_WINE_PRE_SDL_REFUSAL stage=%u\\n", static_cast<unsigned int>(stage)', diagnostic)
-        self.assertEqual(self.source.count('std::fprintf('), 1)
+        self.assertEqual(self.source.count('std::fprintf('), 2)
         self.assertIn('std::fflush(stderr);', diagnostic)
         self.assertIn('return 86;', diagnostic)
         for forbidden in ('nonce', 'environment(', 'GetLastError', '.what()', 'wstring', '%s', '%ls'):
             self.assertNotIn(forbidden, diagnostic)
+
+    def test_local_detail_codes_are_fixed_and_do_not_print_environment_values(self):
+        details = ['readActual', 'readExpected', 'actualMissing', 'actualOversized',
+                   'actualNewline', 'expectedMissing', 'expectedOversized',
+                   'expectedNewline', 'unequal', 'unbounded', 'tooShort', 'prefix',
+                   'dots', 'trailingSeparator', 'suffix']
+        enum = self.source.split('enum class LocalRefusalDetail', 1)[1].split('};', 1)[0]
+        self.assertEqual(re.findall(r'(\w+)\s*=\s*(\d+)', enum),
+                         [(name, str(index)) for index, name in enumerate(details, 1)])
+        diagnostic = self.source.split('inline int localRefusal(LocalRefusalDetail detail)', 1)[1].split('\n}', 1)[0]
+        self.assertIn('"NH_WINE_PRE_SDL_LOCAL_DETAIL detail=%u\\n", static_cast<unsigned int>(detail)', diagnostic)
+        self.assertIn('return refusal(RefusalStage::local);', diagnostic)
+        for forbidden in ('nonce', 'environment(', 'GetLastError', '.what()', 'wstring', '%s', '%ls'):
+            self.assertNotIn(forbidden, diagnostic)
+
+    def test_local_reads_and_predicate_order_preserve_fail_closed_contract(self):
+        read = self.source.split('inline std::wstring localEnvironment(', 1)[1].split('\n}', 1)[0]
+        for required in ('wchar_t buffer[2048];', 'GetEnvironmentVariableW(name, buffer, 2048)',
+                         'length == 0', 'length >= 2048', 'value.find_first_of(L"\\r\\n")',
+                         'LocalRefusalDetail::readExpected : LocalRefusalDetail::readActual',
+                         'LocalRefusalDetail::expectedMissing : LocalRefusalDetail::actualMissing',
+                         'LocalRefusalDetail::expectedOversized : LocalRefusalDetail::actualOversized',
+                         'LocalRefusalDetail::expectedNewline : LocalRefusalDetail::actualNewline'):
+            self.assertIn(required, read)
+        body = self.source.split('stage = RefusalStage::local;', 1)[1].split('stage = RefusalStage::audioVideo;', 1)[0]
+        clauses = ['localEnvironment(L"LOCALAPPDATA", false, localDetail)',
+                   'localEnvironment(L"NH_PRIVATE_WINE_LOCALAPPDATA", true, localDetail)',
+                   'if(!boundedPath(local))', 'if(local != expected)', 'if(local.size() < 20)',
+                   'if(local.substr(0, 3) != L"Z:\\\\")',
+                   'if(local.find(L"..") != std::wstring::npos)',
+                   "if(local.back() == L'\\\\')",
+                   'if(local.substr(local.size() - 13) != L"\\\\localappdata")']
+        positions = [body.index(clause) for clause in clauses]
+        self.assertEqual(positions, sorted(positions))
+        self.assertEqual(re.findall(r'return localRefusal\(LocalRefusalDetail::(\w+)\)', body),
+                         ['unbounded', 'unequal', 'tooShort', 'prefix', 'dots', 'trailingSeparator', 'suffix'])
+        self.assertIn('if(stage == RefusalStage::local)\n\t\treturn localRefusal(localDetail);', self.source)
+        self.assertNotIn('SetEnvironmentVariable', self.source)
 
 
 if __name__ == "__main__":

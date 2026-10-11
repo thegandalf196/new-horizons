@@ -40,6 +40,32 @@ inline int refusal(RefusalStage stage)
 	return 86;
 }
 
+enum class LocalRefusalDetail : unsigned int
+{
+	readActual = 1,
+	readExpected = 2,
+	actualMissing = 3,
+	actualOversized = 4,
+	actualNewline = 5,
+	expectedMissing = 6,
+	expectedOversized = 7,
+	expectedNewline = 8,
+	unequal = 9,
+	unbounded = 10,
+	tooShort = 11,
+	prefix = 12,
+	dots = 13,
+	trailingSeparator = 14,
+	suffix = 15
+};
+
+inline int localRefusal(LocalRefusalDetail detail)
+{
+	std::fprintf(stderr, "NH_WINE_PRE_SDL_LOCAL_DETAIL detail=%u\n", static_cast<unsigned int>(detail));
+	std::fflush(stderr);
+	return refusal(RefusalStage::local);
+}
+
 inline std::wstring environment(const wchar_t * name)
 {
 	wchar_t buffer[2048];
@@ -49,6 +75,32 @@ inline std::wstring environment(const wchar_t * name)
 	std::wstring value(buffer, length);
 	if(value.find_first_of(L"\r\n") != std::wstring::npos)
 		throw std::runtime_error("Invalid private gate environment");
+	return value;
+}
+
+// Same bounded read as environment(), with fixed codes only for stage two.
+// A failure during allocation/read retains the actual/expected phase code.
+inline std::wstring localEnvironment(const wchar_t * name, bool expected, LocalRefusalDetail & detail)
+{
+	detail = expected ? LocalRefusalDetail::readExpected : LocalRefusalDetail::readActual;
+	wchar_t buffer[2048];
+	const DWORD length = GetEnvironmentVariableW(name, buffer, 2048);
+	if(length == 0)
+	{
+		detail = expected ? LocalRefusalDetail::expectedMissing : LocalRefusalDetail::actualMissing;
+		throw std::runtime_error("Missing or oversized private gate environment");
+	}
+	if(length >= 2048)
+	{
+		detail = expected ? LocalRefusalDetail::expectedOversized : LocalRefusalDetail::actualOversized;
+		throw std::runtime_error("Missing or oversized private gate environment");
+	}
+	std::wstring value(buffer, length);
+	if(value.find_first_of(L"\r\n") != std::wstring::npos)
+	{
+		detail = expected ? LocalRefusalDetail::expectedNewline : LocalRefusalDetail::actualNewline;
+		throw std::runtime_error("Invalid private gate environment");
+	}
 	return value;
 }
 
@@ -108,18 +160,29 @@ inline int verifyBeforeSDL()
 	if(enabled == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND)
 		return 0;
 	auto stage = RefusalStage::nonce;
+	auto localDetail = LocalRefusalDetail::readActual;
 	try
 	{
 		const auto nonce = environment(L"NH_PRIVATE_WINE_NONCE");
 		if(nonce.size() != 64 || nonce.find_first_not_of(L"0123456789abcdef") != std::wstring::npos)
 			return refusal(stage);
 		stage = RefusalStage::local;
-		const auto local = environment(L"LOCALAPPDATA");
-		const auto expected = environment(L"NH_PRIVATE_WINE_LOCALAPPDATA");
-		if(!boundedPath(local) || local != expected || local.size() < 20 || local.substr(0, 3) != L"Z:\\"
-			|| local.find(L"..") != std::wstring::npos || local.back() == L'\\'
-			|| local.substr(local.size() - 13) != L"\\localappdata")
-			return refusal(stage);
+		const auto local = localEnvironment(L"LOCALAPPDATA", false, localDetail);
+		const auto expected = localEnvironment(L"NH_PRIVATE_WINE_LOCALAPPDATA", true, localDetail);
+		if(!boundedPath(local))
+			return localRefusal(LocalRefusalDetail::unbounded);
+		if(local != expected)
+			return localRefusal(LocalRefusalDetail::unequal);
+		if(local.size() < 20)
+			return localRefusal(LocalRefusalDetail::tooShort);
+		if(local.substr(0, 3) != L"Z:\\")
+			return localRefusal(LocalRefusalDetail::prefix);
+		if(local.find(L"..") != std::wstring::npos)
+			return localRefusal(LocalRefusalDetail::dots);
+		if(local.back() == L'\\')
+			return localRefusal(LocalRefusalDetail::trailingSeparator);
+		if(local.substr(local.size() - 13) != L"\\localappdata")
+			return localRefusal(LocalRefusalDetail::suffix);
 		stage = RefusalStage::audioVideo;
 		if(environment(L"SDL_AUDIODRIVER") != L"dummy" || environment(L"SDL_AUDIO_DRIVER") != L"dummy"
 			|| environment(L"SDL_VIDEODRIVER") != L"windows" || environment(L"SDL_VIDEO_DRIVER") != L"windows")
@@ -235,6 +298,8 @@ inline int verifyBeforeSDL()
 	{
 		// Stage only: exception text can contain private paths or input values.
 	}
+	if(stage == RefusalStage::local)
+		return localRefusal(localDetail);
 	return refusal(stage);
 }
 }
