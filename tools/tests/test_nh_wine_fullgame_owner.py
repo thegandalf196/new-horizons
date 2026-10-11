@@ -20,7 +20,7 @@ class Backend:
     def __init__(self):
         self.tree = {1: {2}, 2: set()}
         self.identities = {2: {'pid': 2, 'start_ticks': 20, 'uid': self.uid, 'boot_id': self.boot,
-                              'state': 'S', 'exe': '/pinned/wine', 'sha256': 'a' * 64, 'argv': ['wine', 'game']}}
+                              'state': 'S', 'ppid': 1, 'exe': '/pinned/wine', 'sha256': 'a' * 64, 'argv': ['wine', 'game']}}
         self.sent, self.waits, self.closed = [], [], []
         self.env = {'WINEPREFIX': '/private/prefix'}
 
@@ -29,6 +29,11 @@ class Backend:
         if pid not in self.identities: raise FileNotFoundError(pid)
         return copy.deepcopy(self.identities[pid])
     def environment(self, pid): return dict(self.env)
+    def kernel_snapshot(self, pid):
+        if pid == self.pid:
+            return {'pid': 1, 'start_ticks': 10, 'uid': self.uid, 'boot_id': self.boot, 'state': 'S', 'ppid': 0}
+        if pid not in self.identities: raise FileNotFoundError(pid)
+        return {key: self.identities[pid][key] for key in ('pid', 'start_ticks', 'uid', 'boot_id', 'state', 'ppid')}
     def pidfd(self, pid): return pid + 100
     def close(self, fd): self.closed.append(fd)
     def send(self, fd, sig): self.sent.append((fd, sig))
@@ -84,19 +89,55 @@ class Tests(unittest.TestCase):
         self.o.signal_owned(signal.SIGKILL)
         self.assertFalse(self.backend.sent)
 
-    def test_executable_race_no_signal(self):
+    def test_cleanup_does_not_require_executable_visibility(self):
         self.o.adopt()
-        original = self.backend.snapshot
-        count = 0
-        def raced(pid):
-            nonlocal count
-            count += 1
-            result = original(pid)
-            if count == 2: result['exe'] = '/unexpected/exec'
-            return result
-        self.backend.snapshot = raced
+        self.backend.snapshot = mock.Mock(side_effect=PermissionError('exe unreadable'))
         self.o.signal_owned(signal.SIGKILL)
+        self.assertEqual(self.backend.sent, [(102, signal.SIGKILL)])
+        self.backend.snapshot.assert_not_called()
+
+    def test_unreadable_environment_retained_before_diagnostics_and_reaped(self):
+        def denied(pid):
+            self.assertIn(pid, self.o.ledger)
+            self.assertIn(102, self.o.signal_fds)
+            raise PermissionError(13, 'environment unreadable')
+        self.backend.environment = denied
+        self.o.adopt()
+        entry = self.o.ledger[2]
+        self.assertIsNone(entry['initial_environment_empty'])
+        self.assertEqual(entry['environment_diagnostic'], {'status': 'unreadable', 'error_type': 'PermissionError', 'errno': 13})
+        self.o.signal_owned(signal.SIGTERM)
+        self.backend.waits = [(2, 0)]
+        self.o.reap()
+        self.assertEqual(self.backend.sent, [(102, signal.SIGTERM)])
+        self.assertEqual(self.o.reaped, {2: 0})
+        self.assertFalse(self.o.errors)
+
+    def test_unreadable_actual_input_environment_still_refuses_gesture(self):
+        self.backend.environment = mock.Mock(side_effect=PermissionError(13, 'actual environment'))
+        self.o.adopt()
+        gesture = mock.Mock()
+        with self.assertRaises(PermissionError):
+            self.o.verify_input(lambda: self.backend.environment(2), self.verify, gesture)
+        gesture.assert_not_called()
+        self.verify.assert_not_called()
+
+    def test_foreign_actual_parent_never_retained(self):
+        self.backend.identities[2]['ppid'] = 999
+        with self.assertRaises(owner.Refusal): self.o.adopt()
+        self.assertFalse(self.o.ledger)
         self.assertFalse(self.backend.sent)
+
+    def test_pidfd_race_closes_unretained_fd(self):
+        original = self.backend.pidfd
+        def raced(pid):
+            fd = original(pid)
+            self.backend.identities[pid]['start_ticks'] += 1
+            return fd
+        self.backend.pidfd = raced
+        with self.assertRaises(owner.Refusal): self.o.adopt()
+        self.assertEqual(self.backend.closed, [102])
+        self.assertFalse(self.o.ledger)
 
     def test_state_scheduling_change_not_pid_reuse(self):
         self.o.adopt()

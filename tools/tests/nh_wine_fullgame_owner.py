@@ -85,6 +85,17 @@ class Linux:
         if libc.prctl(37, ctypes.byref(value), 0, 0, 0) != 0 or value.value != 1:
             raise Refusal("Wine child subreaper not armed")
 
+    def kernel_snapshot(self, pid):
+        """Cleanup identity does not require dumpable exe/environ visibility."""
+        proc = Path('/proc') / str(pid)
+        before = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+        uid = proc.stat().st_uid
+        after = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+        if before[19] != after[19] or before[1] != after[1]:
+            raise Refusal('Process changed during kernel identity read')
+        return {'pid': pid, 'start_ticks': int(after[19]), 'uid': uid,
+                'boot_id': self.boot, 'state': after[0], 'ppid': int(after[1])}
+
     def snapshot(self, pid):
         proc = Path('/proc') / str(pid)
         fields = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
@@ -206,7 +217,25 @@ class Owner:
             while queue:
                 parent = queue.pop()
                 try:
+                    parent_before = self.backend.kernel_snapshot(parent)
+                    if parent_before['uid'] != self.backend.uid or parent_before['boot_id'] != self.backend.boot:
+                        if parent == self.backend.pid:
+                            raise Refusal('Foreign owner identity')
+                        self.errors.append('Foreign retained parent identity')
+                        continue
+                    if parent != self.backend.pid:
+                        retained = self.ledger[parent]['identity']
+                        if retained is None:
+                            # Direct child's pidfd still permits cleanup, but
+                            # missing parent proof never permits descendant adoption.
+                            continue
+                        if any(parent_before[k] != retained[k] for k in ('pid', 'start_ticks', 'uid', 'boot_id')):
+                            self.errors.append('Retained parent lifetime changed')
+                            continue
                     children = self.backend.children(parent)
+                    parent_after = self.backend.kernel_snapshot(parent)
+                    if any(parent_before[k] != parent_after[k] for k in ('pid', 'start_ticks', 'uid', 'boot_id')):
+                        raise Refusal('Parent changed around child enumeration')
                 except FileNotFoundError:
                     continue
                 for pid in children - seen:
@@ -214,23 +243,36 @@ class Owner:
                     if pid in self.ledger and pid not in self.reaped:
                         continue
                     try:
-                        identity = self.backend.snapshot(pid)
-                        try:
-                            actual = self.backend.environment(pid)
-                        except FileNotFoundError:
-                            actual = {}
+                        identity = self.backend.kernel_snapshot(pid)
                         if identity['uid'] != self.backend.uid or identity['boot_id'] != self.backend.boot:
                             raise Refusal("Foreign descendant identity")
+                        if identity['ppid'] not in (parent, self.backend.pid):
+                            raise Refusal('Descendant outside retained lineage')
                         fd = self.backend.pidfd(pid)
-                        after = self.backend.snapshot(pid)
-                        if any(identity[k] != after[k] for k in ('pid', 'start_ticks', 'uid', 'boot_id')):
+                        try:
+                            after = self.backend.kernel_snapshot(pid)
+                            if any(identity[k] != after[k] for k in ('pid', 'start_ticks', 'uid', 'boot_id')) or after['ppid'] not in (parent, self.backend.pid):
+                                raise Refusal("Descendant reused or changed lineage around pidfd")
+                            if after['ppid'] != self.backend.pid:
+                                current_parent = self.backend.kernel_snapshot(parent)
+                                if any(parent_before[k] != current_parent[k] for k in ('pid', 'start_ticks', 'uid', 'boot_id')):
+                                    raise Refusal('Parent changed around descendant retention')
+                        except Exception:
                             self.backend.close(fd)
-                            raise Refusal("Descendant reused around pidfd")
+                            raise
                         # Kernel ancestry+subreaper+pidfd establish cleanup
                         # ownership even if Wine cleared environ. INPUT remains
                         # fail-closed on actual environ in verify_runtime.
-                        self.retain(pid, {'identity': identity, 'pidfd': fd,
-                                          'initial_environment_empty': not bool(actual)})
+                        entry = {'identity': identity, 'pidfd': fd,
+                                 'initial_environment_empty': None}
+                        self.retain(pid, entry)
+                        try:
+                            actual = self.backend.environment(pid)
+                            entry['initial_environment_empty'] = not bool(actual)
+                            entry['environment_diagnostic'] = {'status': 'read'}
+                        except (FileNotFoundError, PermissionError) as error:
+                            entry['environment_diagnostic'] = {'status': 'unreadable',
+                                'error_type': type(error).__name__, 'errno': error.errno}
                     except FileNotFoundError:
                         continue
             return seen
@@ -242,7 +284,7 @@ class Owner:
                 if pid in self.reaped:
                     continue
                 try:
-                    before = self.backend.snapshot(pid)
+                    before = self.backend.kernel_snapshot(pid)
                     original = entry['identity']
                     if original is None:
                         # Direct stopped child retained before proof I/O failed.
@@ -253,11 +295,9 @@ class Owner:
                         raise Refusal("Owned PID identity changed; no signal")
                     if before['state'] == 'Z':
                         continue
-                    # Descendants may exec normally; bind the CURRENT exact exe/argv
-                    # around each signal, with original pidfd keeping lifetime identity.
-                    after = self.backend.snapshot(pid)
-                    if any(before[k] != after[k] for k in ('pid', 'start_ticks', 'uid', 'boot_id', 'exe', 'sha256', 'argv')):
-                        raise Refusal("Owned executable changed around signal")
+                    after = self.backend.kernel_snapshot(pid)
+                    if any(before[k] != after[k] for k in ('pid', 'start_ticks', 'uid', 'boot_id', 'ppid')):
+                        raise Refusal("Owned kernel lifetime changed around signal")
                     self.backend.send(entry['pidfd'], sig)
                 except (FileNotFoundError, ProcessLookupError):
                     pass
