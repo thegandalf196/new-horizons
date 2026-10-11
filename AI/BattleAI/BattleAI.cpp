@@ -241,9 +241,10 @@ struct CBattleAI::TimingState
 			})
 			{
 				const auto & stage = work.*member;
-				logAi->info("BattleAI nested effect work context=%s lifecycle=%s stage=%s calls=%llu us=%llu",
+				logAi->info("BattleAI nested effect work context=%s lifecycle=%s stage=%s calls=%llu us=%llu ns=%llu",
 					context, lifecycle, name, static_cast<unsigned long long>(stage.calls),
-					static_cast<unsigned long long>(stage.totalMicroseconds));
+					static_cast<unsigned long long>(stage.totalMicroseconds),
+					static_cast<unsigned long long>(stage.totalNanoseconds));
 			}
 		};
 		logEffectWork("movement", "activation_expiry", result->movementExchangeActivationExpiryWork);
@@ -359,8 +360,7 @@ public:
 					&HypotheticLifecycleTiming::EffectWorkTiming::removalMutation,
 					&HypotheticLifecycleTiming::EffectWorkTiming::roundAging})
 				{
-					(aggregate.*member).calls += (sample.*member).calls;
-					(aggregate.*member).totalMicroseconds += (sample.*member).totalMicroseconds;
+					(aggregate.*member).accumulate(sample.*member);
 				}
 			};
 			accumulateSelection(state->summary.selectionMovementSearch, selectionTotals.movementSearch);

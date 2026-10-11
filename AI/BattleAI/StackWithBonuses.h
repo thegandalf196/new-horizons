@@ -41,6 +41,13 @@ struct DLL_LINKAGE HypotheticLifecycleTiming
 	{
 		uint64_t calls = 0;
 		uint64_t totalMicroseconds = 0;
+		uint64_t totalNanoseconds = 0;
+		void accumulate(const StageTiming & sample)
+		{
+			calls += sample.calls;
+			totalMicroseconds += sample.totalMicroseconds;
+			totalNanoseconds += sample.totalNanoseconds;
+		}
 	};
 	struct DLL_LINKAGE EffectWorkTiming
 	{

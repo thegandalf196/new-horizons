@@ -40,9 +40,13 @@ void expectEffectWorkBounds(const HypotheticLifecycleTiming::EffectWorkTiming & 
 		&work.selectiveRemovalQuery, &work.removalMutation, &work.roundAging})
 	{
 		measured += stage->totalMicroseconds;
+		EXPECT_GE(stage->totalNanoseconds, stage->totalMicroseconds * 1000);
 		EXPECT_LE(stage->calls, parentCalls);
 		if(parentCalls == 0)
+		{
 			EXPECT_EQ(stage->totalMicroseconds, 0u);
+			EXPECT_EQ(stage->totalNanoseconds, 0u);
+		}
 	}
 	EXPECT_LE(measured, parentMicroseconds);
 	EXPECT_EQ(work.stackedQuery.calls, parentCalls);
@@ -312,6 +316,43 @@ TEST(NewHorizonsBattleAITimingCountersTest, UnstartedAIHasNoBattleSummary)
 {
 	CBattleAI ai;
 	EXPECT_FALSE(ai.getTimingSummary().has_value());
+}
+
+TEST(NewHorizonsBattleAITimingCountersTest, LifecycleNanosecondsPreserveSubmicrosecondSamplesAcrossAggregation)
+{
+	using Stage = HypotheticLifecycleTiming::StageTiming;
+	HypotheticLifecycleTiming exchange;
+	CBattleAI::TimingSummary summary;
+	// Same accumulation operation used at exchange and callback aggregation,
+	// with synthetic values rather than a platform-dependent clock threshold.
+	for(uint64_t nanoseconds : {1u, 499u, 999u})
+	{
+		Stage sample;
+		sample.calls = 1;
+		sample.totalNanoseconds = nanoseconds;
+		exchange.activationExpiryRemoval.accumulate(sample);
+		exchange.activationExpiryWork.stackedQuery.accumulate(sample);
+	}
+	EXPECT_EQ(exchange.activationExpiryRemoval.calls, 3u);
+	EXPECT_EQ(exchange.activationExpiryRemoval.totalMicroseconds, 0u);
+	EXPECT_EQ(exchange.activationExpiryRemoval.totalNanoseconds, 1499u);
+	summary.movementExchangeActivationExpiryWork.stackedQuery.accumulate(exchange.activationExpiryWork.stackedQuery);
+	summary.movementExchangeActivationExpiryWork.stackedQuery.accumulate(exchange.activationExpiryWork.stackedQuery);
+	const auto & aggregate = summary.movementExchangeActivationExpiryWork.stackedQuery;
+	EXPECT_EQ(aggregate.calls, 6u);
+	EXPECT_EQ(aggregate.totalMicroseconds, 0u); // Never re-round the accumulated ns.
+	EXPECT_EQ(aggregate.totalNanoseconds, 2998u);
+	Stage mixed;
+	mixed.calls = 1;
+	mixed.totalMicroseconds = 2;
+	mixed.totalNanoseconds = 2345;
+	exchange.activationExpiryWork.stackedQuery.accumulate(mixed);
+	EXPECT_EQ(exchange.activationExpiryWork.stackedQuery.totalMicroseconds, 2u);
+	EXPECT_EQ(exchange.activationExpiryWork.stackedQuery.totalNanoseconds, 3844u);
+	exchange = {};
+	summary = {};
+	EXPECT_EQ(exchange.activationExpiryRemoval.totalNanoseconds, 0u);
+	EXPECT_EQ(summary.movementExchangeActivationExpiryWork.stackedQuery.totalNanoseconds, 0u);
 }
 
 TEST_F(NewHorizonsBattleAITimingTest, HealingTentEarlyReturnCountsOnceAndPreservesActionAndWaitFlag)
@@ -905,6 +946,19 @@ protected:
 	void expectLifecycleSubsets(const BattleMovementTiming::ExchangeTiming & exchange) const
 	{
 		const auto & nested = exchange.lifecycleSubsets;
+		const auto expectNanosecondBounds = [](const HypotheticLifecycleTiming::EffectWorkTiming & work,
+			const HypotheticLifecycleTiming::StageTiming & parent)
+		{
+			uint64_t measured = 0;
+			for(const auto * stage : {&work.stackedQuery, &work.rawQuery, &work.snapshotMaterialization,
+				&work.selectiveRemovalQuery, &work.removalMutation, &work.roundAging})
+				measured += stage->totalNanoseconds;
+			EXPECT_LE(measured, parent.totalNanoseconds);
+			EXPECT_GE(parent.totalNanoseconds, parent.totalMicroseconds * 1000);
+		};
+		expectNanosecondBounds(nested.activationExpiryWork, nested.activationExpiryRemoval);
+		expectNanosecondBounds(nested.activationGamblerWork, nested.activationGamblerRemoval);
+		expectNanosecondBounds(nested.roundTimedWork, nested.roundTimedUpdates);
 		EXPECT_LE(nested.activationExpiryRemoval.totalMicroseconds + nested.activationGamblerRemoval.totalMicroseconds,
 			exchange.activationStart.totalMicroseconds);
 		// These count measured calls, not completed activations or rounds.
@@ -1072,6 +1126,7 @@ TEST_F(NewHorizonsExchangeTimingTest, BestTargetAlreadyWaitedSkipsWaitBuckets)
 	{
 		EXPECT_EQ(stage->calls, 0u);
 		EXPECT_EQ(stage->totalMicroseconds, 0u);
+		EXPECT_EQ(stage->totalNanoseconds, 0u);
 	}
 	expectBestTargetClosure(timing);
 }
@@ -1880,6 +1935,8 @@ protected:
 				{
 					const std::string key = std::string(context) + "_" + name;
 					stage(key.c_str(), previous.*member, current.*member);
+					RecordProperty(prefix + key + "_ns", std::to_string((current.*member).totalNanoseconds
+						- (previous.*member).totalNanoseconds));
 				}
 			};
 			effectWork("movementActivationExpiry", before.movementExchangeActivationExpiryWork, after.movementExchangeActivationExpiryWork);

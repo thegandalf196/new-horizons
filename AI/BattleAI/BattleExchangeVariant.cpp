@@ -108,8 +108,7 @@ public:
 		{
 			const auto & sample = local.lifecycleSubsets.*member;
 			auto & aggregate = timing->lifecycleSubsets.*member;
-			aggregate.calls += sample.calls;
-			aggregate.totalMicroseconds += sample.totalMicroseconds;
+			aggregate.accumulate(sample);
 		}
 		timing->body.totalMicroseconds += local.body.totalMicroseconds;
 		for(auto context : {&HypotheticLifecycleTiming::activationExpiryWork,
@@ -124,8 +123,7 @@ public:
 			{
 				const auto & sample = (local.lifecycleSubsets.*context).*stage;
 				auto & aggregate = (timing->lifecycleSubsets.*context).*stage;
-				aggregate.calls += sample.calls;
-				aggregate.totalMicroseconds += sample.totalMicroseconds;
+				aggregate.accumulate(sample);
 			}
 		}
 		timing->remainderMicroseconds += local.body.totalMicroseconds - classified;

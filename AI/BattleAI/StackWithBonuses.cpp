@@ -77,8 +77,9 @@ public:
 		if(timing)
 		{
 			++timing->calls;
-			timing->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
-				Clock::now() - started).count();
+			const auto elapsed = Clock::now() - started;
+			timing->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+			timing->totalNanoseconds += std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
 		}
 	}
 };
