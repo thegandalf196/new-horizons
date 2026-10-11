@@ -89,8 +89,10 @@ class StackWithBonuses : public battle::CUnitState, public virtual IBonusBearer,
 	public std::enable_shared_from_this<StackWithBonuses>
 {
 public:
-	std::vector<Bonus> bonusesToAdd;
-	std::vector<Bonus> bonusesToUpdate;
+	// Queries must retain each local record's identity: descendant removals
+	// suppress the original pointer, not every bonus with an equal value.
+	std::vector<std::shared_ptr<Bonus>> bonusesToAdd;
+	std::vector<std::shared_ptr<Bonus>> bonusesToUpdate;
 	std::set<std::shared_ptr<Bonus>> bonusesToRemove;
 	int treeVersionLocal;
 

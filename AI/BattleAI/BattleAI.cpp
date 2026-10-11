@@ -88,7 +88,10 @@ struct CBattleAI::TimingState
 			" exchange_membership_calls=%llu exchange_membership_us=%llu"
 			" exchange_projection_setup_calls=%llu exchange_projection_setup_us=%llu"
 			" exchange_target_probe_calls=%llu exchange_target_probe_us=%llu"
-			" exchange_applied_attack_calls=%llu exchange_applied_attack_us=%llu exchange_remainder_us=%llu"
+			" exchange_applied_attack_calls=%llu exchange_applied_attack_us=%llu"
+			" exchange_activation_start_calls=%llu exchange_activation_start_us=%llu"
+			" exchange_activation_end_calls=%llu exchange_activation_end_us=%llu"
+			" exchange_round_advance_calls=%llu exchange_round_advance_us=%llu exchange_remainder_us=%llu"
 			" move_go_blocking_subset_calls=%llu move_go_blocking_subset_us=%llu"
 			" select_target_exchange_calls=%llu select_target_exchange_us=%llu select_remainder_us=%llu"
 			" select_best_target_calls=%llu select_best_target_us=%llu"
@@ -98,6 +101,9 @@ struct CBattleAI::TimingState
 			" best_target_waited_projectionsetup_calls=%llu best_target_waited_projectionsetup_us=%llu"
 			" best_target_waited_targetprobes_calls=%llu best_target_waited_targetprobes_us=%llu"
 			" best_target_waited_appliedattacks_calls=%llu best_target_waited_appliedattacks_us=%llu"
+			" best_target_waited_activation_start_calls=%llu best_target_waited_activation_start_us=%llu"
+			" best_target_waited_activation_end_calls=%llu best_target_waited_activation_end_us=%llu"
+			" best_target_waited_round_advance_calls=%llu best_target_waited_round_advance_us=%llu"
 			" best_target_waited_remainder_us=%llu"
 			" best_target_normal_exchange_calls=%llu best_target_normal_exchange_us=%llu"
 			" best_target_normal_body_calls=%llu best_target_normal_body_us=%llu"
@@ -105,6 +111,9 @@ struct CBattleAI::TimingState
 			" best_target_normal_projectionsetup_calls=%llu best_target_normal_projectionsetup_us=%llu"
 			" best_target_normal_targetprobes_calls=%llu best_target_normal_targetprobes_us=%llu"
 			" best_target_normal_appliedattacks_calls=%llu best_target_normal_appliedattacks_us=%llu"
+			" best_target_normal_activation_start_calls=%llu best_target_normal_activation_start_us=%llu"
+			" best_target_normal_activation_end_calls=%llu best_target_normal_activation_end_us=%llu"
+			" best_target_normal_round_advance_calls=%llu best_target_normal_round_advance_us=%llu"
 			" best_target_normal_remainder_us=%llu"
 			" best_target_remainder_us=%llu"
 			" select_siege_defense_calls=%llu select_siege_defense_us=%llu"
@@ -141,6 +150,12 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->movementExchangeTargetProbes.totalMicroseconds),
 			static_cast<unsigned long long>(result->movementExchangeAppliedAttacks.calls),
 			static_cast<unsigned long long>(result->movementExchangeAppliedAttacks.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeActivationStart.calls),
+			static_cast<unsigned long long>(result->movementExchangeActivationStart.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeActivationEnd.calls),
+			static_cast<unsigned long long>(result->movementExchangeActivationEnd.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeRoundAdvance.calls),
+			static_cast<unsigned long long>(result->movementExchangeRoundAdvance.totalMicroseconds),
 			static_cast<unsigned long long>(result->movementExchangeRemainderMicroseconds),
 			static_cast<unsigned long long>(result->movementGoBlockingSubset.calls),
 			static_cast<unsigned long long>(result->movementGoBlockingSubset.totalMicroseconds),
@@ -161,6 +176,12 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbes.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetWaitedAppliedAttacks.calls),
 			static_cast<unsigned long long>(result->bestTargetWaitedAppliedAttacks.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedActivationStart.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedActivationStart.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedActivationEnd.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedActivationEnd.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedRoundAdvance.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedRoundAdvance.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetWaitedRemainderMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetNormalExchange.calls),
 			static_cast<unsigned long long>(result->bestTargetNormalExchange.totalMicroseconds),
@@ -174,6 +195,12 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->bestTargetNormalTargetProbes.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetNormalAppliedAttacks.calls),
 			static_cast<unsigned long long>(result->bestTargetNormalAppliedAttacks.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalActivationStart.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalActivationStart.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalActivationEnd.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalActivationEnd.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalRoundAdvance.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalRoundAdvance.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetNormalRemainderMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetRemainderMicroseconds),
 			static_cast<unsigned long long>(result->selectionSiegeDefense.calls),
@@ -290,6 +317,9 @@ public:
 			accumulateSelection(state->summary.movementExchangeProjectionSetup, exchange.projectionSetup);
 			accumulateSelection(state->summary.movementExchangeTargetProbes, exchange.targetProbes);
 			accumulateSelection(state->summary.movementExchangeAppliedAttacks, exchange.appliedAttacks);
+			accumulateSelection(state->summary.movementExchangeActivationStart, exchange.activationStart);
+			accumulateSelection(state->summary.movementExchangeActivationEnd, exchange.activationEnd);
+			accumulateSelection(state->summary.movementExchangeRoundAdvance, exchange.roundAdvance);
 			state->summary.movementExchangeRemainderMicroseconds += exchange.remainderMicroseconds;
 			accumulateSelection(state->summary.movementGoBlockingSubset, movement.goTowardsBlocking);
 			state->summary.movementRemainderMicroseconds += selectionTotals.movementSearch.totalMicroseconds
@@ -303,6 +333,9 @@ public:
 			accumulateSelection(state->summary.bestTargetWaitedProjectionSetup, bestTarget.waitedDetails.projectionSetup);
 			accumulateSelection(state->summary.bestTargetWaitedTargetProbes, bestTarget.waitedDetails.targetProbes);
 			accumulateSelection(state->summary.bestTargetWaitedAppliedAttacks, bestTarget.waitedDetails.appliedAttacks);
+			accumulateSelection(state->summary.bestTargetWaitedActivationStart, bestTarget.waitedDetails.activationStart);
+			accumulateSelection(state->summary.bestTargetWaitedActivationEnd, bestTarget.waitedDetails.activationEnd);
+			accumulateSelection(state->summary.bestTargetWaitedRoundAdvance, bestTarget.waitedDetails.roundAdvance);
 			state->summary.bestTargetWaitedRemainderMicroseconds += bestTarget.waitedDetails.remainderMicroseconds;
 			accumulateSelection(state->summary.bestTargetNormalExchange, bestTarget.normalExchange);
 			accumulateSelection(state->summary.bestTargetNormalBody, bestTarget.normalDetails.body);
@@ -310,6 +343,9 @@ public:
 			accumulateSelection(state->summary.bestTargetNormalProjectionSetup, bestTarget.normalDetails.projectionSetup);
 			accumulateSelection(state->summary.bestTargetNormalTargetProbes, bestTarget.normalDetails.targetProbes);
 			accumulateSelection(state->summary.bestTargetNormalAppliedAttacks, bestTarget.normalDetails.appliedAttacks);
+			accumulateSelection(state->summary.bestTargetNormalActivationStart, bestTarget.normalDetails.activationStart);
+			accumulateSelection(state->summary.bestTargetNormalActivationEnd, bestTarget.normalDetails.activationEnd);
+			accumulateSelection(state->summary.bestTargetNormalRoundAdvance, bestTarget.normalDetails.roundAdvance);
 			state->summary.bestTargetNormalRemainderMicroseconds += bestTarget.normalDetails.remainderMicroseconds;
 			state->summary.bestTargetRemainderMicroseconds += selectionTotals.bestTarget.totalMicroseconds
 				- bestTarget.waitedExchange.totalMicroseconds - bestTarget.normalExchange.totalMicroseconds;

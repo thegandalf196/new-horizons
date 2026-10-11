@@ -181,7 +181,7 @@ void replacePhysicalAfflictionMarker(StackWithBonuses & unit, Bonus marker)
 				marker.turnsRemain = std::max(marker.turnsRemain, existing->turnsRemain);
 		unit.removeUnitBonus(selector);
 	}
-	unit.bonusesToAdd.emplace_back(std::move(marker));
+	unit.bonusesToAdd.push_back(std::make_shared<Bonus>(std::move(marker)));
 }
 
 void restoreGuardianSpiritFromExistingBonuses(StackWithBonuses & unit)
@@ -523,8 +523,9 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 			if(mergeSelector(&bonus))
 				ret->push_back(std::make_shared<Bonus>(bonus));
 
-	for(const Bonus & bonus : bonusesToUpdate)
+	for(const auto & record : bonusesToUpdate)
 	{
+		const Bonus & bonus = *record;
 		if(mergeSelector(&bonus))
 		{
 			const bool markedAfflictionGroup = isInPhysicalAfflictionGroup(&bonus, capturedPhysicalAfflictionGroups);
@@ -536,17 +537,15 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 			}
 			else
 			{
-				auto b = std::make_shared<Bonus>(bonus);
-				ret->push_back(b);
+				ret->push_back(record);
 			}
 		}
 	}
 
-	for(auto & bonus : bonusesToAdd)
+	for(const auto & bonus : bonusesToAdd)
 	{
-		auto b = std::make_shared<Bonus>(bonus);
-		if(mergeSelector(b.get()))
-			ret->push_back(b);
+		if(mergeSelector(bonus.get()))
+			ret->push_back(bonus);
 	}
 	if(replaceNativeCreatureBonuses)
 	{
@@ -620,13 +619,13 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 			auto next = confusionState;
 			next.applyPending(stamped.spellCasterOwner, stamped.val == 2);
 			removeUnitBonus(Selector::type()(BonusType::CONFUSION_PENDING));
-			bonusesToAdd.emplace_back(stamped);
+			bonusesToAdd.push_back(std::make_shared<Bonus>(stamped));
 			confusionState = next;
 		}
 		else if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
 			replacePhysicalAfflictionMarker(*this, stamped);
 		else
-			bonusesToAdd.emplace_back(stamped);
+			bonusesToAdd.push_back(std::make_shared<Bonus>(stamped));
 		if(stamped.source == BonusSource::SPELL_EFFECT)
 			exactLocalSpellEffects->push_back(stamped);
 	}
@@ -665,7 +664,7 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 			{
 				return newHorizonsSwiftRebirth::isLifecycleMarker(*candidate);
 			}));
-			bonusesToAdd.emplace_back(stamped);
+			bonusesToAdd.push_back(std::make_shared<Bonus>(stamped));
 		}
 		else if(stamped.type == BonusType::CONFUSION_PENDING)
 		{
@@ -674,13 +673,13 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 			auto next = confusionState;
 			next.applyPending(stamped.spellCasterOwner, stamped.val == 2);
 			removeUnitBonus(Selector::type()(BonusType::CONFUSION_PENDING));
-			bonusesToAdd.emplace_back(stamped);
+			bonusesToAdd.push_back(std::make_shared<Bonus>(stamped));
 			confusionState = next;
 		}
 		else if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
 			replacePhysicalAfflictionMarker(*this, stamped);
 		else
-			bonusesToUpdate.emplace_back(stamped);
+			bonusesToUpdate.push_back(std::make_shared<Bonus>(stamped));
 		if(stamped.source == BonusSource::SPELL_EFFECT)
 		{
 			bool found = false;
@@ -799,8 +798,8 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 	for(auto b : *toRemove)
 		bonusesToRemove.insert(b);
 
-	vstd::erase_if(bonusesToAdd, [&](const Bonus & b){return effectiveSelector(&b);});
-	vstd::erase_if(bonusesToUpdate, [&](const Bonus & b){return effectiveSelector(&b);});
+	vstd::erase_if(bonusesToAdd, [&](const auto & b){return effectiveSelector(b.get());});
+	vstd::erase_if(bonusesToUpdate, [&](const auto & b){return effectiveSelector(b.get());});
 	if(projectedEffects)
 		vstd::erase_if(*projectedEffects, [&](const Bonus & b){return effectiveSelector(&b);});
 	vstd::erase_if(*exactLocalSpellEffects, [&](const Bonus & b){return effectiveSelector(&b);});
@@ -955,13 +954,13 @@ void StackWithBonuses::captureEffects()
 				copy->second = std::make_shared<Bonus>(*bonus);
 			projectedUnstackedEffects->push_back(copy->second);
 		}
-	vstd::erase_if(bonusesToAdd, [this](const Bonus & bonus)
+	vstd::erase_if(bonusesToAdd, [this](const auto & bonus)
 	{
-		return isCapturedProjectionEffect(&bonus, capturedPhysicalAfflictionGroups);
+		return isCapturedProjectionEffect(bonus.get(), capturedPhysicalAfflictionGroups);
 	});
-	vstd::erase_if(bonusesToUpdate, [this](const Bonus & bonus)
+	vstd::erase_if(bonusesToUpdate, [this](const auto & bonus)
 	{
-		return isCapturedProjectionEffect(&bonus, capturedPhysicalAfflictionGroups);
+		return isCapturedProjectionEffect(bonus.get(), capturedPhysicalAfflictionGroups);
 	});
 }
 
@@ -1024,8 +1023,22 @@ void StackWithBonuses::advanceTimedRound()
 				&& bonus->turnsRemain <= 0);
 		});
 	}
-	age(bonusesToAdd);
-	age(bonusesToUpdate);
+	const auto ageRecords = [&roundTimed](auto & records)
+	{
+		for(auto & record : records)
+			if(roundTimed(record.get()) && record->turnsRemain > 0)
+			{
+				// A retained query/descendant may still own the earlier identity.
+				record = std::make_shared<Bonus>(*record);
+				--record->turnsRemain;
+			}
+		vstd::erase_if(records, [&roundTimed](const auto & record)
+		{
+			return roundTimed(record.get()) && record->turnsRemain <= 0;
+		});
+	};
+	ageRecords(bonusesToAdd);
+	ageRecords(bonusesToUpdate);
 	++treeVersionLocal;
 	restoreGuardianSpiritFromExistingBonuses(*this);
 	if(health.isCapacityHealthTracking() && getCapacityHealthReferenceMax() > 0)
