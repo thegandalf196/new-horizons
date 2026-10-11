@@ -212,14 +212,16 @@ bool isEligibleSource(const battle::Unit & unit)
 
 bool isElementalMemoryBonus(const Bonus & bonus)
 {
+	if((bonus.type != BonusType::MORALE && bonus.type != BonusType::LUCK)
+		|| bonus.source != BonusSource::SECONDARY_SKILL || bonus.duration != BonusDuration::N_TURNS
+		|| bonus.valType != BonusValueType::ADDITIVE_VALUE || bonus.val <= 0
+		|| bonus.parameters || bonus.hasStatusMetadata())
+		return false;
+
 	const SecondarySkill skill(SecondarySkill::decode(std::string(SKILL_ID)));
 	const auto key = std::string(ELEMENTAL_MEMORY_ID)
 		+ (bonus.type == BonusType::MORALE ? ".morale" : ".luck");
-	return (bonus.type == BonusType::MORALE || bonus.type == BonusType::LUCK)
-		&& skill.getNum() >= 0 && bonus.source == BonusSource::SECONDARY_SKILL
-		&& bonus.sid == BonusSourceID(skill) && bonus.duration == BonusDuration::N_TURNS
-		&& bonus.valType == BonusValueType::ADDITIVE_VALUE && bonus.val > 0
-		&& bonus.stacking == key && !bonus.parameters && !bonus.hasStatusMetadata();
+	return skill.getNum() >= 0 && bonus.sid == BonusSourceID(skill) && bonus.stacking == key;
 }
 
 std::vector<Bonus> elementalMemoryBonuses(const DeathSnapshot & snapshot, const battle::Unit & reborn)

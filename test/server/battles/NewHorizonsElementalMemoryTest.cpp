@@ -318,3 +318,70 @@ TEST_F(NewHorizonsElementalMemoryTest, ChainCapturesCurrentFirstGenerationModifi
 	nextRound();
 	EXPECT_EQ(memoryValue(*second, BonusType::LUCK), 0);
 }
+
+TEST_F(NewHorizonsElementalMemoryTest, ClassifierMatchesOriginalPredicateForInitializedRegistryAndNearMisses)
+{
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	const SecondarySkill skill(SecondarySkill::decode(std::string(SKILL)));
+	ASSERT_GE(skill.getNum(), 0);
+	const auto originalPredicate = [](const Bonus & bonus)
+	{
+		const SecondarySkill decoded(SecondarySkill::decode(std::string(SKILL)));
+		const auto key = std::string(MEMORY) + (bonus.type == BonusType::MORALE ? ".morale" : ".luck");
+		return (bonus.type == BonusType::MORALE || bonus.type == BonusType::LUCK)
+			&& decoded.getNum() >= 0 && bonus.source == BonusSource::SECONDARY_SKILL
+			&& bonus.sid == BonusSourceID(decoded) && bonus.duration == BonusDuration::N_TURNS
+			&& bonus.valType == BonusValueType::ADDITIVE_VALUE && bonus.val > 0
+			&& bonus.stacking == key && !bonus.parameters && !bonus.hasStatusMetadata();
+	};
+	for(const auto type : {BonusType::MORALE, BonusType::LUCK})
+	{
+		Bonus positive(BonusDuration::N_TURNS, type, BonusSource::SECONDARY_SKILL, 3, BonusSourceID(skill));
+		positive.turnsRemain = 1;
+		positive.stacking = std::string(MEMORY) + (type == BonusType::MORALE ? ".morale" : ".luck");
+		ASSERT_TRUE(originalPredicate(positive));
+		EXPECT_TRUE(newHorizonsElementalRebirth::isElementalMemoryBonus(positive));
+		std::vector<std::pair<std::string, Bonus>> rejected;
+		const auto add = [&](std::string name, const auto & mutate)
+		{
+			auto bonus = positive;
+			mutate(bonus);
+			rejected.emplace_back(std::move(name), std::move(bonus));
+		};
+		add("type", [](Bonus & bonus) { bonus.type = BonusType::STACKS_SPEED; });
+		add("source", [](Bonus & bonus) { bonus.source = BonusSource::OTHER; });
+		add("sid", [](Bonus & bonus) { bonus.sid = BonusSourceID(SpellID(SpellID::HASTE)); });
+		add("duration", [](Bonus & bonus) { bonus.duration = BonusDuration::ONE_BATTLE; });
+		add("value type", [](Bonus & bonus) { bonus.valType = BonusValueType::PERCENT_TO_ALL; });
+		add("zero value", [](Bonus & bonus) { bonus.val = 0; });
+		add("negative value", [](Bonus & bonus) { bonus.val = -1; });
+		add("empty stacking", [](Bonus & bonus) { bonus.stacking.clear(); });
+		add("wrong suffix", [type](Bonus & bonus)
+		{
+			bonus.stacking = std::string(MEMORY) + (type == BonusType::MORALE ? ".luck" : ".morale");
+		});
+		add("parameters", [](Bonus & bonus)
+		{
+			JsonNode parameters;
+			parameters["classifierProbe"].Bool() = true;
+			bonus.parameters = std::make_shared<BonusParameters>(parameters);
+		});
+		add("status identity", [](Bonus & bonus) { bonus.statusIdentity = "elementalMemory"; });
+		add("status tags", [](Bonus & bonus) { bonus.statusTags = {BonusStatusTag::DEBUFF}; });
+		for(const auto & [name, bonus] : rejected)
+		{
+			SCOPED_TRACE(name);
+			SCOPED_TRACE(type == BonusType::MORALE ? "Morale" : "Luck");
+			EXPECT_FALSE(originalPredicate(bonus));
+			EXPECT_EQ(newHorizonsElementalRebirth::isElementalMemoryBonus(bonus), originalPredicate(bonus));
+		}
+		// These fields were not classifier gates: preserve the old accepted truth,
+		// rather than silently adding duration-count or unrelated-metadata rules.
+		auto ungated = positive;
+		ungated.turnsRemain = 0;
+		ungated.appliedByEnemy = true;
+		ungated.spellCasterOwner = PlayerColor(1);
+		ASSERT_TRUE(originalPredicate(ungated));
+		EXPECT_TRUE(newHorizonsElementalRebirth::isElementalMemoryBonus(ungated));
+	}
+}
