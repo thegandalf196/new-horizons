@@ -168,6 +168,10 @@ struct DLL_LINKAGE BattleMovementTiming
 		StageTiming targetProbes;
 		/// Counts trackAttack invocations; the initial AP invocation may replay multiple strikes.
 		StageTiming appliedAttacks;
+		StageTiming activationStart;
+		/// Expiry/affliction completion and fortune/Swift end regions; not an activation count.
+		StageTiming activationEnd;
+		StageTiming roundAdvance;
 		uint64_t remainderMicroseconds = 0;
 	};
 	StageTiming findMove;

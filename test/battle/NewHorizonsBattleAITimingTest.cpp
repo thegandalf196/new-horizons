@@ -21,6 +21,7 @@
 #include "../../lib/mapping/MapDifficulty.h"
 
 #include <bit>
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <map>
@@ -130,11 +131,15 @@ protected:
 			timing.selectionBestTarget.totalMicroseconds);
 		EXPECT_EQ(timing.bestTargetWaitedMembership.totalMicroseconds
 			+ timing.bestTargetWaitedProjectionSetup.totalMicroseconds + timing.bestTargetWaitedTargetProbes.totalMicroseconds
-			+ timing.bestTargetWaitedAppliedAttacks.totalMicroseconds + timing.bestTargetWaitedRemainderMicroseconds,
+			+ timing.bestTargetWaitedAppliedAttacks.totalMicroseconds + timing.bestTargetWaitedActivationStart.totalMicroseconds
+			+ timing.bestTargetWaitedActivationEnd.totalMicroseconds + timing.bestTargetWaitedRoundAdvance.totalMicroseconds
+			+ timing.bestTargetWaitedRemainderMicroseconds,
 			timing.bestTargetWaitedBody.totalMicroseconds);
 		EXPECT_EQ(timing.bestTargetNormalMembership.totalMicroseconds
 			+ timing.bestTargetNormalProjectionSetup.totalMicroseconds + timing.bestTargetNormalTargetProbes.totalMicroseconds
-			+ timing.bestTargetNormalAppliedAttacks.totalMicroseconds + timing.bestTargetNormalRemainderMicroseconds,
+			+ timing.bestTargetNormalAppliedAttacks.totalMicroseconds + timing.bestTargetNormalActivationStart.totalMicroseconds
+			+ timing.bestTargetNormalActivationEnd.totalMicroseconds + timing.bestTargetNormalRoundAdvance.totalMicroseconds
+			+ timing.bestTargetNormalRemainderMicroseconds,
 			timing.bestTargetNormalBody.totalMicroseconds);
 		EXPECT_EQ(timing.selectionTargetExchange.calls, timing.selectionBestTarget.calls
 			+ timing.selectionSiegeDefense.calls + timing.selectionDefensiveStance.calls);
@@ -483,6 +488,16 @@ TEST_F(NewHorizonsBattleAITimingTest, OrdinaryResetExcludesOldTargetPartitionFro
 	EXPECT_EQ(summary().activeStackCalls, 0u);
 	EXPECT_EQ(summary().selectionTargetExchange.calls, 0u);
 	EXPECT_EQ(summary().selectionTargetExchange.totalMicroseconds, 0u);
+	const auto reset = summary();
+	for(const auto * stage : {&reset.movementExchangeActivationStart, &reset.movementExchangeActivationEnd,
+		&reset.movementExchangeRoundAdvance, &reset.bestTargetWaitedActivationStart,
+		&reset.bestTargetWaitedActivationEnd, &reset.bestTargetWaitedRoundAdvance,
+		&reset.bestTargetNormalActivationStart, &reset.bestTargetNormalActivationEnd,
+		&reset.bestTargetNormalRoundAdvance})
+	{
+		EXPECT_EQ(stage->calls, 0u);
+		EXPECT_EQ(stage->totalMicroseconds, 0u);
+	}
 	expectEmptyTargetPartition(summary());
 	expectStageClosure(summary());
 	callback->onSubmit = {};
@@ -835,6 +850,8 @@ protected:
 			EXPECT_LE(exchange.body.totalMicroseconds, pair.first->totalMicroseconds);
 			EXPECT_EQ(exchange.membership.totalMicroseconds + exchange.projectionSetup.totalMicroseconds
 				+ exchange.targetProbes.totalMicroseconds + exchange.appliedAttacks.totalMicroseconds
+				+ exchange.activationStart.totalMicroseconds + exchange.activationEnd.totalMicroseconds
+				+ exchange.roundAdvance.totalMicroseconds
 				+ exchange.remainderMicroseconds, exchange.body.totalMicroseconds);
 		}
 	}
@@ -858,11 +875,13 @@ protected:
 		const auto & exchange = timing.findMoveExchangeDetails;
 		const uint64_t classified = exchange.membership.totalMicroseconds
 			+ exchange.projectionSetup.totalMicroseconds + exchange.targetProbes.totalMicroseconds
-			+ exchange.appliedAttacks.totalMicroseconds;
+			+ exchange.appliedAttacks.totalMicroseconds + exchange.activationStart.totalMicroseconds
+			+ exchange.activationEnd.totalMicroseconds + exchange.roundAdvance.totalMicroseconds;
 		EXPECT_LE(classified, exchange.body.totalMicroseconds);
 		EXPECT_EQ(classified + exchange.remainderMicroseconds, exchange.body.totalMicroseconds);
 		for(const auto * stage : {&exchange.membership, &exchange.projectionSetup,
-			&exchange.targetProbes, &exchange.appliedAttacks})
+			&exchange.targetProbes, &exchange.appliedAttacks, &exchange.activationStart,
+			&exchange.activationEnd, &exchange.roundAdvance})
 			EXPECT_LE(stage->totalMicroseconds, exchange.body.totalMicroseconds);
 		EXPECT_LE(exchange.body.totalMicroseconds, timing.findMoveExchange.totalMicroseconds);
 		EXPECT_LE(timing.findMoveExchange.totalMicroseconds, timing.findMove.totalMicroseconds);
@@ -917,6 +936,12 @@ TEST_F(NewHorizonsExchangeTimingTest, BestTargetWaitAndNormalPartitionAndMatchNu
 	EXPECT_EQ(actual.bestAttack.attack.defender->unitId(), expected.bestAttack.attack.defender->unitId());
 	ASSERT_GT(timing.waitedExchange.calls, 0u);
 	EXPECT_EQ(timing.waitedExchange.calls, timing.normalExchange.calls);
+	for(const auto * exchange : {&timing.waitedDetails, &timing.normalDetails})
+	{
+		EXPECT_GT(exchange->activationStart.calls, 0u);
+		EXPECT_GT(exchange->activationEnd.calls, 0u);
+		EXPECT_GT(exchange->roundAdvance.calls, 0u);
+	}
 	expectBestTargetClosure(timing);
 	for(const auto & [id, snapshot] : before)
 	{
@@ -950,6 +975,12 @@ TEST_F(NewHorizonsExchangeTimingTest, BestTargetAlreadyWaitedSkipsWaitBuckets)
 	EXPECT_EQ(timing.waitedExchange.totalMicroseconds, 0u);
 	EXPECT_EQ(timing.waitedDetails.body.calls, 0u);
 	EXPECT_EQ(timing.waitedDetails.remainderMicroseconds, 0u);
+	for(const auto * stage : {&timing.waitedDetails.activationStart, &timing.waitedDetails.activationEnd,
+		&timing.waitedDetails.roundAdvance})
+	{
+		EXPECT_EQ(stage->calls, 0u);
+		EXPECT_EQ(stage->totalMicroseconds, 0u);
+	}
 	ASSERT_GT(timing.normalExchange.calls, 0u);
 	expectBestTargetClosure(timing);
 }
@@ -1003,6 +1034,9 @@ TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAn
 	ASSERT_GT(timing.findMoveExchangeDetails.projectionSetup.calls, 0u);
 	ASSERT_GT(timing.findMoveExchangeDetails.targetProbes.calls, 0u);
 	ASSERT_GT(timing.findMoveExchangeDetails.appliedAttacks.calls, 0u);
+	EXPECT_GT(timing.findMoveExchangeDetails.activationStart.calls, 0u);
+	EXPECT_GT(timing.findMoveExchangeDetails.activationEnd.calls, 0u);
+	EXPECT_GT(timing.findMoveExchangeDetails.roundAdvance.calls, 0u);
 	EXPECT_EQ(timing.findMoveExchangeDetails.membership.calls, timing.findMoveExchangeDetails.body.calls);
 	EXPECT_EQ(timing.findMoveExchangeDetails.projectionSetup.calls, timing.findMoveExchangeDetails.body.calls);
 	expectExchangeClosure(timing);
@@ -1044,7 +1078,8 @@ TEST_F(NewHorizonsExchangeTimingTest, AdjacentTargetsReturnBeforeExchangeAndKeep
 	EXPECT_EQ(timing.findMoveExchange.calls, 0u);
 	const auto & exchange = timing.findMoveExchangeDetails;
 	for(const auto * stage : {&exchange.body, &exchange.membership, &exchange.projectionSetup,
-		&exchange.targetProbes, &exchange.appliedAttacks})
+		&exchange.targetProbes, &exchange.appliedAttacks, &exchange.activationStart,
+		&exchange.activationEnd, &exchange.roundAdvance})
 	{
 		EXPECT_EQ(stage->calls, 0u);
 		EXPECT_EQ(stage->totalMicroseconds, 0u);
@@ -1070,17 +1105,233 @@ TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCount
 	const uint64_t classified = timing.movementExchangeMembership.totalMicroseconds
 		+ timing.movementExchangeProjectionSetup.totalMicroseconds
 		+ timing.movementExchangeTargetProbes.totalMicroseconds
-		+ timing.movementExchangeAppliedAttacks.totalMicroseconds;
+		+ timing.movementExchangeAppliedAttacks.totalMicroseconds
+		+ timing.movementExchangeActivationStart.totalMicroseconds
+		+ timing.movementExchangeActivationEnd.totalMicroseconds
+		+ timing.movementExchangeRoundAdvance.totalMicroseconds;
 	EXPECT_LE(classified, timing.movementExchangeBody.totalMicroseconds);
 	EXPECT_EQ(classified + timing.movementExchangeRemainderMicroseconds,
 		timing.movementExchangeBody.totalMicroseconds);
 	for(const auto * stage : {&timing.movementExchangeMembership, &timing.movementExchangeProjectionSetup,
-		&timing.movementExchangeTargetProbes, &timing.movementExchangeAppliedAttacks})
+		&timing.movementExchangeTargetProbes, &timing.movementExchangeAppliedAttacks,
+		&timing.movementExchangeActivationStart, &timing.movementExchangeActivationEnd,
+		&timing.movementExchangeRoundAdvance})
 		EXPECT_LE(stage->totalMicroseconds, timing.movementExchangeBody.totalMicroseconds);
 	EXPECT_LE(timing.movementExchangeBody.totalMicroseconds, timing.movementFindMoveExchangeSubset.totalMicroseconds);
 	EXPECT_LE(timing.movementFindMoveExchangeSubset.totalMicroseconds, timing.movementFindMove.totalMicroseconds);
 	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
 	expectStageClosure(timing);
+}
+
+class NewHorizonsDetachedBonusRemovalTimingTest : public NewHorizonsBattleAITimingTest
+{
+protected:
+	static Bonus genericRecord(int value = 103, SpellID sid = SpellID::HASTE)
+	{
+		return Bonus(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
+			BonusSource::OTHER, value, BonusSourceID(sid));
+	}
+
+	static TConstBonusListPtr records(const StackWithBonuses & unit)
+	{
+		return unit.getUnstackedBonuses(CSelector([](const Bonus * bonus)
+		{
+			return bonus->type == BonusType::STACKS_SPEED && bonus->duration == BonusDuration::ONE_BATTLE
+				&& (bonus->val == 103 || bonus->val == 104);
+		}));
+	}
+
+	static std::vector<JsonNode> values(const TConstBonusListPtr & bonuses)
+	{
+		std::vector<JsonNode> result;
+		for(const auto & bonus : *bonuses)
+			result.push_back(bonus->toJsonNode());
+		return result;
+	}
+};
+
+TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto liveBefore = ordinary->acquireState()->save();
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto actor = parent->getForUpdate(ordinary->unitId());
+	actor->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
+		BonusSource::OTHER, 3, BonusSourceID()), Bonus(BonusDuration::ONE_BATTLE,
+		BonusType::LUCK, BonusSource::OTHER, 1, BonusSourceID())});
+	const CSelector all([](const Bonus *) { return true; });
+	const CSelector removed([](const Bonus * bonus)
+	{
+		return bonus->source == BonusSource::OTHER && bonus->type == BonusType::STACKS_SPEED && bonus->val == 3;
+	});
+	const auto ordered = [&all](const StackWithBonuses & unit)
+	{
+		std::vector<JsonNode> result;
+		const auto bonuses = unit.getAllBonuses(all);
+		for(const auto & bonus : *bonuses)
+			result.push_back(bonus->toJsonNode());
+		return result;
+	};
+	const auto before = ordered(*actor);
+	std::vector<JsonNode> afterRemoval;
+	unsigned matching = 0;
+	const auto originalBonuses = actor->getAllBonuses(all);
+	for(const auto & bonus : *originalBonuses)
+	{
+		if(removed(bonus.get()))
+			++matching;
+		else
+			afterRemoval.push_back(bonus->toJsonNode());
+	}
+	ASSERT_EQ(matching, 1u);
+	const auto state = actor->save();
+	const auto parentVersion = actor->getTreeVersion();
+	auto noMatch = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto real = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto noMatchActor = noMatch->getForUpdate(actor->unitId());
+	const auto realActor = real->getForUpdate(actor->unitId());
+	ASSERT_EQ(ordered(*noMatchActor), before);
+	ASSERT_EQ(ordered(*realActor), before);
+	const auto noMatchVersion = noMatchActor->getTreeVersion();
+	const auto realVersion = realActor->getTreeVersion();
+	const auto measure = [](const std::function<void()> & action)
+	{
+		const auto start = std::chrono::steady_clock::now();
+		action();
+		return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
+	};
+	RecordProperty("noMatchRemovalUs", std::to_string(measure([&]
+	{
+		noMatchActor->removeUnitBonus(CSelector([](const Bonus *) { return false; }));
+	})));
+	EXPECT_EQ(ordered(*noMatchActor), before);
+	EXPECT_EQ(ordered(*realActor), before);
+	EXPECT_EQ(noMatchActor->save(), state);
+	// Current API invalidates even a no-match removal. Do not optimize it away
+	// merely because the ordered effective bonuses and unit state are unchanged.
+	EXPECT_EQ(noMatchActor->getTreeVersion(), noMatchVersion + 1);
+	RecordProperty("realRemovalUs", std::to_string(measure([&] { realActor->removeUnitBonus(removed); })));
+	EXPECT_EQ(ordered(*realActor), afterRemoval);
+	EXPECT_EQ(realActor->save(), state);
+	EXPECT_EQ(realActor->getTreeVersion(), realVersion + 1);
+	EXPECT_EQ(ordered(*noMatchActor), before);
+	EXPECT_EQ(noMatchActor->save(), state);
+	EXPECT_EQ(ordered(*actor), before);
+	EXPECT_EQ(actor->save(), state);
+	EXPECT_EQ(actor->getTreeVersion(), parentVersion);
+	EXPECT_EQ(battle()->battleGetUnitByID(actor->unitId())->acquireState()->save(), liveBefore);
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_TRUE(callback->heroActions.empty());
+}
+
+TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DistinctEqualAddsKeepIdentityAndRemovalPreservesSourceSidValueDifferences)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto original = parent->getForUpdate(ordinary->unitId());
+	Bonus otherSource = genericRecord();
+	otherSource.source = BonusSource::CREATURE_ABILITY;
+	otherSource.sid = BonusSourceID(creatureByName("core:pikeman"));
+	original->addUnitBonus({genericRecord(), genericRecord(), genericRecord(104),
+		genericRecord(103, SpellID::SLOW), otherSource});
+	const auto before = records(*original);
+	ASSERT_EQ(before->size(), 5u);
+	EXPECT_EQ((*before)[0]->toJsonNode(), (*before)[1]->toJsonNode());
+	ASSERT_NE((*before)[0].get(), (*before)[1].get());
+	const auto repeated = records(*original);
+	for(size_t index = 0; index < before->size(); ++index)
+		EXPECT_EQ((*repeated)[index].get(), (*before)[index].get());
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto removed = child->getForUpdate(original->unitId());
+	const auto untouched = sibling->getForUpdate(original->unitId());
+	const auto state = original->save();
+	const auto pointer = (*before)[0].get();
+	removed->removeUnitBonus(CSelector([pointer](const Bonus * bonus) { return bonus == pointer; }));
+	const auto remaining = records(*removed);
+	ASSERT_EQ(remaining->size(), 4u);
+	for(size_t index = 0; index < remaining->size(); ++index)
+	{
+		EXPECT_EQ((*remaining)[index].get(), (*before)[index + 1].get());
+		EXPECT_EQ((*remaining)[index]->toJsonNode(), (*before)[index + 1]->toJsonNode());
+	}
+	EXPECT_EQ(values(records(*original)), values(before));
+	EXPECT_EQ(values(records(*untouched)), values(before));
+	EXPECT_EQ(original->save(), state);
+	EXPECT_EQ(removed->save(), state);
+	EXPECT_EQ(untouched->save(), state);
+}
+
+TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NestedRemovalAndLaterEqualChildAddDoNotBecomeValueTombstones)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto original = parent->getForUpdate(ordinary->unitId());
+	original->addUnitBonus({genericRecord()});
+	const auto state = original->save();
+	const auto inherited = records(*original);
+	ASSERT_EQ(inherited->size(), 1u);
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto childActor = child->getForUpdate(original->unitId());
+	const auto first = inherited->front().get();
+	childActor->removeUnitBonus(CSelector([first](const Bonus * bonus) { return bonus == first; }));
+	ASSERT_TRUE(records(*childActor)->empty());
+	childActor->addUnitBonus({genericRecord()});
+	const auto later = records(*childActor);
+	ASSERT_EQ(later->size(), 1u);
+	ASSERT_NE(later->front().get(), first);
+	EXPECT_EQ(later->front()->toJsonNode(), inherited->front()->toJsonNode());
+	auto grandchild = std::make_shared<HypotheticBattle>(environment.get(), child);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), child);
+	const auto grandActor = grandchild->getForUpdate(original->unitId());
+	const auto siblingActor = sibling->getForUpdate(original->unitId());
+	const auto grandRecords = records(*grandActor);
+	ASSERT_EQ(grandRecords->size(), 1u);
+	ASSERT_EQ(grandRecords->front().get(), later->front().get());
+	const auto second = later->front().get();
+	grandActor->removeUnitBonus(CSelector([second](const Bonus * bonus) { return bonus == second; }));
+	EXPECT_TRUE(records(*grandActor)->empty());
+	EXPECT_EQ(values(records(*childActor)), values(later));
+	EXPECT_EQ(values(records(*siblingActor)), values(later));
+	EXPECT_EQ(values(records(*original)), values(inherited));
+	for(const auto & unit : {original, childActor, grandActor, siblingActor})
+		EXPECT_EQ(unit->save(), state);
+}
+
+TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, GenericUpdateFallbackHasStableIdentityAcrossQueriesAndNestedRemoval)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto original = parent->getForUpdate(ordinary->unitId());
+	original->updateUnitBonus({genericRecord(), genericRecord(104, SpellID::SLOW)});
+	const auto state = original->save();
+	const auto before = records(*original);
+	ASSERT_EQ(before->size(), 2u);
+	const auto repeated = records(*original);
+	for(size_t index = 0; index < before->size(); ++index)
+		EXPECT_EQ((*repeated)[index].get(), (*before)[index].get());
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto childActor = child->getForUpdate(original->unitId());
+	const auto first = before->front().get();
+	childActor->removeUnitBonus(CSelector([first](const Bonus * bonus) { return bonus == first; }));
+	const auto kept = records(*childActor);
+	ASSERT_EQ(kept->size(), 1u);
+	EXPECT_EQ(kept->front().get(), (*before)[1].get());
+	childActor->updateUnitBonus({genericRecord()});
+	const auto restored = records(*childActor);
+	ASSERT_EQ(restored->size(), 2u);
+	EXPECT_EQ(restored->front().get(), (*before)[1].get());
+	ASSERT_NE((*restored)[1].get(), first);
+	auto grandchild = std::make_shared<HypotheticBattle>(environment.get(), child);
+	const auto grandActor = grandchild->getForUpdate(original->unitId());
+	const auto second = (*before)[1].get();
+	grandActor->removeUnitBonus(CSelector([second](const Bonus * bonus) { return bonus == second; }));
+	ASSERT_EQ(records(*grandActor)->size(), 1u);
+	EXPECT_EQ(records(*grandActor)->front().get(), (*restored)[1].get());
+	EXPECT_EQ(values(records(*original)), values(before));
+	EXPECT_EQ(values(records(*childActor)), values(restored));
+	for(const auto & unit : {original, childActor, grandActor})
+		EXPECT_EQ(unit->save(), state);
 }
 
 // Equal creature counts/HP, not equal action economy or geometry: splitting the
@@ -1192,6 +1443,9 @@ protected:
 			stage("movementBody", before.movementExchangeBody, after.movementExchangeBody);
 			stage("movementProbes", before.movementExchangeTargetProbes, after.movementExchangeTargetProbes);
 			stage("movementAppliedAttacks", before.movementExchangeAppliedAttacks, after.movementExchangeAppliedAttacks);
+			stage("movementActivationStart", before.movementExchangeActivationStart, after.movementExchangeActivationStart);
+			stage("movementActivationEnd", before.movementExchangeActivationEnd, after.movementExchangeActivationEnd);
+			stage("movementRoundAdvance", before.movementExchangeRoundAdvance, after.movementExchangeRoundAdvance);
 			stage("bestTarget", before.selectionBestTarget, after.selectionBestTarget);
 			stage("waitedExchange", before.bestTargetWaitedExchange, after.bestTargetWaitedExchange);
 			stage("normalExchange", before.bestTargetNormalExchange, after.bestTargetNormalExchange);
@@ -1199,6 +1453,12 @@ protected:
 			stage("normalBody", before.bestTargetNormalBody, after.bestTargetNormalBody);
 			stage("waitedProbes", before.bestTargetWaitedTargetProbes, after.bestTargetWaitedTargetProbes);
 			stage("normalProbes", before.bestTargetNormalTargetProbes, after.bestTargetNormalTargetProbes);
+			stage("waitedActivationStart", before.bestTargetWaitedActivationStart, after.bestTargetWaitedActivationStart);
+			stage("waitedActivationEnd", before.bestTargetWaitedActivationEnd, after.bestTargetWaitedActivationEnd);
+			stage("waitedRoundAdvance", before.bestTargetWaitedRoundAdvance, after.bestTargetWaitedRoundAdvance);
+			stage("normalActivationStart", before.bestTargetNormalActivationStart, after.bestTargetNormalActivationStart);
+			stage("normalActivationEnd", before.bestTargetNormalActivationEnd, after.bestTargetNormalActivationEnd);
+			stage("normalRoundAdvance", before.bestTargetNormalRoundAdvance, after.bestTargetNormalRoundAdvance);
 			stage("submission", before.directUnitSubmission, after.directUnitSubmission);
 			RecordProperty(prefix + "bestTargetRemainderUs", std::to_string(after.bestTargetRemainderMicroseconds - before.bestTargetRemainderMicroseconds));
 			expectStageClosure(after);

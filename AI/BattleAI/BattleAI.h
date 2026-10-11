@@ -96,6 +96,9 @@ public:
 		StageTiming movementExchangeProjectionSetup;
 		StageTiming movementExchangeTargetProbes;
 		StageTiming movementExchangeAppliedAttacks;
+		StageTiming movementExchangeActivationStart;
+		StageTiming movementExchangeActivationEnd;
+		StageTiming movementExchangeRoundAdvance;
 		uint64_t movementExchangeRemainderMicroseconds = 0;
 		StageTiming movementGoBlockingSubset;
 		StageTiming selectionTargetExchange;
@@ -108,6 +111,9 @@ public:
 		StageTiming bestTargetWaitedProjectionSetup;
 		StageTiming bestTargetWaitedTargetProbes;
 		StageTiming bestTargetWaitedAppliedAttacks;
+		StageTiming bestTargetWaitedActivationStart;
+		StageTiming bestTargetWaitedActivationEnd;
+		StageTiming bestTargetWaitedRoundAdvance;
 		uint64_t bestTargetWaitedRemainderMicroseconds = 0;
 		StageTiming bestTargetNormalExchange;
 		StageTiming bestTargetNormalBody;
@@ -115,6 +121,9 @@ public:
 		StageTiming bestTargetNormalProjectionSetup;
 		StageTiming bestTargetNormalTargetProbes;
 		StageTiming bestTargetNormalAppliedAttacks;
+		StageTiming bestTargetNormalActivationStart;
+		StageTiming bestTargetNormalActivationEnd;
+		StageTiming bestTargetNormalRoundAdvance;
 		uint64_t bestTargetNormalRemainderMicroseconds = 0;
 		/// Clone/reachability/filter/comparison and wrapper overhead.
 		uint64_t bestTargetRemainderMicroseconds = 0;

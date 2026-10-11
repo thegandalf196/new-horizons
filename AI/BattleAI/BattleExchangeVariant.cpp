@@ -88,7 +88,8 @@ public:
 			Clock::now() - started).count();
 		uint64_t classified = 0;
 		for(auto member : {&ExchangeTiming::membership, &ExchangeTiming::projectionSetup,
-			&ExchangeTiming::targetProbes, &ExchangeTiming::appliedAttacks})
+			&ExchangeTiming::targetProbes, &ExchangeTiming::appliedAttacks,
+			&ExchangeTiming::activationStart, &ExchangeTiming::activationEnd, &ExchangeTiming::roundAdvance})
 		{
 			const auto & sample = local.*member;
 			auto & aggregate = (*timing).*member;
@@ -1838,6 +1839,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				&& newHorizonsFrozen::forfeitsNormalActivation(*attacker, BattleUnitTurnReason::TURN_QUEUE);
 			if(!initialChosenUnit)
 			{
+				MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationStart));
 				if(frozenForfeits)
 					exchangeBattle->nextTurnPreservingFrozenForfeit(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 				else
@@ -1848,6 +1850,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			{
 				if(fortuneActivation)
 				{
+					MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationEnd));
 					exchangeBattle->endFortuneActivation();
 					exchangeBattle->completeSwiftNormalActivation(attacker->unitId());
 					fortuneActivation = false;
@@ -1855,6 +1858,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			};
 			if(frozenForfeits)
 			{
+				MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationEnd));
 				const auto frozen = newHorizonsFrozen::removalPlan(*attacker);
 				attacker->removeUnitBonus(CSelector([](const Bonus * bonus)
 				{
@@ -1867,6 +1871,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				if(current->alive() && !current->isGhost() && !current->isTimeStopped()
 					&& newHorizonsFrozen::isFrozen(*current))
 					current->removeUnitBonus(frozen);
+				activationMeasurement.finish();
 				finishFortuneActivation();
 				continue;
 			}
@@ -2025,6 +2030,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			if(!attacker->isTimeStopped() && attacker->pursuitMovementRemaining == 0
 				&& !exchangeBattle->battleHasPendingRangedFollowUp(attacker.get()))
 			{
+				MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationEnd));
 				attacker->removeUnitBonus(CSelector([](const Bonus * bonus)
 				{
 					return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
@@ -2047,7 +2053,10 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				});
 		}
 
-		exchangeBattle->nextRound();
+		measurement.measure(&BattleMovementTiming::ExchangeTiming::roundAdvance, [&]()
+		{
+			exchangeBattle->nextRound();
+		});
 	}
 
 	auto score = v.getScore();
