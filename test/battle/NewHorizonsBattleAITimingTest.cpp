@@ -18,6 +18,7 @@
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/gameState/CGameState.h"
+#include "../../lib/mapping/MapDifficulty.h"
 
 #include <bit>
 #include <cmath>
@@ -45,7 +46,7 @@ public:
 	unsigned retreatDecisionCalls = 0;
 	bool acceptHeroActions = false;
 	std::function<void()> onSubmit;
-	TimingCallback() : CBattleCallback(PlayerColor(0), nullptr) {}
+	explicit TimingCallback(PlayerColor player = PlayerColor(0)) : CBattleCallback(player, nullptr) {}
 	std::optional<BattleAction> makeSurrenderRetreatDecision(const BattleID &,
 		const BattleStateInfoForRetreat &) override
 	{
@@ -1080,4 +1081,132 @@ TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCount
 	EXPECT_LE(timing.movementFindMoveExchangeSubset.totalMicroseconds, timing.movementFindMove.totalMicroseconds);
 	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
 	expectStageClosure(timing);
+}
+
+// Equal creature counts/HP, not equal action economy or geometry: splitting the
+// army deliberately changes queue and target multiplicity. This measures native
+// decision work, not GUI pacing, server latency, or Windows performance.
+class NewHorizonsBattleDwarfWaitTimingTest : public NewHorizonsBattleAITimingTest
+{
+protected:
+	void measureNaturalRound(unsigned stackCount)
+	{
+		useCommands = false;
+		startGame();
+		gameState()->getStartInfo()->difficulty = static_cast<ui8>(EMapDifficulty::NORMAL);
+		ASSERT_EQ(gameState()->getStartInfo()->getDifficulty(), EMapDifficulty::NORMAL);
+		startBattle();
+		BattleUnitsChanged remove;
+		remove.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(remove);
+		addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 70);
+		int64_t initialHealth = 0;
+		for(unsigned index = 0; index < stackCount; ++index)
+		{
+			const auto * dwarf = addStack(BattleSide::DEFENDER, creatureByName("core:battleDwarf"),
+				BattleHex(13, stackCount == 1 ? 4 : index + 1), 70 / stackCount);
+			initialHealth += dwarf->getAvailableHealth();
+			EXPECT_EQ(dwarf->getAvailableHealth(), static_cast<int64_t>(70 / stackCount) * dwarf->getMaxHealth());
+		}
+		RecordProperty("initialDwarfHealth", std::to_string(initialHealth));
+		RecordProperty("dwarfStacks", std::to_string(stackCount));
+		RecordProperty("forecastRounds", "2"); // Normal production getSimulationTurnsCount.
+		beginCombat();
+		callback = std::make_shared<TimingCallback>(PlayerColor(1));
+		callback->onBattleStarted(battle());
+		environment = std::make_shared<TimingEnvironment>(gameState());
+		ai = std::make_unique<CBattleAI>();
+		ai->initBattleInterface(environment, callback);
+		ai->battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
+			attackerSideHero, defenderSideHero, BattleSide::DEFENDER, false);
+		ai->autobattlePreferences.enableSpellsUsage = false;
+		const auto openingRound = battle()->getRound();
+		unsigned decisions = 0;
+		unsigned waits = 0;
+		for(unsigned actionIndex = 0; actionIndex < 128; ++actionIndex)
+		{
+			ASSERT_NE(gameState()->getBattle(BattleID(0)), nullptr);
+			if(battle()->getRound() != openingRound)
+				break;
+			const auto * active = battle()->battleActiveUnit();
+			ASSERT_NE(active, nullptr);
+			const auto controller = battle()->battleGetOwner(active);
+			if(controller != PlayerColor(1))
+			{
+				ASSERT_EQ(controller, PlayerColor(0));
+				ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), controller,
+					BattleAction::makeDefend(active)));
+				continue;
+			}
+			const auto * actor = battle()->getStack(active->unitId());
+			ASSERT_NE(actor, nullptr);
+			const auto before = summary();
+			const auto serial = battle()->getActivationSerial();
+			std::map<uint32_t, JsonNode> snapshots;
+			for(const auto * unit : battle()->battleGetAllUnits(false))
+				snapshots.emplace(unit->unitId(), unit->acquireState()->save());
+			const auto submitted = callback->actions.size();
+			ai->activeStack(BattleID(0), actor);
+			const auto after = summary();
+			ASSERT_EQ(callback->actions.size(), submitted + 1);
+			ASSERT_TRUE(callback->heroActions.empty());
+			ASSERT_NE(gameState()->getBattle(BattleID(0)), nullptr);
+			EXPECT_EQ(battle()->getActivationSerial(), serial);
+			for(const auto & [id, snapshot] : snapshots)
+			{
+				const auto * unit = battle()->battleGetUnitByID(id);
+				ASSERT_NE(unit, nullptr);
+				EXPECT_EQ(unit->acquireState()->save(), snapshot);
+			}
+			const auto action = callback->actions.back();
+			ASSERT_EQ(action.stackNumber, actor->unitId());
+			ASSERT_EQ(action.side, BattleSide::DEFENDER);
+			const auto prefix = "decision" + std::to_string(decisions++) + "_";
+			RecordProperty(prefix + "action", std::to_string(static_cast<int>(action.actionType)));
+			RecordProperty(prefix + "wallUs", std::to_string(after.activeStackTotalMicroseconds - before.activeStackTotalMicroseconds));
+			const auto stage = [&](const char * name, const CBattleAI::StageTiming & previous,
+				const CBattleAI::StageTiming & current)
+			{
+				RecordProperty(prefix + name + "Us", std::to_string(current.totalMicroseconds - previous.totalMicroseconds));
+				RecordProperty(prefix + name + "Calls", std::to_string(current.calls - previous.calls));
+			};
+			stage("construction", before.evaluatorConstruction, after.evaluatorConstruction);
+			stage("selection", before.stackActionSelection, after.stackActionSelection);
+			stage("creatureSpell", before.selectionCreatureSpell, after.selectionCreatureSpell);
+			stage("movement", before.selectionMovementSearch, after.selectionMovementSearch);
+			stage("movementBody", before.movementExchangeBody, after.movementExchangeBody);
+			stage("bestTarget", before.selectionBestTarget, after.selectionBestTarget);
+			stage("waitedExchange", before.bestTargetWaitedExchange, after.bestTargetWaitedExchange);
+			stage("normalExchange", before.bestTargetNormalExchange, after.bestTargetNormalExchange);
+			stage("waitedBody", before.bestTargetWaitedBody, after.bestTargetWaitedBody);
+			stage("normalBody", before.bestTargetNormalBody, after.bestTargetNormalBody);
+			stage("waitedProbes", before.bestTargetWaitedTargetProbes, after.bestTargetWaitedTargetProbes);
+			stage("normalProbes", before.bestTargetNormalTargetProbes, after.bestTargetNormalTargetProbes);
+			stage("submission", before.directUnitSubmission, after.directUnitSubmission);
+			RecordProperty(prefix + "bestTargetRemainderUs", std::to_string(after.bestTargetRemainderMicroseconds - before.bestTargetRemainderMicroseconds));
+			expectStageClosure(after);
+			EXPECT_EQ(after.activeStackCalls - before.activeStackCalls, 1u);
+			EXPECT_EQ(after.evaluatorConstruction.calls - before.evaluatorConstruction.calls, 1u);
+			if(action.actionType == EActionType::WAIT)
+				++waits;
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), controller, action));
+		}
+		ASSERT_NE(gameState()->getBattle(BattleID(0)), nullptr);
+		EXPECT_GT(battle()->getRound(), openingRound) << "Natural round exceeded bounded action budget";
+		EXPECT_GE(decisions, stackCount);
+		RecordProperty("decisions", std::to_string(decisions));
+		RecordProperty("naturalWaits", std::to_string(waits));
+	}
+};
+
+TEST_F(NewHorizonsBattleDwarfWaitTimingTest, OneStackNormalTwoRoundDecision)
+{
+	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(1));
+}
+
+TEST_F(NewHorizonsBattleDwarfWaitTimingTest, SevenStacksNormalTwoRoundDecisions)
+{
+	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7));
 }
