@@ -124,6 +124,17 @@ protected:
 
 	void expectStageClosure(const CBattleAI::TimingSummary & timing) const
 	{
+		EXPECT_EQ(timing.bestTargetWaitedExchange.totalMicroseconds
+			+ timing.bestTargetNormalExchange.totalMicroseconds + timing.bestTargetRemainderMicroseconds,
+			timing.selectionBestTarget.totalMicroseconds);
+		EXPECT_EQ(timing.bestTargetWaitedMembership.totalMicroseconds
+			+ timing.bestTargetWaitedProjectionSetup.totalMicroseconds + timing.bestTargetWaitedTargetProbes.totalMicroseconds
+			+ timing.bestTargetWaitedAppliedAttacks.totalMicroseconds + timing.bestTargetWaitedRemainderMicroseconds,
+			timing.bestTargetWaitedBody.totalMicroseconds);
+		EXPECT_EQ(timing.bestTargetNormalMembership.totalMicroseconds
+			+ timing.bestTargetNormalProjectionSetup.totalMicroseconds + timing.bestTargetNormalTargetProbes.totalMicroseconds
+			+ timing.bestTargetNormalAppliedAttacks.totalMicroseconds + timing.bestTargetNormalRemainderMicroseconds,
+			timing.bestTargetNormalBody.totalMicroseconds);
 		EXPECT_EQ(timing.selectionTargetExchange.calls, timing.selectionBestTarget.calls
 			+ timing.selectionSiegeDefense.calls + timing.selectionDefensiveStance.calls);
 		EXPECT_EQ(timing.selectionTargetExchange.totalMicroseconds, timing.selectionBestTarget.totalMicroseconds
@@ -813,6 +824,34 @@ TEST_F(NewHorizonsExchangeReadParityTest, FrozenNoQuarterControllerAndFocusFireF
 class NewHorizonsExchangeTimingTest : public NewHorizonsBattleAITimingTest
 {
 protected:
+	void expectBestTargetClosure(const BattleBestTargetTiming & timing) const
+	{
+		for(const auto pair : {std::pair{&timing.waitedExchange, &timing.waitedDetails},
+			std::pair{&timing.normalExchange, &timing.normalDetails}})
+		{
+			const auto & exchange = *pair.second;
+			EXPECT_EQ(exchange.body.calls, pair.first->calls);
+			EXPECT_LE(exchange.body.totalMicroseconds, pair.first->totalMicroseconds);
+			EXPECT_EQ(exchange.membership.totalMicroseconds + exchange.projectionSetup.totalMicroseconds
+				+ exchange.targetProbes.totalMicroseconds + exchange.appliedAttacks.totalMicroseconds
+				+ exchange.remainderMicroseconds, exchange.body.totalMicroseconds);
+		}
+	}
+
+	void forecastBestTarget(const std::shared_ptr<HypotheticBattle> & model,
+		BattleBestTargetTiming * timing, std::optional<EvaluationResult> & result,
+		const battle::Unit * selectedActor = nullptr)
+	{
+		const auto * actor = model->battleGetUnitByID(selectedActor ? selectedActor->unitId() : ordinary->unitId());
+		ASSERT_NE(actor, nullptr);
+		DamageCache cache;
+		cache.buildDamageCache(model, BattleSide::ATTACKER);
+		PotentialTargets targets(actor, cache, model);
+		ASSERT_FALSE(targets.possibleAttacks.empty());
+		BattleExchangeEvaluator evaluator(callback->getBattle(BattleID(0)), environment, 1.0f, 2);
+		result = evaluator.findBestTarget(actor, targets, cache, model, false, timing);
+	}
+
 	void expectExchangeClosure(const BattleMovementTiming & timing) const
 	{
 		const auto & exchange = timing.findMoveExchangeDetails;
@@ -845,6 +884,74 @@ protected:
 		result = evaluator.findMoveTowardsUnreachable(actor, targets, cache, model, timing);
 	}
 };
+
+TEST_F(NewHorizonsExchangeTimingTest, BestTargetWaitAndNormalPartitionAndMatchNullSink)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	std::map<uint32_t, JsonNode> before;
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		before.emplace(unit->unitId(), parent->getForUpdate(unit->unitId())->save());
+	auto control = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto measured = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	for(const auto & [id, snapshot] : before)
+	{
+		control->getForUpdate(id);
+		measured->getForUpdate(id);
+	}
+	std::optional<EvaluationResult> expectedResult;
+	std::optional<EvaluationResult> actualResult;
+	ASSERT_NO_FATAL_FAILURE(forecastBestTarget(control, nullptr, expectedResult));
+	BattleBestTargetTiming timing;
+	ASSERT_NO_FATAL_FAILURE(forecastBestTarget(measured, &timing, actualResult));
+	ASSERT_TRUE(expectedResult.has_value());
+	ASSERT_TRUE(actualResult.has_value());
+	const auto & expected = *expectedResult;
+	const auto & actual = *actualResult;
+	EXPECT_EQ(std::bit_cast<uint32_t>(actual.score), std::bit_cast<uint32_t>(expected.score));
+	EXPECT_EQ(actual.wait, expected.wait);
+	EXPECT_EQ(actual.bestAttack.from, expected.bestAttack.from);
+	EXPECT_EQ(actual.bestAttack.dest, expected.bestAttack.dest);
+	EXPECT_EQ(actual.bestAttack.attack.attacker->unitId(), expected.bestAttack.attack.attacker->unitId());
+	EXPECT_EQ(actual.bestAttack.attack.defender->unitId(), expected.bestAttack.attack.defender->unitId());
+	ASSERT_GT(timing.waitedExchange.calls, 0u);
+	EXPECT_EQ(timing.waitedExchange.calls, timing.normalExchange.calls);
+	expectBestTargetClosure(timing);
+	for(const auto & [id, snapshot] : before)
+	{
+		EXPECT_EQ(parent->getForUpdate(id)->save(), snapshot);
+		EXPECT_EQ(control->getForUpdate(id)->save(), snapshot);
+		EXPECT_EQ(measured->getForUpdate(id)->save(), snapshot);
+		EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), snapshot);
+	}
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_TRUE(callback->heroActions.empty());
+}
+
+TEST_F(NewHorizonsExchangeTimingTest, BestTargetAlreadyWaitedSkipsWaitBuckets)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	model->makeWait(model->battleGetUnitByID(ordinary->unitId()));
+	auto control = std::make_shared<HypotheticBattle>(environment.get(), model);
+	std::optional<EvaluationResult> expected;
+	ASSERT_NO_FATAL_FAILURE(forecastBestTarget(control, nullptr, expected));
+	BattleBestTargetTiming timing;
+	std::optional<EvaluationResult> result;
+	ASSERT_NO_FATAL_FAILURE(forecastBestTarget(model, &timing, result));
+	ASSERT_TRUE(expected.has_value());
+	ASSERT_TRUE(result.has_value());
+	EXPECT_EQ(std::bit_cast<uint32_t>(result->score), std::bit_cast<uint32_t>(expected->score));
+	EXPECT_EQ(result->wait, expected->wait);
+	EXPECT_EQ(result->bestAttack.from, expected->bestAttack.from);
+	EXPECT_EQ(result->bestAttack.dest, expected->bestAttack.dest);
+	EXPECT_EQ(timing.waitedExchange.calls, 0u);
+	EXPECT_EQ(timing.waitedExchange.totalMicroseconds, 0u);
+	EXPECT_EQ(timing.waitedDetails.body.calls, 0u);
+	EXPECT_EQ(timing.waitedDetails.remainderMicroseconds, 0u);
+	ASSERT_GT(timing.normalExchange.calls, 0u);
+	expectBestTargetClosure(timing);
+}
 
 TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAndMatchesNullSink)
 {

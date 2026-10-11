@@ -175,6 +175,15 @@ struct DLL_LINKAGE BattleMovementTiming
 	StageTiming goTowardsBlocking;
 };
 
+/// Nonadditive candidate wrappers and disjoint calculateExchange subregions.
+struct DLL_LINKAGE BattleBestTargetTiming
+{
+	BattleMovementTiming::StageTiming waitedExchange;
+	BattleMovementTiming::StageTiming normalExchange;
+	BattleMovementTiming::ExchangeTiming waitedDetails;
+	BattleMovementTiming::ExchangeTiming normalDetails;
+};
+
 class BattleExchangeEvaluator
 {
 private:
@@ -212,14 +221,16 @@ public:
 		PotentialTargets & targets,
 		DamageCache & damageCache,
 		std::shared_ptr<HypotheticBattle> hb,
-		bool siegeDefense = false);
+		bool siegeDefense = false,
+		BattleBestTargetTiming * timing = nullptr);
 
 	float evaluateExchange(
 		const AttackPossibility & ap,
 		uint8_t turn,
 		PotentialTargets & targets,
 		DamageCache & damageCache,
-		std::shared_ptr<HypotheticBattle> hb) const;
+		std::shared_ptr<HypotheticBattle> hb,
+		BattleMovementTiming::ExchangeTiming * timing = nullptr) const;
 
 	const battle::Units & getOneTurnReachableUnits(uint8_t turn, const BattleHex & hex) const;
 	void updateReachabilityMap(std::shared_ptr<HypotheticBattle> hb);

@@ -92,6 +92,21 @@ struct CBattleAI::TimingState
 			" move_go_blocking_subset_calls=%llu move_go_blocking_subset_us=%llu"
 			" select_target_exchange_calls=%llu select_target_exchange_us=%llu select_remainder_us=%llu"
 			" select_best_target_calls=%llu select_best_target_us=%llu"
+			" best_target_waited_exchange_calls=%llu best_target_waited_exchange_us=%llu"
+			" best_target_waited_body_calls=%llu best_target_waited_body_us=%llu"
+			" best_target_waited_membership_calls=%llu best_target_waited_membership_us=%llu"
+			" best_target_waited_projectionsetup_calls=%llu best_target_waited_projectionsetup_us=%llu"
+			" best_target_waited_targetprobes_calls=%llu best_target_waited_targetprobes_us=%llu"
+			" best_target_waited_appliedattacks_calls=%llu best_target_waited_appliedattacks_us=%llu"
+			" best_target_waited_remainder_us=%llu"
+			" best_target_normal_exchange_calls=%llu best_target_normal_exchange_us=%llu"
+			" best_target_normal_body_calls=%llu best_target_normal_body_us=%llu"
+			" best_target_normal_membership_calls=%llu best_target_normal_membership_us=%llu"
+			" best_target_normal_projectionsetup_calls=%llu best_target_normal_projectionsetup_us=%llu"
+			" best_target_normal_targetprobes_calls=%llu best_target_normal_targetprobes_us=%llu"
+			" best_target_normal_appliedattacks_calls=%llu best_target_normal_appliedattacks_us=%llu"
+			" best_target_normal_remainder_us=%llu"
+			" best_target_remainder_us=%llu"
 			" select_siege_defense_calls=%llu select_siege_defense_us=%llu"
 			" select_defensive_stance_calls=%llu select_defensive_stance_us=%llu"
 			" hero_action_including_submit_calls=%llu hero_action_including_submit_us=%llu"
@@ -134,6 +149,33 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->selectionRemainderMicroseconds),
 			static_cast<unsigned long long>(result->selectionBestTarget.calls),
 			static_cast<unsigned long long>(result->selectionBestTarget.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedExchange.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedExchange.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedBody.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedBody.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedMembership.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedMembership.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedProjectionSetup.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedProjectionSetup.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbes.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbes.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedAppliedAttacks.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedAppliedAttacks.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedRemainderMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalExchange.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalExchange.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalBody.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalBody.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalMembership.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalMembership.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalProjectionSetup.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalProjectionSetup.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalTargetProbes.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalTargetProbes.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalAppliedAttacks.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalAppliedAttacks.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalRemainderMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetRemainderMicroseconds),
 			static_cast<unsigned long long>(result->selectionSiegeDefense.calls),
 			static_cast<unsigned long long>(result->selectionSiegeDefense.totalMicroseconds),
 			static_cast<unsigned long long>(result->selectionDefensiveStance.calls),
@@ -254,6 +296,24 @@ public:
 				- movement.findMove.totalMicroseconds - movement.goTowards.totalMicroseconds;
 			accumulateSelection(state->summary.selectionTargetExchange, selectionTotals.targetExchange);
 			accumulateSelection(state->summary.selectionBestTarget, selectionTotals.bestTarget);
+			const auto & bestTarget = selectionTotals.bestTargetDetails;
+			accumulateSelection(state->summary.bestTargetWaitedExchange, bestTarget.waitedExchange);
+			accumulateSelection(state->summary.bestTargetWaitedBody, bestTarget.waitedDetails.body);
+			accumulateSelection(state->summary.bestTargetWaitedMembership, bestTarget.waitedDetails.membership);
+			accumulateSelection(state->summary.bestTargetWaitedProjectionSetup, bestTarget.waitedDetails.projectionSetup);
+			accumulateSelection(state->summary.bestTargetWaitedTargetProbes, bestTarget.waitedDetails.targetProbes);
+			accumulateSelection(state->summary.bestTargetWaitedAppliedAttacks, bestTarget.waitedDetails.appliedAttacks);
+			state->summary.bestTargetWaitedRemainderMicroseconds += bestTarget.waitedDetails.remainderMicroseconds;
+			accumulateSelection(state->summary.bestTargetNormalExchange, bestTarget.normalExchange);
+			accumulateSelection(state->summary.bestTargetNormalBody, bestTarget.normalDetails.body);
+			accumulateSelection(state->summary.bestTargetNormalMembership, bestTarget.normalDetails.membership);
+			accumulateSelection(state->summary.bestTargetNormalProjectionSetup, bestTarget.normalDetails.projectionSetup);
+			accumulateSelection(state->summary.bestTargetNormalTargetProbes, bestTarget.normalDetails.targetProbes);
+			accumulateSelection(state->summary.bestTargetNormalAppliedAttacks, bestTarget.normalDetails.appliedAttacks);
+			state->summary.bestTargetNormalRemainderMicroseconds += bestTarget.normalDetails.remainderMicroseconds;
+			state->summary.bestTargetRemainderMicroseconds += selectionTotals.bestTarget.totalMicroseconds
+				- bestTarget.waitedExchange.totalMicroseconds - bestTarget.normalExchange.totalMicroseconds;
+
 			accumulateSelection(state->summary.selectionSiegeDefense, selectionTotals.siegeDefense);
 			accumulateSelection(state->summary.selectionDefensiveStance, selectionTotals.defensiveStance);
 			const uint64_t selectionClassifiedMicroseconds = selectionTotals.creatureSpell.totalMicroseconds

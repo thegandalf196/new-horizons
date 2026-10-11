@@ -101,6 +101,24 @@ public:
 		StageTiming selectionTargetExchange;
 		/// Disjoint partitions of selectionTargetExchange, not extra callback time.
 		StageTiming selectionBestTarget;
+		/// Candidate exchange wrappers are subsets of selectionBestTarget.
+		StageTiming bestTargetWaitedExchange;
+		StageTiming bestTargetWaitedBody;
+		StageTiming bestTargetWaitedMembership;
+		StageTiming bestTargetWaitedProjectionSetup;
+		StageTiming bestTargetWaitedTargetProbes;
+		StageTiming bestTargetWaitedAppliedAttacks;
+		uint64_t bestTargetWaitedRemainderMicroseconds = 0;
+		StageTiming bestTargetNormalExchange;
+		StageTiming bestTargetNormalBody;
+		StageTiming bestTargetNormalMembership;
+		StageTiming bestTargetNormalProjectionSetup;
+		StageTiming bestTargetNormalTargetProbes;
+		StageTiming bestTargetNormalAppliedAttacks;
+		uint64_t bestTargetNormalRemainderMicroseconds = 0;
+		/// Clone/reachability/filter/comparison and wrapper overhead.
+		uint64_t bestTargetRemainderMicroseconds = 0;
+
 		StageTiming selectionSiegeDefense;
 		StageTiming selectionDefensiveStance;
 		uint64_t selectionRemainderMicroseconds = 0;

@@ -66,6 +66,7 @@ public:
 		StageTiming targetExchange;
 		/// Disjoint call-site partitions sharing the same elapsed sample as targetExchange.
 		StageTiming bestTarget;
+		BattleBestTargetTiming bestTargetDetails;
 		StageTiming siegeDefense;
 		StageTiming defensiveStance;
 	};
