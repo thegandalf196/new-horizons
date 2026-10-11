@@ -511,6 +511,23 @@ class PrivateLaunchTest(unittest.TestCase):
             popen.assert_not_called()
             self.assertEqual(list((self.root/'wine-run').iterdir()),[])
             parsed=HELPER._parser().parse_args(args)
+            bootstrap=self.root/'nh-wine-bootstrap.exe'
+            bootstrap.write_bytes(pe.read_bytes()+'NH_WINE_BOOTSTRAP_V1'.encode('utf-16-le'))
+            bootstrap_pin=hashlib.sha256(bootstrap.read_bytes()).hexdigest()
+            bootstrap_args=[*args,'--wine-bootstrap',str(bootstrap),'--wine-bootstrap-sha256',bootstrap_pin]
+            admitted=HELPER.wine_fullgame_plan(HELPER._parser().parse_args(bootstrap_args),[])
+            self.assertEqual(admitted['bootstrap'],str(bootstrap))
+            self.assertEqual(admitted['bootstrap_sha256'],bootstrap_pin)
+            for path,pin in ((bootstrap,'0'*64),(None,bootstrap_pin),(bootstrap,None),
+                             (self.root/'missing.exe',bootstrap_pin),(Path('relative.exe'),bootstrap_pin)):
+                invalid=HELPER._parser().parse_args(args)
+                invalid.wine_bootstrap,invalid.wine_bootstrap_sha256=path,pin
+                with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(invalid,[])
+            alias=self.root/'bootstrap-alias.exe';alias.symlink_to(bootstrap)
+            invalid=HELPER._parser().parse_args(bootstrap_args)
+            invalid.wine_bootstrap=alias
+            with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(invalid,[])
+            popen.assert_not_called()
             with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(parsed,['--disable-video'])
             parsed.wine_input_sha256='0'*64
             with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(parsed,[])
@@ -525,6 +542,15 @@ class PrivateLaunchTest(unittest.TestCase):
     def test_content_options_refused_outside_fullgame_without_spawn(self):
         for args in (self._args('--wine-content-manifest',str(self.root/'unused.json')),
                      [*self._wine_args(),'--wine-content-manifest-sha256','0'*64]):
+            with self._patch_boundaries(), self._wine_pin(), mock.patch.object(HELPER.subprocess,'Popen') as popen:
+                with self.assertRaises(SystemExit) as exit:
+                    HELPER.main(args)
+                self.assertEqual(exit.exception.code,2)
+                popen.assert_not_called()
+
+    def test_bootstrap_options_refused_outside_fullgame_without_spawn(self):
+        for args in (self._args('--wine-bootstrap',str(self.root/'unused.exe')),
+                     [*self._wine_args(),'--wine-bootstrap-sha256','0'*64]):
             with self._patch_boundaries(), self._wine_pin(), mock.patch.object(HELPER.subprocess,'Popen') as popen:
                 with self.assertRaises(SystemExit) as exit:
                     HELPER.main(args)
@@ -604,6 +630,23 @@ class WineFullgameAdmissionTest(unittest.TestCase):
                 win32_executable=wexe,win32_facade=wfacade,win32_localappdata=local,
                 supervisor_ready_before_resume=True,owned_service_graph_verified=True,age_after_io=1)
             self.assertFalse(HELPER.verify_wine_runtime(context,plan=plan)['input_authorized'])
+            bootstrap_path=str(Path(temp)/'nh-wine-bootstrap.exe')
+            bootstrap_map=dict(path=bootstrap_path,sha256='c'*64,inode=20,device='00:01')
+            bootstrap_loader={**loader,'argv':['/usr/wine',bootstrap_path]}
+            bootstrap_current={**current,**bootstrap_loader}
+            game_current={**current,'pid':3,'start_ticks':4,'argv':['selected-game-child']}
+            bootstrap_plan={**plan,'wine':'/usr/wine','wine_sha256':'b'*64,
+                'bootstrap':bootstrap_path,'bootstrap_sha256':'c'*64,'bootstrap_mapping':bootstrap_map,
+                'loader_identity':bootstrap_loader,'game_identity':game_current}
+            bootstrap_context={**context,'before':game_current,'after':game_current,'loader':bootstrap_loader,
+                'game_identity':game_current,'bootstrap':{'before':bootstrap_current,'after':bootstrap_current,
+                    'mappings':[bootstrap_map]}}
+            self.assertFalse(HELPER.verify_wine_runtime(bootstrap_context,plan=bootstrap_plan)['input_authorized'])
+            for change in ({'game_identity':{**game_current,'pid':99}}, {'after':current},
+                           {'bootstrap':{'before':bootstrap_current,'after':bootstrap_current,'mappings':[]}},
+                           {'mappings':maps[:-1]}, {'witness':b''}):
+                with self.assertRaises(HELPER.Refusal):
+                    HELPER.verify_wine_runtime({**bootstrap_context,**change},plan=bootstrap_plan)
             for change in ({'nonce':'c'*64},{'loader':{**loader,'sha256':'c'*64}},
                            {'required_environment':{**required,'HOME':'/foreign'}},{'age_after_io':600}):
                 with self.assertRaises(HELPER.Refusal):HELPER.verify_wine_runtime({**context,**change},plan=plan)

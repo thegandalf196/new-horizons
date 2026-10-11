@@ -175,7 +175,28 @@ def verify_wine_runtime(context, *, plan):
     validate_wine_identity(after, owner_uid=uid)
     if any(before[k] != after[k] for k in ("pid", "start_ticks", "uid", "boot_id")):
         raise Refusal("Wine process changed around runtime proof")
-    validate_wine_exec_transition(context["stopped"], after, context["loader"], owner_uid=uid)
+    if plan.get("bootstrap"):
+        bootstrap = context.get("bootstrap", {})
+        validate_wine_exec_transition(context["stopped"], bootstrap.get("after"), context["loader"], owner_uid=uid)
+        validate_wine_identity(bootstrap.get("before"), owner_uid=uid)
+        if any(bootstrap["before"][k] != bootstrap["after"][k] for k in ("pid", "start_ticks", "uid", "boot_id")):
+            raise Refusal("Bootstrap changed around runtime proof")
+        game = plan.get("game_identity")
+        if not isinstance(game, dict) or context.get("game_identity") != game:
+            raise Refusal("Game child differs from retained owned identity")
+        validate_wine_identity(game, owner_uid=uid)
+        if any(after.get(k) != game.get(k) for k in ("pid", "start_ticks", "uid", "boot_id", "exe", "sha256", "argv")):
+            raise Refusal("Owned game child changed")
+        if after.get("state") not in ("R", "S", "D", "I") or after["pid"] == context["stopped"]["pid"] or after["exe"] != plan["wine"] or after["sha256"] != plan["wine_sha256"]:
+            raise Refusal("Game is not a distinct pinned Wine child")
+        rows = bootstrap.get("mappings", [])
+        expected_bootstrap = plan.get("bootstrap_mapping")
+        if not isinstance(expected_bootstrap, dict) or expected_bootstrap.get("path") != plan["bootstrap"] or expected_bootstrap.get("sha256") != plan["bootstrap_sha256"]:
+            raise Refusal("Bootstrap mapping pin absent")
+        if not rows or any(row != expected_bootstrap for row in rows):
+            raise Refusal("Bootstrap mapped identity changed")
+    else:
+        validate_wine_exec_transition(context["stopped"], after, context["loader"], owner_uid=uid)
     root = Path(plan["root"])
     expected_environment = {key: str(root/name) for key,name in (
         ("HOME", "home"), ("WINEHOME", "home"), ("WINEPREFIX", "prefix"),
@@ -231,6 +252,26 @@ def wine_fullgame_plan(args, client_args):
             or struct.unpack_from("<H", image, offset+4)[0] != 0x8664
             or not struct.unpack_from("<H", image, offset+22)[0] & 2):
         raise Refusal("Player must be executable AMD64 PE")
+    bootstrap = None
+    if args.wine_bootstrap is not None or args.wine_bootstrap_sha256 is not None:
+        candidate = args.wine_bootstrap
+        if candidate is None or not candidate.is_absolute() or ".." in candidate.parts:
+            raise Refusal("Bootstrap requires an absolute pinned path")
+        if any(path.is_symlink() for path in (candidate, *candidate.parents)):
+            raise Refusal("Bootstrap has symlink ancestor")
+        bootstrap = _pinned_file(candidate, args.wine_bootstrap_sha256)
+        data = bootstrap.read_bytes()
+        if len(data) < 64 or data[:2] != b"MZ":
+            raise Refusal("Bootstrap is not a PE")
+        position = struct.unpack_from("<I", data, 60)[0]
+        if (position + 24 > len(data) or data[position:position+4] != b"PE\0\0"
+                or struct.unpack_from("<H", data, position+4)[0] != 0x8664
+                or not struct.unpack_from("<H", data, position+22)[0] & 2
+                or struct.unpack_from("<H", data, position+22)[0] & 0x2000
+                or "NH_WINE_BOOTSTRAP_V1".encode("utf-16-le") not in data):
+            raise Refusal("Bootstrap lacks the fixed AMD64 protocol")
+        if bootstrap == executable or len(("Z:"+str(bootstrap).replace("/", "\\")).encode("utf-16-le")) // 2 >= 260:
+            raise Refusal("Bootstrap identity/path is unsuitable")
     receipt = _pinned_file(args.wine_dll_manifest, args.wine_dll_manifest_sha256)
     dlls = json.loads(receipt.read_text())
     required = {"VCMI_lib.dll", "SDL3.dll", "SDL3_image.dll", "SDL3_mixer.dll", "SDL3_ttf.dll"}
@@ -272,7 +313,8 @@ def wine_fullgame_plan(args, client_args):
             "executable_sha256": args.wine_test_sha256, "wine_sha256": args.wine_sha256,
             "server_sha256": args.wine_server_sha256, "input_deadline": 600,
             "input_program": str(input_program), "input_sha256": args.wine_input_sha256,
-            "content": content}
+            "content": content, "bootstrap": str(bootstrap) if bootstrap else None,
+            "bootstrap_sha256": args.wine_bootstrap_sha256}
 
 
 def _decimal(value, name):
@@ -396,6 +438,8 @@ def _parser():
                         help="guarded full-game route requiring a witness-capable PE and private ownership checks; not gameplay-certified")
     parser.add_argument("--wine-server-sha256")
     parser.add_argument("--wine-input-sha256", help="required full-game-only pin of adjacent maintained input helper")
+    parser.add_argument("--wine-bootstrap", type=Path, help="optional pinned SDL-free Win32 child-environment bootstrap")
+    parser.add_argument("--wine-bootstrap-sha256")
     parser.add_argument("--wine-content-manifest", type=Path,
                         help="required full-game-only explicit purchaser-content and fixture manifest")
     parser.add_argument("--wine-content-manifest-sha256")
@@ -619,14 +663,15 @@ def main(argv=None):
             except owner.Refusal as error:
                 raise Refusal(str(error)) from error
         if args.wine_surface_test is not None:
-            if args.wine_input_sha256 or args.wine_server_sha256 or args.wine_content_manifest or args.wine_content_manifest_sha256:
+            if args.wine_input_sha256 or args.wine_server_sha256 or args.wine_content_manifest or args.wine_content_manifest_sha256 or args.wine_bootstrap or args.wine_bootstrap_sha256:
                 raise Refusal("Full-game-only options misplaced in surface mode")
             return run_wine_surface(args, client_args)
         if any((args.wine_test_sha256, args.wine_sha256, args.wine_binary, args.wine_fixtures,
                 args.wine_fixture_manifest, args.wine_fixture_manifest_sha256,
                 args.wine_dll_manifest, args.wine_dll_manifest_sha256,
                 args.wine_run_root, args.wine_server_sha256, args.wine_input_sha256,
-                args.wine_content_manifest, args.wine_content_manifest_sha256)):
+                args.wine_content_manifest, args.wine_content_manifest_sha256,
+                args.wine_bootstrap, args.wine_bootstrap_sha256)):
             raise Refusal("Wine options require --wine-surface-test")
         if any(value is None for value in (args.snapshot, args.profile, args.assets)):
             raise Refusal("Game mode requires --snapshot, --profile and --assets")

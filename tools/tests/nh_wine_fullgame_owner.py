@@ -127,6 +127,14 @@ class Linux:
     def pidfd(self, pid):
         return os.pidfd_open(pid)
 
+    def exited(self, fd):
+        poll = select.poll()
+        poll.register(fd, select.POLLIN | select.POLLHUP)
+        events = poll.poll(0)
+        if any(flags & (select.POLLERR | select.POLLNVAL) for _, flags in events):
+            raise Refusal('Retained pidfd readiness is invalid')
+        return any(flags & (select.POLLIN | select.POLLHUP) for _, flags in events)
+
     def send(self, fd, sig):
         signal.pidfd_send_signal(fd, sig)
 
@@ -171,6 +179,7 @@ class Owner:
         self.started = None
         self.ledger = {}
         self.reaped = {}
+        self.parent_reaped = {}
         self.processes = {}
         self.history = []
         self.errors = []
@@ -183,16 +192,24 @@ class Owner:
         self.signal_fds = ()
 
     def publish_fds(self):
-        self.signal_fds = tuple(row['pidfd'] for pid, row in self.ledger.items() if pid not in self.reaped)
+        self.signal_fds = tuple(row['pidfd'] for pid, row in self.ledger.items() if not self.completed(pid))
+
+    def completed(self, pid):
+        return pid in self.reaped or pid in self.parent_reaped
+
+    def graph_drained(self):
+        return all(self.completed(pid) for pid in self.ledger)
 
     def retain(self, pid, entry):
         """Publish a newly retained lifetime, never inherit numeric-PID status."""
         if pid in self.ledger:
-            if pid not in self.reaped:
+            if not self.completed(pid):
                 self.backend.close(entry['pidfd'])
                 raise Refusal('New lifetime conflicts with unreaped owned PID')
-            self.history.append({'pid': pid, 'entry': self.ledger[pid], 'status': self.reaped[pid]})
-            del self.reaped[pid]
+            self.history.append({'pid': pid, 'entry': self.ledger[pid], 'status': self.reaped.get(pid),
+                                 'parent_reaped': self.parent_reaped.get(pid)})
+            self.reaped.pop(pid, None)
+            self.parent_reaped.pop(pid, None)
             self.processes.pop(pid, None)
         self.ledger[pid] = entry
         self.publish_fds()
@@ -240,7 +257,7 @@ class Owner:
                     continue
                 for pid in children - seen:
                     seen.add(pid); queue.append(pid)
-                    if pid in self.ledger and pid not in self.reaped:
+                    if pid in self.ledger and not self.completed(pid):
                         continue
                     try:
                         identity = self.backend.kernel_snapshot(pid)
@@ -281,7 +298,7 @@ class Owner:
         with self.lock:
             self.adopt()
             for pid, entry in self.ledger.items():
-                if pid in self.reaped:
+                if self.completed(pid):
                     continue
                 try:
                     before = self.backend.kernel_snapshot(pid)
@@ -314,6 +331,26 @@ class Owner:
                 self.reaped[pid] = status
                 if pid in self.processes:
                     self.processes[pid].returncode = status
+            for pid, entry in self.ledger.items():
+                # A Win32 parent may legitimately wait/reap its own child.
+                # Direct Popen children always require our actual waitpid status.
+                if self.completed(pid) or pid in self.processes or entry['identity'] is None:
+                    continue
+                if not self.backend.exited(entry['pidfd']):
+                    continue
+                try:
+                    current = self.backend.kernel_snapshot(pid)
+                except FileNotFoundError:
+                    reason = 'absent'
+                except PermissionError:
+                    continue  # Unreadable is not absence or permission to forget it.
+                else:
+                    if all(current[k] == entry['identity'][k] for k in ('pid', 'start_ticks', 'uid', 'boot_id')):
+                        continue  # Includes an unreaped zombie of the same lifetime.
+                    reason = 'numeric-pid-reused'
+                if self.backend.exited(entry['pidfd']):
+                    self.parent_reaped[pid] = {'identity': copy.deepcopy(entry['identity']),
+                                               'proof': 'retained-pidfd-exited-and-' + reason}
             self.publish_fds()
 
     def spawn(self, command, *, cwd, stdout, stderr=subprocess.STDOUT):
@@ -352,14 +389,14 @@ class Owner:
         grace = min(self.age() + 5, KILL)
         while self.age() < grace:
             self.adopt(); self.reap()
-            if set(self.ledger) <= set(self.reaped):
+            if self.graph_drained():
                 return
             time.sleep(.05)
         self.signal_owned(signal.SIGKILL)
         reap_limit = min(self.age() + 5, DISPLAY)
         while self.age() < reap_limit:
             self.adopt(); self.reap()
-            if set(self.ledger) <= set(self.reaped):
+            if self.graph_drained():
                 return
             time.sleep(.05)
         self.errors.append('Owned Wine descendants not reaped within local/global boundary')
@@ -417,10 +454,10 @@ def finish_owner(owner, supervisor):
             except Exception as reap_error:
                 owner.errors.append('Fallback reap exception: ' + str(reap_error))
                 break
-            if set(owner.ledger) <= set(owner.reaped):
+            if owner.graph_drained():
                 break
             time.sleep(.05)
-        if not set(owner.ledger) <= set(owner.reaped):
+        if not owner.graph_drained():
             owner.errors.append('Fallback cleanup did not reap every retained lifetime')
     finally:
         owner.finished.set()
@@ -496,13 +533,36 @@ def run_fullgame(plan, *, verify_xvfb, verify_runtime):
     return status
 
 
+def owned_game_candidates(owner, bootstrap_pid, expected):
+    """Exact mapped package among retained kernel descendants, not PID/name discovery."""
+    matches = []
+    for pid, entry in list(owner.ledger.items()):
+        if pid == bootstrap_pid or owner.completed(pid) or entry['identity'] is None:
+            continue
+        try:
+            before = owner.backend.snapshot(pid)
+            rows = owner.backend.mappings(pid, {row['path'] for row in expected})
+            after = owner.backend.snapshot(pid)
+        except (FileNotFoundError, PermissionError, ProcessLookupError):
+            continue
+        keys = ('pid', 'start_ticks', 'uid', 'boot_id')
+        if any(before[k] != after[k] or after[k] != entry['identity'][k] for k in keys):
+            raise Refusal('Game candidate changed around mapped-file proof')
+        pinned = {row['path']: row for row in expected}
+        if {row['path'] for row in rows} == set(pinned) and all(row == pinned[row['path']] for row in rows):
+            matches.append(after)
+    if len(matches) > 1:
+        raise Refusal('Multiple owned selected game processes')
+    return matches
+
+
 def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_runtime):
     """Maintained helper entry. Missing witness-capable artifact refuses pre-fork."""
     executable = Path(plan['executable'])
     image = executable.read_bytes()
     if 'NH_WINE_PRE_SDL_V1'.encode('utf-16-le') not in image or 'NH_PRIVATE_WINE_NONCE'.encode('utf-16-le') not in image:
         raise Refusal('Selected PE lacks compiled private startup witness; no Wine fork')
-    if any(key in plan for key in ('launch_nonce', 'stopped_identity', 'loader_identity')):
+    if any(key in plan for key in ('launch_nonce', 'stopped_identity', 'loader_identity', 'game_identity', 'bootstrap_mapping')):
         raise Refusal('Launch binding already populated; no second launch')
     input_script = Path(plan['input_program'])
     if input_script != Path(__file__).with_name('nh-private-input.py').resolve(strict=True):
@@ -519,6 +579,10 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     for key in ('wine', 'server'):
         if file_proof(plan[key])['sha256'] != plan[key + '_sha256']:
             raise Refusal('Pinned Wine provider changed')
+    bootstrap = Path(plan['bootstrap']) if plan.get('bootstrap') else None
+    bootstrap_mapping = file_proof(bootstrap) if bootstrap else None
+    if bootstrap and bootstrap_mapping['sha256'] != plan.get('bootstrap_sha256'):
+        raise Refusal('Pinned bootstrap changed before Wine fork')
     root = Path(plan['root'])
     for name in ('home', 'prefix', 'localappdata', 'config', 'data', 'cache', 'state', 'runtime'):
         (root / name).mkdir(mode=0o700)
@@ -551,7 +615,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     supervisor.start()
     if not owner.armed.wait(1):
         raise Refusal('Supervisor not armed before Wine fork')
-    command = [str(plan['wine']), str(executable)]
+    command = [str(plan['wine']), str(bootstrap or executable)]
     process = None
     stopped = None
     status = 1
@@ -562,10 +626,27 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
             plan['launch_nonce'] = nonce
             plan['stopped_identity'] = copy.deepcopy(stopped)
             plan['loader_identity'] = {'exe': str(plan['wine']), 'sha256': plan['wine_sha256'], 'argv': list(command)}
+            game_pid = process.pid
+            if bootstrap:
+                plan['bootstrap_mapping'] = bootstrap_mapping
+                game_pid = None
+                # Only kernel-owned descendants are candidates, never a global PID/name scan.
+                while owner.age() < 30:
+                    owner.adopt(); owner.reap()
+                    if process.pid in owner.reaped:
+                        raise Refusal('Bootstrap exited before game witness')
+                    matches = owned_game_candidates(owner, process.pid, expected)
+                    if matches and (gate / 'proof.utf16le').exists():
+                        plan['game_identity'] = copy.deepcopy(matches[0])
+                        game_pid = matches[0]['pid']
+                        break
+                    time.sleep(.02)
+                if game_pid is None:
+                    raise Refusal('Owned game witness discovery exceeded30s')
             def context():
                 profile.verify_staged_content(plan['content'], root, verify_copy_bytes=False)
-                before = backend.snapshot(process.pid)
-                mappings = backend.mappings(process.pid, {p['path'] for p in expected})
+                before = backend.snapshot(game_pid)
+                mappings = backend.mappings(game_pid, {p['path'] for p in expected})
                 fd = os.open(gate / 'proof.utf16le', os.O_RDONLY | os.O_NOFOLLOW)
                 try:
                     info = os.fstat(fd)
@@ -577,9 +658,9 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                         raise Refusal('Witness changed during read')
                 finally:
                     os.close(fd)
-                actual_env = backend.environment(process.pid)
-                after = backend.snapshot(process.pid)
-                return {'before': before, 'after': after, 'stopped': stopped,
+                actual_env = backend.environment(game_pid)
+                after = backend.snapshot(game_pid)
+                result = {'before': before, 'after': after, 'stopped': stopped,
                         'loader': copy.deepcopy(plan['loader_identity']),
                         'mappings': mappings, 'expected_mappings': expected,
                         'environment': actual_env, 'required_environment': {key: env[key] for key in (
@@ -588,6 +669,13 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                         'witness': payload, 'nonce': nonce,
                         'win32_executable': windows(executable), 'win32_facade': windows(executable.parent / 'VCMI_lib.dll'),
                         'win32_localappdata': windows(root / 'localappdata')}
+                if bootstrap:
+                    first = backend.snapshot(process.pid)
+                    rows = backend.mappings(process.pid, {str(bootstrap)})
+                    last = backend.snapshot(process.pid)
+                    result['bootstrap'] = {'before': first, 'after': last, 'mappings': rows}
+                    result['game_identity'] = copy.deepcopy(plan['game_identity'])
+                return result
             while not (gate / 'proof.utf16le').exists() and owner.age() < 8:
                 time.sleep(.02)
             owner.verify_input(context, verify_runtime)
@@ -671,8 +759,10 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
         finish_owner(owner, supervisor)
         (root / 'owner-receipt.json').write_text(json.dumps({'owner_pid': backend.pid, 'boot_id': backend.boot,
             'age': owner.age(), 'status': status, 'errors': owner.errors, 'reaped': owner.reaped,
+            'parent_reaped': owner.parent_reaped, 'owned_graph_drained': owner.graph_drained(),
             'ledger': {str(pid): row['identity'] for pid, row in owner.ledger.items()},
-            'prior_lifetimes': [{'pid': row['pid'], 'identity': row['entry']['identity'], 'status': row['status']}
+            'prior_lifetimes': [{'pid': row['pid'], 'identity': row['entry']['identity'], 'status': row['status'],
+                                'parent_reaped': row.get('parent_reaped')}
                                 for row in owner.history]}, indent=2))
     if owner.errors or owner.age() >= FINAL:
         raise Refusal('Wine ownership failed; retained private receipt')

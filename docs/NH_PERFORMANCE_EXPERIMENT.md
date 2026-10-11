@@ -73,6 +73,33 @@ animation speed alongside resource-loading records. Large frame steps establish
 elapsed-time catch-up, not its cause. Capped traces and logging overhead must be
 accounted for before drawing performance conclusions.
 
+### Private Wine child-environment bootstrap
+
+The guarded full-game Wine helper accepts optional `--wine-bootstrap` and
+`--wine-bootstrap-sha256` pins. This test-only executable launches the selected
+game with an explicit Unicode environment, replacing only `LOCALAPPDATA` after
+Wine's initial registry-environment merge. The game's pre-SDL path, nonce and
+audio checks remain mandatory. The bootstrap is not installed or shipped with
+player packages; normal Windows startup is unchanged.
+
+Build test prerequisites into an explicitly configured private output directory,
+outside the repository and its build tree:
+
+```sh
+: "${NH_TEST_OUTPUT:?Set an existing private output directory}"
+g++ -std=c++20 -O2 -DNH_WINE_BOOTSTRAP_ENV_TEST tools/tests/nh-wine-bootstrap.cpp -o "$NH_TEST_OUTPUT/bootstrap-env-test"
+"$NH_TEST_OUTPUT/bootstrap-env-test"
+x86_64-w64-mingw32-g++ -std=c++20 -O2 -DNDEBUG -D_WIN32_WINNT=0x0601 -municode -static -Wl,--nxcompat,--dynamicbase tools/tests/nh-wine-bootstrap.cpp -o "$NH_TEST_OUTPUT/nh-wine-bootstrap.exe"
+```
+
+The first executable checks environment transformation without Wine or SDL.
+Compiling the PE does not verify Windows process creation or game rendering.
+Use the maintained guarded launch/ownership workflow for runtime tests, with a
+fresh disposable prefix, owned background display and dummy audio; do not invoke
+the PE directly on the host desktop. Parent-reaped descendants have a separate
+kernel-backed cleanup classification, not a fabricated exit status. Direct
+children still require an actual wait status.
+
 ### Creature-preview surface regression
 
 Creature previews use a shadow-preserving mode without generating a selection
