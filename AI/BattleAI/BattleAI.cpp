@@ -91,6 +91,9 @@ struct CBattleAI::TimingState
 			" exchange_applied_attack_calls=%llu exchange_applied_attack_us=%llu exchange_remainder_us=%llu"
 			" move_go_blocking_subset_calls=%llu move_go_blocking_subset_us=%llu"
 			" select_target_exchange_calls=%llu select_target_exchange_us=%llu select_remainder_us=%llu"
+			" select_best_target_calls=%llu select_best_target_us=%llu"
+			" select_siege_defense_calls=%llu select_siege_defense_us=%llu"
+			" select_defensive_stance_calls=%llu select_defensive_stance_us=%llu"
 			" hero_action_including_submit_calls=%llu hero_action_including_submit_us=%llu"
 			" direct_unit_submit_calls=%llu direct_unit_submit_us=%llu unclassified_us=%llu",
 			battleID.getNum(), player.toString(),
@@ -129,6 +132,12 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->selectionTargetExchange.calls),
 			static_cast<unsigned long long>(result->selectionTargetExchange.totalMicroseconds),
 			static_cast<unsigned long long>(result->selectionRemainderMicroseconds),
+			static_cast<unsigned long long>(result->selectionBestTarget.calls),
+			static_cast<unsigned long long>(result->selectionBestTarget.totalMicroseconds),
+			static_cast<unsigned long long>(result->selectionSiegeDefense.calls),
+			static_cast<unsigned long long>(result->selectionSiegeDefense.totalMicroseconds),
+			static_cast<unsigned long long>(result->selectionDefensiveStance.calls),
+			static_cast<unsigned long long>(result->selectionDefensiveStance.totalMicroseconds),
 			static_cast<unsigned long long>(result->heroAction.calls),
 			static_cast<unsigned long long>(result->heroAction.totalMicroseconds),
 			static_cast<unsigned long long>(result->directUnitSubmission.calls),
@@ -244,6 +253,9 @@ public:
 			state->summary.movementRemainderMicroseconds += selectionTotals.movementSearch.totalMicroseconds
 				- movement.findMove.totalMicroseconds - movement.goTowards.totalMicroseconds;
 			accumulateSelection(state->summary.selectionTargetExchange, selectionTotals.targetExchange);
+			accumulateSelection(state->summary.selectionBestTarget, selectionTotals.bestTarget);
+			accumulateSelection(state->summary.selectionSiegeDefense, selectionTotals.siegeDefense);
+			accumulateSelection(state->summary.selectionDefensiveStance, selectionTotals.defensiveStance);
 			const uint64_t selectionClassifiedMicroseconds = selectionTotals.creatureSpell.totalMicroseconds
 				+ selectionTotals.movementSearch.totalMicroseconds + selectionTotals.targetExchange.totalMicroseconds;
 			state->summary.selectionRemainderMicroseconds += stageTotals.stackActionSelection.totalMicroseconds

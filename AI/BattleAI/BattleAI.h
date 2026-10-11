@@ -99,6 +99,10 @@ public:
 		uint64_t movementExchangeRemainderMicroseconds = 0;
 		StageTiming movementGoBlockingSubset;
 		StageTiming selectionTargetExchange;
+		/// Disjoint partitions of selectionTargetExchange, not extra callback time.
+		StageTiming selectionBestTarget;
+		StageTiming selectionSiegeDefense;
+		StageTiming selectionDefensiveStance;
 		uint64_t selectionRemainderMicroseconds = 0;
 		/// Includes Hero Action evaluation and any submission performed inside it.
 		StageTiming heroAction;
