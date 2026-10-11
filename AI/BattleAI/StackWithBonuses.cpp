@@ -1061,7 +1061,7 @@ void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTi
 	// Read the seal and polarity before its own final round expires. These
 	// immutable values apply equally to stacked, source-local and raw aliases.
 	const auto preservedPolarity = newHorizonsSorcery::spellLockPreservesBeneficial(*this);
-	const bool sealed = newHorizonsSorcery::isSpellLocked(*this) && preservedPolarity.has_value();
+	const bool sealed = preservedPolarity.has_value() && newHorizonsSorcery::isSpellLocked(*this);
 	const auto roundTimed = [this, sealed, preservedPolarity](const Bonus * bonus)
 	{
 		return timedProjectionEffect(bonus, capturedPhysicalAfflictionGroups)

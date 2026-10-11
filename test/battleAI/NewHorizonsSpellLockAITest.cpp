@@ -140,6 +140,31 @@ public:
 	const GameCb * game() const override { return state.get(); }
 };
 
+class SpellLockQueryCountingStack final : public StackWithBonuses
+{
+	Bonus resistanceProbe;
+	Bonus polarityProbe;
+	Bonus unrelatedProbe;
+
+public:
+	mutable unsigned resistanceQueries = 0;
+
+	SpellLockQueryCountingStack(const HypotheticBattle * owner, const battle::Unit * source)
+		: StackWithBonuses(owner, source),
+		resistanceProbe(*spellBonus(spellId(newHorizonsSorcery::SPELL_LOCK_SPELL), BonusType::MAGIC_RESISTANCE, 100)),
+		polarityProbe(*spellBonus(spellId(newHorizonsSorcery::SPELL_LOCK_SPELL), BonusType::NONE)),
+		unrelatedProbe(*spellBonus(spellId("core:haste"), BonusType::STACKS_SPEED))
+	{}
+
+	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override
+	{
+		// Count the resistance-only query, not the full snapshot or polarity query.
+		if(selector(&resistanceProbe) && !selector(&polarityProbe) && !selector(&unrelatedProbe))
+			++resistanceQueries;
+		return StackWithBonuses::getAllBonuses(selector, cachingStr);
+	}
+};
+
 class NewHorizonsSpellLockLifetimeAITest : public HeroCommandFixture
 {
 protected:
@@ -217,6 +242,41 @@ protected:
 		return result;
 	}
 };
+}
+
+TEST_F(NewHorizonsSpellLockLifetimeAITest, RoundAgingQueriesResistanceOnlyWhenPolarityIsPresent)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto haste = addTimedSpell("core:haste", BonusType::STACKS_SPEED);
+	const auto slow = addTimedSpell("core:slow", BonusType::STACKS_SPEED);
+	const auto liveState = target->acquireState()->save();
+	const auto lock = spellId(newHorizonsSorcery::SPELL_LOCK_SPELL);
+	for(unsigned mode = 0; mode < 5; ++mode)
+	{
+		SCOPED_TRACE(mode); // Absent, resistance-only, friendly, hostile, polarity-only.
+		auto branch = projection();
+		SpellLockQueryCountingStack unit(branch.get(), static_cast<const battle::Unit *>(target));
+		if(mode >= 1 && mode <= 3)
+			unit.addUnitBonus({*spellBonus(lock, BonusType::MAGIC_RESISTANCE, 100)});
+		if(mode >= 2)
+			unit.addUnitBonus({*spellBonus(lock, BonusType::NONE, mode == 3 ? 0 : 1)});
+		const auto version = unit.getTreeVersion();
+		unit.resistanceQueries = 0;
+		unit.advanceTimedRound();
+		EXPECT_EQ(unit.resistanceQueries, mode >= 2 ? 1u : 0u);
+		EXPECT_EQ(unit.getTreeVersion(), version + 1);
+		EXPECT_EQ(turns(unit, "core:haste", BonusType::STACKS_SPEED), mode == 2 ? 2 : 1);
+		EXPECT_EQ(turns(unit, "core:slow", BonusType::STACKS_SPEED), mode == 3 ? 2 : 1);
+		const auto localHaste = localEffects(unit, "core:haste");
+		const auto localSlow = localEffects(unit, "core:slow");
+		ASSERT_EQ(localHaste.size(), 1u);
+		ASSERT_EQ(localSlow.size(), 1u);
+		EXPECT_EQ(localHaste.front().turnsRemain, mode == 2 ? 2 : 1);
+		EXPECT_EQ(localSlow.front().turnsRemain, mode == 3 ? 2 : 1);
+		EXPECT_EQ(target->acquireState()->save(), liveState);
+		EXPECT_EQ(haste->turnsRemain, 2);
+		EXPECT_EQ(slow->turnsRemain, 2);
+	}
 }
 
 TEST_F(NewHorizonsSpellLockLifetimeAITest, EnemySealFinalRoundPreservesSlowThenUnlockedRoundAgesIt)
