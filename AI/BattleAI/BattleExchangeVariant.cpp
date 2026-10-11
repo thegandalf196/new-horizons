@@ -1026,10 +1026,13 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.enemyDamageReduce += value;
 		attackerValue[actorBeforeTrigger->unitId()].value -= value;
 	};
-	const auto mainHexScoringActor = projectedAttacker->acquireState();
-	const auto mainHexDamage = projectHexOfPain(projectedAttacker.get(), defender.get(), shooting, false,
-		{{defender->unitId(), actualDamage}});
-	recordHexOfPain(mainHexScoringActor.get(), mainHexDamage);
+	if(newHorizonsHexOfPainAI::hasEffect(projectedAttacker.get()))
+	{
+		const auto mainHexScoringActor = projectedAttacker->acquireState();
+		const auto mainHexDamage = projectHexOfPain(projectedAttacker.get(), defender.get(), shooting, false,
+			{{defender->unitId(), actualDamage}});
+		recordHexOfPain(mainHexScoringActor.get(), mainHexDamage);
+	}
 
 	const bool projectedEnemyKill = defenderWasAlive && !defenderMayRebirth
 		&& (evaluateOnly

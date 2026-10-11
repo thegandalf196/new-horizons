@@ -239,6 +239,16 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode());
 	}
 };
+
+class NewHorizonsLeadershipSaveTransferTest : public NewHorizonsLeadershipAdmissionTest
+{
+protected:
+	void SetUp() override
+	{
+		TinyMapGameTest::SetUp();
+		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
+	}
+};
 }
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, StrongholdBlacksmithUsesSavedOffersAndBallistaYardRefreshesSiege)
@@ -281,16 +291,24 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, StrongholdBlacksmithUsesSavedOffersAn
 	EXPECT_TRUE(hero->hasArt(ArtifactID::AMMO_CART));
 	EXPECT_EQ(gameState()->getPlayerState(player)->resources[EGameResID::GOLD], goldAvailable - favoredPrice);
 
-	hero->pos = town->visitablePos() - hero->getVisitableOffset();
-	town->onHeroVisit(gameHandler, hero);
 	auto countSiegeBonuses = [hero]()
 	{
 		return std::count_if(hero->getExportedBonusList().begin(), hero->getExportedBonusList().end(),
 			[](const auto & bonus) { return bonus->type == BonusType::SIEGE_RATING; });
 	};
+	// Christian's authored starting War Machines is Basic (+20 Siege).
+	// Purchasing a machine did not grant a Yard visit bonus; visiting adds 20
+	// to that independent skill rating, rather than replacing the total.
+	ASSERT_TRUE(hero->getSiegeCapabilities());
+	ASSERT_EQ(hero->getSiegeCapabilities()->warMachinesRank, 1);
+	const auto siegeBeforeVisit = hero->getSiegeCapabilities()->siegeRating;
+	ASSERT_EQ(siegeBeforeVisit, 20);
+	ASSERT_EQ(countSiegeBonuses(), 0);
+	hero->pos = town->visitablePos() - hero->getVisitableOffset();
+	town->onHeroVisit(gameHandler, hero);
 	ASSERT_EQ(countSiegeBonuses(), 1);
 	ASSERT_TRUE(hero->getSiegeCapabilities());
-	EXPECT_EQ(hero->getSiegeCapabilities()->siegeRating, 20);
+	EXPECT_EQ(hero->getSiegeCapabilities()->siegeRating, siegeBeforeVisit + 20);
 	auto bonus = *std::find_if(hero->getExportedBonusList().begin(), hero->getExportedBonusList().end(),
 		[](const auto & candidate) { return candidate->type == BonusType::SIEGE_RATING; });
 	const auto calendar = gameState()->getCalendar();
@@ -302,7 +320,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, StrongholdBlacksmithUsesSavedOffersAn
 		[](const auto & candidate) { return candidate->type == BonusType::SIEGE_RATING; });
 	EXPECT_EQ(refreshedBonus->val, 20);
 	EXPECT_EQ(refreshedBonus->turnsRemain, remainingDays);
-	EXPECT_EQ(hero->getSiegeCapabilities()->siegeRating, 20);
+	EXPECT_EQ(hero->getSiegeCapabilities()->siegeRating, siegeBeforeVisit + 20);
 }
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, JoiningArmyClampsDuplicateStacksAndLeavesFullArmyRemainder)
@@ -1530,4 +1548,167 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, WizardMageSurplusTransferThenGarrison
 	EXPECT_EQ(server.systemMessages, 0);
 	EXPECT_FALSE(server.hasLeadershipLimitMessage());
 	EXPECT_EQ(server.garrisonDialogs, 0); // The local UI did not invent a query.
+}
+
+TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarrisonSwapPreserveCapacityAndLinks)
+{
+	const CreatureID mage(CreatureID::decode("core:mage"));
+	const PlayerColor player(0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.playerActive(PlayerColor(1))
+		.town({12, 12, 0}, faction("core:tower"), player)
+		.townGarrison({{mage, 1}})
+		.hero({5, 5, 0}, heroType("core:solmyr"), player)
+		.heroExperience(0)
+		.heroGarrison({{mage, 2}})
+		// Keep the game active after both accepted army operations.
+		.town({26, 26, 0}, faction("core:castle"), PlayerColor(1));
+	startWithMap(std::move(builder));
+
+	auto * town = findFirst<CGTownInstance>();
+	auto * hero = findHeroByOwner(player);
+	ASSERT_NE(town, nullptr);
+	ASSERT_NE(hero, nullptr);
+	const ObjectInstanceID townId = town->id;
+	const ObjectInstanceID heroId = hero->id;
+	ChangeObjPos moveHero;
+	moveHero.objid = heroId;
+	moveHero.nPos = town->visitablePos();
+	moveHero.initiator = player;
+	gameState()->apply(moveHero);
+	SetHeroesInTown setHeroes;
+	setHeroes.tid = townId;
+	setHeroes.visiting = heroId;
+	setHeroes.garrison = ObjectInstanceID::NONE;
+	gameState()->apply(setHeroes);
+	gameState()->actingPlayers.insert(player);
+	const JsonNode capturedCapabilities = hero->getCapabilityRules();
+
+	const auto expectCapacity = [&](const CGHeroInstance & currentHero)
+	{
+		EXPECT_EQ(currentHero.getHeroClassID(), HeroClassID(HeroClassID::decode("core:wizard")));
+		EXPECT_EQ(currentHero.level, 1);
+		const auto capacity = currentHero.getLeadershipSlotCapacity(mage);
+		ASSERT_TRUE(capacity);
+		EXPECT_EQ(capacity->leadership, 650);
+		EXPECT_EQ(capacity->requirement, 300);
+		EXPECT_EQ(capacity->maximum, 2);
+		EXPECT_EQ(currentHero.getCapabilityRules(), capturedCapabilities);
+	};
+	const auto snapshotArmy = [](const CArmedInstance & army)
+	{
+		std::vector<std::tuple<int, int, TQuantity>> snapshot;
+		for(const auto & [slot, stack] : army.Slots())
+			snapshot.emplace_back(slot.getNum(), stack->getCreatureID().getNum(), stack->getCount());
+		return snapshot;
+	};
+	ASSERT_NO_FATAL_FAILURE(expectCapacity(*hero));
+	ASSERT_EQ(town->getVisitingHero(), hero);
+	ASSERT_EQ(hero->getVisitedTown(), town);
+	ASSERT_FALSE(hero->isGarrisoned());
+	ASSERT_EQ(hero->getStackCount(SlotID(0)), 2);
+	ASSERT_EQ(town->getStackCount(SlotID(0)), 1);
+	const auto heroArmyBefore = snapshotArmy(*hero);
+	const auto townArmyBefore = snapshotArmy(*town);
+
+	// Preserve the live visiting link in the actual whole-world snapshot.
+	auto restored = std::make_shared<CGameState>();
+	restored->preInit(LIBRARY);
+	restored->loadFromMemory(gameState()->saveToMemory());
+	const auto * restoredHero = restored->getHero(heroId);
+	const auto * restoredTown = restored->getTown(townId);
+	ASSERT_NE(restoredHero, nullptr);
+	ASSERT_NE(restoredTown, nullptr);
+	ASSERT_NE(restoredHero, hero);
+	ASSERT_NE(restoredTown, town);
+	ASSERT_NO_FATAL_FAILURE(expectCapacity(*restoredHero));
+	ASSERT_EQ(snapshotArmy(*restoredHero), heroArmyBefore);
+	ASSERT_EQ(snapshotArmy(*restoredTown), townArmyBefore);
+	ASSERT_EQ(restoredTown->getVisitingHero(), restoredHero);
+	ASSERT_EQ(restoredTown->getGarrisonHero(), nullptr);
+	ASSERT_EQ(restoredHero->getVisitedTown(), restoredTown);
+	ASSERT_FALSE(restoredHero->isGarrisoned());
+	ASSERT_TRUE(restored->actingPlayers.contains(player));
+	EXPECT_FALSE(newHorizonsHeroes::canMergeArmies(restoredTown, restoredHero));
+
+	LeadershipRecordingServer restoredServer(restored);
+	CGameHandler restoredHandler(restoredServer, restored);
+	// Move one Mage to a separate slot; do not combine all three into capacity two.
+	ArrangeStacks transfer(1, SlotID(1), SlotID(0), heroId, townId, 0);
+	transfer.player = player;
+	transfer.requestID = 91;
+	restoredHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, transfer);
+	ASSERT_EQ(restoredServer.responses.size(), 1u);
+	EXPECT_EQ(restoredServer.responses.back().requestID, transfer.requestID);
+	ASSERT_TRUE(restoredServer.responses.back().result);
+	EXPECT_EQ(restoredServer.rebalancePacks, 1);
+	ASSERT_EQ(restoredHero->stacksCount(), 2);
+	EXPECT_EQ(restoredHero->getStackCount(SlotID(0)), 2);
+	EXPECT_EQ(restoredHero->getStackCount(SlotID(1)), 1);
+	EXPECT_EQ(restoredHero->getCreature(SlotID(0))->getId(), mage);
+	EXPECT_EQ(restoredHero->getCreature(SlotID(1))->getId(), mage);
+	EXPECT_EQ(restoredTown->stacksCount(), 0);
+	EXPECT_EQ(restoredTown->getVisitingHero(), restoredHero);
+	EXPECT_EQ(restoredHero->getVisitedTown(), restoredTown);
+
+	GarrisonHeroSwap swap(townId);
+	swap.player = player;
+	swap.requestID = 92;
+	restoredHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, swap);
+	ASSERT_EQ(restoredServer.responses.size(), 2u);
+	EXPECT_EQ(restoredServer.responses.back().requestID, swap.requestID);
+	ASSERT_TRUE(restoredServer.responses.back().result);
+	ASSERT_EQ(restoredTown->getVisitingHero(), nullptr);
+	ASSERT_EQ(restoredTown->getGarrisonHero(), restoredHero);
+	ASSERT_EQ(restoredHero->getVisitedTown(), restoredTown);
+	ASSERT_TRUE(restoredHero->isGarrisoned());
+	EXPECT_EQ(restoredServer.rebalancePacks, 1);
+	EXPECT_TRUE(restoredServer.playerEndsGamePacks.empty());
+	EXPECT_EQ(restoredServer.systemMessages, 0);
+	EXPECT_FALSE(restoredServer.hasLeadershipLimitMessage());
+	EXPECT_EQ(restoredServer.garrisonDialogs, 0);
+	const auto transferredArmy = snapshotArmy(*restoredHero);
+
+	// Restore the changed hero/town relation without reattaching either object.
+	auto reloaded = std::make_shared<CGameState>();
+	reloaded->preInit(LIBRARY);
+	reloaded->loadFromMemory(restored->saveToMemory());
+	const auto * reloadedHero = reloaded->getHero(heroId);
+	const auto * reloadedTown = reloaded->getTown(townId);
+	ASSERT_NE(reloadedHero, nullptr);
+	ASSERT_NE(reloadedTown, nullptr);
+	ASSERT_NE(reloadedHero, restoredHero);
+	ASSERT_NE(reloadedTown, restoredTown);
+	ASSERT_NO_FATAL_FAILURE(expectCapacity(*reloadedHero));
+	ASSERT_EQ(snapshotArmy(*reloadedHero), transferredArmy);
+	ASSERT_EQ(reloadedTown->stacksCount(), 0);
+	ASSERT_EQ(reloadedTown->getVisitingHero(), nullptr);
+	ASSERT_EQ(reloadedTown->getGarrisonHero(), reloadedHero);
+	ASSERT_EQ(reloadedHero->getVisitedTown(), reloadedTown);
+	ASSERT_TRUE(reloadedHero->isGarrisoned());
+	ASSERT_EQ(reloadedHero->getOwner(), player);
+	ASSERT_EQ(reloadedTown->getOwner(), player);
+	ASSERT_TRUE(reloaded->actingPlayers.contains(player));
+
+	LeadershipRecordingServer reloadedServer(reloaded);
+	CGameHandler reloadedHandler(reloadedServer, reloaded);
+	// A saturated combine must fail atomically even after the second restoration.
+	ArrangeStacks noFit(2, SlotID(1), SlotID(0), heroId, heroId, 0);
+	noFit.player = player;
+	noFit.requestID = 93;
+	reloadedHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, noFit);
+	ASSERT_EQ(reloadedServer.responses.size(), 1u);
+	EXPECT_EQ(reloadedServer.responses.back().requestID, noFit.requestID);
+	EXPECT_FALSE(reloadedServer.responses.back().result);
+	EXPECT_EQ(snapshotArmy(*reloadedHero), transferredArmy);
+	EXPECT_EQ(reloadedTown->stacksCount(), 0);
+	EXPECT_EQ(reloadedServer.rebalancePacks, 0);
+	EXPECT_TRUE(reloadedServer.hasLeadershipLimitMessage());
+	EXPECT_EQ(reloadedTown->getGarrisonHero(), reloadedHero);
+	EXPECT_EQ(reloadedHero->getVisitedTown(), reloadedTown);
+	EXPECT_TRUE(reloadedHero->isGarrisoned());
+	EXPECT_EQ(reloadedHero->getStackCount(SlotID(0)) + reloadedHero->getStackCount(SlotID(1)), 3);
+	EXPECT_TRUE(reloadedServer.playerEndsGamePacks.empty());
+	EXPECT_EQ(reloadedServer.garrisonDialogs, 0);
 }

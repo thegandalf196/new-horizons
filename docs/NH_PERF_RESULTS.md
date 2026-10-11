@@ -1,5 +1,42 @@
 # New Horizons performance experiment — measured results
 
+## Matched Hex snapshot guard comparison (2026-10-11)
+
+Four bounded Linux replays used the same Normal-difficulty save, settings,
+client and resources. A retained the unconditional Hex scoring snapshot; B
+created it only when Hex of Pain was present. Only the corresponding library
+code differed. Runs used fresh disposable profiles, silent isolated displays
+and no concurrent build or heavy test. OS file-cache state was uncontrolled.
+
+| Attempt | Variant | Blue turn ms | Tan turn ms | Normal quit |
+| --- | --- | ---: | ---: | --- |
+| 1 | A | 7,277 | 4,052 | Yes |
+| 2 | B | 7,230 | 4,001 | No |
+| 3 | B | 7,185 | 4,021 | Yes |
+| 4 | A | 7,321 | 4,054 | Yes |
+
+Attempt 2 completed both timed turns but an operator delay prevented normal
+quit before the safety deadline; its normal-quit failure is retained, while
+supervised cleanup succeeded. Thus these
+are four timed attempts, not four successful complete acceptance runs.
+All four produced the same ordered 81 battle actions and seven round boundaries,
+with closed timing partitions and unchanged input/resource hashes. This does
+not establish equality of the entire game state.
+
+Descriptive means were A: 7,299/4,053 ms and B: 7,207.5/4,011 ms. These small
+samples do **not** establish a reliable speedup. A separate saved-game situation
+using B completed its two turns in 5,556/66 ms and quit normally; its settings
+were newly specified, not a reconstruction of an earlier unretained profile.
+Neither experiment establishes native Windows performance, animation FPS,
+SDL/NHART overhead, cold-cache behavior or lower hardware requirements.
+
+Focused native checks passed 23/23, including active/inactive Hex and profiler
+regressions. Two retained baseline cases matched exchange-score bits, selected
+action, Perfect Moment and Archery Skirmisher flags exactly. Separately, 30/30
+Leadership/save-transfer and control-status checks passed. These bounded checks
+do not certify all forecasts, complete combat save/resume or Windows gameplay.
+The reported slow Windows turns remain unresolved.
+
 ## Battle-AI exchange cost breakdown (2026-10-11)
 
 A bounded Linux replay of a supplied Normal-difficulty save completed one day
