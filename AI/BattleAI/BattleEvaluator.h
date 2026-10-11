@@ -64,6 +64,10 @@ public:
 		BattleMovementTiming movementDetails;
 		/// Counts measured call sites, not the number of candidate exchanges.
 		StageTiming targetExchange;
+		/// Disjoint call-site partitions sharing the same elapsed sample as targetExchange.
+		StageTiming bestTarget;
+		StageTiming siegeDefense;
+		StageTiming defensiveStance;
 	};
 
 	BattleAction selectStackAction(const CStack * stack, SelectionTiming * timing = nullptr);

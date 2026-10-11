@@ -4372,29 +4372,36 @@ class SelectionStageScope
 {
 	using Clock = std::chrono::steady_clock;
 	StageTiming * timing;
+	StageTiming * aggregate;
 	Clock::time_point started;
 
 public:
-	explicit SelectionStageScope(StageTiming * timing)
-		: timing(timing), started(timing ? Clock::now() : Clock::time_point{})
+	explicit SelectionStageScope(StageTiming * timing, StageTiming * aggregate = nullptr)
+		: timing(timing), aggregate(aggregate), started(timing ? Clock::now() : Clock::time_point{})
 	{}
 
 	~SelectionStageScope()
 	{
 		if(timing)
 		{
-			++timing->calls;
-			timing->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
+			const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
 				Clock::now() - started).count();
+			++timing->calls;
+			timing->totalMicroseconds += elapsed;
+			if(aggregate)
+			{
+				++aggregate->calls;
+				aggregate->totalMicroseconds += elapsed;
+			}
 		}
 	}
 };
 
 template<typename StageTiming, typename Callable>
 decltype(auto) measureSelectionStage(StageTiming * timing,
-	Callable && action)
+	Callable && action, StageTiming * aggregate = nullptr)
 {
-	SelectionStageScope measurement(timing);
+	SelectionStageScope measurement(timing, aggregate);
 	return std::forward<Callable>(action)();
 }
 }
@@ -4454,10 +4461,10 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 		logAi->trace("Evaluating attack for %s", stack->getDescription());
 #endif
 
-		auto evaluationResult = measureSelectionStage(timing ? &timing->targetExchange : nullptr, [&]()
+		auto evaluationResult = measureSelectionStage(timing ? &timing->bestTarget : nullptr, [&]()
 		{
 			return scoreEvaluator.findBestTarget(stack, *targets, damageCache, hb, siegeDefense);
-		});
+		}, timing ? &timing->targetExchange : nullptr);
 		auto & bestAttack = evaluationResult.bestAttack;
 
 		cachedAttack.ap = bestAttack;
@@ -4540,10 +4547,10 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 						BattleAttackInfo bai(stack, stack, 0, false);
 						AttackPossibility apDefend(stack->getPosition(), stack->getPosition(), bai);
 
-						float defenseValue = measureSelectionStage(timing ? &timing->targetExchange : nullptr, [&]()
+						float defenseValue = measureSelectionStage(timing ? &timing->siegeDefense : nullptr, [&]()
 						{
 							return scoreEvaluator.evaluateExchange(apDefend, 0, *targets, damageCache, hb);
-						});
+						}, timing ? &timing->targetExchange : nullptr);
 
 						if((defenseValue > score && score <= 0) || (defenseValue > 2 * score && score > 0))
 						{
@@ -4622,10 +4629,10 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 	if(stack->acquireState()->waitedThisTurn)
 		return BattleAction::makeDefend(stack);
 
-	const bool worthwhileDefense = measureSelectionStage(timing ? &timing->targetExchange : nullptr, [&]()
+	const bool worthwhileDefense = measureSelectionStage(timing ? &timing->defensiveStance : nullptr, [&]()
 	{
 		return defensiveStanceMakesDefendWorthwhile(env.get(), hb, stack, damageCache);
-	});
+	}, timing ? &timing->targetExchange : nullptr);
 	if(worthwhileDefense)
 		return BattleAction::makeDefend(stack);
 	return BattleAction::makeWait(stack);

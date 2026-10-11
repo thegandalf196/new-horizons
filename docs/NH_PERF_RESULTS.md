@@ -1,5 +1,19 @@
 # New Horizons performance experiment — measured results
 
+## Target-selection timing partition (2026-10-11)
+
+The existing target-exchange aggregate now separates best-target selection,
+siege-defense evaluation and defensive-stance evaluation. Each child and its
+parent receive the same elapsed sample; the children sum exactly to the parent
+and must not be added to it as extra callback time. Counts describe consumer
+calls, not candidate attacks. Disabled timing performs no additional clock reads.
+
+All twenty-two focused timing cases passed, including action/state equivalence,
+partition closure, ordinary battle-end/reset and defensive-stance attribution.
+The build and binary privacy check passed. This validates instrumentation, not
+actual siege execution, native Windows gameplay or a turn-time improvement.
+The saved-game replay with these counters remains pending.
+
 ## Completed-activation forecast checkpoint (2026-10-11)
 
 Defend, ordinary movement and activation-consuming creature casts now include

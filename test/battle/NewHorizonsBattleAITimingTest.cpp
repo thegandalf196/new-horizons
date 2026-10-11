@@ -12,6 +12,7 @@
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
@@ -123,6 +124,10 @@ protected:
 
 	void expectStageClosure(const CBattleAI::TimingSummary & timing) const
 	{
+		EXPECT_EQ(timing.selectionTargetExchange.calls, timing.selectionBestTarget.calls
+			+ timing.selectionSiegeDefense.calls + timing.selectionDefensiveStance.calls);
+		EXPECT_EQ(timing.selectionTargetExchange.totalMicroseconds, timing.selectionBestTarget.totalMicroseconds
+			+ timing.selectionSiegeDefense.totalMicroseconds + timing.selectionDefensiveStance.totalMicroseconds);
 		const uint64_t classified = timing.evaluatorConstruction.totalMicroseconds
 			+ timing.stackActionSelection.totalMicroseconds + timing.heroAction.totalMicroseconds
 			+ timing.directUnitSubmission.totalMicroseconds;
@@ -162,6 +167,7 @@ protected:
 		const auto expected = control.selectStackAction(ordinary);
 		BattleEvaluator::SelectionTiming timing;
 		const auto actual = measured.selectStackAction(ordinary, &timing);
+		expectTargetPartition(timing);
 		EXPECT_EQ(actual.side, expected.side);
 		EXPECT_EQ(actual.stackNumber, expected.stackNumber);
 		EXPECT_EQ(actual.actionType, expected.actionType);
@@ -194,6 +200,8 @@ protected:
 		if(adjacentEnemy)
 		{
 			EXPECT_GE(timing.targetExchange.calls, 1u);
+			EXPECT_EQ(timing.bestTarget.calls, 1u);
+			EXPECT_EQ(timing.siegeDefense.calls, 0u);
 		}
 		EXPECT_EQ(ordinary->getAvailableHealth(), ourHealth);
 		EXPECT_EQ(enemy->getAvailableHealth(), enemyHealth);
@@ -204,6 +212,24 @@ protected:
 		EXPECT_TRUE(callback->actions.empty());
 		EXPECT_TRUE(callback->heroActions.empty());
 		EXPECT_EQ(callback->retreatDecisionCalls, 0u);
+	}
+
+	void expectTargetPartition(const BattleEvaluator::SelectionTiming & timing) const
+	{
+		EXPECT_EQ(timing.targetExchange.calls, timing.bestTarget.calls
+			+ timing.siegeDefense.calls + timing.defensiveStance.calls);
+		EXPECT_EQ(timing.targetExchange.totalMicroseconds, timing.bestTarget.totalMicroseconds
+			+ timing.siegeDefense.totalMicroseconds + timing.defensiveStance.totalMicroseconds);
+	}
+
+	void expectEmptyTargetPartition(const CBattleAI::TimingSummary & timing) const
+	{
+		for(const auto * stage : {&timing.selectionBestTarget, &timing.selectionSiegeDefense,
+			&timing.selectionDefensiveStance})
+		{
+			EXPECT_EQ(stage->calls, 0u);
+			EXPECT_EQ(stage->totalMicroseconds, 0u);
+		}
 	}
 };
 
@@ -237,6 +263,7 @@ TEST_F(NewHorizonsBattleAITimingTest, HealingTentEarlyReturnCountsOnceAndPreserv
 	EXPECT_EQ(timing.selectionCreatureSpell.calls, 0u);
 	EXPECT_EQ(timing.selectionMovementSearch.calls, 0u);
 	EXPECT_EQ(timing.selectionTargetExchange.calls, 0u);
+	expectEmptyTargetPartition(timing);
 	EXPECT_EQ(timing.movementFindMove.calls, 0u);
 	EXPECT_EQ(timing.movementGoTowards.calls, 0u);
 	EXPECT_EQ(timing.movementFindMoveExchangeSubset.calls, 0u);
@@ -303,6 +330,7 @@ TEST_F(NewHorizonsBattleAITimingTest, ResetKeepsOldInFlightScopeOutOfNewBattleCo
 	EXPECT_EQ(summary().selectionCreatureSpell.calls, 0u);
 	EXPECT_EQ(summary().selectionMovementSearch.calls, 0u);
 	EXPECT_EQ(summary().selectionTargetExchange.calls, 0u);
+	expectEmptyTargetPartition(summary());
 	EXPECT_EQ(summary().selectionRemainderMicroseconds, 0u);
 	EXPECT_EQ(summary().movementFindMove.calls, 0u);
 	EXPECT_EQ(summary().movementGoTowards.calls, 0u);
@@ -329,6 +357,7 @@ TEST_F(NewHorizonsBattleAITimingTest, EndingCallbackCanDestroyOwnerWithoutInvali
 		ai->battleEnd(BattleID(0), nullptr, QueryID(-1));
 		EXPECT_EQ(summary().activeStackInFlight, 1u);
 		EXPECT_EQ(summary().directUnitSubmission.calls, 0u);
+		expectEmptyTargetPartition(summary());
 		ai.reset();
 	};
 	auto * activeAI = ai.get();
@@ -401,6 +430,114 @@ TEST_F(NewHorizonsBattleAITimingTest, DistantSelectionTimingPreservesUntimedDeci
 TEST_F(NewHorizonsBattleAITimingTest, AdjacentSelectionTimingPreservesUntimedDecisionAndLiveState)
 {
 	ASSERT_NO_FATAL_FAILURE(expectSameSelectionWithAndWithoutTiming(true));
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, OrdinaryBattleEndRetainsClosedTargetPartitionAfterSubmission)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	ai->autobattlePreferences.enableSpellsUsage = false;
+	callback->onSubmit = [&]
+	{
+		ai->battleEnd(BattleID(0), nullptr, QueryID(-1));
+		EXPECT_TRUE(summary().finished);
+		EXPECT_FALSE(summary().reported);
+		EXPECT_EQ(summary().activeStackInFlight, 1u);
+	};
+	ai->activeStack(BattleID(0), ordinary);
+	ASSERT_EQ(callback->actions.size(), 1u);
+	const auto timing = summary();
+	EXPECT_TRUE(timing.finished);
+	EXPECT_TRUE(timing.reported);
+	EXPECT_EQ(timing.activeStackInFlight, 0u);
+	EXPECT_EQ(timing.selectionBestTarget.calls, 1u);
+	EXPECT_EQ(timing.selectionSiegeDefense.calls, 0u);
+	expectStageClosure(timing);
+	ai->battleEnd(BattleID(0), nullptr, QueryID(-1));
+	EXPECT_EQ(summary().selectionBestTarget.calls, timing.selectionBestTarget.calls);
+	EXPECT_EQ(summary().selectionBestTarget.totalMicroseconds, timing.selectionBestTarget.totalMicroseconds);
+	EXPECT_EQ(summary().selectionTargetExchange.totalMicroseconds, timing.selectionTargetExchange.totalMicroseconds);
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, OrdinaryResetExcludesOldTargetPartitionFromNewSummary)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	ai->autobattlePreferences.enableSpellsUsage = false;
+	callback->onSubmit = [&]
+	{
+		ai->battleEnd(BattleID(0), nullptr, QueryID(-1));
+		startTiming();
+	};
+	ai->activeStack(BattleID(0), ordinary);
+	EXPECT_EQ(summary().activeStackCalls, 0u);
+	EXPECT_EQ(summary().selectionTargetExchange.calls, 0u);
+	EXPECT_EQ(summary().selectionTargetExchange.totalMicroseconds, 0u);
+	expectEmptyTargetPartition(summary());
+	expectStageClosure(summary());
+	callback->onSubmit = {};
+	ai->activeStack(BattleID(0), ordinary);
+	EXPECT_EQ(summary().activeStackCalls, 1u);
+	EXPECT_EQ(summary().selectionBestTarget.calls, 1u);
+	EXPECT_EQ(summary().selectionSiegeDefense.calls, 0u);
+	expectStageClosure(summary());
+}
+
+class NewHorizonsTargetPartitionTest : public NewHorizonsBattleAITimingTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		// Keep the existing legacy-command timing scene but capture the actual
+		// registered generic perk pool for the independent defensive branch.
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+};
+
+TEST_F(NewHorizonsTargetPartitionTest, DefensiveStancePartitionPreservesNullSinkDecisionAndLiveState)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto armorer = SecondarySkill::decode("new-horizons:armorer");
+	ASSERT_GE(armorer, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(armorer), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.pavise"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.pavise"));
+	auto * shooter = addStack(BattleSide::DEFENDER, creatureByName("core:titan"), BattleHex(12, 7), 3);
+	ASSERT_NE(shooter, nullptr);
+	ASSERT_TRUE(battle()->battleCanShoot(shooter, ordinary->getPosition()));
+	ordinary->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
+		BonusSource::OTHER, -ordinary->getMovementRange(), BonusSourceID()));
+	ASSERT_EQ(ordinary->getMovementRange(), 0);
+	ASSERT_FALSE(ordinary->waitedThisTurn);
+	ASSERT_FALSE(ordinary->defended());
+	const auto ourHealth = ordinary->getAvailableHealth();
+	const auto enemyHealth = enemy->getAvailableHealth();
+	const auto shooterHealth = shooter->getAvailableHealth();
+	const auto ourPosition = ordinary->getPosition();
+	BattleEvaluator control(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	BattleEvaluator measured(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	const auto expected = control.selectStackAction(ordinary, nullptr);
+	BattleEvaluator::SelectionTiming timing;
+	const auto actual = measured.selectStackAction(ordinary, &timing);
+	EXPECT_EQ(actual.toString(), expected.toString());
+	EXPECT_EQ(actual.perfectMoment, expected.perfectMoment);
+	EXPECT_EQ(actual.archerySkirmisherAttack, expected.archerySkirmisherAttack);
+	EXPECT_EQ(timing.bestTarget.calls, 0u);
+	EXPECT_EQ(timing.siegeDefense.calls, 0u);
+	EXPECT_EQ(timing.defensiveStance.calls, 1u);
+	EXPECT_EQ(timing.targetExchange.calls, 1u);
+	expectTargetPartition(timing);
+	EXPECT_EQ(ordinary->getAvailableHealth(), ourHealth);
+	EXPECT_EQ(enemy->getAvailableHealth(), enemyHealth);
+	EXPECT_EQ(shooter->getAvailableHealth(), shooterHealth);
+	EXPECT_EQ(ordinary->getPosition(), ourPosition);
+	EXPECT_FALSE(ordinary->defended());
+	EXPECT_FALSE(ordinary->waitedThisTurn);
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_TRUE(callback->heroActions.empty());
 }
 
 TEST_F(NewHorizonsBattleAITimingTest, OrdinaryThrowingSubmissionRetainsClosedSelectionPartition)
