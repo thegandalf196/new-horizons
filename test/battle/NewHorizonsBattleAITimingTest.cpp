@@ -1089,8 +1089,10 @@ TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCount
 class NewHorizonsBattleDwarfWaitTimingTest : public NewHorizonsBattleAITimingTest
 {
 protected:
-	void measureNaturalRound(unsigned stackCount)
+	void measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1)
 	{
+		ASSERT_TRUE(stackCount == 1 || stackCount == 7);
+		ASSERT_TRUE(opposingStackCount == 1 || opposingStackCount == 7);
 		useCommands = false;
 		startGame();
 		gameState()->getStartInfo()->difficulty = static_cast<ui8>(EMapDifficulty::NORMAL);
@@ -1101,7 +1103,14 @@ protected:
 		for(const auto * unit : battle()->battleGetAllUnits(false))
 			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
-		addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 70);
+		int64_t opposingHealth = 0;
+		for(unsigned index = 0; index < opposingStackCount; ++index)
+		{
+			const auto * pikeman = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"),
+				BattleHex(3, opposingStackCount == 1 ? 5 : index + 1), 70 / opposingStackCount);
+			EXPECT_EQ(pikeman->getAvailableHealth(), static_cast<int64_t>(70 / opposingStackCount) * pikeman->getMaxHealth());
+			opposingHealth += pikeman->getAvailableHealth();
+		}
 		int64_t initialHealth = 0;
 		for(unsigned index = 0; index < stackCount; ++index)
 		{
@@ -1111,7 +1120,11 @@ protected:
 			EXPECT_EQ(dwarf->getAvailableHealth(), static_cast<int64_t>(70 / stackCount) * dwarf->getMaxHealth());
 		}
 		RecordProperty("initialDwarfHealth", std::to_string(initialHealth));
+		ASSERT_EQ(initialHealth, 1400);
 		RecordProperty("dwarfStacks", std::to_string(stackCount));
+		RecordProperty("opposingStacks", std::to_string(opposingStackCount));
+		RecordProperty("initialOpposingHealth", std::to_string(opposingHealth));
+		RecordProperty("opposingCreatureCount", "70");
 		RecordProperty("forecastRounds", "2"); // Normal production getSimulationTurnsCount.
 		beginCombat();
 		callback = std::make_shared<TimingCallback>(PlayerColor(1));
@@ -1177,6 +1190,8 @@ protected:
 			stage("creatureSpell", before.selectionCreatureSpell, after.selectionCreatureSpell);
 			stage("movement", before.selectionMovementSearch, after.selectionMovementSearch);
 			stage("movementBody", before.movementExchangeBody, after.movementExchangeBody);
+			stage("movementProbes", before.movementExchangeTargetProbes, after.movementExchangeTargetProbes);
+			stage("movementAppliedAttacks", before.movementExchangeAppliedAttacks, after.movementExchangeAppliedAttacks);
 			stage("bestTarget", before.selectionBestTarget, after.selectionBestTarget);
 			stage("waitedExchange", before.bestTargetWaitedExchange, after.bestTargetWaitedExchange);
 			stage("normalExchange", before.bestTargetNormalExchange, after.bestTargetNormalExchange);
@@ -1209,4 +1224,12 @@ TEST_F(NewHorizonsBattleDwarfWaitTimingTest, OneStackNormalTwoRoundDecision)
 TEST_F(NewHorizonsBattleDwarfWaitTimingTest, SevenStacksNormalTwoRoundDecisions)
 {
 	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7));
+}
+
+TEST_F(NewHorizonsBattleDwarfWaitTimingTest, SevenStacksAgainstSevenOpposingStacksNormalTwoRoundDecisions)
+{
+	// Same seventy creatures per side as the existing seven-versus-one case;
+	// only opposing stack multiplicity and corresponding legal start hexes vary.
+	// WAIT is observed, never forced or required by this timing fixture.
+	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7, 7));
 }
