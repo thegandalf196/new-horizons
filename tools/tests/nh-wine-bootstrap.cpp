@@ -17,6 +17,30 @@ namespace
 {
 constexpr size_t MAX_ENVIRONMENT = 131072;
 
+enum class Stage2Detail : unsigned
+{
+	NONE = 0,
+	READ_LOCAL = 1,
+	READ_TARGET = 2,
+	READ_FACADE = 3,
+	ROUTE_LOCAL = 4,
+	ROUTE_TARGET = 5,
+	ROUTE_FACADE = 6,
+	LOCAL_ANCESTORS = 7,
+	TARGET_FILE = 8,
+	FACADE_FILE = 9,
+	TARGET_NAME = 10,
+	FACADE_PAIR = 11,
+	GATE_ANCESTORS = 12,
+};
+
+template<typename Predicate>
+bool stage2Check(Stage2Detail & detail, Stage2Detail slot, Predicate predicate)
+{
+	detail = slot;
+	return predicate();
+}
+
 std::wstring variableName(const std::wstring & entry)
 {
 	// Drive-current-directory pseudo variables begin with '='; keep that key.
@@ -136,6 +160,7 @@ struct Attributes
 int bootstrap(int argc)
 {
 	unsigned stage = 1;
+	Stage2Detail detail = Stage2Detail::NONE;
 	try
 	{
 		if(argc != 1) throw std::invalid_argument("Arguments refused");
@@ -144,16 +169,25 @@ int bootstrap(int argc)
 		if(nonce.size() != 64 || nonce.find_first_not_of(L"0123456789abcdef") != std::wstring::npos)
 			throw std::invalid_argument("Invalid challenge");
 		stage = 2;
+		detail = Stage2Detail::READ_LOCAL;
 		const auto local = environment(L"NH_PRIVATE_WINE_LOCALAPPDATA");
+		detail = Stage2Detail::READ_TARGET;
 		const auto target = environment(L"NH_PRIVATE_WINE_EXECUTABLE");
+		detail = Stage2Detail::READ_FACADE;
 		const auto facade = environment(L"NH_PRIVATE_WINE_FACADE");
-		if(!boundedRoute(local) || !boundedRoute(target) || !boundedRoute(facade)
-			|| !plainDirectoryAncestors(local) || !plainFile(target) || !plainFile(facade))
+		if(!stage2Check(detail, Stage2Detail::ROUTE_LOCAL, [&] { return boundedRoute(local); })
+			|| !stage2Check(detail, Stage2Detail::ROUTE_TARGET, [&] { return boundedRoute(target); })
+			|| !stage2Check(detail, Stage2Detail::ROUTE_FACADE, [&] { return boundedRoute(facade); })
+			|| !stage2Check(detail, Stage2Detail::LOCAL_ANCESTORS, [&] { return plainDirectoryAncestors(local); })
+			|| !stage2Check(detail, Stage2Detail::TARGET_FILE, [&] { return plainFile(target); })
+			|| !stage2Check(detail, Stage2Detail::FACADE_FILE, [&] { return plainFile(facade); }))
 			throw std::invalid_argument("Invalid private path");
 		const auto cwd = target.substr(0, target.find_last_of(L'\\'));
-		if(target.substr(target.find_last_of(L'\\') + 1) != L"new-horizons.exe" || facade != cwd + L"\\VCMI_lib.dll"
-			|| !plainDirectoryAncestors(local + L"\\.nh-private-wine-gate"))
+		if(!stage2Check(detail, Stage2Detail::TARGET_NAME, [&] { return target.substr(target.find_last_of(L'\\') + 1) == L"new-horizons.exe"; })
+			|| !stage2Check(detail, Stage2Detail::FACADE_PAIR, [&] { return facade == cwd + L"\\VCMI_lib.dll"; })
+			|| !stage2Check(detail, Stage2Detail::GATE_ANCESTORS, [&] { return plainDirectoryAncestors(local + L"\\.nh-private-wine-gate"); }))
 			throw std::invalid_argument("Invalid selected pair");
+		detail = Stage2Detail::NONE;
 		stage = 3;
 		if(environment(L"SDL_AUDIODRIVER") != L"dummy" || environment(L"SDL_AUDIO_DRIVER") != L"dummy"
 			|| environment(L"SDL_VIDEODRIVER") != L"windows" || environment(L"SDL_VIDEO_DRIVER") != L"windows")
@@ -228,7 +262,7 @@ int bootstrap(int argc)
 	}
 	catch(...)
 	{
-		std::fprintf(stderr, "NH_WINE_BOOTSTRAP_REFUSAL stage=%u\n", stage);
+		std::fprintf(stderr, "NH_WINE_BOOTSTRAP_REFUSAL stage=%u detail=%u\n", stage, static_cast<unsigned>(detail));
 		std::fflush(stderr);
 		return 87;
 	}
@@ -239,6 +273,32 @@ int bootstrap(int argc)
 #ifdef NH_WINE_BOOTSTRAP_ENV_TEST
 int main()
 {
+	// These process-free controls exercise numbering, short-circuiting and
+	// exception attribution without calling any Windows filesystem or process API.
+	Stage2Detail detail = Stage2Detail::NONE;
+	unsigned calls = 0;
+	if(!stage2Check(detail, Stage2Detail::ROUTE_LOCAL, [&] { ++calls; return false; })
+		|| !stage2Check(detail, Stage2Detail::ROUTE_TARGET, [&] { ++calls; return true; }))
+	{
+		if(calls != 1 || static_cast<unsigned>(detail) != 4) return 4;
+	}
+	else return 4;
+	if(!stage2Check(detail, Stage2Detail::TARGET_NAME, [] { return true; })
+		|| !stage2Check(detail, Stage2Detail::FACADE_PAIR, [] { return false; })
+		|| !stage2Check(detail, Stage2Detail::GATE_ANCESTORS, [] { return true; }))
+	{
+		if(static_cast<unsigned>(detail) != 11) return 5;
+	}
+	else return 5;
+	try
+	{
+		stage2Check(detail, Stage2Detail::TARGET_FILE, []() -> bool { throw std::runtime_error("synthetic"); });
+		return 6;
+	}
+	catch(const std::runtime_error &)
+	{
+		if(static_cast<unsigned>(detail) != 8) return 6;
+	}
 	const auto block = childEnvironment({L"=C:=C:\\private", L"SDL_AUDIODRIVER=dummy", L"LOCALAPPDATA=old",
 		L"localappdata=duplicate", L"LOCALAPPDATA_EXTRA=keep", L"UNICODE=\u03a9\u4e2d", L"NH_PRIVATE_WINE_NONCE=unchanged"}, L"Z:\\private\\localappdata");
 	std::vector<std::wstring> entries;
