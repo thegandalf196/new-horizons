@@ -300,6 +300,111 @@ TEST_F(NewHorizonsPlagueCompletionAITest, ActualHostileLockPausesOnlyDurationWhi
 	EXPECT_FALSE(newHorizonsPlague::hasPlague(victim));
 }
 
+TEST_F(NewHorizonsPlagueCompletionAITest, OneRoundHostileLockExpiresThenFinalPlagueTickRemovesOnlyChildInfection)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	defenderSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL)),
+		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	defenderSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	const auto seal = SpellID(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	defenderSideHero->addSpellToSpellbook(seal);
+	const auto liveActorState = actor->save();
+	const auto liveVictimState = victim->save();
+	// This branch evaluates the defender's paid cast, so it must retain the
+	// caster's ordinary visible battle context, not the attacker-only callback.
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(),
+		std::make_shared<CPlayerBattleCallback>(battle(), defenderSideHero->getOwner()));
+	// Consume two actual detached attack completions in distinct rounds; do
+	// not fabricate a one-tick infection by editing its bonus or parameters.
+	ASSERT_NO_FATAL_FAILURE(completeProjectedAttack(parent));
+	ASSERT_NE(marker(parent->battleGetUnitByID(actor->unitId())), nullptr);
+	ASSERT_EQ(marker(parent->battleGetUnitByID(actor->unitId()))->turnsRemain, 2);
+	parent->nextRound();
+	ASSERT_NO_FATAL_FAILURE(completeProjectedAttack(parent));
+	ASSERT_NE(marker(parent->battleGetUnitByID(actor->unitId())), nullptr);
+	ASSERT_EQ(marker(parent->battleGetUnitByID(actor->unitId()))->turnsRemain, 1);
+	parent->nextRound();
+	auto parentActor = parent->getForUpdate(actor->unitId());
+	auto parentVictim = parent->getForUpdate(victim->unitId());
+	const auto parentActorState = parentActor->save();
+	const auto parentVictimState = parentVictim->save();
+	ASSERT_NE(marker(parentActor.get()), nullptr);
+	const auto parentPlagueDuration = marker(parentActor.get())->turnsRemain;
+	const auto parentPlagueParameters = marker(parentActor.get())->parameters->toCustom<JsonNode>();
+	const auto parentHits = parent->getProjectedPlagueHits().size();
+	const auto parentRound = parent->battleGetRound();
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto siblingActor = sibling->getForUpdate(actor->unitId());
+	auto siblingVictim = sibling->getForUpdate(victim->unitId());
+	const auto siblingActorState = siblingActor->save();
+	const auto siblingVictimState = siblingVictim->save();
+	ASSERT_NE(marker(siblingActor.get()), nullptr);
+	const auto siblingPlagueDuration = marker(siblingActor.get())->turnsRemain;
+	const auto siblingPlagueParameters = marker(siblingActor.get())->parameters->toCustom<JsonNode>();
+	auto childActor = child->getForUpdate(actor->unitId());
+	ASSERT_EQ(child->battleGetMySide(), BattleSide::DEFENDER);
+	ASSERT_EQ(child->battleCanCastSpell(defenderSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
+	spells::BattleCast cast(child.get(), defenderSideHero, spells::Mode::HERO, seal.toSpell());
+	const spells::Target target{spells::Destination(childActor.get())};
+	spells::detail::ProblemImpl problem;
+	const bool legal = seal.toSpell()->battleMechanics(&cast)->canBeCastAt(target, problem);
+	std::vector<std::string> messages;
+	problem.getAll(messages);
+	ASSERT_TRUE(legal) << (messages.empty() ? "no diagnostic" : messages.front());
+	cast.castEval(child->getServerCallback(), target);
+	ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*childActor));
+	const auto sealMarkers = childActor->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(seal)).And(Selector::type()(BonusType::NONE)));
+	ASSERT_EQ(sealMarkers->size(), 1u);
+	ASSERT_EQ(sealMarkers->front()->turnsRemain, 1);
+	ASSERT_EQ(newHorizonsSorcery::spellLockPreservesBeneficial(*childActor), std::optional<bool>(false));
+	ASSERT_NE(marker(childActor.get()), nullptr);
+	ASSERT_TRUE(newHorizonsSorcery::durationPausedBySpellLock(*childActor, *marker(childActor.get())));
+	const auto expectedTick = newHorizonsPlague::adjustedTickDamage(*child, BattleSide::DEFENDER,
+		childActor.get(), marker(childActor.get())->val);
+	ASSERT_GT(expectedTick, 0);
+	const auto health = childActor->getAvailableHealth();
+	ASSERT_GT(health, 2 * expectedTick);
+	ASSERT_NO_FATAL_FAILURE(completeProjectedAttack(child));
+	ASSERT_NE(marker(childActor.get()), nullptr);
+	EXPECT_EQ(marker(childActor.get())->turnsRemain, 1);
+	EXPECT_EQ(childActor->getAvailableHealth(), health - expectedTick);
+	EXPECT_EQ(marker(childActor.get())->parameters->toCustom<JsonNode>()["lastProcessedRound"].Integer(), parentRound);
+	EXPECT_EQ(child->getProjectedPlagueHits().size(), parentHits + 1);
+	child->nextRound(); // The one-round seal expires, not the preserved last tick.
+	ASSERT_FALSE(newHorizonsSorcery::isSpellLocked(*childActor));
+	ASSERT_NE(marker(childActor.get()), nullptr);
+	EXPECT_EQ(marker(childActor.get())->turnsRemain, 1);
+	EXPECT_EQ(childActor->getAvailableHealth(), health - expectedTick);
+	EXPECT_EQ(child->battleGetRound(), parentRound + 1);
+	ASSERT_NO_FATAL_FAILURE(completeProjectedAttack(child));
+	EXPECT_EQ(childActor->getAvailableHealth(), health - 2 * expectedTick);
+	EXPECT_EQ(marker(childActor.get()), nullptr);
+	EXPECT_EQ(child->getProjectedPlagueHits().size(), parentHits + 2);
+	newHorizonsPlague::completeActivation(*child, *child->getServerCallback(), actor->unitId());
+	EXPECT_EQ(childActor->getAvailableHealth(), health - 2 * expectedTick);
+	EXPECT_EQ(child->getProjectedPlagueHits().size(), parentHits + 2);
+	EXPECT_EQ(parentActor->save(), parentActorState);
+	EXPECT_EQ(parentVictim->save(), parentVictimState);
+	ASSERT_NE(marker(parentActor.get()), nullptr);
+	EXPECT_EQ(marker(parentActor.get())->turnsRemain, parentPlagueDuration);
+	EXPECT_EQ(marker(parentActor.get())->parameters->toCustom<JsonNode>(), parentPlagueParameters);
+	EXPECT_EQ(parent->getProjectedPlagueHits().size(), parentHits);
+	EXPECT_EQ(parent->battleGetRound(), parentRound);
+	EXPECT_EQ(siblingActor->save(), siblingActorState);
+	EXPECT_EQ(siblingVictim->save(), siblingVictimState);
+	ASSERT_NE(marker(siblingActor.get()), nullptr);
+	EXPECT_EQ(marker(siblingActor.get())->turnsRemain, siblingPlagueDuration);
+	EXPECT_EQ(marker(siblingActor.get())->parameters->toCustom<JsonNode>(), siblingPlagueParameters);
+	EXPECT_EQ(sibling->getProjectedPlagueHits().size(), parentHits);
+	EXPECT_EQ(sibling->battleGetRound(), parentRound);
+	EXPECT_FALSE(newHorizonsSorcery::isSpellLocked(*parentActor));
+	EXPECT_FALSE(newHorizonsSorcery::isSpellLocked(*siblingActor));
+	EXPECT_EQ(actor->save(), liveActorState);
+	EXPECT_EQ(victim->save(), liveVictimState);
+}
+
 TEST_F(NewHorizonsPlagueCompletionAITest, LethalProjectedTickSpreadsThenRemovesSourceWithoutLiveMutation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(20));
