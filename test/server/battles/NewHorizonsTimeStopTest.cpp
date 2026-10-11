@@ -19,6 +19,9 @@
 #include "../../../lib/bonuses/Updaters.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../../lib/GameSettings.h"
+#include "../../../lib/mapping/CMapInfo.h"
+#include "../../../lib/spells/CSpellHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
@@ -46,6 +49,30 @@ JsonNode magicRulesForVersion(int version)
 	{
 		rules.Struct().erase("schoolRankPowerCoefficientPercent");
 		rules.Struct().erase("spellcraftEfficiencyPercent");
+		// Derive a historical policy, not a current v3 object with a new label.
+		for(const auto * key : {"protectedAdventureBarriers", "creatureAbilities", "morale"})
+			rules.Struct().erase(key);
+		rules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
+		for(auto & [name, spell] : rules["spells"].Struct())
+		{
+			(void)name;
+			for(const auto * key : {"selectedPlacement", "earthquake", "structures", "heroAccess",
+				"restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers",
+				"temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"})
+				spell.Struct().erase(key);
+			if(spell.Struct().contains("variant"))
+			{
+				spell.Struct().erase("variant");
+				spell["active"].Bool() = false;
+			}
+		}
+		// Retain the existing historical Sorrow mapping rather than its later
+		// authored v3 level/cost/school override, as in the saved-v2 fixtures.
+		auto & sorrow = rules["spells"]["core:sorrow"];
+		sorrow.Struct().erase("level");
+		sorrow.Struct().erase("costs");
+		sorrow["schools"].Vector().clear();
+		sorrow["schools"].Vector().emplace_back(std::string("new-horizons:chaos"));
 	}
 	if(version == newHorizonsMagic::RULESET_VERSION)
 	{
@@ -77,6 +104,8 @@ JsonNode magicRulesForVersion(int version)
 		}
 	}
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	rules.setOverrideFlag(true);
+	newHorizonsMagic::validateRules(rules);
 	return rules;
 }
 
@@ -297,6 +326,122 @@ TEST(NewHorizonsTimeStopTest, MarkerRoundTripsAndLegacyBonusesRemainReadable)
 	EXPECT_TRUE(rejected.extractBuffer().empty());
 }
 
+class NewHorizonsTimeStopSerializationTest : public BattleTestFixture
+{
+protected:
+	CStack * stopped = nullptr;
+	CStack * control = nullptr;
+	void prepareConsumedSlot()
+	{
+		startGame();
+		startBattle();
+		stopped = addStack(BattleSide::ATTACKER, CreatureID(0), BattleHex(8, 5), 10);
+		control = addStack(BattleSide::DEFENDER, CreatureID(0), BattleHex(12, 5), 10);
+		removeAllBattleUnits(*this, {stopped, control});
+		beginTimeStopTestCombat(*this, control);
+		battle()->addOrUpdateUnitBonus(stopped, *timeStopMarker(BattleSide::ATTACKER), true);
+		ASSERT_TRUE(stopped->isTimeStopped());
+		ASSERT_FALSE(stopped->timeStopTurnConsumed());
+		ASSERT_TRUE(queueContains(stopped->unitId()));
+		// The actual replicated AUTOMATIC_ACTION producer marks the existing
+		// stopped slot consumed; no synthetic receipt setter is used here.
+		BattleSetActiveStack activate;
+		activate.battleID = BattleID(0);
+		activate.stack = stopped->unitId();
+		activate.reason = BattleUnitTurnReason::AUTOMATIC_ACTION;
+		gameHandler->sendAndApply(activate);
+		ASSERT_TRUE(stopped->timeStopTurnConsumed());
+		activate.stack = control->unitId();
+		activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+		gameHandler->sendAndApply(activate);
+		ASSERT_FALSE(queueContains(stopped->unitId()));
+	}
+	bool queueContains(uint32_t id) const
+	{
+		std::vector<battle::Units> turns;
+		battle()->battleGetTurnOrder(turns, 0, 1);
+		for(const auto & turn : turns)
+			for(const auto * unit : turn)
+				if(unit->unitId() == id)
+					return true;
+		return false;
+	}
+};
+
+TEST_F(NewHorizonsTimeStopSerializationTest, ConsumedRealAutomaticSlotSurvivesBinaryRebindAndResetsNextRound)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareConsumedSlot());
+	const auto id = stopped->unitId();
+	CMemorySerializer memory;
+	ASSERT_NO_THROW(memory.oser & *stopped);
+	auto restored = std::make_unique<CStack>();
+	ASSERT_NO_THROW(memory.iser & *restored);
+	EXPECT_TRUE(restored->timeStopTurnConsumed());
+	ASSERT_NO_THROW(restored->localInit(battle()));
+	EXPECT_TRUE(restored->isTimeStopped());
+	EXPECT_TRUE(restored->timeStopTurnConsumed());
+	const auto entry = std::find_if(battle()->stacks.begin(), battle()->stacks.end(),
+		[id](const auto & stack) { return stack && stack->unitId() == id; });
+	ASSERT_NE(entry, battle()->stacks.end());
+	stopped->detachFromAll();
+	*entry = std::move(restored);
+	stopped = entry->get();
+	EXPECT_FALSE(queueContains(id));
+	BattleNextRound next;
+	next.battleID = BattleID(0);
+	gameHandler->sendAndApply(next);
+	EXPECT_TRUE(stopped->isTimeStopped());
+	EXPECT_FALSE(stopped->timeStopTurnConsumed());
+	EXPECT_TRUE(queueContains(id));
+}
+
+TEST_F(NewHorizonsTimeStopSerializationTest, ConsumedReceiptRejectsEveryOlderOwningWriterBeforePrefix)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareConsumedSlot());
+	for(int kind = 0; kind < 3; ++kind)
+	{
+		CMemorySerializer old;
+		old.oser.version = ESerializationVersion::NEW_HORIZONS_MORALE_EXTRA_DAMAGE;
+		if(kind == 0)
+		{
+			EXPECT_THROW(old.oser & *stopped, std::runtime_error);
+		}
+		if(kind == 1)
+		{
+			EXPECT_THROW(old.oser & *battle(), std::runtime_error);
+		}
+		if(kind == 2)
+		{
+			EXPECT_THROW(old.oser & *gameState(), std::runtime_error);
+		}
+		EXPECT_TRUE(old.extractBuffer().empty());
+	}
+	// An owning BattleStart envelope must reject before its battleID too.
+	BattleStart packet;
+	packet.battleID = BattleID(0);
+	const auto entry = std::find_if(gameState()->currentBattles.begin(), gameState()->currentBattles.end(),
+		[this](const auto & current) { return current.get() == battle(); });
+	ASSERT_NE(entry, gameState()->currentBattles.end());
+	packet.info = std::move(*entry);
+	CMemorySerializer oldPacket;
+	oldPacket.oser.version = ESerializationVersion::NEW_HORIZONS_MORALE_EXTRA_DAMAGE;
+	EXPECT_THROW(oldPacket.oser & packet, std::runtime_error);
+	EXPECT_TRUE(oldPacket.extractBuffer().empty());
+	*entry = std::move(packet.info);
+}
+
+TEST(NewHorizonsTimeStopSerializationCompatibilityTest, PreviousFormatOrdinaryDescriptorDefaultsToUnconsumed)
+{
+	CStackBasicDescriptor base(CreatureID(0), 2);
+	CStack ordinary(&base, PlayerColor(0), 1, BattleSide::ATTACKER);
+	CMemorySerializer old;
+	old.oser.version = old.iser.version = ESerializationVersion::NEW_HORIZONS_MORALE_EXTRA_DAMAGE;
+	ASSERT_NO_THROW(old.oser & ordinary);
+	CStack restored;
+	ASSERT_NO_THROW(old.iser & restored);
+	EXPECT_FALSE(restored.timeStopTurnConsumed());
+}
+
 class NewHorizonsTimeStopContentTest : public BattleTestFixture
 {
 protected:
@@ -313,6 +458,15 @@ protected:
 	{
 		BattleTestFixture::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRulesForVersion(magicRulesVersion));
+		if(magicRulesVersion < newHorizonsMagic::CURRENT_RULESET_VERSION)
+		{
+			// Future starting-book replacements validate the entire current
+			// roster, including off-map heroes. They are not part of this saved policy.
+			JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+			heroes["startingSkills"].Struct().erase("startingBookReplacements");
+			heroes.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
+		}
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
@@ -754,7 +908,7 @@ TEST_P(NewHorizonsTimeStopLegacyProfileTest, SchoolRankKeepsTheSavedV1V2RadiusAn
 	const auto affected = mechanics->getAffectedStacks(aim);
 	EXPECT_EQ(std::find(affected.begin(), affected.end(), outerStack), affected.end());
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), MasteryLevel::NONE);
-	EXPECT_NE(description.find("Saved v1/v2 rules use a 100% Spell Power coefficient at every Sorcery rank"),
+	EXPECT_NE(description.find("Saved v1/v2 rules use a 100% Spell Power coefficient at every rank"),
 		std::string::npos);
 	EXPECT_NE(description.find("Current radius at Spell Power 99: 1"), std::string::npos);
 

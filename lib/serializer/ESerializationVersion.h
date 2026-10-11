@@ -252,18 +252,21 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_IMPLOSION, // captured canonical Implosion, Teleport and Dispel clauses
 	NEW_HORIZONS_FINAL_LUCK, // captured final direct physical Luck multiplier
 	NEW_HORIZONS_MORALE_EXTRA_DAMAGE, // captured Morale extra-activation direct attack damage and provenance
+	NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT, // current-round synthetic stasis activation already consumed
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_MORALE_EXTRA_DAMAGE,
+	CURRENT = NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_FINAL_LUCK > ESerializationVersion::NEW_HORIZONS_IMPLOSION,
 	"Final Luck policy must remain append-only before release aliases");
 static_assert(ESerializationVersion::NEW_HORIZONS_MORALE_EXTRA_DAMAGE > ESerializationVersion::NEW_HORIZONS_FINAL_LUCK,
 	"Morale extra-activation damage must remain append-only before release aliases");
+static_assert(ESerializationVersion::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT > ESerializationVersion::NEW_HORIZONS_MORALE_EXTRA_DAMAGE,
+	"Time Stop consumed scheduling state must remain append-only before release aliases");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_IMPLOSION > ESerializationVersion::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS,
 	"Canonical spell clauses must remain append-only before release aliases");

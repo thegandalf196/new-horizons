@@ -53,6 +53,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info)
+			info->validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving && info && info->getLuckRollRules().finalDirectPhysicalMultiplier
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))
 			throw std::runtime_error("Cannot discard captured final physical Luck policy from BattleStart");

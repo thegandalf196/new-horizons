@@ -65,6 +65,8 @@ protected:
 		ON_CALL(battle, getSidePlayer(BattleSide::DEFENDER)).WillByDefault(Return(PlayerColor(1)));
 		ON_CALL(mechanics, battle()).WillByDefault(Return(&battle));
 		ON_CALL(mechanics, getSpell()).WillByDefault(Return(spell.toSpell()));
+		ON_CALL(mechanics, getSpellId()).WillByDefault(Return(spell));
+		ON_CALL(mechanics, getSpellIndex()).WillByDefault(Return(spell.getNum()));
 		ON_CALL(mechanics, getCasterColor()).WillByDefault(Return(PlayerColor(0)));
 		ON_CALL(mechanics, canBeCastAt(_, _)).WillByDefault(Return(true));
 

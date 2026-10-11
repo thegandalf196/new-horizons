@@ -496,6 +496,12 @@ public:
 			if(stack)
 				stack->validateFrozenSerialization(h);
 	}
+	void validateTimeStopSerialization(bool supported) const
+	{
+		for(const auto & stack : stacks)
+			if(stack)
+				stack->validateTimeStopSerialization(supported);
+	}
 
 	template <typename Handler> void validateHeroicSpiritSerialization(Handler & h) const
 	{
@@ -551,6 +557,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving && luckRollRules.finalDirectPhysicalMultiplier
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))
 			throw std::runtime_error("Cannot discard captured final physical Luck policy");
