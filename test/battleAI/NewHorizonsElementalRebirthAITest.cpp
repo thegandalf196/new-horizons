@@ -453,6 +453,87 @@ TEST_F(NewHorizonsElementalRebirthAITest, ReplacementChangesPhysicalExchangeScor
 		<< "The projected replacement must contribute exactly once in the physical DPS score scale";
 }
 
+TEST_F(NewHorizonsElementalRebirthAITest, MemoryProbePreservesScoreAndBranchesWhileAppliedDeathRetainsMemory)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	constexpr auto memoryPerk = "new-horizons:elementalRebirth.elementalMemory";
+	confluxHero->applyPerkSelection({REBIRTH_SKILL, memoryPerk});
+	ASSERT_TRUE(confluxHero->hasActivePerk(REBIRTH_SKILL, memoryPerk));
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto sourceId = source->unitId();
+	const auto attackerId = opposingPikemen->unitId();
+	parent->addUnitBonus(sourceId, {
+		Bonus(BonusDuration::PERMANENT, BonusType::MORALE, BonusSource::OTHER, 1000, BonusSourceID()),
+		Bonus(BonusDuration::PERMANENT, BonusType::LUCK, BonusSource::OTHER, 1000, BonusSourceID())});
+	auto parentSource = parent->getForUpdate(sourceId);
+	auto parentAttacker = parent->getForUpdate(attackerId);
+	const auto snapshot = parent->captureElementalRebirthSource(*parentSource);
+	ASSERT_TRUE(snapshot.has_value());
+	ASSERT_TRUE(snapshot->profile.elementalMemory);
+	ASSERT_GT(snapshot->positiveMoraleModifier, 0);
+	ASSERT_GT(snapshot->positiveLuckModifier, 0);
+	const auto parentSourceState = parentSource->save();
+	const auto parentAttackerState = parentAttacker->save();
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto siblingSource = sibling->getForUpdate(sourceId);
+	auto siblingAttacker = sibling->getForUpdate(attackerId);
+	ASSERT_EQ(siblingSource->save(), parentSourceState);
+	ASSERT_EQ(siblingAttacker->save(), parentAttackerState);
+	auto attacker = child->getForUpdate(attackerId);
+	auto victim = child->getForUpdate(sourceId);
+	ASSERT_NE(victim.get(), parentSource.get());
+	ASSERT_NE(victim.get(), siblingSource.get());
+	DamageCache cache;
+	const auto damage = cache.getDamage(attacker.get(), victim.get(), child);
+	ASSERT_GE(damage, victim->getAvailableHealth());
+	const auto projectedDamage = battleAIProjectDamage(victim.get(), damage,
+		battleAIDamageProvenance(attacker.get(), true));
+	const auto expectedScore = AttackPossibility::calculateDamageReduce(attacker.get(), victim.get(),
+		projectedDamage.healthLoss, cache, child);
+	BattleExchangeVariant exchange;
+	const auto probeScore = exchange.trackAttack(attacker, victim, false, false, cache, child, true, false);
+	EXPECT_FLOAT_EQ(probeScore, expectedScore);
+	EXPECT_TRUE(child->getElementalRebirthSpawnUnitIds().empty());
+	EXPECT_EQ(victim->save(), parentSourceState);
+	EXPECT_EQ(attacker->save(), parentAttackerState);
+
+	// The same selected branch still captures before an applied lethal hit.
+	exchange.trackAttack(attacker, victim, false, false, cache, child, false, false);
+	ASSERT_FALSE(victim->alive());
+	const auto spawns = rebirthSpawns(*child);
+	ASSERT_EQ(spawns.size(), 1u);
+	const auto * reborn = spawns.front();
+	EXPECT_EQ(reborn->getAvailableHealth(), newHorizonsElementalRebirth::targetHP(*snapshot, reborn->creatureId(), *child));
+	for(const auto type : {BonusType::MORALE, BonusType::LUCK})
+	{
+		const auto positive = reborn->getAllBonuses(Selector::type()(type).And(CSelector([](const Bonus * bonus)
+		{
+			return bonus && bonus->val > 0;
+		})));
+		const int captured = type == BonusType::MORALE
+			? snapshot->positiveMoraleModifier : snapshot->positiveLuckModifier;
+		EXPECT_EQ(positive->totalValue(), captured);
+		const auto memory = reborn->getAllBonuses(Selector::type()(type).And(CSelector([](const Bonus * bonus)
+		{
+			return bonus && bonus->stacking.starts_with("new-horizons:elementalRebirth.elementalMemory.");
+		})));
+		ASSERT_EQ(memory->size(), 1u);
+		EXPECT_GT(memory->front()->val, 0);
+		EXPECT_EQ(memory->front()->turnsRemain, 1);
+	}
+	for(const auto & branch : {parent, sibling})
+	{
+		EXPECT_EQ(branch->getForUpdate(sourceId)->save(), parentSourceState);
+		EXPECT_EQ(branch->getForUpdate(attackerId)->save(), parentAttackerState);
+		EXPECT_EQ(branch->battleGetUnitByID(sourceId)->valOfBonuses(BonusType::MORALE), snapshot->positiveMoraleModifier);
+		EXPECT_EQ(branch->battleGetUnitByID(sourceId)->valOfBonuses(BonusType::LUCK), snapshot->positiveLuckModifier);
+		EXPECT_TRUE(branch->getElementalRebirthSpawnUnitIds().empty());
+	}
+	EXPECT_EQ(source->getAvailableHealth(), parentSource->getAvailableHealth());
+	EXPECT_TRUE(source->alive());
+}
+
 TEST_F(NewHorizonsElementalRebirthAITest, PrimalBurstCollateralIsIncludedInPhysicalExchangeAndBranchCopies)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 400, nullptr, true, 1000));
