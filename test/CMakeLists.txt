@@ -246,6 +246,7 @@ set(test_SRCS
 		server/battles/NewHorizonsShadowGiftTest.cpp
 		server/battles/NewHorizonsPlagueTest.cpp
 		server/battles/NewHorizonsPlagueControlSpellLockTest.cpp
+		server/battles/NewHorizonsSpellLockControlTest.cpp
 		server/battles/NewHorizonsPuppetMasterTest.cpp
 		server/battles/NewHorizonsForcedMarchTest.cpp
 		server/battles/NewHorizonsForgetfulnessTest.cpp
