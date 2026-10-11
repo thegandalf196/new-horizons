@@ -934,8 +934,14 @@ void StackWithBonuses::captureEffects()
 	// sources; capture only those exact source/sid groups, not unrelated stats.
 	const auto effects = getAllBonuses(Selector::all);
 	const auto unstackedEffects = getUnstackedBonuses(Selector::all);
-	projectedEffects.emplace();
-	projectedUnstackedEffects.emplace();
+	if(projectedEffects)
+		projectedEffects->clear();
+	else
+		projectedEffects.emplace();
+	if(projectedUnstackedEffects)
+		projectedUnstackedEffects->clear();
+	else
+		projectedUnstackedEffects.emplace();
 	for(const auto & bonus : *unstackedEffects)
 		if(bonus && bonus->type == BonusType::PHYSICAL_AFFLICTION)
 		{
