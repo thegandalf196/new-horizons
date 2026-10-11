@@ -117,17 +117,17 @@ void CHeroOverview::genControls()
 	r = Rect(2 * borderOffset + 44, 6 * borderOffset + yOffset + 278, 235, 44);
 	backgroundRectangles.push_back(std::make_shared<TransparentFilledRectangle>(r.resize(1), rectangleColor, borderColor));
 	labelHeroSpeciality = std::make_shared<CLabel>(r.x + borderOffset, r.y + borderOffset, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, LIBRARY->generaltexth->allTexts[78]);
-	labelSpecialityName = std::make_shared<CLabel>(r.x + borderOffset, r.y + borderOffset + 20, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, (*LIBRARY->heroh)[heroIdx]->getSpecialtyNameTranslated());
+	labelSpecialityName = std::make_shared<CLabel>(r.x + borderOffset, r.y + borderOffset + 20, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, starting.specialty.name);
 
 	// speciality image
 	r = Rect(borderOffset, 6 * borderOffset + yOffset + 278, 44, 44);
 	backgroundRectangles.push_back(std::make_shared<TransparentFilledRectangle>(r.resize(1), rectangleColor, borderColor));
-	imageSpeciality = std::make_shared<CAnimImage>(AnimationPath::builtin("UN44"), (*LIBRARY->heroh)[heroIdx]->imageIndex, 0, r.x, r.y);
+	imageSpeciality = std::make_shared<CAnimImage>(starting.specialty.animation(), starting.specialty.frame(), r);
 
 	// speciality description
 	r = Rect(borderOffset, 7 * borderOffset + yOffset + 322, 284, 85);
 	backgroundRectangles.push_back(std::make_shared<TransparentFilledRectangle>(r.resize(1), rectangleColor, borderColor));
-	labelSpecialityDescription = std::make_shared<CTextBox>((*LIBRARY->heroh)[heroIdx]->getSpecialtyDescriptionTranslated(), r.resize(-borderOffset), CSlider::EStyle::BROWN, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
+	labelSpecialityDescription = std::make_shared<CTextBox>(starting.specialty.description, r.resize(-borderOffset), CSlider::EStyle::BROWN, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
 	if(labelSpecialityDescription->slider && !ENGINE->input().inputModeUsesGestures())
 		labelSpecialityDescription->slider->clearScrollBounds();
 

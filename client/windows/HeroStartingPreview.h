@@ -4,12 +4,14 @@
  */
 #pragma once
 #include "../../lib/entities/hero/HeroStartingProjection.h"
+#include "HeroSpecialtyPresentation.h"
 #include <map>
 class CMapInfo;
 class CGHeroInstance;
 struct HeroStartingPreview
 {
 	newHorizonsHeroes::StartingHeroProjection values;
+	HeroSpecialtyPresentation specialty;
 	std::vector<int> stackChances;
 	std::map<std::string, std::string> perkNames;
 	bool defaultProfile = true;

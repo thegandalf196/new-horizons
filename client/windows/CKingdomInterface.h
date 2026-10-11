@@ -142,6 +142,9 @@ class InfoBoxHeroData : public InfoBoxAbstractHeroData
 
 public:
 	InfoBoxHeroData(InfoType Type, const CGHeroInstance *Hero, int Index=0);
+	std::string getNameText() override;
+	AnimationPath getImageName(InfoBox::InfoSize size) override;
+	size_t getImageIndex() override;
 
 	//To get a bit different texts for hero window
 	std::string getHoverText() override;

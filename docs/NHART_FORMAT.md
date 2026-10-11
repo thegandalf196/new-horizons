@@ -101,7 +101,24 @@ the latter accepts an expected manifest dictionary or JSON filename.
 
 Container validation is separate from decoder, mounting/precedence, rendered
 presentation, licensing and clean-install player-package acceptance.
-The native runtime reader checks structural bounds and resource identities but
-does not recalculate payload hashes or require a selection manifest. Mandatory
-Python verification during build/package validation establishes the inventory
-and full-payload integrity boundary before a distribution pack is consumed.
+The native runtime reader checks structural bounds, resource identities and the
+embedded resource inventory. Startup preparation verifies each payload hash and
+uses the whole-package SHA256 as the prepared-cache identity. This does not
+change NHART v1's serialization. The current startup-cache implementation limits
+packages to 1 GiB. Mandatory Python build/package verification additionally
+validates the complete selection/provenance manifest contract.
+
+To exercise the real native reader without original game data or a renderer,
+configure with `-DENABLE_NH_ART_CACHE_REGRESSION=ON`, build
+`nhArtStartupRuntimeTest`, and run:
+
+```sh
+nhArtStartupRuntimeTest --pack Mods/new-horizons/NewHorizons.nhart --cache-root EXISTING-DISPOSABLE-DIRECTORY
+```
+
+This probe pins the currently selected package count/hash; update its explicit
+oracles when intentionally updating the selected pack. It verifies both scopes,
+all payload bytes and persisted-cache reuse, then reports three warm read loops
+for identical resources. It does not initialize SDL, control the OS file cache,
+measure rendering, or delete the generated cache child. See
+[NHART_DELIVERY.md](NHART_DELIVERY.md) for preparation and recovery boundaries.

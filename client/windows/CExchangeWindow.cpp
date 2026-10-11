@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "SpellPointPresentation.h"
 #include "CExchangeWindow.h"
+#include "HeroSpecialtyPresentation.h"
 
 #include "CHeroBackpackWindow.h"
 
@@ -88,7 +89,9 @@ CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2,
 			secSkills[leftRight][m] = std::make_shared<CSecSkillPlace>(
 				Point(32 + 36 * m + 454 * leftRight, qeLayout ? 80 : 88), CSecSkillPlace::ImageSize::SMALL);
 
-		specImages[leftRight] = std::make_shared<CAnimImage>(AnimationPath::builtin("UN32"), hero->getHeroType()->imageIndex, 0, 67 + 490 * leftRight, qeLayout ? 41 : 45);
+		const auto specialty = heroSpecialtyPresentation(*hero);
+		specImages[leftRight] = std::make_shared<CAnimImage>(specialty.animation(true), specialty.frame(),
+			Rect(67 + 490 * leftRight, qeLayout ? 41 : 45, 32, 32));
 
 		expImages[leftRight] = std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL32"), 4, 0, 103 + 490 * leftRight, qeLayout ? 41 : 45);
 		expValues[leftRight] = std::make_shared<CLabel>(119 + 490 * leftRight, qeLayout ? 66 : 71, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE);

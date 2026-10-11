@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons; GPL-2.0-or-later; see license.txt. */
 #include "../../clientsdl3/render/GrayscalePngPalette.h"
+#include "../../clientsdl3/render/PaletteUpdate.h"
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <filesystem>
@@ -31,6 +32,67 @@ constexpr std::array<Mask, 12> masks{{
 void require(bool value, const std::string & message)
 {
 	if(!value) throw std::runtime_error(message);
+}
+void checkPaletteUpdates()
+{
+	using Palette = std::unique_ptr<SDL_Palette, decltype(&SDL_DestroyPalette)>;
+	Palette first(SDL_CreatePalette(256), SDL_DestroyPalette);
+	Palette second(SDL_CreatePalette(256), SDL_DestroyPalette);
+	require(first != nullptr && second != nullptr, "Cannot create regression palettes");
+	const std::array<SDL_Color, 3> initial{{{0, 0, 0, 0}, {0, 0, 0, 128}, {0, 0, 0, 64}}};
+	require(SDL_SetPaletteColors(first.get(), initial.data(), 5, initial.size())
+		&& SDL_SetPaletteColors(second.get(), initial.data(), 5, initial.size()), "Cannot initialize regression palettes");
+
+	// Calibrate the actual SDL3 behavior: an identical raw write invalidates a texture key.
+	auto version = first->version;
+	require(SDL_SetPaletteColors(first.get(), &initial[0], 5, 1), "Raw palette write failed");
+	require(first->version != version, "Raw unchanged SDL3 write did not change palette version");
+
+	version = first->version;
+	for(int redraw = 0; redraw < 100; ++redraw)
+		paletteUpdate::setColorIfChanged(first.get(), 5, initial[0]);
+	require(first->version == version, "Unchanged selection invalidated the palette");
+
+	for(int redraw = 0; redraw < 100; ++redraw)
+	{
+		paletteUpdate::setColorIfChanged(first.get(), 6, initial[1]);
+		paletteUpdate::setColorIfChanged(first.get(), 7, initial[2]);
+	}
+	require(first->version == version, "Unchanged selection shadows invalidated the palette");
+
+	const std::array<SDL_Color, 4> changed{{{17, 0, 0, 0}, {17, 23, 0, 0}, {17, 23, 31, 0}, {17, 23, 31, 47}}};
+	for(const auto & color : changed)
+	{
+		version = first->version;
+		paletteUpdate::setColorIfChanged(first.get(), 5, color);
+		const auto & actual = first->colors[5];
+		require(first->version != version && actual.r == color.r && actual.g == color.g
+			&& actual.b == color.b && actual.a == color.a, "Changed selection channel was not committed");
+		version = first->version;
+		paletteUpdate::setColorIfChanged(first.get(), 5, color);
+		require(first->version == version, "Repeated changed selection invalidated the palette");
+	}
+
+	for(int index = 5; index <= 7; ++index)
+	{
+		const SDL_Color color{41, 59, 83, 101};
+		paletteUpdate::setColorIfChanged(first.get(), index, color);
+		version = first->version;
+		paletteUpdate::setColorIfChanged(first.get(), index, initial[index - 5]);
+		const auto & actual = first->colors[index];
+		const auto & expected = initial[index - 5];
+		require(first->version != version && actual.r == expected.r && actual.g == expected.g
+			&& actual.b == expected.b && actual.a == expected.a, "Selection/shadow restoration was not committed");
+	}
+
+	const auto secondVersion = second->version;
+	paletteUpdate::setColorIfChanged(first.get(), 5, changed.back());
+	require(second->version == secondVersion && second->colors[5].a == initial[0].a,
+		"Updating one image changed an independent palette");
+	paletteUpdate::setColorIfChanged(second.get(), 5, changed.back());
+	require(second->version != secondVersion && second->colors[5].a == changed.back().a,
+		"Matching another image's color incorrectly suppressed an independent palette update");
+	std::cout << "PASS: 6 palette-version controls via actual SDL3 and production update helper\n";
 }
 void verifyPrivateWineEnvironment(const std::string & root)
 {
@@ -125,6 +187,7 @@ int main(int argc, char ** argv)
 			"Usage: nhSdl3GrayscaleMaskRuntimeTest verified-fixture-directory [--wine-private-environment private-root]");
 		if(argc == 4) verifyPrivateWineEnvironment(argv[3]);
 		// CPU surfaces only: no SDL_Init, window, renderer, audio or event loop.
+		checkPaletteUpdates();
 		for(const auto & mask : masks) check(argv[1], mask);
 		std::cout << "PASS: all 12 selected masks via shipping SDL3_image and production repair\n";
 		return 0;

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../../client/windows/HeroSpecialtyPresentation.h"
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
@@ -674,6 +675,7 @@ protected:
 	bool absent = false;
 	bool legacy = false;
 	bool preset = false;
+	bool previousSerializationContext = false;
 	void mapLoaded(CMap * loaded) override
 	{
 		NewHorizonsCreatureSpecialtyTest::mapLoaded(loaded);
@@ -684,6 +686,19 @@ protected:
 		if(legacy) rules = JsonNode();
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		if(previousSerializationContext)
+		{
+			// This positive writer control predates the later canonical-spell
+			// clauses. Keep the v3 policy, but do not capture those future keys.
+			JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+			magic["spells"]["core:implosion"].Struct().erase("implosion");
+			magic["spells"]["core:teleport"].Struct().erase("ignoreInterveningBarriers");
+			magic["spells"]["core:dispel"].Struct().erase("temporaryMagicalEffectsOnly");
+			magic["spells"]["core:curse"].Struct().erase("schoolRankDurations");
+			magic["spells"]["core:fireWall"].Struct().erase("burnGroundedFlyers");
+			magic.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+		}
 		if(legacy)
 		{
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
@@ -849,6 +864,11 @@ TEST_F(NewHorizonsWispSpecialtyTest, WorldReplayAndRepeatedInitRetainTargetWitho
 		EXPECT_EQ(loaded->getCreatureLineSpecialtyTarget(), creature("new-horizons:wisp"));
 		EXPECT_EQ(specialtyMarkers(*loaded), specialtyMarkers(*original));
 		EXPECT_EQ(specialtyMarkerCount(*loaded), 4u);
+		const auto loadedPresentation = heroSpecialtyPresentation(*loaded);
+		const auto originalPresentation = heroSpecialtyPresentation(*original);
+		EXPECT_EQ(loadedPresentation.creature, originalPresentation.creature);
+		EXPECT_EQ(loadedPresentation.frame(), originalPresentation.frame());
+		EXPECT_EQ(loadedPresentation.description, originalPresentation.description);
 		expectLine(*loaded, *reference, true);
 	}
 }
@@ -865,6 +885,48 @@ TEST_F(NewHorizonsWispSpecialtyTest, DescriptionAndLocalMarkersFollowActualTarge
 		EXPECT_NE(hero->getSpecialtyDescriptionTranslated().find(creature("new-horizons:wisp").toCreature()->getNamePluralTranslated()), std::string::npos);
 		for(const auto & marker : specialtyMarkers(*hero))
 			EXPECT_NE(marker.find(std::to_string(creature("new-horizons:wisp").getNum())), std::string::npos);
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, CurrentDefaultSpecialtyPresentationUsesSelectedWispIconAndCapturedDescription)
+{
+	prepare();
+	const auto wisp = creature("new-horizons:wisp");
+	for(auto * hero : {pasis(), monere()})
+	{
+		const auto presentation = heroSpecialtyPresentation(*hero);
+		ASSERT_TRUE(presentation.creature.has_value());
+		EXPECT_EQ(*presentation.creature, wisp);
+		EXPECT_EQ(presentation.frame(), wisp.toCreature()->getIconIndex());
+		EXPECT_EQ(presentation.animation().getOriginalName(), "CPRSMALL");
+		EXPECT_EQ(presentation.animation(true).getOriginalName(), "CPRSMALL");
+		EXPECT_EQ(presentation.name, wisp.toCreature()->getNamePluralTranslated());
+		EXPECT_EQ(presentation.description, hero->getSpecialtyDescriptionTranslated());
+		const auto prototype = heroSpecialtyPresentation(*hero->getHeroType(), hero->getPrimaryGrowthRules(),
+			newHorizonsHeroes::defaultCreatureLineTarget(hero->getPrimaryGrowthRules(), hero->getHeroTypeID()));
+		EXPECT_EQ(prototype.creature, presentation.creature);
+		EXPECT_EQ(prototype.name, presentation.name);
+		EXPECT_EQ(prototype.description, presentation.description);
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, ExplicitMapAndAbsentLegacyPresentationKeepOriginalPsychicIconAndText)
+{
+	preset = true;
+	prepare();
+	for(auto * hero : {pasis(), monere()})
+	{
+		const auto presentation = heroSpecialtyPresentation(*hero);
+		EXPECT_FALSE(presentation.creature.has_value());
+		EXPECT_EQ(presentation.frame(), hero->getHeroType()->imageIndex);
+		EXPECT_EQ(presentation.animation().getOriginalName(), "UN44");
+		EXPECT_EQ(presentation.animation(true).getOriginalName(), "UN32");
+		EXPECT_EQ(presentation.name, hero->getHeroType()->getSpecialtyNameTranslated());
+		EXPECT_EQ(presentation.description, hero->getSpecialtyDescriptionTranslated());
+		const auto legacy = heroSpecialtyPresentation(*hero->getHeroType(), JsonNode(), std::nullopt);
+		EXPECT_FALSE(legacy.creature.has_value());
+		EXPECT_EQ(legacy.frame(), presentation.frame());
+		EXPECT_EQ(legacy.name, presentation.name);
 	}
 }
 
@@ -951,7 +1013,9 @@ TEST_F(NewHorizonsWispSpecialtyTest, RawOldReaderRejectsPresenceAndAbsentPreviou
 	ASSERT_NO_THROW(current.iser & unchanged);
 	EXPECT_TRUE(unchanged["heroes"]["newHorizons"].isNull());
 	absent = true;
+	previousSerializationContext = true;
 	prepare();
+	EXPECT_FALSE(pasis()->getMagicRules()["spells"]["core:implosion"].Struct().contains("implosion"));
 	CMemorySerializer old;
 	old.oser.version = previous;
 	ASSERT_NO_THROW(old.oser & *pasis());

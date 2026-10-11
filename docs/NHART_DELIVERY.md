@@ -73,6 +73,35 @@ the module mounts its pack after readable Content configuration. No alternate
 renderer or image format is introduced. Per-entry independent bounded streams
 preserve the existing decoded-image/animation caching policy.
 
+### Installed artwork preparation
+
+NHART remains the public distribution authority; installing prepared resources
+does not authorize committing loose artwork. Before gameplay, the native
+resource loader prepares a verified, package-digest-keyed directory in the
+current profile's cache. Both mounts retain their original resource identities
+and precedence, but read prepared files after preparation completes. There is
+no per-frame extraction, Python dependency for players, or silent archive
+fallback. Preparation preserves payload bytes, including animation descriptors
+and frame offsets; it does not regenerate or resize artwork.
+
+The first preparation requires writable cache space. Subsequent launches verify
+the prepared inventory before reuse. A damaged or unsafe cache produces an
+actionable startup error rather than unverified artwork. Other package versions
+and user saves are not removed. Keep the shipped NHART file: the cache is not a
+replacement distribution, and ordinary builds still use the committed package.
+
+Storage preparation and rendering performance are separate concerns. In
+particular, replacing archive reads does not by itself fix SDL texture uploads
+or image decoding; improvements must be measured rather than assumed.
+
+The native startup cache currently admits packages up to 1 GiB. A crashed
+preparation can leave a `<package-digest>.lock` or a digest-prefixed staging
+directory under `new-horizons-art/v1`. With all game processes closed, recover
+only the identified generated cache entries, retaining the shipped package;
+do not delete a whole profile. Failed staging directories are retained rather
+than recursively deleting potentially substituted paths. Cache integrity is
+checked at startup, not continuously against later same-user modifications.
+
 ## Acceptance boundaries
 
 Container integrity, source compilation, resource/decoder integration, rendered

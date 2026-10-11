@@ -398,8 +398,10 @@ void OptionsTab::CPlayerOptionTooltipBox::genHeroWindow()
 	genHeader();
 	labelHeroSpeciality = std::make_shared<CLabel>(pos.w / 2 + 4, 117, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, LIBRARY->generaltexth->allTexts[78]);
 
-	imageSpeciality = std::make_shared<CAnimImage>(AnimationPath::builtin("UN44"), (*LIBRARY->heroh)[heroIndex]->imageIndex, 0, pos.w / 2 - 22, 134);
-	labelSpecialityName = std::make_shared<CLabel>(pos.w / 2, 188, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, (*LIBRARY->heroh)[heroIndex]->getSpecialtyNameTranslated());
+	const auto starting = heroStartingPreview(heroIndex, SEL->getMapInfo(), playerSettings.color);
+	imageSpeciality = std::make_shared<CAnimImage>(starting.specialty.animation(), starting.specialty.frame(),
+		Rect(pos.w / 2 - 22, 134, 44, 44));
+	labelSpecialityName = std::make_shared<CLabel>(pos.w / 2, 188, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, starting.specialty.name);
 }
 
 void OptionsTab::CPlayerOptionTooltipBox::genBonusWindow()

@@ -63,6 +63,7 @@ set(vcmisdl3_HEADERS
 	media/ISoundPlayer.h
 	media/IVideoPlayer.h
 	render/MemoryBudgetedCache.h
+	render/PaletteUpdate.h
 	render/Canvas.h
 	render/CanvasImage.h
 	render/GpuResources.h

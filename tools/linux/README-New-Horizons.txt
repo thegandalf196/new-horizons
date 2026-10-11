@@ -24,6 +24,13 @@ rules and selected artwork are included; no separate mod download is required.
 Keep Mods/new-horizons/NewHorizons.nhart intact. Original game archives remain
 external; do not extract artwork into the package as a fallback.
 
+Before gameplay, the engine verifies the NHART package and prepares its exact
+resource bytes in a new-horizons-art directory within the managed cache tree.
+The current pack needs about 27 MB plus filesystem overhead. Later launches
+verify and reuse the prepared files; no extraction takes place during animation.
+Keep the NHART file. A preparation error means you should check cache space and
+permissions, not delete saves or modify your original installation.
+
 The first launch creates a private managed profile for settings and saves. Reuse
 that profile for later launches; an existing unmanaged profile is refused. Keep
 profiles outside both the extracted package and the original installation.

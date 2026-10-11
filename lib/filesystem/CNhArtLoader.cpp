@@ -7,6 +7,9 @@
 #include "CNhArtLoader.h"
 
 #include "CFileInputStream.h"
+#include "NhArtCache.h"
+#include "../VCMIDirs.h"
+#include "../json/JsonParser.h"
 #include "../texts/TextOperations.h"
 
 #include <array>
@@ -93,7 +96,13 @@ bool validName(const std::string & name)
 	{
 		const auto end = name.find('/', start);
 		const auto part = name.substr(start, end == std::string::npos ? end : end - start);
-		if(part.empty() || part == "." || part == "..")
+		if(part.empty() || part == "." || part == ".." || part.back()=='.' || part.back()==' '
+			|| std::any_of(part.begin(),part.end(),[](unsigned char c){return c<32 || c==127;}))
+			return false;
+		auto stem=part.substr(0,part.find('.'));
+		std::transform(stem.begin(),stem.end(),stem.begin(),[](unsigned char c){return static_cast<char>(std::toupper(c));});
+		if(stem=="CON" || stem=="PRN" || stem=="AUX" || stem=="NUL"
+			|| (stem.size()==4 && (stem.substr(0,3)=="COM" || stem.substr(0,3)=="LPT") && stem[3]>='1' && stem[3]<='9'))
 			return false;
 		if(end == std::string::npos)
 			break;
@@ -152,18 +161,22 @@ public:
 };
 }
 
-CNhArtLoader::CNhArtLoader(std::string mountPoint, boost::filesystem::path archive)
-	: archive(std::move(archive)), mountPoint(std::move(mountPoint))
+CNhArtLoader::CNhArtLoader(std::string mountPoint, boost::filesystem::path archive,
+	boost::filesystem::path cacheRoot, Backing backing)
+	: archive(std::move(archive)), mountPoint(std::move(mountPoint)), backing(backing)
 {
 	const auto archiveName = this->archive.filename().string();
+	// Source aliases are normal in developer installs; resolve exactly once.
+	// Cache targets, unlike source mounts, never permit links/reparse traversal.
+	const auto source=boost::filesystem::canonical(this->archive);
 	const auto check = [&archiveName](bool condition, const std::string & reason)
 	{
 		require(condition, reason, archiveName);
 	};
-	const auto fileSize = boost::filesystem::file_size(this->archive);
+	const auto fileSize = boost::filesystem::file_size(source);
 	check(fileSize >= HEADER_SIZE && fileSize <= static_cast<ui64>(std::numeric_limits<si64>::max()),
 		"header missing or archive size exceeds signed stream range");
-	CFileInputStream stream(this->archive);
+	CFileInputStream stream(source);
 	std::array<ui8, 8> magic{};
 	check(stream.read(magic.data(), magic.size()) == magic.size(), "truncated header magic");
 	check(magic == std::array<ui8, 8>{'N', 'H', 'A', 'R', 'T', '\r', '\n', 0x1a}, "incorrect magic");
@@ -178,6 +191,7 @@ CNhArtLoader::CNhArtLoader(std::string mountPoint, boost::filesystem::path archi
 	check(count <= indexSize / RECORD_SIZE, "entry count cannot fit in index");
 	check(stream.seek(static_cast<si64>(indexOffset)) == indexOffset, "index seek failed");
 	std::vector<std::pair<ui64, ui64>> ranges;
+	std::vector<nhart::Record> records;
 	ranges.reserve(count);
 	for(ui64 i = 0; i < count; ++i)
 	{
@@ -198,8 +212,9 @@ CNhArtLoader::CNhArtLoader(std::string mountPoint, boost::filesystem::path archi
 		ResourcePath resource(this->mountPoint + name);
 		if(resource == ResourcePath(this->mountPoint + ".nhart/manifest.json"))
 			check(name == ".nhart/manifest.json", "reserved manifest name must use its exact spelling");
-		check(entries.emplace(resource, Entry{name, static_cast<si64>(offset), static_cast<si64>(length)}).second,
+		check(entries.emplace(resource, Entry{name, static_cast<si64>(offset), static_cast<si64>(length),records.size()}).second,
 			"normalized resource identity collision");
+		records.push_back({name,offset,length,digest});
 		if(length > 0)
 			ranges.emplace_back(offset, offset + length);
 	}
@@ -207,6 +222,30 @@ CNhArtLoader::CNhArtLoader(std::string mountPoint, boost::filesystem::path archi
 	std::sort(ranges.begin(), ranges.end());
 	for(size_t i = 1; i < ranges.size(); ++i)
 		check(ranges[i - 1].second <= ranges[i].first, "overlapping payload ranges");
+	const auto metadata=std::find_if(records.begin(),records.end(),[](const auto & record){return record.name==".nhart/manifest.json";});
+	check(metadata!=records.end() && metadata->size<=MAX_INDEX_SIZE,"missing or oversized embedded manifest");
+	std::vector<ui8> manifestBytes(static_cast<size_t>(metadata->size));
+	check(stream.seek(metadata->offset)==metadata->offset && stream.read(manifestBytes.data(),manifestBytes.size())==manifestBytes.size(),"manifest read failed");
+	check(nhart::sha256(manifestBytes)==metadata->digest,"manifest SHA256 mismatch");
+	JsonParsingSettings parsing;parsing.mode=JsonParsingSettings::JsonFormatMode::JSON;
+	JsonParser parser(reinterpret_cast<const char *>(manifestBytes.data()),manifestBytes.size(),parsing);
+	const auto manifest=parser.parse("NHART embedded manifest");
+	check(parser.isValid() && manifest.isStruct() && manifest["format"].isNumber() && manifest["format"].Float()==1
+		&& manifest["entries"].isVector(),"invalid embedded manifest");
+	std::map<std::string,const nhart::Record *> selected;
+	for(const auto & record:records)if(record.name!=".nhart/manifest.json")selected.emplace(record.name,&record);
+	check(manifest["entries"].Vector().size()==selected.size(),"manifest inventory count mismatch");
+	for(const auto & declared:manifest["entries"].Vector())
+	{
+		check(declared.isStruct() && declared["resource"].isString() && declared["size"].isNumber() && declared["sha256"].isString(),"invalid manifest inventory row");
+		const auto found=selected.find(declared["resource"].String());
+		check(found!=selected.end() && declared["size"].Float()>=0 && declared["size"].Float()==static_cast<double>(found->second->size)
+			&& declared["sha256"].String()==nhart::hex(found->second->digest),"manifest inventory mismatch");
+		selected.erase(found);
+	}
+	check(selected.empty(),"missing manifest inventory row");
+	if(backing==Backing::PreparedFiles)
+		cache=nhart::prepareCache(source,cacheRoot.empty()?VCMIDirs::get().userCachePath():cacheRoot,records);
 	// Self-contained packaging metadata participates in all structural checks
 	// above, but is not a gameplay resource.
 	entries.erase(ResourcePath(this->mountPoint + ".nhart/manifest.json"));
@@ -216,7 +255,9 @@ std::unique_ptr<CInputStream> CNhArtLoader::load(const ResourcePath & resourceNa
 {
 	const auto & entry = entries.at(resourceName);
 	logGlobal->trace("Loading NHART resource %s from %s", entry.name, archive.filename().generic_string());
-	return std::make_unique<NhArtInputStream>(archive, entry.offset, entry.length);
+	return backing==Backing::PreparedFiles
+		? std::make_unique<NhArtInputStream>(cache->path/nhart::cacheFileName(entry.record),0,entry.length)
+		: std::make_unique<NhArtInputStream>(archive,entry.offset,entry.length);
 }
 
 bool CNhArtLoader::existsResource(const ResourcePath & resourceName) const

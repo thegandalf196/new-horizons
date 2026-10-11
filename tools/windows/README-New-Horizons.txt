@@ -45,6 +45,13 @@ Paste that line into File Explorer's address bar to find:
   cache\                                   generated/extracted resources
   logs\                                    diagnostics
 
+Before gameplay, New Horizons verifies NewHorizons.nhart and prepares its
+artwork in a versioned directory under the profile cache. This needs about
+27 MB plus filesystem overhead for the current pack. Later launches verify
+and reuse it; animations do not extract files while playing. Keep the shipped
+NHART package. If preparation fails, check free space and cache permissions;
+do not remove saves or original game files to repair the artwork cache.
+
 New saves use a separate New Horizons directory:
   %LOCALAPPDATA%\new-horizons\Saves
 

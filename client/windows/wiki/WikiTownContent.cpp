@@ -45,6 +45,7 @@
 #include "../../../lib/entities/hero/CHeroClass.h"
 #include "../../../lib/entities/hero/EHeroGender.h"
 #include "../CHeroOverview.h"
+#include "../HeroStartingPreview.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -541,9 +542,10 @@ static void addHeroesTable(
 
 			// Specialty icon (UN44, scaled to fit the row)
 			const int specIconSz = heroRowH - 4;
+			const auto specialty = heroStartingPreview(h->getId()).specialty;
 			widgets.push_back(std::make_shared<CAnimImage>(
-				AnimationPath::builtin("UN44"),
-				h->imageIndex,
+				specialty.animation(),
+				specialty.frame(),
 				Rect(TABLE_MARGIN + colPort + colName2 + colGend + 2,
 				     curY + 2, specIconSz, specIconSz),
 				0));
@@ -554,7 +556,7 @@ static void addHeroesTable(
 				     colSpec2 - CELL_PAD_L * 2,
 				     heroRowH - CELL_PAD_T * 2),
 				FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE,
-				h->getSpecialtyNameTranslated()));
+				specialty.name));
 
 			std::function<void()> lclick;
 			if(navigateCallback)

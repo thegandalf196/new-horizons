@@ -6,6 +6,9 @@
 #include "StdInc.h"
 
 #include "../../lib/filesystem/CNhArtLoader.h"
+#include "../../lib/filesystem/NhArtSha256.h"
+#include "../../lib/filesystem/NhArtCache.h"
+#include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/filesystem/CInputStream.h"
 #include "../../lib/texts/TextOperations.h"
 
@@ -46,8 +49,22 @@ void appendLE(Bytes & bytes, ui64 value, size_t width)
 	putLE(bytes, at, value, width);
 }
 
-Archive makeArchive(const std::vector<Payload> & payloads)
+Archive makeArchive(std::vector<Payload> payloads)
 {
+	// Genuine synthetic self-contained manifest and record hashes. Original
+	// requested rows retain their record indices; metadata is appended last.
+	std::erase_if(payloads,[](const auto & row){return row.name==".nhart/manifest.json";});
+	std::string metadata="{\"format\":1,\"entries\":[";
+	for(size_t i=0;i<payloads.size();++i)
+	{
+		if(i)metadata+=",";
+		// Malformed-name fixtures may contain arbitrary bytes; they are rejected
+		// by index admission before their intentionally irrelevant JSON is read.
+		metadata+="{\"resource\":\""+payloads[i].name+"\",\"size\":"+std::to_string(payloads[i].data.size())
+			+",\"sha256\":\""+nhart::hex(nhart::sha256(payloads[i].data))+"\"}";
+	}
+	metadata+="]}";
+	payloads.push_back({".nhart/manifest.json",Bytes(metadata.begin(),metadata.end())});
 	Archive archive;
 	archive.data.resize(32);
 	const std::array<ui8, 8> magic{'N', 'H', 'A', 'R', 'T', '\r', '\n', 0x1a};
@@ -69,9 +86,8 @@ Archive makeArchive(const std::vector<Payload> & payloads)
 		appendLE(archive.data, 0, 4);
 		appendLE(archive.data, offsets[i], 8);
 		appendLE(archive.data, payloads[i].data.size(), 8);
-		// The runtime treats the SHA256 slot as opaque bytes; the package
-		// verifier independently checks payload integrity, not this loader.
-		archive.data.insert(archive.data.end(), 32, 0xa5);
+		const auto digest=nhart::sha256(payloads[i].data);
+		archive.data.insert(archive.data.end(),digest.begin(),digest.end());
 		archive.data.insert(archive.data.end(), payloads[i].name.begin(), payloads[i].name.end());
 	}
 	return archive;
@@ -118,6 +134,7 @@ class CNhArtLoaderTest : public ::testing::Test
 	boost::filesystem::path directory;
 	unsigned int nextFile = 0;
 protected:
+	boost::filesystem::path cacheRoot() const { return directory/"cache"; }
 	void SetUp() override
 	{
 		directory = boost::filesystem::temp_directory_path()
@@ -141,7 +158,7 @@ protected:
 	void reject(const Bytes & bytes)
 	{
 		const auto path = write(bytes);
-		EXPECT_THROW(CNhArtLoader("", path), std::runtime_error);
+		EXPECT_THROW(CNhArtLoader("", path,cacheRoot()), std::runtime_error);
 	}
 };
 
@@ -150,7 +167,7 @@ TEST_F(CNhArtLoaderTest, PngAndDefRemainExactBytesWithCaseAndTypeNamespaces)
 	const auto png = syntheticPng();
 	const auto def = syntheticDef();
 	const auto path = write(makeArchive({{"Art/Same.png", png}, {"Art/Same.def", def}}).data);
-	CNhArtLoader loader("Mount/", path);
+	CNhArtLoader loader("Mount/", path,cacheRoot());
 	EXPECT_EQ(loader.getMountPoint(), "Mount/");
 	const ResourcePath image("mount/art/same", EResType::IMAGE);
 	const ResourcePath animation("MOUNT/ART/SAME", EResType::ANIMATION);
@@ -168,7 +185,7 @@ TEST_F(CNhArtLoaderTest, PngAndDefRemainExactBytesWithCaseAndTypeNamespaces)
 
 TEST_F(CNhArtLoaderTest, ReadsSeeksAndSkipsStayWithinPayload)
 {
-	CNhArtLoader loader("", write(makeArchive({{"first.png", {1, 2, 3}}, {"second.png", {9, 8}}}).data));
+	CNhArtLoader loader("", write(makeArchive({{"first.png", {1, 2, 3}}, {"second.png", {9, 8}}}).data),cacheRoot());
 	auto stream = loader.load(ResourcePath("first.png"));
 	std::array<ui8, 8> buffer{};
 	EXPECT_EQ(stream->getSize(), 3);
@@ -194,7 +211,7 @@ TEST_F(CNhArtLoaderTest, ReadsSeeksAndSkipsStayWithinPayload)
 
 TEST_F(CNhArtLoaderTest, EmptyPayloadDoesNotExposeHeaderOrNeighbour)
 {
-	CNhArtLoader loader("", write(makeArchive({{"empty.png", {}}, {"next.png", {7}}}).data));
+	CNhArtLoader loader("", write(makeArchive({{"empty.png", {}}, {"next.png", {7}}}).data),cacheRoot());
 	auto stream = loader.load(ResourcePath("empty.png"));
 	ui8 sentinel = 99;
 	EXPECT_EQ(stream->getSize(), 0);
@@ -203,14 +220,14 @@ TEST_F(CNhArtLoaderTest, EmptyPayloadDoesNotExposeHeaderOrNeighbour)
 	EXPECT_EQ(stream->seek(8), 0);
 	EXPECT_EQ(stream->skip(8), 0);
 	EXPECT_EQ(stream->tell(), 0);
-	CNhArtLoader empty("", write(makeArchive({}).data));
+	CNhArtLoader empty("", write(makeArchive({}).data),cacheRoot());
 	EXPECT_TRUE(empty.getFilteredFiles([](const auto &) { return true; }).empty());
 }
 
 TEST_F(CNhArtLoaderTest, ConcurrentStreamsHaveIndependentPositions)
 {
 	const auto png = syntheticPng();
-	CNhArtLoader loader("", write(makeArchive({{"art.png", png}}).data));
+	CNhArtLoader loader("", write(makeArchive({{"art.png", png}}).data),cacheRoot());
 	auto parent = loader.load(ResourcePath("art.png"));
 	ASSERT_EQ(parent->seek(5), 5);
 	std::vector<std::future<Bytes>> reads;
@@ -232,7 +249,7 @@ TEST_F(CNhArtLoaderTest, ConcurrentStreamsHaveIndependentPositions)
 TEST_F(CNhArtLoaderTest, ManifestIsHiddenAndOrdinaryDotNamesAreResources)
 {
 	CNhArtLoader loader("", write(makeArchive({{".nhart/manifest.json", {'{', '}'}},
-		{"art/.selected.png", {1}}, {"art/caf\xc3\xa9.png", {2}}}).data));
+		{"art/.selected.png", {1}}, {"art/caf\xc3\xa9.png", {2}}}).data),cacheRoot());
 	EXPECT_FALSE(loader.existsResource(ResourcePath(".nhart/manifest.json")));
 	EXPECT_EQ(loader.getFilteredFiles([](const auto &) { return true; }).size(), 2u);
 	EXPECT_EQ(readAll(*loader.load(ResourcePath("art/.selected.png"))), (Bytes{1}));
@@ -270,7 +287,7 @@ TEST_F(CNhArtLoaderTest, RejectsHeaderIndexBoundsAndImpossibleCounts)
 		putLE(malformed, 16, offset, 8);
 		reject(malformed);
 	}
-	for(const auto count : {ui64{2}, ui64{1000001}, std::numeric_limits<ui64>::max()})
+	for(const auto count : {ui64{3}, ui64{1000001}, std::numeric_limits<ui64>::max()})
 	{
 		auto malformed = valid;
 		putLE(malformed, 24, count, 8);
@@ -317,7 +334,7 @@ TEST_F(CNhArtLoaderTest, RejectsPayloadHeaderIndexCrossingAndUnsignedOverflow)
 TEST_F(CNhArtLoaderTest, RejectsOverlappingNonemptyPayloadsButAllowsAdjacency)
 {
 	const auto valid = makeArchive({{"first.png", {1, 2}}, {"second.png", {3, 4}}});
-	EXPECT_NO_THROW(CNhArtLoader("", write(valid.data)));
+	EXPECT_NO_THROW(CNhArtLoader("", write(valid.data),cacheRoot()));
 	auto malformed = valid.data;
 	putLE(malformed, valid.records[1] + 8, 33, 8);
 	reject(malformed);
@@ -342,5 +359,107 @@ TEST_F(CNhArtLoaderTest, RejectsTraversalAbsoluteAndMalformedUtf8Names)
 		SCOPED_TRACE(name);
 		reject(makeArchive({{name, {1}}}).data);
 	}
+}
+
+TEST_F(CNhArtLoaderTest, Sha256PublishedKnownVectorsAndChunkBoundary)
+{
+	const auto digest=[](const std::string & value){return nhart::hex(nhart::sha256(std::span<const ui8>(reinterpret_cast<const ui8 *>(value.data()),value.size())));};
+	EXPECT_EQ(digest(""),"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+	EXPECT_EQ(digest("abc"),"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+	EXPECT_EQ(digest("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),"248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
+	const std::string million(1000000,'a');
+	EXPECT_EQ(digest(million),"cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
+	std::istringstream stream(million);
+	EXPECT_EQ(nhart::hex(nhart::sha256(stream,million.size())),digest(million));
+}
+
+TEST_F(CNhArtLoaderTest, PreparedBackingAndExplicitDirectBenchmarkHaveIdenticalBytes)
+{
+	const auto payloads=makeArchive({{"art.png",syntheticPng()},{"art.def",syntheticDef()},{"empty.png",{}}});
+	const auto path=write(payloads.data);
+	CNhArtLoader cached("",path,cacheRoot());
+	CNhArtLoader direct("",path,cacheRoot(),CNhArtLoader::Backing::DirectArchiveForTests);
+	for(const auto & resource:cached.getFilteredFiles([](const auto &){return true;}))
+		EXPECT_EQ(readAll(*cached.load(resource)),readAll(*direct.load(resource)));
+	boost::filesystem::remove(path);
+	EXPECT_EQ(readAll(*cached.load(ResourcePath("art.png"))),syntheticPng());
+}
+
+TEST_F(CNhArtLoaderTest, BothMountScopesSharePreparedBackingWithoutCollapsingIdentities)
+{
+	const auto path=write(makeArchive({{"DATA/value.json",{1,2}}}).data);
+	CNhArtLoader builtin("",path,cacheRoot());
+	CNhArtLoader mod("MODS/NEW-HORIZONS/",path,cacheRoot());
+	EXPECT_TRUE(builtin.existsResource(ResourcePath("DATA/value.json")));
+	EXPECT_TRUE(mod.existsResource(ResourcePath("MODS/NEW-HORIZONS/DATA/value.json")));
+	EXPECT_FALSE(mod.existsResource(ResourcePath("DATA/value.json")));
+	EXPECT_EQ(readAll(*builtin.load(ResourcePath("DATA/value.json"))),readAll(*mod.load(ResourcePath("MODS/NEW-HORIZONS/DATA/value.json"))));
+}
+
+TEST_F(CNhArtLoaderTest, CacheReuseRevalidatesCorruptedPayloadBeforeUse)
+{
+	const auto archive=makeArchive({{"image.png",{1,2,3}}});const auto path=write(archive.data);
+	{CNhArtLoader first("",path,cacheRoot());}
+	const auto payload=cacheRoot()/"new-horizons-art"/"v1"/nhart::hex(nhart::sha256(archive.data))/nhart::cacheFileName(0);
+	std::ofstream corrupt(payload.string(),std::ios::binary|std::ios::trunc);corrupt.put(9);corrupt.close();
+	EXPECT_THROW(CNhArtLoader("",path,cacheRoot()),std::runtime_error);
+	EXPECT_TRUE(boost::filesystem::exists(payload)); // Do not delete/repair arbitrary existing trees.
+}
+
+TEST_F(CNhArtLoaderTest, CacheReuseRejectsExtraFiles)
+{
+	const auto archive=makeArchive({{"image.png",{1}}});const auto path=write(archive.data);
+	{CNhArtLoader first("",path,cacheRoot());}
+	const auto directory=cacheRoot()/"new-horizons-art"/"v1"/nhart::hex(nhart::sha256(archive.data));
+	std::ofstream extra((directory/"unrelated.png").string());extra.put(1);extra.close();
+	EXPECT_THROW(CNhArtLoader("",path,cacheRoot()),std::runtime_error);
+	EXPECT_TRUE(boost::filesystem::exists(directory/"unrelated.png"));
+}
+
+TEST_F(CNhArtLoaderTest, RejectsPayloadAndEmbeddedManifestDigestCorruption)
+{
+	auto archive=makeArchive({{"image.png",{1,2,3}}});
+	auto corrupt=archive.data;corrupt[32]^=1;reject(corrupt);
+	corrupt=archive.data;corrupt[archive.records.back()+24]^=1;reject(corrupt);
+}
+
+TEST_F(CNhArtLoaderTest, RejectsWindowsDeviceTrailingDotSpaceAndControlNames)
+{
+	for(const auto & name:{"CON.png","art/NUL.json","LPT9.png","COM1.def","bad./art.png","bad /art.png","bad\x01.png"})
+		reject(makeArchive({{name,{1}}}).data);
+}
+
+#ifndef _WIN32
+TEST_F(CNhArtLoaderTest, DeveloperArchiveSymlinkResolvesSourceButNotCacheTargets)
+{
+	const auto source=write(makeArchive({{"image.png",{1,2}}}).data);
+	const auto alias=source.parent_path()/"linked.nhart";
+	boost::filesystem::create_symlink(source,alias);
+	CNhArtLoader loader("",alias,cacheRoot());
+	EXPECT_EQ(readAll(*loader.load(ResourcePath("image.png"))),(Bytes{1,2}));
+	EXPECT_EQ(loader.getFullFileURI(ResourcePath("image.png")),TextOperations::filesystemPathToUtf8(alias)+"/image.png");
+}
+
+TEST_F(CNhArtLoaderTest, RejectsLinkedCacheRootWithoutWritingOutside)
+{
+	const auto outside=cacheRoot().parent_path()/"outside";
+	ASSERT_TRUE(boost::filesystem::create_directory(outside));
+	boost::filesystem::create_directory_symlink(outside,cacheRoot());
+	EXPECT_THROW(CNhArtLoader("",write(makeArchive({{"image.png",{1}}}).data),cacheRoot()),std::runtime_error);
+	EXPECT_TRUE(boost::filesystem::is_empty(outside));
+}
+#endif
+
+TEST_F(CNhArtLoaderTest, CommittedPackSelfContainedManifestAndAllPayloadsMatchDirectBacking)
+{
+	const auto archive=CResourceHandler::get("initial")->getResourceName(ResourcePath("Mods/new-horizons/NewHorizons.nhart",EResType::ARCHIVE_NHART));
+	ASSERT_TRUE(archive.has_value());
+	CNhArtLoader prepared("",*archive,cacheRoot());
+	CNhArtLoader direct("",*archive,cacheRoot(),CNhArtLoader::Backing::DirectArchiveForTests);
+	const auto resources=prepared.getFilteredFiles([](const auto &){return true;});
+	ASSERT_FALSE(resources.empty());
+	EXPECT_EQ(resources,direct.getFilteredFiles([](const auto &){return true;}));
+	EXPECT_FALSE(prepared.existsResource(ResourcePath(".nhart/manifest.json")));
+	for(const auto & resource:resources)EXPECT_EQ(readAll(*prepared.load(resource)),readAll(*direct.load(resource)));
 }
 }

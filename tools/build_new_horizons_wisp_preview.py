@@ -67,11 +67,11 @@ BORROWED_PROFILES = {
         "aiValue": 44,
         "leadership": 50,
         "sound": {
-            "attack": "AGRMATTK.wav",
+            "attack": "MAGICBLT.wav",
             "defend": "AGRMDFND.wav",
             "killed": "AGRMKILL.wav",
             "move": "AGRMMOVE.wav",
-            "shoot": "AGRMSHOT.wav",
+            "shoot": "MAGICBLT.wav",
             "wince": "AGRMWNCE.wav",
         },
         "upgrades": ["magicElemental"],
@@ -96,11 +96,11 @@ BORROWED_PROFILES = {
         "aiValue": 66,
         "leadership": 60,
         "sound": {
-            "attack": "MGRMATTK.wav",
+            "attack": "MAGICBLT.wav",
             "defend": "MGRMDFND.wav",
             "killed": "MGRMKILL.wav",
             "move": "MGRMMOVE.wav",
-            "shoot": "MGRMSHOT.wav",
+            "shoot": "MAGICBLT.wav",
             "wince": "MGRMWNCE.wav",
         },
         "upgrades": [],
@@ -429,7 +429,8 @@ This detached overlay is for the approved Linux art preview only. It does not
 change the normal `Mods/new-horizons` tree. It temporarily maps
 `core:psychicElemental` to the supplied base Wisp and
 `core:magicElemental` to the supplied upgraded Wisp. The preview borrows the
-stock Gremlin/Master Gremlin Core stat, shooter, sound, and Leadership profile;
+stock Gremlin/Master Gremlin Core stat, shooter, and Leadership profile;
+both attack modes use the Magic Arrow sound, not the borrowed Gremlin sounds.
 the borrowed values are not approved final creature rules. Do not load an
 existing save with this overlay.
 

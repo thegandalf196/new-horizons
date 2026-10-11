@@ -270,6 +270,7 @@ jobs:
           cmake --preset new-horizons-windows-x64
           -DENABLE_CCACHE=ON
           -DENABLE_NH_SDL3_MASK_REGRESSION=ON
+          -DENABLE_NH_ART_CACHE_REGRESSION=ON
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
@@ -302,13 +303,13 @@ jobs:
 
       - name: Compile Windows x64 client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
-        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest --parallel 4
+        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest nhArtStartupRuntimeTest --parallel 4
 
       - name: Stage upstream runtime and resources
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
         run: cmake --install build/new-horizons-windows-x64
 
-      - name: Verify selected masks with shipping SDL3_image (surface only)
+      - name: Verify selected masks and palette updates with shipping SDL3 (CPU only)
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
         run: |
           set -euo pipefail
@@ -322,6 +323,19 @@ jobs:
           export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy SDL_VIDEO_DRIVER=dummy SDL_AUDIO_DRIVER=dummy
           unset DISPLAY WAYLAND_DISPLAY
           "$test_exe" build/new-horizons-windows-x64/sdl3-mask-fixtures
+
+      - name: Verify native NHART preparation and matched-byte reads (CPU only)
+        if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
+        run: |
+          set -euo pipefail
+          test_exe=build/new-horizons-windows-x64/install/nhArtStartupRuntimeTest.exe
+          cp build/new-horizons-windows-x64/bin/nhArtStartupRuntimeTest.exe "$test_exe"
+          trap 'rm -f "$test_exe"' EXIT
+          mkdir -p build/new-horizons-windows-x64/nhart-regression-cache
+          export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy SDL_VIDEO_DRIVER=dummy SDL_AUDIO_DRIVER=dummy
+          unset DISPLAY WAYLAND_DISPLAY
+          "$test_exe" --pack build/new-horizons-windows-x64/install/Mods/new-horizons/NewHorizons.nhart \
+            --cache-root build/new-horizons-windows-x64/nhart-regression-cache
 
       - name: Package client, recursive PE closure, licenses and corresponding sources
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}

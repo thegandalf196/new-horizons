@@ -14,6 +14,10 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
 import build_new_horizons_wisp_preview as wisp_preview  # noqa: E402
+if __package__:
+    from .test_new_horizons_content import load
+else:
+    from test_new_horizons_content import load
 
 
 class WispPreviewOverlayTest(unittest.TestCase):
@@ -171,6 +175,22 @@ class WispPreviewOverlayTest(unittest.TestCase):
         self.assertEqual(requirements["core:psychicElemental"], 50)
         self.assertEqual(requirements["core:magicElemental"], 60)
         self.assertIn("TEMPORARY PRIVATE ART PREVIEW ONLY", mod["description"])
+
+    def test_preview_and_shipping_attacks_use_magic_arrow_sound(self):
+        expected = load('config/spells/offensive.json')['magicArrow']['sounds']['cast'] + '.wav'
+        self.assertEqual(expected, 'MAGICBLT.wav')
+        generated = self._json_output(
+            self.outputs, 'Mods/new-horizons/Content/config/creatures/conflux.json')
+        for key in ('core:psychicElemental', 'core:magicElemental'):
+            with self.subTest(preview=key):
+                self.assertEqual(generated[key]['sound']['attack'], expected)
+                self.assertEqual(generated[key]['sound']['shoot'], expected)
+        shipped = load('Mods/new-horizons/Content/config/creatures/conflux.json')
+        for key in ('wisp', 'wispUpgrade'):
+            with self.subTest(shipped=key):
+                self.assertEqual(shipped[key]['sound']['attack'], expected)
+                self.assertNotIn('shooter', shipped[key]['abilities'])
+                self.assertNotIn('shoot', shipped[key]['sound'])
 
     def test_builder_is_read_only_against_the_normal_module(self):
         self.assertEqual(self.source_hashes_before, self.source_hashes_after)

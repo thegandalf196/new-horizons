@@ -196,8 +196,8 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 
 	// ── 4. Specialty ─────────────────────────────────────────────────────
 	{
-		const std::string specName = hero->getSpecialtyNameTranslated();
-		const std::string specDesc = hero->getSpecialtyDescriptionTranslated();
+		const std::string specName = starting.specialty.name;
+		const std::string specDesc = starting.specialty.description;
 		if(!specName.empty())
 		{
 			curY += 16;
@@ -216,9 +216,8 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 			widgets.push_back(rowBorder);
 
 			widgets.push_back(std::make_shared<CAnimImage>(
-				AnimationPath::builtin("UN44"),
-				hero->imageIndex, 0,
-				MARGIN + 2, curY + 2));
+				starting.specialty.animation(), starting.specialty.frame(),
+				Rect(MARGIN + 2, curY + 2, 44, 44)));
 			widgets.push_back(std::make_shared<CLabel>(
 				MARGIN + iconCol + CELL_L, curY + CELL_T,
 				FONT_MEDIUM, ETextAlignment::TOPLEFT, Colors::YELLOW,

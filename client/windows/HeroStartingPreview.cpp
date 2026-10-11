@@ -85,6 +85,12 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 		context.resolved = true;
 	}
 	result.values = newHorizonsHeroes::projectStartingHero(prototype, context, overrides);
+	std::optional<CreatureID> specialtyTarget;
+	if(capturedHero)
+		specialtyTarget = capturedHero->getCreatureLineSpecialtyTarget();
+	else if(!context.resolved && !overrides.skills)
+		specialtyTarget = newHorizonsHeroes::defaultCreatureLineTarget(context.development, id);
+	result.specialty = heroSpecialtyPresentation(prototype, context.development, specialtyTarget);
 	for(const auto & selection : result.values.perks)
 		for(const auto & row : context.perks["skills"][selection.skillId]["perks"].Vector())
 			if(row["id"].String() == selection.perkId)

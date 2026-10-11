@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "SpellPointPresentation.h"
 #include "CHeroWindow.h"
+#include "HeroSpecialtyPresentation.h"
 #include "NewHorizonsPerkBrowser.h"
 #include "NewHorizonsPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
@@ -720,8 +721,10 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	title->setText(titleText.toString(&GAME->translator()));
 
 	specArea->text = curHero->getSpecialtyDescriptionTranslated();
-	specImage->setFrame(curHero->getHeroType()->imageIndex);
-	specName->setText(curHero->getHeroType()->getSpecialtyNameTranslated());
+	const auto specialty = heroSpecialtyPresentation(*curHero);
+	specImage->setAnimationPath(specialty.animation(), specialty.frame());
+	specImage->setScale(Point(44, 44));
+	specName->setText(specialty.name);
 
 	tacticsButton = std::make_shared<CToggleButton>(newHorizonsLayout ? Point(544, 544) : Point(539, 483), AnimationPath::builtin("hsbtns8.def"), std::make_pair(LIBRARY->generaltexth->translate("core.heroscrn.26"), LIBRARY->generaltexth->translate("core.heroscrn.31")), 0, EShortcut::HERO_TOGGLE_TACTICS);
 	tacticsButton->addHoverText(EButtonState::HIGHLIGHTED, LIBRARY->generaltexth->translate("core.heroscrn.25"));

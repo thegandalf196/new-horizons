@@ -7,13 +7,16 @@
 
 #include "ISimpleResourceLoader.h"
 #include "ResourcePath.h"
+namespace nhart { struct PreparedCache; }
 
-/// Read-only, uncompressed NHART resource archive. Payload integrity is checked
-/// by the packaging verifier; runtime validates all index structure and bounds.
+/// Prepares verified file backing before any resource is made available.
 class DLL_LINKAGE CNhArtLoader : public ISimpleResourceLoader
 {
 public:
-	CNhArtLoader(std::string mountPoint, boost::filesystem::path archive);
+	/// DirectArchiveForTests is an explicit benchmark seam, never a runtime fallback.
+	enum class Backing { PreparedFiles, DirectArchiveForTests };
+	CNhArtLoader(std::string mountPoint, boost::filesystem::path archive,
+		boost::filesystem::path cacheRoot = {}, Backing backing = Backing::PreparedFiles);
 	std::unique_ptr<CInputStream> load(const ResourcePath & resourceName) const override;
 	bool existsResource(const ResourcePath & resourceName) const override;
 	std::string getMountPoint() const override;
@@ -28,8 +31,11 @@ private:
 		std::string name;
 		si64 offset;
 		si64 length;
+		size_t record;
 	};
 	boost::filesystem::path archive;
 	std::string mountPoint;
 	std::unordered_map<ResourcePath, Entry> entries;
+	std::shared_ptr<const nhart::PreparedCache> cache;
+	Backing backing;
 };

@@ -7,6 +7,13 @@ set(clientapp_HEADERS
 		StdInc.h
 )
 
+option(ENABLE_NH_ART_CACHE_REGRESSION "Build the CPU-only NHART startup and payload regression" OFF)
+if(ENABLE_NH_ART_CACHE_REGRESSION)
+	add_executable(nhArtStartupRuntimeTest ../client/tests/NhArtStartupRuntimeTest.cpp)
+	target_link_libraries(nhArtStartupRuntimeTest PRIVATE vcmi)
+	vcmi_set_output_dir(nhArtStartupRuntimeTest "")
+endif()
+
 if(IOS)
 	set(clientapp_SRCS ${clientapp_SRCS}
 		CFocusableHelper.cpp

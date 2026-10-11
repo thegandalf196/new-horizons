@@ -12,6 +12,7 @@
 
 #include "SDLImage.h"
 #include "SDL_Extensions.h"
+#include "PaletteUpdate.h"
 
 #include "GameEngine.h"
 
@@ -158,14 +159,14 @@ void ScalableImageParameters::setOverlayColor(const SDL_Palette * originalPalett
 	// SDL_SetPaletteColors, not a direct write to colors[] - it bumps SDL_Palette::version,
 	// which is how a cached GPU texture notices this palette changed under it
 	SDL_Color overlayColor = CSDL_Ext::toSDL(addColors(targetPalette[5], color));
-	SDL_SetPaletteColors(palette, &overlayColor, 5, 1);
+	paletteUpdate::setColorIfChanged(palette, 5, overlayColor);
 
 	if (includeShadow)
 	{
 		for (int i : {6,7})
 		{
 			SDL_Color shadowColor = CSDL_Ext::toSDL(addColors(targetPalette[i], color));
-			SDL_SetPaletteColors(palette, &shadowColor, i, 1);
+			paletteUpdate::setColorIfChanged(palette, i, shadowColor);
 		}
 	}
 }

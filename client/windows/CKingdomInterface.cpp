@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "SpellPointPresentation.h"
 #include "CKingdomInterface.h"
+#include "HeroSpecialtyPresentation.h"
 
 #include "CCastleInterface.h"
 #include "CPlayerState.h"
@@ -347,6 +348,24 @@ InfoBoxHeroData::InfoBoxHeroData(InfoType Type, const CGHeroInstance * Hero, int
 {
 }
 
+std::string InfoBoxHeroData::getNameText()
+{
+	return type == HERO_SPECIAL ? heroSpecialtyPresentation(*hero).name
+		: InfoBoxAbstractHeroData::getNameText();
+}
+
+AnimationPath InfoBoxHeroData::getImageName(InfoBox::InfoSize size)
+{
+	return type == HERO_SPECIAL ? heroSpecialtyPresentation(*hero).animation(size == InfoBox::SIZE_SMALL)
+		: InfoBoxAbstractHeroData::getImageName(size);
+}
+
+size_t InfoBoxHeroData::getImageIndex()
+{
+	return type == HERO_SPECIAL ? heroSpecialtyPresentation(*hero).frame()
+		: InfoBoxAbstractHeroData::getImageIndex();
+}
+
 int InfoBoxHeroData::getSubID()
 {
 	switch(type)
@@ -451,6 +470,9 @@ void InfoBoxHeroData::prepareMessage(std::string & text, std::shared_ptr<CCompon
 	comp.reset();
 	switch(type)
 	{
+	case HERO_SPECIAL:
+		text = hero->getSpecialtyDescriptionTranslated();
+		break;
 	case HERO_MANA:
 	{
 		text = spellPointPresentation::tooltip(hero->getManaAvailable(),

@@ -398,6 +398,7 @@ set(vcmiclientcommon_HEADERS
 	windows/ExchangeSecondarySkillSlots.h
 	windows/CHeroOverview.h
 	windows/HeroStartingPreview.h
+	windows/HeroSpecialtyPresentation.h
 	windows/CHeroWindow.h
 	windows/HeroGrowthWindow.h
 	windows/HeroSkillOddsWindow.h
