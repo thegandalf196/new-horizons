@@ -250,6 +250,17 @@ def wine_fullgame_plan(args, client_args):
     if args.wine_run_root is None:
         raise Refusal("Fresh private full-game root required")
     validate_wine_private_root(args.wine_run_root, uid=os.getuid())
+    content_module_path = Path(__file__).with_name("nh_wine_profile.py")
+    if content_module_path.is_symlink() or not content_module_path.is_file():
+        raise Refusal("Adjacent Wine content admission module unavailable")
+    spec = importlib.util.spec_from_file_location("nh_wine_profile_guarded", content_module_path)
+    content_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(content_module)
+    try:
+        content = content_module.load_content_manifest(args.wine_content_manifest,
+                                                     args.wine_content_manifest_sha256)
+    except content_module.Refusal as error:
+        raise Refusal(str(error)) from error
     # Root remains untouched, and even the future expanded profile must fit MAX_PATH.
     local = "Z:" + str(args.wine_run_root).replace("/", "\\") + r"\localappdata"
     bounded = [local+r"\HeroesIII-NewHorizons\cache\extracted",
@@ -260,7 +271,8 @@ def wine_fullgame_plan(args, client_args):
             "root": str(args.wine_run_root), "guard": str(args.guard), "dlls": dlls,
             "executable_sha256": args.wine_test_sha256, "wine_sha256": args.wine_sha256,
             "server_sha256": args.wine_server_sha256, "input_deadline": 600,
-            "input_program": str(input_program), "input_sha256": args.wine_input_sha256}
+            "input_program": str(input_program), "input_sha256": args.wine_input_sha256,
+            "content": content}
 
 
 def _decimal(value, name):
@@ -384,6 +396,9 @@ def _parser():
                         help="guarded full-game route requiring a witness-capable PE and private ownership checks; not gameplay-certified")
     parser.add_argument("--wine-server-sha256")
     parser.add_argument("--wine-input-sha256", help="required full-game-only pin of adjacent maintained input helper")
+    parser.add_argument("--wine-content-manifest", type=Path,
+                        help="required full-game-only explicit purchaser-content and fixture manifest")
+    parser.add_argument("--wine-content-manifest-sha256")
     parser.add_argument("--wine-test-sha256")
     parser.add_argument("--wine-sha256")
     parser.add_argument("--wine-binary", type=Path)
@@ -604,13 +619,14 @@ def main(argv=None):
             except owner.Refusal as error:
                 raise Refusal(str(error)) from error
         if args.wine_surface_test is not None:
-            if args.wine_input_sha256 or args.wine_server_sha256:
+            if args.wine_input_sha256 or args.wine_server_sha256 or args.wine_content_manifest or args.wine_content_manifest_sha256:
                 raise Refusal("Full-game-only options misplaced in surface mode")
             return run_wine_surface(args, client_args)
         if any((args.wine_test_sha256, args.wine_sha256, args.wine_binary, args.wine_fixtures,
                 args.wine_fixture_manifest, args.wine_fixture_manifest_sha256,
                 args.wine_dll_manifest, args.wine_dll_manifest_sha256,
-                args.wine_run_root, args.wine_server_sha256, args.wine_input_sha256)):
+                args.wine_run_root, args.wine_server_sha256, args.wine_input_sha256,
+                args.wine_content_manifest, args.wine_content_manifest_sha256)):
             raise Refusal("Wine options require --wine-surface-test")
         if any(value is None for value in (args.snapshot, args.profile, args.assets)):
             raise Refusal("Game mode requires --snapshot, --profile and --assets")

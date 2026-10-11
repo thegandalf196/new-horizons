@@ -97,3 +97,41 @@ Offline composer tests, byte-equivalence inspection, registration/native tests,
 normal client bootstrap and GUI/save/AI journeys are separate evidence. Merely
 checking in this recipe or seeing its output does not prove checkout-native
 reproduction or player acceptance.
+
+## Guarded Windows test profiles
+
+The separate `nh-private-launch.py --wine-fullgame` route requires a
+witness-capable player executable, pinned Wine/DLL/input-helper providers, an
+owned private Xvfb guard, and a fresh private root outside the checkout. Its
+caller must independently bound the entire run and own display cleanup. It is
+not a replacement for the normal Windows launcher or evidence of gameplay
+acceptance.
+
+`--wine-content-manifest` and `--wine-content-manifest-sha256` select private
+test inputs. The version-1 JSON has these exact top-level fields:
+
+- `version`: integer `1`.
+- `original`: `data` and `music`, each with an absolute directory `path` and
+  a nonempty `files` object mapping relative filenames to SHA-256 hashes.
+- `map`: absolute `path`, `sha256`, and a plain `.vmap` or `.h3m` `filename`.
+- `settings` and `modPreset`: absolute `path` and `sha256` for each JSON file.
+
+The preset is the curated default with `vcmi`, `core`, and `new-horizons`, and
+an empty preset settings object. Admission is read-only. Before launch, staging
+links external Data/Mp3 directories and copies only the selected map and small
+configuration files into the disposable profile. Links are resource references,
+not an OS-enforced read-only sandbox. Only declared original files are verified;
+the manifest must list every original resource used by the test.
+
+Original bytes are verified before launch and after cleanup, outside the timed
+owner window. Map/link checks remain active during input; configuration files
+may legitimately be rewritten by the engine. Keep manifests, profiles, saves,
+logs, and proprietary inputs private and outside disposable build directories.
+
+Process-free regression commands:
+
+```sh
+python3 tools/tests/test_nh_private_launch.py
+python3 tools/tests/test_nh_wine_fullgame_owner.py
+python3 -m unittest discover -s tools/tests -p test_nh_wine_profile.py
+```

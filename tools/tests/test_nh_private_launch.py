@@ -480,12 +480,30 @@ class PrivateLaunchTest(unittest.TestCase):
         for name in ('VCMI_lib.dll','SDL3.dll','SDL3_image.dll','SDL3_mixer.dll','SDL3_ttf.dll'):
             path=self.root/name;path.write_bytes(name.encode());pins[name]=hashlib.sha256(path.read_bytes()).hexdigest()
         receipt=self.root/'full-dlls.json';receipt.write_text(json.dumps(pins))
+        original = {}
+        for group in ('data', 'music'):
+            directory = self.root / ('content-' + group)
+            directory.mkdir()
+            file = directory / 'synthetic.bin';file.write_bytes(group.encode())
+            original[group] = {'path':str(directory), 'files':{file.name:hashlib.sha256(file.read_bytes()).hexdigest()}}
+        content_map = self.root/'fixture.vmap';content_map.write_bytes(b'synthetic map')
+        content_settings = self.root/'fixture-settings.json';content_settings.write_text('{}')
+        content_preset = self.root/'fixture-preset.json'
+        content_preset.write_text(json.dumps({'activePreset':'default','presets':{'default':{
+            'mods':['vcmi','core','new-horizons'],'settings':{}}}}))
+        pin = lambda p: {'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
+        content_manifest = self.root/'content-manifest.json'
+        content_manifest.write_text(json.dumps({'version':1,'original':original,
+            'map':{**pin(content_map),'filename':'fixture.vmap'},
+            'settings':pin(content_settings),'modPreset':pin(content_preset)}))
         args=['--guard',str(self.guard),'--wine-fullgame',str(pe),
               '--wine-test-sha256',hashlib.sha256(pe.read_bytes()).hexdigest(),
               '--wine-binary',str(wine),'--wine-sha256',hashlib.sha256(wine.read_bytes()).hexdigest(),
               '--wine-server-sha256',hashlib.sha256(server.read_bytes()).hexdigest(),
               '--wine-input-sha256',hashlib.sha256(HELPER_PATH.with_name('nh-private-input.py').read_bytes()).hexdigest(),
               '--wine-dll-manifest',str(receipt),'--wine-dll-manifest-sha256',hashlib.sha256(receipt.read_bytes()).hexdigest(),
+              '--wine-content-manifest',str(content_manifest),
+              '--wine-content-manifest-sha256',hashlib.sha256(content_manifest.read_bytes()).hexdigest(),
               '--wine-run-root',str(self.root/'wine-run')]
         with self._patch_boundaries(),mock.patch.object(HELPER.subprocess,'Popen') as popen:
             self.assertEqual(HELPER.main([*args,'--verify-only']),0)
@@ -496,6 +514,21 @@ class PrivateLaunchTest(unittest.TestCase):
             parsed.wine_input_sha256='0'*64
             with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(parsed,[])
             popen.assert_not_called()
+            parsed.wine_input_sha256 = hashlib.sha256(HELPER_PATH.with_name('nh-private-input.py').read_bytes()).hexdigest()
+            parsed.wine_content_manifest_sha256 = '0'*64
+            with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(parsed,[])
+            parsed.wine_content_manifest = None
+            with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(parsed,[])
+            popen.assert_not_called()
+
+    def test_content_options_refused_outside_fullgame_without_spawn(self):
+        for args in (self._args('--wine-content-manifest',str(self.root/'unused.json')),
+                     [*self._wine_args(),'--wine-content-manifest-sha256','0'*64]):
+            with self._patch_boundaries(), self._wine_pin(), mock.patch.object(HELPER.subprocess,'Popen') as popen:
+                with self.assertRaises(SystemExit) as exit:
+                    HELPER.main(args)
+                self.assertEqual(exit.exception.code,2)
+                popen.assert_not_called()
 
 
 class WineFullgameAdmissionTest(unittest.TestCase):
