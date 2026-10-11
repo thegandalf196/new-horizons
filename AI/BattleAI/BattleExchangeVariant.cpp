@@ -1967,7 +1967,16 @@ battle::Units ReachabilityMapCache::computeOneTurnReachableUnits(std::shared_ptr
 			auto reachabilityIter = unitReachabilityMap.find(unit->unitId());
 			assert(reachabilityIter != unitReachabilityMap.end()); // missing updateReachabilityMap call?
 
-			ReachabilityInfo unitReachability = reachabilityIter != unitReachabilityMap.end() ? reachabilityIter->second : turnBattle.getReachability(unit);
+			std::optional<ReachabilityInfo> fallbackReachability;
+			const ReachabilityInfo * reachability = nullptr;
+			if(reachabilityIter != unitReachabilityMap.end())
+				reachability = &reachabilityIter->second;
+			else
+			{
+				fallbackReachability.emplace(turnBattle.getReachability(unit));
+				reachability = &*fallbackReachability;
+			}
+			const ReachabilityInfo & unitReachability = *reachability;
 
 			// Distances may be finite through Passing Lines (or Ghost Walk) even
 			// when this occupied hex is not a legal movement destination.
