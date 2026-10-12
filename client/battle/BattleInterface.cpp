@@ -66,6 +66,9 @@
 #include "../../lib/spells/effects/Effect.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
+#include <array>
+#include <chrono>
+
 BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *army1, const CCreatureSet *army2,
 		const CGHeroInstance *hero1, const CGHeroInstance *hero2,
 		std::shared_ptr<CPlayerInterface> att,
@@ -1639,24 +1642,40 @@ std::shared_ptr<CPlayerBattleCallback> BattleInterface::getBattle() const
 
 void BattleInterface::endAction(const BattleAction &action)
 {
+	// One record per completed WAIT callback, independent of the per-frame
+	// animation cap; collection remains bounded by external trace/run/log limits.
+	const bool traceWait = action.actionType == EActionType::WAIT && logAnim->isDebugEnabled()
+		&& BattleAnimationTiming::enabled();
+	std::array<std::chrono::steady_clock::time_point, 6> waitTimes;
+	const auto markWait = [&](size_t index)
+	{
+		if(traceWait)
+			waitTimes[index] = std::chrono::steady_clock::now();
+	};
+	markWait(0);
+
 	// deferred spell hit reactions (e.g. chain lightning) are left undriven; start them so the wait below completes them
 	if(!awaitingEvents.empty() && !hasAnimations())
 		executeStagedAnimations();
 
 	// it is possible that tactics mode ended while opening music is still playing
 	waitForAnimations();
+	markWait(1);
 	if(action.actionType == EActionType::END_TACTIC_PHASE)
 		return; // the authoritative phase snapshot selects the next controller
 
 	presentAcceptedHeroOrder(action);
 	waitForAnimations();
+	markWait(2);
 
 	const CStack * stack = action.isUnitAction() ? getBattle()->battleGetStackByID(action.stackNumber) : nullptr;
 
 	// Activate stack from stackToActivate because this might have been temporary disabled, e.g., during spell cast
 	activateStack();
+	markWait(3);
 
 	stacksController->endAction(action);
+	markWait(4);
 	windowObject->updateQueue();
 	// StartAction is delivered before its authoritative state packet is applied.
 	// Refresh after EndAction instead, so HERO_COMMAND can no longer leave a stale
@@ -1672,6 +1691,21 @@ void BattleInterface::endAction(const BattleAction &action)
 	if(action.actionType == EActionType::HERO_SPELL || action.actionType == EActionType::HERO_COMMAND)
 		fieldController->redrawBackgroundWithHexes();
 
+	if(traceWait)
+	{
+		markWait(5);
+		// Disjoint steady-clock wall spans in microseconds, not CPU time or
+		// physical presentation. Facing completion includes controller work
+		// and its reversal-animation wait; initial wait includes staged work.
+		const auto elapsed = [&](size_t begin, size_t end)
+		{
+			return static_cast<long long>(std::chrono::duration_cast<std::chrono::microseconds>(
+				waitTimes[end] - waitTimes[begin]).count());
+		};
+		logAnim->debug("NH_WAIT_END_TIMING battle=%d stack=%d action=%d initial_wait_us=%lld order_wait_us=%lld activation_us=%lld facing_completion_us=%lld ui_remainder_us=%lld total_us=%lld",
+			battleID.getNum(), action.stackNumber, static_cast<int>(action.actionType),
+			elapsed(0, 1), elapsed(1, 2), elapsed(2, 3), elapsed(3, 4), elapsed(4, 5), elapsed(0, 5));
+	}
 }
 
 void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
