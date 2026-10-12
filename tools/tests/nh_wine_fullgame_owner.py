@@ -241,7 +241,12 @@ class Linux:
         uid = proc.stat().st_uid
         after = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
         if before[19] != after[19] or before[1] != after[1]:
-            raise Refusal('Process changed during kernel identity read')
+            kind = ('both' if before[19] != after[19] and before[1] != after[1]
+                    else 'lifetime' if before[19] != after[19] else 'ancestry')
+            raise Refusal('Process changed during kernel identity read: '
+                          f'kind={kind} pid={int(pid)} '
+                          f'before_start_ticks={int(before[19])} after_start_ticks={int(after[19])} '
+                          f'before_ppid={int(before[1])} after_ppid={int(after[1])}')
         return {'pid': pid, 'start_ticks': int(after[19]), 'uid': uid,
                 'boot_id': self.boot, 'state': after[0], 'ppid': int(after[1])}
 

@@ -57,6 +57,40 @@ class Tests(unittest.TestCase):
         self.factory = lambda: {'fresh': True}
         self.verify = mock.Mock(return_value={'verified': True})
 
+    def kernel_read(self, after_start, after_parent):
+        # Exercise the actual reader with synthetic stat contents, not /proc.
+        def contents(start, parent):
+            fields = ['0'] * 20
+            fields[0], fields[1], fields[19] = 'S', str(parent), str(start)
+            return '23 (private name) ' + ' '.join(fields)
+        backend = object.__new__(owner.Linux)
+        backend.boot = 'synthetic-boot'
+        with mock.patch.object(Path, 'read_text', side_effect=[contents(100, 7), contents(after_start, after_parent)]), \
+             mock.patch.object(Path, 'stat', return_value=mock.Mock(st_uid=1000)):
+            return backend.kernel_snapshot(23)
+
+    def test_kernel_identity_lifetime_change_remains_refused_with_numeric_diagnostic(self):
+        with self.assertRaises(owner.Refusal) as caught:
+            self.kernel_read(101, 7)
+        self.assertEqual(str(caught.exception), 'Process changed during kernel identity read: '
+            'kind=lifetime pid=23 before_start_ticks=100 after_start_ticks=101 before_ppid=7 after_ppid=7')
+
+    def test_kernel_identity_ancestry_change_remains_refused_with_numeric_diagnostic(self):
+        with self.assertRaises(owner.Refusal) as caught:
+            self.kernel_read(100, 8)
+        self.assertEqual(str(caught.exception), 'Process changed during kernel identity read: '
+            'kind=ancestry pid=23 before_start_ticks=100 after_start_ticks=100 before_ppid=7 after_ppid=8')
+
+    def test_kernel_identity_both_changes_remain_refused_with_numeric_diagnostic(self):
+        with self.assertRaises(owner.Refusal) as caught:
+            self.kernel_read(101, 8)
+        self.assertEqual(str(caught.exception), 'Process changed during kernel identity read: '
+            'kind=both pid=23 before_start_ticks=100 after_start_ticks=101 before_ppid=7 after_ppid=8')
+
+    def test_kernel_identity_unchanged_read_preserves_normal_result(self):
+        self.assertEqual(self.kernel_read(100, 7), dict(pid=23, start_ticks=100, uid=1000,
+            boot_id='synthetic-boot', state='S', ppid=7))
+
     def test_descendant_adopted_with_pidfd(self):
         self.assertEqual(self.o.adopt(), {2})
         self.assertEqual(self.o.ledger[2]['pidfd'], 102)
