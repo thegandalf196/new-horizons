@@ -141,6 +141,22 @@ public:
 		return sides.at(side).bloodragePainIncrement;
 	}
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return sides.at(side).sylvanLuck; }
+	/// The explicit captured Hero Luck block selects the replacement policy.
+	/// Absence retains older battle semantics, regardless of the wire epoch.
+	void validateCapturedGamblerPolicy(const SylvanLuckState * incoming = nullptr) const
+	{
+		if(magicRules["heroLuck"].isNull())
+			return;
+		newHorizonsHeroLuck::validateRules(magicRules);
+		const auto retired = [](const SylvanLuckState & state)
+		{
+			return state.gambler || state.gamblerAttackUsedThisRound;
+		};
+		if((incoming && retired(*incoming))
+			|| retired(sides.at(BattleSide::ATTACKER).sylvanLuck)
+			|| retired(sides.at(BattleSide::DEFENDER).sylvanLuck))
+			throw std::runtime_error("Captured Hero Luck policy cannot admit retired Gambler state");
+	}
 	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
 	{
 		return sides.at(side).adverseCombatReroll;

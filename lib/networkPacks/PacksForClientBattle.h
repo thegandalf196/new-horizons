@@ -210,6 +210,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validateExtendSpellSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION));
 		h & battleID;
 		h & info;
+		if(!h.saving && info)
+			info->validateCapturedGamblerPolicy();
 		if(!h.saving && info) info->validateMoraleActivationSerialization(h);
 		if(!h.saving && info)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(info->getMagicRules(),

@@ -70,6 +70,31 @@ damage and healing/restoration boundaries, Order companion-perk scaling and
 Heroic Spirit no-recursion/save-load/AI continuation. Numerical tuning and broad
 interaction certification remain deferred to their appropriate phase.
 
+## Retired Gambler state — captured-policy admission
+
+An explicit, validated captured `heroLuck` block selects the replacement policy,
+including when all configured trigger chances are zero. In that context, reject
+retired `gambler` or `gamblerAttackUsedThisRound` state before BattleStart install,
+BattleAttack damage, or authoritative packet broadcast. Do not silently clear
+contradictory state after applying it. Present malformed rule blocks are invalid,
+not an older-policy marker. Other Sylvan fortune flags and raw codecs remain
+unchanged.
+
+Provisional compatibility boundary: an absent captured block retains historical
+admission, including the old physical Gambler window. This is not a claim that
+all historical fields are inert, or that ordinary mid-battle world saves are
+supported. Chance defaults, wire version and the current installed configuration
+must not silently reinterpret a captured battle's policy. Revisit absent-block
+migration and unusual replay contexts separately.
+
+Implementation: the shared BattleInfo validator is used at packet decoding,
+game-state visitor admission and the authoritative send boundary. Focused tests
+cover clean current admission, valid retired raw states, unchanged rejected
+damage/state, and absent-block compatibility. The Linux client and native tests
+build; all nine focused admission, raw-codec and current Erratic Mana controls
+pass. These packet-boundary tests do not certify an authenticated network
+session, ordinary world-save combat resumption or rendered presentation.
+
 ## Spell Lock — allegiance at cast time
 
 Friendly/hostile preservation follows the target's current controller when the
