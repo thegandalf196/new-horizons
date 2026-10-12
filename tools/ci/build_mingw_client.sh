@@ -44,6 +44,11 @@ PY
             -c:h 'ffmpeg/*:tools.build:compiler_executables={"c":"x86_64-w64-mingw32-gcc-posix","cpp":"x86_64-w64-mingw32-g++-posix","rc":"x86_64-w64-mingw32-windres","asm":"nasm"}'
             -c:h 'ffmpeg/*:tools.gnu:pkg_config=pkgconf' )
     fi
+    # The local patched recipe is distinct from the preserved upstream cache.
+    # Generate keeps its existing never-build policy and requires a ready binary.
+    conan export "$repo/tools/conan/sdl_image" \
+        --version=3.4.4 --user=newhorizons --channel=patched \
+        -cc "core.cache:storage_path=$package_storage"
     conan install tools/ci/conan_mingw_client.py \
         -pr:h "$repo/tools/ci/conan-mingw-x64" -pr:b nh-linux-build \
         -s:b compiler.cppstd=20 --build="$build_policy" "${remap_args[@]}" \

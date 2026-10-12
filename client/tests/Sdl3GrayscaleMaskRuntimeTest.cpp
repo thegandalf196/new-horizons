@@ -33,6 +33,128 @@ void require(bool value, const std::string & message)
 {
 	if(!value) throw std::runtime_error(message);
 }
+void appendBigEndian(std::vector<uint8_t> & bytes, uint32_t value)
+{
+	for(int shift = 24; shift >= 0; shift -= 8)
+		bytes.push_back(static_cast<uint8_t>(value >> shift));
+}
+void appendPngChunk(std::vector<uint8_t> & bytes, const char * type, const std::vector<uint8_t> & data)
+{
+	appendBigEndian(bytes, static_cast<uint32_t>(data.size()));
+	const auto start = bytes.size();
+	bytes.insert(bytes.end(), type, type + 4);
+	bytes.insert(bytes.end(), data.begin(), data.end());
+	uint32_t crc = 0xffffffff;
+	for(size_t index = start; index < bytes.size(); ++index)
+	{
+		crc ^= bytes[index];
+		for(int bit = 0; bit < 8; ++bit)
+			crc = (crc >> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+	}
+	appendBigEndian(bytes, crc ^ 0xffffffff);
+}
+constexpr std::array<SDL_Color, 4> syntheticPalette{{
+	{19, 31, 47, 0}, {61, 79, 97, 1}, {113, 131, 151, 127}, {173, 193, 211, 255}}};
+SDL_Color syntheticPixel(int x, int y, bool indexed)
+{
+	if(indexed)
+		return syntheticPalette[(x + 2 * y) % syntheticPalette.size()];
+	return {static_cast<uint8_t>(x * 23 + y), static_cast<uint8_t>(y * 27 + x),
+		static_cast<uint8_t>(x * 11 + y * 13), syntheticPalette[(x + y) % 4].a};
+}
+std::vector<uint8_t> syntheticPng(bool indexed, bool interlaced)
+{
+	constexpr int size = 9; // All seven Adam7 passes are nonempty, including partial final rows.
+	std::vector<uint8_t> bytes{137, 80, 78, 71, 13, 10, 26, 10};
+	std::vector<uint8_t> header;
+	appendBigEndian(header, size);
+	appendBigEndian(header, size);
+	header.insert(header.end(), {8, static_cast<uint8_t>(indexed ? 3 : 6), 0, 0,
+		static_cast<uint8_t>(interlaced)});
+	appendPngChunk(bytes, "IHDR", header);
+	if(indexed)
+	{
+		std::vector<uint8_t> palette, alpha;
+		for(const auto & color : syntheticPalette)
+		{
+			palette.insert(palette.end(), {color.r, color.g, color.b});
+			alpha.push_back(color.a);
+		}
+		appendPngChunk(bytes, "PLTE", palette);
+		appendPngChunk(bytes, "tRNS", alpha);
+	}
+	constexpr std::array<std::array<int, 4>, 7> passes{{
+		{0, 0, 8, 8}, {4, 0, 8, 8}, {0, 4, 4, 8}, {2, 0, 4, 4},
+		{0, 2, 2, 4}, {1, 0, 2, 2}, {0, 1, 1, 2}}};
+	std::vector<uint8_t> raw;
+	auto appendPass = [&](const std::array<int, 4> & pass)
+	{
+		for(int y = pass[1]; y < size; y += pass[3])
+		{
+			raw.push_back(0); // PNG filter None, independently decodable scanlines.
+			for(int x = pass[0]; x < size; x += pass[2])
+			{
+				if(indexed)
+					raw.push_back(static_cast<uint8_t>((x + 2 * y) % 4));
+				else
+				{
+					const auto color = syntheticPixel(x, y, false);
+					raw.insert(raw.end(), {color.r, color.g, color.b, color.a});
+				}
+			}
+		}
+	};
+	if(interlaced)
+		for(const auto & pass : passes)
+			appendPass(pass);
+	else
+		appendPass({0, 0, 1, 1});
+	// One small zlib stored block: no compressor, libpng or SDL writer dependency.
+	require(raw.size() < 65536, "Synthetic PNG exceeds stored-block bound");
+	const auto length = static_cast<uint16_t>(raw.size());
+	const auto complement = static_cast<uint16_t>(~length);
+	std::vector<uint8_t> zlib{0x78, 0x01, 0x01, static_cast<uint8_t>(length),
+		static_cast<uint8_t>(length >> 8), static_cast<uint8_t>(complement), static_cast<uint8_t>(complement >> 8)};
+	zlib.insert(zlib.end(), raw.begin(), raw.end());
+	uint32_t a = 1, b = 0;
+	for(const auto value : raw)
+	{
+		a = (a + value) % 65521;
+		b = (b + a) % 65521;
+	}
+	appendBigEndian(zlib, (b << 16) | a);
+	appendPngChunk(bytes, "IDAT", zlib);
+	appendPngChunk(bytes, "IEND", {});
+	return bytes;
+}
+void checkInterlaceDecoding()
+{
+	using Surface = std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)>;
+	for(const bool indexed : {false, true})
+		for(const bool interlaced : {false, true})
+		{
+			const std::string label = std::string(indexed ? "indexed" : "RGBA")
+				+ (interlaced ? " Adam7" : " noninterlaced");
+			std::cout << "Decoding synthetic " << label << std::endl;
+			const auto bytes = syntheticPng(indexed, interlaced);
+			Surface decoded(IMG_Load_IO(SDL_IOFromConstMem(bytes.data(), bytes.size()), true), SDL_DestroySurface);
+			require(decoded != nullptr, label + " decode failed: " + SDL_GetError());
+			require(decoded->w == 9 && decoded->h == 9, label + " dimensions differ");
+			Surface rgba(SDL_ConvertSurface(decoded.get(), SDL_PIXELFORMAT_RGBA32), SDL_DestroySurface);
+			require(rgba != nullptr && SDL_LockSurface(rgba.get()), label + " read failed");
+			for(int y = 0; y < 9; ++y)
+				for(int x = 0; x < 9; ++x)
+				{
+					const auto expected = syntheticPixel(x, y, indexed);
+					const auto * actual = static_cast<const uint8_t *>(rgba->pixels) + y * rgba->pitch + x * 4;
+					require(actual[0] == expected.r && actual[1] == expected.g
+						&& actual[2] == expected.b && actual[3] == expected.a,
+						label + " pixel/alpha mismatch at " + std::to_string(x) + "," + std::to_string(y));
+				}
+			SDL_UnlockSurface(rgba.get());
+			std::cout << "PASS: " << label << " all 81 exact RGBA pixels\n";
+		}
+}
 void checkPaletteUpdates()
 {
 	using Palette = std::unique_ptr<SDL_Palette, decltype(&SDL_DestroyPalette)>;
@@ -183,13 +305,15 @@ int main(int argc, char ** argv)
 {
 	try
 	{
-		require(argc == 2 || (argc == 4 && std::string(argv[2]) == "--wine-private-environment"),
-			"Usage: nhSdl3GrayscaleMaskRuntimeTest verified-fixture-directory [--wine-private-environment private-root]");
+		const bool interlace = argc == 3 && std::string(argv[2]) == "--interlace-regression";
+		require(argc == 2 || interlace || (argc == 4 && std::string(argv[2]) == "--wine-private-environment"),
+			"Usage: nhSdl3GrayscaleMaskRuntimeTest verified-fixture-directory [--interlace-regression | --wine-private-environment private-root]");
 		if(argc == 4) verifyPrivateWineEnvironment(argv[3]);
 		// CPU surfaces only: no SDL_Init, window, renderer, audio or event loop.
 		checkPaletteUpdates();
 		for(const auto & mask : masks) check(argv[1], mask);
 		std::cout << "PASS: all 12 selected masks via shipping SDL3_image and production repair\n";
+		if(interlace) checkInterlaceDecoding();
 		return 0;
 	}
 	catch(const std::exception & error)

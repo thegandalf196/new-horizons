@@ -17,7 +17,7 @@ class NewHorizonsMinGWClient(ConanFile):
     requires = (
         "boost/[>=1.74 <1.87]", "minizip/[^1.2.12]", "zlib/[^1.2.12]",
         "libiconv/1.17", "libsquish/[^1.15]", "onetbb/[^2021.7]",
-        "sdl/[^3.4.0]", "sdl_image/[^3.4.4]", "sdl_mixer/[^3.2.0]",
+        "sdl/[^3.4.0]", "sdl_image/3.4.4@newhorizons/patched", "sdl_mixer/[^3.2.0]",
         "sdl_ttf/[^3.2.2]", "lua/[>=5.4.7 <5.5]", "opus/[<1.6]", "ffmpeg/[>=4.4]",
     )
 
