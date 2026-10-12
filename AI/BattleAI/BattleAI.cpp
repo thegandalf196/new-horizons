@@ -21,6 +21,7 @@
 #include "../../lib/callback/IGameInfoCallback.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/PossiblePlayerBattleAction.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
@@ -39,11 +40,49 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdlib>
+#include <exception>
 #include <mutex>
+#include <string_view>
 #include <utility>
 
 #define LOGL(text) print(text)
 #define LOGFL(text, formattingEl) print(boost::str(boost::format(text) % formattingEl))
+
+namespace
+{
+bool waitTimingEnabled()
+{
+	static const bool requested = []
+	{
+		const char * value = std::getenv("NH_RENDER_LOAD_TIMINGS");
+		return value && std::string_view(value) == "1";
+	}();
+	return requested && logGlobal->isDebugEnabled() && logAi->isDebugEnabled();
+}
+
+unsigned int waitTimingLimit()
+{
+	static const unsigned int limit = []
+	{
+		const char * value = std::getenv("NH_RENDER_LOAD_TIMING_LIMIT");
+		if(!value || !*value)
+			return 1024u;
+		unsigned int result = 0;
+		for(const char * current = value; *current; ++current)
+		{
+			if(*current < '0' || *current > '9')
+				return 1024u;
+			const auto digit = static_cast<unsigned int>(*current - '0');
+			if(result > (16384u - digit) / 10)
+				return 1024u;
+			result = result * 10 + digit;
+		}
+		return result ? result : 1024u;
+	}();
+	return limit;
+}
+}
 
 struct CBattleAI::TimingState
 {
@@ -55,6 +94,7 @@ struct CBattleAI::TimingState
 	std::mutex mutex;
 	TimingSummary summary;
 	int32_t lastObservedRound = -1;
+	uint64_t waitTraceAttempts = 0;
 
 	TimingState(BattleID battleID, PlayerColor player) : battleID(battleID), player(player) {}
 
@@ -265,6 +305,18 @@ class CBattleAI::TimingScope
 	TimingState::Clock::time_point started = TimingState::Clock::now();
 	TimingSummary stageTotals;
 	BattleEvaluator::SelectionTiming selectionTotals;
+	bool traceRequested = false;
+	bool traceWait = false;
+	bool submitReturned = false;
+	bool submitThrew = false;
+	uint64_t callbackOrdinal = 0;
+	uint32_t capturedStack = 0;
+	int32_t capturedRound = -1;
+	BattleSide capturedSide = BattleSide::NONE;
+	int uncaughtAtEntry = 0;
+	TimingState::Clock::time_point decisionReady;
+	TimingState::Clock::time_point submitBegin;
+	TimingState::Clock::time_point submitEnd;
 
 	class StageScope
 	{
@@ -297,13 +349,48 @@ public:
 	void submitUnitAction(std::shared_ptr<CBattleCallback> callback,
 		const BattleID & battleID, const BattleAction & action)
 	{
+		// Only a selected direct WAIT is certified here. Hero-action returns have
+		// no invented submission timestamps; the owner may die during submission.
+		if(traceRequested && action.actionType == EActionType::WAIT)
+		{
+			uint64_t attempt;
+			{
+				std::lock_guard lock(state->mutex);
+				attempt = state->waitTraceAttempts++;
+			}
+			const auto limit = waitTimingLimit();
+			if(attempt == limit)
+				logAi->debug("NH_WAIT_CALLBACK_TIMING cap=%u battle=%d reached; subsequent WAIT records omitted", limit, state->battleID.getNum());
+			traceWait = attempt < limit;
+			if(traceWait)
+				decisionReady = TimingState::Clock::now();
+		}
 		measure(&TimingSummary::directUnitSubmission, [&]
 		{
-			callback->battleMakeUnitAction(battleID, action);
+			if(traceWait)
+				submitBegin = TimingState::Clock::now();
+			try
+			{
+				callback->battleMakeUnitAction(battleID, action);
+				if(traceWait)
+				{
+					submitEnd = TimingState::Clock::now();
+					submitReturned = true;
+				}
+			}
+			catch(...)
+			{
+				if(traceWait)
+				{
+					submitEnd = TimingState::Clock::now();
+					submitThrew = true;
+				}
+				throw;
+			}
 		});
 	}
 
-	TimingScope(std::shared_ptr<TimingState> current, const BattleID & battleID) : state(std::move(current))
+	TimingScope(std::shared_ptr<TimingState> current, const BattleID & battleID, const CStack * stack) : state(std::move(current))
 	{
 		if(!state || state->battleID != battleID)
 		{
@@ -316,20 +403,30 @@ public:
 			if(!state->summary.finished)
 			{
 				++state->summary.activeStackCalls;
+				callbackOrdinal = state->summary.activeStackCalls;
 				++state->summary.activeStackInFlight;
 				accepted = true;
 			}
 		}
 		if(!accepted)
 			state.reset();
+		traceRequested = state && waitTimingEnabled();
+		if(traceRequested)
+		{
+			capturedStack = stack->unitId();
+			capturedSide = stack->unitSide();
+			capturedRound = stack->getBattle() ? stack->getBattle()->getRound() : -1;
+			uncaughtAtEntry = std::uncaught_exceptions();
+		}
 	}
 
 	~TimingScope()
 	{
 		if(!state)
 			return;
+		const auto exited = TimingState::Clock::now();
 		const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
-			TimingState::Clock::now() - started).count();
+			exited - started).count();
 		std::optional<TimingSummary> report;
 		{
 			std::lock_guard lock(state->mutex);
@@ -440,6 +537,21 @@ public:
 		}
 		// No CBattleAI pointer: battleEnd may have destroyed the AI during submission.
 		state->log(report);
+		if(traceWait)
+		{
+			const auto absolute = [](TimingState::Clock::time_point point)
+			{
+				return static_cast<long long>(std::chrono::duration_cast<std::chrono::microseconds>(point.time_since_epoch()).count());
+			};
+			// Epilogue sample before this record, not CPU time or physical presentation.
+			// Epochs correlate only within this process, never across native/Wine runs.
+			const auto callbackExit = TimingState::Clock::now();
+			logAi->debug("NH_WAIT_CALLBACK_TIMING battle=%d player=%d side=%d stack=%u round=%d callback=%llu entry_steady_us=%lld decision_ready_steady_us=%lld submit_begin_steady_us=%lld submit_end_steady_us=%lld exit_steady_us=%lld submit_returned=%d submit_threw=%d callback_unwinding=%d round_valid=%d",
+				state->battleID.getNum(), state->player.getNum(), static_cast<int>(capturedSide), capturedStack,
+				capturedRound, static_cast<unsigned long long>(callbackOrdinal), absolute(started), absolute(decisionReady),
+				absolute(submitBegin), absolute(submitEnd), absolute(callbackExit), submitReturned, submitThrew,
+				std::uncaught_exceptions() > uncaughtAtEntry, capturedRound >= 0);
+		}
 	}
 };
 
@@ -790,7 +902,7 @@ BattleAction CBattleAI::choosePursuitMovement(const std::shared_ptr<CBattleInfoC
 
 void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 {
-	TimingScope timing(timingState.load(), battleID);
+	TimingScope timing(timingState.load(), battleID, stack);
 	LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName());
 	const auto battleCallback = cb->getBattle(battleID);
 	const auto hasMandatoryOrder = [&]()
