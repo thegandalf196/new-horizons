@@ -38,6 +38,34 @@ int main()
 		const auto large = std::numeric_limits<uint32_t>::max();
 		require(phase.elapsedForAdvance(large) == 0, "Large preceding interval is not charged to new projectile");
 		require(phase.elapsedForAdvance(large) == large, "Later large interval must not be capped or discarded");
+
+		AnimationFrameAdvance frameAdvance;
+		require(frameAdvance.elapsedSeconds() == 0.f, "New sprite interval starts empty");
+		frameAdvance.advance(0.125f);
+		require(frameAdvance.elapsedSeconds() == 0.f && frameAdvance.advanceProgress(0., 10.) == 0.,
+			"Tick before draw defers both sprite interval and initial movement position");
+		frameAdvance.advance(0.125f);
+		require(frameAdvance.elapsedSeconds() == 0.125f, "No-render second update must advance normally");
+		const auto overrun = frameAdvance.advanceProgress(0., 10.);
+		require(overrun == 1.25, "Movement interval must retain segment overrun");
+		const auto residual = overrun - 1.;
+		// A sprite loop or per-hex init does not restart MOVING. Reading the
+		// actual production interval repeatedly cannot consume another guard.
+		require(frameAdvance.elapsedSeconds() == 0.125f && frameAdvance.advanceProgress(0., 10.) == overrun,
+			"Repeated interval reads must not defer movement a second time");
+		frameAdvance.advance(0.125f);
+		const auto nextSegment = frameAdvance.advanceProgress(residual, 2.);
+		require(nextSegment == 0.5, "Per-hex residual continues without a new phase deferral");
+		frameAdvance.advance(0.25f);
+		require(frameAdvance.advanceProgress(nextSegment, 2.) == 1., "Final segment reaches completion unchanged");
+		frameAdvance.restart();
+		require(frameAdvance.elapsedSeconds() == 0.f, "setType phase entry clears stale previous interval");
+		frameAdvance.onRenderAttempt();
+		frameAdvance.advance(0.125f);
+		require(frameAdvance.elapsedSeconds() == 0.125f && frameAdvance.advanceProgress(0., 4.) == 0.5,
+			"Draw before tick permits normal flying-distance rate consumption");
+		frameAdvance.advance(0.125f);
+		require(frameAdvance.advanceProgress(0.5, 4.) == 1., "Flying completion preserves its rate and boundary");
 		std::cout << "Animation phase start: all checks passed\n";
 		return 0;
 	}
