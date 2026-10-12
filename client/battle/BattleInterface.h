@@ -124,9 +124,11 @@ class BattleInterface
 	// Armed by the pre-apply StartAction callback, consumed only after acceptance.
 	std::unique_ptr<BattleAction> pendingHeroOrderPresentation;
 	int32_t pendingHeroOrderRound = -1;
+	long long heroCueTraceScene = 0;
+	uint64_t heroCueTraceOrdinal = 0;
 	void presentAcceptedHeroOrder(const BattleAction & action);
 	void presentHeroPositiveProcs(BattleSide side, bool luckyDay, bool erraticMana,
-		bool druidicLuck, bool heroicSpirit);
+		bool druidicLuck, bool heroicSpirit, bool spell, int source);
 
 	void playIntroSoundAndUnlockInterface();
 	void onIntroSoundPlayed();

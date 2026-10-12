@@ -992,6 +992,14 @@ void BattleInterface::openingEnd()
 
 BattleInterface::~BattleInterface()
 {
+	if(heroCueTraceScene && BattleAnimationTiming::enabled())
+	{
+		heroPositiveProcPresentation::TraceContext trace;
+		trace.scene = heroCueTraceScene;
+		trace.battle = battleID.getNum();
+		trace.ordinal = heroCueTraceOrdinal;
+		heroPositiveProcPresentation::trace(trace, "teardown");
+	}
 	CPlayerInterface::battleInt = nullptr;
 
 	if (adventureInt)
@@ -1354,7 +1362,7 @@ void BattleInterface::spellCast(const BattleSpellCast * sc)
 	if(sc->activeCast && sc->castByHero && sc->casterStack < 0 && sc->heroLuck)
 		presentHeroPositiveProcs(sc->side, false,
 			sc->heroLuck->has(newHorizonsHeroLuck::Proc::ErraticMana),
-			sc->heroLuck->has(newHorizonsHeroLuck::Proc::DruidicLuck), false);
+			sc->heroLuck->has(newHorizonsHeroLuck::Proc::DruidicLuck), false, true, sc->spellID.getNum());
 	auto targetedTile = sc->tile;
 
 	const AudioPath & castSoundPath = spell->getCastSound();
@@ -1749,7 +1757,8 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 	if(state)
 		presentHeroPositiveProcs(action.side,
 			state->heroLuck && state->heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay), false, false,
-			state->heroMorale && state->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit));
+			state->heroMorale && state->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit),
+			false, static_cast<int>(action.command));
 
 	// Reuse presentation resources only, never spell definitions/mechanics.
 	// Each Order has a distinct troop effect; Second Wind uses retired Mirth.
@@ -1804,11 +1813,27 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 }
 
 void BattleInterface::presentHeroPositiveProcs(BattleSide side, bool luckyDay, bool erraticMana,
-	bool druidicLuck, bool heroicSpirit)
+	bool druidicLuck, bool heroicSpirit, bool spell, int source)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return;
 	const auto hero = side == BattleSide::DEFENDER ? defendingHero : attackingHero;
+	std::optional<heroPositiveProcPresentation::TraceContext> trace;
+	if((luckyDay || erraticMana || druidicLuck || heroicSpirit) && BattleAnimationTiming::enabled())
+	{
+		trace.emplace();
+		trace->scene = heroCueTraceScene;
+		trace->ordinal = ++heroCueTraceOrdinal;
+		trace->battle = battleID.getNum();
+		trace->side = static_cast<int>(side);
+		trace->round = getBattle()->battleGetRound();
+		trace->spell = spell;
+		trace->source = source;
+		trace->flags = (luckyDay ? 1u : 0u) | (erraticMana ? 2u : 0u)
+			| (druidicLuck ? 4u : 0u) | (heroicSpirit ? 8u : 0u);
+		heroPositiveProcPresentation::trace(*trace, hero ? "receipt" : "receiptNoHero");
+		heroCueTraceScene = trace->scene;
+	}
 	if(!hero)
 		return;
 
@@ -1819,10 +1844,19 @@ void BattleInterface::presentHeroPositiveProcs(BattleSide side, bool luckyDay, b
 			continue;
 		// Separate stages keep simultaneous Order Luck and Heroic Spirit
 		// visible in sequence, without replacing either transient effect.
+		auto cueTrace = trace;
+		if(cueTrace)
+		{
+			cueTrace->effect = static_cast<int>(cues[i]);
+			heroPositiveProcPresentation::trace(*cueTrace, "queued", -1, -1, 0,
+				static_cast<int>(i == 0 ? EAnimationEvents::BEFORE_HIT : EAnimationEvents::HIT));
+		}
 		addToAnimationStage(i == 0 ? EAnimationEvents::BEFORE_HIT : EAnimationEvents::HIT,
-			[this, hero, effect = cues[i]]()
+			[this, hero, effect = cues[i], cueTrace]() mutable
 			{
-				effectsController->displayHeroPositiveEffect(effect, hero->positiveProcAnchor());
+				if(cueTrace)
+					heroPositiveProcPresentation::trace(*cueTrace, "start");
+				effectsController->displayHeroPositiveEffect(effect, hero->positiveProcAnchor(), cueTrace);
 			});
 	}
 }

@@ -55,3 +55,20 @@ WAITs yield seven records normally or one record plus one notice at cap one.
 These are callback/mock-submission checks, not graphical UI, CPU/GPU, physical
 presentation or Windows performance acceptance. Follow the existing guarded
 graphical-testing rules for runtime measurements; no speedup is established.
+
+## Hero positive-proc presentation diagnostics
+
+With the same render-timing opt-in and shared event budget, `NH_HERO_PROC`
+correlates an accepted successful Hero Luck/Morale receipt with its queued stage,
+stage execution, effect registration, first CPU draw return, midpoint and natural
+finish. Scene, local action ordinal, source, side and effect identify the chain;
+the existing animation ID joins registration to playback. One horseshoe still
+represents simultaneous successful Luck perks; the eagle remains a separate stage.
+
+`teardown` marks scene termination, not natural effect completion. Missing images
+are reported without changing existing recovery behavior. Disabled or capped
+records leave the chain incomplete; absence is not proof of a failed proc or draw.
+The first-draw record follows `Canvas::draw` returning, not GPU presentation or
+visible pixels. Pure flag/once-only-marker tests do not establish rendered
+acceptance. Observe actual successful procs through the guarded graphical path;
+do not force gameplay probabilities or infer successful rendering from receipts.

@@ -14,6 +14,8 @@
 #include "../../lib/Color.h"
 #include "../../lib/filesystem/ResourcePath.h"
 #include "BattleConstants.h"
+#include "HeroPositiveProcPresentation.h"
+#include <optional>
 
 class BattleAction;
 struct BattleTriggerEffect;
@@ -47,6 +49,7 @@ struct BattleEffect
 	float transparencyFactor = 1.0;
 	std::shared_ptr<CAnimation> animation;
 	int effectID; //uniqueID equal ot ID of appropriate CSpellEffectAnim
+	std::optional<heroPositiveProcPresentation::TraceContext> heroCueTrace;
 	BattleHex tile; //Indicates if effect which hex the effect is drawn on
 };
 
@@ -70,7 +73,8 @@ public:
 
 	//displays custom effect on the battlefield
 	void displayEffect(EBattleEffect effect, const BattleHex & destTile);
-	void displayHeroPositiveEffect(EBattleEffect effect, Point anchor);
+	void displayHeroPositiveEffect(EBattleEffect effect, Point anchor,
+		const std::optional<heroPositiveProcPresentation::TraceContext> & trace = std::nullopt);
 	void displayEffect(EBattleEffect effect, const AudioPath & soundFile, const BattleHex & destTile, float transparencyFactor = 1.f);
 	void displayAnimation(const AnimationPath & animation, const AudioPath & soundFile, const BattleHexArray & destTiles, float transparencyFactor = 1.f);
 

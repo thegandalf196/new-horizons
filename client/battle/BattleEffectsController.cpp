@@ -16,6 +16,7 @@
 #include "BattleRenderer.h"
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
+#include "CreatureAnimation.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -35,6 +36,20 @@
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../GameInstance.h"
+
+void heroPositiveProcPresentation::trace(TraceContext & context, const char * event,
+	int animation, int frame, int frames, int stage, int x, int y, bool imageAvailable)
+{
+	if(!BattleAnimationTiming::enabled() || !BattleAnimationTiming::reserve())
+		return;
+	const auto now = BattleAnimationTiming::steadyMicroseconds();
+	if(!context.scene)
+		context.scene = now;
+	logGlobal->debug("NH_HERO_PROC event=%s steady_us=%lld scene=%lld ordinal=%llu battle=%d side=%d round=%d sourceKind=%s source=%d flags=%u effect=%d animation=%d frame=%d frames=%d stage=%d pos_x=%d pos_y=%d imageAvailable=%d",
+		event, now, context.scene, static_cast<unsigned long long>(context.ordinal), context.battle,
+		context.side, context.round, context.spell ? "spell" : "order", context.source, context.flags,
+		context.effect, animation, frame, frames, stage, x, y, imageAvailable);
+}
 
 BattleEffectsController::BattleEffectsController(BattleInterface & owner):
 	owner(owner)
@@ -63,7 +78,8 @@ void BattleEffectsController::displayAnimation(const AnimationPath & animation, 
 	owner.stacksController->addNewAnim(new EffectAnimation(owner, animation, destTiles, 0, transparencyFactor));
 }
 
-void BattleEffectsController::displayHeroPositiveEffect(EBattleEffect effect, Point anchor)
+void BattleEffectsController::displayHeroPositiveEffect(EBattleEffect effect, Point anchor,
+	const std::optional<heroPositiveProcPresentation::TraceContext> & trace)
 {
 	if(effect != EBattleEffect::GOOD_LUCK && effect != EBattleEffect::GOOD_MORALE)
 		return;
@@ -72,11 +88,20 @@ void BattleEffectsController::displayHeroPositiveEffect(EBattleEffect effect, Po
 	const auto animation = ENGINE->renderHandler().loadAnimation(path, EImageBlitMode::SIMPLE);
 	const auto first = animation->getImage(0, 0, true);
 	if(!first)
+	{
+		if(trace)
+		{
+			auto missing = *trace;
+			heroPositiveProcPresentation::trace(missing, "unavailable");
+		}
 		return;
+	}
 
 	ENGINE->sound().playSound(AudioPath::builtin(effect == EBattleEffect::GOOD_LUCK ? "GOODLUCK" : "GOODMRLE"));
-	owner.stacksController->addNewAnim(new EffectAnimation(owner, path,
-		anchor - first->dimensions() / 2, EffectAnimation::FORCE_ON_TOP));
+	auto * effectAnimation = new EffectAnimation(owner, path,
+		anchor - first->dimensions() / 2, EffectAnimation::FORCE_ON_TOP);
+	effectAnimation->setHeroCueTrace(trace);
+	owner.stacksController->addNewAnim(effectAnimation);
 }
 
 void BattleEffectsController::battleAnimationPlayed(const BattleAnimationPlayed & pack)
@@ -192,6 +217,9 @@ void BattleEffectsController::collectRenderableObjects(BattleRenderer & renderer
 			img->setAlpha(255 * elem.transparencyFactor);
 
 			canvas.draw(img, elem.pos);
+			if(elem.heroCueTrace && elem.heroCueTrace->markFirstDrawReturned())
+				heroPositiveProcPresentation::trace(*elem.heroCueTrace, "firstDrawReturn", elem.effectID,
+					currentFrame, static_cast<int>(elem.animation->size()), -1, elem.pos.x, elem.pos.y, static_cast<bool>(img));
 		});
 	}
 }
