@@ -140,9 +140,13 @@ state, or establish a fix for slow AI turns or scenario-restart UI cleanup.
 
 ### Regression guardrail: restarting during combat
 
-Status: reopened. A combat view was reported to remain superimposed on later
-scenarios after restarting during battle in the `5229c808b15d` player build.
-Rendered reproduction and verification of the repair remain required.
+Status: reproduced on Linux SDL3/OpenGL at source `875b2c5591d1`, following
+the report from the `5229c808b15d` Windows player build. An ordinary human
+combat restart completed teardown and loaded a new Day 1 adventure, but the
+old battlefield and creatures remained composited over it. The probe exited
+normally; this is a visible failure, not a failed launch or source-only finding.
+Rendered verification of the scene-layer repair and Windows acceptance remain
+required. A second scenario was not exercised in the failing probe.
 
 The previous repair, `89bb7c693e5c`, established shutdown ordering:
 `CServerHandler::restartGameplay` stops the old network/gameplay waiters before
@@ -159,12 +163,32 @@ Protected rendering invariant: clearing a scene must discard its deferred
 redraw requests, reset the pending flag, and request a complete repaint. An old
 window retained by another owner must not repaint over the next scene merely
 because a request was queued before teardown. `WindowHandler::clear()` previously
-omitted that invalidation; this is a concrete test gap, not yet proof of the
-reported overlay's cause. The queue's introduction predates the earlier repair;
-do not assign causality from commit order alone.
+omitted that invalidation. Repairing the queue alone did not eliminate the
+rendered failure. The queue's introduction predates the earlier repair; do not
+assign causality from commit order alone.
+
+Protected GPU-layer invariant: definitive scene teardown must release every
+scene layer independently of whether its former widget is currently active.
+Opening combat settings deactivates the battle and requests a BATTLE-layer
+release. A subsequent full redraw includes covered windows, so the inactive
+`BattleFieldController::show()` can reclaim that layer. Clearing the scene later
+deactivates only the top settings window; destroying the already-inactive
+battlefield does not request another release. SDL3 owns the persistent layer
+texture, while the battlefield's canvas merely borrows it. A new adventure's
+transparent map area can therefore expose the old BATTLE layer above MAP.
+This chain is established by source and the rendered symptom; per-frame layer
+bits were not instrumented in the failing probe.
+
+`WindowHandler::clear()` now marks every `GpuRenderLayer` released through the
+existing thread-safe deferred API. The next GUI frame clears them before new
+windows draw; a surviving or restored owner can then reclaim its layer normally.
+SDL2's existing release API remains a no-op. This does not flush artwork caches,
+destroy textures from the network thread, or change ordinary covered-window
+redrawing. The teardown source check includes negative in-memory witnesses for
+a missing release or incomplete layer range; it is not an executable GPU test.
 
 Changes to battle ownership, restart/quickload/game shutdown, window clearing
-or deferred painting must preserve both invariants and run the linked lifecycle
+or deferred painting must preserve these invariants and run the linked lifecycle
 regressions. Rendered acceptance must exercise battle -> restart -> a new
 scenario, plus return-to-menu -> another scenario; verify no old battle window,
 queued repaint or delayed callback reappears. Record the tested build and
