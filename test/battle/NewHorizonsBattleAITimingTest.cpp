@@ -22,13 +22,18 @@
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapping/MapDifficulty.h"
+#include "../../lib/logging/CLogger.h"
 
 #include <bit>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <functional>
 #include <map>
+#include <mutex>
+#include <sstream>
 #include <stdexcept>
+#include <string_view>
 
 namespace
 {
@@ -55,7 +60,9 @@ void expectEffectWorkBounds(const HypotheticLifecycleTiming::EffectWorkTiming & 
 	EXPECT_EQ(work.selectiveRemovalQuery.calls, removal ? parentCalls : 0u);
 	EXPECT_EQ(work.removalMutation.calls, removal ? parentCalls : 0u);
 	if(removal)
+	{
 		EXPECT_EQ(work.roundAging.calls, 0u);
+	}
 }
 
 class TimingEnvironment final : public Environment
@@ -1792,7 +1799,8 @@ TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, RepeatedCaptureKeepsRetainedSp
 class NewHorizonsBattleDwarfWaitTimingTest : public NewHorizonsBattleAITimingTest
 {
 protected:
-	void measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1)
+	void measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1,
+		bool stopAtFirstWait = false, const std::function<void()> & onWait = {})
 	{
 		ASSERT_TRUE(stackCount == 1 || stackCount == 7);
 		ASSERT_TRUE(opposingStackCount == 1 || opposingStackCount == 7);
@@ -1838,6 +1846,12 @@ protected:
 		ai->battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
 			attackerSideHero, defenderSideHero, BattleSide::DEFENDER, false);
 		ai->autobattlePreferences.enableSpellsUsage = false;
+		if(onWait)
+			callback->onSubmit = [this, onWait]
+			{
+				if(callback->actions.back().actionType == EActionType::WAIT)
+					onWait();
+			};
 		const auto openingRound = battle()->getRound();
 		unsigned decisions = 0;
 		unsigned waits = 0;
@@ -1865,6 +1879,9 @@ protected:
 				snapshots.emplace(unit->unitId(), unit->acquireState()->save());
 			const auto submitted = callback->actions.size();
 			ai->activeStack(BattleID(0), actor);
+			if(stopAtFirstWait && callback->actions.size() == submitted + 1
+				&& callback->actions.back().actionType == EActionType::WAIT)
+				return; // The bounded diagnostic controls observe this actual selection.
 			const auto after = summary();
 			ASSERT_EQ(callback->actions.size(), submitted + 1);
 			ASSERT_TRUE(callback->heroActions.empty());
@@ -1980,4 +1997,211 @@ TEST_F(NewHorizonsBattleDwarfWaitTimingTest, SevenStacksAgainstSevenOpposingStac
 	// only opposing stack multiplicity and corresponding legal start hexes vary.
 	// WAIT is observed, never forced or required by this timing fixture.
 	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7, 7));
+}
+
+namespace
+{
+struct WaitDiagnosticMessages
+{
+	std::mutex mutex;
+	std::vector<std::string> rows;
+	bool truncated = false;
+};
+
+class WaitDiagnosticTarget final : public ILogTarget
+{
+	std::weak_ptr<WaitDiagnosticMessages> messages;
+public:
+	explicit WaitDiagnosticTarget(std::weak_ptr<WaitDiagnosticMessages> value) : messages(std::move(value)) {}
+	void write(const LogRecord & record) override
+	{
+		if(!record.message.starts_with("NH_WAIT_CALLBACK_TIMING "))
+			return;
+		if(const auto target = messages.lock())
+		{
+			std::lock_guard lock(target->mutex);
+			if(target->rows.size() < 32)
+				target->rows.push_back(record.message);
+			else
+				target->truncated = true;
+		}
+	}
+};
+
+class ScopedWaitDiagnostics final
+{
+	CLogger * global = CLogger::getGlobalLogger();
+	CLogger * aiLogger = CLogger::getLogger(CLoggerDomain("ai"));
+	ELogLevel::ELogLevel globalLevel = global->getLevel();
+	ELogLevel::ELogLevel aiLevel = aiLogger->getLevel();
+public:
+	std::shared_ptr<WaitDiagnosticMessages> messages = std::make_shared<WaitDiagnosticMessages>();
+	explicit ScopedWaitDiagnostics(ELogLevel::ELogLevel requestedAiLevel = ELogLevel::DEBUG)
+	{
+		global->setLevel(ELogLevel::DEBUG);
+		aiLogger->setLevel(requestedAiLevel);
+		global->addTarget(std::make_unique<WaitDiagnosticTarget>(messages));
+	}
+	~ScopedWaitDiagnostics()
+	{
+		aiLogger->setLevel(aiLevel);
+		global->setLevel(globalLevel);
+		// CLogger has no individual removal API. The bounded weak target is
+		// inert after this buffer expires; unrelated targets are never cleared.
+		messages.reset();
+	}
+	ScopedWaitDiagnostics(const ScopedWaitDiagnostics &) = delete;
+	ScopedWaitDiagnostics & operator=(const ScopedWaitDiagnostics &) = delete;
+	std::vector<std::string> rows() const
+	{
+		std::lock_guard lock(messages->mutex);
+		EXPECT_FALSE(messages->truncated);
+		return messages->rows;
+	}
+};
+
+bool requestedWaitDiagnostics()
+{
+	const char * value = std::getenv("NH_RENDER_LOAD_TIMINGS");
+	return value && std::string_view(value) == "1";
+}
+
+unsigned int configuredWaitDiagnosticLimit()
+{
+	const char * value = std::getenv("NH_RENDER_LOAD_TIMING_LIMIT");
+	if(!value || !*value)
+		return 1024;
+	unsigned int result = 0;
+	for(const char * current = value; *current; ++current)
+	{
+		if(*current < '0' || *current > '9')
+			return 1024;
+		const auto digit = static_cast<unsigned int>(*current - '0');
+		if(result > (16384u - digit) / 10)
+			return 1024;
+		result = result * 10 + digit;
+	}
+	return result ? result : 1024;
+}
+
+std::map<std::string, int64_t> waitFields(const std::string & row)
+{
+	std::map<std::string, int64_t> result;
+	std::istringstream tokens(row);
+	std::string token;
+	tokens >> token;
+	while(tokens >> token)
+	{
+		const auto split = token.find('=');
+		if(split != std::string::npos)
+			result.emplace(token.substr(0, split), std::stoll(token.substr(split + 1)));
+	}
+	return result;
+}
+}
+
+class NewHorizonsWaitDiagnosticTest : public NewHorizonsBattleDwarfWaitTimingTest
+{
+protected:
+	void expectRecord(const ScopedWaitDiagnostics & capture, bool returned, bool threw, bool unwinding)
+	{
+		ASSERT_FALSE(callback->actions.empty());
+		ASSERT_EQ(callback->actions.back().actionType, EActionType::WAIT)
+			<< "The fixture must naturally select WAIT; no fallback action or skip is acceptable";
+		const auto rows = capture.rows();
+		if(!requestedWaitDiagnostics())
+		{
+			EXPECT_TRUE(rows.empty());
+			RecordProperty("waitDiagnosticRecords", "0");
+			return;
+		}
+		ASSERT_EQ(rows.size(), 1u);
+		RecordProperty("waitDiagnosticRecords", "1");
+		const auto fields = waitFields(rows.front());
+		for(const auto * key : {"battle", "player", "side", "stack", "round", "callback", "round_valid",
+			"entry_steady_us", "decision_ready_steady_us", "submit_begin_steady_us", "submit_end_steady_us",
+			"exit_steady_us", "submit_returned", "submit_threw", "callback_unwinding"})
+			ASSERT_TRUE(fields.contains(key)) << key;
+		EXPECT_EQ(fields.at("battle"), 0);
+		EXPECT_EQ(fields.at("player"), 1);
+		EXPECT_EQ(fields.at("side"), static_cast<int>(BattleSide::DEFENDER));
+		EXPECT_EQ(fields.at("stack"), callback->actions.back().stackNumber);
+		EXPECT_EQ(fields.at("round"), battle()->getRound());
+		EXPECT_EQ(fields.at("round_valid"), 1);
+		EXPECT_GT(fields.at("callback"), 0);
+		EXPECT_LE(fields.at("entry_steady_us"), fields.at("decision_ready_steady_us"));
+		EXPECT_LE(fields.at("decision_ready_steady_us"), fields.at("submit_begin_steady_us"));
+		EXPECT_LE(fields.at("submit_begin_steady_us"), fields.at("submit_end_steady_us"));
+		EXPECT_LE(fields.at("submit_end_steady_us"), fields.at("exit_steady_us"));
+		EXPECT_EQ(fields.at("submit_returned"), returned);
+		EXPECT_EQ(fields.at("submit_threw"), threw);
+		EXPECT_EQ(fields.at("callback_unwinding"), unwinding);
+	}
+};
+
+TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitRecordsMatchOptInAndCapturedIdentity)
+{
+	ScopedWaitDiagnostics capture;
+	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7, 1, true));
+	ASSERT_NO_FATAL_FAILURE(expectRecord(capture, true, false, false));
+}
+
+TEST_F(NewHorizonsWaitDiagnosticTest, DisabledAiLoggerNaturalWaitEmitsNoDiagnostic)
+{
+	ScopedWaitDiagnostics capture(ELogLevel::ERROR);
+	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7, 1, true));
+	ASSERT_FALSE(callback->actions.empty());
+	ASSERT_EQ(callback->actions.back().actionType, EActionType::WAIT);
+	EXPECT_TRUE(capture.rows().empty());
+	RecordProperty("waitDiagnosticRecords", "0");
+}
+
+TEST_F(NewHorizonsWaitDiagnosticTest, ThrowingNaturalWaitRetainsIdentityAndRethrows)
+{
+	ScopedWaitDiagnostics capture;
+	EXPECT_THROW(measureNaturalRound(7, 1, true, [] { throw std::runtime_error("WAIT submission refusal"); }), std::runtime_error);
+	ASSERT_NO_FATAL_FAILURE(expectRecord(capture, false, true, true));
+}
+
+TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitOwnerDestructionKeepsSharedRecordAlive)
+{
+	ScopedWaitDiagnostics capture;
+	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7, 1, true, [this]
+	{
+		ai->battleEnd(BattleID(0), nullptr, QueryID(-1));
+		ai.reset();
+	}));
+	EXPECT_FALSE(ai);
+	ASSERT_NO_FATAL_FAILURE(expectRecord(capture, true, false, false));
+}
+
+TEST_F(NewHorizonsWaitDiagnosticTest, ConfiguredCapMatchesObservedNaturalWaitCount)
+{
+	ScopedWaitDiagnostics capture;
+	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7));
+	const auto waits = std::count_if(callback->actions.begin(), callback->actions.end(),
+		[](const auto & action) { return action.actionType == EActionType::WAIT; });
+	ASSERT_GT(waits, 1) << "Overflow coverage requires actual multiple selected WAIT actions";
+	const auto rows = capture.rows();
+	RecordProperty("observedNaturalWaits", std::to_string(waits));
+	if(!requestedWaitDiagnostics())
+	{
+		EXPECT_TRUE(rows.empty());
+		RecordProperty("waitDiagnosticRecords", "0");
+		RecordProperty("waitDiagnosticOverflowNotices", "0");
+		return;
+	}
+	const auto limit = configuredWaitDiagnosticLimit();
+	const auto detailed = std::min<uint64_t>(static_cast<uint64_t>(waits), limit);
+	const bool overflow = static_cast<uint64_t>(waits) > limit;
+	ASSERT_EQ(rows.size(), detailed + (overflow ? 1 : 0));
+	for(size_t index = 0; index < detailed; ++index)
+		EXPECT_NE(rows[index].find(" entry_steady_us="), std::string::npos);
+	if(overflow)
+	{
+		EXPECT_EQ(rows.back(), "NH_WAIT_CALLBACK_TIMING cap=" + std::to_string(limit)
+			+ " battle=0 reached; subsequent WAIT records omitted");
+	}
+	RecordProperty("waitDiagnosticRecords", std::to_string(detailed));
+	RecordProperty("waitDiagnosticOverflowNotices", overflow ? "1" : "0");
 }

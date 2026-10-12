@@ -1655,6 +1655,10 @@ void BattleInterface::endAction(const BattleAction &action)
 	// animation cap; collection remains bounded by external trace/run/log limits.
 	const bool traceWait = action.actionType == EActionType::WAIT && logAnim->isDebugEnabled()
 		&& BattleAnimationTiming::enabled();
+	// Capture before any presentation wait; no callback ordinal is invented for
+	// this separate UI event. Repeated stack/round matches may remain ambiguous.
+	const int capturedRound = traceWait ? getBattle()->battleGetRound() : -1;
+	const int capturedSide = static_cast<int>(action.side);
 	std::array<std::chrono::steady_clock::time_point, 6> waitTimes;
 	const auto markWait = [&](size_t index)
 	{
@@ -1711,9 +1715,14 @@ void BattleInterface::endAction(const BattleAction &action)
 			return static_cast<long long>(std::chrono::duration_cast<std::chrono::microseconds>(
 				waitTimes[end] - waitTimes[begin]).count());
 		};
-		logAnim->debug("NH_WAIT_END_TIMING battle=%d stack=%d action=%d initial_wait_us=%lld order_wait_us=%lld activation_us=%lld facing_completion_us=%lld ui_remainder_us=%lld total_us=%lld",
+		const auto absolute = [](std::chrono::steady_clock::time_point point)
+		{
+			return static_cast<long long>(std::chrono::duration_cast<std::chrono::microseconds>(point.time_since_epoch()).count());
+		};
+		logAnim->debug("NH_WAIT_END_TIMING battle=%d stack=%d action=%d initial_wait_us=%lld order_wait_us=%lld activation_us=%lld facing_completion_us=%lld ui_remainder_us=%lld total_us=%lld side=%d round=%d entry_steady_us=%lld exit_steady_us=%lld",
 			battleID.getNum(), action.stackNumber, static_cast<int>(action.actionType),
-			elapsed(0, 1), elapsed(1, 2), elapsed(2, 3), elapsed(3, 4), elapsed(4, 5), elapsed(0, 5));
+			elapsed(0, 1), elapsed(1, 2), elapsed(2, 3), elapsed(3, 4), elapsed(4, 5), elapsed(0, 5),
+			capturedSide, capturedRound, absolute(waitTimes[0]), absolute(waitTimes[5]));
 	}
 }
 

@@ -21,3 +21,37 @@ The fork enforces upstream's existing in-process single-player route. That is a
 candidate explanation, not established cause. Earlier queued-typed formation tests
 showed no meaningful end-to-end benefit and did not test this user's observation.
 No superiority/performance claim until the controlled comparison supplies evidence.
+
+## Battle WAIT latency — diagnostic boundaries
+
+Status: instrumentation implemented; runtime latency remains under investigation.
+Set `NH_RENDER_LOAD_TIMINGS=1` with global and AI logging at DEBUG or TRACE.
+`NH_WAIT_CALLBACK_TIMING` records a naturally selected direct-unit WAIT's
+scope entry, decision-ready-at-submission, request-call entry/exit and diagnostic
+epilogue. Captured battle/player/physical-side/stack/round and callback ordinal identify
+the event without reading a destroyed AI owner. Return, throw and unwinding
+flags distinguish completed request calls from exceptions; return is not an
+authoritative acceptance or presentation acknowledgement.
+
+`NH_RENDER_LOAD_TIMING_LIMIT` bounds AI records per battle/player timing state:
+default 1024, maximum 16384, with one overflow notice. Missing records after the
+cap do not establish absence of WAIT. Hero-spell and other early-return paths
+are not certified by this direct-WAIT record.
+
+With animation logging at DEBUG or TRACE, the existing `NH_WAIT_END_TIMING`
+also records absolute entry/exit times alongside its disjoint UI stage spans.
+This UI record retains its existing external run/log bounds, independently of
+the AI record cap. Compare steady-clock epochs only within one process. Match
+events only when battle/side/stack/round and ordering are unambiguous; no AI
+ordinal is invented for UI events; their side is the action's side, not a new
+controller identity. Submission and UI intervals may overlap and
+must not be added together. Epilogue times include aggregation/observer work
+but exclude the final record's own output, not literal function-return latency.
+
+Focused native checks pass in separate default/OFF (five), ON (five) and cap-one
+(one) runs. They exercise actual selected WAITs, captured identity, monotonic
+boundaries, logger disablement, rethrows and owner destruction. Seven natural
+WAITs yield seven records normally or one record plus one notice at cap one.
+These are callback/mock-submission checks, not graphical UI, CPU/GPU, physical
+presentation or Windows performance acceptance. Follow the existing guarded
+graphical-testing rules for runtime measurements; no speedup is established.
