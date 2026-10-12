@@ -10,8 +10,13 @@
 #include "HeroCommandFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/bonuses/BonusParameters.h"
+#include "../../../lib/bonuses/Limiters.h"
+#include "../../../lib/bonuses/Propagators.h"
+#include "../../../lib/bonuses/Updaters.h"
 #include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -394,6 +399,68 @@ TEST_F(NewHorizonsCureTest, OriginalAllyCureFrozenPreservesPaidPuppetControlAndS
 		newHorizonsFrozen::marker(BonusSourceID(creatureByName("core:iceElemental")), round)}), std::invalid_argument);
 	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
 	EXPECT_EQ(target->frozenLastAppliedRound(), round);
+}
+
+TEST_F(NewHorizonsCureTest, PaidPuppetActiveAndCureCleansedFrozenReceiptsSurviveNativeStackCodecAndRebind)
+{
+	deployOriginalCureActor = true;
+	ASSERT_NO_FATAL_FAILURE(preparePaidPuppetControl());
+	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	const auto round = target->frozenLastAppliedRound();
+	const auto health = target->getAvailableHealth();
+	ASSERT_EQ(health, target->getTotalHealth());
+	const auto control = target->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	ASSERT_EQ(control->size(), 1u);
+	const auto marker = control->front()->toJsonNode();
+	const auto markerOwner = control->front()->spellCasterOwner;
+	const auto markerTurns = control->front()->turnsRemain;
+	const auto roundTrip = [&](bool frozen)
+	{
+		// Limited descriptor input: carry the actually produced exported bonuses
+		// and validated Frozen receipt, not a fabricated control/status marker.
+		// Native CStack wire does not encode full health/action state. This full-HP
+		// constructor case is NOT a live army/world save or activation-resume test.
+		CStackBasicDescriptor descriptor(target->creatureId(), target->unitBaseAmount());
+		CStack native(&descriptor, target->unitOwner(), static_cast<int>(target->unitId()),
+			target->unitSide(), target->unitSlot());
+		native.initialPosition = target->getPosition();
+		native.restoreFrozenApplicationRound(target->frozenLastAppliedRound());
+		for(const auto & bonus : target->getExportedBonusList())
+			native.addNewBonus(std::make_shared<Bonus>(*bonus));
+		CMemorySerializer wire;
+		ASSERT_NO_THROW(native.serialize(wire.oser));
+		CStack decoded;
+		ASSERT_NO_THROW(decoded.serialize(wire.iser));
+		ASSERT_NO_THROW(decoded.localInit(battle()));
+		EXPECT_EQ(decoded.unitSide(), target->unitSide());
+		EXPECT_EQ(battle()->battleGetOwner(&decoded), attackerSideHero->getOwner());
+		EXPECT_EQ(battle()->battleGetActionController(&decoded), defenderSideHero->getOwner());
+		EXPECT_TRUE(newHorizonsPuppetMaster::hasValidControlMarker(*battle(), &decoded));
+		EXPECT_EQ(decoded.isNewHorizonsFrozen(), frozen);
+		EXPECT_EQ(decoded.frozenLastAppliedRound(), round);
+		EXPECT_FALSE(newHorizonsFrozen::canApply(decoded, round));
+		EXPECT_EQ(decoded.getCount(), target->getCount());
+		EXPECT_EQ(decoded.getAvailableHealth(), health);
+		const auto restoredControl = decoded.getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+		ASSERT_EQ(restoredControl->size(), 1u);
+		EXPECT_EQ(restoredControl->front()->toJsonNode(), marker);
+		EXPECT_EQ(restoredControl->front()->spellCasterOwner, markerOwner);
+		EXPECT_EQ(restoredControl->front()->turnsRemain, markerTurns);
+		decoded.detachFromAll();
+	};
+	ASSERT_NO_FATAL_FAILURE(roundTrip(true));
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleGetActionController(battle()->battleActiveUnit()), attackerSideHero->getOwner());
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto casts = battle()->battleCastSpells(BattleSide::ATTACKER);
+	auto action = cureAction(target);
+	action.spellCurePhysicalAffliction = "frozen";
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->getOwner(), action));
+	ASSERT_FALSE(newHorizonsFrozen::isFrozen(*target));
+	ASSERT_LT(attackerSideHero->getManaAvailable(), mana);
+	ASSERT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), casts + 1);
+	ASSERT_EQ(target->frozenLastAppliedRound(), round);
+	ASSERT_NO_FATAL_FAILURE(roundTrip(false));
 }
 
 TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceCleansesFullHealthAndPreservesRecipientStampAndInnateBonus)
