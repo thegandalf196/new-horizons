@@ -352,6 +352,50 @@ TEST_F(NewHorizonsCureTest, PuppetControllerCannotCureMechanicallyHostileTargetO
 	EXPECT_EQ(battle()->battleGetOwner(target), attackerSideHero->getOwner());
 }
 
+TEST_F(NewHorizonsCureTest, OriginalAllyCureFrozenPreservesPaidPuppetControlAndSameRoundReceipt)
+{
+	deployOriginalCureActor = true;
+	ASSERT_NO_FATAL_FAILURE(preparePaidPuppetControl());
+	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleGetActionController(battle()->battleActiveUnit()), attackerSideHero->getOwner());
+	const auto control = target->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	ASSERT_EQ(control->size(), 1u);
+	const auto marker = control->front()->toJsonNode();
+	const auto markerOwner = control->front()->spellCasterOwner;
+	const auto markerTurns = control->front()->turnsRemain;
+	const auto health = target->getAvailableHealth();
+	const auto round = target->frozenLastAppliedRound();
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto casts = battle()->battleCastSpells(BattleSide::ATTACKER);
+	const auto allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	auto action = cureAction(target);
+	action.spellCurePhysicalAffliction = "frozen";
+	ASSERT_EQ(action.spellCureAffliction, SpellID::NONE);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->getOwner(), action));
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_EQ(target->getAvailableHealth(), health);
+	EXPECT_EQ(target->frozenLastAppliedRound(), round);
+	EXPECT_FALSE(newHorizonsFrozen::canApply(*target, round));
+	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), casts + 1);
+	EXPECT_NE(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
+	const auto after = target->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	ASSERT_EQ(after->size(), 1u);
+	EXPECT_EQ(after->front()->toJsonNode(), marker);
+	EXPECT_EQ(after->front()->spellCasterOwner, markerOwner);
+	EXPECT_EQ(after->front()->turnsRemain, markerTurns);
+	EXPECT_TRUE(newHorizonsPuppetMaster::hasValidControlMarker(*battle(), target));
+	EXPECT_EQ(battle()->battleGetActionController(target), defenderSideHero->getOwner());
+	EXPECT_EQ(battle()->battleGetOwner(target), attackerSideHero->getOwner());
+	EXPECT_EQ(target->unitSide(), BattleSide::ATTACKER);
+	// Same authoritative admission used by the standalone Frozen regression.
+	EXPECT_THROW(battle()->addUnitBonus(target->unitId(), {
+		newHorizonsFrozen::marker(BonusSourceID(creatureByName("core:iceElemental")), round)}), std::invalid_argument);
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_EQ(target->frozenLastAppliedRound(), round);
+}
+
 TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceCleansesFullHealthAndPreservesRecipientStampAndInnateBonus)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
