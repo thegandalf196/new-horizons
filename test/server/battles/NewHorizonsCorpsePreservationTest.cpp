@@ -25,6 +25,7 @@
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../../lib/networkPacks/BattleChanges.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../server/queries/BattleQueries.h"
@@ -579,6 +580,100 @@ TEST_F(NewHorizonsCorpsePreservationTest, DisintegrateRemainsExcludedWithCorpseP
 	EXPECT_EQ(resultCount(*result, BattleSide::DEFENDER, pikeman, true), targetStackCount - destroyedBySpell)
 		<< "Corpse Preservation never restores remains explicitly destroyed by Disintegrate";
 	EXPECT_EQ(raisedSkeletons(), (targetStackCount - destroyedBySpell) / 10);
+}
+
+TEST_F(NewHorizonsCorpsePreservationTest, PaidReanimateThenDisintegrateCannotRestoreDestroyedTemporaryCasualties)
+{
+	prepareBattle(false, 0);
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::CORPSE_PRESERVATION_ID));
+	const auto reanimate = spellById(newHorizonsMagic::SHADOW_REANIMATE_SPELL);
+	const auto disintegrate = spellById(DISINTEGRATE_SPELL);
+	ASSERT_NE(reanimate, SpellID::NONE);
+	ASSERT_NE(disintegrate, SpellID::NONE);
+	const auto shadowMagic = SecondarySkill::decode(std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL));
+	const auto havocMagic = SecondarySkill::decode(std::string(newHorizonsMagic::HAVOC_MAGIC_SKILL));
+	ASSERT_GE(shadowMagic, 0);
+	ASSERT_GE(havocMagic, 0);
+	defenderSideHero->setSecSkillLevel(SecondarySkill(shadowMagic), MasteryLevel::ADVANCED,
+		ChangeValueMode::ABSOLUTE);
+	defenderSideHero->addSpellToSpellbook(reanimate);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(havocMagic), MasteryLevel::EXPERT,
+		ChangeValueMode::ABSOLUTE);
+
+	// All casualties and restorations below come from accepted paid spells and
+	// their real injury/UnitChanges packets, not manufactured health ledgers.
+	const auto initialHealth = target->getAvailableHealth();
+	const auto initialCount = target->getCount();
+	const auto attackerMana = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(castHeroSpell(BattleSide::ATTACKER, SpellID::MAGIC_ARROW, target));
+	ASSERT_LT(attackerSideHero->getManaAvailable(), attackerMana);
+	const auto injured = target->acquireState();
+	const auto originalCasualties = injured->getMagicalCasualties();
+	ASSERT_GT(originalCasualties, 0);
+	ASSERT_EQ(injured->getUnusableRemains(), 0);
+	const auto injurySnapshot = injured->save();
+	const auto & injuryCohorts = injurySnapshot["state"]["health"]["casualtyProvenance"].Vector();
+	ASSERT_EQ(injuryCohorts.size(), 1u);
+	EXPECT_EQ(injuryCohorts.front()["provenance"].Integer(),
+		static_cast<int64_t>(battle::DamageProvenance::SPELL));
+	EXPECT_EQ(injuryCohorts.front()["count"].Integer(), originalCasualties);
+	EXPECT_EQ(injuryCohorts.front()["temporarilyRestored"].Integer(), 0);
+
+	ASSERT_TRUE(advanceToActiveSideInRound(BattleSide::DEFENDER, 1));
+	const auto defenderMana = defenderSideHero->getManaAvailable();
+	const auto castsBefore = battle()->battleCastSpells(BattleSide::DEFENDER);
+	ASSERT_TRUE(castHeroSpell(BattleSide::DEFENDER, reanimate, target));
+	ASSERT_LT(defenderSideHero->getManaAvailable(), defenderMana);
+	ASSERT_EQ(battle()->battleCastSpells(BattleSide::DEFENDER), castsBefore + 1);
+	const auto raised = target->acquireState();
+	const auto temporaryCount = raised->health.getResurrected();
+	ASSERT_GT(temporaryCount, 0);
+	ASSERT_EQ(temporaryCount, originalCasualties);
+	ASSERT_EQ(raised->getAvailableHealth(), initialHealth);
+	ASSERT_EQ(raised->getCount(), initialCount);
+	const auto raisedSnapshot = raised->save();
+	const auto & raisedCohorts = raisedSnapshot["state"]["health"]["casualtyProvenance"].Vector();
+	ASSERT_EQ(raisedCohorts.size(), 1u);
+	EXPECT_EQ(raisedCohorts.front()["provenance"].Integer(),
+		static_cast<int64_t>(battle::DamageProvenance::SPELL));
+	EXPECT_EQ(raisedCohorts.front()["count"].Integer(), originalCasualties);
+	EXPECT_EQ(raisedCohorts.front()["temporarilyRestored"].Integer(), temporaryCount);
+
+	ASSERT_TRUE(advanceToActiveSideInRound(BattleSide::ATTACKER, 2));
+	const auto manaBeforeDisintegrate = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(castHeroSpell(BattleSide::ATTACKER, disintegrate, target));
+	ASSERT_LT(attackerSideHero->getManaAvailable(), manaBeforeDisintegrate);
+	const auto destroyed = target->acquireState();
+	const auto destroyedCount = initialCount - destroyed->getCount();
+	ASSERT_GE(destroyedCount, temporaryCount)
+		<< "The real spell must destroy the raised cohort, not merely wound survivors";
+	ASSERT_GT(destroyed->getCount(), 0);
+	EXPECT_EQ(destroyed->getUnusableRemains(), destroyedCount);
+	EXPECT_EQ(destroyed->health.getResurrected(), 0);
+	EXPECT_EQ(destroyed->getMagicalCasualties(), 0);
+	ASSERT_EQ(destroyed->getFirstHPleft(), destroyed->getMaxHealth())
+		<< "This refusal control requires no surviving wound that Re-animate could heal";
+	EXPECT_EQ(destroyed->getAvailableHealth(),
+		static_cast<int64_t>(destroyed->getCount()) * destroyed->getMaxHealth());
+	const auto destroyedSnapshot = destroyed->save();
+	EXPECT_TRUE(destroyedSnapshot["state"]["health"]["casualtyProvenance"].Vector().empty())
+		<< "Destroyed temporary successors cannot retain their usable original corpse cohort";
+	RecordProperty("reanimated_temporary_casualties", temporaryCount);
+	RecordProperty("disintegrated_casualties", destroyedCount);
+
+	ASSERT_TRUE(advanceToActiveSideInRound(BattleSide::DEFENDER, 2));
+	const auto manaBeforeRefusal = defenderSideHero->getManaAvailable();
+	const auto castsBeforeRefusal = battle()->battleCastSpells(BattleSide::DEFENDER);
+	const auto allowancesBeforeRefusal = battle()->getHeroActionAllowances(BattleSide::DEFENDER);
+	const auto activeBeforeRefusal = battle()->battleActiveUnit()->unitId();
+	const auto stateBeforeRefusal = target->acquireState()->save();
+	EXPECT_FALSE(castHeroSpell(BattleSide::DEFENDER, reanimate, target));
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), manaBeforeRefusal);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::DEFENDER), castsBeforeRefusal);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::DEFENDER), allowancesBeforeRefusal);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeBeforeRefusal);
+	EXPECT_EQ(target->acquireState()->save(), stateBeforeRefusal);
 }
 
 TEST_F(NewHorizonsCorpsePreservationTest, DeathLordSpecialPoolExcludesDisintegrateDestroyedRemains)
