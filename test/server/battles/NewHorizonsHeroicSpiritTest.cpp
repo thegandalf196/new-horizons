@@ -4,11 +4,17 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "BattleStartSnapshotFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/NewHorizonsHeroicSpirit.h"
+#include "../../../lib/battle/NewHorizonsHeroLuck.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/Problem.h"
 #include "../../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -35,6 +41,7 @@ protected:
 	CStack * enemy = nullptr;
 	bool chanceSucceeds = true;
 	bool selectDoubleCommand = false;
+	bool selectLuckyDay = false;
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -55,6 +62,14 @@ protected:
 		magic["morale"]["diceSize"].Integer() = 100;
 		magic.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+		if(selectLuckyDay)
+		{
+			JsonNode luckChance;
+			luckChance.Vector().assign(4, JsonNode(100));
+			loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, luckChance);
+			loaded->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
+			loaded->overrideGameSetting(EGameSettings::COMBAT_LUCK_BIAS, JsonNode(0));
+		}
 	}
 	void select(const char * perk, MasteryLevel::Type rank, const char * skill = newHorizonsHeroicSpirit::SKILL)
 	{
@@ -97,6 +112,17 @@ protected:
 			ASSERT_NO_FATAL_FAILURE(select("new-horizons:command.aggressiveCommander", MasteryLevel::BASIC, "new-horizons:command"));
 			ASSERT_NO_FATAL_FAILURE(select("new-horizons:command.veteranCommander", MasteryLevel::ADVANCED, "new-horizons:command"));
 			ASSERT_NO_FATAL_FAILURE(select("new-horizons:command.doubleCommand", MasteryLevel::EXPERT, "new-horizons:command"));
+		}
+		if(selectLuckyDay)
+		{
+			ASSERT_NO_FATAL_FAILURE(select("new-horizons:luck.fortuneSFavor", MasteryLevel::BASIC, "new-horizons:luck"));
+			ASSERT_NO_FATAL_FAILURE(select("new-horizons:luck.luckyRecovery", MasteryLevel::ADVANCED, "new-horizons:luck"));
+			attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+				BonusType::LUCK, BonusSource::OTHER, 1 - attackerSideHero->luckVal(), BonusSourceID()));
+			attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+			attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+			attackerSideHero->initializeSpellPoints(20, 0);
 		}
 		startBattle();
 		BattleUnitsChanged remove;
@@ -150,6 +176,146 @@ TEST_F(NewHorizonsHeroicSpiritTest, AcceptedFlexibleOrderGrantsOneOrderButBonusO
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).heroicSpiritProcessedReceipts, processed);
 	EXPECT_FALSE(actor->heroicSpiritRetaliation);
 	EXPECT_EQ(actor->counterAttacks.total(), 1);
+}
+
+TEST_F(NewHorizonsHeroicSpiritTest, ComposedBattleAndRngReconstructionConsumesSavedOrderOnlyGrantWithoutRecursion)
+{
+	selectLuckyDay = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
+	ASSERT_EQ(attackerSideHero->luckVal(), 1);
+	ASSERT_TRUE(newHorizonsHeroLuck::hasLuckyDay(attackerSideHero));
+	const auto * haste = SpellID(SpellID::HASTE).toSpell();
+	spells::BattleCast validSpell(battle(), attackerSideHero, spells::Mode::HERO, haste);
+	auto spellMechanics = haste->battleMechanics(&validSpell);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(spellMechanics->canBeCastAt(spells::Target{spells::Destination(actor)}, problem));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto sourceOrder = battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE);
+	ASSERT_TRUE(sourceOrder);
+	ASSERT_TRUE(sourceOrder->heroLuck);
+	ASSERT_TRUE(sourceOrder->heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay));
+	ASSERT_TRUE(sourceOrder->heroMorale);
+	ASSERT_TRUE(sourceOrder->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit));
+	const auto sourceLedger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto round = battle()->getRound();
+	ASSERT_EQ(sourceLedger.remainingCounts(round), (HeroActionAllowanceState::Counts{0, 1, 0}));
+	ASSERT_EQ(sourceLedger.heroicSpiritProcessedReceipts.size(), 1u);
+	const auto actorId = actor->unitId();
+	const auto enemyId = enemy->unitId();
+	const auto actorState = actor->acquireState()->save();
+	const auto enemyState = enemy->acquireState()->save();
+	const auto initialNormal = battle()->getSide(BattleSide::ATTACKER).initialNormalSpellPoints;
+	const auto initialBuffer = battle()->getSide(BattleSide::ATTACKER).initialBufferSpellPoints;
+	const auto savedRandomizer = [](GameRandomizer & randomizer)
+	{
+		CMemorySerializer bytes;
+		bytes.oser & randomizer;
+		return bytes.extractBuffer();
+	};
+	const auto sourceRandomizer = savedRandomizer(*gameHandler->randomizer);
+
+	// Active battles are NOT in world saves. Reconstruct a separate world plus
+	// the established detached BattleStart/unit-state packets, not an ordinary
+	// mid-battle save/resume protocol; the original graph remains untouched.
+	auto replica = std::make_shared<CGameState>();
+	replica->preInit(LIBRARY);
+	replica->loadFromMemory(gameState()->saveToMemory());
+	ASSERT_TRUE(replica->currentBattles.empty());
+	const auto restoredId = replica->nextBattleID;
+	BattleStart outgoing;
+	outgoing.battleID = restoredId;
+	outgoing.info = battleStartFixture::snapshot(*battle(), replica.get());
+	BattleUnitsChanged outgoingUnits;
+	outgoingUnits.battleID = restoredId;
+	for(const auto * unit : battle()->getStacksIf([](const CStack *) { return true; }))
+	{
+		outgoingUnits.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::UPDATE);
+		outgoingUnits.changedStacks.back().data = unit->acquireState()->save();
+	}
+	CMemorySerializer wire;
+	wire.oser & outgoing & outgoingUnits;
+	wire.iser.cb = replica.get();
+	BattleStart incoming;
+	BattleUnitsChanged incomingUnits;
+	wire.iser & incoming & incomingUnits;
+	RecordingGameServer restoredServer;
+	restoredServer.gameState = replica;
+	auto restoredHandler = std::make_shared<CGameHandler>(restoredServer, replica);
+	restoredHandler->sendAndApply(incoming);
+	restoredHandler->sendAndApply(incomingUnits);
+	CMemorySerializer rngWire(sourceRandomizer);
+	rngWire.iser & *restoredHandler->randomizer;
+	ASSERT_EQ(savedRandomizer(*restoredHandler->randomizer), sourceRandomizer);
+	auto * restoredBattle = replica->getBattle(restoredId);
+	ASSERT_NE(restoredBattle, nullptr);
+	const auto * restoredHero = restoredBattle->getSideHero(BattleSide::ATTACKER);
+	const auto * restoredActor = restoredBattle->battleGetUnitByID(actorId);
+	const auto * restoredEnemy = restoredBattle->battleGetUnitByID(enemyId);
+	ASSERT_NE(restoredHero, nullptr);
+	ASSERT_NE(restoredActor, nullptr);
+	ASSERT_NE(restoredEnemy, nullptr);
+	ASSERT_EQ(restoredHero->luckVal(), attackerSideHero->luckVal());
+	ASSERT_EQ(restoredHero->moraleVal(), attackerSideHero->moraleVal());
+	ASSERT_TRUE(newHorizonsHeroLuck::hasLuckyDay(restoredHero));
+	ASSERT_TRUE(newHorizonsHeroicSpirit::hasPerk(restoredHero));
+	ASSERT_EQ(restoredBattle->getRound(), round);
+	ASSERT_NE(restoredBattle->battleActiveUnit(), nullptr);
+	ASSERT_EQ(restoredBattle->battleActiveUnit()->unitId(), actorId);
+	ASSERT_EQ(restoredBattle->battleGetActionController(restoredActor), PlayerColor(0));
+	EXPECT_EQ(restoredActor->acquireState()->save(), actorState);
+	EXPECT_EQ(restoredEnemy->acquireState()->save(), enemyState);
+	EXPECT_EQ(restoredBattle->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE), sourceOrder);
+	EXPECT_EQ(restoredBattle->getHeroActionAllowances(BattleSide::ATTACKER), sourceLedger);
+	// BattleStart intentionally restores INITIAL pools; no paid-mana resume claim.
+	EXPECT_EQ(restoredHero->getNormalSpellPoints(), initialNormal);
+	EXPECT_EQ(restoredHero->getBufferSpellPoints(), initialBuffer);
+	ASSERT_TRUE(restoredHero->hasSpellbook());
+	ASSERT_TRUE(restoredHero->canCastThisSpell(haste));
+	ASSERT_TRUE(restoredActor->alive());
+	ASSERT_EQ(restoredBattle->battleGetOwner(restoredActor), restoredHero->getCasterOwner());
+	ASSERT_GE(restoredHero->getManaAvailable(), restoredBattle->battleGetSpellCost(haste, restoredHero));
+	ASSERT_FALSE(restoredBattle->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::HASTE));
+	ASSERT_EQ(restoredBattle->battleCanCastSpell(restoredHero, spells::Mode::HERO), ESpellCastProblem::CASTS_PER_TURN_LIMIT);
+	BattleAction rejectedSpell;
+	rejectedSpell.actionType = EActionType::HERO_SPELL;
+	rejectedSpell.side = BattleSide::ATTACKER;
+	rejectedSpell.spell = SpellID::HASTE;
+	rejectedSpell.aimToUnit(restoredActor);
+	EXPECT_FALSE(restoredHandler->battles->makePlayerBattleAction(restoredId, PlayerColor(0), rejectedSpell));
+	EXPECT_EQ(savedRandomizer(*restoredHandler->randomizer), sourceRandomizer);
+	EXPECT_EQ(restoredBattle->getHeroActionAllowances(BattleSide::ATTACKER), sourceLedger);
+	EXPECT_EQ(restoredActor->acquireState()->save(), actorState);
+
+	CMemorySerializer expectedWire(sourceRandomizer);
+	GameRandomizer expected(*replica);
+	expectedWire.iser & expected;
+	auto expectedLuck = expected.rollHeroLuck(restoredHero->id, restoredHero->luckVal());
+	ASSERT_TRUE(expectedLuck);
+	expectedLuck->mark(newHorizonsHeroLuck::Proc::LuckyDay);
+	ASSERT_TRUE(restoredBattle->battleCanBeginHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
+	ASSERT_TRUE(restoredHandler->battles->makePlayerBattleAction(restoredId, PlayerColor(0),
+		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE)));
+	EXPECT_EQ(savedRandomizer(*restoredHandler->randomizer), savedRandomizer(expected));
+	const auto continued = restoredBattle->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE);
+	ASSERT_TRUE(continued);
+	EXPECT_EQ(continued->heroLuck, expectedLuck);
+	EXPECT_FALSE(continued->heroMorale);
+	EXPECT_EQ(continued->heroMoraleActionGrantId, 0u);
+	EXPECT_EQ(restoredBattle->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE), sourceOrder);
+	EXPECT_EQ(restoredBattle->getHeroOrderStates(BattleSide::ATTACKER).size(), 2u);
+	const auto & spent = restoredBattle->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_EQ(spent.remainingCounts(round), (HeroActionAllowanceState::Counts{}));
+	EXPECT_EQ(spent.heroicSpiritProcessedReceipts, sourceLedger.heroicSpiritProcessedReceipts);
+	EXPECT_EQ(spent.nextGrantId, sourceLedger.nextGrantId);
+	EXPECT_FALSE(restoredHandler->battles->makePlayerBattleAction(restoredId, PlayerColor(0),
+		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE)));
+	EXPECT_EQ(savedRandomizer(*restoredHandler->randomizer), savedRandomizer(expected));
+	EXPECT_EQ(battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE), sourceOrder);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), sourceLedger);
+	EXPECT_EQ(savedRandomizer(*gameHandler->randomizer), sourceRandomizer);
+	EXPECT_EQ(actor->acquireState()->save(), actorState);
+	EXPECT_EQ(enemy->acquireState()->save(), enemyState);
 }
 
 TEST_F(NewHorizonsHeroicSpiritTest, RequiredDoubleCommandRunsBeforeHeroicBonusAndNeitherBonusChainsMorale)
