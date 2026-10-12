@@ -71,6 +71,7 @@ std::string orderAllowanceSourceName(HeroActionAllowanceState::GrantSource sourc
 		case HeroActionAllowanceState::GrantSource::BATTLE_PLAN: return "Battle Plan";
 		case HeroActionAllowanceState::GrantSource::DIVINE_MANDATE: return "Divine Mandate";
 		case HeroActionAllowanceState::GrantSource::CRISIS_COMMAND: return "Crisis Command";
+		case HeroActionAllowanceState::GrantSource::HEROIC_SPIRIT: return "Heroic Spirit";
 	}
 	return "Additional ability";
 }

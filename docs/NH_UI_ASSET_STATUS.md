@@ -22,6 +22,13 @@ and the loaded configuration before a game starts. Pregame, custom/upgraded and
 Windows breadth remain unverified. No artwork-package change or ordinary
 launcher promotion is claimed.
 
+Heroic Spirit bonus-Order source label: **Provisional**. The Orders panel names
+the typed opportunity "Heroic Spirit" instead of "Additional ability". The
+ordinary Hero Action badge reports the flexible allowance only; "Spent" does
+not establish that an Order-only bonus is absent. The source binding check and
+Linux client build pass. A successful bonus opportunity has not yet been
+observed in-game. No new artwork or artwork-package change is involved.
+
 2026-10-10 corrected selector: **Provisional**, principal rendering and mouse
 controls observed on the matched corrected client. Root inspects sustained
 centered heading/readback/buttons, three ordered target badges including same

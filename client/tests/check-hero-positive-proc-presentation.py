@@ -6,6 +6,11 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 class HeroPositiveProcPresentationTest(unittest.TestCase):
+    def test_order_only_opportunity_names_heroic_spirit(self):
+        window = (ROOT/'client/battle/BattleHeroActionWindow.cpp').read_text()
+        method = window.split('std::string orderAllowanceSourceName', 1)[1].split('\nstd::string ', 1)[0]
+        self.assertIn('case HeroActionAllowanceState::GrantSource::HEROIC_SPIRIT: return "Heroic Spirit";', method)
+
     def test_existing_positive_resources_only(self):
         effects = (ROOT/'client/battle/BattleEffectsController.cpp').read_text()
         method = effects.split('void BattleEffectsController::displayHeroPositiveEffect', 1)[1].split('\nvoid ', 1)[0]
