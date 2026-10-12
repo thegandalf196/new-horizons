@@ -15,7 +15,8 @@ def main():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
     for pattern in ('test_windows*.py', 'test_*mingw*.py', 'test_git_source_snapshot.py',
-                    'test_binary_privacy.py', 'test_dependency_preflight.py'):
+                    'test_binary_privacy.py', 'test_dependency_preflight.py',
+                    'test_sdl_image_conan_recipe.py', 'test_prepare_sdl3_image_interlace.py'):
         suite.addTests(loader.discover(str(tests), pattern=pattern))
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     report = {

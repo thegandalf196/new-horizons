@@ -1,0 +1,203 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""Synthetic recipe adapters/consumer controls; no Conan/cache/build/processes."""
+import ast
+import difflib
+import hashlib
+import importlib.util
+from pathlib import Path
+import shutil
+import sys
+import tempfile
+import types
+import unittest
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parents[2]
+RECIPE = ROOT / 'tools/conan/sdl_image'
+CHECKER = ROOT / 'tools/ci/prepare_sdl3_image_interlace.py'
+PATCH = ROOT / 'tools/ci/patches/sdl3-image-3.4.4-interlace.patch'
+
+
+class ConfigurationError(Exception):
+    pass
+
+
+def imported(path, name, extra=None):
+    modules = {}
+    for key, attributes in {
+        'conan': {'ConanFile': object},
+        'conan.errors': {'ConanInvalidConfiguration': ConfigurationError},
+        'conan.tools.cmake': dict.fromkeys(('CMake','CMakeDeps','CMakeToolchain','cmake_layout'), mock.Mock()),
+        'conan.tools.files': dict.fromkeys(('copy','get','patch','rmdir','save'), mock.Mock()),
+        'conan.tools.scm': {'Version': mock.Mock()},
+    }.items():
+        module = types.ModuleType(key)
+        module.__dict__.update(attributes)
+        modules[key] = module
+    modules.update(extra or {})
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    with mock.patch.dict(sys.modules, modules):
+        spec.loader.exec_module(module)
+    return module
+
+
+class RecipeTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.module = imported(RECIPE/'conanfile.py','synthetic_sdl_recipe')
+        self.recipe = self.module.SDLImageConan()
+        self.recipe.recipe_folder = str(RECIPE)
+        self.recipe.export_sources_folder = str(self.root/'exports')
+        self.recipe.source_folder = str(self.root/'source')
+        self.recipe.version = '3.4.4'
+        self.recipe.conan_data = {'sources':{'3.4.4':{
+            'url':'https://synthetic.invalid/source.tar.gz','sha256':'a'*64}}}
+        (self.root/'exports/patches').mkdir(parents=True)
+        (self.root/'source/src').mkdir(parents=True)
+
+    def test_export_copies_only_existing_maintained_checker_and_patch(self):
+        with mock.patch.object(self.module.shutil,'copyfile',wraps=shutil.copyfile) as copy:
+            self.recipe.export_sources()
+        self.assertEqual(copy.call_count,2)
+        files = {p.relative_to(self.root/'exports').as_posix():p.read_bytes()
+                 for p in (self.root/'exports').rglob('*') if p.is_file()}
+        self.assertEqual(files,{'prepare_sdl3_image_interlace.py':CHECKER.read_bytes(),
+            'patches/sdl3-image-3.4.4-interlace.patch':PATCH.read_bytes()})
+
+    def test_standalone_collector_export_layout_is_supported(self):
+        recipe = self.root/'standalone'
+        (recipe/'patches').mkdir(parents=True)
+        shutil.copyfile(CHECKER,recipe/CHECKER.name)
+        shutil.copyfile(PATCH,recipe/'patches'/PATCH.name)
+        self.recipe.recipe_folder = str(recipe)
+        self.recipe.export_sources()
+        self.assertEqual((self.root/'exports'/CHECKER.name).read_bytes(),CHECKER.read_bytes())
+
+    def test_missing_standalone_exports_refused(self):
+        self.recipe.recipe_folder = str(self.root/'missing/recipe')
+        with self.assertRaises(ConfigurationError):
+            self.recipe.export_sources()
+
+    def source_fixture(self):
+        source = (b'/* Synthetic implementation license */\n'
+            b'int (*png_set_interlace_handling)(void *);\n'
+            b'FUNCTION_LOADER_LIBPNG(png_set_interlace_handling, fake)\n'
+            b'    lib.png_read_update_info(vars->png_ptr, vars->info_ptr);\n'
+            b'    lib.png_read_update_info(context->png_ptr, context->info_ptr);\n')
+        cmake = b'set(MAJOR_VERSION 3)\nset(MINOR_VERSION 4)\nset(MICRO_VERSION 4)\n'
+        result = source
+        for receiver in (b'vars',b'context'):
+            marker = b'    lib.png_read_update_info('+receiver+b'->png_ptr, '+receiver+b'->info_ptr);'
+            result = result.replace(marker,b'    lib.png_set_interlace_handling('+receiver+b'->png_ptr);\n'+marker)
+        selected_patch = ''.join(difflib.unified_diff(source.decode().splitlines(True),
+            result.decode().splitlines(True),fromfile='a/src/IMG_libpng.c',tofile='b/src/IMG_libpng.c')).encode()
+        exported = self.root/'exports'
+        (exported/'patches'/PATCH.name).write_bytes(selected_patch)
+        # Test-only hash pins let the unchanged real checker validate fixtures.
+        (exported/CHECKER.name).write_text(CHECKER.read_text()+
+            '\nSOURCE_SHA256 = '+repr(hashlib.sha256(source).hexdigest())+
+            '\nCMAKE_SHA256 = '+repr(hashlib.sha256(cmake).hexdigest())+'\n')
+        def get(recipe, **kwargs):
+            self.assertEqual(kwargs,{**recipe.conan_data['sources']['3.4.4'],'strip_root':True})
+            (self.root/'source/src/IMG_libpng.c').write_bytes(source)
+            (self.root/'source/CMakeLists.txt').write_bytes(cmake)
+        def patch(recipe, **kwargs):
+            self.assertEqual(kwargs,dict(base_path=recipe.source_folder,
+                patch_file=str(exported/'patches'/PATCH.name),strip=1))
+            (self.root/'source/src/IMG_libpng.c').write_bytes(result)
+        return get, patch, source, result
+
+    def test_source_checks_applies_and_verifies_exact_result_before_cleanup(self):
+        get, patch, source, result = self.source_fixture()
+        with mock.patch.object(self.module,'get',side_effect=get), \
+             mock.patch.object(self.module,'patch',side_effect=patch) as apply, \
+             mock.patch.object(self.module,'rmdir') as remove:
+            self.recipe.source()
+        self.assertEqual(apply.call_count,1)
+        remove.assert_called_once_with(self.recipe,str(self.root/'source/external'))
+        self.assertEqual((self.root/'source/src/IMG_libpng.c').read_bytes(),result)
+        self.assertEqual(result.count(b'lib.png_set_interlace_handling('),2)
+
+    def test_wrong_version_refused_before_download(self):
+        self.recipe.version = '3.4.5'
+        with mock.patch.object(self.module,'get') as get, self.assertRaises(ConfigurationError):
+            self.recipe.source()
+        get.assert_not_called()
+
+    def test_actual_checker_execution_never_writes_bytecode_or_changes_global_flag(self):
+        get, patch, source, result = self.source_fixture()
+        before = {p.relative_to(self.root/'exports').as_posix():p.read_bytes()
+                  for p in (self.root/'exports').rglob('*') if p.is_file()}
+        with mock.patch.object(sys,'dont_write_bytecode',False), \
+             mock.patch.object(self.module,'get',side_effect=get), \
+             mock.patch.object(self.module,'patch',side_effect=patch), \
+             mock.patch.object(self.module,'rmdir'):
+            self.recipe.source()
+            self.assertFalse(sys.dont_write_bytecode)
+        self.assertEqual({p.relative_to(self.root/'exports').as_posix():p.read_bytes()
+                          for p in (self.root/'exports').rglob('*') if p.is_file()},before)
+        self.assertEqual((self.root/'source/src/IMG_libpng.c').read_bytes(),result)
+        self.assertFalse(list(self.root.rglob('__pycache__')))
+        self.assertFalse(list(self.root.rglob('*.pyc')))
+
+    def test_wrong_source_refused_before_patch(self):
+        get, patch, source, result = self.source_fixture()
+        def changed(recipe, **kwargs):
+            get(recipe,**kwargs)
+            (self.root/'source/src/IMG_libpng.c').write_bytes(source+b'changed')
+        with mock.patch.object(self.module,'get',side_effect=changed), \
+             mock.patch.object(self.module,'patch') as apply, self.assertRaises(RuntimeError):
+            self.recipe.source()
+        apply.assert_not_called()
+
+    def test_wrong_patch_refused_before_application(self):
+        get, patch, source, result = self.source_fixture()
+        (self.root/'exports/patches'/PATCH.name).write_bytes(b'wrong patch')
+        with mock.patch.object(self.module,'get',side_effect=get), \
+             mock.patch.object(self.module,'patch') as apply, self.assertRaises(RuntimeError):
+            self.recipe.source()
+        apply.assert_not_called()
+
+    def test_wrong_applied_result_refused_before_cleanup(self):
+        get, patch, source, result = self.source_fixture()
+        with mock.patch.object(self.module,'get',side_effect=get), \
+             mock.patch.object(self.module,'patch'), mock.patch.object(self.module,'rmdir') as remove, \
+             self.assertRaises(ConfigurationError):
+            self.recipe.source()
+        remove.assert_not_called()
+
+    def test_upstream_build_methods_ast_unchanged(self):
+        expected = {
+            'layout':'0dce8d2679069e932e504d847334157195e6866950ac0d8222b1af849888484a',
+            'requirements':'f49e64cca0ad22060ec6b91caeef993ccf099b2569b8f7e43528ca53e3fef06a',
+            'validate':'7b025a8c1db4eb575110cf701b9e179ad839de0aba321e3428ec6a53202ef752',
+            'build_requirements':'58c0600e8998741bcac6c5a3863e712ba3618f7b6e164f5c9c4a0f337a7a0bf8',
+            'generate':'cd0038ab8d26359042580cb768e074ab4ae2f63787e72a653e8c20881bc3f16f',
+            'build':'1d41c8e061dca0a22e7f5a2ce774bbacaad63fc449d46dc761a4888fb83c9f42',
+            'package':'fd13f93ead64babf0875d1b8a29c116665313bb0ccd925f088496351bbb3e1bb',
+            'package_info':'cf324afa795ec5c00f680565bd638a423506f7f5ebbd51cc2e20b47ed731055e'}
+        cls = next(n for n in ast.parse((RECIPE/'conanfile.py').read_text()).body if isinstance(n,ast.ClassDef))
+        actual = {n.name:hashlib.sha256(ast.dump(n,include_attributes=False).encode()).hexdigest()
+                  for n in cls.body if isinstance(n,ast.FunctionDef) and n.name in expected}
+        self.assertEqual(actual,expected)
+
+    def test_root_consumer_replaces_only_direct_sdl_image_and_inherits_dynamic_requirements(self):
+        class Base:
+            requires = ['zlib/1','sdl_image/[^3.4.4]','sdl_mixer/3','xz_utils/5']
+            requirements = mock.Mock()
+        dependency = types.ModuleType('dependencies.conanfile')
+        dependency.VCMI = Base
+        module = imported(ROOT/'conanfile.py','synthetic_root_consumer',{'dependencies.conanfile':dependency})
+        self.assertEqual(module.VCMIApp.requires,
+            ['zlib/1','sdl_image/3.4.4@newhorizons/patched','sdl_mixer/3','xz_utils/5'])
+        self.assertEqual(Base.requires[1],'sdl_image/[^3.4.4]')
+        self.assertIs(module.VCMIApp.requirements,Base.requirements)
+        self.assertIn('29751304a13d25ac513f24305fa25b06a6edd9607718c90129b8350d35fc5573',
+                      (RECIPE/'conandata.yml').read_text())
+
+
+if __name__ == '__main__':
+    unittest.main()

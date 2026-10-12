@@ -113,6 +113,30 @@ optimized path. The reference ran first and operating-system cache state was
 not controlled. These are same-input CPU component measurements on the hosted
 runner, not an in-game speedup, GPU timing or certification of later revisions.
 
+### SDL3 PNG interlace regression
+
+The maintained `tools/ci/patches/sdl3-image-3.4.4-interlace.patch` initializes
+libpng interlace handling before both ordinary PNG and APNG read-update paths.
+`python3 tools/ci/prepare_sdl3_image_interlace.py --source-root "$NH_SDL_IMAGE_SOURCE"` checks
+the exact supported source and patch without modifying either. Its optional
+`--output` writes one new patched source artifact into explicitly configured
+private POSIX storage, not an installed library or a complete build tree.
+
+Enable `ENABLE_NH_SDL3_MASK_REGRESSION` and run
+`nhSdl3GrayscaleMaskRuntimeTest "$NH_MASK_FIXTURES" --interlace-regression`
+to add synthetic RGBA/indexed Adam7 and noninterlaced pixel/alpha controls to
+the existing mask/palette checks. Retain stderr separately: an exit-zero pixel
+test alone does not prove the interlace warning disappeared. Source preparation
+does not repair shipping providers; rebuilt library selection, warning-free
+decoder execution and corresponding-source packaging require separate checks.
+Notice-only repair retains the historical upstream dependency consumer. Its
+reference check rejects patched-decoder artifacts with a different source graph;
+use a fresh build for those artifacts. The notice-first preflight may compile
+the patched decoder, but does not compile the game client.
+The root Conan/MSVC workflow and local MinGW consumer select this patched
+recipe; the MinGW helper exports it before dependency resolution. System-package
+SDL providers are not changed by that selection and require a separate rebuild.
+
 ### Private Wine child-environment bootstrap
 
 The guarded full-game Wine helper accepts optional `--wine-bootstrap` and

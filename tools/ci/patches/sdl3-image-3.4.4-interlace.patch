@@ -1,0 +1,18 @@
+--- a/src/IMG_libpng.c
++++ b/src/IMG_libpng.c
+@@ -439,6 +439,7 @@
+         }
+     }
+ 
++    lib.png_set_interlace_handling(vars->png_ptr);
+     lib.png_read_update_info(vars->png_ptr, vars->info_ptr);
+     lib.png_get_IHDR(vars->png_ptr, vars->info_ptr, &vars->width, &vars->height, &vars->bit_depth,
+                      &vars->color_type, &vars->interlace_type, NULL, NULL);
+@@ -944,6 +945,7 @@
+         lib.png_set_filler(context->png_ptr, 0xFF, PNG_FILLER_AFTER);
+     }
+ 
++    lib.png_set_interlace_handling(context->png_ptr);
+     lib.png_read_update_info(context->png_ptr, context->info_ptr);
+ 
+     context->surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);

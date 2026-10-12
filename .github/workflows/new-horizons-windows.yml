@@ -4,15 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       preflight_only:
-        description: Validate all dependency notices and corresponding sources without compiling
+        description: Validate notices/sources without compiling the client (may build the patched decoder)
         type: boolean
         default: true
       repack_run_id:
-        description: Optional successful build run to repair notices/sources without recompiling
+        description: Optional historical upstream-decoder build run for notice-only repair
         type: string
         default: ''
   # Initially registered by a scoped push. Manual branch dispatch is now
-  # verified; run the cheap notice preflight before dispatching a full rebuild.
+  # verified; run the notice-first preflight before a full client rebuild.
 
 permissions:
   contents: read
@@ -29,6 +29,7 @@ jobs:
     timeout-minutes: 180
     env:
       VSLANG: '1033'
+      PYTHONDONTWRITEBYTECODE: '1'
     defaults:
       run:
         shell: bash
@@ -197,10 +198,21 @@ jobs:
                       print(path.relative_to(stage).as_posix())
 
       - name: Resolve upstream dependency profile
+        env:
+          ORIGINAL_REPACK_RUN_ID: ${{ inputs.repack_run_id }}
         run: |
           set -euo pipefail
           conan profile detect
-          conan install . --output-folder=conan-generated --build=never \
+          install_recipe=.
+          build_policy=(--build='sdl_image/3.4.4@newhorizons/patched' --conf='tools.build:jobs=4')
+          if [[ -n "$ORIGINAL_REPACK_RUN_ID" ]]; then
+            # An old binary must retain its original dependency source graph.
+            install_recipe=tools/ci/conan_notice_repack.py
+            build_policy=(--build=never)
+          else
+            conan export tools/conan/sdl_image --version=3.4.4 --user=newhorizons --channel=patched
+          fi
+          conan install "$install_recipe" --output-folder=conan-generated "${build_policy[@]}" \
             --profile=dependencies/conan_profiles/msvc-x64 \
             --conf='tools.cmake.cmaketoolchain:generator=Ninja' \
             --conf="tools.microsoft.msbuild:vs_version=${MSBUILD_VS_VERSION}" \
@@ -386,7 +398,31 @@ jobs:
           trap 'rm -f "$test_exe"' EXIT
           export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy SDL_VIDEO_DRIVER=dummy SDL_AUDIO_DRIVER=dummy
           unset DISPLAY WAYLAND_DISPLAY
-          "$test_exe" build/new-horizons-windows-x64/sdl3-mask-fixtures
+          "$test_exe" build/new-horizons-windows-x64/sdl3-mask-fixtures --interlace-regression \
+            > build/new-horizons-windows-x64/sdl3-mask.stdout.log \
+            2> build/new-horizons-windows-x64/sdl3-mask.stderr.log
+          python - <<'PY'
+          from pathlib import Path
+          output = Path('build/new-horizons-windows-x64/sdl3-mask.stdout.log').read_text()
+          errors = Path('build/new-horizons-windows-x64/sdl3-mask.stderr.log').read_text()
+          required = ('RGBA noninterlaced', 'RGBA Adam7', 'indexed noninterlaced', 'indexed Adam7')
+          if any('PASS: ' + label + ' all 81 exact RGBA pixels' not in output for label in required):
+              raise RuntimeError('Interlace pixel/alpha controls did not all pass')
+          if 'Interlace handling should be turned on when using png_read_image' in errors:
+              raise RuntimeError('Shipping SDL3_image still emits the interlace warning')
+          print(output)
+          if errors:
+              print(errors)
+          PY
+
+      - name: Retain decoder pixel and warning evidence
+        if: ${{ always() && !inputs.preflight_only && inputs.repack_run_id == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Decoder-regression-${{ github.sha }}
+          path: build/new-horizons-windows-x64/sdl3-mask.*.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Verify native NHART preparation and matched-byte reads (CPU only)
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
