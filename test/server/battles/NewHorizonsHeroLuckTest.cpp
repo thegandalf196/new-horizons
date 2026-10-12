@@ -12,6 +12,8 @@
 #include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/ISpellMechanics.h"
 
 #include <cmath>
 #include <limits>
@@ -97,6 +99,32 @@ protected:
 		beginCombat();
 		ASSERT_NE(battle()->battleActiveUnit(), nullptr);
 		ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()), PlayerColor(0));
+	}
+	void preparePaidHaste(bool erratic)
+	{
+		startGame();
+		ASSERT_NO_FATAL_FAILURE(selectOffer("new-horizons:luck", "new-horizons:luck.fortuneSFavor", MasteryLevel::BASIC));
+		ASSERT_NO_FATAL_FAILURE(selectOffer("new-horizons:luck", erratic
+			? "new-horizons:luck.gambler" : "new-horizons:luck.serendipity", MasteryLevel::ADVANCED));
+		if(!erratic)
+		{
+			ASSERT_NO_FATAL_FAILURE(selectOffer("new-horizons:luck", "new-horizons:luck.twistOfFate", MasteryLevel::EXPERT));
+		}
+		ASSERT_EQ(newHorizonsHeroLuck::hasErraticMana(attackerSideHero), erratic);
+		ASSERT_EQ(newHorizonsHeroLuck::hasDruidicLuck(attackerSideHero), !erratic);
+		ASSERT_FALSE(newHorizonsHeroLuck::hasLuckyDay(attackerSideHero));
+		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::LUCK, BonusSource::OTHER, 1 - attackerSideHero->luckVal(), BonusSourceID()));
+		ASSERT_EQ(attackerSideHero->luckVal(), 1);
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->initializeSpellPoints(20, 0);
+		startBattle();
+		beginCombat();
+		ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+		ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()), PlayerColor(0));
+		ASSERT_TRUE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::HASTE));
 	}
 	BattleAction order(HeroCommand command)
 	{
@@ -323,6 +351,77 @@ TEST_F(HeroLuckOrderTest, InvalidOrderDoesNotSeedDrawOrChangeSavedRandomizer)
 		BattleAction::makeTargetedHeroCommand(BattleSide::ATTACKER, HeroCommand::FOCUS_FIRE, friendly->unitId())));
 	EXPECT_EQ(savedRandomizer(*gameHandler->randomizer), before);
 	EXPECT_TRUE(battle()->getHeroOrderStates(BattleSide::ATTACKER).empty());
+}
+
+TEST_F(HeroLuckOrderTest, PaidNondamagingHasteWithOnlyDruidicConsumesActionAndManaWithoutLuckDraw)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePaidHaste(false));
+	const auto * spell = SpellID(SpellID::HASTE).toSpell();
+	ASSERT_TRUE(spell->isPositive());
+	ASSERT_FALSE(spells::heroLuckDamageEligible(*spell, battle()->getMagicRules()));
+	const auto * target = battle()->battleActiveUnit();
+	const auto marker = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::HASTE)));
+	ASSERT_TRUE(target->getAllBonuses(marker)->empty());
+	const auto health = target->getAvailableHealth();
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto cost = battle()->battleGetSpellCost(spell, attackerSideHero);
+	ASSERT_GT(cost, 0);
+	ASSERT_GE(mana, cost);
+	const auto castCount = battle()->getSide(BattleSide::ATTACKER).castSpellsCount;
+	const auto before = savedRandomizer(*gameHandler->randomizer);
+	GameRandomizer expected(*gameState());
+	CMemorySerializer rngWire(before);
+	rngWire.iser & expected;
+	ASSERT_EQ(savedRandomizer(expected), before);
+	// Positive Haste has neither ordinary hostile-resistance nor mirror draws.
+	// No Hero Luck stream is seeded, advanced or rebiased for Druidic alone.
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroAction(0)));
+	const auto casts = server.castsOf(SpellID::HASTE);
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_FALSE(casts.front().announcement.counterspellNegated);
+	EXPECT_FALSE(casts.front().announcement.heroLuck);
+	EXPECT_EQ(casts.front().announcement.paidHeroManaCost, cost);
+	EXPECT_EQ(casts.front().damage, 0);
+	EXPECT_FALSE(target->getAllBonuses(marker)->empty());
+	EXPECT_EQ(target->getAvailableHealth(), health);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).castSpellsCount, castCount + 1);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).heroSpellCastCompleted);
+	EXPECT_FALSE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::HASTE));
+	EXPECT_EQ(savedRandomizer(*gameHandler->randomizer), savedRandomizer(expected));
+}
+
+TEST_F(HeroLuckOrderTest, PaidNondamagingHasteWithOnlyErraticUsesOneLuckDrawAndRefunds)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePaidHaste(true));
+	const auto * spell = SpellID(SpellID::HASTE).toSpell();
+	ASSERT_TRUE(spell->isPositive());
+	ASSERT_FALSE(spells::heroLuckDamageEligible(*spell, battle()->getMagicRules()));
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto cost = battle()->battleGetSpellCost(spell, attackerSideHero);
+	const auto refund = cost * newHorizonsHeroLuck::manaRefundPercent(battle()->getMagicRules()) / 100;
+	ASSERT_GT(refund, 0);
+	ASSERT_GE(mana, cost);
+	const auto before = savedRandomizer(*gameHandler->randomizer);
+	GameRandomizer expected(*gameState());
+	CMemorySerializer rngWire(before);
+	rngWire.iser & expected;
+	auto receipt = expected.rollHeroLuck(attackerSideHero->id, attackerSideHero->luckVal());
+	ASSERT_TRUE(receipt);
+	ASSERT_TRUE(receipt->triggered(newHorizonsHeroLuck::chanceScalePercent(battle()->getMagicRules(), Proc::ErraticMana)));
+	receipt->mark(Proc::ErraticMana);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroAction(0)));
+	const auto casts = server.castsOf(SpellID::HASTE);
+	ASSERT_EQ(casts.size(), 1u);
+	ASSERT_TRUE(casts.front().announcement.heroLuck);
+	EXPECT_EQ(*casts.front().announcement.heroLuck, *receipt);
+	EXPECT_FALSE(casts.front().announcement.heroLuck->has(Proc::DruidicLuck));
+	EXPECT_FALSE(casts.front().announcement.counterspellNegated);
+	EXPECT_EQ(casts.front().announcement.paidHeroManaCost, cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost + refund);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).heroSpellCastCompleted);
+	EXPECT_FALSE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::HASTE));
+	EXPECT_EQ(savedRandomizer(*gameHandler->randomizer), savedRandomizer(expected));
 }
 
 TEST_F(HeroLuckOrderTest, DedicatedHeroStreamsRemainIsolatedAndRoundTripTheirNextDraw)
