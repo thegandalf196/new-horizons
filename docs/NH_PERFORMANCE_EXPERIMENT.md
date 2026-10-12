@@ -83,6 +83,24 @@ animation speed alongside resource-loading records. Large frame steps establish
 elapsed-time catch-up, not its cause. Capped traces and logging overhead must be
 accounted for before drawing performance conclusions.
 
+### Generated outlines and phase-entry timing
+
+SDL3 generated outlines resolve pixel metadata once and sample a pitch-correct
+alpha plane. Stencil work is restricted to the occupied silhouette's influence
+bounds, without changing the full canvas, threshold semantics or sprite pixels.
+The opt-in `ENABLE_NH_SDL3_OUTLINE_REGRESSION` target
+`nhSdl3OutlineRuntimeTest` checks pixel equivalence against an independent generic
+reference and prints bounded same-input sparse/dense CPU timings. It does not
+initialize video or audio. Component timings are not gameplay frame-time or
+Windows presentation measurements.
+
+Creature groups and emitted projectiles defer at most one initial update that
+could precede phase creation. A prior draw attempt releases the deferral; absent
+rendering cannot repeatedly suppress advancement. Existing animation diagnostics
+retain caller `dt_ms` and additionally report applied `advance_dt_ms`.
+`nhAnimationPhaseStartTest` and `nhProjectileFlightLifecycleTest` cover the pure
+start/flight policy, not complete battle callbacks or physical presentation.
+
 ### Private Wine child-environment bootstrap
 
 The guarded full-game Wine helper accepts optional `--wine-bootstrap` and

@@ -243,6 +243,7 @@ void BattleProjectileController::emitStackProjectile(const CStack * stack)
 		if ( !projectile->playing && projectile->shooterID == stackID)
 		{
 			projectile->playing = true;
+			projectile->phaseStart.restart();
 			return;
 		}
 	}
@@ -254,6 +255,7 @@ void BattleProjectileController::render(Canvas & canvas)
 	{
 		if ( projectile->playing )
 		{
+			projectile->phaseStart.onRenderAttempt();
 			projectile->show(canvas);
 			// Missing artwork must not leave an immortal projectile either.
 			projectile->visibility.onRenderAttempt();
@@ -269,11 +271,12 @@ void BattleProjectileController::tick(uint32_t msPassed)
 		{
 			const bool trace = BattleAnimationTiming::reserve();
 			const float previous = trace ? projectile->progress : 0.f;
-			projectile->tick(msPassed);
+			const uint32_t advanceTime = projectile->phaseStart.elapsedForAdvance(msPassed);
+			projectile->tick(advanceTime);
 			if(trace)
-				logGlobal->debug("NH_RENDER_LOAD_TIMING stage=projectileAdvance projectile=%p shooter=%d steady_us=%lld dt_ms=%u before=%.3f progress=%.3f removable=%d",
+				logGlobal->debug("NH_RENDER_LOAD_TIMING stage=projectileAdvance projectile=%p shooter=%d steady_us=%lld dt_ms=%u before=%.3f progress=%.3f removable=%d advance_dt_ms=%u",
 					static_cast<void *>(projectile.get()), projectile->shooterID, BattleAnimationTiming::steadyMicroseconds(),
-					msPassed, previous, projectile->progress, projectile->visibility.canRemove(projectile->progress));
+					msPassed, previous, projectile->progress, projectile->visibility.canRemove(projectile->progress), advanceTime);
 		}
 	}
 
@@ -491,6 +494,7 @@ void BattleProjectileController::createSpellRayProjectile(const CStack * caster,
 	ray->progress  = 0;
 	ray->speed     = totalTime > 0 ? 1.f / totalTime : 1000.f;
 	ray->playing   = true;
+	ray->phaseStart.restart();
 
 	projectiles.push_back(std::shared_ptr<ProjectileBase>(ray));
 }

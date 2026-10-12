@@ -257,6 +257,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleOverlayLogVisualizer.h
 	battle/BattleProjectileController.h
 	battle/ProjectileFlightLifecycle.h
+	battle/AnimationPhaseStart.h
 	battle/BattleRenderer.h
 	battle/BattleResultWindow.h
 	battle/BattleSidePanel.h

@@ -23,6 +23,8 @@
 
 #include "lib/GameConstants.h"
 
+#include <cstring>
+
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 #include <tbb/blocked_range2d.h>
@@ -796,44 +798,126 @@ void CSDL_Ext::getClipRect(SDL_Surface * src, Rect & other)
 
 SDL_Surface* CSDL_Ext::drawOutline(SDL_Surface* sourceSurface, const SDL_Color& color, int thickness, uint8_t alphaThreshold)
 {
-	if(thickness < 1)
+	if(thickness < 1 || !sourceSurface || sourceSurface->w <= 0 || sourceSurface->h <= 0)
 		return nullptr;
 
+	const int width = sourceSurface->w;
+	const int height = sourceSurface->h;
+	std::vector<Uint8> alphaPlane(static_cast<size_t>(width) * height);
 	SDL_Surface* destSurface = newSurface(Point(sourceSurface->w, sourceSurface->h));
-
-	if(SDL_MUSTLOCK(sourceSurface)) SDL_LockSurface(sourceSurface);
-	if(SDL_MUSTLOCK(destSurface)) SDL_LockSurface(destSurface);
-
-	int width = sourceSurface->w;
-	int height = sourceSurface->h;
-
-	// Helper lambda to get alpha
-	auto getAlpha = [&](int x, int y) -> Uint8 {
-		if (x < 0 || x >= width || y < 0 || y >= height)
-			return 0;
-		Uint32 pixel = *((Uint32*)sourceSurface->pixels + y * width + x);
-		return getColor(sourceSurface, pixel).a;
-	};
-
-	tbb::parallel_for(tbb::blocked_range<size_t>(0, height), [&](const tbb::blocked_range<size_t>& r)
+	const bool sourceLock = SDL_MUSTLOCK(sourceSurface);
+	const bool destLock = SDL_MUSTLOCK(destSurface);
+	bool sourceLocked = false;
+	bool destLocked = false;
+	try
 	{
-		for (int y = r.begin(); y != r.end(); ++y)
+		if(sourceLock && !(sourceLocked = SDL_LockSurface(sourceSurface)))
+			throw std::runtime_error("Cannot lock outline source");
+		if(destLock && !(destLocked = SDL_LockSurface(destSurface)))
+			throw std::runtime_error("Cannot lock outline destination");
+		const auto * format = getFormat(sourceSurface);
+		const auto * palette = getPalette(sourceSurface);
+		const int bytes = format ? format->bytes_per_pixel : 0;
+		const bool packed = format && bytes >= 1 && bytes <= 4
+			&& (!SDL_ISPIXELFORMAT_INDEXED(sourceSurface->format) || sourceSurface->format == SDL_PIXELFORMAT_INDEX8)
+			&& !SDL_ISPIXELFORMAT_FOURCC(sourceSurface->format) && !SDL_ISPIXELFORMAT_FLOAT(sourceSurface->format);
+		const bool byteAlpha = packed && !palette && format->Abits == 8 && format->Ashift % 8 == 0;
+		std::array<Uint8, 256> paletteAlpha{};
+		if(sourceSurface->format == SDL_PIXELFORMAT_INDEX8 && palette)
+			for(int i = 0; i < std::min<int>(palette->ncolors, paletteAlpha.size()); ++i)
+				SDL_GetRGBA(static_cast<Uint32>(i), format, palette, nullptr, nullptr, nullptr, &paletteAlpha[i]);
+		int left = width, top = height, right = -1, bottom = -1;
+		for(int y = 0; y < height; ++y)
 		{
-			for (int x = 0; x < width; x++)
+			const auto * row = static_cast<const Uint8 *>(sourceSurface->pixels) + static_cast<size_t>(y) * sourceSurface->pitch;
+			for(int x = 0; x < width; ++x)
 			{
-				const Uint8 finalAlpha = outlineMask::pixelAlpha(x, y, width, height, thickness, alphaThreshold, color.a, getAlpha);
-				if(finalAlpha > 0)
+				Uint8 alpha = 0;
+				if(byteAlpha)
 				{
-					Uint32 newPixel = mapColor(destSurface, { color.r, color.g, color.b, finalAlpha });
-					*((Uint32*)destSurface->pixels + y * width + x) = newPixel;
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+					alpha = row[x * bytes + bytes - 1 - format->Ashift / 8];
+#else
+					alpha = row[x * bytes + format->Ashift / 8];
+#endif
+				}
+				else if(sourceSurface->format == SDL_PIXELFORMAT_INDEX8 && palette)
+				{
+					if(row[x] < palette->ncolors)
+						alpha = paletteAlpha[row[x]];
+					else
+						SDL_GetRGBA(row[x], format, palette, nullptr, nullptr, nullptr, &alpha);
+				}
+				else if(packed)
+				{
+					Uint32 pixel = 0;
+					if(bytes == 3)
+					{
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+						pixel = (Uint32(row[x * 3]) << 16) | (Uint32(row[x * 3 + 1]) << 8) | row[x * 3 + 2];
+#else
+						pixel = row[x * 3] | (Uint32(row[x * 3 + 1]) << 8) | (Uint32(row[x * 3 + 2]) << 16);
+#endif
+					}
+					else if(bytes == 2)
+					{
+						Uint16 value;
+						std::memcpy(&value, row + x * bytes, sizeof(value));
+						pixel = value;
+					}
+					else if(bytes == 1)
+						pixel = row[x];
+					else
+						std::memcpy(&pixel, row + x * bytes, bytes);
+					SDL_GetRGBA(pixel, format, palette, nullptr, nullptr, nullptr, &alpha);
+				}
+				else if(!SDL_ReadSurfacePixel(sourceSurface, x, y, nullptr, nullptr, nullptr, &alpha))
+					throw std::runtime_error("Cannot sample outline source");
+				alphaPlane[static_cast<size_t>(y) * width + x] = alpha;
+				if(alphaThreshold == 0 ? alpha != 0 : alpha >= alphaThreshold)
+				{
+					left = std::min(left, x); top = std::min(top, y);
+					right = std::max(right, x); bottom = std::max(bottom, y);
 				}
 			}
 		}
-	});
-
-	if(SDL_MUSTLOCK(sourceSurface)) SDL_UnlockSurface(sourceSurface);
-	if(SDL_MUSTLOCK(destSurface)) SDL_UnlockSurface(destSurface);
-
+		const auto getAlpha = [&](int x, int y) -> Uint8
+		{
+			return x < 0 || x >= width || y < 0 || y >= height ? 0 : alphaPlane[static_cast<size_t>(y) * width + x];
+		};
+		std::array<Uint32, 256> colors{};
+		const auto * destFormat = getFormat(destSurface);
+		for(size_t i = 1; i < colors.size(); ++i)
+			colors[i] = SDL_MapRGBA(destFormat, nullptr, color.r, color.g, color.b, static_cast<Uint8>(i));
+		// Keep the original full canvas; only padding beyond the exact influence
+		// radius is omitted. Widen arithmetic before expanding occupied bounds.
+		if(right >= left)
+		{
+			const int xBegin = static_cast<int>(std::max<int64_t>(0, int64_t(left) - thickness));
+			const int xEnd = static_cast<int>(std::min<int64_t>(width, int64_t(right) + thickness + 1));
+			const int yBegin = static_cast<int>(std::max<int64_t>(0, int64_t(top) - thickness));
+			const int yEnd = static_cast<int>(std::min<int64_t>(height, int64_t(bottom) + thickness + 1));
+			tbb::parallel_for(tbb::blocked_range<int>(yBegin, yEnd), [&](const tbb::blocked_range<int> & r)
+			{
+				for(int y = r.begin(); y != r.end(); ++y)
+					for(int x = xBegin; x < xEnd; ++x)
+					{
+						const Uint8 alpha = outlineMask::pixelAlpha(x, y, width, height, thickness, alphaThreshold, color.a, getAlpha);
+						if(alpha > 0)
+							std::memcpy(static_cast<Uint8 *>(destSurface->pixels) + static_cast<size_t>(y) * destSurface->pitch + x * sizeof(Uint32), &colors[alpha], sizeof(Uint32));
+					}
+			});
+		}
+	}
+	catch(...)
+	{
+		if(sourceLocked) SDL_UnlockSurface(sourceSurface);
+		if(destLocked) SDL_UnlockSurface(destSurface);
+		SDL_DestroySurface(destSurface);
+		throw;
+	}
+	if(sourceLocked) SDL_UnlockSurface(sourceSurface);
+	if(destLocked) SDL_UnlockSurface(destSurface);
 	return destSurface;
 }
 

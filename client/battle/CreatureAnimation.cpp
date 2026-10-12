@@ -244,6 +244,7 @@ void CreatureAnimation::setType(ECreatureAnimType type)
 {
 	this->type = type;
 	currentFrame = 0;
+	phaseStart.restart();
 	once = false;
 
 	speed = speedController(this, type);
@@ -330,17 +331,18 @@ bool CreatureAnimation::incrementFrame(float timePassed)
 		&& BattleAnimationTiming::reserve();
 	const float previousFrame = trace ? currentFrame : 0.f;
 	elapsedTime += timePassed;
-	currentFrame += timePassed * speed;
+	const float advanceTime = phaseStart.elapsedForAdvance(timePassed);
+	currentFrame += advanceTime * speed;
 	if (animationEnd >= 0)
 		currentFrame = std::min(currentFrame, animationEnd);
 
 	const auto framesNumber = framesInGroup(type);
 	if(trace)
-		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=animationAdvance animation=%p resource=%s steady_us=%lld dt_ms=%.3f group=%d before=%.3f advanced=%.3f frameSteps=%d frames=%d completes=%d speed=%.3f",
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=animationAdvance animation=%p resource=%s steady_us=%lld dt_ms=%.3f group=%d before=%.3f advanced=%.3f frameSteps=%d frames=%d completes=%d speed=%.3f advance_dt_ms=%.3f",
 			static_cast<void *>(this), animationResourceLabel(name.getOriginalName()), BattleAnimationTiming::steadyMicroseconds(),
 			timePassed * 1000., static_cast<int>(type), previousFrame, currentFrame,
 			static_cast<int>(std::floor(currentFrame) - std::floor(previousFrame)), framesNumber,
-			framesNumber <= 0 || currentFrame >= float(framesNumber), speed);
+			framesNumber <= 0 || currentFrame >= float(framesNumber), speed, advanceTime * 1000.);
 
 	if(framesNumber <= 0)
 	{
@@ -413,6 +415,7 @@ static ColorRGBA genBorderColor(ui8 alpha, const ColorRGBA & base)
 
 void CreatureAnimation::nextFrame(Canvas & canvas, const ColorRGBA & effectColor, uint8_t transparency, bool facingRight)
 {
+	phaseStart.onRenderAttempt();
 	const bool trace = BattleAnimationTiming::enabled() && !isIdle() && !isDead() && type != ECreatureAnimType::FROZEN
 		&& BattleAnimationTiming::reserve();
 	const auto started = trace ? BattleAnimationTiming::steadyMicroseconds() : 0;

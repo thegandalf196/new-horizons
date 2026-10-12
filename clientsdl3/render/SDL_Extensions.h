@@ -94,6 +94,8 @@ SDL_Color toSDL(const ColorRGBA & color);
 	///set key-color to 0,255,255 only if it exactly mapped
 	void setDefaultColorKeyPresize(SDL_Surface * surface);
 
+	/// Full-canvas alpha outline; source pitch/pixels retained. Color keys do not
+	/// replace getRGBA alpha, and threshold zero retains legacy fringe alpha.
 	SDL_Surface * drawOutline(SDL_Surface * source, const SDL_Color & color, int thickness, uint8_t alphaThreshold = 0);
 	SDL_Surface * drawShadow(SDL_Surface * source, bool doSheer);
 
