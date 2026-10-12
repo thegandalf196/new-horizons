@@ -19,6 +19,7 @@
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/battle/NewHorizonsBulwark.h"
 #include "../../../lib/battle/NewHorizonsFrozen.h"
+#include "../../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
@@ -53,6 +54,7 @@ protected:
 	int magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
 	bool disableFrozenRules = false;
 	int freezingTouchChance = -1;
+	bool deployOriginalCureActor = false;
 	CStack * target = nullptr;
 	CStack * poisonEnemy = nullptr;
 
@@ -100,6 +102,10 @@ protected:
 		removeDeployedUnits();
 		target = addStack(BattleSide::ATTACKER, creatureByName(creature), BattleHex(3, 5), count);
 		poisonEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), poisonEnemyCount);
+		if(deployOriginalCureActor)
+		{
+			ASSERT_NE(addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(4, 5), 1), nullptr);
+		}
 		beginCombat();
 		ASSERT_NE(target, nullptr);
 		ASSERT_NE(poisonEnemy, nullptr);
@@ -187,6 +193,41 @@ protected:
 		return !target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(source)))->empty();
 	}
 
+	JsonNode spellEffectsJson(SpellID source) const
+	{
+		JsonNode result;
+		const auto bonuses = target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(source)));
+		for(const auto & bonus : *bonuses)
+			result.Vector().push_back(bonus->toJsonNode());
+		return result;
+	}
+
+	void preparePaidPuppetControl()
+	{
+		ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1, 100));
+		giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		const SpellID puppet(SpellID::decode(std::string(newHorizonsPuppetMaster::SPELL_ID)));
+		defenderSideHero->addSpellToSpellbook(puppet);
+		defenderSideHero->addSpellToSpellbook(SpellID::CURE);
+		const int chaosMagic = SecondarySkill::decode("new-horizons:chaosMagic");
+		ASSERT_GE(chaosMagic, 0);
+		defenderSideHero->setSecSkillLevel(SecondarySkill(chaosMagic), MasteryLevel::BASIC,
+			ChangeValueMode::ABSOLUTE);
+		defenderSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(defenderSideHero, 1000);
+		const auto mana = defenderSideHero->getManaAvailable();
+		const auto casts = battle()->battleCastSpells(BattleSide::DEFENDER);
+		// Established paid-cast fixture path validates canBeCast/canBeCastAt and
+		// executes BattleCast::cast, rather than fabricating a controller marker.
+		ASSERT_TRUE(castOn(defenderSideHero, puppet, target));
+		ASSERT_LT(defenderSideHero->getManaAvailable(), mana);
+		ASSERT_EQ(battle()->battleCastSpells(BattleSide::DEFENDER), casts + 1);
+		ASSERT_TRUE(newHorizonsPuppetMaster::hasValidControlMarker(*battle(), target));
+		ASSERT_EQ(target->unitSide(), BattleSide::ATTACKER);
+		ASSERT_EQ(battle()->battleGetOwner(target), attackerSideHero->getOwner());
+		ASSERT_EQ(battle()->battleGetActionController(target), defenderSideHero->getOwner());
+	}
+
 	BattleAction cureAction(const CStack * unit, SpellID affliction = SpellID::NONE) const
 	{
 		BattleAction action;
@@ -227,6 +268,88 @@ protected:
 		return stack->physicalPoisonActivationsRemaining < remainingBefore;
 	}
 };
+}
+
+TEST_F(NewHorizonsCureTest, OriginalAllyCureRemovesPhysicalPoisonButPreservesPaidPuppetControl)
+{
+	deployOriginalCureActor = true;
+	ASSERT_NO_FATAL_FAILURE(preparePaidPuppetControl());
+	ASSERT_NO_FATAL_FAILURE(addPhysicalPoison());
+	addMagicalConditions();
+	const auto control = target->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	ASSERT_EQ(control->size(), 1u);
+	const auto marker = control->front()->toJsonNode();
+	const auto markerOwner = control->front()->spellCasterOwner;
+	const auto markerTurns = control->front()->turnsRemain;
+	const auto health = target->getAvailableHealth();
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto casts = battle()->battleCastSpells(BattleSide::ATTACKER);
+	const auto allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const std::array<SpellID, 3> unrelated{SpellID::CURSE, SpellID::SLOW, SpellID::BERSERK};
+	std::array<JsonNode, 3> unrelatedBefore;
+	for(size_t index = 0; index < unrelated.size(); ++index)
+		unrelatedBefore[index] = spellEffectsJson(unrelated[index]);
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleGetActionController(battle()->battleActiveUnit()), attackerSideHero->getOwner());
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->getOwner(),
+		cureAction(target, SpellID::POISON)));
+	EXPECT_EQ(target->physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(target->physicalPoisonActivationsRemaining, 0);
+	EXPECT_EQ(target->getAvailableHealth(), health);
+	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), casts + 1);
+	EXPECT_NE(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
+	const auto after = target->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	ASSERT_EQ(after->size(), 1u);
+	EXPECT_EQ(after->front()->toJsonNode(), marker);
+	EXPECT_EQ(after->front()->spellCasterOwner, markerOwner);
+	EXPECT_EQ(after->front()->turnsRemain, markerTurns);
+	EXPECT_TRUE(newHorizonsPuppetMaster::hasValidControlMarker(*battle(), target));
+	EXPECT_EQ(battle()->battleGetActionController(target), defenderSideHero->getOwner());
+	EXPECT_EQ(battle()->battleGetOwner(target), attackerSideHero->getOwner());
+	for(size_t index = 0; index < unrelated.size(); ++index)
+	{
+		EXPECT_TRUE(hasSource(unrelated[index]));
+		EXPECT_EQ(spellEffectsJson(unrelated[index]), unrelatedBefore[index]);
+	}
+}
+
+TEST_F(NewHorizonsCureTest, PuppetControllerCannotCureMechanicallyHostileTargetOrSpendItsFreshAction)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePaidPuppetControl());
+	advanceRound(); // Earn a new action; rejection must not merely mean Puppet spent it.
+	ASSERT_NO_FATAL_FAILURE(addPhysicalPoison());
+	// Peasants have only1HP, so injury would make casualties, not a healing
+	// opportunity. A physical affliction provides a genuine friendly Cure target.
+	ASSERT_NO_FATAL_FAILURE(addPhysicalPoison(5, 3, poisonEnemy));
+	ASSERT_TRUE(newHorizonsPuppetMaster::hasValidControlMarker(*battle(), target));
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleGetActionController(battle()->battleActiveUnit()), defenderSideHero->getOwner());
+	spells::BattleCast cast(battle(), defenderSideHero, spells::Mode::HERO, SpellID(SpellID::CURE).toSpell());
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(SpellID(SpellID::CURE).toSpell()->battleMechanics(&cast)->canBeCast(problem));
+	const auto state = target->acquireState()->save();
+	const auto control = target->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	ASSERT_EQ(control->size(), 1u);
+	const auto marker = control->front()->toJsonNode();
+	const auto markerOwner = control->front()->spellCasterOwner;
+	const auto mana = defenderSideHero->getManaAvailable();
+	const auto casts = battle()->battleCastSpells(BattleSide::DEFENDER);
+	const auto allowances = battle()->getHeroActionAllowances(BattleSide::DEFENDER);
+	auto action = cureAction(target, SpellID::POISON);
+	action.side = BattleSide::DEFENDER;
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), defenderSideHero->getOwner(), action));
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::DEFENDER), casts);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::DEFENDER), allowances);
+	EXPECT_EQ(target->acquireState()->save(), state);
+	const auto after = target->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	ASSERT_EQ(after->size(), 1u);
+	EXPECT_EQ(after->front()->toJsonNode(), marker);
+	EXPECT_EQ(after->front()->spellCasterOwner, markerOwner);
+	EXPECT_TRUE(newHorizonsPuppetMaster::hasValidControlMarker(*battle(), target));
+	EXPECT_EQ(battle()->battleGetActionController(target), defenderSideHero->getOwner());
+	EXPECT_EQ(battle()->battleGetOwner(target), attackerSideHero->getOwner());
 }
 
 TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceCleansesFullHealthAndPreservesRecipientStampAndInnateBonus)
