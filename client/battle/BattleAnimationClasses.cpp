@@ -458,7 +458,7 @@ bool MovementAnimation::init()
 
 void MovementAnimation::tick(uint32_t msPassed)
 {
-	progress += float(msPassed) / 1000 * progressPerSecond;
+	progress = myAnim->getFrameAdvance().advanceProgress(progress, progressPerSecond);
 
 	//moving instructions
 	myAnim->pos.x = begX + distanceX * progress;

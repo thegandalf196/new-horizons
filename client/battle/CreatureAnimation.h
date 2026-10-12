@@ -95,7 +95,7 @@ private:
 	/// currently displayed frame. Float to allow H3-style animations where frames
 	/// don't display for integer number of frames
 	float currentFrame;
-	AnimationPhaseStart phaseStart;
+	AnimationFrameAdvance frameAdvance;
 	float animationEnd;
 
 	/// cumulative, real-time duration of animation. Used for effects like selection border
@@ -143,6 +143,8 @@ public:
 
 	/// Gets the current frame ID within current group.
 	float getCurrentFrame() const;
+	/// Effective interval already consumed by the sprite during this update.
+	const AnimationFrameAdvance & getFrameAdvance() const;
 	/// Actual current sprite content in battlefield coordinates, not its canvas.
 	Rect currentFrameContentRect(bool facingRight) const;
 

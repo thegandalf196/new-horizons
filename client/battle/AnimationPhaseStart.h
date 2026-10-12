@@ -25,3 +25,24 @@ public:
 		return elapsed;
 	}
 };
+
+/// The sprite and its position consume the same interval in one update.
+class AnimationFrameAdvance
+{
+	AnimationPhaseStart phaseStart;
+	float seconds = 0.f;
+
+public:
+	void restart()
+	{
+		phaseStart.restart();
+		seconds = 0.f;
+	}
+	void onRenderAttempt() { phaseStart.onRenderAttempt(); }
+	void advance(float elapsed) { seconds = phaseStart.elapsedForAdvance(elapsed); }
+	float elapsedSeconds() const { return seconds; }
+	double advanceProgress(double progress, double progressPerSecond) const
+	{
+		return progress + seconds * progressPerSecond;
+	}
+};

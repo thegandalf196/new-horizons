@@ -244,7 +244,7 @@ void CreatureAnimation::setType(ECreatureAnimType type)
 {
 	this->type = type;
 	currentFrame = 0;
-	phaseStart.restart();
+	frameAdvance.restart();
 	once = false;
 
 	speed = speedController(this, type);
@@ -331,7 +331,8 @@ bool CreatureAnimation::incrementFrame(float timePassed)
 		&& BattleAnimationTiming::reserve();
 	const float previousFrame = trace ? currentFrame : 0.f;
 	elapsedTime += timePassed;
-	const float advanceTime = phaseStart.elapsedForAdvance(timePassed);
+	frameAdvance.advance(timePassed);
+	const float advanceTime = frameAdvance.elapsedSeconds();
 	currentFrame += advanceTime * speed;
 	if (animationEnd >= 0)
 		currentFrame = std::min(currentFrame, animationEnd);
@@ -383,6 +384,11 @@ float CreatureAnimation::getCurrentFrame() const
 	return currentFrame;
 }
 
+const AnimationFrameAdvance & CreatureAnimation::getFrameAdvance() const
+{
+	return frameAdvance;
+}
+
 Rect CreatureAnimation::currentFrameContentRect(bool facingRight) const
 {
 	const auto & animation = facingRight ? forward : reverse;
@@ -415,7 +421,7 @@ static ColorRGBA genBorderColor(ui8 alpha, const ColorRGBA & base)
 
 void CreatureAnimation::nextFrame(Canvas & canvas, const ColorRGBA & effectColor, uint8_t transparency, bool facingRight)
 {
-	phaseStart.onRenderAttempt();
+	frameAdvance.onRenderAttempt();
 	const bool trace = BattleAnimationTiming::enabled() && !isIdle() && !isDead() && type != ECreatureAnimType::FROZEN
 		&& BattleAnimationTiming::reserve();
 	const auto started = trace ? BattleAnimationTiming::steadyMicroseconds() : 0;
@@ -443,9 +449,9 @@ void CreatureAnimation::nextFrame(Canvas & canvas, const ColorRGBA & effectColor
 	if(trace)
 	{
 		const auto returned = BattleAnimationTiming::steadyMicroseconds();
-		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=animationDrawReturn animation=%p resource=%s steady_us=%lld group=%d frame=%llu imageAvailable=%d facingRight=%d us=%lld",
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=animationDrawReturn animation=%p resource=%s steady_us=%lld group=%d frame=%llu imageAvailable=%d facingRight=%d us=%lld pos_x=%d pos_y=%d",
 			static_cast<void *>(this), animationResourceLabel(name.getOriginalName()), returned,
-			static_cast<int>(type), static_cast<unsigned long long>(frame), image != nullptr, facingRight, returned - started);
+			static_cast<int>(type), static_cast<unsigned long long>(frame), image != nullptr, facingRight, returned - started, pos.x, pos.y);
 	}
 }
 
