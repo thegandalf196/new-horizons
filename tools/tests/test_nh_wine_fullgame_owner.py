@@ -763,5 +763,52 @@ class WineRootMappingTests(unittest.TestCase):
         self.assertIn('Final Wine root mapping verification failed', receipt['final_errors'])
 
 
+class TypedFixtureContractTest(unittest.TestCase):
+    def plan(self, name='playback-cabir.vmap'):
+        return {'wine': '/pinned/wine', 'executable': '/selected/new-horizons.exe',
+                'fixture_map': name, 'content': {'map': {'filename': name}}}
+
+    def test_fixed_direct_and_bootstrap_arguments(self):
+        plan = self.plan()
+        fixed = ['--testmap', 'Maps/playback-cabir.vmap', '--spectate', '--savefrequency', '0']
+        self.assertEqual(owner.fixture_arguments(plan), fixed)
+        self.assertEqual(owner.fullgame_command(plan), ['/pinned/wine', '/selected/new-horizons.exe', *fixed])
+        plan['bootstrap'] = '/private/nh-wine-bootstrap.exe'
+        self.assertEqual(owner.fullgame_command(plan), ['/pinned/wine', plan['bootstrap'], '--fixture-map', 'playback-cabir.vmap'])
+        self.assertEqual(owner.fixture_arguments(plan), fixed)
+
+    def test_legacy_has_no_added_arguments(self):
+        plan = self.plan()
+        del plan['fixture_map']
+        self.assertEqual(owner.fullgame_command(plan), ['/pinned/wine', '/selected/new-horizons.exe'])
+        plan['bootstrap'] = '/private/nh-wine-bootstrap.exe'
+        self.assertEqual(owner.fullgame_command(plan), ['/pinned/wine', plan['bootstrap']])
+
+    def test_invalid_names_and_wrong_manifest_refuse(self):
+        for name in ('', True, 'Maps/a.vmap', '../a.vmap', 'a b.vmap', 'a.vmap"',
+                     'a.h3m', 'a.VMAP', 'CON.vmap', 'lpt9.vmap', 'com1.vmap', 'a'*65+'.vmap', 'é.vmap'):
+            with self.subTest(name=name), self.assertRaises(owner.Refusal):
+                owner.fixture_arguments(self.plan(name))
+        plan = self.plan()
+        plan['content']['map']['filename'] = 'different.vmap'
+        with self.assertRaises(owner.Refusal): owner.fixture_arguments(plan)
+
+    def test_exact_actual_game_argv_spellings(self):
+        plan = self.plan()
+        fixed = owner.fixture_arguments(plan)
+        for executable in (plan['executable'], 'Z:\\selected\\new-horizons.exe'):
+            for prefix in ([], [plan['wine']]):
+                owner.verify_fixture_argv(plan, {'argv': [*prefix, executable, *fixed]})
+
+    def test_extra_reordered_wrong_target_and_missing_argv_refuse(self):
+        plan = self.plan()
+        fixed = owner.fixture_arguments(plan)
+        for argv in (None, [], ['/foreign/new-horizons.exe', *fixed],
+                     [plan['executable'], *fixed, '--onlyAI'], [plan['executable'], *reversed(fixed)],
+                     [plan['executable'], '--testmap', 'Maps/foreign.vmap', *fixed[2:]]):
+            with self.subTest(argv=argv), self.assertRaises(owner.Refusal):
+                owner.verify_fixture_argv(plan, {'argv': argv})
+
+
 if __name__ == '__main__':
     unittest.main()

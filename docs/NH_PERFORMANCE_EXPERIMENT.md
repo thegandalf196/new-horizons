@@ -98,8 +98,20 @@ Creature groups and emitted projectiles defer at most one initial update that
 could precede phase creation. A prior draw attempt releases the deferral; absent
 rendering cannot repeatedly suppress advancement. Existing animation diagnostics
 retain caller `dt_ms` and additionally report applied `advance_dt_ms`.
+Movement position reuses the sprite's stored effective interval for the same
+update. Entering a new pose clears stale elapsed time; continuing `MOVING`
+across hexes preserves residual progress without another start deferral.
+Draw diagnostics also include `pos_x` and `pos_y`; these are requested drawing
+coordinates, not physical presentation measurements.
 `nhAnimationPhaseStartTest` and `nhProjectileFlightLifecycleTest` cover the pure
 start/flight policy, not complete battle callbacks or physical presentation.
+
+Windows CI run `38193691694`, source `d042cb3f4fd2`, passes all 135 outline
+pixel-equivalence cases. On the synthetic sparse 450x400 input, three
+single-thread reference runs took 178.9–180.8 ms versus 1.21–1.24 ms for the
+optimized path. The reference ran first and operating-system cache state was
+not controlled. These are same-input CPU component measurements on the hosted
+runner, not an in-game speedup, GPU timing or certification of later revisions.
 
 ### Private Wine child-environment bootstrap
 
@@ -109,6 +121,17 @@ game with an explicit Unicode environment, replacing only `LOCALAPPDATA` after
 Wine's initial registry-environment merge. The game's pre-SDL path, nonce and
 audio checks remain mandatory. The bootstrap is not installed or shipped with
 player packages; normal Windows startup is unchanged.
+
+For an autonomous fixture, the full-game route accepts
+`--wine-fixture-map NAME.vmap` exactly once. The basename must match the
+hash-pinned content manifest, use the admitted ASCII grammar and fit the
+expanded Win32 path bound. The owner generates only
+`--testmap Maps/NAME.vmap --spectate --savefrequency 0`; arbitrary client
+arguments remain refused. Bootstrap use requires a newly built, hash-pinned
+`NH_WINE_BOOTSTRAP_FIXTURE_V1` executable. Actual child arguments are checked
+around runtime proofs. Admission and compilation alone do not establish Wine
+rendering or native Windows behavior; fresh containment checks and a separate
+bounded run authorization remain mandatory.
 
 Wine can mark its canonical `Z:\` host-root drive alias as a reparse point.
 The private bootstrap and game witness recognize only that exact root; other
