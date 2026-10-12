@@ -53,5 +53,6 @@ assert "ENGINE->windows().clear();" in remove_gui, "endGame must remove the Batt
 
 clear = body(windows, "void WindowHandler::clear()")
 assert "windowsStack.clear();" in clear, "window teardown must empty the window stack"
+assert "redrawState.clearScene();" in clear, "window teardown must invalidate prior-scene deferred paints"
 
 print("battle restart teardown source checks passed")

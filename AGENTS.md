@@ -16,6 +16,16 @@ mutate gameplay state from the frontend.
 
 ## Important Patterns and Conventions
 
+### Protected regression invariants
+
+Before changing battle ownership, restart/quickload/game shutdown, window
+clearing or deferred rendering, read the combat-restart guardrail in
+`docs/NH_PERFORMANCE_EXPERIMENT.md`. Preserve its shutdown and repaint
+invariants, run the linked regression checks, and verify the ordinary rendered
+transition when touching those paths. A source-only check does not close a
+reported visual regression. Record recurrent defects with their previous fix,
+protected invariant, regression coverage and remaining acceptance evidence.
+
 ### C++ style
 
 Follow the project's C++ conventions in [`docs/developers/Coding_Guidelines.md`](docs/developers/Coding_Guidelines.md) (formatting, naming, and general style).
