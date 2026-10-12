@@ -83,6 +83,31 @@ animation speed alongside resource-loading records. Large frame steps establish
 elapsed-time catch-up, not its cause. Capped traces and logging overhead must be
 accounted for before drawing performance conclusions.
 
+### WAIT completion diagnostics
+
+With the existing `NH_RENDER_LOAD_TIMINGS=1` opt-in and both global and animation
+DEBUG logging enabled, each completed `BattleInterface::endAction` WAIT callback
+emits one `NH_WAIT_END_TIMING` record. No clocks are sampled for other actions or
+when these gates are disabled. No new pacing, cache or transport behavior is
+introduced. See [logging configuration](developers/Logging_API.md) for logger
+settings; avoid global TRACE unless the additional messages are needed.
+
+The record identifies battle, stack and action, and reports steady-clock wall
+microseconds: `initial_wait_us` includes staged work and the first animation wait;
+`order_wait_us` includes Order presentation and its wait; `activation_us` includes
+stack lookup and activation; `facing_completion_us` includes the stack controller's
+reversal playback, wait and cleanup; `ui_remainder_us` covers the remaining queue
+and status refresh. `total_us` excludes emission of the timing record itself.
+Individual spans can sum up to four microseconds below the total through
+microsecond truncation.
+
+These records do not consume the per-frame animation diagnostic cap. They remain
+subject to the approved run duration and log-size budget; a truncated or refused
+trace is not a complete WAIT count. Correlate them with existing AI/request and
+animation records to locate a long completion interval. They do not measure CPU
+time, physical presentation, or establish the cause of the reported Windows delay.
+Compare instrumentation-off runs before attributing a performance regression.
+
 ### Generated outlines and phase-entry timing
 
 SDL3 generated outlines resolve pixel metadata once and sample a pitch-correct
