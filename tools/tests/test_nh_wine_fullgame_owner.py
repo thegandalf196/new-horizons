@@ -861,5 +861,74 @@ class TypedFixtureContractTest(unittest.TestCase):
                 owner.verify_fixture_argv(plan, {'argv': argv})
 
 
+class LoaderRefusalDiagnosticTests(unittest.TestCase):
+    def values(self):
+        expected = {'exe':'/selected/wine', 'sha256':'a'*64,
+                    'argv':['/selected/wine','/selected/bootstrap.exe','--fixture-map','fixture.vmap']}
+        actual = {**expected, 'pid':2, 'start_ticks':3, 'uid':1000,
+                  'boot_id':'owned-boot', 'state':'S'}
+        return expected, {'bootstrap':{'before':copy.deepcopy(actual),'after':copy.deepcopy(actual)}}
+
+    def test_each_exact_loader_mismatch_is_recorded_without_acceptance(self):
+        for key, value in (('exe','/other/wine'), ('sha256','b'*64), ('argv',['changed-title'])):
+            expected, context = self.values()
+            context['bootstrap']['after'][key] = value
+            original = owner.Refusal('exact loader refusal')
+            verifier = mock.Mock(side_effect=original)
+            records = []
+            with self.assertRaises(owner.Refusal) as caught:
+                owner.verify_with_loader_diagnostic(verifier, context, expected, records)
+            self.assertIs(caught.exception, original)
+            self.assertEqual(records[0]['mismatched_fields'], [key])
+            self.assertEqual(records[0]['bootstrap_after'][key], value)
+
+    def test_refusal_keeps_event_unexecuted(self):
+        expected, context = self.values()
+        runtime = owner.Owner(Backend(), {}, lambda:None, clock=lambda:0)
+        runtime.started = 0
+        runtime.armed.set()
+        event = mock.Mock()
+        records = []
+        original = owner.Refusal('runtime refused')
+        def checked(actual):
+            return owner.verify_with_loader_diagnostic(mock.Mock(side_effect=original), actual, expected, records)
+        with self.assertRaises(owner.Refusal) as caught:
+            runtime.verify_input(lambda:context, checked, event)
+        self.assertIs(caught.exception, original)
+        event.assert_not_called()
+        self.assertEqual(len(records), 1)
+
+    def test_serialized_record_excludes_payloads_and_bounds_unknown_values(self):
+        expected, context = self.values()
+        context.update(nonce='secret-nonce', witness=b'secret-witness', environment={'HOME':'secret-home'})
+        context['bootstrap']['after'].update(secret='secret-value', exe='x'*1025, argv=['x']*17)
+        result = owner.loader_refusal_diagnostic(expected, context)
+        encoded = json.dumps(result)
+        for secret in ('secret-nonce','secret-witness','secret-home','secret-value','x'*1025):
+            self.assertNotIn(secret, encoded)
+        self.assertIsNone(result['bootstrap_after']['exe'])
+        self.assertIsNone(result['bootstrap_after']['argv'])
+        self.assertEqual(result['bootstrap_after']['unrecorded_fields'], ['exe','argv'])
+        self.assertLess(len(encoded), 40000)
+        self.assertEqual(json.loads(encoded), result)
+
+    def test_diagnostic_failure_does_not_replace_original_exception(self):
+        original = owner.Refusal('original')
+        with mock.patch.object(owner,'loader_refusal_diagnostic',side_effect=ValueError('diagnostic')):
+            with self.assertRaises(owner.Refusal) as caught:
+                owner.verify_with_loader_diagnostic(mock.Mock(side_effect=original), {}, {}, [])
+        self.assertIs(caught.exception, original)
+
+    def test_success_does_not_record_and_refusal_records_are_capped(self):
+        expected, context = self.values()
+        records = []
+        self.assertEqual(owner.verify_with_loader_diagnostic(lambda _:42,context,expected,records),42)
+        self.assertEqual(records, [])
+        for _ in range(9):
+            with self.assertRaises(owner.Refusal):
+                owner.verify_with_loader_diagnostic(mock.Mock(side_effect=owner.Refusal('no')),context,expected,records)
+        self.assertEqual(len(records),8)
+
+
 if __name__ == '__main__':
     unittest.main()
