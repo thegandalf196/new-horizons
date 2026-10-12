@@ -55,21 +55,32 @@ std::string animationResourceLabel(const std::string & value)
 }
 }
 
-bool BattleAnimationTiming::enabled()
+bool BattleAnimationTiming::requested()
 {
 	static const bool requested = []
 	{
 		const char * value = std::getenv("NH_RENDER_LOAD_TIMINGS");
 		return value && std::string_view(value) == "1";
 	}();
-	return requested && logGlobal->isDebugEnabled();
+	return requested;
+}
+
+unsigned int BattleAnimationTiming::limit()
+{
+	static const unsigned int limit = animationTimingLimit(std::getenv("NH_RENDER_LOAD_TIMING_LIMIT"));
+	return limit;
+}
+
+bool BattleAnimationTiming::enabled()
+{
+	return requested() && logGlobal->isDebugEnabled();
 }
 
 bool BattleAnimationTiming::reserve()
 {
 	if(!enabled())
 		return false;
-	static const unsigned int limit = animationTimingLimit(std::getenv("NH_RENDER_LOAD_TIMING_LIMIT"));
+	const auto limit = BattleAnimationTiming::limit();
 	static std::atomic<uint64_t> attempts{0};
 	const auto index = attempts.fetch_add(1, std::memory_order_relaxed);
 	if(index == limit)

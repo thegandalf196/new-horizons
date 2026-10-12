@@ -58,12 +58,21 @@ graphical-testing rules for runtime measurements; no speedup is established.
 
 ## Hero positive-proc presentation diagnostics
 
-With the same render-timing opt-in and shared event budget, `NH_HERO_PROC`
-correlates an accepted successful Hero Luck/Morale receipt with its queued stage,
+With `NH_RENDER_LOAD_TIMINGS=1` and the `animation.heroProc` logger at DEBUG,
+`NH_HERO_PROC` correlates accepted Hero Luck/Morale flags with their queued stage,
 stage execution, effect registration, first CPU draw return, midpoint and natural
 finish. Scene, local action ordinal, source, side and effect identify the chain;
 the existing animation ID joins registration to playback. One horseshoe still
 represents simultaneous successful Luck perks; the eagle remains a separate stage.
+
+Hero records have an independent bounded counter using the existing strict
+`NH_RENDER_LOAD_TIMING_LIMIT` parser (default 1024, maximum 16384, one overflow
+notice). Set global, animation and AI logging to INFO and only this child domain
+to DEBUG to observe cues without enabling generic per-frame timing records.
+Existing generic timing gates and budgets are unchanged.
+`receiptNoProc` records accepted zero-proc flags; no cue chain is expected for
+that action. This distinguishes an observed non-trigger from missing trace data
+without logging random draws or changing probabilities.
 
 `teardown` marks scene termination, not natural effect completion. Missing images
 are reported without changing existing recovery behavior. Disabled or capped

@@ -32,7 +32,8 @@ struct TraceContext
 	}
 };
 
-// Uses the existing BattleAnimationTiming opt-in and shared event budget.
+// Same literal opt-in/strict limit parser; separate hero-only child-domain budget.
+bool traceEnabled();
 void trace(TraceContext & context, const char * event, int animation = -1,
 	int frame = -1, int frames = 0, int stage = -1, int x = 0, int y = 0,
 	bool imageAvailable = false);

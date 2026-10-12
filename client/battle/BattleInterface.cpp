@@ -992,7 +992,7 @@ void BattleInterface::openingEnd()
 
 BattleInterface::~BattleInterface()
 {
-	if(heroCueTraceScene && BattleAnimationTiming::enabled())
+	if(heroCueTraceScene && heroPositiveProcPresentation::traceEnabled())
 	{
 		heroPositiveProcPresentation::TraceContext trace;
 		trace.scene = heroCueTraceScene;
@@ -1819,7 +1819,7 @@ void BattleInterface::presentHeroPositiveProcs(BattleSide side, bool luckyDay, b
 		return;
 	const auto hero = side == BattleSide::DEFENDER ? defendingHero : attackingHero;
 	std::optional<heroPositiveProcPresentation::TraceContext> trace;
-	if((luckyDay || erraticMana || druidicLuck || heroicSpirit) && BattleAnimationTiming::enabled())
+	if(heroPositiveProcPresentation::traceEnabled())
 	{
 		trace.emplace();
 		trace->scene = heroCueTraceScene;
@@ -1831,7 +1831,7 @@ void BattleInterface::presentHeroPositiveProcs(BattleSide side, bool luckyDay, b
 		trace->source = source;
 		trace->flags = (luckyDay ? 1u : 0u) | (erraticMana ? 2u : 0u)
 			| (druidicLuck ? 4u : 0u) | (heroicSpirit ? 8u : 0u);
-		heroPositiveProcPresentation::trace(*trace, hero ? "receipt" : "receiptNoHero");
+		heroPositiveProcPresentation::trace(*trace, !hero ? "receiptNoHero" : trace->flags ? "receipt" : "receiptNoProc");
 		heroCueTraceScene = trace->scene;
 	}
 	if(!hero)

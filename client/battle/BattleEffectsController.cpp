@@ -36,16 +36,45 @@
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../GameInstance.h"
+#include "../../lib/logging/CLogger.h"
+
+#include <atomic>
+
+namespace
+{
+CLogger * heroProcLogger()
+{
+	static auto * logger = CLogger::getLogger(CLoggerDomain("animation.heroProc"));
+	return logger;
+}
+
+bool reserveHeroProcTrace()
+{
+	if(!heroPositiveProcPresentation::traceEnabled())
+		return false;
+	const auto limit = BattleAnimationTiming::limit();
+	static std::atomic<uint64_t> attempts{0};
+	const auto index = attempts.fetch_add(1, std::memory_order_relaxed);
+	if(index == limit)
+		heroProcLogger()->debug("NH_HERO_PROC cap=%u reached; subsequent events counted but not logged", limit);
+	return index < limit;
+}
+}
+
+bool heroPositiveProcPresentation::traceEnabled()
+{
+	return BattleAnimationTiming::requested() && heroProcLogger()->isDebugEnabled();
+}
 
 void heroPositiveProcPresentation::trace(TraceContext & context, const char * event,
 	int animation, int frame, int frames, int stage, int x, int y, bool imageAvailable)
 {
-	if(!BattleAnimationTiming::enabled() || !BattleAnimationTiming::reserve())
+	if(!reserveHeroProcTrace())
 		return;
 	const auto now = BattleAnimationTiming::steadyMicroseconds();
 	if(!context.scene)
 		context.scene = now;
-	logGlobal->debug("NH_HERO_PROC event=%s steady_us=%lld scene=%lld ordinal=%llu battle=%d side=%d round=%d sourceKind=%s source=%d flags=%u effect=%d animation=%d frame=%d frames=%d stage=%d pos_x=%d pos_y=%d imageAvailable=%d",
+	heroProcLogger()->debug("NH_HERO_PROC event=%s steady_us=%lld scene=%lld ordinal=%llu battle=%d side=%d round=%d sourceKind=%s source=%d flags=%u effect=%d animation=%d frame=%d frames=%d stage=%d pos_x=%d pos_y=%d imageAvailable=%d",
 		event, now, context.scene, static_cast<unsigned long long>(context.ordinal), context.battle,
 		context.side, context.round, context.spell ? "spell" : "order", context.source, context.flags,
 		context.effect, animation, frame, frames, stage, x, y, imageAvailable);
