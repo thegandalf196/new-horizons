@@ -8,6 +8,8 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "BattleStartSnapshotFixture.h"
+#include "../../../lib/gameState/CGameState.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
@@ -461,6 +463,136 @@ TEST_F(NewHorizonsCureTest, PaidPuppetActiveAndCureCleansedFrozenReceiptsSurvive
 	ASSERT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), casts + 1);
 	ASSERT_EQ(target->frozenLastAppliedRound(), round);
 	ASSERT_NO_FATAL_FAILURE(roundTrip(false));
+}
+
+TEST_F(NewHorizonsCureTest, PaidPuppetFrozenCurePacketsReconstructDamagedBattleAndValidateNextActivation)
+{
+	deployOriginalCureActor = true;
+	ASSERT_NO_FATAL_FAILURE(preparePaidPuppetControl());
+	ASSERT_NO_FATAL_FAILURE(injure(3));
+	ASSERT_NO_FATAL_FAILURE(injure(7, poisonEnemy));
+	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	const auto frozenRound = target->frozenLastAppliedRound();
+	const auto damagedTargetHealth = target->getAvailableHealth();
+	const auto manaBeforeCure = attackerSideHero->getManaAvailable();
+	const auto castsBeforeCure = battle()->battleCastSpells(BattleSide::ATTACKER);
+	auto cure = cureAction(target);
+	cure.spellCurePhysicalAffliction = "frozen";
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->getOwner(), cure));
+	ASSERT_GT(target->getAvailableHealth(), damagedTargetHealth);
+	ASSERT_FALSE(target->isNewHorizonsFrozen());
+	ASSERT_LT(attackerSideHero->getManaAvailable(), manaBeforeCure);
+	ASSERT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), castsBeforeCure + 1);
+	ASSERT_NE(battle()->battleGetOwner(target), battle()->battleGetActionController(target));
+
+	const auto targetId = target->unitId();
+	const auto enemyId = poisonEnemy->unitId();
+	const auto targetHealth = target->getAvailableHealth();
+	const auto enemyHealth = poisonEnemy->getAvailableHealth();
+	ASSERT_LT(enemyHealth, poisonEnemy->getTotalHealth());
+	const auto originalOwner = battle()->battleGetOwner(target);
+	const auto controller = battle()->battleGetActionController(target);
+	const auto control = target->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	ASSERT_EQ(control->size(), 1u);
+	const auto controlJson = control->front()->toJsonNode();
+	const auto controlCaster = control->front()->spellCasterOwner;
+	const auto round = battle()->getRound();
+	const auto attackerAllowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto defenderAllowances = battle()->getHeroActionAllowances(BattleSide::DEFENDER);
+	const auto attackerCasts = battle()->battleCastSpells(BattleSide::ATTACKER);
+	const auto defenderCasts = battle()->battleCastSpells(BattleSide::DEFENDER);
+	const auto initialAttackerMana = battle()->getSide(BattleSide::ATTACKER).initialNormalSpellPoints;
+	const auto initialDefenderMana = battle()->getSide(BattleSide::DEFENDER).initialNormalSpellPoints;
+	const auto initialAttackerBuffer = battle()->getSide(BattleSide::ATTACKER).initialBufferSpellPoints;
+	const auto initialDefenderBuffer = battle()->getSide(BattleSide::DEFENDER).initialBufferSpellPoints;
+	const auto restoredId = gameState()->nextBattleID;
+
+	// Composed packet reconstruction, NOT an emitted resume protocol or a world
+	// save implementation. The established builder detaches real bonus descriptors;
+	// CStack's wire omits full health/action state, carried by UnitChanges below.
+	BattleStart outgoing;
+	outgoing.battleID = restoredId;
+	outgoing.info = battleStartFixture::snapshot(*battle(), gameState().get());
+	for(const auto * unit : battle()->getStacksIf([](const CStack *) { return true; }))
+		outgoing.info->getStack(unit->unitId(), false)->restoreFrozenApplicationRound(unit->frozenLastAppliedRound());
+	BattleUnitsChanged outgoingUnits;
+	outgoingUnits.battleID = restoredId;
+	for(const auto * unit : battle()->getStacksIf([](const CStack *) { return true; }))
+	{
+		outgoingUnits.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::UPDATE);
+		outgoingUnits.changedStacks.back().data = unit->acquireState()->save();
+	}
+	CMemorySerializer wire;
+	wire.oser & outgoing & outgoingUnits;
+	wire.iser.cb = gameState().get();
+	BattleStart incoming;
+	BattleUnitsChanged incomingUnits;
+	wire.iser & incoming & incomingUnits;
+	ASSERT_NE(incoming.info, nullptr);
+	EXPECT_EQ(incoming.info->getHeroActionAllowances(BattleSide::ATTACKER), attackerAllowances);
+	EXPECT_EQ(incoming.info->getHeroActionAllowances(BattleSide::DEFENDER), defenderAllowances);
+
+	// Tear down through the real visitor before attaching the replacement graph.
+	// No saved live unit pointer is dereferenced after this boundary.
+	BattleCancelled cancelled;
+	cancelled.battleID = BattleID(0);
+	gameHandler->sendAndApply(cancelled);
+	target = nullptr;
+	poisonEnemy = nullptr;
+	ASSERT_TRUE(gameState()->currentBattles.empty());
+	ASSERT_EQ(attackerSideHero->battle, nullptr);
+	ASSERT_EQ(defenderSideHero->battle, nullptr);
+	gameHandler->sendAndApply(incoming);
+	gameHandler->sendAndApply(incomingUnits);
+	ASSERT_EQ(gameState()->currentBattles.size(), 1u);
+	ASSERT_EQ(battle()->getBattleID(), restoredId);
+	target = battle()->getStack(targetId, false);
+	poisonEnemy = battle()->getStack(enemyId, false);
+	ASSERT_NE(target, nullptr);
+	ASSERT_NE(poisonEnemy, nullptr);
+	EXPECT_EQ(target->getAvailableHealth(), targetHealth);
+	EXPECT_EQ(poisonEnemy->getAvailableHealth(), enemyHealth);
+	EXPECT_EQ(target->frozenLastAppliedRound(), frozenRound);
+	EXPECT_FALSE(target->isNewHorizonsFrozen());
+	EXPECT_FALSE(newHorizonsFrozen::canApply(*target, frozenRound));
+	EXPECT_EQ(battle()->battleGetOwner(target), originalOwner);
+	EXPECT_EQ(battle()->battleGetActionController(target), controller);
+	const auto restoredControl = target->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	ASSERT_EQ(restoredControl->size(), 1u);
+	EXPECT_EQ(restoredControl->front()->toJsonNode(), controlJson);
+	EXPECT_EQ(restoredControl->front()->spellCasterOwner, controlCaster);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), attackerAllowances);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::DEFENDER), defenderAllowances);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), attackerCasts);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::DEFENDER), defenderCasts);
+	// The bootstrap packet intentionally resets INITIAL pools. Paid cast counts
+	// and allowances survived, but paid mana pools did not: this is not faithful
+	// whole-battle resume or world-save coverage. Do not bypass SetMana's guard.
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), initialAttackerMana);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), initialAttackerBuffer);
+	EXPECT_EQ(defenderSideHero->getNormalSpellPoints(), initialDefenderMana);
+	EXPECT_EQ(defenderSideHero->getBufferSpellPoints(), initialDefenderBuffer);
+
+	// Advance only accepted ordinary actions, never force activeStack. Reach the
+	// controlled unit naturally, reject its original owner's request, then accept
+	// exactly the current controller's action through authoritative validation.
+	for(unsigned int steps = 0; steps < 16; ++steps)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		if(active->unitId() == targetId)
+			break;
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(restoredId,
+			battle()->battleGetActionController(active), BattleAction::makeDefend(active)));
+	}
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), targetId);
+	ASSERT_EQ(battle()->getRound(), round);
+	ASSERT_EQ(battle()->battleGetActionController(target), controller);
+	const auto defend = BattleAction::makeDefend(target);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(restoredId, originalOwner, defend));
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), targetId);
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(restoredId, controller, defend));
 }
 
 TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceCleansesFullHealthAndPreservesRecipientStampAndInnateBonus)

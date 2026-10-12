@@ -145,8 +145,24 @@ timed-effect gates pass 29 and 44 cases respectively, without skips. Local
 serialized-marker validation works before bonus-graph rebinding; earlier failing
 results are retained. These are static-engine tests, not shipped-library or
 whole-game save/resume certification. Defend/creature-cast and explicit movement
-forecast completion remain separate work. Controlled-target cleansing transitions
-still require execution; ordinary friendly/hostile casts do not prove them.
+forecast completion remain separate work. Focused paid Puppet Master -> Cure
+tests now execute original-ally physical Poison and Frozen cleansing, reject the
+controller's mechanically hostile Cure request without spending its fresh action,
+and preserve control provenance and the same-round Frozen receipt. A separate
+native stack-codec/rebind test covers active and cleansed Frozen receipts; it is
+not full health/action/world-save coverage.
+
+A subsequent composed BattleStart/UnitChanges packet test reconstructs damaged
+stack health, control provenance, cleansed Frozen receipts and cast allowances,
+then reaches the controlled stack's next activation through accepted actions.
+Its original owner's Defend is rejected and the current controller's is accepted.
+The three-case native gate passes without skips. BattleStart's intentional
+initial-mana reset is asserted, not disguised as paid-pool persistence.
+
+Ordinary world saves omit active battles, and combat settings disable saving.
+Do not describe detached stack or BattleStart packet checks as an implemented
+mid-battle save/resume feature. Compound world-save and extra-activation journeys
+still require their own appropriate execution evidence.
 
 Other recorded interaction risks include composite percentage rounding,
 Counterfire/Crossfire ownership provenance, Inspirational aura expiry, Deep Flank

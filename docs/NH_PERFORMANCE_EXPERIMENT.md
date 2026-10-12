@@ -140,13 +140,27 @@ state, or establish a fix for slow AI turns or scenario-restart UI cleanup.
 
 ### Regression guardrail: restarting during combat
 
-Status: reproduced on Linux SDL3/OpenGL at source `875b2c5591d1`, following
+Status: repaired transition verified on Linux SDL3/OpenGL at source
+`d21c7b5017fc`. The preceding failure was reproduced at `875b2c5591d1`, following
 the report from the `5229c808b15d` Windows player build. An ordinary human
 combat restart completed teardown and loaded a new Day 1 adventure, but the
 old battlefield and creatures remained composited over it. The probe exited
 normally; this is a visible failure, not a failed launch or source-only finding.
-Rendered verification of the scene-layer repair and Windows acceptance remain
-required. A second scenario was not exercised in the failing probe.
+A second scenario was not exercised in that failing probe.
+
+The repaired build passed an ordinary human combat -> Settings -> Restart ->
+settled Day 1 adventure, followed by Main Menu -> New Game -> Single Scenario ->
+a fresh adventure. Neither adventure retained the old battlefield, creatures,
+queue or battle controls; opening settings again also left the underlying scene
+clean. The second game newly initialized the same fixture, not a different map.
+Normal Quit completed, the client was parent-reaped, and all recorded test
+processes and owned display objects were gone. All 812 immutable runtime files,
+46 qualified source files and the unchanged NHART package passed post-run
+integrity verification. The townless fixture emitted three known warnings and
+no errors; this is not a warning-free or performance acceptance claim.
+Windows acceptance of this scene-layer repair and other teardown journeys,
+including quickload, remain unverified. An earlier incomplete repaired-build
+probe and its failed owned-run lifecycle remain separate evidence, not a pass.
 
 The previous repair, `89bb7c693e5c`, established shutdown ordering:
 `CServerHandler::restartGameplay` stops the old network/gameplay waiters before
