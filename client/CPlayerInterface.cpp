@@ -25,6 +25,7 @@
 #include "battle/BattleFieldController.h"
 #include "battle/BattleInterface.h"
 #include "battle/BattleResultWindow.h"
+#include "battle/BattleResultReply.h"
 #include "battle/BattleSiegeController.h"
 #include "battle/BattleWindow.h"
 
@@ -915,7 +916,10 @@ void CPlayerInterface::battleEnd(const BattleID & battleID, const BattleResult *
 			{
 				wnd->resultCallback = [this, queryID](ui32 selection)
 				{
-					cb->selectionMade(selection, queryID);
+					sendBattleResultReply(selection, queryID, [this](int choice, QueryID query)
+					{
+						cb->selectionMade(choice, query);
+					});
 				};
 			}
 
