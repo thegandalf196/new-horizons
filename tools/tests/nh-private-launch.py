@@ -19,7 +19,8 @@ Example (the profile is a dedicated writable path):
 Only these optional client arguments are accepted after --:
   --disable-video
   --savefrequency 0
-  --testmap Maps/<relative-map>.h3m
+  --testmap Maps/<relative-map>.h3m (or .vmap)
+  --spectate
 """
 import argparse
 import hashlib
@@ -424,9 +425,9 @@ def validate_client_args(client_args):
     seen = set()
     while index < len(client_args):
         option = client_args[index]
-        if option == "--disable-video":
+        if option in ("--disable-video", "--spectate"):
             if option in seen:
-                raise Refusal("Duplicate client argument: --disable-video")
+                raise Refusal(f"Duplicate client argument: {option}")
             seen.add(option)
             index += 1
             continue
@@ -438,14 +439,14 @@ def validate_client_args(client_args):
             continue
         if option == "--testmap":
             if option in seen or index + 1 >= len(client_args):
-                raise Refusal("--testmap requires one safe Maps/*.h3m path")
+                raise Refusal("--testmap requires one safe Maps/*.h3m or Maps/*.vmap path")
             name = client_args[index + 1]
             parts = name.split("/")
             if ("\\" in name or "\0" in name or len(parts) < 2
                     or parts[0] != "Maps"
                     or any(part in ("", ".", "..") for part in parts)
-                    or not name.lower().endswith(".h3m")):
-                raise Refusal("--testmap must be a relative Maps/*.h3m path without traversal")
+                    or not name.lower().endswith((".h3m", ".vmap"))):
+                raise Refusal("--testmap must be a relative Maps/*.h3m or Maps/*.vmap path without traversal")
             seen.add(option)
             index += 2
             continue

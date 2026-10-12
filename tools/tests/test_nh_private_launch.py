@@ -271,6 +271,53 @@ class PrivateLaunchTest(unittest.TestCase):
         self.assertFalse(run.call_args.kwargs.get("shell", False))
         self.assertFalse((self.root / "should-not-exist.h3m").exists())
 
+    def test_native_vmap_spectate_preserves_exact_argv(self):
+        client_args = ['--disable-video', '--savefrequency', '0', '--testmap',
+                       'Maps/Controlled fixture/Animation witness.vmap', '--spectate']
+        with self._patch_boundaries(), mock.patch.object(
+                HELPER.subprocess, 'run', return_value=mock.Mock(returncode=0)) as run:
+            self.assertEqual(HELPER.main(self._args('--verify-only', '--', *client_args)), 0)
+        passed = run.call_args.args[0]
+        self.assertEqual(passed[passed.index('--') + 1:], client_args)
+        self.assertFalse(run.call_args.kwargs.get('shell', False))
+
+    def test_native_testmap_bad_paths_refuse_before_spawn(self):
+        paths = ['/Maps/map.vmap', 'C:/Maps/map.vmap', 'Maps/../map.vmap',
+                 'Maps/./map.vmap', 'Maps//map.vmap', 'Maps\\map.vmap',
+                 'Maps/map\0.vmap', 'Maps/map.zip', 'Maps/map.vmap.exe', '', 'Maps/']
+        with self._patch_boundaries(), mock.patch.object(HELPER.subprocess, 'run') as run:
+            for name in paths:
+                with self.subTest(name=repr(name)), self.assertRaises(SystemExit) as caught:
+                    HELPER.main(self._args('--verify-only', '--', '--testmap', name, '--spectate'))
+                self.assertEqual(caught.exception.code, 2)
+            run.assert_not_called()
+
+    def test_native_duplicate_missing_or_unapproved_flags_refuse(self):
+        invalid = [['--spectate', '--spectate'], ['--testmap'],
+                   ['--testmap', '--spectate'],
+                   ['--testmap', 'Maps/a.vmap', '--testmap', 'Maps/b.h3m'],
+                   ['--spectate=true'], ['--onlyAI'], ['--nointro'],
+                   ['--testmap', 'Maps/a.vmap', '--spectate', 'true']]
+        with self._patch_boundaries(), mock.patch.object(HELPER.subprocess, 'run') as run:
+            for arguments in invalid:
+                with self.subTest(arguments=arguments), self.assertRaises(SystemExit) as caught:
+                    HELPER.main(self._args('--verify-only', '--', *arguments))
+                self.assertEqual(caught.exception.code, 2)
+            run.assert_not_called()
+
+    def test_native_h3m_and_vmap_extensions_share_existing_path_policy(self):
+        for name in ('Maps/map.h3m', 'Maps/map.vmap', 'Maps/Nested/map.VMAP'):
+            HELPER.validate_client_args(['--testmap', name, '--spectate'])
+
+    def test_wine_still_refuses_native_vmap_spectate_arguments(self):
+        # Client arguments are rejected before accessing any Wine paths/pins.
+        with mock.patch.object(HELPER.subprocess, 'Popen') as popen:
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.wine_fullgame_plan(SimpleNamespace(), ['--testmap', 'Maps/map.vmap', '--spectate'])
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.wine_surface_plan(SimpleNamespace(), ['--spectate'])
+            popen.assert_not_called()
+
     def _wine_args(self):
         executable = self.root / "nhSdl3GrayscaleMaskRuntimeTest.exe"
         image = bytearray(128)
