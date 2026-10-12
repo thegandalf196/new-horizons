@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "BattleStartSnapshotFixture.h"
 
 #include "../../../AI/BattleAI/AttackPossibility.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -17,6 +18,7 @@
 #include "../../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/gameState/GameStatePackVisitor.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
@@ -42,6 +44,17 @@ JsonNode chanceCurve(int value)
 	return result;
 }
 
+class GamblerAdmissionServer final : public RecordingGameServer
+{
+public:
+	size_t appliedPackets = 0;
+	void applyPack(CPackForClient & pack) override
+	{
+		++appliedPackets;
+		RecordingGameServer::applyPack(pack);
+	}
+};
+
 class GamblerEnvironment final : public Environment
 {
 	std::shared_ptr<CGameState> state;
@@ -61,6 +74,8 @@ class NewHorizonsGamblerTest : public BattleTestFixture
 protected:
 	int goodLuckChance = 100;
 	int badLuckChance = 100;
+	bool captureZeroHeroLuckChance = false;
+	bool captureLegacyWithoutHeroLuck = false;
 
 	void SetUp() override
 	{
@@ -77,6 +92,22 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, chanceCurve(goodLuckChance));
 		loaded->overrideGameSetting(EGameSettings::COMBAT_BAD_LUCK_CHANCE, chanceCurve(badLuckChance));
 		loaded->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
+		if(captureZeroHeroLuckChance || captureLegacyWithoutHeroLuck)
+		{
+			auto magic = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+			if(captureLegacyWithoutHeroLuck)
+			{
+				magic.Struct().erase("heroLuck");
+				magic.Struct().erase("heroMorale");
+			}
+			else
+			{
+				for(const char * key : {"luckyDayChanceScalePercent", "erraticManaChanceScalePercent", "druidicLuckChanceScalePercent"})
+					magic["heroLuck"][key].Integer() = 0;
+			}
+			magic.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+		}
 	}
 
 	CStack * addStack(BattleSide side, const CreatureID & creature, const BattleHex & position, int32_t count)
@@ -172,6 +203,169 @@ protected:
 		return !bonuses || bonuses->empty() ? nullptr : bonuses->front().get();
 	}
 };
+}
+
+TEST_F(NewHorizonsGamblerTest, CurrentCapturedPolicyRejectsBattleStartBeforeDecodeInstallOrBroadcast)
+{
+	captureZeroHeroLuckChance = true;
+	startGame();
+	startBattle();
+	ASSERT_TRUE(battle()->getMagicRules()["heroLuck"].isStruct());
+	for(const char * key : {"luckyDayChanceScalePercent", "erraticManaChanceScalePercent", "druidicLuckChanceScalePercent"})
+	{
+		ASSERT_EQ(battle()->getMagicRules()["heroLuck"][key].Integer(), 0);
+	}
+	// Existing rule validation rejects present malformed blocks; only null is
+	// the legacy absence marker. No invalid battle capture is manufactured here.
+	JsonNode malformedArray;
+	malformedArray.Vector().emplace_back(1);
+	for(const auto & malformed : {JsonNode(1), malformedArray})
+	{
+		auto rules = battle()->getMagicRules();
+		rules["heroLuck"] = malformed;
+		EXPECT_THROW(newHorizonsHeroLuck::validateRules(rules), std::runtime_error);
+	}
+	{
+		auto replica = std::make_shared<CGameState>();
+		replica->preInit(LIBRARY);
+		replica->loadFromMemory(gameState()->saveToMemory());
+		BattleStart clean;
+		clean.battleID = replica->nextBattleID;
+		clean.info = battleStartFixture::snapshot(*battle(), replica.get());
+		CMemorySerializer wire;
+		wire.oser & clean;
+		wire.iser.cb = replica.get();
+		BattleStart decoded;
+		ASSERT_NO_THROW(wire.iser & decoded);
+		GamblerAdmissionServer recording;
+		recording.gameState = replica;
+		CGameHandler handler(recording, replica);
+		ASSERT_NO_THROW(handler.sendAndApply(decoded));
+		EXPECT_EQ(recording.appliedPackets, 1u);
+		ASSERT_NE(replica->getBattle(clean.battleID), nullptr);
+		EXPECT_FALSE(replica->getBattle(clean.battleID)->getSylvanLuckState(BattleSide::ATTACKER).gambler);
+	}
+	for(const bool usedHistory : {false, true})
+	{
+		auto replica = std::make_shared<CGameState>();
+		replica->preInit(LIBRARY);
+		replica->loadFromMemory(gameState()->saveToMemory());
+		ASSERT_TRUE(replica->currentBattles.empty());
+		const auto before = replica->saveToMemory();
+		BattleStart outgoing;
+		outgoing.battleID = replica->nextBattleID;
+		outgoing.info = battleStartFixture::snapshot(*battle(), replica.get());
+		// Explicit zero chance settings still select current policy; the marker is
+		// the validated captured block, not a proc chance or the serialization epoch.
+		ASSERT_EQ(outgoing.info->getMagicRules(), battle()->getMagicRules());
+		auto & fortune = outgoing.info->getSide(BattleSide::ATTACKER).sylvanLuck;
+		fortune.gambler = true;
+		fortune.gamblerAttackUsedThisRound = usedHistory;
+		CMemorySerializer wire;
+		wire.oser & outgoing;
+		wire.iser.cb = replica.get();
+		BattleStart decoded;
+		EXPECT_THROW(wire.iser & decoded, std::runtime_error);
+		GameStatePackVisitor visitor(*replica);
+		EXPECT_THROW(outgoing.visit(visitor), std::runtime_error);
+		GamblerAdmissionServer recording;
+		recording.gameState = replica;
+		CGameHandler handler(recording, replica);
+		EXPECT_THROW(handler.sendAndApply(outgoing), std::runtime_error);
+		EXPECT_EQ(recording.appliedPackets, 0u);
+		EXPECT_TRUE(replica->currentBattles.empty());
+		EXPECT_EQ(replica->saveToMemory(), before);
+	}
+}
+
+TEST_F(NewHorizonsGamblerTest, AbsentCapturedPolicyKeepsLegacyBattleStartAndRawCodecReadable)
+{
+	captureLegacyWithoutHeroLuck = true;
+	startGame();
+	startBattle();
+	ASSERT_TRUE(battle()->getMagicRules()["heroLuck"].isNull());
+	auto replica = std::make_shared<CGameState>();
+	replica->preInit(LIBRARY);
+	replica->loadFromMemory(gameState()->saveToMemory());
+	BattleStart outgoing;
+	outgoing.battleID = replica->nextBattleID;
+	outgoing.info = battleStartFixture::snapshot(*battle(), replica.get());
+	// Historical captured rules remain a distinct compatibility context. This
+	// constructed packet is not an ordinary supported mid-battle save protocol.
+	ASSERT_EQ(outgoing.info->getMagicRules(), battle()->getMagicRules());
+	outgoing.info->getSide(BattleSide::ATTACKER).sylvanLuck.gambler = true;
+	CMemorySerializer wire;
+	wire.oser & outgoing;
+	wire.iser.cb = replica.get();
+	BattleStart decoded;
+	ASSERT_NO_THROW(wire.iser & decoded);
+	GamblerAdmissionServer recording;
+	recording.gameState = replica;
+	CGameHandler handler(recording, replica);
+	ASSERT_NO_THROW(handler.sendAndApply(decoded));
+	EXPECT_EQ(recording.appliedPackets, 1u);
+	const auto * restored = replica->getBattle(outgoing.battleID);
+	ASSERT_NE(restored, nullptr);
+	EXPECT_TRUE(restored->getSylvanLuckState(BattleSide::ATTACKER).gambler);
+	EXPECT_EQ(restored->getSylvanLuckState(BattleSide::ATTACKER).chanceLuck(0, 42, false), 3);
+	EXPECT_FALSE(battle()->getSylvanLuckState(BattleSide::ATTACKER).gambler);
+}
+
+TEST_F(NewHorizonsGamblerTest, CurrentCapturedPolicyRejectsAttackInjectionAndRetainedHistoryBeforeDamage)
+{
+	startGame();
+	startBattle();
+	beginCombat();
+	const auto attackers = battle()->getStacksIf([](const CStack * stack) { return stack->unitSide() == BattleSide::ATTACKER; });
+	const auto defenders = battle()->getStacksIf([](const CStack * stack) { return stack->unitSide() == BattleSide::DEFENDER; });
+	ASSERT_FALSE(attackers.empty());
+	ASSERT_FALSE(defenders.empty());
+	const auto * actor = attackers.front();
+	const auto * target = defenders.front();
+	BattleAttack outgoing;
+	outgoing.battleID = BattleID(0);
+	outgoing.stackAttacking = actor->unitId();
+	outgoing.fortuneSide = BattleSide::ATTACKER;
+	outgoing.fortuneState = SylvanLuckState{};
+	outgoing.fortuneState->gambler = true;
+	BattleStackAttacked hit;
+	hit.stackAttacked = target->unitId();
+	hit.attackerID = actor->unitId();
+	hit.damageAmount = 1;
+	target->prepareAttacked(hit, gameHandler->getRandomGenerator(), false, battle::DamageProvenance::PHYSICAL_CREATURE);
+	ASSERT_NE(hit.newState.data, target->acquireState()->save());
+	outgoing.bsa.push_back(hit);
+	CMemorySerializer wire;
+	wire.oser & outgoing;
+	BattleAttack decoded;
+	wire.iser & decoded; // Raw legacy attack codec remains readable, even now.
+	const auto actorBefore = actor->acquireState()->save();
+	const auto targetBefore = target->acquireState()->save();
+	const auto attacksBefore = server.attacks.size();
+	GameStatePackVisitor visitor(*gameState());
+	EXPECT_THROW(decoded.visit(visitor), std::runtime_error);
+	EXPECT_THROW(gameHandler->sendAndApply(decoded), std::runtime_error);
+	EXPECT_EQ(server.attacks.size(), attacksBefore);
+	EXPECT_EQ(actor->acquireState()->save(), actorBefore);
+	EXPECT_EQ(target->acquireState()->save(), targetBefore);
+	EXPECT_FALSE(battle()->getSylvanLuckState(BattleSide::ATTACKER).gambler);
+
+	// Clean incoming state cannot launder contradictory retained current state.
+	// This history-only raw shape is intentionally tested in-process, not
+	// attributed to the reader policy: its raw codec already rejects it.
+	decoded.fortuneState.reset();
+	const auto original = battle()->getSylvanLuckState(BattleSide::ATTACKER);
+	battle()->getSide(BattleSide::ATTACKER).sylvanLuck.gamblerAttackUsedThisRound = true;
+	const auto contradictory = battle()->getSylvanLuckState(BattleSide::ATTACKER);
+	EXPECT_THROW(decoded.visit(visitor), std::runtime_error);
+	EXPECT_THROW(gameHandler->sendAndApply(decoded), std::runtime_error);
+	EXPECT_EQ(battle()->getSylvanLuckState(BattleSide::ATTACKER), contradictory);
+	EXPECT_EQ(server.attacks.size(), attacksBefore);
+	EXPECT_EQ(target->acquireState()->save(), targetBefore);
+	battle()->getSide(BattleSide::ATTACKER).sylvanLuck = original;
+	SylvanLuckState legitimate;
+	legitimate.serendipity = legitimate.secondChance = legitimate.chainOfFortune = true;
+	EXPECT_NO_THROW(battle()->validateCapturedGamblerPolicy(&legitimate));
 }
 
 TEST(GamblerRulesTest, SideWindowAndAttackPacketRoundTripKeepLegacyDefaultsAndRejectDowngrade)

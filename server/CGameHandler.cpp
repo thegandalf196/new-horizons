@@ -2162,6 +2162,17 @@ void CGameHandler::grantLearningMentorAward(const std::optional<LearningMentorAw
 
 void CGameHandler::sendAndApply(CPackForClient & pack)
 {
+	// Validate captured policy before applyPack broadcasts and then applies the packet.
+	if(const auto * start = dynamic_cast<const BattleStart *>(&pack))
+	{
+		if(start->info)
+			start->info->validateCapturedGamblerPolicy();
+	}
+	else if(const auto * attack = dynamic_cast<const BattleAttack *>(&pack))
+	{
+		if(const auto * battle = gameState().getBattle(attack->battleID))
+			battle->validateCapturedGamblerPolicy(attack->fortuneState ? &*attack->fortuneState : nullptr);
+	}
 	// Capture only artifact receipt events. Inventory identity, not slot changes,
 	// distinguishes acquisition from same-hero equipment/backpack rearrangement.
 	const auto scrollInventory = [](const CGHeroInstance & hero)

@@ -2216,6 +2216,8 @@ void GameStatePackVisitor::visitCommanderLevelUp(CommanderLevelUp & pack)
 
 void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 {
+	if(pack.info)
+		pack.info->validateCapturedGamblerPolicy();
 	spellPointBonusGraphChanged = true;
 	if(!pack.info)
 		throw std::runtime_error("Missing BattleStart state");
@@ -2469,6 +2471,7 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	auto * battle = gs.getBattle(pack.battleID);
 	if(!battle)
 		throw std::runtime_error("BattleAttack references a missing battle");
+	battle->validateCapturedGamblerPolicy(pack.fortuneState ? &*pack.fortuneState : nullptr);
 	pack.validatePerfectFortuneMarker();
 	pack.validateLuckSerendipityMarker();
 	if(pack.luckSerendipityState)
