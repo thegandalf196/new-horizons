@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include "../../clientapp/PrivateWinePathPolicy.h"
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -142,7 +143,7 @@ bool plainDirectoryAncestors(std::wstring path)
 	{
 		const DWORD attrs = GetFileAttributesW(path.c_str());
 		const DWORD error = attrs == INVALID_FILE_ATTRIBUTES ? GetLastError() : ERROR_SUCCESS;
-		if(attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY) || (attrs & FILE_ATTRIBUTE_REPARSE_POINT))
+		if(!privateWinePathPolicy::isDirectoryAllowed(path, attrs))
 		{
 			const auto message = ancestorRefusalMessage(depth, static_cast<unsigned long>(attrs), static_cast<unsigned long>(error));
 			std::fputs(message.c_str(), stderr);
@@ -287,6 +288,15 @@ int bootstrap(int argc)
 #ifdef NH_WINE_BOOTSTRAP_ENV_TEST
 int main()
 {
+	using namespace privateWinePathPolicy;
+	if(!isDirectoryAllowed(L"Z:\\", DIRECTORY | REPARSE_POINT)
+		|| !isDirectoryAllowed(L"Z:\\", DIRECTORY)
+		|| !isDirectoryAllowed(L"Z:\\private\\localappdata", DIRECTORY)
+		|| !isDirectoryAllowed(L"C:\\", DIRECTORY)) return 8;
+	for(const auto path : {L"Z:", L"z:\\", L"Z:\\\\", L"Z:/", L"Z:\\.", L"Z:\\private", L"C:\\", L"\\\\server\\share\\"})
+		if(isDirectoryAllowed(path, DIRECTORY | REPARSE_POINT) || isCanonicalRoot(path)) return 9;
+	for(const auto attrs : {INVALID_ATTRIBUTES, REPARSE_POINT, std::uint32_t(0)})
+		if(isDirectoryAllowed(L"Z:\\", attrs)) return 10;
 	if(ancestorRefusalMessage(0, 0xffffffffUL, 3)
 		!= "NH_WINE_BOOTSTRAP_ANCESTOR_REFUSAL depth=0 attrs=4294967295 error=3\n"
 		|| ancestorRefusalMessage(8, 0x410UL, 0)

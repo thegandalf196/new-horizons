@@ -754,6 +754,19 @@ class PrivateWineWitnessDiagnosticContractTest(unittest.TestCase):
         for forbidden in ('refusal(', 'fprintf', 'CreateFile', 'VCMIDirs::get', 'Sleep('):
             self.assertNotIn(forbidden, early)
 
+    def test_shared_root_policy_precedes_stop_before_drive_relative_parent(self):
+        self.assertIn('#include "PrivateWinePathPolicy.h"', self.source)
+        body = self.source.split('inline bool plainAncestors(', 1)[1].split('inline bool boundedPath(', 1)[0]
+        self.assertIn('privateWinePathPolicy::isDirectoryAllowed(current.wstring(), attributes)', body)
+        self.assertIn('privateWinePathPolicy::isCanonicalRoot(current.wstring()) || current == current.parent_path()', body)
+        self.assertLess(body.index('isDirectoryAllowed('), body.index('isCanonicalRoot('))
+        self.assertIn('return false;', body)
+        bootstrap = (Path(__file__).resolve().parents[2] / 'tools/tests/nh-wine-bootstrap.cpp').read_text()
+        self.assertIn('#include "../../clientapp/PrivateWinePathPolicy.h"', bootstrap)
+        ancestors = bootstrap.split('bool plainDirectoryAncestors(', 1)[1].split('bool plainFile(', 1)[0]
+        self.assertIn('privateWinePathPolicy::isDirectoryAllowed(path, attrs)', ancestors)
+        self.assertLess(ancestors.index('isDirectoryAllowed('), ancestors.index('if(path.size() == 3) return true;'))
+
     def test_fixed_stage_codes_cover_every_phase_and_all_refusals(self):
         stages = ['nonce', 'local', 'audioVideo', 'executable', 'facade', 'gate',
                   'configRead', 'configShape', 'expansion', 'resolvedDirs',

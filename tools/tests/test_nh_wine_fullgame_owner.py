@@ -3,6 +3,7 @@
 import copy
 import importlib.util
 import json
+import os
 from pathlib import Path
 import signal
 import tempfile
@@ -486,8 +487,10 @@ class Tests(unittest.TestCase):
                 raise owner.Refusal('pure stop before backend')
             with mock.patch.object(owner, 'Linux', side_effect=backend), \
                  mock.patch.object(owner.subprocess, 'Popen') as popen:
+                state = {}
                 with self.assertRaisesRegex(owner.Refusal, 'pure stop'):
-                    owner.run_staged_fullgame(plan, profile, {}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+                    owner.run_staged_fullgame(plan, profile, state, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+                self.addCleanup(state['mapping'].close)  # Direct inner-fixture call lacks outer finalizer.
                 popen.assert_not_called()
             for item in ('HeroesIII-NewHorizons/content', 'HeroesIII-NewHorizons/config',
                          'HeroesIII-NewHorizons/cache', 'HeroesIII-NewHorizons/logs', 'new-horizons/Saves'):
@@ -539,6 +542,225 @@ class Tests(unittest.TestCase):
                  mock.patch.object(owner, 'run_staged_fullgame', return_value=0):
                 with self.assertRaisesRegex(owner.Refusal, 'Final content'):
                     owner.run_fullgame({'content': {}, 'root': name}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+
+
+class WineRootMappingTests(unittest.TestCase):
+    """Synthetic filesystem only; never forks or invokes Wine."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.root.chmod(0o700)
+        (self.root / 'prefix').mkdir(mode=0o700)
+
+    def mapping(self):
+        result = owner.WineRootMapping(self.root)
+        self.addCleanup(result.close)
+        return result
+
+    def test_literal_root_alias_and_other_drive_allowed(self):
+        mapping = self.mapping()
+        self.assertEqual(os.readlink(self.root / 'prefix/dosdevices/z:'), '/')
+        (self.root / 'prefix/dosdevices/c:').symlink_to('../drive_c')
+        mapping.verify()
+        self.assertEqual(len(mapping.fds), 3)
+
+    def test_non_root_link_target_refused_with_same_link_identity(self):
+        mapping = self.mapping()
+        with mock.patch.object(owner.os, 'readlink', return_value='/not-root'):
+            with self.assertRaises(owner.Refusal):
+                mapping.verify()
+
+    def test_replacement_root_target_still_refused(self):
+        mapping = self.mapping()
+        link = self.root / 'prefix/dosdevices/z:'
+        link.rename(link.with_name('retained-old-z'))
+        link.symlink_to('/')
+        with self.assertRaises(owner.Refusal):
+            mapping.verify()
+
+    def test_missing_link_refused(self):
+        mapping = self.mapping()
+        (self.root / 'prefix/dosdevices/z:').unlink()
+        with self.assertRaises(owner.Refusal):
+            mapping.verify()
+
+    def test_uppercase_drive_conflict_refused(self):
+        mapping = self.mapping()
+        (self.root / 'prefix/dosdevices/Z:').symlink_to('/')
+        with self.assertRaises(owner.Refusal):
+            mapping.verify()
+
+    def test_parent_name_replacement_refused(self):
+        mapping = self.mapping()
+        (self.root / 'prefix/dosdevices').rename(self.root / 'prefix/old-dosdevices')
+        (self.root / 'prefix/dosdevices').mkdir(mode=0o700)
+        (self.root / 'prefix/dosdevices/z:').symlink_to('/')
+        with self.assertRaises(owner.Refusal):
+            mapping.verify()
+
+    def test_prefix_name_replacement_refused(self):
+        mapping = self.mapping()
+        (self.root / 'prefix').rename(self.root / 'old-prefix')
+        (self.root / 'prefix').mkdir(mode=0o700)
+        with self.assertRaises(owner.Refusal):
+            mapping.verify()
+
+    def test_root_mode_change_refused(self):
+        mapping = self.mapping()
+        self.root.chmod(0o755)
+        with self.assertRaises(owner.Refusal):
+            mapping.verify()
+
+    def test_uid_mismatch_refused_before_link_creation(self):
+        with mock.patch.object(owner.os, 'getuid', return_value=os.getuid() + 1):
+            with self.assertRaises(owner.Refusal):
+                owner.WineRootMapping(self.root)
+        self.assertFalse((self.root / 'prefix/dosdevices').exists())
+
+    def test_bad_fd_or_unreadable_mapping_refused(self):
+        mapping = self.mapping()
+        with mock.patch.object(owner.os, 'fstat', side_effect=OSError('synthetic unreadable')):
+            with self.assertRaises(owner.Refusal):
+                mapping.verify()
+
+    def test_link_uid_mismatch_refused(self):
+        mapping = self.mapping()
+        actual = os.stat
+        def changed(path, *args, **kwargs):
+            info = actual(path, *args, **kwargs)
+            if path == 'z:':
+                values = list(info)
+                values[4] += 1
+                return os.stat_result(values)
+            return info
+        with mock.patch.object(owner.os, 'stat', side_effect=changed):
+            with self.assertRaises(owner.Refusal):
+                mapping.verify()
+
+    def test_held_fd_mismatch_refused(self):
+        mapping = self.mapping()
+        mapping.parents[1] = mapping.parents[0]
+        with self.assertRaises(owner.Refusal):
+            mapping.verify()
+
+    def test_constructor_error_closes_all_opened_fds(self):
+        real_close = os.close
+        with mock.patch.object(owner.os, 'symlink', side_effect=OSError('synthetic failure')), \
+             mock.patch.object(owner.os, 'close', wraps=real_close) as closed:
+            with self.assertRaises(owner.Refusal):
+                owner.WineRootMapping(self.root)
+            self.assertEqual(closed.call_count, 3)
+
+    def test_close_is_idempotent_and_closed_guard_refuses(self):
+        mapping = self.mapping()
+        retained = list(mapping.fds)
+        mapping.close(); mapping.close()
+        for fd in retained:
+            with self.assertRaises(OSError):
+                os.fstat(fd)
+        with self.assertRaises(owner.Refusal):
+            mapping.verify()
+
+    def failing_close(self, mapping):
+        real_close = os.close
+        attempts = []
+        def close(fd):
+            attempts.append(fd)
+            real_close(fd)
+            if len(attempts) == 1:
+                raise OSError('synthetic first close failure')
+        return close, attempts
+
+    def test_close_failure_attempts_every_retained_fd_once(self):
+        mapping = self.mapping()
+        retained = list(mapping.fds)
+        close, attempts = self.failing_close(mapping)
+        with mock.patch.object(owner.os, 'close', side_effect=close):
+            with self.assertRaisesRegex(owner.Refusal, 'handle cleanup failed'):
+                mapping.close()
+        self.assertEqual(attempts, list(reversed(retained)))
+        self.assertEqual(mapping.fds, [])
+        mapping.close()  # No retry of any descriptor, including the failed close.
+
+    def test_constructor_cleanup_failure_preserves_initial_cause(self):
+        real_close = os.close
+        attempts = []
+        original = OSError('synthetic link failure')
+        def close(fd):
+            attempts.append(fd)
+            real_close(fd)
+            if len(attempts) == 1:
+                raise OSError('synthetic close failure')
+        with mock.patch.object(owner.os, 'symlink', side_effect=original), \
+             mock.patch.object(owner.os, 'close', side_effect=close):
+            with self.assertRaisesRegex(owner.Refusal, 'handle cleanup failed') as caught:
+                owner.WineRootMapping(self.root)
+        self.assertIs(caught.exception.__cause__, original)
+        self.assertEqual(len(attempts), 3)
+        self.assertEqual(len(set(attempts)), 3)
+
+    def test_outer_close_failure_retains_runtime_failure_in_final_receipt(self):
+        mapping = self.mapping()
+        close, attempts = self.failing_close(mapping)
+        def runtime(plan, module, state, **kwargs):
+            state['mapping'] = mapping
+            raise owner.Refusal('synthetic primary runtime refusal')
+        with mock.patch.object(owner, 'content_module', return_value=mock.Mock()), \
+             mock.patch.object(owner, 'run_staged_fullgame', side_effect=runtime), \
+             mock.patch.object(owner.os, 'close', side_effect=close):
+            with self.assertRaisesRegex(owner.Refusal, 'Final content') as caught:
+                owner.run_fullgame({'root': str(self.root), 'content': {}}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+        self.assertEqual(str(caught.exception.__cause__), 'synthetic primary runtime refusal')
+        self.assertEqual(len(attempts), 3)
+        self.assertEqual(mapping.fds, [])
+        receipt = json.loads((self.root / 'content-final.json').read_text())
+        self.assertEqual(receipt['runtime_failure'], 'synthetic primary runtime refusal')
+        self.assertIn('Final Wine root mapping handle cleanup failed', receipt['final_errors'])
+
+    def test_runtime_callback_bracket_rejects_mid_proof_link_change(self):
+        mapping = self.mapping()
+        def changed(context):
+            (self.root / 'prefix/dosdevices/z:').unlink()
+            return {'verified': True}
+        with self.assertRaises(owner.Refusal):
+            mapping.verify_runtime(changed, {})
+
+    def test_runtime_callback_has_before_and_after_mapping_checks(self):
+        mapping = self.mapping()
+        with mock.patch.object(mapping, 'verify', wraps=mapping.verify) as checked:
+            self.assertEqual(mapping.verify_runtime(lambda context: context, {'actual': True}), {'actual': True})
+            self.assertEqual(checked.call_count, 2)
+
+    def test_outer_final_check_keeps_handles_until_after_audit(self):
+        mapping = self.mapping()
+        profile = mock.Mock()
+        plan = {'root': str(self.root), 'content': {}}
+        def runtime(plan, module, state, **kwargs):
+            state['mapping'] = mapping
+            raise owner.Refusal('synthetic runtime failure')
+        def originals(content):
+            self.assertEqual(len(mapping.fds), 3)
+        profile.verify_original_content.side_effect = originals
+        with mock.patch.object(owner, 'content_module', return_value=profile), \
+             mock.patch.object(owner, 'run_staged_fullgame', side_effect=runtime):
+            with self.assertRaisesRegex(owner.Refusal, 'synthetic runtime failure'):
+                owner.run_fullgame(plan, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+        self.assertEqual(mapping.fds, [])
+
+    def test_final_mapping_refusal_is_retained_and_handles_closed(self):
+        mapping = self.mapping()
+        def runtime(plan, module, state, **kwargs):
+            state['mapping'] = mapping
+            (self.root / 'prefix/dosdevices/z:').unlink()
+            return 0
+        with mock.patch.object(owner, 'content_module', return_value=mock.Mock()), \
+             mock.patch.object(owner, 'run_staged_fullgame', side_effect=runtime):
+            with self.assertRaisesRegex(owner.Refusal, 'Final content'):
+                owner.run_fullgame({'root': str(self.root), 'content': {}}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+        self.assertEqual(mapping.fds, [])
+        receipt = json.loads((self.root / 'content-final.json').read_text())
+        self.assertIn('Final Wine root mapping verification failed', receipt['final_errors'])
 
 
 if __name__ == '__main__':
