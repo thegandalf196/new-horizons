@@ -325,9 +325,9 @@ int32_t CRetaliations::total() const
 	if(noRetaliation.hasBonus())
 		return 0;
 
-	const auto * personalState = dynamic_cast<const CUnitState *>(owner);
-	const int64_t additionalRetaliations = static_cast<int64_t>(env ? env->unitAdditionalRetaliations(owner) : 0)
-		+ (personalState && personalState->heroicSpiritRetaliation ? 1 : 0);
+	// Legacy Heroic Spirit state remains readable, but no longer grants a
+	// creature retaliation: the reworked perk grants a typed Hero Order action.
+	const int64_t additionalRetaliations = env ? env->unitAdditionalRetaliations(owner) : 0;
 	if(newHorizonsCreatureAbilitySuppression::suppressionLevel(*owner) >= 2)
 	{
 		// The ordinary bonus cache normally preserves a larger observed cap for

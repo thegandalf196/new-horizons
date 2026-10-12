@@ -1,5 +1,27 @@
 # New Horizons UI and asset status register
 
+Creature encyclopedia shortcut: **Provisional**. Persistent ordinary-creature
+information windows expose a compact gold `i` on the existing button backing.
+It opens the existing encyclopedia using the resolved scoped creature identity;
+closing the encyclopedia preserves the underlying information window. Existing
+portrait and keyboard shortcuts remain unchanged. Ephemeral right-click,
+Commander and special-creature windows do not gain the new control. This reuses
+existing visual resources and supplied descriptions, without new artwork or a
+second lore catalog. The linked SDL3 Linux client passed a bounded in-game
+Pikeman check: the button rendered at native resolution, opened the matching
+encyclopedia page, and closing that page returned to the same creature window.
+The selected game and artwork bytes remained unchanged afterward. Custom and
+upgraded creature-page breadth and Windows interaction remain unverified.
+The updated SDL3 Linux client also passed a bounded battle-context Pikeman
+check showing Rank Core, base Initiative 4 and Leadership Cost 60, without the
+legacy Level row. Opening and closing the page preserved the underlying creature
+window. The run completed one legal Charge Order and exited normally; its log
+contained no errors or warnings. This verifies the registered-dwelling guard on
+that route, not all creature pages. These changes reuse captured rules in game
+and the loaded configuration before a game starts. Pregame, custom/upgraded and
+Windows breadth remain unverified. No artwork-package change or ordinary
+launcher promotion is claimed.
+
 2026-10-10 corrected selector: **Provisional**, principal rendering and mouse
 controls observed on the matched corrected client. Root inspects sustained
 centered heading/readback/buttons, three ordered target badges including same

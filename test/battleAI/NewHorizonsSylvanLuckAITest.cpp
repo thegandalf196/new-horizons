@@ -79,7 +79,8 @@ protected:
 		attackerSideHero->applyPerkSelection({skillKey, "new-horizons:luck.fortuneSFavor"});
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->applyPerkSelection({skillKey, std::string(newHorizonsCombatSkills::LUCKY_RECOVERY_PERK_ID)});
-		ASSERT_TRUE(newHorizonsCombatSkills::hasLuckyRecovery(attackerSideHero));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(skillKey,
+			std::string(newHorizonsCombatSkills::LUCKY_RECOVERY_PERK_ID)));
 		if(sylvan)
 		{
 			const std::string sylvanSkill = "new-horizons:sylvanLuck";
@@ -89,7 +90,7 @@ protected:
 		}
 		if(opposingSerendipity)
 		{
-			// Recovery and Serendipity share the Advanced Luck tier. Select
+			// Lucky Day and Serendipity share the Advanced Luck tier. Select
 			// Serendipity on the other hero instead of inventing an enabled token.
 			defenderSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 			defenderSideHero->applyPerkSelection({skillKey, "new-horizons:luck.fortuneSFavor"});
@@ -123,7 +124,7 @@ protected:
 		ASSERT_TRUE(preview.defenderDead);
 		ASSERT_FALSE(preview.fortuneStrikes.empty());
 		EXPECT_EQ(preview.attackerState->getAvailableHealth(),
-			health + std::min<int64_t>(50, sylvan ? victimHealth / 5 : victimHealth / 10));
+			health + (sylvan ? std::min<int64_t>(50, victimHealth / 10) : 0));
 		EXPECT_EQ(model->getForUpdate(source->unitId())->getAvailableHealth(), health);
 		EXPECT_EQ(source->getAvailableHealth(), health);
 		BattleExchangeVariant exchange;
@@ -135,12 +136,12 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsGenericLuckyRecoveryAITest, GenericOnlyForecastAndSelectedReplayHealExactlyOnce)
+TEST_F(NewHorizonsGenericLuckyRecoveryAITest, LuckyDayDoesNotHealCreatureForecastOrSelectedReplay)
 {
 	ASSERT_NO_FATAL_FAILURE(verifyForecast(false));
 }
 
-TEST_F(NewHorizonsGenericLuckyRecoveryAITest, CombinedForecastAndSelectedReplayHealTwentyPercent)
+TEST_F(NewHorizonsGenericLuckyRecoveryAITest, LuckyDayDoesNotDoubleSylvanRecovery)
 {
 	ASSERT_NO_FATAL_FAILURE(verifyForecast(true));
 }
@@ -263,7 +264,7 @@ TEST_F(NewHorizonsGenericLuckyRecoveryAITest, CapturedLuckAndPerfectFortuneOverr
 		// present allegiance. UNKNOWN stays unknown on that captured side.
 		EXPECT_FALSE(model->getLuckSerendipityState(BattleSide::DEFENDER).currentRoundPositiveLuck);
 		EXPECT_EQ(model->getLuckSerendipityState(BattleSide::DEFENDER).firstAttackUsed, !capturedPerfect);
-		EXPECT_EQ(striker->getAvailableHealth(), health + (capturedPerfect ? 20 : 0));
+		EXPECT_EQ(striker->getAvailableHealth(), health);
 	}
 	EXPECT_EQ(parent->getForUpdate(source->unitId())->getAvailableHealth(), source->getAvailableHealth());
 	EXPECT_FALSE(parent->getPerfectFortuneState(BattleSide::ATTACKER).used);

@@ -155,8 +155,10 @@ protected:
 		selectTwistOfFate(attackerSideHero);
 		selectTwistOfFate(defenderSideHero);
 		startBattle();
-		ASSERT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).enabled);
-		ASSERT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).enabled);
+		// The saved selection ID is retained, but its current generic perk is
+		// Druidic Luck. It must not capture the retired adverse reroll token.
+		ASSERT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).enabled);
+		ASSERT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).enabled);
 	}
 
 	std::shared_ptr<Bonus> attachCombatScript(CStack * unit, std::string_view scriptName,
@@ -210,7 +212,7 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsTwistScriptedTest, DestructionRerollsAHostileSuccessForTheRecipientAndTheRedrawIsFinal)
+TEST_F(NewHorizonsTwistScriptedTest, DruidicLuckDoesNotRedrawHostileDestruction)
 {
 	startTwistBattle();
 	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 1);
@@ -224,28 +226,27 @@ TEST_F(NewHorizonsTwistScriptedTest, DestructionRerollsAHostileSuccessForTheReci
 	const auto script = attachCombatScript(actor, "destruction", 50, parameters);
 	ASSERT_NE(script, nullptr);
 
-	// Pin the actor's existing biased sequence to success then failure. The first
-	// hostile result spends Twist; the final redraw therefore leaves the target intact.
+	// Pin success then failure: the current generic selection must keep the
+	// first ordinary success rather than substitute the old adverse redraw.
 	const auto seed = findAbilitySeedWith(true, false, 50);
 	ASSERT_TRUE(seed.has_value());
 	gameHandler->randomizer->setSeed(*seed);
 	const auto recipientCountBefore = recipient->getCount();
 	runCombatScript(script, actor, recipient);
 
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
-	EXPECT_EQ(recipient->getCount(), recipientCountBefore)
-		<< "The final failed redraw must suppress the initial successful destruction proc";
-	EXPECT_EQ(twistFeedbackCount(), 1u);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_EQ(recipient->getCount(), recipientCountBefore - 1)
+		<< "Druidic Luck must not replace the ordinary destruction draw";
+	EXPECT_EQ(twistFeedbackCount(), 0u);
 
-	// A later scripted success in the same combat gets its ordinary single draw,
-	// with no second Twist transition or feedback.
+	// A later script call also has no retired token transition or feedback.
 	runCombatScript(script, actor, recipient);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
-	EXPECT_EQ(twistFeedbackCount(), 1u);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
+	EXPECT_EQ(twistFeedbackCount(), 0u);
 }
 
-TEST_F(NewHorizonsTwistScriptedTest, DeathStareRerollsTheWholePositiveCappedBinomialCount)
+TEST_F(NewHorizonsTwistScriptedTest, DruidicLuckKeepsTheFirstPositiveCappedDeathStareCount)
 {
 	startTwistBattle();
 	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 1000);
@@ -274,13 +275,13 @@ TEST_F(NewHorizonsTwistScriptedTest, DeathStareRerollsTheWholePositiveCappedBino
 
 	const auto casts = server.castsOf(SpellID::DEATH_STARE);
 	ASSERT_EQ(casts.size(), 1u);
-	EXPECT_EQ(casts.front().killed, static_cast<uint32_t>(sequence->final))
-		<< "The script must use the second capped binomial sample, not merely reroll whether the first was positive";
+	EXPECT_EQ(casts.front().killed, static_cast<uint32_t>(sequence->first))
+		<< "The selected current perk must not consume the distinct second binomial sample";
 	EXPECT_LE(casts.front().killed, static_cast<uint32_t>(sequence->cap));
 	EXPECT_GT(casts.front().killed, 0u);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
-	EXPECT_EQ(twistFeedbackCount(), 1u);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_EQ(twistFeedbackCount(), 0u);
 }
 
 TEST_F(NewHorizonsTwistScriptedTest, ImmuneDeathStareTargetDoesNotSpendTheRecipientAllowance)
@@ -310,8 +311,8 @@ TEST_F(NewHorizonsTwistScriptedTest, ImmuneDeathStareTargetDoesNotSpendTheRecipi
 	ASSERT_EQ(casts.size(), 1u);
 	EXPECT_EQ(casts.front().killed, 0u);
 	EXPECT_EQ(recipient->getCount(), recipientCountBefore);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available())
-		<< "The immune recipient's positive raw binomial result bypasses Twist and remains immune";
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available())
+		<< "The immune recipient remains immune without creating a retired reroll allowance";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
 	EXPECT_EQ(twistFeedbackCount(), 0u);
 }

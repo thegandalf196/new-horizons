@@ -124,6 +124,7 @@ class CStackWindow : public CWindowObject
 	class ButtonsSection : public CWindowSection
 	{
 		std::shared_ptr<CButton> dismiss;
+		std::shared_ptr<CButton> encyclopedia;
 		std::array<std::shared_ptr<CButton>, 3> upgrade;// no more than 3 buttons - space limit
 		std::shared_ptr<CButton> exit;
 	public:

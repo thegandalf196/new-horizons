@@ -461,6 +461,20 @@ int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcas
 	return heroCoefficient(effect, hero, warcastingBonusPercent, divineMandateEfficiencyBonusPercent, true);
 }
 
+int orderPotency(int value, const HeroOrderState & state, const JsonNode & magicRules)
+{
+	return newHorizonsHeroLuck::orderPotency(value, magicRules, isActive(state.command) && state.luckyDay());
+}
+
+int orderPotency(int intrinsicValue, int valueWithCompanions,
+	const HeroOrderState & state, const JsonNode & magicRules)
+{
+	const int64_t result = static_cast<int64_t>(orderPotency(intrinsicValue, state, magicRules))
+		+ static_cast<int64_t>(valueWithCompanions) - intrinsicValue;
+	return static_cast<int>(std::clamp<int64_t>(result,
+		std::numeric_limits<int>::min(), std::numeric_limits<int>::max()));
+}
+
 int efficiencyPercent(const CGHeroInstance & hero)
 {
 	return 100 + std::clamp(hero.getPerkSkillRank("new-horizons:command"), 0, 3) * 10;

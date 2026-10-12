@@ -11,6 +11,9 @@
 
 #include "callback/IGameRandomizer.h"
 #include "CRandomGenerator.h"
+#include "../battle/NewHorizonsHeroLuck.h"
+
+#include <optional>
 
 enum class EGameSettings;
 
@@ -25,6 +28,8 @@ public:
 	/// Performs coin flip with specified success chance
 	/// Returns true with probability successChance percents, and false with probability totalWeight-successChance percents
 	bool roll(vstd::RNG & generator, int successChance, int totalWeight, int biasValue);
+	newHorizonsHeroLuck::Receipt rollReceipt(vstd::RNG & generator, int successChance, int totalWeight, int biasValue);
+	void validateRoll(int successChance, int totalWeight, int biasValue) const;
 
 	template<typename Handler>
 	void serialize(Handler & h)
@@ -49,6 +54,8 @@ public:
 	/// Performs coin flip with specified success chance
 	/// Returns true with probability successChance percents, and false with probability 100-successChance percents
 	bool roll(int successChance, int totalWeight, int biasValue);
+	newHorizonsHeroLuck::Receipt rollReceipt(int successChance, int totalWeight, int biasValue);
+	void validateRoll(int successChance, int totalWeight, int biasValue) const;
 
 	template<typename Handler>
 	void serialize(Handler & h)
@@ -94,6 +101,9 @@ class DLL_LINKAGE GameRandomizer final : public IGameRandomizer
 	std::map<ObjectInstanceID, RandomGeneratorWithBias> goodLuckSeed;
 	std::map<ObjectInstanceID, RandomGeneratorWithBias> badLuckSeed;
 	std::map<ObjectInstanceID, RandomGeneratorWithBias> combatAbilitySeed;
+	// Separate from physical creature fortune even when the army actor ID matches.
+	std::map<ObjectInstanceID, RandomGeneratorWithBias> heroLuckSeed;
+	std::map<ObjectInstanceID, RandomGeneratorWithBias> heroMoraleSeed;
 
 	bool rollMoraleLuck(std::map<ObjectInstanceID, RandomGeneratorWithBias> & seeds, ObjectInstanceID actor, int moraleLuckValue, EGameSettings biasValue, EGameSettings diceSize, EGameSettings diceWeights);
 	bool isMoraleLuckRollStochastic(int magnitude, EGameSettings diceSize, EGameSettings diceWeights) const;
@@ -111,6 +121,8 @@ public:
 	bool rollBadMorale(ObjectInstanceID actor, int moraleValue);
 	bool rollGoodLuck(ObjectInstanceID actor, int luckValue);
 	bool rollBadLuck(ObjectInstanceID actor, int luckValue);
+	std::optional<newHorizonsHeroLuck::Receipt> rollHeroLuck(ObjectInstanceID actor, int luckValue);
+	std::optional<newHorizonsHeroLuck::Receipt> rollHeroMorale(ObjectInstanceID actor, int moraleValue);
 	bool isBadLuckRollStochastic(int magnitude) const;
 	bool isBadMoraleRollStochastic(int magnitude) const;
 
@@ -134,6 +146,9 @@ public:
 	template<typename Handler>
 	void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK)
+			&& (!heroLuckSeed.empty() || !heroMoraleSeed.empty()))
+			throw std::runtime_error("Cannot discard Hero Luck or Morale random streams");
 		h & globalRandomNumberGenerator;
 
 		h & allocatedArtifacts;
@@ -143,5 +158,15 @@ public:
 		h & goodLuckSeed;
 		h & badLuckSeed;
 		h & combatAbilitySeed;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+		{
+			h & heroLuckSeed;
+			h & heroMoraleSeed;
+		}
+		else if(!h.saving)
+		{
+			heroLuckSeed.clear();
+			heroMoraleSeed.clear();
+		}
 	}
 };

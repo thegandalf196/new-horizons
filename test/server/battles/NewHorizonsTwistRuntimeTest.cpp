@@ -150,8 +150,17 @@ protected:
 		if(bothSides)
 			selectTwistOfFate(defenderSideHero);
 		startBattle();
-		ASSERT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).enabled);
-		EXPECT_EQ(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).enabled, bothSides);
+		ASSERT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).enabled);
+		EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).enabled);
+	}
+
+	void neutralHeroLuckForResistance(CGHeroInstance * hero)
+	{
+		// Keep Druidic Luck legally selected while isolating ordinary target
+		// resistance from its new, independent positive-Hero spell roll.
+		hero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::LUCK, BonusSource::OTHER, -hero->luckVal(), BonusSourceID()));
+		ASSERT_EQ(hero->luckVal(), 0);
 	}
 
 	static void luck(CStack * unit, int value)
@@ -162,10 +171,11 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsTwistRuntimeTest, HostileChainLightningLazilyRerollsPrimaryResistanceDuringAuthoritativeCast)
+TEST_F(NewHorizonsTwistRuntimeTest, DruidicLuckDoesNotRedrawPrimaryResistanceDuringAuthoritativeCast)
 {
 	startTwistBattle(true);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	neutralHeroLuckForResistance(attackerSideHero);
 	attackerSideHero->addSpellToSpellbook(SpellID::CHAIN_LIGHTNING);
 	setTestSpellPointTotal(attackerSideHero, 1000);
 
@@ -212,15 +222,15 @@ TEST_F(NewHorizonsTwistRuntimeTest, HostileChainLightningLazilyRerollsPrimaryRes
 	const auto secondaryHealthBefore = secondary->getAvailableHealth();
 	ASSERT_TRUE(castOn(attackerSideHero, SpellID::CHAIN_LIGHTNING, target));
 
-	EXPECT_EQ(target->getAvailableHealth(), healthBefore)
-		<< "The actual chain consumer must use the final resistance result, not route through on the cached miss";
-	EXPECT_EQ(secondary->getAvailableHealth(), secondaryHealthBefore)
-		<< "A primary that resists during preparation must stop the chain before a second hop is selected";
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used)
-		<< "A hostile, eligible recipient's stochastic resistance spends its controller's one use";
+	EXPECT_LT(target->getAvailableHealth(), healthBefore)
+		<< "Druidic Luck keeps the ordinary first resistance miss";
+	EXPECT_LT(secondary->getAvailableHealth(), secondaryHealthBefore)
+		<< "The ordinary first miss lets the chain reach its second recipient";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used)
+		<< "A current Druidic selection does not enable the retired adverse allowance";
 }
 
-TEST_F(NewHorizonsTwistRuntimeTest, NegativeLuckForecastSquaresOnlyTheAvailableTwistChance)
+TEST_F(NewHorizonsTwistRuntimeTest, DruidicLuckKeepsOrdinaryNegativeLuckForecastAndFirstDraw)
 {
 	startTwistBattle();
 	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 3);
@@ -248,8 +258,8 @@ TEST_F(NewHorizonsTwistRuntimeTest, NegativeLuckForecastSquaresOnlyTheAvailableT
 		return static_cast<int64_t>(normal * (1.0 - adverseChance) + unlucky * adverseChance);
 	};
 
-	EXPECT_EQ(battle()->battleExpectedLuckDamage(ordinary), forecast(chance * chance));
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_EQ(battle()->battleExpectedLuckDamage(ordinary), forecast(chance));
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
 
 	int draws = 0;
 	const bool finalBadLuck = gameHandler->battles->resolveAdverseCombatRoll(BattleID(0),
@@ -258,13 +268,13 @@ TEST_F(NewHorizonsTwistRuntimeTest, NegativeLuckForecastSquaresOnlyTheAvailableT
 			++draws;
 			return draws == 1;
 		});
-	EXPECT_FALSE(finalBadLuck);
-	EXPECT_EQ(draws, 2);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_TRUE(finalBadLuck);
+	EXPECT_EQ(draws, 1);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
 	EXPECT_EQ(battle()->battleExpectedLuckDamage(ordinary), forecast(chance));
 }
 
-TEST_F(NewHorizonsTwistRuntimeTest, HypotheticalAdverseRollSpendsOnlyItsBranchAllowance)
+TEST_F(NewHorizonsTwistRuntimeTest, HypotheticalDruidicBranchesKeepOneDrawAndNoRetiredAllowance)
 {
 	startTwistBattle();
 	TwistRuntimeEnvironment environment(gameState());
@@ -281,15 +291,15 @@ TEST_F(NewHorizonsTwistRuntimeTest, HypotheticalAdverseRollSpendsOnlyItsBranchAl
 			return draws == 1;
 		});
 
-	EXPECT_FALSE(finalResult);
-	EXPECT_EQ(draws, 2);
-	EXPECT_TRUE(branch->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
-	EXPECT_TRUE(root->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
-	EXPECT_TRUE(sibling->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_TRUE(finalResult);
+	EXPECT_EQ(draws, 1);
+	EXPECT_FALSE(branch->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_FALSE(root->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_FALSE(sibling->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
 }
 
-TEST_F(NewHorizonsTwistRuntimeTest, ActualNegativeLuckSpendsTheAttackingArmysAllowance)
+TEST_F(NewHorizonsTwistRuntimeTest, ActualNegativeLuckDoesNotCreateADruidicRerollAllowance)
 {
 	startTwistBattle(true);
 	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
@@ -303,11 +313,11 @@ TEST_F(NewHorizonsTwistRuntimeTest, ActualNegativeLuckSpendsTheAttackingArmysAll
 	for(int attempt = 0; attempt < 32
 		&& !battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used; ++attempt)
 		ASSERT_TRUE(attack(attacker, defender->getPosition()));
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
 }
 
-TEST_F(NewHorizonsTwistRuntimeTest, SecondChanceSuppressesTheFirstBadStrikeBeforeTwistCanSpend)
+TEST_F(NewHorizonsTwistRuntimeTest, SecondChanceSuppressesFirstBadStrikeWithoutEnablingDruidicRerolls)
 {
 	startGame();
 	selectTwistOfFate(attackerSideHero, secondChanceId);
@@ -321,18 +331,18 @@ TEST_F(NewHorizonsTwistRuntimeTest, SecondChanceSuppressesTheFirstBadStrikeBefor
 		&& !battle()->getSylvanLuckState(BattleSide::ATTACKER).secondChanceUsed; ++attempt)
 	{
 		ASSERT_TRUE(attack(attacker, defender->getPosition()));
-		EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
-			<< "A suppressed adverse result cannot consume Twist of Fate";
+		EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
+			<< "Second Chance suppression does not create a retired Druidic reroll allowance";
 	}
 	ASSERT_TRUE(battle()->getSylvanLuckState(BattleSide::ATTACKER).secondChanceUsed);
 	for(int attempt = 0; attempt < 32
 		&& !battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used; ++attempt)
 		ASSERT_TRUE(attack(attacker, defender->getPosition()));
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used)
-		<< "A subsequent unsuppressed negative trigger is eligible";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used)
+		<< "Subsequent ordinary negative triggers do not enable the retired allowance";
 }
 
-TEST_F(NewHorizonsTwistRuntimeTest, ActualNegativeMoraleSpendsOnlyTheActivatingArmysAllowance)
+TEST_F(NewHorizonsTwistRuntimeTest, ActualNegativeMoraleDoesNotCreateADruidicRerollAllowance)
 {
 	startTwistBattle(true);
 	auto * afflicted = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(leftHex), 10);
@@ -344,11 +354,11 @@ TEST_F(NewHorizonsTwistRuntimeTest, ActualNegativeMoraleSpendsOnlyTheActivatingA
 	for(int round = 0; round < 32
 		&& !battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used; ++round)
 		endRound();
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
 }
 
-TEST_F(NewHorizonsTwistRuntimeTest, HostileDeathBlowSpendsTheRecipientsAllowanceNotTheActors)
+TEST_F(NewHorizonsTwistRuntimeTest, HostileDeathBlowDoesNotCreateADruidicRecipientAllowance)
 {
 	startTwistBattle(true);
 	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
@@ -361,8 +371,8 @@ TEST_F(NewHorizonsTwistRuntimeTest, HostileDeathBlowSpendsTheRecipientsAllowance
 	for(int attempt = 0; attempt < 32
 		&& !battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used; ++attempt)
 		ASSERT_TRUE(attack(attacker, defender->getPosition()));
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
 }
 
 namespace
@@ -414,10 +424,11 @@ protected:
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, 1000);
+		neutralHeroLuckForResistance(attackerSideHero);
 
 		startBattle();
-		ASSERT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).enabled);
-		ASSERT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).enabled);
+		ASSERT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).enabled);
+		ASSERT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).enabled);
 		removeDeployedUnits();
 
 		friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
@@ -433,8 +444,8 @@ protected:
 		castingEscort->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 			BonusType::STACKS_INITIATIVE_FLAT, BonusSource::OTHER, 100, BonusSourceID()));
 
-		// Keep the selected stack's original army separate from the controller
-		// whose Twist allowance should pay for its hostile resistance reroll.
+		// Keep original army and current controller distinct; neither gains
+		// the retired reroll allowance from a current Druidic selection.
 		friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 			BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
 		ASSERT_EQ(friendly->unitSide(), BattleSide::ATTACKER);
@@ -491,7 +502,7 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsTwistHandOfFateRuntimeTest, LateCollateralResistanceRerollsForItsCurrentControllerWithoutChangingTheChoice)
+TEST_F(NewHorizonsTwistHandOfFateRuntimeTest, DruidicLuckKeepsFirstCollateralResistanceAndTheSelectedRecipient)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareHandOfFateBattle());
 	ASSERT_NE(enemyCollateral, nullptr);
@@ -508,16 +519,16 @@ TEST_F(NewHorizonsTwistHandOfFateRuntimeTest, LateCollateralResistanceRerollsFor
 		BattleID(0), PlayerColor(0), handOfFateAction()));
 
 	EXPECT_EQ(primaryBefore - primary->getAvailableHealth(), 320)
-		<< "The primary spell damage remains intact when late collateral resists";
-	EXPECT_EQ(selectedBefore - friendly->getAvailableHealth(), 0)
-		<< "The selected stack's final resistance redraw must prevent collateral damage";
+		<< "The primary spell damage remains intact on the ordinary first draw";
+	EXPECT_EQ(selectedBefore - friendly->getAvailableHealth(), 320)
+		<< "The selected stack keeps its first resistance miss without a Druidic redraw";
 	EXPECT_EQ(otherCandidateBefore - enemyCollateral->getAvailableHealth(), 0)
-		<< "A resisted late recipient does not cause Hand of Fate to choose another stack";
+		<< "Removing the retired redraw must not change the selected collateral stack";
 	EXPECT_EQ(escortBefore - castingEscort->getAvailableHealth(), 0);
 	ASSERT_EQ(server.castsOf(spell).size(), 1u);
-	EXPECT_EQ(server.castsOf(spell).front().damage, 320);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used)
-		<< "The hypnotized recipient is currently controlled by the defender, whose allowance is spent";
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
-		<< "Its original unitSide does not determine who pays for the reroll";
+	EXPECT_EQ(server.castsOf(spell).front().damage, 640);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used)
+		<< "The current controller has no retired allowance from Druidic Luck";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
+		<< "The original unitSide also has no retired allowance";
 }

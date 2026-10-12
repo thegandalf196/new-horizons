@@ -36,6 +36,7 @@ struct DLL_LINKAGE Link
 	BattleSide casterSide = BattleSide::NONE;
 	int32_t echoBasisPoints = 0;
 	JsonNode mdrPenetration;
+	int32_t damageMultiplierPercent = 100;
 };
 
 /// True only when the saved battle ruleset admits the Soul Chain spell.
@@ -73,5 +74,6 @@ DLL_LINKAGE int64_t adjustedEchoDamage(
 	const battle::Unit * primary,
 	int64_t actualSecondaryDamage,
 	int32_t echoBasisPoints,
-	const JsonNode * capturedPenetration = nullptr);
+	const JsonNode * capturedPenetration = nullptr,
+	int32_t damageMultiplierPercent = 100);
 }

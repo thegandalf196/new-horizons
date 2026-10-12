@@ -39,6 +39,32 @@ public:
 		return static_cast<int64_t>(normal) + buffer;
 	}
 
+	struct DLL_LINKAGE Refund
+	{
+		int32_t normal = 0;
+		int32_t permanentBuffer = 0;
+		int32_t temporaryBuffer = 0;
+	};
+
+	/// Undo a percentage of an actual charge, in reverse charge order. Rounding
+	/// occurs once on the whole cost, never separately on the provenance pools.
+	static Refund refundForSpent(int32_t normalSpent, int32_t permanentBufferSpent,
+		int32_t temporaryBufferSpent, int32_t percent)
+	{
+		if(normalSpent < 0 || permanentBufferSpent < 0 || temporaryBufferSpent < 0
+			|| percent < 0 || percent > 100)
+			throw std::invalid_argument("Invalid Spell Point refund provenance");
+		int64_t remaining = (static_cast<int64_t>(normalSpent) + permanentBufferSpent
+			+ temporaryBufferSpent) * percent / 100;
+		Refund result;
+		result.normal = static_cast<int32_t>(std::min<int64_t>(normalSpent, remaining));
+		remaining -= result.normal;
+		result.permanentBuffer = static_cast<int32_t>(std::min<int64_t>(permanentBufferSpent, remaining));
+		remaining -= result.permanentBuffer;
+		result.temporaryBuffer = static_cast<int32_t>(std::min<int64_t>(temporaryBufferSpent, remaining));
+		return result;
+	}
+
 	/// Set Normal Spell Points to an absolute value. Values are clamped to the
 	/// nonnegative capacity; increasing capacity never fills the new space.
 	void setNormal(int32_t value, int32_t maximum) noexcept

@@ -377,7 +377,14 @@ TEST_F(NewHorizonsSecondChanceTest, IneligibleBallistaAndSpellLikeShotsDoNotSpen
 	ASSERT_TRUE(magog->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 	EXPECT_FALSE(newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(ballista, true));
 	EXPECT_FALSE(newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(magog, false));
+	// Raw negative Luck does not make war-machine or ranged spell-like
+	// damage eligible for either Luck trigger or Second Chance consumption.
+	ASSERT_LT(ballista->valOfBonuses(BonusType::LUCK), 0);
+	ASSERT_LT(magog->valOfBonuses(BonusType::LUCK), 0);
+	EXPECT_EQ(battle()->battleGetAttackLuck(ballista, target, true), 0);
+	EXPECT_EQ(battle()->battleGetAttackLuck(magog, target, true), 0);
 	ASSERT_TRUE(battle()->getSylvanLuckState(BattleSide::ATTACKER).secondChance);
+	const auto suppressionLogsBefore = secondChanceLogCount();
 
 	const auto submitShot = [this, target](CStack * shooter)
 	{
@@ -389,18 +396,25 @@ TEST_F(NewHorizonsSecondChanceTest, IneligibleBallistaAndSpellLikeShotsDoNotSpen
 	ASSERT_TRUE(submitShot(ballista));
 	auto * ballistaAttack = attackBy(ballista->unitId());
 	ASSERT_NE(ballistaAttack, nullptr);
-	EXPECT_TRUE(ballistaAttack->unlucky());
+	EXPECT_FALSE(ballistaAttack->lucky());
+	EXPECT_FALSE(ballistaAttack->unlucky());
 	ASSERT_TRUE(ballistaAttack->fortuneState);
+	EXPECT_TRUE(ballistaAttack->fortuneState->secondChance);
 	EXPECT_FALSE(ballistaAttack->fortuneState->secondChanceUsed);
 	EXPECT_FALSE(battle()->getSylvanLuckState(BattleSide::ATTACKER).secondChanceUsed);
+	EXPECT_EQ(secondChanceLogCount(), suppressionLogsBefore);
 
 	server.attacks.clear();
 	ASSERT_TRUE(submitShot(magog));
 	auto * spellLikeAttack = attackBy(magog->unitId());
 	ASSERT_NE(spellLikeAttack, nullptr);
 	EXPECT_TRUE(spellLikeAttack->spellLike());
-	EXPECT_TRUE(spellLikeAttack->unlucky());
+	EXPECT_FALSE(spellLikeAttack->lucky());
+	EXPECT_FALSE(spellLikeAttack->unlucky());
 	ASSERT_TRUE(spellLikeAttack->fortuneState);
+	EXPECT_TRUE(spellLikeAttack->fortuneState->secondChance);
 	EXPECT_FALSE(spellLikeAttack->fortuneState->secondChanceUsed);
 	EXPECT_FALSE(battle()->getSylvanLuckState(BattleSide::ATTACKER).secondChanceUsed);
+	EXPECT_TRUE(battle()->getSylvanLuckState(BattleSide::ATTACKER).secondChance);
+	EXPECT_EQ(secondChanceLogCount(), suppressionLogsBefore);
 }

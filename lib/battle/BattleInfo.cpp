@@ -798,8 +798,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 				"new-horizons:luck", "new-horizons:luck.serendipity");
 			currentBattle->sides[i].perfectFortune.enabled = heroes[i]->hasActivePerk(
 				"new-horizons:luck", "new-horizons:luck.perfectFortune");
-			currentBattle->sides[i].adverseCombatReroll.enabled = heroes[i]->hasActivePerk(
-				"new-horizons:luck", "new-horizons:luck.twistOfFate");
+			// Stable IDs now denote hero spell procs, not creature rerolls/windows.
+			currentBattle->sides[i].adverseCombatReroll.enabled = false;
 			currentBattle->sides[i].moraleSuppression.enabled = heroes[i]->hasActivePerk(
 				"new-horizons:discipline", "new-horizons:discipline.rally");
 			currentBattle->sides[i].moraleSuppression.roundEnabled = heroes[i]->hasActivePerk(
@@ -810,7 +810,7 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 				"new-horizons:warMachines", "new-horizons:warMachines.quartermaster");
 			auto & fortune = currentBattle->sides[i].sylvanLuck;
 			fortune.secondChance = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.secondChance");
-			fortune.gambler = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.gambler");
+			fortune.gambler = false;
 			fortune.chainOfFortune = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.chainOfFortune");
 			fortune.serendipity = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.serendipity");
 			fortune.naturesProvidence = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.natureSProvidence");

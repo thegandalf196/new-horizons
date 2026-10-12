@@ -93,6 +93,18 @@ object exactly once. That is normal **Library** initialization within a native
 harness, not normal client startup, rendering, ordinary acquisition or gameplay.
 This tool neither creates that overlay nor authorizes a GUI run.
 
+The Hero Luck/Morale save exporter has a narrower maintained opt-in:
+`NH_EXPORT_HERO_PROC_ORDINARY_BOOTSTRAP=1` selects ordinary library initialization
+only with the exact test filter
+`NewHorizonsHeroProcFixtureExportTest.ExportLegalOfferOrderProcAdventureSave`,
+`NH_EXPORT_HERO_PROC_FAMILY=attacker` or `defender`, and an explicit
+`NH_EXPORT_HERO_PROC_SAVE_ROOT` matching the isolated runtime save directory.
+Supply the ordinary `config/vcmi/modSettings.json` preset with only `core`,
+`vcmi`, and `new-horizons`. The exporter rejects other resolved mods. Without
+this opt-in, normal tests still use the TEST preset. A save exported with that
+test preset can reference test-only hero-pool entities and is not a player
+fixture. Native export/reload remains distinct from client listing and loading.
+
 Offline composer tests, byte-equivalence inspection, registration/native tests,
 normal client bootstrap and GUI/save/AI journeys are separate evidence. Merely
 checking in this recipe or seeing its output does not prove checkout-native

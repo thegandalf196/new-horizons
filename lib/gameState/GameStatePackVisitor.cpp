@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../battle/NewHorizonsHeroicSpirit.h"
+#include "../battle/NewHorizonsHeroLuck.h"
 #include "../mapObjects/CGCreature.h"
 #include "../entities/hero/NewHorizonsDiplomacy.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
@@ -60,6 +61,7 @@
 #include "../mapping/CMap.h"
 #include "../networkPacks/StackLocation.h"
 #include "../spells/CSpell.h"
+#include "../spells/ISpellMechanics.h"
 #include "../spells/NewHorizonsMagic.h"
 
 #include <algorithm>
@@ -314,6 +316,31 @@ void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMa
 				throw std::runtime_error("Cannot restore Spell Point snapshot during battle without temporary Buffer provenance");
 			hero.restoreSpellPointSnapshot(static_cast<int32_t>(amount), bufferAmount);
 			break;
+		case Operation::REFUND_HERO_LUCK:
+		{
+			auto * side = findBattleSide(gs, hero.id);
+			if(!side)
+				throw std::runtime_error("Hero Luck refund requires an active battle");
+			const bool twoPools = newHorizonsMagic::spellPointRulesActive(hero.getMagicRules());
+			const int64_t maximumNormal = twoPools ? hero.manaLimit() : std::numeric_limits<int32_t>::max();
+			const int64_t restoredBuffer = static_cast<int64_t>(pack.bufferAmount) + pack.temporaryBufferAmount;
+			const int64_t nextBuffer = static_cast<int64_t>(hero.getBufferSpellPoints()) + restoredBuffer;
+			const int64_t nextTemporary = static_cast<int64_t>(side->temporaryBufferRemaining) + pack.temporaryBufferAmount;
+			// Validate all three pools before touching any of them. This operation
+			// restores an actual charge, not a capacity-capped grant or conversion.
+			if(static_cast<int64_t>(hero.getNormalSpellPoints()) + amount > maximumNormal
+				|| nextBuffer > std::numeric_limits<int32_t>::max()
+				|| nextTemporary > nextBuffer || nextTemporary > std::numeric_limits<int32_t>::max()
+				|| side->temporaryBufferRemaining < 0 || side->temporaryBufferRemaining > hero.getBufferSpellPoints()
+				|| (!twoPools && restoredBuffer != 0))
+				throw std::runtime_error("Hero Luck refund exceeds available pool headroom or provenance");
+			if(!hero.restoreNormalSpellPoints(static_cast<int32_t>(amount)))
+				throw std::runtime_error("Invalid Hero Luck Normal refund");
+			if(restoredBuffer != 0 && !hero.grantBufferSpellPoints(static_cast<int32_t>(restoredBuffer)))
+				throw std::runtime_error("Invalid Hero Luck Buffer refund");
+			side->temporaryBufferRemaining = static_cast<int32_t>(nextTemporary);
+			break;
+		}
 		case Operation::LEGACY:
 			throw std::runtime_error("Unresolved legacy Spell Point mutation");
 	}
@@ -2685,7 +2712,49 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				throw std::runtime_error("Invalid canonical Order StartAction destination");
 			targetUnitIds.push_back(static_cast<uint32_t>(target.unitValue));
 		}
-		const auto expected = battleContext->battlePrepareHeroOrderState(pack.ba.side, pack.ba.command, targetUnitIds);
+		auto expected = battleContext->battlePrepareHeroOrderState(pack.ba.side, pack.ba.command, targetUnitIds);
+		if(expected && pack.orderState)
+		{
+			const auto * hero = battleContext->battleGetFightingHero(pack.ba.side);
+			const bool requiresLuckDraw = newHorizonsHeroLuck::hasLuckyDay(hero)
+				&& newHorizonsHeroLuck::canRollLuck(*hero, gs.getSettings());
+			if(pack.orderState->heroLuck.has_value() != requiresLuckDraw)
+				throw std::runtime_error("Order is missing or invents its eligible Hero Luck draw");
+			if(pack.orderState->heroLuck)
+			{
+				if(!newHorizonsHeroLuck::hasLuckyDay(hero))
+					throw std::runtime_error("Order Luck receipt requires Lucky Day");
+				const auto & luck = *pack.orderState->heroLuck;
+				newHorizonsHeroLuck::validateLuckContext(luck, *hero, gs.getSettings());
+				const auto flags = luck.triggered(newHorizonsHeroLuck::chanceScalePercent(
+					battleContext->getMagicRules(), newHorizonsHeroLuck::Proc::LuckyDay))
+					? static_cast<uint8_t>(newHorizonsHeroLuck::Proc::LuckyDay) : 0;
+				if(luck.procFlags != flags)
+					throw std::runtime_error("Order Luck proc differs from accepted draw");
+				expected->heroLuck = luck;
+			}
+			const auto selected = battleContext->battleGetOrderActionAllowance(pack.ba.side);
+			HeroActionAllowanceState projected;
+			if(newHorizonsHeroLuck::projectOrderAllowance(*battleContext, pack.ba.side, *expected,
+				pack.doubleCommandState ? &*pack.doubleCommandState : nullptr, projected))
+			{
+				expected->heroMoraleActionGrantId = selected->grantId;
+				if(pack.orderState->heroMorale.has_value() != newHorizonsHeroLuck::canRollMorale(
+					*hero, gs.getSettings(), battleContext->getMagicRules()))
+					throw std::runtime_error("Order is missing or invents its eligible Hero Morale draw");
+				if(pack.orderState->heroMorale)
+				{
+					const auto & morale = *pack.orderState->heroMorale;
+					newHorizonsHeroLuck::validateMoraleContext(morale, *hero, gs.getSettings(), battleContext->getMagicRules());
+					const auto flags = morale.triggered(newHorizonsHeroLuck::chanceScalePercent(
+						battleContext->getMagicRules(), newHorizonsHeroLuck::Proc::HeroicSpirit))
+						? static_cast<uint8_t>(newHorizonsHeroLuck::Proc::HeroicSpirit) : 0;
+					if(morale.procFlags != flags)
+						throw std::runtime_error("Order Morale proc differs from accepted draw");
+					expected->heroMorale = morale;
+				}
+			}
+		}
 		if(!expected || expected != pack.orderState)
 			throw std::runtime_error("Invalid canonical Order StartAction snapshot");
 		const auto existingOrders = battleContext->getHeroOrderStates(pack.ba.side);
@@ -2843,10 +2912,27 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			}
 			else if(!orderReceipt || orderReceipt->source != HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
 				throw std::runtime_error("Double Command follow-up did not consume its grant");
-			commandBattle->setDoubleCommandState(pack.ba.side, *acceptedDoubleCommandState);
+		}
+		// Append after mandatory companion grants so Double Command remains the
+		// earliest typed Order; the optional Morale Order cannot interrupt it.
+		if(pack.orderState && pack.orderState->heroMoraleActionGrantId != 0)
+		{
+			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
+			if(!orderReceipt || pack.orderState->heroMoraleActionGrantId != orderReceipt->grantId
+				|| orderReceipt->action != HeroActionAllowanceState::ActionKind::ORDER
+				|| orderReceipt->round != pack.orderState->issuedRound
+				|| !newHorizonsHeroicSpirit::canRollOrderMorale(hero, *orderReceipt)
+				|| !nextAllowances.canResolveHeroicSpirit(*orderReceipt))
+				throw std::runtime_error("Heroic Spirit does not match the consumed flexible Order receipt");
+			const bool success = pack.orderState->heroMorale
+				&& pack.orderState->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit);
+			if(!nextAllowances.resolveHeroicSpirit(*orderReceipt, success))
+				throw std::runtime_error("Could not commit Heroic Spirit Order resolution");
 		}
 		if(sharedActionBudget)
 			side.heroActionAllowances = std::move(nextAllowances);
+		if(acceptedDoubleCommandState)
+			commandBattle->setDoubleCommandState(pack.ba.side, *acceptedDoubleCommandState);
 		if(acceptedDoubleCommandState)
 			side.validateDoubleCommandState();
 		const bool spendsHeroAction = sharedActionBudget
@@ -3275,6 +3361,37 @@ void GameStatePackVisitor::visitSetBattlecraftMasteryAward(SetBattlecraftMastery
 
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
+	pack.validateHeroLuckReceipt();
+	if(pack.activeCast && pack.castByHero && pack.casterStack < 0
+		&& (pack.side == BattleSide::ATTACKER || pack.side == BattleSide::DEFENDER))
+	{
+		const auto * battle = gs.getBattle(pack.battleID);
+		const auto * hero = battle ? battle->getSideHero(pack.side) : nullptr;
+		const auto * spell = pack.spellID.toSpell();
+		if(!battle || !hero || !spell)
+			throw std::runtime_error("Hero Luck cast receipt has no actual caster context");
+		const auto & rules = battle->getMagicRules();
+		const bool eligible = newHorizonsHeroLuck::hasErraticMana(hero)
+			|| (newHorizonsHeroLuck::hasDruidicLuck(hero) && spells::heroLuckDamageEligible(*spell, rules));
+		if(pack.heroLuck.has_value() != (eligible && newHorizonsHeroLuck::canRollLuck(*hero, gs.getSettings())))
+			throw std::runtime_error("Hero spell is missing or invents its eligible Luck draw");
+		if(pack.heroLuck)
+		{
+			const auto & luck = *pack.heroLuck;
+			newHorizonsHeroLuck::validateLuckContext(luck, *hero, gs.getSettings());
+			uint8_t flags = 0;
+			if(newHorizonsHeroLuck::hasErraticMana(hero) && pack.paidHeroManaCost > 0
+				&& static_cast<int64_t>(pack.paidHeroManaCost) * newHorizonsHeroLuck::manaRefundPercent(rules) / 100 > 0
+				&& luck.triggered(newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::ErraticMana)))
+				flags |= static_cast<uint8_t>(newHorizonsHeroLuck::Proc::ErraticMana);
+			if(!pack.counterspellNegated && newHorizonsHeroLuck::hasDruidicLuck(hero)
+				&& spells::heroLuckDamageEligible(*spell, rules)
+				&& luck.triggered(newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::DruidicLuck)))
+				flags |= static_cast<uint8_t>(newHorizonsHeroLuck::Proc::DruidicLuck);
+			if(luck.procFlags != flags)
+				throw std::runtime_error("Hero spell proc flags differ from accepted Luck draw");
+		}
+	}
 	if(pack.extendedSpell && (!pack.activeCast || !pack.castByHero
 		|| (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)))
 		throw std::runtime_error("Invalid Extend Spell cast receipt");

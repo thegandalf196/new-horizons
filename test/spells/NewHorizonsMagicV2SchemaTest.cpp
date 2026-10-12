@@ -20,6 +20,8 @@ JsonNode v1Rules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 1;
+	rules.Struct().erase("heroLuck");
+	rules.Struct().erase("heroMorale");
 	rules.Struct().erase("warcasting");
 	rules.Struct().erase("spellPoints");
 	rules.Struct().erase("mageGuildGeneration");
@@ -57,6 +59,8 @@ JsonNode v2Rules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 2;
+	rules.Struct().erase("heroLuck");
+	rules.Struct().erase("heroMorale");
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
 	for(auto & [name, spell] : rules["spells"].Struct())

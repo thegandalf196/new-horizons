@@ -2005,17 +2005,14 @@ AttackPossibility AttackPossibility::evaluate(
 						: (strike.perfectMoment || ap.attack.luckyStrike
 							|| (luck > 0 && rules.diceSize > 0 && !rules.goodChance.empty()
 								&& rules.goodChance[chanceIndex] >= rules.diceSize));
-					const bool genericRecovery = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(
-						attacker, attackInfo.physicalDamage)
-						&& newHorizonsCombatSkills::hasLuckyRecovery(state->battleGetOwnerHero(attacker));
-					if((genericRecovery || fortune.luckyRecovery) && certainlyLucky && ap.attackerState->alive())
+					if(fortune.luckyRecovery && certainlyLucky && ap.attackerState->alive())
 					{
 						int64_t actualDamage = 0;
 						for(const auto & [unitId, damage] : strike.resolvedHits)
 							if(unitId == strike.defenderId || rules.affectsAllTargets)
 								actualDamage += std::max<int64_t>(0, damage);
 						auto healing = newHorizonsCombatSkills::luckyRecoveryAmount(
-							actualDamage, genericRecovery, fortune.luckyRecovery);
+							actualDamage, false, fortune.luckyRecovery);
 						if(healing > 0)
 							ap.attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
 					}
@@ -2371,13 +2368,10 @@ AttackPossibility AttackPossibility::evaluate(
 						: (retaliationAttack.luckyStrike
 							|| (luck > 0 && rules.diceSize > 0 && !rules.goodChance.empty()
 								&& rules.goodChance[chanceIndex] >= rules.diceSize));
-					const bool genericRecovery = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(
-						retaliatorState.get(), retaliationAttack.physicalDamage)
-						&& newHorizonsCombatSkills::hasLuckyRecovery(state->battleGetOwnerHero(defender));
-					if((genericRecovery || fortune.luckyRecovery) && certainlyLucky && retaliatorState->alive())
+					if(fortune.luckyRecovery && certainlyLucky && retaliatorState->alive())
 					{
 						auto healing = newHorizonsCombatSkills::luckyRecoveryAmount(
-							retaliationActualDamage, genericRecovery, fortune.luckyRecovery);
+							retaliationActualDamage, false, fortune.luckyRecovery);
 						if(healing > 0)
 							retaliatorState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
 					}

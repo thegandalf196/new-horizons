@@ -410,10 +410,10 @@ public:
 			return;
 		}
 
-		const int64_t baseDamage = newHorizonsMagic::poisonBaseDamageBasisPoints(
+		const int64_t baseDamage = mechanics->scaleHeroLuckDamage(newHorizonsMagic::poisonBaseDamageBasisPoints(
 			mechanics->getEffectPower(), mechanics->getSpellPowerCoefficientBasisPoints(),
 			mechanics->getEmpowerSpellBonusPercent(),
-			newHorizonsMagic::poisonBaseBonusPercent(mechanics->getHeroCaster()));
+			newHorizonsMagic::poisonBaseBonusPercent(mechanics->getHeroCaster())));
 		for(const auto & destination : target)
 		{
 			const auto * unit = destination.unitValue;

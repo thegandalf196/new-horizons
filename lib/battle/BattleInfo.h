@@ -407,7 +407,10 @@ public:
 	{
 		for(const auto & side : sides)
 			for(const auto & order : side.orderStates)
+			{
+				order.validateHeroLuckSerialization(h);
 				order.validateRoyalStandardSerialization(h);
+			}
 	}
 	bool hasMandateOfHeavenState() const
 	{
@@ -509,6 +512,15 @@ public:
 
 	template <typename Handler> void validateHeroicSpiritSerialization(Handler & h) const
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK)
+			&& (!magicRules["heroLuck"].isNull() || !magicRules["heroMorale"].isNull()))
+			throw std::runtime_error("Cannot discard captured Hero Luck or Morale rules");
+		for(const auto & side : sides)
+		{
+			side.heroActionAllowances.validateHeroicSpiritSerialization(h);
+			for(const auto & order : side.orderStates)
+				order.validateHeroLuckSerialization(h);
+		}
 		for(const auto & stack : stacks)
 			if(stack)
 				stack->validateHeroicSpiritSerialization(h);
@@ -1275,6 +1287,12 @@ public:
 	PlayerColor getSidePlayer(BattleSide side) const override;
 	const CArmedInstance * getSideArmy(BattleSide side) const override;
 	const CGHeroInstance * getSideHero(BattleSide side) const override;
+	int32_t getTemporaryBufferRemaining(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return 0;
+		return getSide(side).temporaryBufferRemaining;
+	}
 	int32_t getFirstRoundMoraleModifier(BattleSide side) const override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)

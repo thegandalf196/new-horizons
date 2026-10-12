@@ -254,12 +254,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_MORALE_EXTRA_DAMAGE, // captured Morale extra-activation direct attack damage and provenance
 	NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT, // current-round synthetic stasis activation already consumed
 	NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT, // binary No Quarter lifetime and Veteran physical damage history
+	NEW_HORIZONS_HERO_LUCK, // accepted Hero Luck/Morale receipts, streams and Order allowances
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT,
+	CURRENT = NEW_HORIZONS_HERO_LUCK,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT > ESerializationVersion::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT,

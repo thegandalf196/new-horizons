@@ -139,8 +139,8 @@ protected:
 		if(bothSides)
 			selectTwistOfFate(defenderSideHero);
 		startBattle();
-		ASSERT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).enabled);
-		EXPECT_EQ(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).enabled, bothSides);
+		ASSERT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).enabled);
+		EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).enabled);
 	}
 
 	bool resolve(BattleSide side, bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw)
@@ -229,7 +229,7 @@ TEST_F(NewHorizonsAdverseCombatRerollTest, DeterministicAndFavorableResultsDoNot
 		return true;
 	}));
 	EXPECT_EQ(deterministicDraws, 1);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
 
 	int favorableDraws = 0;
 	EXPECT_FALSE(gameHandler->spellcastEnvironment()->resolveAdverseCombatRoll(
@@ -239,29 +239,23 @@ TEST_F(NewHorizonsAdverseCombatRerollTest, DeterministicAndFavorableResultsDoNot
 		return false;
 	}));
 	EXPECT_EQ(favorableDraws, 1);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
 }
 
-TEST_F(NewHorizonsAdverseCombatRerollTest, FirstAdverseResultGetsOneFinalRedrawEvenWhenItIsAlsoAdverse)
+TEST_F(NewHorizonsAdverseCombatRerollTest, DruidicLuckKeepsFirstAdverseDrawWithoutFeedback)
 {
 	startTwistBattle();
 	const auto logsBefore = server.battleLogLines.size();
 	int draws = 0;
-	const bool finalResult = resolve(BattleSide::ATTACKER, true, true, [this, &draws, logsBefore]
+	const bool finalResult = resolve(BattleSide::ATTACKER, true, true, [&draws]
 	{
 		++draws;
-		if(draws == 2)
-		{
-			EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used)
-				<< "The spent state must be applied before the final draw";
-			EXPECT_GT(server.battleLogLines.size(), logsBefore)
-				<< "Reroll feedback must be published before the final draw";
-		}
 		return true;
 	});
-	EXPECT_TRUE(finalResult) << "The final result is not rerolled even if it remains adverse";
-	EXPECT_EQ(draws, 2);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_TRUE(finalResult) << "The ordinary first adverse result remains authoritative";
+	EXPECT_EQ(draws, 1);
+	EXPECT_EQ(server.battleLogLines.size(), logsBefore);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
 
 	int laterDraws = 0;
 	EXPECT_TRUE(resolve(BattleSide::ATTACKER, true, true, [&laterDraws]
@@ -272,34 +266,34 @@ TEST_F(NewHorizonsAdverseCombatRerollTest, FirstAdverseResultGetsOneFinalRedrawE
 	EXPECT_EQ(laterDraws, 1);
 }
 
-TEST_F(NewHorizonsAdverseCombatRerollTest, SideAllowanceIsIndependentAndPersistsAcrossRounds)
+TEST_F(NewHorizonsAdverseCombatRerollTest, DruidicSelectionsDoNotEnableEitherSideAcrossRounds)
 {
 	startTwistBattle(true);
 	int attackerDraws = 0;
-	EXPECT_FALSE(resolve(BattleSide::ATTACKER, true, true, [&attackerDraws]
+	EXPECT_TRUE(resolve(BattleSide::ATTACKER, true, true, [&attackerDraws]
 	{
 		++attackerDraws;
 		return attackerDraws == 1;
 	}));
-	EXPECT_EQ(attackerDraws, 2);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
+	EXPECT_EQ(attackerDraws, 1);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
 
 	battle()->nextRound();
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
 
 	int defenderDraws = 0;
-	EXPECT_FALSE(resolve(BattleSide::DEFENDER, true, true, [&defenderDraws]
+	EXPECT_TRUE(resolve(BattleSide::DEFENDER, true, true, [&defenderDraws]
 	{
 		++defenderDraws;
 		return defenderDraws == 1;
 	}));
-	EXPECT_EQ(defenderDraws, 2);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
+	EXPECT_EQ(defenderDraws, 1);
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
 }
 
-TEST_F(NewHorizonsAdverseCombatRerollTest, NestedAdverseCallbackCannotConsumeTheAllowanceTwice)
+TEST_F(NewHorizonsAdverseCombatRerollTest, NestedAdverseCallbacksKeepCurrentStateInert)
 {
 	startTwistBattle();
 	int outerDraws = 0;
@@ -310,9 +304,6 @@ TEST_F(NewHorizonsAdverseCombatRerollTest, NestedAdverseCallbackCannotConsumeThe
 		&nestedDraws, &nestedSawSpentState, &nestedResult]
 	{
 		++outerDraws;
-		if(outerDraws == 1)
-			return true;
-
 		nestedSawSpentState = battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used;
 		nestedResult = resolve(BattleSide::ATTACKER, true, true, [&nestedDraws]
 		{
@@ -323,18 +314,18 @@ TEST_F(NewHorizonsAdverseCombatRerollTest, NestedAdverseCallbackCannotConsumeThe
 	});
 
 	EXPECT_FALSE(outerResult);
-	EXPECT_EQ(outerDraws, 2);
-	EXPECT_TRUE(nestedSawSpentState);
+	EXPECT_EQ(outerDraws, 1);
+	EXPECT_FALSE(nestedSawSpentState);
 	EXPECT_TRUE(nestedResult);
-	EXPECT_EQ(nestedDraws, 1) << "A nested adverse result sees the published expenditure";
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_EQ(nestedDraws, 1) << "A nested selection also keeps its single ordinary draw";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
 }
 
-TEST_F(NewHorizonsAdverseCombatRerollTest, HypotheticalBranchesCopyAndSpendStateWithoutChangingTheirParent)
+TEST_F(NewHorizonsAdverseCombatRerollTest, HypotheticalBranchesRejectRetiredAllowanceWithoutChangingParent)
 {
 	startTwistBattle();
 	const auto liveState = battle()->getAdverseCombatRerollState(BattleSide::ATTACKER);
-	ASSERT_TRUE(liveState.enabled);
+	ASSERT_FALSE(liveState.enabled);
 	ASSERT_FALSE(liveState.used);
 
 	auto environment = std::make_shared<AdverseCombatRerollEnvironment>(gameState());
@@ -349,13 +340,13 @@ TEST_F(NewHorizonsAdverseCombatRerollTest, HypotheticalBranchesCopyAndSpendState
 	packet.side = BattleSide::ATTACKER;
 	packet.state = {true, true};
 	EXPECT_EQ(branch->getBattleID(), packet.battleID);
-	BattleStatePackVisitor visitor(*branch);
-	packet.visitTyped(visitor);
+	EXPECT_THROW(packet.validateTransitionFrom(liveState), std::runtime_error)
+		<< "A current Druidic Luck selection must not acquire a retired allowance";
 
 	HypotheticBattle nested(environment.get(), branch);
-	EXPECT_EQ(nested.getAdverseCombatRerollState(BattleSide::ATTACKER), packet.state)
-		<< "A nested projection inherits the branch-local packet snapshot";
-	EXPECT_TRUE(branch->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_EQ(nested.getAdverseCombatRerollState(BattleSide::ATTACKER), liveState)
+		<< "A nested projection retains the current inert allowance";
+	EXPECT_FALSE(branch->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
 	EXPECT_EQ(root->getAdverseCombatRerollState(BattleSide::ATTACKER), liveState);
 	EXPECT_EQ(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER), liveState);
 }

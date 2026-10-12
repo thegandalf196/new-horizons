@@ -456,6 +456,36 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
     def test_registry_validates_against_schema(self):
         Draft4Validator(self.schema).validate(self.rules)
 
+    def test_hero_luck_reworks_keep_saved_ids_ranks_and_sylvan_recovery(self):
+        perks = {p['id']: p for p in self.rules['skills']['new-horizons:luck']['perks']}
+        for identity, name, rank in (
+                ('luckyRecovery', 'Lucky Day', 'advanced'),
+                ('gambler', 'Erratic Mana', 'advanced'),
+                ('twistOfFate', 'Druidic Luck', 'expert')):
+            perk = perks['new-horizons:luck.' + identity]
+            self.assertEqual((perk['name'], perk['requires']), (name, rank))
+            self.assertEqual(perk['effect']['status'], 'active')
+            self.assertEqual(perk['description'], perk['effect']['description'])
+        self.assertNotIn('new-horizons:luck.luckyDay', perks)
+        self.assertNotIn('new-horizons:luck.erraticMana', perks)
+        self.assertNotIn('new-horizons:luck.druidicLuck', perks)
+        sylvan = next(p for p in self.rules['skills']['new-horizons:sylvanLuck']['perks']
+                      if p['id'] == 'new-horizons:sylvanLuck.luckyRecovery')
+        description = 'A melee Lucky Strike restores surviving creatures for 10% of actual damage dealt.'
+        self.assertEqual((sylvan['name'], sylvan['requires']), ('Lucky Recovery', 'basic'))
+        self.assertEqual(sylvan['description'], description)
+        self.assertEqual(sylvan['effect'], {'status': 'active', 'description': description})
+
+    def test_heroic_spirit_is_an_expert_order_only_hero_morale_perk(self):
+        perk = next(p for p in self.rules['skills']['new-horizons:discipline']['perks']
+                    if p['id'] == 'new-horizons:discipline.heroicSpirit')
+        self.assertEqual((perk['name'], perk['requires']), ('Heroic Spirit', 'expert'))
+        self.assertEqual(perk['effect']['status'], 'active')
+        self.assertEqual(perk['description'], perk['effect']['description'])
+        self.assertIn('one additional Order-only Hero Action', perk['description'])
+        self.assertIn('Bonus Orders cannot trigger further Morale', perk['description'])
+        self.assertNotIn('retaliation', perk['description'])
+
     def test_source_identity_and_selection_limits(self):
         self.assertEqual(self.rules["schemaVersion"], 1)
         self.assertEqual(self.rules["rulesetVersion"], 2)

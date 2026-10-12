@@ -39,7 +39,7 @@ function Script:apply(mechanics, server, target)
 				statusTags = {"DEBUFF"},
 				statusIdentity = spellKey,
 				addInfo = {
-					damageSharePercent = DAMAGE_SHARE_PERCENT,
+					damageSharePercent = mechanics:scaleHeroLuckDamage(DAMAGE_SHARE_PERCENT),
 					casterSide = casterSide
 				}
 			}, false)

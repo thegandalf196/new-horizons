@@ -233,16 +233,47 @@ int64_t Mechanics::scaleDamageSpellPowerComponentWithCoefficientBasisPoints(cons
 		coefficientBasisPoints, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), damageSpecialtyPercent);
 }
 
+bool heroLuckDamageEligible(const Spell & spell, const JsonNode & savedMagicRules)
+{
+	if(spell.getId() == SpellID::DEATH_STARE)
+		return false;
+	const auto & key = spell.getJsonKey();
+	return spell.isDamage() || newHorizonsMagic::physicalPoisonEnabled(savedMagicRules, spell.getId())
+		|| newHorizonsMagic::earthquakeRulesEnabled(savedMagicRules, spell.getId())
+		|| key == "new-horizons:lifeDrain" || key == "new-horizons:soulChain"
+		|| key == "new-horizons:plague" || key == "new-horizons:hexOfPain"
+		|| newHorizonsMagic::isLandMine(spell.getId()) || newHorizonsMagic::isFireWall(spell.getId());
+}
+
+int64_t scaleHeroLuckDamage(int64_t damage, int32_t multiplierPercent)
+{
+	if(multiplierPercent < 0 || multiplierPercent > 1000)
+		throw std::invalid_argument("Invalid Hero Luck damage multiplier");
+	if(damage <= 0)
+		return damage;
+	const int64_t multiplier = multiplierPercent;
+	const int64_t quotient = damage / 100;
+	const int64_t remainder = damage % 100 * multiplier / 100;
+	if(multiplier != 0 && quotient > (std::numeric_limits<int64_t>::max() - remainder) / multiplier)
+		return std::numeric_limits<int64_t>::max();
+	return quotient * multiplier + remainder;
+}
+
+int64_t Mechanics::scaleHeroLuckDamage(int64_t damage) const
+{
+	return spells::scaleHeroLuckDamage(damage, getHeroLuckDamageMultiplierPercent());
+}
+
 int64_t Mechanics::getHexOfPainFlatDamage() const
 {
 	if(getSpellId().toSpell()->getJsonKey() != "new-horizons:hexOfPain")
 		return 0;
 	const auto * hero = getHeroCaster();
-	return newHorizonsMagic::hexOfPainFlatDamage(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
+	return scaleHeroLuckDamage(newHorizonsMagic::hexOfPainFlatDamage(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
 		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(),
 		hero ? hero->getDamageSpellSpecialtyBonusPercent(getSpellId()) : 0,
 		usesNewHorizonsMagicV3() && hero
-			&& hero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.painweaver"));
+			&& hero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.painweaver")));
 }
 
 int64_t Mechanics::getPlagueTickDamage() const
@@ -252,8 +283,8 @@ int64_t Mechanics::getPlagueTickDamage() const
 	const auto * hero = getHeroCaster();
 	// Preserve Plague's authored initial snapshot: coefficient, not an extra
 	// Warcasting/Empower application. Children reuse this exact captured value.
-	return newHorizonsMagic::plagueTickDamage(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
-		hero ? hero->getDamageSpellSpecialtyBonusPercent(getSpellId()) : 0);
+	return scaleHeroLuckDamage(newHorizonsMagic::plagueTickDamage(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
+		hero ? hero->getDamageSpellSpecialtyBonusPercent(getSpellId()) : 0));
 }
 
 int64_t Mechanics::getPhantomArmyIntegrity(const battle::Unit * source) const
@@ -413,7 +444,7 @@ int32_t Mechanics::getNewHorizonsHavocStructuralDamage() const
 	if(!usesNewHorizonsHavocStructures())
 		return 0;
 
-	const int64_t rawDamage = std::max<int64_t>(0, getEffectValue());
+	const int64_t rawDamage = scaleHeroLuckDamage(std::max<int64_t>(0, getEffectValue()));
 	const int percentage = newHorizonsMagic::havocFortificationDamagePercent(
 		battle()->getBattle()->getMagicRules(), getSpellId());
 	return newHorizonsMagic::scaleHavocStructuralDamage(rawDamage, percentage,
@@ -703,6 +734,11 @@ int32_t BattleCast::getMetamagicManaRefund() const
 	return metamagicManaRefund;
 }
 
+std::optional<newHorizonsHeroLuck::Receipt> BattleCast::getHeroLuck() const
+{
+	return heroLuck;
+}
+
 BattleCast::OptionalValue64 BattleCast::getEffectValue() const
 {
 	return effectValue;
@@ -796,6 +832,12 @@ void BattleCast::setMetamagicTargetUnitId(uint32_t value)
 void BattleCast::setMetamagicManaRefund(int32_t value)
 {
 	metamagicManaRefund = value;
+}
+
+void BattleCast::setHeroLuck(const newHorizonsHeroLuck::Receipt & value)
+{
+	value.validate();
+	heroLuck = value;
 }
 
 void BattleCast::setEffectValue(BattleCast::Value64 value)
@@ -994,6 +1036,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	cb(event->getBattle())
 {
 	caster = event->getCaster();
+	heroLuck = event->getHeroLuck();
 	metamagicFollowup = event->isMetamagicFollowup();
 	massSlow = event->getMassSlow();
 	shadowGiftSacrificePercent = event->getShadowGiftSacrificePercent();
@@ -1747,7 +1790,11 @@ int32_t BaseMechanics::getDirectCreatureActivationDamagePercent() const
 	// Second Wind and earned Morale are separate genuine origins: the live
 	// activation transition clears Morale when beginning Second Wind, and the
 	// completion transition spends Second Wind before any earned Morale check.
-	return newHorizonsDivineMandate::crownSecondWindPercent(*hero, *order, unit->unitId());
+	return heroCommands::orderPotency(
+		heroCommands::secondWindPercent(*hero, order->warcastingBonusPercent,
+			order->divineMandateEfficiencyBonusPercent()),
+		newHorizonsDivineMandate::crownSecondWindPercent(*hero, *order, unit->unitId()),
+		*order, callback->getBattle()->getMagicRules());
 }
 
 int64_t Mechanics::adjustRecipientDamage(const battle::Unit * target, int64_t rawDamage) const
@@ -1852,7 +1899,7 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 				rawDamage += *missingHealthDamage;
 		}
 	}
-	int64_t adjustedDamage = owner->adjustRawDamage(caster, target, rawDamage,
+	int64_t adjustedDamage = owner->adjustRawDamage(caster, target, scaleHeroLuckDamage(rawDamage),
 		useIndependentMagicalDamageReduction ? 0 : legacyIgnoreReduction,
 		holdReductionBasisPoints, finalDamageMultiplierPercent, useIndependentMagicalDamageReduction,
 		usesNewHorizonsMagicV3(), true, perkReductionBasisPoints,
@@ -1894,6 +1941,12 @@ IBattleCast::Value64 BaseMechanics::getRecipientEffectValue(const battle::Unit *
 				static_cast<int64_t>(newHorizonsMagic::RESURRECTION_SPELL_POWER_HP_PER_POINT)
 					* std::max<int64_t>(0, getEffectPower()) * multiplier, 100, coefficient, specialty);
 	return getEffectValue();
+}
+
+int32_t BaseMechanics::getHeroLuckDamageMultiplierPercent() const
+{
+	return heroLuck && heroLuck->has(newHorizonsHeroLuck::Proc::DruidicLuck)
+		? newHorizonsHeroLuck::damageMultiplierPercent(cb->getBattle()->getMagicRules()) : 100;
 }
 
 int64_t BaseMechanics::applySpellBonus(int64_t value, const battle::Unit * target) const

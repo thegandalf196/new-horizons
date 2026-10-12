@@ -70,6 +70,7 @@ public:
 
 	//displays custom effect on the battlefield
 	void displayEffect(EBattleEffect effect, const BattleHex & destTile);
+	void displayHeroPositiveEffect(EBattleEffect effect, Point anchor);
 	void displayEffect(EBattleEffect effect, const AudioPath & soundFile, const BattleHex & destTile, float transparencyFactor = 1.f);
 	void displayAnimation(const AnimationPath & animation, const AudioPath & soundFile, const BattleHexArray & destTiles, float transparencyFactor = 1.f);
 

@@ -232,7 +232,7 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsRallyTest, FirstNegativeMoraleIsCanceledForItsCurrentControllerAndLeavesTwistAvailable)
+TEST_F(NewHorizonsRallyTest, FirstNegativeMoraleIsCanceledForCurrentControllerWithoutDruidicRerolls)
 {
 	startRallyBattle(false, true, true, 50);
 	ASSERT_TRUE(defenderSideHero->hasActivePerk(disciplineSkillId, rallyPerkId));
@@ -258,8 +258,8 @@ TEST_F(NewHorizonsRallyTest, FirstNegativeMoraleIsCanceledForItsCurrentControlle
 
 	EXPECT_TRUE(battle()->getMoraleSuppressionState(BattleSide::DEFENDER).used)
 		<< "The controller of a hypnotized negative-Morale recipient spends Rally";
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available())
-		<< "Rally cancels the failed trigger before Twist can consume its allowance";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available())
+		<< "Rally cancels the failed trigger without creating a retired Druidic reroll";
 	EXPECT_FALSE(battle()->getMoraleSuppressionState(BattleSide::ATTACKER).enabled);
 	EXPECT_EQ(activationCount(server.stackActivations, hypnotized->unitId(), BattleUnitTurnReason::TURN_QUEUE), 1u)
 		<< "A canceled trigger reaches the ordinary turn queue instead of an automatic no-action activation";

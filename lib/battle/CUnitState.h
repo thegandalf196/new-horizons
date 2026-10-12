@@ -256,6 +256,8 @@ public:
 	int32_t battlecraftOverwatchReadyRound = -1;
 	int32_t battlecraftOverwatchUsedRound = -1;
 	/// Nonstacking derived retaliation: excludes the granting Morale activation.
+	// Retired creature mechanic; retain fields for legacy JSON/wire compatibility.
+	// Neither field now grants an extra retaliation or creature activation.
 	bool heroicSpiritRetaliation = false;
 	bool heroicSpiritMoralePending = false;
 	/// Round in which this stack first spent Deadeye on an ordinary ranged shot.

@@ -23,6 +23,172 @@ using Source = Ledger::GrantSource;
 
 }
 
+TEST(HeroActionAllowanceState, HeroicSpiritResolvesEachAcceptedFlexibleOrderOnceAndCannotPaySpells)
+{
+	Ledger ledger;
+	ledger.resetForRound(1);
+	const auto ordinary = ledger.eligibleAllowance(Action::ORDER, 1);
+	ASSERT_TRUE(ordinary);
+	Ledger::Receipt notYetConsumed{ordinary->grantId, Action::ORDER, ordinary->allowance, ordinary->source, 1};
+	EXPECT_FALSE(ledger.canResolveHeroicSpirit(notYetConsumed));
+	const auto receipt = ledger.consumeAllowance(ordinary->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(receipt);
+	ASSERT_TRUE(ledger.canResolveHeroicSpirit(*receipt));
+	ASSERT_TRUE(ledger.resolveHeroicSpirit(*receipt, true));
+	EXPECT_EQ(ledger.remainingCounts(1), (Ledger::Counts{0, 1, 0}));
+	EXPECT_FALSE(ledger.eligibleAllowance(Action::SPELL, 1));
+	const auto unchanged = ledger;
+	EXPECT_FALSE(ledger.resolveHeroicSpirit(*receipt, true));
+	EXPECT_EQ(ledger, unchanged);
+	const auto bonus = ledger.eligibleAllowance(Action::ORDER, 1);
+	ASSERT_TRUE(bonus);
+	EXPECT_EQ(bonus->source, Source::HEROIC_SPIRIT);
+	const auto bonusReceipt = ledger.consumeAllowance(bonus->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(bonusReceipt);
+	EXPECT_FALSE(ledger.canResolveHeroicSpirit(*bonusReceipt));
+	EXPECT_FALSE(ledger.resolveHeroicSpirit(*bonusReceipt, true));
+	EXPECT_EQ(ledger.remainingCounts(1), (Ledger::Counts{}));
+}
+
+TEST(HeroActionAllowanceState, HeroicSpiritFailedRollCannotBeRetriedAndRoundResetExpiresReceipts)
+{
+	Ledger ledger;
+	ledger.resetForRound(2);
+	const auto receipt = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 2)->grantId, Action::ORDER, 2);
+	ASSERT_TRUE(receipt);
+	ASSERT_TRUE(ledger.resolveHeroicSpirit(*receipt, false));
+	const auto afterFailure = ledger;
+	EXPECT_FALSE(ledger.resolveHeroicSpirit(*receipt, true));
+	EXPECT_EQ(ledger, afterFailure);
+	EXPECT_EQ(ledger.remainingCounts(2), (Ledger::Counts{}));
+	ledger.resetForRound(3);
+	EXPECT_TRUE(ledger.heroicSpiritProcessedReceipts.empty());
+	EXPECT_FALSE(ledger.canResolveHeroicSpirit(*receipt));
+	const auto fresh = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 3)->grantId, Action::ORDER, 3);
+	ASSERT_TRUE(fresh);
+	ASSERT_TRUE(ledger.resolveHeroicSpirit(*fresh, true));
+	ledger.resetForRound(4);
+	EXPECT_EQ(ledger.remainingCounts(4), (Ledger::Counts{1, 0, 0}));
+	EXPECT_TRUE(ledger.heroicSpiritProcessedReceipts.empty());
+}
+
+TEST(HeroActionAllowanceState, DistinctFlexibleOrdersMayResolveWithoutAnInventedRoundCap)
+{
+	Ledger ledger;
+	ledger.resetForRound(1);
+	ledger.grantAllowance(Allowance::HERO, Source::ARTIFACT, 1);
+	const auto first = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(first);
+	ASSERT_TRUE(ledger.resolveHeroicSpirit(*first, true));
+	const auto bonus = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(bonus);
+	EXPECT_FALSE(ledger.resolveHeroicSpirit(*bonus, true));
+	const auto second = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(second);
+	ASSERT_EQ(second->allowance, Allowance::HERO);
+	ASSERT_TRUE(ledger.resolveHeroicSpirit(*second, true));
+	EXPECT_EQ(ledger.heroicSpiritProcessedReceipts.size(), 2u);
+	EXPECT_EQ(ledger.remainingCounts(1), (Ledger::Counts{0, 1, 0}));
+}
+
+TEST(HeroActionAllowanceState, TypedDoubleCommandOrdersRemainFirstAndCannotTriggerHeroicSpirit)
+{
+	Ledger ledger;
+	ledger.resetForRound(1);
+	const auto ordinary = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(ordinary);
+	ASSERT_TRUE(ledger.resolveHeroicSpirit(*ordinary, true));
+	const auto doubleId = ledger.grantAllowance(Allowance::ORDER, Source::DOUBLE_COMMAND, 1);
+	const auto selected = ledger.eligibleAllowance(Action::ORDER, 1);
+	ASSERT_TRUE(selected);
+	EXPECT_EQ(selected->grantId, doubleId);
+	const auto doubleReceipt = ledger.consumeAllowance(doubleId, Action::ORDER, 1);
+	ASSERT_TRUE(doubleReceipt);
+	EXPECT_FALSE(ledger.resolveHeroicSpirit(*doubleReceipt, true));
+	DoubleCommandState continuation;
+	const auto bonus = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(bonus);
+	EXPECT_FALSE(continuation.begin(*bonus, true, HeroCommand::CHARGE, 1, 7));
+	EXPECT_FALSE(continuation.used);
+}
+
+TEST(HeroActionAllowanceState, HeroicSpiritRejectsMalformedReceiptsAndDirectManufacturedGrants)
+{
+	Ledger ledger;
+	ledger.resetForRound(1);
+	const auto receipt = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(receipt);
+	const auto before = ledger;
+	for(const auto source : {Source::DOUBLE_COMMAND, Source::BATTLE_PLAN, Source::CRISIS_COMMAND,
+		Source::METAMAGIC, Source::DIVINE_MANDATE, Source::HEROIC_SPIRIT})
+	{
+		auto malformed = *receipt;
+		malformed.source = source;
+		EXPECT_FALSE(ledger.resolveHeroicSpirit(malformed, true));
+		EXPECT_EQ(ledger, before);
+	}
+	auto spell = *receipt;
+	spell.action = Action::SPELL;
+	EXPECT_FALSE(ledger.resolveHeroicSpirit(spell, true));
+	EXPECT_THROW(ledger.grantAllowance(Allowance::ORDER, Source::HEROIC_SPIRIT, 1), std::invalid_argument);
+	EXPECT_EQ(ledger, before);
+	ledger.heroicSpiritProcessedReceipts = {receipt->grantId, receipt->grantId};
+	EXPECT_THROW(ledger.validateShape(), std::runtime_error);
+	ledger = before;
+	ASSERT_TRUE(ledger.resolveHeroicSpirit(*receipt, true));
+	ledger.heroicSpiritProcessedReceipts.clear();
+	EXPECT_THROW(ledger.validateShape(), std::runtime_error);
+}
+
+TEST(HeroActionAllowanceState, HeroicSpiritCurrentRoundTripsAndOldWriterRefusesBeforePrefix)
+{
+	Ledger ledger;
+	ledger.resetForRound(1);
+	const auto receipt = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(receipt);
+	ASSERT_TRUE(ledger.resolveHeroicSpirit(*receipt, true));
+	CMemorySerializer current;
+	current.oser & ledger;
+	Ledger restored;
+	current.iser & restored;
+	EXPECT_EQ(restored, ledger);
+	EXPECT_FALSE(restored.canResolveHeroicSpirit(*receipt));
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_CRISIS_COMMAND;
+	EXPECT_THROW(old.oser & ledger, std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+	Ledger empty;
+	CMemorySerializer oldEmpty;
+	oldEmpty.oser.version = ESerializationVersion::NEW_HORIZONS_CRISIS_COMMAND;
+	oldEmpty.iser.version = ESerializationVersion::NEW_HORIZONS_CRISIS_COMMAND;
+	oldEmpty.oser & empty;
+	Ledger oldRestored;
+	oldRestored.heroicSpiritProcessedReceipts = {7};
+	oldEmpty.iser & oldRestored;
+	EXPECT_EQ(oldRestored, empty);
+}
+
+TEST(HeroActionAllowanceState, OldOrdinaryLedgerDecodesIntoPreviouslyHeroicSpiritDestination)
+{
+	Ledger ordinary;
+	ordinary.resetForRound(1);
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_CRISIS_COMMAND;
+	old.iser.version = ESerializationVersion::NEW_HORIZONS_CRISIS_COMMAND;
+	ASSERT_NO_THROW(old.oser & ordinary);
+
+	Ledger reused;
+	reused.resetForRound(1);
+	const auto receipt = reused.consumeAllowance(reused.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
+	ASSERT_TRUE(receipt);
+	ASSERT_TRUE(reused.resolveHeroicSpirit(*receipt, true));
+	ASSERT_EQ(reused.grants.size(), ordinary.grants.size());
+	ASSERT_EQ(reused.grants.front().source, Source::HEROIC_SPIRIT);
+	ASSERT_NO_THROW(old.iser & reused);
+	EXPECT_EQ(reused, ordinary);
+	EXPECT_TRUE(reused.heroicSpiritProcessedReceipts.empty());
+}
+
 TEST(HeroActionAllowanceState, OneFlexibleHeroAllowancePaysEitherKindOnce)
 {
 	Ledger ledger;

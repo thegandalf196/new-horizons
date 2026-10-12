@@ -327,7 +327,7 @@ TEST_F(NewHorizonsFearlessTest, MixedFearFiltersOnlyPositiveCreatureAbilityAndPr
 	EXPECT_EQ(activationCount(mixed->unitId(), BattleUnitTurnReason::AUTOMATIC_ACTION), 1u);
 }
 
-TEST_F(NewHorizonsFearlessTest, SuppressedFearLeavesRallyAndTwistAvailableAndDoesNotEraseNegativeMorale)
+TEST_F(NewHorizonsFearlessTest, SuppressedFearLeavesRallyAvailableWithoutCreatingDruidicRerolls)
 {
 	startGame();
 	selectFearless(attackerSideHero, true);
@@ -335,7 +335,7 @@ TEST_F(NewHorizonsFearlessTest, SuppressedFearLeavesRallyAndTwistAvailableAndDoe
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(disciplineSkillId, rallyPerkId));
 	startBattle();
 	ASSERT_TRUE(battle()->getMoraleSuppressionState(BattleSide::ATTACKER).available());
-	ASSERT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	ASSERT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
 	removeDeployedUnits();
 
 	auto * fearful = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(5, 5), 10);
@@ -354,8 +354,8 @@ TEST_F(NewHorizonsFearlessTest, SuppressedFearLeavesRallyAndTwistAvailableAndDoe
 	EXPECT_FALSE(fearful->fear);
 	EXPECT_TRUE(battle()->getMoraleSuppressionState(BattleSide::ATTACKER).available())
 		<< "Suppressing nonmagical fear does not spend Rally";
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
-		<< "Suppressing stochastic nonmagical fear does not spend Twist of Fate";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
+		<< "Suppressing stochastic fear does not enable a retired Druidic reroll";
 	ASSERT_TRUE(act(fearful, BattleAction::makeDefend(fearful)));
 
 	auto * negativeMorale = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(8, 5), 10);
@@ -366,8 +366,8 @@ TEST_F(NewHorizonsFearlessTest, SuppressedFearLeavesRallyAndTwistAvailableAndDoe
 
 	EXPECT_TRUE(battle()->getMoraleSuppressionState(BattleSide::ATTACKER).used)
 		<< "Fearless leaves an unrelated negative-Morale trigger for Rally to cancel";
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
-		<< "Rally cancels the realized negative Morale result before Twist can consume its allowance";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
+		<< "Rally cancels negative Morale; Druidic Luck has no retired reroll allowance";
 	EXPECT_FALSE(negativeMorale->fear);
 	EXPECT_EQ(activationCount(negativeMorale->unitId(), BattleUnitTurnReason::TURN_QUEUE), 1u);
 	EXPECT_EQ(activationCount(negativeMorale->unitId(), BattleUnitTurnReason::AUTOMATIC_ACTION), 0u);

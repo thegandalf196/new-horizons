@@ -399,6 +399,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		heroActionAllowances.validateHeroicSpiritSerialization(h);
+		for(const auto & order : orderStates)
+			order.validateHeroLuckSerialization(h);
 		if(h.saving)
 			rapidResponse.validateSerialization(h);
 		if(h.saving)

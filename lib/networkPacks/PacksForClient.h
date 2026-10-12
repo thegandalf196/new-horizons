@@ -403,7 +403,8 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 		RESTORE_NORMAL,
 		SPEND,
 		GRANT_BUFFER,
-		RESTORE_SNAPSHOT
+		RESTORE_SNAPSHOT,
+		REFUND_HERO_LUCK
 	};
 
 	void visitTyped(ICPackVisitor & visitor) override;
@@ -420,11 +421,13 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 		setOperation(operation, amount, bufferAmount);
 	}
 
-	void setOperation(Operation value, int64_t operationAmount, int32_t operationBufferAmount = 0)
+	void setOperation(Operation value, int64_t operationAmount, int32_t operationBufferAmount = 0,
+		int32_t operationTemporaryBufferAmount = 0)
 	{
 		operation = value;
 		amount = operationAmount;
 		bufferAmount = operationBufferAmount;
+		temporaryBufferAmount = operationTemporaryBufferAmount;
 		mode = ChangeValueMode::RELATIVE;
 		val = 0;
 		switch(operation)
@@ -447,6 +450,7 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 				val = static_cast<si32>(std::clamp<int64_t>(amount, 0, std::numeric_limits<si32>::max()));
 				break;
 			case Operation::LEGACY:
+			case Operation::REFUND_HERO_LUCK:
 				break;
 		}
 		validateOperationPayload();
@@ -454,14 +458,16 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 
 	void validateOperationPayload() const
 	{
-		if(operation < Operation::LEGACY || operation > Operation::RESTORE_SNAPSHOT
-			|| amount < 0 || bufferAmount < 0)
+		if(operation < Operation::LEGACY || operation > Operation::REFUND_HERO_LUCK
+			|| amount < 0 || bufferAmount < 0 || temporaryBufferAmount < 0)
 			throw std::runtime_error("Invalid Spell Point mutation payload");
 		if((operation == Operation::LEGACY && amount != 0)
-			|| (operation != Operation::RESTORE_SNAPSHOT && bufferAmount != 0))
+			|| (operation != Operation::RESTORE_SNAPSHOT && operation != Operation::REFUND_HERO_LUCK && bufferAmount != 0)
+			|| (operation != Operation::REFUND_HERO_LUCK && temporaryBufferAmount != 0))
 			throw std::runtime_error("Invalid Buffer payload for Spell Point mutation");
 		if((operation == Operation::SET_NORMAL || operation == Operation::RESTORE_NORMAL
-			|| operation == Operation::GRANT_BUFFER || operation == Operation::RESTORE_SNAPSHOT)
+			|| operation == Operation::GRANT_BUFFER || operation == Operation::RESTORE_SNAPSHOT
+			|| operation == Operation::REFUND_HERO_LUCK)
 			&& amount > std::numeric_limits<int32_t>::max())
 			throw std::runtime_error("Spell Point mutation exceeds a pool's representable range");
 	}
@@ -472,9 +478,18 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 	Operation operation = Operation::LEGACY;
 	int64_t amount = 0;
 	int32_t bufferAmount = 0;
+	/// For REFUND_HERO_LUCK, bufferAmount is permanent Buffer only. Temporary
+	/// Buffer is distinct so its battle-end expiry provenance is restored too.
+	int32_t temporaryBufferAmount = 0;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && operation == Operation::REFUND_HERO_LUCK)
+		{
+			validateOperationPayload();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+				throw std::runtime_error("Cannot discard Hero Luck refund provenance in an older pack format");
+		}
 		h & val;
 		h & hid;
 		h & mode;
@@ -489,9 +504,9 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 			h & operation;
 			h & amount;
 			h & bufferAmount;
-			if(!h.saving && (operation < Operation::LEGACY || operation > Operation::RESTORE_SNAPSHOT))
+			if(!h.saving && (operation < Operation::LEGACY || operation > Operation::REFUND_HERO_LUCK
+				|| (operation == Operation::REFUND_HERO_LUCK && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))))
 				throw std::runtime_error("Invalid Spell Point mutation operation");
-			validateOperationPayload();
 		}
 		else if(!h.saving)
 		{
@@ -499,6 +514,11 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 			amount = 0;
 			bufferAmount = 0;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+			h & temporaryBufferAmount;
+		else if(!h.saving)
+			temporaryBufferAmount = 0;
+		validateOperationPayload();
 	}
 };
 

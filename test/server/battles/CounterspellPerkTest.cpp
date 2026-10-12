@@ -10,6 +10,7 @@
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/battle/HeroActionAllowanceState.h"
+#include "../../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -184,6 +185,66 @@ protected:
 		CounterspellPerkTest::SetUp();
 	}
 };
+
+class HeroLuckCounterspellTest : public TypedCounterspellPerkTest
+{
+protected:
+	void mapLoaded(CMap * map) override
+	{
+		CounterspellPerkTest::mapLoaded(map);
+		// Retain the historical Counterspell override above; this does not make
+		// Counterspell available in the current authored spell roster.
+		JsonNode curve;
+		curve.Vector().assign(4, JsonNode(100));
+		map->overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, curve);
+		map->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
+		map->overrideGameSetting(EGameSettings::COMBAT_LUCK_BIAS, JsonNode(0));
+	}
+};
+
+TEST_F(HeroLuckCounterspellTest, PaidNegatedDamageSpellRefundsWithoutDamageProc)
+{
+	prepare(100, false);
+	const SecondarySkill luck(SecondarySkill::decode("new-horizons:luck"));
+	ASSERT_TRUE(luck.hasValue());
+	defenderSideHero->setSecSkillLevel(luck, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	defenderSideHero->applyPerkSelection({"new-horizons:luck", "new-horizons:luck.fortuneSFavor"});
+	defenderSideHero->setSecSkillLevel(luck, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	defenderSideHero->applyPerkSelection({"new-horizons:luck", "new-horizons:luck.gambler"});
+	defenderSideHero->setSecSkillLevel(luck, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	defenderSideHero->applyPerkSelection({"new-horizons:luck", "new-horizons:luck.twistOfFate"});
+	ASSERT_TRUE(newHorizonsHeroLuck::hasErraticMana(defenderSideHero));
+	ASSERT_TRUE(newHorizonsHeroLuck::hasDruidicLuck(defenderSideHero));
+	defenderSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::LUCK, BonusSource::OTHER, 1 - defenderSideHero->luckVal(), BonusSourceID()));
+	ASSERT_EQ(defenderSideHero->luckVal(), 1);
+	defenderSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	defenderSideHero->initializeSpellPoints(20, 0);
+	defenderSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+	const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	const auto cost = defenderSideHero->getSpellCost(spell);
+	ASSERT_GT(cost, 1);
+	const auto hp = attacker->getAvailableHealth();
+	ASSERT_TRUE(castCounterspell()); // A genuine paid ward, not an injected marker.
+	activate(defender); // Existing historical fixture's authoritative turn packet.
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::DEFENDER;
+	action.spell = SpellID::MAGIC_ARROW;
+	action.aimToUnit(attacker);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), action));
+	EXPECT_EQ(attacker->getAvailableHealth(), hp);
+	EXPECT_EQ(defenderSideHero->getNormalSpellPoints(), 20 - cost + cost / 2);
+	EXPECT_EQ(defenderSideHero->getBufferSpellPoints(), 0);
+	const auto casts = server.castsOf(SpellID::MAGIC_ARROW);
+	ASSERT_EQ(casts.size(), 1u);
+	const auto & cast = casts.front().announcement;
+	EXPECT_TRUE(cast.counterspellNegated);
+	EXPECT_EQ(cast.paidHeroManaCost, cost);
+	ASSERT_TRUE(cast.heroLuck);
+	EXPECT_TRUE(cast.heroLuck->has(newHorizonsHeroLuck::Proc::ErraticMana));
+	EXPECT_FALSE(cast.heroLuck->has(newHorizonsHeroLuck::Proc::DruidicLuck));
+}
 
 TEST_F(CounterspellPerkTest, HistoricalCounterspellDataAndIndependentCountermageRemainAvailable)
 {

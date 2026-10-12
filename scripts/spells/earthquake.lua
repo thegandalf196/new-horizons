@@ -338,6 +338,7 @@ function Script:apply(mechanics, server, target)
 		if geomancerActive(mechanics) then
 			structuralDamage = math.floor(structuralDamage * 125 / 100)
 		end
+		structuralDamage = mechanics:scaleHeroLuckDamage(structuralDamage)
 		for _, part in ipairs(plannedSections(mechanics, center)) do
 			server:damageFortification(battle, part, structuralDamage)
 		end

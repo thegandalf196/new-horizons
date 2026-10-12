@@ -117,6 +117,7 @@ function Script:apply(mechanics, server, target)
 			statusIdentity = spellKey,
 			addInfo = {
 				mdrPenetration = mechanics:getCapturedMdrPenetration(),
+				damageMultiplierPercent = mechanics:getHeroLuckDamageMultiplierPercent(),
 				primaryUnitId = primary:unitID(),
 				casterSide = casterSide
 			},

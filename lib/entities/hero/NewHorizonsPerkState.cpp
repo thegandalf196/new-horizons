@@ -7,6 +7,8 @@
 #include "NewHorizonsPerkState.h"
 
 #include <map>
+#include <array>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <tuple>
@@ -36,10 +38,60 @@ void savedFields(const JsonNode & node, std::initializer_list<std::string_view> 
 		if(std::find(keys.begin(), keys.end(), key) == keys.end())
 			throw std::runtime_error("Unknown New Horizons perk state field " + key);
 }
+
+void migrateLegacyHeroProcText(JsonNode & rules)
+{
+	if(!usesPerkRules(rules))
+		return;
+	struct LegacyText
+	{
+		const char * skill;
+		const char * perk;
+		const char * name;
+		const char * description;
+	};
+	const std::array<LegacyText, 4> legacy = {{
+		{"new-horizons:luck", "new-horizons:luck.luckyRecovery", "Lucky Recovery",
+			"When a melee attack triggers positive Luck, surviving creatures in the attacker recover HP equal to 10% of actual damage dealt."},
+		{"new-horizons:luck", "new-horizons:luck.gambler", "Gambler",
+			"The first friendly attack each round gains +3 Luck for that attack. If positive Luck does not trigger, the attacking stack suffers -2 Luck until its next activation."},
+		{"new-horizons:luck", "new-horizons:luck.twistOfFate", "Twist of Fate",
+			"The first random combat roll each combat that produces a negative result for the hero's army is automatically rerolled once. Deterministic effects cannot be rerolled."},
+		{"new-horizons:discipline", "new-horizons:discipline.heroicSpirit", "Heroic Spirit",
+			"When positive Morale triggers, the affected stack gains one additional retaliation until its next activation."}
+	}};
+	// Resource services are initialized before world/crossover loading. Load the
+	// shipped text only when a recognized legacy row is present, never cache a
+	// second catalogue or replace the saved gameplay registry/provenance.
+	std::optional<JsonNode> canonical;
+	for(const auto & entry : legacy)
+	{
+		auto & skills = rules["skills"].Struct();
+		const auto skill = skills.find(entry.skill);
+		if(skill == skills.end() || !skill->second["perks"].isVector())
+			continue;
+		for(auto & perk : skill->second["perks"].Vector())
+		{
+			if(perk["id"].String() != entry.perk || perk["name"].String() != entry.name
+				|| perk["description"].String() != entry.description
+				|| perk["effect"]["description"].String() != entry.description)
+				continue;
+			if(!canonical)
+				canonical.emplace(JsonPath::builtin("config/newHorizonsPerks"));
+			const auto current = perkDefinition(*canonical, entry.skill, entry.perk);
+			if(!current)
+				throw std::runtime_error("Missing canonical Hero proc perk text");
+			perk["name"].String() = current->name;
+			perk["description"].String() = current->description;
+			perk["effect"]["description"] = current->effect["description"];
+		}
+	}
+}
 }
 
 void PerkState::migrateRetiredPerks()
 {
+	migrateLegacyHeroProcText(rules);
 	if(!usesPerkRules(rules)
 		|| !rules["schemaVersion"].isNumber()
 		|| rules["schemaVersion"].Integer() != RETIRED_SPELL_BUFFER_SCHEMA_VERSION

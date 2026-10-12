@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../../lib/battle/NewHorizonsHeroLuck.h"
 #include "BattleTestFixture.h"
 #include "../../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../../server/CGameHandler.h"
@@ -110,7 +111,8 @@ protected:
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		if(selected)
 			attackerSideHero->applyPerkSelection({skillKey, std::string(newHorizonsCombatSkills::LUCKY_RECOVERY_PERK_ID)});
-		ASSERT_EQ(newHorizonsCombatSkills::hasLuckyRecovery(attackerSideHero), selected);
+		ASSERT_FALSE(newHorizonsCombatSkills::hasLuckyRecovery(attackerSideHero));
+		ASSERT_EQ(newHorizonsHeroLuck::hasLuckyDay(attackerSideHero), selected);
 		if(sylvan)
 		{
 			const std::string sylvanSkill = "new-horizons:sylvanLuck";
@@ -190,11 +192,11 @@ TEST(NewHorizonsLuckyRecoveryRulesTest, IndependentContributionsFloorOnceAndPres
 		std::numeric_limits<int64_t>::max() / 5);
 }
 
-TEST_F(NewHorizonsGenericLuckyRecoveryTest, GenericOnlyPositiveMeleeUsesActualNonOverkillLossAndHealsSurvivors)
+TEST_F(NewHorizonsGenericLuckyRecoveryTest, LuckyDayDoesNotHealPositiveCreatureMelee)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareRecovery());
 	ASSERT_FALSE(battle()->getSylvanLuckState(BattleSide::ATTACKER).luckyRecovery);
-	ASSERT_NO_FATAL_FAILURE(verifyRecovery(1, true));
+	ASSERT_NO_FATAL_FAILURE(verifyRecovery(0, true));
 }
 
 TEST_F(NewHorizonsGenericLuckyRecoveryTest, NeutralMeleeDoesNotRecover)
@@ -211,11 +213,11 @@ TEST_F(NewHorizonsGenericLuckyRecoveryTest, PositiveRangedAttackDoesNotRecover)
 	ASSERT_NO_FATAL_FAILURE(verifyRecovery(0, true, true));
 }
 
-TEST_F(NewHorizonsGenericLuckyRecoveryTest, GenericAndSylvanContributeTwentyPercentWithoutResurrection)
+TEST_F(NewHorizonsGenericLuckyRecoveryTest, LuckyDayPreservesOnlySylvanTenPercentRecoveryWithoutResurrection)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareRecovery(true, true));
 	ASSERT_TRUE(battle()->getSylvanLuckState(BattleSide::ATTACKER).luckyRecovery);
-	ASSERT_NO_FATAL_FAILURE(verifyRecovery(2, true));
+	ASSERT_NO_FATAL_FAILURE(verifyRecovery(1, true));
 }
 
 TEST_F(NewHorizonsGenericLuckyRecoveryTest, UnselectedGenericPerkDoesNotRecover)

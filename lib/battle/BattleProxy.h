@@ -40,6 +40,10 @@ public:
 	PlayerColor getSidePlayer(BattleSide side) const override;
 	const CArmedInstance * getSideArmy(BattleSide side) const override;
 	const CGHeroInstance * getSideHero(BattleSide side) const override;
+	int32_t getTemporaryBufferRemaining(BattleSide side) const override
+	{
+		return subject->getBattle()->getTemporaryBufferRemaining(side);
+	}
 	int32_t getFirstRoundMoraleModifier(BattleSide side) const override
 	{
 		return subject->getBattle()->getFirstRoundMoraleModifier(side);

@@ -1901,6 +1901,25 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	// Capture this before beforeCast can turn a successful Magic Mirror redirect
 	// into Mode::MAGIC_MIRROR. The reflected effect is not a second enemy hero cast.
 	const bool originalHeroCast = sc.activeCast && sc.castByHero && casterHero && validHeroSide;
+	const bool heroLuckOrigin = originalHeroCast && casterHero == battleInfo->getSideHero(casterSide);
+	if(heroLuckOrigin && heroLuck)
+	{
+		const auto & rules = battleInfo->getMagicRules();
+		const bool hasRefund = spellCost > 0
+			&& static_cast<int64_t>(spellCost) * newHorizonsHeroLuck::manaRefundPercent(rules) / 100 > 0;
+		if(hasRefund && newHorizonsHeroLuck::hasErraticMana(casterHero)
+			&& heroLuck->triggered(newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::ErraticMana)))
+			heroLuck->mark(newHorizonsHeroLuck::Proc::ErraticMana);
+		if(!sc.counterspellNegated && heroLuckDamageEligible(*owner, rules)
+			&& newHorizonsHeroLuck::hasDruidicLuck(casterHero)
+			&& heroLuck->triggered(newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::DruidicLuck)))
+			heroLuck->mark(newHorizonsHeroLuck::Proc::DruidicLuck);
+		// Concentration's per-recipient mechanics and internal mirror handling
+		// inherit this same resolved outcome, never another Luck draw.
+		if(eventSnapshot)
+			eventSnapshot->setHeroLuck(*heroLuck);
+	}
+	sc.heroLuck = heroLuckOrigin ? heroLuck : std::nullopt;
 	if(originalHeroCast && casterHero == battleInfo->getSideHero(casterSide))
 		sc.crossSchoolFormula = newHorizonsCrossSchoolFormula::acceptedReceipt(*battleInfo, casterSide, getSpellId());
 	const BattleSide originalCasterSide = casterSide;
@@ -2407,7 +2426,34 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 
 	if(sc.activeCast)
 	{
+		const int32_t normalBeforePayment = originalHeroCast ? casterHero->getNormalSpellPoints() : 0;
+		const int32_t bufferBeforePayment = originalHeroCast ? casterHero->getBufferSpellPoints() : 0;
+		const int32_t temporaryBeforePayment = originalHeroCast
+			? battleInfo->getTemporaryBufferRemaining(originalCasterSide) : 0;
 		caster->spendMana(server, spellCost);
+		if(heroLuckOrigin && heroLuck && heroLuck->has(newHorizonsHeroLuck::Proc::ErraticMana))
+		{
+			// Effects may alter pools before payment; capture only the real charge,
+			// then refund it before any unrelated recovery runs below.
+			const int32_t normalSpent = normalBeforePayment - casterHero->getNormalSpellPoints();
+			const int32_t bufferSpent = bufferBeforePayment - casterHero->getBufferSpellPoints();
+			const int32_t temporarySpent = temporaryBeforePayment
+				- battleInfo->getTemporaryBufferRemaining(originalCasterSide);
+			if(normalSpent < 0 || bufferSpent < 0 || temporarySpent < 0 || temporarySpent > bufferSpent
+				|| static_cast<int64_t>(normalSpent) + bufferSpent != spellCost)
+				throw std::runtime_error("Hero Luck refund charge has invalid Spell Point provenance");
+			const auto refund = newHorizonsHeroes::SpellPointState::refundForSpent(normalSpent,
+				bufferSpent - temporarySpent, temporarySpent,
+				newHorizonsHeroLuck::manaRefundPercent(battleInfo->getMagicRules()));
+			if(refund.normal != 0 || refund.permanentBuffer != 0 || refund.temporaryBuffer != 0)
+			{
+				SetMana restored;
+				restored.hid = casterHero->id;
+				restored.setOperation(SetMana::Operation::REFUND_HERO_LUCK,
+					refund.normal, refund.permanentBuffer, refund.temporaryBuffer);
+				server->apply(restored);
+			}
+		}
 		const auto divineMandatePairsAfterSpell = mode == Mode::HERO && casterHero && validHeroSide
 			? battle()->battleGetDivineMandateStatus(casterSide).completedPairs : divineMandatePairsBeforeSpell;
 		const auto chaplainReserve = newHorizonsDivineMandate::chaplainReserveRecovery(

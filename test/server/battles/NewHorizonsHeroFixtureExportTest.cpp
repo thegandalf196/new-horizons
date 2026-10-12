@@ -17,6 +17,196 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include <cstdlib>
 #include <zlib.h>
+#include <filesystem>
+#include "../../../lib/filesystem/Filesystem.h"
+#include "../../../server/CGameHandler.h"
+#include "../../../server/processors/TurnOrderProcessor.h"
+
+// Separate from BattleTestFixture::startGame: retain ordinary hero/army
+// initialization and never pin/search a combat RNG stream or strip bonuses.
+class NewHorizonsHeroProcFixtureExportTest : public TinyMapGameTest
+{
+protected:
+	RecordingGameServer server;
+	std::shared_ptr<CGameHandler> handler;
+	Services * gameServices() override { return LIBRARY; }
+	void configurePlayer(PlayerSettings & player) const override
+	{
+		player.bonus = PlayerStartingBonus::GOLD;
+		if(player.color == PlayerColor(1))
+			player.connectedPlayerIDs.clear();
+	}
+	void TearDown() override
+	{
+		handler.reset();
+		server.gameState.reset();
+		TinyMapGameTest::TearDown();
+	}
+	void chooseOffer(CGHeroInstance * hero, const char * skill, const char * perk, bool prerequisite)
+	{
+		const auto wanted = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules, skill, perk);
+		ASSERT_TRUE(wanted);
+		const int tier = newHorizonsHeroes::perkRequiredRank(wanted->requiredRank);
+		for(const auto & selected : hero->getPerkState().selected)
+		{
+			if(selected.skillId != skill)
+				continue;
+			const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules, skill, selected.perkId);
+			if(!definition || newHorizonsHeroes::perkRequiredRank(definition->requiredRank) != tier)
+				continue;
+			ASSERT_TRUE(prerequisite || selected.perkId == perk) << "An occupied tier cannot be cleared for this fixture";
+			return;
+		}
+		const auto ranks = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
+		// This selects a legal offer, not a combat seed. GameRandomizer is
+		// never queried/reset and no action/proc is performed before saving.
+		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
+		{
+			const auto offer = hero->getPerkState().prepareOffer(ranks, offerSeed);
+			for(size_t choice = 0; choice < offer.size(); ++choice)
+				if(offer[choice].selection.skillId == skill && offer[choice].selection.perkId == perk)
+				{
+					handler->levelUpHero(hero, offer, choice, offerSeed, false);
+					ASSERT_TRUE(hero->hasActivePerk(skill, perk));
+					return;
+				}
+		}
+		FAIL() << "No legal offer for " << perk;
+	}
+};
+
+TEST_F(NewHorizonsHeroProcFixtureExportTest, ExportLegalOfferOrderProcAdventureSave)
+{
+	const char * familyValue = std::getenv("NH_EXPORT_HERO_PROC_FAMILY");
+	const char * rootValue = std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT");
+	if(!familyValue || !rootValue)
+		GTEST_SKIP() << "Explicit private family and save root are required for export";
+	const std::string family(familyValue);
+	ASSERT_TRUE(family == "attacker" || family == "defender");
+	const std::filesystem::path root(rootValue);
+	ASSERT_TRUE(root.is_absolute() && std::filesystem::is_directory(root));
+	for(auto ancestor = root; !ancestor.empty(); ancestor = ancestor.parent_path())
+	{
+		ASSERT_FALSE(std::filesystem::is_symlink(std::filesystem::symlink_status(ancestor)));
+		if(ancestor == ancestor.root_path()) break;
+	}
+	// Use the maintained writer in its isolated user-save mount only. The
+	// explicit configured path cannot redirect output to a package/original.
+	ASSERT_EQ(std::filesystem::canonical(root), std::filesystem::canonical(
+		std::filesystem::path(VCMIDirs::get().userSavePath().string())));
+	const auto output = root / ("hero-proc-" + family + ".vsgm1");
+	ASSERT_EQ(std::filesystem::symlink_status(output).type(), std::filesystem::file_type::not_found);
+	const auto luck = SecondarySkill(SecondarySkill::decode("new-horizons:luck"));
+	const auto discipline = SecondarySkill(SecondarySkill::decode("new-horizons:discipline"));
+	const auto divineMandate = SecondarySkill(SecondarySkill::decode("new-horizons:divineMandate"));
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const CreatureID companion(CreatureID::decode("core:imp"));
+	const ArtifactID pendant(ArtifactID::decode("core:pendantOfCourage"));
+	ASSERT_NE(pikeman, CreatureID::NONE);
+	ASSERT_NE(companion, CreatureID::NONE);
+	ASSERT_NE(pendant, ArtifactID::NONE);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).name("NHHeroProcPresentation")
+		.description("Private ordinary pre-battle Hero Luck/Morale presentation fixture. No forced proc or battle-only mode.")
+		.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+		.town({8, 8, 0}, FactionID::CASTLE, PlayerColor(0)).townGarrison({})
+		.town({20, 20, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({});
+	for(int color = 0; color < 2; ++color)
+		builder.hero({11 + color, 10, 0}, HeroTypeID(color), PlayerColor(color))
+			// Ordinary Might creation replaces the second authored skill with
+			// its faction skill. Reserve that slot without sacrificing Discipline.
+			.heroExperience(0).heroSecondarySkills({{SecondarySkill::LUCK, 3},
+				{SecondarySkill::ARCHERY, 1}, {SecondarySkill::LEADERSHIP, 3}})
+			.heroGarrison({{pikeman, 200}, {companion, 20}})
+			.heroEquipped({{ArtifactPosition::NECK, pendant}}).heroSpells({});
+	startWithMap(builder, EMapDifficulty::NORMAL);
+	server.gameState = gameState();
+	handler = std::make_shared<CGameHandler>(server, gameState());
+	// The existing-state constructor does not perform CGameHandler::init's
+	// ordinary turn-order registration. Register the actual initialized players.
+	for(const auto & player : gameState()->players)
+		handler->turnOrder->addPlayer(player.first);
+	for(int color = 0; color < 2; ++color)
+	{
+		auto * hero = findHeroByOwner(PlayerColor(color));
+		ASSERT_NE(hero, nullptr);
+		// SOD stores legacy uint8 skill IDs. Ordinary creation migrates these
+		// through canonical startingSkills; never patch ranks after loading.
+		ASSERT_EQ(hero->getSecSkillLevel(luck), 3);
+		ASSERT_EQ(hero->getSecSkillLevel(discipline), 3);
+		ASSERT_EQ(hero->getSecSkillLevel(divineMandate), 1);
+		ASSERT_EQ(hero->getPerkSkillRank("new-horizons:luck"), 3);
+		ASSERT_EQ(hero->getPerkSkillRank("new-horizons:discipline"), 3);
+		ASSERT_EQ(hero->getStackCount(SlotID(0)), 200);
+		ASSERT_EQ(hero->getStackCount(SlotID(1)), 20);
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:luck", "new-horizons:luck.secondChance", true));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:luck", "new-horizons:luck.luckyRecovery", false));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:luck", "new-horizons:luck.twistOfFate", false));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:discipline", "new-horizons:discipline.steadfast", true));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:discipline", "new-horizons:discipline.holdFast", true));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:discipline", "new-horizons:discipline.heroicSpirit", false));
+		ASSERT_GT(hero->luckVal(), 0);
+		ASSERT_GT(hero->moraleVal(), 0);
+	}
+	handler->start(false);
+	if(family == "defender")
+	{
+		ASSERT_TRUE(handler->turnOrder->onPlayerEndsTurn(PlayerColor(0)));
+	}
+	ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(family == "attacker" ? PlayerColor(0) : PlayerColor(1)));
+	ASSERT_TRUE(gameState()->currentBattles.empty());
+	const std::array<std::vector<newHorizonsHeroes::PerkSelection>, 2> selectedBeforeSave{
+		findHeroByOwner(PlayerColor(0))->getPerkState().selected,
+		findHeroByOwner(PlayerColor(1))->getPerkState().selected};
+	const auto filename = "Saves/hero-proc-" + family;
+	handler->save(filename, PlayerColor::NEUTRAL);
+	ASSERT_TRUE(std::filesystem::is_regular_file(output));
+	ASSERT_GT(std::filesystem::file_size(output), 0u);
+	// Read the complete world and server state through the production loader.
+	// Its own game state replaces gs; rebind the recording server before any
+	// subsequent authoritative operation, and inspect only the loaded objects.
+	StartInfo loadInfo = *handler->gameState().getStartInfo();
+	loadInfo.mode = EStartMode::LOAD_GAME;
+	loadInfo.mapname = filename;
+	handler->load(loadInfo);
+	server.gameState = handler->gs;
+	ASSERT_NE(handler->gs, gameState());
+	ASSERT_TRUE(handler->gameState().currentBattles.empty());
+	ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(
+		family == "attacker" ? PlayerColor(0) : PlayerColor(1)));
+	ASSERT_FALSE(handler->turnOrder->isPlayerMakingTurn(
+		family == "attacker" ? PlayerColor(1) : PlayerColor(0)));
+	EXPECT_TRUE(handler->gameState().getStartInfo()->playerInfos.at(PlayerColor(0)).isControlledByHuman());
+	EXPECT_FALSE(handler->gameState().getStartInfo()->playerInfos.at(PlayerColor(1)).isControlledByHuman());
+	for(int color = 0; color < 2; ++color)
+	{
+		const auto heroes = handler->gameState().getHeroes(PlayerColor(color));
+		ASSERT_EQ(heroes.size(), 1u);
+		const auto * hero = heroes.front();
+		ASSERT_NE(hero, nullptr);
+		EXPECT_EQ(hero->getPerkState().selected, selectedBeforeSave[color]);
+		EXPECT_EQ(hero->getSecSkillLevel(luck), 3);
+		EXPECT_EQ(hero->getSecSkillLevel(discipline), 3);
+		EXPECT_EQ(hero->getSecSkillLevel(divineMandate), 1);
+		EXPECT_EQ(hero->getPerkSkillRank("new-horizons:luck"), 3);
+		EXPECT_EQ(hero->getPerkSkillRank("new-horizons:discipline"), 3);
+		EXPECT_TRUE(hero->hasActivePerk("new-horizons:luck", "new-horizons:luck.luckyRecovery"));
+		EXPECT_TRUE(hero->hasActivePerk("new-horizons:luck", "new-horizons:luck.twistOfFate"));
+		EXPECT_TRUE(hero->hasActivePerk("new-horizons:discipline", "new-horizons:discipline.heroicSpirit"));
+		EXPECT_GT(hero->luckVal(), 0);
+		EXPECT_GT(hero->moraleVal(), 0);
+		EXPECT_EQ(hero->stacksCount(), 2u);
+		EXPECT_EQ(hero->getStackCount(SlotID(0)), 200);
+		EXPECT_EQ(hero->getStackCount(SlotID(1)), 20);
+	}
+	if(HasFailure())
+		return;
+	RecordProperty("saveLoadRoundtrip", "verified");
+	RecordProperty("family", family);
+	RecordProperty("savePath", output.string());
+	RecordProperty("mapIdentity", "NHHeroProcPresentation");
+	RecordProperty("combatActionsBeforeExport", 0);
+}
 
 class NewHorizonsHeroFixtureExportTest : public BattleTestFixture
 {

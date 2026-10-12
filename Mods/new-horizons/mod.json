@@ -473,6 +473,17 @@
 			"newHorizons": {
 				"schemaVersion": 1,
 				"rulesetVersion": 3,
+				"heroLuck": {
+					"luckyDayChanceScalePercent": 100,
+					"erraticManaChanceScalePercent": 100,
+					"druidicLuckChanceScalePercent": 100,
+					"orderMultiplierPercent": 200,
+					"damageMultiplierPercent": 200,
+					"manaRefundPercent": 50
+				},
+				"heroMorale": {
+					"heroicSpiritChanceScalePercent": 100
+				},
 				"protectedAdventureBarriers": true,
 				"creatureAbilities": {
 					"rulesetVersion": 1,
@@ -6147,7 +6158,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "4f25bcf4229afb7d25163359ada5ae6b409b407d8fb761300d0889904d9ef509",
+				"sourceSha256": "daad4409e1086f45baa5f8bc19d008fffa6336ac2a5db8019d09def30c887008",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -6936,10 +6947,10 @@
 								"id": "new-horizons:discipline.heroicSpirit",
 								"name": "Heroic Spirit",
 								"requires": "expert",
-								"description": "When positive Morale triggers, the affected stack gains one additional retaliation until its next activation.",
+								"description": "After an ordinary Order, positive hero Morale may grant one additional Order-only Hero Action. Bonus Orders cannot trigger further Morale.",
 								"effect": {
 									"status": "active",
-									"description": "When positive Morale triggers, the affected stack gains one additional retaliation until its next activation."
+									"description": "After an ordinary Order, positive hero Morale may grant one additional Order-only Hero Action. Bonus Orders cannot trigger further Morale."
 								}
 							}
 						]
@@ -9006,22 +9017,22 @@
 							},
 							{
 								"id": "new-horizons:luck.luckyRecovery",
-								"name": "Lucky Recovery",
+								"name": "Lucky Day",
 								"requires": "advanced",
-								"description": "When a melee attack triggers positive Luck, surviving creatures in the attacker recover HP equal to 10% of actual damage dealt.",
+								"description": "An accepted Order may trigger positive hero Luck to double its intrinsic potency. Duration, targets, activation counts and companion-perk bonuses are unchanged.",
 								"effect": {
 									"status": "active",
-									"description": "When a melee attack triggers positive Luck, surviving creatures in the attacker recover HP equal to 10% of actual damage dealt."
+									"description": "An accepted Order may trigger positive hero Luck to double its intrinsic potency. Duration, targets, activation counts and companion-perk bonuses are unchanged."
 								}
 							},
 							{
 								"id": "new-horizons:luck.gambler",
-								"name": "Gambler",
+								"name": "Erratic Mana",
 								"requires": "advanced",
-								"description": "The first friendly attack each round gains +3 Luck for that attack. If positive Luck does not trigger, the attacking stack suffers -2 Luck until its next activation.",
+								"description": "An accepted paid hero spell may trigger positive hero Luck to refund 50% of actual spent Mana, rounded down, preserving the original Mana pools. A negated spell remains eligible.",
 								"effect": {
 									"status": "active",
-									"description": "The first friendly attack each round gains +3 Luck for that attack. If positive Luck does not trigger, the attacking stack suffers -2 Luck until its next activation."
+									"description": "An accepted paid hero spell may trigger positive hero Luck to refund 50% of actual spent Mana, rounded down, preserving the original Mana pools. A negated spell remains eligible."
 								}
 							},
 							{
@@ -9036,12 +9047,12 @@
 							},
 							{
 								"id": "new-horizons:luck.twistOfFate",
-								"name": "Twist of Fate",
+								"name": "Druidic Luck",
 								"requires": "expert",
-								"description": "The first random combat roll each combat that produces a negative result for the hero's army is automatically rerolled once. Deterministic effects cannot be rerolled.",
+								"description": "An accepted damaging hero spell may trigger positive hero Luck to double numerical HP and structural damage, including its captured damage-over-time and zones. Healing, counts and instant kills are unchanged.",
 								"effect": {
 									"status": "active",
-									"description": "The first random combat roll each combat that produces a negative result for the hero's army is automatically rerolled once. Deterministic effects cannot be rerolled."
+									"description": "An accepted damaging hero spell may trigger positive hero Luck to double numerical HP and structural damage, including its captured damage-over-time and zones. Healing, counts and instant kills are unchanged."
 								}
 							},
 							{

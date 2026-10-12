@@ -17,6 +17,7 @@
 #include "BattleEffectsController.h"
 #include "BattleFieldController.h"
 #include "BattleHero.h"
+#include "HeroPositiveProcPresentation.h"
 #include "BattleObstacleController.h"
 #include "BattleProjectileController.h"
 #include "BattleRenderer.h"
@@ -27,6 +28,7 @@
 #include "BattleWindow.h"
 #include "CreatureAnimation.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsHeroLuck.h"
 #include "PurifyWindow.h"
 #include "TemporalFieldWindow.h"
 
@@ -1346,6 +1348,13 @@ void BattleInterface::spellCast(const BattleSpellCast * sc)
 		return;
 
 	const CSpell * spell = spellID.toSpell();
+
+	// Only the accepted original Hero cast owns this presentation. Reflected,
+	// passive and creature casts cannot replay an inherited proc receipt.
+	if(sc->activeCast && sc->castByHero && sc->casterStack < 0 && sc->heroLuck)
+		presentHeroPositiveProcs(sc->side, false,
+			sc->heroLuck->has(newHorizonsHeroLuck::Proc::ErraticMana),
+			sc->heroLuck->has(newHorizonsHeroLuck::Proc::DruidicLuck), false);
 	auto targetedTile = sc->tile;
 
 	const AudioPath & castSoundPath = spell->getCastSound();
@@ -1726,6 +1735,13 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 		&& (!state || state->command != action.command || state->issuedRound != pendingHeroOrderRound))
 		return;
 
+	// The pending action was consumed above, so repeated EndAction cannot
+	// replay either proc. Successful Luck and Morale have separate receipts.
+	if(state)
+		presentHeroPositiveProcs(action.side,
+			state->heroLuck && state->heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay), false, false,
+			state->heroMorale && state->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit));
+
 	// Reuse presentation resources only, never spell definitions/mechanics.
 	// Each Order has a distinct troop effect; Second Wind uses retired Mirth.
 	const char * animation = nullptr;
@@ -1776,6 +1792,30 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 	setHeroAnimation(action.side, EHeroAnimType::VICTORY);
 	if(!targets.empty())
 		effectsController->displayAnimation(AnimationPath::builtin(animation), AudioPath::builtin(sound), targets, transparency);
+}
+
+void BattleInterface::presentHeroPositiveProcs(BattleSide side, bool luckyDay, bool erraticMana,
+	bool druidicLuck, bool heroicSpirit)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return;
+	const auto hero = side == BattleSide::DEFENDER ? defendingHero : attackingHero;
+	if(!hero)
+		return;
+
+	const auto cues = heroPositiveProcPresentation::effects(luckyDay, erraticMana, druidicLuck, heroicSpirit);
+	for(size_t i = 0; i < cues.size(); ++i)
+	{
+		if(cues[i] == EBattleEffect::INVALID)
+			continue;
+		// Separate stages keep simultaneous Order Luck and Heroic Spirit
+		// visible in sequence, without replacing either transient effect.
+		addToAnimationStage(i == 0 ? EAnimationEvents::BEFORE_HIT : EAnimationEvents::HIT,
+			[this, hero, effect = cues[i]]()
+			{
+				effectsController->displayHeroPositiveEffect(effect, hero->positiveProcAnchor());
+			});
+	}
 }
 
 void BattleInterface::appendBattleLog(const std::string & newEntry)

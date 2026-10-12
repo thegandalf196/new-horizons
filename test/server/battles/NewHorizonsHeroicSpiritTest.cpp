@@ -9,6 +9,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/NewHorizonsHeroicSpirit.h"
+#include "../../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
@@ -32,6 +33,8 @@ class NewHorizonsHeroicSpiritTest : public HeroCommandFixture
 protected:
 	CStack * actor = nullptr;
 	CStack * enemy = nullptr;
+	bool chanceSucceeds = true;
+	bool selectDoubleCommand = false;
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -43,7 +46,7 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode chance;
 		for(int i = 0; i < 10; ++i)
-			chance.Vector().emplace_back(100);
+			chance.Vector().emplace_back(chanceSucceeds ? 100 : 0);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_MORALE_CHANCE, chance);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_DICE_SIZE, JsonNode(100));
 		// The live randomizer reads captured New Horizons Morale before legacy settings.
@@ -53,20 +56,20 @@ protected:
 		magic.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 	}
-	void select(const char * perk, MasteryLevel::Type rank)
+	void select(const char * perk, MasteryLevel::Type rank, const char * skill = newHorizonsHeroicSpirit::SKILL)
 	{
-		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsHeroicSpirit::SKILL)),
+		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill)),
 			rank, ChangeValueMode::ABSOLUTE);
 		const auto lookup = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
 			const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, seed);
 			for(size_t choice = 0; choice < offers.size(); ++choice)
-				if(offers[choice].selection.skillId == newHorizonsHeroicSpirit::SKILL
+				if(offers[choice].selection.skillId == skill
 					&& offers[choice].selection.perkId == perk)
 				{
 					gameHandler->levelUpHero(attackerSideHero, offers, choice, seed, false);
-					ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsHeroicSpirit::SKILL, perk));
+					ASSERT_TRUE(attackerSideHero->hasActivePerk(skill, perk));
 					return;
 				}
 		}
@@ -88,6 +91,12 @@ protected:
 			select("new-horizons:discipline.steadfast", MasteryLevel::BASIC);
 			select("new-horizons:discipline.holdFast", MasteryLevel::ADVANCED);
 			select(newHorizonsHeroicSpirit::PERK, MasteryLevel::EXPERT);
+		}
+		if(selectDoubleCommand)
+		{
+			ASSERT_NO_FATAL_FAILURE(select("new-horizons:command.aggressiveCommander", MasteryLevel::BASIC, "new-horizons:command"));
+			ASSERT_NO_FATAL_FAILURE(select("new-horizons:command.veteranCommander", MasteryLevel::ADVANCED, "new-horizons:command"));
+			ASSERT_NO_FATAL_FAILURE(select("new-horizons:command.doubleCommand", MasteryLevel::EXPERT, "new-horizons:command"));
 		}
 		startBattle();
 		BattleUnitsChanged remove;
@@ -112,189 +121,189 @@ protected:
 		ASSERT_TRUE(actor->hadMorale);
 		ASSERT_EQ(battle()->battleActiveUnit(), actor);
 	}
+	void setHeroMorale(int value)
+	{
+		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+			BonusType::MORALE, BonusSource::OTHER, value - attackerSideHero->moraleVal(), BonusSourceID()));
+		ASSERT_EQ(attackerSideHero->moraleVal(), value);
+	}
 };
 }
 
-TEST_F(NewHorizonsHeroicSpiritTest, ActualEarnedMoraleGrantsAvailableRetaliationThroughImmediateExtra)
+TEST_F(NewHorizonsHeroicSpiritTest, AcceptedFlexibleOrderGrantsOneOrderButBonusOrderCannotChain)
 {
-	prepare();
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
+	const auto round = battle()->getRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto & granted = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_EQ(granted.remainingCounts(round), (HeroActionAllowanceState::Counts{0, 1, 0}));
+	ASSERT_EQ(granted.heroicSpiritProcessedReceipts.size(), 1u);
+	const auto processed = granted.heroicSpiritProcessedReceipts;
+	const auto bonus = battle()->battleGetOrderActionAllowance(BattleSide::ATTACKER);
+	ASSERT_TRUE(bonus);
+	EXPECT_EQ(bonus->source, HeroActionAllowanceState::GrantSource::HEROIC_SPIRIT);
+	EXPECT_FALSE(granted.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, round));
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(round),
+		(HeroActionAllowanceState::Counts{}));
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).heroicSpiritProcessedReceipts, processed);
+	EXPECT_FALSE(actor->heroicSpiritRetaliation);
+	EXPECT_EQ(actor->counterAttacks.total(), 1);
+}
+
+TEST_F(NewHorizonsHeroicSpiritTest, RequiredDoubleCommandRunsBeforeHeroicBonusAndNeitherBonusChainsMorale)
+{
+	selectDoubleCommand = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(newHorizonsHeroicSpirit::hasPerk(attackerSideHero));
+	ASSERT_TRUE(heroCommands::hasDoubleCommand(attackerSideHero));
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
+	const auto round = battle()->getRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto & ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	ASSERT_EQ(ledger.remainingCounts(round), (HeroActionAllowanceState::Counts{0, 2, 0}));
+	ASSERT_EQ(ledger.heroicSpiritProcessedReceipts.size(), 1u);
+	const auto processed = ledger.heroicSpiritProcessedReceipts;
+	ASSERT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+	const auto required = battle()->battleGetOrderActionAllowance(BattleSide::ATTACKER);
+	ASSERT_TRUE(required);
+	EXPECT_EQ(required->source, HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND);
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+	EXPECT_TRUE(battle()->getDoubleCommandState(BattleSide::ATTACKER).used);
+	EXPECT_EQ(ledger.remainingCounts(round), (HeroActionAllowanceState::Counts{0, 1, 0}));
+	EXPECT_EQ(ledger.heroicSpiritProcessedReceipts, processed);
+	const auto moraleBonus = battle()->battleGetOrderActionAllowance(BattleSide::ATTACKER);
+	ASSERT_TRUE(moraleBonus);
+	EXPECT_EQ(moraleBonus->source, HeroActionAllowanceState::GrantSource::HEROIC_SPIRIT);
+	ASSERT_TRUE(issue(HeroCommand::RIPOSTE));
+	EXPECT_EQ(ledger.remainingCounts(round), (HeroActionAllowanceState::Counts{}));
+	EXPECT_EQ(ledger.heroicSpiritProcessedReceipts, processed);
+	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+	const auto & orders = battle()->getHeroOrderStates(BattleSide::ATTACKER);
+	ASSERT_EQ(orders.size(), 3u);
+	EXPECT_EQ(orders[0].command, HeroCommand::CHARGE);
+	EXPECT_EQ(orders[1].command, HeroCommand::HOLD_THE_LINE);
+	EXPECT_EQ(orders[2].command, HeroCommand::RIPOSTE);
+}
+
+TEST_F(NewHorizonsHeroicSpiritTest, UnusedMoraleOrderAndProcessedReceiptExpireAtNextRound)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(battle()->getRound()).orderActions, 1u);
+	advanceRound();
+	const auto & ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_EQ(ledger.remainingCounts(battle()->getRound()), (HeroActionAllowanceState::Counts{1, 0, 0}));
+	EXPECT_TRUE(ledger.heroicSpiritProcessedReceipts.empty());
+}
+
+TEST_F(NewHorizonsHeroicSpiritTest, ZeroHeroMoraleNeverGrantsAnOrder)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(0));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto & ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_EQ(ledger.remainingCounts(battle()->getRound()), (HeroActionAllowanceState::Counts{}));
+	EXPECT_TRUE(ledger.heroicSpiritProcessedReceipts.empty());
+}
+
+TEST_F(NewHorizonsHeroicSpiritTest, NegativeHeroMoraleNeverPenalizesOrGrantsAnOrder)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(-1));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto & ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_EQ(ledger.remainingCounts(battle()->getRound()), (HeroActionAllowanceState::Counts{}));
+	EXPECT_TRUE(ledger.heroicSpiritProcessedReceipts.empty());
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+}
+
+TEST_F(NewHorizonsHeroicSpiritTest, PositiveHeroMoraleWithoutPerkNeverGrantsAnOrder)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false));
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto & ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_EQ(ledger.remainingCounts(battle()->getRound()), (HeroActionAllowanceState::Counts{}));
+	EXPECT_TRUE(ledger.heroicSpiritProcessedReceipts.empty());
+}
+
+TEST_F(NewHorizonsHeroicSpiritTest, DisabledMoraleChanceRecordsResolutionWithoutGrant)
+{
+	chanceSucceeds = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto & ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_EQ(ledger.remainingCounts(battle()->getRound()), (HeroActionAllowanceState::Counts{}));
+	EXPECT_EQ(ledger.heroicSpiritProcessedReceipts.size(), 1u);
+}
+
+TEST_F(NewHorizonsHeroicSpiritTest, ActualCreatureMoraleStillOccursWithoutRetiredRetaliationGrant)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
 	actor->counterAttacks.use();
 	ASSERT_EQ(actor->counterAttacks.available(), 0);
-	earn();
-	EXPECT_TRUE(actor->heroicSpiritRetaliation);
+	ASSERT_NO_FATAL_FAILURE(earn());
+	EXPECT_FALSE(actor->heroicSpiritRetaliation);
 	EXPECT_FALSE(actor->heroicSpiritMoralePending);
-	EXPECT_EQ(actor->counterAttacks.total(), 2);
-	EXPECT_EQ(actor->counterAttacks.available(), 1);
-	actor->counterAttacks.use();
+	EXPECT_EQ(actor->counterAttacks.total(), 1);
 	EXPECT_EQ(actor->counterAttacks.available(), 0);
-}
-
-TEST_F(NewHorizonsHeroicSpiritTest, MoraleReasonWithoutEarnedEventDoesNotGrant)
-{
-	prepare();
-	activate(BattleUnitTurnReason::MORALE);
-	EXPECT_TRUE(actor->hadMorale);
-	EXPECT_FALSE(actor->heroicSpiritRetaliation);
-	EXPECT_EQ(actor->counterAttacks.total(), 1);
-}
-
-TEST_F(NewHorizonsHeroicSpiritTest, ActualUnselectedPositiveMoraleHasNoPerkRetaliation)
-{
-	prepare(false);
-	earn();
-	EXPECT_FALSE(actor->heroicSpiritRetaliation);
-	EXPECT_EQ(actor->counterAttacks.total(), 1);
-}
-
-TEST_F(NewHorizonsHeroicSpiritTest, ContinuationsPreserveButFollowingNormalActivationExpiresWithoutCacheLatch)
-{
-	prepare();
-	earn();
-	ASSERT_EQ(actor->counterAttacks.total(), 2); // Prime ordinary cap cache.
-	for(const auto reason : {BattleUnitTurnReason::HERO_COMMAND, BattleUnitTurnReason::HERO_SPELLCAST,
-		BattleUnitTurnReason::UNIT_SPELLCAST, BattleUnitTurnReason::ACTION_REJECTED,
-		BattleUnitTurnReason::MASTER_GATE_CONTINUATION, BattleUnitTurnReason::PURSUIT_CONTINUATION,
-		BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION})
-	{
-		activate(reason);
-		EXPECT_TRUE(actor->heroicSpiritRetaliation);
-	}
-	activate(BattleUnitTurnReason::TURN_QUEUE);
-	EXPECT_FALSE(actor->heroicSpiritRetaliation);
-	EXPECT_EQ(actor->counterAttacks.total(), 1);
-}
-
-TEST_F(NewHorizonsHeroicSpiritTest, IndependentExtraActivationExpires)
-{
-	prepare();
-	earn();
-	activate(BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION);
-	EXPECT_FALSE(actor->heroicSpiritRetaliation);
-	EXPECT_EQ(actor->counterAttacks.total(), 1);
-}
-
-TEST_F(NewHorizonsHeroicSpiritTest, OnlyTheGrantingMoraleActivationIsExempt)
-{
-	prepare();
-	earn();
-	ASSERT_FALSE(actor->heroicSpiritMoralePending);
-	activate(BattleUnitTurnReason::MORALE);
-	EXPECT_FALSE(actor->heroicSpiritRetaliation);
-	EXPECT_EQ(actor->counterAttacks.total(), 1);
-}
-
-TEST_F(NewHorizonsHeroicSpiritTest, RepeatedGrantDoesNotStackAndRoundResetPreservesOrdinaryConsumption)
-{
-	prepare();
-	earn();
-	auto state = actor->acquireState();
-	state->hadMorale = false; // Isolated already-earned event idempotence control.
-	ASSERT_TRUE(newHorizonsHeroicSpirit::grantEarnedMorale(*state, attackerSideHero));
-	ASSERT_TRUE(newHorizonsHeroicSpirit::grantEarnedMorale(*state, attackerSideHero));
-	EXPECT_EQ(state->counterAttacks.total(), 2);
-	actor->counterAttacks.use();
-	actor->counterAttacks.use();
-	EXPECT_EQ(actor->counterAttacks.available(), 0);
-	advanceRound();
-	EXPECT_EQ(actor->counterAttacks.available(), 2);
-	activate(BattleUnitTurnReason::TURN_QUEUE);
-	EXPECT_EQ(actor->counterAttacks.available(), 1);
-}
-
-TEST_F(NewHorizonsHeroicSpiritTest, NoRetaliationIncapacityAndDeathRemainAuthoritative)
-{
-	prepare();
-	earn();
-	actor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::NO_RETALIATION, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_EQ(actor->counterAttacks.total(), 0);
-	auto state = actor->acquireState();
-	int64_t lethalDamage = state->getAvailableHealth();
-	state->damage(lethalDamage);
-	EXPECT_FALSE(state->alive());
-	EXPECT_FALSE(state->isGhost());
-	EXPECT_FALSE(state->heroicSpiritRetaliation);
-	EXPECT_FALSE(state->heroicSpiritMoralePending);
-	int64_t restoration = actor->getAvailableHealth();
-	state->heal(restoration, EHealLevel::RESURRECT, EHealPower::PERMANENT);
-	EXPECT_TRUE(state->alive());
-	EXPECT_FALSE(state->heroicSpiritRetaliation);
-	EXPECT_FALSE(state->heroicSpiritMoralePending);
-	state->makeGhost();
-	EXPECT_FALSE(state->heroicSpiritRetaliation);
-	EXPECT_FALSE(state->alive());
-}
-
-TEST_F(NewHorizonsHeroicSpiritTest, DetachedEarnedProjectionCopiesAndExpiresWithoutLiveOrSiblingMutation)
-{
-	prepare();
+	EXPECT_TRUE(battle()->getHeroActionAllowances(BattleSide::ATTACKER).heroicSpiritProcessedReceipts.empty());
 	SpiritEnvironment environment(gameState());
-	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
-	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+	auto parent = std::make_shared<HypotheticBattle>(&environment,
+		std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
 	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
-	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+	auto projected = child->getForUpdate(actor->unitId());
+	projected->hadMorale = false; // Isolated already-earned projection control.
 	ASSERT_TRUE(child->projectEarnedMoraleActivation(actor->unitId()));
-	EXPECT_EQ(child->getForUpdate(actor->unitId())->counterAttacks.total(), 2);
-	EXPECT_TRUE(child->getForUpdate(actor->unitId())->hadMorale);
-	EXPECT_EQ(parent->getForUpdate(actor->unitId())->counterAttacks.total(), 1);
-	EXPECT_EQ(sibling->getForUpdate(actor->unitId())->counterAttacks.total(), 1);
+	EXPECT_EQ(projected->counterAttacks.total(), 1);
+	EXPECT_FALSE(projected->heroicSpiritRetaliation);
 	EXPECT_FALSE(actor->heroicSpiritRetaliation);
-	child->nextTurn(actor->unitId(), BattleUnitTurnReason::UNIT_SPELLCAST);
-	EXPECT_TRUE(child->getForUpdate(actor->unitId())->heroicSpiritRetaliation);
-	child->nextTurn(actor->unitId(), BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION);
-	EXPECT_FALSE(child->getForUpdate(actor->unitId())->heroicSpiritRetaliation);
-	EXPECT_EQ(child->getForUpdate(actor->unitId())->counterAttacks.total(), 1);
+	EXPECT_TRUE(actor->hadMorale);
 }
 
-TEST_F(NewHorizonsHeroicSpiritTest, StasisQueuePassDoesNotExpireAndCurrentJsonRejectsMalformedBeforeMutation)
+TEST_F(NewHorizonsHeroicSpiritTest, LegacyCreatureFieldsRoundTripButAreInertAndMalformedStateStillRejects)
 {
-	prepare();
-	earn();
-	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	SetStackEffect pack;
-	pack.battleID = BattleID(0);
-	pack.toAdd.emplace_back(actor->unitId(), std::vector<Bonus>{stopped});
-	gameHandler->sendAndApply(pack);
-	activate(BattleUnitTurnReason::AUTOMATIC_ACTION);
-	EXPECT_TRUE(actor->heroicSpiritRetaliation);
+	ASSERT_NO_FATAL_FAILURE(prepare());
 	auto state = actor->acquireState();
-	auto snapshot = state->save();
-	snapshot["state"]["heroicSpiritRetaliation"].String() = "not a boolean";
-	const auto before = state->save();
-	EXPECT_THROW(state->load(snapshot), std::runtime_error);
-	EXPECT_EQ(state->save(), before);
-	snapshot = before;
-	snapshot["state"]["heroicSpiritRetaliation"].Bool() = false;
-	snapshot["state"]["heroicSpiritMoralePending"].Bool() = true;
-	EXPECT_THROW(state->load(snapshot), std::runtime_error);
-	EXPECT_EQ(state->save(), before);
-	auto legacy = before;
-	legacy["state"].Struct().erase("heroicSpiritRetaliation");
-	ASSERT_NO_THROW(state->load(legacy));
-	EXPECT_FALSE(state->heroicSpiritRetaliation);
-}
-
-TEST_F(NewHorizonsHeroicSpiritTest, CurrentStackJsonRoundTripAndOldEnclosingPrefixes)
-{
-	prepare();
-	earn();
+	state->heroicSpiritRetaliation = true;
+	state->heroicSpiritMoralePending = false;
+	const auto snapshot = state->save();
 	auto copy = actor->acquireState();
-	auto snapshot = actor->save();
-	copy->heroicSpiritRetaliation = false;
-	copy->load(snapshot);
+	ASSERT_NO_THROW(copy->load(snapshot));
 	EXPECT_TRUE(copy->heroicSpiritRetaliation);
-	EXPECT_EQ(copy->counterAttacks.available(), actor->counterAttacks.available());
+	EXPECT_EQ(copy->counterAttacks.total(), 1);
+	EXPECT_FALSE(newHorizonsHeroicSpirit::canGrantEarnedMorale(*copy, attackerSideHero));
+	EXPECT_FALSE(newHorizonsHeroicSpirit::grantEarnedMorale(*copy, attackerSideHero));
+	newHorizonsHeroicSpirit::beginActivation(*copy, BattleUnitTurnReason::MORALE);
+	EXPECT_FALSE(copy->heroicSpiritRetaliation);
+	EXPECT_FALSE(copy->heroicSpiritMoralePending);
+	auto malformed = snapshot;
+	malformed["state"]["heroicSpiritRetaliation"].String() = "not a boolean";
+	const auto before = copy->save();
+	EXPECT_THROW(copy->load(malformed), std::runtime_error);
+	EXPECT_EQ(copy->save(), before);
+	malformed = snapshot;
+	malformed["state"]["heroicSpiritRetaliation"].Bool() = false;
+	malformed["state"]["heroicSpiritMoralePending"].Bool() = true;
+	EXPECT_THROW(copy->load(malformed), std::runtime_error);
+	EXPECT_EQ(copy->save(), before);
+
+	CStackBasicDescriptor descriptor(actor->creatureId(), actor->unitBaseAmount());
+	CStack native(&descriptor, actor->unitOwner(), static_cast<int>(actor->unitId()), actor->unitSide(), actor->unitSlot());
+	native.heroicSpiritRetaliation = true; // Legacy descriptor, not a new producer.
 	CMemorySerializer current;
-	current.oser.version = ESerializationVersion::CURRENT;
-	current.iser.version = ESerializationVersion::CURRENT;
-	ASSERT_NO_THROW(current.oser & *actor);
-	CStack restored;
-	ASSERT_NO_THROW(current.iser & restored);
-	EXPECT_TRUE(restored.heroicSpiritRetaliation);
-	EXPECT_FALSE(restored.heroicSpiritMoralePending);
-	restored.localInit(gameState()->getBattle(BattleID(0)));
-	EXPECT_TRUE(restored.heroicSpiritRetaliation);
-	EXPECT_EQ(restored.counterAttacks.total(), 2);
+	ASSERT_NO_THROW(current.oser & native);
+	CStack decoded;
+	ASSERT_NO_THROW(current.iser & decoded);
+	EXPECT_TRUE(decoded.heroicSpiritRetaliation);
+	ASSERT_NO_THROW(decoded.localInit(battle()));
+	EXPECT_TRUE(decoded.heroicSpiritRetaliation);
+	EXPECT_EQ(decoded.counterAttacks.total(), 1);
 	const auto reject = [](const auto & value)
 	{
 		CMemorySerializer bytes;
@@ -309,69 +318,37 @@ TEST_F(NewHorizonsHeroicSpiritTest, CurrentStackJsonRoundTripAndOldEnclosingPref
 	update.battleID = BattleID(0);
 	update.changedStacks = {change};
 	reject(update);
-	reject(*actor);
-	reject(*battle());
-	CGameState callback;
-	callback.preInit(LIBRARY);
-	BattleStart start;
-	start.battleID = BattleID(0);
-	start.info = std::make_unique<BattleInfo>(&callback);
-	start.info->stacks.push_back(std::make_unique<CStack>());
-	start.info->stacks.back()->heroicSpiritRetaliation = true;
-	reject(start);
-	change.data["state"].Struct().erase("heroicSpiritRetaliation");
-	change.data["state"].Struct().erase("heroicSpiritMoralePending");
-	CMemorySerializer legacy;
-	legacy.oser.version = ESerializationVersion::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES;
-	legacy.iser.version = ESerializationVersion::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES;
-	ASSERT_NO_THROW(legacy.oser & change);
-	UnitChanges oldRestored;
-	ASSERT_NO_THROW(legacy.iser & oldRestored);
-	EXPECT_FALSE(battle::hasHeroicSpiritState(oldRestored.data));
+	reject(native);
+	native.heroicSpiritRetaliation = false;
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES;
+	old.iser.version = ESerializationVersion::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES;
+	ASSERT_NO_THROW(old.oser & native);
+	CStack oldDecoded;
+	ASSERT_NO_THROW(old.iser & oldDecoded);
+	EXPECT_FALSE(oldDecoded.heroicSpiritRetaliation);
+	EXPECT_FALSE(oldDecoded.heroicSpiritMoralePending);
+}
 
+TEST_F(NewHorizonsHeroicSpiritTest, LegacyCreatureEventIsReadableButCannotProduceRetaliation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
 	BattleTriggerEffect grant;
 	grant.battleID = BattleID(0);
 	grant.stackID = actor->unitId();
 	grant.effect = BonusType::MORALE;
 	grant.val = 1;
 	grant.heroicSpiritGrant = true;
-	reject(grant);
-	CMemorySerializer eventBytes;
-	eventBytes.oser.version = ESerializationVersion::CURRENT;
-	eventBytes.iser.version = ESerializationVersion::CURRENT;
-	ASSERT_NO_THROW(eventBytes.oser & grant);
-	BattleTriggerEffect eventRestored;
-	ASSERT_NO_THROW(eventBytes.iser & eventRestored);
-	EXPECT_TRUE(eventRestored.heroicSpiritGrant);
-	EXPECT_EQ(eventRestored.effect, BonusType::MORALE);
-	EXPECT_EQ(eventRestored.stackID, actor->unitId());
-	grant.heroicSpiritGrant = false;
-	CMemorySerializer oldEvent;
-	oldEvent.oser.version = ESerializationVersion::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES;
-	oldEvent.iser.version = ESerializationVersion::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES;
-	ASSERT_NO_THROW(oldEvent.oser & grant);
-	eventRestored.heroicSpiritGrant = true;
-	ASSERT_NO_THROW(oldEvent.iser & eventRestored);
-	EXPECT_FALSE(eventRestored.heroicSpiritGrant);
-	const auto beforeInvalid = actor->save();
-	grant.heroicSpiritGrant = true;
-	// The real granting activation already set hadMorale: a stale repeat is invalid.
-	EXPECT_THROW(gameHandler->sendAndApply(grant), std::runtime_error);
-	EXPECT_EQ(actor->save(), beforeInvalid);
-	grant.effect = BonusType::HP_REGENERATION;
-	EXPECT_THROW(gameHandler->sendAndApply(grant), std::runtime_error);
-	EXPECT_EQ(actor->save(), beforeInvalid);
-	CMemorySerializer invalidBytes;
-	invalidBytes.oser.version = ESerializationVersion::CURRENT;
-	EXPECT_THROW(invalidBytes.oser & grant, std::runtime_error);
-	EXPECT_TRUE(invalidBytes.extractBuffer().empty());
-	grant.effect = BonusType::MORALE;
-	grant.val = 0;
-	EXPECT_THROW(gameHandler->sendAndApply(grant), std::runtime_error);
-	EXPECT_EQ(actor->save(), beforeInvalid);
-	grant.val = 1;
-	grant.stackID = enemy->unitId(); // Current controller has no eligible owning hero.
-	const auto enemyBefore = enemy->save();
-	EXPECT_THROW(gameHandler->sendAndApply(grant), std::runtime_error);
-	EXPECT_EQ(enemy->save(), enemyBefore);
+	CMemorySerializer current;
+	ASSERT_NO_THROW(current.oser & grant);
+	BattleTriggerEffect decoded;
+	ASSERT_NO_THROW(current.iser & decoded);
+	EXPECT_TRUE(decoded.heroicSpiritGrant);
+	const auto before = actor->save();
+	EXPECT_THROW(gameHandler->sendAndApply(decoded), std::runtime_error);
+	EXPECT_EQ(actor->save(), before);
+	CMemorySerializer oldWriter;
+	oldWriter.oser.version = ESerializationVersion::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES;
+	EXPECT_THROW(oldWriter.oser & grant, std::runtime_error);
+	EXPECT_TRUE(oldWriter.extractBuffer().empty());
 }
