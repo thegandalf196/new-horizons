@@ -37,6 +37,51 @@ class Refusal(RuntimeError):
     pass
 
 
+def loader_refusal_diagnostic(expected, context):
+    """Bounded private identity evidence only, never a verification substitute."""
+    def snapshot(value, keys):
+        value = value if isinstance(value, dict) else {}
+        result = {}
+        omitted = []
+        for key in keys:
+            item = value.get(key)
+            if key == 'argv':
+                valid = (isinstance(item, list) and len(item) <= 16
+                         and all(isinstance(v, str) and len(v) <= 1024 for v in item))
+                result[key] = list(item) if valid else None
+            else:
+                valid = (type(item) is int and 0 <= item <= 2**64-1) if key in ('pid', 'start_ticks', 'uid') else (isinstance(item, str) and len(item) <= 1024)
+                result[key] = item if valid else None
+            if not valid:
+                omitted.append(key)
+        result['unrecorded_fields'] = omitted
+        return result
+    bootstrap = context.get('bootstrap') if isinstance(context, dict) else None
+    bootstrap = bootstrap if isinstance(bootstrap, dict) else {}
+    identity_keys = ('pid', 'start_ticks', 'uid', 'boot_id', 'state', 'exe', 'sha256', 'argv')
+    selected = snapshot(expected, ('exe', 'sha256', 'argv'))
+    before = snapshot(bootstrap.get('before'), identity_keys)
+    after = snapshot(bootstrap.get('after'), identity_keys)
+    mismatched = [key for key in ('exe', 'sha256', 'argv')
+                  if key not in selected['unrecorded_fields'] and key not in after['unrecorded_fields']
+                  and selected[key] != after[key]]
+    return {'expected_loader': selected, 'bootstrap_before': before,
+            'bootstrap_after': after, 'mismatched_fields': mismatched}
+
+
+def verify_with_loader_diagnostic(verifier, context, expected, diagnostics):
+    try:
+        return verifier(context)
+    except Exception:
+        # Original refusal propagates even if diagnostic rendering fails.
+        try:
+            if len(diagnostics) < 8:
+                diagnostics.append(loader_refusal_diagnostic(expected, context))
+        except Exception:
+            pass
+        raise
+
+
 class WineRootMapping:
     """Pin private C: and approved Z: aliases; not an OS sandbox."""
     def __init__(self, root):
@@ -761,7 +806,10 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
         (root / name).mkdir(mode=0o700)
     mapping = WineRootMapping(root)
     content_state['mapping'] = mapping
-    checked_runtime = lambda context: mapping.verify_runtime(verify_runtime, context)
+    runtime_refusals = []
+    checked_runtime = lambda context: verify_with_loader_diagnostic(
+        lambda actual: mapping.verify_runtime(verify_runtime, actual), context,
+        plan.get('loader_identity'), runtime_refusals)
     for name in ('HeroesIII-NewHorizons', 'new-horizons'):
         (root / 'localappdata' / name).mkdir(mode=0o700)
     for name in ('content', 'config', 'cache', 'logs'):
@@ -949,6 +997,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
         (root / 'owner-receipt.json').write_text(json.dumps({'owner_pid': backend.pid, 'boot_id': backend.boot,
             'age': owner.age(), 'status': status, 'errors': owner.errors, 'reaped': owner.reaped,
             'parent_reaped': owner.parent_reaped, 'owned_graph_drained': owner.graph_drained(),
+            'runtime_refusals': runtime_refusals,
             'ledger': {str(pid): row['identity'] for pid, row in owner.ledger.items()},
             'prior_lifetimes': [{'pid': row['pid'], 'identity': row['entry']['identity'], 'status': row['status'],
                                 'parent_reaped': row.get('parent_reaped')}
