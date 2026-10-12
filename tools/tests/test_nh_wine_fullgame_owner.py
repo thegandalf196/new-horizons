@@ -4,6 +4,7 @@ import copy
 import importlib.util
 import json
 import os
+import stat
 from pathlib import Path
 import signal
 import tempfile
@@ -558,12 +559,62 @@ class WineRootMappingTests(unittest.TestCase):
         self.addCleanup(result.close)
         return result
 
-    def test_literal_root_alias_and_other_drive_allowed(self):
+    def test_missing_c_drive_is_created_private_and_canonical(self):
+        self.assertFalse((self.root / 'prefix/drive_c').exists())
         mapping = self.mapping()
         self.assertEqual(os.readlink(self.root / 'prefix/dosdevices/z:'), '/')
-        (self.root / 'prefix/dosdevices/c:').symlink_to('../drive_c')
+        self.assertEqual(os.readlink(self.root / 'prefix/dosdevices/c:'), '../drive_c')
+        self.assertEqual(stat.S_IMODE((self.root / 'prefix/drive_c').stat().st_mode), 0o700)
+        self.assertEqual((self.root / 'prefix/dosdevices/c:').resolve(), self.root / 'prefix/drive_c')
         mapping.verify()
-        self.assertEqual(len(mapping.fds), 3)
+        self.assertEqual(len(mapping.fds), 4)
+
+    def test_c_drive_link_replacement_and_uppercase_refused(self):
+        mapping = self.mapping()
+        link = self.root / 'prefix/dosdevices/c:'
+        link.unlink(); link.symlink_to('/')
+        with self.assertRaises(owner.Refusal):mapping.verify()
+
+    def test_c_drive_uppercase_conflict_refused(self):
+        mapping = self.mapping()
+        (self.root / 'prefix/dosdevices/C:').symlink_to('../drive_c')
+        with self.assertRaises(owner.Refusal):mapping.verify()
+
+    def test_c_drive_retarget_refused_even_with_same_link_identity(self):
+        mapping = self.mapping()
+        readlink = os.readlink
+        def changed(path, **kwargs):
+            return '/' if path == 'c:' else readlink(path, **kwargs)
+        with mock.patch.object(owner.os,'readlink',side_effect=changed):
+            with self.assertRaises(owner.Refusal):mapping.verify()
+
+    def test_c_drive_directory_replacement_refused(self):
+        mapping = self.mapping()
+        drive = self.root / 'prefix/drive_c'
+        drive.rename(self.root / 'prefix/old-drive_c')
+        drive.mkdir(mode=0o700)
+        with self.assertRaises(owner.Refusal):mapping.verify()
+
+    def test_c_drive_symlink_replacement_refused(self):
+        mapping = self.mapping()
+        drive = self.root / 'prefix/drive_c'
+        drive.rename(self.root / 'prefix/old-drive_c')
+        drive.symlink_to(self.root / 'prefix/old-drive_c')
+        with self.assertRaises(owner.Refusal):mapping.verify()
+
+    def test_missing_c_drive_link_refused(self):
+        mapping = self.mapping()
+        (self.root / 'prefix/dosdevices/c:').unlink()
+        with self.assertRaises(owner.Refusal):mapping.verify()
+
+    def test_preexisting_c_directory_or_symlink_refused_without_overwrite(self):
+        drive = self.root / 'prefix/drive_c'
+        drive.symlink_to(self.root)
+        with self.assertRaises(owner.Refusal):owner.WineRootMapping(self.root)
+        self.assertTrue(drive.is_symlink())
+        drive.unlink(); drive.mkdir(mode=0o700)
+        with self.assertRaises(owner.Refusal):owner.WineRootMapping(self.root)
+        self.assertTrue(drive.is_dir())
 
     def test_non_root_link_target_refused_with_same_link_identity(self):
         mapping = self.mapping()
@@ -650,7 +701,7 @@ class WineRootMappingTests(unittest.TestCase):
              mock.patch.object(owner.os, 'close', wraps=real_close) as closed:
             with self.assertRaises(owner.Refusal):
                 owner.WineRootMapping(self.root)
-            self.assertEqual(closed.call_count, 3)
+            self.assertEqual(closed.call_count, 4)
 
     def test_close_is_idempotent_and_closed_guard_refuses(self):
         mapping = self.mapping()
@@ -697,8 +748,8 @@ class WineRootMappingTests(unittest.TestCase):
             with self.assertRaisesRegex(owner.Refusal, 'handle cleanup failed') as caught:
                 owner.WineRootMapping(self.root)
         self.assertIs(caught.exception.__cause__, original)
-        self.assertEqual(len(attempts), 3)
-        self.assertEqual(len(set(attempts)), 3)
+        self.assertEqual(len(attempts), 4)
+        self.assertEqual(len(set(attempts)), 4)
 
     def test_outer_close_failure_retains_runtime_failure_in_final_receipt(self):
         mapping = self.mapping()
@@ -712,7 +763,7 @@ class WineRootMappingTests(unittest.TestCase):
             with self.assertRaisesRegex(owner.Refusal, 'Final content') as caught:
                 owner.run_fullgame({'root': str(self.root), 'content': {}}, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
         self.assertEqual(str(caught.exception.__cause__), 'synthetic primary runtime refusal')
-        self.assertEqual(len(attempts), 3)
+        self.assertEqual(len(attempts), 4)
         self.assertEqual(mapping.fds, [])
         receipt = json.loads((self.root / 'content-final.json').read_text())
         self.assertEqual(receipt['runtime_failure'], 'synthetic primary runtime refusal')
@@ -740,7 +791,7 @@ class WineRootMappingTests(unittest.TestCase):
             state['mapping'] = mapping
             raise owner.Refusal('synthetic runtime failure')
         def originals(content):
-            self.assertEqual(len(mapping.fds), 3)
+            self.assertEqual(len(mapping.fds), 4)
         profile.verify_original_content.side_effect = originals
         with mock.patch.object(owner, 'content_module', return_value=profile), \
              mock.patch.object(owner, 'run_staged_fullgame', side_effect=runtime):

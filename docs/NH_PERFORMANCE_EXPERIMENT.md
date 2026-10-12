@@ -140,6 +140,12 @@ prefix's literal `z:` → `/` mapping and its directory handles before launch,
 then revalidates them around proof, acknowledgement, input and cleanup.
 This is boundary validation, not an operating-system sandbox.
 
+Precreating `dosdevices` also skips Wine 10's normal private C-drive setup
+([initialization source](https://github.com/wine-mirror/wine/blob/wine-10.0/dlls/ntdll/unix/server.c)).
+The owner therefore creates an exclusive private `drive_c` and canonical
+`c:` → `../drive_c`, retaining and checking their directory/link identities
+alongside `z:`. This does not reuse a host prefix or relax witness deadlines.
+
 Build test prerequisites into an explicitly configured private output directory,
 outside the repository and its build tree:
 

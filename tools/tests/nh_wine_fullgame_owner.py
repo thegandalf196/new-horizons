@@ -38,26 +38,34 @@ class Refusal(RuntimeError):
 
 
 class WineRootMapping:
-    """Pin the approved Z: alias; boundary checks, not an OS sandbox."""
+    """Pin private C: and approved Z: aliases; not an OS sandbox."""
     def __init__(self, root):
         self.root = Path(root)
         self.uid = os.getuid()
         self.fds = []
         self.parents = []
         self.link = None
+        self.c_link = None
         try:
             if not self.root.is_absolute():
                 raise Refusal('Wine mapping root is not absolute')
-            for index, path in enumerate((self.root, self.root / 'prefix', self.root / 'prefix/dosdevices')):
-                if index == 2:
-                    os.mkdir('dosdevices', mode=0o700, dir_fd=self.fds[-1])
+            # Wine 10 setup_config_dir creates drive_c/c: only when its own
+            # dosdevices mkdir succeeds. Our pinned Z: preparation must also
+            # supply C: explicitly, before Wine sees that existing directory.
+            for index, path in enumerate((self.root, self.root / 'prefix',
+                                          self.root / 'prefix/drive_c', self.root / 'prefix/dosdevices')):
+                parent = self.fds[1] if index >= 2 else (self.fds[0] if index == 1 else None)
+                if index >= 2:
+                    os.mkdir(path.name, mode=0o700, dir_fd=parent)
                 fd = os.open(path if index == 0 else path.name,
                              os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
-                             **({} if index == 0 else {'dir_fd': self.fds[-1]}))
+                             **({} if index == 0 else {'dir_fd': parent}))
                 self.fds.append(fd)
                 info = os.fstat(fd)
                 self._directory(info)
                 self.parents.append(self._identity(info))
+            os.symlink('../drive_c', 'c:', dir_fd=self.fds[-1])
+            self.c_link = self._identity(os.stat('c:', dir_fd=self.fds[-1], follow_symlinks=False))
             os.symlink('/', 'z:', dir_fd=self.fds[-1])
             self.link = self._identity(os.stat('z:', dir_fd=self.fds[-1], follow_symlinks=False))
             self.verify()
@@ -78,10 +86,11 @@ class WineRootMapping:
 
     def verify(self):
         try:
-            if len(self.fds) != 3:
+            if len(self.fds) != 4:
                 raise Refusal('Private Wine mapping handles missing')
             for fd, path, expected in zip(self.fds,
-                                         (self.root, self.root / 'prefix', self.root / 'prefix/dosdevices'),
+                                         (self.root, self.root / 'prefix', self.root / 'prefix/drive_c',
+                                          self.root / 'prefix/dosdevices'),
                                          self.parents):
                 held, live = os.fstat(fd), path.lstat()
                 self._directory(held)
@@ -94,6 +103,17 @@ class WineRootMapping:
                 pass
             else:
                 raise Refusal('Conflicting Wine root drive spelling')
+            try:
+                os.stat('C:', dir_fd=self.fds[-1], follow_symlinks=False)
+            except FileNotFoundError:
+                pass
+            else:
+                raise Refusal('Conflicting private Wine C drive spelling')
+            info = os.stat('c:', dir_fd=self.fds[-1], follow_symlinks=False)
+            if (not stat.S_ISLNK(info.st_mode) or info.st_uid != self.uid
+                    or self._identity(info) != self.c_link
+                    or os.readlink('c:', dir_fd=self.fds[-1]) != '../drive_c'):
+                raise Refusal('Private Wine C link changed')
             info = os.stat('z:', dir_fd=self.fds[-1], follow_symlinks=False)
             if (not stat.S_ISLNK(info.st_mode) or info.st_uid != self.uid
                     or self._identity(info) != self.link
