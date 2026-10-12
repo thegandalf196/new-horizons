@@ -5,6 +5,7 @@ set(clientapp_SRCS
 
 set(clientapp_HEADERS
 		StdInc.h
+		PrivateWinePathPolicy.h
 		PrivateWineStartupWitness.h
 )
 

@@ -92,6 +92,13 @@ Wine's initial registry-environment merge. The game's pre-SDL path, nonce and
 audio checks remain mandatory. The bootstrap is not installed or shipped with
 player packages; normal Windows startup is unchanged.
 
+Wine can mark its canonical `Z:\` host-root drive alias as a reparse point.
+The private bootstrap and game witness recognize only that exact root; other
+reparse paths remain rejected. The Linux owner creates and pins the fresh
+prefix's literal `z:` → `/` mapping and its directory handles before launch,
+then revalidates them around proof, acknowledgement, input and cleanup.
+This is boundary validation, not an operating-system sandbox.
+
 Build test prerequisites into an explicitly configured private output directory,
 outside the repository and its build tree:
 

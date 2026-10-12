@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string>
+#include "PrivateWinePathPolicy.h"
 
 namespace privateWineStartup
 {
@@ -118,10 +119,9 @@ inline bool plainAncestors(const boost::filesystem::path & path)
 	for(auto current = path; !current.empty(); current = current.parent_path())
 	{
 		const DWORD attributes = GetFileAttributesW(current.c_str());
-		if(attributes == INVALID_FILE_ATTRIBUTES || !(attributes & FILE_ATTRIBUTE_DIRECTORY)
-			|| (attributes & FILE_ATTRIBUTE_REPARSE_POINT))
+		if(!privateWinePathPolicy::isDirectoryAllowed(current.wstring(), attributes))
 			return false;
-		if(current == current.parent_path())
+		if(privateWinePathPolicy::isCanonicalRoot(current.wstring()) || current == current.parent_path())
 			break;
 	}
 	return true;

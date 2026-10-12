@@ -37,6 +37,90 @@ class Refusal(RuntimeError):
     pass
 
 
+class WineRootMapping:
+    """Pin the approved Z: alias; boundary checks, not an OS sandbox."""
+    def __init__(self, root):
+        self.root = Path(root)
+        self.uid = os.getuid()
+        self.fds = []
+        self.parents = []
+        self.link = None
+        try:
+            if not self.root.is_absolute():
+                raise Refusal('Wine mapping root is not absolute')
+            for index, path in enumerate((self.root, self.root / 'prefix', self.root / 'prefix/dosdevices')):
+                if index == 2:
+                    os.mkdir('dosdevices', mode=0o700, dir_fd=self.fds[-1])
+                fd = os.open(path if index == 0 else path.name,
+                             os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                             **({} if index == 0 else {'dir_fd': self.fds[-1]}))
+                self.fds.append(fd)
+                info = os.fstat(fd)
+                self._directory(info)
+                self.parents.append(self._identity(info))
+            os.symlink('/', 'z:', dir_fd=self.fds[-1])
+            self.link = self._identity(os.stat('z:', dir_fd=self.fds[-1], follow_symlinks=False))
+            self.verify()
+        except Exception as error:
+            try:
+                self.close()
+            except Refusal:
+                raise Refusal('Cannot establish private Wine root mapping; handle cleanup failed') from error
+            raise Refusal('Cannot establish private Wine root mapping') from error
+
+    @staticmethod
+    def _identity(info):
+        return (info.st_dev, info.st_ino, info.st_uid, info.st_mode)
+
+    def _directory(self, info):
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != self.uid or stat.S_IMODE(info.st_mode) != 0o700:
+            raise Refusal('Private Wine mapping directory changed')
+
+    def verify(self):
+        try:
+            if len(self.fds) != 3:
+                raise Refusal('Private Wine mapping handles missing')
+            for fd, path, expected in zip(self.fds,
+                                         (self.root, self.root / 'prefix', self.root / 'prefix/dosdevices'),
+                                         self.parents):
+                held, live = os.fstat(fd), path.lstat()
+                self._directory(held)
+                self._directory(live)
+                if self._identity(held) != expected or self._identity(live) != expected:
+                    raise Refusal('Private Wine mapping parent identity changed')
+            try:
+                os.stat('Z:', dir_fd=self.fds[-1], follow_symlinks=False)
+            except FileNotFoundError:
+                pass
+            else:
+                raise Refusal('Conflicting Wine root drive spelling')
+            info = os.stat('z:', dir_fd=self.fds[-1], follow_symlinks=False)
+            if (not stat.S_ISLNK(info.st_mode) or info.st_uid != self.uid
+                    or self._identity(info) != self.link
+                    or os.readlink('z:', dir_fd=self.fds[-1]) != '/'):
+                raise Refusal('Private Wine root link changed')
+        except OSError as error:
+            raise Refusal('Private Wine root mapping unavailable') from error
+
+    def close(self):
+        first_error = None
+        while self.fds:
+            fd = self.fds.pop()
+            try:
+                os.close(fd)  # Exactly one attempt; never retry a potentially reused FD.
+            except OSError as error:
+                if first_error is None:
+                    first_error = error
+        if first_error is not None:
+            raise Refusal('Private Wine mapping handle cleanup failed') from first_error
+
+    def verify_runtime(self, verifier, context):
+        self.verify()
+        result = verifier(context)
+        self.verify()
+        return result
+
+
 def input_argv(request):
     if not isinstance(request, dict) or type(request.get('id')) is not int or request['id'] < 0:
         raise Refusal('Input request requires a nonnegative integer id')
@@ -519,6 +603,17 @@ def run_fullgame(plan, *, verify_xvfb, verify_runtime):
             final_originals_verified = True
         except Exception as error:
             final_errors.append('Final original-content verification failed: ' + str(error))
+        mapping = state.get('mapping')
+        if mapping is not None:
+            try:
+                mapping.verify()
+            except Exception:
+                final_errors.append('Final Wine root mapping verification failed')
+            try:
+                mapping.close()  # After ownership cleanup and all final checks.
+            except Exception:
+                final_errors.append('Final Wine root mapping handle cleanup failed')
+        # Publish only after every close attempt; retain the original failure too.
         (Path(plan['root']) / 'content-final.json').write_text(json.dumps({
             'staged': state['staged'], 'final_errors': final_errors,
             'runtime_failure': str(failure) if failure is not None else None,
@@ -602,6 +697,9 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     root = Path(plan['root'])
     for name in ('home', 'prefix', 'localappdata', 'config', 'data', 'cache', 'state', 'runtime'):
         (root / name).mkdir(mode=0o700)
+    mapping = WineRootMapping(root)
+    content_state['mapping'] = mapping
+    checked_runtime = lambda context: mapping.verify_runtime(verify_runtime, context)
     for name in ('HeroesIII-NewHorizons', 'new-horizons'):
         (root / 'localappdata' / name).mkdir(mode=0o700)
     for name in ('content', 'config', 'cache', 'logs'):
@@ -638,6 +736,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     status = 1
     try:
         owner.verify_xvfb()
+        mapping.verify()
         with (root / 'client.log').open('xb') as log:
             process, stopped = owner.spawn(command, cwd=executable.parent, stdout=log)
             plan['launch_nonce'] = nonce
@@ -661,6 +760,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                 if game_pid is None:
                     raise Refusal('Owned game witness discovery exceeded30s')
             def context():
+                mapping.verify()
                 profile.verify_staged_content(plan['content'], root, verify_copy_bytes=False)
                 before = backend.snapshot(game_pid)
                 mappings = backend.mappings(game_pid, {p['path'] for p in expected})
@@ -692,12 +792,14 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                     last = backend.snapshot(process.pid)
                     result['bootstrap'] = {'before': first, 'after': last, 'mappings': rows}
                     result['game_identity'] = copy.deepcopy(plan['game_identity'])
+                mapping.verify()
                 return result
             while not (gate / 'proof.utf16le').exists() and owner.age() < 8:
                 time.sleep(.02)
-            owner.verify_input(context, verify_runtime)
+            owner.verify_input(context, checked_runtime)
             # Exclusive nonce ACK only after actual Win32/Linux/mapping/env proof.
             def ack():
+                mapping.verify()
                 fd = os.open(gate / 'approved.utf16le', os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
                 try:
                     payload = nonce.encode('utf-16-le')
@@ -705,7 +807,8 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                         raise Refusal('Short exclusive nonce ACK')
                 finally:
                     os.close(fd)
-            owner.verify_input(context, verify_runtime, ack)
+                mapping.verify()
+            owner.verify_input(context, checked_runtime, ack)
             buffer, stdin_open = b'', True
             while owner.age() < TERM and not owner.finished.is_set():
                 owner.adopt(); owner.reap()
@@ -749,8 +852,8 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                             time.sleep(.01)
                         owner.signal_owned(signal.SIGTERM)
                         raise Refusal('Input provider timeout')
-                    owner.verify_input(context, verify_runtime, gesture)
-                    owner.verify_input(context, verify_runtime)  # Fresh game proof AFTER actual gesture.
+                    owner.verify_input(context, checked_runtime, gesture)
+                    owner.verify_input(context, checked_runtime)  # Fresh game proof AFTER actual gesture.
                     print(json.dumps({'id': request['id'], 'input_done': True, 'age': owner.age()}), flush=True)
                 else:
                     time.sleep(.02)
@@ -774,6 +877,10 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
         except Exception as error:
             owner.errors.append(str(error))
         finish_owner(owner, supervisor)
+        try:
+            mapping.verify()
+        except Exception:
+            owner.errors.append('Post-cleanup Wine root mapping verification failed')
         (root / 'owner-receipt.json').write_text(json.dumps({'owner_pid': backend.pid, 'boot_id': backend.boot,
             'age': owner.age(), 'status': status, 'errors': owner.errors, 'reaped': owner.reaped,
             'parent_reaped': owner.parent_reaped, 'owned_graph_drained': owner.graph_drained(),
