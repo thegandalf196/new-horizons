@@ -187,6 +187,10 @@ void WindowHandler::clear()
 
 	windowsStack.clear();
 	disposed.clear();
+	// Covered windows can reclaim a layer while inactive; scene teardown must
+	// release their content independently of final deactivation or destruction.
+	for(size_t layer = 0; layer < static_cast<size_t>(GpuRenderLayer::COUNT); ++layer)
+		ENGINE->screenHandler().releaseLayer(static_cast<GpuRenderLayer>(layer));
 	// Old widgets may remain externally owned after a scenario restart. Their
 	// deferred paints must not draw the old battle over the next scene.
 	redrawState.clearScene();
