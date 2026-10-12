@@ -169,6 +169,13 @@ Wine's executable token in its process arguments. Both bootstrap snapshots
 retain exact process-lifetime, executable and hash checks; direct/surface
 launches retain their original full-command requirement.
 
+Wine 10's [loader initialization](https://github.com/wine-mirror/wine/blob/wine-10.0/dlls/ntdll/unix/loader.c)
+sets `WINELOADER` from its physical executable. After the admitted bootstrap
+and game process/hash checks pass, that route accepts only the exact pinned
+loader string. Foreign values and all other restricted host/injection routes
+remain refused; direct/surface routes retain their strict environment contract.
+This corrects test admission, not game playback or Windows performance.
+
 Precreating `dosdevices` also skips Wine 10's normal private C-drive setup
 ([initialization source](https://github.com/wine-mirror/wine/blob/wine-10.0/dlls/ntdll/unix/server.c)).
 The owner therefore creates an exclusive private `drive_c` and canonical
