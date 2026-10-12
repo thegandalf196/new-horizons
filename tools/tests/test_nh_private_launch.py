@@ -878,6 +878,23 @@ class WineFullgameAdmissionTest(unittest.TestCase):
         for key,value in [('SDL_AUDIO_DRIVER','pulse'),('WAYLAND_DISPLAY','wayland-0'),('LOCALAPPDATA','/host')]:
             with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_environment({**actual,key:value},required)
 
+    def test_host_route_refusals_report_only_fixed_ordered_key_names(self):
+        required={k:'/private/'+k for k in ('HOME','WINEHOME','WINEPREFIX','LOCALAPPDATA',
+            'XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','XDG_STATE_HOME','XDG_RUNTIME_DIR')}
+        actual={**required,'DISPLAY':':191','SDL_VIDEODRIVER':'windows','SDL_VIDEO_DRIVER':'windows',
+            'SDL_AUDIODRIVER':'dummy','SDL_AUDIO_DRIVER':'dummy'}
+        keys=('WAYLAND_DISPLAY','LD_PRELOAD','LD_AUDIT','LD_LIBRARY_PATH',
+              'PULSE_SERVER','PIPEWIRE_REMOTE','WINELOADER','WINESERVER')
+        for key in keys:
+            with self.subTest(key=key), self.assertRaises(HELPER.Refusal) as caught:
+                HELPER.validate_wine_environment({**actual,key:'secret-value'},required)
+            self.assertEqual(str(caught.exception),'Wine host/injection route refused: keys='+key)
+            HELPER.validate_wine_environment({**actual,key:''},required)
+        with self.assertRaises(HELPER.Refusal) as caught:
+            HELPER.validate_wine_environment({**actual,**dict.fromkeys(reversed(keys),'secret-value')},required)
+        self.assertEqual(str(caught.exception),'Wine host/injection route refused: keys='+','.join(keys))
+        self.assertNotIn('secret-value',str(caught.exception))
+
     def test_fresh_root_no_symlink_no_reuse(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)/'run';root.mkdir(mode=0o700)

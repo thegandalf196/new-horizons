@@ -37,8 +37,9 @@ class Refusal(RuntimeError):
     pass
 
 
-def loader_refusal_diagnostic(expected, context):
+def loader_refusal_diagnostic(expected, context, *, selected_providers=None):
     """Bounded private identity evidence only, never a verification substitute."""
+    context = context if isinstance(context, dict) else {}
     def snapshot(value, keys):
         value = value if isinstance(value, dict) else {}
         result = {}
@@ -65,18 +66,34 @@ def loader_refusal_diagnostic(expected, context):
     mismatched = [key for key in ('exe', 'sha256', 'argv')
                   if key not in selected['unrecorded_fields'] and key not in after['unrecorded_fields']
                   and selected[key] != after[key]]
+    actual_environment = context.get('environment') if isinstance(context, dict) else None
+    environment_available = isinstance(actual_environment, dict)
+    actual_environment = actual_environment if environment_available else {}
+    forbidden = {key: bool(actual_environment.get(key)) for key in (
+        'WAYLAND_DISPLAY', 'LD_PRELOAD', 'LD_AUDIT', 'LD_LIBRARY_PATH',
+        'PULSE_SERVER', 'PIPEWIRE_REMOTE', 'WINELOADER', 'WINESERVER')}
+    providers = selected_providers if isinstance(selected_providers, dict) else {}
+    provider_matches = {key: bool(isinstance(providers.get(provider), str) and providers[provider]
+        and actual_environment.get(key) == providers[provider])
+        for key, provider in (('WINELOADER', 'wine'), ('WINESERVER', 'server'))}
     return {'expected_loader': selected, 'bootstrap_before': before,
-            'bootstrap_after': after, 'mismatched_fields': mismatched}
+            'bootstrap_after': after, 'mismatched_fields': mismatched,
+            'mismatched_fields_are_differences_not_failed_predicates': True,
+            'environment_record_available': environment_available,
+            'forbidden_environment_nonempty': forbidden,
+            'environment_matches_selected_provider': provider_matches,
+            'selected_game_before': snapshot(context.get('before'), ('pid', 'start_ticks', 'uid')),
+            'selected_game_after': snapshot(context.get('after'), ('pid', 'start_ticks', 'uid'))}
 
 
-def verify_with_loader_diagnostic(verifier, context, expected, diagnostics):
+def verify_with_loader_diagnostic(verifier, context, expected, diagnostics, *, selected_providers=None):
     try:
         return verifier(context)
     except Exception:
         # Original refusal propagates even if diagnostic rendering fails.
         try:
             if len(diagnostics) < 8:
-                diagnostics.append(loader_refusal_diagnostic(expected, context))
+                diagnostics.append(loader_refusal_diagnostic(expected, context, selected_providers=selected_providers))
         except Exception:
             pass
         raise
@@ -814,7 +831,8 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     runtime_refusals = []
     checked_runtime = lambda context: verify_with_loader_diagnostic(
         lambda actual: mapping.verify_runtime(verify_runtime, actual), context,
-        plan.get('loader_identity'), runtime_refusals)
+        plan.get('loader_identity'), runtime_refusals,
+        selected_providers={'wine': plan['wine'], 'server': plan['server']})
     for name in ('HeroesIII-NewHorizons', 'new-horizons'):
         (root / 'localappdata' / name).mkdir(mode=0o700)
     for name in ('content', 'config', 'cache', 'logs'):
