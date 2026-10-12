@@ -953,6 +953,43 @@ class LoaderRefusalDiagnosticTests(unittest.TestCase):
                 owner.verify_with_loader_diagnostic(mock.Mock(side_effect=original), {}, {}, [])
         self.assertIs(caught.exception, original)
 
+    def test_environment_diagnostic_is_fixed_boolean_only_and_binds_available_game_identity(self):
+        expected, context = self.values()
+        keys=('WAYLAND_DISPLAY','LD_PRELOAD','LD_AUDIT','LD_LIBRARY_PATH',
+              'PULSE_SERVER','PIPEWIRE_REMOTE','WINELOADER','WINESERVER')
+        game=dict(pid=23,start_ticks=100,uid=1000,unknown='secret-game')
+        context.update(before=game,after=game,environment={**dict.fromkeys(keys,'secret-route'),
+            'UNRELATED':'secret-unrelated','WINELOADER':'secret-selected-wine','WINESERVER':'secret-selected-server'})
+        record=owner.loader_refusal_diagnostic(expected,context,selected_providers={
+            'wine':'secret-selected-wine','server':'secret-selected-server'})
+        self.assertTrue(record['environment_record_available'])
+        self.assertEqual(list(record['forbidden_environment_nonempty']),list(keys))
+        self.assertEqual(record['forbidden_environment_nonempty'],dict.fromkeys(keys,True))
+        self.assertEqual(record['environment_matches_selected_provider'],{'WINELOADER':True,'WINESERVER':True})
+        self.assertEqual(record['selected_game_before'],dict(pid=23,start_ticks=100,uid=1000,unrecorded_fields=[]))
+        self.assertEqual(record['selected_game_after'],record['selected_game_before'])
+        self.assertTrue(record['mismatched_fields_are_differences_not_failed_predicates'])
+        encoded=json.dumps(record)
+        for secret in ('secret-route','secret-unrelated','secret-selected-wine','secret-selected-server','secret-game'):
+            self.assertNotIn(secret,encoded)
+        context['environment']={'WINELOADER':'foreign-secret','WINESERVER':''}
+        record=owner.loader_refusal_diagnostic(expected,context,selected_providers={
+            'wine':'selected-secret','server':'selected-server'})
+        self.assertEqual(record['environment_matches_selected_provider'],{'WINELOADER':False,'WINESERVER':False})
+        self.assertEqual(record['forbidden_environment_nonempty'],{key:key=='WINELOADER' for key in keys})
+
+    def test_refusal_receipt_preserves_original_exception_and_unavailable_environment(self):
+        expected,context=self.values()
+        original=owner.Refusal('unchanged refusal')
+        records=[]
+        with self.assertRaises(owner.Refusal) as caught:
+            owner.verify_with_loader_diagnostic(mock.Mock(side_effect=original),context,expected,records,
+                selected_providers={'wine':'secret-selected','server':'secret-server'})
+        self.assertIs(caught.exception,original)
+        self.assertFalse(records[0]['environment_record_available'])
+        self.assertTrue(all(value is False for value in records[0]['forbidden_environment_nonempty'].values()))
+        self.assertEqual(records[0]['selected_game_before']['unrecorded_fields'],['pid','start_ticks','uid'])
+
     def test_success_does_not_record_and_refusal_records_are_capped(self):
         expected, context = self.values()
         records = []

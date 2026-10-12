@@ -168,9 +168,10 @@ def validate_wine_environment(actual, required):
             raise Refusal("Actual Wine private profile differs")
     if any(actual.get(k) != v for k,v in fixed.items()):
         raise Refusal("Actual Wine silent/display route differs")
-    if any(actual.get(k) for k in ("WAYLAND_DISPLAY", "LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH",
-                                   "PULSE_SERVER", "PIPEWIRE_REMOTE", "WINELOADER", "WINESERVER")):
-        raise Refusal("Wine host/injection route refused")
+    rejected = [k for k in ("WAYLAND_DISPLAY", "LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH",
+                            "PULSE_SERVER", "PIPEWIRE_REMOTE", "WINELOADER", "WINESERVER") if actual.get(k)]
+    if rejected:
+        raise Refusal("Wine host/injection route refused: keys=" + ",".join(rejected))
 
 
 def render_timing_contract(args):
