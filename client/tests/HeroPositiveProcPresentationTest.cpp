@@ -19,9 +19,18 @@ constexpr bool everyFlagCombination()
 static_assert(everyFlagCombination());
 static_assert(heroPositiveProcPresentation::effects(false, true, true, false)[0] == EBattleEffect::GOOD_LUCK);
 static_assert(heroPositiveProcPresentation::effects(true, false, false, true)[1] == EBattleEffect::GOOD_MORALE);
+
+bool firstDrawMarkerIsPerCueAndOnceOnly()
+{
+	heroPositiveProcPresentation::TraceContext original;
+	if(!original.markFirstDrawReturned() || original.markFirstDrawReturned())
+		return false;
+	heroPositiveProcPresentation::TraceContext next;
+	return next.markFirstDrawReturned() && !next.markFirstDrawReturned();
+}
 }
 
 int main()
 {
-	return everyFlagCombination() ? 0 : 1;
+	return everyFlagCombination() && firstDrawMarkerIsPerCueAndOnceOnly() ? 0 : 1;
 }

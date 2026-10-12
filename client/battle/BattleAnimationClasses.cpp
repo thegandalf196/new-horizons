@@ -1020,6 +1020,8 @@ bool EffectAnimation::init()
 	auto first = animation->getImage(0, 0, true);
 	if(!first)
 	{
+		if(heroCueTrace)
+			heroPositiveProcPresentation::trace(*heroCueTrace, "initUnavailable", ID);
 		delete this;
 		return false;
 	}
@@ -1044,6 +1046,7 @@ bool EffectAnimation::init()
 	be.currentFrame = 0;
 	be.transparencyFactor = transparencyFactor;
 	be.type = reversed ? BattleEffect::AnimType::REVERSE : BattleEffect::AnimType::DEFAULT;
+	be.heroCueTrace = heroCueTrace;
 
 	for (size_t i = 0; i < std::max(battlehexes.size(), positions.size()); ++i)
 	{
@@ -1077,6 +1080,9 @@ bool EffectAnimation::init()
 		}
 		owner.effectsController->battleEffects.push_back(be);
 	}
+	if(heroCueTrace)
+		heroPositiveProcPresentation::trace(*heroCueTrace, "registered", ID, 0,
+			static_cast<int>(animation->size()), -1, be.pos.x, be.pos.y, true);
 	return true;
 }
 
@@ -1110,6 +1116,9 @@ bool EffectAnimation::screenFill() const
 void EffectAnimation::onEffectFinished()
 {
 	effectFinished = true;
+	if(heroCueTrace)
+		heroPositiveProcPresentation::trace(*heroCueTrace, "naturalFinish", ID, static_cast<int>(animation->size()) - 1,
+			static_cast<int>(animation->size()));
 	if (onFinished)
 		onFinished();
 }
@@ -1128,6 +1137,9 @@ void EffectAnimation::playEffect(uint32_t msPassed)
 			if(!midpointReached && elem.currentFrame >= elem.animation->size() / 2.0)
 			{
 				midpointReached = true;
+				if(heroCueTrace)
+					heroPositiveProcPresentation::trace(*heroCueTrace, "midpoint", ID, static_cast<int>(elem.currentFrame),
+						static_cast<int>(elem.animation->size()));
 				if(onMidpoint)
 					onMidpoint();
 			}

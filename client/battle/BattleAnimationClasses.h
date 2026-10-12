@@ -13,6 +13,8 @@
 #include "../../lib/filesystem/ResourcePath.h"
 #include "../../lib/Color.h"
 #include "BattleConstants.h"
+#include "HeroPositiveProcPresentation.h"
+#include <optional>
 
 class CStack;
 class CCreature;
@@ -317,6 +319,7 @@ class EffectAnimation : public BattleAnimation
 	bool effectFinished;
 	bool midpointReached = false;
 	bool reversed;
+	std::optional<heroPositiveProcPresentation::TraceContext> heroCueTrace;
 
 	std::shared_ptr<CAnimation>	animation;
 	std::vector<Point> positions;
@@ -352,6 +355,10 @@ public:
 
 	EffectAnimation(BattleInterface & owner, const AnimationPath & animationName, Point pos, BattleHex hex,     int effects = 0, bool reversed = false);
 	 ~EffectAnimation();
+	void setHeroCueTrace(const std::optional<heroPositiveProcPresentation::TraceContext> & trace)
+	{
+		heroCueTrace = trace;
+	}
 
 	/// invoked once when the animation reaches its last frame, before the effect is removed
 	std::function<void()> onFinished;
