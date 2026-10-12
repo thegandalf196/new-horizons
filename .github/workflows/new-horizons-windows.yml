@@ -158,6 +158,34 @@ jobs:
           PY
           echo "NH_CONAN_SOURCE_CACHE=$source_cache" >> "$GITHUB_ENV"
 
+      - name: Seed verified Conan source cache fallback for SDL3_image
+        env:
+          # Exact official release bytes pinned by the unchanged SDL_image recipe.
+          SDL_IMAGE_SOURCE_SHA256: 29751304a13d25ac513f24305fa25b06a6edd9607718c90129b8350d35fc5573
+          SDL_IMAGE_SOURCE_BYTES: 11123077
+        run: |
+          set -euo pipefail
+          source_cache="$RUNNER_TEMP/conan-source-cache"
+          archive="$RUNNER_TEMP/SDL3_image-3.4.4.tar.gz"
+          # Independent official endpoint; one bounded fetch, no retry loop.
+          # Never substitute a new checksum or alter the canonical recipe URL.
+          curl --fail --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 120 --max-filesize 15728640 --retry 0 \
+            --output "$archive" https://www.libsdl.org/projects/SDL_image/release/SDL3_image-3.4.4.tar.gz
+          python - "$source_cache" "$archive" "$SDL_IMAGE_SOURCE_SHA256" "$SDL_IMAGE_SOURCE_BYTES" <<'PY'
+          from pathlib import Path
+          import sys
+
+          sys.path.insert(0, 'tools/ci')
+          from preflight_dependency_sources import seed_source_cache
+
+          archive = Path(sys.argv[2])
+          if archive.stat().st_size != int(sys.argv[4]):
+              raise SystemExit('SDL3_image official source size mismatch')
+          print(seed_source_cache(Path(sys.argv[1]), archive, sys.argv[3]))
+          PY
+          echo "NH_CONAN_SOURCE_CACHE=$source_cache" >> "$GITHUB_ENV"
+
       - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1, upstream; no private-repository subscription gate
         with:
           arch: x64
@@ -213,6 +241,7 @@ jobs:
             conan export tools/conan/sdl_image --version=3.4.4 --user=newhorizons --channel=patched
           fi
           conan install "$install_recipe" --output-folder=conan-generated "${build_policy[@]}" \
+            --core-conf="core.sources:download_cache=$NH_CONAN_SOURCE_CACHE" \
             --profile=dependencies/conan_profiles/msvc-x64 \
             --conf='tools.cmake.cmaketoolchain:generator=Ninja' \
             --conf="tools.microsoft.msbuild:vs_version=${MSBUILD_VS_VERSION}" \
