@@ -558,6 +558,23 @@ class PrivateLaunchTest(unittest.TestCase):
             popen.assert_not_called()
             self.assertEqual(list((self.root/'wine-run').iterdir()),[])
             parsed=HELPER._parser().parse_args(args)
+            self.assertIsNone(HELPER.wine_fullgame_plan(parsed,[])['fixture_map'])
+            fixture_args=[*args,'--wine-fixture-map','fixture.vmap']
+            fixture=HELPER.wine_fullgame_plan(HELPER._parser().parse_args(fixture_args),[])
+            self.assertEqual(fixture['fixture_map'],'fixture.vmap')
+            for name in ('', 'other.vmap', '../fixture.vmap', 'Maps/fixture.vmap',
+                         'CON.vmap', 'fixture.VMAP', 'a b.vmap', 'é.vmap', 'a'*65+'.vmap'):
+                invalid=HELPER._parser().parse_args([*args,'--wine-fixture-map='+name])
+                with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(invalid,[])
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.wine_fullgame_plan(HELPER._parser().parse_args(fixture_args),['--spectate'])
+            # Existing expanded cache route fits, but the typed map route does
+            # not: enforce its own UTF-16 MAX_PATH bound before any staging.
+            long_root=Path('/'+'r'*196)
+            invalid=HELPER._parser().parse_args(fixture_args)
+            invalid.wine_run_root=long_root
+            with mock.patch.object(HELPER,'validate_wine_private_root'):
+                with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(invalid,[])
             self.assertEqual(HELPER.wine_fullgame_plan(parsed,[])['render_timings'],{'enabled':False,'limit':None})
             metric=HELPER._parser().parse_args([*args,'--wine-render-load-timings'])
             self.assertEqual(HELPER.wine_fullgame_plan(metric,[])['render_timings'],{'enabled':True,'limit':1024})
@@ -570,6 +587,16 @@ class PrivateLaunchTest(unittest.TestCase):
             admitted=HELPER.wine_fullgame_plan(HELPER._parser().parse_args(bootstrap_args),[])
             self.assertEqual(admitted['bootstrap'],str(bootstrap))
             self.assertEqual(admitted['bootstrap_sha256'],bootstrap_pin)
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.wine_fullgame_plan(HELPER._parser().parse_args(
+                    [*bootstrap_args,'--wine-fixture-map','fixture.vmap']),[])
+            capable=self.root/'fixture-bootstrap.exe'
+            capable.write_bytes(bootstrap.read_bytes()+'NH_WINE_BOOTSTRAP_FIXTURE_V1'.encode('utf-16-le'))
+            capable_pin=hashlib.sha256(capable.read_bytes()).hexdigest()
+            typed=HELPER.wine_fullgame_plan(HELPER._parser().parse_args([*fixture_args,
+                '--wine-bootstrap',str(capable),'--wine-bootstrap-sha256',capable_pin]),[])
+            self.assertEqual(typed['bootstrap_sha256'],capable_pin)
+            self.assertEqual(typed['fixture_map'],'fixture.vmap')
             for path,pin in ((bootstrap,'0'*64),(None,bootstrap_pin),(bootstrap,None),
                              (self.root/'missing.exe',bootstrap_pin),(Path('relative.exe'),bootstrap_pin)):
                 invalid=HELPER._parser().parse_args(args)
@@ -590,6 +617,28 @@ class PrivateLaunchTest(unittest.TestCase):
             parsed.wine_content_manifest = None
             with self.assertRaises(HELPER.Refusal):HELPER.wine_fullgame_plan(parsed,[])
             popen.assert_not_called()
+
+    def test_fixture_option_refused_outside_fullgame_without_spawn(self):
+        surface_args=self._wine_args()
+        for name in ('fixture.vmap',''):
+            for args in (self._args('--wine-fixture-map='+name),
+                         [*surface_args,'--wine-fixture-map='+name]):
+                with self._patch_boundaries(), self._wine_pin(), mock.patch.object(HELPER.subprocess,'Popen') as popen:
+                    with self.assertRaises(SystemExit) as exit:HELPER.main(args)
+                    self.assertEqual(exit.exception.code,2)
+                    popen.assert_not_called()
+
+    def test_fixture_option_duplicate_refuses_before_spawn(self):
+        for options in (
+                ['--wine-fixture-map','fixture.vmap','--wine-fixture-map','fixture.vmap'],
+                ['--wine-fixture-map=','--wine-fixture-map='],
+                ['--wine-fixture-map=fixture.vmap','--wine-fixture-map','other.vmap'],
+                ['--wine-fixture-map','','--wine-fixture-map=fixture.vmap']):
+            with mock.patch.object(HELPER.subprocess,'Popen') as popen:
+                with self.assertRaises(SystemExit) as exit:
+                    HELPER.main(['--guard',str(self.guard),*options])
+                self.assertEqual(exit.exception.code,2)
+                popen.assert_not_called()
 
     def test_content_options_refused_outside_fullgame_without_spawn(self):
         for args in (self._args('--wine-content-manifest',str(self.root/'unused.json')),

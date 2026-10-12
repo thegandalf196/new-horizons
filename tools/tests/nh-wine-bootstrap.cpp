@@ -85,6 +85,30 @@ bool boundedRoute(const std::wstring & value)
 		&& value.back() != L'\\' && value.find(L'"') == std::wstring::npos;
 }
 
+bool fixtureName(const std::wstring & name)
+{
+	const auto ascii = [](wchar_t c) { return (c >= L'a' && c <= L'z') || (c >= L'A' && c <= L'Z') || (c >= L'0' && c <= L'9'); };
+	if(name.size() < 6 || name.size() > 69 || name.substr(name.size() - 5) != L".vmap" || !ascii(name.front()))
+		return false;
+	std::wstring stem = name.substr(0, name.size() - 5);
+	for(auto & c : stem)
+	{
+		if(!ascii(c) && c != L'_' && c != L'-') return false;
+		if(c >= L'a' && c <= L'z') c -= L'a' - L'A';
+	}
+	if(stem == L"CON" || stem == L"PRN" || stem == L"AUX" || stem == L"NUL") return false;
+	return !(stem.size() == 4 && (stem.substr(0, 3) == L"COM" || stem.substr(0, 3) == L"LPT")
+		&& stem[3] >= L'1' && stem[3] <= L'9');
+}
+
+std::wstring fixtureCommand(int argc, wchar_t ** argv)
+{
+	if(argc == 1) return {};
+	if(argc != 3 || std::wstring(argv[1]) != L"--fixture-map" || !fixtureName(argv[2]))
+		throw std::invalid_argument("Arguments refused");
+	return L" --testmap Maps/" + std::wstring(argv[2]) + L" --spectate --savefrequency 0";
+}
+
 std::vector<wchar_t> childEnvironment(const std::vector<std::wstring> & inherited, const std::wstring & local)
 {
 	if(!boundedRoute(local) || local.size() < 13 || local.substr(local.size() - 13) != L"\\localappdata"
@@ -172,13 +196,13 @@ struct Attributes
 	~Attributes() { if(list) DeleteProcThreadAttributeList(list); }
 };
 
-int bootstrap(int argc)
+int bootstrap(int argc, wchar_t ** argv)
 {
 	unsigned stage = 1;
 	Stage2Detail detail = Stage2Detail::NONE;
 	try
 	{
-		if(argc != 1) throw std::invalid_argument("Arguments refused");
+		const auto fixture = fixtureCommand(argc, argv);
 		// Kept in the PE for admission; this helper never initializes SDL.
 		const auto nonce = environment(L"NH_PRIVATE_WINE_NONCE");
 		if(nonce.size() != 64 || nonce.find_first_not_of(L"0123456789abcdef") != std::wstring::npos)
@@ -202,6 +226,12 @@ int bootstrap(int argc)
 			|| !stage2Check(detail, Stage2Detail::FACADE_PAIR, [&] { return facade == cwd + L"\\VCMI_lib.dll"; })
 			|| !stage2Check(detail, Stage2Detail::GATE_ANCESTORS, [&] { return plainDirectoryAncestors(local + L"\\.nh-private-wine-gate"); }))
 			throw std::invalid_argument("Invalid selected pair");
+		if(!fixture.empty())
+		{
+			const auto map = local + L"\\HeroesIII-NewHorizons\\content\\Maps\\" + argv[2];
+			if(!boundedRoute(map) || !plainFile(map))
+				throw std::invalid_argument("Invalid staged fixture");
+		}
 		detail = Stage2Detail::NONE;
 		stage = 3;
 		if(environment(L"SDL_AUDIODRIVER") != L"dummy" || environment(L"SDL_AUDIO_DRIVER") != L"dummy"
@@ -259,7 +289,7 @@ int bootstrap(int argc)
 		startup.StartupInfo.hStdError = err.value;
 		startup.lpAttributeList = list;
 		PROCESS_INFORMATION process{};
-		auto command = L"\"" + target + L"\"";
+		auto command = L"\"" + target + L"\"" + fixture;
 		stage = 6;
 		if(!CreateProcessW(target.c_str(), command.data(), nullptr, nullptr, TRUE,
 			CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT, childEnv.data(), cwd.c_str(), &startup.StartupInfo, &process))
@@ -288,6 +318,17 @@ int bootstrap(int argc)
 #ifdef NH_WINE_BOOTSTRAP_ENV_TEST
 int main()
 {
+	for(const auto name : {L"playback-cabir.vmap", L"a.vmap", L"Cabir_2.vmap"})
+		if(!fixtureName(name)) return 11;
+	for(const auto name : {L"../bad.vmap", L"Maps/bad.vmap", L"CON.vmap", L"lpt9.vmap", L"a b.vmap", L"x.vmap\"", L"x.h3m", L".vmap", L"x.VMAP"})
+		if(fixtureName(name)) return 12;
+	wchar_t program[] = L"bootstrap";
+	wchar_t option[] = L"--fixture-map";
+	wchar_t map[] = L"playback-cabir.vmap";
+	wchar_t * arguments[]{program, option, map};
+	if(!fixtureCommand(1, arguments).empty()
+		|| fixtureCommand(3, arguments) != L" --testmap Maps/playback-cabir.vmap --spectate --savefrequency 0") return 13;
+	try { fixtureCommand(2, arguments); return 14; } catch(const std::invalid_argument &) {}
 	using namespace privateWinePathPolicy;
 	if(!isDirectoryAllowed(L"Z:\\", DIRECTORY | REPARSE_POINT)
 		|| !isDirectoryAllowed(L"Z:\\", DIRECTORY)
@@ -354,11 +395,13 @@ int main()
 	return 0;
 }
 #elif defined(_WIN32)
-int wmain(int argc, wchar_t **)
+int wmain(int argc, wchar_t ** argv)
 {
 	// Volatile prevents this fixed admission marker from being optimized away.
 	const wchar_t * volatile protocol = L"NH_WINE_BOOTSTRAP_V1";
 	(void)protocol;
-	return bootstrap(argc);
+	const wchar_t * volatile fixtureProtocol = L"NH_WINE_BOOTSTRAP_FIXTURE_V1";
+	(void)fixtureProtocol;
+	return bootstrap(argc, argv);
 }
 #endif

@@ -337,10 +337,28 @@ def wine_fullgame_plan(args, client_args):
                                                      args.wine_content_manifest_sha256)
     except content_module.Refusal as error:
         raise Refusal(str(error)) from error
+    fixture_map = args.wine_fixture_map
+    if fixture_map is not None:
+        # Share the owner's exact typed argv contract, rather than admitting a
+        # second basename grammar or any general client-argument passthrough.
+        owner_path = Path(__file__).with_name("nh_wine_fullgame_owner.py")
+        if owner_path.is_symlink() or not owner_path.is_file():
+            raise Refusal("Adjacent full-game Wine ownership dispatcher unavailable")
+        spec = importlib.util.spec_from_file_location("nh_wine_fixture_admission", owner_path)
+        owner = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(owner)
+        try:
+            owner.fixture_arguments({"fixture_map": fixture_map, "content": content})
+        except owner.Refusal as error:
+            raise Refusal(str(error)) from error
+        if bootstrap and "NH_WINE_BOOTSTRAP_FIXTURE_V1".encode("utf-16-le") not in bootstrap.read_bytes():
+            raise Refusal("Pinned bootstrap lacks typed fixture capability")
     # Root remains untouched, and even the future expanded profile must fit MAX_PATH.
     local = "Z:" + str(args.wine_run_root).replace("/", "\\") + r"\localappdata"
     bounded = [local+r"\HeroesIII-NewHorizons\cache\extracted",
                "Z:"+str(executable.parent/"config/dirs.json").replace("/", "\\")]
+    if fixture_map is not None:
+        bounded.append(local+"\\HeroesIII-NewHorizons\\content\\Maps\\"+fixture_map)
     if any(len(path.encode("utf-16-le"))//2 >= 260 for path in bounded):
         raise Refusal("Private profile exceeds existing Win32 path bound")
     return {"executable": str(executable), "wine": str(wine), "server": str(server),
@@ -349,7 +367,8 @@ def wine_fullgame_plan(args, client_args):
             "server_sha256": args.wine_server_sha256, "input_deadline": 600,
             "input_program": str(input_program), "input_sha256": args.wine_input_sha256,
             "content": content, "bootstrap": str(bootstrap) if bootstrap else None,
-            "bootstrap_sha256": args.wine_bootstrap_sha256, "render_timings": timings}
+            "bootstrap_sha256": args.wine_bootstrap_sha256, "render_timings": timings,
+            "fixture_map": fixture_map}
 
 
 def _decimal(value, name):
@@ -454,6 +473,12 @@ def validate_client_args(client_args):
 
 
 def _parser():
+    class SingleFixtureMap(argparse.Action):
+        def __call__(self, parser, namespace, value, option_string=None):
+            if getattr(namespace, self.dest, None) is not None:
+                parser.error("--wine-fixture-map may appear only once")
+            setattr(namespace, self.dest, value)
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--guard", required=True, type=Path,
                         help="explicit JSON identity guard for the owned :191 Xvfb")
@@ -475,6 +500,8 @@ def _parser():
     parser.add_argument("--wine-input-sha256", help="required full-game-only pin of adjacent maintained input helper")
     parser.add_argument("--wine-bootstrap", type=Path, help="optional pinned SDL-free Win32 child-environment bootstrap")
     parser.add_argument("--wine-bootstrap-sha256")
+    parser.add_argument("--wine-fixture-map", metavar="NAME.vmap", action=SingleFixtureMap,
+                        help="full-game-only exact manifest-bound map; fixed testmap/spectate/no-save arguments")
     parser.add_argument("--wine-render-load-timings", action="store_true",
                         help="full-game-only bounded existing render-load diagnostics")
     parser.add_argument("--wine-render-load-timing-limit", metavar="1..16384")
@@ -505,7 +532,7 @@ def _pinned_file(path, digest):
 
 def wine_surface_plan(args, client_args):
     """A fixed surface-only PE contract, separate from the managed game route."""
-    if client_args or any((args.snapshot, args.profile, args.assets, args.debugger_log)):
+    if client_args or args.wine_fixture_map is not None or any((args.snapshot, args.profile, args.assets, args.debugger_log)):
         raise Refusal("Wine surface mode cannot accept game options or arbitrary arguments")
     executable = _pinned_file(args.wine_surface_test, args.wine_test_sha256)
     if executable.name not in ("nhSdl3GrayscaleMaskRuntimeTest.exe",
@@ -701,7 +728,7 @@ def main(argv=None):
             except owner.Refusal as error:
                 raise Refusal(str(error)) from error
         if args.wine_surface_test is not None:
-            if args.wine_input_sha256 or args.wine_server_sha256 or args.wine_content_manifest or args.wine_content_manifest_sha256 or args.wine_bootstrap or args.wine_bootstrap_sha256 or args.wine_render_load_timings or args.wine_render_load_timing_limit is not None:
+            if args.wine_fixture_map is not None or args.wine_input_sha256 or args.wine_server_sha256 or args.wine_content_manifest or args.wine_content_manifest_sha256 or args.wine_bootstrap or args.wine_bootstrap_sha256 or args.wine_render_load_timings or args.wine_render_load_timing_limit is not None:
                 raise Refusal("Full-game-only options misplaced in surface mode")
             return run_wine_surface(args, client_args)
         if any((args.wine_test_sha256, args.wine_sha256, args.wine_binary, args.wine_fixtures,
@@ -710,7 +737,8 @@ def main(argv=None):
                 args.wine_run_root, args.wine_server_sha256, args.wine_input_sha256,
                 args.wine_content_manifest, args.wine_content_manifest_sha256,
                 args.wine_bootstrap, args.wine_bootstrap_sha256,
-                args.wine_render_load_timings, args.wine_render_load_timing_limit is not None)):
+                args.wine_render_load_timings, args.wine_render_load_timing_limit is not None,
+                args.wine_fixture_map is not None)):
             raise Refusal("Wine options require --wine-surface-test")
         if any(value is None for value in (args.snapshot, args.profile, args.assets)):
             raise Refusal("Game mode requires --snapshot, --profile and --assets")

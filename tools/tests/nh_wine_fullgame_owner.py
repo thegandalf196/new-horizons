@@ -666,6 +666,45 @@ def owned_game_candidates(owner, bootstrap_pid, expected):
     return matches
 
 
+def fixture_arguments(plan):
+    """One manifest-bound typed fixture, never a general client argv list."""
+    name = plan.get('fixture_map')
+    if name is None:
+        return []
+    if (not isinstance(name, str) or not name.endswith('.vmap')
+            or not 1 <= len(name[:-5]) <= 64
+            or name[0] not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+            or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-' for c in name[:-5])):
+        raise Refusal('Invalid typed fixture basename')
+    stem = name[:-5].upper()
+    if stem in {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}:
+        raise Refusal('Reserved fixture basename')
+    if name != plan['content']['map']['filename']:
+        raise Refusal('Fixture differs from pinned selected map')
+    return ['--testmap', 'Maps/' + name, '--spectate', '--savefrequency', '0']
+
+
+def fullgame_command(plan):
+    arguments = fixture_arguments(plan)
+    if plan.get('bootstrap'):
+        return [plan['wine'], plan['bootstrap'], *(['--fixture-map', plan['fixture_map']] if arguments else [])]
+    return [plan['wine'], plan['executable'], *arguments]
+
+
+def verify_fixture_argv(plan, identity):
+    arguments = fixture_arguments(plan)
+    if not arguments:
+        return
+    executable = plan['executable']
+    windows = 'Z:' + executable.replace('/', '\\')
+    # Only exact native/Win32 spellings of the pinned selected module; no
+    # arbitrary prefixes, option reordering or trailing arguments are accepted.
+    expected = [[executable, *arguments], [windows, *arguments],
+                [plan['wine'], executable, *arguments], [plan['wine'], windows, *arguments]]
+    if identity.get('argv') not in expected:
+        raise Refusal('Actual game fixture argv differs from fixed contract')
+
+
 def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_runtime):
     """Maintained helper entry. Missing witness-capable artifact refuses pre-fork."""
     executable = Path(plan['executable'])
@@ -675,6 +714,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     if any(key in plan for key in ('launch_nonce', 'stopped_identity', 'loader_identity', 'game_identity', 'bootstrap_mapping')):
         raise Refusal('Launch binding already populated; no second launch')
     timing_env = render_timing_environment(plan)
+    fixture_arguments(plan) # Fail before staging/fork, even if admission is incomplete.
     input_script = Path(plan['input_program'])
     if input_script != Path(__file__).with_name('nh-private-input.py').resolve(strict=True):
         raise Refusal('Input provider is not exact adjacent maintained program')
@@ -694,6 +734,8 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     bootstrap_mapping = file_proof(bootstrap) if bootstrap else None
     if bootstrap and bootstrap_mapping['sha256'] != plan.get('bootstrap_sha256'):
         raise Refusal('Pinned bootstrap changed before Wine fork')
+    if bootstrap and plan.get('fixture_map') is not None and 'NH_WINE_BOOTSTRAP_FIXTURE_V1'.encode('utf-16-le') not in bootstrap.read_bytes():
+        raise Refusal('Pinned bootstrap lacks typed fixture capability')
     root = Path(plan['root'])
     for name in ('home', 'prefix', 'localappdata', 'config', 'data', 'cache', 'state', 'runtime'):
         (root / name).mkdir(mode=0o700)
@@ -730,7 +772,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     supervisor.start()
     if not owner.armed.wait(1):
         raise Refusal('Supervisor not armed before Wine fork')
-    command = [str(plan['wine']), str(bootstrap or executable)]
+    command = fullgame_command(plan)
     process = None
     stopped = None
     status = 1
@@ -753,6 +795,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                         raise Refusal('Bootstrap exited before game witness')
                     matches = owned_game_candidates(owner, process.pid, expected)
                     if matches and (gate / 'proof.utf16le').exists():
+                        verify_fixture_argv(plan, matches[0])
                         plan['game_identity'] = copy.deepcopy(matches[0])
                         game_pid = matches[0]['pid']
                         break
@@ -763,6 +806,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                 mapping.verify()
                 profile.verify_staged_content(plan['content'], root, verify_copy_bytes=False)
                 before = backend.snapshot(game_pid)
+                verify_fixture_argv(plan, before)
                 mappings = backend.mappings(game_pid, {p['path'] for p in expected})
                 fd = os.open(gate / 'proof.utf16le', os.O_RDONLY | os.O_NOFOLLOW)
                 try:
@@ -777,6 +821,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                     os.close(fd)
                 actual_env = backend.environment(game_pid)
                 after = backend.snapshot(game_pid)
+                verify_fixture_argv(plan, after)
                 result = {'before': before, 'after': after, 'stopped': stopped,
                         'loader': copy.deepcopy(plan['loader_identity']),
                         'mappings': mappings, 'expected_mappings': expected,
