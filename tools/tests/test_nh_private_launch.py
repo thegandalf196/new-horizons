@@ -758,6 +758,48 @@ class WineFullgameAdmissionTest(unittest.TestCase):
         with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_mapping_rows([*expected,{**expected[1],'path':'/other/VCMI_lib.dll'}],expected)
         with self.assertRaises(HELPER.Refusal):HELPER.validate_wine_mapping_rows([*expected,{**expected[2],'path':'/other/sdl3.dll'}],expected)
 
+    def test_bootstrap_transition_accepts_only_two_exact_argv_spellings(self):
+        identity=dict(pid=2,start_ticks=3,uid=os.getuid(),boot_id='d916fa5f-9d12-4f87-a813-9581d728ef55')
+        stopped={**identity,'state':'T'}
+        for tail in ([], ['--fixture-map','playback-cabir.vmap']):
+            loader=dict(exe='/pinned/wine',sha256='b'*64,
+                        argv=['/pinned/wine','/pinned/bootstrap.exe',*tail])
+            for argv in (loader['argv'],loader['argv'][1:]):
+                actual={**identity,**loader,'state':'S','argv':list(argv)}
+                original=json.dumps([stopped,actual,loader],sort_keys=True)
+                HELPER.validate_wine_exec_transition(stopped,actual,loader,owner_uid=os.getuid(),
+                                                    expected_bootstrap='/pinned/bootstrap.exe')
+                self.assertEqual(json.dumps([stopped,actual,loader],sort_keys=True),original)
+                if argv != loader['argv']:
+                    with self.assertRaises(HELPER.Refusal):
+                        HELPER.validate_wine_exec_transition(stopped,actual,loader,owner_uid=os.getuid())
+
+    def test_bootstrap_transition_rejects_unpinned_or_changed_commands(self):
+        identity=dict(pid=2,start_ticks=3,uid=os.getuid(),boot_id='d916fa5f-9d12-4f87-a813-9581d728ef55')
+        stopped={**identity,'state':'T'}
+        loader=dict(exe='/pinned/wine',sha256='b'*64,
+                    argv=['/pinned/wine','/pinned/bootstrap.exe','--fixture-map','playback-cabir.vmap'])
+        actual={**identity,**loader,'state':'S'}
+        for argv in (loader['argv'][2:],loader['argv'][1:-1],loader['argv'][1:]+['extra'],
+                     ['/pinned/bootstrap.exe','playback-cabir.vmap','--fixture-map'],
+                     ['/pinned/bootstrap.exe','--fixture-map','other.vmap']):
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.validate_wine_exec_transition(stopped,{**actual,'argv':argv},loader,
+                    owner_uid=os.getuid(),expected_bootstrap='/pinned/bootstrap.exe')
+        for bootstrap in ('/foreign/bootstrap.exe','relative.exe'):
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.validate_wine_exec_transition(stopped,actual,loader,owner_uid=os.getuid(),
+                                                    expected_bootstrap=bootstrap)
+        foreign_loader={**loader,'argv':['/other/wine',*loader['argv'][1:]]}
+        with self.assertRaises(HELPER.Refusal):
+            HELPER.validate_wine_exec_transition(stopped,{**actual,'argv':foreign_loader['argv']},foreign_loader,
+                owner_uid=os.getuid(),expected_bootstrap='/pinned/bootstrap.exe')
+        for key,value in (('exe','/foreign/wine'),('sha256','c'*64),('pid',99),('start_ticks',99),
+                          ('uid',os.getuid()+1),('boot_id','a916fa5f-9d12-4f87-a813-9581d728ef55'),('state','T')):
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.validate_wine_exec_transition(stopped,{**actual,key:value},loader,
+                    owner_uid=os.getuid(),expected_bootstrap='/pinned/bootstrap.exe')
+
     def test_whole_runtime_context_is_plan_bound_and_rechecked(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)/'run';root.mkdir(mode=0o700)
@@ -807,6 +849,17 @@ class WineFullgameAdmissionTest(unittest.TestCase):
                 'game_identity':game_current,'bootstrap':{'before':bootstrap_current,'after':bootstrap_current,
                     'mappings':[bootstrap_map]}}
             self.assertFalse(HELPER.verify_wine_runtime(bootstrap_context,plan=bootstrap_plan)['input_authorized'])
+            stripped={**bootstrap_current,'argv':bootstrap_loader['argv'][1:]}
+            stripped_context={**bootstrap_context,'bootstrap':{'before':stripped,'after':stripped,
+                'mappings':[bootstrap_map]}}
+            self.assertFalse(HELPER.verify_wine_runtime(stripped_context,plan=bootstrap_plan)['input_authorized'])
+            for snapshot in ('before','after'):
+                for key,value in (('argv',['unapproved']),('exe','/foreign/wine'),('sha256','d'*64),
+                                  ('pid',99),('state','T')):
+                    with self.assertRaises(HELPER.Refusal):
+                        HELPER.verify_wine_runtime({**bootstrap_context,'bootstrap':{
+                            **bootstrap_context['bootstrap'],snapshot:{**bootstrap_current,key:value}}},
+                            plan=bootstrap_plan)
             for change in ({'game_identity':{**game_current,'pid':99}}, {'after':current},
                            {'bootstrap':{'before':bootstrap_current,'after':bootstrap_current,'mappings':[]}},
                            {'mappings':maps[:-1]}, {'witness':b''}):
