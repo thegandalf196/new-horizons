@@ -159,7 +159,11 @@ def validate_wine_mapping_rows(rows, expected):
         raise Refusal("Alternative selected PE/provider mapping")
 
 
-def validate_wine_environment(actual, required):
+def validate_wine_environment(actual, required, *, expected_loader=None):
+    if expected_loader is not None and (not isinstance(expected_loader, str)
+            or not Path(expected_loader).is_absolute() or str(Path(expected_loader)) != expected_loader
+            or ".." in Path(expected_loader).parts or "\0" in expected_loader):
+        raise Refusal("Invalid admitted Wine loader environment pin")
     fixed = {"DISPLAY": PRIVATE_DISPLAY, "SDL_VIDEODRIVER": "windows", "SDL_VIDEO_DRIVER": "windows",
              "SDL_AUDIODRIVER": "dummy", "SDL_AUDIO_DRIVER": "dummy"}
     for key in ("HOME", "WINEHOME", "WINEPREFIX", "LOCALAPPDATA", "XDG_DATA_HOME", "XDG_CONFIG_HOME",
@@ -169,7 +173,9 @@ def validate_wine_environment(actual, required):
     if any(actual.get(k) != v for k,v in fixed.items()):
         raise Refusal("Actual Wine silent/display route differs")
     rejected = [k for k in ("WAYLAND_DISPLAY", "LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH",
-                            "PULSE_SERVER", "PIPEWIRE_REMOTE", "WINELOADER", "WINESERVER") if actual.get(k)]
+                            "PULSE_SERVER", "PIPEWIRE_REMOTE", "WINELOADER", "WINESERVER")
+                if actual.get(k) and not (k == "WINELOADER" and expected_loader is not None
+                                         and actual[k] == expected_loader)]
     if rejected:
         raise Refusal("Wine host/injection route refused: keys=" + ",".join(rejected))
 
@@ -255,7 +261,11 @@ def verify_wine_runtime(context, *, plan):
                 or (directory == root and stat.S_IMODE(info.st_mode) != 0o700)
                 or any(parent.is_symlink() for parent in directory.parents)):
             raise Refusal("Runtime private profile directory changed")
-    validate_wine_environment(context["environment"], expected_environment)
+    # Wine 10 init_paths sets WINELOADER from its physical executable. Only the
+    # admitted bootstrap route, whose process/hash proofs passed above, may
+    # retain that exact value. Direct/surface callers keep the strict default.
+    validate_wine_environment(context["environment"], expected_environment,
+                              expected_loader=plan["wine"] if plan.get("bootstrap") else None)
     validate_render_timing_environment(context["environment"],
         plan.get("render_timings", {"enabled": False, "limit": None}))
     required_dlls = {"VCMI_lib.dll", "SDL3.dll", "SDL3_image.dll", "SDL3_mixer.dll", "SDL3_ttf.dll"}

@@ -853,6 +853,20 @@ class WineFullgameAdmissionTest(unittest.TestCase):
             stripped_context={**bootstrap_context,'bootstrap':{'before':stripped,'after':stripped,
                 'mappings':[bootstrap_map]}}
             self.assertFalse(HELPER.verify_wine_runtime(stripped_context,plan=bootstrap_plan)['input_authorized'])
+            loader_environment={**bootstrap_context['environment'],'WINELOADER':'/usr/wine'}
+            matched_context={**bootstrap_context,'environment':loader_environment}
+            self.assertFalse(HELPER.verify_wine_runtime(matched_context,plan=bootstrap_plan)['input_authorized'])
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.verify_wine_runtime({**context,'environment':loader_environment},plan=plan)
+            for change in ({'environment':{**loader_environment,'WINELOADER':'/foreign/wine'}},
+                           {'environment':{**loader_environment,'WINESERVER':'/usr/wineserver'}},
+                           {'after':{**game_current,'exe':'/foreign/wine'}},
+                           {'after':{**game_current,'sha256':'d'*64}}):
+                with self.assertRaises(HELPER.Refusal):
+                    HELPER.verify_wine_runtime({**matched_context,**change},plan=bootstrap_plan)
+            for change in ({'wine':'/foreign/wine'},{'wine_sha256':'d'*64}):
+                with self.assertRaises(HELPER.Refusal):
+                    HELPER.verify_wine_runtime(matched_context,plan={**bootstrap_plan,**change})
             for snapshot in ('before','after'):
                 for key,value in (('argv',['unapproved']),('exe','/foreign/wine'),('sha256','d'*64),
                                   ('pid',99),('state','T')):
@@ -894,6 +908,25 @@ class WineFullgameAdmissionTest(unittest.TestCase):
             HELPER.validate_wine_environment({**actual,**dict.fromkeys(reversed(keys),'secret-value')},required)
         self.assertEqual(str(caught.exception),'Wine host/injection route refused: keys='+','.join(keys))
         self.assertNotIn('secret-value',str(caught.exception))
+
+    def test_bootstrap_loader_environment_accepts_only_exact_canonical_pin(self):
+        required={k:'/private/'+k for k in ('HOME','WINEHOME','WINEPREFIX','LOCALAPPDATA',
+            'XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','XDG_STATE_HOME','XDG_RUNTIME_DIR')}
+        actual={**required,'DISPLAY':':191','SDL_VIDEODRIVER':'windows','SDL_VIDEO_DRIVER':'windows',
+            'SDL_AUDIODRIVER':'dummy','SDL_AUDIO_DRIVER':'dummy','WINELOADER':'/pinned/wine'}
+        HELPER.validate_wine_environment(actual,required,expected_loader='/pinned/wine')
+        with self.assertRaises(HELPER.Refusal):
+            HELPER.validate_wine_environment(actual,required)
+        for loader in ('/foreign/wine','/pinned//wine','/pinned/./wine','/pinned/wine/','/pinned/wine extra'):
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.validate_wine_environment({**actual,'WINELOADER':loader},required,expected_loader='/pinned/wine')
+        for pin in ('','wine','/pinned/../wine','/pinned//wine','/pinned/wine\0',False):
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.validate_wine_environment(actual,required,expected_loader=pin)
+        for key in ('WAYLAND_DISPLAY','LD_PRELOAD','LD_AUDIT','LD_LIBRARY_PATH',
+                    'PULSE_SERVER','PIPEWIRE_REMOTE','WINESERVER'):
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.validate_wine_environment({**actual,key:'secret-route'},required,expected_loader='/pinned/wine')
 
     def test_fresh_root_no_symlink_no_reuse(self):
         with tempfile.TemporaryDirectory() as temp:
