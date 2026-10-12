@@ -260,6 +260,7 @@ set(vcmiclientcommon_HEADERS
 	battle/AnimationPhaseStart.h
 	battle/BattleRenderer.h
 	battle/BattleResultWindow.h
+	battle/BattleResultReply.h
 	battle/BattleSidePanel.h
 	battle/BattleSiegeController.h
 	battle/BattleStacksController.h

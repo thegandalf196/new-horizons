@@ -21,6 +21,7 @@
 #include "BattleProjectileController.h"
 #include "BattleRenderer.h"
 #include "BattleResultWindow.h"
+#include "BattleResultReply.h"
 #include "BattleSiegeController.h"
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
@@ -1287,7 +1288,10 @@ void BattleInterface::battleFinished(const BattleResult& br, QueryID queryID)
 
 	if(settings["session"]["spectate"].Bool() && settings["session"]["spectate-skip-battle-result"].Bool())
 	{
-		curInt->cb->selectionMade(0, queryID);
+		sendBattleResultReply(0, queryID, [this](int selection, QueryID query)
+		{
+			curInt->cb->selectionMade(selection, query);
+		});
 		windowObject->close();
 		return;
 	}
@@ -1303,7 +1307,10 @@ void BattleInterface::battleFinished(const BattleResult& br, QueryID queryID)
 	auto wnd = std::make_shared<BattleResultWindow>(br, *(this->curInt));
 	wnd->resultCallback = [this, queryID](ui32 selection)
 	{
-		curInt->cb->selectionMade(selection, queryID);
+		sendBattleResultReply(selection, queryID, [this](int choice, QueryID query)
+		{
+			curInt->cb->selectionMade(choice, query);
+		});
 	};
 	ENGINE->windows().pushWindow(wnd);
 
