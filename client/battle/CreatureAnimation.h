@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "AnimationPhaseStart.h"
 #include "../../lib/FunctionList.h"
 #include "../../lib/Color.h"
 #include "../widgets/Images.h"
@@ -94,6 +95,7 @@ private:
 	/// currently displayed frame. Float to allow H3-style animations where frames
 	/// don't display for integer number of frames
 	float currentFrame;
+	AnimationPhaseStart phaseStart;
 	float animationEnd;
 
 	/// cumulative, real-time duration of animation. Used for effects like selection border

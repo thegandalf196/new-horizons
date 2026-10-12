@@ -10,6 +10,7 @@
 #pragma once
 
 #include "ProjectileFlightLifecycle.h"
+#include "AnimationPhaseStart.h"
 
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/Point.h"
@@ -37,6 +38,7 @@ struct ProjectileBase
 	int shooterID;  // ID of shooter stack
 	bool playing;   // if set to true, projectile animation is playing, e.g. flying to target
 	ProjectileFlightLifecycle visibility;
+	AnimationPhaseStart phaseStart;
 };
 
 /// Projectile for most shooters - render pre-selected frame moving in straight line from origin to destination

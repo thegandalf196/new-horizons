@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "../battle/ProjectileFlightLifecycle.h"
+#include "../battle/AnimationPhaseStart.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -19,6 +20,19 @@ int main()
 {
 	try
 	{
+		AnimationPhaseStart emitted;
+		ProjectileFlightLifecycle newlyEmitted;
+		newlyEmitted.protectFirstRender();
+		float newProgress = emitted.elapsedForAdvance(0.1f) * 3750.f / 300.f;
+		require(newProgress == 0.f && newlyEmitted.visibleProgress(newProgress) == 0.f,
+			"Newly emitted projectile must start at origin, not consume pre-emission time");
+		newProgress += emitted.elapsedForAdvance(0.1f) * 3750.f / 300.f;
+		require(newProgress > 1.f && !newlyEmitted.canRemove(newProgress),
+			"No-render phase deferral ends after one tick; existing unseen retirement stays protected");
+		emitted.onRenderAttempt();
+		newlyEmitted.onRenderAttempt();
+		require(newlyEmitted.canRemove(newProgress), "Existing completion must retire after presentation");
+
 		ProjectileFlightLifecycle missile;
 		missile.protectFirstRender();
 		const float progress = 0.1f * 3750.f / 300.f;

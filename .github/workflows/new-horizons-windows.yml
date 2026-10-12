@@ -272,6 +272,7 @@ jobs:
           -DENABLE_NH_SDL3_MASK_REGRESSION=ON
           -DENABLE_NH_ART_CACHE_REGRESSION=ON
           -DENABLE_NH_PREVIEW_SURFACE_REGRESSION=ON
+          -DENABLE_NH_SDL3_OUTLINE_REGRESSION=ON
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
@@ -304,7 +305,7 @@ jobs:
 
       - name: Compile Windows x64 client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
-        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest nhArtStartupRuntimeTest nhImageOptimizerRuntimeTest nhCreaturePreviewSurfaceRuntimeTest --parallel 4
+        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest nhArtStartupRuntimeTest nhImageOptimizerRuntimeTest nhCreaturePreviewSurfaceRuntimeTest nhSdl3OutlineRuntimeTest --parallel 4
 
       - name: Stage upstream runtime and resources
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
@@ -317,7 +318,7 @@ jobs:
           import os, pathlib, shutil, subprocess, tempfile
 
           root = pathlib.Path('build/new-horizons-windows-x64').resolve()
-          names = ('nhImageOptimizerRuntimeTest', 'nhCreaturePreviewSurfaceRuntimeTest')
+          names = ('nhImageOptimizerRuntimeTest', 'nhCreaturePreviewSurfaceRuntimeTest', 'nhSdl3OutlineRuntimeTest')
           destinations = [root / 'install' / (name + '.exe') for name in names]
           for destination in destinations:
               if destination.exists() or destination.is_symlink():
