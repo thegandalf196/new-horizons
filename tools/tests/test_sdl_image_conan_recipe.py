@@ -169,20 +169,28 @@ class RecipeTests(unittest.TestCase):
             self.recipe.source()
         remove.assert_not_called()
 
-    def test_upstream_build_methods_ast_unchanged(self):
+    def test_upstream_build_methods_source_unchanged(self):
+        # Independently derived from the preserved ORIGINAL CCI recipe bytes:
+        # SHA256 e7ae89c80dd7d42149a3e9c44cee1dc167cdf07eed5fb557d146ba2a6d10a8f6.
+        # Hash exact method source after LF normalization, not ast.dump:
+        # Python versions can add AST fields/change dump formatting.
         expected = {
-            'layout':'0dce8d2679069e932e504d847334157195e6866950ac0d8222b1af849888484a',
-            'requirements':'f49e64cca0ad22060ec6b91caeef993ccf099b2569b8f7e43528ca53e3fef06a',
-            'validate':'7b025a8c1db4eb575110cf701b9e179ad839de0aba321e3428ec6a53202ef752',
-            'build_requirements':'58c0600e8998741bcac6c5a3863e712ba3618f7b6e164f5c9c4a0f337a7a0bf8',
-            'generate':'cd0038ab8d26359042580cb768e074ab4ae2f63787e72a653e8c20881bc3f16f',
-            'build':'1d41c8e061dca0a22e7f5a2ce774bbacaad63fc449d46dc761a4888fb83c9f42',
-            'package':'fd13f93ead64babf0875d1b8a29c116665313bb0ccd925f088496351bbb3e1bb',
-            'package_info':'cf324afa795ec5c00f680565bd638a423506f7f5ebbd51cc2e20b47ed731055e'}
-        cls = next(n for n in ast.parse((RECIPE/'conanfile.py').read_text()).body if isinstance(n,ast.ClassDef))
-        actual = {n.name:hashlib.sha256(ast.dump(n,include_attributes=False).encode()).hexdigest()
-                  for n in cls.body if isinstance(n,ast.FunctionDef) and n.name in expected}
-        self.assertEqual(actual,expected)
+            'layout':'cdffa3633a455a4d56919730fd8434e0dfaf025d98e037e333f50035c5a4ca4c',
+            'requirements':'476973d6d16e0bbee3f834ea2604167618bc0039e351b709daed80866021d175',
+            'validate':'7f182eec68f722c4fcceed88f817a6dc98e1ee56124815961c977e89245d3da6',
+            'build_requirements':'b1716ec214567bb53b8d2abd7056fdf1626958059c8829c139bb5175620a15c2',
+            'generate':'0b5cb5db1ca6c395b367f3de8a95c7882ac956fe3e1b7800db06f50321d523da',
+            'build':'95d7310c8240994c8dab0bc74fc7a27e7304073f4472e9030cc38d543bb6c0b2',
+            'package':'e56d7a567e6d8bd1e674b8cd5c0066a5e2e8273dc61c2ca6e9c2ea90d47ccbbe',
+            'package_info':'1701ab987c915c5aa50c6e29d335b1ccb3829b9847e59a4c91f479d2d0e85ad4'}
+        source = (RECIPE/'conanfile.py').read_bytes().decode('utf-8')
+        for variant in (source, source.replace('\r\n','\n').replace('\n','\r\n')):
+            with self.subTest(newlines='CRLF' if '\r\n' in variant else 'LF'):
+                normalized = variant.replace('\r\n','\n').replace('\r','\n')
+                cls = next(n for n in ast.parse(normalized).body if isinstance(n,ast.ClassDef))
+                actual = {n.name:hashlib.sha256(ast.get_source_segment(normalized,n).encode('utf-8')).hexdigest()
+                          for n in cls.body if isinstance(n,ast.FunctionDef) and n.name in expected}
+                self.assertEqual(actual,expected)
 
     def test_root_consumer_replaces_only_direct_sdl_image_and_inherits_dynamic_requirements(self):
         class Base:
