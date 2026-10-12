@@ -22,6 +22,8 @@ class Canvas;
 // Shared opt-in budget; records describe CPU draw attempts, not presents.
 namespace BattleAnimationTiming
 {
+	bool requested();
+	unsigned int limit();
 	bool enabled();
 	bool reserve();
 	long long steadyMicroseconds();
