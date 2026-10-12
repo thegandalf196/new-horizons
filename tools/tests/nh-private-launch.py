@@ -67,7 +67,7 @@ def validate_wine_identity(row, *, owner_uid):
         raise Refusal("Invalid Wine boot identity")
 
 
-def validate_wine_exec_transition(stopped, actual, loader, *, owner_uid):
+def validate_wine_exec_transition(stopped, actual, loader, *, owner_uid, expected_bootstrap=None):
     for row in (stopped, actual):
         validate_wine_identity(row, owner_uid=owner_uid)
     if (stopped.get("state") != "T" or actual.get("state") not in ("R", "S", "D", "I")
@@ -77,7 +77,16 @@ def validate_wine_exec_transition(stopped, actual, loader, *, owner_uid):
         raise Refusal("Unproven Wine loader transition")
     if any(stopped[k] != actual[k] for k in ("pid", "start_ticks", "uid", "boot_id")):
         raise Refusal("Wine identity changed across exec")
-    if any(actual.get(k) != loader[k] for k in ("exe", "sha256", "argv")):
+    permitted_argv = [loader["argv"]]
+    if expected_bootstrap is not None:
+        # Wine may remove its own argv[0], but only for the admitted bootstrap.
+        # Keep the observed snapshots intact and the physical loader pins exact.
+        if (not isinstance(expected_bootstrap, str) or not Path(expected_bootstrap).is_absolute()
+                or loader["argv"][:2] != [loader["exe"], expected_bootstrap]):
+            raise Refusal("Bootstrap differs from pinned loader command")
+        permitted_argv.append(loader["argv"][1:])
+    if (any(actual.get(k) != loader[k] for k in ("exe", "sha256"))
+            or actual.get("argv") not in permitted_argv):
         raise Refusal("Wine loader does not match exact pinned transition")
 
 
@@ -209,8 +218,9 @@ def verify_wine_runtime(context, *, plan):
         raise Refusal("Wine process changed around runtime proof")
     if plan.get("bootstrap"):
         bootstrap = context.get("bootstrap", {})
-        validate_wine_exec_transition(context["stopped"], bootstrap.get("after"), context["loader"], owner_uid=uid)
-        validate_wine_identity(bootstrap.get("before"), owner_uid=uid)
+        for snapshot in ("before", "after"):
+            validate_wine_exec_transition(context["stopped"], bootstrap.get(snapshot), context["loader"],
+                                          owner_uid=uid, expected_bootstrap=plan["bootstrap"])
         if any(bootstrap["before"][k] != bootstrap["after"][k] for k in ("pid", "start_ticks", "uid", "boot_id")):
             raise Refusal("Bootstrap changed around runtime proof")
         game = plan.get("game_identity")
