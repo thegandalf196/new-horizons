@@ -41,6 +41,13 @@ bool stage2Check(Stage2Detail & detail, Stage2Detail slot, Predicate predicate)
 	return predicate();
 }
 
+std::string ancestorRefusalMessage(unsigned depth, unsigned long attrs, unsigned long error)
+{
+	char buffer[128];
+	std::snprintf(buffer, sizeof(buffer), "NH_WINE_BOOTSTRAP_ANCESTOR_REFUSAL depth=%u attrs=%lu error=%lu\n", depth, attrs, error);
+	return buffer;
+}
+
 std::wstring variableName(const std::wstring & entry)
 {
 	// Drive-current-directory pseudo variables begin with '='; keep that key.
@@ -130,15 +137,22 @@ std::wstring environment(const wchar_t * name)
 
 bool plainDirectoryAncestors(std::wstring path)
 {
+	unsigned depth = 0;
 	while(path.size() >= 3)
 	{
 		const DWORD attrs = GetFileAttributesW(path.c_str());
+		const DWORD error = attrs == INVALID_FILE_ATTRIBUTES ? GetLastError() : ERROR_SUCCESS;
 		if(attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY) || (attrs & FILE_ATTRIBUTE_REPARSE_POINT))
+		{
+			const auto message = ancestorRefusalMessage(depth, static_cast<unsigned long>(attrs), static_cast<unsigned long>(error));
+			std::fputs(message.c_str(), stderr);
 			return false;
+		}
 		if(path.size() == 3) return true;
 		const auto slash = path.find_last_of(L'\\');
 		if(slash == std::wstring::npos) return false;
 		path.resize(slash == 2 ? 3 : slash);
+		++depth;
 	}
 	return false;
 }
@@ -273,6 +287,10 @@ int bootstrap(int argc)
 #ifdef NH_WINE_BOOTSTRAP_ENV_TEST
 int main()
 {
+	if(ancestorRefusalMessage(0, 0xffffffffUL, 3)
+		!= "NH_WINE_BOOTSTRAP_ANCESTOR_REFUSAL depth=0 attrs=4294967295 error=3\n"
+		|| ancestorRefusalMessage(8, 0x410UL, 0)
+		!= "NH_WINE_BOOTSTRAP_ANCESTOR_REFUSAL depth=8 attrs=1040 error=0\n") return 7;
 	// These process-free controls exercise numbering, short-circuiting and
 	// exception attribution without calling any Windows filesystem or process API.
 	Stage2Detail detail = Stage2Detail::NONE;
