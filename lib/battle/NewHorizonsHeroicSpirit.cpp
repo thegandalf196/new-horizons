@@ -15,32 +15,24 @@ bool hasPerk(const CGHeroInstance * hero)
 		&& hero->hasActivePerk(SKILL, PERK);
 }
 
-bool canGrantEarnedMorale(const battle::CUnitState & unit, const CGHeroInstance * hero)
+bool canRollOrderMorale(const CGHeroInstance * hero, const HeroActionAllowanceState::Receipt & receipt)
 {
-	return hasPerk(hero) && unit.alive() && !unit.isGhost() && !unit.isTimeStopped()
-		&& !unit.isTurret() && unit.unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
-		&& !unit.hasBonusOfType(BonusType::SIEGE_WEAPON) && !unit.hadMorale;
+	return HeroActionAllowanceState::isHeroicSpiritTrigger(receipt)
+		&& hasPerk(hero) && hero->moraleVal() > 0;
 }
 
-bool grantEarnedMorale(battle::CUnitState & unit, const CGHeroInstance * hero)
+bool canGrantEarnedMorale(const battle::CUnitState &, const CGHeroInstance *)
 {
-	if(!canGrantEarnedMorale(unit, hero))
-		return false;
-	if(!unit.heroicSpiritRetaliation)
-	{
-		unit.heroicSpiritRetaliation = true;
-		unit.heroicSpiritMoralePending = true;
-	}
-	return true;
+	return false;
 }
 
-void beginActivation(battle::CUnitState & unit, BattleUnitTurnReason reason)
+bool grantEarnedMorale(battle::CUnitState &, const CGHeroInstance *)
 {
-	if(reason == BattleUnitTurnReason::MORALE && unit.heroicSpiritMoralePending)
-	{
-		unit.heroicSpiritMoralePending = false;
-		return;
-	}
+	return false;
+}
+
+void beginActivation(battle::CUnitState & unit, BattleUnitTurnReason)
+{
 	unit.heroicSpiritRetaliation = false;
 	unit.heroicSpiritMoralePending = false;
 }

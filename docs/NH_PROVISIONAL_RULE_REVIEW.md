@@ -1,5 +1,75 @@
 # New Horizons provisional rule review
 
+## Hero Luck reworks and Heroic Spirit — accepted-action receipts
+
+The canonical generic Luck rows now replace Lucky Recovery/Gambler/Twist of Fate
+with Lucky Day/Erratic Mana/Druidic Luck, retaining their saved IDs and Advanced/
+Advanced/Expert ranks. Sylvan Lucky Recovery is separate and unchanged. Heroic
+Spirit retains its Discipline Expert identity but grants one Order-only Hero
+Action from positive hero Morale after an ordinary Order; bonus Orders do not
+recur. No creature retaliation or extra creature activation is granted.
+
+Chosen interpretation: reuse actual positive hero Luck and existing Luck curve/
+dice/bias; use the actual captured Morale curve/dice for Heroic Spirit. Capture
+one action-origin Luck result rather than rolling again for each target, delayed
+tick or internal echo/mirror. Independently admitted follow-ups receive their
+own Luck check. Lucky Day scales intrinsic Order potency only, not duration,
+targets, activation count or companion-perk bonuses. Druidic Luck scales numerical
+HP/structural damage including captured damage-over-time/zones, not healing,
+counts or instant kills. Erratic Mana may refund a paid accepted spell even if
+its output is negated; refund floor50% of actual charge in reverse charge order
+(normal, permanent Buffer, temporary Buffer), preserving each pool's origin.
+Internal echoes/mirrors cannot generate another refund.
+
+Damage interpretation: Druidic Luck multiplies raw numerical damage before the
+existing recipient mitigation, caps and integer rounding. Consequently, the
+final HP loss need not be exactly twice an independently rounded ordinary hit.
+Life Drain retains its existing healing-from-actual-damage rule; its healing
+coefficient is not doubled separately. Revisit both distinctions during balance
+review rather than introducing a second critical multiplier after mitigation.
+
+Order interpretation: complete the ordinary intrinsic formula, including its
+Warcasting/Divine efficiency inputs and existing formula cap, then apply Lucky
+Day. Crown and Altar's completed increment and separate companion-perk effects
+remain unchanged. This also applies to active Second Wind creature spells;
+neither route adds an activation or reapplies the formula cap after Luck.
+
+Rationale: these boundaries keep the new hero-facing effects tied to accepted
+actions, avoid multiplying action economy or applying a cast repeatedly, and
+prevent a temporary reserve becoming permanent through a refund. The current
+100% perk chance scales,200% potency/damage and50% refund are provisional test
+numbers recorded in canonical Experimental Values; no independent trigger curve
+or configurable Heroic Spirit grant count was introduced. Optional saved blocks
+default to these values when absent, preserving readable earlier snapshots.
+
+Implementation surface: captured `heroLuck`/`heroMorale` values in
+`config/newHorizonsMagic.json` and its v3 schema; four stable-ID descriptions in
+`config/newHorizonsPerks.json`; generated module uses these canonical values.
+Shared C++ validation/accessors and accepted action/packet integration are
+implemented. Focused native coverage exercises accepted-action receipts,
+allowance ordering, RNG isolation, refund pools, damage scaling and retirement
+of the superseded generic effects. A separate paid Hex regression verifies
+effect-packet serialization and detached AFTER_ATTACK damage with parent/sibling
+state isolation; this is not world-save or battle-resume acceptance. Data/schema
+tests check defaults, strict bounds, optional old-snapshot shape, ranks/IDs and
+Sylvan isolation.
+
+Focused data evidence: 49 Python registry/schema cases pass, and the generated
+module freshness check passes. The first combined invocation had a test import-
+path error; the proper existing `tools/tests` import path was used for the pass.
+The combined Linux client and native tests build. A bounded ordinary Linux
+battle executed a legal Charge Order and returned safely through creature
+information and encyclopedia navigation. Successful hero horseshoe/eagle cues
+were not captured; their rendered acceptance, Windows gameplay and broad
+save/resume interactions remain pending.
+
+Second-look cases: zero-cost paid admission, split charge pools and rounding,
+negated multi-target casts, temporary Buffer expiry, independently admitted
+follow-ups versus internal echoes, delayed source-owner changes, structural
+damage and healing/restoration boundaries, Order companion-perk scaling and
+Heroic Spirit no-recursion/save-load/AI continuation. Numerical tuning and broad
+interaction certification remain deferred to their appropriate phase.
+
 ## Spell Lock — allegiance at cast time
 
 Friendly/hostile preservation follows the target's current controller when the
@@ -263,6 +333,11 @@ transfer/merge/save/entry evidence are pending. Revisit whole-stack amplificatio
 late acquisition and multi-origin mixed-army valuation during Phase2/3.
 
 ## Rapid Response and Heroic Spirit — activation ordering
+
+Historical note: the Heroic Spirit retaliation interpretation below is superseded
+by the canonical hero-Morale Order-only rework above. Rapid Response's separate
+ordering interpretation is unchanged; retain this record as prior reasoning,
+not authority to grant the removed Heroic Spirit retaliation.
 
 Rapid Response defers until earned immediate extras finish, preserving their
 action economy without an interruption/resumption subsystem. It then moves one
@@ -653,6 +728,12 @@ history exclusion and defeated hero removal. Broader retained draw/troopless
 winner, tavern rerecruitment and save restoration remain Phase2.
 
 ## Lucky Recovery composition and attack-local Avatar admission
+
+Historical note: generic Lucky Recovery is now Lucky Day, with the same saved ID
+but no generic survivor-healing effect. The generic-plus-Sylvan20% composition
+below is superseded. Sylvan's separate10% survivor recovery and the independent
+Avatar admission interpretation remain unchanged; prior tests are historical
+evidence, not acceptance of the removed generic effect.
 
 Generic and Sylvan Lucky Recovery each recover10% of actual non-overkill melee
 damage on positive Luck, healing only survivors. If both independent perks are

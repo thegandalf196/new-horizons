@@ -4181,7 +4181,9 @@ Discipline replaces the old Leadership Skill. Leadership is reserved for the Sec
 |Veteran Cohesion|Advanced|The first time a friendly stack falls below 50% of its maximum HP during combat, it gains +2 Morale for the rest of that combat.|
 |Hold Fast|Advanced|Friendly stacks that Defend or are affected by Hold the Line! treat negative Morale as 0 until their next activation.|
 |Unbreakable|Expert|The first negative Morale trigger against the army each round is ignored.|
-|Heroic Spirit|Expert|When positive Morale triggers, the affected stack gains one additional retaliation until its next activation.|
+|Heroic Spirit|Expert|After an ordinary Order, positive hero Morale may grant one additional Order-only Hero Action. Bonus Orders cannot trigger further Morale.|
+
+Heroic Spirit checks the issuing hero's positive Morale after an accepted ordinary Order. A successful trigger grants exactly one Order-only Hero Action, not a creature activation, retaliation or unrestricted spell action. Bonus Orders, including the granted Order, cannot generate another Morale grant. The trigger uses the same current Morale curve and dice as the ordinary combat rules, with the captured Morale override where present.
 
 
 
@@ -4759,10 +4761,10 @@ Luck governs favorable and unfavorable chance in combat. The exact -10 to +10 tr
 |Lucky Aim|Basic|A ranged attack that triggers positive Luck ignores 25% of the target's Creature Defense.|
 |Fortune's Favor|Basic|Positive Lucky Strike damage multipliers increase by +0.25x.|
 |Serendipity|Advanced|If no friendly positive Luck trigger occurred during the previous round, the first friendly attack of the new round receives +2 Luck for that attack.|
-|Lucky Recovery|Advanced|When a melee attack triggers positive Luck, surviving creatures in the attacker recover HP equal to 10% of actual damage dealt.|
-|Gambler|Advanced|The first friendly attack each round gains +3 Luck for that attack. If positive Luck does not trigger, the attacking stack suffers -2 Luck until its next activation.|
+|Lucky Day|Advanced|An accepted Order may trigger positive hero Luck to double its intrinsic potency. Duration, targets, activation counts and companion-perk bonuses are unchanged.|
+|Erratic Mana|Advanced|An accepted paid hero spell may trigger positive hero Luck to refund 50% of actual spent Mana, rounded down, preserving the original Mana pools. A negated spell remains eligible.|
 |Chain of Fortune|Advanced|Once per round after a friendly positive Luck trigger, the next different friendly stack to attack gains +1 Luck for that attack.|
-|Twist of Fate|Expert|The first random combat roll each combat that produces a negative result for the hero's army is automatically rerolled once. Deterministic effects cannot be rerolled.|
+|Druidic Luck|Expert|An accepted damaging hero spell may trigger positive hero Luck to double numerical HP and structural damage, including its captured damage-over-time and zones. Healing, counts and instant kills are unchanged.|
 |Perfect Fortune|Expert|The first eligible attack made by the hero's army each combat triggers positive Luck automatically.|
 
 Chain of Fortune cannot benefit another strike by the stack that supplied its
@@ -4770,13 +4772,13 @@ positive Luck trigger. The once-per-round restriction limits triggering; it
 does not expire an unused benefit. That benefit waits for the next different
 friendly stack to attack, even if that attack occurs in a later round.
 
-For Twist of Fate, an adverse random result means negative Luck, negative
-Morale, failed resistance against a hostile spell, or a successful hostile
-chance ability. The army suffering that result spends its own once-per-combat
-reroll, even when the roll originates from its opponent. Damage variance,
-failed beneficial procs, and random target or form selection do not qualify.
-Reroll the qualifying roll once; the reroll's result is final and cannot itself
-trigger another reroll.
+These three generic perks use the acting hero's positive Luck and the existing Luck trigger curve and dice. They replace the former generic Lucky Recovery, Gambler and Twist of Fate effects; the separate Sylvan Luck Lucky Recovery remains unchanged. Their internal identifiers remain `luck.luckyRecovery`, `luck.gambler` and `luck.twistOfFate` to preserve saved perk identity, and their ranks remain Advanced, Advanced and Expert.
+
+Lucky Day multiplies only the intrinsic numerical potency of the accepted Order. It does not extend duration, add targets, grant more activations, duplicate companion-perk bonuses or turn an Order-only continuation into a spell action. Druidic Luck multiplies numerical HP and structural damage authored by the accepted hero spell, including damage captured for its later damage-over-time or zone effects; it does not multiply healing, summon/restoration counts, status duration or instant-kill counts.
+
+Erratic Mana refunds the configured fraction of Mana actually charged for an accepted paid hero spell, rounded down. Restore the original source pools in reverse charge order: normal Mana first, then permanent Spell Buffer, then temporary Spell Buffer. No refund may move Mana between origins or create an unrelated permanent reserve. A successfully admitted and paid spell remains eligible even when resistance or another effect negates its output; a rejected or uncharged action does not earn a refund.
+
+An accepted action captures its Luck result once. Internal echoes and mirrors inherit the parent's result and cannot obtain a fresh Erratic Mana refund. An independently admitted follow-up checks its own hero Luck. Delayed damage retains the originating cast's result rather than rolling again when a damage-over-time tick or zone fires.
 
 
 ### Faction Skills
@@ -5195,7 +5197,21 @@ Penetration wording is standardized. Effects that previously said they ignored p
 
 
 
-Positive Luck: an eligible creature attack or retaliation deals 2.00x final direct physical damage. Negative Luck: it deals 0.50x final direct physical damage. Luck does not modify spell damage, war-machine damage, healing, or indirect damage unless an ability explicitly says otherwise. Sylvan Luck replaces the 2.00x positive multiplier with its listed 2.25x / 2.60x / 3.00x multiplier. Positive Morale: after the stack completes its normal Creature Activation, it immediately receives one additional Creature Activation at 75% direct damage. This bonus activation cannot trigger Morale again and cannot itself generate another additional activation. Negative Morale: the stack forfeits its normal Creature Activation when the trigger occurs. Morale is checked only for normal activations, not extra activations granted by Second Wind!, Seize Initiative movement, or similar effects.
+Positive Luck: an eligible creature attack or retaliation deals 2.00x final direct physical damage. Negative Luck: it deals 0.50x final direct physical damage. Luck does not modify spell damage, war-machine damage, healing, or indirect damage unless an ability explicitly says otherwise. Sylvan Luck replaces the 2.00x positive multiplier with its listed 2.25x / 2.60x / 3.00x multiplier. Positive Morale: after the stack completes its normal Creature Activation, it immediately receives one additional Creature Activation at 75% direct damage. This bonus activation cannot trigger Morale again and cannot itself generate another additional activation. Negative Morale: the stack forfeits its normal Creature Activation when the trigger occurs. Creature Morale is checked only for normal Creature Activations, not extra activations granted by Second Wind!, Seize Initiative movement, or similar effects; Heroic Spirit's separate hero-Morale Order check follows its perk definition.
+
+Hero Luck and Heroic Spirit test values reuse the curves above rather than introducing independent curves: current positive hero Luck gives 4% per point up to 40% at +10, and positive hero Morale gives 3% per point up to 30% at +10; both current dice denominators are 100. Nonpositive values do not trigger these positive effects. The saved hero perk chance scales are provisional tuning factors, not a second Luck or Morale attribute.
+
+|**Captured field**|**Current test value**|
+|---|---|
+|heroLuck.luckyDayChanceScalePercent|100%|
+|heroLuck.erraticManaChanceScalePercent|100%|
+|heroLuck.druidicLuckChanceScalePercent|100%|
+|heroLuck.orderMultiplierPercent|200% (2.00x)|
+|heroLuck.damageMultiplierPercent|200% (2.00x)|
+|heroLuck.manaRefundPercent|50%, rounded down from actual spent Mana|
+|heroMorale.heroicSpiritChanceScalePercent|100%|
+
+These optional captured blocks use the listed defaults when absent in an earlier snapshot. Each chance scale and multiplier is an integer from 0 to 1000 percent; Mana refund is an integer from 0 to 100 percent. Heroic Spirit's exactly one Order-only grant is a structural rule, not a configurable numerical grant count. Numerical tuning belongs here; eligibility, origin preservation and no-recursion rules belong to the perk definitions above.
 
 ###### Leadership progression and creature requirements
 

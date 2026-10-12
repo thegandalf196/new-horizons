@@ -647,6 +647,21 @@ CStackWindow::ButtonsSection::ButtonsSection(CStackWindow * owner, int yOffset)
 {
 	OBJECT_CONSTRUCTION;
 
+	// Persistent creature windows can open a reference page. Right-click
+	// popups remain ephemeral; special/Commander entries are not normal Wiki rows.
+	if(!parent->info->popupWindow && !parent->info->commander && parent->info->creature
+		&& !parent->info->creature->special)
+	{
+		const auto key = WikiEntryKey{WikiCategory::CREATURE, parent->info->creature->getJsonKey()};
+		encyclopedia = std::make_shared<CButton>(Point(104, 5), AnimationPath::builtin("stackWindow/upgradeButton"),
+			CButton::tooltip(LIBRARY->generaltexth->translate("vcmi.wiki.title"),
+				parent->info->creature->getNameSingularTranslated()), [key]()
+			{
+				ENGINE->windows().createAndPushWindow<WikiWindow>(WikiWindow::Style::BROWN, key);
+			});
+		encyclopedia->setTextOverlay("i", EFonts::FONT_TIMES, Colors::METALLIC_GOLD);
+	}
+
 	if(parent->info->dismissInfo && parent->info->dismissInfo->callback)
 	{
 		auto onDismiss = [this]()

@@ -14,10 +14,13 @@
 #include "../bonuses/Bonus.h"
 #include "../bonuses/BonusParameters.h"
 #include "../spells/CSpell.h"
+#include "../spells/ISpellMechanics.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../spells/MagicalDamageReduction.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
 #include "../networkPacks/PacksForClientBattle.h"
+
+#include <cmath>
 
 namespace
 {
@@ -131,8 +134,14 @@ std::optional<Link> linkFor(const battle::Unit * secondary)
 			const auto side = static_cast<BattleSide>(sideValue);
 			if(!validBattleSide(side))
 				continue;
+			const auto & multiplier = parameters["damageMultiplierPercent"];
+			if(!multiplier.isNull() && (!multiplier.isNumber() || !std::isfinite(multiplier.Float())
+				|| multiplier.Float() < 0 || multiplier.Float() > 1000
+				|| std::floor(multiplier.Float()) != multiplier.Float()))
+				continue;
 
-			return Link{static_cast<uint32_t>(primaryValue), side, marker->val, parameters["mdrPenetration"]};
+			return Link{static_cast<uint32_t>(primaryValue), side, marker->val, parameters["mdrPenetration"],
+				multiplier.isNull() ? 100 : static_cast<int32_t>(multiplier.Integer())};
 		}
 		catch(const std::exception &)
 		{
@@ -150,12 +159,13 @@ bool isEchoHit(const BattleStackAttacked & hit)
 
 int64_t adjustedEchoDamage(const CBattleInfoCallback & battle, const BattleSide casterSide,
 	const battle::Unit * primary, const int64_t actualSecondaryDamage, const int32_t echoBasisPoints,
-	const JsonNode * capturedPenetration)
+	const JsonNode * capturedPenetration, const int32_t damageMultiplierPercent)
 {
 	if(!primary || !primary->alive())
 		return 0;
 
-	const auto rawDamage = echoDamage(actualSecondaryDamage, echoBasisPoints);
+	const auto rawDamage = spells::scaleHeroLuckDamage(
+		echoDamage(actualSecondaryDamage, echoBasisPoints), damageMultiplierPercent);
 	if(rawDamage <= 0)
 		return 0;
 

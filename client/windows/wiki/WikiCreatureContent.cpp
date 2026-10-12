@@ -32,6 +32,10 @@
 #include "../../../lib/CBonusTypeHandler.h"
 #include "../../../lib/CStack.h"
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/IGameSettings.h"
+#include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../../../lib/entities/hero/NewHorizonsCapabilityRules.h"
+#include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../../lib/ResourceSet.h"
 #include "../../../lib/texts/CGeneralTextHandler.h"
 #include "../InfoWindows.h"
@@ -130,7 +134,39 @@ std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (compl
 		CStackInstance fakeStack(nullptr, creature->getId(), 1, true);
 		const bool shooter = fakeStack.hasBonusOfType(BonusType::SHOOTER) && fakeStack.valOfBonuses(BonusType::SHOTS);
 
-		stats.push_back({tr("vcmi.wiki.creature.stat.level"),   std::to_string(creature->getLevel())});
+		std::optional<newHorizonsCreatures::CreatureCategoryView> category;
+		const JsonNode * capabilityRules = nullptr;
+		const auto * callback = GAME->interface() ? GAME->interface()->cb.get() : nullptr;
+		if(CPlayerInterface::battleInt)
+		{
+			// An absent saved battle category must not adopt world or installation defaults.
+			const auto battleCallback = CPlayerInterface::battleInt->getBattle();
+			if(battleCallback && battleCallback->getBattle())
+				category = battleCallback->battleGetCreatureCategory(creature->getId());
+			// CreatureInfo obtains capability rows from the originating game's callback too.
+			if(callback)
+				capabilityRules = &callback->getHeroCapabilityRules();
+		}
+		else if(callback)
+		{
+			category = callback->getCreatureCategory(creature->getId());
+			capabilityRules = &callback->getHeroCapabilityRules();
+		}
+		else if(const auto * settings = LIBRARY->engineSettings())
+		{
+			// Pregame browsing has no captured game: describe the actually loaded
+			// engine profile, using the same validated rules and creature lookup.
+			const auto categories = newHorizonsCreatures::captureCreatureCategoryRules(
+				settings->getValue(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES));
+			category = newHorizonsCreatures::creatureCategoryView(categories, creature->getId());
+			capabilityRules = &settings->getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES);
+		}
+		const bool showNewHorizonsStats = capabilityRules && newHorizonsHeroes::usesRules(*capabilityRules)
+			&& (*capabilityRules)["rulesetVersion"].Integer() >= 2;
+		if(category)
+			stats.push_back({"Rank", tr(category->nameTextId.c_str())});
+		else
+			stats.push_back({tr("vcmi.wiki.creature.stat.level"), std::to_string(creature->getLevel())});
 		stats.push_back({tr("core.genrltxt.190"),  std::to_string(fakeStack.getAttack(shooter))});
 		stats.push_back({tr("core.genrltxt.191"), std::to_string(fakeStack.getDefense(shooter))});
 
@@ -142,6 +178,13 @@ std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (compl
 			stats.push_back({tr("core.genrltxt.199"), std::to_string(dmgMin) + " - " + std::to_string(dmgMax)});
 
 		stats.push_back({tr("core.genrltxt.193"),     std::to_string(fakeStack.getMovementRange())});
+		if(showNewHorizonsStats)
+		{
+			stats.push_back({tr("new-horizons.fort.stat.initiative"), std::to_string(creature->getBaseInitiative())});
+			const int requirement = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(
+				*capabilityRules, creature->getId());
+			stats.push_back({tr("new-horizons.fort.stat.leadershipCost"), requirement > 0 ? std::to_string(requirement) : "--"});
+		}
 		stats.push_back({tr("core.help.439.help"), std::to_string(fakeStack.getMaxHealth())});
 		stats.push_back({tr("core.genrltxt.194"),    std::to_string(creature->getGrowth())});
 
@@ -406,9 +449,12 @@ std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (compl
 			Obj::CREATURE_GENERATOR1, Obj::CREATURE_GENERATOR2,
 			Obj::CREATURE_GENERATOR3, Obj::CREATURE_GENERATOR4
 		};
+		const auto knownObjects = LIBRARY->objtypeh->knownObjects();
 		for(const int objTypeId : dwellingObjTypes)
 		{
 			const MapObjectID objType(objTypeId);
+			if(!knownObjects.contains(objType))
+				continue;
 			for(const MapObjectSubID subtype : LIBRARY->objtypeh->knownSubObjects(objType))
 			{
 				auto baseHandler = LIBRARY->objtypeh->getHandlerFor(objType, subtype);

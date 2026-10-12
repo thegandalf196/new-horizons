@@ -9,14 +9,17 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/NewHorizonsPlague.h"
 #include "../../../lib/battle/NewHorizonsPuppetMaster.h"
+#include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusList.h"
 #include "../../../lib/bonuses/BonusSelector.h"
+#include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -39,6 +42,7 @@ class NewHorizonsPlagueControlSpellLockTest : public HeroCommandFixture
 {
 protected:
 	CStack * infected = nullptr;
+	CStack * spreadRecipient = nullptr;
 
 	void SetUp() override
 	{
@@ -72,7 +76,7 @@ protected:
 		setTestSpellPointTotal(hero, 1000);
 	}
 
-	void prepareControlledInfection()
+	void prepareControlledInfection(bool addSpreadRecipient = false)
 	{
 		startGame();
 		ASSERT_NO_FATAL_FAILURE(configure(attackerSideHero));
@@ -86,6 +90,11 @@ protected:
 		ASSERT_NE(addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(3, 5), 1000), nullptr);
 		infected = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 1000);
 		ASSERT_NE(infected, nullptr);
+		if(addSpreadRecipient)
+		{
+			spreadRecipient = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(11, 5), 1000);
+			ASSERT_NE(spreadRecipient, nullptr);
+		}
 		beginCombat();
 		const auto manaBefore = attackerSideHero->getManaAvailable();
 		ASSERT_TRUE(castOn(attackerSideHero, plagueSpell(), infected));
@@ -155,6 +164,149 @@ TEST_F(NewHorizonsPlagueControlSpellLockTest, PuppetInputControllerHostileSealPr
 	ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*infected));
 	EXPECT_EQ(newHorizonsSorcery::spellLockPreservesBeneficial(*infected), std::optional<bool>(false));
 	EXPECT_TRUE(newHorizonsSorcery::durationPausedBySpellLock(*infected, *plagueMarker()));
+	EXPECT_EQ(server.castsOf(plagueSpell()).size(), 1u);
+	EXPECT_EQ(server.castsOf(puppetSpell()).size(), 1u);
+	EXPECT_EQ(server.castsOf(lockSpell()).size(), 1u);
+}
+
+TEST_F(NewHorizonsPlagueControlSpellLockTest, ControlledCompletionTicksLockedPlagueOnceThenExpiresSealAndFinalInfection)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareControlledInfection(true));
+	advanceRound(); // Restore the paid controller's Hero Action for the hostile seal.
+	ASSERT_TRUE(castOn(attackerSideHero, lockSpell(), infected));
+	ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*infected));
+	ASSERT_NE(plagueMarker(), nullptr);
+	ASSERT_TRUE(newHorizonsSorcery::durationPausedBySpellLock(*infected, *plagueMarker()));
+	const auto initialRemaining = plagueMarker()->turnsRemain;
+	ASSERT_GT(initialRemaining, 0);
+	const auto originalOwner = battle()->battleGetOwner(infected);
+	const auto controller = battle()->battleGetActionController(infected);
+	ASSERT_NE(controller, originalOwner);
+	ASSERT_FALSE(newHorizonsPlague::hasPlague(spreadRecipient));
+
+	// Every activation below is reached through accepted ordinary actions; no
+	// activeStack, round, status duration, or lastProcessedRound is overwritten.
+	const auto reachInfected = [&]()
+	{
+		const size_t limit = battle()->stacks.size() * 12 + 12;
+		for(size_t step = 0; step < limit; ++step)
+		{
+			const auto * active = battle()->battleActiveUnit();
+			if(!active) return false;
+			if(active->unitId() == infected->unitId()) return true;
+			if(!gameHandler->battles->makePlayerBattleAction(BattleID(0),
+				battle()->battleGetActionController(active), BattleAction::makeDefend(active)))
+				return false;
+		}
+		return false;
+	};
+	const auto countTargetHits = [&](size_t first)
+	{
+		std::pair<size_t, int64_t> result{};
+		for(size_t index = first; index < server.injuries.size(); ++index)
+			for(const auto & hit : server.injuries[index].stacks)
+				if(hit.stackAttacked == infected->unitId() && hit.spellID == plagueSpell())
+				{
+					++result.first;
+					result.second += hit.damageAmount;
+				}
+		return result;
+	};
+	ASSERT_TRUE(reachInfected());
+	ASSERT_EQ(battle()->battleGetActionController(infected), controller);
+	const auto initialState = infected->acquireState()->save();
+	const auto startedBeforeWrongOwner = server.startedActions.size();
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), originalOwner,
+		BattleAction::makeDefend(infected)));
+	EXPECT_EQ(server.startedActions.size(), startedBeforeWrongOwner);
+	EXPECT_EQ(infected->acquireState()->save(), initialState);
+
+	const auto waitRound = battle()->getRound();
+	const auto healthBeforeWait = infected->getAvailableHealth();
+	const auto markerBeforeWait = plagueMarker()->toJsonNode();
+	const auto injuriesBeforeWait = server.injuries.size();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), controller,
+		BattleAction::makeWait(infected)));
+	EXPECT_EQ(countTargetHits(injuriesBeforeWait), (std::pair<size_t, int64_t>{0, 0}));
+	EXPECT_EQ(infected->getAvailableHealth(), healthBeforeWait);
+	ASSERT_NE(plagueMarker(), nullptr);
+	EXPECT_EQ(plagueMarker()->toJsonNode(), markerBeforeWait);
+	EXPECT_TRUE(newHorizonsPuppetMaster::hasValidControlMarker(*battle(), infected));
+	EXPECT_FALSE(newHorizonsPuppetMaster::hasLucidity(infected));
+	ASSERT_TRUE(reachInfected());
+	ASSERT_EQ(battle()->getRound(), waitRound);
+
+	int lockedCompletions = 0;
+	int unsealedCompletions = 0;
+	int32_t previousCompletedRound = -1;
+	for(int completion = 0; completion < initialRemaining + 5; ++completion)
+	{
+		ASSERT_TRUE(reachInfected());
+		const auto before = plagueMarker();
+		ASSERT_NE(before, nullptr);
+		const auto round = battle()->getRound();
+		ASSERT_GT(round, previousCompletedRound);
+		previousCompletedRound = round;
+		const bool sealed = newHorizonsSorcery::isSpellLocked(*infected);
+		ASSERT_EQ(newHorizonsSorcery::durationPausedBySpellLock(*infected, *before), sealed);
+		ASSERT_NE(before->parameters, nullptr);
+		auto parameters = before->parameters->toCustom<JsonNode>();
+		const auto expectedDamage = newHorizonsPlague::adjustedTickDamage(*battle(), BattleSide::ATTACKER,
+			infected, before->val, &parameters["mdrPenetration"]);
+		ASSERT_GT(expectedDamage, 0);
+		const auto health = infected->getAvailableHealth();
+		ASSERT_GT(health, expectedDamage); // Final removal must be expiry, not death.
+		const auto previousAttempts = parameters["spreadAttempts"].Integer();
+		const auto firstInjury = server.injuries.size();
+		const auto firstAction = server.startedActions.size();
+		const auto action = BattleAction::makeDefend(infected);
+		const auto actionController = battle()->battleGetActionController(infected);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), actionController, action));
+		EXPECT_EQ(server.startedActions.size(), firstAction + 1);
+		EXPECT_EQ(countTargetHits(firstInjury), (std::pair<size_t, int64_t>{1, expectedDamage}));
+		EXPECT_EQ(infected->getAvailableHealth(), health - expectedDamage);
+		EXPECT_FALSE(newHorizonsPuppetMaster::hasControlMarker(infected));
+		EXPECT_EQ(battle()->battleGetActionController(infected), originalOwner);
+		if(completion == 0)
+		{
+			EXPECT_TRUE(newHorizonsPuppetMaster::hasLucidity(infected));
+			EXPECT_TRUE(newHorizonsPlague::hasPlague(spreadRecipient));
+			EXPECT_EQ(actionController, controller);
+		}
+		if(sealed)
+			++lockedCompletions;
+		else
+			++unsealedCompletions;
+		const auto after = plagueMarker();
+		if(sealed || before->turnsRemain > 1)
+		{
+			ASSERT_NE(after, nullptr);
+			ASSERT_NE(after->parameters, nullptr);
+			EXPECT_EQ(after->turnsRemain, before->turnsRemain - (sealed ? 0 : 1));
+			EXPECT_EQ(after->parameters->toCustom<JsonNode>()["lastProcessedRound"].Integer(), round);
+			EXPECT_EQ(after->parameters->toCustom<JsonNode>()["spreadAttempts"].Integer(), previousAttempts + 1);
+		}
+		else
+			EXPECT_EQ(after, nullptr);
+		// Within the same round a completed Defend is stale. Across a new round
+		// the same payload may be a legal new activation, not a duplicate receipt.
+		if(battle()->getRound() == round)
+		{
+			const auto stateBeforeDuplicate = infected->acquireState()->save();
+			const auto actionCount = server.startedActions.size();
+			const auto injuryCount = server.injuries.size();
+			EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), actionController, action));
+			EXPECT_EQ(server.startedActions.size(), actionCount);
+			EXPECT_EQ(server.injuries.size(), injuryCount);
+			EXPECT_EQ(infected->acquireState()->save(), stateBeforeDuplicate);
+		}
+		if(!after) break;
+	}
+	EXPECT_GT(lockedCompletions, 0);
+	EXPECT_EQ(unsealedCompletions, initialRemaining);
+	EXPECT_FALSE(newHorizonsSorcery::isSpellLocked(*infected));
+	EXPECT_EQ(plagueMarker(), nullptr);
+	EXPECT_TRUE(infected->alive());
 	EXPECT_EQ(server.castsOf(plagueSpell()).size(), 1u);
 	EXPECT_EQ(server.castsOf(puppetSpell()).size(), 1u);
 	EXPECT_EQ(server.castsOf(lockSpell()).size(), 1u);

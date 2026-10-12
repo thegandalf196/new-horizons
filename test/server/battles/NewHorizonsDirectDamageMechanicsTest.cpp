@@ -11,6 +11,8 @@
 #include "HeroCommandFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/BattleExchangeVariant.h"
+#include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/battle/NewHorizonsPlague.h"
@@ -26,10 +28,12 @@
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/spells/ProxyCaster.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/effects/Effect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/bonuses/Limiters.h"
 #include "../../../lib/bonuses/Propagators.h"
@@ -2456,3 +2460,450 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, IncomingSavedBattleBeatsConflicting
 	// Adversarial delegated-world callback + actual BattleInfo wire and AI effect
 	// evaluation, not a full CGameState save-load or new-spell availability gate.
 }
+
+class HeroLuckSpellTest : public NewHorizonsDirectDamageMechanicsTest
+{
+protected:
+	CStack * walker = nullptr;
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsDirectDamageMechanicsTest::mapLoaded(map);
+		JsonNode curve;
+		curve.Vector().assign(4, JsonNode(100));
+		map->overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, curve);
+		map->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
+		map->overrideGameSetting(EGameSettings::COMBAT_LUCK_BIAS, JsonNode(0));
+	}
+
+	void prepareLuckySpell(int luck = 1, int permanentBuffer = 0, int temporaryBuffer = 0)
+	{
+		forceRealHeroScale = true;
+		usePerks = true;
+		authoredRules = savedV3Formula();
+		startGame();
+		spell = SpellID(SpellID::decode(selectedSpellKey)).toSpell();
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		attackerSideHero->addSpellToSpellbook(spell->getId());
+		if(selectedSpellKey == "new-horizons:plague" || selectedSpellKey == "new-horizons:soulChain"
+			|| selectedSpellKey == "new-horizons:hexOfPain"
+			|| selectedSpellKey == "core:fireWall")
+		{
+			const auto school = selectedSpellKey == "core:fireWall"
+				? havocMagicKey : "new-horizons:shadowMagic";
+			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(school)),
+				MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		}
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->initializeSpellPoints(20, permanentBuffer);
+		const SecondarySkill skill(SecondarySkill::decode("new-horizons:luck"));
+		ASSERT_TRUE(skill.hasValue());
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({"new-horizons:luck", "new-horizons:luck.fortuneSFavor"});
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({"new-horizons:luck", "new-horizons:luck.gambler"});
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({"new-horizons:luck", "new-horizons:luck.twistOfFate"});
+		ASSERT_TRUE(newHorizonsHeroLuck::hasErraticMana(attackerSideHero));
+		ASSERT_TRUE(newHorizonsHeroLuck::hasDruidicLuck(attackerSideHero));
+		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::LUCK, BonusSource::OTHER, luck - attackerSideHero->luckVal(), BonusSourceID()));
+		ASSERT_EQ(attackerSideHero->luckVal(), luck);
+		if(temporaryBuffer)
+		{
+			Bonus combatMana;
+			combatMana.type = BonusType::COMBAT_MANA_BONUS;
+			combatMana.val = temporaryBuffer;
+			GiveBonus grant(GiveBonus::ETarget::OBJECT, attackerSideHero->id, combatMana);
+			gameHandler->sendAndApply(grant);
+		}
+		startBattle();
+		target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
+		if(selectedSpellKey == "core:fireWall")
+			walker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(69), 100);
+		beginCombat();
+		ASSERT_EQ(attackerSideHero->getNormalSpellPoints(), 20);
+		ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), permanentBuffer + temporaryBuffer);
+		ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, temporaryBuffer);
+		ASSERT_EQ(battle()->getBattle()->getTemporaryBufferRemaining(BattleSide::ATTACKER), temporaryBuffer);
+	}
+
+	std::vector<std::byte> randomizerBytes()
+	{
+		CMemorySerializer wire;
+		wire.oser & *gameHandler->randomizer;
+		return wire.extractBuffer();
+	}
+
+	void advanceOrdinaryArrowResistance(GameRandomizer & expected)
+	{
+		ASSERT_EQ(spell->getId(), SpellID::MAGIC_ARROW);
+		ASSERT_TRUE(spell->isNegative());
+		ASSERT_TRUE(spell->isMagical());
+		const auto units = battle()->battleGetAllUnits(false);
+		ASSERT_EQ(units.size(), 3u); // Two original garrison tokens and the explicit target.
+		for(const auto * unit : units)
+		{
+			ASSERT_EQ(unit->magicResistance(), 0);
+			ASSERT_FALSE(newHorizonsSorcery::isSpellLocked(*unit));
+			ASSERT_FALSE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero,
+				spell->getId(), *unit, target->getPosition(), BattleSide::ATTACKER, true));
+			// Ordinary negative spells eagerly draw once per battlefield unit,
+			// including zero-resistance units. Keep this global stream separate
+			// from the one accepted Hero Luck draw, without omitting either stream.
+			expected.getDefault().nextInt(0, 99);
+		}
+	}
+
+	BattleAction spellAction() const
+	{
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = spell->getId();
+		action.aimToUnit(target);
+		return action;
+	}
+
+	int64_t previewDamage()
+	{
+		spells::BattleCast preview(battle(), attackerSideHero, spells::Mode::HERO, spell);
+		return spell->battleMechanics(&preview)->adjustEffectValue(target);
+	}
+
+	bool reachActivation(const battle::Unit * desired)
+	{
+		for(size_t index = 0; index < battle()->stacks.size() * 8 + 8; ++index)
+		{
+			const auto * active = battle()->battleActiveUnit();
+			if(!active)
+				return false;
+			if(active->unitId() == desired->unitId())
+				return true;
+			if(!gameHandler->battles->makePlayerBattleAction(BattleID(0),
+				battle()->sideToPlayer(active->unitSide()), BattleAction::makeDefend(active)))
+				return false;
+		}
+		return false;
+	}
+};
+
+TEST_F(HeroLuckSpellTest, PaidDiscountedSpellSharesOneLuckDrawForDamageAndRefund)
+{
+	prepareLuckySpell();
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:wisdom")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getSpellCost(spell), 3);
+	const auto beforeRandom = randomizerBytes();
+	auto invalid = spellAction();
+	invalid.setTarget(battle::Target{spells::Destination(BattleHex::INVALID)});
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), invalid));
+	EXPECT_EQ(randomizerBytes(), beforeRandom);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 20);
+	const auto baselineDamage = previewDamage();
+	EXPECT_EQ(previewDamage(), baselineDamage);
+	EXPECT_EQ(randomizerBytes(), beforeRandom);
+	CMemorySerializer copy;
+	copy.oser & *gameHandler->randomizer;
+	GameRandomizer expected(*gameState());
+	copy.iser & expected;
+	auto expectedReceipt = expected.rollHeroLuck(attackerSideHero->id, attackerSideHero->luckVal());
+	ASSERT_TRUE(expectedReceipt);
+	expectedReceipt->mark(newHorizonsHeroLuck::Proc::ErraticMana);
+	expectedReceipt->mark(newHorizonsHeroLuck::Proc::DruidicLuck);
+	advanceOrdinaryArrowResistance(expected);
+	CMemorySerializer expectedWire;
+	expectedWire.oser & expected;
+	const auto hp = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spellAction()));
+	EXPECT_EQ(randomizerBytes(), expectedWire.extractBuffer());
+	EXPECT_EQ(hp - target->getAvailableHealth(), 2 * baselineDamage);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 18); // Paid three, refunded floor(three/2).
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 0);
+	const auto casts = server.castsOf(spell->getId());
+	ASSERT_FALSE(casts.empty());
+	const auto & receipt = casts.back().announcement.heroLuck;
+	ASSERT_TRUE(receipt);
+	EXPECT_EQ(*receipt, *expectedReceipt);
+	EXPECT_TRUE(receipt->has(newHorizonsHeroLuck::Proc::ErraticMana));
+	EXPECT_TRUE(receipt->has(newHorizonsHeroLuck::Proc::DruidicLuck));
+	EXPECT_EQ(casts.back().announcement.paidHeroManaCost, 3);
+}
+
+TEST_F(HeroLuckSpellTest, PaidRefundRestoresNormalBeforePermanentAndTemporaryBuffers)
+{
+	prepareLuckySpell(1, 1, 1);
+	ASSERT_EQ(attackerSideHero->getSpellCost(spell), 4);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spellAction()));
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 20);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 0);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 0);
+}
+
+TEST_F(HeroLuckSpellTest, PaidRefundRetainsTemporaryBufferProvenance)
+{
+	prepareLuckySpell(1, 0, 10);
+	DamageEnvironment environment(gameState(), nullptr);
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle proxy(&environment, callback);
+	EXPECT_EQ(proxy.getBattle()->getTemporaryBufferRemaining(BattleSide::ATTACKER), 10);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spellAction()));
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 20);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 8);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 8);
+	EXPECT_EQ(battle()->getBattle()->getTemporaryBufferRemaining(BattleSide::ATTACKER), 8);
+	EXPECT_EQ(proxy.getBattle()->getTemporaryBufferRemaining(BattleSide::ATTACKER), 8);
+}
+
+TEST_F(HeroLuckSpellTest, PaidRefundRestoresPermanentBufferBeforeTemporaryBuffer)
+{
+	prepareLuckySpell(1, 3, 1);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spellAction()));
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 20);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 2);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 0);
+}
+
+class NonpositiveHeroLuckSpellTest : public HeroLuckSpellTest, public ::testing::WithParamInterface<int> {};
+
+TEST_P(NonpositiveHeroLuckSpellTest, InvalidAndAcceptedCastsDoNotDrawLuckOrProc)
+{
+	prepareLuckySpell(GetParam());
+	const auto beforeRandom = randomizerBytes();
+	auto invalid = spellAction();
+	invalid.setTarget(battle::Target{spells::Destination(BattleHex::INVALID)});
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), invalid));
+	EXPECT_EQ(randomizerBytes(), beforeRandom);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 20);
+	const auto damage = previewDamage();
+	EXPECT_EQ(randomizerBytes(), beforeRandom);
+	CMemorySerializer copy;
+	copy.oser & *gameHandler->randomizer;
+	GameRandomizer expected(*gameState());
+	copy.iser & expected;
+	advanceOrdinaryArrowResistance(expected); // No Hero Luck seed or draw for nonpositive Luck.
+	CMemorySerializer expectedWire;
+	expectedWire.oser & expected;
+	const auto hp = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spellAction()));
+	EXPECT_EQ(randomizerBytes(), expectedWire.extractBuffer());
+	EXPECT_EQ(hp - target->getAvailableHealth(), damage);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 16);
+	const auto casts = server.castsOf(spell->getId());
+	ASSERT_FALSE(casts.empty());
+	EXPECT_FALSE(casts.back().announcement.heroLuck);
+}
+
+INSTANTIATE_TEST_SUITE_P(ZeroAndNegative, NonpositiveHeroLuckSpellTest, ::testing::Values(0, -1));
+
+TEST_F(HeroLuckSpellTest, PaidPlagueCapturesCriticalDamageForLaterNaturalActivation)
+{
+	selectedSpellKey = "new-horizons:plague";
+	prepareLuckySpell();
+	spells::BattleCast preview(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto unboostedTick = spell->battleMechanics(&preview)->getPlagueTickDamage();
+	ASSERT_GT(unboostedTick, 0);
+	const auto hp = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spellAction()));
+	const auto markers = target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(spell->getId())).And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER)));
+	ASSERT_EQ(markers->size(), 1u);
+	const auto marker = markers->front();
+	EXPECT_EQ(marker->val, 2 * unboostedTick);
+	EXPECT_EQ(target->getAvailableHealth(), hp);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 14); // Eleven paid; five refunded.
+	ASSERT_TRUE(reachActivation(target));
+	const auto beforeCompletion = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
+		BattleAction::makeDefend(target)));
+	// The captured raw tick is already doubled; the activation consumer applies
+	// ordinary mitigation, not a second Luck multiplier or another hero-cast roll.
+	EXPECT_EQ(beforeCompletion - target->getAvailableHealth(),
+		newHorizonsPlague::adjustedTickDamage(*battle(), BattleSide::ATTACKER, target, marker->val));
+	EXPECT_EQ(marker->val, 2 * unboostedTick);
+	EXPECT_EQ(server.castsOf(spell->getId()).size(), 1u);
+}
+
+TEST_F(HeroLuckSpellTest, PaidFireWallCapturesCriticalDamageOnceAcrossWireAndMovement)
+{
+	selectedSpellKey = "core:fireWall";
+	prepareLuckySpell();
+	spells::BattleCast preview(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto raw = spell->battleMechanics(&preview)->getEffectValue();
+	ASSERT_GT(raw, 0);
+	auto action = spellAction();
+	action.setTarget(battle::Target{spells::Destination(BattleHex(70))});
+	action.spellFireWallDirection = BattleHex::RIGHT;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	ASSERT_EQ(battle()->obstacles.size(), 1u);
+	const auto * wall = dynamic_cast<const SpellCreatedObstacle *>(battle()->obstacles.front().get());
+	ASSERT_NE(wall, nullptr);
+	EXPECT_TRUE(wall->damageSnapshot);
+	EXPECT_EQ(wall->minimalDamage, 2 * raw);
+	CMemorySerializer wire;
+	wire.oser & *wall;
+	SpellCreatedObstacle decoded;
+	wire.iser & decoded;
+	EXPECT_TRUE(decoded.damageSnapshot);
+	EXPECT_EQ(decoded.minimalDamage, wall->minimalDamage);
+	ASSERT_TRUE(reachActivation(walker));
+	const auto hp = walker->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeMove(walker, BattleHex(73))));
+	EXPECT_EQ(hp - walker->getAvailableHealth(), 2 * raw);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 14); // Twelve paid; six refunded.
+	EXPECT_EQ(server.castsOf(spell->getId()).size(), 1u);
+}
+
+TEST(HeroLuckSpellDamageTest, NumericScalingSaturatesAndKeepsExecutionAndHealingIneligible)
+{
+	EXPECT_EQ(spells::scaleHeroLuckDamage(1, 200), 2);
+	EXPECT_EQ(spells::scaleHeroLuckDamage(3, 150), 4);
+	EXPECT_EQ(spells::scaleHeroLuckDamage(std::numeric_limits<int64_t>::max(), 200),
+		std::numeric_limits<int64_t>::max());
+	EXPECT_EQ(spells::scaleHeroLuckDamage(-1, 200), -1);
+	EXPECT_THROW(spells::scaleHeroLuckDamage(1, -1), std::invalid_argument);
+	EXPECT_THROW(spells::scaleHeroLuckDamage(1, 1001), std::invalid_argument);
+	const auto rules = savedV3Formula();
+	EXPECT_FALSE(spells::heroLuckDamageEligible(*SpellID(SpellID::DEATH_STARE).toSpell(), rules));
+	EXPECT_FALSE(spells::heroLuckDamageEligible(*SpellID(SpellID::CURE).toSpell(), rules));
+	EXPECT_TRUE(spells::heroLuckDamageEligible(*SpellID(SpellID::EARTHQUAKE).toSpell(), rules));
+}
+
+TEST_F(HeroLuckSpellTest, PaidSoulChainKeepsAuthoredRatioAndCapturesIndependentDamageMultiplier)
+{
+	selectedSpellKey = "new-horizons:soulChain";
+	prepareLuckySpell();
+	auto * secondary = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(120), 1000);
+	auto action = spellAction();
+	action.setTarget(battle::Target{spells::Destination(target), spells::Destination(secondary)});
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	const auto link = newHorizonsSoulChain::linkFor(secondary);
+	ASSERT_TRUE(link);
+	EXPECT_EQ(link->primaryUnitId, target->unitId());
+	EXPECT_EQ(link->echoBasisPoints, 2000); // No doubling of the authored ratio/cap.
+	EXPECT_EQ(link->damageMultiplierPercent, 200);
+	EXPECT_EQ(newHorizonsSoulChain::adjustedEchoDamage(*battle(), BattleSide::ATTACKER,
+		target, 100, link->echoBasisPoints, &link->mdrPenetration, link->damageMultiplierPercent), 40);
+	const auto markers = secondary->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(spell->getId())).And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER)));
+	ASSERT_EQ(markers->size(), 1u);
+	const auto marker = markers->front();
+	CMemorySerializer wire;
+	wire.oser & *marker;
+	Bonus decoded;
+	wire.iser & decoded;
+	EXPECT_EQ(decoded.val, marker->val);
+	ASSERT_NE(decoded.parameters, nullptr);
+	EXPECT_EQ(decoded.parameters->toJsonNode(), marker->parameters->toJsonNode());
+	auto changed = decoded.parameters->toJsonNode();
+	changed["damageMultiplierPercent"].Integer() = 100;
+	decoded.parameters = std::make_shared<BonusParameters>(changed);
+	EXPECT_EQ(marker->parameters->toJsonNode()["damageMultiplierPercent"].Integer(), 200);
+	EXPECT_EQ(newHorizonsSoulChain::linkFor(secondary)->damageMultiplierPercent, 200);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 14);
+}
+
+#if ENABLE_BATTLE_AI
+TEST_F(HeroLuckSpellTest, PaidCriticalHexEffectCodecReplaysAfterAttackWithoutBranchMutation)
+{
+	selectedSpellKey = "new-horizons:hexOfPain";
+	prepareLuckySpell();
+	CStack * victim = nullptr;
+	for(const auto & hex : target->getSurroundingHexes())
+		if(hex.isValid() && !battle()->battleGetUnitByPos(hex, false))
+		{
+			victim = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), hex, 1000);
+			break;
+		}
+	ASSERT_NE(victim, nullptr);
+	blockRetaliation(target);
+	forceMaximumDamage(target);
+	spells::BattleCast preview(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto unboostedFlat = spell->battleMechanics(&preview)->getHexOfPainFlatDamage();
+	ASSERT_GT(unboostedFlat, 0);
+	const auto paidCost = attackerSideHero->getSpellCost(spell);
+	ASSERT_GT(paidCost, 1);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spellAction()));
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 20 - paidCost + paidCost / 2);
+	const auto casts = server.castsOf(spell->getId());
+	ASSERT_EQ(casts.size(), 1u);
+	ASSERT_TRUE(casts.front().announcement.heroLuck);
+	ASSERT_TRUE(casts.front().announcement.heroLuck->has(newHorizonsHeroLuck::Proc::DruidicLuck));
+	const auto selector = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell->getId()))
+		.And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER));
+	const auto markers = target->getBonuses(selector);
+	ASSERT_EQ(markers->size(), 1u);
+	const auto marker = markers->front();
+	ASSERT_NE(marker->parameters, nullptr);
+	EXPECT_EQ(marker->val, 2 * unboostedFlat);
+	EXPECT_EQ(marker->parameters->toJsonNode()["damageSharePercent"].Integer(), 20);
+	SetStackEffect packet;
+	packet.battleID = BattleID(0);
+	packet.toAdd.emplace_back(target->unitId(), std::vector<Bonus>{*marker});
+	CMemorySerializer wire;
+	wire.oser & packet;
+	SetStackEffect decoded;
+	wire.iser & decoded;
+	ASSERT_EQ(decoded.toAdd.size(), 1u);
+	ASSERT_EQ(decoded.toAdd.front().second.size(), 1u);
+	EXPECT_EQ(decoded.toAdd.front().second.front().toJsonNode(), marker->toJsonNode());
+	// Reconstruct only this effect slot in a disposable forecast branch. This
+	// uses the real packet visitor, not a world-save or battle-resume protocol.
+	DamageEnvironment environment(gameState(), nullptr);
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(1));
+	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
+	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+	const auto snapshotHex = [&selector](const battle::Unit * unit)
+	{
+		const auto bonuses = unit->getBonuses(selector);
+		std::vector<JsonNode> result;
+		for(const auto & bonus : *bonuses)
+			result.push_back(bonus->toJsonNode());
+		return result;
+	};
+	const auto parentHex = snapshotHex(parent->battleGetUnitByID(target->unitId()));
+	const auto siblingHex = snapshotHex(sibling->battleGetUnitByID(target->unitId()));
+	const auto liveHex = snapshotHex(target);
+	const auto parentActorState = parent->getForUpdate(target->unitId())->save();
+	const auto parentVictimState = parent->getForUpdate(victim->unitId())->save();
+	const auto siblingActorState = sibling->getForUpdate(target->unitId())->save();
+	const auto siblingVictimState = sibling->getForUpdate(victim->unitId())->save();
+	const auto liveActorState = target->acquireState()->save();
+	const auto liveVictimState = victim->acquireState()->save();
+	child->removeUnitBonus(target->unitId(), std::vector<Bonus>{*marker});
+	ASSERT_TRUE(snapshotHex(child->battleGetUnitByID(target->unitId())).empty());
+	child->getServerCallback()->apply(decoded);
+	EXPECT_EQ(snapshotHex(child->battleGetUnitByID(target->unitId())), liveHex);
+	auto source = child->getForUpdate(target->unitId());
+	auto recipient = child->getForUpdate(victim->unitId());
+	ASSERT_FALSE(source->hasBonusOfType(BonusType::SPELL_DAMAGE_REDUCTION));
+	DamageCache cache;
+	cache.buildDamageCache(child, BattleSide::DEFENDER);
+	const auto physicalDamage = static_cast<int64_t>(cache.getDamage(source.get(), recipient.get(), child));
+	ASSERT_GT(physicalDamage, 0);
+	ASSERT_LT(physicalDamage, recipient->getAvailableHealth());
+	const auto expectedHex = 2 * unboostedFlat + physicalDamage * 20 / 100;
+	ASSERT_EQ(attackerSideHero->getSpellBonus(spell, expectedHex, target), expectedHex);
+	ASSERT_LT(expectedHex, source->getAvailableHealth());
+	const auto sourceHP = source->getAvailableHealth();
+	const auto recipientHP = recipient->getAvailableHealth();
+	const auto beforeForecastRng = randomizerBytes();
+	BattleExchangeVariant exchange;
+	exchange.trackAttack(source, recipient, false, true, cache, child, false, false);
+	EXPECT_EQ(recipientHP - recipient->getAvailableHealth(), physicalDamage);
+	EXPECT_EQ(sourceHP - source->getAvailableHealth(), expectedHex);
+	EXPECT_EQ(randomizerBytes(), beforeForecastRng);
+	EXPECT_EQ(snapshotHex(source.get()), liveHex); // No duration/parameter rewrite or second multiplier.
+	EXPECT_EQ(snapshotHex(parent->battleGetUnitByID(target->unitId())), parentHex);
+	EXPECT_EQ(snapshotHex(sibling->battleGetUnitByID(target->unitId())), siblingHex);
+	EXPECT_EQ(snapshotHex(target), liveHex);
+	EXPECT_EQ(parent->getForUpdate(target->unitId())->save(), parentActorState);
+	EXPECT_EQ(parent->getForUpdate(victim->unitId())->save(), parentVictimState);
+	EXPECT_EQ(sibling->getForUpdate(target->unitId())->save(), siblingActorState);
+	EXPECT_EQ(sibling->getForUpdate(victim->unitId())->save(), siblingVictimState);
+	EXPECT_EQ(target->acquireState()->save(), liveActorState);
+	EXPECT_EQ(victim->acquireState()->save(), liveVictimState);
+}
+#endif

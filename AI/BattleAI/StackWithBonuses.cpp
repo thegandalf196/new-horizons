@@ -1412,14 +1412,11 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return;
 	auto & fortune = fortuneStates.at(side);
-	const bool genericLuckyRecovery = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(
-		attack.attacker, attack.physicalDamage)
-		&& newHorizonsCombatSkills::hasLuckyRecovery(battleGetOwnerHero(attack.attacker));
-	// Generic Recovery does not require an active Sylvan history. Record-only
-	// projections must never heal; selected replay supplies actual HP losses.
+	// Only Sylvan Lucky Recovery heals a creature. Generic Luck now operates
+	// on accepted hero actions; record-only projections must never heal.
 	if(applyAftermath && !attack.shooting && attackerState && attackerState->alive()
 		&& (perfectFortune || serendipityOutcome == ProjectedLuckOutcome::POSITIVE)
-		&& (genericLuckyRecovery || fortune.luckyRecovery))
+		&& fortune.luckyRecovery)
 	{
 		int64_t actualDamage = 0;
 		const auto rules = getLuckRollRules();
@@ -1427,7 +1424,7 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 			if((attack.defender && unitId == attack.defender->unitId()) || rules.affectsAllTargets)
 				actualDamage += std::max<int64_t>(0, damage);
 		auto healing = newHorizonsCombatSkills::luckyRecoveryAmount(actualDamage,
-			genericLuckyRecovery, fortune.luckyRecovery);
+			false, fortune.luckyRecovery);
 		if(healing > 0)
 			attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
 	}
@@ -2664,7 +2661,6 @@ bool HypotheticBattle::projectEarnedMoraleActivation(uint32_t unitId)
 		|| unit->waited() || unit->fear || battleGetMorale(unit.get()) <= 0
 		|| newHorizonsSwiftRebirth::blocksAdditionalActivation(*unit, getRound()))
 		return false;
-	newHorizonsHeroicSpirit::grantEarnedMorale(*unit, battleGetOwnerHero(unit.get()));
 	nextTurn(unitId, BattleUnitTurnReason::MORALE);
 	return true;
 }

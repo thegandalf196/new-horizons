@@ -1485,6 +1485,8 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(orderState)
+			orderState->validateHeroLuckSerialization(h);
+		if(orderState)
 			orderState->validateRoyalStandardSerialization(h);
 		if(h.saving && orderState && orderState->sacredCommandEfficiencyBonusPercent != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
@@ -1761,6 +1763,17 @@ struct DLL_LINKAGE EndAction : public CPackForClient
 
 struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 {
+	std::optional<newHorizonsHeroLuck::Receipt> heroLuck;
+	void validateHeroLuckReceipt() const
+	{
+		if(!heroLuck)
+			return;
+		heroLuck->validate();
+		if(!activeCast || !castByHero || casterStack >= 0
+			|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			|| (heroLuck->procFlags & ~uint8_t{6}) != 0)
+			throw std::runtime_error("Invalid hero spell Luck receipt envelope");
+	}
 	BattleID battleID = BattleID::NONE;
 	bool activeCast = true;
 	BattleSide side = BattleSide::NONE; //which hero did cast spell
@@ -1788,6 +1801,12 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateHeroLuckReceipt();
+			if(heroLuck && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+				throw std::runtime_error("Cannot discard hero spell Luck receipt");
+		}
 		if(h.saving && extendedSpell && !h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION))
 			throw std::runtime_error("Cannot discard Extend Spell cast receipt");
 		if(h.saving && extendedSpell && (!activeCast || !castByHero
@@ -1894,6 +1913,11 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		}
 		else if(!h.saving)
 			crossSchoolFormula.reset();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+			h & heroLuck;
+		else if(!h.saving)
+			heroLuck.reset();
+		validateHeroLuckReceipt();
 		assert(battleID != BattleID::NONE);
 	}
 };

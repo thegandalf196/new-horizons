@@ -12,7 +12,6 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
-#include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 
 #include "BattleProcessor.h"
 
@@ -1963,8 +1962,6 @@ bool BattleFlowProcessor::rollGoodMorale(const CBattleInfoCallback & battle, con
 			bte.effect = BonusType::MORALE;
 			bte.val = 1;
 			bte.additionalInfo = 0;
-			bte.heroicSpiritGrant = newHorizonsHeroicSpirit::canGrantEarnedMorale(*next,
-				battle.battleGetOwnerHero(next));
 			gameHandler->sendAndApply(bte); //play animation
 
 			if(const auto * hero = battle.battleGetOwnerHero(next);

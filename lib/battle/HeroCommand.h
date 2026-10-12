@@ -10,11 +10,13 @@
 #pragma once
 
 #include "../json/JsonNode.h"
+#include "NewHorizonsHeroLuck.h"
 
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -124,6 +126,29 @@ struct DLL_LINKAGE HeroOrderState
 	std::vector<uint32_t> crownAndAltarRecipientUnitIds;
 	int32_t crownAndAltarFocusFirePercent = 0;
 	uint16_t crownAndAltarHoldReductionBasisPoints = 0;
+	std::optional<newHorizonsHeroLuck::Receipt> heroLuck;
+	std::optional<newHorizonsHeroLuck::Receipt> heroMorale;
+	uint32_t heroMoraleActionGrantId = 0;
+	bool luckyDay() const { return heroLuck && heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay); }
+	template<typename Handler> void validateHeroLuckSerialization(Handler & h) const
+	{
+		if(h.saving && (heroLuck || heroMorale || heroMoraleActionGrantId != 0)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+			throw std::runtime_error("Cannot discard Hero Luck or Morale Order receipt");
+		if(heroLuck)
+		{
+			heroLuck->validate();
+			if((heroLuck->procFlags & ~static_cast<uint8_t>(newHorizonsHeroLuck::Proc::LuckyDay)) != 0)
+				throw std::runtime_error("Invalid Order Luck proc flags");
+		}
+		if(heroMorale)
+		{
+			heroMorale->validate();
+			if(heroMoraleActionGrantId == 0
+				|| (heroMorale->procFlags & ~static_cast<uint8_t>(newHorizonsHeroLuck::Proc::HeroicSpirit)) != 0)
+				throw std::runtime_error("Invalid Order Morale proc flags");
+		}
+	}
 
 	bool crownAndAltarAppliesTo(uint32_t unitId) const
 	{
@@ -305,6 +330,7 @@ struct DLL_LINKAGE HeroOrderState
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		validateHeroLuckSerialization(h);
 		validateRoyalStandardSerialization(h);
 		if(h.saving && (protectInterceptionsConsumed > 1 || protectInterceptionLimit > 1)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHIELD_MASTER))
@@ -396,6 +422,19 @@ struct DLL_LINKAGE HeroOrderState
 			h & ironWillLifetime;
 		else if(!h.saving)
 			ironWillLifetime = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+		{
+			h & heroLuck;
+			h & heroMorale;
+			h & heroMoraleActionGrantId;
+		}
+		else if(!h.saving)
+		{
+			heroLuck.reset();
+			heroMorale.reset();
+			heroMoraleActionGrantId = 0;
+		}
+		validateHeroLuckSerialization(h);
 		if(!h.saving)
 			validateShape();
 	}
@@ -451,6 +490,12 @@ DLL_LINKAGE bool isCanonicalRules(const JsonNode & rules);
 /// Empty rules mean legacy gameplay. Unsupported or malformed nonempty rules fail closed.
 DLL_LINKAGE void validateRules(const JsonNode & rules);
 DLL_LINKAGE int coefficient(const JsonNode & effect, int attack, int defense);
+/// Apply the issued Order's positive-Luck snapshot after the ordinary formula.
+/// Companion perks and existing downstream caps remain the caller's concern.
+DLL_LINKAGE int orderPotency(int value, const HeroOrderState & state, const JsonNode & magicRules);
+/// Scale intrinsic potency only, retaining the already computed companion increment.
+DLL_LINKAGE int orderPotency(int intrinsicValue, int valueWithCompanions,
+	const HeroOrderState & state, const JsonNode & magicRules);
 /// Evaluate an Order formula for a hero, scaling only its Attack/Defense-derived
 /// terms by the hero's New Horizons Command rank (100/110/120/130%).
 DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero);

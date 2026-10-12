@@ -29,6 +29,7 @@
 #include "../bonuses/BonusEnum.h"
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
+#include "../battle/NewHorizonsHeroLuck.h"
 #include "../battle/Unit.h"
 #include "../bonuses/Bonus.h"
 #include "../bonuses/BonusSelector.h"
@@ -1394,11 +1395,14 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "morale", "creatureAbilities", "protectedAdventureBarriers"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "morale", "creatureAbilities", "protectedAdventureBarriers", "heroLuck", "heroMorale"});
+	newHorizonsHeroLuck::validateRules(rules);
 	newHorizonsProtectedMobility::validateRulesSerialization(rules, true);
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
+	if(!rules["heroLuck"].isNull() || !rules["heroMorale"].isNull())
+		require(version == CURRENT_RULESET_VERSION, "Hero Luck and Morale require magic rules v3");
 	if(rules.Struct().contains("creatureAbilities"))
 	{
 		require(version == CURRENT_RULESET_VERSION, "Creature abilities require magic rules v3");

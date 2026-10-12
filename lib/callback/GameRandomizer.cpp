@@ -45,21 +45,45 @@ bool rollSavedMoraleChance(std::map<ObjectInstanceID, RandomGeneratorWithBias> &
 
 bool RandomizationBias::roll(vstd::RNG & generator, int successChance, int totalWeight, int biasValue)
 {
-	assert(successChance > 0);
-	assert(totalWeight >= successChance);
+	return rollReceipt(generator, successChance, totalWeight, biasValue).triggered();
+}
+
+void RandomizationBias::validateRoll(int successChance, int totalWeight, int biasValue) const
+{
+	if(successChance <= 0 || totalWeight < successChance)
+		throw std::runtime_error("Invalid randomization weights");
+	const int64_t afterSuccess = static_cast<int64_t>(accumulatedBias)
+		- static_cast<int64_t>(totalWeight - successChance) * biasValue;
+	const int64_t afterFailure = static_cast<int64_t>(accumulatedBias)
+		+ static_cast<int64_t>(successChance) * biasValue;
+	if(afterSuccess < std::numeric_limits<int32_t>::min() || afterSuccess > std::numeric_limits<int32_t>::max()
+		|| afterFailure < std::numeric_limits<int32_t>::min() || afterFailure > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Randomization bias exceeds its saved representation");
+}
+
+newHorizonsHeroLuck::Receipt RandomizationBias::rollReceipt(vstd::RNG & generator,
+	int successChance, int totalWeight, int biasValue)
+{
+	validateRoll(successChance, totalWeight, biasValue); // before RNG or bias mutation
 
 	int failChance = totalWeight - successChance;
-	int newRoll = generator.nextInt(1, totalWeight);
+	newHorizonsHeroLuck::Receipt receipt;
+	receipt.heroValue = 1; // specialized caller records its actual positive attribute
+	receipt.diceSize = totalWeight;
+	receipt.baseThreshold = successChance;
+	receipt.draw = generator.nextInt(1, totalWeight);
+	receipt.priorBias = accumulatedBias;
 	// accumulated bias is stored as premultiplied to avoid precision loss on division
 	// so multiply everything else in equation to compensate
 	// precision loss is small, and generally insignificant, but better to play it safe
-	bool success = newRoll * totalWeight - accumulatedBias <= successChance * totalWeight;
-	if(success)
-		accumulatedBias -= failChance * biasValue;
-	else
-		accumulatedBias += successChance * biasValue;
+	bool success = receipt.triggered();
+	const int64_t nextBias = static_cast<int64_t>(accumulatedBias)
+		+ (success ? -static_cast<int64_t>(failChance) : static_cast<int64_t>(successChance)) * biasValue;
+	if(nextBias < std::numeric_limits<int32_t>::min() || nextBias > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Randomization bias exceeds its saved representation");
+	accumulatedBias = static_cast<int32_t>(nextBias);
 
-	return success;
+	return receipt;
 }
 
 RandomGeneratorWithBias::RandomGeneratorWithBias(int seed)
@@ -70,6 +94,16 @@ RandomGeneratorWithBias::RandomGeneratorWithBias(int seed)
 bool RandomGeneratorWithBias::roll(int successChance, int totalWeight, int biasValue)
 {
 	return bias.roll(generator, successChance, totalWeight, biasValue);
+}
+
+newHorizonsHeroLuck::Receipt RandomGeneratorWithBias::rollReceipt(int successChance, int totalWeight, int biasValue)
+{
+	return bias.rollReceipt(generator, successChance, totalWeight, biasValue);
+}
+
+void RandomGeneratorWithBias::validateRoll(int successChance, int totalWeight, int biasValue) const
+{
+	bias.validateRoll(successChance, totalWeight, biasValue);
 }
 
 GameRandomizer::GameRandomizer(const IGameInfoCallback & gameInfo)
@@ -135,6 +169,54 @@ bool GameRandomizer::rollGoodLuck(ObjectInstanceID actor, int luckValue)
 bool GameRandomizer::rollBadLuck(ObjectInstanceID actor, int luckValue)
 {
 	return rollMoraleLuck(badLuckSeed, actor, luckValue, EGameSettings::COMBAT_LUCK_BIAS, EGameSettings::COMBAT_LUCK_DICE_SIZE, EGameSettings::COMBAT_BAD_LUCK_CHANCE);
+}
+
+std::optional<newHorizonsHeroLuck::Receipt> GameRandomizer::rollHeroLuck(ObjectInstanceID actor, int luckValue)
+{
+	const auto curve = gameInfo.getSettings().getVector(EGameSettings::COMBAT_GOOD_LUCK_CHANCE);
+	if(luckValue <= 0 || curve.empty())
+		return std::nullopt;
+	const int chance = curve[std::min<size_t>(curve.size(), luckValue) - 1];
+	const int dice = gameInfo.getSettings().getInteger(EGameSettings::COMBAT_LUCK_DICE_SIZE);
+	if(chance <= 0 || dice <= 0 || chance > dice)
+		return std::nullopt;
+	const int bias = gameInfo.getSettings().getInteger(EGameSettings::COMBAT_LUCK_BIAS);
+	if(heroLuckSeed.count(actor))
+		heroLuckSeed.at(actor).validateRoll(chance, dice, bias);
+	else
+		RandomizationBias{}.validateRoll(chance, dice, bias);
+	if(!heroLuckSeed.count(actor))
+		heroLuckSeed.try_emplace(actor, getDefault().nextInt());
+	auto receipt = heroLuckSeed.at(actor).rollReceipt(chance, dice, bias);
+	receipt.heroValue = luckValue;
+	return receipt;
+}
+
+std::optional<newHorizonsHeroLuck::Receipt> GameRandomizer::rollHeroMorale(ObjectInstanceID actor, int moraleValue)
+{
+	if(moraleValue <= 0)
+		return std::nullopt;
+	const auto & rules = gameInfo.getMagicRules();
+	const auto configuredChance = newHorizonsMagic::moraleChance(rules, moraleValue);
+	const auto configuredDice = configuredChance ? newHorizonsMagic::moraleDiceSize(rules) : std::nullopt;
+	const auto curve = gameInfo.getSettings().getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE);
+	if(!configuredChance && curve.empty())
+		return std::nullopt;
+	const int chance = configuredChance.value_or(curve.empty() ? 0
+		: curve[std::min<size_t>(curve.size(), moraleValue) - 1]);
+	const int dice = configuredDice.value_or(gameInfo.getSettings().getInteger(EGameSettings::COMBAT_MORALE_DICE_SIZE));
+	if(chance <= 0 || dice <= 0 || chance > dice)
+		return std::nullopt;
+	const int bias = gameInfo.getSettings().getInteger(EGameSettings::COMBAT_MORALE_BIAS);
+	if(heroMoraleSeed.count(actor))
+		heroMoraleSeed.at(actor).validateRoll(chance, dice, bias);
+	else
+		RandomizationBias{}.validateRoll(chance, dice, bias);
+	if(!heroMoraleSeed.count(actor))
+		heroMoraleSeed.try_emplace(actor, getDefault().nextInt());
+	auto receipt = heroMoraleSeed.at(actor).rollReceipt(chance, dice, bias);
+	receipt.heroValue = moraleValue;
+	return receipt;
 }
 
 bool GameRandomizer::isMoraleLuckRollStochastic(int magnitude, EGameSettings diceSizeSetting,

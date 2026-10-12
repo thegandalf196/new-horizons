@@ -754,7 +754,8 @@ float expectedSoulChainEchoValue(const Mechanics * spellMechanics,
 	const auto capturedPenetration = spellMechanics->getCapturedMdrPenetration();
 	const auto adjustedEcho = newHorizonsSoulChain::adjustedEchoDamage(
 		*battle, spellMechanics->getCasterSide(), projectedPrimary.get(),
-		expectedSecondaryDamage, echoBasisPoints, &capturedPenetration);
+		expectedSecondaryDamage, echoBasisPoints, &capturedPenetration,
+		spellMechanics->getHeroLuckDamageMultiplierPercent());
 	const auto primaryApplicationChance = spellApplicationChance(spellMechanics, primary);
 	const auto expectedEcho = static_cast<int64_t>(std::llround(
 		static_cast<double>(adjustedEcho) * primaryApplicationChance));
@@ -2444,7 +2445,8 @@ float SpellTargetEvaluator::soulChainDelayedDamageValue(const Mechanics * spellM
 
 		const auto capturedPenetration = spellMechanics->getCapturedMdrPenetration();
 		const auto adjustedEcho = newHorizonsSoulChain::adjustedEchoDamage(
-			*battle, casterSide, projectedPrimary.get(), expectedSecondaryDamage, echoBasisPoints, &capturedPenetration);
+			*battle, casterSide, projectedPrimary.get(), expectedSecondaryDamage, echoBasisPoints, &capturedPenetration,
+			spellMechanics->getHeroLuckDamageMultiplierPercent());
 		const auto expectedEcho = static_cast<int64_t>(std::llround(
 			static_cast<double>(adjustedEcho) * primaryApplicationChance));
 		const auto actualEcho = std::min<int64_t>(

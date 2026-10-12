@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "../../lib/entities/hero/SpellPointState.h"
+#include "../../lib/networkPacks/PacksForClient.h"
+#include "../../lib/serializer/CMemorySerializer.h"
 
 #include <array>
 
@@ -223,4 +225,67 @@ TEST(SpellPointStateTest, InvalidSnapshotLeavesExistingPoolsUnchanged)
 	EXPECT_FALSE(state.restoreSnapshot(20, -1, 50));
 	EXPECT_EQ(state.getNormal(), 30);
 	EXPECT_EQ(state.getBuffer(), 50);
+}
+
+TEST(SpellPointStateTest, HeroLuckRefundFloorsOnceAndReversesChargeProvenance)
+{
+	struct Case
+	{
+		int32_t normal;
+		int32_t permanent;
+		int32_t temporary;
+		SpellPointState::Refund expected;
+	};
+	const std::array cases{
+		Case{3, 3, 3, {3, 1, 0}}, Case{0, 3, 2, {0, 2, 0}},
+		Case{0, 0, 5, {0, 0, 2}}, Case{1, 0, 1, {1, 0, 0}},
+		Case{0, 0, 1, {0, 0, 0}}, Case{0, 0, 0, {0, 0, 0}}};
+	for(const auto & input : cases)
+	{
+		const auto actual = SpellPointState::refundForSpent(input.normal, input.permanent, input.temporary, 50);
+		EXPECT_EQ(actual.normal, input.expected.normal);
+		EXPECT_EQ(actual.permanentBuffer, input.expected.permanentBuffer);
+		EXPECT_EQ(actual.temporaryBuffer, input.expected.temporaryBuffer);
+		EXPECT_EQ(static_cast<int64_t>(actual.normal) + actual.permanentBuffer + actual.temporaryBuffer,
+			(static_cast<int64_t>(input.normal) + input.permanent + input.temporary) / 2);
+	}
+	const auto maximum = std::numeric_limits<int32_t>::max();
+	const auto large = SpellPointState::refundForSpent(maximum, maximum, maximum, 50);
+	EXPECT_EQ(large.normal, maximum);
+	EXPECT_EQ(large.permanentBuffer, maximum / 2);
+	EXPECT_EQ(large.temporaryBuffer, 0);
+	EXPECT_THROW(SpellPointState::refundForSpent(-1, 0, 0, 50), std::invalid_argument);
+	EXPECT_THROW(SpellPointState::refundForSpent(0, -1, 0, 50), std::invalid_argument);
+	EXPECT_THROW(SpellPointState::refundForSpent(0, 0, -1, 50), std::invalid_argument);
+	EXPECT_THROW(SpellPointState::refundForSpent(1, 1, 1, 101), std::invalid_argument);
+}
+
+TEST(SpellPointStateTest, HeroLuckRefundPacketPreservesThreePoolsAndRejectsOlderWriterBeforePrefix)
+{
+	SetMana original;
+	original.hid = ObjectInstanceID(7);
+	original.setOperation(SetMana::Operation::REFUND_HERO_LUCK, 1, 2, 3);
+	CMemorySerializer wire;
+	wire.oser & original;
+	SetMana restored;
+	wire.iser & restored;
+	EXPECT_EQ(restored.operation, SetMana::Operation::REFUND_HERO_LUCK);
+	EXPECT_EQ(restored.hid, original.hid);
+	EXPECT_EQ(restored.amount, 1);
+	EXPECT_EQ(restored.bufferAmount, 2);
+	EXPECT_EQ(restored.temporaryBufferAmount, 3);
+
+	CMemorySerializer old;
+	old.oser.version = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_HERO_LUCK) - 1);
+	EXPECT_THROW(old.oser & original, std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+	SetMana malformed = original;
+	malformed.temporaryBufferAmount = -1;
+	CMemorySerializer invalid;
+	EXPECT_THROW(invalid.oser & malformed, std::runtime_error);
+	EXPECT_TRUE(invalid.extractBuffer().empty());
+	malformed.operation = SetMana::Operation::SPEND;
+	malformed.temporaryBufferAmount = 1;
+	EXPECT_THROW(malformed.validateOperationPayload(), std::runtime_error);
 }

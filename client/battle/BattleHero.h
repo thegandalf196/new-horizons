@@ -59,6 +59,8 @@ class BattleHero : public CIntObject
 	void render(Canvas & canvas); //prints next frame of animation to to
 public:
 	const CGHeroInstance * instance() const;
+	/// Battlefield-local upper-body anchor for transient hero proc effects.
+	Point positiveProcAnchor() const;
 	/// Select a transient school overlay for the next CAST_SPELL phase, if a supported variant is installed.
 	void setCastingGlowSchool(std::optional<std::string> school);
 

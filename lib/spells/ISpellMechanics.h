@@ -18,6 +18,7 @@
 
 #include "../battle/Destination.h"
 #include "../battle/BattleSide.h"
+#include "../battle/NewHorizonsHeroLuck.h"
 #include "../int3.h"
 #include "../GameConstants.h"
 #include "../bonuses/Bonus.h"
@@ -40,6 +41,11 @@ namespace spells
 {
 class Service;
 class Spell;
+
+/// Numerical damage sources admitted by the current hero-spell pipeline.
+/// Count-based creature execution is not HP damage, even if flagged offensive.
+DLL_LINKAGE bool heroLuckDamageEligible(const Spell & spell, const JsonNode & savedMagicRules);
+DLL_LINKAGE int64_t scaleHeroLuckDamage(int64_t damage, int32_t multiplierPercent);
 
 /// Immutable provenance of an already-resolved effect. No casting resources or RNG.
 struct DLL_LINKAGE RecipientConditionContext
@@ -150,6 +156,7 @@ public:
 	virtual bool isMetamagicGrand() const { return false; }
 	virtual uint32_t getMetamagicTargetUnitId() const { return std::numeric_limits<uint32_t>::max(); }
 	virtual int32_t getMetamagicManaRefund() const { return 0; }
+	virtual std::optional<newHorizonsHeroLuck::Receipt> getHeroLuck() const { return std::nullopt; }
 
 	virtual OptionalValue64 getEffectValue() const = 0;
 	/// Ward side is set by the authoritative battle action processor when this
@@ -198,6 +205,7 @@ public:
 	bool isMetamagicGrand() const override;
 	uint32_t getMetamagicTargetUnitId() const override;
 	int32_t getMetamagicManaRefund() const override;
+	std::optional<newHorizonsHeroLuck::Receipt> getHeroLuck() const override;
 
 	OptionalValue64 getEffectValue() const override;
 	BattleSide getCounterspellSide() const override;
@@ -221,6 +229,7 @@ public:
 	void setMetamagicGrand(bool value);
 	void setMetamagicTargetUnitId(uint32_t value);
 	void setMetamagicManaRefund(int32_t value);
+	void setHeroLuck(const newHorizonsHeroLuck::Receipt & value);
 
 	void setEffectValue(Value64 value);
 	void setCounterspell(BattleSide wardSide, bool negated, int32_t manaSpent = 0);
@@ -264,6 +273,7 @@ private:
 	bool metamagicGrand = false;
 	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
 	int32_t metamagicManaRefund = 0;
+	std::optional<newHorizonsHeroLuck::Receipt> heroLuck;
 	BattleSide counterspellSide = BattleSide::NONE;
 	bool counterspellNegated = false;
 	int32_t counterspellManaSpent = 0;
@@ -296,6 +306,10 @@ protected:
 class DLL_LINKAGE Mechanics : public scripting::ApiRawPointer<Mechanics>
 {
 public:
+	/// A resolved cast outcome only; no RNG. Count-based executions deliberately
+	/// do not use this numerical HP-damage operation.
+	virtual int32_t getHeroLuckDamageMultiplierPercent() const { return 100; }
+	int64_t scaleHeroLuckDamage(int64_t damage) const;
 	virtual ~Mechanics();
 
 	virtual void forEachEffect(const std::function<bool(const effects::Effect &)> & fn) const
@@ -538,6 +552,7 @@ private:
 class DLL_LINKAGE BaseMechanics : public Mechanics
 {
 public:
+	int32_t getHeroLuckDamageMultiplierPercent() const override;
 	virtual ~BaseMechanics();
 
 	bool adaptProblem(ESpellCastProblem source, Problem & target) const override;
@@ -628,6 +643,7 @@ public:
 
 protected:
 	const CSpell * owner;
+	std::optional<newHorizonsHeroLuck::Receipt> heroLuck;
 	Mode mode;
 	/// Register only at an accepted execution seam, never during UI prediction.
 	void registerOverwhelmingFormulaCast(ServerCallback * server);

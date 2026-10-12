@@ -63,7 +63,7 @@ class MagicV2DataTest(unittest.TestCase):
         self.rules.pop('schoolRankPowerCoefficientPercent')
         self.rules.pop('spellcraftEfficiencyPercent')
         # v2 is an earlier captured profile, not current v3 with a new version.
-        for key in ('morale', 'creatureAbilities', 'protectedAdventureBarriers'):
+        for key in ('morale', 'creatureAbilities', 'protectedAdventureBarriers', 'heroLuck', 'heroMorale'):
             self.rules.pop(key, None)
         self.rules['adventureSpells']['core:waterWalk'].pop('requireLegalDayEnd', None)
         self.rules['spells']['core:quicksand'].pop('selectedPlacement')
@@ -80,6 +80,59 @@ class MagicV2DataTest(unittest.TestCase):
                                 if 'variant' not in row}
         self.old_rules = legacy_rules(self.rules)
         self.formula_spell = 'core:magicArrow'
+
+    def test_captured_hero_luck_morale_defaults_and_module_match(self):
+        expected = {
+            'luckyDayChanceScalePercent': 100, 'erraticManaChanceScalePercent': 100,
+            'druidicLuckChanceScalePercent': 100, 'orderMultiplierPercent': 200,
+            'damageMultiplierPercent': 200, 'manaRefundPercent': 50,
+        }
+        self.assertEqual(self.v3_rules['heroLuck'], expected)
+        self.assertEqual(self.v3_rules['heroMorale'], {'heroicSpiritChanceScalePercent': 100})
+        module = load('Mods/new-horizons/mod.json')['settings']['magic']['newHorizons']
+        self.assertEqual(module['heroLuck'], expected)
+        self.assertEqual(module['heroMorale'], self.v3_rules['heroMorale'])
+        # Reuse established curves rather than silently creating independent dice.
+        self.assertEqual(load('config/newHorizonsCombat.json')['combat']['goodLuckChance'],
+                         list(range(4, 41, 4)))
+        self.assertEqual(self.v3_rules['morale']['goodChance'], list(range(3, 31, 3)))
+        self.assertEqual(self.v3_rules['morale']['diceSize'], 100)
+
+    def test_hero_action_blocks_are_optional_v3_only_and_structurally_closed(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        old = copy.deepcopy(self.v3_rules)
+        for block in ('heroLuck', 'heroMorale'):
+            old.pop(block)
+            for invalid in (None, {}, {**self.v3_rules[block], 'extra': 1}):
+                changed = copy.deepcopy(self.v3_rules)
+                changed[block] = invalid
+                with self.subTest(block=block, invalid=invalid):
+                    self.assertFalse(validator.is_valid(changed))
+            for field in self.v3_rules[block]:
+                changed = copy.deepcopy(self.v3_rules)
+                changed[block].pop(field)
+                self.assertFalse(validator.is_valid(changed))
+            legacy = copy.deepcopy(self.rules)
+            legacy[block] = self.v3_rules[block]
+            self.assertFalse(self.validator.is_valid(legacy))
+        validator.validate(old)
+        self.assertNotIn('heroLuck', self.rules)
+        self.assertNotIn('heroMorale', self.old_rules)
+
+    def test_hero_action_values_have_strict_integer_bounds(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        for block in ('heroLuck', 'heroMorale'):
+            for field in self.v3_rules[block]:
+                maximum = 100 if field == 'manaRefundPercent' else 1000
+                for value in (-1, maximum + 1, True, 0.5, '100'):
+                    changed = copy.deepcopy(self.v3_rules)
+                    changed[block][field] = value
+                    with self.subTest(block=block, field=field, value=value):
+                        self.assertFalse(validator.is_valid(changed))
+                for value in (0, maximum):
+                    changed = copy.deepcopy(self.v3_rules)
+                    changed[block][field] = value
+                    validator.validate(changed)
 
     def test_resurrection_marker_is_optional_and_v3_only(self):
         validator = Draft4Validator(self.v3, registry=self.registry)

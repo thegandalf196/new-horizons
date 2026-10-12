@@ -56,7 +56,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		DOUBLE_COMMAND,
 		BATTLE_PLAN,
 		DIVINE_MANDATE,
-		CRISIS_COMMAND
+		CRISIS_COMMAND,
+		HEROIC_SPIRIT
 	};
 
 	struct DLL_LINKAGE Grant
@@ -73,6 +74,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 
 		template <typename Handler> void serialize(Handler & h)
 		{
+			if(h.saving && source == GrantSource::HEROIC_SPIRIT && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+				throw std::runtime_error("Heroic Spirit allowance requires its save format");
 			if(source == GrantSource::CRISIS_COMMAND && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
 				throw std::runtime_error("Crisis Command allowance requires its save format");
 			if(h.saving && !divineMandateRecipients.empty()
@@ -92,6 +95,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			h & id;
 			h & allowance;
 			h & source;
+			if(source == GrantSource::HEROIC_SPIRIT && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+				throw std::runtime_error("Old-format raw allowance contains Heroic Spirit");
 			if(source == GrantSource::CRISIS_COMMAND && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
 				throw std::runtime_error("Old-format raw allowance contains Crisis Command");
 			h & grantedRound;
@@ -121,6 +126,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				|| (source == GrantSource::DOUBLE_COMMAND
 					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
 				|| (source == GrantSource::CRISIS_COMMAND
+					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
+				|| (source == GrantSource::HEROIC_SPIRIT
 					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
 				|| (source == GrantSource::BATTLE_PLAN
 					&& (allowance != AllowanceKind::ORDER || grantedRound != 1 || expiryRound != 1))
@@ -166,6 +173,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 	uint32_t nextGrantId = 1;
 	std::vector<Grant> grants;
 	uint8_t divineMandateCompletedPairs = 0;
+	/// Round-local consumed flexible-Order receipts whose Morale roll was resolved.
+	/// Failures are retained too, so replay cannot reroll an accepted action.
+	std::vector<uint32_t> heroicSpiritProcessedReceipts;
 
 	bool operator==(const HeroActionAllowanceState &) const = default;
 
@@ -185,6 +195,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			return grant.expiryRound < round;
 		});
 		next.currentRound = round;
+		next.heroicSpiritProcessedReceipts.clear();
 		next.appendGrant(AllowanceKind::HERO, GrantSource::ROUND, round);
 		next.validateShape();
 		*this = std::move(next);
@@ -196,7 +207,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 	{
 		validateShape();
 		if(currentRound < 0 || !isValid(allowance) || !isValid(source)
-			|| source == GrantSource::ROUND || expiryRound < currentRound
+			|| source == GrantSource::ROUND || source == GrantSource::HEROIC_SPIRIT || expiryRound < currentRound
 			|| ((source == GrantSource::METAMAGIC || source == GrantSource::METAMAGIC_GRAND)
 				&& allowance != AllowanceKind::SPELL))
 			throw std::invalid_argument("Invalid Hero Action allowance grant");
@@ -206,6 +217,43 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		next.validateShape();
 		*this = std::move(next);
 		return id;
+	}
+
+	/// Only the authoritative consumer's accepted flexible-Hero Order receipt
+	/// may resolve Morale. Typed bonus Orders cannot manufacture further grants.
+	static bool isHeroicSpiritTrigger(const Receipt & receipt)
+	{
+		return receipt.action == ActionKind::ORDER && receipt.allowance == AllowanceKind::HERO
+			&& receipt.grantId != 0 && receipt.round >= 0 && receipt.divineMandateRecipients.empty()
+			&& (receipt.source == GrantSource::ROUND || receipt.source == GrantSource::PERK
+				|| receipt.source == GrantSource::ARTIFACT || receipt.source == GrantSource::OTHER);
+	}
+
+	bool canResolveHeroicSpirit(const Receipt & receipt) const
+	{
+		validateShape();
+		return currentRound >= 0 && receipt.round == currentRound
+			&& isHeroicSpiritTrigger(receipt) && receipt.grantId < nextGrantId
+			&& nextGrantId != std::numeric_limits<uint32_t>::max()
+			&& !std::binary_search(heroicSpiritProcessedReceipts.begin(), heroicSpiritProcessedReceipts.end(), receipt.grantId)
+			&& std::none_of(grants.begin(), grants.end(), [&receipt](const Grant & grant)
+			{
+				return grant.id == receipt.grantId;
+			});
+	}
+
+	bool resolveHeroicSpirit(const Receipt & receipt, bool success)
+	{
+		if(!canResolveHeroicSpirit(receipt))
+			return false;
+		auto next = *this;
+		next.heroicSpiritProcessedReceipts.insert(std::lower_bound(next.heroicSpiritProcessedReceipts.begin(),
+			next.heroicSpiritProcessedReceipts.end(), receipt.grantId), receipt.grantId);
+		if(success)
+			next.appendGrant(AllowanceKind::ORDER, GrantSource::HEROIC_SPIRIT, currentRound);
+		next.validateShape();
+		*this = std::move(next);
+		return true;
 	}
 
 	/// Selects without spending. Typed allowances are preferred to flexible Hero
@@ -307,10 +355,22 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		if(divineMandateCompletedPairs > MAX_DIVINE_MANDATE_COMPLETED_PAIRS
 			|| (currentRound == -1 && divineMandateCompletedPairs != 0))
 			throw std::runtime_error("Invalid Divine Mandate completed-pair count");
+		if((currentRound == -1 && !heroicSpiritProcessedReceipts.empty())
+			|| !std::is_sorted(heroicSpiritProcessedReceipts.begin(), heroicSpiritProcessedReceipts.end())
+			|| std::adjacent_find(heroicSpiritProcessedReceipts.begin(), heroicSpiritProcessedReceipts.end()) != heroicSpiritProcessedReceipts.end()
+			|| std::any_of(heroicSpiritProcessedReceipts.begin(), heroicSpiritProcessedReceipts.end(), [this](uint32_t id)
+			{
+				return id == 0 || id >= nextGrantId || std::any_of(grants.begin(), grants.end(), [id](const Grant & grant)
+				{
+					return grant.id == id;
+				});
+			}))
+			throw std::runtime_error("Invalid Heroic Spirit processed Order receipts");
 
 		uint32_t previousId = 0;
 		uint32_t currentRoundBaseGrants = 0;
 		uint32_t divineMandateGrants = 0;
+		uint32_t heroicSpiritGrants = 0;
 		for(const auto & grant : grants)
 		{
 			grant.validateShape();
@@ -322,15 +382,20 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				++currentRoundBaseGrants;
 			if(grant.source == GrantSource::DIVINE_MANDATE)
 				++divineMandateGrants;
+			if(grant.source == GrantSource::HEROIC_SPIRIT)
+				++heroicSpiritGrants;
 		}
 		if(currentRoundBaseGrants > 1)
 			throw std::runtime_error("Duplicate base Hero Action allowance");
 		if(divineMandateGrants > 1)
 			throw std::runtime_error("Duplicate Divine Mandate follow-up allowance");
+		if(heroicSpiritGrants > heroicSpiritProcessedReceipts.size())
+			throw std::runtime_error("Heroic Spirit allowance lacks a processed Order receipt");
 	}
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		validateHeroicSpiritSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND)
 			&& std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
 			{ return grant.source == GrantSource::CRISIS_COMMAND; }))
@@ -373,12 +438,29 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			h & divineMandateCompletedPairs;
 		else if(!h.saving)
 			divineMandateCompletedPairs = 0;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+			h & heroicSpiritProcessedReceipts;
+		else if(!h.saving)
+		{
+			heroicSpiritProcessedReceipts.clear();
+			if(std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
+			{ return grant.source == GrantSource::HEROIC_SPIRIT; }))
+				throw std::runtime_error("Old-format ledger contains Heroic Spirit");
+		}
 		if(!h.saving
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MANDATE_OF_HEAVEN)
 			&& divineMandateCompletedPairs > MAX_DIVINE_MANDATE_COMPLETED_PAIRS_WITHOUT_MANDATE_OF_HEAVEN)
 			throw std::runtime_error("Pre-Mandate of Heaven save contains an extended Divine Mandate pair count");
 		if(!h.saving)
 			validateShape();
+	}
+
+	template <typename Handler> void validateHeroicSpiritSerialization(Handler & h) const
+	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK)
+			&& (!heroicSpiritProcessedReceipts.empty() || std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
+			{ return grant.source == GrantSource::HEROIC_SPIRIT; })))
+			throw std::runtime_error("Cannot discard Heroic Spirit Order state");
 	}
 
 	template <typename Handler> void validateSharedPurposeSerialization(Handler & h) const
@@ -443,7 +525,8 @@ private:
 			|| value == GrantSource::METAMAGIC_GRAND || value == GrantSource::PERK
 			|| value == GrantSource::ARTIFACT || value == GrantSource::OTHER
 			|| value == GrantSource::DOUBLE_COMMAND || value == GrantSource::BATTLE_PLAN
-			|| value == GrantSource::DIVINE_MANDATE || value == GrantSource::CRISIS_COMMAND;
+			|| value == GrantSource::DIVINE_MANDATE || value == GrantSource::CRISIS_COMMAND
+			|| value == GrantSource::HEROIC_SPIRIT;
 	}
 
 	static bool canPay(AllowanceKind allowance, ActionKind action)

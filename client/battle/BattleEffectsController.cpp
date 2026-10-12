@@ -23,6 +23,8 @@
 #include "render/CAnimation.h"
 #include "render/Canvas.h"
 #include "render/Graphics.h"
+#include "render/IRenderHandler.h"
+#include "render/IImage.h"
 
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
@@ -59,6 +61,22 @@ void BattleEffectsController::displayAnimation(const AnimationPath & animation, 
 	ENGINE->sound().playSound( soundFile );
 
 	owner.stacksController->addNewAnim(new EffectAnimation(owner, animation, destTiles, 0, transparencyFactor));
+}
+
+void BattleEffectsController::displayHeroPositiveEffect(EBattleEffect effect, Point anchor)
+{
+	if(effect != EBattleEffect::GOOD_LUCK && effect != EBattleEffect::GOOD_MORALE)
+		return;
+
+	const auto path = AnimationPath::builtinTODO(graphics->battleACToDef[static_cast<size_t>(effect)][0]);
+	const auto animation = ENGINE->renderHandler().loadAnimation(path, EImageBlitMode::SIMPLE);
+	const auto first = animation->getImage(0, 0, true);
+	if(!first)
+		return;
+
+	ENGINE->sound().playSound(AudioPath::builtin(effect == EBattleEffect::GOOD_LUCK ? "GOODLUCK" : "GOODMRLE"));
+	owner.stacksController->addNewAnim(new EffectAnimation(owner, path,
+		anchor - first->dimensions() / 2, EffectAnimation::FORCE_ON_TOP));
 }
 
 void BattleEffectsController::battleAnimationPlayed(const BattleAnimationPlayed & pack)

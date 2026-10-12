@@ -405,7 +405,12 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		{{"target", "Healing recipient."}}, {},
 		"Returns recipient-specific healing with Crown and Altar scaling only the Spell Power component, never fixed healing.");
 	R.method<&Mechanics::getHexOfPainFlatDamage>("getHexOfPainFlatDamage", {},
-		"Returns the initial Hex flat term after shared Spell Power modifiers; trigger damage share is unchanged.");
+		"Returns Hex of Pain's cast-time flat damage, including its resolved Hero Luck outcome.");
+	R.method<&Mechanics::scaleHeroLuckDamage>("scaleHeroLuckDamage",
+		{{"damage", "An unmultiplied numerical HP-damage component or its captured coefficient."}}, {},
+		"Applies this originating cast's resolved damage multiplier once, without RNG. Not for healing or creature counts.");
+	R.method<&Mechanics::getHeroLuckDamageMultiplierPercent>("getHeroLuckDamageMultiplierPercent", {},
+		"Returns the resolved originating cast's damage percentage for a later damage snapshot. No RNG.");
 	R.method<&Mechanics::getPlagueTickDamage>("getPlagueTickDamage", {},
 		"Returns the initial Plague snapshot; later ticks and children reuse this value.");
 	R.method<&Mechanics::getPhantomArmyIntegrity>("getPhantomArmyIntegrity",

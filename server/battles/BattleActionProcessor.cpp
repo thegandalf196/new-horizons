@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsHeroLuck.h"
+#include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "BattleActionProcessor.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
@@ -1512,6 +1514,11 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 				HeroActionAllowanceState::ActionKind::SPELL, grant->allowance, grant->source,
 				battle.battleGetRound(), grant->divineMandateRecipients};
 	}
+	if(newHorizonsHeroLuck::hasErraticMana(h)
+		|| (newHorizonsHeroLuck::hasDruidicLuck(h)
+			&& spells::heroLuckDamageEligible(*s, battle.getBattle()->getMagicRules())))
+		if(const auto luck = gameHandler->randomizer->rollHeroLuck(h->id, h->luckVal()))
+			parameters.setHeroLuck(*luck);
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
 	if(!counterspellNegated && s->getId() == newHorizonsPurify::spellID())
 	{
@@ -3465,7 +3472,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 				}
 				const HeroActionAllowanceState::Receipt receipt{selected->grantId,
 					HeroActionAllowanceState::ActionKind::ORDER, selected->allowance, selected->source,
-					battle.battleGetRound()};
+					battle.battleGetRound(), {}};
 				auto next = currentDoubleCommand;
 				const auto deferredTarget = ba.command == HeroCommand::SECOND_WIND
 					? preparedOrderState->primaryTargetUnitId : DoubleCommandState::INVALID_UNIT_ID;
@@ -3511,6 +3518,38 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		return false;
 	}
 	logGlobal->trace("Making action: %s", ba.toString());
+	if(preparedOrderState)
+	{
+		const auto * hero = battle.battleGetFightingHero(ba.side);
+		const auto selected = battle.battleGetOrderActionAllowance(ba.side);
+		HeroActionAllowanceState projected;
+		bool resolveMorale = false;
+		try
+		{
+			resolveMorale = newHorizonsHeroLuck::projectOrderAllowance(battle, ba.side,
+				*preparedOrderState, preparedDoubleCommandState ? &*preparedDoubleCommandState : nullptr, projected);
+		}
+		catch(const std::exception & error)
+		{
+			gameHandler->complain(error.what());
+			return false;
+		}
+		if(newHorizonsHeroLuck::hasLuckyDay(hero))
+		{
+			preparedOrderState->heroLuck = gameHandler->randomizer->rollHeroLuck(hero->id, hero->luckVal());
+			if(preparedOrderState->heroLuck && preparedOrderState->heroLuck->triggered(
+				newHorizonsHeroLuck::chanceScalePercent(battle.getBattle()->getMagicRules(), newHorizonsHeroLuck::Proc::LuckyDay)))
+				preparedOrderState->heroLuck->mark(newHorizonsHeroLuck::Proc::LuckyDay);
+		}
+		if(resolveMorale)
+		{
+			preparedOrderState->heroMoraleActionGrantId = selected->grantId;
+			preparedOrderState->heroMorale = gameHandler->randomizer->rollHeroMorale(hero->id, hero->moraleVal());
+			if(preparedOrderState->heroMorale && preparedOrderState->heroMorale->triggered(
+				newHorizonsHeroLuck::chanceScalePercent(battle.getBattle()->getMagicRules(), newHorizonsHeroLuck::Proc::HeroicSpirit)))
+				preparedOrderState->heroMorale->mark(newHorizonsHeroLuck::Proc::HeroicSpirit);
+		}
+	}
 
 	// for these events client does not expects StartAction/EndAction wrapper
 	if (!ba.isBattleEndAction())
@@ -4657,18 +4696,14 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		&& battle.battleCanUsePerfectMoment(attacker, defender, attack.ranged);
 	const auto luckSide = battle.playerToSide(battle.battleGetOwner(attacker));
 	bool secondChanceWasAvailable = false;
-	bool gamblerAttackWasAvailable = false;
 	SylvanLuckState fortuneBeforeAttack;
 	if(luckSide == BattleSide::ATTACKER || luckSide == BattleSide::DEFENDER)
 	{
 		fortuneBeforeAttack = battle.getBattle()->getSylvanLuckState(luckSide);
 		secondChanceWasAvailable = fortuneBeforeAttack.secondChance && !fortuneBeforeAttack.secondChanceUsed;
-		gamblerAttackWasAvailable = fortuneBeforeAttack.gamblerAttackAvailable();
 	}
 	const bool chainFortuneWasAvailable = fortuneBeforeAttack.chainFortuneAvailable(attacker->unitId());
 	rollAttackFlags(battle, attacker, defender, bat, perfectMoment);
-	const bool gamblerAttackWindowUsed = gamblerAttackWasAvailable && bat.fortuneState
-		&& bat.fortuneState->gamblerAttackUsedThisRound;
 	const bool chainFortuneConsumed = chainFortuneWasAvailable && bat.fortuneState
 		&& !bat.fortuneState->chainFortuneAvailable(attacker->unitId());
 	const bool chainFortuneArmed = bat.fortuneState && !fortuneBeforeAttack.chainTriggeredThisRound
@@ -4687,13 +4722,6 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	{
 		MetaString line;
 		line.appendRawString("Positive Luck from %s arms Chain of Fortune: the next different friendly stack's attack receives +1 Luck (normal Luck limits and immunity apply).");
-		attacker->addNameReplacement(line, attacker->getCount());
-		combatFeedbackLogLines.push_back(std::move(line));
-	}
-	if(gamblerAttackWindowUsed)
-	{
-		MetaString line;
-		line.appendRawString("Gambler offers +3 Luck to %s for its first attack this round; normal Luck limits and immunity apply.");
 		attacker->addNameReplacement(line, attacker->getCount());
 		combatFeedbackLogLines.push_back(std::move(line));
 	}
@@ -4836,9 +4864,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	}
 
 	markSpellLikeAttack(attacker, bat);
-	const bool genericLuckyRecovery = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker, !bat.spellLike())
-		&& newHorizonsCombatSkills::hasLuckyRecovery(attackerHero);
-	if(bat.lucky() && (bat.fortuneState || genericLuckyRecovery))
+	if(bat.lucky() && bat.fortuneState)
 	{
 		int64_t actualDamage = 0;
 		bool enemyStackKilled = false;
@@ -4862,7 +4888,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		if(!attack.ranged && attackerState->alive())
 		{
 			auto healing = newHorizonsCombatSkills::luckyRecoveryAmount(actualDamage,
-				genericLuckyRecovery, bat.fortuneState && bat.fortuneState->luckyRecovery);
+				false, bat.fortuneState && bat.fortuneState->luckyRecovery);
 			if(healing > 0)
 				attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
 		}
@@ -5193,26 +5219,6 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		defender->addNameReplacement(line, defender->getCount());
 		message.lines.push_back(std::move(line));
 		gameHandler->sendAndApply(message);
-	}
-	if(gamblerAttackWindowUsed && !bat.lucky() && attacker->alive())
-	{
-		const auto existing = attacker->getAllBonuses(CSelector([](const Bonus * bonus)
-		{
-			return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
-		}));
-		if(!existing || existing->empty())
-		{
-			SetStackEffect penalty;
-			penalty.battleID = battle.getBattle()->getBattleID();
-			penalty.toAdd.emplace_back(attacker->unitId(),
-				std::vector<Bonus>{newHorizonsCombatSkills::gamblerLuckPenalty()});
-			gameHandler->sendAndApply(penalty);
-		}
-
-		MetaString line;
-		line.appendRawString("Gambler's first attack this round did not trigger positive Luck; %s suffers -2 Luck until its next activation.");
-		attacker->addNameReplacement(line, attacker->getCount());
-		combatFeedbackLogLines.push_back(std::move(line));
 	}
 	for(const auto * target : immovableTriggered)
 	{

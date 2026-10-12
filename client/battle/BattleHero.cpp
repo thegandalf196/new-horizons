@@ -267,6 +267,13 @@ void BattleHero::pause()
 	currentSpeed = 0.f;
 }
 
+Point BattleHero::positiveProcAnchor() const
+{
+	// Both facing directions use the actual hero widget, not a creature hex
+	// or the compact hero portrait. Keep the effect above the horse's body.
+	return Point(pos.center().x, pos.y + pos.h / 4) - parent->pos.topLeft();
+}
+
 void BattleHero::play()
 {
 	//H3 speed: 10 fps ( 100 ms per frame)

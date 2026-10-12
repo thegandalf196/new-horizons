@@ -2101,6 +2101,8 @@ int CBattleInfoCallback::battleHeroOrderFlankMeleeDamagePercent(const BattleAtta
 		++distinctSides;
 	const int additionalSides = std::max(0, distinctSides - 1);
 	const auto & formula = currentBattle->getHeroCommandRules()["commands"]["flank"]["effects"]["meleeDamagePercent"];
+	const int intrinsicBaseDamagePercent = heroCommands::coefficient(formula, *hero,
+		state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
 	const int baseDamagePercent = heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(formula,
 		state->crownAndAltarAppliesTo(attacker->unitId())), *hero,
 		state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
@@ -2111,7 +2113,11 @@ int CBattleInfoCallback::battleHeroOrderFlankMeleeDamagePercent(const BattleAtta
 			*hero, state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent())
 		: battleHeroOrderFlankAdditionalSidePercent(attackerSide,
 			state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
-	return baseDamagePercent + additionalSides * additionalSidePercent;
+	const int intrinsicAdditionalSidePercent = heroCommands::coefficient(
+		currentBattle->getHeroCommandRules()["commands"]["flank"]["effects"]["additionalSidePercent"],
+		*hero, state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
+	return heroCommands::orderPotency(intrinsicBaseDamagePercent + additionalSides * intrinsicAdditionalSidePercent,
+		baseDamagePercent + additionalSides * additionalSidePercent, *state, currentBattle->getMagicRules());
 }
 
 int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide side,
@@ -2169,8 +2175,10 @@ int CBattleInfoCallback::battleTargetedRangedCommandPercent(const battle::Unit *
 	const auto side = playerToSide(battleGetOwner(attacker));
 	const auto mark = battleGetFocusFireState(side);
 	const auto order = battleGetHeroOrderState(side, HeroCommand::FOCUS_FIRE);
-	return order && order->crownAndAltarAppliesTo(attacker->unitId())
+	const int value = order && order->crownAndAltarAppliesTo(attacker->unitId())
 		? order->crownAndAltarFocusFirePercent : mark->rangedDamagePercent;
+	return order ? heroCommands::orderPotency(mark->rangedDamagePercent, value,
+		*order, getBattle()->getMagicRules()) : value;
 }
 
 ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const
@@ -4042,13 +4050,18 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		const auto defenderSide = playerToSide(battleGetOwner(info.defender));
 		const auto attackerStates = battleGetHeroOrderStates(attackerSide);
 		const auto defenderStates = battleGetHeroOrderStates(defenderSide);
-		const auto coefficientFor = [](const JsonNode & formula, const CGHeroInstance * hero,
-			const HeroOrderState * orderState, uint32_t recipient)
+		const auto coefficientFor = [this](const JsonNode & formula, const CGHeroInstance * hero,
+			const HeroOrderState * orderState, uint32_t recipient, bool scaleLucky = true)
 		{
-			return hero ? heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(formula,
+			const int intrinsic = hero ? heroCommands::coefficient(formula, *hero,
+				orderState ? orderState->warcastingBonusPercent : 0,
+				orderState ? orderState->divineMandateEfficiencyBonusPercent() : 0) : 0;
+			const int value = hero ? heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(formula,
 				orderState && orderState->crownAndAltarAppliesTo(recipient)), *hero,
 				orderState ? orderState->warcastingBonusPercent : 0,
 				orderState ? orderState->divineMandateEfficiencyBonusPercent() : 0) : 0;
+			return scaleLucky && orderState
+				? heroCommands::orderPotency(intrinsic, value, *orderState, getBattle()->getMagicRules()) : value;
 		};
 		const auto eligibleOrderUnit = [](const battle::Unit * unit)
 		{
@@ -4100,8 +4113,11 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(eligibleOrderUnit(info.attacker) && !info.shooting && !info.secondaryAttack && info.chargeDistance >= 3
 					&& !attackerState.containsConsumed(info.attacker->unitId()))
 				{
-					const int orderDamagePercent = coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState, info.attacker->unitId())
-						+ 2 * (info.chargeDistance - 3);
+					const int intrinsic = heroCommands::coefficient(rules["charge"]["effects"]["meleeDamagePercent"],
+						*attack, attackerState.warcastingBonusPercent, attackerState.divineMandateEfficiencyBonusPercent());
+					const int orderDamagePercent = heroCommands::orderPotency(intrinsic + 2 * (info.chargeDistance - 3),
+						coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState, info.attacker->unitId(), false)
+							+ 2 * (info.chargeDistance - 3), attackerState, getBattle()->getMagicRules());
 					payload.heroOrderDamagePercent += orderDamagePercent;
 					if(orderDamagePercent > 0)
 						recordAttackerCause(HeroCommand::CHARGE);
@@ -4122,8 +4138,13 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::BRACE:
 				if(eligibleOrderUnit(info.attacker) && info.bracePreemptive && !info.shooting)
 				{
-					const int orderMultiplier = newHorizonsCombatSkills::bracePreemptivePercent(
-						coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"], attack, &attackerState, info.attacker->unitId()), attack);
+					const int ordinary = coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"],
+						attack, &attackerState, info.attacker->unitId(), false);
+					const int companion = newHorizonsCombatSkills::bracePreemptivePercent(ordinary, attack) - ordinary;
+					const int intrinsic = heroCommands::coefficient(rules["brace"]["effects"]["preemptiveDamagePercent"],
+						*attack, attackerState.warcastingBonusPercent, attackerState.divineMandateEfficiencyBonusPercent());
+					const int orderMultiplier = heroCommands::orderPotency(intrinsic, ordinary,
+						attackerState, getBattle()->getMagicRules()) + companion;
 					payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
 					if(payload.heroOrderFinalDamageMultiplier == 100)
 						payload.heroOrderFinalDamageMultiplier = orderMultiplier;
@@ -4160,9 +4181,12 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::SECOND_WIND:
 				if(attackerState.secondWindActive && attackerState.primaryTargetUnitId == info.attacker->unitId())
 				{
-					const int orderMultiplier = newHorizonsDivineMandate::crownSecondWindPercent(
-						*attack, attackerState, info.attacker->unitId());
-					if(orderMultiplier < 100)
+					const int orderMultiplier = heroCommands::orderPotency(
+						heroCommands::secondWindPercent(*attack, attackerState.warcastingBonusPercent,
+							attackerState.divineMandateEfficiencyBonusPercent()),
+						newHorizonsDivineMandate::crownSecondWindPercent(*attack, attackerState, info.attacker->unitId()),
+						attackerState, getBattle()->getMagicRules());
+					if(orderMultiplier != 100)
 					{
 						payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
 						if(payload.heroOrderFinalDamageMultiplier == 100)

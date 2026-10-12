@@ -477,6 +477,7 @@ set(test_SRCS
 		server/battles/NewHorizonsShadowAssaultTest.cpp
 		server/battles/NewHorizonsNightProwlerTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
+		server/battles/NewHorizonsHeroLuckTest.cpp
 		server/battles/NewHorizonsLuckSerendipityTest.cpp
 		server/battles/NewHorizonsFortunesFavorTest.cpp
 		server/NewHorizonsPerfectFortuneTest.cpp
@@ -842,6 +843,9 @@ add_executable(nhProjectileFlightLifecycleTest ../client/tests/ProjectileFlightL
 add_test(NAME nhProjectileFlightLifecycleTest COMMAND nhProjectileFlightLifecycleTest)
 add_executable(nhWindowSceneRedrawTest ../client/tests/WindowSceneRedrawTest.cpp)
 add_test(NAME nhWindowSceneRedrawTest COMMAND nhWindowSceneRedrawTest)
+
+add_executable(nhHeroPositiveProcPresentationTest ../client/tests/HeroPositiveProcPresentationTest.cpp)
+add_test(NAME nhHeroPositiveProcPresentationTest COMMAND nhHeroPositiveProcPresentationTest)
 add_executable(nhAnimationPhaseStartTest ../client/tests/AnimationPhaseStartTest.cpp)
 add_test(NAME nhAnimationPhaseStartTest COMMAND nhAnimationPhaseStartTest)
 add_executable(nhReleaseUpdatePolicyTest

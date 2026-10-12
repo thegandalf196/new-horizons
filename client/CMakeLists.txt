@@ -240,6 +240,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleFieldController.h
 	battle/BattleFieldReachability.h
 	battle/BattleHero.h
+	battle/HeroPositiveProcPresentation.h
 	battle/BattleHeroActionWindow.h
 	battle/MagicArrowOverchargeWindow.h
 	battle/PurifyWindow.h

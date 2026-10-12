@@ -7,6 +7,7 @@
 #include "../../lib/serializer/CMemorySerializer.h"
 
 #include <stdexcept>
+#include <array>
 
 namespace
 {
@@ -27,6 +28,130 @@ constexpr auto CURRENT_DESIGN_SOURCE_SHA256 =
 	"7fd38c3b12386e62f511d66bfbd1ea615f301d1e2bdf57a9c70b831ff3ff81e4";
 constexpr auto UNKNOWN_SOURCE_SHA256 =
 	"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
+struct LegacyHeroProcText
+{
+	const char * skill;
+	const char * perk;
+	const char * name;
+	const char * description;
+};
+
+const std::array<LegacyHeroProcText, 4> LEGACY_HERO_PROC_TEXT = {{
+	{"new-horizons:luck", "new-horizons:luck.luckyRecovery", "Lucky Recovery",
+		"When a melee attack triggers positive Luck, surviving creatures in the attacker recover HP equal to 10% of actual damage dealt."},
+	{"new-horizons:luck", "new-horizons:luck.gambler", "Gambler",
+		"The first friendly attack each round gains +3 Luck for that attack. If positive Luck does not trigger, the attacking stack suffers -2 Luck until its next activation."},
+	{"new-horizons:luck", "new-horizons:luck.twistOfFate", "Twist of Fate",
+		"The first random combat roll each combat that produces a negative result for the hero's army is automatically rerolled once. Deterministic effects cannot be rerolled."},
+	{"new-horizons:discipline", "new-horizons:discipline.heroicSpirit", "Heroic Spirit",
+		"When positive Morale triggers, the affected stack gains one additional retaliation until its next activation."}
+}};
+
+JsonNode & savedPerk(JsonNode & rules, const char * skill, const char * id)
+{
+	for(auto & perk : rules["skills"][skill]["perks"].Vector())
+		if(perk["id"].String() == id)
+			return perk;
+	throw std::runtime_error("Missing fixture perk");
+}
+
+newHorizonsHeroes::PerkState legacyHeroProcState()
+{
+	auto result = state();
+	result.select("new-horizons:luck", "new-horizons:luck.secondChance", 1);
+	result.select("new-horizons:luck", "new-horizons:luck.luckyRecovery", 2);
+	result.select("new-horizons:luck", "new-horizons:luck.twistOfFate", 3);
+	result.select("new-horizons:discipline", "new-horizons:discipline.steadfast", 1);
+	result.select("new-horizons:discipline", "new-horizons:discipline.holdFast", 2);
+	result.select("new-horizons:discipline", "new-horizons:discipline.heroicSpirit", 3);
+	for(const auto & entry : LEGACY_HERO_PROC_TEXT)
+	{
+		auto & perk = savedPerk(result.rules, entry.skill, entry.perk);
+		perk["name"].String() = entry.name;
+		perk["description"].String() = entry.description;
+		perk["effect"]["description"].String() = entry.description;
+	}
+	// Preserve saved policy and unrelated text rather than adopting today's
+	// full catalogue. The unselected Gambler row can remain planned in a save.
+	savedPerk(result.rules, "new-horizons:luck", "new-horizons:luck.gambler")["effect"]["status"].String() = "planned";
+	result.rules["sourceSha256"].String() = UNKNOWN_SOURCE_SHA256;
+	result.rules["skills"][SKILL]["ranks"]["basic"]["description"].String() = "Saved unrelated coefficient: +42%.";
+	result.validate();
+	return result;
+}
+
+JsonNode expectedHeroProcText(const JsonNode & saved)
+{
+	auto result = saved;
+	const auto canonical = state();
+	for(const auto & entry : LEGACY_HERO_PROC_TEXT)
+	{
+		const auto current = newHorizonsHeroes::perkDefinition(canonical.rules, entry.skill, entry.perk);
+		if(!current)
+			throw std::runtime_error("Missing canonical fixture perk");
+		auto & perk = savedPerk(result, entry.skill, entry.perk);
+		perk["name"].String() = current->name;
+		perk["description"].String() = current->description;
+		perk["effect"]["description"] = current->effect["description"];
+	}
+	return result;
+}
+}
+
+TEST(NewHorizonsPerkState, LegacyHeroProcTextMigratesFromCanonicalOnJsonLoadWithoutChangingSavedPolicy)
+{
+	const auto legacy = legacyHeroProcState();
+	const auto expected = expectedHeroProcText(legacy.rules);
+	const auto restored = newHorizonsHeroes::PerkState::fromJson(legacy.toJson());
+	EXPECT_EQ(restored.rules, expected);
+	EXPECT_EQ(restored.selected, legacy.selected);
+	EXPECT_EQ(restored.rules["skills"]["new-horizons:sylvanLuck"], legacy.rules["skills"]["new-horizons:sylvanLuck"]);
+	EXPECT_EQ(restored.rules["sourceSha256"], legacy.rules["sourceSha256"]);
+}
+
+TEST(NewHorizonsPerkState, LegacyHeroProcTextMigratesOnBinaryLoadAndIsIdempotent)
+{
+	const auto legacy = legacyHeroProcState();
+	CMemorySerializer memory;
+	memory.oser & legacy;
+	newHorizonsHeroes::PerkState restored;
+	memory.iser & restored;
+	EXPECT_EQ(restored.rules, expectedHeroProcText(legacy.rules));
+	EXPECT_EQ(restored.selected, legacy.selected);
+	const auto jsonAgain = newHorizonsHeroes::PerkState::fromJson(restored.toJson());
+	EXPECT_EQ(jsonAgain.rules, restored.rules);
+	EXPECT_EQ(jsonAgain.selected, restored.selected);
+	CMemorySerializer again;
+	again.oser & restored;
+	newHorizonsHeroes::PerkState binaryAgain;
+	again.iser & binaryAgain;
+	EXPECT_EQ(binaryAgain.rules, restored.rules);
+	EXPECT_EQ(binaryAgain.selected, restored.selected);
+}
+
+TEST(NewHorizonsPerkState, CurrentAndUnrecognizedHeroProcTextRemainExactlyCaptured)
+{
+	for(bool customLegacy : {false, true})
+	{
+		auto captured = state();
+		if(customLegacy)
+		{
+			auto & perk = savedPerk(captured.rules, "new-horizons:luck", "new-horizons:luck.gambler");
+			perk["name"].String() = "Gambler";
+			perk["description"].String() = "Unrecognized saved custom semantics.";
+			perk["effect"]["description"].String() = "Unrecognized saved custom semantics.";
+		}
+		const auto json = newHorizonsHeroes::PerkState::fromJson(captured.toJson());
+		EXPECT_EQ(json.rules, captured.rules);
+		EXPECT_EQ(json.selected, captured.selected);
+		CMemorySerializer memory;
+		memory.oser & captured;
+		newHorizonsHeroes::PerkState binary;
+		memory.iser & binary;
+		EXPECT_EQ(binary.rules, captured.rules);
+		EXPECT_EQ(binary.selected, captured.selected);
+	}
 }
 
 TEST(NewHorizonsPerkState, LegacyStateRemainsEmptyAndCannotSelect)

@@ -501,13 +501,13 @@ TEST_F(NewHorizonsRapidResponseTest, JointEarnedHeroicMoralePrecedesRapidWithout
 	ASSERT_TRUE(firstEndpoint.isAvailable());
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
 		BattleAction::makeMove(enemy, firstEndpoint)));
-	// Actual positive existing Morale roll: Heroic survives precisely its
-	// granting extra, while the response stays queued rather than duplicated.
+	// Actual positive creature Morale still precedes Rapid Response, but the
+	// reworked Heroic Spirit grants Orders, not creature retaliations.
 	ASSERT_EQ(battle()->battleActiveUnit(), enemy);
 	ASSERT_TRUE(enemy->hadMorale);
-	EXPECT_TRUE(enemy->heroicSpiritRetaliation);
+	EXPECT_FALSE(enemy->heroicSpiritRetaliation);
 	EXPECT_FALSE(enemy->heroicSpiritMoralePending);
-	EXPECT_EQ(enemy->counterAttacks.total(), 2);
+	EXPECT_EQ(enemy->counterAttacks.total(), 1);
 	const auto pending = battle()->getRapidResponseState(BattleSide::ATTACKER);
 	ASSERT_TRUE(pending.pending());
 	EXPECT_EQ(pending.pendingUnitId, latestId);
@@ -535,9 +535,9 @@ TEST_F(NewHorizonsRapidResponseTest, JointEarnedHeroicMoralePrecedesRapidWithout
 	EXPECT_FALSE(battle()->getRapidResponseState(BattleSide::ATTACKER).pending());
 	EXPECT_EQ(battle()->getRapidResponseState(BattleSide::ATTACKER).lastUsedRound, battle()->getRound());
 	EXPECT_TRUE(battle()->getSeizeInitiativeState().completed(enemy->unitId()));
-	EXPECT_TRUE(enemy->heroicSpiritRetaliation);
-	// Existing lifecycle-boundary control, not a fabricated earned grant:
-	// a separate genuine extra start expires Heroic, never its granting extra.
+	EXPECT_FALSE(enemy->heroicSpiritRetaliation);
+	// A separate genuine extra start must still leave the completed ordinary
+	// slot and Rapid Response receipt intact, without reviving retired state.
 	BattleSetActiveStack independent;
 	independent.battleID = BattleID(0);
 	independent.stack = enemy->unitId();

@@ -304,7 +304,7 @@ TEST_F(NewHorizonsUnbreakableTest, IgnoresOneNegativeTriggerPerRoundAndRenewsAft
 		<< "Unbreakable does not turn its per-round use into Rally's battle-long use";
 }
 
-TEST_F(NewHorizonsUnbreakableTest, UnbreakableAndRallyProtectSeparateTriggersBeforeTwistOfFate)
+TEST_F(NewHorizonsUnbreakableTest, UnbreakableAndRallyProtectSeparateTriggersWithoutDruidicRerolls)
 {
 	startUnbreakableBattle(BattleSide::DEFENDER, true, true);
 	auto * hypnotized = addNegativeMoraleStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(leftHex));
@@ -328,19 +328,19 @@ TEST_F(NewHorizonsUnbreakableTest, UnbreakableAndRallyProtectSeparateTriggersBef
 	EXPECT_FALSE(battle()->getMoraleSuppressionState(BattleSide::DEFENDER).used)
 		<< "The same negative trigger spends only Unbreakable, leaving Rally available";
 	EXPECT_FALSE(battle()->getMoraleSuppressionState(BattleSide::ATTACKER).roundUsed);
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available())
-		<< "The ignored trigger returns before Twist of Fate can spend its reroll";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available())
+		<< "Unbreakable ignores the trigger without creating a retired Druidic reroll";
 
 	advanceUntilTrackedActivations(pikemen, 1);
 	EXPECT_TRUE(battle()->getMoraleSuppressionState(BattleSide::DEFENDER).used)
 		<< "Rally protects the next trigger after this round's Unbreakable allowance is spent";
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
 	advanceUntilTrackedActivations(pikemen, 2);
 	EXPECT_EQ(trackedActivationCount(pikemen, BattleUnitTurnReason::TURN_QUEUE), 1u);
 	EXPECT_EQ(trackedActivationCount(pikemen, BattleUnitTurnReason::AUTOMATIC_ACTION), 1u)
 		<< "A third negative trigger reaches the ordinary bad-Morale path after both allowances are spent";
-	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available())
-		<< "At a deterministic 100% bad-Morale chance, the unsuppressed third trigger does not invoke a stochastic Twist reroll";
+	EXPECT_FALSE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available())
+		<< "The unsuppressed third trigger remains ordinary bad Morale with no Druidic reroll";
 }
 
 TEST_F(NewHorizonsUnbreakableTest, PositiveMoraleAndMoraleImmunityLeaveUnbreakableAvailable)

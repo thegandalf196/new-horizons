@@ -125,6 +125,8 @@ class BattleInterface
 	std::unique_ptr<BattleAction> pendingHeroOrderPresentation;
 	int32_t pendingHeroOrderRound = -1;
 	void presentAcceptedHeroOrder(const BattleAction & action);
+	void presentHeroPositiveProcs(BattleSide side, bool luckyDay, bool erraticMana,
+		bool druidicLuck, bool heroicSpirit);
 
 	void playIntroSoundAndUnlockInterface();
 	void onIntroSoundPlayed();

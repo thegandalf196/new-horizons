@@ -265,7 +265,7 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 		-- the authoritative cast mechanics and retained in the generic obstacle
 		-- damage floor.  The trigger proxy recognizes these sources and uses the
 		-- snapshot exactly.
-		minimalDamage    = snapshotDamage and mechanics:getEffectValue() or (self.minimalDamage or 0),
+		minimalDamage    = snapshotDamage and mechanics:scaleHeroLuckDamage(mechanics:getEffectValue()) or (self.minimalDamage or 0),
 		damageSnapshot   = snapshotDamage,
 		-- The legacy Fire Wall descriptor stores two decrements, which gives
 		-- the original spell's duration.  Canonical New Horizons Fire Wall is

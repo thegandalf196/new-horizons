@@ -30,10 +30,11 @@ int rank(const CGHeroInstance * hero, const char * skill)
 
 namespace newHorizonsCombatSkills
 {
-bool hasLuckyRecovery(const CGHeroInstance * hero)
+bool hasLuckyRecovery(const CGHeroInstance *)
 {
-	return hero && hero->hasActivePerk(std::string(LUCK_SKILL_ID),
-		std::string(LUCKY_RECOVERY_PERK_ID));
+	// Decode-only legacy API: this stable generic ID now denotes Lucky Day.
+	// Sylvan Lucky Recovery remains a separate active mechanic.
+	return false;
 }
 
 int64_t luckyRecoveryAmount(int64_t actualDamage, bool genericRecovery, bool sylvanRecovery)

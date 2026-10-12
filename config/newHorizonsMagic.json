@@ -1,6 +1,17 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 3,
+	"heroLuck": {
+		"luckyDayChanceScalePercent": 100,
+		"erraticManaChanceScalePercent": 100,
+		"druidicLuckChanceScalePercent": 100,
+		"orderMultiplierPercent": 200,
+		"damageMultiplierPercent": 200,
+		"manaRefundPercent": 50
+	},
+	"heroMorale": {
+		"heroicSpiritChanceScalePercent": 100
+	},
 	"protectedAdventureBarriers": true,
 	"creatureAbilities": {
 		"rulesetVersion": 1,

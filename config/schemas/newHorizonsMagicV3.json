@@ -9,6 +9,29 @@
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [3]},
+		"heroLuck": {
+			"type": "object",
+			"required": ["luckyDayChanceScalePercent", "erraticManaChanceScalePercent", "druidicLuckChanceScalePercent", "orderMultiplierPercent", "damageMultiplierPercent", "manaRefundPercent"],
+			"additionalProperties": false,
+			"properties": {
+				"luckyDayChanceScalePercent": {"type": "integer", "minimum": 0, "maximum": 1000},
+				"erraticManaChanceScalePercent": {"type": "integer", "minimum": 0, "maximum": 1000},
+				"druidicLuckChanceScalePercent": {"type": "integer", "minimum": 0, "maximum": 1000},
+				"orderMultiplierPercent": {"type": "integer", "minimum": 0, "maximum": 1000},
+				"damageMultiplierPercent": {"type": "integer", "minimum": 0, "maximum": 1000},
+				"manaRefundPercent": {"type": "integer", "minimum": 0, "maximum": 100}
+			},
+			"description": "Optional captured hero Luck perk values. Absence retains defaults 100% chance scales, 200% potency/damage and 50% Mana refund. Trigger curves and dice remain in the existing Luck settings."
+		},
+		"heroMorale": {
+			"type": "object",
+			"required": ["heroicSpiritChanceScalePercent"],
+			"additionalProperties": false,
+			"properties": {
+				"heroicSpiritChanceScalePercent": {"type": "integer", "minimum": 0, "maximum": 1000}
+			},
+			"description": "Optional captured Heroic Spirit chance scale; absence retains 100%. Uses the existing captured Morale curve/dice when available. The one Order-only grant is structural, not a configurable count."
+		},
 		"morale": {
 			"$ref": "vcmi:newHorizonsMagic#/definitions/morale",
 			"description": "Optional captured v3 Morale curve. Absence retains earlier profiles. Runtime additionally checks every chance is no greater than the captured diceSize."
