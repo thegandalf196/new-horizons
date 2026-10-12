@@ -76,6 +76,39 @@ class WindowsDecoderRecipeTest(unittest.TestCase):
         self.assertIn('/tools/ci/patches/sdl3-image-3.4.4-interlace.patch text eol=lf',
                       (ROOT/'.gitattributes').read_text())
 
+    def test_official_sdl_source_seed_is_pinned_and_bound_before_dependency_build(self):
+        workflow = yaml.safe_load((ROOT/'.github/workflows/new-horizons-windows.yml').read_text())
+        steps = [step for job in workflow['jobs'].values() for step in job['steps']]
+        seed = next(step for step in steps if step.get('name') == 'Seed verified Conan source cache fallback for SDL3_image')
+        resolution = next(step for step in steps if step.get('name') == 'Resolve upstream dependency profile')
+        expected = '29751304a13d25ac513f24305fa25b06a6edd9607718c90129b8350d35fc5573'
+        self.assertLess(steps.index(seed), steps.index(resolution))
+        self.assertEqual(seed['env']['SDL_IMAGE_SOURCE_SHA256'], expected)
+        self.assertEqual(seed['env']['SDL_IMAGE_SOURCE_BYTES'], 11123077)
+        script = seed['run']
+        self.assertIn('https://www.libsdl.org/projects/SDL_image/release/SDL3_image-3.4.4.tar.gz', script)
+        self.assertIn('curl --fail --location', script)
+        self.assertIn("--proto '=https' --proto-redir '=https'", script)
+        self.assertIn('--max-time 120 --max-filesize 15728640 --retry 0', script)
+        self.assertIn('archive.stat().st_size != int(sys.argv[4])', script)
+        self.assertIn('seed_source_cache(Path(sys.argv[1]), archive, sys.argv[3])', script)
+        self.assertIn('echo "NH_CONAN_SOURCE_CACHE=$source_cache" >> "$GITHUB_ENV"', script)
+        self.assertEqual(script.count('curl --fail'), 1)
+        self.assertNotIn('for url', script)
+        self.assertNotIn('--insecure', script)
+        binding = '--core-conf="core.sources:download_cache=$NH_CONAN_SOURCE_CACHE"'
+        self.assertEqual(resolution['run'].count(binding), 1)
+        self.assertIn('conan install "$install_recipe"', resolution['run'])
+        # Transport/cache fallback must not replace the recipe's canonical source
+        # or weaken the independently maintained source and shipping pixel gates.
+        data = yaml.safe_load((ROOT/'tools/conan/sdl_image/conandata.yml').read_text())
+        self.assertEqual(data['sources']['3.4.4'], {
+            'sha256': expected,
+            'url': 'https://github.com/libsdl-org/SDL_image/releases/download/release-3.4.4/SDL3_image-3.4.4.tar.gz'})
+        self.assertTrue(any('preflight_dependency_sources' in step.get('run', '')
+                            and 'source_cache=pathlib.Path(os.environ[\'NH_CONAN_SOURCE_CACHE\'])' in step.get('run', '')
+                            for step in steps))
+
 
 if __name__ == '__main__':
     unittest.main()
