@@ -113,6 +113,65 @@ optimized path. The reference ran first and operating-system cache state was
 not controlled. These are same-input CPU component measurements on the hosted
 runner, not an in-game speedup, GPU timing or certification of later revisions.
 
+### Resolved Cabir and Wisp playback regression
+
+First-use custom frames triggered expensive generated-outline preparation over
+large, mostly transparent canvases. The resulting draw stalls let wall-clock
+animation updates catch up across multiple frame indices. Available image
+payloads therefore did not guarantee that every pose received a draw opportunity;
+this was not evidence of missing artwork or an NHART extraction problem.
+
+The repair combines the bounded, pixel-equivalent outline kernel described above
+with initial-pose and projectile-birth timing corrections. Walking position now
+uses the same effective update interval as its sprite, preserving movement
+progress across hexes. Sprite pixels, authored frame lists, resource identities
+and the NHART package were not changed for this repair.
+
+The implementation is in `clientsdl3/render/SDL_Extensions.cpp` and
+`client/battle/{AnimationPhaseStart.h,CreatureAnimation.cpp,
+BattleAnimationClasses.cpp,BattleProjectileController.cpp}`. The outline/phase
+repair landed in `d042cb3f4fd2`; the walking synchronization in `5a85daca0ad5`.
+Both are included in Windows build
+[38201168973](https://github.com/thegandalf196/new-horizons/actions/runs/38201168973),
+source `5229c808b15d`. Player verification confirmed Cabir and Wisp playback fixed
+in that build. This is separate from the native CPU/pixel and Linux draw-trace
+checks: it does not provide measured Windows frame times, certify every animation
+state, or establish a fix for slow AI turns or scenario-restart UI cleanup.
+
+### Regression guardrail: restarting during combat
+
+Status: reopened. A combat view was reported to remain superimposed on later
+scenarios after restarting during battle in the `5229c808b15d` player build.
+Rendered reproduction and verification of the repair remain required.
+
+The previous repair, `89bb7c693e5c`, established shutdown ordering:
+`CServerHandler::restartGameplay` stops the old network/gameplay waiters before
+destroying game state; `CClient::endGame` detaches the global battle interface,
+stops its waiters, clears its GUI, and then releases the battle. Preserve that
+ordering. The original `client/tests/check-battle-restart-teardown.py` checks
+source ordering; it is not rendered restart acceptance.
+The production-used scheduling regression is
+`client/tests/WindowSceneRedrawTest.cpp`, registered as `nhWindowSceneRedrawTest`.
+Run it with `ctest --test-dir build/new-horizons-linux -R '^nhWindowSceneRedrawTest$' --output-on-failure`,
+alongside `python3 client/tests/check-battle-restart-teardown.py`.
+
+Protected rendering invariant: clearing a scene must discard its deferred
+redraw requests, reset the pending flag, and request a complete repaint. An old
+window retained by another owner must not repaint over the next scene merely
+because a request was queued before teardown. `WindowHandler::clear()` previously
+omitted that invalidation; this is a concrete test gap, not yet proof of the
+reported overlay's cause. The queue's introduction predates the earlier repair;
+do not assign causality from commit order alone.
+
+Changes to battle ownership, restart/quickload/game shutdown, window clearing
+or deferred painting must preserve both invariants and run the linked lifecycle
+regressions. Rendered acceptance must exercise battle -> restart -> a new
+scenario, plus return-to-menu -> another scenario; verify no old battle window,
+queued repaint or delayed callback reappears. Record the tested build and
+platform, distinguish normal exit from supervised cleanup, and keep this issue
+open until the actual transition is verified. Do not substitute a cache reset
+or source-order assertion for that acceptance.
+
 ### SDL3 PNG interlace regression
 
 The maintained `tools/ci/patches/sdl3-image-3.4.4-interlace.patch` initializes

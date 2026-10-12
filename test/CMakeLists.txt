@@ -840,6 +840,8 @@ add_subdirectory_with_folder("3rdparty" "${googleTest_Dir}" "${CMAKE_CURRENT_BIN
 add_executable(vcmitest ${test_SRCS} ${test_HEADERS} ${mock_HEADERS})
 add_executable(nhProjectileFlightLifecycleTest ../client/tests/ProjectileFlightLifecycleTest.cpp)
 add_test(NAME nhProjectileFlightLifecycleTest COMMAND nhProjectileFlightLifecycleTest)
+add_executable(nhWindowSceneRedrawTest ../client/tests/WindowSceneRedrawTest.cpp)
+add_test(NAME nhWindowSceneRedrawTest COMMAND nhWindowSceneRedrawTest)
 add_executable(nhAnimationPhaseStartTest ../client/tests/AnimationPhaseStartTest.cpp)
 add_test(NAME nhAnimationPhaseStartTest COMMAND nhAnimationPhaseStartTest)
 add_executable(nhReleaseUpdatePolicyTest

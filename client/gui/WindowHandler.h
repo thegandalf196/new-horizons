@@ -9,8 +9,57 @@
  */
 #pragma once
 
+#include <algorithm>
+#include <cstddef>
+#include <memory>
+#include <vector>
+
 class IShowActivatable;
 class CIntObject;
+
+/// Scheduling only; callers retain the existing interface-mutex discipline.
+template<typename Object>
+class SceneRedrawState
+{
+	std::vector<Object *> pending;
+	bool hasPending = false;
+	bool fullRedraw = false;
+
+public:
+	void request(Object * object)
+	{
+		if(std::find(pending.begin(), pending.end(), object) == pending.end())
+			pending.push_back(object);
+		hasPending = true;
+	}
+
+	void cancel(Object * object)
+	{
+		if(!hasPending)
+			return;
+		pending.erase(std::remove(pending.begin(), pending.end(), object), pending.end());
+		hasPending = !pending.empty();
+	}
+
+	std::vector<Object *> takePending()
+	{
+		std::vector<Object *> result;
+		result.swap(pending);
+		hasPending = false;
+		return result;
+	}
+
+	void requestFullRedraw() { fullRedraw = true; }
+	bool fullRedrawRequested() const { return fullRedraw; }
+	void finishFrame() { fullRedraw = false; }
+
+	void clearScene()
+	{
+		pending.clear();
+		hasPending = false;
+		requestFullRedraw();
+	}
+};
 
 class WindowHandler
 {
@@ -24,13 +73,10 @@ class WindowHandler
 	/// Widget drawn on top of every window and outside of the stack, e.g. the replay abort button
 	std::shared_ptr<IShowActivatable> overlay;
 
-	bool totalRedrawRequested = false;
-
 	/// Objects whose redraw() arrived from a thread that may not draw, repainted at the start of
 	/// the next frame. No extra drawing - the software path would have redrawn them right away.
 	/// All access happens under the interface mutex, like the rest of WindowHandler.
-	std::vector<CIntObject *> pendingRedraws;
-	bool hasPendingRedraws = false;
+	SceneRedrawState<CIntObject> redrawState;
 
 	/// returns top windows
 	std::shared_ptr<IShowActivatable> topWindowImpl() const;

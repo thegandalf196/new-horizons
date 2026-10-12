@@ -99,32 +99,23 @@ bool WindowHandler::isTopWindow(IShowActivatable * window) const
 
 void WindowHandler::totalRedraw()
 {
-	totalRedrawRequested = true;
+	redrawState.requestFullRedraw();
 }
 
 void WindowHandler::requestRedraw(CIntObject * object)
 {
-	if(!vstd::contains(pendingRedraws, object))
-		pendingRedraws.push_back(object);
-
-	hasPendingRedraws = true;
+	redrawState.request(object);
 }
 
 void WindowHandler::cancelRedraw(CIntObject * object)
 {
 	// every destroyed widget passes here, so the common case must stay cheap
-	if(!hasPendingRedraws)
-		return;
-
-	vstd::erase(pendingRedraws, object);
-	hasPendingRedraws = !pendingRedraws.empty();
+	redrawState.cancel(object);
 }
 
 void WindowHandler::processPendingRedraws()
 {
-	std::vector<CIntObject *> pending;
-	pending.swap(pendingRedraws);
-	hasPendingRedraws = false;
+	auto pending = redrawState.takePending();
 
 	if(pending.empty())
 		return;
@@ -152,12 +143,12 @@ void WindowHandler::simpleRedraw()
 {
 	processPendingRedraws();
 
-	if (totalRedrawRequested)
+	if (redrawState.fullRedrawRequested())
 		totalRedrawImpl();
 	else
 		simpleRedrawImpl();
 
-	totalRedrawRequested = false;
+	redrawState.finishFrame();
 }
 
 void WindowHandler::simpleRedrawImpl()
@@ -196,6 +187,9 @@ void WindowHandler::clear()
 
 	windowsStack.clear();
 	disposed.clear();
+	// Old widgets may remain externally owned after a scenario restart. Their
+	// deferred paints must not draw the old battle over the next scene.
+	redrawState.clearScene();
 }
 
 void WindowHandler::setOverlay(std::shared_ptr<IShowActivatable> newOverlay)
