@@ -14,13 +14,17 @@ from datetime import datetime, timezone
 import fcntl
 import hashlib
 import json
+import math
 import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import signal
 import stat
+import subprocess
 import tempfile
 import sys
+import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from verify_new_horizons_art_install import verify_install, read_jsonc, nhart, RUNTIME_ART_PACK
@@ -431,6 +435,144 @@ def promote(args):
         print(candidate)
 
 
+def current_lease(store):
+    """Called under the store lock; absence is distinct from an invalid pointer."""
+    pointer = store / "current.json"
+    try:
+        identity = pointer.lstat()
+    except FileNotFoundError:
+        return None
+    read_current(store)  # Never treat a corrupt or linked pointer as no selection.
+    return (identity.st_dev, identity.st_ino, identity.st_mtime_ns,
+            identity.st_ctime_ns, pointer.read_bytes())
+
+
+def candidate_validation_identity(candidate, digest):
+    metadata = verify_snapshot(candidate, digest)
+    identity = candidate.stat()
+    return (identity.st_dev, identity.st_ino, identity.st_mtime_ns,
+            identity.st_ctime_ns, metadata,
+            sha256_file(candidate / "SNAPSHOT.json"),
+            sha256_file(candidate / "SHA256SUMS"))
+
+
+def validation_descendants(process):
+    members = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit() or int(entry.name) == process.pid:
+            continue
+        try:
+            fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
+        except (FileNotFoundError, ProcessLookupError):
+            continue
+        if int(fields[2]) == process.pid and int(fields[3]) == process.pid:
+            members.append(int(entry.name))
+    return members
+
+
+def validation_exit_observed(process):
+    # Retain the zombie leader to reserve its PID/PGID until all group signalling
+    # is complete. Popen.wait/poll must not be used at this stage.
+    return os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+
+
+def wait_validation_driver(process, timeout):
+    deadline = time.monotonic() + timeout
+    while validation_exit_observed(process) is None:
+        if time.monotonic() >= deadline:
+            raise subprocess.TimeoutExpired(process.args, timeout)
+        time.sleep(.01)
+
+
+def cleanup_validation_group(process):
+    """Only the fresh session/process group created for this validation driver."""
+    for signum in (signal.SIGTERM, signal.SIGKILL):
+        os.killpg(process.pid, signum)  # The unreaped leader reserves this group.
+        deadline = time.monotonic() + 2
+        while time.monotonic() < deadline:
+            if validation_exit_observed(process) is not None and not validation_descendants(process):
+                process.wait(timeout=2)
+                return
+            time.sleep(.01)
+    process.wait(timeout=2)
+    if validation_descendants(process):
+        fail("Validation process group cleanup could not be confirmed")
+
+
+def validate(args):
+    """Run an explicitly reviewed acceptance driver, then CAS-promote its candidate.
+
+    Supported drivers keep all descendants in this new process group and reap
+    them. Existing guarded graphical owner protocols are not compatible wrappers.
+    """
+    timeout = args.timeout
+    if not math.isfinite(timeout) or timeout <= 0:
+        fail("Validation timeout must be finite and positive")
+    command = list(args.validation_command)
+    if command[:1] == ["--"]:
+        command = command[1:]
+    if not command or any(not isinstance(value, str) or not value or "\0" in value
+                          for value in command):
+        fail("Validation requires an explicit command argv")
+    store = Path(args.store).absolute()
+    with store_lock(store, exclusive=True):
+        candidate = candidate_in_store(store, args.snapshot)
+        digest = SNAPSHOT_RE.fullmatch(candidate.name).group(1)
+        before = candidate_validation_identity(candidate, digest)
+        lease = current_lease(store)
+    # A long acceptance must not prevent another validated candidate or explicit
+    # rollback from being selected. Its captured lease cannot be refreshed later.
+    environment = os.environ.copy()
+    environment["NH_VALIDATION_SNAPSHOT"] = str(candidate)
+    environment["NH_VALIDATION_SNAPSHOT_SHA256"] = digest
+    process = None
+    interrupted = None
+    cleaning = False
+    def interrupt(signum, frame):
+        nonlocal interrupted
+        interrupted = signum
+        # A signal during Popen construction is deferred until its owned handle
+        # is available. Further signals cannot interrupt bounded cleanup.
+        if process is not None and not cleaning:
+            fail(f"Validation interrupted by signal {signum}")
+    previous_handlers = {signum: signal.getsignal(signum) for signum in (signal.SIGTERM, signal.SIGINT)}
+    try:
+        for signum in previous_handlers:
+            signal.signal(signum, interrupt)
+        try:
+            if interrupted is not None:
+                fail(f"Validation interrupted by signal {interrupted}")
+            process = subprocess.Popen(command, env=environment, stdout=sys.stderr,
+                                       start_new_session=True)
+            if interrupted is not None:
+                fail(f"Validation interrupted by signal {interrupted}")
+            wait_validation_driver(process, timeout)
+            if validation_descendants(process):
+                fail("Validation driver left descendants after returning")
+            cleaning = True  # Defer interruptions across the final direct reap.
+        except BaseException:
+            cleaning = True
+            if process is not None:
+                cleanup_validation_group(process)
+            raise
+        code = process.wait(timeout=2)  # No further signals to this group.
+    except (OSError, subprocess.TimeoutExpired) as error:
+        fail(f"Validation driver did not complete successfully: {error}")
+    finally:
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
+    if interrupted is not None:
+        fail(f"Validation interrupted by signal {interrupted}")
+    if code != 0:
+        fail(f"Validation driver failed with exit status {code}")
+    with store_lock(store, exclusive=True):
+        if candidate_validation_identity(candidate, digest) != before:
+            fail("Candidate changed during validation")
+        if current_lease(store) != lease:
+            fail("Current selection changed during validation; refusing stale promotion")
+        print(promote_snapshot(store, candidate))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -460,6 +602,15 @@ def main():
     promote_parser.add_argument("--snapshot", type=Path, required=True)
     promote_parser.add_argument("--store", type=Path, required=True)
     promote_parser.set_defaults(run=promote)
+    validate_parser = subparsers.add_parser(
+        "validate", help="run an explicit acceptance driver and promote only its unchanged candidate")
+    validate_parser.add_argument("--snapshot", type=Path, required=True)
+    validate_parser.add_argument("--store", type=Path, required=True)
+    validate_parser.add_argument("--timeout", type=float, required=True,
+                                 help="finite positive driver deadline in seconds; driver owns descendant cleanup")
+    validate_parser.add_argument("validation_command", nargs=argparse.REMAINDER,
+                                 help="reviewed validation driver argv after --; never interpreted by a shell")
+    validate_parser.set_defaults(run=validate)
     args = parser.parse_args()
     try:
         args.run(args)

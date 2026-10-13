@@ -91,8 +91,12 @@ cat > "$sourceTree/config/filesystem.json" <<'JSON'
 JSON
 [[ $(< "$candidate/config/filesystem.json") == '{"source":"editable"}' ]]
 
-python3 "$repo/tools/ci/linux_playable_snapshot.py" promote \
-	--snapshot "$candidate" --store "$store" > /dev/null
+# Synthetic acceptance uses the exact supplied candidate; no game is executed.
+# A successful gate selects it without a separate promotion command.
+python3 "$repo/tools/ci/linux_playable_snapshot.py" validate \
+	--snapshot "$candidate" --store "$store" --timeout 10 -- \
+	python3 -c 'import os, sys; from pathlib import Path; candidate = Path(os.environ["NH_VALIDATION_SNAPSHOT"]); assert candidate == Path(sys.argv[1]); assert candidate.name == "snapshot-" + os.environ["NH_VALIDATION_SNAPSHOT_SHA256"]; assert (candidate / "new-horizons").is_file()' \
+	"$candidate" > /dev/null
 
 expectedMap='Maps/Map with spaces.h3m'
 HOME="$temporary/home" SNAPSHOT_TEST_ARGV="$temporary/argv" \
@@ -158,4 +162,4 @@ for index in "${!expected_override[@]}"; do
 	[[ ${override[$index]} == "${expected_override[$index]}" ]]
 done
 
-printf '%s\n' 'PASS: default requires an explicitly promoted frozen snapshot; frozen resources, runtime overrides, profile and game args are preserved.'
+printf '%s\n' 'PASS: successful validation automatically selects the frozen snapshot; runtime overrides, legacy rollback, profile and game args are preserved.'
