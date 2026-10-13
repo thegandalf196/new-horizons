@@ -795,6 +795,133 @@ protected:
 	}
 };
 
+class NewHorizonsCampaignStartingArmyTest : public NewHorizonsStartingArmyTest
+{
+protected:
+	bool oldSpecialRequirements = false;
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsStartingArmyTest::mapLoaded(loaded);
+		if(oldSpecialRequirements)
+		{
+			JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+			rules["leadership"]["creatureRequirements"].Struct().erase("core:enchanter");
+			rules["leadership"]["creatureRequirements"].Struct().erase("core:sharpshooter");
+			rules.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, rules);
+		}
+	}
+	void prepareCampaignHeroes(bool explicitArmies = false)
+	{
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36).playerActive(PlayerColor(0));
+		for(int index = 0; index < 2; ++index)
+		{
+			builder.hero({5 + index * 5, 5, 0}, HeroTypeID(HeroTypeID::decode(
+				index == 0 ? "core:dracon" : "core:gelu")), PlayerColor(0)).heroExperience(0);
+			if(explicitArmies)
+				builder.heroGarrison({{CreatureID(CreatureID::decode(
+					index == 0 ? "core:enchanter" : "core:sharpshooter")), 123}});
+		}
+		startWithMap(std::move(builder));
+	}
+};
+
+TEST_F(NewHorizonsCampaignStartingArmyTest, DefaultSpeciesResolveLeadershipCapacity)
+{
+	prepareCampaignHeroes();
+	for(const char * identity : {"core:dracon", "core:gelu"})
+	{
+		SCOPED_TRACE(identity);
+		const auto * hero = gameState()->getMap().getHero(HeroTypeID(HeroTypeID::decode(identity)));
+		ASSERT_NE(hero, nullptr);
+		const auto & original = hero->getHeroType()->initialArmy;
+		ASSERT_FALSE(original.empty());
+		const CreatureID special(CreatureID::decode(std::string(identity) == "core:dracon"
+			? "core:enchanter" : "core:sharpshooter"));
+		ASSERT_TRUE(std::ranges::any_of(original, [special](const auto & row){ return row.creature == special; }));
+		int ordinarySlot = 0;
+		for(const auto & row : original)
+		{
+			if(row.creature.toCreature()->warMachine != ArtifactID::NONE)
+			{
+				EXPECT_TRUE(hero->hasArt(row.creature.toCreature()->warMachine));
+				continue;
+			}
+			const SlotID slot(ordinarySlot++);
+			EXPECT_EQ(hero->getCreature(slot)->getId(), row.creature);
+			const auto capacity = hero->getLeadershipSlotCapacity(row.creature);
+			ASSERT_TRUE(capacity);
+			ASSERT_GT(capacity->maximum, 0);
+			EXPECT_GE(hero->getStackCount(slot), std::min<int>(row.minAmount, capacity->maximum));
+			EXPECT_LE(hero->getStackCount(slot), std::min<int>(row.maxAmount, capacity->maximum));
+		}
+		EXPECT_EQ(hero->stacksCount(), ordinarySlot);
+		const auto capacity = hero->getLeadershipSlotCapacity(special);
+		ASSERT_TRUE(capacity);
+		// Explicit provisional costs, not inference from legacy numeric tiers.
+		EXPECT_EQ(capacity->requirement, special == CreatureID(CreatureID::decode("core:enchanter")) ? 380 : 170);
+	}
+}
+
+TEST_F(NewHorizonsCampaignStartingArmyTest, ExplicitMapSpeciesAndCountsAreNotClamped)
+{
+	prepareCampaignHeroes(true);
+	GameRandomizer randomizer(*gameState());
+	for(const char * identity : {"core:dracon", "core:gelu"})
+	{
+		auto * hero = gameState()->getMap().getHero(HeroTypeID(HeroTypeID::decode(identity)));
+		ASSERT_NE(hero, nullptr);
+		const auto species = hero->getCreature(SlotID(0))->getId();
+		const CreatureID authoredSpecies(CreatureID::decode(std::string(identity) == "core:dracon"
+			? "core:enchanter" : "core:sharpshooter"));
+		ASSERT_EQ(species, authoredSpecies);
+		const auto capacity = hero->getLeadershipSlotCapacity(species);
+		ASSERT_TRUE(capacity);
+		ASSERT_LT(capacity->maximum, 123);
+		ASSERT_NO_THROW(hero->initHero(randomizer));
+		EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), species);
+		EXPECT_EQ(hero->getStackCount(SlotID(0)), 123);
+		EXPECT_EQ(hero->stacksCount(), 1);
+	}
+}
+
+TEST_F(NewHorizonsCampaignStartingArmyTest, CapturedTableWithoutOnlySpecialRowsSurvivesWorldRoundtrip)
+{
+	oldSpecialRequirements = true;
+	prepareCampaignHeroes(true);
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(gameState()->saveToMemory());
+	GameRandomizer randomizer(restored);
+	for(const char * identity : {"core:dracon", "core:gelu"})
+	{
+		const HeroTypeID id(HeroTypeID::decode(identity));
+		const auto * original = gameState()->getMap().getHero(id);
+		auto * loaded = restored.getMap().getHero(id);
+		ASSERT_NE(original, nullptr);
+		ASSERT_NE(loaded, nullptr);
+		const auto captured = original->getCapabilityRules();
+		JsonNode expected(JsonPath::builtin("config/newHorizonsCapabilities"));
+		expected["leadership"]["creatureRequirements"].Struct().erase("core:enchanter");
+		expected["leadership"]["creatureRequirements"].Struct().erase("core:sharpshooter");
+		EXPECT_EQ(captured["leadership"], expected["leadership"]);
+		const auto species = original->getCreature(SlotID(0))->getId();
+		const CreatureID authoredSpecies(CreatureID::decode(std::string(identity) == "core:dracon"
+			? "core:enchanter" : "core:sharpshooter"));
+		ASSERT_EQ(species, authoredSpecies);
+		EXPECT_FALSE(original->getLeadershipSlotCapacity(species));
+		EXPECT_TRUE(original->getLeadershipSlotCapacity(CreatureID(CreatureID::decode("core:pikeman"))));
+		EXPECT_EQ(loaded->getCapabilityRules(), captured);
+		EXPECT_FALSE(loaded->getLeadershipSlotCapacity(species));
+		ASSERT_NO_THROW(loaded->initHero(randomizer));
+		EXPECT_EQ(loaded->getCapabilityRules(), captured);
+		EXPECT_FALSE(loaded->getLeadershipSlotCapacity(species));
+		EXPECT_EQ(loaded->getCreature(SlotID(0))->getId(), species);
+		EXPECT_EQ(loaded->getStackCount(SlotID(0)), 123);
+	}
+}
+
 TEST_F(NewHorizonsStartingArmyTest, All144DefaultArmiesRetainCompositionAndLeadershipSafeSampledRanges)
 {
 	const std::array<const char *, 144> heroes{{

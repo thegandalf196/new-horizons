@@ -18,6 +18,7 @@
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
+#include "../../lib/gameState/UpgradeInfo.h"
 #include "../../lib/logging/CLogger.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGDwelling.h"
@@ -130,6 +131,10 @@ public:
 			infoWindows.push_back({window->player, window->type, window->text.toString(LIBRARY->generaltexth.get())});
 		if(dynamic_cast<RebalanceStacks *>(&pack))
 			++rebalancePacks;
+		if(dynamic_cast<SetStackType *>(&pack))
+			++stackTypePacks;
+		if(dynamic_cast<SetResources *>(&pack))
+			++resourcePacks;
 		state->apply(pack);
 	}
 
@@ -153,6 +158,8 @@ public:
 	ObjectInstanceID garrisonHero = ObjectInstanceID::NONE;
 	int systemMessages = 0;
 	int rebalancePacks = 0;
+	int stackTypePacks = 0;
+	int resourcePacks = 0;
 	int garrisonDialogs = 0;
 
 	bool hasLeadershipLimitMessage() const
@@ -229,6 +236,75 @@ protected:
     CGTownInstance * recruitmentTown = nullptr;
     CGHeroInstance * recruitmentHero = nullptr;
 };
+
+class NewHorizonsCampaignUpgradeLeadershipTest : public NewHorizonsLeadershipAdmissionTest,
+	public ::testing::WithParamInterface<int> {};
+
+TEST_P(NewHorizonsCampaignUpgradeLeadershipTest, SpecialUpgradeChecksTargetCapacityBeforeSpending)
+{
+	const bool dracon = GetParam() == 0;
+	const PlayerColor player(0);
+	const HeroTypeID identity = heroType(dracon ? "core:dracon" : "core:gelu");
+	const CreatureID source(CreatureID::decode(dracon ? "core:mage" : "core:woodElf"));
+	const CreatureID target(CreatureID::decode(dracon ? "core:enchanter" : "core:sharpshooter"));
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36).playerActive(player).hero({5, 5, 0}, identity, player).heroExperience(0);
+	startWithMap(std::move(builder));
+	auto * hero = gameState()->getMap().getHero(identity);
+	ASSERT_NE(hero, nullptr);
+	const auto targetCapacity = hero->getLeadershipSlotCapacity(target);
+	const auto sourceCapacity = hero->getLeadershipSlotCapacity(source);
+	ASSERT_TRUE(targetCapacity);
+	ASSERT_TRUE(sourceCapacity);
+	ASSERT_GT(targetCapacity->maximum, 0);
+	ASSERT_LE(targetCapacity->maximum + 1, sourceCapacity->maximum);
+	EXPECT_EQ(targetCapacity->requirement, dracon ? 380 : 170);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->setCreature(SlotID(0), source, targetCapacity->maximum + 1));
+	UpgradeInfo upgrade(source);
+	gameState()->fillUpgradeInfo(hero, SlotID(0), upgrade);
+	ASSERT_TRUE(vstd::contains(upgrade.getAvailableUpgrades(), target));
+	const auto perCreatureCost = upgrade.getUpgradeCostsFor(target);
+	auto * playerState = gameState()->getPlayerState(player);
+	for(size_t resource = 0; resource < GameConstants::RESOURCE_QUANTITY; ++resource)
+		playerState->resources[resource] = 100000;
+	gameState()->actingPlayers.insert(player);
+	LeadershipRecordingServer server(gameState());
+	CGameHandler handler(server, gameState());
+	const auto resourcesBefore = playerState->resources;
+	const auto capabilityBefore = hero->getCapabilityRules();
+	UpgradeCreature excessive(SlotID(0), hero->id, target);
+	excessive.player = player;
+	excessive.requestID = 740;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, excessive);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), source);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), targetCapacity->maximum + 1);
+	EXPECT_EQ(hero->stacksCount(), 1);
+	EXPECT_EQ(playerState->resources, resourcesBefore);
+	EXPECT_EQ(hero->getCapabilityRules(), capabilityBefore);
+	EXPECT_EQ(server.stackTypePacks, 0);
+	EXPECT_EQ(server.resourcePacks, 0);
+	EXPECT_TRUE(server.hasLeadershipLimitMessage());
+
+	hero->setStackCount(SlotID(0), targetCapacity->maximum);
+	UpgradeCreature exact(SlotID(0), hero->id, target);
+	exact.player = player;
+	exact.requestID = 741;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, exact);
+	ASSERT_EQ(server.responses.size(), 2u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), target);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), targetCapacity->maximum);
+	EXPECT_EQ(hero->stacksCount(), 1);
+	EXPECT_EQ(playerState->resources, resourcesBefore - perCreatureCost * targetCapacity->maximum);
+	EXPECT_EQ(hero->getCapabilityRules(), capabilityBefore);
+	EXPECT_EQ(server.stackTypePacks, 1);
+	EXPECT_EQ(server.resourcePacks, perCreatureCost.empty() ? 0 : 1);
+}
+
+INSTANTIATE_TEST_SUITE_P(DraconAndGelu, NewHorizonsCampaignUpgradeLeadershipTest, ::testing::Values(0, 1));
 
 class LegacyLeadershipAdmissionTest : public NewHorizonsLeadershipAdmissionTest
 {
