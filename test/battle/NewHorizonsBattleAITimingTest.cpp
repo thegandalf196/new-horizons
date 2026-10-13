@@ -14,16 +14,20 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/bonuses/Updaters.h"
 #include "../../lib/callback/CBattleCallback.h"
+#include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapping/MapDifficulty.h"
 #include "../../lib/logging/CLogger.h"
+#include "../../lib/serializer/CMemorySerializer.h"
 
 #include <bit>
 #include <chrono>
@@ -2727,6 +2731,107 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 	ASSERT_TRUE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE));
 	ASSERT_EQ(battle()->battleGetActionController(battle()->battleActiveUnit()), PlayerColor(0));
 	callback->acceptHeroActions = true;
+	// Export value-only state outside activeStack: no pointer graph, timer or
+	// RNG draw is serialized. Exact bytes compare only this build/platform.
+	const auto valueHex = [](const auto & value)
+	{
+		CMemorySerializer memory;
+		memory.oser & value;
+		const auto bytes = memory.extractBuffer();
+		if(bytes.size() > 256 * 1024)
+			throw std::runtime_error("Shipping diagnostic value snapshot exceeded bound");
+		constexpr char digits[] = "0123456789abcdef";
+		std::string result;
+		result.reserve(bytes.size() * 2);
+		for(const auto byte : bytes)
+		{
+			const auto number = std::to_integer<unsigned char>(byte);
+			result.push_back(digits[number >> 4]);
+			result.push_back(digits[number & 15]);
+		}
+		return result;
+	};
+	const auto localBonuses = [&](const auto & node)
+	{
+		JsonNode result;
+		result.Vector();
+		for(const auto & bonus : node.getExportedBonusList())
+		{
+			JsonNode entry;
+			entry["json"] = bonus->toJsonNode();
+			entry["bonusOwner"].Integer() = bonus->bonusOwner.getNum();
+			entry["customIconHex"].String() = valueHex(bonus->customIconPath);
+			entry["descriptionHex"].String() = valueHex(bonus->description);
+			entry["hasUpdater"].Bool() = static_cast<bool>(bonus->updater);
+			entry["hasPropagationUpdater"].Bool() = static_cast<bool>(bonus->propagationUpdater);
+			entry["propagationUpdaterJson"] = bonus->propagationUpdater
+				? bonus->propagationUpdater->toJsonNode() : JsonNode();
+			// Updater JSON is its established public surface, not a full dynamic
+			// object codec; some implementations omit private parameters/children.
+			result.Vector().push_back(std::move(entry));
+		}
+		return result;
+	};
+	const auto stateSnapshot = [&]
+	{
+		JsonNode result;
+		const auto * currentBattle = gameState()->getBattle(BattleID(0));
+		if(!currentBattle || !gameHandler->randomizer)
+			throw std::runtime_error("Shipping diagnostic battle/randomizer missing");
+		result["round"].Integer() = currentBattle->getRound();
+		result["activationSerial"].Integer() = currentBattle->getActivationSerial();
+		const auto * active = currentBattle->battleActiveUnit();
+		result["activeUnit"].Integer() = active ? static_cast<int64_t>(active->unitId()) : -1;
+		const auto units = currentBattle->battleGetAllUnits(false);
+		if(units.size() > 32)
+			throw std::runtime_error("Shipping diagnostic unit snapshot exceeded bound");
+		for(const auto * unit : units)
+		{
+			const auto * stack = dynamic_cast<const CStack *>(unit);
+			if(!stack)
+				throw std::runtime_error("Shipping diagnostic stack missing");
+			JsonNode entry;
+			entry["id"].Integer() = unit->unitId();
+			entry["side"].Integer() = static_cast<int>(unit->unitSide());
+			entry["creatureHex"].String() = valueHex(unit->creatureId());
+			entry["ownerHex"].String() = valueHex(currentBattle->battleGetOwner(unit));
+			entry["controllerHex"].String() = valueHex(currentBattle->battleGetActionController(unit));
+			const auto ownedState = unit->acquireState();
+			entry["state"] = ownedState->save();
+			entry["localBonuses"] = localBonuses(*stack);
+			result["units"].Vector().push_back(std::move(entry));
+		}
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			const auto * hero = side == BattleSide::ATTACKER ? attackerSideHero : defenderSideHero;
+			if(!hero)
+				throw std::runtime_error("Shipping diagnostic hero missing");
+			JsonNode entry;
+			entry["side"].Integer() = static_cast<int>(side);
+			entry["playerHex"].String() = valueHex(currentBattle->getSidePlayer(side));
+			entry["heroHex"].String() = valueHex(hero->id);
+			entry["spellPointsInitialized"].Bool() = hero->areSpellPointsInitialized();
+			entry["normalSpellPoints"].Integer() = hero->getNormalSpellPoints();
+			entry["bufferSpellPoints"].Integer() = hero->getBufferSpellPoints();
+			entry["localBonuses"] = localBonuses(*hero);
+			entry["allowancesHex"].String() = valueHex(currentBattle->getHeroActionAllowances(side));
+			entry["ordersHex"].String() = valueHex(currentBattle->getHeroOrderStates(side));
+			entry["activeOrderHex"].String() = valueHex(currentBattle->getActiveOrder(side));
+			entry["focusFireHex"].String() = valueHex(currentBattle->getFocusFireState(side));
+			entry["warcastingHex"].String() = valueHex(currentBattle->getWarcastingState(side));
+			entry["doubleCommandHex"].String() = valueHex(currentBattle->getDoubleCommandState(side));
+			entry["castSpells"].Integer() = currentBattle->getCastSpells(side);
+			entry["usedSpellsHex"].String() = valueHex(currentBattle->getUsedSpells(side));
+			result["sides"].Vector().push_back(std::move(entry));
+		}
+		result["randomizerHex"].String() = valueHex(*gameHandler->randomizer);
+		if(result.toString().size() > 1024 * 1024)
+			throw std::runtime_error("Shipping diagnostic combined snapshot exceeded bound");
+		return result;
+	};
+	const auto beforeSnapshot = stateSnapshot();
+	EXPECT_EQ(stateSnapshot(), beforeSnapshot) << "Snapshot reads must not consume state/RNG";
+	RecordProperty("shippingStateBefore", beforeSnapshot.toString());
 	unsigned consumedHeroActions = 0;
 	for(unsigned attempt = 0; attempt < 16 && callback->actions.empty(); ++attempt)
 	{
@@ -2758,6 +2863,84 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 	RecordProperty("forecastRounds", "2");
 	RecordProperty("commandsEnabled", "true");
 	const auto measured = summary();
+	// Calls are deterministic parity fields; elapsed values are descriptive wall.
+	RecordProperty("shippingActiveStackCalls", std::to_string(measured.activeStackCalls));
+	RecordProperty("shippingRoundsObserved", std::to_string(measured.roundsObserved));
+	for(const auto & [name, member] : {
+		std::pair{"movementRemainder", &CBattleAI::TimingSummary::movementRemainderMicroseconds},
+		std::pair{"movementExchangeRemainder", &CBattleAI::TimingSummary::movementExchangeRemainderMicroseconds},
+		std::pair{"bestTargetWaitedRemainder", &CBattleAI::TimingSummary::bestTargetWaitedRemainderMicroseconds},
+		std::pair{"bestTargetNormalRemainder", &CBattleAI::TimingSummary::bestTargetNormalRemainderMicroseconds},
+		std::pair{"bestTargetRemainder", &CBattleAI::TimingSummary::bestTargetRemainderMicroseconds},
+		std::pair{"selectionRemainder", &CBattleAI::TimingSummary::selectionRemainderMicroseconds},
+		std::pair{"unclassified", &CBattleAI::TimingSummary::unclassifiedMicroseconds}})
+		RecordProperty(std::string("shippingPhase_") + name + "_us", std::to_string(measured.*member));
+	for(const auto & [name, member] : {
+		std::pair{"evaluatorConstruction", &CBattleAI::TimingSummary::evaluatorConstruction},
+		std::pair{"stackActionSelection", &CBattleAI::TimingSummary::stackActionSelection},
+		std::pair{"selectionCreatureSpell", &CBattleAI::TimingSummary::selectionCreatureSpell},
+		std::pair{"selectionMovementSearch", &CBattleAI::TimingSummary::selectionMovementSearch},
+		std::pair{"movementFindMove", &CBattleAI::TimingSummary::movementFindMove},
+		std::pair{"movementGoTowards", &CBattleAI::TimingSummary::movementGoTowards},
+		std::pair{"movementFindMoveExchangeSubset", &CBattleAI::TimingSummary::movementFindMoveExchangeSubset},
+		std::pair{"movementExchangeBody", &CBattleAI::TimingSummary::movementExchangeBody},
+		std::pair{"movementExchangeMembership", &CBattleAI::TimingSummary::movementExchangeMembership},
+		std::pair{"movementExchangeProjectionSetup", &CBattleAI::TimingSummary::movementExchangeProjectionSetup},
+		std::pair{"movementExchangeTargetProbes", &CBattleAI::TimingSummary::movementExchangeTargetProbes},
+		std::pair{"movementExchangeTargetProbeMainDamage", &CBattleAI::TimingSummary::movementExchangeTargetProbeMainDamage},
+		std::pair{"movementExchangeTargetProbeDpsScore", &CBattleAI::TimingSummary::movementExchangeTargetProbeDpsScore},
+		std::pair{"movementExchangeAppliedAttacks", &CBattleAI::TimingSummary::movementExchangeAppliedAttacks},
+		std::pair{"movementExchangeActivationStart", &CBattleAI::TimingSummary::movementExchangeActivationStart},
+		std::pair{"movementExchangeActivationEnd", &CBattleAI::TimingSummary::movementExchangeActivationEnd},
+		std::pair{"movementExchangeRoundAdvance", &CBattleAI::TimingSummary::movementExchangeRoundAdvance},
+		std::pair{"movementExchangeActivationExpiryRemoval", &CBattleAI::TimingSummary::movementExchangeActivationExpiryRemoval},
+		std::pair{"movementExchangeActivationGamblerRemoval", &CBattleAI::TimingSummary::movementExchangeActivationGamblerRemoval},
+		std::pair{"movementExchangeRoundTimedUpdates", &CBattleAI::TimingSummary::movementExchangeRoundTimedUpdates},
+		std::pair{"movementGoBlockingSubset", &CBattleAI::TimingSummary::movementGoBlockingSubset},
+		std::pair{"selectionTargetExchange", &CBattleAI::TimingSummary::selectionTargetExchange},
+		std::pair{"selectionBestTarget", &CBattleAI::TimingSummary::selectionBestTarget},
+		std::pair{"bestTargetWaitedExchange", &CBattleAI::TimingSummary::bestTargetWaitedExchange},
+		std::pair{"bestTargetWaitedBody", &CBattleAI::TimingSummary::bestTargetWaitedBody},
+		std::pair{"bestTargetWaitedMembership", &CBattleAI::TimingSummary::bestTargetWaitedMembership},
+		std::pair{"bestTargetWaitedProjectionSetup", &CBattleAI::TimingSummary::bestTargetWaitedProjectionSetup},
+		std::pair{"bestTargetWaitedTargetProbes", &CBattleAI::TimingSummary::bestTargetWaitedTargetProbes},
+		std::pair{"bestTargetWaitedTargetProbeMainDamage", &CBattleAI::TimingSummary::bestTargetWaitedTargetProbeMainDamage},
+		std::pair{"bestTargetWaitedTargetProbeDpsScore", &CBattleAI::TimingSummary::bestTargetWaitedTargetProbeDpsScore},
+		std::pair{"bestTargetWaitedAppliedAttacks", &CBattleAI::TimingSummary::bestTargetWaitedAppliedAttacks},
+		std::pair{"bestTargetWaitedActivationStart", &CBattleAI::TimingSummary::bestTargetWaitedActivationStart},
+		std::pair{"bestTargetWaitedActivationEnd", &CBattleAI::TimingSummary::bestTargetWaitedActivationEnd},
+		std::pair{"bestTargetWaitedRoundAdvance", &CBattleAI::TimingSummary::bestTargetWaitedRoundAdvance},
+		std::pair{"bestTargetWaitedActivationExpiryRemoval", &CBattleAI::TimingSummary::bestTargetWaitedActivationExpiryRemoval},
+		std::pair{"bestTargetWaitedActivationGamblerRemoval", &CBattleAI::TimingSummary::bestTargetWaitedActivationGamblerRemoval},
+		std::pair{"bestTargetWaitedRoundTimedUpdates", &CBattleAI::TimingSummary::bestTargetWaitedRoundTimedUpdates},
+		std::pair{"bestTargetNormalExchange", &CBattleAI::TimingSummary::bestTargetNormalExchange},
+		std::pair{"bestTargetNormalBody", &CBattleAI::TimingSummary::bestTargetNormalBody},
+		std::pair{"bestTargetNormalMembership", &CBattleAI::TimingSummary::bestTargetNormalMembership},
+		std::pair{"bestTargetNormalProjectionSetup", &CBattleAI::TimingSummary::bestTargetNormalProjectionSetup},
+		std::pair{"bestTargetNormalTargetProbes", &CBattleAI::TimingSummary::bestTargetNormalTargetProbes},
+		std::pair{"bestTargetNormalTargetProbeMainDamage", &CBattleAI::TimingSummary::bestTargetNormalTargetProbeMainDamage},
+		std::pair{"bestTargetNormalTargetProbeDpsScore", &CBattleAI::TimingSummary::bestTargetNormalTargetProbeDpsScore},
+		std::pair{"bestTargetNormalAppliedAttacks", &CBattleAI::TimingSummary::bestTargetNormalAppliedAttacks},
+		std::pair{"bestTargetNormalActivationStart", &CBattleAI::TimingSummary::bestTargetNormalActivationStart},
+		std::pair{"bestTargetNormalActivationEnd", &CBattleAI::TimingSummary::bestTargetNormalActivationEnd},
+		std::pair{"bestTargetNormalRoundAdvance", &CBattleAI::TimingSummary::bestTargetNormalRoundAdvance},
+		std::pair{"bestTargetNormalActivationExpiryRemoval", &CBattleAI::TimingSummary::bestTargetNormalActivationExpiryRemoval},
+		std::pair{"bestTargetNormalActivationGamblerRemoval", &CBattleAI::TimingSummary::bestTargetNormalActivationGamblerRemoval},
+		std::pair{"bestTargetNormalRoundTimedUpdates", &CBattleAI::TimingSummary::bestTargetNormalRoundTimedUpdates},
+		std::pair{"selectionSiegeDefense", &CBattleAI::TimingSummary::selectionSiegeDefense},
+		std::pair{"selectionDefensiveStance", &CBattleAI::TimingSummary::selectionDefensiveStance},
+		std::pair{"heroAction", &CBattleAI::TimingSummary::heroAction},
+		std::pair{"directUnitSubmission", &CBattleAI::TimingSummary::directUnitSubmission},
+	})
+	{
+		RecordProperty(std::string("shippingPhase_") + name + "_calls", std::to_string((measured.*member).calls));
+		RecordProperty(std::string("shippingPhase_") + name + "_us", std::to_string((measured.*member).totalMicroseconds));
+	}
+	const auto afterSnapshot = stateSnapshot();
+	EXPECT_EQ(stateSnapshot(), afterSnapshot) << "Snapshot reads must not consume state/RNG";
+	RecordProperty("shippingStateAfter", afterSnapshot.toString());
+	RecordProperty("shippingHeroActionsHex", valueHex(callback->heroActions));
+	RecordProperty("shippingUnitActionsHex", valueHex(callback->actions));
 	recordProbeCacheDelta("shipping_movement_cache_", {}, measured.movementExchangeProbeDamageCache);
 	recordProbeCacheDelta("shipping_waited_cache_", {}, measured.bestTargetWaitedProbeDamageCache);
 	recordProbeCacheDelta("shipping_normal_cache_", {}, measured.bestTargetNormalProbeDamageCache);
