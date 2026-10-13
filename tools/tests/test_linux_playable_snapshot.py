@@ -337,6 +337,91 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
             self.assertEqual(result.returncode, 2)
         self.assertFalse((self.store / 'current.json').exists())
 
+    def test_external_validation_is_signal_free_and_promotes_once(self):
+        candidate = self.freeze_candidate()
+        with mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn, \
+             mock.patch.object(snapshot_tools.os, 'killpg') as signals:
+            ticket = snapshot_tools.begin_validation(self.store, candidate)
+            self.assertEqual(ticket.candidate, candidate)
+            self.assertEqual(ticket.digest, candidate.name.removeprefix('snapshot-'))
+            self.assertEqual(snapshot_tools.finish_validation(ticket, accepted=True), candidate)
+            with self.assertRaisesRegex(RuntimeError, 'unused in-process ticket'):
+                snapshot_tools.finish_validation(ticket, accepted=True)
+            with self.assertRaisesRegex(RuntimeError, 'unused in-process ticket'):
+                snapshot_tools.finish_validation({'accepted': True}, accepted=True)
+            spawn.assert_not_called()
+            signals.assert_not_called()
+        self.assertEqual(self.selected_snapshot(), candidate)
+
+    def test_external_validation_rejection_and_nonliteral_true_consume_ticket(self):
+        candidate = self.freeze_candidate()
+        with mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn, \
+             mock.patch.object(snapshot_tools.os, 'killpg') as signals:
+            for accepted in (False, 'true', 1, None):
+                with self.subTest(accepted=accepted):
+                    ticket = snapshot_tools.begin_validation(self.store, candidate)
+                    with self.assertRaisesRegex(RuntimeError, 'did not accept'):
+                        snapshot_tools.finish_validation(ticket, accepted=accepted)
+                    with self.assertRaisesRegex(RuntimeError, 'unused in-process ticket'):
+                        snapshot_tools.finish_validation(ticket, accepted=True)
+            spawn.assert_not_called()
+            signals.assert_not_called()
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_external_validation_mutation_cannot_promote_or_replay(self):
+        candidate = self.freeze_candidate()
+        with mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn, \
+             mock.patch.object(snapshot_tools.os, 'killpg') as signals:
+            ticket = snapshot_tools.begin_validation(self.store, candidate)
+            target = candidate / 'config/filesystem.json'
+            target.chmod(0o644)
+            target.write_text('changed')
+            with self.assertRaisesRegex(RuntimeError, 'inventory or checksum mismatch'):
+                snapshot_tools.finish_validation(ticket, accepted=True)
+            with self.assertRaisesRegex(RuntimeError, 'unused in-process ticket'):
+                snapshot_tools.finish_validation(ticket, accepted=True)
+            spawn.assert_not_called()
+            signals.assert_not_called()
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_external_validation_stale_lease_preserves_newer_selection(self):
+        candidate = self.freeze_candidate()
+        (self.source / 'config/filesystem.json').write_text('{"newer":true}')
+        newer = self.freeze_candidate()
+        with mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn, \
+             mock.patch.object(snapshot_tools.os, 'killpg') as signals:
+            ticket = snapshot_tools.begin_validation(self.store, candidate)
+            self.promote_candidate(newer)
+            with self.assertRaisesRegex(RuntimeError, 'refusing stale promotion'):
+                snapshot_tools.finish_validation(ticket, accepted=True)
+            spawn.assert_not_called()
+            signals.assert_not_called()
+        self.assertEqual(self.selected_snapshot(), newer)
+
+    def test_external_validation_same_bytes_aba_is_stale(self):
+        candidate = self.freeze_candidate()
+        self.promote_candidate(candidate)
+        with mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn, \
+             mock.patch.object(snapshot_tools.os, 'killpg') as signals:
+            ticket = snapshot_tools.begin_validation(self.store, candidate)
+            before = (self.store / 'current.json').read_bytes()
+            self.promote_candidate(candidate)
+            self.assertEqual((self.store / 'current.json').read_bytes(), before)
+            with self.assertRaisesRegex(RuntimeError, 'refusing stale promotion'):
+                snapshot_tools.finish_validation(ticket, accepted=True)
+            spawn.assert_not_called()
+            signals.assert_not_called()
+
+    def test_external_validation_refuses_bad_existing_pointer_at_begin(self):
+        candidate = self.freeze_candidate()
+        (self.store / 'current.json').write_text('invalid')
+        with mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn, \
+             mock.patch.object(snapshot_tools.os, 'killpg') as signals:
+            with self.assertRaisesRegex(RuntimeError, 'Cannot read current'):
+                snapshot_tools.begin_validation(self.store, candidate)
+            spawn.assert_not_called()
+            signals.assert_not_called()
+
     def activate_nhart(self, selected=None):
         selected = selected or ['Mods/new-horizons/Images/icon.png']
         manifest = {'format': 1, 'requiredFamilies': ['fixture'],
