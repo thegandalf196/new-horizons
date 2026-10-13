@@ -94,6 +94,8 @@ CANONICAL_LEADERSHIP_REQUIREMENTS = {
     'core:earthElemental': 250,
     'core:magicElemental': 320,
     'core:phoenix': 650,
+    'core:enchanter': 380,
+    'core:sharpshooter': 170,
     'new-horizons:wisp': 140,
     'new-horizons:wispUpgrade': 170,
 }

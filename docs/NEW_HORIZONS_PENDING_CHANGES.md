@@ -1,5 +1,23 @@
 # New Horizons Pending Changes
 
+## Provisional campaign special-creature Leadership requirements
+
+Enchanters require380 Leadership per creature; Sharpshooters require170.
+These explicit requirements apply to freshly captured current rules, including
+Dracon/Gelu's special-upgrade targets. Existing authoritative admission must
+reject above-capacity upgrades before charging resources or changing species.
+Default armies remain original-composition and Leadership-limited; explicit
+map armies and older captured requirement tables are not rewritten.
+
+The values provisionally match the maximum upgraded-source-line requirements
+(Arch Mage/Zealot and Marksman/Grand Elf respectively), not a final valuation
+of the stronger target creatures. No statistics, categories, specialties or
+upgrade graph changes. Nine focused native cases, seven capability data checks
+and module freshness pass; client and native tests build. See the provisional
+review ledger for rationale and verification scope. Integrate these entries into
+canonical Experimental
+Values after verification; this amendment is not a new permanent authority.
+
 ## User-authored Thane / Halon class swap — New Horizons only
 
 The user explicitly assigns Halon to Battle Mage (stable class ID

@@ -1,5 +1,30 @@
 # New Horizons provisional rule review
 
+## Campaign special-upgrade creatures — Leadership requirements
+
+Chosen provisional requirements: Enchanter380 and Sharpshooter170 per creature.
+Each equals the maximum current requirement of its upgraded source lines:
+Arch Mage/Zealot for Enchanter, Marksman/Grand Elf for Sharpshooter. These are
+explicit configurable entries, not a new runtime derivation or numerical-tier
+formula. Review whether the stronger target creatures warrant higher costs in
+Phase3; this decision closes an otherwise unrestricted-capacity path, not a
+balance assessment.
+
+Implementation: `config/newHorizonsCapabilities.json` and generated module
+settings. Existing captured-rule lookup, default-army initialization and
+authoritative special-upgrade admission consume those entries. Preserve older
+captured tables without these keys and explicit map-authored armies; do not
+backfill installed defaults into saves or resample existing armies.
+
+Source review confirms the two-row scope and parent-cost rationale. Nine focused
+native cases pass: campaign default species/capacity, explicit map preservation,
+old captured-table roundtrip, real special-upgrade refusal/exact-fit admission,
+and the existing ordinary-army controls. Seven capability data checks and module
+freshness also pass; client and native tests build. No campaign-wide, Windows or
+rendered acceptance follows from this evidence.
+The temporary amendment is recorded in Pending Changes until integrated into
+the canonical Experimental Values section.
+
 ## Hero Luck reworks and Heroic Spirit — accepted-action receipts
 
 The canonical generic Luck rows now replace Lucky Recovery/Gambler/Twist of Fate
