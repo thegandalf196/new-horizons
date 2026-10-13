@@ -1362,7 +1362,7 @@ void BattleInterface::spellCast(const BattleSpellCast * sc)
 	if(sc->activeCast && sc->castByHero && sc->casterStack < 0 && sc->heroLuck)
 		presentHeroPositiveProcs(sc->side, false,
 			sc->heroLuck->has(newHorizonsHeroLuck::Proc::ErraticMana),
-			sc->heroLuck->has(newHorizonsHeroLuck::Proc::DruidicLuck), false, true, sc->spellID.getNum());
+			sc->heroLuck->has(newHorizonsHeroLuck::Proc::DruidicLuck), false, true, sc->spellID.getNum(), &*sc->heroLuck);
 	auto targetedTile = sc->tile;
 
 	const AudioPath & castSoundPath = spell->getCastSound();
@@ -1758,7 +1758,9 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 		presentHeroPositiveProcs(action.side,
 			state->heroLuck && state->heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay), false, false,
 			state->heroMorale && state->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit),
-			false, static_cast<int>(action.command));
+			false, static_cast<int>(action.command),
+			state->heroLuck ? &*state->heroLuck : nullptr,
+			state->heroMorale ? &*state->heroMorale : nullptr, state->heroMoraleActionGrantId);
 
 	// Reuse presentation resources only, never spell definitions/mechanics.
 	// Each Order has a distinct troop effect; Second Wind uses retired Mirth.
@@ -1813,7 +1815,9 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 }
 
 void BattleInterface::presentHeroPositiveProcs(BattleSide side, bool luckyDay, bool erraticMana,
-	bool druidicLuck, bool heroicSpirit, bool spell, int source)
+	bool druidicLuck, bool heroicSpirit, bool spell, int source,
+	const newHorizonsHeroLuck::Receipt * luckReceipt,
+	const newHorizonsHeroLuck::Receipt * moraleReceipt, uint32_t moraleGrantId)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return;
@@ -1829,6 +1833,13 @@ void BattleInterface::presentHeroPositiveProcs(BattleSide side, bool luckyDay, b
 		trace->round = getBattle()->battleGetRound();
 		trace->spell = spell;
 		trace->source = source;
+		heroPositiveProcPresentation::captureReceiptEvidence(*trace, luckReceipt, moraleReceipt, moraleGrantId);
+		// These scales are captured battle policy, not stored RNG receipt fields.
+		const auto & rules = getBattle()->getBattle()->getMagicRules();
+		trace->luckyDayPolicyScale = newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::LuckyDay);
+		trace->erraticManaPolicyScale = newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::ErraticMana);
+		trace->druidicLuckPolicyScale = newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::DruidicLuck);
+		trace->heroicSpiritPolicyScale = newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::HeroicSpirit);
 		trace->flags = (luckyDay ? 1u : 0u) | (erraticMana ? 2u : 0u)
 			| (druidicLuck ? 4u : 0u) | (heroicSpirit ? 8u : 0u);
 		heroPositiveProcPresentation::trace(*trace, !hero ? "receiptNoHero" : trace->flags ? "receipt" : "receiptNoProc");

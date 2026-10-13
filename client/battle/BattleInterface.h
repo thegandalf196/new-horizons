@@ -15,6 +15,7 @@
 
 #include "../../lib/battle/BattleHex.h"
 #include "../../lib/battle/BattleUnitTurnReason.h"
+#include "../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../lib/spells/SpellAnimationItem.h"
 #include "../../lib/ConditionalWait.h"
 #include "NewHorizonsQueueActivationStatus.h"
@@ -128,7 +129,9 @@ class BattleInterface
 	uint64_t heroCueTraceOrdinal = 0;
 	void presentAcceptedHeroOrder(const BattleAction & action);
 	void presentHeroPositiveProcs(BattleSide side, bool luckyDay, bool erraticMana,
-		bool druidicLuck, bool heroicSpirit, bool spell, int source);
+		bool druidicLuck, bool heroicSpirit, bool spell, int source,
+		const newHorizonsHeroLuck::Receipt * luckReceipt = nullptr,
+		const newHorizonsHeroLuck::Receipt * moraleReceipt = nullptr, uint32_t moraleGrantId = 0);
 
 	void playIntroSoundAndUnlockInterface();
 	void onIntroSoundPlayed();

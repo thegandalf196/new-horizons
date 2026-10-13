@@ -97,6 +97,16 @@ without logging random draws or changing probabilities.
 Zero flags do not distinguish an ineligible action, an omitted roll or a missed
 roll; they establish only that no successful proc was represented.
 
+Receipt-presence fields now distinguish absent metadata from a retained draw.
+Hero value, base threshold and dice size come from that authoritative receipt;
+absent values are marked unknown. The four `PolicyScale` fields describe the
+captured battle policy, not the random result. The Morale grant ID identifies the
+consumed triggering grant receipt, not the new Heroic Spirit grant or the consumed
+allowance kind. No random draw or bias is logged.
+These scalar summaries are copied before queued playback; they do not retain
+packet or Order pointers. Component tests cover copy, reset and separate optional
+presence, not actual logger output, packet routing or visible effects.
+
 `teardown` marks scene termination, not natural effect completion. Missing images
 are reported without changing existing recovery behavior. Disabled or capped
 records leave the chain incomplete; absence is not proof of a failed proc or draw.
