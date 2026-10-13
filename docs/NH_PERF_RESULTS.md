@@ -1,5 +1,28 @@
 # New Horizons performance experiment — measured results
 
+## Native Rebirth probe eligibility checkpoint (2026-10-13)
+
+Attack forecasts now query native Rebirth readiness only when their post-attack
+state can trigger lethal melee Cleave. Applied attacks retain the original
+pre-hit readiness check. Hex handling, attack scores, forecast depth, candidate
+selection and rendering are unchanged. This removes unused work; a measured
+turn-time improvement has not yet been established.
+
+All 32 focused native cases passed with no failures, errors, disabled cases or
+skips: twelve Hex/snapshot cases, twelve Plague action-completion cases, seven
+Elemental Rebirth cases and one normal shipping AI callback. The new Phoenix
+controls verify ready/depleted native charges, exact Cleave scores, repeated
+probe isolation and the detached applied-path decision. They do not exercise
+live-server Phoenix resurrection. The new hostile Spell Lock/Defend control
+verifies actual Plague ticks, spread, paused duration, seal expiry and same-round
+deduplication; it does not expose the AI's internal Defend preview state.
+
+The Release build and binary privacy scan passed. Exact discovery, isolated
+runtime environment, source/resource/binary parity and process cleanup were
+checked. Artwork package bytes are unchanged. These statically linked native
+tests are not graphical acceptance, Windows timing evidence or a matched
+performance comparison.
+
 ## Inactive Veteran Cohesion construction checkpoint (2026-10-11)
 
 Inactive bonus queries with no inherited Veteran Cohesion modifier now return

@@ -1001,7 +1001,9 @@ float BattleExchangeVariant::trackAttack(
 	const int64_t defenderHealthBeforeAttack = defender->getAvailableHealth();
 	const auto defenderRebirthSource = !evaluateOnly && defenderWasAlive
 		? hb->captureElementalRebirthSource(*defender) : std::nullopt;
-	const bool defenderMayRebirth = hb->hasReadyNativeRebirth(defender.get());
+	// Applied attacks retain their pre-hit native-Rebirth receipt. A probe
+	// needs this query only if its post-attack state can actually trigger Cleave.
+	const bool defenderMayRebirth = !evaluateOnly && hb->hasReadyNativeRebirth(defender.get());
 	// Only Hex and Cleave consume the probe's post-attack attacker state.
 	// Ordinary applied attacks must still spend shots/Wait bonuses as before.
 	const bool needsProbeState = evaluateOnly
@@ -1111,7 +1113,8 @@ float BattleExchangeVariant::trackAttack(
 			: !defender->alive());
 	if(!shooting && projectedAttacker && projectedAttacker->alive() && projectedEnemyKill
 		&& hb->battleMatchOwner(attacker.get(), defender.get())
-		&& hb->battleCanTriggerCleave(projectedAttacker.get()))
+		&& hb->battleCanTriggerCleave(projectedAttacker.get())
+		&& (!evaluateOnly || !hb->hasReadyNativeRebirth(defender.get())))
 	{
 		if(const auto * selected = hb->battleSelectCleaveTarget(projectedAttacker.get(), defender.get()))
 		{
