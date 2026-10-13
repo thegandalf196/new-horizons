@@ -3,10 +3,13 @@ from contextlib import redirect_stdout
 import io
 import hashlib
 import json
+import os
+import signal
 from pathlib import Path
 import sys
 import subprocess
 import tempfile
+import time
 import unittest
 from types import SimpleNamespace
 from unittest import mock
@@ -153,6 +156,186 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
         with redirect_stdout(output):
             resolve(SimpleNamespace(store=self.store))
         return Path(output.getvalue().strip())
+
+    def validate_candidate(self, snapshot, code, timeout=5, extra_args=()):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            snapshot_tools.validate(SimpleNamespace(
+                snapshot=snapshot, store=self.store, timeout=timeout,
+                validation_command=[sys.executable, '-c', code, *extra_args]))
+        return Path(output.getvalue().strip())
+
+    def test_validation_success_binds_exact_candidate_and_overwrites_ambient_identity(self):
+        candidate = self.freeze_candidate()
+        receipt = self.root / 'driver.json'
+        code = ("import json,os,pathlib,sys; "
+                "pathlib.Path(sys.argv[1]).write_text(json.dumps({k:os.environ[k] for k in "
+                "('NH_VALIDATION_SNAPSHOT','NH_VALIDATION_SNAPSHOT_SHA256')}))")
+        with mock.patch.dict(os.environ, {'NH_VALIDATION_SNAPSHOT': '/wrong',
+                                         'NH_VALIDATION_SNAPSHOT_SHA256': 'wrong'}):
+            self.assertEqual(self.validate_candidate(candidate, code, extra_args=(str(receipt),)), candidate)
+        self.assertEqual(self.selected_snapshot(), candidate)
+        self.assertEqual(json.loads(receipt.read_text()), {
+            'NH_VALIDATION_SNAPSHOT': str(candidate),
+            'NH_VALIDATION_SNAPSHOT_SHA256': candidate.name.removeprefix('snapshot-')})
+
+    def test_validation_failure_keeps_selected_baseline(self):
+        baseline = self.freeze_candidate()
+        self.promote_candidate(baseline)
+        (self.source / 'config/filesystem.json').write_text('{"candidate":2}')
+        candidate = self.freeze_candidate()
+        before = (self.store / 'current.json').read_bytes()
+        with self.assertRaisesRegex(RuntimeError, 'exit status 7'):
+            self.validate_candidate(candidate, 'raise SystemExit(7)')
+        self.assertEqual((self.store / 'current.json').read_bytes(), before)
+        self.assertEqual(self.selected_snapshot(), baseline)
+
+    def test_validation_spawn_exception_does_not_promote(self):
+        candidate = self.freeze_candidate()
+        with mock.patch.object(snapshot_tools.subprocess, 'Popen', side_effect=OSError('cannot spawn')):
+            with self.assertRaisesRegex(RuntimeError, 'cannot spawn'):
+                self.validate_candidate(candidate, 'pass')
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_validation_rejects_payload_mutation_even_after_exit_zero(self):
+        candidate = self.freeze_candidate()
+        code = ("import os,pathlib; p=pathlib.Path(os.environ['NH_VALIDATION_SNAPSHOT'])/"
+                "'config/filesystem.json'; p.chmod(0o644); p.write_text('changed')")
+        with self.assertRaisesRegex(RuntimeError, 'inventory or checksum mismatch'):
+            self.validate_candidate(candidate, code)
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_validation_rejects_metadata_only_mutation(self):
+        candidate = self.freeze_candidate()
+        code = ("import os,pathlib; p=pathlib.Path(os.environ['NH_VALIDATION_SNAPSHOT'])/"
+                "'SNAPSHOT.json'; p.chmod(0o644); p.write_text(p.read_text()+'\\n')")
+        with self.assertRaisesRegex(RuntimeError, 'Candidate changed'):
+            self.validate_candidate(candidate, code)
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_validation_cannot_overwrite_concurrently_promoted_candidate(self):
+        candidate = self.freeze_candidate()
+        (self.source / 'config/filesystem.json').write_text('{"newer":true}')
+        newer = self.freeze_candidate()
+        script = Path(snapshot_tools.__file__).resolve()
+        code = ("import subprocess,sys; subprocess.run([sys.executable,sys.argv[1],"
+                "'promote','--store',sys.argv[2],'--snapshot',sys.argv[3]],check=True)")
+        with self.assertRaisesRegex(RuntimeError, 'refusing stale promotion'):
+            self.validate_candidate(candidate, code, extra_args=(str(script), str(self.store), str(newer)))
+        self.assertEqual(self.selected_snapshot(), newer)
+
+    def test_validation_detects_same_bytes_pointer_replacement(self):
+        candidate = self.freeze_candidate()
+        self.promote_candidate(candidate)
+        code = ("import os,pathlib,sys,tempfile; p=pathlib.Path(sys.argv[1])/'current.json'; "
+                "fd,n=tempfile.mkstemp(dir=p.parent); "
+                "os.write(fd,p.read_bytes()); os.close(fd); os.replace(n,p)")
+        with self.assertRaisesRegex(RuntimeError, 'refusing stale promotion'):
+            self.validate_candidate(candidate, code, extra_args=(str(self.store),))
+        self.assertEqual(self.selected_snapshot(), candidate)
+
+    def test_validation_refuses_malformed_or_symlink_pointer_before_spawn(self):
+        candidate = self.freeze_candidate()
+        pointer = self.store / 'current.json'
+        for linked in (False, True):
+            with self.subTest(linked=linked):
+                if linked:
+                    pointer.unlink()
+                    pointer.symlink_to(self.root / 'missing')
+                else:
+                    pointer.write_text('not json')
+                with mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn:
+                    with self.assertRaises(RuntimeError):
+                        self.validate_candidate(candidate, 'pass')
+                    spawn.assert_not_called()
+
+    def test_validation_requires_explicit_command_and_finite_positive_timeout(self):
+        candidate = self.freeze_candidate()
+        for timeout, command in ((0, [sys.executable]), (-1, [sys.executable]),
+                                 (float('nan'), [sys.executable]), (float('inf'), [sys.executable]),
+                                 (1, []), (1, ['--'])):
+            with self.subTest(timeout=timeout, command=command):
+                with mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn:
+                    with self.assertRaises(RuntimeError):
+                        snapshot_tools.validate(SimpleNamespace(snapshot=candidate, store=self.store,
+                                                               timeout=timeout, validation_command=command))
+                    spawn.assert_not_called()
+
+    def test_validation_timeout_reaps_driver_and_its_owned_descendant(self):
+        candidate = self.freeze_candidate()
+        ids = self.root / 'pids.json'
+        code = (
+            "import json,os,pathlib,signal,subprocess,sys,time\n"
+            "child=subprocess.Popen([sys.executable,'-c',"
+            "'import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); time.sleep(30)'])\n"
+            "def stop(signum,frame):\n"
+            " child.kill(); child.wait(); raise SystemExit(0)\n"
+            "signal.signal(signal.SIGTERM,stop)\n"
+            "pathlib.Path(sys.argv[1]).write_text(json.dumps([os.getpid(),child.pid]))\n"
+            "time.sleep(30)\n")
+        with self.assertRaisesRegex(RuntimeError, 'did not complete successfully'):
+            self.validate_candidate(candidate, code, timeout=.5, extra_args=(str(ids),))
+        for pid in json.loads(ids.read_text()):
+            with self.assertRaises(ProcessLookupError):
+                os.kill(pid, 0)
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_validation_uses_literal_argv_not_shell(self):
+        candidate = self.freeze_candidate()
+        argument = '$HOME; touch ' + str(self.root / 'must-not-exist')
+        code = "import sys; assert sys.argv[1].startswith('$HOME; touch ')"
+        self.validate_candidate(candidate, code, extra_args=(argument,))
+        self.assertFalse((self.root / 'must-not-exist').exists())
+
+    def test_validation_left_descendant_branch_cleans_before_reaping_leader(self):
+        candidate = self.freeze_candidate()
+        driver = mock.Mock(pid=123, args=['synthetic-driver'])
+        previous = signal.getsignal(signal.SIGTERM)
+        def cleanup(process):
+            self.assertIs(process, driver)
+            driver.wait.assert_not_called()
+        with mock.patch.object(snapshot_tools.subprocess, 'Popen', return_value=driver), \
+             mock.patch.object(snapshot_tools, 'wait_validation_driver'), \
+             mock.patch.object(snapshot_tools, 'validation_descendants', return_value=[456]), \
+             mock.patch.object(snapshot_tools, 'cleanup_validation_group', side_effect=cleanup) as clean:
+            with self.assertRaisesRegex(RuntimeError, 'left descendants'):
+                self.validate_candidate(candidate, 'pass')
+            clean.assert_called_once_with(driver)
+        self.assertIs(signal.getsignal(signal.SIGTERM), previous)
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_validation_wrapper_sigterm_cleans_and_reaps_synthetic_driver(self):
+        candidate = self.freeze_candidate()
+        pidfile = self.root / 'driver.pid'
+        script = Path(snapshot_tools.__file__).resolve()
+        code = ("import os,pathlib,sys,time; pathlib.Path(sys.argv[1]).write_text(str(os.getpid())); "
+                "time.sleep(30)")
+        command = [sys.executable, str(script), 'validate', '--snapshot', str(candidate),
+                   '--store', str(self.store), '--timeout', '10', '--',
+                   sys.executable, '-c', code, str(pidfile)]
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) as wrapper:
+            deadline = time.monotonic() + 5
+            while not pidfile.exists() and wrapper.poll() is None and time.monotonic() < deadline:
+                time.sleep(.01)
+            self.assertTrue(pidfile.exists(), 'Synthetic driver did not start')
+            wrapper.send_signal(signal.SIGTERM)
+            stdout, stderr = wrapper.communicate(timeout=8)
+        self.assertEqual(wrapper.returncode, 2, stderr)
+        self.assertIn('interrupted by signal', stderr)
+        self.assertEqual(stdout, '')
+        with self.assertRaises(ProcessLookupError):
+            os.kill(int(pidfile.read_text()), 0)
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_validation_cli_requires_timeout_and_command(self):
+        candidate = self.freeze_candidate()
+        script = Path(snapshot_tools.__file__).resolve()
+        base = [sys.executable, str(script), 'validate', '--snapshot', str(candidate),
+                '--store', str(self.store)]
+        for extra in ([], ['--timeout', '2']):
+            result = subprocess.run(base + extra, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 2)
+        self.assertFalse((self.store / 'current.json').exists())
 
     def activate_nhart(self, selected=None):
         selected = selected or ['Mods/new-horizons/Images/icon.png']

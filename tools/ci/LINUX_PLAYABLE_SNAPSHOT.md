@@ -73,14 +73,56 @@ This catches optional artwork being silently lost in a newer build, including
 the historical school-casting/Guild omission. Current normal candidates use the
 committed NHART package and bootstrap mounts, not undistributed private overlays.
 
-Pass `--client "$candidate/new-horizons" --resources "$candidate"` explicitly,
-so validation cannot accidentally select the currently promoted snapshot. After
-the required headless new-game validation succeeds, promote the same candidate:
+Normal development connects reviewed acceptance to promotion with `validate`.
+Supply an explicit reviewed acceptance-driver argv after `--`; no command is
+selected automatically and no shell interprets it:
+
+```sh
+python3 tools/ci/linux_playable_snapshot.py validate \
+  --snapshot "$candidate" \
+  --store "$store" --timeout 640 -- \
+  /absolute/path/to/reviewed-validation-driver --config /path/to/private/config
+```
+
+That driver path is illustrative, not a shipped/checksum-only acceptance gate.
+`--timeout` is required, finite and positive, in seconds. The helper overwrites
+`NH_VALIDATION_SNAPSHOT` with the canonical in-store candidate path and
+`NH_VALIDATION_SNAPSHOT_SHA256` with its payload digest. The reviewed driver
+must consume and verify both, selecting that candidate's client/resources
+explicitly rather than the current pointer or newest directory. Other environment
+variables are inherited: strict environment, original-content, private-profile,
+silent-audio, display/provider and gameplay admission remain driver obligations.
+Zero means the driver declares its reviewed acceptance and cleanup complete;
+this generic wrapper does not independently certify gameplay or rendering.
+Mere startup, a timeout or a checksum-only command must not declare acceptance.
+
+The snapshot is verified before and after acceptance, including metadata and
+directory identity. Success automatically promotes only that identical candidate.
+The current-pointer lease captures absence or valid file identity, timestamps and
+bytes under the store lock before launch. The lock is released during validation.
+Exclusive post-verification/CAS rejects a changed or malformed pointer, including
+same-byte atomic replacement; a late run never refreshes its lease or overwrites
+a newer selection. Invalid existing pointers are not treated as absence.
+
+This Linux-only command supports ordinary main-thread CLI drivers whose children
+remain in the fresh owned session/process group and are reaped by the driver.
+Timeout or TERM/INT interruption triggers bounded group TERM/KILL (two seconds
+per phase), then direct-driver reaping; descendants after a normal return also
+cause failure/cleanup. The helper retains the unreaped session leader during
+all signalling, preventing PID/PGID reuse from targeting an unrelated group.
+Unconfirmed cleanup never promotes. Drivers must not daemonize or escape this
+group: this is not a universal arbitrary-process cleanup guarantee.
+Existing guarded graphical owner protocols with exact-PID cleanup or group-signal
+prohibitions are **not automatically compatible**; their pinned invocation is
+unchanged, and integration needs separate review. Driver stdout goes to stderr;
+successful helper stdout contains only the selected path. Logs/receipts and
+acceptance criteria belong to the driver, not a fabricated wrapper certificate.
+
+Explicit `promote` remains available for approved rollback/preview workflows:
 
 ```sh
 python3 tools/ci/linux_playable_snapshot.py promote \
-  --snapshot "$candidate" \
-  --store "$store"
+  --snapshot "$approved_snapshot" --store "$store"
 ```
 
 For a bounded non-graphical candidate check, use a fresh private profile outside
@@ -107,7 +149,8 @@ This check does not establish rendered UI or manual gameplay acceptance.
 
 The default `play-new-horizons-linux.sh` verifies and launches only the snapshot
 named by `current.json`. It never falls back to the mutable build tree or another
-stage. `freeze` leaves that pointer unchanged; `promote` verifies all payload
+stage. `freeze` leaves that pointer unchanged; `validate` couples acceptance to
+guarded atomic selection, while explicit `promote` verifies all payload
 checksums before atomically replacing it. The pointer records the previous
 promoted snapshot for review.
 

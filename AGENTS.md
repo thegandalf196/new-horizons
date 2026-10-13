@@ -308,6 +308,21 @@ Do not bypass that helper with a custom launch inheriting host audio routes.
 
 ## Persistent user-priority queue
 
+### Automatic local playable delivery
+
+The ordinary Linux launcher must follow the latest successfully validated
+immutable candidate, not the newest compiled binary. Run local delivery gates
+through `tools/ci/linux_playable_snapshot.py validate` so successful validation
+and atomic promotion are one operation; do not leave a passed candidate awaiting
+a separate manual pointer repair. Supply a reviewed, bounded validation driver
+that tests the exact snapshot identified by the helper's environment bindings.
+Compilation, checksum verification or a trivial zero-exit command alone is not
+gameplay acceptance. A failed, timed-out, changed or superseded candidate must
+leave the current playable build unchanged. Keep explicit promotion for reviewed
+rollback or separately managed previews, not the ordinary delivery path.
+Pinned graphical ownership protocols require their own reviewed integration;
+do not bypass their isolation, cleanup or acceptance gates to promote a build.
+
 Keep build directories disposable. Do not store unique artwork, handoffs,
 authoring masters, saves, development worktrees or the selected playable delivery
 inside them. Keep those in explicitly configured local storage outside the
