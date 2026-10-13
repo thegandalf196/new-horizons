@@ -1342,11 +1342,13 @@ void CGHeroInstance::updateSkillBonus(const SecondarySkill & which, int val)
 
 	if(val > 0)
 	{
-		static const SecondarySkill newHorizonsOffenseSkill(SecondarySkill::decode("new-horizons:offense"));
-		const int offenseSpecialtyPercent = which == newHorizonsOffenseSkill
+		const auto newHorizonsOffenseSkill = LIBRARY->identifiers()->getIdentifier(
+			ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:offense", true);
+		const int offenseSpecialtyPercent = newHorizonsOffenseSkill && which == SecondarySkill(*newHorizonsOffenseSkill)
 			? getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::OFFENCE)) : 0;
-		static const SecondarySkill newHorizonsEstatesSkill(SecondarySkill::decode("new-horizons:estates"));
-		const int estatesSpecialtyPercent = which == newHorizonsEstatesSkill
+		const auto newHorizonsEstatesSkill = LIBRARY->identifiers()->getIdentifier(
+			ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:estates", true);
+		const int estatesSpecialtyPercent = newHorizonsEstatesSkill && which == SecondarySkill(*newHorizonsEstatesSkill)
 			? getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)) : 0;
 		auto skillBonus = (*LIBRARY->skillh)[which]->at(val).effects;
 		for(const auto& b : skillBonus)
@@ -1370,8 +1372,9 @@ void CGHeroInstance::updateSkillBonus(const SecondarySkill & which, int val)
 		}
 	}
 
-	const int luckSkillIndex = SecondarySkill::decode("new-horizons:luck");
-	if(luckSkillIndex >= 0 && which == SecondarySkill(luckSkillIndex)
+	const auto luckSkillIndex = LIBRARY->identifiers()->getIdentifier(
+		ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:luck", true);
+	if(luckSkillIndex && which == SecondarySkill(*luckSkillIndex)
 		&& hasActivePerk("new-horizons:luck", "new-horizons:luck.fortuneSFavor"))
 	{
 		addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
@@ -2927,13 +2930,14 @@ bool CGHeroInstance::canGrantNewHorizonsLearningMentorTo(const CGHeroInstance & 
 
 int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const
 {
-	const int decoded = SecondarySkill::decode(skillId);
-	if(decoded < 0)
+	const auto decoded = LIBRARY->identifiers()->getIdentifier(
+		ModScope::scopeGame(), SecondarySkill::entityType(), skillId, true);
+	if(!decoded)
 		return 0;
-	const SecondarySkill skill(decoded);
-	// SecondarySkill::decode supports an unscoped suffix fallback for legacy
-	// content. Perk registries require the exact canonical scoped identity.
-	if(SecondarySkill::encode(skill.getNum()) != skillId)
+	const SecondarySkill skill(*decoded);
+	// Optional perk queries require an exact canonical identity, never a legacy
+	// unscoped alias. Required captured registry validation remains separate.
+	if(SecondarySkill::encode(*decoded) != skillId)
 		return 0;
 	return getSecSkillLevel(skill);
 }

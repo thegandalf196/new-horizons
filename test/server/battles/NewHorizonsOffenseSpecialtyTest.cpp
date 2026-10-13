@@ -227,6 +227,7 @@ class NewHorizonsOffenseSpecialtyTest : public HeroCommandFixture
 {
 protected:
 	bool omitSkillSpecialtyRules = false;
+	bool requireExecutionerFixture = false;
 
 	void SetUp() override
 	{
@@ -240,6 +241,11 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		// This specialty fixture requires Executioner as its independent Basic perk.
+		// Crag Hack's ordinary profile selects Shock Assault at the same tier.
+		if(requireExecutionerFixture)
+			rules["startingSkills"]["startingDevelopmentProfiles"]["core:cragHack"]
+				["startingPerks"].Vector().front()["perk"].String() = std::string(EXECUTIONER_PERK_ID);
 		if(omitSkillSpecialtyRules)
 		{
 			rules.Struct().erase("skillSpecialties");
@@ -310,6 +316,7 @@ protected:
 
 	void runAliasRankChecks(const char * specialistId)
 	{
+		requireExecutionerFixture = true;
 		startSpecialtyMap(specialistId);
 		auto * specialist = attackerSideHero;
 		auto * control = defenderSideHero;
@@ -366,8 +373,9 @@ protected:
 		const auto offense = nhOffenseSkill();
 		specialist->setSecSkillLevel(offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		control->setSecSkillLevel(offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		specialist->applyPerkSelection({std::string(OFFENSE_SKILL_ID), std::string(EXECUTIONER_PERK_ID)});
-		control->applyPerkSelection({std::string(OFFENSE_SKILL_ID), std::string(EXECUTIONER_PERK_ID)});
+		for(auto * hero : {specialist, control})
+			if(!hero->getPerkState().hasSelection(std::string(OFFENSE_SKILL_ID), std::string(EXECUTIONER_PERK_ID)))
+				hero->applyPerkSelection({std::string(OFFENSE_SKILL_ID), std::string(EXECUTIONER_PERK_ID)});
 		ASSERT_TRUE(specialist->hasActivePerk(std::string(OFFENSE_SKILL_ID), std::string(EXECUTIONER_PERK_ID)));
 		ASSERT_TRUE(control->hasActivePerk(std::string(OFFENSE_SKILL_ID), std::string(EXECUTIONER_PERK_ID)));
 

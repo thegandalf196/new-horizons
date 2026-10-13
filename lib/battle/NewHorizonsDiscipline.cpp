@@ -93,7 +93,7 @@ bool hasFearless(const CGHeroInstance * hero)
 
 bool hasVeteranCohesion(const CGHeroInstance * hero)
 {
-	return hero && hero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode(std::string(SKILL)))) >= MasteryLevel::ADVANCED
+	return hero && hero->getPerkSkillRank(std::string(SKILL)) >= MasteryLevel::ADVANCED
 		&& hero->hasActivePerk(std::string(SKILL), std::string(VETERAN_COHESION));
 }
 
@@ -102,9 +102,10 @@ TConstBonusListPtr veteranCohesionBonuses(TConstBonusListPtr original, const CSe
 	const auto isPersonalModifier = [](const Bonus * bonus)
 	{
 		return bonus && bonus->type == BonusType::MORALE && bonus->source == BonusSource::SECONDARY_SKILL
-			&& bonus->sid == disciplineSkillSource() && bonus->duration == BonusDuration::ONE_BATTLE
+			&& bonus->duration == BonusDuration::ONE_BATTLE
 			&& bonus->val == 2 && bonus->valType == BonusValueType::ADDITIVE_VALUE
-			&& bonus->stacking == VETERAN_COHESION && !bonus->parameters && !bonus->hasStatusMetadata();
+			&& bonus->stacking == VETERAN_COHESION && !bonus->parameters && !bonus->hasStatusMetadata()
+			&& bonus->sid == disciplineSkillSource();
 	};
 	const bool inherited = std::any_of(original->begin(), original->end(), [&](const auto & bonus)
 	{ return isPersonalModifier(bonus.get()); });
