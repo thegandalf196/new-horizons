@@ -85,11 +85,29 @@ EndTurn request. It checks captured Luck/Morale rules, selected perks and ranks,
 positive Normal mana, nonzero permanent Buffer and a nonempty spellbook on the
 reloaded heroes. The existing presentation-export fixture remains unchanged.
 
+Public service draws populate both heroes' dedicated Luck/Morale RNG streams.
+The test checks whole RNG-state equality across the disk save/load, then compares
+the next full receipts and default-generator draw with an independent clone.
+These RNG comparisons precede the subsequent EndTurn; they are not paid-proc
+presentation evidence.
+
 The opt-in case requires `NH_EXPORT_HERO_PROC_SAVE_ROOT` to match the isolated
 test profile's actual save directory; it refuses symlinked or existing output.
 Its default TEST content preset and admitted mock connection establish a focused
 save/continuation regression, not shipping-only graphical acceptance, successful
 proc/refund presentation, negative connection authentication or active-battle saves.
+
+## Hero Luck and spell reflection
+
+`PaidMagicMirrorInheritsOneHeroLuckReceiptAndRefundsOnlyOriginalPayer` checks a
+paid Magic Arrow reflected by Magic Mirror: one original Luck receipt, reflected
+critical damage, one Hero Action charge and a refund only to the original payer,
+including Normal/permanent/temporary Spell Point provenance. The fixture reaches
+the caster's activation through accepted actions before taking its snapshots;
+it does not overwrite initiative or relax cast validation.
+
+This is focused native coverage, not graphical cue, exhaustive reflection or
+statistical probability certification.
 
 ## Hero positive-proc presentation diagnostics
 

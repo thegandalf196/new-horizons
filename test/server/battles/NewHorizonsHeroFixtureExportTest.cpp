@@ -13,9 +13,11 @@
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/VCMIDirs.h"
+#include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/networkPacks/PacksForServer.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include <cstdlib>
 #include <zlib.h>
 #include <filesystem>
@@ -253,6 +255,8 @@ TEST_F(NewHorizonsHeroProcFixtureExportTest, PermanentHeroProcStateSurvivesWorld
 		int32_t normal;
 		int32_t buffer;
 		std::set<SpellID> spellbook;
+		int32_t luck;
+		int32_t morale;
 	};
 	std::vector<SavedHero> heroesBefore;
 	for(int color = 0; color < 2; ++color)
@@ -288,11 +292,32 @@ TEST_F(NewHorizonsHeroProcFixtureExportTest, PermanentHeroProcStateSurvivesWorld
 		ASSERT_GT(hero->getBufferSpellPoints(), 0);
 		ASSERT_TRUE(hero->spellbookContainsSpell(learned));
 		heroesBefore.push_back({hero->id, hero->getPerkState(), hero->getNormalSpellPoints(),
-			hero->getBufferSpellPoints(), hero->getSpellsInSpellbook()});
+			hero->getBufferSpellPoints(), hero->getSpellsInSpellbook(), hero->luckVal(), hero->moraleVal()});
 	}
 	const auto rulesBefore = handler->gameState().getMagicRules();
 	ASSERT_TRUE(rulesBefore["heroLuck"].isStruct());
 	ASSERT_TRUE(rulesBefore["heroMorale"].isStruct());
+	const auto randomizerBytes = [](GameRandomizer & randomizer)
+	{
+		CMemorySerializer wire;
+		wire.oser & randomizer;
+		return wire.extractBuffer();
+	};
+	// Public service draws populate both heroes' dedicated streams for this
+	// deterministic native save test. These are not paid action/proc presentation
+	// evidence; no seed, attribute or chance is overridden to obtain an outcome.
+	for(const auto & saved : heroesBefore)
+	{
+		ASSERT_GT(saved.luck, 0);
+		ASSERT_GT(saved.morale, 0);
+		ASSERT_TRUE(handler->randomizer->rollHeroLuck(saved.id, saved.luck));
+		ASSERT_TRUE(handler->randomizer->rollHeroMorale(saved.id, saved.morale));
+	}
+	const auto beforeSaveRandomizer = randomizerBytes(*handler->randomizer);
+	CMemorySerializer expectedWire(beforeSaveRandomizer);
+	GameRandomizer expected(handler->gameState());
+	expectedWire.iser & expected;
+	ASSERT_EQ(randomizerBytes(expected), beforeSaveRandomizer);
 	const auto filename = "Saves/hero-proc-permanent-continuation";
 	handler->save(filename, PlayerColor::NEUTRAL);
 	ASSERT_TRUE(std::filesystem::is_regular_file(output));
@@ -305,6 +330,7 @@ TEST_F(NewHorizonsHeroProcFixtureExportTest, PermanentHeroProcStateSurvivesWorld
 	ASSERT_NE(handler->gs, gameState());
 	ASSERT_TRUE(handler->gameState().currentBattles.empty());
 	EXPECT_EQ(handler->gameState().getMagicRules(), rulesBefore);
+	ASSERT_EQ(randomizerBytes(*handler->randomizer), beforeSaveRandomizer);
 	const auto expectPermanent = [&]()
 	{
 		for(const auto & saved : heroesBefore)
@@ -319,9 +345,28 @@ TEST_F(NewHorizonsHeroProcFixtureExportTest, PermanentHeroProcStateSurvivesWorld
 			EXPECT_EQ(hero->getNormalSpellPoints(), saved.normal);
 			EXPECT_EQ(hero->getBufferSpellPoints(), saved.buffer);
 			EXPECT_EQ(hero->getSpellsInSpellbook(), saved.spellbook);
+			EXPECT_EQ(hero->luckVal(), saved.luck);
+			EXPECT_EQ(hero->moraleVal(), saved.morale);
 		}
 	};
 	ASSERT_NO_FATAL_FAILURE(expectPermanent());
+	for(const auto & saved : heroesBefore)
+	{
+		const auto * restoredHero = handler->gameState().getHero(saved.id);
+		ASSERT_NE(restoredHero, nullptr);
+		const auto expectedLuck = expected.rollHeroLuck(saved.id, saved.luck);
+		const auto actualLuck = handler->randomizer->rollHeroLuck(saved.id, restoredHero->luckVal());
+		ASSERT_TRUE(expectedLuck);
+		ASSERT_TRUE(actualLuck);
+		EXPECT_EQ(actualLuck, expectedLuck);
+		const auto expectedMorale = expected.rollHeroMorale(saved.id, saved.morale);
+		const auto actualMorale = handler->randomizer->rollHeroMorale(saved.id, restoredHero->moraleVal());
+		ASSERT_TRUE(expectedMorale);
+		ASSERT_TRUE(actualMorale);
+		EXPECT_EQ(actualMorale, expectedMorale);
+	}
+	EXPECT_EQ(handler->randomizer->getDefault().nextInt(), expected.getDefault().nextInt());
+	EXPECT_EQ(randomizerBytes(*handler->randomizer), randomizerBytes(expected));
 	ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(PlayerColor(0)));
 	ASSERT_FALSE(handler->turnOrder->isPlayerMakingTurn(PlayerColor(1)));
 	// The ordinary request validates connection/player, active status and
@@ -338,6 +383,7 @@ TEST_F(NewHorizonsHeroProcFixtureExportTest, PermanentHeroProcStateSurvivesWorld
 	if(HasFailure())
 		return;
 	RecordProperty("worldSaveReloadPermanentHeroPolicy", "verified");
+	RecordProperty("worldSaveReloadDedicatedHeroRngContinuation", "verified");
 	RecordProperty("validatedPostLoadEndTurn", "verified");
 }
 

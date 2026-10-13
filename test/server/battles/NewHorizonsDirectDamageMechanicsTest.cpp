@@ -2475,7 +2475,8 @@ protected:
 		map->overrideGameSetting(EGameSettings::COMBAT_LUCK_BIAS, JsonNode(0));
 	}
 
-	void prepareLuckySpell(int luck = 1, int permanentBuffer = 0, int temporaryBuffer = 0)
+	void prepareLuckySpell(int luck = 1, int permanentBuffer = 0, int temporaryBuffer = 0,
+		bool uniqueMirrorRecipient = false)
 	{
 		forceRealHeroScale = true;
 		usePerks = true;
@@ -2521,6 +2522,18 @@ protected:
 		target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
 		if(selectedSpellKey == "core:fireWall")
 			walker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(69), 100);
+		if(uniqueMirrorRecipient)
+		{
+			// Replace the one-creature attacker token before combat begins so a
+			// reflected spell has one unsaturated, legally placed recipient.
+			BattleUnitsChanged remove;
+			remove.battleID = BattleID(0);
+			for(const auto * unit : battle()->battleGetAllUnits(false))
+				if(unit->unitSide() == BattleSide::ATTACKER)
+					remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+			gameHandler->sendAndApply(remove);
+			walker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 1000);
+		}
 		beginCombat();
 		ASSERT_EQ(attackerSideHero->getNormalSpellPoints(), 20);
 		ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), permanentBuffer + temporaryBuffer);
@@ -2628,6 +2641,100 @@ TEST_F(HeroLuckSpellTest, PaidDiscountedSpellSharesOneLuckDrawForDamageAndRefund
 	EXPECT_TRUE(receipt->has(newHorizonsHeroLuck::Proc::ErraticMana));
 	EXPECT_TRUE(receipt->has(newHorizonsHeroLuck::Proc::DruidicLuck));
 	EXPECT_EQ(casts.back().announcement.paidHeroManaCost, 3);
+}
+
+TEST_F(HeroLuckSpellTest, PaidMagicMirrorInheritsOneHeroLuckReceiptAndRefundsOnlyOriginalPayer)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareLuckySpell(1, 3, 1, true));
+	ASSERT_EQ(spell->getId(), SpellID::MAGIC_ARROW);
+	ASSERT_NE(walker, nullptr);
+	const auto preparedRound = battle()->battleGetRound();
+	// The replacement has a new unit ID/slot. Do not assume it wins the
+	// original tokens' initiative tie; advance only by accepted Defend actions.
+	ASSERT_TRUE(reachActivation(walker));
+	ASSERT_EQ(battle()->battleGetRound(), preparedRound);
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), walker->unitId());
+	ASSERT_EQ(battle()->battleGetActionController(walker), PlayerColor(0));
+	ASSERT_TRUE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, spell->getId()));
+	ASSERT_EQ(attackerSideHero->getNormalSpellPoints(), 20);
+	ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), 4);
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 1);
+	ASSERT_FALSE(newHorizonsHeroLuck::hasLuckyDay(attackerSideHero));
+	ASSERT_TRUE(newHorizonsHeroLuck::hasErraticMana(attackerSideHero));
+	ASSERT_TRUE(newHorizonsHeroLuck::hasDruidicLuck(attackerSideHero));
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_MIRROR, BonusSource::OTHER, 100, BonusSourceID()));
+	ASSERT_EQ(target->valOfBonuses(BonusType::MAGIC_MIRROR), 100);
+	ASSERT_FALSE(walker->hasBonusOfType(BonusType::MAGIC_MIRROR));
+	const auto recipients = battle()->getUnitsIf([](const battle::Unit * unit)
+	{
+		return unit->unitSide() == BattleSide::ATTACKER && unit->isValidTarget(false)
+			&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
+	});
+	ASSERT_EQ(recipients.size(), 1u);
+	ASSERT_EQ(recipients.front(), walker);
+	const auto beforePreview = randomizerBytes();
+	spells::BattleCast preview(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto baseline = spell->battleMechanics(&preview)->adjustEffectValue(walker);
+	ASSERT_GT(baseline, 0);
+	EXPECT_EQ(randomizerBytes(), beforePreview);
+	const auto reflectedHealth = walker->getAvailableHealth();
+	const auto originalTargetHealth = target->getAvailableHealth();
+	ASSERT_GT(reflectedHealth, 2 * baseline);
+	const auto defenderNormal = defenderSideHero->getNormalSpellPoints();
+	const auto defenderBuffer = defenderSideHero->getBufferSpellPoints();
+	const auto defenderTemporary = battle()->getSide(BattleSide::DEFENDER).temporaryBufferRemaining;
+	const auto defenderLedger = battle()->getHeroActionAllowances(BattleSide::DEFENDER);
+	ASSERT_EQ(attackerSideHero->getSpellCost(spell), 4);
+	const auto casterLedger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto round = battle()->battleGetRound();
+	ASSERT_EQ(casterLedger.remainingCounts(round).heroActions, 1u);
+	ASSERT_EQ(casterLedger.remainingCounts(round).spellActions, 0u);
+	CMemorySerializer copy;
+	copy.oser & *gameHandler->randomizer;
+	GameRandomizer expected(*gameState());
+	copy.iser & expected;
+	auto receipt = expected.rollHeroLuck(attackerSideHero->id, attackerSideHero->luckVal());
+	ASSERT_TRUE(receipt);
+	receipt->mark(newHorizonsHeroLuck::Proc::ErraticMana);
+	receipt->mark(newHorizonsHeroLuck::Proc::DruidicLuck);
+	advanceOrdinaryArrowResistance(expected);
+	expected.getDefault().nextInt(0, 99); // Guaranteed Mirror still draws once.
+	const auto chosen = RandomGeneratorUtil::nextItem(recipients, expected.getDefault());
+	ASSERT_EQ(*chosen, walker); // Singleton selection still uses the real RNG helper.
+	advanceOrdinaryArrowResistance(expected); // Reflected beforeCast's eager rolls.
+	CMemorySerializer expectedWire;
+	expectedWire.oser & expected;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spellAction()));
+	EXPECT_EQ(randomizerBytes(), expectedWire.extractBuffer());
+	EXPECT_EQ(reflectedHealth - walker->getAvailableHealth(), 2 * baseline);
+	EXPECT_EQ(target->getAvailableHealth(), originalTargetHealth);
+	const auto casts = server.castsOf(spell->getId());
+	ASSERT_EQ(casts.size(), 1u);
+	const auto & accepted = casts.front().announcement;
+	ASSERT_TRUE(accepted.heroLuck);
+	EXPECT_EQ(*accepted.heroLuck, *receipt);
+	EXPECT_EQ(accepted.reflectedCres, std::set<uint32_t>{target->unitId()});
+	EXPECT_EQ(accepted.affectedCres, std::vector<uint32_t>{walker->unitId()});
+	EXPECT_EQ(accepted.paidHeroManaCost, 4);
+	EXPECT_EQ(accepted.side, BattleSide::ATTACKER);
+	EXPECT_TRUE(accepted.castByHero);
+	EXPECT_TRUE(accepted.activeCast);
+	// Paid4 from temporary1/permanent3; refundfloor(4/2)=2 to permanent,
+	// not temporary or the reflecting side. No Normal charge occurred.
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 20);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 2);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 0);
+	EXPECT_EQ(defenderSideHero->getNormalSpellPoints(), defenderNormal);
+	EXPECT_EQ(defenderSideHero->getBufferSpellPoints(), defenderBuffer);
+	EXPECT_EQ(battle()->getSide(BattleSide::DEFENDER).temporaryBufferRemaining, defenderTemporary);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::DEFENDER), defenderLedger);
+	EXPECT_EQ(battle()->battleGetRound(), round);
+	const auto & afterLedger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_EQ(afterLedger.remainingCounts(round).heroActions, 0u);
+	EXPECT_EQ(afterLedger.remainingCounts(round).spellActions, 0u);
+	EXPECT_EQ(afterLedger.nextGrantId, casterLedger.nextGrantId);
 }
 
 TEST_F(HeroLuckSpellTest, PaidRefundRestoresNormalBeforePermanentAndTemporaryBuffers)
