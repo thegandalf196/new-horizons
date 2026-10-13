@@ -517,6 +517,7 @@ public:
 	HeroTypeID getHeroTypeID() const;
 	/// Uses the saved New Horizons creature-line specialty rules only when this
 	/// instance carries their persistent conversion markers.
+	newHorizonsHeroes::SpecialtyPresentation getSpecialtyPresentation() const;
 	std::string getSpecialtyDescriptionTranslated() const;
 	/// Returns the saved New Horizons damage-specialty component bonus only
 	/// when this hero has the matching persistent local conversion marker.

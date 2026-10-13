@@ -3,6 +3,9 @@
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/CCreatureHandler.h"
+#include "../../lib/CSkillHandler.h"
+#include "../../lib/GameLibrary.h"
+#include "../../lib/spells/CSpell.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
 struct HeroSpecialtyPresentation
@@ -11,45 +14,59 @@ struct HeroSpecialtyPresentation
 	std::string description;
 	std::optional<CreatureID> creature;
 	size_t prototypeFrame = 0;
+	std::optional<SpellID> spell;
+	std::optional<SecondarySkill> skill;
 	AnimationPath animation(bool small = false) const
 	{
-		return AnimationPath::builtin(creature ? "CPRSMALL" : small ? "UN32" : "UN44");
+		if(creature)
+			return AnimationPath::builtin("CPRSMALL");
+		// SPELLSCR uses the same registered index at both sizes. SPELLINT
+		// would require index+1, which these existing callers do not request.
+		if(spell)
+			return AnimationPath::builtin("SPELLSCR");
+		if(skill)
+			return AnimationPath::builtin(small ? "SECSK32" : "SECSKILL");
+		return AnimationPath::builtin(small ? "UN32" : "UN44");
 	}
 	size_t frame() const
 	{
-		return creature ? creature->toCreature()->getIconIndex() : prototypeFrame;
+		if(creature)
+			return creature->toCreature()->getIconIndex();
+		if(spell)
+			return spell->toSpell()->getIconIndex();
+		if(skill)
+			return skill->toEntity(LIBRARY)->getIconIndex();
+		return prototypeFrame;
 	}
 };
+
+inline HeroSpecialtyPresentation heroSpecialtyPresentation(const CHero & hero,
+	const newHorizonsHeroes::SpecialtyPresentation & metadata)
+{
+	HeroSpecialtyPresentation result;
+	result.name = metadata.name;
+	result.description = metadata.description;
+	result.prototypeFrame = static_cast<size_t>(hero.imageIndex);
+	result.spell = metadata.spell;
+	result.skill = metadata.skill;
+	// The unchanged creature alias already has its native specialty art.
+	// Only a changed target (Wisp) needs the replacement creature portrait.
+	if(metadata.creature && hero.creatureLineSpecialtyAlias
+		&& *metadata.creature != hero.creatureLineSpecialtyAlias->creature)
+		result.creature = metadata.creature;
+	return result;
+}
 
 // Explicit read-only context: an absent/captured legacy target never consults
 // installed defaults. The original prototype remains the compatibility alias.
 inline HeroSpecialtyPresentation heroSpecialtyPresentation(const CHero & hero,
-	const JsonNode & development, std::optional<CreatureID> target)
+	const JsonNode & development, std::optional<CreatureID> target, const JsonNode & magic = JsonNode())
 {
-	HeroSpecialtyPresentation result{hero.getSpecialtyNameTranslated(),
-		hero.getSpecialtyDescriptionTranslated(), std::nullopt, static_cast<size_t>(hero.imageIndex)};
-	if(!target || !hero.creatureLineSpecialtyAlias || *target == hero.creatureLineSpecialtyAlias->creature)
-		return result;
-	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(development);
-	if(!rules)
-		return result;
-	result.creature = target;
-	result.name = target->toCreature()->getNamePluralTranslated();
-	result.description = result.name + " and their upgrades gain +" + std::to_string(rules->speed)
-		+ " Speed and +" + std::to_string(rules->initiative) + " Initiative. They also gain +"
-		+ std::to_string(rules->attributePerStep) + " Creature Attack and +"
-		+ std::to_string(rules->attributePerStep) + " Creature Defense per "
-		+ std::to_string(rules->levelStep) + " hero levels, up to +"
-		+ std::to_string(rules->attributeMaximum) + " at level "
-		+ std::to_string(rules->levelStep * rules->attributeMaximum) + ".";
-	return result;
+	return heroSpecialtyPresentation(hero,
+		newHorizonsHeroes::resolveSpecialtyPresentation(hero, development, magic, target));
 }
 
 inline HeroSpecialtyPresentation heroSpecialtyPresentation(const CGHeroInstance & hero)
 {
-	auto result = heroSpecialtyPresentation(*hero.getHeroType(), hero.getPrimaryGrowthRules(),
-		hero.getCreatureLineSpecialtyTarget());
-	// Preserve all existing spell/skill-specialty and instance description logic.
-	result.description = hero.getSpecialtyDescriptionTranslated();
-	return result;
+	return heroSpecialtyPresentation(*hero.getHeroType(), hero.getSpecialtyPresentation());
 }

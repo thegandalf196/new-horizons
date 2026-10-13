@@ -14,11 +14,30 @@
 #include "NewHorizonsPerkState.h"
 #include <functional>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
+class CHero;
+class CGHeroInstance;
+
 namespace newHorizonsHeroes
 {
+/// Explicit-context read-only presentation; optional targets identify existing
+/// registered resources. An absent conversion retains the prototype identity.
+struct DLL_LINKAGE SpecialtyPresentation
+{
+	std::string name;
+	std::string description;
+	std::optional<CreatureID> creature;
+	std::optional<SpellID> spell;
+	std::optional<SecondarySkill> skill;
+};
+
+DLL_LINKAGE SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
+	const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target,
+	const CGHeroInstance * capturedHero = nullptr);
+
 constexpr int HERO_RULESET_VERSION = 1;
 /// The canonical New Horizons offer table covers the 31 skills in Tables
 /// 45-47 of the archival New Horizons.docx. Keep this count beside the runtime validator

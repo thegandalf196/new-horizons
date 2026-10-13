@@ -24,6 +24,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClient.h"
 #include "../../../lib/spells/CSpellHandler.h"
+#include "../../../lib/spells/CSpell.h"
 #include "FullGameSnapshotTypes.h"
 #include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/campaign/CampaignState.h"
@@ -630,6 +631,164 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, MageLineRefreshesAtCanonicalThresholdsA
 		EXPECT_EQ(theodorus->getHeroType()->specialty[i]->val, std::get<1>(prototypeSnapshot[i]));
 		EXPECT_EQ(theodorus->getHeroType()->specialty[i]->stacking, std::get<2>(prototypeSnapshot[i]));
 	}
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, ApprovedSpellAndNavigationPresentationUsesExplicitTargets)
+{
+	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	const std::array<std::pair<const char *, const char *>, 18> successors = {{
+		{"core:ash", "core:fireball"}, {"core:darkstorn", "new-horizons:hexOfPain"},
+		{"core:astral", "new-horizons:phantomArmy"}, {"core:septienna", "new-horizons:plague"},
+		{"core:melodia", "core:bless"}, {"core:daremyth", "core:haste"},
+		{"core:coronius", "new-horizons:holyWrath"}, {"core:cuthbert", "new-horizons:frailty"},
+		{"core:olema", "new-horizons:frailty"}, {"core:mirlanda", "new-horizons:frailty"},
+		{"core:xsi", "new-horizons:frailty"}, {"core:aenain", "new-horizons:frailty"},
+		{"core:merist", "new-horizons:hydrasVitality"}, {"core:labetha", "new-horizons:guardianSpirit"},
+		{"core:inteus", "new-horizons:crusade"}, {"core:loynis", "new-horizons:crusade"},
+		{"core:zubin", "new-horizons:focusMagic"}, {"core:thant", "new-horizons:reanimate"}
+	}};
+	for(const auto & [heroId, spellId] : successors)
+	{
+		SCOPED_TRACE(heroId);
+		const auto * hero = HeroTypeID(HeroTypeID::decode(heroId)).toHeroType();
+		const SpellID spell(SpellID::decode(spellId));
+		ASSERT_NE(hero, nullptr);
+		ASSERT_NE(spell.toSpell(), nullptr);
+		const auto metadata = newHorizonsHeroes::resolveSpecialtyPresentation(*hero, development, magic, std::nullopt);
+		ASSERT_EQ(metadata.spell, spell);
+		EXPECT_FALSE(metadata.creature);
+		EXPECT_FALSE(metadata.skill);
+		EXPECT_EQ(metadata.name, spell.toSpell()->getNameTranslated());
+		EXPECT_NE(metadata.description.find(metadata.name), std::string::npos);
+		const auto card = heroSpecialtyPresentation(*hero, development, std::nullopt, magic);
+		EXPECT_EQ(card.name, metadata.name);
+		EXPECT_EQ(card.description, metadata.description);
+		EXPECT_EQ(card.frame(), spell.toSpell()->getIconIndex());
+		EXPECT_EQ(card.animation().getOriginalName(), "SPELLSCR");
+		EXPECT_EQ(card.animation(true).getOriginalName(), "SPELLSCR");
+		const auto legacy = newHorizonsHeroes::resolveSpecialtyPresentation(*hero, JsonNode(), magic, std::nullopt);
+		EXPECT_FALSE(legacy.spell);
+		EXPECT_EQ(legacy.name, hero->getSpecialtyNameTranslated());
+		EXPECT_EQ(legacy.description, hero->getSpecialtyDescriptionTranslated());
+	}
+	for(const auto * heroId : {"core:sylvia", "core:voy"})
+	{
+		const auto * hero = HeroTypeID(HeroTypeID::decode(heroId)).toHeroType();
+		ASSERT_NE(hero, nullptr);
+		const auto metadata = newHorizonsHeroes::resolveSpecialtyPresentation(*hero, development, magic, std::nullopt);
+		ASSERT_EQ(metadata.skill, SecondarySkill(SecondarySkill::LOGISTICS));
+		EXPECT_FALSE(metadata.spell);
+		EXPECT_FALSE(metadata.creature);
+		EXPECT_NE(metadata.description.find("+20%"), std::string::npos);
+		const auto card = heroSpecialtyPresentation(*hero, development, std::nullopt, magic);
+		EXPECT_EQ(card.name, metadata.name);
+		EXPECT_EQ(card.animation().getOriginalName(), "SECSKILL");
+		EXPECT_EQ(card.animation(true).getOriginalName(), "SECSK32");
+		EXPECT_EQ(card.frame(), metadata.skill->toEntity(LIBRARY)->getIconIndex());
+		auto disabled = development;
+		disabled["skillSpecialties"]["navigationStartReplacements"].Bool() = false;
+		EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(*hero, disabled, magic, std::nullopt).skill);
+	}
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, SharedPresentationKeepsFallbackResourceAndCampaignIdentity)
+{
+	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	for(const auto * heroId : {"core:thorgrim", "core:elleshar", "core:gem", "core:malcom",
+		"core:isra", "core:vidomina", "core:sandro", "core:jenova", "core:halon", "core:solmyr",
+		"core:mutare", "core:mutareDrake", "core:dracon", "core:gelu", "core:adrienne", "core:sirMullich"})
+	{
+		SCOPED_TRACE(heroId);
+		const auto * hero = HeroTypeID(HeroTypeID::decode(heroId)).toHeroType();
+		ASSERT_NE(hero, nullptr);
+		const auto metadata = newHorizonsHeroes::resolveSpecialtyPresentation(*hero, development, magic, std::nullopt);
+		EXPECT_FALSE(metadata.creature);
+		EXPECT_FALSE(metadata.spell);
+		EXPECT_FALSE(metadata.skill);
+		EXPECT_EQ(metadata.name, hero->getSpecialtyNameTranslated());
+		EXPECT_EQ(metadata.description, hero->getSpecialtyDescriptionTranslated());
+		const auto card = heroSpecialtyPresentation(*hero, metadata);
+		EXPECT_EQ(card.frame(), hero->imageIndex);
+		EXPECT_EQ(card.animation().getOriginalName(), "UN44");
+	}
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, SharedLiveAndPreviewPresentationUsesMarkersWithoutMutation)
+{
+	startCastleSpecialtyMap();
+	for(const auto * hero : {findHeroAt({5, 5, 0}), findHeroAt({7, 7, 0})})
+	{
+		ASSERT_NE(hero, nullptr);
+		const std::vector<std::shared_ptr<Bonus>> beforeBonuses(hero->getExportedBonusList().begin(),
+			hero->getExportedBonusList().end());
+		const auto beforeBonusState = hero->getExportedBonusList().toJsonNode();
+		const auto beforeRules = hero->getPrimaryGrowthRules();
+		const auto live = hero->getSpecialtyPresentation();
+		const auto preview = newHorizonsHeroes::resolveSpecialtyPresentation(*hero->getHeroType(),
+			hero->getPrimaryGrowthRules(), hero->getMagicRules(), std::nullopt);
+		EXPECT_EQ(live.name, preview.name);
+		EXPECT_EQ(live.description, preview.description);
+		EXPECT_EQ(live.creature, preview.creature);
+		EXPECT_EQ(live.skill, preview.skill);
+		EXPECT_EQ(live.spell, preview.spell);
+		EXPECT_EQ(hero->getSpecialtyDescriptionTranslated(), live.description);
+		EXPECT_EQ(heroSpecialtyPresentation(*hero).description, live.description);
+		EXPECT_EQ(std::vector<std::shared_ptr<Bonus>>(hero->getExportedBonusList().begin(),
+			hero->getExportedBonusList().end()), beforeBonuses);
+		EXPECT_EQ(hero->getExportedBonusList().toJsonNode(), beforeBonusState);
+		EXPECT_EQ(hero->getPrimaryGrowthRules(), beforeRules);
+		EXPECT_THROW(newHorizonsHeroes::resolveSpecialtyPresentation(*hero->getHeroType(),
+			JsonNode(), hero->getMagicRules(), std::nullopt, hero), std::invalid_argument);
+	}
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, SharedLiveSpellAndNavigationUsesActualCapturedEligibility)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:ash")), PlayerColor(0))
+		.heroExperience(0).heroGarrison({{creature("core:imp"), 1}})
+		.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:sylvia")), PlayerColor(1))
+		.heroExperience(0).heroGarrison({{creature("core:pikeman"), 1}});
+	startWithMap(std::move(builder));
+	const auto * ash = findHeroAt({5, 5, 0});
+	const auto * sylvia = findHeroAt({7, 7, 0});
+	ASSERT_NE(ash, nullptr);
+	ASSERT_NE(sylvia, nullptr);
+	const auto fireball = SpellID(SpellID::FIREBALL);
+	ASSERT_EQ(ash->getDamageSpellSpecialtyBonusPercent(fireball), 15);
+	ASSERT_EQ(sylvia->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)), 20);
+	for(const auto * hero : {ash, sylvia})
+	{
+		const auto live = hero->getSpecialtyPresentation();
+		const auto preview = newHorizonsHeroes::resolveSpecialtyPresentation(*hero->getHeroType(),
+			hero->getPrimaryGrowthRules(), hero->getMagicRules(), std::nullopt);
+		EXPECT_EQ(live.name, preview.name);
+		EXPECT_EQ(live.description, preview.description);
+		EXPECT_EQ(live.spell, preview.spell);
+		EXPECT_EQ(live.skill, preview.skill);
+		EXPECT_EQ(heroSpecialtyPresentation(*hero).name, live.name);
+		EXPECT_EQ(hero->getSpecialtyDescriptionTranslated(), live.description);
+	}
+	EXPECT_EQ(ash->getSpecialtyPresentation().spell, fireball);
+	EXPECT_EQ(sylvia->getSpecialtyPresentation().skill, SecondarySkill(SecondarySkill::LOGISTICS));
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, SharedCapturedAbsenceDoesNotReinterpretInstalledCreatureDefaults)
+{
+	omitCreatureLineRules = true;
+	startCastleSpecialtyMap();
+	const auto * hero = findHeroAt({5, 5, 0});
+	ASSERT_NE(hero, nullptr);
+	const auto live = hero->getSpecialtyPresentation();
+	EXPECT_FALSE(live.creature);
+	EXPECT_FALSE(live.skill);
+	EXPECT_FALSE(live.spell);
+	EXPECT_EQ(live.name, hero->getHeroType()->getSpecialtyNameTranslated());
+	EXPECT_EQ(live.description, hero->getHeroType()->getSpecialtyDescriptionTranslated());
+	EXPECT_EQ(heroSpecialtyPresentation(*hero).animation().getOriginalName(), "UN44");
 }
 
 TEST_F(NewHorizonsCreatureSpecialtyTest, ArcherLineSpeedFallbackAddsInitiativeOnlyOnce)

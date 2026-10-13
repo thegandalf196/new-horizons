@@ -11,6 +11,7 @@
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForLobby.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
@@ -51,6 +52,7 @@ protected:
 	bool fortressDevelopment = false;
 	bool aenainOptIn = true;
 	bool aenainFalseFlag = false;
+	bool previousFormatContext = false;
 	SpellID presetSpell = SpellID::WEAKNESS;
 	CStack * friendly = nullptr;
 	CStack * target = nullptr;
@@ -108,6 +110,31 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		isolateHistoricalAdventurePolicies(*loaded);
+		if(previousFormatContext)
+		{
+			// This positive writer control predates the canonical-spell clauses
+			// and active Crisis Command profile. Capture their historical absence,
+			// rather than making the production writer discard current policy.
+			auto magic = loaded->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+			magic["spells"]["core:implosion"].Struct().erase("implosion");
+			magic["spells"]["core:teleport"].Struct().erase("ignoreInterveningBarriers");
+			magic["spells"]["core:dispel"].Struct().erase("temporaryMagicalEffectsOnly");
+			magic["spells"]["core:curse"].Struct().erase("schoolRankDurations");
+			magic["spells"]["core:fireWall"].Struct().erase("burnGroundedFlyers");
+			magic.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			auto & commands = perks["skills"]["new-horizons:command"]["perks"].Vector();
+			const auto crisis = std::ranges::find_if(commands, [](const JsonNode & entry)
+			{
+				return entry["id"].String() == "new-horizons:command.crisisCommand";
+			});
+			ASSERT_NE(crisis, commands.end());
+			ASSERT_EQ((*crisis)["effect"]["status"].String(), "active");
+			(*crisis)["effect"]["status"].String() = "planned";
+			perks.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+		}
 	}
 	void prepare(const std::string & actor = "core:cuthbert", int spellPower = 100)
 	{
@@ -508,7 +535,10 @@ TEST_F(NewHorizonsFrailtySpecialtyTest, CurrentWorldRoundtripAndPreviousFormatOu
 TEST_F(NewHorizonsFrailtySpecialtyTest, CurrentOptOutPreservesProducerAndPreviousFormatCompatibility)
 {
 	optIn = false;
+	previousFormatContext = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_THROW(newHorizonsMagic::validateCanonicalSpellClausesSerialization(attackerSideHero->getMagicRules(), false));
+	ASSERT_FALSE(newHorizonsHeroes::crisisCommandProfileActive(attackerSideHero->getPerkState().rules));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(SpellID::WEAKNESS));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(frailty()));
 	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(frailty()), 0);
