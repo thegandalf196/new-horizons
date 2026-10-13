@@ -270,16 +270,17 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->directUnitSubmission.calls),
 			static_cast<unsigned long long>(result->directUnitSubmission.totalMicroseconds),
 			static_cast<unsigned long long>(result->unclassifiedMicroseconds));
-		const auto logProbeCache = [](const char * context, const DamageCacheProbeTiming & cache)
+		const auto logProbeCache = [this](const char * context, const DamageCacheProbeTiming & cache)
 		{
 			if(cache.body.calls == 0)
 				return;
-			logAi->info("BattleAI nested probe cache timing context=%s body_calls=%llu body_ns=%llu"
+			logAi->info("BattleAI nested probe cache timing battle=%d player=%s context=%s"
+				" body_calls=%llu body_ns=%llu"
 				" preflight_calls=%llu preflight_ns=%llu dynamic_calls=%llu dynamic_ns=%llu remainder_ns=%llu"
 				" current_calls=%llu original_calls=%llu root_hits=%llu child_hits=%llu parent_original_hits=%llu"
 				" root_original_fallbacks=%llu parent_original_fallbacks=%llu dynamic_bypasses=%llu"
 				" fills=%llu dead_returns=%llu failed_operations=%llu suppressed_reentries=%llu",
-				context, static_cast<unsigned long long>(cache.body.calls),
+				battleID.getNum(), player.toString(), context, static_cast<unsigned long long>(cache.body.calls),
 				static_cast<unsigned long long>(cache.body.totalNanoseconds),
 				static_cast<unsigned long long>(cache.preflight.calls), static_cast<unsigned long long>(cache.preflight.totalNanoseconds),
 				static_cast<unsigned long long>(cache.dynamicDamage.calls), static_cast<unsigned long long>(cache.dynamicDamage.totalNanoseconds),

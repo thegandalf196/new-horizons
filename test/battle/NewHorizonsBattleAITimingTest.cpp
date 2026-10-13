@@ -2288,11 +2288,13 @@ struct WaitDiagnosticMessages
 class WaitDiagnosticTarget final : public ILogTarget
 {
 	std::weak_ptr<WaitDiagnosticMessages> messages;
+	const std::string prefix;
 public:
-	explicit WaitDiagnosticTarget(std::weak_ptr<WaitDiagnosticMessages> value) : messages(std::move(value)) {}
+	WaitDiagnosticTarget(std::weak_ptr<WaitDiagnosticMessages> value, std::string rowPrefix)
+		: messages(std::move(value)), prefix(std::move(rowPrefix)) {}
 	void write(const LogRecord & record) override
 	{
-		if(!record.message.starts_with("NH_WAIT_CALLBACK_TIMING "))
+		if(!record.message.starts_with(prefix))
 			return;
 		if(const auto target = messages.lock())
 		{
@@ -2313,11 +2315,12 @@ class ScopedWaitDiagnostics final
 	ELogLevel::ELogLevel aiLevel = aiLogger->getLevel();
 public:
 	std::shared_ptr<WaitDiagnosticMessages> messages = std::make_shared<WaitDiagnosticMessages>();
-	explicit ScopedWaitDiagnostics(ELogLevel::ELogLevel requestedAiLevel = ELogLevel::DEBUG)
+	explicit ScopedWaitDiagnostics(ELogLevel::ELogLevel requestedAiLevel = ELogLevel::DEBUG,
+		std::string rowPrefix = "NH_WAIT_CALLBACK_TIMING ")
 	{
 		global->setLevel(ELogLevel::DEBUG);
 		aiLogger->setLevel(requestedAiLevel);
-		global->addTarget(std::make_unique<WaitDiagnosticTarget>(messages));
+		global->addTarget(std::make_unique<WaitDiagnosticTarget>(messages, std::move(rowPrefix)));
 	}
 	~ScopedWaitDiagnostics()
 	{
@@ -2421,6 +2424,84 @@ TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitRecordsMatchOptInAndCapturedIde
 	ScopedWaitDiagnostics capture;
 	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7, 1, true));
 	ASSERT_NO_FATAL_FAILURE(expectRecord(capture, true, false, false));
+}
+
+TEST_F(NewHorizonsWaitDiagnosticTest, ProbeCacheAggregateRowsCarryCapturedBattleAndPlayerIdentity)
+{
+	ScopedWaitDiagnostics capture(ELogLevel::DEBUG, "BattleAI nested probe cache timing ");
+	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7, 7));
+	const auto before = summary();
+	ASSERT_EQ(before.activeStackInFlight, 0u);
+	ai->battleEnd(BattleID(0), nullptr, QueryID(-1));
+	const auto completed = summary();
+	ASSERT_TRUE(completed.finished);
+	ASSERT_TRUE(completed.reported);
+	const auto rows = capture.rows();
+	if(!requestedWaitDiagnostics())
+	{
+		EXPECT_TRUE(rows.empty());
+		EXPECT_EQ(completed.movementExchangeProbeDamageCache.body.calls, 0u);
+		EXPECT_EQ(completed.bestTargetWaitedProbeDamageCache.body.calls, 0u);
+		EXPECT_EQ(completed.bestTargetNormalProbeDamageCache.body.calls, 0u);
+		RecordProperty("identifiedProbeCacheRows", "0");
+		return;
+	}
+	ASSERT_GT(completed.movementExchangeProbeDamageCache.body.calls, 0u);
+	std::map<std::string, const DamageCacheProbeTiming *> expected;
+	for(const auto & [context, cache] : {
+		std::pair{"movement", &completed.movementExchangeProbeDamageCache},
+		std::pair{"best_target_waited", &completed.bestTargetWaitedProbeDamageCache},
+		std::pair{"best_target_normal", &completed.bestTargetNormalProbeDamageCache}})
+	{
+		if(cache->body.calls > 0)
+			expected.emplace(context, cache);
+	}
+	ASSERT_EQ(rows.size(), expected.size());
+	for(const auto & row : rows)
+	{
+		std::map<std::string, std::string> fields;
+		std::istringstream tokens(row);
+		std::string token;
+		while(tokens >> token)
+		{
+			const auto separator = token.find('=');
+			if(separator != std::string::npos)
+			{
+				ASSERT_TRUE(fields.emplace(token.substr(0, separator), token.substr(separator + 1)).second);
+			}
+		}
+		ASSERT_EQ(fields.size(), 22u);
+		ASSERT_TRUE(fields.contains("battle"));
+		ASSERT_TRUE(fields.contains("player"));
+		ASSERT_TRUE(fields.contains("context"));
+		EXPECT_EQ(fields.at("battle"), "0");
+		EXPECT_EQ(fields.at("player"), PlayerColor(1).toString());
+		const auto found = expected.find(fields.at("context"));
+		ASSERT_NE(found, expected.end());
+		const auto & cache = *found->second;
+		const std::map<std::string, uint64_t> numeric{
+			{"body_calls", cache.body.calls}, {"body_ns", cache.body.totalNanoseconds},
+			{"preflight_calls", cache.preflight.calls}, {"preflight_ns", cache.preflight.totalNanoseconds},
+			{"dynamic_calls", cache.dynamicDamage.calls}, {"dynamic_ns", cache.dynamicDamage.totalNanoseconds},
+			{"remainder_ns", cache.remainderNanoseconds}, {"current_calls", cache.getDamageCalls},
+			{"original_calls", cache.getOriginalDamageCalls}, {"root_hits", cache.rootCacheHits},
+			{"child_hits", cache.localChildCacheHits}, {"parent_original_hits", cache.parentOriginalHits},
+			{"root_original_fallbacks", cache.rootOriginalFallbacks},
+			{"parent_original_fallbacks", cache.parentOriginalFallbacks},
+			{"dynamic_bypasses", cache.dynamicBypasses}, {"fills", cache.cacheFillCalls},
+			{"dead_returns", cache.deadReturns}, {"failed_operations", cache.failedOperations},
+			{"suppressed_reentries", cache.suppressedReentrantCalls}};
+		ASSERT_EQ(numeric.size(), 19u);
+		for(const auto & [key, value] : numeric)
+		{
+			ASSERT_TRUE(fields.contains(key)) << key;
+			EXPECT_EQ(fields.at(key), std::to_string(value)) << key;
+		}
+		expectProbeCacheClosure(cache);
+		expected.erase(found);
+	}
+	EXPECT_TRUE(expected.empty());
+	RecordProperty("identifiedProbeCacheRows", std::to_string(rows.size()));
 }
 
 TEST_F(NewHorizonsWaitDiagnosticTest, DisabledAiLoggerNaturalWaitEmitsNoDiagnostic)
