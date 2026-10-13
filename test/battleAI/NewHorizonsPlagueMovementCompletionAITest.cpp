@@ -16,6 +16,10 @@
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
+#include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
+
+#include <map>
 
 namespace
 {
@@ -171,6 +175,152 @@ TEST_F(NewHorizonsPlagueMovementCompletionAITest, OrdinaryMoveTicksOnceAtDestina
 	EXPECT_TRUE(newHorizonsPlague::hasPlague(spreadTarget));
 	newHorizonsPlague::completeActivation(*projection.battle, *projection.battle->getServerCallback(), mover->unitId());
 	EXPECT_EQ(projection.battle->getProjectedPlagueHits().size(), 1u);
+}
+
+TEST_F(NewHorizonsPlagueMovementCompletionAITest, HostileLockMoveTicksAndSpreadsBeforeSealExpiryThenCountsDownOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare()); // Real paid Plague, not a fabricated marker.
+	defenderSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL)),
+		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	// The infection captured its damage at SP100. SP0 gives the real seal one round.
+	defenderSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	const SpellID seal(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	defenderSideHero->addSpellToSpellbook(seal);
+	advanceRound(); // Existing fixture round packet refreshes the paid hero allowance.
+	ASSERT_EQ(battle()->battleActiveUnit(), mover);
+	const auto manaBeforeSeal = defenderSideHero->getManaAvailable();
+	ASSERT_TRUE(castOn(defenderSideHero, seal, mover));
+	EXPECT_LT(defenderSideHero->getManaAvailable(), manaBeforeSeal);
+	const auto marker = [&](const battle::Unit * unit) -> std::shared_ptr<const Bonus>
+	{
+		const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(plague())).And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER)));
+		return bonuses->empty() ? nullptr : bonuses->front();
+	};
+	const auto infection = marker(mover);
+	ASSERT_NE(infection, nullptr);
+	ASSERT_NE(infection->parameters, nullptr);
+	ASSERT_EQ(infection->turnsRemain, 3);
+	ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*mover));
+	ASSERT_EQ(newHorizonsSorcery::spellLockPreservesBeneficial(*mover), std::optional<bool>(false));
+	ASSERT_TRUE(newHorizonsSorcery::durationPausedBySpellLock(*mover, *infection));
+	const auto seals = mover->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(seal)).And(Selector::type()(BonusType::NONE)));
+	ASSERT_EQ(seals->size(), 1u);
+	ASSERT_EQ(seals->front()->turnsRemain, 1);
+	const auto round = battle()->battleGetRound();
+	const auto initialParameters = infection->parameters->toCustom<JsonNode>();
+	ASSERT_LT(initialParameters["lastProcessedRound"].Integer(), round);
+	ASSERT_EQ(initialParameters["casterSide"].Integer(), static_cast<int>(BattleSide::DEFENDER));
+	// Independent integral HP oracle: this ordinary Peasant has no mitigation,
+	// and the caster has no incidental Plague damage bonus. Spell Lock resistance
+	// blocks new spells, but does not reduce an already-captured Plague tick.
+	const int64_t tick = infection->val;
+	ASSERT_GT(tick, 0);
+	ASSERT_EQ(defenderSideHero->getSpellBonus(plague().toSpell(), tick, mover), tick);
+	ASSERT_EQ(mover->valOfBonuses(BonusType::SPELL_DAMAGE_REDUCTION), 0);
+	ASSERT_EQ(mover->getGuardianSpiritHitPoints(), 0);
+	ASSERT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(mover), 0);
+	ASSERT_EQ(battle()->battleGetPerkMagicalReductionBasisPoints(mover), 0);
+	const auto health = mover->getAvailableHealth();
+	ASSERT_GT(health, 2 * tick);
+	ASSERT_FALSE(newHorizonsPlague::hasPlague(spreadTarget));
+	auto parent = model();
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	std::map<uint32_t, JsonNode> parentBefore;
+	std::map<uint32_t, JsonNode> siblingBefore;
+	std::map<uint32_t, JsonNode> liveBefore;
+	for(const auto * unit : battle()->battleGetAllUnits(true))
+	{
+		parentBefore.emplace(unit->unitId(), parent->getForUpdate(unit->unitId())->save());
+		siblingBefore.emplace(unit->unitId(), sibling->getForUpdate(unit->unitId())->save());
+		liveBefore.emplace(unit->unitId(), unit->acquireState()->save());
+	}
+	const auto first = project(parent);
+	ASSERT_TRUE(first.arrivedAlive);
+	ASSERT_NE(first.battle, nullptr);
+	ASSERT_EQ(first.battle->getMagicRules(), parent->getMagicRules());
+	auto projectedMover = first.battle->getForUpdate(mover->unitId());
+	ASSERT_EQ(first.battle->getProjectedPlagueHits().size(), 1u);
+	EXPECT_EQ(projectedMover->getAvailableHealth(), health - tick);
+	EXPECT_FLOAT_EQ(first.value.first, -static_cast<float>(tick));
+	ASSERT_NE(marker(projectedMover.get()), nullptr);
+	EXPECT_EQ(marker(projectedMover.get())->turnsRemain, 3);
+	EXPECT_EQ(marker(projectedMover.get())->parameters->toCustom<JsonNode>()["lastProcessedRound"].Integer(), round);
+	EXPECT_EQ(marker(projectedMover.get())->parameters->toCustom<JsonNode>()["spreadAttempts"].Integer(),
+		initialParameters["spreadAttempts"].Integer() + 1);
+	ASSERT_NE(marker(first.battle->battleGetUnitByID(spreadTarget->unitId())), nullptr);
+	EXPECT_EQ(marker(first.battle->battleGetUnitByID(spreadTarget->unitId()))->val, tick);
+	EXPECT_TRUE(newHorizonsSorcery::isSpellLocked(*projectedMover));
+	newHorizonsPlague::completeActivation(*first.battle, *first.battle->getServerCallback(), mover->unitId());
+	EXPECT_EQ(first.battle->getProjectedPlagueHits().size(), 1u);
+	EXPECT_EQ(projectedMover->getAvailableHealth(), health - tick);
+	for(const auto & [id, snapshot] : liveBefore)
+		EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), snapshot);
+	ASSERT_TRUE(actualMove());
+	EXPECT_EQ(mover->getPosition(), destination);
+	EXPECT_EQ(mover->getAvailableHealth(), health - tick);
+	ASSERT_NE(marker(mover), nullptr);
+	EXPECT_EQ(marker(mover)->turnsRemain, 3);
+	EXPECT_EQ(marker(mover)->parameters->toCustom<JsonNode>(), marker(projectedMover.get())->parameters->toCustom<JsonNode>());
+	ASSERT_NE(marker(spreadTarget), nullptr);
+	EXPECT_EQ(marker(spreadTarget)->toJsonNode(), marker(first.battle->battleGetUnitByID(spreadTarget->unitId()))->toJsonNode());
+
+	// Drive the real ordinary queue to its next normal round with accepted
+	// Defends, matching the existing delayed-move fixture. Never assign activeStack.
+	for(size_t answered = 0; answered < battle()->stacks.size() + 1
+		&& (battle()->battleGetRound() == round || battle()->battleActiveUnit() != mover); ++answered)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(active, mover);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+			battle()->battleGetActionController(active), BattleAction::makeDefend(active)));
+	}
+	ASSERT_EQ(battle()->battleGetRound(), round + 1);
+	ASSERT_EQ(battle()->battleActiveUnit(), mover);
+	ASSERT_FALSE(newHorizonsSorcery::isSpellLocked(*mover));
+	ASSERT_NE(marker(mover), nullptr);
+	EXPECT_EQ(marker(mover)->turnsRemain, 3);
+	EXPECT_EQ(mover->getAvailableHealth(), health - tick);
+	std::map<uint32_t, JsonNode> liveBeforeSecondProjection;
+	for(const auto * unit : battle()->battleGetAllUnits(true))
+		liveBeforeSecondProjection.emplace(unit->unitId(), unit->acquireState()->save());
+	first.battle->nextRound();
+	first.battle->nextTurn(mover->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	ASSERT_FALSE(newHorizonsSorcery::isSpellLocked(*projectedMover));
+	ASSERT_NE(marker(projectedMover.get()), nullptr);
+	EXPECT_EQ(marker(projectedMover.get())->turnsRemain, 3);
+	EXPECT_EQ(projectedMover->getAvailableHealth(), health - tick);
+	const auto back = BattleAction::makeMove(mover, BattleHex(4, 5));
+	const auto second = BattleEvaluator::projectOrdinaryMoveCompletion(environment.get(), first.battle,
+		back, PlayerColor(0));
+	ASSERT_TRUE(second.arrivedAlive);
+	ASSERT_EQ(second.battle->getProjectedPlagueHits().size(), 2u);
+	const auto * secondMover = second.battle->battleGetUnitByID(mover->unitId());
+	EXPECT_EQ(secondMover->getAvailableHealth(), health - 2 * tick);
+	EXPECT_FLOAT_EQ(second.value.first, -static_cast<float>(tick));
+	ASSERT_NE(marker(secondMover), nullptr);
+	EXPECT_EQ(marker(secondMover)->turnsRemain, 2);
+	EXPECT_EQ(marker(secondMover)->parameters->toCustom<JsonNode>()["lastProcessedRound"].Integer(), round + 1);
+	EXPECT_EQ(marker(secondMover)->parameters->toCustom<JsonNode>()["spreadAttempts"].Integer(),
+		initialParameters["spreadAttempts"].Integer() + 2);
+	newHorizonsPlague::completeActivation(*second.battle, *second.battle->getServerCallback(), mover->unitId());
+	EXPECT_EQ(second.battle->getProjectedPlagueHits().size(), 2u);
+	EXPECT_EQ(secondMover->getAvailableHealth(), health - 2 * tick);
+	EXPECT_EQ(marker(secondMover)->turnsRemain, 2);
+	for(const auto & [id, snapshot] : liveBeforeSecondProjection)
+		EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), snapshot);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), back));
+	EXPECT_EQ(mover->getAvailableHealth(), secondMover->getAvailableHealth());
+	ASSERT_NE(marker(mover), nullptr);
+	EXPECT_EQ(marker(mover)->toJsonNode(), marker(secondMover)->toJsonNode());
+	for(const auto & [id, snapshot] : parentBefore)
+		EXPECT_EQ(parent->getForUpdate(id)->save(), snapshot);
+	for(const auto & [id, snapshot] : siblingBefore)
+		EXPECT_EQ(sibling->getForUpdate(id)->save(), snapshot);
+	EXPECT_TRUE(parent->getProjectedPlagueHits().empty());
+	EXPECT_TRUE(sibling->getProjectedPlagueHits().empty());
 }
 
 TEST_F(NewHorizonsPlagueMovementCompletionAITest, LethalCompletionRemainsLegalAndPropagatesAfterArrival)
