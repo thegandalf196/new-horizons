@@ -1190,10 +1190,13 @@ float BattleExchangeVariant::trackAttack(
 						targetWasAlive && !target->alive(), target->isClone(), targetMayRebirth);
 			}
 				projectedAttacker->afterAttack(false, false, cleaveAttack.physicalDamage);
-				const auto cleaveHexScoringActor = projectedAttacker->acquireState();
-				const auto cleaveHexDamage = projectHexOfPain(projectedAttacker.get(), targetUnit,
-					false, false, {{targetUnit->unitId(), resolvedCleaveDamage}});
-				recordHexOfPain(cleaveHexScoringActor.get(), cleaveHexDamage);
+				if(newHorizonsHexOfPainAI::hasEffect(projectedAttacker.get()))
+				{
+					const auto cleaveHexScoringActor = projectedAttacker->acquireState();
+					const auto cleaveHexDamage = projectHexOfPain(projectedAttacker.get(), targetUnit,
+						false, false, {{targetUnit->unitId(), resolvedCleaveDamage}});
+					recordHexOfPain(cleaveHexScoringActor.get(), cleaveHexDamage);
+				}
 			}
 	}
 
@@ -1285,10 +1288,13 @@ float BattleExchangeVariant::trackAttack(
 			hb->projectElementalRebirth(attacker.get(), *attackerRebirthSource,
 				attackerWasAlive && !attacker->alive(), attacker->isClone(), attackerMayRebirth);
 		defender->afterAttack(false, true, retaliationAttack.physicalDamage);
-		const auto retaliationHexScoringActor = defender->acquireState();
-		const auto retaliationHexDamage = projectHexOfPain(defender.get(), attacker.get(), false, true,
-			{{attacker->unitId(), actualDamage}});
-		recordHexOfPain(retaliationHexScoringActor.get(), retaliationHexDamage);
+		if(newHorizonsHexOfPainAI::hasEffect(defender.get()))
+		{
+			const auto retaliationHexScoringActor = defender->acquireState();
+			const auto retaliationHexDamage = projectHexOfPain(defender.get(), attacker.get(), false, true,
+				{{attacker->unitId(), actualDamage}});
+			recordHexOfPain(retaliationHexScoringActor.get(), retaliationHexDamage);
+		}
 	}
 	if(!evaluateOnly && hb->getActiveStackID() == static_cast<int32_t>(attacker->unitId()))
 		attacker->consumeNoQuarterActivation();
