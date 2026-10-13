@@ -56,6 +56,27 @@ These are callback/mock-submission checks, not graphical UI, CPU/GPU, physical
 presentation or Windows performance acceptance. Follow the existing guarded
 graphical-testing rules for runtime measurements; no speedup is established.
 
+### Target-probe damage and scoring measurements
+
+The existing battle-summary row separates the primary damage calculation and
+DPS scoring inside target probes. Movement uses
+`exchange_target_probe_main_damage_*` and `exchange_target_probe_dps_score_*`;
+normal and waited forecasts use the corresponding `best_target_normal_*` and
+`best_target_waited_*` fields. Each pair reports calls and wall microseconds.
+
+These are disjoint nested subsets of target-probe time, not additional regions
+to add to the enclosing exchange or callback total. DPS scoring includes its
+reverse-damage and health-scoring callees, not just arithmetic. Early-return
+probes may have zero child calls. Applied attacks do not populate these counters;
+null timing sinks take no clock samples. Search depth, scoring and rules are
+unchanged.
+
+Focused checks cover timed/null score and state parity, applied-attack exclusion,
+early/reset zeros, nested bounds and movement/normal/waited aggregation. Existing
+one-stack, seven-stack and seven-versus-seven Normal controls exercise the new
+properties. These checks validate attribution, not a performance improvement;
+reproducible workload-matched measurements are still needed before optimizing.
+
 ## Hero positive-proc presentation diagnostics
 
 With `NH_RENDER_LOAD_TIMINGS=1` and the `animation.heroProc` logger at DEBUG,
@@ -73,6 +94,8 @@ Existing generic timing gates and budgets are unchanged.
 `receiptNoProc` records accepted zero-proc flags; no cue chain is expected for
 that action. This distinguishes an observed non-trigger from missing trace data
 without logging random draws or changing probabilities.
+Zero flags do not distinguish an ineligible action, an omitted roll or a missed
+roll; they establish only that no successful proc was represented.
 
 `teardown` marks scene termination, not natural effect completion. Missing images
 are reported without changing existing recovery behavior. Disabled or capped

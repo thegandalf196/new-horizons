@@ -162,6 +162,19 @@ protected:
 
 	void expectStageClosure(const CBattleAI::TimingSummary & timing) const
 	{
+		const auto probeChildren = [](const CBattleAI::StageTiming & mainDamage,
+			const CBattleAI::StageTiming & dpsScore, const CBattleAI::StageTiming & parent)
+		{
+			EXPECT_LE(mainDamage.totalMicroseconds + dpsScore.totalMicroseconds, parent.totalMicroseconds);
+			EXPECT_LE(dpsScore.calls, mainDamage.calls);
+			EXPECT_LE(mainDamage.calls, parent.calls);
+		};
+		probeChildren(timing.movementExchangeTargetProbeMainDamage, timing.movementExchangeTargetProbeDpsScore,
+			timing.movementExchangeTargetProbes);
+		probeChildren(timing.bestTargetWaitedTargetProbeMainDamage, timing.bestTargetWaitedTargetProbeDpsScore,
+			timing.bestTargetWaitedTargetProbes);
+		probeChildren(timing.bestTargetNormalTargetProbeMainDamage, timing.bestTargetNormalTargetProbeDpsScore,
+			timing.bestTargetNormalTargetProbes);
 		const auto subsets = [](const CBattleAI::StageTiming & expiry, const CBattleAI::StageTiming & gambler,
 			const CBattleAI::StageTiming & roundTimed, const CBattleAI::StageTiming & activation,
 			const CBattleAI::StageTiming & round)
@@ -311,7 +324,10 @@ protected:
 	void expectEmptyTargetPartition(const CBattleAI::TimingSummary & timing) const
 	{
 		for(const auto * stage : {&timing.selectionBestTarget, &timing.selectionSiegeDefense,
-			&timing.selectionDefensiveStance})
+			&timing.selectionDefensiveStance, &timing.movementExchangeTargetProbeMainDamage,
+			&timing.movementExchangeTargetProbeDpsScore, &timing.bestTargetWaitedTargetProbeMainDamage,
+			&timing.bestTargetWaitedTargetProbeDpsScore, &timing.bestTargetNormalTargetProbeMainDamage,
+			&timing.bestTargetNormalTargetProbeDpsScore})
 		{
 			EXPECT_EQ(stage->calls, 0u);
 			EXPECT_EQ(stage->totalMicroseconds, 0u);
@@ -596,6 +612,9 @@ TEST_F(NewHorizonsBattleAITimingTest, OrdinaryResetExcludesOldTargetPartitionFro
 	EXPECT_EQ(summary().selectionTargetExchange.totalMicroseconds, 0u);
 	const auto reset = summary();
 	for(const auto * stage : {&reset.movementExchangeActivationStart, &reset.movementExchangeActivationEnd,
+		&reset.movementExchangeTargetProbeMainDamage, &reset.movementExchangeTargetProbeDpsScore,
+		&reset.bestTargetWaitedTargetProbeMainDamage, &reset.bestTargetWaitedTargetProbeDpsScore,
+		&reset.bestTargetNormalTargetProbeMainDamage, &reset.bestTargetNormalTargetProbeDpsScore,
 		&reset.movementExchangeRoundAdvance, &reset.bestTargetWaitedActivationStart,
 		&reset.bestTargetWaitedActivationEnd, &reset.bestTargetWaitedRoundAdvance,
 		&reset.bestTargetNormalActivationStart, &reset.bestTargetNormalActivationEnd,
@@ -952,6 +971,10 @@ class NewHorizonsExchangeTimingTest : public NewHorizonsBattleAITimingTest
 protected:
 	void expectLifecycleSubsets(const BattleMovementTiming::ExchangeTiming & exchange) const
 	{
+		EXPECT_LE(exchange.targetProbeMainDamage.totalMicroseconds + exchange.targetProbeDpsScore.totalMicroseconds,
+			exchange.targetProbes.totalMicroseconds);
+		EXPECT_LE(exchange.targetProbeDpsScore.calls, exchange.targetProbeMainDamage.calls);
+		EXPECT_LE(exchange.targetProbeMainDamage.calls, exchange.targetProbes.calls);
 		const auto & nested = exchange.lifecycleSubsets;
 		const auto expectNanosecondBounds = [](const HypotheticLifecycleTiming::EffectWorkTiming & work,
 			const HypotheticLifecycleTiming::StageTiming & parent)
@@ -1080,6 +1103,7 @@ TEST_F(NewHorizonsExchangeTimingTest, BestTargetWaitAndNormalPartitionAndMatchNu
 	EXPECT_EQ(timing.waitedExchange.calls, timing.normalExchange.calls);
 	for(const auto * exchange : {&timing.waitedDetails, &timing.normalDetails})
 	{
+		EXPECT_EQ(exchange->targetProbeDpsScore.calls, exchange->targetProbeMainDamage.calls);
 		EXPECT_GT(exchange->activationStart.calls, 0u);
 		EXPECT_GT(exchange->activationEnd.calls, 0u);
 		EXPECT_GT(exchange->roundAdvance.calls, 0u);
@@ -1121,7 +1145,8 @@ TEST_F(NewHorizonsExchangeTimingTest, BestTargetAlreadyWaitedSkipsWaitBuckets)
 	EXPECT_EQ(timing.waitedDetails.body.calls, 0u);
 	EXPECT_EQ(timing.waitedDetails.remainderMicroseconds, 0u);
 	for(const auto * stage : {&timing.waitedDetails.activationStart, &timing.waitedDetails.activationEnd,
-		&timing.waitedDetails.roundAdvance})
+		&timing.waitedDetails.roundAdvance, &timing.waitedDetails.targetProbeMainDamage,
+		&timing.waitedDetails.targetProbeDpsScore})
 	{
 		EXPECT_EQ(stage->calls, 0u);
 		EXPECT_EQ(stage->totalMicroseconds, 0u);
@@ -1144,7 +1169,7 @@ TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAn
 	// Real mixed participants exercise both future target probes and applied
 	// resolution; every exchange retains Normal's two-round forecast.
 	addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 50);
-	addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 5), 50);
+	const auto * forwardActor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 5), 50);
 	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 7), 50);
 	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 3), 50);
 	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
@@ -1186,6 +1211,9 @@ TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAn
 	ASSERT_GT(timing.findMoveExchange.calls, 0u);
 	ASSERT_GT(timing.findMoveExchangeDetails.projectionSetup.calls, 0u);
 	ASSERT_GT(timing.findMoveExchangeDetails.targetProbes.calls, 0u);
+	ASSERT_GT(timing.findMoveExchangeDetails.targetProbeMainDamage.calls, 0u);
+	EXPECT_EQ(timing.findMoveExchangeDetails.targetProbeDpsScore.calls,
+		timing.findMoveExchangeDetails.targetProbeMainDamage.calls);
 	ASSERT_GT(timing.findMoveExchangeDetails.appliedAttacks.calls, 0u);
 	EXPECT_GT(timing.findMoveExchangeDetails.activationStart.calls, 0u);
 	EXPECT_GT(timing.findMoveExchangeDetails.activationEnd.calls, 0u);
@@ -1196,6 +1224,26 @@ TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAn
 	EXPECT_EQ(timing.findMoveExchangeDetails.membership.calls, timing.findMoveExchangeDetails.body.calls);
 	EXPECT_EQ(timing.findMoveExchangeDetails.projectionSetup.calls, timing.findMoveExchangeDetails.body.calls);
 	expectExchangeClosure(timing);
+	std::optional<EvaluationResult> expectedBest;
+	std::optional<EvaluationResult> actualBest;
+	BattleBestTargetTiming bestTiming;
+	ASSERT_NO_FATAL_FAILURE(forecastBestTarget(control, nullptr, expectedBest, forwardActor));
+	ASSERT_NO_FATAL_FAILURE(forecastBestTarget(measured, &bestTiming, actualBest, forwardActor));
+	ASSERT_TRUE(expectedBest);
+	ASSERT_TRUE(actualBest);
+	EXPECT_EQ(std::bit_cast<uint32_t>(actualBest->score), std::bit_cast<uint32_t>(expectedBest->score));
+	EXPECT_EQ(actualBest->wait, expectedBest->wait);
+	EXPECT_EQ(actualBest->bestAttack.from, expectedBest->bestAttack.from);
+	EXPECT_EQ(actualBest->bestAttack.dest, expectedBest->bestAttack.dest);
+	EXPECT_EQ(actualBest->bestAttack.attack.attacker->unitId(), expectedBest->bestAttack.attack.attacker->unitId());
+	EXPECT_EQ(actualBest->bestAttack.attack.defender->unitId(), expectedBest->bestAttack.attack.defender->unitId());
+	EXPECT_EQ(actualBest->bestAttack.attack.shooting, expectedBest->bestAttack.attack.shooting);
+	for(const auto * exchange : {&bestTiming.waitedDetails, &bestTiming.normalDetails})
+	{
+		EXPECT_GT(exchange->targetProbeMainDamage.calls, 0u);
+		EXPECT_EQ(exchange->targetProbeDpsScore.calls, exchange->targetProbeMainDamage.calls);
+	}
+	expectBestTargetClosure(bestTiming);
 	for(const auto & [id, snapshot] : parentBefore)
 	{
 		EXPECT_EQ(parent->getForUpdate(id)->save(), snapshot);
@@ -1209,6 +1257,22 @@ TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAn
 	}
 	EXPECT_TRUE(callback->actions.empty());
 	EXPECT_TRUE(callback->heroActions.empty());
+	ai->autobattlePreferences.enableSpellsUsage = false;
+	ai->activeStack(BattleID(0), ordinary);
+	ASSERT_EQ(callback->actions.size(), 1u);
+	EXPECT_GT(summary().movementExchangeTargetProbeMainDamage.calls, 0u);
+	ai->activeStack(BattleID(0), forwardActor);
+	ASSERT_EQ(callback->actions.size(), 2u);
+	const auto aggregate = summary();
+	for(const auto pair : {std::pair{&aggregate.bestTargetWaitedTargetProbeMainDamage, &aggregate.bestTargetWaitedTargetProbeDpsScore},
+		std::pair{&aggregate.bestTargetNormalTargetProbeMainDamage, &aggregate.bestTargetNormalTargetProbeDpsScore}})
+	{
+		EXPECT_GT(pair.first->calls, 0u);
+		EXPECT_EQ(pair.second->calls, pair.first->calls);
+	}
+	expectStageClosure(aggregate);
+	for(const auto & [id, snapshot] : liveBefore)
+		EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), snapshot);
 }
 
 TEST_F(NewHorizonsExchangeTimingTest, AdjacentTargetsReturnBeforeExchangeAndKeepBucketsZero)
@@ -1234,7 +1298,8 @@ TEST_F(NewHorizonsExchangeTimingTest, AdjacentTargetsReturnBeforeExchangeAndKeep
 	EXPECT_EQ(timing.findMoveExchange.calls, 0u);
 	const auto & exchange = timing.findMoveExchangeDetails;
 	for(const auto * stage : {&exchange.body, &exchange.membership, &exchange.projectionSetup,
-		&exchange.targetProbes, &exchange.appliedAttacks, &exchange.activationStart,
+		&exchange.targetProbes, &exchange.targetProbeMainDamage, &exchange.targetProbeDpsScore,
+		&exchange.appliedAttacks, &exchange.activationStart,
 		&exchange.activationEnd, &exchange.roundAdvance})
 	{
 		EXPECT_EQ(stage->calls, 0u);
@@ -1264,6 +1329,7 @@ TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCount
 	ASSERT_GT(timing.movementFindMoveExchangeSubset.calls, 0u);
 	EXPECT_EQ(timing.movementExchangeBody.calls, timing.movementFindMoveExchangeSubset.calls);
 	ASSERT_GT(timing.movementExchangeProjectionSetup.calls, 0u);
+	EXPECT_EQ(timing.movementExchangeTargetProbeDpsScore.calls, timing.movementExchangeTargetProbeMainDamage.calls);
 	const uint64_t classified = timing.movementExchangeMembership.totalMicroseconds
 		+ timing.movementExchangeProjectionSetup.totalMicroseconds
 		+ timing.movementExchangeTargetProbes.totalMicroseconds
@@ -1283,6 +1349,73 @@ TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCount
 	EXPECT_LE(timing.movementFindMoveExchangeSubset.totalMicroseconds, timing.movementFindMove.totalMicroseconds);
 	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
 	expectStageClosure(timing);
+}
+
+TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIgnoreAppliedOrNullActors)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	std::map<uint32_t, JsonNode> before;
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		before.emplace(unit->unitId(), parent->getForUpdate(unit->unitId())->save());
+	for(bool evaluateOnly : {true, false})
+	{
+		auto control = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		auto measured = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		DamageCache controlCache;
+		DamageCache measuredCache;
+		controlCache.buildDamageCache(control, BattleSide::ATTACKER);
+		measuredCache.buildDamageCache(measured, BattleSide::ATTACKER);
+		BattleExchangeVariant controlExchange;
+		BattleExchangeVariant measuredExchange;
+		BattleMovementTiming::StageTiming mainDamage;
+		BattleMovementTiming::StageTiming dpsScore;
+		const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore};
+		const auto expected = controlExchange.trackAttack(control->getForUpdate(ordinary->unitId()),
+			control->getForUpdate(enemy->unitId()), false, true, controlCache, control, evaluateOnly);
+		const auto actual = measuredExchange.trackAttack(measured->getForUpdate(ordinary->unitId()),
+			measured->getForUpdate(enemy->unitId()), false, true, measuredCache, measured, evaluateOnly,
+			true, nullptr, &bundle);
+		EXPECT_EQ(std::bit_cast<uint32_t>(actual), std::bit_cast<uint32_t>(expected));
+		EXPECT_EQ(measuredExchange.getScore().ourDamageReduce, controlExchange.getScore().ourDamageReduce);
+		EXPECT_EQ(measuredExchange.getScore().enemyDamageReduce, controlExchange.getScore().enemyDamageReduce);
+		EXPECT_EQ(mainDamage.calls, evaluateOnly ? 1u : 0u);
+		EXPECT_EQ(dpsScore.calls, mainDamage.calls);
+		if(!evaluateOnly)
+		{
+			EXPECT_EQ(mainDamage.totalMicroseconds, 0u);
+			EXPECT_EQ(dpsScore.totalMicroseconds, 0u);
+		}
+		for(const auto & [id, snapshot] : before)
+		{
+			EXPECT_EQ(measured->getForUpdate(id)->save(), control->getForUpdate(id)->save());
+			if(evaluateOnly)
+			{
+				EXPECT_EQ(measured->getForUpdate(id)->save(), snapshot);
+			}
+			EXPECT_EQ(parent->getForUpdate(id)->save(), snapshot);
+			EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), snapshot);
+		}
+	}
+	BattleMovementTiming::StageTiming mainDamage;
+	BattleMovementTiming::StageTiming dpsScore;
+	const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore};
+	DamageCache cache;
+	cache.buildDamageCache(parent, BattleSide::ATTACKER);
+	BattleExchangeVariant empty;
+	EXPECT_EQ(empty.trackAttack(nullptr, parent->getForUpdate(enemy->unitId()), false, true,
+		cache, parent, true, true, nullptr, &bundle), 0);
+	const BattleTargetProbeTiming nullSinks;
+	BattleExchangeVariant nullBundle;
+	EXPECT_EQ(nullBundle.trackAttack(nullptr, parent->getForUpdate(enemy->unitId()), false, true,
+		cache, parent, true, true, nullptr, &nullSinks), 0);
+	for(const auto * stage : {&mainDamage, &dpsScore})
+	{
+		EXPECT_EQ(stage->calls, 0u);
+		EXPECT_EQ(stage->totalMicroseconds, 0u);
+	}
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_TRUE(callback->heroActions.empty());
 }
 
 class NewHorizonsDetachedBonusRemovalTimingTest : public NewHorizonsBattleAITimingTest
@@ -1910,6 +2043,8 @@ protected:
 			stage("movement", before.selectionMovementSearch, after.selectionMovementSearch);
 			stage("movementBody", before.movementExchangeBody, after.movementExchangeBody);
 			stage("movementProbes", before.movementExchangeTargetProbes, after.movementExchangeTargetProbes);
+			stage("movementProbeMainDamage", before.movementExchangeTargetProbeMainDamage, after.movementExchangeTargetProbeMainDamage);
+			stage("movementProbeDpsScore", before.movementExchangeTargetProbeDpsScore, after.movementExchangeTargetProbeDpsScore);
 			stage("movementAppliedAttacks", before.movementExchangeAppliedAttacks, after.movementExchangeAppliedAttacks);
 			stage("movementActivationStart", before.movementExchangeActivationStart, after.movementExchangeActivationStart);
 			stage("movementActivationEnd", before.movementExchangeActivationEnd, after.movementExchangeActivationEnd);
@@ -1924,6 +2059,10 @@ protected:
 			stage("normalBody", before.bestTargetNormalBody, after.bestTargetNormalBody);
 			stage("waitedProbes", before.bestTargetWaitedTargetProbes, after.bestTargetWaitedTargetProbes);
 			stage("normalProbes", before.bestTargetNormalTargetProbes, after.bestTargetNormalTargetProbes);
+			stage("waitedProbeMainDamage", before.bestTargetWaitedTargetProbeMainDamage, after.bestTargetWaitedTargetProbeMainDamage);
+			stage("waitedProbeDpsScore", before.bestTargetWaitedTargetProbeDpsScore, after.bestTargetWaitedTargetProbeDpsScore);
+			stage("normalProbeMainDamage", before.bestTargetNormalTargetProbeMainDamage, after.bestTargetNormalTargetProbeMainDamage);
+			stage("normalProbeDpsScore", before.bestTargetNormalTargetProbeDpsScore, after.bestTargetNormalTargetProbeDpsScore);
 			stage("waitedActivationStart", before.bestTargetWaitedActivationStart, after.bestTargetWaitedActivationStart);
 			stage("waitedActivationEnd", before.bestTargetWaitedActivationEnd, after.bestTargetWaitedActivationEnd);
 			stage("waitedRoundAdvance", before.bestTargetWaitedRoundAdvance, after.bestTargetWaitedRoundAdvance);
