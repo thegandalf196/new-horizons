@@ -109,6 +109,52 @@ struct FortuneStrikeProjection
 	std::vector<DefiantDenialProjection> defiantDenials;
 };
 
+/// Probe-only wall diagnostics. Never stored by a cache or battle model.
+/// body counts only the outer cache operation; original->current fallback is
+/// nested. preflight/dynamicDamage/remainder partition that body, not the probe.
+struct DLL_LINKAGE DamageCacheProbeTiming
+{
+	using StageTiming = HypotheticLifecycleTiming::StageTiming;
+	StageTiming body;
+	StageTiming preflight;
+	StageTiming dynamicDamage;
+	uint64_t remainderNanoseconds = 0;
+	uint64_t getDamageCalls = 0;
+	uint64_t getOriginalDamageCalls = 0;
+	uint64_t rootCacheHits = 0;
+	uint64_t localChildCacheHits = 0;
+	uint64_t parentOriginalHits = 0;
+	uint64_t rootOriginalFallbacks = 0;
+	uint64_t parentOriginalFallbacks = 0;
+	uint64_t dynamicBypasses = 0;
+	uint64_t cacheFillCalls = 0;
+	uint64_t deadReturns = 0;
+	uint64_t failedOperations = 0;
+	/// Reentry during a measured phase is included in that outer phase wall;
+	/// its clocks/counters are suppressed to prevent overlap.
+	uint64_t suppressedReentrantCalls = 0;
+	// Call-local bookkeeping only, excluded from aggregation and serialization.
+	uint32_t operationsInFlight = 0;
+	uint32_t dynamicCallbacksInFlight = 0;
+	uint32_t phasesInFlight = 0;
+
+	void accumulate(const DamageCacheProbeTiming & sample)
+	{
+		body.accumulate(sample.body);
+		preflight.accumulate(sample.preflight);
+		dynamicDamage.accumulate(sample.dynamicDamage);
+		remainderNanoseconds += sample.remainderNanoseconds;
+		for(auto member : {&DamageCacheProbeTiming::getDamageCalls,
+			&DamageCacheProbeTiming::getOriginalDamageCalls, &DamageCacheProbeTiming::rootCacheHits,
+			&DamageCacheProbeTiming::localChildCacheHits, &DamageCacheProbeTiming::parentOriginalHits,
+			&DamageCacheProbeTiming::rootOriginalFallbacks, &DamageCacheProbeTiming::parentOriginalFallbacks,
+			&DamageCacheProbeTiming::dynamicBypasses, &DamageCacheProbeTiming::cacheFillCalls,
+			&DamageCacheProbeTiming::deadReturns, &DamageCacheProbeTiming::failedOperations,
+			&DamageCacheProbeTiming::suppressedReentrantCalls})
+			(this->*member) += sample.*member;
+	}
+};
+
 class DamageCache
 {
 private:
@@ -122,6 +168,8 @@ private:
 	std::set<uint32_t> frozenTargets;
 	DamageCache * parent;
 
+	void cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender,
+		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 	bool tracksRangedMarks(uint32_t defenderId) const;
 	bool tracksEvasiveShroud(uint32_t defenderId) const;
@@ -136,8 +184,12 @@ public:
 
 	void cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
 	int64_t getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
+	int64_t getDamage(const battle::Unit * attacker, const battle::Unit * defender,
+		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
 	int64_t getObstacleDamage(const BattleHex & hex, const battle::Unit * defender);
 	int64_t getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
+	int64_t getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender,
+		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
 	void buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 };
 
@@ -197,6 +249,13 @@ public:
 		uint64_t damageDealt,
 		DamageCache & damageCache,
 		std::shared_ptr<CBattleInfoCallback> cb);
+	static float calculateDamageReduce(
+		const battle::Unit * attacker,
+		const battle::Unit * defender,
+		uint64_t damageDealt,
+		DamageCache & damageCache,
+		std::shared_ptr<CBattleInfoCallback> cb,
+		DamageCacheProbeTiming * timing);
 
 private:
 	static int64_t evaluateBlockedShootersDmg(

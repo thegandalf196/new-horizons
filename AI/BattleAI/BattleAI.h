@@ -11,6 +11,7 @@
 #include <atomic>
 #include "../../lib/battle/ReachabilityInfo.h"
 #include "../../lib/callback/CGameInterface.h"
+#include "AttackPossibility.h"
 #include "PossibleSpellcast.h"
 #include "PotentialTargets.h"
 #include "TacticsHandler.h"
@@ -99,6 +100,7 @@ public:
 		/// Nested target-probe subsets, excluded from body closure.
 		StageTiming movementExchangeTargetProbeMainDamage;
 		StageTiming movementExchangeTargetProbeDpsScore;
+		DamageCacheProbeTiming movementExchangeProbeDamageCache;
 		StageTiming movementExchangeAppliedAttacks;
 		StageTiming movementExchangeActivationStart;
 		StageTiming movementExchangeActivationEnd;
@@ -123,6 +125,7 @@ public:
 		StageTiming bestTargetWaitedTargetProbes;
 		StageTiming bestTargetWaitedTargetProbeMainDamage;
 		StageTiming bestTargetWaitedTargetProbeDpsScore;
+		DamageCacheProbeTiming bestTargetWaitedProbeDamageCache;
 		StageTiming bestTargetWaitedAppliedAttacks;
 		StageTiming bestTargetWaitedActivationStart;
 		StageTiming bestTargetWaitedActivationEnd;
@@ -141,6 +144,7 @@ public:
 		StageTiming bestTargetNormalTargetProbes;
 		StageTiming bestTargetNormalTargetProbeMainDamage;
 		StageTiming bestTargetNormalTargetProbeDpsScore;
+		DamageCacheProbeTiming bestTargetNormalProbeDamageCache;
 		StageTiming bestTargetNormalAppliedAttacks;
 		StageTiming bestTargetNormalActivationStart;
 		StageTiming bestTargetNormalActivationEnd;

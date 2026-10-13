@@ -32,6 +32,8 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 
 #include <array>
+#include <chrono>
+#include <exception>
 
 #include "../../lib/GameLibrary.h"
 
@@ -41,6 +43,96 @@
 
 namespace
 {
+class DamageCacheOperationScope
+{
+	using Clock = std::chrono::steady_clock;
+	DamageCacheProbeTiming * timing;
+	bool outer = false;
+	Clock::time_point started;
+	uint64_t classifiedBefore = 0;
+	int exceptionsBefore = 0;
+public:
+	explicit DamageCacheOperationScope(DamageCacheProbeTiming * receiver)
+		: timing(receiver)
+	{
+		if(!timing)
+			return;
+		if(timing->phasesInFlight)
+		{
+			++timing->suppressedReentrantCalls;
+			timing = nullptr;
+			return;
+		}
+		outer = timing->operationsInFlight++ == 0;
+		if(outer)
+		{
+			classifiedBefore = timing->preflight.totalNanoseconds + timing->dynamicDamage.totalNanoseconds;
+			exceptionsBefore = std::uncaught_exceptions();
+			started = Clock::now();
+		}
+	}
+	DamageCacheOperationScope(const DamageCacheOperationScope &) = delete;
+	DamageCacheOperationScope & operator=(const DamageCacheOperationScope &) = delete;
+	DamageCacheProbeTiming * receiver() const { return timing; }
+	~DamageCacheOperationScope()
+	{
+		if(!timing)
+			return;
+		--timing->operationsInFlight;
+		if(!outer)
+			return;
+		const auto elapsed = Clock::now() - started;
+		const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
+		++timing->body.calls;
+		timing->body.totalNanoseconds += nanoseconds;
+		timing->body.totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+		const auto classified = timing->preflight.totalNanoseconds + timing->dynamicDamage.totalNanoseconds
+			- classifiedBefore;
+		timing->remainderNanoseconds += nanoseconds - classified;
+		if(std::uncaught_exceptions() > exceptionsBefore)
+			++timing->failedOperations;
+	}
+};
+
+class DamageCachePhaseScope
+{
+	using Clock = std::chrono::steady_clock;
+	DamageCacheProbeTiming * timing;
+	DamageCacheProbeTiming::StageTiming * stage;
+	bool dynamic;
+	Clock::time_point started;
+public:
+	DamageCachePhaseScope(DamageCacheProbeTiming * timing,
+		DamageCacheProbeTiming::StageTiming DamageCacheProbeTiming::* member)
+		: timing(timing), stage(timing ? &(timing->*member) : nullptr),
+		  dynamic(member == &DamageCacheProbeTiming::dynamicDamage),
+		  started(stage ? Clock::now() : Clock::time_point{})
+	{
+		if(stage)
+		{
+			++timing->phasesInFlight;
+			if(dynamic)
+				++timing->dynamicCallbacksInFlight;
+		}
+	}
+	DamageCachePhaseScope(const DamageCachePhaseScope &) = delete;
+	DamageCachePhaseScope & operator=(const DamageCachePhaseScope &) = delete;
+	~DamageCachePhaseScope() { finish(); }
+	void finish()
+	{
+		if(!stage)
+			return;
+		const auto elapsed = Clock::now() - started;
+		++stage->calls;
+		stage->totalNanoseconds += std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
+		stage->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+		--timing->phasesInFlight;
+		if(dynamic)
+			--timing->dynamicCallbacksInFlight;
+		stage = nullptr;
+	}
+};
+
 bool projectDefiant(HypotheticBattle & battle, const BattleAttackInfo & attack,
 	newHorizonsArmorer::DefiantDenialCause cause, FortuneStrikeProjection & strike)
 {
@@ -175,6 +267,13 @@ void projectVampirismHealing(battle::CUnitState * attacker, int64_t actualDamage
 
 void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
+	cacheDamageMeasured(attacker, defender, std::move(hb), nullptr);
+}
+
+void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender,
+	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing)
+{
+	DamageCachePhaseScope preflight(timing, &DamageCacheProbeTiming::preflight);
 	if(defender->hasBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection)))
 		evasiveShroudTargets.insert(defender->unitId());
 	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker));
@@ -197,7 +296,13 @@ void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit 
 
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
 		rangedMarkTargets.insert(defender->unitId());
-	auto damage = hb->battleExpectedLuckDamage(BattleAttackInfo(attacker, defender, 0, hb->battleCanShoot(attacker, defender->getPosition())));
+	const BattleAttackInfo attack(attacker, defender, 0, hb->battleCanShoot(attacker, defender->getPosition()));
+	preflight.finish();
+	const auto damage = [&]()
+	{
+		DamageCachePhaseScope dynamic(timing, &DamageCacheProbeTiming::dynamicDamage);
+		return hb->battleExpectedLuckDamage(attack);
+	}();
 
 	damageCache[attacker->unitId()][defender->unitId()] = static_cast<float>(damage) / attacker->getCount();
 }
@@ -345,6 +450,17 @@ bool DamageCache::tracksFrozen(uint32_t defenderId) const
 
 int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
+	return getDamage(attacker, defender, std::move(hb), nullptr);
+}
+
+int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender,
+	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)
+{
+	DamageCacheOperationScope operation(receiver);
+	auto * timing = operation.receiver();
+	if(timing)
+		++timing->getDamageCalls;
+	DamageCachePhaseScope preflight(timing, &DamageCacheProbeTiming::preflight);
 	if(newHorizonsFrozen::isFrozen(*defender))
 		frozenTargets.insert(defender->unitId());
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
@@ -426,8 +542,14 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| newHorizonsFrozen::isFrozen(*attacker)
 		|| tracksFrozen(defender->unitId()))
 	{
+		if(timing)
+			++timing->dynamicBypasses;
 		if(!attacker->alive())
+		{
+			if(timing)
+				++timing->deadReturns;
 			return 0;
+		}
 		const auto * primaryTarget = hb->battleResolveHeroOrderTarget(attacker, defender, shooting);
 		attack.defender = primaryTarget ? primaryTarget : defender;
 		attack.protectIntercepted = attack.defender->unitId() != defender->unitId();
@@ -436,12 +558,26 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 			attack.relentlessAssaultDamagePercent = hb->battleGetRelentlessAssaultDamagePercent(
 				attacker, attack.defender);
 		}
+		preflight.finish();
+		DamageCachePhaseScope dynamic(timing, &DamageCacheProbeTiming::dynamicDamage);
 		return hb->battleExpectedLuckDamage(attack);
 	}
 	bool wasComputedBefore = damageCache[attacker->unitId()].count(defender->unitId());
 
 	if (!wasComputedBefore)
-		cacheDamage(attacker, defender, hb);
+	{
+		if(timing)
+			++timing->cacheFillCalls;
+		preflight.finish();
+		cacheDamageMeasured(attacker, defender, hb, timing);
+	}
+	else if(timing)
+	{
+		if(parent)
+			++timing->localChildCacheHits;
+		else
+			++timing->rootCacheHits;
+	}
 
 	return damageCache[attacker->unitId()][defender->unitId()] * attacker->getCount();
 }
@@ -465,6 +601,17 @@ int64_t DamageCache::getObstacleDamage(const BattleHex & hex, const battle::Unit
 
 int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
+	return getOriginalDamage(attacker, defender, std::move(hb), nullptr);
+}
+
+int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender,
+	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)
+{
+	DamageCacheOperationScope operation(receiver);
+	auto * timing = operation.receiver();
+	if(timing)
+		++timing->getOriginalDamageCalls;
+	DamageCachePhaseScope preflight(timing, &DamageCacheProbeTiming::preflight);
 	if(parent)
 	{
 		auto attackerDamageMap = parent->damageCache.find(attacker->unitId());
@@ -475,12 +622,22 @@ int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const batt
 
 			if(targetDamage != attackerDamageMap->second.end())
 			{
+				if(timing)
+					++timing->parentOriginalHits;
 				return static_cast<int64_t>(targetDamage->second * attacker->getCount());
 			}
 		}
 	}
 
-	return getDamage(attacker, defender, hb);
+	if(timing)
+	{
+		if(parent)
+			++timing->parentOriginalFallbacks;
+		else
+			++timing->rootOriginalFallbacks;
+	}
+	preflight.finish();
+	return getDamage(attacker, defender, hb, timing);
 }
 
 AttackPossibility::AttackPossibility(const BattleHex & from, const BattleHex & dest, const BattleAttackInfo & attack)
@@ -535,6 +692,17 @@ float AttackPossibility::calculateDamageReduce(
 	DamageCache & damageCache,
 	std::shared_ptr<CBattleInfoCallback> state)
 {
+	return calculateDamageReduce(attacker, defender, damageDealt, damageCache, std::move(state), nullptr);
+}
+
+float AttackPossibility::calculateDamageReduce(
+	const battle::Unit * attacker,
+	const battle::Unit * defender,
+	uint64_t damageDealt,
+	DamageCache & damageCache,
+	std::shared_ptr<CBattleInfoCallback> state,
+	DamageCacheProbeTiming * timing)
+{
 	const float HEALTH_BOUNTY = 0.5;
 	const float KILL_BOUNTY = 0.5;
 
@@ -569,7 +737,7 @@ float AttackPossibility::calculateDamageReduce(
 			|| damageDealt < static_cast<uint64_t>(integrity))
 			return 0.0f;
 
-		const auto copiedStackDamage = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state);
+		const auto copiedStackDamage = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state, timing);
 		return static_cast<float>(copiedStackDamage);
 	}
 
@@ -596,7 +764,7 @@ float AttackPossibility::calculateDamageReduce(
 		const auto healthAfter = damageProjection->getAvailableHealth();
 		const auto actualDamage = std::max<int64_t>(0, healthBefore - healthAfter);
 		const auto enemiesKilled = std::max(0, countBefore - damageProjection->getCount());
-		const auto enemyDamageBeforeAttack = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state);
+		const auto enemyDamageBeforeAttack = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state, timing);
 		const auto damagePerEnemy = enemyDamageBeforeAttack / static_cast<double>(countBefore);
 		const auto woundHealth = static_cast<float>(actualDamage) / std::max(1, capacityReferenceMax);
 		const auto hpValue = std::min(woundHealth, static_cast<float>(countBefore));
@@ -609,7 +777,7 @@ float AttackPossibility::calculateDamageReduce(
 
 	vstd::amin(damageDealt, availableHealth);
 
-	auto enemyDamageBeforeAttack = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state);
+	auto enemyDamageBeforeAttack = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state, timing);
 	auto enemiesKilled = damageDealt / maxHealth + (damageDealt % maxHealth >= defender->getFirstHPleft() ? 1 : 0);
 	auto damagePerEnemy = enemyDamageBeforeAttack / (double)defender->getCount();
 	auto exceedingDamage = (damageDealt % maxHealth);

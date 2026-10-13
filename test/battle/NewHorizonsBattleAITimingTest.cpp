@@ -14,6 +14,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
@@ -34,9 +35,122 @@
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <tuple>
 
 namespace
 {
+bool requestedWaitDiagnostics();
+
+void expectProbeCacheClosure(const DamageCacheProbeTiming & timing)
+{
+	EXPECT_EQ(timing.body.totalNanoseconds, timing.preflight.totalNanoseconds
+		+ timing.dynamicDamage.totalNanoseconds + timing.remainderNanoseconds);
+	for(const auto * stage : {&timing.body, &timing.preflight, &timing.dynamicDamage})
+		EXPECT_GE(stage->totalNanoseconds, stage->totalMicroseconds * 1000);
+	EXPECT_EQ(timing.operationsInFlight, 0u);
+	EXPECT_EQ(timing.dynamicCallbacksInFlight, 0u);
+	EXPECT_EQ(timing.phasesInFlight, 0u);
+	EXPECT_LE(timing.failedOperations, timing.body.calls);
+	EXPECT_LE(timing.dynamicDamage.calls, timing.dynamicBypasses + timing.cacheFillCalls);
+}
+
+void recordProbeCacheDelta(const std::string & prefix, const DamageCacheProbeTiming & previous,
+	const DamageCacheProbeTiming & current)
+{
+	for(const auto & [name, member] : {
+		std::pair{"body", &DamageCacheProbeTiming::body},
+		std::pair{"preflight", &DamageCacheProbeTiming::preflight},
+		std::pair{"dynamic", &DamageCacheProbeTiming::dynamicDamage}})
+	{
+		const auto & before = previous.*member;
+		const auto & after = current.*member;
+		testing::Test::RecordProperty(prefix + name + "Us", std::to_string(after.totalMicroseconds - before.totalMicroseconds));
+		testing::Test::RecordProperty(prefix + name + "Ns", std::to_string(after.totalNanoseconds - before.totalNanoseconds));
+		testing::Test::RecordProperty(prefix + name + "Calls", std::to_string(after.calls - before.calls));
+	}
+	for(const auto & [name, member] : {
+		std::pair{"remainderNs", &DamageCacheProbeTiming::remainderNanoseconds},
+		std::pair{"currentCalls", &DamageCacheProbeTiming::getDamageCalls},
+		std::pair{"originalCalls", &DamageCacheProbeTiming::getOriginalDamageCalls},
+		std::pair{"rootHits", &DamageCacheProbeTiming::rootCacheHits},
+		std::pair{"childHits", &DamageCacheProbeTiming::localChildCacheHits},
+		std::pair{"parentOriginalHits", &DamageCacheProbeTiming::parentOriginalHits},
+		std::pair{"rootOriginalFallbacks", &DamageCacheProbeTiming::rootOriginalFallbacks},
+		std::pair{"parentOriginalFallbacks", &DamageCacheProbeTiming::parentOriginalFallbacks},
+		std::pair{"dynamicBypasses", &DamageCacheProbeTiming::dynamicBypasses},
+		std::pair{"fills", &DamageCacheProbeTiming::cacheFillCalls},
+		std::pair{"deadReturns", &DamageCacheProbeTiming::deadReturns},
+		std::pair{"failedOperations", &DamageCacheProbeTiming::failedOperations},
+		std::pair{"suppressedReentries", &DamageCacheProbeTiming::suppressedReentrantCalls}})
+		testing::Test::RecordProperty(prefix + name, std::to_string((current.*member) - (previous.*member)));
+}
+
+void expectProbeCacheParent(const DamageCacheProbeTiming & cache, uint64_t parentMicroseconds, uint64_t parentCalls)
+{
+	expectProbeCacheClosure(cache);
+	// Each existing parent sample truncates separately to us. Child ns must
+	// allow that lost submicrosecond part; this is a nesting bound, not a speed gate.
+	EXPECT_LE(cache.body.totalNanoseconds, (parentMicroseconds + parentCalls) * 1000);
+}
+
+// Hooks exercise the actual dynamic callback and preflight query seams. They
+// are test-local and one-shot; no production callback/cache retains a sink.
+class ProbeHookCallback final : public BattleProxy
+{
+public:
+	using BattleProxy::BattleProxy;
+	mutable std::function<void()> onLuckRead;
+	bool failCommandRules = false;
+	mutable std::function<void()> onCommandRulesRead;
+	LuckRollRules getLuckRollRules() const override
+	{
+		auto hook = std::move(onLuckRead);
+		onLuckRead = {};
+		if(hook)
+			hook();
+		return BattleProxy::getLuckRollRules();
+	}
+	const JsonNode & getHeroCommandRules() const override
+	{
+		auto hook = std::move(onCommandRulesRead);
+		onCommandRulesRead = {};
+		if(hook)
+			hook();
+		if(failCommandRules)
+			throw std::runtime_error("Probe preflight test exception");
+		return BattleProxy::getHeroCommandRules();
+	}
+
+	// BattleProxy intentionally leaves mutation and a few read delegates
+	// abstract. Forward reads; reject mutations so these callback tests cannot
+	// accidentally simulate or repair state through their fault-injection wrapper.
+	BattleID getBattleID() const override { return subject->getBattle()->getBattleID(); }
+	const scripting::Pool & getScriptContextPool() const override { return subject->getBattle()->getScriptContextPool(); }
+	std::vector<SpellID> getUsedSpells(BattleSide side) const override { return subject->getBattle()->getUsedSpells(side); }
+	uint32_t nextUnitId() const override { return subject->getBattle()->nextUnitId(); }
+	int64_t getActualDamage(const DamageRange & damage, int32_t count, vstd::RNG & rng) const override
+	{
+		return subject->getBattle()->getActualDamage(damage, count, rng);
+	}
+	int3 getLocation() const override { return subject->getBattle()->getLocation(); }
+	BattleLayout getLayout() const override { return subject->getBattle()->getLayout(); }
+	void nextRound() override { refuseMutation(); }
+	void nextTurn(uint32_t, BattleUnitTurnReason) override { refuseMutation(); }
+	void addUnit(uint32_t, const JsonNode &) override { refuseMutation(); }
+	void updateUnit(uint32_t, const JsonNode &, int64_t) override { refuseMutation(); }
+	void moveUnit(uint32_t, const BattleHex &) override { refuseMutation(); }
+	void removeUnit(uint32_t) override { refuseMutation(); }
+	void addUnitBonus(uint32_t, const std::vector<Bonus> &) override { refuseMutation(); }
+	void updateUnitBonus(uint32_t, const std::vector<Bonus> &) override { refuseMutation(); }
+	void removeUnitBonus(uint32_t, const std::vector<Bonus> &) override { refuseMutation(); }
+	void setWallState(EWallPart, EWallState) override { refuseMutation(); }
+	void addObstacle(const ObstacleChanges &) override { refuseMutation(); }
+	void updateObstacle(const ObstacleChanges &) override { refuseMutation(); }
+	void removeObstacle(uint32_t) override { refuseMutation(); }
+private:
+	[[noreturn]] static void refuseMutation() { throw std::logic_error("Read-only probe callback cannot mutate battle"); }
+};
+
 void expectEffectWorkBounds(const HypotheticLifecycleTiming::EffectWorkTiming & work,
 	uint64_t parentCalls, uint64_t parentMicroseconds, bool removal)
 {
@@ -162,6 +276,11 @@ protected:
 
 	void expectStageClosure(const CBattleAI::TimingSummary & timing) const
 	{
+		for(const auto & [cache, main, dps] : {
+			std::tuple{&timing.movementExchangeProbeDamageCache, &timing.movementExchangeTargetProbeMainDamage, &timing.movementExchangeTargetProbeDpsScore},
+			std::tuple{&timing.bestTargetWaitedProbeDamageCache, &timing.bestTargetWaitedTargetProbeMainDamage, &timing.bestTargetWaitedTargetProbeDpsScore},
+			std::tuple{&timing.bestTargetNormalProbeDamageCache, &timing.bestTargetNormalTargetProbeMainDamage, &timing.bestTargetNormalTargetProbeDpsScore}})
+			expectProbeCacheParent(*cache, main->totalMicroseconds + dps->totalMicroseconds, main->calls + dps->calls);
 		const auto probeChildren = [](const CBattleAI::StageTiming & mainDamage,
 			const CBattleAI::StageTiming & dpsScore, const CBattleAI::StageTiming & parent)
 		{
@@ -975,6 +1094,9 @@ protected:
 			exchange.targetProbes.totalMicroseconds);
 		EXPECT_LE(exchange.targetProbeDpsScore.calls, exchange.targetProbeMainDamage.calls);
 		EXPECT_LE(exchange.targetProbeMainDamage.calls, exchange.targetProbes.calls);
+		expectProbeCacheParent(exchange.targetProbeDamageCache,
+			exchange.targetProbeMainDamage.totalMicroseconds + exchange.targetProbeDpsScore.totalMicroseconds,
+			exchange.targetProbeMainDamage.calls + exchange.targetProbeDpsScore.calls);
 		const auto & nested = exchange.lifecycleSubsets;
 		const auto expectNanosecondBounds = [](const HypotheticLifecycleTiming::EffectWorkTiming & work,
 			const HypotheticLifecycleTiming::StageTiming & parent)
@@ -1370,7 +1492,8 @@ TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIg
 		BattleExchangeVariant measuredExchange;
 		BattleMovementTiming::StageTiming mainDamage;
 		BattleMovementTiming::StageTiming dpsScore;
-		const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore};
+		DamageCacheProbeTiming cacheTiming;
+		const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore, &cacheTiming};
 		const auto expected = controlExchange.trackAttack(control->getForUpdate(ordinary->unitId()),
 			control->getForUpdate(enemy->unitId()), false, true, controlCache, control, evaluateOnly);
 		const auto actual = measuredExchange.trackAttack(measured->getForUpdate(ordinary->unitId()),
@@ -1381,6 +1504,8 @@ TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIg
 		EXPECT_EQ(measuredExchange.getScore().enemyDamageReduce, controlExchange.getScore().enemyDamageReduce);
 		EXPECT_EQ(mainDamage.calls, evaluateOnly ? 1u : 0u);
 		EXPECT_EQ(dpsScore.calls, mainDamage.calls);
+		expectProbeCacheClosure(cacheTiming);
+		EXPECT_EQ(cacheTiming.body.calls, evaluateOnly ? 2u : 0u);
 		if(!evaluateOnly)
 		{
 			EXPECT_EQ(mainDamage.totalMicroseconds, 0u);
@@ -1399,12 +1524,15 @@ TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIg
 	}
 	BattleMovementTiming::StageTiming mainDamage;
 	BattleMovementTiming::StageTiming dpsScore;
-	const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore};
+	DamageCacheProbeTiming cacheTiming;
+	const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore, &cacheTiming};
 	DamageCache cache;
 	cache.buildDamageCache(parent, BattleSide::ATTACKER);
 	BattleExchangeVariant empty;
 	EXPECT_EQ(empty.trackAttack(nullptr, parent->getForUpdate(enemy->unitId()), false, true,
 		cache, parent, true, true, nullptr, &bundle), 0);
+	EXPECT_EQ(cacheTiming.body.calls, 0u);
+	expectProbeCacheClosure(cacheTiming);
 	const BattleTargetProbeTiming nullSinks;
 	BattleExchangeVariant nullBundle;
 	EXPECT_EQ(nullBundle.trackAttack(nullptr, parent->getForUpdate(enemy->unitId()), false, true,
@@ -1963,6 +2091,9 @@ protected:
 			initialHealth += dwarf->getAvailableHealth();
 			EXPECT_EQ(dwarf->getAvailableHealth(), static_cast<int64_t>(70 / stackCount) * dwarf->getMaxHealth());
 		}
+		RecordProperty("probeCacheDiagnosticEnvironmentRequested", requestedWaitDiagnostics() ? "true" : "false");
+		RecordProperty("probeCacheDiagnosticLoggerEnabled", CLogger::getGlobalLogger()->isDebugEnabled()
+			&& CLogger::getLogger(CLoggerDomain("ai"))->isDebugEnabled() ? "true" : "false");
 		RecordProperty("initialDwarfHealth", std::to_string(initialHealth));
 		ASSERT_EQ(initialHealth, 1400);
 		RecordProperty("dwarfStacks", std::to_string(stackCount));
@@ -2105,6 +2236,9 @@ protected:
 			effectWork("normalActivationGambler", before.bestTargetNormalActivationGamblerWork, after.bestTargetNormalActivationGamblerWork);
 			effectWork("normalRoundTimed", before.bestTargetNormalRoundTimedWork, after.bestTargetNormalRoundTimedWork);
 			RecordProperty(prefix + "bestTargetRemainderUs", std::to_string(after.bestTargetRemainderMicroseconds - before.bestTargetRemainderMicroseconds));
+			recordProbeCacheDelta(prefix + "movement_cache_", before.movementExchangeProbeDamageCache, after.movementExchangeProbeDamageCache);
+			recordProbeCacheDelta(prefix + "waited_cache_", before.bestTargetWaitedProbeDamageCache, after.bestTargetWaitedProbeDamageCache);
+			recordProbeCacheDelta(prefix + "normal_cache_", before.bestTargetNormalProbeDamageCache, after.bestTargetNormalProbeDamageCache);
 			expectStageClosure(after);
 			EXPECT_EQ(after.activeStackCalls - before.activeStackCalls, 1u);
 			EXPECT_EQ(after.evaluatorConstruction.calls - before.evaluatorConstruction.calls, 1u);
@@ -2343,4 +2477,479 @@ TEST_F(NewHorizonsWaitDiagnosticTest, ConfiguredCapMatchesObservedNaturalWaitCou
 	}
 	RecordProperty("waitDiagnosticRecords", std::to_string(detailed));
 	RecordProperty("waitDiagnosticOverflowNotices", overflow ? "1" : "0");
+}
+
+TEST(DamageCacheProbeTimingTest, AggregationPreservesNanosecondsAndExcludesInFlightBookkeeping)
+{
+	DamageCacheProbeTiming sample;
+	sample.body.calls = 1;
+	sample.body.totalNanoseconds = 999;
+	sample.preflight.calls = 1;
+	sample.preflight.totalNanoseconds = 400;
+	sample.dynamicDamage.calls = 1;
+	sample.dynamicDamage.totalNanoseconds = 500;
+	sample.remainderNanoseconds = 99;
+	sample.getDamageCalls = sample.dynamicBypasses = sample.suppressedReentrantCalls = 1;
+	sample.operationsInFlight = sample.dynamicCallbacksInFlight = sample.phasesInFlight = 1;
+	DamageCacheProbeTiming total;
+	total.accumulate(sample);
+	total.accumulate(sample);
+	EXPECT_EQ(total.body.calls, 2u);
+	EXPECT_EQ(total.body.totalMicroseconds, 0u);
+	EXPECT_EQ(total.body.totalNanoseconds, 1998u);
+	EXPECT_EQ(total.getDamageCalls, 2u);
+	EXPECT_EQ(total.dynamicBypasses, 2u);
+	EXPECT_EQ(total.suppressedReentrantCalls, 2u);
+	expectProbeCacheClosure(total);
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, ProbeCacheLegacyHitsAndImmediateParentFallbackPreserveNullSinkValues)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	ASSERT_FALSE(battle()->battleUsesHeroCommands());
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto attacker = model->getForUpdate(ordinary->unitId());
+	auto defender = model->getForUpdate(enemy->unitId());
+	const auto beforeAttacker = attacker->save();
+	const auto beforeDefender = defender->save();
+	DamageCache root;
+	root.buildDamageCache(model, BattleSide::ATTACKER);
+	DamageCacheProbeTiming hit;
+	EXPECT_EQ(root.getDamage(attacker.get(), defender.get(), model, &hit),
+		root.getDamage(attacker.get(), defender.get(), model));
+	EXPECT_EQ(hit.body.calls, 1u);
+	EXPECT_EQ(hit.rootCacheHits, 1u);
+	EXPECT_EQ(hit.dynamicDamage.calls, 0u);
+	EXPECT_EQ(hit.dynamicBypasses, 0u);
+	expectProbeCacheClosure(hit);
+	DamageCacheProbeTiming original;
+	EXPECT_EQ(root.getOriginalDamage(attacker.get(), defender.get(), model, &original),
+		root.getOriginalDamage(attacker.get(), defender.get(), model));
+	EXPECT_EQ(original.body.calls, 1u); // Nested original->current is not another body.
+	EXPECT_EQ(original.getOriginalDamageCalls, 1u);
+	EXPECT_EQ(original.getDamageCalls, 1u);
+	EXPECT_EQ(original.rootOriginalFallbacks, 1u);
+	EXPECT_EQ(original.rootCacheHits, 1u);
+	EXPECT_EQ(original.preflight.calls, 2u);
+	expectProbeCacheClosure(original);
+	DamageCache child(&root);
+	DamageCacheProbeTiming parentHit;
+	EXPECT_EQ(child.getOriginalDamage(attacker.get(), defender.get(), model, &parentHit),
+		child.getOriginalDamage(attacker.get(), defender.get(), model));
+	EXPECT_EQ(parentHit.parentOriginalHits, 1u);
+	EXPECT_EQ(parentHit.getDamageCalls, 0u);
+	expectProbeCacheClosure(parentHit);
+	// The established algorithm checks only the immediate parent's map.
+	// Do not silently turn this diagnostic into a recursive ancestor lookup.
+	DamageCache grandchild(&child);
+	DamageCache nullGrandchild(&child);
+	DamageCacheProbeTiming fallback;
+	EXPECT_EQ(grandchild.getOriginalDamage(attacker.get(), defender.get(), model, &fallback),
+		nullGrandchild.getOriginalDamage(attacker.get(), defender.get(), model));
+	EXPECT_EQ(fallback.parentOriginalFallbacks, 1u);
+	EXPECT_EQ(fallback.cacheFillCalls, 1u);
+	EXPECT_EQ(fallback.dynamicDamage.calls, 1u);
+	EXPECT_EQ(fallback.body.calls, 1u);
+	EXPECT_EQ(grandchild.getDamage(attacker.get(), defender.get(), model, &fallback),
+		nullGrandchild.getDamage(attacker.get(), defender.get(), model));
+	EXPECT_EQ(fallback.localChildCacheHits, 1u);
+	EXPECT_EQ(fallback.body.calls, 2u);
+	expectProbeCacheClosure(fallback);
+	EXPECT_EQ(attacker->save(), beforeAttacker);
+	EXPECT_EQ(defender->save(), beforeDefender);
+	EXPECT_EQ(ordinary->acquireState()->save(), beforeAttacker);
+	EXPECT_EQ(enemy->acquireState()->save(), beforeDefender);
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheCurrentFocusFireStateAndScoresMatchNullSink)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	ASSERT_TRUE(battle()->battleUsesHeroCommands());
+	ASSERT_TRUE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE));
+	auto * liveShooter = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 50);
+	auto * liveControlled = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(6, 6), 50);
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto shooter = model->getForUpdate(liveShooter->unitId());
+	auto target = model->getForUpdate(enemy->unitId());
+	auto controlled = model->getForUpdate(liveControlled->unitId());
+	const auto liveTarget = enemy->acquireState()->save();
+	const auto liveShooterState = liveShooter->acquireState()->save();
+	const auto liveControlledState = liveControlled->acquireState()->save();
+	DamageCache cache;
+	DamageCache nullCache;
+	cache.buildDamageCache(model, BattleSide::ATTACKER);
+	nullCache.buildDamageCache(model, BattleSide::ATTACKER);
+	FocusFireState mark;
+	mark.targetUnitId = target->unitId();
+	mark.recipientUnitIds = {shooter->unitId()};
+	mark.issuedRound = model->battleGetRound();
+	mark.rangedDamagePercent = 30;
+	model->setFocusFireState(BattleSide::ATTACKER, mark);
+	HeroOrderState order;
+	order.command = HeroCommand::FOCUS_FIRE;
+	order.issuedRound = model->battleGetRound();
+	order.primaryTargetUnitId = target->unitId();
+	model->setHeroOrderState(BattleSide::ATTACKER, order);
+	ASSERT_TRUE(order.scheduledFor(shooter->unitId(), model->battleGetRound()));
+	ASSERT_GT(model->battleTargetedRangedCommandPercent(shooter.get(), target.get(), true), 0);
+	ASSERT_TRUE(newHorizonsFrozen::canApply(*target, model->battleGetRound()));
+	target->addUnitBonus({newHorizonsFrozen::makeFrozenMarker(
+		BonusSourceID(creatureByName("core:iceElemental")), model->battleGetRound())});
+	target->applyNoQuarter(1, true);
+	controlled->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED,
+		BonusSource::OTHER, 1, BonusSourceID())});
+	ASSERT_TRUE(newHorizonsFrozen::isFrozen(*target));
+	ASSERT_TRUE(target->hasBonus(CSelector(newHorizonsOffense::isNoQuarterBonus)));
+	ASSERT_NE(model->battleGetActionController(controlled.get()), battle()->battleGetActionController(liveControlled));
+	DamageCacheProbeTiming timing;
+	for(unsigned state = 0; state < 2; ++state)
+	{
+		const auto targetBefore = target->save();
+		const auto shooterBefore = shooter->save();
+		const auto controlledBefore = controlled->save();
+		const auto markBefore = model->getFocusFireState(BattleSide::ATTACKER);
+		const auto ordersBefore = model->getHeroOrderStates(BattleSide::ATTACKER);
+		EXPECT_EQ(cache.getDamage(shooter.get(), target.get(), model, &timing),
+			nullCache.getDamage(shooter.get(), target.get(), model));
+		BattleMovementTiming::StageTiming mainDamage, dpsScore;
+		BattleTargetProbeTiming sinks{&mainDamage, &dpsScore, &timing};
+		BattleExchangeVariant measured, unmeasured;
+		const auto actual = measured.trackAttack(shooter, target, true, true, cache, model, true, true, nullptr, &sinks);
+		const auto expected = unmeasured.trackAttack(shooter, target, true, true, nullCache, model, true);
+		ASSERT_GT(actual, 0);
+		EXPECT_EQ(std::bit_cast<uint32_t>(actual), std::bit_cast<uint32_t>(expected));
+		EXPECT_EQ(std::bit_cast<uint32_t>(measured.getScore().enemyDamageReduce),
+			std::bit_cast<uint32_t>(unmeasured.getScore().enemyDamageReduce));
+		EXPECT_EQ(std::bit_cast<uint32_t>(measured.getScore().ourDamageReduce),
+			std::bit_cast<uint32_t>(unmeasured.getScore().ourDamageReduce));
+		EXPECT_EQ(mainDamage.calls, 1u);
+		EXPECT_EQ(dpsScore.calls, 1u);
+		EXPECT_EQ(target->save(), targetBefore);
+		EXPECT_EQ(shooter->save(), shooterBefore);
+		EXPECT_EQ(controlled->save(), controlledBefore);
+		EXPECT_EQ(model->getFocusFireState(BattleSide::ATTACKER), markBefore);
+		EXPECT_EQ(model->getHeroOrderStates(BattleSide::ATTACKER), ordersBefore);
+		// Reuse both caches across a genuine projected state change. Remembered
+		// Frozen and the existing supported-rule guard must still bypass IDs.
+		if(state == 0)
+		{
+			target->removeUnitBonus(newHorizonsFrozen::removalPlan(*target));
+			mark.rangedDamagePercent = 40;
+			model->setFocusFireState(BattleSide::ATTACKER, mark);
+			ASSERT_FALSE(newHorizonsFrozen::isFrozen(*target));
+			ASSERT_GT(model->battleTargetedRangedCommandPercent(shooter.get(), target.get(), true), 0);
+		}
+	}
+	EXPECT_GE(timing.dynamicBypasses, 4u);
+	EXPECT_EQ(timing.dynamicDamage.calls, timing.dynamicBypasses);
+	EXPECT_EQ(timing.rootCacheHits, 0u);
+	EXPECT_EQ(timing.cacheFillCalls, 0u);
+	EXPECT_GE(timing.getOriginalDamageCalls, 2u);
+	expectProbeCacheClosure(timing);
+	EXPECT_EQ(enemy->acquireState()->save(), liveTarget);
+	EXPECT_EQ(liveShooter->acquireState()->save(), liveShooterState);
+	EXPECT_EQ(liveControlled->acquireState()->save(), liveControlledState);
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheExceptionsRestoreDepthBeforeSubsequentDynamicCalls)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto probe = std::make_shared<ProbeHookCallback>(model);
+	auto attacker = model->getForUpdate(ordinary->unitId());
+	auto target = model->getForUpdate(enemy->unitId());
+	const auto before = target->save();
+	DamageCache cache;
+	DamageCacheProbeTiming timing;
+	probe->failCommandRules = true;
+	EXPECT_THROW(cache.getDamage(attacker.get(), target.get(), probe), std::runtime_error);
+	EXPECT_THROW(cache.getDamage(attacker.get(), target.get(), probe, &timing), std::runtime_error);
+	EXPECT_EQ(timing.failedOperations, 1u);
+	EXPECT_EQ(timing.dynamicDamage.calls, 0u);
+	expectProbeCacheClosure(timing);
+	probe->failCommandRules = false;
+	probe->onLuckRead = [] { throw std::runtime_error("Probe dynamic test exception"); };
+	EXPECT_THROW(cache.getDamage(attacker.get(), target.get(), probe), std::runtime_error);
+	probe->onLuckRead = [] { throw std::runtime_error("Probe dynamic test exception"); };
+	EXPECT_THROW(cache.getDamage(attacker.get(), target.get(), probe, &timing), std::runtime_error);
+	EXPECT_EQ(timing.failedOperations, 2u);
+	EXPECT_EQ(timing.dynamicDamage.calls, 1u);
+	expectProbeCacheClosure(timing);
+	EXPECT_EQ(cache.getDamage(attacker.get(), target.get(), probe, &timing),
+		cache.getDamage(attacker.get(), target.get(), probe));
+	EXPECT_EQ(timing.body.calls, 3u);
+	EXPECT_EQ(timing.getDamageCalls, 3u);
+	EXPECT_EQ(timing.dynamicBypasses, 2u);
+	EXPECT_EQ(timing.dynamicDamage.calls, 2u);
+	expectProbeCacheClosure(timing);
+	EXPECT_EQ(target->save(), before);
+	EXPECT_EQ(enemy->acquireState()->save(), before);
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheDynamicReentryIsIncludedOnceAndSuppressedLocally)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto probe = std::make_shared<ProbeHookCallback>(model);
+	auto attacker = model->getForUpdate(ordinary->unitId());
+	auto target = model->getForUpdate(enemy->unitId());
+	const auto before = target->save();
+	DamageCache cache;
+	DamageCacheProbeTiming timing;
+	int64_t nested = -1;
+	probe->onLuckRead = [&] { nested = cache.getDamage(attacker.get(), target.get(), probe, &timing); };
+	const auto actual = cache.getDamage(attacker.get(), target.get(), probe, &timing);
+	EXPECT_EQ(actual, cache.getDamage(attacker.get(), target.get(), probe));
+	EXPECT_EQ(nested, actual);
+	EXPECT_EQ(timing.body.calls, 1u);
+	EXPECT_EQ(timing.getDamageCalls, 1u);
+	EXPECT_EQ(timing.dynamicBypasses, 1u);
+	EXPECT_EQ(timing.dynamicDamage.calls, 1u);
+	EXPECT_EQ(timing.suppressedReentrantCalls, 1u);
+	expectProbeCacheClosure(timing);
+	EXPECT_EQ(target->save(), before);
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)
+{
+	// Separate from the historical commands=false Dwarf workload. Default AI
+	// preferences and shipping command rules are retained; no WAIT/Order is forced.
+	ScopedWaitDiagnostics capture;
+	// Reuse the established nonempty Normal exchange geometry. Two adjacent
+	// singleton melee sides never invoke estimateAttack's target comparisons.
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 50);
+	addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 5), 50);
+	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 7), 50);
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 3), 50);
+	gameState()->getStartInfo()->difficulty = static_cast<ui8>(EMapDifficulty::NORMAL);
+	ASSERT_TRUE(battle()->battleUsesHeroCommands());
+	ASSERT_TRUE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE));
+	ASSERT_EQ(battle()->battleGetActionController(battle()->battleActiveUnit()), PlayerColor(0));
+	callback->acceptHeroActions = true;
+	unsigned consumedHeroActions = 0;
+	for(unsigned attempt = 0; attempt < 16 && callback->actions.empty(); ++attempt)
+	{
+		const auto * activeUnit = battle()->battleActiveUnit();
+		ASSERT_NE(activeUnit, nullptr);
+		const auto * active = battle()->getStack(activeUnit->unitId());
+		ASSERT_NE(active, nullptr);
+		ASSERT_EQ(battle()->battleGetActionController(active), PlayerColor(0));
+		const auto heroesBefore = callback->heroActions.size();
+		ai->activeStack(BattleID(0), active);
+		expectStageClosure(summary());
+		if(callback->heroActions.size() != heroesBefore)
+		{
+			ASSERT_EQ(callback->heroActions.size(), heroesBefore + 1);
+			const auto action = callback->heroActions.back();
+			RecordProperty("heroAction" + std::to_string(consumedHeroActions++), action.toString());
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+		}
+		else
+		{
+			ASSERT_EQ(callback->actions.size(), 1u);
+			const auto action = callback->actions.back();
+			RecordProperty("naturalUnitAction", action.toString());
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+		}
+	}
+	ASSERT_EQ(callback->actions.size(), 1u) << "Natural current-command continuation exceeded bounded action budget";
+	RecordProperty("heroActionCount", std::to_string(consumedHeroActions));
+	RecordProperty("forecastRounds", "2");
+	RecordProperty("commandsEnabled", "true");
+	const auto measured = summary();
+	recordProbeCacheDelta("shipping_movement_cache_", {}, measured.movementExchangeProbeDamageCache);
+	recordProbeCacheDelta("shipping_waited_cache_", {}, measured.bestTargetWaitedProbeDamageCache);
+	recordProbeCacheDelta("shipping_normal_cache_", {}, measured.bestTargetNormalProbeDamageCache);
+	RecordProperty("callbackWallUs", std::to_string(measured.activeStackTotalMicroseconds));
+	RecordProperty("probeCacheBodyNs", std::to_string(measured.movementExchangeProbeDamageCache.body.totalNanoseconds
+		+ measured.bestTargetWaitedProbeDamageCache.body.totalNanoseconds + measured.bestTargetNormalProbeDamageCache.body.totalNanoseconds));
+	const auto measuredCurrentCalls = measured.movementExchangeProbeDamageCache.getDamageCalls
+		+ measured.bestTargetWaitedProbeDamageCache.getDamageCalls + measured.bestTargetNormalProbeDamageCache.getDamageCalls;
+	RecordProperty("probeCacheDiagnosticEnvironmentRequested", requestedWaitDiagnostics() ? "true" : "false");
+	RecordProperty("probeCacheDiagnosticLoggerEnabled", CLogger::getGlobalLogger()->isDebugEnabled()
+		&& CLogger::getLogger(CLoggerDomain("ai"))->isDebugEnabled() ? "true" : "false");
+	const bool expectedAdmission = requestedWaitDiagnostics()
+		&& CLogger::getGlobalLogger()->isDebugEnabled()
+		&& CLogger::getLogger(CLoggerDomain("ai"))->isDebugEnabled();
+	RecordProperty("probeCacheDiagnosticExpectedAdmission", expectedAdmission ? "true" : "false");
+	ASSERT_GT(measured.movementExchangeTargetProbes.calls + measured.bestTargetWaitedTargetProbes.calls
+		+ measured.bestTargetNormalTargetProbes.calls, 0u);
+	if(expectedAdmission)
+	{
+		EXPECT_GT(measuredCurrentCalls, 0u);
+	}
+	else
+	{
+		EXPECT_EQ(measuredCurrentCalls, 0u);
+		EXPECT_EQ(measured.movementExchangeProbeDamageCache.body.calls, 0u);
+		EXPECT_EQ(measured.bestTargetWaitedProbeDamageCache.body.calls, 0u);
+		EXPECT_EQ(measured.bestTargetNormalProbeDamageCache.body.calls, 0u);
+	}
+	RecordProperty("probeCacheDynamicCalls", std::to_string(measured.movementExchangeProbeDamageCache.dynamicDamage.calls
+		+ measured.bestTargetWaitedProbeDamageCache.dynamicDamage.calls + measured.bestTargetNormalProbeDamageCache.dynamicDamage.calls));
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, ProbeCachePreflightReentryAndDeadReturnKeepClosedOuterWall)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto probe = std::make_shared<ProbeHookCallback>(model);
+	auto attacker = model->getForUpdate(ordinary->unitId());
+	auto target = model->getForUpdate(enemy->unitId());
+	const auto liveBefore = ordinary->acquireState()->save();
+	DamageCache cache;
+	DamageCacheProbeTiming timing;
+	int64_t nested = -1;
+	probe->onCommandRulesRead = [&] { nested = cache.getDamage(attacker.get(), target.get(), probe, &timing); };
+	const auto actual = cache.getDamage(attacker.get(), target.get(), probe, &timing);
+	EXPECT_EQ(actual, cache.getDamage(attacker.get(), target.get(), probe));
+	EXPECT_EQ(nested, actual);
+	EXPECT_EQ(timing.body.calls, 1u);
+	EXPECT_EQ(timing.getDamageCalls, 1u);
+	EXPECT_EQ(timing.preflight.calls, 1u);
+	EXPECT_EQ(timing.dynamicDamage.calls, 1u);
+	EXPECT_EQ(timing.suppressedReentrantCalls, 1u);
+	expectProbeCacheClosure(timing);
+	int64_t lethal = attacker->getAvailableHealth();
+	attacker->damage(lethal);
+	ASSERT_FALSE(attacker->alive());
+	DamageCacheProbeTiming dead;
+	EXPECT_EQ(cache.getDamage(attacker.get(), target.get(), probe, &dead), 0);
+	EXPECT_EQ(cache.getDamage(attacker.get(), target.get(), probe), 0);
+	EXPECT_EQ(dead.body.calls, 1u);
+	EXPECT_EQ(dead.dynamicBypasses, 1u);
+	EXPECT_EQ(dead.deadReturns, 1u);
+	EXPECT_EQ(dead.dynamicDamage.calls, 0u);
+	expectProbeCacheClosure(dead);
+	EXPECT_EQ(ordinary->acquireState()->save(), liveBefore);
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheNormalForecastPreservesNaturalActionDestinationAndLiveState)
+{
+	// Reuse the established nonempty Normal exchange geometry. Two adjacent
+	// singleton melee sides never invoke estimateAttack's target comparisons.
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 50);
+	addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 5), 50);
+	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 7), 50);
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 3), 50);
+	ASSERT_TRUE(battle()->battleUsesHeroCommands());
+	auto setupModel = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache setupCache;
+	setupCache.buildDamageCache(setupModel, BattleSide::ATTACKER);
+	PotentialTargets setupTargets(ordinary, setupCache, setupModel);
+	ASSERT_FALSE(setupTargets.unreachableEnemies.empty());
+	std::map<uint32_t, JsonNode> before;
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		before.emplace(unit->unitId(), unit->acquireState()->save());
+	BattleEvaluator control(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	BattleEvaluator measured(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	BattleEvaluator::SelectionTiming timing;
+	timing.movementDetails.findMoveExchangeDetails.collectProbeDamageCache = true;
+	timing.bestTargetDetails.waitedDetails.collectProbeDamageCache = true;
+	timing.bestTargetDetails.normalDetails.collectProbeDamageCache = true;
+	const auto expected = control.selectStackAction(ordinary);
+	BattleEvaluator disabled(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	BattleEvaluator::SelectionTiming disabledTiming;
+	const auto defaultMeasured = disabled.selectStackAction(ordinary, &disabledTiming);
+	EXPECT_EQ(defaultMeasured.toString(), expected.toString());
+	EXPECT_EQ(defaultMeasured.perfectMoment, expected.perfectMoment);
+	EXPECT_EQ(defaultMeasured.archerySkirmisherAttack, expected.archerySkirmisherAttack);
+	for(const auto * exchange : {&disabledTiming.movementDetails.findMoveExchangeDetails,
+		&disabledTiming.bestTargetDetails.waitedDetails, &disabledTiming.bestTargetDetails.normalDetails})
+	{
+		EXPECT_FALSE(exchange->collectProbeDamageCache);
+		EXPECT_EQ(exchange->targetProbeDamageCache.body.calls, 0u);
+		EXPECT_EQ(exchange->targetProbeDamageCache.getDamageCalls, 0u);
+		expectProbeCacheClosure(exchange->targetProbeDamageCache);
+	}
+	const auto actual = measured.selectStackAction(ordinary, &timing);
+	EXPECT_EQ(actual.toString(), expected.toString());
+	EXPECT_EQ(actual.perfectMoment, expected.perfectMoment);
+	EXPECT_EQ(actual.archerySkirmisherAttack, expected.archerySkirmisherAttack);
+	const auto actualTargets = actual.getTarget(battle());
+	const auto expectedTargets = expected.getTarget(battle());
+	ASSERT_EQ(actualTargets.size(), expectedTargets.size());
+	for(size_t index = 0; index < actualTargets.size(); ++index)
+	{
+		EXPECT_EQ(actualTargets[index].hexValue, expectedTargets[index].hexValue);
+		EXPECT_EQ(actualTargets[index].unitValue, expectedTargets[index].unitValue);
+	}
+	for(const auto * exchange : {&timing.movementDetails.findMoveExchangeDetails,
+		&timing.bestTargetDetails.waitedDetails, &timing.bestTargetDetails.normalDetails})
+	{
+		expectProbeCacheParent(exchange->targetProbeDamageCache,
+			exchange->targetProbeMainDamage.totalMicroseconds + exchange->targetProbeDpsScore.totalMicroseconds,
+			exchange->targetProbeMainDamage.calls + exchange->targetProbeDpsScore.calls);
+		EXPECT_EQ(exchange->targetProbeDamageCache.failedOperations, 0u);
+	}
+	ASSERT_GT(timing.movementDetails.findMoveExchange.calls, 0u);
+	ASSERT_GT(timing.movementDetails.findMoveExchangeDetails.targetProbes.calls, 0u);
+	EXPECT_GT(timing.movementDetails.findMoveExchangeDetails.targetProbeDamageCache.getDamageCalls
+		+ timing.bestTargetDetails.waitedDetails.targetProbeDamageCache.getDamageCalls
+		+ timing.bestTargetDetails.normalDetails.targetProbeDamageCache.getDamageCalls, 0u);
+	for(const auto & [id, saved] : before)
+		EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), saved);
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_TRUE(callback->heroActions.empty());
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheAdjacentSingletonRetainsAdmissionWithoutTargetComparisons)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	ASSERT_TRUE(battle()->battleUsesHeroCommands());
+	ASSERT_EQ(tent->getMovementRange(), 0u);
+	ASSERT_FALSE(tent->canShoot());
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache cache;
+	cache.buildDamageCache(model, BattleSide::ATTACKER);
+	PotentialTargets targets(ordinary, cache, model);
+	ASSERT_TRUE(targets.unreachableEnemies.empty());
+	ASSERT_FALSE(targets.possibleAttacks.empty());
+	BattleExchangeEvaluator membership(callback->getBattle(BattleID(0)), environment, 1.0f, 2);
+	membership.updateReachabilityMap(model);
+	const auto participants = membership.getExchangeUnits(targets.possibleAttacks.front(), 0, targets, model);
+	ASSERT_EQ(participants.units.size(), 2u);
+	std::set<uint32_t> ids;
+	for(const auto & [round, units] : participants.units)
+		for(const auto * unit : units)
+			ids.insert(unit->unitId());
+	ASSERT_EQ(ids, (std::set<uint32_t>{ordinary->unitId(), enemy->unitId()}));
+	std::map<uint32_t, JsonNode> before;
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		before.emplace(unit->unitId(), unit->acquireState()->save());
+	BattleEvaluator control(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	BattleEvaluator measured(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	BattleEvaluator::SelectionTiming timing;
+	timing.movementDetails.findMoveExchangeDetails.collectProbeDamageCache = true;
+	timing.bestTargetDetails.waitedDetails.collectProbeDamageCache = true;
+	timing.bestTargetDetails.normalDetails.collectProbeDamageCache = true;
+	const auto expected = control.selectStackAction(ordinary);
+	const auto actual = measured.selectStackAction(ordinary, &timing);
+	EXPECT_EQ(actual.toString(), expected.toString());
+	EXPECT_EQ(actual.perfectMoment, expected.perfectMoment);
+	EXPECT_EQ(actual.archerySkirmisherAttack, expected.archerySkirmisherAttack);
+	EXPECT_EQ(timing.movementDetails.findMoveExchange.calls, 0u);
+	ASSERT_GT(timing.bestTargetDetails.normalDetails.body.calls, 0u);
+	for(const auto * exchange : {&timing.movementDetails.findMoveExchangeDetails,
+		&timing.bestTargetDetails.waitedDetails, &timing.bestTargetDetails.normalDetails})
+	{
+		EXPECT_TRUE(exchange->collectProbeDamageCache);
+		EXPECT_EQ(exchange->targetProbes.calls, 0u);
+		EXPECT_EQ(exchange->targetProbeMainDamage.calls, 0u);
+		EXPECT_EQ(exchange->targetProbeDpsScore.calls, 0u);
+		EXPECT_EQ(exchange->targetProbeDamageCache.body.calls, 0u);
+		EXPECT_EQ(exchange->targetProbeDamageCache.getDamageCalls, 0u);
+		expectProbeCacheClosure(exchange->targetProbeDamageCache);
+	}
+	for(const auto & [id, saved] : before)
+		EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), saved);
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_TRUE(callback->heroActions.empty());
 }

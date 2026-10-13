@@ -73,6 +73,10 @@ public:
 	{
 		return timing ? &(local.*member) : nullptr;
 	}
+	DamageCacheProbeTiming * probeDamageCache()
+	{
+		return timing && timing->collectProbeDamageCache ? &local.targetProbeDamageCache : nullptr;
+	}
 	HypotheticLifecycleTiming * lifecycleSubsets()
 	{
 		return timing ? &local.lifecycleSubsets : nullptr;
@@ -102,6 +106,8 @@ public:
 			classified += sample.totalMicroseconds;
 		}
 		timing->body.calls += local.body.calls;
+		if(timing->collectProbeDamageCache)
+			timing->targetProbeDamageCache.accumulate(local.targetProbeDamageCache);
 		// Nested subsets are aggregated separately, never added to classified body time.
 		for(auto member : {&ExchangeTiming::targetProbeMainDamage, &ExchangeTiming::targetProbeDpsScore})
 		{
@@ -970,7 +976,8 @@ float BattleExchangeVariant::trackAttack(
 	int64_t attackDamage;
 	{
 		MovementExchangeScope damageMeasurement(evaluateOnly && probeTiming ? probeTiming->mainDamage : nullptr);
-		attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
+		attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb,
+			evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr);
 	}
 	const auto attackLastStand = resolveLastStand(projectedAttack, defender.get(), attackDamage);
 	attackDamage = attackLastStand.first.damageToApply;
@@ -986,7 +993,8 @@ float BattleExchangeVariant::trackAttack(
 	{
 		MovementExchangeScope scoreMeasurement(evaluateOnly && probeTiming ? probeTiming->dpsScore : nullptr);
 		defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(),
-			projectedAttackDamage.healthLoss, damageCache, hb);
+			projectedAttackDamage.healthLoss, damageCache, hb,
+			evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr);
 	}
 	float attackerDamageReduce = 0;
 	const bool defenderWasAlive = defender->alive();
@@ -1950,7 +1958,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 					{
 						const BattleTargetProbeTiming probeTiming{
 							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeMainDamage),
-							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeDpsScore)};
+							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeDpsScore),
+							measurement.probeDamageCache()};
 						return v.trackAttack(attacker, stackWithBonuses, shooting, isOur,
 							damageCache, exchangeBattle, true, true, &readyOverwatch, timing ? &probeTiming : nullptr);
 					});

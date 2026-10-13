@@ -270,6 +270,30 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->directUnitSubmission.calls),
 			static_cast<unsigned long long>(result->directUnitSubmission.totalMicroseconds),
 			static_cast<unsigned long long>(result->unclassifiedMicroseconds));
+		const auto logProbeCache = [](const char * context, const DamageCacheProbeTiming & cache)
+		{
+			if(cache.body.calls == 0)
+				return;
+			logAi->info("BattleAI nested probe cache timing context=%s body_calls=%llu body_ns=%llu"
+				" preflight_calls=%llu preflight_ns=%llu dynamic_calls=%llu dynamic_ns=%llu remainder_ns=%llu"
+				" current_calls=%llu original_calls=%llu root_hits=%llu child_hits=%llu parent_original_hits=%llu"
+				" root_original_fallbacks=%llu parent_original_fallbacks=%llu dynamic_bypasses=%llu"
+				" fills=%llu dead_returns=%llu failed_operations=%llu suppressed_reentries=%llu",
+				context, static_cast<unsigned long long>(cache.body.calls),
+				static_cast<unsigned long long>(cache.body.totalNanoseconds),
+				static_cast<unsigned long long>(cache.preflight.calls), static_cast<unsigned long long>(cache.preflight.totalNanoseconds),
+				static_cast<unsigned long long>(cache.dynamicDamage.calls), static_cast<unsigned long long>(cache.dynamicDamage.totalNanoseconds),
+				static_cast<unsigned long long>(cache.remainderNanoseconds),
+				static_cast<unsigned long long>(cache.getDamageCalls), static_cast<unsigned long long>(cache.getOriginalDamageCalls),
+				static_cast<unsigned long long>(cache.rootCacheHits), static_cast<unsigned long long>(cache.localChildCacheHits),
+				static_cast<unsigned long long>(cache.parentOriginalHits), static_cast<unsigned long long>(cache.rootOriginalFallbacks),
+				static_cast<unsigned long long>(cache.parentOriginalFallbacks), static_cast<unsigned long long>(cache.dynamicBypasses),
+				static_cast<unsigned long long>(cache.cacheFillCalls), static_cast<unsigned long long>(cache.deadReturns),
+				static_cast<unsigned long long>(cache.failedOperations), static_cast<unsigned long long>(cache.suppressedReentrantCalls));
+		};
+		logProbeCache("movement", result->movementExchangeProbeDamageCache);
+		logProbeCache("best_target_waited", result->bestTargetWaitedProbeDamageCache);
+		logProbeCache("best_target_normal", result->bestTargetNormalProbeDamageCache);
 		const auto logSubsets = [](const char * context, const StageTiming & expiry,
 			const StageTiming & gambler, const StageTiming & roundTimed)
 		{
@@ -352,6 +376,9 @@ class CBattleAI::TimingScope
 public:
 	BattleEvaluator::SelectionTiming * selectionSink()
 	{
+		selectionTotals.movementDetails.findMoveExchangeDetails.collectProbeDamageCache = traceRequested;
+		selectionTotals.bestTargetDetails.waitedDetails.collectProbeDamageCache = traceRequested;
+		selectionTotals.bestTargetDetails.normalDetails.collectProbeDamageCache = traceRequested;
 		return state ? &selectionTotals : nullptr;
 	}
 
@@ -490,6 +517,8 @@ public:
 			accumulateSelection(state->summary.movementExchangeTargetProbes, exchange.targetProbes);
 			accumulateSelection(state->summary.movementExchangeTargetProbeMainDamage, exchange.targetProbeMainDamage);
 			accumulateSelection(state->summary.movementExchangeTargetProbeDpsScore, exchange.targetProbeDpsScore);
+			if(traceRequested)
+				state->summary.movementExchangeProbeDamageCache.accumulate(exchange.targetProbeDamageCache);
 			accumulateSelection(state->summary.movementExchangeAppliedAttacks, exchange.appliedAttacks);
 			accumulateSelection(state->summary.movementExchangeActivationStart, exchange.activationStart);
 			accumulateSelection(state->summary.movementExchangeActivationEnd, exchange.activationEnd);
@@ -514,6 +543,8 @@ public:
 			accumulateSelection(state->summary.bestTargetWaitedTargetProbes, bestTarget.waitedDetails.targetProbes);
 			accumulateSelection(state->summary.bestTargetWaitedTargetProbeMainDamage, bestTarget.waitedDetails.targetProbeMainDamage);
 			accumulateSelection(state->summary.bestTargetWaitedTargetProbeDpsScore, bestTarget.waitedDetails.targetProbeDpsScore);
+			if(traceRequested)
+				state->summary.bestTargetWaitedProbeDamageCache.accumulate(bestTarget.waitedDetails.targetProbeDamageCache);
 			accumulateSelection(state->summary.bestTargetWaitedAppliedAttacks, bestTarget.waitedDetails.appliedAttacks);
 			accumulateSelection(state->summary.bestTargetWaitedActivationStart, bestTarget.waitedDetails.activationStart);
 			accumulateSelection(state->summary.bestTargetWaitedActivationEnd, bestTarget.waitedDetails.activationEnd);
@@ -532,6 +563,8 @@ public:
 			accumulateSelection(state->summary.bestTargetNormalTargetProbes, bestTarget.normalDetails.targetProbes);
 			accumulateSelection(state->summary.bestTargetNormalTargetProbeMainDamage, bestTarget.normalDetails.targetProbeMainDamage);
 			accumulateSelection(state->summary.bestTargetNormalTargetProbeDpsScore, bestTarget.normalDetails.targetProbeDpsScore);
+			if(traceRequested)
+				state->summary.bestTargetNormalProbeDamageCache.accumulate(bestTarget.normalDetails.targetProbeDamageCache);
 			accumulateSelection(state->summary.bestTargetNormalAppliedAttacks, bestTarget.normalDetails.appliedAttacks);
 			accumulateSelection(state->summary.bestTargetNormalActivationStart, bestTarget.normalDetails.activationStart);
 			accumulateSelection(state->summary.bestTargetNormalActivationEnd, bestTarget.normalDetails.activationEnd);
