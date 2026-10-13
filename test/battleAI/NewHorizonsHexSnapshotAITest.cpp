@@ -16,6 +16,7 @@
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include <vcmi/Environment.h>
+#include <map>
 
 namespace
 {
@@ -415,6 +416,145 @@ protected:
 		}
 	}
 
+	void checkNativeRebirthCleave(bool ready)
+	{
+		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
+		startGame();
+		const SecondarySkill offense(SecondarySkill::decode(newHorizonsOffense::SKILL));
+		attackerSideHero->setSecSkillLevel(offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, "new-horizons:offense.shockAssault"});
+		attackerSideHero->setSecSkillLevel(offense, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE));
+		startBattle();
+		BattleUnitsChanged remove;
+		remove.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(remove);
+		auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(7, 5), 1000);
+		auto * phoenix = addStack(BattleSide::DEFENDER, creatureByName("core:phoenix"), BattleHex(8, 5), 1);
+		auto * secondary = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(10, 5), 10000);
+		ASSERT_NE(actor, nullptr);
+		ASSERT_NE(phoenix, nullptr);
+		ASSERT_NE(secondary, nullptr);
+		blockRetaliation(actor);
+		forceMaximumDamage(actor);
+		battle()->nextRound();
+		// Use the creature's real native bonus and charge ledger, not an injected
+		// REBIRTH marker or a synthetic readiness implementation.
+		ASSERT_GT(phoenix->valOfBonuses(BonusType::REBIRTH), 0);
+		ASSERT_GT(phoenix->casts.available(), 0);
+		if(!ready)
+			phoenix->casts.use(phoenix->casts.available());
+		ASSERT_EQ(phoenix->canCast(), ready);
+		HexSnapshotEnvironment environment(gameState());
+		auto parent = std::make_shared<HypotheticBattle>(&environment,
+			std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
+		auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+		std::map<uint32_t, JsonNode> liveBefore, parentBefore, siblingBefore;
+		for(const auto * unit : battle()->battleGetAllUnits(true))
+		{
+			liveBefore.emplace(unit->unitId(), unit->acquireState()->save());
+			parentBefore.emplace(unit->unitId(), parent->getForUpdate(unit->unitId())->save());
+			siblingBefore.emplace(unit->unitId(), sibling->getForUpdate(unit->unitId())->save());
+		}
+		std::vector<JsonNode> rawRebirth;
+		const auto rawRebirthOwner = phoenix->getBonusesOfType(BonusType::REBIRTH);
+		for(const auto & bonus : *rawRebirthOwner)
+			rawRebirth.push_back(bonus->toJsonNode());
+		ASSERT_FALSE(rawRebirth.empty());
+		const auto rngBefore = randomizerSnapshot();
+		auto branch = std::make_shared<HypotheticBattle>(&environment, parent);
+		auto source = branch->getForUpdate(actor->unitId());
+		auto victim = branch->getForUpdate(phoenix->unitId());
+		auto collateral = branch->getForUpdate(secondary->unitId());
+		ASSERT_EQ(branch->hasReadyNativeRebirth(victim.get()), ready);
+		ASSERT_EQ(victim->getPhantomInitialIntegrity(), 0);
+		ASSERT_FALSE(victim->isClone());
+		ASSERT_FALSE(branch->captureElementalRebirthSource(*victim).has_value());
+		ASSERT_TRUE(branch->battleCanTriggerCleave(source.get()));
+		const auto sourceState = source->save();
+		const auto victimState = victim->save();
+		const auto collateralState = collateral->save();
+		const auto charges = victim->casts.available();
+		DamageCache cache;
+		cache.buildDamageCache(branch, BattleSide::ATTACKER);
+		const auto damage = cache.getDamage(source.get(), victim.get(), branch);
+		ASSERT_GE(damage, victim->getAvailableHealth());
+		ASSERT_EQ(victim->getGuardianSpiritHitPoints(), 0);
+		const auto hit = battleAIProjectDamage(victim.get(), damage,
+			battleAIDamageProvenance(source.get(), true));
+		ASSERT_EQ(hit.healthLoss, victim->getAvailableHealth());
+		const float mainValue = AttackPossibility::calculateDamageReduce(source.get(), victim.get(),
+			hit.healthLoss, cache, branch);
+		ASSERT_GT(mainValue, 0);
+		auto afterAttack = source->acquireState();
+		afterAttack->afterAttack(false, false, true);
+		ASSERT_TRUE(branch->battleCanTriggerCleave(afterAttack.get()));
+		const auto * selected = branch->battleSelectCleaveTarget(afterAttack.get(), victim.get());
+		ASSERT_NE(selected, nullptr);
+		ASSERT_EQ(selected->unitId(), secondary->unitId());
+		BattleAttackInfo cleaveAttack(afterAttack.get(), collateral.get(), 0, false);
+		cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+		const auto cleaveDamage = branch->battleExpectedLuckDamage(cleaveAttack);
+		ASSERT_GT(cleaveDamage, 0);
+		ASSERT_LT(cleaveDamage, collateral->getAvailableHealth());
+		const float secondaryValue = AttackPossibility::calculateDamageReduce(afterAttack.get(), collateral.get(),
+			cleaveDamage, cache, branch);
+		ASSERT_GT(secondaryValue, 0);
+		const float expectedScore = mainValue + (ready ? 0.0f : secondaryValue);
+		for(int repeat = 0; repeat < 3; ++repeat)
+		{
+			BattleExchangeVariant probe;
+			EXPECT_FLOAT_EQ(probe.trackAttack(source, victim, false, true, cache, branch, true, false), expectedScore);
+			EXPECT_EQ(source->save(), sourceState);
+			EXPECT_EQ(victim->save(), victimState);
+			EXPECT_EQ(collateral->save(), collateralState);
+			EXPECT_EQ(victim->casts.available(), charges);
+			std::vector<JsonNode> probeRebirth;
+			const auto probeRebirthOwner = victim->getBonusesOfType(BonusType::REBIRTH);
+			for(const auto & bonus : *probeRebirthOwner)
+				probeRebirth.push_back(bonus->toJsonNode());
+			EXPECT_EQ(probeRebirth, rawRebirth);
+			EXPECT_TRUE(branch->getElementalRebirthSpawnUnitIds().empty());
+			EXPECT_EQ(randomizerSnapshot(), rngBefore);
+		}
+		// Applied detached lethal hit must retain the same native-precedence
+		// decision. This is not a claim that the forecast resurrects a Phoenix.
+		BattleExchangeVariant applied;
+		EXPECT_FLOAT_EQ(applied.trackAttack(source, victim, false, true, cache, branch, false, false), expectedScore);
+		EXPECT_FALSE(victim->alive());
+		EXPECT_EQ(victim->casts.available(), charges);
+		EXPECT_EQ(collateral->getAvailableHealth(), secondary->getAvailableHealth() - (ready ? 0 : cleaveDamage));
+		EXPECT_EQ(source->cleaveUsedThisActivation, !ready);
+		EXPECT_TRUE(branch->getElementalRebirthSpawnUnitIds().empty());
+		std::vector<JsonNode> appliedRebirth;
+		const auto appliedRebirthOwner = victim->getBonusesOfType(BonusType::REBIRTH);
+		for(const auto & bonus : *appliedRebirthOwner)
+			appliedRebirth.push_back(bonus->toJsonNode());
+		EXPECT_EQ(appliedRebirth, rawRebirth);
+		EXPECT_EQ(randomizerSnapshot(), rngBefore);
+		for(const auto & [id, snapshot] : liveBefore)
+			EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), snapshot);
+		for(const auto & [id, snapshot] : parentBefore)
+			EXPECT_EQ(parent->getForUpdate(id)->save(), snapshot);
+		for(const auto & [id, snapshot] : siblingBefore)
+			EXPECT_EQ(sibling->getForUpdate(id)->save(), snapshot);
+		EXPECT_TRUE(parent->getElementalRebirthSpawnUnitIds().empty());
+		EXPECT_TRUE(sibling->getElementalRebirthSpawnUnitIds().empty());
+		for(const auto & untouched : {parent, sibling})
+		{
+			const auto * native = untouched->battleGetUnitByID(phoenix->unitId());
+			EXPECT_EQ(native->acquireState()->casts.available(), charges);
+			std::vector<JsonNode> untouchedRebirth;
+			const auto untouchedRebirthOwner = native->getBonusesOfType(BonusType::REBIRTH);
+			for(const auto & bonus : *untouchedRebirthOwner)
+				untouchedRebirth.push_back(bonus->toJsonNode());
+			EXPECT_EQ(untouchedRebirth, rawRebirth);
+		}
+	}
+
 	void checkMainAttack(bool withHex, bool evaluateOnly, bool shooting = false, bool withCleave = false)
 	{
 		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
@@ -554,6 +694,16 @@ protected:
 TEST_F(NewHorizonsHexSnapshotAITest, NoHexProbePreservesScoreAndActionState)
 {
 	checkMainAttack(false, true);
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, ReadyNativePhoenixSuppressesLethalCleaveScoreWithoutProbeMutation)
+{
+	checkNativeRebirthCleave(true);
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, DepletedNativePhoenixPermitsExactLethalCleaveScoreWithoutProbeMutation)
+{
+	checkNativeRebirthCleave(false);
 }
 
 TEST_F(NewHorizonsHexSnapshotAITest, NoHexAppliedAttackPreservesDamageAndScoring)

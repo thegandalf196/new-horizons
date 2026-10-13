@@ -17,9 +17,11 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/CSpellHandler.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include <vcmi/ServerCallback.h>
 #include <array>
+#include <map>
 
 namespace
 {
@@ -427,6 +429,136 @@ TEST_F(NewHorizonsPlagueActionCompletionAITest, PerkBoundDefendChoiceThenAccepte
 	EXPECT_LT(caster->getAvailableHealth(), before);
 	ASSERT_NE(marker(), nullptr);
 	EXPECT_EQ(marker()->turnsRemain, 2);
+}
+
+TEST_F(NewHorizonsPlagueActionCompletionAITest, HostileLockDefendTicksAndSpreadsBeforeSealExpiryThenCountsDownOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true, true)); // Existing real paid Plague fixture.
+	auto * spreadTarget = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(5, 5), 1000);
+	ASSERT_NE(spreadTarget, nullptr);
+	defenderSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL)),
+		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	// Plague captured SP100; the ordinary SP0 seal lasts one round.
+	defenderSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	const SpellID seal(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	defenderSideHero->addSpellToSpellbook(seal);
+	advanceRound(); // Existing round packet refreshes the paid hero allowance.
+	ASSERT_EQ(battle()->battleActiveUnit(), caster);
+	const auto manaBeforeSeal = defenderSideHero->getManaAvailable();
+	ASSERT_TRUE(castOn(defenderSideHero, seal, caster));
+	EXPECT_LT(defenderSideHero->getManaAvailable(), manaBeforeSeal);
+	ASSERT_NE(marker(), nullptr);
+	ASSERT_NE(marker()->parameters, nullptr);
+	ASSERT_EQ(marker()->turnsRemain, 3);
+	ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*caster));
+	ASSERT_EQ(newHorizonsSorcery::spellLockPreservesBeneficial(*caster), std::optional<bool>(false));
+	ASSERT_TRUE(newHorizonsSorcery::durationPausedBySpellLock(*caster, *marker()));
+	const auto seals = caster->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(seal)).And(Selector::type()(BonusType::NONE)));
+	ASSERT_EQ(seals->size(), 1u);
+	ASSERT_EQ(seals->front()->turnsRemain, 1);
+	const auto round = battle()->battleGetRound();
+	const auto initialParameters = marker()->parameters->toCustom<JsonNode>();
+	ASSERT_LT(initialParameters["lastProcessedRound"].Integer(), round);
+	ASSERT_EQ(initialParameters["casterSide"].Integer(), static_cast<int>(BattleSide::DEFENDER));
+	const int64_t tick = marker()->val;
+	ASSERT_GT(tick, 0);
+	ASSERT_EQ(defenderSideHero->getSpellBonus(plague().toSpell(), tick, caster), tick);
+	ASSERT_EQ(caster->valOfBonuses(BonusType::SPELL_DAMAGE_REDUCTION), 0);
+	ASSERT_EQ(caster->getGuardianSpiritHitPoints(), 0);
+	ASSERT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(caster), 0);
+	ASSERT_EQ(battle()->battleGetPerkMagicalReductionBasisPoints(caster), 0);
+	const auto health = caster->getAvailableHealth();
+	ASSERT_GT(health, 2 * tick);
+	ASSERT_FALSE(newHorizonsPlague::hasPlague(spreadTarget));
+	// Retain the existing Pavise Defend-choice preconditions. Temporary protection
+	// must expire before Plague damage even when the hostile seal pauses duration.
+	caster->casts.use(caster->casts.available());
+	caster->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::STACKS_MOVEMENT_RANGE, BonusSource::OTHER, -100, BonusSourceID()));
+	ASSERT_EQ(caster->getMovementRange(0), 0);
+	ASSERT_FALSE(caster->acquireState()->waitedThisTurn);
+	caster->addNewBonus(std::make_shared<Bonus>(BonusDuration::STACK_ACTIVATION,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 100,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(),
+		std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	std::map<uint32_t, JsonNode> parentBefore, siblingBefore, liveBefore;
+	for(const auto * unit : battle()->battleGetAllUnits(true))
+	{
+		parentBefore.emplace(unit->unitId(), parent->getForUpdate(unit->unitId())->save());
+		siblingBefore.emplace(unit->unitId(), sibling->getForUpdate(unit->unitId())->save());
+		liveBefore.emplace(unit->unitId(), unit->acquireState()->save());
+	}
+	auto callback = std::make_shared<PlagueActionCallback>(PlayerColor(0));
+	callback->onBattleStarted(battle());
+	DamageCache cache;
+	cache.buildDamageCache(parent, BattleSide::ATTACKER);
+	BattleEvaluator evaluator(environment, callback, parent, cache, caster, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	const auto chosen = evaluator.selectStackAction(caster);
+	ASSERT_EQ(chosen.actionType, EActionType::DEFEND);
+	for(const auto & [id, snapshot] : liveBefore)
+		EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), snapshot);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), chosen));
+	EXPECT_FALSE(caster->hasBonusOfType(BonusType::SPELL_DAMAGE_REDUCTION));
+	EXPECT_EQ(caster->getAvailableHealth(), health - tick);
+	ASSERT_NE(marker(), nullptr);
+	EXPECT_EQ(marker()->turnsRemain, 3);
+	EXPECT_EQ(marker()->parameters->toCustom<JsonNode>()["lastProcessedRound"].Integer(), round);
+	EXPECT_EQ(marker()->parameters->toCustom<JsonNode>()["spreadAttempts"].Integer(),
+		initialParameters["spreadAttempts"].Integer() + 1);
+	EXPECT_TRUE(newHorizonsSorcery::isSpellLocked(*caster));
+	const auto spread = spreadTarget->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(plague())).And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER)));
+	ASSERT_EQ(spread->size(), 1u);
+	EXPECT_EQ(spread->front()->val, tick);
+	// Re-enter only the shared adapter on an already-completed detached state:
+	// this proves deduplication without inventing another accepted live activation.
+	const auto checkDedup = [&]()
+	{
+		auto completed = std::make_shared<HypotheticBattle>(environment.get(),
+			std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
+		std::map<uint32_t, JsonNode> before;
+		for(const auto * unit : battle()->battleGetAllUnits(true))
+			before.emplace(unit->unitId(), completed->getForUpdate(unit->unitId())->save());
+		newHorizonsPlague::completeActivation(*completed, *completed->getServerCallback(), caster->unitId());
+		for(const auto & [id, snapshot] : before)
+			EXPECT_EQ(completed->getForUpdate(id)->save(), snapshot);
+		EXPECT_TRUE(completed->getProjectedPlagueHits().empty());
+	};
+	checkDedup();
+	for(size_t answered = 0; answered < battle()->stacks.size() + 1
+		&& (battle()->battleGetRound() == round || battle()->battleActiveUnit() != caster); ++answered)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(active, caster);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+			battle()->battleGetActionController(active), BattleAction::makeDefend(active)));
+	}
+	ASSERT_EQ(battle()->battleGetRound(), round + 1);
+	ASSERT_EQ(battle()->battleActiveUnit(), caster);
+	ASSERT_FALSE(newHorizonsSorcery::isSpellLocked(*caster));
+	ASSERT_NE(marker(), nullptr);
+	EXPECT_EQ(marker()->turnsRemain, 3);
+	EXPECT_EQ(caster->getAvailableHealth(), health - tick);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeDefend(caster)));
+	EXPECT_EQ(caster->getAvailableHealth(), health - 2 * tick);
+	ASSERT_NE(marker(), nullptr);
+	EXPECT_EQ(marker()->turnsRemain, 2);
+	EXPECT_EQ(marker()->parameters->toCustom<JsonNode>()["lastProcessedRound"].Integer(), round + 1);
+	EXPECT_EQ(marker()->parameters->toCustom<JsonNode>()["spreadAttempts"].Integer(),
+		initialParameters["spreadAttempts"].Integer() + 2);
+	checkDedup();
+	for(const auto & [id, snapshot] : parentBefore)
+		EXPECT_EQ(parent->getForUpdate(id)->save(), snapshot);
+	for(const auto & [id, snapshot] : siblingBefore)
+		EXPECT_EQ(sibling->getForUpdate(id)->save(), snapshot);
+	EXPECT_TRUE(parent->getProjectedPlagueHits().empty());
+	EXPECT_TRUE(sibling->getProjectedPlagueHits().empty());
 }
 
 TEST_F(NewHorizonsPlagueActionCompletionAITest, InfectedPositiveBuffRemainsSelectableWhenDpsBenefitExceedsRequiredTick)
