@@ -911,10 +911,37 @@ void CSplitWindow::sliderMoved(int to)
 	setAmount(rightMin + to, false);
 }
 
+namespace
+{
+// A visible parent identity, independent of the perk icon and selection callback.
+class CLevelUpPerkComponent : public CSelectableComponent
+{
+	std::shared_ptr<CComponent> parentSkill;
+
+public:
+	CLevelUpPerkComponent(SecondarySkill skill, bool hasSkill, int requiredRank,
+		const std::string & name, const AnimationPath & icon, const std::string & parentName)
+		: CSelectableComponent(hasSkill ? ComponentType::SEC_SKILL : ComponentType::NONE,
+			hasSkill ? skill : SecondarySkill(0), name, CComponent::medium)
+	{
+		OBJECT_CONSTRUCTION;
+		setCustomIcon(icon);
+		setHorizontalLayout(284, 46);
+		pos.h = 96;
+		parentSkill = std::make_shared<CComponent>(hasSkill ? ComponentType::SEC_SKILL : ComponentType::NONE,
+			hasSkill ? skill : SecondarySkill(0), requiredRank, CComponent::small);
+		parentSkill->customSubtitle = parentName + "\n"
+			+ GAME->translator().translate("core.skilllev", requiredRank - 1);
+		parentSkill->setHorizontalLayout(226, 40);
+		parentSkill->moveTo(pos.topLeft() + Point(52, 50));
+	}
+};
+}
+
 CLevelWindow::CLevelWindow(const CGHeroInstance * hero, PrimarySkill pskill, const std::vector<SecondarySkill> & skills,
 	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, std::function<void(ui32)> callback,
 	const std::optional<PrimaryGainSnapshot> & gains)
-	: CWindowObject(PLAYER_COLORED, ImagePath::builtin("newHorizonsLevelUpBackground.png")),
+	: CWindowObject(PLAYER_COLORED | BORDERED, ImagePath::builtin("newHorizonsLevelUpBackground.png")),
 	skillViewOffset(0)
 {
 	OBJECT_CONSTRUCTION;
@@ -957,6 +984,7 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	ok.reset();
 	mainTitle.reset();
 	levelTitle.reset();
+	choiceInstruction.reset();
 	skillIcon.reset();
 	skillValue.reset();
 	primaryGainWidgets.clear();
@@ -966,14 +994,14 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	const auto choicePageCount = std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
 	if(choicePageCount > 1)
 	{
-		buttonLeft = std::make_shared<CButton>(Point(23, 480), AnimationPath::builtin("HSBTNS3"), CButton::tooltip(), [this](){
+		buttonLeft = std::make_shared<CButton>(Point(24, 532), AnimationPath::builtin("HSBTNS3"), CButton::tooltip(), [this](){
 			if(skillViewOffset > 0)
 				skillViewOffset--;
 			else
 				skillViewOffset = static_cast<int>(std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2)) - 1;
 			createSkillBox();
 		}, EShortcut::MOVE_LEFT);
-		buttonRight = std::make_shared<CButton>(Point(65, 480), AnimationPath::builtin("HSBTNS5"), CButton::tooltip(), [this](){
+		buttonRight = std::make_shared<CButton>(Point(66, 532), AnimationPath::builtin("HSBTNS5"), CButton::tooltip(), [this](){
 			const auto pages = std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
 			if(skillViewOffset < static_cast<int>(pages) - 1)
 				skillViewOffset++;
@@ -983,17 +1011,20 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 		}, EShortcut::MOVE_RIGHT);
 	}
 
-	portrait = std::make_shared<CHeroArea>(170, 66, hero);
+	// Native LVLUPBKG header is centered with its original portrait/banner layout.
+	portrait = std::make_shared<CHeroArea>(297, 66, hero);
 	portrait->addClickCallback(nullptr);
 	portrait->addRClickCallback([hero = hero](){ ENGINE->windows().createAndPushWindow<CRClickPopupInt>(std::make_shared<CHeroWindow>(hero)); });
-	ok = std::make_shared<CButton>(Point(296, 480), AnimationPath::builtin("IOKAY"), CButton::tooltip(), std::bind(&CLevelWindow::submitSelection, this), EShortcut::GLOBAL_ACCEPT);
+	ok = std::make_shared<CButton>(Point(288, 532), AnimationPath::builtin("IOKAY"), CButton::tooltip(), std::bind(&CLevelWindow::submitSelection, this), EShortcut::GLOBAL_ACCEPT);
+	choiceInstruction = std::make_shared<CLabel>(320, 516, FONT_SMALL, ETextAlignment::CENTER,
+		Colors::WHITE, "Choose one skill or perk");
 
 	//%s has gained a level.
 	MetaString mainTitleText;
 	mainTitleText.appendTextID("core.genrltxt.444");
 	mainTitleText.replaceTextID(hero->getNameTextID());
 
-	mainTitle = std::make_shared<CLabel>(192, 33, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, mainTitleText.toString(&GAME->translator()));
+	mainTitle = std::make_shared<CLabel>(320, 33, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, mainTitleText.toString(&GAME->translator()), 340);
 
 	//%s is now a level %d %s.
 	MetaString levelTitleText;
@@ -1002,20 +1033,19 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	levelTitleText.replaceNumber(primaryGains ? primaryGains->level : hero->level);
 	levelTitleText.replaceTextID(hero->getClassNameTextID());
 
-	levelTitle = std::make_shared<CLabel>(192, 162, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, levelTitleText.toString(&GAME->translator()));
+	levelTitle = std::make_shared<CLabel>(320, 162, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, levelTitleText.toString(&GAME->translator()), 340);
 	if(primaryGains)
 	{
-		primaryGainWidgets.push_back(std::make_shared<CLabel>(192, 187, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "Actual gains this level"));
 		for(size_t i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
 		{
-			const int x = 54 + static_cast<int>(i) * 80;
+			const int x = 36 + static_cast<int>(i) * 148;
 			const int gained = primaryGains->gains[i];
 			// These are the canonical Heroes III primary-attribute frames.  The
 			// New Horizons glyphs are useful on the development screen, but do not
 			// replace the familiar Attack/Defense/Power/Knowledge level-up icons.
-			primaryGainWidgets.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), i, 0, x, 205));
-			primaryGainWidgets.push_back(std::make_shared<CLabel>(x + 16, 247, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, GAME->translator().translate("core.priskill", i), 72));
-			primaryGainWidgets.push_back(std::make_shared<CLabel>(x + 16, 269, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, std::string(gained > 0 ? "+" : "") + std::to_string(gained), 72));
+			primaryGainWidgets.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), i, 0, x, 196));
+			primaryGainWidgets.push_back(std::make_shared<CLabel>(x + 78, 209, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, GAME->translator().translate("core.priskill", i), 90));
+			primaryGainWidgets.push_back(std::make_shared<CLabel>(x + 78, 235, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, std::string(gained > 0 ? "+" : "") + std::to_string(gained), 90));
 		}
 	}
 	else
@@ -1023,8 +1053,8 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 		MetaString skillValueText;
 		skillValueText.appendTextID("core.priskill", pskill.getNum());
 		skillValueText.appendRawString(" +1");
-		skillIcon = std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), pskill.getNum(), 0, 174, 190);
-		skillValue = std::make_shared<CLabel>(192, 253, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, skillValueText.toString(&GAME->translator()));
+		skillIcon = std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), pskill.getNum(), 0, 246, 196);
+		skillValue = std::make_shared<CLabel>(364, 218, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, skillValueText.toString(&GAME->translator()));
 	}
 }
 
@@ -1079,8 +1109,8 @@ void CLevelWindow::createSkillBox()
 			if(row < perkChoices.size())
 				displayedChoiceOrder.push_back(perkChoices[row]);
 		}
-		choiceHeaders.push_back(std::make_shared<CLabel>(115, 290, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
-		choiceHeaders.push_back(std::make_shared<CLabel>(266, 290, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
+		choiceHeaders.push_back(std::make_shared<CLabel>(166, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
+		choiceHeaders.push_back(std::make_shared<CLabel>(474, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
 
 		std::vector<std::shared_ptr<CSelectableComponent>> skillComps;
 		std::vector<std::shared_ptr<CSelectableComponent>> perkComps;
@@ -1096,17 +1126,12 @@ void CLevelWindow::createSkillBox()
 					offeredRank, CComponent::medium);
 				if(newHorizonsMagic::rulesActive(hero->getMagicRules()))
 				{
-					const auto currentRankText = currentRank == 0
-						? GAME->translator().translate("new-horizons.levelUp.skill.unlearned")
-						: GAME->translator().translate("core.skilllev", currentRank - 1);
 					const auto offeredRankText = GAME->translator().translate("core.skilllev", offeredRank - 1);
-					MetaString transition = MetaString::createFromTextID("new-horizons.levelUp.skill.rankTransition");
-					transition.replaceRawString(currentRankText);
-					transition.replaceRawString(offeredRankText);
-					comp->customSubtitle = transition.toString(&GAME->translator()) + "\n"
+					comp->customSubtitle = offeredRankText + "\n"
 						+ LIBRARY->skillh->getById(skill)->getNameTranslated();
 				}
 				skillComps.push_back(comp);
+				comp->setHorizontalLayout(284, 96);
 			}
 			else
 			{
@@ -1117,43 +1142,42 @@ void CLevelWindow::createSkillBox()
 					? SecondarySkill(decoded)
 					: (perk.selection.skillId == "new-horizons:necromancy"
 						? SecondarySkill(SecondarySkill::NECROMANCY) : SecondarySkill(SecondarySkill::NONE));
-				const auto subtitle = GAME->translator().translate("core.skilllev", perk.requiredRank - 1)
-					+ "\n" + perk.name;
 				const bool hasCanonicalSkillIcon = (decoded >= 0 && SecondarySkill::encode(decoded) == perk.selection.skillId)
 					|| perk.selection.skillId == "new-horizons:necromancy";
-				comp = hasCanonicalSkillIcon
-					? std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, iconSkill, subtitle, CComponent::medium)
-					: std::make_shared<CSelectableComponent>(ComponentType::NONE, SecondarySkill(0), subtitle, CComponent::medium);
+				const auto parentName = hasCanonicalSkillIcon
+					? LIBRARY->skillh->getById(iconSkill)->getNameTranslated() : perk.selection.skillId;
+				comp = std::make_shared<CLevelUpPerkComponent>(iconSkill, hasCanonicalSkillIcon,
+					perk.requiredRank, perk.name, AnimationPath::builtin(newHorizonsPerkIcon(perk.selection.perkId)), parentName);
 				comp->customDescription = newHorizonsPerkHelp::format(hero, perk.selection.skillId,
 					perk.name, newHorizonsPerkHelp::tierName(perk.requiredRank), perk.description);
-				const auto & iconKey = newHorizonsPerkIcon(perk.selection.perkId);
-				comp->setCustomIcon(AnimationPath::builtin(iconKey));
 				perkComps.push_back(comp);
 			}
 			comp->onChoose = std::bind(&CLevelWindow::submitSelection, this);
-			comp->setHorizontalLayout(135, 70);
 		}
 
 		// Use one single-column box per category so an absent skill or perk
 		// never pulls the other category into its column. The offer contract
-		// allows two entries per category, hence the fixed two-row rectangles.
+		// allows two entries per category. Size each box to its actual rows so
+		// a single offer stays aligned with the first recess rather than centered.
 		if(!skillComps.empty())
 		{
-			skillChoiceBox = std::make_shared<CComponentBox>(skillComps, Rect(48, 308, 135, 148),
+			skillChoiceBox = std::make_shared<CComponentBox>(skillComps,
+				Rect(24, 294, 284, static_cast<int>(skillComps.size()) * 108 - 12),
 				[this](int){
 					perkChoiceActive = false;
 					if(perkChoiceBox)
 						perkChoiceBox->clearSelection();
-				}, 12, 4, 8, 1);
+				}, 12, 4, 12, 1);
 		}
 		if(!perkComps.empty())
 		{
-			perkChoiceBox = std::make_shared<CComponentBox>(perkComps, Rect(199, 308, 135, 148),
+			perkChoiceBox = std::make_shared<CComponentBox>(perkComps,
+				Rect(332, 294, 284, static_cast<int>(perkComps.size()) * 108 - 12),
 				[this](int){
 					perkChoiceActive = true;
 					if(skillChoiceBox)
 						skillChoiceBox->clearSelection();
-				}, 12, 4, 8, 1);
+				}, 12, 4, 12, 1);
 		}
 		std::vector<EShortcut> skillShortcuts;
 		std::vector<EShortcut> perkShortcuts;
