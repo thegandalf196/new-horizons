@@ -172,6 +172,10 @@ struct DLL_LINKAGE BattleMovementTiming
 		/// Disjoint nested subsets of targetProbes, not extra classified body time.
 		StageTiming targetProbeMainDamage;
 		StageTiming targetProbeDpsScore;
+		/// Nested cache subtree of primary damage and DPS probes; not extra body time.
+		DamageCacheProbeTiming targetProbeDamageCache;
+		/// Explicit admission for additional high-frequency clocks; default false.
+		bool collectProbeDamageCache = false;
 		/// Counts trackAttack invocations; the initial AP invocation may replay multiple strikes.
 		StageTiming appliedAttacks;
 		StageTiming activationStart;
@@ -195,6 +199,7 @@ struct DLL_LINKAGE BattleTargetProbeTiming
 {
 	BattleMovementTiming::StageTiming * mainDamage = nullptr;
 	BattleMovementTiming::StageTiming * dpsScore = nullptr;
+	DamageCacheProbeTiming * damageCache = nullptr;
 };
 
 /// Nonadditive candidate wrappers and disjoint calculateExchange subregions.
