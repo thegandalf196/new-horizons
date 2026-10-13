@@ -103,6 +103,13 @@ public:
 		}
 		timing->body.calls += local.body.calls;
 		// Nested subsets are aggregated separately, never added to classified body time.
+		for(auto member : {&ExchangeTiming::targetProbeMainDamage, &ExchangeTiming::targetProbeDpsScore})
+		{
+			const auto & sample = local.*member;
+			auto & aggregate = (*timing).*member;
+			aggregate.calls += sample.calls;
+			aggregate.totalMicroseconds += sample.totalMicroseconds;
+		}
 		for(auto member : {&HypotheticLifecycleTiming::activationExpiryRemoval,
 			&HypotheticLifecycleTiming::activationGamblerRemoval, &HypotheticLifecycleTiming::roundTimedUpdates})
 		{
@@ -835,7 +842,8 @@ float BattleExchangeVariant::trackAttack(
 	std::shared_ptr<HypotheticBattle> hb,
 	bool evaluateOnly,
 	bool allowRetaliation,
-	std::optional<bool> * readyOverwatch)
+	std::optional<bool> * readyOverwatch,
+	const BattleTargetProbeTiming * probeTiming)
 {
 	if(!attacker || attacker->armorerLastStandEndedActivation)
 		return 0;
@@ -959,7 +967,11 @@ float BattleExchangeVariant::trackAttack(
 			target->armorerLastStandEndedActivation = true;
 	};
 
-	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
+	int64_t attackDamage;
+	{
+		MovementExchangeScope damageMeasurement(evaluateOnly && probeTiming ? probeTiming->mainDamage : nullptr);
+		attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
+	}
 	const auto attackLastStand = resolveLastStand(projectedAttack, defender.get(), attackDamage);
 	attackDamage = attackLastStand.first.damageToApply;
 	const auto attackDamageProvenance = battleAIDamageProvenance(
@@ -970,8 +982,12 @@ float BattleExchangeVariant::trackAttack(
 	const auto projectedAttackDamage = battleAIProjectDamage(
 		defender.get(), attackDamage, attackDamageProvenance);
 	const int64_t actualDamage = projectedAttackDamage.appliedDamage;
-	float defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(),
-		projectedAttackDamage.healthLoss, damageCache, hb);
+	float defenderDamageReduce;
+	{
+		MovementExchangeScope scoreMeasurement(evaluateOnly && probeTiming ? probeTiming->dpsScore : nullptr);
+		defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(),
+			projectedAttackDamage.healthLoss, damageCache, hb);
+	}
 	float attackerDamageReduce = 0;
 	const bool defenderWasAlive = defender->alive();
 	const int64_t defenderHealthBeforeAttack = defender->getAvailableHealth();
@@ -1932,8 +1948,11 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 					auto stackWithBonuses = exchangeBattle->getForUpdate(u->unitId());
 					const auto score = measurement.measure(&BattleMovementTiming::ExchangeTiming::targetProbes, [&]()
 					{
+						const BattleTargetProbeTiming probeTiming{
+							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeMainDamage),
+							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeDpsScore)};
 						return v.trackAttack(attacker, stackWithBonuses, shooting, isOur,
-							damageCache, exchangeBattle, true, true, &readyOverwatch);
+							damageCache, exchangeBattle, true, true, &readyOverwatch, timing ? &probeTiming : nullptr);
 					});
 
 #if BATTLE_TRACE_LEVEL>=2

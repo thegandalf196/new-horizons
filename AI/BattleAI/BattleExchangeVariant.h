@@ -13,6 +13,8 @@
 #include "PotentialTargets.h"
 #include "StackWithBonuses.h"
 
+struct DLL_LINKAGE BattleTargetProbeTiming;
+
 struct BattleScore
 {
 	float ourDamageReduce;
@@ -103,7 +105,8 @@ public:
 		bool evaluateOnly = false,
 		bool allowRetaliation = true,
 		// Probe-only hint: share solely within one immutable target-selection batch.
-		std::optional<bool> * readyOverwatch = nullptr);
+		std::optional<bool> * readyOverwatch = nullptr,
+		const BattleTargetProbeTiming * probeTiming = nullptr);
 
 	const BattleScore & getScore() const { return dpsScore; }
 	/// Complete an already applied action and score only its newly finalized Plague injury.
@@ -166,6 +169,9 @@ struct DLL_LINKAGE BattleMovementTiming
 		StageTiming membership;
 		StageTiming projectionSetup;
 		StageTiming targetProbes;
+		/// Disjoint nested subsets of targetProbes, not extra classified body time.
+		StageTiming targetProbeMainDamage;
+		StageTiming targetProbeDpsScore;
 		/// Counts trackAttack invocations; the initial AP invocation may replay multiple strikes.
 		StageTiming appliedAttacks;
 		StageTiming activationStart;
@@ -182,6 +188,13 @@ struct DLL_LINKAGE BattleMovementTiming
 	StageTiming findMoveExchange;
 	ExchangeTiming findMoveExchangeDetails;
 	StageTiming goTowardsBlocking;
+};
+
+/// Call-local sinks only: never retained by a unit/model or used for applied attacks.
+struct DLL_LINKAGE BattleTargetProbeTiming
+{
+	BattleMovementTiming::StageTiming * mainDamage = nullptr;
+	BattleMovementTiming::StageTiming * dpsScore = nullptr;
 };
 
 /// Nonadditive candidate wrappers and disjoint calculateExchange subregions.
