@@ -2495,7 +2495,8 @@ TEST_F(NewHorizonsEstatesSpecialtyFixture, LordHaartScalesOnlyEstatesIncomeAndKe
 		addOtherResourceIncome(hero, EGameResID::GOLD, 30);
 		addOtherResourceIncome(hero, EGameResID::WOOD, 2);
 		hero->setNewHorizonsInvestorDailyGold(100);
-		hero->applyPerkSelection({std::string(ESTATES_SKILL_ID), std::string(TAX_COLLECTOR_ID)});
+		if(!hero->getPerkState().hasSelection(std::string(ESTATES_SKILL_ID), std::string(TAX_COLLECTOR_ID)))
+			hero->applyPerkSelection({std::string(ESTATES_SKILL_ID), std::string(TAX_COLLECTOR_ID)});
 		ASSERT_TRUE(hero->hasActivePerk(std::string(ESTATES_SKILL_ID), std::string(TAX_COLLECTOR_ID)));
 	}
 

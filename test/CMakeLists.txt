@@ -871,9 +871,11 @@ if(ENABLE_NULLKILLER2_AI)
 	# instead of linking the facade and loading a second copy of lib globals.
 	target_sources(vcmitest PRIVATE $<TARGET_OBJECTS:Nullkiller2>)
 	if(TARGET vcmiLua)
-		# This fixture exercises the internal Lua descriptor materializer, which
-		# is not an exported facade symbol in configurations without embedded AI.
-		target_sources(vcmitest PRIVATE spells/OverwhelmingFormulaObstacleTest.cpp)
+		# These fixtures exercise internal Lua descriptors and field serialization.
+		# Reuse embedded Lua, not a second facade/global instance.
+		target_sources(vcmitest PRIVATE
+			spells/OverwhelmingFormulaObstacleTest.cpp
+			scripting/LuaStackFieldKeyTest.cpp)
 	endif()
 	set(vcmitest_LIBS gtest gmock vcmiMain vcmiservercommon TBB::tbb ${SYSTEM_LIBS})
 	foreach(optional_vcmitest_target IN ITEMS vcmiLua EmptyAI StupidAI MMAI)
