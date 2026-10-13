@@ -80,7 +80,9 @@ fi
 [[ $XDG_DATA_HOME == "$EXPECTED_PROFILE/data" ]]
 [[ $XDG_CONFIG_HOME == "$EXPECTED_PROFILE/config" ]]
 [[ $XDG_CACHE_HOME == "$EXPECTED_PROFILE/cache" ]]
-[[ $XDG_DATA_DIRS == "$PWD" ]]
+# System MIME/icon data must remain available to GTK without inheriting custom
+# desktop roots. EntryPoint's cwd/development mode isolates game resources.
+[[ $XDG_DATA_DIRS == /usr/local/share:/usr/share ]]
 [[ $LD_LIBRARY_PATH == "$EXPECTED_ENGINE" ]]
 [[ -z ${LD_PRELOAD+x} && -z ${LD_AUDIT+x} ]]
 [[ ! -e $XDG_DATA_HOME/vcmi/Mods ]]

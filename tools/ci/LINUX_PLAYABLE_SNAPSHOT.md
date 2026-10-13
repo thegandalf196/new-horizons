@@ -35,6 +35,16 @@ currently built `new-horizons` and neighboring `libvcmi.so`, plus `config`,
 read-only snapshot. It is separate from `stage_linux_client.py`, which prepares
 audited distribution packages.
 
+The managed launcher keeps GTK's standard system desktop-data paths available
+(`/usr/local/share:/usr/share`) for MIME recognition and native-dialog icons.
+Replacing those paths with the game runtime directory prevents GdkPixbuf from
+recognizing PNG icons on affected installations and can abort GTK dialogs.
+Game-resource isolation remains separate: EntryPoint changes to the curated
+runtime directory, where VCMIDirs development mode searches only that directory.
+Private settings/cache paths and exclusion of inherited custom data roots remain
+unchanged. A native image-decoding check is not full-game startup acceptance;
+an error dialog may also be reporting an earlier startup failure.
+
 After a successful build, create a candidate without changing the default:
 
 For NHART candidates, `--resources` must point to a detached, verified resource
