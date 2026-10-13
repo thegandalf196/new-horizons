@@ -118,6 +118,44 @@ unchanged, and integration needs separate review. Driver stdout goes to stderr;
 successful helper stdout contains only the selected path. Logs/receipts and
 acceptance criteria belong to the driver, not a fabricated wrapper certificate.
 
+### Signal-free completion for externally owned acceptance
+
+A separately reviewed endpoint with its own fixed exact-PID graphical protocol
+can use the same selection transaction without being wrapped by `validate`:
+
+```python
+ticket = begin_validation(store, exact_managed_candidate)  # Before any launch.
+# The reviewed endpoint performs/owns its existing acceptance and full postchecks.
+selected = finish_validation(ticket, accepted=reviewed_acceptance_passed)
+```
+
+These Python entry points spawn and signal nothing. `ticket.candidate` and
+`ticket.digest` expose the bound identity; the private context stays in the
+reviewed endpoint process, outside the payload. There is no JSON import, CLI
+“accept” command or generic receipt-to-certificate parser. The endpoint must
+hold the original ticket through its complete receipt, actual acceptance and
+post-preservation checks. Only literal boolean `True` can finish promotion.
+Every completion attempt consumes the ticket, including refusal; it cannot be
+replayed after a mutation, stale lease or failed acceptance. Losing the endpoint
+loses the ticket: a later process cannot reconstruct acceptance from a file.
+
+`begin_validation` requires an exact generated snapshot inside the selected
+managed store, verifies it and captures the strict pointer lease under lock.
+`finish_validation` repeats exact candidate/store identity and lease checks
+under exclusive lock before identical atomic promotion. It has no timers or
+process ownership: the reviewed endpoint remains solely responsible for its
+existing bounded launch, safe inputs, silence, exact-PID cleanup and reaping.
+The literal acceptance boolean is a trusted endpoint declaration, not proof
+created by this tool or a security boundary against arbitrary Python callers.
+
+An external private candidate must first be frozen, without promotion, into the
+managed store with its explicit provider quartet. Verify identical full payload
+mapping/digest before starting acceptance; retain the original candidate and
+evidence. Do not silently rebind an already pinned graphical protocol, copy
+unreviewed bytes, promote a checksum-only result or waive its final receipt.
+Existing pending graphical preparations are unchanged until their separate
+integration, file materialization and runtime approvals.
+
 Explicit `promote` remains available for approved rollback/preview workflows:
 
 ```sh

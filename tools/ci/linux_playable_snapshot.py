@@ -456,6 +456,63 @@ def candidate_validation_identity(candidate, digest):
             sha256_file(candidate / "SHA256SUMS"))
 
 
+class _ValidationTicket:
+    """Private in-process context, not a serializable acceptance receipt."""
+    __slots__ = ("_store", "_candidate", "_digest", "_before", "_lease",
+                 "_store_identity", "_consumed")
+
+    def __init__(self, store, candidate, digest, before, lease):
+        self._store = store
+        self._candidate = candidate
+        self._digest = digest
+        self._before = before
+        self._lease = lease
+        identity = store.stat()
+        self._store_identity = identity.st_dev, identity.st_ino
+        self._consumed = False
+
+    @property
+    def candidate(self):
+        return self._candidate
+
+    @property
+    def digest(self):
+        return self._digest
+
+
+def begin_validation(store, snapshot):
+    """Capture an exact managed candidate before a reviewed endpoint starts work."""
+    store = Path(store).absolute()
+    with store_lock(store, exclusive=True):
+        candidate = candidate_in_store(store, snapshot)
+        digest = SNAPSHOT_RE.fullmatch(candidate.name).group(1)
+        return _ValidationTicket(store, candidate, digest,
+                                 candidate_validation_identity(candidate, digest),
+                                 current_lease(store))
+
+
+def finish_validation(ticket, *, accepted):
+    """Signal-free one-shot completion, called after reviewed acceptance/postchecks.
+
+    The trusted endpoint declares acceptance, not an arbitrary JSON receipt.
+    This function never starts, supervises or signals that endpoint's processes.
+    """
+    if type(ticket) is not _ValidationTicket or ticket._consumed:
+        fail("Validation requires an unused in-process ticket")
+    ticket._consumed = True  # A failed completion cannot be repaired and replayed.
+    if accepted is not True:
+        fail("Reviewed validation endpoint did not accept the candidate")
+    with store_lock(ticket._store, exclusive=True):
+        identity = ticket._store.stat()
+        if (identity.st_dev, identity.st_ino) != ticket._store_identity:
+            fail("Snapshot store changed during validation")
+        if candidate_validation_identity(ticket.candidate, ticket.digest) != ticket._before:
+            fail("Candidate changed during validation")
+        if current_lease(ticket._store) != ticket._lease:
+            fail("Current selection changed during validation; refusing stale promotion")
+        return promote_snapshot(ticket._store, ticket.candidate)
+
+
 def validation_descendants(process):
     members = []
     for entry in Path("/proc").iterdir():
@@ -514,17 +571,12 @@ def validate(args):
     if not command or any(not isinstance(value, str) or not value or "\0" in value
                           for value in command):
         fail("Validation requires an explicit command argv")
-    store = Path(args.store).absolute()
-    with store_lock(store, exclusive=True):
-        candidate = candidate_in_store(store, args.snapshot)
-        digest = SNAPSHOT_RE.fullmatch(candidate.name).group(1)
-        before = candidate_validation_identity(candidate, digest)
-        lease = current_lease(store)
+    ticket = begin_validation(args.store, args.snapshot)
     # A long acceptance must not prevent another validated candidate or explicit
     # rollback from being selected. Its captured lease cannot be refreshed later.
     environment = os.environ.copy()
-    environment["NH_VALIDATION_SNAPSHOT"] = str(candidate)
-    environment["NH_VALIDATION_SNAPSHOT_SHA256"] = digest
+    environment["NH_VALIDATION_SNAPSHOT"] = str(ticket.candidate)
+    environment["NH_VALIDATION_SNAPSHOT_SHA256"] = ticket.digest
     process = None
     interrupted = None
     cleaning = False
@@ -565,12 +617,7 @@ def validate(args):
         fail(f"Validation interrupted by signal {interrupted}")
     if code != 0:
         fail(f"Validation driver failed with exit status {code}")
-    with store_lock(store, exclusive=True):
-        if candidate_validation_identity(candidate, digest) != before:
-            fail("Candidate changed during validation")
-        if current_lease(store) != lease:
-            fail("Current selection changed during validation; refusing stale promotion")
-        print(promote_snapshot(store, candidate))
+    print(finish_validation(ticket, accepted=True))
 
 
 def main():
