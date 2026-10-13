@@ -16,6 +16,8 @@
 #include "../../lib/entities/hero/CHeroHandler.h"
 #include "../../lib/entities/hero/CHeroClass.h"
 #include "../../lib/entities/artifact/CArtifact.h"
+#include "../../lib/texts/CGeneralTextHandler.h"
+#include "../../lib/texts/CompositeTranslator.h"
 
 namespace
 {
@@ -34,6 +36,8 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 	const IGameSettings * effectiveSettings = LIBRARY->engineSettings();
 	std::unique_ptr<CMap> map;
 	HeroStartingPreview result;
+	const ITranslator & biographyTranslator = capturedHero ? GAME->translator() : *LIBRARY->generaltexth;
+	result.biography = heroStartingBiography(prototype, biographyTranslator, capturedHero);
 	if(selectedMap && !selectedMap->isRandomMap && !selectedMap->campaign
 		&& !selectedMap->scenarioOptionsOfSave && !selectedMap->fileURI.empty())
 	{
@@ -50,6 +54,14 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 					hero && hero->getHeroTypeID() == id && hero->getOwner() == owner)
 				{
 					overrides = authoredOverrides(*hero);
+					if(!capturedHero)
+					{
+						// A parsed preview map never installs its text globally.
+						// Composite lookup retains static translation override priority.
+						CompositeTranslator mapTranslator;
+						mapTranslator.install(map->texts);
+						result.biography = heroStartingBiography(prototype, mapTranslator, hero);
+					}
 					break;
 				}
 		}
@@ -61,6 +73,7 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 			context = newHorizonsHeroes::startingHeroContext(*LIBRARY->engineSettings());
 			effectiveSettings = LIBRARY->engineSettings();
 			overrides = {};
+			result.biography = heroStartingBiography(prototype, biographyTranslator, capturedHero);
 			result.defaultProfile = true;
 		}
 	}
