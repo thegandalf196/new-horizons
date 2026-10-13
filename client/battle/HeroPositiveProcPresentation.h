@@ -21,6 +21,19 @@ struct TraceContext
 	bool spell = false;
 	int source = -1;
 	unsigned flags = 0;
+	bool luckReceiptPresent = false;
+	bool moraleReceiptPresent = false;
+	int luckHeroValue = -1;
+	int luckBaseThreshold = -1;
+	int luckDiceSize = -1;
+	int moraleHeroValue = -1;
+	int moraleBaseThreshold = -1;
+	int moraleDiceSize = -1;
+	uint32_t moraleGrantId = 0;
+	int luckyDayPolicyScale = -1;
+	int erraticManaPolicyScale = -1;
+	int druidicLuckPolicyScale = -1;
+	int heroicSpiritPolicyScale = -1;
 	int effect = -1;
 	bool firstDrawReturned = false;
 	bool markFirstDrawReturned()
@@ -31,6 +44,23 @@ struct TraceContext
 		return true;
 	}
 };
+
+// Copies only the three public receipt summary values; never draw/bias/seed.
+// Shared by actual opt-in assembly and the dependency-free component test.
+template<typename Receipt>
+void captureReceiptEvidence(TraceContext & context, const Receipt * luck,
+	const Receipt * morale, uint32_t moraleGrantId)
+{
+	context.luckReceiptPresent = luck != nullptr;
+	context.moraleReceiptPresent = morale != nullptr;
+	context.luckHeroValue = luck ? luck->heroValue : -1;
+	context.luckBaseThreshold = luck ? luck->baseThreshold : -1;
+	context.luckDiceSize = luck ? luck->diceSize : -1;
+	context.moraleHeroValue = morale ? morale->heroValue : -1;
+	context.moraleBaseThreshold = morale ? morale->baseThreshold : -1;
+	context.moraleDiceSize = morale ? morale->diceSize : -1;
+	context.moraleGrantId = moraleGrantId;
+}
 
 // Same literal opt-in/strict limit parser; separate hero-only child-domain budget.
 bool traceEnabled();

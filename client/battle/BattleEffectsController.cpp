@@ -74,10 +74,23 @@ void heroPositiveProcPresentation::trace(TraceContext & context, const char * ev
 	const auto now = BattleAnimationTiming::steadyMicroseconds();
 	if(!context.scene)
 		context.scene = now;
-	heroProcLogger()->debug("NH_HERO_PROC event=%s steady_us=%lld scene=%lld ordinal=%llu battle=%d side=%d round=%d sourceKind=%s source=%d flags=%u effect=%d animation=%d frame=%d frames=%d stage=%d pos_x=%d pos_y=%d imageAvailable=%d",
+	heroProcLogger()->debug("NH_HERO_PROC event=%s steady_us=%lld scene=%lld ordinal=%llu battle=%d side=%d round=%d sourceKind=%s source=%d flags=%u effect=%d animation=%d frame=%d frames=%d stage=%d pos_x=%d pos_y=%d imageAvailable=%d luckReceiptPresent=%d moraleReceiptPresent=%d luckHeroValue=%d luckBaseThreshold=%d luckDiceSize=%d moraleHeroValue=%d moraleBaseThreshold=%d moraleDiceSize=%d moraleGrantId=%u luckyDayPolicyScale=%d erraticManaPolicyScale=%d druidicLuckPolicyScale=%d heroicSpiritPolicyScale=%d",
 		event, now, context.scene, static_cast<unsigned long long>(context.ordinal), context.battle,
 		context.side, context.round, context.spell ? "spell" : "order", context.source, context.flags,
-		context.effect, animation, frame, frames, stage, x, y, imageAvailable);
+		context.effect, animation, frame, frames, stage, x, y, imageAvailable,
+		context.luckReceiptPresent,
+		context.moraleReceiptPresent,
+		context.luckHeroValue,
+		context.luckBaseThreshold,
+		context.luckDiceSize,
+		context.moraleHeroValue,
+		context.moraleBaseThreshold,
+		context.moraleDiceSize,
+		context.moraleGrantId,
+		context.luckyDayPolicyScale,
+		context.erraticManaPolicyScale,
+		context.druidicLuckPolicyScale,
+		context.heroicSpiritPolicyScale);
 }
 
 BattleEffectsController::BattleEffectsController(BattleInterface & owner):
