@@ -109,7 +109,7 @@ void CHeroOverview::genControls()
 	// hero biography
 	r = Rect(borderOffset, 5 * borderOffset + yOffset + 148, 284, 130);
 	backgroundRectangles.push_back(std::make_shared<TransparentFilledRectangle>(r.resize(1), rectangleColor, borderColor));
-	labelHeroBiography = std::make_shared<CTextBox>((*LIBRARY->heroh)[heroIdx]->getBiographyTranslated(), r.resize(-borderOffset), CSlider::EStyle::BROWN, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
+	labelHeroBiography = std::make_shared<CTextBox>(starting.biography.translated, r.resize(-borderOffset), CSlider::EStyle::BROWN, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
 	if(labelHeroBiography->slider && !ENGINE->input().inputModeUsesGestures())
 		labelHeroBiography->slider->clearScrollBounds();
 

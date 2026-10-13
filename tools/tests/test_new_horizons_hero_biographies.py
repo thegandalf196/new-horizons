@@ -94,6 +94,31 @@ class NewHorizonsHeroBiographyTest(unittest.TestCase):
         self.assertLess(function.index("if (!biographyCustomTextId.empty())"),
                         function.index("if (getHeroTypeID().hasValue())"))
 
+    def test_selected_map_biography_preview_wiring_preserves_context_precedence(self):
+        # Source integration only: native helper controls do not link the GUI
+        # CMapService -> CHeroOverview path, and this is not rendered coverage.
+        source = (ROOT / "client/windows/HeroStartingPreview.cpp").read_text()
+        default = source.split("if(selectedMap", 1)[0]
+        self.assertIn("const ITranslator & biographyTranslator = capturedHero ? GAME->translator() : *LIBRARY->generaltexth;", default)
+        self.assertIn("result.biography = heroStartingBiography(prototype, biographyTranslator, capturedHero);", default)
+        matching = source.split("for(const auto & object : map->objects)", 1)[1]
+        matching, remaining = matching.split("catch(const std::exception & error)", 1)
+        self.assertIn("hero && hero->getHeroTypeID() == id && hero->getOwner() == owner", matching)
+        self.assertIn("if(!capturedHero)", matching)
+        self.assertIn("CompositeTranslator mapTranslator;", matching)
+        self.assertIn("mapTranslator.install(map->texts);", matching)
+        self.assertIn("result.biography = heroStartingBiography(prototype, mapTranslator, hero);", matching)
+        self.assertLess(matching.index("if(!capturedHero)"), matching.index("mapTranslator.install(map->texts)"))
+        self.assertLess(matching.index("hero->getOwner() == owner"),
+                        matching.index("heroStartingBiography(prototype, mapTranslator, hero)"))
+        fallback = remaining.split("else if(!selectedMap", 1)[0]
+        self.assertIn("result.biography = heroStartingBiography(prototype, biographyTranslator, capturedHero);", fallback)
+        overview = (ROOT / "client/windows/CHeroOverview.cpp").read_text()
+        biography_line = next(line for line in overview.splitlines()
+                              if "labelHeroBiography = std::make_shared<CTextBox>" in line)
+        self.assertIn("starting.biography.translated", biography_line)
+        self.assertNotIn("getBiographyTranslated()", biography_line)
+
     def test_generator_rejects_wrong_rosters_and_invalid_decision_types(self):
         generator = load_module_generator()
         with tempfile.TemporaryDirectory() as temporary:

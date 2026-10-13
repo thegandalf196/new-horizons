@@ -5,13 +5,34 @@
 #pragma once
 #include "../../lib/entities/hero/HeroStartingProjection.h"
 #include "HeroSpecialtyPresentation.h"
+#include "../../lib/texts/ITranslator.h"
 #include <map>
+#include <stdexcept>
 class CMapInfo;
 class CGHeroInstance;
+struct HeroStartingBiography
+{
+	std::string textID;
+	std::string translated;
+};
+
+// Copy text while the parsed map/captured context still exists. This reads no
+// gameplay state beyond the matching hero's existing biography identity.
+// The caller must supply its actual translation context; no global fallback.
+inline HeroStartingBiography heroStartingBiography(const CHero & prototype, const ITranslator & translator,
+	const CGHeroInstance * hero = nullptr)
+{
+	if(hero && hero->getHeroTypeID() != prototype.getId())
+		throw std::invalid_argument("Starting biography requires the matching hero identity");
+	const auto textID = hero ? hero->getBiographyTextID() : prototype.getBiographyTextID();
+	return {textID, translator.translate(textID)};
+}
+
 struct HeroStartingPreview
 {
 	newHorizonsHeroes::StartingHeroProjection values;
 	HeroSpecialtyPresentation specialty;
+	HeroStartingBiography biography;
 	std::vector<int> stackChances;
 	std::map<std::string, std::string> perkNames;
 	bool defaultProfile = true;
