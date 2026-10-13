@@ -618,127 +618,19 @@ const CHero * CGHeroInstance::getHeroType() const
 	return getHeroTypeID().toHeroType();
 }
 
-std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
+newHorizonsHeroes::SpecialtyPresentation CGHeroInstance::getSpecialtyPresentation() const
 {
-	const CHero * heroType = getHeroType();
+	const auto * heroType = getHeroType();
 	if(!heroType)
 		return {};
+	return newHorizonsHeroes::resolveSpecialtyPresentation(*heroType, primaryGrowthRules, getMagicRules(),
+		heroType->creatureLineSpecialtyAlias ? std::optional<CreatureID>(getCreatureLineSpecialtyTarget())
+			: std::nullopt, this);
+}
 
-	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules);
-	const auto & localBonuses = getExportedBonusList();
-	if(rules && heroType->creatureLineSpecialtyAlias)
-	{
-		const CreatureID creature = getCreatureLineSpecialtyTarget();
-		const std::array<std::string, 4> markers = {
-			creatureLineSpecialtyMarker(heroType->getId(), creature, "speed"),
-			creatureLineSpecialtyMarker(heroType->getId(), creature, "initiative"),
-			creatureLineSpecialtyMarker(heroType->getId(), creature, "attack"),
-			creatureLineSpecialtyMarker(heroType->getId(), creature, "defense")
-		};
-		const bool converted = std::ranges::any_of(localBonuses, [&markers](const auto & bonus)
-		{
-			return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
-		});
-		if(converted)
-		{
-			MetaString description;
-			description.appendNamePlural(creature);
-			description.appendRawString(" and their upgrades gain +");
-			description.appendNumber(rules->speed);
-			description.appendRawString(" Speed and +");
-			description.appendNumber(rules->initiative);
-			description.appendRawString(" Initiative. They also gain +");
-			description.appendNumber(rules->attributePerStep);
-			description.appendRawString(" Creature Attack and +");
-			description.appendNumber(rules->attributePerStep);
-			description.appendRawString(" Creature Defense per ");
-			description.appendNumber(rules->levelStep);
-			description.appendRawString(" hero levels, up to +");
-			description.appendNumber(rules->attributeMaximum);
-			description.appendRawString(" at level ");
-			description.appendNumber(rules->levelStep * rules->attributeMaximum);
-			description.appendRawString(".");
-			return description.toString(LIBRARY->generaltexth.get());
-		}
-	}
-
-	for(const auto & producer : heroType->spellSpecialtySuccessorProducers)
-		if(const auto target = authoredRemainingSpellReplacement(*this, producer.source))
-		{
-			const int percent = producer.damage ? getDamageSpellSpecialtyBonusPercent(*target)
-				: getNonDamageSpellSpecialtyBonusPercent(*target);
-			if(percent > 0)
-			{
-				MetaString description;
-				description.appendName(*target);
-				description.appendRawString(" gains +");
-				description.appendNumber(percent);
-				description.appendRawString(producer.damage
-					? "% to its initial Spell Power-derived damage component. Fixed terms and later triggers are unchanged."
-					: "% to its Spell Power-derived duration or Integrity component. Fixed terms and caps are unchanged.");
-				return description.toString(LIBRARY->generaltexth.get());
-			}
-		}
-
-	if(const auto damageRules = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules))
-		for(const auto & producer : heroType->damageSpellSpecialtyProducers)
-			if(const auto target = authoredDamageSpellReplacement(*this, producer.spell).value_or(producer.spell);
-				getDamageSpellSpecialtyBonusPercent(target) > 0)
-			{
-				MetaString description;
-				description.appendName(target);
-				description.appendRawString(" gains +");
-				description.appendNumber(damageRules->componentPercent);
-				description.appendRawString("% to its Spell Power-derived damage component.");
-				return description.toString(LIBRARY->generaltexth.get());
-			}
-
-	if(const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules))
-		for(const auto & producer : heroType->nonDamageSpellSpecialtyProducers)
-		{
-			const auto target = authoredNonDamageSpellReplacement(*this, producer.spell).value_or(producer.spell);
-			if(getNonDamageSpellSpecialtyBonusPercent(target) > 0)
-			{
-				MetaString description;
-				description.appendName(target);
-				description.appendRawString(" gains +");
-				description.appendNumber(rules->componentPercent);
-				if(producer.spell == SpellID::BLESS)
-					description.appendRawString("% to its Spell Power-derived duration component before its normal duration cap.");
-				else if(producer.spell == SpellID::HASTE)
-					description.appendRawString("% to its Spell Power-derived duration component. Its Speed bonus is unchanged.");
-				else if(target.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL)
-					description.appendRawString("% to its Spell Power-derived Creature Defense loss component. Its fixed term and caps are unchanged.");
-				else if(target.toSpell()->getJsonKey() == "new-horizons:hydrasVitality")
-					description.appendRawString("% to its Spell Power-derived maximum-HP increase. Its fixed term, cap and regeneration rate are unchanged.");
-				else if(target.toSpell()->getJsonKey() == "new-horizons:guardianSpirit")
-					description.appendRawString("% to its Spell Power-derived protective HP component. Its fixed term and duration are unchanged.");
-				else if(target.toSpell()->getJsonKey() == "new-horizons:crusade")
-					description.appendRawString("% to its Spell Power-derived Attack, Defense, Initiative and Magical Damage Reduction components. Its fixed terms, caps and duration are unchanged.");
-				else
-					description.appendRawString("% to its Spell Power-derived healing component.");
-				return description.toString(LIBRARY->generaltexth.get());
-			}
-		}
-
-	if(const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules))
-		if(heroType->navigationSpecialtyProducer
-			&& getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)) > 0)
-			return "Logistics's core Movement effect is increased by +20%. Navigation's sea bonus and embark cost, and other perks, are unchanged.";
-
-	if(const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules))
-		if(heroType->secondarySkillSpecialtyAlias
-			&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0)
-		{
-			MetaString description;
-			description.appendTextID(heroType->secondarySkillSpecialtyAlias->skill.toEntity(LIBRARY)->getNameTextID());
-			description.appendRawString(" core numerical effects are increased by +");
-			description.appendNumber(rules->coreBonusPercent);
-			description.appendRawString("%. Skill perks are not increased.");
-			return description.toString(LIBRARY->generaltexth.get());
-		}
-
-	return heroType->getSpecialtyDescriptionTranslated();
+std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
+{
+	return getSpecialtyPresentation().description;
 }
 
 int CGHeroInstance::getDamageSpellSpecialtyBonusPercent(SpellID spell) const

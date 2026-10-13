@@ -79,6 +79,9 @@ protected:
 		else
 		{
 			heroRules.Struct().erase("damageSpellSpecialties");
+			// The later composite opt-in requires that block. A snapshot without
+			// damage conversion must not retain its dependent activation flag.
+			heroRules.Struct().erase("remainingSpellSpecialtyReplacements");
 			// This is a deliberately old saved snapshot; do not inherit the active
 			// preset's optional field while applying the map override.
 			heroRules.setOverrideFlag(true);
@@ -331,6 +334,8 @@ TEST_F(NewHorizonsDamageSpecialtyTest, MissingSavedRulesKeepLunasLegacyFireWallT
 {
 	enableDamageSpecialtyRules = false;
 	startSpecialistMap("core:luna");
+	ASSERT_FALSE(attackerSideHero->getPrimaryGrowthRules().Struct().contains("damageSpellSpecialties"));
+	ASSERT_FALSE(attackerSideHero->getPrimaryGrowthRules().Struct().contains("remainingSpellSpecialtyReplacements"));
 	const auto triggerSpell = spell("core:fireWallTrigger");
 	EXPECT_EQ(attackerSideHero->getDamageSpellSpecialtyBonusPercent(SpellID::FIRE_WALL), 0);
 	EXPECT_EQ(attackerSideHero->getDamageSpellSpecialtyBonusPercent(triggerSpell), 0);
