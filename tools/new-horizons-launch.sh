@@ -290,6 +290,9 @@ if [[ -n $received_signal ]]; then
 fi
 # Do not inherit XDG VCMI settings, optional mods, or loader injection variables.
 # This is a curated launch profile, not a sandbox or global mod prohibition.
+# GTK/GdkPixbuf needs system MIME and icon data for native dialogs. Engine data
+# isolation is provided by EntryPoint's runtime cwd and VCMIDirs development mode,
+# not by hiding desktop resources through XDG_DATA_DIRS. Do not inherit custom roots.
 launch_command=("$runtime/new-horizons" --nointro "${client_args[@]}")
 if [[ -n $debugger_log ]]; then
 	# Do not source host/profile .gdbinit. Preserve inferior exit status; a
@@ -301,7 +304,7 @@ launch_managed_client() {
 	exec env --default-signal=INT -u LD_PRELOAD -u LD_AUDIT \
 	LD_LIBRARY_PATH="$(dirname -- "$client")" \
 	XDG_DATA_HOME="$profile/data" XDG_CONFIG_HOME="$profile/config" \
-	XDG_CACHE_HOME="$profile/cache" XDG_DATA_DIRS="$runtime" \
+	XDG_CACHE_HOME="$profile/cache" XDG_DATA_DIRS=/usr/local/share:/usr/share \
 	"${launch_command[@]}"
 }
 if [[ -n $debugger_log ]]; then
