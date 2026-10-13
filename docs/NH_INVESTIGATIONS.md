@@ -77,6 +77,20 @@ one-stack, seven-stack and seven-versus-seven Normal controls exercise the new
 properties. These checks validate attribution, not a performance improvement;
 reproducible workload-matched measurements are still needed before optimizing.
 
+## Permanent hero state across world saves
+
+`PermanentHeroProcStateSurvivesWorldSaveReloadAndValidatedEndTurn` exercises the
+production world-file writer and loader, then submits an ordinary validated
+EndTurn request. It checks captured Luck/Morale rules, selected perks and ranks,
+positive Normal mana, nonzero permanent Buffer and a nonempty spellbook on the
+reloaded heroes. The existing presentation-export fixture remains unchanged.
+
+The opt-in case requires `NH_EXPORT_HERO_PROC_SAVE_ROOT` to match the isolated
+test profile's actual save directory; it refuses symlinked or existing output.
+Its default TEST content preset and admitted mock connection establish a focused
+save/continuation regression, not shipping-only graphical acceptance, successful
+proc/refund presentation, negative connection authentication or active-battle saves.
+
 ## Hero positive-proc presentation diagnostics
 
 With `NH_RENDER_LOAD_TIMINGS=1` and the `animation.heroProc` logger at DEBUG,

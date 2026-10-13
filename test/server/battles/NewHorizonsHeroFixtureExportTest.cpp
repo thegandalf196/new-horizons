@@ -15,6 +15,7 @@
 #include "../../../lib/VCMIDirs.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/networkPacks/PacksForServer.h"
 #include <cstdlib>
 #include <zlib.h>
 #include <filesystem>
@@ -206,6 +207,138 @@ TEST_F(NewHorizonsHeroProcFixtureExportTest, ExportLegalOfferOrderProcAdventureS
 	RecordProperty("savePath", output.string());
 	RecordProperty("mapIdentity", "NHHeroProcPresentation");
 	RecordProperty("combatActionsBeforeExport", 0);
+}
+
+// Separate from the presentation exporter above: no exported presentation
+// hero, army, spell restriction or selected perk is changed by this case.
+TEST_F(NewHorizonsHeroProcFixtureExportTest, PermanentHeroProcStateSurvivesWorldSaveReloadAndValidatedEndTurn)
+{
+	const char * rootValue = std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT");
+	if(!rootValue)
+		GTEST_SKIP() << "Explicit isolated save root is required for world save test";
+	const std::filesystem::path root(rootValue);
+	ASSERT_TRUE(root.is_absolute() && std::filesystem::is_directory(root));
+	for(auto ancestor = root; !ancestor.empty(); ancestor = ancestor.parent_path())
+	{
+		ASSERT_FALSE(std::filesystem::is_symlink(std::filesystem::symlink_status(ancestor)));
+		if(ancestor == ancestor.root_path()) break;
+	}
+	ASSERT_EQ(std::filesystem::canonical(root), std::filesystem::canonical(
+		std::filesystem::path(VCMIDirs::get().userSavePath().string())));
+	const auto output = root / "hero-proc-permanent-continuation.vsgm1";
+	ASSERT_EQ(std::filesystem::symlink_status(output).type(), std::filesystem::file_type::not_found);
+	const auto luck = SecondarySkill(SecondarySkill::decode("new-horizons:luck"));
+	const auto discipline = SecondarySkill(SecondarySkill::decode("new-horizons:discipline"));
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).name("NHHeroProcPermanentContinuation")
+		.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+		.town({8, 8, 0}, FactionID::CASTLE, PlayerColor(0)).townGarrison({})
+		.town({20, 20, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({});
+	for(int color = 0; color < 2; ++color)
+		builder.hero({11 + color, 10, 0}, HeroTypeID(color), PlayerColor(color))
+			.heroExperience(0).heroSecondarySkills({{SecondarySkill::LUCK, 3},
+				{SecondarySkill::ARCHERY, 1}, {SecondarySkill::LEADERSHIP, 3}})
+			.heroGarrison({{CreatureID(CreatureID::decode("core:pikeman")), 20}}).heroSpells({});
+	startWithMap(builder, EMapDifficulty::NORMAL);
+	server.gameState = gameState();
+	handler = std::make_shared<CGameHandler>(server, gameState());
+	for(const auto & player : gameState()->players)
+		handler->turnOrder->addPlayer(player.first);
+	const SpellID learned(SpellID::MAGIC_ARROW);
+	ASSERT_NE(learned.toSpell(), nullptr);
+	struct SavedHero
+	{
+		ObjectInstanceID id;
+		newHorizonsHeroes::PerkState perks;
+		int32_t normal;
+		int32_t buffer;
+		std::set<SpellID> spellbook;
+	};
+	std::vector<SavedHero> heroesBefore;
+	for(int color = 0; color < 2; ++color)
+	{
+		auto * hero = findHeroByOwner(PlayerColor(color));
+		ASSERT_NE(hero, nullptr);
+		ASSERT_EQ(hero->getSecSkillLevel(luck), 3);
+		ASSERT_EQ(hero->getSecSkillLevel(discipline), 3);
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:luck", "new-horizons:luck.secondChance", true));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:luck", color == 0
+			? "new-horizons:luck.luckyRecovery" : "new-horizons:luck.gambler", false));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:luck", "new-horizons:luck.twistOfFate", false));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:discipline", "new-horizons:discipline.steadfast", true));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:discipline", "new-horizons:discipline.holdFast", true));
+		ASSERT_NO_FATAL_FAILURE(chooseOffer(hero, "new-horizons:discipline", "new-horizons:discipline.heroicSpirit", false));
+		// Legitimate test setup through public permanent hero-state APIs, not
+		// battle temporary buffers, proc forcing, raw fields or a paid-cast claim.
+		hero->addSpellToSpellbook(learned);
+		ASSERT_TRUE(hero->grantBufferSpellPoints(17));
+		ASSERT_TRUE(hero->areSpellPointsInitialized());
+		ASSERT_GT(hero->getNormalSpellPoints(), 0);
+		ASSERT_GT(hero->getBufferSpellPoints(), 0);
+		ASSERT_TRUE(hero->spellbookContainsSpell(learned));
+	}
+	handler->start(false);
+	ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(PlayerColor(0)));
+	ASSERT_TRUE(handler->gameState().currentBattles.empty());
+	for(int color = 0; color < 2; ++color)
+	{
+		const auto * hero = findHeroByOwner(PlayerColor(color));
+		ASSERT_NE(hero, nullptr);
+		ASSERT_GT(hero->getNormalSpellPoints(), 0);
+		ASSERT_GT(hero->getBufferSpellPoints(), 0);
+		ASSERT_TRUE(hero->spellbookContainsSpell(learned));
+		heroesBefore.push_back({hero->id, hero->getPerkState(), hero->getNormalSpellPoints(),
+			hero->getBufferSpellPoints(), hero->getSpellsInSpellbook()});
+	}
+	const auto rulesBefore = handler->gameState().getMagicRules();
+	ASSERT_TRUE(rulesBefore["heroLuck"].isStruct());
+	ASSERT_TRUE(rulesBefore["heroMorale"].isStruct());
+	const auto filename = "Saves/hero-proc-permanent-continuation";
+	handler->save(filename, PlayerColor::NEUTRAL);
+	ASSERT_TRUE(std::filesystem::is_regular_file(output));
+	ASSERT_GT(std::filesystem::file_size(output), 0u);
+	StartInfo loadInfo = *handler->gameState().getStartInfo();
+	loadInfo.mode = EStartMode::LOAD_GAME;
+	loadInfo.mapname = filename;
+	handler->load(loadInfo);
+	server.gameState = handler->gs;
+	ASSERT_NE(handler->gs, gameState());
+	ASSERT_TRUE(handler->gameState().currentBattles.empty());
+	EXPECT_EQ(handler->gameState().getMagicRules(), rulesBefore);
+	const auto expectPermanent = [&]()
+	{
+		for(const auto & saved : heroesBefore)
+		{
+			const auto * hero = handler->gameState().getHero(saved.id);
+			ASSERT_NE(hero, nullptr);
+			EXPECT_EQ(hero->getPerkState().rules, saved.perks.rules);
+			EXPECT_EQ(hero->getPerkState().selected, saved.perks.selected);
+			EXPECT_EQ(hero->getPerkSkillRank("new-horizons:luck"), 3);
+			EXPECT_EQ(hero->getPerkSkillRank("new-horizons:discipline"), 3);
+			EXPECT_TRUE(hero->areSpellPointsInitialized());
+			EXPECT_EQ(hero->getNormalSpellPoints(), saved.normal);
+			EXPECT_EQ(hero->getBufferSpellPoints(), saved.buffer);
+			EXPECT_EQ(hero->getSpellsInSpellbook(), saved.spellbook);
+		}
+	};
+	ASSERT_NO_FATAL_FAILURE(expectPermanent());
+	ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(PlayerColor(0)));
+	ASSERT_FALSE(handler->turnOrder->isPlayerMakingTurn(PlayerColor(1)));
+	// The ordinary request validates connection/player, active status and
+	// pending queries before delegating to the authoritative turn processor.
+	// Player0→Player1 does not advance the day or regenerate either mana pool.
+	EndTurn endTurn;
+	endTurn.player = PlayerColor(0);
+	handler->handleReceivedPack(GameConnectionID::FIRST_CONNECTION, endTurn);
+	EXPECT_FALSE(handler->turnOrder->isPlayerMakingTurn(PlayerColor(0)));
+	EXPECT_TRUE(handler->turnOrder->isPlayerMakingTurn(PlayerColor(1)));
+	EXPECT_TRUE(handler->gameState().currentBattles.empty());
+	EXPECT_EQ(handler->gameState().getMagicRules(), rulesBefore);
+	ASSERT_NO_FATAL_FAILURE(expectPermanent());
+	if(HasFailure())
+		return;
+	RecordProperty("worldSaveReloadPermanentHeroPolicy", "verified");
+	RecordProperty("validatedPostLoadEndTurn", "verified");
 }
 
 class NewHorizonsHeroFixtureExportTest : public BattleTestFixture
