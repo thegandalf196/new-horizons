@@ -195,6 +195,7 @@ public:
 /// Raised up level window where you can select one out of two skills
 class CLevelWindow : public CWindowObject
 {
+	// Native content640x568 plus CWindowObject's28x29 border fits800x600.
 public:
 	struct PrimaryGainSnapshot
 	{
@@ -210,6 +211,7 @@ private:
 	std::shared_ptr<CButton> ok;
 	std::shared_ptr<CLabel> mainTitle;
 	std::shared_ptr<CLabel> levelTitle;
+	std::shared_ptr<CLabel> choiceInstruction;
 	std::shared_ptr<CAnimImage> skillIcon;
 	std::shared_ptr<CLabel> skillValue;
 

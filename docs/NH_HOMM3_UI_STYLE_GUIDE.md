@@ -90,7 +90,28 @@ Treat a supplied mockup as a guide to content placement and interaction. If
 its own construction is artificial or unattractive, do not reproduce that
 construction literally.
 
-## Review checklist
+## Delivery gate
+
+A working interaction is not a finished visual interface. Before marking a new
+or revised interface ready for ordinary playable delivery, inspect its rendered
+native-resolution presentation against the relevant original Heroes III screen.
+Review the whole panel, including its outer frame, focal artwork, materials,
+typography, icon scale, control states and neighboring regions. A collection of
+individually appropriate sprites does not establish a coherent composition.
+
+Reuse the original screen's identifying visual structure where applicable,
+including portrait surrounds and banners. Generic text links, settings controls
+and information dialogs are functional scaffolding, not automatic substitutes
+for an integrated town, hero or combat interface. Record any remaining scaffold
+as unfinished rather than silently treating it as final. Apply the same standard
+to related screens; do not wait for a separate report for each instance.
+
+When a visual preview is required, present the actual rendered interface before
+activating it. A generated mockup or source/layout check does not replace that
+review. Preserve prior preview versions and distinguish visual approval from
+mechanical verification.
+
+## Native-resolution checklist
 
 At the game's actual resolution, compare the result against relevant original
 Heroes III dialogs as well as the supplied reference. Check for:

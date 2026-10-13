@@ -10,6 +10,45 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class LevelSnapshotTest(unittest.TestCase):
+    def test_skill_choice_labels_show_only_offered_rank(self):
+        source = (ROOT / 'client/windows/GUIClasses.cpp').read_text()
+        choices = source.split('void CLevelWindow::createSkillBox()', 1)[1]
+        self.assertIn('translate("core.skilllev", offeredRank - 1)', choices)
+        self.assertIn('comp->customSubtitle = offeredRankText + "\\n"', choices)
+        self.assertNotIn('new-horizons.levelUp.skill.unlearned', choices)
+        self.assertNotIn('new-horizons.levelUp.skill.rankTransition', choices)
+
+    def test_native_panel_footer_has_separate_regions(self):
+        source = (ROOT / 'client/windows/GUIClasses.cpp').read_text()
+        background = (ROOT / 'client/render/AssetGenerator.cpp').read_text()
+        method = background.split(
+            'AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground()', 1
+        )[1].split('AssetGenerator::CanvasPtr', 1)[0]
+        self.assertIn('createDialogBackground(Point(640, 568))', method)
+        self.assertIn('PLAYER_COLORED | BORDERED', source)
+        self.assertIn('ImagePath::builtin("LVLUPBKG.bmp")', method)
+        self.assertIn('original->width() - 36', method)
+        self.assertIn('Point((640 - headerWidth) / 2, 18)', method)
+        self.assertIn('Rect(18, 18, headerWidth, 166)', method)
+        self.assertIn('CHeroArea>(297, 66', source)
+        self.assertIn('CLabel>(320, 516', source)
+        self.assertIn('CButton>(Point(288, 532)', source)
+        self.assertLess(516 + 6, 532)
+        self.assertLessEqual(532 + 32, 568)
+        self.assertLessEqual(294 + 108 + 96, 516 - 12)
+        # CWindowObject::showAll adds these native DIALGBOX border dimensions.
+        self.assertLessEqual(640 + 28, 800)
+        self.assertLessEqual(568 + 29, 600)
+
+    def test_perk_exposes_distinct_parent_icon_name_and_rank(self):
+        source = (ROOT / 'client/windows/GUIClasses.cpp').read_text()
+        component = source.split('class CLevelUpPerkComponent', 1)[1].split('CLevelWindow::CLevelWindow', 1)[0]
+        self.assertIn('setCustomIcon(icon)', component)
+        self.assertIn('CComponent::small', component)
+        self.assertIn('parentSkill->customSubtitle = parentName', component)
+        self.assertIn('translate("core.skilllev", requiredRank - 1)', component)
+        self.assertIn('parentSkill->setHorizontalLayout(226, 40)', component)
+
     def test_actual_snapshot_preserves_hero_level_type(self):
         snapshot = (ROOT / 'client/windows/GUIClasses.h').read_text()
         hero = (ROOT / 'lib/mapObjects/CGHeroInstance.h').read_text()

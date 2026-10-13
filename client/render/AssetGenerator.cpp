@@ -32,6 +32,7 @@
 #include "../../lib/RiverHandler.h"
 #include "../../lib/RoadHandler.h"
 #include "../../lib/TerrainHandler.h"
+#include "../../lib/constants/NumericConstants.h"
 
 #include <cmath>
 #include <limits>
@@ -2481,31 +2482,34 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() cons
 
 AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground() const
 {
-	// Preserve the familiar title/portrait art and frame. Do not tile the
-	// decorated middle: it contains stars, portrait and button-shaped insets,
-	// which otherwise reappear behind the lower choices and confirmation.
-	auto source = ENGINE->renderHandler().loadImage(
-		ImageLocator(ImagePath::builtin("LVLUPBKG.bmp"), EImageBlitMode::COLORKEY));
-	constexpr int extraHeight = 64;
-	constexpr int topFrame = 184;
-	constexpr int bottomFrame = 12;
-	constexpr int sideFrame = 12;
-	const Point size(source->width(), source->height() + extraHeight);
-	auto image = createDialogBackground(size);
+	// Continuous leather and one connected native level-up header, not a
+	// collage of medal/portrait cutouts. CWindowObject supplies DIALGBOX borders.
+	// Content568 + native border29 fits the minimum600px logical viewport.
+	auto image = createDialogBackground(Point(640, 568));
 	Canvas canvas = image->getCanvas();
-	canvas.draw(source, Point(0, 0), Rect(0, 0, source->width(), topFrame));
-
-	const int sourceMiddleHeight = source->height() - topFrame - bottomFrame;
-	for(int y = topFrame; y < size.y - bottomFrame; )
+	auto original = ENGINE->renderHandler().loadImage(
+		ImageLocator(ImagePath::builtin("LVLUPBKG.bmp"), EImageBlitMode::COLORKEY));
+	// Native frame bevel extends through pixel17. Keep one connected focal
+	// region inside that bevel, preserving native caption/portrait coordinates.
+	const int headerWidth = original->width() - 36;
+	canvas.draw(original, Point((640 - headerWidth) / 2, 18), Rect(18, 18, headerWidth, 166));
+	const auto recessed = [&canvas](const Rect & rect)
 	{
-		const int height = std::min(sourceMiddleHeight, size.y - bottomFrame - y);
-		canvas.draw(source, Point(0, y), Rect(0, topFrame, sideFrame, height));
-		canvas.draw(source, Point(size.x - sideFrame, y),
-			Rect(source->width() - sideFrame, topFrame, sideFrame, height));
-		y += height;
+		const ColorRGBA shadow(45, 31, 20);
+		canvas.drawColorBlended(rect, ColorRGBA(0, 0, 0, 36));
+		canvas.drawBorder(rect, ColorRGBA(128, 100, 75));
+		canvas.drawLine(Point(rect.x + 1, rect.y + 1),
+			Point(rect.x + rect.w - 2, rect.y + 1), shadow, shadow);
+		canvas.drawLine(Point(rect.x + 1, rect.y + 1),
+			Point(rect.x + 1, rect.y + rect.h - 2), shadow, shadow);
+	};
+	for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
+		recessed(Rect(24 + i * 148, 190, 140, 72));
+	for(int row = 0; row < 2; ++row)
+	{
+		recessed(Rect(24, 294 + row * 108, 284, 96));
+		recessed(Rect(332, 294 + row * 108, 284, 96));
 	}
-	canvas.draw(source, Point(0, size.y - bottomFrame),
-		Rect(0, source->height() - bottomFrame, source->width(), bottomFrame));
 	return image;
 }
 
