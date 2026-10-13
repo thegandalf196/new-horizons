@@ -314,6 +314,7 @@ jobs:
           -DENABLE_NH_ART_CACHE_REGRESSION=ON
           -DENABLE_NH_PREVIEW_SURFACE_REGRESSION=ON
           -DENABLE_NH_SDL3_OUTLINE_REGRESSION=ON
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
@@ -346,7 +347,23 @@ jobs:
 
       - name: Compile Windows x64 client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
-        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest nhArtStartupRuntimeTest nhImageOptimizerRuntimeTest nhCreaturePreviewSurfaceRuntimeTest nhSdl3OutlineRuntimeTest --parallel 4
+        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest nhArtStartupRuntimeTest nhImageOptimizerRuntimeTest nhCreaturePreviewSurfaceRuntimeTest nhSdl3OutlineRuntimeTest --parallel 4 -- -d keeprsp
+
+      - name: Record bounded Windows AI compiler flag evidence
+        if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
+        shell: bash
+        run: |
+          python -m unittest discover -s tools/ci -p test_windows_ai_compile_flags.py
+          python tools/ci/windows_ai_compile_flags.py --build-root build/new-horizons-windows-x64 --output build/new-horizons-windows-x64/preflight/windows-ai-compile-flags.json
+
+      - name: Retain only Windows AI compiler flag evidence
+        if: ${{ always() && !inputs.preflight_only && inputs.repack_run_id == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-AI-compile-flags-${{ github.sha }}
+          path: build/new-horizons-windows-x64/preflight/windows-ai-compile-flags.json
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Stage upstream runtime and resources
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
