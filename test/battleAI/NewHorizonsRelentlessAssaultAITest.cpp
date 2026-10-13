@@ -41,6 +41,9 @@ protected:
 		ASSERT_GE(decodedOffense, 0);
 		const SecondarySkill offense(decodedOffense);
 		hero->setSecSkillLevel(offense, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		// A selected Expert perk requires one validated choice at each earlier tier.
+		hero->applyPerkSelection({newHorizonsOffense::SKILL, "new-horizons:offense.executioner"});
+		hero->applyPerkSelection({newHorizonsOffense::SKILL, "new-horizons:offense.armorPiercer"});
 		hero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT});
 		ASSERT_TRUE(hero->hasActivePerk(
 			newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT));
@@ -266,7 +269,8 @@ TEST_F(NewHorizonsRelentlessAssaultAITest, DefendingHeroStreakDoesNotIncreaseRet
 	ASSERT_EQ(battle()->battleGetRelentlessAssaultDamagePercent(defender, attacker), 10);
 
 	RelentlessAssaultEnvironment environment(gameState());
-	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(1));
+	ASSERT_EQ(callback->battleGetFightingHero(BattleSide::DEFENDER), defenderSideHero);
 	const auto retaliationDamage = [&](bool seeded)
 	{
 		auto model = std::make_shared<HypotheticBattle>(&environment, callback);
