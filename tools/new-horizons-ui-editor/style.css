@@ -1,0 +1,36 @@
+/* Editor chrome and explicit procedural preview; not shipped gameplay art. */
+:root { color-scheme: dark; font: 14px system-ui, sans-serif; color: #e1dac8; background: #181a1c; }
+* { box-sizing: border-box; }
+body { margin: 0; } header { padding: 12px 18px 8px; border-bottom: 1px solid #554833; }
+h1 { font-size: 19px; margin: 0 0 5px; } h2 { font-size: 14px; margin: 14px 0 8px; }
+small { color: #c0a466; font-size: 11px; } p { color: #aca89f; line-height: 1.45; font-size: 12px; margin: 6px 0; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; background: #24272b; }
+button, select, input { font: inherit; border: 1px solid #655642; border-radius: 2px; padding: 5px 7px; background: #303235; color: #e7e0cf; }
+button { cursor: pointer; } button:hover { border-color: #d5b86b; } button:disabled { opacity: .4; cursor: default; }
+label { display: flex; align-items: center; gap: 6px; font-size: 12px; } input[type=number] { width: 76px; } input[type=checkbox] { accent-color: #c5a65f; }
+main { display: grid; grid-template-columns: 230px minmax(360px, 1fr) 270px; height: calc(100vh - 153px); min-height: 640px; }
+aside { padding: 0 14px 15px; overflow: auto; background: #202326; } .palette { border-right: 1px solid #4b4235; } .inspector { border-left: 1px solid #4b4235; }
+.row, .pair { display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; } .pair > label { flex: 1; flex-direction: column; align-items: start; }
+#layers { display: flex; flex-direction: column; gap: 3px; max-height: 310px; overflow: auto; margin-bottom: 12px; }
+.layer-row { text-align: left; font-size: 12px; } .layer-row[aria-pressed=true] { border-color: #f3d079; background: #514530; }
+#properties > label { margin: 9px 0; flex-direction: column; align-items: start; } #properties > label input, #properties > label select { width: 100%; }
+fieldset { border: 1px solid #655642; padding: 7px; margin-top: 14px; } fieldset label { margin: 7px 0; } #tile-resource { width: 100%; }
+.workspace { overflow: auto; padding: 22px; background: #141517; } #scaled-board { position: relative; margin: 0 auto; }
+#board { position: absolute; top: 0; left: 0; transform-origin: top left; background: #352317; outline: 1px solid #8b7956; isolation: isolate; }
+#board.grid::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1000; background-image: linear-gradient(#e8d6a018 1px, transparent 1px), linear-gradient(90deg, #e8d6a018 1px, transparent 1px); background-size: var(--grid) var(--grid); }
+.layer { position: absolute; overflow: hidden; user-select: none; touch-action: none; cursor: move; color: #eed6a2; font: 13px Georgia, serif; display: flex; align-items: center; justify-content: center; white-space: pre-wrap; text-align: center; }
+.layer.locked { cursor: pointer; } .layer.selected { outline: 2px solid #73cde4; outline-offset: -2px; }
+.layer img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; image-rendering: pixelated; }
+.layer .placeholder { pointer-events: none; padding: 3px; text-shadow: 1px 1px #000; }
+.type-panel .placeholder, .type-frame .placeholder { display: none; }
+.type-frame { box-shadow: inset 0 0 0 3px #ad8950, inset 0 0 0 5px #382618, inset 0 0 0 7px #816944; pointer-events: auto; }
+.type-banner { border: 2px dashed #a8854d; background: #52332040; } .type-crest { border: 2px dotted #bd995e; }
+.type-hero, .type-icon { border: 2px inset #9b7f4d; background: #15110d; }
+.type-perk { box-shadow: inset 0 0 0 2px #2e2015, inset 0 0 0 3px #866942; }
+.type-button { border: 3px outset #967a4a; background: #51412a; }
+.preview-leather { background-color: #4a3020; background-image: repeating-linear-gradient(17deg, #ffffff05 0 1px, transparent 1px 5px), repeating-linear-gradient(93deg, #00000018 0 1px, transparent 1px 7px); }
+.preview-stone { background-color: #4b4942; background-image: repeating-linear-gradient(7deg, #00000018 0 1px, transparent 1px 9px); }
+.preview-plain { background-color: #302a21; }
+.resize { position: absolute; right: 1px; bottom: 1px; width: 10px; height: 10px; background: #73cde4; border: 1px solid #153d48; cursor: nwse-resize; z-index: 2; }
+.caption { max-width: 700px; margin: 18px auto; } footer { padding: 9px 16px; background: #262b30; border-top: 1px solid #4d4538; font-size: 12px; }
+@media (max-width: 1000px) { main { grid-template-columns: 180px minmax(360px, 1fr) 220px; } aside { padding: 0 8px 10px; } }

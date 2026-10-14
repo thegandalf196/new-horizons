@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "New Horizons offline prototype layout v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "status",
+    "name",
+    "canvas",
+    "grid",
+    "materials",
+    "layers"
+  ],
+  "properties": {
+    "format": {
+      "const": "new-horizons-ui-layout"
+    },
+    "version": {
+      "const": 1
+    },
+    "status": {
+      "const": "prototype"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 4096
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 4096
+        }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "size",
+        "snap"
+      ],
+      "properties": {
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "snap": {
+          "type": "boolean"
+        }
+      }
+    },
+    "materials": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "resource",
+          "tileWidth",
+          "tileHeight",
+          "origin",
+          "preview"
+        ],
+        "properties": {
+          "kind": {
+            "const": "tile"
+          },
+          "resource": {
+            "type": "string",
+            "maxLength": 160,
+            "pattern": "^(?!(?:[a-zA-Z]:|(?:[dD][aA][tT][aA]|[hH][tT][tT][pP][sS]?|[fF][iI][lL][eE]|[bB][lL][oO][bB]|[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]):|/))(?!.*//)(?!.*(?:^|[:/])\\.\\.(?:/|$))(?![^:]*:/)(?:[a-zA-Z0-9_-]+:)?[a-zA-Z0-9_./-]*$"
+          },
+          "tileWidth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4096
+          },
+          "tileHeight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4096
+          },
+          "origin": {
+            "enum": [
+              "canvas",
+              "local"
+            ]
+          },
+          "preview": {
+            "enum": [
+              "leather",
+              "stone",
+              "plain"
+            ]
+          }
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "label",
+          "x",
+          "y",
+          "w",
+          "h",
+          "anchor",
+          "binding",
+          "material",
+          "assetRef",
+          "visible",
+          "locked"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,63}$"
+          },
+          "type": {
+            "enum": [
+              "panel",
+              "frame",
+              "banner",
+              "crest",
+              "hero",
+              "icon",
+              "perk",
+              "text",
+              "button",
+              "image"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "x": {
+            "type": "integer",
+            "minimum": -8192,
+            "maximum": 8192
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -8192,
+            "maximum": 8192
+          },
+          "w": {
+            "type": "integer",
+            "minimum": 8,
+            "maximum": 4096
+          },
+          "h": {
+            "type": "integer",
+            "minimum": 8,
+            "maximum": 4096
+          },
+          "anchor": {
+            "enum": [
+              "top-left",
+              "top-center",
+              "top-right",
+              "center-left",
+              "center",
+              "center-right",
+              "bottom-left",
+              "bottom-center",
+              "bottom-right"
+            ]
+          },
+          "binding": {
+            "type": "string",
+            "maxLength": 160,
+            "pattern": "^[a-zA-Z0-9_.\\[\\]-]*$"
+          },
+          "material": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "assetRef": {
+            "type": "string",
+            "maxLength": 160,
+            "pattern": "^(?!(?:[a-zA-Z]:|(?:[dD][aA][tT][aA]|[hH][tT][tT][pP][sS]?|[fF][iI][lL][eE]|[bB][lL][oO][bB]|[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]):|/))(?!.*//)(?!.*(?:^|[:/])\\.\\.(?:/|$))(?![^:]*:/)(?:[a-zA-Z0-9_-]+:)?[a-zA-Z0-9_./-]*$"
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "locked": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}
