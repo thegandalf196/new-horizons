@@ -1,5 +1,24 @@
 # New Horizons UI and asset status register
 
+## Selected provisional perk draft batch
+
+Ninety-four completed purpose-made perk drafts are selected for provisional
+runtime use: the initial 90 plus Quartermaster, Passing Lines, Sanctuary Keeper
+and Lucky Day. Each exact semantic ID has a dedicated 44px shared icon binding,
+four-state 44px animation and a retained 32px companion image. Existing compact
+animation consumers continue scaling the 44px family; native 32px consumption is
+not claimed. Selection and original-generation/own-draft-edit provenance are
+recorded in `assets/new-horizons/perk-art-selections.json`. Counterfire, Druidic
+Luck and Lucky Aim select v2; prior versions, masters, prompts and reviews remain
+private.
+
+Artwork status is **Provisional**, never Final merely because it is packaged.
+The existing 3137 selected payloads are preserved exactly; the batch contributes
+658 additional resources under the unchanged NHART format. Source/container
+verification and Linux client compilation pass. Package-only rendered
+acceptance and ordinary playable delivery remain pending. Later perk,
+hero-specialty and spell batches are not implicitly included in these 94 entries.
+
 Creature encyclopedia shortcut: **Provisional**. Persistent ordinary-creature
 information windows expose a compact gold `i` on the existing button backing.
 It opens the existing encyclopedia using the resolved scoped creature identity;
