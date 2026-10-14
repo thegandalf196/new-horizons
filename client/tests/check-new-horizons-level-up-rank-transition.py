@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Source guard for New Horizons level-up Skill-rank subtitles.
+"""Source guard for the approved offered-rank and parent-Skill subtitles.
 
 This checks source wiring only. It is not a native UI, layout, or rendered
 acceptance test.
@@ -53,42 +53,29 @@ def verify_rank_transition_wiring() -> None:
         "existing integer SEC_SKILL component with offered rank",
     )
 
-    # The exact 0/1/2 index mapping: zero has no current rank, while positive
-    # values and the offered rank use the existing Basic/Advanced/Expert table.
+    # Display only the offered Basic/Advanced/Expert rank, as requested.
+    # The actual current rank still determines the offer and component value.
     require(skill_branch, "if(newHorizonsMagic::rulesActive(hero->getMagicRules()))", "saved New Horizons gate")
-    require(skill_branch, "currentRank == 0", "unlearned current-rank branch")
-    require(
-        skill_branch,
-        'translate("new-horizons.levelUp.skill.unlearned")',
-        "localized unlearned label for rank zero",
-    )
-    require(
-        skill_branch,
-        'translate("core.skilllev", currentRank - 1)',
-        "current-rank Basic/Advanced mapping",
-    )
     require(
         skill_branch,
         'translate("core.skilllev", offeredRank - 1)',
         "offered-rank Basic/Advanced/Expert mapping",
     )
-    require(
-        skill_branch,
-        'MetaString::createFromTextID("new-horizons.levelUp.skill.rankTransition")',
-        "localized current-to-offered template",
-    )
-    current_replacement = skill_branch.index("transition.replaceRawString(currentRankText)")
-    offered_replacement = skill_branch.index("transition.replaceRawString(offeredRankText)")
-    assert current_replacement < offered_replacement, "rank transition must show current before offered"
+    assert 'skill.unlearned' not in skill_branch, "do not display the rejected Unlearned label"
+    assert 'skill.rankTransition' not in skill_branch, "do not restore the rejected transition subtitle"
     require(skill_branch, 'LIBRARY->skillh->getById(skill)->getNameTranslated()', "Skill name on second subtitle line")
-    require(skill_branch, 'comp->customSubtitle = transition.toString(&GAME->translator()) + "\\n"', "rank subtitle override")
+    require(skill_branch, 'comp->customSubtitle = offeredRankText + "\\n"', "offered rank above Skill name")
 
     assert "newHorizonsMagic::rulesActive" not in perk_branch, "rank transition gate must not alter perk cards"
     assert "rankTransition" not in perk_branch, "perk cards must keep their separate current presentation"
-    require(perk_branch, "perk.requiredRank - 1", "existing perk prerequisite rank subtitle")
+    require(perk_branch, "perk.requiredRank, perk.name", "pass prerequisite rank and name to perk card")
     require(perk_branch, "perk.name", "existing perk name subtitle")
     require(perk_branch, "newHorizonsPerkHelp::format", "existing perk help")
     require(perk_branch, "newHorizonsPerkIcon(perk.selection.perkId)", "existing perk icon")
+    _, _, parent_card = braced_block(LEVEL, "class CLevelUpPerkComponent")
+    require(parent_card, 'parentSkill->customSubtitle = parentName + "\\n"', "visible canonical parent Skill name")
+    require(parent_card, 'translate("core.skilllev", requiredRank - 1)', "parent Skill's required rank")
+    require(parent_card, 'requiredRank, CComponent::small', "parent Skill icon rank")
 
     component_subtitle = COMPONENT.split("std::string CComponent::getSubtitle() const", 1)[1]
     require(component_subtitle, "if (!customSubtitle.empty())", "custom subtitle readback")
@@ -101,17 +88,13 @@ def verify_rank_transition_wiring() -> None:
     assert unlearned and unlearned.strip(), "missing localized unlearned text"
     assert transition and transition.count("%s") == 2, "rank transition needs current and offered placeholders"
 
-    expected = {
-        0: (unlearned, "Basic"),
-        1: ("Basic", "Advanced"),
-        2: ("Advanced", "Expert"),
-    }
-    assert all(current and offered for current, offered in expected.values())
+    ranks = ("Basic", "Advanced", "Expert")
+    assert [ranks[(current + 1) - 1] for current in range(3)] == list(ranks)
 
 
 def main() -> None:
     verify_rank_transition_wiring()
-    print("New Horizons level-up rank transition source wiring passed (not rendered acceptance)")
+    print("New Horizons offered-rank and parent-Skill source wiring passed (not rendered acceptance)")
 
 
 if __name__ == "__main__":
