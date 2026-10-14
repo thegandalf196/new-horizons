@@ -1,5 +1,6 @@
 /* Offline layout prototype, part of VCMI. GPL-2.0-or-later. */
 import * as model from './model.mjs';
+import {exportTranslationReport} from './translation.mjs';
 const $ = id => document.getElementById(id);
 let history, selected = '', zoom = 1, gesture = null, layoutEpoch = 0;
 const assets = new Map();
@@ -72,6 +73,7 @@ $('front').onclick = () => attempt(() => commit(model.reorderLayer(history.curre
 $('import').onclick = () => $('layout-file').click();
 $('layout-file').onchange = async () => { const file = $('layout-file').files[0]; try { if(!file) return; const epoch = ++layoutEpoch; gesture = null; if(file.size > 1024 * 1024) throw new Error('Layout exceeds 1 MiB'); const layout = model.parseLayout(await file.text()); if(epoch !== layoutEpoch) return; history = new model.History(layout); selected = ''; render(); status('Imported references need private PNGs rebound in this session.'); } catch(error) { status(error.message); } finally { $('layout-file').value = ''; } };
 $('export').onclick = () => attempt(() => { const url = URL.createObjectURL(new Blob([model.exportLayout(history.current)],{type:'application/json'})); const a = document.createElement('a'); a.href = url; a.download = 'layout.nh-ui.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url),1000); status('Exported layout and references only; no PNG bytes or local filenames.'); });
+$('translation').onclick = () => attempt(() => { $('translation-report').textContent = exportTranslationReport(history.current); $('translation-preview').open = true; status('Offline geometry proposals only: runtimeReady=false; all blockers retained.'); });
 $('asset-import').onclick = () => $('asset-file').click();
 $('asset-file').onchange = async () =>
 {

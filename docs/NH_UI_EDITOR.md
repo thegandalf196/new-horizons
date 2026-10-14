@@ -1,7 +1,7 @@
 # Offline New Horizons UI layout prototype
 
 Run `python3 tools/new-horizons-ui-editor/serve.py`, then open
-`http://127.0.0.1:8766` yourself. The server binds loopback only, serves six
+`http://127.0.0.1:8766` yourself. The server binds loopback only, serves seven
 fixed files, accepts no uploads and launches no browser/game. No dependencies
 or remote services are required; a modern browser with ES modules is needed.
 
@@ -60,3 +60,38 @@ checked for the edited geometry, tiled material and reference-only/privacy contr
 The original failed harness result is retained; all observed processes exited and
 both owned ports closed. This is scoped editor evidence, not game integration or
 final-art approval. A human authoring trial and broader browser coverage remain open.
+
+## Offline native-mapping check
+
+**Check native mapping** produces a read-only diagnostic report in the inspector.
+Regenerate it after an edit; it is a snapshot, not live validation. The same report
+is available without a server/browser:
+
+```sh
+node tools/new-horizons-ui-editor/validate-layout.mjs tools/new-horizons-ui-editor/level-up.example.json
+```
+
+Valid layouts return exit0 and a version1 `new-horizons-ui-translation-report`.
+Malformed/unreadable/nonregular/oversized input returns exit2 without echoing
+private paths or input excerpts. Output goes to stdout; no game/config/art file is
+written or loaded. All reports explicitly have `runtimeReady: false`.
+
+The actual level-up consumer is hardcoded `CLevelWindow` in `GUIClasses.cpp`;
+`InterfaceObjectConfigurable` is only a reference contract, not an active adapter.
+Reports resolve all anchors to validated integer rectangles and identify narrow
+portrait/button positions, centered-label positions/widths and canonical primary
+icon positions. Known point proposals also retain current approved reference positions and an
+equality flag; differing positions are proposals, not automatic UI changes.
+Offer rows and combined primary gain/name placeholders are only
+group envelopes: native groups/labels cannot be replaced independently from these.
+Native skill/perk values, ranks, offer count, callbacks, shortcuts, text/font
+metrics, images and dynamic visibility remain unresolved and engine-owned.
+
+Every layer, including hidden and unknown bindings, remains in the report with
+its blockers. Duplicate roles and incompatible layer types are flagged. A local
+tiled material has a rectangle proposal but unverified native cell dimensions;
+canvas-origin tiling is explicitly incompatible with the current configurable
+`CFilledTexture` builder's panel-local phase. Private PNG references and procedural
+ornaments are never represented as packaged engine assets. These reports are
+geometry proposals, **not loadable widget JSON or authorization to change the
+approved shipping layout**. Existing JSON import/export is unchanged.
