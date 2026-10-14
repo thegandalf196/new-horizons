@@ -25,6 +25,7 @@ protected:
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepareLandMine(int32_t spellPower = 43)

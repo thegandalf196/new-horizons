@@ -9,10 +9,12 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsHeroRulesFixture.h"
+#include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/constants/StringConstants.h"
 #include "../../lib/modding/CModHandler.h"
+#include <limits>
 
 using namespace newHorizonsHeroes;
 
@@ -55,6 +57,102 @@ TEST(NewHorizonsHeroRulesTest, NamedSchemaAcceptsFullAndEmptyAndRejectsMalformed
 	bad = testHeroRules();
 	bad["extraGrowth"].Vector()[0]["chances"].Vector()[1].Integer() = 101;
 	EXPECT_FALSE(valid(bad));
+}
+
+TEST(NewHorizonsHeroRulesTest, DruidPolicyCapturesExactCoefficientsAndKeepsOlderAbsence)
+{
+	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
+	auto rules = testHeroRules();
+	rules["druidSpecialties"] = configured["druidSpecialties"];
+	ASSERT_TRUE(rules["druidSpecialties"].isStruct());
+	ASSERT_NO_THROW(validateHeroRules(rules, true));
+	const auto captured = resolveHeroRules(rules, HeroClassID(0));
+	const auto policy = druidSpecialtyRules(captured);
+	ASSERT_TRUE(policy);
+	EXPECT_EQ(policy->highLore.percentPerLevel, 10);
+	EXPECT_EQ(policy->highLore.maximumPercent, 100);
+	EXPECT_EQ(policy->restorativeSorceress.percentPerLevel, 5);
+	EXPECT_EQ(policy->naturalPhilosopher.percentPerLevel, 5);
+	EXPECT_EQ(policy->knowledgeObjectExperiencePercent, 25);
+	EXPECT_NO_THROW(validateDruidSpecialtySerialization(captured, true));
+	EXPECT_THROW(validateDruidSpecialtySerialization(captured, false), std::runtime_error);
+	rules["druidSpecialties"]["highLore"]["percentPerLevel"].Integer() = 20;
+	EXPECT_EQ(druidSpecialtyRules(captured)->highLore.percentPerLevel, 10);
+	auto old = captured;
+	old.Struct().erase("druidSpecialties");
+	const auto before = old;
+	EXPECT_FALSE(druidSpecialtyRules(old));
+	EXPECT_NO_THROW(validateResolvedHeroRules(old));
+	EXPECT_NO_THROW(validateDruidSpecialtySerialization(old, false));
+	EXPECT_EQ(old, before);
+
+	std::vector<JsonNode> invalid(8, captured);
+	invalid[0]["druidSpecialties"]["version"].Integer() = 2;
+	invalid[1]["druidSpecialties"]["highLore"]["percentPerLevel"].Integer() = -1;
+	invalid[2]["druidSpecialties"]["highLore"]["percentPerLevel"].Float() = 1.5;
+	invalid[3]["druidSpecialties"]["restorativeSorceress"]["maximumPercent"].Integer() = 1001;
+	invalid[4]["druidSpecialties"]["naturalPhilosopher"]["knowledgeObjectExperiencePercent"].Integer() = -1;
+	invalid[5]["druidSpecialties"].Struct().erase("highLore");
+	invalid[6]["druidSpecialties"]["unexpected"].Bool() = true;
+	invalid[7]["druidSpecialties"]["highLore"] = JsonNode(false);
+	for(const auto & malformed : invalid)
+	{
+		EXPECT_THROW(validateResolvedHeroRules(malformed), std::runtime_error);
+		EXPECT_THROW(druidSpecialtyRules(malformed), std::runtime_error);
+		EXPECT_THROW(validateDruidSpecialtySerialization(malformed, true), std::runtime_error);
+	}
+}
+
+TEST(NewHorizonsHeroRulesTest, DruidContributionUsesIndependentFloorLevelCapAndSafeSaturation)
+{
+	const LevelScaledSpecialty highLore{10, 100};
+	EXPECT_EQ(druidSpecialtyPercent(0, highLore), 0);
+	EXPECT_EQ(druidSpecialtyPercent(1, highLore), 10);
+	EXPECT_EQ(druidSpecialtyPercent(10, highLore), 100);
+	EXPECT_EQ(druidSpecialtyPercent(20, highLore), 100);
+	EXPECT_EQ(druidSpecialtyPercent(std::numeric_limits<int>::max(), highLore), 100);
+	EXPECT_EQ(druidSpecialtyExtra(30, 10), 3);
+	EXPECT_EQ(druidSpecialtyExtra(29, 10), 2);
+	EXPECT_EQ(druidSpecialtyExtra(0, 100), 0);
+	EXPECT_EQ(druidSpecialtyExtra(30, 0), 0);
+	EXPECT_EQ(druidSpecialtyExtra(std::numeric_limits<int64_t>::max(), 100), std::numeric_limits<int64_t>::max());
+	EXPECT_EQ(druidSpecialtyExtra(std::numeric_limits<int64_t>::max(), 1000), std::numeric_limits<int64_t>::max());
+	EXPECT_THROW(druidSpecialtyPercent(-1, highLore), std::invalid_argument);
+	EXPECT_THROW(druidSpecialtyPercent(1, (LevelScaledSpecialty{1001, 100})), std::invalid_argument);
+	EXPECT_THROW(druidSpecialtyExtra(-1, 10), std::invalid_argument);
+	EXPECT_THROW(druidSpecialtyExtra(30, 1001), std::invalid_argument);
+}
+
+TEST(NewHorizonsHeroRulesTest, FreshWeightedPerkCaptureRequiresWholeClassTableButLegacyValidationDoesNot)
+{
+	if(!newHorizonsModuleActive())
+		GTEST_SKIP() << "Requires scoped canonical New Horizons skill identities";
+	const JsonNode complete(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(usesWeightedPerkOffers(perks));
+	ASSERT_NO_THROW(validateWeightedPerkCapture(complete, perks));
+	auto missing = complete;
+	missing.Struct().erase("skillOfferWeights");
+	EXPECT_THROW(validateWeightedPerkCapture(missing, perks), std::runtime_error);
+	missing["skillOfferWeights"] = JsonNode();
+	EXPECT_THROW(validateWeightedPerkCapture(missing, perks), std::runtime_error);
+	EXPECT_THROW(validateWeightedPerkCapture(JsonNode(), perks), std::runtime_error);
+	EXPECT_THROW(validateWeightedPerkCapture(JsonNode(JsonMap{}), perks), std::runtime_error);
+	auto partial = complete;
+	ASSERT_GT(partial["skillOfferWeights"].Struct().size(), 1);
+	partial["skillOfferWeights"].Struct().erase(partial["skillOfferWeights"].Struct().begin());
+	EXPECT_THROW(validateWeightedPerkCapture(partial, perks), std::runtime_error);
+	partial = complete;
+	auto & row = partial["skillOfferWeights"].Struct().begin()->second.Struct();
+	row.erase(row.begin());
+	EXPECT_THROW(validateWeightedPerkCapture(partial, perks), std::runtime_error);
+	auto legacyPerks = perks;
+	legacyPerks.Struct().erase("offerWeightPolicyVersion");
+	const auto before = missing;
+	EXPECT_NO_THROW(validateWeightedPerkCapture(missing, legacyPerks));
+	EXPECT_NO_THROW(validateHeroRules(missing, true));
+	EXPECT_NO_THROW(validateWeightedPerkCapture(testHeroRules(), legacyPerks));
+	EXPECT_EQ(missing, before);
 }
 
 TEST(NewHorizonsHeroRulesTest, ResolvedSnapshotDoesNotFollowChangedInstalledProfile)

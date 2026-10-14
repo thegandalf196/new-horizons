@@ -89,6 +89,30 @@ struct DLL_LINKAGE SkillSpecialtyRules
 	std::vector<SecondarySkill> skills;
 };
 
+enum class DruidSpecialtyKind { HIGH_LORE, RESTORATIVE_SORCERESS, NATURAL_PHILOSOPHER };
+
+struct DLL_LINKAGE LevelScaledSpecialty
+{
+	int percentPerLevel = 0;
+	int maximumPercent = 0;
+};
+
+/// Explicit captured coefficients for three authored identities, not faction bonuses.
+struct DLL_LINKAGE DruidSpecialtyRules
+{
+	int version = 1;
+	LevelScaledSpecialty highLore;
+	LevelScaledSpecialty restorativeSorceress;
+	LevelScaledSpecialty naturalPhilosopher;
+	int knowledgeObjectExperiencePercent = 0;
+};
+
+DLL_LINKAGE std::optional<DruidSpecialtyRules> druidSpecialtyRules(const JsonNode & development);
+DLL_LINKAGE void validateDruidSpecialtySerialization(const JsonNode & development, bool supported);
+DLL_LINKAGE int druidSpecialtyPercent(int level, const LevelScaledSpecialty & rule);
+/// Floor the extra contribution; saturation prevents overflow before existing caps.
+DLL_LINKAGE int64_t druidSpecialtyExtra(int64_t ordinaryContribution, int percent);
+
 /// Read-only live-hero presentation. No secondary attributes or masteries are
 /// fabricated here. Primary growth is the fixed class vector; version 3 also
 /// exposes the owned skills' independent bonus opportunities.

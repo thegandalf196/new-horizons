@@ -133,7 +133,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ControlledBlastIsAcceptedThroughAdvance
 			if(!heroSkillSeedInitialized)
 				probe.nextInt();
 			const auto offerSeed = static_cast<uint64_t>(static_cast<uint32_t>(probe.nextInt()));
-			if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed), perkId))
+			if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext()), perkId))
 				return candidateSeed;
 		}
 		return 0;
@@ -228,7 +228,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ScoutingImmediatelyRevealsExpandedSight
 	bool selected = false;
 	for(uint64_t seed = 0; seed < 1000 && !selected; ++seed)
 	{
-		const auto offer = hero->getPerkState().prepareOffer(ranks, seed);
+		const auto offer = hero->getPerkState().prepareOffer(ranks, seed, hero->getPerkOfferWeightContext());
 		for(size_t index = 0; index < offer.size(); ++index)
 		{
 			if(offer[index].selection.perkId != "new-horizons:logistics.scouting")
@@ -278,7 +278,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ExternalRankAdvancementKeepsRankAndOffe
 	std::vector<newHorizonsHeroes::PerkOfferCandidate> offer;
 	for(uint64_t seed = 0; seed < 1000; ++seed)
 	{
-		offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+		offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 		if(offerContains(offer, "new-horizons:sylvanLuck.elvenPrecision"))
 			break;
 	}
@@ -331,7 +331,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ActiveBasicArcheryPerkUnlocksAdvancedRa
 	std::vector<newHorizonsHeroes::PerkOfferCandidate> offer;
 	for(uint64_t seed = 0; seed < 1000; ++seed)
 	{
-		offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+		offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 		if(offerContains(offer, "new-horizons:archery.armorPiercingShot"))
 			break;
 	}
@@ -374,7 +374,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ExperienceOfferChoiceActivatesEffectAnd
 		CRandomGenerator probe(candidateSeed);
 		probe.nextInt();
 		const auto offerSeed = static_cast<uint64_t>(static_cast<uint32_t>(probe.nextInt()));
-		if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed), overchargerId))
+		if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext()), overchargerId))
 		{
 			rootSeed = candidateSeed;
 			break;
@@ -472,7 +472,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, RampartFactionSkillProgressionAndPerkCh
 		CRandomGenerator probe(candidateSeed);
 		probe.nextInt(); // hero-specific secondary/primary skill stream seed
 		const auto offerSeed = static_cast<uint64_t>(static_cast<uint32_t>(probe.nextInt()));
-		if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed),
+		if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext()),
 			"new-horizons:sylvanLuck.elvenPrecision"))
 		{
 			rootSeed = candidateSeed;
@@ -567,7 +567,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ChristianCanChooseInspirationalLeaderAn
 		CRandomGenerator probe(candidateSeed);
 		probe.nextInt();
 		const auto offerSeed = static_cast<uint64_t>(static_cast<uint32_t>(probe.nextInt()));
-		if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed),
+		if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext()),
 			inspirationalLeaderId))
 		{
 			rootSeed = candidateSeed;

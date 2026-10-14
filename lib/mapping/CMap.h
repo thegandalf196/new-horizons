@@ -215,6 +215,8 @@ public:
 	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
+	void validateNewHorizonsWeightedPerkSerialization(bool supported) const;
+	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsArtifactManaRegenerationSerialization(bool supported) const;
 	void validateNewHorizonsGlyphsOfFearSerialization(bool supported) const;
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
@@ -379,6 +381,10 @@ public:
 			validateNewHorizonsGlyphsOfFearSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
 		if(h.saving)
 			validateNewHorizonsLighthouseSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+		if(h.saving)
+			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+		if(h.saving)
+			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)
 			validateNewHorizonsStartingDevelopmentSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)

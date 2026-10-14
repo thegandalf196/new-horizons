@@ -1220,7 +1220,7 @@ TEST_F(NewHorizonsMagicStateTest, WizardCanChooseArcaneMemoryFromTheBasicWisdomO
 	bool selectedThroughOffer = false;
 	for(uint64_t offerSeed = 0; offerSeed < 4096 && !selectedThroughOffer; ++offerSeed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, offerSeed);
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, offerSeed, attackerSideHero->getPerkOfferWeightContext());
 		const auto arcaneMemory = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == ARCANE_MEMORY;

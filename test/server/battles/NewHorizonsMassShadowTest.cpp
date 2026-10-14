@@ -474,14 +474,14 @@ TEST_F(NewHorizonsMassShadowTest, GrandMaledictionIsAnExpertOfferAndAddsThenLose
 			: 0;
 	};
 
-	auto basicOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 1337);
+	auto basicOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 1337, attackerSideHero->getPerkOfferWeightContext());
 	EXPECT_TRUE(std::ranges::any_of(basicOffer, [](const auto & offer)
 	{
 		return offer.selection.perkId == maledictionKey && offer.requiredRank == MasteryLevel::BASIC;
 	}));
 	attackerSideHero->applyPerkSelection({shadowSkillKey, maledictionKey});
 	attackerSideHero->setSecSkillLevel(shadow, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	auto advancedOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 1337);
+	auto advancedOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 1337, attackerSideHero->getPerkOfferWeightContext());
 	EXPECT_FALSE(std::ranges::any_of(advancedOffer, [](const auto & offer)
 	{
 		return offer.selection.perkId == grandMaledictionKey;
@@ -490,7 +490,7 @@ TEST_F(NewHorizonsMassShadowTest, GrandMaledictionIsAnExpertOfferAndAddsThenLose
 	EXPECT_THROW(attackerSideHero->applyPerkSelection({shadowSkillKey, grandMaledictionKey}), std::runtime_error);
 
 	attackerSideHero->setSecSkillLevel(shadow, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	auto expertOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 1337);
+	auto expertOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 1337, attackerSideHero->getPerkOfferWeightContext());
 	const auto grandMalediction = std::ranges::find_if(expertOffer, [](const auto & offer)
 	{
 		return offer.selection.perkId == grandMaledictionKey;

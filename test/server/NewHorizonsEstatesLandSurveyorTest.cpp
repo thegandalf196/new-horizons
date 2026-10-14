@@ -145,7 +145,7 @@ protected:
 		};
 		for(uint64_t offerSeed = 0; offerSeed < 64; ++offerSeed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, offerSeed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext());
 			const auto selected = std::ranges::find_if(offer, [](const auto & candidate)
 			{
 				return candidate.selection.perkId == LAND_SURVEYOR;

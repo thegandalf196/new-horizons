@@ -1,5 +1,35 @@
 # New Horizons Pending Changes
 
+## Perk offers inherit full parent Skill weights
+
+Supersedes the final sentence of canonical "Class Skill offer weights": each
+eligible perk receives the hero class's full captured offer weight for its
+parent Skill. Do not divide that weight among a Skill's eligible perks. Apply
+existing perk legality and tier checks before drawing without replacement;
+zero weight excludes the parent's perks. Skill-choice drawing remains separate.
+
+The explicit captured offer policy controls new worlds. Earlier captured
+registries without that policy retain their previous offers and pending-choice
+validation. Installed defaults must not reinterpret an old saved query.
+Runtime configuration and server validation are integrated; native and playable
+verification are pending. Integrate this settled rule into the canonical
+section after verification rather than retaining a second permanent rule source.
+
+## Provisional coefficients for three authored Druid specialties
+
+Initial configurable values: Elleshar's High Lore10% per level, maximum100%,
+applied only to Intelligence's extra maximum Spell Points; Gem's Restorative
+Sorceress5% per level, maximum100%, applied to Cure's Spell Power healing
+component and First Aid Tent creature healing; Malcom's Natural Philosopher
+5% per level, maximum100%, applied to the core Learning experience bonus,
+plus25% raw experience from Learning Stones and Trees of Knowledge.
+
+These numbers are provisional, not asserted to come from the authored workbook.
+Historical captured absence retains previous behavior. No starting-profile,
+army, book or equipment changes accompany these numerical riders. See the
+provisional review ledger for boundaries and remaining verification; integrate
+the values into canonical Experimental Values after review.
+
 ## Provisional campaign special-creature Leadership requirements
 
 Enchanters require380 Leadership per creature; Sharpshooters require170.

@@ -50,6 +50,7 @@ protected:
 		else if(!enablePolicy)
 			rules["spells"]["core:teleport"]["ignoreInterveningBarriers"].Bool() = false;
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void prepare(int rank = 0)

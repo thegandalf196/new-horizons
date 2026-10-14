@@ -161,7 +161,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			if(std::ranges::any_of(offers, [&](const auto & offer)
 			{
 				return offer.selection.skillId == warcastingSkill && offer.selection.perkId == perkId;
@@ -180,7 +180,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offers.begin(), offers.end(), [&](const auto & offer)
 			{
 				return offer.selection.skillId == skillId && offer.selection.perkId == perkId;

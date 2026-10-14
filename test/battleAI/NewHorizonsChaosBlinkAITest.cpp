@@ -94,6 +94,7 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void SetUp() override

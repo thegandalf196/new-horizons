@@ -73,6 +73,7 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void prepare(const int32_t spellPower, const int32_t attackerCount = 10)

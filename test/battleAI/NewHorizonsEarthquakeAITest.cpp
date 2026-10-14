@@ -235,6 +235,8 @@ protected:
 				throw std::runtime_error("Missing Geomancer from the New Horizons perk registry");
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perks));
 		}
+		if(allowGeomancer)
+			captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void prepareHero(const int spellPower = 0)

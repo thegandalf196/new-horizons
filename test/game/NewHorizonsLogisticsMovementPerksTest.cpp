@@ -147,7 +147,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offer.begin(), offer.end(), [&perkId](const auto & entry)
 			{
 				return entry.selection.perkId == perkId;
@@ -331,7 +331,7 @@ TEST_F(NewHorizonsLogisticsMovementPerksTest, RoadmasterForecastMatchesOrthogona
 	const auto basicOffer = hero->getPerkState().prepareOffer([this](const std::string & skillId)
 	{
 		return hero->getPerkSkillRank(skillId);
-	}, 7);
+	}, 7, hero->getPerkOfferWeightContext());
 	EXPECT_TRUE(std::none_of(basicOffer.begin(), basicOffer.end(), [](const auto & candidate)
 	{
 		return candidate.selection.perkId == ROADMASTER_PERK || candidate.selection.perkId == WAYFARER_PERK;
@@ -345,7 +345,7 @@ TEST_F(NewHorizonsLogisticsMovementPerksTest, RoadmasterForecastMatchesOrthogona
 	const auto advancedOffer = hero->getPerkState().prepareOffer([this](const std::string & skillId)
 	{
 		return hero->getPerkSkillRank(skillId);
-	}, 13);
+	}, 13, hero->getPerkOfferWeightContext());
 	EXPECT_TRUE(std::none_of(advancedOffer.begin(), advancedOffer.end(), [](const auto & candidate)
 	{
 		return candidate.selection.perkId == WAYFARER_PERK;

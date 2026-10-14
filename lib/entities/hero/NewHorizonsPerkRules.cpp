@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsPerkRules.h"
+#include "NewHorizonsHeroRules.h"
 
 #include <array>
 #include <cmath>
@@ -156,9 +157,12 @@ void validatePerkRules(const JsonNode & rules)
 	if(!usesPerkRules(rules))
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
-		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills"});
+		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion"});
 	require(integer(rules["schemaVersion"], PERK_SCHEMA_VERSION, PERK_SCHEMA_VERSION), "schemaVersion");
 	require(integer(rules["rulesetVersion"], PERK_MIN_RULESET_VERSION, PERK_RULESET_VERSION), "rulesetVersion");
+	if(rules.Struct().contains("offerWeightPolicyVersion"))
+		require(integer(rules["offerWeightPolicyVersion"], PERK_OFFER_WEIGHT_POLICY_VERSION,
+			PERK_OFFER_WEIGHT_POLICY_VERSION), "offerWeightPolicyVersion");
 	require(rules["sourceDocument"].isString() && !rules["sourceDocument"].String().empty(), "sourceDocument");
 	require(rules["sourceSha256"].isString() && rules["sourceSha256"].String().size() == 64, "sourceSha256");
 	for(const auto c : rules["sourceSha256"].String())
@@ -207,6 +211,27 @@ void validatePerkRules(const JsonNode & rules)
 		require(counts[0] == PERK_BASIC_POOL_SIZE && counts[1] == PERK_ADVANCED_POOL_SIZE
 			&& counts[2] == PERK_EXPERT_POOL_SIZE, key + " must have four basic, four advanced and two expert perks");
 	}
+}
+
+bool usesWeightedPerkOffers(const JsonNode & rules)
+{
+	validatePerkRules(rules);
+	return usesPerkRules(rules) && rules.Struct().contains("offerWeightPolicyVersion");
+}
+
+void validateWeightedPerkSerialization(const JsonNode & rules, bool supported)
+{
+	if(usesWeightedPerkOffers(rules) && !supported)
+		throw std::runtime_error("Cannot serialize weighted perk offers to an older format");
+}
+
+void validateWeightedPerkCapture(const JsonNode & development, const JsonNode & perks)
+{
+	if(!usesWeightedPerkOffers(perks))
+		return;
+	require(usesRules(development), "weighted perk capture requires hero rules");
+	validateHeroRules(development, true);
+	require(development["skillOfferWeights"].isStruct(), "weighted perk capture requires the full skill offer table");
 }
 
 std::optional<SkillDefinition> perkSkill(const JsonNode & rules, std::string_view skillId)

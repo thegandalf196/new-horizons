@@ -29,6 +29,15 @@
 
 #include <vstd/RNG.h>
 
+namespace
+{
+std::optional<Obj> experienceRewardSource(const IObjectInterface * object)
+{
+	const auto * instance = dynamic_cast<const CGObjectInstance *>(object);
+	return instance ? std::optional<Obj>(instance->ID) : std::nullopt;
+}
+}
+
 bool Rewardable::Interface::rewardTeachesSecondarySkill(const Rewardable::VisitInfo & info, const CGHeroInstance * contextHero) const
 {
 	if(!contextHero)
@@ -265,7 +274,8 @@ void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEv
 		if (info.reward.primary[i] != 0)
 			gameEvents.changePrimSkill(hero, static_cast<PrimarySkill>(i), info.reward.primary[i], ChangeValueMode::RELATIVE);
 
-	const TExpType expToGive = info.reward.calculateHeroExperience(hero);
+	const TExpType expToGive = info.reward.calculateHeroExperience(hero, true,
+		experienceRewardSource(getObject()));
 
 	if(expToGive)
 		gameEvents.giveExperience(hero, expToGive);
@@ -433,7 +443,7 @@ void Rewardable::Interface::grantRewardWithMessage(IGameEventCallback & gameEven
 	InfoWindow iw;
 	iw.player = contextHero->tempOwner;
 	iw.text = vi.message;
-	vi.reward.loadComponents(iw.components, contextHero);
+	vi.reward.loadComponents(iw.components, contextHero, experienceRewardSource(getObject()));
 	iw.type = configuration.infoWindowType;
 	configureInfoWindow(iw, contextHero, index);
 	gameEvents.showInfoDialog(&iw);
@@ -472,11 +482,13 @@ std::vector<Component> Rewardable::Interface::loadComponents(const CGHeroInstanc
 	if (configuration.selectMode != Rewardable::SELECT_FIRST && rewardIndices.size() > 1)
 	{
 		for (auto index : rewardIndices)
-			result.push_back(configuration.info.at(index).reward.getDisplayedComponent(contextHero));
+			result.push_back(configuration.info.at(index).reward.getDisplayedComponent(contextHero,
+				experienceRewardSource(getObject())));
 	}
 	else
 	{
-		configuration.info.at(rewardIndices.front()).reward.loadComponents(result, contextHero);
+		configuration.info.at(rewardIndices.front()).reward.loadComponents(result, contextHero,
+			experienceRewardSource(getObject()));
 	}
 
 	return result;

@@ -57,6 +57,7 @@ protected:
 			|| !setPerkActive(perkRules, havocMagicSkillId, cryomancerPerkId))
 			throw std::runtime_error("Missing Pyromancer or Cryomancer from the New Horizons perk registry");
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepareFireWall(int32_t spellPower = 43, bool selectPyromancer = false)

@@ -10,8 +10,11 @@
 #pragma once
 
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/entities/hero/CHeroClassHandler.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/IGameSettings.h"
+#include "../../lib/mapping/CMap.h"
 
 inline JsonNode testHeroRules()
 {
@@ -41,4 +44,19 @@ inline JsonNode testHeroRules()
 		rules["extraGrowth"].Vector().push_back(extra);
 	}
 	return rules;
+}
+
+/// Use only in fixtures that explicitly capture testHeroRules() (or their
+/// corresponding empty legacy development context), after final perk overrides.
+/// Keep every perk definition/status/rank unchanged; do not fabricate a current
+/// skill-weight table in a historical mechanics scenario.
+inline void captureLegacyPerkOfferPolicy(CMap & map)
+{
+	JsonNode perks = map.getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+	newHorizonsHeroes::validatePerkRules(perks);
+	if(!newHorizonsHeroes::usesPerkRules(perks))
+		return;
+	perks.Struct().erase("offerWeightPolicyVersion");
+	perks.setOverrideFlag(true);
+	map.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 }

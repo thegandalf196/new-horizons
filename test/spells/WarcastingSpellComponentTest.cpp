@@ -105,6 +105,7 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void prepare()

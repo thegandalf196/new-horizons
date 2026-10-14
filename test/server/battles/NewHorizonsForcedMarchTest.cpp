@@ -104,7 +104,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			const auto found = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 			{
 				return candidate.selection.skillId == logisticsSkillId

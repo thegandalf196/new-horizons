@@ -255,13 +255,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT, // current-round synthetic stasis activation already consumed
 	NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT, // binary No Quarter lifetime and Veteran physical damage history
 	NEW_HORIZONS_HERO_LUCK, // accepted Hero Luck/Morale receipts, streams and Order allowances
+	NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES, // captured weighted offers and authored Druid specialty policies
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_HERO_LUCK,
+	CURRENT = NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES > ESerializationVersion::NEW_HORIZONS_HERO_LUCK,
+	"Weighted perks and Druid specialties must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT > ESerializationVersion::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT,
 	"Combat activation snapshot state must remain append-only");

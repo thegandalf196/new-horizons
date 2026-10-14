@@ -38,6 +38,37 @@ positions = [restart.find(step) for step in restart_steps]
 assert all(position >= 0 for position in positions), restart_steps
 assert positions == sorted(positions), "restart must terminate waiters before destroying client state"
 
+
+def check_restart_text_lifecycle(restart_body: str) -> None:
+    teardown = restart_body.find("client.reset();")
+    release = restart_body.find("gameplayTextOverlays.clear();")
+    lobby = restart_body.find("logicConnection->enterLobbyConnectionMode();")
+    assert teardown >= 0 and teardown < release < lobby, \
+        "old map texts must remain through client/UI teardown, then leave before a new session"
+
+
+check_restart_text_lifecycle(restart)
+for broken in (
+    restart.replace("gameplayTextOverlays.clear();", ""),
+    restart.replace("gameplayTextOverlays.clear();", "").replace(
+        "client->finishGameplay();", "gameplayTextOverlays.clear();\nclient->finishGameplay();"),
+):
+    try:
+        check_restart_text_lifecycle(broken)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("restart text lifecycle accepted missing or premature overlay release")
+
+starting = body(server, "void CServerHandler::startGameplay(std::shared_ptr<CGameState> gameState)")
+assert "gameplayTextOverlays.emplace_back(gameState->getMap().texts);" in starting, \
+    "the new session must install its own map texts"
+assert "gameplayTextOverlays.emplace_back(si->campState->getTexts());" in starting, \
+    "campaign-wide text sources must survive via the new session"
+assert re.search(r"for\(const auto & scenarioTexts : si->campState->getScenarioTexts\(\)\)\s*"
+                 r"gameplayTextOverlays.emplace_back\(scenarioTexts.second\);", starting), \
+    "transferred heroes must retain current-campaign prior-scenario text sources"
+
 ending = body(client, "void CClient::endGame()")
 detach = "auto endingBattleInterface = std::move(CPlayerInterface::battleInt);"
 terminate = "endingBattleInterface->endNetwork();"

@@ -402,6 +402,8 @@ protected:
 			heroCommands::validateRules(rules);
 			loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
 		}
+		if(useRealHeroScale)
+			captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void SetUp() override
@@ -497,7 +499,7 @@ protected:
 
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [&](const auto & candidate)
 			{
 				return candidate.selection.skillId == skillId

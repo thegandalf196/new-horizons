@@ -136,6 +136,7 @@ public:
 	int32_t battleGetDirectActivationOutputPercent(const BattleAttackInfo & info) const;
 	/// First Aid Tent raw healing after activation output modifiers, before target HP caps.
 	int64_t battleGetFirstAidHealingOutput(const battle::Unit * healer) const;
+	int64_t battleGetFirstAidCreatureHealingOutput(const battle::Unit * healer, const battle::Unit * target) const;
 	bool battleHasWarMachinesPerk(const battle::Unit * machine, const std::string & perk) const;
 	bool battleCanRepairWarMachine(const battle::Unit * healer, const battle::Unit * target) const;
 	FirstAidStructureRepairPreview battleGetFirstAidStructureRepairPreview(

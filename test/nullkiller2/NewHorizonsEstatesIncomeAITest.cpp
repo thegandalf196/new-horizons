@@ -207,7 +207,7 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedEstate
 	{
 		return firstHero->getPerkSkillRank(skillId);
 	};
-	const auto offer = firstHero->getPerkState().prepareOffer(rankLookup, 0);
+	const auto offer = firstHero->getPerkState().prepareOffer(rankLookup, 0, firstHero->getPerkOfferWeightContext());
 	ASSERT_EQ(offer.size(), 1u);
 	const auto networkOffer = std::ranges::find_if(offer, [](const auto & candidate)
 	{
@@ -309,7 +309,7 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedInvest
 	{
 		return firstHero->getPerkSkillRank(skillId);
 	};
-	const auto offer = firstHero->getPerkState().prepareOffer(rankLookup, 0);
+	const auto offer = firstHero->getPerkState().prepareOffer(rankLookup, 0, firstHero->getPerkOfferWeightContext());
 	ASSERT_EQ(offer.size(), 1u);
 	ASSERT_EQ(offer.front().selection.perkId, INVESTOR);
 	ASSERT_EQ(offer.front().requiredRank, MasteryLevel::ADVANCED);

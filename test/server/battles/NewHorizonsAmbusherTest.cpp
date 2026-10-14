@@ -134,7 +134,7 @@ protected:
 		const auto rankLookup = [hero](const std::string & skill) { return hero->getPerkSkillRank(skill); };
 		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, offerSeed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext());
 			if(std::ranges::any_of(offers, [perkId](const auto & offer)
 			{
 				return offer.selection.skillId == newHorizonsShroud::SKILL_ID
@@ -150,7 +150,7 @@ protected:
 		const auto rankLookup = [hero](const std::string & skill) { return hero->getPerkSkillRank(skill); };
 		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, offerSeed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offers.size(); ++choice)
 			{
 				if(offers[choice].selection.skillId == newHorizonsShroud::SKILL_ID

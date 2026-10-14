@@ -56,6 +56,7 @@ protected:
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	const CSpell * prepare(std::string_view spellKey)

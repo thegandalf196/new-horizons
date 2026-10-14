@@ -41,6 +41,7 @@
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/artifact/CArtifactInstance.h"
 #include "../GameLibrary.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../combatScripts/IDamageCalculatorScript.h"
 #include "../scripting/ScriptService.h"
 #include "../spells/ObstacleCasterProxy.h"
@@ -238,6 +239,24 @@ int64_t CBattleInfoCallback::battleGetFirstAidHealingOutput(const battle::Unit *
 		battleGetActivationOutputPercent(healer));
 }
 
+int64_t CBattleInfoCallback::battleGetFirstAidCreatureHealingOutput(
+	const battle::Unit * healer, const battle::Unit * target) const
+{
+	const auto ordinary = battleGetFirstAidHealingOutput(healer);
+	if(!healer || !target || !target->alive() || !target->isValidTarget()
+		|| target->getFirstHPleft() >= target->getMaxHealth()
+		|| target->isTurret() || target->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| !battleMatchActionController(healer, target, true))
+		return ordinary;
+	const auto * hero = battleGetOwnerHero(healer);
+	const auto specialty = hero
+		? hero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::RESTORATIVE_SORCERESS) : std::nullopt;
+	if(!specialty)
+		return ordinary;
+	return ordinary + newHorizonsHeroes::druidSpecialtyExtra(ordinary,
+		newHorizonsHeroes::druidSpecialtyPercent(hero->level, specialty->restorativeSorceress));
+}
+
 bool CBattleInfoCallback::battleHasWarMachinesPerk(
 	const battle::Unit * machine, const std::string & perk) const
 {
@@ -323,7 +342,7 @@ FirstAidHealingPreview CBattleInfoCallback::battleGetFirstAidHealingPreview(
 		return result;
 
 	auto state = target->acquireState();
-	auto healing = battleGetFirstAidHealingOutput(healer);
+	auto healing = battleGetFirstAidCreatureHealingOutput(healer, target);
 	result.survivorHealedHP = state->heal(healing, EHealLevel::HEAL,
 		EHealPower::PERMANENT).healedHealthPoints;
 	auto restoration = battleGetBattlefieldMedicRestorationBudget(healer, target);
@@ -4334,7 +4353,7 @@ int64_t CBattleInfoCallback::getFirstAidHealValue(const CGHeroInstance * owner, 
 	int64_t base = firstAidHealingBase(owner);
 	if(const auto * activeHealer = battleActiveUnit(); activeHealer && activeHealer->isFirstAidTent()
 		&& battleGetOwnerHero(activeHealer) == owner)
-		base = battleGetFirstAidHealingOutput(activeHealer);
+		base = battleGetFirstAidCreatureHealingOutput(activeHealer, target);
 
 	if(base <= 0)
 		return 0;

@@ -169,7 +169,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offer.size(); ++choice)
 			{
 				if(offer[choice].selection.skillId != newHorizonsNecromancy::SKILL_ID

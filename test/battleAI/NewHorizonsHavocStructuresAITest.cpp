@@ -205,6 +205,7 @@ protected:
 			heroCommands::validateRules(commandRules);
 			map->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, commandRules);
 		}
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepare(const bool siege)

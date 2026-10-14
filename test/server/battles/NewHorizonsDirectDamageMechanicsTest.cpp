@@ -416,6 +416,8 @@ protected:
 			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 		}
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, savedEnabled ? authoredRules : JsonNode());
+		if(forceRealHeroScale)
+			captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepare()

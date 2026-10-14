@@ -29,6 +29,7 @@ protected:
 		}
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void checkAreaCast()

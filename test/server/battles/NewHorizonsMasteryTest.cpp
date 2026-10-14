@@ -331,7 +331,7 @@ TEST_F(NewHorizonsMasteryTest, DeferredPerkOfferRebuildsFromCurrentTierOccupancy
 	{
 		return attackerSideHero->getPerkSkillRank(skillId);
 	};
-	const auto originalOffer = state.prepareOffer(rankLookup, offerSeed);
+	const auto originalOffer = state.prepareOffer(rankLookup, offerSeed, attackerSideHero->getPerkOfferWeightContext());
 	ASSERT_FALSE(originalOffer.empty());
 
 	auto offer = makeLevelUpOffer();
@@ -343,7 +343,7 @@ TEST_F(NewHorizonsMasteryTest, DeferredPerkOfferRebuildsFromCurrentTierOccupancy
 
 	const auto newlySelected = originalOffer.front().selection;
 	gameHandler->levelUpHero(attackerSideHero, originalOffer, 0, offerSeed, false);
-	const auto expectedOffer = state.prepareOffer(rankLookup, offerSeed);
+	const auto expectedOffer = state.prepareOffer(rankLookup, offerSeed, attackerSideHero->getPerkOfferWeightContext());
 	ASSERT_FALSE(expectedOffer.empty());
 	EXPECT_NE(expectedOffer, originalOffer);
 	EXPECT_FALSE(std::any_of(expectedOffer.begin(), expectedOffer.end(), [&newlySelected](const auto & candidate)
@@ -399,7 +399,7 @@ TEST_F(NewHorizonsMasteryTest, DeferredEmptyPerkOfferCanBecomeEligibleBeforeProm
 	{
 		return attackerSideHero->getPerkSkillRank(skillId);
 	};
-	EXPECT_TRUE(state.prepareOffer(rankLookup, offerSeed).empty());
+	EXPECT_TRUE(state.prepareOffer(rankLookup, offerSeed, attackerSideHero->getPerkOfferWeightContext()).empty());
 
 	auto offer = makeLevelUpOffer();
 	offer.perkOfferSeed = offerSeed;
@@ -410,7 +410,7 @@ TEST_F(NewHorizonsMasteryTest, DeferredEmptyPerkOfferCanBecomeEligibleBeforeProm
 
 	gameHandler->changeSecSkill(attackerSideHero, offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	gameHandler->changeSecSkill(attackerSideHero, warcasting, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	const auto expectedOffer = state.prepareOffer(rankLookup, offerSeed);
+	const auto expectedOffer = state.prepareOffer(rankLookup, offerSeed, attackerSideHero->getPerkOfferWeightContext());
 	ASSERT_FALSE(expectedOffer.empty());
 	gameHandler->onAdvInterfaceReady(PlayerColor(0));
 

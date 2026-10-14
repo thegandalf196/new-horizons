@@ -11,6 +11,10 @@
 #include "../server/battles/BattleStartSnapshotFixture.h"
 
 #include "../../lib/GameLibrary.h"
+#include "../../lib/GameSettings.h"
+#include "../../lib/StartInfo.h"
+#include "../../lib/campaign/CampaignState.h"
+#include "../../lib/entities/artifact/CArtifactInstance.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/IGameSettings.h"
@@ -24,7 +28,9 @@
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/entities/hero/CHero.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/MiscObjects.h"
 #include "../../lib/mapObjects/army/CSimpleArmy.h"
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
@@ -144,7 +150,7 @@ protected:
 
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [&perkId](const auto & candidate)
 			{
 				return candidate.selection.perkId == perkId;
@@ -210,7 +216,7 @@ protected:
 
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [&perkId](const auto & candidate)
 			{
 				return candidate.selection.perkId == perkId;
@@ -259,6 +265,49 @@ protected:
 		EXPECT_EQ(hero->manaLimit(), maximum);
 		EXPECT_EQ(hero->getManaAvailable(), static_cast<int64_t>(normal) + buffer);
 	}
+};
+
+class HighLoreCapacityTest : public SpellPointCapacityTest
+{
+protected:
+	virtual bool captureHighLore() const { return true; }
+	void mapLoaded(CMap * loaded) override
+	{
+		SpellPointCapacityTest::mapLoaded(loaded);
+		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+		ASSERT_TRUE(development["druidSpecialties"].isStruct());
+		// Isolate Druid admission/codec guards from the same-epoch weighted
+		// offer feature; the existing fixture uses its historical offer helper.
+		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		perks.Struct().erase("offerWeightPolicyVersion");
+		perks.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+		if(!captureHighLore())
+			development.Struct().erase("druidSpecialties");
+		development.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
+		for(const auto & object : loaded->objects)
+			if(auto * hero = dynamic_cast<CGHeroInstance *>(object.get()); hero && hero->getOwner() == PlayerColor(0))
+				hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:elleshar")));
+	}
+	void activateDefaultIntelligence()
+	{
+		ASSERT_EQ(attackerSideHero->getHeroType()->getJsonKey(), "core:elleshar");
+		ASSERT_TRUE(attackerSideHero->getPerkState().hasSelection(WISDOM_SKILL_ID, INTELLIGENCE_PERK_ID));
+		SetSecSkill rank;
+		rank.id = attackerSideHero->id;
+		rank.which = SecondarySkill(SecondarySkill::decode(WISDOM_SKILL_ID));
+		rank.val = MasteryLevel::BASIC;
+		rank.mode = ChangeValueMode::ABSOLUTE;
+		gameState()->apply(rank);
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, INTELLIGENCE_PERK_ID));
+	}
+};
+
+class HighLoreAbsentCapacityTest : public HighLoreCapacityTest
+{
+protected:
+	bool captureHighLore() const override { return false; }
 };
 
 class SpellPointCapacityPlannedMysticismTest : public SpellPointCapacityTest
@@ -459,6 +508,97 @@ TEST_F(SpellPointCapacityTest, ExpertArcaneReservoirAddsTwentyFiveAfterIntellige
 	expectPools(attackerSideHero, 64, 17, 155); // floor(1.30 * 100) + 25; capacity does not refill.
 }
 
+TEST_F(HighLoreCapacityTest, CapturedPolicyScalesOnlyIntelligenceExtraAtLevelOneTenAndCapWithoutRefill)
+{
+	const auto policy = attackerSideHero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::HIGH_LORE);
+	ASSERT_TRUE(policy);
+	ASSERT_EQ(policy->highLore.percentPerLevel, 10);
+	ASSERT_EQ(policy->highLore.maximumPercent, 100);
+	setKnowledge(attackerSideHero, 101);
+	setNormal(attackerSideHero, 60);
+	grantBuffer(attackerSideHero, 17);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, INTELLIGENCE_PERK_ID));
+	EXPECT_EQ(attackerSideHero->getHighLoreManaBonus(), 0);
+	expectPools(attackerSideHero, 60, 17, 101);
+	ASSERT_NO_FATAL_FAILURE(activateDefaultIntelligence());
+	// Levels here are native fixture inputs, not a claim of accepted level-up actions.
+	for(const auto & [level, extra] : std::array<std::pair<ui32, int32_t>, 3>{{{1, 3}, {10, 30}, {20, 30}}})
+	{
+		SCOPED_TRACE(level);
+		attackerSideHero->level = level;
+		EXPECT_EQ(attackerSideHero->getHighLoreManaBonus(), extra);
+		expectPools(attackerSideHero, 60, 17, 131 + extra);
+	}
+
+	setKnowledge(defenderSideHero, 101);
+	ASSERT_TRUE(advanceWisdomAndSelectPerkThroughLegalOffers(defenderSideHero,
+		INTELLIGENCE_PERK_ID, DEEP_KNOWLEDGE_PERK_ID));
+	ASSERT_NE(defenderSideHero->getHeroType()->getJsonKey(), "core:elleshar");
+	EXPECT_FALSE(defenderSideHero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::HIGH_LORE));
+	EXPECT_EQ(defenderSideHero->getHighLoreManaBonus(), 0);
+	EXPECT_EQ(defenderSideHero->manaLimit(), 131);
+}
+
+TEST_F(HighLoreCapacityTest, ArcaneReservoirStaysTwentyFiveAndCurrentWorldCodecRetainsPolicyAndPools)
+{
+	setKnowledge(attackerSideHero, 101);
+	setNormal(attackerSideHero, 60);
+	grantBuffer(attackerSideHero, 17);
+	ASSERT_NO_FATAL_FAILURE(activateDefaultIntelligence());
+	const SecondarySkill wisdom(SecondarySkill::decode(WISDOM_SKILL_ID));
+	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
+	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, DEEP_KNOWLEDGE_PERK_ID));
+	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
+	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, ARCANE_RESERVOIR_PERK_ID));
+	attackerSideHero->level = 10;
+	EXPECT_EQ(attackerSideHero->getHighLoreManaBonus(), 30);
+	expectPools(attackerSideHero, 60, 17, 186); // 131 + HighLore30 + unchanged Reservoir25.
+	const auto captured = attackerSideHero->getPrimaryGrowthRules();
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * hero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(hero, nullptr);
+	EXPECT_EQ(hero->getPrimaryGrowthRules(), captured);
+	EXPECT_EQ(hero->level, 10);
+	EXPECT_EQ(hero->getHighLoreManaBonus(), 30);
+	expectPools(hero, 60, 17, 186);
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
+	EXPECT_THROW(old.oser & attackerSideHero, std::runtime_error);
+}
+
+TEST_F(HighLoreAbsentCapacityTest, OlderCapturedAbsenceKeepsOrdinaryCapacityAndSurvivesPriorEpoch)
+{
+	ASSERT_TRUE(attackerSideHero->getPrimaryGrowthRules()["druidSpecialties"].isNull());
+	setKnowledge(attackerSideHero, 101);
+	setNormal(attackerSideHero, 60);
+	grantBuffer(attackerSideHero, 17);
+	ASSERT_NO_FATAL_FAILURE(activateDefaultIntelligence());
+	attackerSideHero->level = 10;
+	EXPECT_FALSE(attackerSideHero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::HIGH_LORE));
+	EXPECT_EQ(attackerSideHero->getHighLoreManaBonus(), 0);
+	expectPools(attackerSideHero, 60, 17, 131);
+	CMemorySerializer bytes;
+	bytes.oser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
+	bytes.iser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
+	// A detached hero codec does not rebuild inherited bonuses. Restore the
+	// real world through its ordinary post-load bonus-tree reconstruction.
+	ASSERT_NO_THROW(bytes.oser & *gameState());
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	bytes.iser.loadingGamestate = true;
+	bytes.iser.cb = &restored;
+	ASSERT_NO_THROW(bytes.iser & restored);
+	const auto * hero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(hero, nullptr);
+	EXPECT_TRUE(hero->getPrimaryGrowthRules()["druidSpecialties"].isNull());
+	EXPECT_FALSE(hero->getPerkState().rules.Struct().contains("offerWeightPolicyVersion"));
+	EXPECT_EQ(hero->getHighLoreManaBonus(), 0);
+	expectPools(hero, 60, 17, 131);
+}
+
 TEST_F(SpellPointCapacityTest, LosingExpertWisdomClampsNormalCapacityAndPreservesBuffer)
 {
 	setKnowledge(attackerSideHero, 100);
@@ -505,7 +645,7 @@ TEST_F(SpellPointCapacityPlannedArcaneReservoirTest, SavedPlannedSnapshotCannotO
 	};
 	for(uint64_t seed = 0; seed < 128; ++seed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == ARCANE_RESERVOIR_PERK_ID;
@@ -528,7 +668,7 @@ TEST_F(SpellPointCapacityPlannedArcaneReservoirTest, SavedPlannedSnapshotCannotO
 	};
 	for(uint64_t seed = 0; seed < 128; ++seed)
 	{
-		const auto offer = restoredHero->getPerkState().prepareOffer(restoredRankLookup, seed);
+		const auto offer = restoredHero->getPerkState().prepareOffer(restoredRankLookup, seed, restoredHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == ARCANE_RESERVOIR_PERK_ID;
@@ -627,7 +767,7 @@ TEST_F(SpellPointCapacityPlannedMysticismTest, SavedPlannedSnapshotDoesNotOfferO
 	const auto offer = restoredHero->getPerkState().prepareOffer([restoredHero](const std::string & skillId)
 	{
 		return restoredHero->getPerkSkillRank(skillId);
-	}, 42);
+	}, 42, restoredHero->getPerkOfferWeightContext());
 	EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 	{
 		return candidate.selection.perkId == MYSTICISM_PERK_ID;
@@ -846,7 +986,7 @@ TEST_F(SpellPointCapacityPlannedMeditationTest, SavedPlannedMeditationCannotBeOf
 	};
 	for(uint64_t seed = 0; seed < 128; ++seed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == MEDITATION_PERK_ID;

@@ -173,6 +173,7 @@ protected:
 				town->possibleSpells.clear();
 			}
 		}
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void startWithRules(JsonNode rules)

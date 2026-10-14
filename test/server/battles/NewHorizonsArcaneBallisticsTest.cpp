@@ -100,6 +100,7 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void acceptPerkThroughOffer(CGHeroInstance * hero, std::string_view skillId,
@@ -111,7 +112,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offers.begin(), offers.end(), [&](const auto & offer)
 			{
 				return offer.selection.skillId == skillId && offer.selection.perkId == perkId;

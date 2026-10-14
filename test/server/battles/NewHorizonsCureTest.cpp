@@ -95,6 +95,8 @@ protected:
 		if(!optIntoNewCure)
 			rules["spells"][cureKey].Struct().erase("cureAfflictions");
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+		if(enableHealerPerkRules)
+			captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepare(int spellPower = 20, const std::string & creature = "core:pikeman", int count = 100,

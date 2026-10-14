@@ -144,8 +144,11 @@ Spell Lock clocks. No Quarter/Veteran snapshot and adjacent Frozen/Time Stop/
 timed-effect gates pass 29 and 44 cases respectively, without skips. Local
 serialized-marker validation works before bonus-graph rebinding; earlier failing
 results are retained. These are static-engine tests, not shipped-library or
-whole-game save/resume certification. Defend/creature-cast and explicit movement
-forecast completion remain separate work. Focused paid Puppet Master -> Cure
+whole-game save/resume certification. Subsequent detached completion adapters
+also cover Defend, completing creature casts and ordinary movement projections.
+The action and movement completion suites contain focused accepted-action,
+hostile-seal, countdown, propagation and isolation cases; their existence does
+not establish a fresh run on every later build. Focused paid Puppet Master -> Cure
 tests now execute original-ally physical Poison and Frozen cleansing, reject the
 controller's mechanically hostile Cure request without spending its fresh action,
 and preserve control provenance and the same-round Frozen receipt. A separate

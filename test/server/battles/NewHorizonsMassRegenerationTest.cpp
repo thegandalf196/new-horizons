@@ -431,9 +431,9 @@ TEST_F(NewHorizonsMassRegenerationTest, AdvancedCommunionIsOfferedAndItsVirtualG
 		});
 	};
 	attackerSideHero->setSecSkillLevel(nature, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, 0);
+	auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, 0, attackerSideHero->getPerkOfferWeightContext());
 	for(int seed = 1; seed <= 4095 && !hasCommunionOffer(offers); ++seed)
-		offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 	const auto communionOffer = std::ranges::find_if(offers, [](const auto & offer)
 	{
 		return offer.selection.perkId == verdantCommunionPerk

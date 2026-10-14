@@ -134,7 +134,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 10000; ++seed)
 		{
-			const auto offer = candidate->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = candidate->getPerkState().prepareOffer(rankLookup, seed, candidate->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offer.size(); ++index)
 			{
 				if(offer[index].selection.perkId != perkId)

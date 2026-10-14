@@ -15,13 +15,24 @@ newHorizonsHeroes::PerkState state()
 {
 	newHorizonsHeroes::PerkState result;
 	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	// Historical pure-state tests exercise the captured legacy offer policy.
+	// Weighted-policy fixtures explicitly opt back into version1 below.
+	result.rules.Struct().erase("offerWeightPolicyVersion");
 	return result;
 }
 
 const std::string SKILL = "new-horizons:sorceryMagic";
-// Keep this fixture pointed at a skill whose entire perk pool is still planned.
-// Offense now has the active Shock Assault vertical slice.
+// This identity is used by an explicitly synthetic planned snapshot below;
+// its current authored pool is active and must not be treated as planned.
 const std::string PLANNED_SKILL = "new-horizons:armorer";
+
+newHorizonsHeroes::PerkState plannedState()
+{
+	auto result = state();
+	for(auto & perk : result.rules["skills"][PLANNED_SKILL]["perks"].Vector())
+		perk["effect"]["status"].String() = "planned";
+	return result;
+}
 constexpr auto HISTORICAL_PERK_SOURCE_SHA256 =
 	"d0aa9c0017967e85120b4e63e04df3d58441d606ce9c496d29117515330654ce";
 constexpr auto CURRENT_DESIGN_SOURCE_SHA256 =
@@ -281,6 +292,10 @@ TEST(NewHorizonsPerkState, OccupiedTierOnlyBlocksAlternativesFromTheSameSkill)
 TEST(NewHorizonsPerkState, OfferKeepsSameTierPerksFromOtherSkillsEligible)
 {
 	auto saved = state();
+	// Isolate occupied-tier admission from the growing authored Discipline pool.
+	for(auto & perk : saved.rules["skills"]["new-horizons:discipline"]["perks"].Vector())
+		if(perk["id"].String() != "new-horizons:discipline.inspirationalLeader")
+			perk["effect"]["status"].String() = "planned";
 	const auto sorceryOptions = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
 	ASSERT_GE(sorceryOptions.size(), 2u);
 	saved.select(SKILL, sorceryOptions[0].id, 1);
@@ -297,7 +312,7 @@ TEST(NewHorizonsPerkState, OfferKeepsSameTierPerksFromOtherSkillsEligible)
 
 TEST(NewHorizonsPerkState, PlannedAndRankLockedEffectsNeverProjectAsEnabled)
 {
-	auto saved = state();
+	auto saved = plannedState();
 	const auto planned = newHorizonsHeroes::perkOptions(saved.rules, PLANNED_SKILL);
 	ASSERT_GE(planned.size(), 2u);
 	const auto & perk = planned.front();
@@ -628,7 +643,7 @@ TEST(NewHorizonsPerkState, ExpertHavocWithBasicStormcallerOffersOnlyAdvancedTier
 
 TEST(NewHorizonsPerkState, OfferExcludesPlannedPerksAndCanBeEmpty)
 {
-	auto saved = state();
+	auto saved = plannedState();
 	const auto plannedOnly = saved.prepareOffer([](const std::string & skillId)
 	{
 		return skillId == PLANNED_SKILL ? 3 : 0;
@@ -708,4 +723,236 @@ TEST(NewHorizonsPerkState, LegacyRulesNeverInventAnOffer)
 	newHorizonsHeroes::PerkState legacy;
 	EXPECT_TRUE(legacy.prepareOffer([](const std::string &) { return 3; }, 1).empty());
 	EXPECT_THROW(legacy.acceptOffer({}, 0, [](const std::string &) { return 3; }, 1), std::runtime_error);
+}
+
+namespace
+{
+newHorizonsHeroes::PerkState weightedOfferState()
+{
+	auto result = state();
+	result.rules["offerWeightPolicyVersion"].Integer() = 1;
+	for(auto & [skill, definition] : result.rules["skills"].Struct())
+		for(auto & perk : definition["perks"].Vector())
+		{
+			const auto & id = perk["id"].String();
+			const bool active = id == "new-horizons:discipline.inspirationalLeader"
+				|| id == "new-horizons:luck.opportunist" || id == "new-horizons:luck.secondChance";
+			perk["effect"]["status"].String() = active ? "active" : "planned";
+		}
+	return result;
+}
+
+int weightedOfferRank(const std::string & skill)
+{
+	return skill == "new-horizons:luck" || skill == "new-horizons:discipline" ? 1 : 0;
+}
+
+std::optional<int> parentOfferWeight(const std::string & skill)
+{
+	return skill == "new-horizons:luck" ? 20 : 60;
+}
+
+newHorizonsHeroes::PerkState::OfferWeightContext capturedWeights(
+	newHorizonsHeroes::PerkState::OfferWeightLookup lookup)
+{
+	return {newHorizonsHeroes::PerkState::OfferWeightMode::CapturedTable, std::move(lookup)};
+}
+}
+
+TEST(NewHorizonsPerkState, ParentWeightIsPerPerkNotNormalizedByFamily)
+{
+	auto saved = weightedOfferState();
+	const auto offer = saved.prepareOffer(weightedOfferRank, 4, capturedWeights(parentOfferWeight));
+	ASSERT_EQ(offer.size(), 2u);
+	// SplitMix64(seed4) gives first draw78 out of100: Discipline60,
+	// Luck Opportunist20, Luck SecondChance20. Normalizing the two Luck
+	// perks to10 each would instead select Discipline (draw58 out of80).
+	EXPECT_EQ(offer.front().selection.perkId, "new-horizons:luck.opportunist");
+	EXPECT_NE(offer[0].selection, offer[1].selection);
+	EXPECT_EQ(offer, saved.prepareOffer(weightedOfferRank, 4, capturedWeights(parentOfferWeight)));
+}
+
+TEST(NewHorizonsPerkState, WeightedIntegerDrawHasStableGoldenSequence)
+{
+	auto saved = weightedOfferState();
+	const auto offer = saved.prepareOffer(weightedOfferRank, 0, capturedWeights(parentOfferWeight));
+	ASSERT_EQ(offer.size(), 2u);
+	EXPECT_EQ(offer[0].selection.perkId, "new-horizons:discipline.inspirationalLeader");
+	EXPECT_EQ(offer[1].selection.perkId, "new-horizons:luck.secondChance");
+}
+
+TEST(NewHorizonsPerkState, ZeroParentWeightExcludesAllItsPerks)
+{
+	auto saved = weightedOfferState();
+	const auto weights = [](const std::string & skill) -> std::optional<int>
+	{
+		return skill == "new-horizons:luck" ? 0 : 60;
+	};
+	const auto offer = saved.prepareOffer(weightedOfferRank, 4, capturedWeights(weights));
+	ASSERT_EQ(offer.size(), 1u);
+	EXPECT_EQ(offer[0].selection.skillId, "new-horizons:discipline");
+	EXPECT_TRUE(saved.prepareOffer(weightedOfferRank, 4,
+		capturedWeights([](const std::string &) -> std::optional<int> { return 0; })).empty());
+}
+
+TEST(NewHorizonsPerkState, ExplicitLegacyWeightContextRetainsExactUniformOrdering)
+{
+	auto saved = weightedOfferState();
+	auto uniform = saved;
+	uniform.rules.Struct().erase("offerWeightPolicyVersion");
+	const newHorizonsHeroes::PerkState::OfferWeightContext legacyContext{
+		newHorizonsHeroes::PerkState::OfferWeightMode::IntentionalLegacyNoCapturedTable, {}};
+	EXPECT_EQ(saved.prepareOffer(weightedOfferRank, 42, legacyContext),
+		uniform.prepareOffer(weightedOfferRank, 42));
+	// Captured absence overrides newly installed callbacks, preserving queries.
+	EXPECT_EQ(uniform.prepareOffer(weightedOfferRank, 42, capturedWeights(parentOfferWeight)),
+		uniform.prepareOffer(weightedOfferRank, 42));
+}
+
+TEST(NewHorizonsPerkState, PartialMissingOrInvalidParentWeightsRefuse)
+{
+	auto saved = weightedOfferState();
+	const auto partial = [](const std::string & skill) -> std::optional<int>
+	{
+		return skill == "new-horizons:luck" ? std::optional<int>(20) : std::nullopt;
+	};
+	EXPECT_THROW(saved.prepareOffer(weightedOfferRank, 1, capturedWeights(partial)), std::runtime_error);
+	for(int invalid : {-1, 101})
+	{
+		EXPECT_THROW(saved.prepareOffer(weightedOfferRank, 1,
+			capturedWeights([invalid](const std::string &) -> std::optional<int> { return invalid; })), std::runtime_error);
+	}
+}
+
+TEST(NewHorizonsPerkState, WeightedAcceptanceRevalidatesWeightsRankAndTier)
+{
+	auto saved = weightedOfferState();
+	const auto offer = saved.prepareOffer(weightedOfferRank, 4, capturedWeights(parentOfferWeight));
+	ASSERT_EQ(offer.size(), 2u);
+	EXPECT_THROW(saved.acceptOffer(offer, 0, weightedOfferRank, 4,
+		capturedWeights([](const std::string & skill) -> std::optional<int>
+		{
+			return skill == "new-horizons:luck" ? 0 : 60;
+		})), std::runtime_error);
+	EXPECT_THROW(saved.acceptOffer(offer, 0, [](const std::string &) { return 0; },
+		4, capturedWeights(parentOfferWeight)), std::runtime_error);
+	auto forged = offer;
+	forged[0].description += " forged";
+	EXPECT_THROW(saved.acceptOffer(forged, 0, weightedOfferRank, 4, capturedWeights(parentOfferWeight)), std::runtime_error);
+	saved.acceptOffer(offer, 0, weightedOfferRank, 4, capturedWeights(parentOfferWeight));
+	EXPECT_TRUE(saved.hasSelection(offer[0].selection.skillId, offer[0].selection.perkId));
+	const auto next = saved.prepareOffer(weightedOfferRank, 5, capturedWeights(parentOfferWeight));
+	for(const auto & candidate : next)
+		EXPECT_NE(candidate.selection.skillId, offer[0].selection.skillId);
+}
+
+TEST(NewHorizonsPerkState, CapturedPolicyAndLegacyPendingOfferSurviveSaveRoundtrip)
+{
+	auto saved = weightedOfferState();
+	const auto weighted = saved.prepareOffer(weightedOfferRank, 4, capturedWeights(parentOfferWeight));
+	CMemorySerializer memory;
+	memory.oser & saved;
+	newHorizonsHeroes::PerkState restored;
+	memory.iser & restored;
+	EXPECT_EQ(restored.prepareOffer(weightedOfferRank, 4, capturedWeights(parentOfferWeight)), weighted);
+	EXPECT_EQ(newHorizonsHeroes::PerkState::fromJson(saved.toJson()).rules, saved.rules);
+	auto legacy = saved;
+	legacy.rules.Struct().erase("offerWeightPolicyVersion");
+	const auto pending = legacy.prepareOffer(weightedOfferRank, 42);
+	CMemorySerializer legacyMemory;
+	legacyMemory.oser & legacy;
+	newHorizonsHeroes::PerkState legacyRestored;
+	legacyMemory.iser & legacyRestored;
+	EXPECT_EQ(legacyRestored.prepareOffer(weightedOfferRank, 42, capturedWeights(parentOfferWeight)), pending);
+	legacyRestored.acceptOffer(pending, 0, weightedOfferRank, 42, capturedWeights(parentOfferWeight));
+}
+TEST(NewHorizonsPerkState, WeightedCapturedPolicyRefusesOlderBinaryWriter)
+{
+	auto saved = weightedOfferState();
+	CMemorySerializer older;
+	older.oser.version = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES) - 1);
+	EXPECT_THROW(older.oser & saved, std::runtime_error);
+}
+
+TEST(NewHorizonsPerkState, WeightedCapturedPolicyRefusesOlderRawBinaryReader)
+{
+	auto saved = weightedOfferState();
+	CMemorySerializer current;
+	current.oser & saved;
+	current.iser.version = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES) - 1);
+	newHorizonsHeroes::PerkState restored;
+	EXPECT_THROW(current.iser & restored, std::runtime_error);
+}
+
+TEST(NewHorizonsPerkState, AbsentWeightedPolicyRetainsOlderBinaryPendingOffer)
+{
+	auto legacy = weightedOfferState();
+	legacy.rules.Struct().erase("offerWeightPolicyVersion");
+	const auto pending = legacy.prepareOffer(weightedOfferRank, 42);
+	const auto oldVersion = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES) - 1);
+	CMemorySerializer older;
+	older.oser.version = oldVersion;
+	older.iser.version = oldVersion;
+	older.oser & legacy;
+	newHorizonsHeroes::PerkState restored;
+	older.iser & restored;
+	EXPECT_EQ(restored.prepareOffer(weightedOfferRank, 42, capturedWeights(parentOfferWeight)), pending);
+	restored.acceptOffer(pending, 0, weightedOfferRank, 42, capturedWeights(parentOfferWeight));
+}
+
+TEST(NewHorizonsPerkState, AbsentWeightedPolicyBinarySaveDoesNotMutateCapturedRules)
+{
+	const auto priorEpoch = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES) - 1);
+	for(const bool older : {false, true})
+	{
+		SCOPED_TRACE(older);
+		auto saved = weightedOfferState();
+		saved.rules.Struct().erase("offerWeightPolicyVersion");
+		const JsonNode originalRules = saved.rules;
+		const auto pending = saved.prepareOffer(weightedOfferRank, 42);
+		CMemorySerializer memory;
+		if(older)
+		{
+			memory.oser.version = priorEpoch;
+			memory.iser.version = priorEpoch;
+		}
+		ASSERT_NO_THROW(memory.oser & saved);
+		EXPECT_EQ(saved.rules, originalRules);
+		EXPECT_FALSE(saved.rules.Struct().contains("offerWeightPolicyVersion"));
+		newHorizonsHeroes::PerkState restored;
+		ASSERT_NO_THROW(memory.iser & restored);
+		EXPECT_EQ(restored.rules, originalRules);
+		EXPECT_FALSE(restored.rules.Struct().contains("offerWeightPolicyVersion"));
+		EXPECT_EQ(restored.prepareOffer(weightedOfferRank, 42), pending);
+	}
+}
+
+TEST(NewHorizonsPerkState, NullWeightedPolicyRemainsInvalidBeforeBinaryWrite)
+{
+	auto saved = state();
+	saved.rules["offerWeightPolicyVersion"] = JsonNode();
+	ASSERT_TRUE(saved.rules.Struct().contains("offerWeightPolicyVersion"));
+	const JsonNode originalRules = saved.rules;
+	EXPECT_THROW(saved.validate(), std::runtime_error);
+	CMemorySerializer memory;
+	EXPECT_THROW(memory.oser & saved, std::runtime_error);
+	EXPECT_TRUE(memory.extractBuffer().empty());
+	EXPECT_EQ(saved.rules, originalRules);
+}
+
+TEST(NewHorizonsPerkState, ActiveWeightedPolicyRefusesMissingContextOrLookup)
+{
+	auto saved = weightedOfferState();
+	EXPECT_THROW(saved.prepareOffer(weightedOfferRank, 42), std::runtime_error);
+	const newHorizonsHeroes::PerkState::OfferWeightContext forgotten{
+		newHorizonsHeroes::PerkState::OfferWeightMode::CapturedTable, {}};
+	EXPECT_THROW(saved.prepareOffer(weightedOfferRank, 42, forgotten), std::runtime_error);
+	const auto allMissing = [](const std::string &) -> std::optional<int> { return std::nullopt; };
+	EXPECT_THROW(saved.prepareOffer(weightedOfferRank, 42, capturedWeights(allMissing)), std::runtime_error);
+	const auto offer = saved.prepareOffer(weightedOfferRank, 42, capturedWeights(parentOfferWeight));
+	EXPECT_THROW(saved.acceptOffer(offer, 0, weightedOfferRank, 42), std::runtime_error);
 }

@@ -128,6 +128,18 @@ public:
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
+	void validateNewHorizonsWeightedPerkSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateWeightedPerkSerialization(
+			getAllOverrides()["heroes"]["newHorizonsPerks"], supported);
+	}
+
+	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateDruidSpecialtySerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
 	{
 		newHorizonsHeroes::validateStartingDevelopmentSerialization(
@@ -230,6 +242,10 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
 			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
 			h & overrides;
@@ -280,6 +296,10 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
 			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 			loadSavedOverrides(overrides);

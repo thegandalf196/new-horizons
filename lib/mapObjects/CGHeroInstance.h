@@ -282,9 +282,14 @@ public:
 	bool usesPrimaryGrowth() const;
 	std::optional<newHorizonsHeroes::PrimaryGrowthView> getPrimaryGrowthView() const;
 	const JsonNode & getPrimaryGrowthRules() const { return primaryGrowthRules; }
+	std::optional<newHorizonsHeroes::DruidSpecialtyRules> getDruidSpecialtyRules(
+		newHorizonsHeroes::DruidSpecialtyKind specialty) const;
+	int64_t getHighLoreManaBonus() const;
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
+	/// Immutable offer context derived only from captured primary-growth rules.
+	newHorizonsHeroes::PerkState::OfferWeightContext getPerkOfferWeightContext() const;
 	int32_t getNewHorizonsInvestorDailyGold() const { return newHorizonsInvestorDailyGold; }
 	void setNewHorizonsInvestorDailyGold(int32_t value)
 	{
@@ -728,6 +733,9 @@ public:
 			newHorizonsLighthouse::validateRulesSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 		if(h.saving)
+			newHorizonsHeroes::validateDruidSpecialtySerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+		if(h.saving)
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
@@ -878,6 +886,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
 				newHorizonsLighthouse::validateRulesSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+				newHorizonsHeroes::validateDruidSpecialtySerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 				newHorizonsHeroes::validateRemainingStartSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,

@@ -920,6 +920,10 @@ void CServerHandler::restartGameplay()
 	client->finishGameplay();
 	client->endGame();
 	client.reset();
+	// Teardown may still translate old map widgets. Drop their overlays only
+	// after it finishes; startGameplay installs the new map and current campaign
+	// scenario texts, including the sources needed by transferred heroes.
+	gameplayTextOverlays.clear();
 
 	logicConnection->enterLobbyConnectionMode();
 }

@@ -113,6 +113,7 @@ class NewHorizonsStartingDevelopmentTest : public TinyMapGameTest
 {
 protected:
 	bool absent = false;
+	bool absentDruidSpecialty = false;
 	bool legacy = false;
 	bool explicitSkills = false;
 	bool ownedTown = false;
@@ -128,6 +129,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(absentDruidSpecialty)
+			rules.Struct().erase("druidSpecialties");
 		if(absent)
 		{
 			rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
@@ -512,7 +515,21 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AineDefaultTaxCollectorUsesActualOwne
 TEST_F(NewHorizonsStartingDevelopmentTest, EllesharDefaultIntelligenceFeedsRealCapacityFloor)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(rampartStarts[2]));
+	ASSERT_TRUE(actor()->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::HIGH_LORE));
 	actor()->setPrimarySkill(PrimarySkill::KNOWLEDGE, 101, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(actor()->getHighLoreManaBonus(), 3); // floor(Intelligence extra30 * level1 10%).
+	EXPECT_EQ(actor()->manaLimit(), 134);
+	EXPECT_TRUE(actor()->spellbookContainsSpell(SpellID::CURSE));
+}
+
+TEST_F(NewHorizonsStartingDevelopmentTest, EllesharOlderCapturedAbsenceKeepsOrdinaryIntelligenceCapacity)
+{
+	absentDruidSpecialty = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(rampartStarts[2]));
+	EXPECT_TRUE(actor()->getPrimaryGrowthRules()["druidSpecialties"].isNull());
+	EXPECT_FALSE(actor()->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::HIGH_LORE));
+	actor()->setPrimarySkill(PrimarySkill::KNOWLEDGE, 101, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(actor()->getHighLoreManaBonus(), 0);
 	EXPECT_EQ(actor()->manaLimit(), 131);
 	EXPECT_TRUE(actor()->spellbookContainsSpell(SpellID::CURSE));
 }

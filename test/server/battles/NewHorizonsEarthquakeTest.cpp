@@ -134,6 +134,7 @@ protected:
 		if(allowGeomancer && !activateGeomancer(perks))
 			throw std::runtime_error("Missing Geomancer from the New Horizons perk registry");
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perks));
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	SecondarySkill natureMagic() const

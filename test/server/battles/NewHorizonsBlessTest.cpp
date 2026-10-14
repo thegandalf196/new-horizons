@@ -103,6 +103,7 @@ protected:
 		JsonNode rules = magicVersion == newHorizonsMagic::CURRENT_RULESET_VERSION
 			? JsonNode(JsonPath::builtin("config/newHorizonsMagic")) : legacyMagicRules(magicVersion);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepare(int spellPower, int lightRank, bool selectBenediction = false)

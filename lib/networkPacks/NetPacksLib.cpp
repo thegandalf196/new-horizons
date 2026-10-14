@@ -1105,6 +1105,20 @@ void LobbyStartGame::validateNewHorizonsLighthouseSerialization(bool supported) 
 		initializedGameState->validateNewHorizonsLighthouseSerialization(supported);
 }
 
+
+void LobbyStartGame::validateNewHorizonsWeightedPerkSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsWeightedPerkSerialization(supported);
+}
+
+
+void LobbyStartGame::validateNewHorizonsDruidSpecialtySerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsDruidSpecialtySerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
 {
 	if(initializedGameState)

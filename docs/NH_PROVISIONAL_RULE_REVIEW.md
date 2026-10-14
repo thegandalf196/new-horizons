@@ -1,5 +1,32 @@
 # New Horizons provisional rule review
 
+## Authored Druid specialties — configurable initial coefficients
+
+Elleshar's High Lore increases only Intelligence's extra maximum Spell Points:
+10% per hero level, capped at100%. It does not multiply base Knowledge,
+Arcane Reservoir, or refill pools. Gem's Restorative Sorceress increases Cure's
+Spell Power healing component and First Aid Tent creature healing by5% per
+level, capped at100%; fixed Cure healing, structure repair and Battlefield
+Medic restoration budgets remain separate. Malcom's Natural Philosopher
+increases the core Learning experience contribution by5% per level, capped
+at100%, and grants25% additional raw experience from actual Learning Stones
+and Trees of Knowledge before ordinary experience modifiers.
+
+These are provisional configurable coefficients, not workbook-authored balance
+values. Fractions round down; checked arithmetic prevents overflow. Each hero
+uses its captured specialty policy; absent historical policy retains previous
+behavior. No starting books, equipment or armies are changed by these riders.
+Implementation: `config/newHorizonsHeroes.json`, shared hero-rule accessors,
+hero mana/experience calculations, spell mechanics, Tent output and typed
+reward provenance. Source integration is complete; compiled, native and
+playable verification remain pending.
+
+Second-look cases: high-level experience saturation, mixed Learning bonus
+sources, healing coefficient order, First Aid survivor/restoration boundaries,
+starting-profile usability, captured-policy save migration and localized
+specialty presentation. The temporary numerical amendment remains in Pending
+Changes until integrated into canonical Experimental Values.
+
 ## Campaign special-upgrade creatures — Leadership requirements
 
 Chosen provisional requirements: Enchanter380 and Sharpshooter170 per creature.
