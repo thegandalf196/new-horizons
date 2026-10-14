@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
-FILES = {'index.html', 'style.css', 'model.mjs', 'editor.mjs', 'level-up.example.json', 'layout.schema.json'}
+FILES = {'index.html', 'style.css', 'model.mjs', 'editor.mjs', 'translation.mjs', 'level-up.example.json', 'layout.schema.json'}
 
 def admitted_path(path):
     name = urlsplit(path).path

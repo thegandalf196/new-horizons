@@ -17,6 +17,7 @@ class UiEditorTest(unittest.TestCase):
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as m from {json.dumps((EDITOR / 'model.mjs').as_uri())};
+import * as t from {json.dumps((EDITOR / 'translation.mjs').as_uri())};
 const seed = m.parseLayout(fs.readFileSync({json.dumps(str(EDITOR / 'level-up.example.json'))}, 'utf8'));
 """
         result = subprocess.run([node, '--input-type=module', '-e', prefix + body], capture_output=True, text=True, timeout=10)
@@ -115,6 +116,7 @@ elements.get('add-type').value='crest';elements.get('add').onclick();
 assert.equal(elements.get('prop-id').value,'crest-1');assert.equal(elements.get('board').children.length,seed.layers.length+1);
 elements.get('delete').onclick();assert.equal(elements.get('board').children.length,seed.layers.length);
 assert.equal(typeof handlers.keydown,'function');
+elements.get('translation').onclick();assert.equal(JSON.parse(elements.get('translation-report').textContent).runtimeReady,false);assert.equal(elements.get('translation-preview').open,true);assert.equal(elements.get('board').children.length,seed.layers.length);
 """)
 
     def test_frontend_syntax_bindings_and_schema(self):
@@ -133,9 +135,55 @@ assert.equal(typeof handlers.keydown,'function');
         self.assertEqual(schema['properties']['version']['const'], 1)
         self.assertEqual(schema['properties']['materials']['additionalProperties']['properties']['kind']['const'], 'tile')
         node = shutil.which('node')
-        for filename in ['editor.mjs','model.mjs']:
+        for filename in ['editor.mjs','model.mjs','translation.mjs','validate-layout.mjs']:
             result = subprocess.run([node,'--check',str(EDITOR / filename)],capture_output=True,text=True,timeout=10)
             self.assertEqual(result.returncode,0,result.stderr)
+
+    def test_translation_seed_and_anchor_geometry(self):
+        self.node("""
+const before=m.exportLayout(seed), report=t.translationReport(seed);assert.equal(report.runtimeReady,false);assert.equal(report.version,1);assert.equal(report.target,'CLevelWindow');assert.equal(report.layers.length,seed.layers.length);assert.equal(m.exportLayout(seed),before);
+const title=report.layers.find(x=>x.binding==='hero.name');assert.deepEqual(title.geometryProposal.position,{x:320,y:33});assert.equal(title.geometryProposal.maxWidth,340);
+assert.equal(title.geometryProposal.matchesApprovedPosition,true);const moved=m.updateRect(seed,'portrait',{x:304,y:72,w:58,h:64},false);assert.equal(t.translationReport(moved).layers.find(x=>x.id==='portrait').geometryProposal.matchesApprovedPosition,false);
+const icon=report.layers.find(x=>x.binding==='primary.attack');assert.deepEqual(icon.geometryProposal.nativeResource,{builtin:'PSKIL42',frame:0,group:0});
+for(const anchor of m.ANCHORS){const d=m.reanchor(seed,'portrait',anchor), r=t.translationReport(d);assert.deepEqual(r.layers.find(x=>x.id==='portrait').geometryProposal.position,{x:297,y:66});assert.equal(r.runtimeReady,false);}
+assert(report.globalBlockers.some(x=>x.code==='NO_RUNTIME_ADAPTER'));
+""")
+
+    def test_translation_integer_bounds_and_canvas(self):
+        self.node("""
+for(const patch of [{x:297.5},{x:-1},{w:4096}]) {const d=m.clone(seed);Object.assign(d.layers.find(x=>x.id==='portrait'),patch);assert.throws(()=>t.translationReport(d));}
+const d=m.clone(seed);d.canvas.height=576;assert(t.translationReport(d).globalBlockers.some(x=>x.code==='CANVAS_MISMATCH'));
+const enlarged=m.editLayer(seed,'portrait',{w:64});const p=t.translationReport(enlarged).layers.find(x=>x.id==='portrait');assert(p.blockers.some(x=>x.code==='PORTRAIT_SIZE'));assert.equal(t.translationReport(enlarged).runtimeReady,false);
+""")
+
+    def test_translation_private_and_tiled_blockers(self):
+        self.node("""
+const d=m.clone(seed);d.layers.find(x=>x.id==='portrait').assetRef='private:image-1';d.materials.leather.resource='private:leather';
+let report=t.translationReport(d);assert(report.layers.find(x=>x.id==='portrait').blockers.some(x=>x.code==='PRIVATE_IMAGE'));
+const panel=report.layers.find(x=>x.id==='background');for(const code of ['PRIVATE_MATERIAL','NATIVE_TILE_SIZE','TILE_ORIGIN','MATERIAL_RESOLUTION'])assert(panel.blockers.some(x=>x.code===code));assert.equal(panel.materialProposal.requestedTile.w,64);
+d.materials.leather.origin='local';report=t.translationReport(d);const local=report.layers.find(x=>x.id==='background');assert(!local.blockers.some(x=>x.code==='TILE_ORIGIN'));assert(local.blockers.some(x=>x.code==='NATIVE_TILE_SIZE'));assert.equal(report.runtimeReady,false);
+assert(!t.exportTranslationReport(d).includes('base64'));assert(!t.exportTranslationReport(d).includes('blob:'));
+""")
+
+    def test_translation_unknown_duplicate_and_visibility(self):
+        self.node("""
+const d=m.clone(seed);d.layers.find(x=>x.id==='portrait').binding='hero.unknown';d.layers.find(x=>x.id==='level').binding='hero.name';d.layers.find(x=>x.id==='crest').assetRef='private:crest';d.layers.find(x=>x.id==='crest').visible=false;
+const report=t.translationReport(d);assert(report.layers.find(x=>x.id==='portrait').blockers.some(x=>x.code==='UNKNOWN_BINDING'));assert.equal(report.layers.find(x=>x.id==='portrait').geometryProposal,null);assert(report.layers.find(x=>x.id==='level').blockers.some(x=>x.code==='DUPLICATE_BINDING'));assert(report.layers.find(x=>x.id==='crest').blockers.some(x=>x.code==='PRIVATE_IMAGE'));assert.equal(report.layers.length,d.layers.length);
+const wrong=m.editLayer(seed,'portrait',{type:'panel'});assert(t.translationReport(wrong).layers.find(x=>x.id==='portrait').blockers.some(x=>x.code==='BINDING_TYPE'));
+""")
+
+    def test_translation_cli_valid_and_private_errors(self):
+        node = shutil.which('node')
+        command = [node, str(EDITOR / 'validate-layout.mjs')]
+        result = subprocess.run(command + [str(EDITOR / 'level-up.example.json')],capture_output=True,text=True,timeout=10)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertFalse(json.loads(result.stdout)['runtimeReady'])
+        for target in [str(EDITOR / 'index.html'), str(EDITOR / 'missing-private-file.json'), str(EDITOR)]:
+            result = subprocess.run(command + [target],capture_output=True,text=True,timeout=10)
+            self.assertEqual(result.returncode,2)
+            self.assertEqual(result.stdout,'')
+            self.assertNotIn(str(EDITOR),result.stderr)
+
 
     def asset_environment(self):
         return """

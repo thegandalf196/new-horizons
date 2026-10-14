@@ -10,6 +10,7 @@
 <label>Grid <input id="grid-size" type="number" min="1" max="64" value="8"></label>
 <label><input id="snap" type="checkbox" checked> Snap</label><label><input id="grid-visible" type="checkbox" checked> Show grid</label>
 <button id="import">Import JSON</button><button id="export">Export JSON</button>
+<button id="translation">Check native mapping</button>
 <input id="layout-file" type="file" accept=".json,application/json" hidden>
 </nav>
 <main>
@@ -30,6 +31,7 @@
 <label>Material <select id="prop-material"></select></label><label>Resource reference <input id="prop-assetRef" maxlength="160" placeholder="private:portrait-1"></label>
 <div class="row"><label><input id="prop-visible" type="checkbox"> Visible</label><label><input id="prop-locked" type="checkbox"> Locked</label></div>
 <fieldset id="material-properties"><legend>Tile cells (never whole-panel stretch)</legend><label>Resource <input id="tile-resource" maxlength="160"></label><div class="pair"><label>Tile W <input id="tile-width" type="number" min="1" max="4096"></label><label>Tile H <input id="tile-height" type="number" min="1" max="4096"></label></div><label>Origin <select id="tile-origin"><option value="canvas">Continuous canvas</option><option value="local">Local panel</option></select></label></fieldset>
-</form><p>Frames, banners and crests are separate layers. Imported ornaments use contain, not stretched backgrounds. Bindings are descriptive; no game commands run.</p></aside>
+</form><p>Frames, banners and crests are separate layers. Imported ornaments use contain, not stretched backgrounds. Bindings are descriptive; no game commands run.</p>
+<details id="translation-preview"><summary>Offline mapping report — not runtime-ready</summary><pre id="translation-report" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px">Use Check native mapping to generate a report for the current layout.</pre></details></aside>
 </main><footer id="status" role="status" aria-live="polite">Loading prototype…</footer>
 <script type="module" src="editor.mjs"></script></body></html>
