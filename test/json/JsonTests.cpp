@@ -4,6 +4,7 @@
 #include "../../lib/json/JsonValidator.h"
 #include "../../lib/json/JsonBonus.h"
 #include "../../lib/bonuses/Bonus.h"
+#include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/modding/ModScope.h"
 
 TEST(JsonSchemaStartupTest, PatternSearchAndAnchorsRemainDistinct)
@@ -75,6 +76,51 @@ TEST(JsonSchemaStartupTest, TaggedBonusValidatesAndStillUsesStrictBonusParser)
 	bonus["statusIdentity"].String() = "core:\nslow";
 	EXPECT_FALSE(validator.check("vcmi:bonusInstance", bonus).empty());
 	EXPECT_THROW(JsonUtils::parseBonus(bonus), std::runtime_error);
+}
+
+TEST(JsonSchemaStartupTest, RandomCasterPolicyParserRetainsAbsentZeroAndExactScalarOne)
+{
+	JsonNode bonus;
+	bonus["type"].String() = "RANDOM_SPELLCASTER";
+	bonus["val"].Integer() = 2;
+	const auto absent = JsonUtils::parseBonus(bonus);
+	ASSERT_NE(absent, nullptr);
+	EXPECT_FALSE(absent->parameters);
+	for(const int policy : {0, 1})
+	{
+		bonus["addInfo"].Integer() = policy;
+		const auto parsed = JsonUtils::parseBonus(bonus);
+		ASSERT_NE(parsed, nullptr);
+		ASSERT_TRUE(parsed->parameters);
+		const auto stored = parsed->parameters->toJsonNode();
+		EXPECT_EQ(stored.getType(), JsonNode::JsonType::DATA_INTEGER);
+		EXPECT_EQ(stored.Integer(), policy);
+	}
+}
+
+TEST(JsonSchemaStartupTest, RandomCasterPolicyParserRejectsCoercionAndUnknownValuesWithoutSchema)
+{
+	JsonNode bonus;
+	bonus["type"].String() = "RANDOM_SPELLCASTER";
+	bonus["val"].Integer() = 2;
+	JsonNode vector;
+	vector.Vector().emplace_back(1);
+	JsonNode object;
+	object["policy"].Integer() = 1;
+	JsonNode integralFloat;
+	integralFloat.Float() = 1.0;
+	const std::vector<JsonNode> malformed{
+		JsonNode(), JsonNode(true), JsonNode("1"), JsonNode(2), JsonNode(-1),
+		JsonNode(int64_t{1} << 40), JsonNode(1.5), integralFloat, vector, object,
+		JsonNode(std::numeric_limits<double>::infinity()),
+		JsonNode(-std::numeric_limits<double>::infinity()),
+		JsonNode(std::numeric_limits<double>::quiet_NaN())
+	};
+	for(const auto & policy : malformed)
+	{
+		bonus["addInfo"] = policy;
+		EXPECT_THROW(JsonUtils::parseBonus(bonus), std::runtime_error);
+	}
 }
 
 TEST(JsonTest, conflictDetectionTestNoConflict)

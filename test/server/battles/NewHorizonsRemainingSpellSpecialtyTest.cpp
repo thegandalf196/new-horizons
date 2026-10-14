@@ -7,6 +7,7 @@
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/entities/hero/CHero.h"
+#include "../../../lib/entities/hero/CHeroHandler.h"
 #include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -25,6 +26,12 @@
 
 namespace
 {
+class SpecialtyFixtureHeroHandler : public CHeroHandler
+{
+public:
+	using CHeroHandler::loadFromJson;
+};
+
 struct Successor
 {
 	const char * hero;
@@ -63,6 +70,9 @@ protected:
 	bool enabled = true;
 	bool legacy = false;
 	bool explicitFalse = false;
+	bool fortuneChild = false;
+	bool arcaneOnly = false;
+	bool fortuneOnly = false;
 	CStack * friendly = nullptr;
 	CStack * enemy = nullptr;
 
@@ -85,9 +95,19 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			legacy ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(!fortuneChild)
+		{
+			rules.Struct().erase("fortuneChildSpecialty"); // Historical six-successor captured policy.
+			rules.Struct().erase("arcanePreparationSpecialty");
+		}
+		if(arcaneOnly)
+			rules.Struct().erase("fortuneChildSpecialty");
+		if(fortuneOnly)
+			rules.Struct().erase("arcanePreparationSpecialty");
 		ASSERT_TRUE(newHorizonsHeroes::usesRemainingSpellSpecialties(rules))
 			<< "Principal gate requires the shipped opt-in, not a fixture activation";
-		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+		if(!fortuneChild)
+			rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		// An original-magic context cannot admit the optional modern starting-book table.
 		if(legacy)
 			rules["startingSkills"].Struct().erase("startingBookReplacements");
@@ -277,6 +297,146 @@ protected:
 		EXPECT_FALSE(paid());
 	}
 };
+
+TEST_F(NewHorizonsRemainingSpellSpecialtyTest, FortuneChildDefaultProducerScalesLuckAndSurvivesClone)
+{
+	fortuneChild = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(5));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(spell("core:fortune")));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(spell("core:haste")));
+	EXPECT_EQ(percent(*attackerSideHero), 0);
+	EXPECT_EQ(attackerSideHero->getFortuneChildLuckBonus(), 0);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:luck"))), 1);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic"))), 1);
+	const int ordinaryLuck = attackerSideHero->valOfBonuses(BonusType::LUCK);
+	const auto * type = attackerSideHero->getHeroType();
+	ASSERT_EQ(type->spellSpecialtySuccessorProducers.size(), 1u);
+	EXPECT_EQ(type->spellSpecialtySuccessorProducers.front().bonus->type, BonusType::SPECIAL_FIXED_VALUE_ENCHANT);
+	EXPECT_TRUE(attackerSideHero->getBonusesOfType(BonusType::SPECIAL_FIXED_VALUE_ENCHANT)->empty());
+	while(attackerSideHero->level < 4)
+		attackerSideHero->levelUp({});
+	EXPECT_EQ(attackerSideHero->getFortuneChildLuckBonus(), 0);
+	attackerSideHero->levelUp({});
+	EXPECT_EQ(attackerSideHero->getFortuneChildLuckBonus(), 1);
+	EXPECT_EQ(attackerSideHero->valOfBonuses(BonusType::LUCK), ordinaryLuck + 1);
+	while(attackerSideHero->level < 10)
+		attackerSideHero->levelUp({});
+	EXPECT_EQ(attackerSideHero->getFortuneChildLuckBonus(), 2);
+	EXPECT_EQ(attackerSideHero->valOfBonuses(BonusType::LUCK), ordinaryLuck + 2);
+	CMemorySerializer memory;
+	memory.oser & *gameState();
+	CGameState copied;
+	memory.iser.cb = &copied;
+	memory.iser.loadingGamestate = true;
+	memory.iser & copied;
+	const auto * restored = copied.getHero(attackerSideHero->id);
+	ASSERT_NE(restored, nullptr);
+	EXPECT_EQ(restored->getFortuneChildLuckBonus(), 2);
+	EXPECT_EQ(restored->valOfBonuses(BonusType::LUCK), ordinaryLuck + 2);
+	EXPECT_EQ(restored->getNonDamageSpellSpecialtyBonusPercent(spell("core:haste")), 0);
+	const auto view = newHorizonsHeroes::resolveSpecialtyPresentation(*type,
+		restored->getPrimaryGrowthRules(), restored->getMagicRules(), std::nullopt, restored);
+	EXPECT_EQ(view.name, "Fortune's Child");
+	EXPECT_NE(view.description.find("Current specialty bonus: +2 Luck"), std::string::npos);
+	attackerSideHero->initHero(*gameHandler->randomizer);
+	EXPECT_EQ(attackerSideHero->valOfBonuses(BonusType::LUCK), ordinaryLuck + 2);
+	while(attackerSideHero->level < 25)
+		attackerSideHero->levelUp({});
+	EXPECT_EQ(attackerSideHero->getFortuneChildLuckBonus(), 5);
+	EXPECT_EQ(attackerSideHero->valOfBonuses(BonusType::LUCK), ordinaryLuck + 5);
+}
+
+class IndividualSpecialtyFormatAdmission : public NewHorizonsRemainingSpellSpecialtyTest,
+	public testing::WithParamInterface<bool> {};
+
+TEST_P(IndividualSpecialtyFormatAdmission, OlderEnclosingWritersRejectEachPolicyBeforePrefix)
+{
+	fortuneChild = true;
+	arcaneOnly = GetParam();
+	fortuneOnly = !GetParam();
+	ASSERT_NO_FATAL_FAILURE(prepare(5));
+	const auto reject = [](auto & value)
+	{
+		CMemorySerializer bytes;
+		bytes.oser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
+		EXPECT_THROW(value.serialize(bytes.oser), std::runtime_error);
+		EXPECT_TRUE(bytes.extractBuffer().empty());
+	};
+	reject(*attackerSideHero);
+	GameSettings settings;
+	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	rules.Struct().erase(GetParam() ? "fortuneChildSpecialty" : "arcanePreparationSpecialty");
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, rules);
+	reject(settings);
+	reject(gameState()->getMap());
+	reject(*gameState());
+	LobbyStartGame lobby;
+	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
+	lobby.initializedGameState = gameState();
+	reject(lobby);
+}
+
+TEST_P(IndividualSpecialtyFormatAdmission, RawOlderSettingsReaderRejectsEachCapturedPolicy)
+{
+	JsonNode raw;
+	raw["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	raw["heroes"]["newHorizons"].Struct().erase(
+		GetParam() ? "fortuneChildSpecialty" : "arcanePreparationSpecialty");
+	CMemorySerializer bytes;
+	bytes.oser & raw;
+	bytes.iser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
+	GameSettings decoded;
+	EXPECT_THROW(decoded.serialize(bytes.iser), std::runtime_error);
+}
+
+TEST_P(IndividualSpecialtyFormatAdmission, OlderWorldReaderRejectsEachCapturedPolicy)
+{
+	fortuneChild = true;
+	arcaneOnly = GetParam();
+	fortuneOnly = !GetParam();
+	ASSERT_NO_FATAL_FAILURE(prepare(5));
+	CMemorySerializer memory;
+	memory.oser & *gameState();
+	memory.iser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	memory.iser.loadingGamestate = true;
+	memory.iser.cb = &restored;
+	EXPECT_THROW(memory.iser & restored, std::runtime_error);
+}
+
+INSTANTIATE_TEST_SUITE_P(BothPolicies, IndividualSpecialtyFormatAdmission, testing::Bool());
+
+TEST_F(NewHorizonsRemainingSpellSpecialtyTest, ModifiedNativeFortuneProducerIsNotAnnotatedForConversion)
+{
+	SpecialtyFixtureHeroHandler loader;
+	JsonNode native(JsonPath::builtin("config/heroes/tower"));
+	auto definition = native["daremyth"];
+	const HeroTypeID daremyth(HeroTypeID::decode("core:daremyth"));
+	const auto * installed = daremyth.toHeroType();
+	ASSERT_NE(installed, nullptr);
+	// Loading a local prototype re-registers its static text IDs. Supply the
+	// identical inherited core strings so this control cannot replace them
+	// with the core JSON's absent text leaves.
+	definition["texts"]["name"].String() = installed->getNameTranslated();
+	definition["texts"]["biography"].String() = installed->getBiographyTranslated();
+	definition["texts"]["specialty"]["name"].String() = installed->getSpecialtyNameTranslated();
+	definition["texts"]["specialty"]["description"].String() = installed->getSpecialtyDescriptionTranslated();
+	definition["texts"]["specialty"]["tooltip"].String() = installed->getSpecialtyTooltipTranslated();
+	definition.setModScope("core");
+	const auto exact = loader.loadFromJson("core", definition, "daremyth", daremyth.getNum());
+	ASSERT_EQ(exact->spellSpecialtySuccessorProducers.size(), 1u);
+	std::vector<JsonNode> modified(2, definition);
+	modified[0]["specialty"]["bonuses"]["fortune"]["addInfo"].Integer() = 4;
+	modified[1]["specialty"]["bonuses"]["fortune"]["val"].Integer() = 1;
+	for(const auto & alternative : modified)
+	{
+		const auto parsed = loader.loadFromJson("core", alternative, "daremyth", daremyth.getNum());
+		EXPECT_TRUE(parsed->spellSpecialtySuccessorProducers.empty());
+		ASSERT_EQ(parsed->specialty.size(), 1u);
+		EXPECT_EQ(parsed->specialty.front()->type, BonusType::SPECIAL_FIXED_VALUE_ENCHANT);
+	}
+}
 
 class ApprovedSpellSuccessors : public NewHorizonsRemainingSpellSpecialtyTest, public testing::WithParamInterface<int> {};
 TEST_P(ApprovedSpellSuccessors, ActualPaidDefaultWithPower) { paidControl(GetParam(), 100); }

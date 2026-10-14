@@ -1332,6 +1332,18 @@ void CMap::validateNewHorizonsWeightedPerkSerialization(bool supported) const
 }
 
 
+void CMap::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsIndividualSpecialtiesSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
 void CMap::validateNewHorizonsDruidSpecialtySerialization(bool supported) const
 {
 	if(gameSettings)

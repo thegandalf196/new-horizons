@@ -424,6 +424,9 @@ public:
 
 	/// Complete, uniformly weighted random-beneficial pool, without selecting an outcome or using RNG.
 	std::vector<SpellID> getAvailableBeneficialSpells(const battle::Unit * caster, const battle::Unit * target) const;
+	/// Target-dependent random enchantments; hostile pools require explicit bonus opt-in.
+	std::vector<SpellID> getAvailableRandomCreatureSpells(const battle::Unit * caster, const battle::Unit * target) const;
+	SpellID getRandomCreatureSpell(vstd::RNG & rand, const battle::Unit * caster, const battle::Unit * target) const;
 	SpellID getRandomBeneficialSpell(vstd::RNG & rand, const battle::Unit * caster, const battle::Unit * target) const;
 	SpellID getRandomCastedSpell(vstd::RNG & rand, const CStack * caster) const; //called at the beginning of turn for Faerie Dragon
 

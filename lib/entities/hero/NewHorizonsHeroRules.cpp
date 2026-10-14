@@ -256,6 +256,28 @@ void validateDruidSpecialtyRules(const JsonNode & rules)
 	}
 }
 
+void validateOptionalFortuneChildSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("fortuneChildSpecialty"))
+		return;
+	const auto & row = rules["fortuneChildSpecialty"];
+	fields(row, {"version", "luckPerStep", "levelStep"});
+	require(integer(row["version"], 1, 1), "Fortune's Child version");
+	require(integer(row["luckPerStep"], 0, 1000), "Fortune's Child Luck per step");
+	require(integer(row["levelStep"], 1, 1000), "Fortune's Child level step");
+}
+
+void validateOptionalArcanePreparationSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("arcanePreparationSpecialty"))
+		return;
+	const auto & row = rules["arcanePreparationSpecialty"];
+	fields(row, {"version", "initialPercent", "percentPerLevel", "maximumPercent"});
+	require(integer(row["version"], 1, 1), "Arcane Preparation version");
+	for(const char * key : {"initialPercent", "percentPerLevel", "maximumPercent"})
+		require(integer(row[key], 0, 100), "Arcane Preparation percentage");
+}
+
 void validateExcludedSkills(const JsonNode & excludedSkills)
 {
 	if(excludedSkills.isNull())
@@ -537,7 +559,9 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty"});
+	validateOptionalFortuneChildSpecialtyRules(rules);
+	validateOptionalArcanePreparationSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
@@ -577,7 +601,9 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty"});
+	validateOptionalFortuneChildSpecialtyRules(rules);
+	validateOptionalArcanePreparationSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
@@ -617,6 +643,10 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 		result["skillSpecialties"] = rules["skillSpecialties"];
 	if(rules.Struct().contains("druidSpecialties"))
 		result["druidSpecialties"] = rules["druidSpecialties"];
+	if(rules.Struct().contains("fortuneChildSpecialty"))
+		result["fortuneChildSpecialty"] = rules["fortuneChildSpecialty"];
+	if(rules.Struct().contains("arcanePreparationSpecialty"))
+		result["arcanePreparationSpecialty"] = rules["arcanePreparationSpecialty"];
 	if(rules.Struct().contains("lighthouseDeparture"))
 		result["lighthouseDeparture"] = rules["lighthouseDeparture"];
 	if(rules["skillOfferWeights"].isStruct())
@@ -801,6 +831,39 @@ void validateOffensiveStartSpecialtySerialization(const JsonNode & rules, bool s
 	});
 	if(!supported && ((specialties.isStruct() && specialties.Struct().contains("offensiveStartReplacements")) || hasNewSpell))
 		throw std::runtime_error("Offensive starting specialty rules require the new save format");
+}
+
+std::optional<FortuneChildSpecialtyRules> fortuneChildSpecialtyRules(const JsonNode & development)
+{
+	if(!usesRules(development) || !development.isStruct()
+		|| !development.Struct().contains("fortuneChildSpecialty"))
+		return std::nullopt;
+	validateOptionalFortuneChildSpecialtyRules(development);
+	const auto & row = development["fortuneChildSpecialty"];
+	return FortuneChildSpecialtyRules{static_cast<int>(row["luckPerStep"].Integer()),
+		static_cast<int>(row["levelStep"].Integer())};
+}
+
+std::optional<ArcanePreparationSpecialtyRules> arcanePreparationSpecialtyRules(const JsonNode & development)
+{
+	if(!usesRules(development) || !development.isStruct()
+		|| !development.Struct().contains("arcanePreparationSpecialty"))
+		return std::nullopt;
+	validateOptionalArcanePreparationSpecialtyRules(development);
+	const auto & row = development["arcanePreparationSpecialty"];
+	return ArcanePreparationSpecialtyRules{static_cast<int>(row["initialPercent"].Integer()),
+		static_cast<int>(row["percentPerLevel"].Integer()), static_cast<int>(row["maximumPercent"].Integer())};
+}
+
+void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported)
+{
+	if(!development.isStruct() || (!development.Struct().contains("fortuneChildSpecialty")
+		&& !development.Struct().contains("arcanePreparationSpecialty")))
+		return;
+	if(!supported)
+		throw std::runtime_error("Individual hero specialties require the new save format");
+	validateOptionalFortuneChildSpecialtyRules(development);
+	validateOptionalArcanePreparationSpecialtyRules(development);
 }
 
 bool usesRemainingSpellSpecialties(const JsonNode & rules)
@@ -1370,6 +1433,41 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 	if(capturedHero && (capturedHero->getHeroType() != heroType
 		|| capturedHero->getPrimaryGrowthRules() != development || capturedHero->getMagicRules() != magic))
 		throw std::invalid_argument("Specialty presentation requires the matching captured context");
+
+	const std::string fortuneMarker = "new-horizons:fortune-child:" + std::to_string(heroType->getId().getNum());
+	if(const auto preparation = arcanePreparationSpecialtyRules(development);
+		preparation && heroType->getJsonKey() == "core:serena"
+		&& newHorizonsMagic::spellPointRulesActive(magic))
+	{
+		result.name = "Arcane Preparation";
+		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
+		result.description = "At combat start, Intelligence grants temporary Buffer equal to "
+			+ std::to_string(preparation->initialPercent) + "% + "
+			+ std::to_string(preparation->percentPerLevel) + "% per hero level of Intelligence's extra maximum Spell Points"
+			+ " (up to " + std::to_string(preparation->maximumPercent) + "%, rounded down; minimum 1 when positive)."
+			+ " Unused temporary Buffer expires after combat. Normal capacity and Spell Points are unchanged.";
+		if(capturedHero)
+			result.description += " Current: " + std::to_string(capturedHero->getArcanePreparationPercent())
+				+ "%, +" + std::to_string(capturedHero->getArcanePreparationBufferBonus()) + " temporary Buffer.";
+		return result;
+	}
+	if(const auto fortune = fortuneChildSpecialtyRules(development);
+		fortune && heroType->getJsonKey() == "core:daremyth"
+		&& std::ranges::any_of(heroType->spellSpecialtySuccessorProducers, [](const auto & producer)
+			{ return producer.source == SpellID::FORTUNE; })
+		&& (!capturedHero || std::ranges::any_of(capturedHero->getExportedBonusList(), [&fortuneMarker](const auto & bonus)
+			{ return bonus && bonus->type == BonusType::LUCK && bonus->stacking == fortuneMarker; })))
+	{
+		result.name = "Fortune's Child";
+		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:luck"));
+		result.description = "Daremyth grants +" + std::to_string(fortune->luckPerStep)
+			+ " Luck for every " + std::to_string(fortune->levelStep)
+			+ " hero levels. This adds to ordinary Luck and follows its existing limits.";
+		if(capturedHero)
+			result.description += " Current specialty bonus: +"
+				+ std::to_string(capturedHero->getFortuneChildLuckBonus()) + " Luck.";
+		return result;
+	}
 
 	if(const auto druids = druidSpecialtyRules(development))
 	{

@@ -1023,6 +1023,29 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 			continue;
 		const auto successor = std::ranges::find_if(heroType->spellSpecialtySuccessorProducers,
 			[&b](const auto & producer) { return producer.bonus == b; });
+		if(heroType->getJsonKey() == "core:daremyth"
+			&& newHorizonsHeroes::fortuneChildSpecialtyRules(primaryGrowthRules)
+			&& successor != heroType->spellSpecialtySuccessorProducers.end()
+			&& successor->source == SpellID::FORTUNE)
+		{
+			const std::string marker = "new-horizons:fortune-child:" + std::to_string(heroType->getId().getNum());
+			if(creationInitialization)
+			{
+				auto converted = std::make_shared<Bonus>(*b);
+				converted->type = BonusType::LUCK;
+				converted->valType = BonusValueType::ADDITIVE_VALUE;
+				converted->subtype = BonusSubtypeID();
+				converted->parameters.reset();
+				converted->val = 0;
+				converted->stacking = marker;
+				addNewBonus(converted);
+				refreshFortuneChildSpecialtyBonus();
+				continue;
+			}
+			if(std::ranges::any_of(getExportedBonusList(), [&marker](const auto & bonus)
+				{ return bonus && bonus->stacking == marker; }))
+				continue;
+		}
 		if(successor != heroType->spellSpecialtySuccessorProducers.end())
 			if(const auto target = authoredRemainingSpellReplacement(*this, successor->source))
 			{
@@ -2313,6 +2336,33 @@ int64_t CGHeroInstance::getHighLoreManaBonus() const
 		newHorizonsHeroes::druidSpecialtyPercent(level, rules->highLore));
 }
 
+int CGHeroInstance::getArcanePreparationPercent() const
+{
+	const auto rules = newHorizonsHeroes::arcanePreparationSpecialtyRules(primaryGrowthRules);
+	const auto * heroType = getHeroType();
+	if(!rules || !heroType || heroType->getJsonKey() != "core:serena"
+		|| !newHorizonsMagic::spellPointRulesActive(getMagicRules()))
+		return 0;
+	return static_cast<int>(std::min<int64_t>(rules->maximumPercent,
+		static_cast<int64_t>(rules->initialPercent) + static_cast<int64_t>(rules->percentPerLevel) * level));
+}
+
+int32_t CGHeroInstance::getArcanePreparationBufferBonus() const
+{
+	if(!newHorizonsHeroes::arcanePreparationSpecialtyRules(primaryGrowthRules)
+		|| !getHeroType() || getHeroType()->getJsonKey() != "core:serena"
+		|| !newHorizonsMagic::spellPointRulesActive(getMagicRules())
+		|| !hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence"))
+		return 0;
+	const int64_t knowledge = std::max<int64_t>(0, getPrimSkillLevel(PrimarySkill::KNOWLEDGE));
+	const int64_t intelligence = std::max<int64_t>(0,
+		knowledge * newHorizonsMagic::spellPointsIntelligenceMaximumPercent(getMagicRules()) / 100 - knowledge);
+	if(intelligence == 0)
+		return 0;
+	return static_cast<int32_t>(std::min<int64_t>(std::numeric_limits<int32_t>::max(),
+		std::max<int64_t>(1, intelligence * getArcanePreparationPercent() / 100)));
+}
+
 si32 CGHeroInstance::manaLimit() const
 {
 	if(newHorizonsMagic::spellPointRulesActive(getMagicRules()))
@@ -3190,6 +3240,7 @@ void CGHeroInstance::levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS
 	lastPrimaryGains = gains;
 	++level;
 	refreshCreatureLineSpecialtyBonuses(false);
+	refreshFortuneChildSpecialtyBonus();
 	//update specialty and other bonuses that scale with level
 	nodeHasChanged();
 }
@@ -3225,6 +3276,34 @@ CreatureID CGHeroInstance::getCreatureLineSpecialtyTarget() const
 		return *newHorizonsHeroes::defaultCreatureLineTarget(primaryGrowthRules, getHeroTypeID());
 	const auto * hero = getHeroType();
 	return hero && hero->creatureLineSpecialtyAlias ? hero->creatureLineSpecialtyAlias->creature : CreatureID();
+}
+
+int CGHeroInstance::getFortuneChildLuckBonus() const
+{
+	const auto rules = newHorizonsHeroes::fortuneChildSpecialtyRules(primaryGrowthRules);
+	const auto * heroType = getHeroType();
+	if(!rules || !heroType || heroType->getJsonKey() != "core:daremyth")
+		return 0;
+	const std::string marker = "new-horizons:fortune-child:" + std::to_string(heroType->getId().getNum());
+	if(std::ranges::none_of(getExportedBonusList(), [&marker](const auto & bonus)
+		{ return bonus && bonus->type == BonusType::LUCK && bonus->stacking == marker; }))
+		return 0;
+	return static_cast<int>(std::min<int64_t>(std::numeric_limits<int>::max(),
+		static_cast<int64_t>(level) / rules->levelStep * rules->luckPerStep));
+}
+
+void CGHeroInstance::refreshFortuneChildSpecialtyBonus()
+{
+	const auto * heroType = getHeroType();
+	if(!heroType || heroType->getJsonKey() != "core:daremyth"
+		|| !newHorizonsHeroes::fortuneChildSpecialtyRules(primaryGrowthRules))
+		return;
+	const std::string marker = "new-horizons:fortune-child:" + std::to_string(heroType->getId().getNum());
+	const int luck = getFortuneChildLuckBonus();
+	for(const auto & bonus : getExportedBonusList())
+		if(bonus && bonus->type == BonusType::LUCK && bonus->stacking == marker)
+			bonus->val = luck;
+	nodeHasChanged();
 }
 
 void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)

@@ -52,6 +52,25 @@
 				"nonDamageSpellSpecialties": {"$ref": "#/definitions/nonDamageSpellSpecialties"},
 				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"},
 				"druidSpecialties": {"$ref": "#/definitions/druidSpecialties"},
+				"fortuneChildSpecialty": {
+					"type": "object", "additionalProperties": false,
+					"required": ["version", "luckPerStep", "levelStep"],
+					"properties": {
+						"version": {"type": "integer", "enum": [1]},
+						"luckPerStep": {"type": "integer", "minimum": 0, "maximum": 1000},
+						"levelStep": {"type": "integer", "minimum": 1, "maximum": 1000}
+					}
+				},
+				"arcanePreparationSpecialty": {
+					"type": "object", "additionalProperties": false,
+					"required": ["version", "initialPercent", "percentPerLevel", "maximumPercent"],
+					"properties": {
+						"version": {"type": "integer", "enum": [1]},
+						"initialPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+						"percentPerLevel": {"type": "integer", "minimum": 0, "maximum": 100},
+						"maximumPercent": {"type": "integer", "minimum": 0, "maximum": 100}
+					}
+				},
 				"remainingSpellSpecialtyReplacements": {"type": "boolean", "description": "Captured six authored spell-specialty successors. Absence or false preserves original producers; any key presence requires its serialization feature."}
 			}
 		}

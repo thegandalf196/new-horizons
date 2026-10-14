@@ -635,7 +635,8 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, MageLineRefreshesAtCanonicalThresholdsA
 
 TEST_F(NewHorizonsCreatureSpecialtyTest, ApprovedSpellAndNavigationPresentationUsesExplicitTargets)
 {
-	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	development.Struct().erase("fortuneChildSpecialty"); // Earlier captured Haste-successor presentation.
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 	const std::array<std::pair<const char *, const char *>, 18> successors = {{
 		{"core:ash", "core:fireball"}, {"core:darkstorn", "new-horizons:hexOfPain"},

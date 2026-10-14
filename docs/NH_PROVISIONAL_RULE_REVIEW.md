@@ -1,5 +1,111 @@
 # New Horizons provisional rule review
 
+## Griffin Elite reinforcement and target-dependent Genie wishes
+
+Chosen Griffin12/12, Damage7–10, HP45; Royal14/14, Damage9–12, HP55.
+The existing Elite label should provide a sturdier flying retaliation unit
+above the Core swordsman line. A moderate offensive increase and additional
+survivability support that identity without increasing activation count or
+altering speed. Preserve weekly growth, prices and Leadership during this
+bounded change; these values are experimental rather than final balance.
+
+Regular Genie inherits the previous Master Genie blessing mechanic unchanged:
+three casts, proficiency2, enchantment power5. Master Genie chooses recipient
+allegiance, then uniformly draws a legal effect using the authoritative RNG:
+allies receive the established beneficial pool; enemies receive one of six
+existing temporary debuffs (Curse, Weakness, Slow, Misfortune, Sorrow,
+Forgetfulness). Exclude damage, mass effects and control-transfer effects.
+Both routes spend the same three charges. This gives the upgrade versatility
+without doubling its action budget. Spell access and current target/immunity
+checks apply before drawing; empty pools spend neither charges nor RNG.
+
+Implementation: the generated experimental creature patch, numeric
+`RANDOM_SPELLCASTER.addInfo=1` opt-in, shared battle pool callback, authoritative
+existing creature-cast dispatch, deterministic client legality and AI uniform
+outcome forecasting. Bonus metadata already serializes; no new mutable wish
+state is introduced. Original definitions and absent opt-ins remain compatible.
+Native tests cover ally/hostile charge sharing, base rejection, immune rejection,
+uniform forecast and actual AI hostile requests; all 15 native creature/parser
+cases pass, including separate positive Hydra and zero-benefit Bone Dragon
+forecasts. The local Linux preview includes this implementation.
+Data checks cover exact changed leaves, preserved economy and mount precedence.
+
+The hostile opt-in retains exact scalar integer metadata. Parser controls cover
+absent/0/1 and reject coercion, unknown values and nonfinite payloads independently
+of schema validation. Runtime controls reject malformed externally constructed
+metadata. Mixed-specific/ANY proficiency controls match the server's first
+chosen-spell bonus and battlefield raise, rather than summing specific bonuses.
+Strategic army `aiValue` remains the inherited static value from installed
+creature data; tactical damage and wish evaluation use actual updated mechanics.
+Reassess that explicit strategic weight during numerical playtesting; no price,
+Leadership or army-value coefficient is silently changed here.
+
+Second look: Griffin retaliation survivability, curses on shooters/luck/morale
+immune units, Spell Lock/Time Stop/Sanctified, Magic Plains mass exclusion,
+saved creature bonus provenance, native AI valuation and ordinary rendered
+target selection. No new artwork or playable-delivery acceptance is claimed.
+
+## Serena Arcane Preparation — provisional Intelligence-derived combat Buffer
+
+The selected unique specialty replaces the workbook's earlier Prodigy proposal.
+Provisionally, calculate ordinary Intelligence's extra Normal capacity from
+current Knowledge and the captured Intelligence percentage, excluding High Lore,
+artifact Mana multipliers and flat capacity/reserve bonuses. Grant 30% of that
+contribution at level 1, increasing by five percentage points per hero level up
+to 100% at level 15. Round down; when the Intelligence contribution is positive,
+grant at least one temporary Buffer point. Otherwise grant zero.
+
+The rationale is a distinct preparation benefit for Metamagic without increasing
+Serena's permanent capacity, restoring spent Normal points or adding another
+Metamagic use. Elleshar's High Lore increases Normal capacity. The workbook's
+Ayden Mana Furnace restores Normal points toward capacity at combat start;
+Andra's Bottomless Mind adds a flat level-scaled reserve. Formula Reserve restores
+three Normal points after a completed Metamagic sequence; Spell Buffer grants
+six Buffer after an unused Metamagic opportunity expires. Serena instead adds
+an Intelligence-derived, temporary reserve immediately when combat starts.
+
+`CGHeroInstance::getArcanePreparationBufferBonus` computes the captured policy
+and `SideInBattle::init` joins the existing combat-Mana grant. Existing temporary
+Buffer grant/spend/save/end/cancellation code owns its provenance and expiry;
+no new battlefield counter or pool is introduced. Fresh starting development
+uses Wisdom/Intelligence and Basic Metamagic. Old policy absence is inert and
+old starting profiles remain captured. The combined individual-specialty save
+feature occupies one appended format version.
+
+Focused source cases cover real default starts, floor/minimum/cap arithmetic,
+inactive Intelligence, artifact Mana modifiers, old policy absence, temporary
+spending/save/end/cancellation and integer headroom. The 24-case native
+hero/compatibility gate passes. Local Linux preview delivery is complete;
+ordinary rendered and native Windows acceptance remain pending. Revisit the
+initial coefficient and progression after
+playtesting; the unique temporary-reserve identity is selected. Pending Changes
+holds the workbook/canonical amendment until integration.
+
+## Daremyth Fortune's Child — provisional coefficients
+
+The selected identity is Fortune's Child rather than the previously approved
+Haste successor. The authored workbook does not provide a numerical threshold.
+Provisionally, +1 ordinary Luck is granted per five completed hero levels:
+levels 1–4 grant zero, 5–9 grant +1, and 10–14 grant +2. No specialty-specific
+cap is introduced; the common Luck system still controls the final outcome.
+The rationale is a visible, simple progression that can be tuned later.
+
+The optional captured `fortuneChildSpecialty` policy owns the coefficients.
+`CGHeroInstance::initHero` converts only the exact recognized native Fortune
+producer to a local Luck bonus, and `levelUp` refreshes it. Old policy absence
+retains the old specialty, including the Haste successor. The existing Haste
+starting inscription remains unchanged because Fortune is a retired hero spell.
+Only Daremyth's specialty is affected.
+
+Focused source tests cover captured coefficients, malformed policy admission,
+level thresholds, ordinary Luck addition, clone/reinitialization and old writer
+rejection before output. The 24-case native hero/compatibility gate passes and
+the local Linux preview includes this specialty. Ordinary rendered and native
+Windows validation remain pending.
+Revisit whether a different first threshold or coefficient is more enjoyable;
+the authored identity itself is settled. The temporary amendment is recorded
+in Pending Changes until canonical integration.
+
 ## Authored Druid specialties — configurable initial coefficients
 
 Elleshar's High Lore increases only Intelligence's extra maximum Spell Points:

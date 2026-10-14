@@ -178,6 +178,15 @@ static TBonusParametersPtr loadBonusAddInfo(BonusType type, const JsonNode & val
 	if (value.isNull())
 		return nullptr;
 
+	if(type == BonusType::RANDOM_SPELLCASTER)
+	{
+		if(value.getType() != JsonNode::JsonType::DATA_INTEGER
+			|| (value.Integer() != 0 && value.Integer() != 1))
+			throw std::runtime_error("RANDOM_SPELLCASTER addInfo requires scalar integer 0 or 1");
+		// Preserve the exact scalar type in existing serialized bonus metadata.
+		return std::make_shared<BonusParameters>(value);
+	}
+
 	auto result = std::make_shared<BonusParameters>();
 	BonusParameters & var = *result;
 
@@ -842,6 +851,7 @@ bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifi
 	const JsonNode * value = nullptr;
 	const JsonNode & subtypeNode = ability["subtype"];
 	const JsonNode & addinfoNode = ability["addInfo"];
+	const bool hasAddInfo = ability.Struct().contains("addInfo");
 
 	if (ability["type"].isNull())
 	{
@@ -856,9 +866,11 @@ bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifi
 
 	BonusMigration::warnIfRetired(ability, descriptionID);
 
-	LIBRARY->identifiers()->requestIdentifier("bonus", ability["type"], [b, subtypeNode, addinfoNode, descriptionID](si32 bonusID)
+	LIBRARY->identifiers()->requestIdentifier("bonus", ability["type"], [b, subtypeNode, addinfoNode, hasAddInfo, descriptionID](si32 bonusID)
 	{
 		b->type = static_cast<BonusType>(bonusID);
+		if(b->type == BonusType::RANDOM_SPELLCASTER && hasAddInfo && addinfoNode.isNull())
+			throw std::runtime_error("RANDOM_SPELLCASTER addInfo requires scalar integer 0 or 1");
 		loadBonusSubtype(b->subtype, b->type, subtypeNode);
 		b->parameters = loadBonusAddInfo(b->type, addinfoNode);
 		if (b->type == BonusType::PHYSICAL_AFFLICTION)

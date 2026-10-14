@@ -32,7 +32,7 @@ public:
 		DEMONIC_GATE,
 		WALK_AND_SPELLCAST,
 
-		RANDOM_GENIE_SPELL,   // random spell on a friendly creature
+		RANDOM_GENIE_SPELL,   // random enchantment; hostile targeting requires explicit caster opt-in
 
 		NO_LOCATION,          // massive spells that affect every possible target, automatic casts
 		ANY_LOCATION,

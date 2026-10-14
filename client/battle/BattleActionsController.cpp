@@ -4439,10 +4439,10 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 			return lifeDrainTargetHexIsLegal(targetHex);
 
 		case PossiblePlayerBattleAction::RANDOM_GENIE_SPELL:
-			if(targetStack && targetStackOwned && targetStack != owner.stacksController->getActiveStack() && targetStack->alive()) //only positive spells for other allied creatures
+			if(targetStack && targetStack != owner.stacksController->getActiveStack() && targetStack->alive())
 			{
-				SpellID spellID = owner.getBattle()->getRandomBeneficialSpell(CRandomGenerator::getDefault(), owner.stacksController->getActiveStack(), targetStack);
-				return spellID != SpellID::NONE;
+				return !owner.getBattle()->getAvailableRandomCreatureSpells(
+					owner.stacksController->getActiveStack(), targetStack).empty();
 			}
 			return false;
 

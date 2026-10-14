@@ -1,5 +1,76 @@
 # New Horizons Pending Changes
 
+## Griffin Elite statistics and Genie wishes — provisional experimental update
+
+Griffin: Attack12, Defense12, Damage7–10, HP45. Royal Griffin: Attack14,
+Defense14, Damage9–12, HP55. Existing Elite categories, Speed/Initiative7/9,
+Growth5, Gold300/450, Leadership220/260, flying and retaliation abilities
+remain as authored. These configurable numbers supersede the earlier weaker
+Griffin rows provisionally; review numerical balance during creature playtests.
+
+Regular Genie receives the previous Master Genie's three allied random
+enchantments at spell proficiency2 and enchantment power5. Master Genie keeps
+three shared wishes: allied recipients use the existing beneficial pool;
+hostile recipients use legal single-creature Curse, Weakness, Slow, Misfortune,
+Sorrow or Forgetfulness. Current captured spell access, immunity and target
+conditions filter each pool. No damage, mass spells or control-transfer spells
+enter the curse pool. One accepted wish consumes one creature cast and its
+activation, without hero mana. Other Genie statistics, economy and artwork
+remain unchanged. Core creature definitions and random casters without the
+explicit bonus opt-in retain the earlier allied-only policy.
+
+Implementation source: `config/newHorizonsCreatureExperimentalValues.json`,
+generated as the last curated creature patch. Linux compilation, 22 focused
+hero/creature data checks and 15 native creature/parser cases pass. The local
+Linux preview includes these changes; ordinary rendered selection and native
+Windows gameplay acceptance remain pending.
+Integrate these amendments into canonical Experimental Values after validation.
+
+## Serena — Arcane Preparation
+
+Supersedes the hero-redesign workbook's earlier Prodigy proposal and its
+Learning/Eagle Eye starting package. Serena now starts with Basic Wisdom and
+Intelligence alongside Basic Metamagic. Her class, primary attributes, army,
+spell access and Metamagic use count are unchanged.
+
+With active Intelligence, let K be current Knowledge and I be the ordinary
+Intelligence capacity contribution: floor(K × captured Intelligence percentage
+/ 100) − K. Exclude High Lore, artifact Mana modifiers and flat capacity/reserve
+bonuses from I. At combat start, Serena receives temporary Buffer B:
+p = min(100, 25 + 5 × hero level);
+B = I > 0 ? max(1, floor(I × p / 100)) : 0.
+The percentages are provisional, configurable and captured by the optional
+`arcanePreparationSpecialty` policy. Existing Buffer integer limits bound the
+actual grant.
+
+This grant does not refill Normal Spell Points or increase maximum Normal
+capacity. It joins existing temporary combat Buffer: spending consumes its
+temporary provenance, unused temporary Buffer expires at battle end, and
+cancellation restores the precombat pools. Permanent Buffer granted by other
+effects remains governed by those effects. Policy absence retains the previous
+specialty behavior; older saved starting-development profiles remain captured.
+Source implementation and focused data checks are validated by the 24-case
+native hero/compatibility gate. The local Linux preview includes this specialty;
+ordinary rendered gameplay and native Windows acceptance remain pending.
+
+## Daremyth — Fortune's Child
+
+The selected Daremyth specialty replaces the earlier Haste successor with
+Fortune's Child: add +1 Luck for every five hero levels (first +1 at level 5,
++2 at level 10). This is ordinary Luck; the common Luck system governs its
+limits and effects. No separate specialty cap applies. The coefficients are
+provisional and configurable through the captured `fortuneChildSpecialty`
+policy. Daremyth's starting development and existing Haste starting inscription
+are unchanged; Fortune remains a retired hero spell.
+
+Only new heroes carrying this policy convert the exact native Fortune producer.
+Earlier captured worlds without the policy keep their existing Haste successor
+or original Fortune specialty. The current source implements the selected
+mechanic; Linux compilation and the 24-case native hero/compatibility gate pass.
+The local Linux preview includes it; ordinary rendered gameplay and native
+Windows acceptance remain pending.
+The historical Daremyth Haste row below is superseded for this new policy.
+
 ## Perk offers inherit full parent Skill weights
 
 Supersedes the final sentence of canonical "Class Skill offer weights": each

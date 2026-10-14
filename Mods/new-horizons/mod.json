@@ -3042,6 +3042,17 @@
 					"componentPercent": 15
 				},
 				"remainingSpellSpecialtyReplacements": true,
+				"fortuneChildSpecialty": {
+					"version": 1,
+					"luckPerStep": 1,
+					"levelStep": 5
+				},
+				"arcanePreparationSpecialty": {
+					"version": 1,
+					"initialPercent": 25,
+					"percentPerLevel": 5,
+					"maximumPercent": 100
+				},
 				"nonDamageSpellSpecialties": {
 					"version": 1,
 					"aenainFrailtyReplacement": true,
@@ -3618,7 +3629,7 @@
 						"core:serena": {
 							"skills": [
 								{
-									"skill": "new-horizons:learning",
+									"skill": "new-horizons:wisdom",
 									"rank": 1
 								},
 								{
@@ -3628,8 +3639,8 @@
 							],
 							"startingPerks": [
 								{
-									"skill": "new-horizons:learning",
-									"perk": "new-horizons:learning.eagleEye"
+									"skill": "new-horizons:wisdom",
+									"perk": "new-horizons:wisdom.intelligence"
 								}
 							]
 						},
@@ -10290,7 +10301,8 @@
 		"config/creatures/castle.json",
 		"config/creatures/special.json",
 		"config/creatures/tower.json",
-		"config/creatures/conflux.json"
+		"config/creatures/conflux.json",
+		"config/creatures/experimentalValues.json"
 	],
 	"heroClasses": [
 		"config/heroClasses/names.json"

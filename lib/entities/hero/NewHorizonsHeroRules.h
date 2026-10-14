@@ -113,6 +113,22 @@ DLL_LINKAGE int druidSpecialtyPercent(int level, const LevelScaledSpecialty & ru
 /// Floor the extra contribution; saturation prevents overflow before existing caps.
 DLL_LINKAGE int64_t druidSpecialtyExtra(int64_t ordinaryContribution, int percent);
 
+/// Captured Daremyth coefficients; absence preserves the earlier spell specialty.
+struct DLL_LINKAGE FortuneChildSpecialtyRules
+{
+	int luckPerStep = 1;
+	int levelStep = 5;
+};
+DLL_LINKAGE std::optional<FortuneChildSpecialtyRules> fortuneChildSpecialtyRules(const JsonNode & development);
+struct DLL_LINKAGE ArcanePreparationSpecialtyRules
+{
+	int initialPercent = 25;
+	int percentPerLevel = 5;
+	int maximumPercent = 100;
+};
+DLL_LINKAGE std::optional<ArcanePreparationSpecialtyRules> arcanePreparationSpecialtyRules(const JsonNode & development);
+DLL_LINKAGE void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported);
+
 /// Read-only live-hero presentation. No secondary attributes or masteries are
 /// fabricated here. Primary growth is the fixed class vector; version 3 also
 /// exposes the owned skills' independent bonus opportunities.

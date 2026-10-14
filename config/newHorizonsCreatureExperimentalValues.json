@@ -1,0 +1,26 @@
+{
+	"core:griffin": {
+		"attack": 12,
+		"defense": 12,
+		"damage": { "min": 7, "max": 10 },
+		"hitPoints": 45
+	},
+	"core:royalGriffin": {
+		"attack": 14,
+		"defense": 14,
+		"damage": { "min": 9, "max": 12 },
+		"hitPoints": 55
+	},
+	"core:genie": {
+		"abilities": {
+			"casts": { "type": "CASTS", "val": 3 },
+			"spellsLength": { "type": "CREATURE_ENCHANT_POWER", "val": 5 },
+			"randomSpellcaster": { "type": "RANDOM_SPELLCASTER", "val": 2 }
+		}
+	},
+	"core:masterGenie": {
+		"abilities": {
+			"randomSpellcaster": { "type": "RANDOM_SPELLCASTER", "val": 2, "addInfo": 1 }
+		}
+	}
+}

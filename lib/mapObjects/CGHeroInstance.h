@@ -101,6 +101,7 @@ private:
 	TConstBonusListPtr getMoraleBonuses() const override;
 	bool isSpellbinderHatGrantEligible(const SpellID & spell) const;
 	void refreshCreatureLineSpecialtyBonuses(bool createIfMissing);
+	void refreshFortuneChildSpecialtyBonus();
 	bool canLearnSpellImpl(const spells::Spell * spell, bool allowBanned,
 		bool ignoreSchoolProficiency, bool logWarnings, bool allowAdventureGuildUnlock) const;
 
@@ -285,6 +286,10 @@ public:
 	std::optional<newHorizonsHeroes::DruidSpecialtyRules> getDruidSpecialtyRules(
 		newHorizonsHeroes::DruidSpecialtyKind specialty) const;
 	int64_t getHighLoreManaBonus() const;
+	/// Only the captured exact native Daremyth producer contributes this Luck.
+	int getFortuneChildLuckBonus() const;
+	int getArcanePreparationPercent() const;
+	int32_t getArcanePreparationBufferBonus() const;
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
@@ -736,6 +741,9 @@ public:
 			newHorizonsHeroes::validateDruidSpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)
+			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
+		if(h.saving)
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
@@ -888,6 +896,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 				newHorizonsHeroes::validateDruidSpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+				newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
 				newHorizonsHeroes::validateRemainingStartSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,

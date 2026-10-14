@@ -257,6 +257,7 @@ public:
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
 	void validateNewHorizonsWeightedPerkSerialization(bool supported) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported) const;
 	void validateNewHorizonsArtifactManaRegenerationSerialization(bool supported) const;
 	void validateNewHorizonsGlyphsOfFearSerialization(bool supported) const;
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
@@ -302,6 +303,8 @@ public:
 			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)
 			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+		if(h.saving)
+			validateNewHorizonsIndividualSpecialtiesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
 		if(h.saving)
 			validateNewHorizonsRemainingStartSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 		if(h.saving)
@@ -451,6 +454,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 				newHorizonsHeroes::validateDruidSpecialtySerialization(heroDevelopmentRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+				newHorizonsHeroes::validateIndividualSpecialtiesSerialization(heroDevelopmentRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
 				newHorizonsHeroes::validateRemainingStartSerialization(heroDevelopmentRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(heroDevelopmentRules,
