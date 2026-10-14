@@ -37950,6 +37950,516 @@
       "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
       "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
       "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_spell_confusion-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_confusion-30.png",
+      "size": 2270,
+      "sha256": "2031b89830fa0a839bbe0d1bf2590a617d82e39b4dd352112c10b5f19fc508c9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_confusion-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_confusion-32.png",
+      "size": 2525,
+      "sha256": "11bf413cf2827c263c70a2fd40d6e4c48e04966e801e091287b0e70ac8e0e892",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_confusion-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_confusion-44.png",
+      "size": 4197,
+      "sha256": "a8915a8a7f83b770a0609b9195314323a6c5b734ef0865fcb25be365ab632fcf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_crusade-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_crusade-30.png",
+      "size": 1874,
+      "sha256": "c9f860ae300666da4fe16457bd820974dc1c14d8950845b624f25ca240b61e1e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_crusade-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_crusade-32.png",
+      "size": 2048,
+      "sha256": "784eb8aaac4dbacad473ffed15bfbdd48bb9f593001e17e6cdaa15ada3901b72",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_crusade-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_crusade-44.png",
+      "size": 3340,
+      "sha256": "b2f8e5d91c6ecfcba0dfcff9cfed08f95b56097850419f631361d1480ae5122e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_disintegrate-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_disintegrate-30.png",
+      "size": 2337,
+      "sha256": "b63a717ecbabb439d1be18b3b45f92573bf0b7497a2a7602b1f7eea59ac53b31",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_disintegrate-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_disintegrate-32.png",
+      "size": 2574,
+      "sha256": "2769f8bc51123075f1d6e75c208fa33e7e83edbf0c8d0ce0ae1d56bc32d028f0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_disintegrate-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_disintegrate-44.png",
+      "size": 4267,
+      "sha256": "faaf8e9af4c90391b91369cb1f52015c90a8740b7bcc300e2ce6caab86376b8b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_elemental_convergence-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_elemental_convergence-30.png",
+      "size": 1936,
+      "sha256": "4d9dfcab320b1dac00bea14110cfdfb01fb4b7dfd48d897d8b56ab928cbeb19d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_elemental_convergence-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_elemental_convergence-32.png",
+      "size": 2149,
+      "sha256": "662f6f7484b14b9837fa33915c9d3a8e0b2e43767ff74ecf5d732b933fac27da",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_elemental_convergence-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_elemental_convergence-44.png",
+      "size": 3528,
+      "sha256": "175e7c730d7f8f117ecb02f454fc2e40364614a2d2cf38605007dd5a25f57182",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_focus_magic-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_focus_magic-30.png",
+      "size": 2538,
+      "sha256": "9dd25575436696089bcf2f226c00c87cfbddbb4ef8f1f16ec57b8f09e91caaed",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_focus_magic-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_focus_magic-32.png",
+      "size": 2786,
+      "sha256": "fb8d4a282880792214f1bb7dc633deeda6869cb5b88c28d927666ec891f326ec",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_focus_magic-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_focus_magic-44.png",
+      "size": 4657,
+      "sha256": "ed360756b941d012de6522060e9dd01c3474f826c8ecb9976028928bac54f9f2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_hand_of_fate-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_hand_of_fate-30.png",
+      "size": 2322,
+      "sha256": "e5988043a0014d4196c370bdbfcf59eacddb55524360cc0b57328f1165f15bd5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_hand_of_fate-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_hand_of_fate-32.png",
+      "size": 2552,
+      "sha256": "96e5ef7c8e78e62568efaaa20049a994cf504df688c3a6e39bf7443030b5e7ad",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_hand_of_fate-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_hand_of_fate-44.png",
+      "size": 4294,
+      "sha256": "5d0807e777b420c981a8cf3c41d500cb138c0d15f8ec66f3c893759c19ef854b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_master_chain_lightning-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_master_chain_lightning-30.png",
+      "size": 1545,
+      "sha256": "221dd5a0b0311e557603cf2a506ac8cbdb583224ea0f7f9b989c0c57538eb531",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_master_chain_lightning-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_master_chain_lightning-32.png",
+      "size": 1736,
+      "sha256": "3a9e15db2d097c1ecda2bc3a1530f12dd0640f505650522ca32527610cf4c123",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_master_chain_lightning-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_master_chain_lightning-44.png",
+      "size": 2765,
+      "sha256": "393f83afdea7c6b98d0cc705592f294b460e61105a84a0b5a578c1bf71ed01eb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_natures_wrath-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_natures_wrath-30.png",
+      "size": 2696,
+      "sha256": "7c61f5b0e96974e30c7669a5bac00b7428868bfc37f62b6321385bd03a183fcb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_natures_wrath-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_natures_wrath-32.png",
+      "size": 2995,
+      "sha256": "f4f59d40162190b591bc743f29d660ada0e2ee8729fb9678c18ebaf5489a21a3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_natures_wrath-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_natures_wrath-44.png",
+      "size": 4999,
+      "sha256": "5ad9e732f5b5a27a5e96077e9dbea1045ed131138f324c6984333f721c1de6ce",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_pandemonium-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_pandemonium-30.png",
+      "size": 2421,
+      "sha256": "ca431833813307c8b73db40b97006a40d59b4646b9e0f348c1ba4c7a9cd336a6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_pandemonium-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_pandemonium-32.png",
+      "size": 2709,
+      "sha256": "5236b33a5d4452fb22e50eb7ca61921b4b7f1861360c1de8e8ce8021cc7e6498",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_pandemonium-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_pandemonium-44.png",
+      "size": 4588,
+      "sha256": "a66e3d713116efa5309cc2b6fa25b5037778d85cabc5103d1738e0f1c77a9e10",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_phantom_army-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_phantom_army-30.png",
+      "size": 2469,
+      "sha256": "74c4eb7da7f1f55871ff223ba076861b76828074d965463b6f64f585c011902b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_phantom_army-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_phantom_army-32.png",
+      "size": 2716,
+      "sha256": "b65a6447e618145e03180f0444f6cb962c3e48c1f064f3fc294652d566b87769",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_phantom_army-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_phantom_army-44.png",
+      "size": 4667,
+      "sha256": "03d144e30f4075e193511385438879894add5165b576b89360d06fcf86f0e989",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_polymorph-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_polymorph-30.png",
+      "size": 2539,
+      "sha256": "af81deeb7ca4c77078eafa630b82037ba79f5bd4d0438b74f515f273d1688110",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_polymorph-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_polymorph-32.png",
+      "size": 2858,
+      "sha256": "85095205d05a01483a0de104047713b1f5b283917fad6e4bd981084086628e93",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_polymorph-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_polymorph-44.png",
+      "size": 4812,
+      "sha256": "d173fbfb5ee4bad571673e970b235a48962339142e5439186d7a1d7781ab3884",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_puppet_master-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_puppet_master-30.png",
+      "size": 2620,
+      "sha256": "231ac3883118de85b2de0e16145d5c7eaa50022299ccaf34ddc1b2f29519d149",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_puppet_master-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_puppet_master-32.png",
+      "size": 2910,
+      "sha256": "4b48095af9c7dccf578b6a50e6047ef0af7ae797b518e9fe13ce03cf415854a5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_puppet_master-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_puppet_master-44.png",
+      "size": 4896,
+      "sha256": "052d83651f08b52f66dc84a6692bd71ffa4711390c4e77f1280f21d8ca406922",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_reality_warp-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_reality_warp-30.png",
+      "size": 2035,
+      "sha256": "34cae634de83e3b7c228c30bbd76e6f5fdf99fe7554f55290acfe6e3ab5cbd38",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_reality_warp-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_reality_warp-32.png",
+      "size": 2220,
+      "sha256": "b82334faaf149e49d1c89af8d0a24a5cc2be144c34d535c17b2f2dcda0ea60e3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_reality_warp-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_reality_warp-44.png",
+      "size": 3744,
+      "sha256": "2a5f534667697604557575c1d0e6f1845b7a8810bfd9f5793aef2c489c23f43b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_shield_of_chaos-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_shield_of_chaos-30.png",
+      "size": 2258,
+      "sha256": "a3573807d192b2c1ee4c7742436e0fec1f192db27b889cb6b901d21001b25df6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_shield_of_chaos-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_shield_of_chaos-32.png",
+      "size": 2507,
+      "sha256": "e6dbce44528901ac9554c57b37112e9d0a8728b4f41f38255aaa6b02cbee23fc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_shield_of_chaos-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_shield_of_chaos-44.png",
+      "size": 4205,
+      "sha256": "f065d81787df7255b88c4e03be1dc033bf2698189668f4961f571cfa19d7c8bb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_spell_lock-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_spell_lock-30.png",
+      "size": 2172,
+      "sha256": "00a37239a6400dc3917176d7c95412e6e2dfe20b50699a93edd35c33e985c50b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_spell_lock-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_spell_lock-32.png",
+      "size": 2435,
+      "sha256": "b8a642f8da820b3698e3b08c8a0798a32cbc3bd9ab7c57a94bdc2339c2f6aa20",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_spell_lock-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_spell_lock-44.png",
+      "size": 4093,
+      "sha256": "fe908dc011c26bf38de998cbcdf64df92076912b4510d184f388b9b88224e3b2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_time_stop-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_time_stop-30.png",
+      "size": 2333,
+      "sha256": "9e97f70aff4dc087e8275ac0d16b0195d8eb55a03862b0de3645104c8237046f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_time_stop-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_time_stop-32.png",
+      "size": 2573,
+      "sha256": "e875e2a0c4fd9de569c06d7ed8189159bc0a483e6e586adab5a62b1875727e20",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_time_stop-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_time_stop-44.png",
+      "size": 4295,
+      "sha256": "2f7ab749a2a7286a7f119e528a8c5d7302fd3bf62a93b92215fc2f2a557632ed",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_transfigure_matter-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_transfigure_matter-30.png",
+      "size": 2349,
+      "sha256": "195a5d2a839a15c898c1c8cd17f7b507811deb522c03ddfc1d50dd0076bd9f8c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_transfigure_matter-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_transfigure_matter-32.png",
+      "size": 2625,
+      "sha256": "b4d47b129e8a6b8b405b5e4b118b431e71f6f28a062d593d97de1937af27626e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_transfigure_matter-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_transfigure_matter-44.png",
+      "size": 4560,
+      "sha256": "f32d388c8989949ea6f9c7f66fe484fc5268b5d14eec1a5753d044c4bf5085fb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
     }
   ],
   "requiredFamilies": [
@@ -37964,7 +38474,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 1717,
+    "builtin-skills-perks-orders-and-ui": 1768,
     "cabir-and-master": 214,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

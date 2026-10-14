@@ -1,5 +1,26 @@
 # New Horizons UI and asset status register
 
+## Selected provisional spell symbol batch
+
+Seventeen purpose-made original spell families now have dedicated book44,
+scroll/scenario32 and effect/immunity30 PNG bindings. The 51 selected exports
+are recorded in `assets/new-horizons/spell-art-selections.json`, with pinned
+master, exact prompt, comparison and handoff hashes; originals remain private.
+Holy Wrath and Regeneration scenario roles reuse their already selected32px
+resources. No gameplay fields, original core spell bindings, perk bindings or
+existing package payload/provenance are changed. All3795 previous payloads are
+preserved; the unchanged NHART format contains3846 selected payloads.
+
+Selection is **Provisional**, not Final approval. Source/container checks do
+not establish rendered acceptance: parchment contrast and dark status panels
+need native in-game review. Several exports have visible edge alpha; full-edge
+transparency or an eight-percent inset is not claimed. Small details may merge
+at30px, especially Master Chain Lightning targets, Phantom Army helmets and
+Puppet Master strings. Arcane Breach remains a separate placeholder status,
+outside these seventeen spell families. Specialty and later perk drafts are
+not included. Build-specific delivery and native rendered review remain separate
+acceptance stages; these source and package checks do not establish either.
+
 ## Selected provisional perk draft batch
 
 Ninety-four completed purpose-made perk drafts are selected for provisional

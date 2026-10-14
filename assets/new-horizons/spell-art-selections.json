@@ -1,0 +1,552 @@
+{
+  "format": 1,
+  "baselineArchiveSha256": "48f90ac5e070caae600e21afe524db660550bfd7a94f59e39c089d6d66982456",
+  "baselineManifestSha256": "04de688adcd943fc6c7fb7ce5deb306e876d99c195cb217e8034d7bb89083669",
+  "baselineConfigSha256": "da2867a1c36f5cceb39a6b2274a613247578f9c8bc5853dba487c94c06c4119c",
+  "nonGraphicsConfigSha256": "2ba07b651b4252ecd7662008fff9713cbba3d4303a1429c870ef373ca1f0bb8c",
+  "baselineEntriesSha256": "71dad62760d5b6d485a15ad26ae35166dde790eb10fb54ea805fa94a4d57b783",
+  "baselineCount": 3795,
+  "entryCount": 3846,
+  "newArchiveSha256": "bf330e88de86ac5097a1e6a27258e5283d034415160eafc99f185c8d7d3d0505",
+  "entries": [
+    {
+      "id": "new-horizons:phantomArmy",
+      "bindings": {
+        "iconBook": "NH_spell_phantom_army-44.png",
+        "iconScroll": "NH_spell_phantom_army-32.png",
+        "iconEffect": "NH_spell_phantom_army-30.png",
+        "iconImmune": "NH_spell_phantom_army-30.png",
+        "iconScenarioBonus": "NH_spell_phantom_army-32.png"
+      },
+      "exports": {
+        "NH_spell_phantom_army-44.png": {
+          "sha256": "03d144e30f4075e193511385438879894add5165b576b89360d06fcf86f0e989",
+          "size": 44
+        },
+        "NH_spell_phantom_army-32.png": {
+          "sha256": "b65a6447e618145e03180f0444f6cb962c3e48c1f064f3fc294652d566b87769",
+          "size": 32
+        },
+        "NH_spell_phantom_army-30.png": {
+          "sha256": "74c4eb7da7f1f55871ff223ba076861b76828074d965463b6f64f585c011902b",
+          "size": 30
+        }
+      },
+      "handoffSha256": "0860d6a4f06717741ce82083df7cfbe66702d21671fda0d598ffb2271157e9f1",
+      "masterSha256": "7c8f622026889d84bb92d190d35bb5a0f8b2977202360e4e9294f16cce47e456",
+      "promptSha256": "8c98fba57781d2c5dd0a860d3695a87e268551219c69889fc53ff704570b46d3",
+      "previewSha256": "77852ffff2bc8e9efced57057c8fae70e995db12d0cbb1a6104a3f74b4b5bf12",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:timeStop",
+      "bindings": {
+        "iconBook": "NH_spell_time_stop-44.png",
+        "iconScroll": "NH_spell_time_stop-32.png",
+        "iconEffect": "NH_spell_time_stop-30.png",
+        "iconImmune": "NH_spell_time_stop-30.png",
+        "iconScenarioBonus": "NH_spell_time_stop-32.png"
+      },
+      "exports": {
+        "NH_spell_time_stop-44.png": {
+          "sha256": "2f7ab749a2a7286a7f119e528a8c5d7302fd3bf62a93b92215fc2f2a557632ed",
+          "size": 44
+        },
+        "NH_spell_time_stop-32.png": {
+          "sha256": "e875e2a0c4fd9de569c06d7ed8189159bc0a483e6e586adab5a62b1875727e20",
+          "size": 32
+        },
+        "NH_spell_time_stop-30.png": {
+          "sha256": "9e97f70aff4dc087e8275ac0d16b0195d8eb55a03862b0de3645104c8237046f",
+          "size": 30
+        }
+      },
+      "handoffSha256": "0860d6a4f06717741ce82083df7cfbe66702d21671fda0d598ffb2271157e9f1",
+      "masterSha256": "2e5cedb74a5a4c93a501bbc1426fc9bfcdba94a55bdbcb2f6661eb5fd1a1b2c6",
+      "promptSha256": "726c76946aa0103e5efa624a503a32a83d79fd64e0be77f4628bd0c981baaa52",
+      "previewSha256": "5c91eae8e381f511e379a8dc03a7bf665688d91f502fb42bcfd6de61d83d30f6",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:spellLock",
+      "bindings": {
+        "iconBook": "NH_spell_spell_lock-44.png",
+        "iconScroll": "NH_spell_spell_lock-32.png",
+        "iconEffect": "NH_spell_spell_lock-30.png",
+        "iconImmune": "NH_spell_spell_lock-30.png",
+        "iconScenarioBonus": "NH_spell_spell_lock-32.png"
+      },
+      "exports": {
+        "NH_spell_spell_lock-44.png": {
+          "sha256": "fe908dc011c26bf38de998cbcdf64df92076912b4510d184f388b9b88224e3b2",
+          "size": 44
+        },
+        "NH_spell_spell_lock-32.png": {
+          "sha256": "b8a642f8da820b3698e3b08c8a0798a32cbc3bd9ab7c57a94bdc2339c2f6aa20",
+          "size": 32
+        },
+        "NH_spell_spell_lock-30.png": {
+          "sha256": "00a37239a6400dc3917176d7c95412e6e2dfe20b50699a93edd35c33e985c50b",
+          "size": 30
+        }
+      },
+      "handoffSha256": "0860d6a4f06717741ce82083df7cfbe66702d21671fda0d598ffb2271157e9f1",
+      "masterSha256": "2513592120c8a4c1337ec3b94f398d1bbc9a6b4083b85ae9097ee9dc2dc39de0",
+      "promptSha256": "a97287e6c5ade146e45992f8d2265870466033698bb0c21ea0dc5208afedab66",
+      "previewSha256": "bb4396caceb3991b9122db700afa9e45078b1db33e7d08260be2cd6123226560",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:focusMagic",
+      "bindings": {
+        "iconBook": "NH_spell_focus_magic-44.png",
+        "iconScroll": "NH_spell_focus_magic-32.png",
+        "iconEffect": "NH_spell_focus_magic-30.png",
+        "iconImmune": "NH_spell_focus_magic-30.png",
+        "iconScenarioBonus": "NH_spell_focus_magic-32.png"
+      },
+      "exports": {
+        "NH_spell_focus_magic-44.png": {
+          "sha256": "ed360756b941d012de6522060e9dd01c3474f826c8ecb9976028928bac54f9f2",
+          "size": 44
+        },
+        "NH_spell_focus_magic-32.png": {
+          "sha256": "fb8d4a282880792214f1bb7dc633deeda6869cb5b88c28d927666ec891f326ec",
+          "size": 32
+        },
+        "NH_spell_focus_magic-30.png": {
+          "sha256": "9dd25575436696089bcf2f226c00c87cfbddbb4ef8f1f16ec57b8f09e91caaed",
+          "size": 30
+        }
+      },
+      "handoffSha256": "0860d6a4f06717741ce82083df7cfbe66702d21671fda0d598ffb2271157e9f1",
+      "masterSha256": "3c18b5641724a90b7665fe45add643af68f06cfb9b15b314190fe52281db0318",
+      "promptSha256": "b15bccd15c9b8dc138dda2209c67aa5c9c89f853afa5d4dd596fac5419323dcc",
+      "previewSha256": "52a0ba190489f6aebe4333a98db2f019b389e3a8b88611ab536e5ff9b75c8386",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:disintegrate",
+      "bindings": {
+        "iconBook": "NH_spell_disintegrate-44.png",
+        "iconScroll": "NH_spell_disintegrate-32.png",
+        "iconEffect": "NH_spell_disintegrate-30.png",
+        "iconImmune": "NH_spell_disintegrate-30.png",
+        "iconScenarioBonus": "NH_spell_disintegrate-32.png"
+      },
+      "exports": {
+        "NH_spell_disintegrate-44.png": {
+          "sha256": "faaf8e9af4c90391b91369cb1f52015c90a8740b7bcc300e2ce6caab86376b8b",
+          "size": 44
+        },
+        "NH_spell_disintegrate-32.png": {
+          "sha256": "2769f8bc51123075f1d6e75c208fa33e7e83edbf0c8d0ce0ae1d56bc32d028f0",
+          "size": 32
+        },
+        "NH_spell_disintegrate-30.png": {
+          "sha256": "b63a717ecbabb439d1be18b3b45f92573bf0b7497a2a7602b1f7eea59ac53b31",
+          "size": 30
+        }
+      },
+      "handoffSha256": "0860d6a4f06717741ce82083df7cfbe66702d21671fda0d598ffb2271157e9f1",
+      "masterSha256": "cee35ea54912b6d9b87f500f0042128abe4755bb5125c4cd4650fd6179086f3e",
+      "promptSha256": "556b84341e928ae3751479eced574938c6dd6d83fbe5c795b71ce21b0c125575",
+      "previewSha256": "53e152b1061f9d74b2521af7b00970b3d62ff78d7d4b5a57d61e70991db0718b",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:handOfFate",
+      "bindings": {
+        "iconBook": "NH_spell_hand_of_fate-44.png",
+        "iconScroll": "NH_spell_hand_of_fate-32.png",
+        "iconEffect": "NH_spell_hand_of_fate-30.png",
+        "iconImmune": "NH_spell_hand_of_fate-30.png",
+        "iconScenarioBonus": "NH_spell_hand_of_fate-32.png"
+      },
+      "exports": {
+        "NH_spell_hand_of_fate-44.png": {
+          "sha256": "5d0807e777b420c981a8cf3c41d500cb138c0d15f8ec66f3c893759c19ef854b",
+          "size": 44
+        },
+        "NH_spell_hand_of_fate-32.png": {
+          "sha256": "96e5ef7c8e78e62568efaaa20049a994cf504df688c3a6e39bf7443030b5e7ad",
+          "size": 32
+        },
+        "NH_spell_hand_of_fate-30.png": {
+          "sha256": "e5988043a0014d4196c370bdbfcf59eacddb55524360cc0b57328f1165f15bd5",
+          "size": 30
+        }
+      },
+      "handoffSha256": "e193400ce496d1772cd35bac6f3c9cbd35712202f15a2e60d192d517f6299772",
+      "masterSha256": "3103bbe24e627b49fcd942c5aff2102ea0cb7f927930711b1d60aec1f87e64c8",
+      "promptSha256": "ffd855be786d102d49be063281041c0284aadf9dc730785bad9b27c053e9b947",
+      "previewSha256": "f7ede86a7fe0309073087457e6c55780db325c732736c079d661474222fda3d2",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:realityWarp",
+      "bindings": {
+        "iconBook": "NH_spell_reality_warp-44.png",
+        "iconScroll": "NH_spell_reality_warp-32.png",
+        "iconEffect": "NH_spell_reality_warp-30.png",
+        "iconImmune": "NH_spell_reality_warp-30.png",
+        "iconScenarioBonus": "NH_spell_reality_warp-32.png"
+      },
+      "exports": {
+        "NH_spell_reality_warp-44.png": {
+          "sha256": "2a5f534667697604557575c1d0e6f1845b7a8810bfd9f5793aef2c489c23f43b",
+          "size": 44
+        },
+        "NH_spell_reality_warp-32.png": {
+          "sha256": "b82334faaf149e49d1c89af8d0a24a5cc2be144c34d535c17b2f2dcda0ea60e3",
+          "size": 32
+        },
+        "NH_spell_reality_warp-30.png": {
+          "sha256": "34cae634de83e3b7c228c30bbd76e6f5fdf99fe7554f55290acfe6e3ab5cbd38",
+          "size": 30
+        }
+      },
+      "handoffSha256": "e193400ce496d1772cd35bac6f3c9cbd35712202f15a2e60d192d517f6299772",
+      "masterSha256": "6b4c4953f2be949e71494c3b11eab8f5b5e7c4718efaa6a4b542957f42382356",
+      "promptSha256": "f21ba5475971ffe9bfa2eb51c5b8bba1bf3d2b39d9029e037d89f98553c4b5f9",
+      "previewSha256": "24dacffa98870536528adf5283fa076857c87f263194f222935b151454af860f",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:polymorph",
+      "bindings": {
+        "iconBook": "NH_spell_polymorph-44.png",
+        "iconScroll": "NH_spell_polymorph-32.png",
+        "iconEffect": "NH_spell_polymorph-30.png",
+        "iconImmune": "NH_spell_polymorph-30.png",
+        "iconScenarioBonus": "NH_spell_polymorph-32.png"
+      },
+      "exports": {
+        "NH_spell_polymorph-44.png": {
+          "sha256": "d173fbfb5ee4bad571673e970b235a48962339142e5439186d7a1d7781ab3884",
+          "size": 44
+        },
+        "NH_spell_polymorph-32.png": {
+          "sha256": "85095205d05a01483a0de104047713b1f5b283917fad6e4bd981084086628e93",
+          "size": 32
+        },
+        "NH_spell_polymorph-30.png": {
+          "sha256": "af81deeb7ca4c77078eafa630b82037ba79f5bd4d0438b74f515f273d1688110",
+          "size": 30
+        }
+      },
+      "handoffSha256": "e193400ce496d1772cd35bac6f3c9cbd35712202f15a2e60d192d517f6299772",
+      "masterSha256": "f305a01dcf2f62af8983c60497499a395d7af72b46256531a8ec7dc8a3f279cf",
+      "promptSha256": "f468d36f8481ec2fdf2706e8cf5e13312113294a9f9589d8c4064f42f6a88a83",
+      "previewSha256": "4a7caa7fea4a76c543dc85112a9e70e81b3200babffdcf2d84bb83222ec8ea3a",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:shieldOfChaos",
+      "bindings": {
+        "iconBook": "NH_spell_shield_of_chaos-44.png",
+        "iconScroll": "NH_spell_shield_of_chaos-32.png",
+        "iconEffect": "NH_spell_shield_of_chaos-30.png",
+        "iconImmune": "NH_spell_shield_of_chaos-30.png",
+        "iconScenarioBonus": "NH_spell_shield_of_chaos-32.png"
+      },
+      "exports": {
+        "NH_spell_shield_of_chaos-44.png": {
+          "sha256": "f065d81787df7255b88c4e03be1dc033bf2698189668f4961f571cfa19d7c8bb",
+          "size": 44
+        },
+        "NH_spell_shield_of_chaos-32.png": {
+          "sha256": "e6dbce44528901ac9554c57b37112e9d0a8728b4f41f38255aaa6b02cbee23fc",
+          "size": 32
+        },
+        "NH_spell_shield_of_chaos-30.png": {
+          "sha256": "a3573807d192b2c1ee4c7742436e0fec1f192db27b889cb6b901d21001b25df6",
+          "size": 30
+        }
+      },
+      "handoffSha256": "5652bc91767d4821704e8576dc2db94119da14b7b6bb0e7dccc4ebf2ec8af4b8",
+      "masterSha256": "098552b4891d4753a7e3caf747b2d72944349cfb69996399d4e5a4d84a5fecaa",
+      "promptSha256": "a94812c14b75d0549a614aaddfa0d0bcf622af450af8a488477f969c1925bc38",
+      "previewSha256": "910dc3f2b2a6f8239325de04c520bb74ce1e282a761142fd65d3c117cd6f6023",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:pandemonium",
+      "bindings": {
+        "iconBook": "NH_spell_pandemonium-44.png",
+        "iconScroll": "NH_spell_pandemonium-32.png",
+        "iconEffect": "NH_spell_pandemonium-30.png",
+        "iconImmune": "NH_spell_pandemonium-30.png",
+        "iconScenarioBonus": "NH_spell_pandemonium-32.png"
+      },
+      "exports": {
+        "NH_spell_pandemonium-44.png": {
+          "sha256": "a66e3d713116efa5309cc2b6fa25b5037778d85cabc5103d1738e0f1c77a9e10",
+          "size": 44
+        },
+        "NH_spell_pandemonium-32.png": {
+          "sha256": "5236b33a5d4452fb22e50eb7ca61921b4b7f1861360c1de8e8ce8021cc7e6498",
+          "size": 32
+        },
+        "NH_spell_pandemonium-30.png": {
+          "sha256": "ca431833813307c8b73db40b97006a40d59b4646b9e0f348c1ba4c7a9cd336a6",
+          "size": 30
+        }
+      },
+      "handoffSha256": "5652bc91767d4821704e8576dc2db94119da14b7b6bb0e7dccc4ebf2ec8af4b8",
+      "masterSha256": "eaa9f7d83fea450ab287989066acc5bfd7916e690bbe2fdf3eb23aa347daa5cf",
+      "promptSha256": "923425e63d3cfd4932c05c9778e4628aba79af2ad035d535a1b13d753ff469b0",
+      "previewSha256": "01a55cc303b1c60a45908d70ffb40bc67abadfe474f9d384ca6bbf3f45e7a26f",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:naturesWrath",
+      "bindings": {
+        "iconBook": "NH_spell_natures_wrath-44.png",
+        "iconScroll": "NH_spell_natures_wrath-32.png",
+        "iconEffect": "NH_spell_natures_wrath-30.png",
+        "iconImmune": "NH_spell_natures_wrath-30.png",
+        "iconScenarioBonus": "NH_spell_natures_wrath-32.png"
+      },
+      "exports": {
+        "NH_spell_natures_wrath-44.png": {
+          "sha256": "5ad9e732f5b5a27a5e96077e9dbea1045ed131138f324c6984333f721c1de6ce",
+          "size": 44
+        },
+        "NH_spell_natures_wrath-32.png": {
+          "sha256": "f4f59d40162190b591bc743f29d660ada0e2ee8729fb9678c18ebaf5489a21a3",
+          "size": 32
+        },
+        "NH_spell_natures_wrath-30.png": {
+          "sha256": "7c61f5b0e96974e30c7669a5bac00b7428868bfc37f62b6321385bd03a183fcb",
+          "size": 30
+        }
+      },
+      "handoffSha256": "5652bc91767d4821704e8576dc2db94119da14b7b6bb0e7dccc4ebf2ec8af4b8",
+      "masterSha256": "5284b3989e990dfe24dc3b817c71ab59308d444e14cff1f33c1dbfcba10bdc6f",
+      "promptSha256": "0d0eb5aec77a44e2bea9408f05e4ccba526030be9a9625d7216345f7eda1a71e",
+      "previewSha256": "179a6b13ed659b63a804cf8ea21201cbdb34840cd00d2e7309d693fc5621d652",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:elementalConvergence",
+      "bindings": {
+        "iconBook": "NH_spell_elemental_convergence-44.png",
+        "iconScroll": "NH_spell_elemental_convergence-32.png",
+        "iconEffect": "NH_spell_elemental_convergence-30.png",
+        "iconImmune": "NH_spell_elemental_convergence-30.png",
+        "iconScenarioBonus": "NH_spell_elemental_convergence-32.png"
+      },
+      "exports": {
+        "NH_spell_elemental_convergence-44.png": {
+          "sha256": "175e7c730d7f8f117ecb02f454fc2e40364614a2d2cf38605007dd5a25f57182",
+          "size": 44
+        },
+        "NH_spell_elemental_convergence-32.png": {
+          "sha256": "662f6f7484b14b9837fa33915c9d3a8e0b2e43767ff74ecf5d732b933fac27da",
+          "size": 32
+        },
+        "NH_spell_elemental_convergence-30.png": {
+          "sha256": "4d9dfcab320b1dac00bea14110cfdfb01fb4b7dfd48d897d8b56ab928cbeb19d",
+          "size": 30
+        }
+      },
+      "handoffSha256": "5652bc91767d4821704e8576dc2db94119da14b7b6bb0e7dccc4ebf2ec8af4b8",
+      "masterSha256": "c3ebdedcd15aa600de1daedfad2e4bb7986e5f3a62d4cc5cace1b42f61cac81f",
+      "promptSha256": "d1353cdbc24dcca395dd25634c8451dcc87f54313516477e3bcb92bb2e4cdac7",
+      "previewSha256": "5328258dac1cfe6c5b3732dd9ce3b3db5a157fdeafa3e5d157526c6a58929c6e",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:masterChainLightning",
+      "bindings": {
+        "iconBook": "NH_spell_master_chain_lightning-44.png",
+        "iconScroll": "NH_spell_master_chain_lightning-32.png",
+        "iconEffect": "NH_spell_master_chain_lightning-30.png",
+        "iconImmune": "NH_spell_master_chain_lightning-30.png",
+        "iconScenarioBonus": "NH_spell_master_chain_lightning-32.png"
+      },
+      "exports": {
+        "NH_spell_master_chain_lightning-44.png": {
+          "sha256": "393f83afdea7c6b98d0cc705592f294b460e61105a84a0b5a578c1bf71ed01eb",
+          "size": 44
+        },
+        "NH_spell_master_chain_lightning-32.png": {
+          "sha256": "3a9e15db2d097c1ecda2bc3a1530f12dd0640f505650522ca32527610cf4c123",
+          "size": 32
+        },
+        "NH_spell_master_chain_lightning-30.png": {
+          "sha256": "221dd5a0b0311e557603cf2a506ac8cbdb583224ea0f7f9b989c0c57538eb531",
+          "size": 30
+        }
+      },
+      "handoffSha256": "49b9492a79a60fb2f34576bf54ce0c935869f8e9b671f9b0208aa4df1dbdd78d",
+      "masterSha256": "f9f1322247f685e6c6736e9b2ad89b474396bda85e81d95855805354b0e3d1d1",
+      "promptSha256": "53541f8301f0efa103494beb05027c951ef55882a1e7749b4c461fc5b62c276f",
+      "previewSha256": "9417fe626b8b99b86b196c75423165c15e3b2e6c4d5af211b93bf3196e6896a5",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:transfigureMatter",
+      "bindings": {
+        "iconBook": "NH_spell_transfigure_matter-44.png",
+        "iconScroll": "NH_spell_transfigure_matter-32.png",
+        "iconEffect": "NH_spell_transfigure_matter-30.png",
+        "iconImmune": "NH_spell_transfigure_matter-30.png",
+        "iconScenarioBonus": "NH_spell_transfigure_matter-32.png"
+      },
+      "exports": {
+        "NH_spell_transfigure_matter-44.png": {
+          "sha256": "f32d388c8989949ea6f9c7f66fe484fc5268b5d14eec1a5753d044c4bf5085fb",
+          "size": 44
+        },
+        "NH_spell_transfigure_matter-32.png": {
+          "sha256": "b4d47b129e8a6b8b405b5e4b118b431e71f6f28a062d593d97de1937af27626e",
+          "size": 32
+        },
+        "NH_spell_transfigure_matter-30.png": {
+          "sha256": "195a5d2a839a15c898c1c8cd17f7b507811deb522c03ddfc1d50dd0076bd9f8c",
+          "size": 30
+        }
+      },
+      "handoffSha256": "49b9492a79a60fb2f34576bf54ce0c935869f8e9b671f9b0208aa4df1dbdd78d",
+      "masterSha256": "d1c9861ed80182d3a7960970649c15dcec87032d6704e4cd584559e3a123b20e",
+      "promptSha256": "aa7782880bacb6a56eede27fe3670828e6e615aef2f6f8421e15277b068b5948",
+      "previewSha256": "8ed6c28e01d77487046d17c71c1f651fd0c4245daad8a0dbe93e1f9698e0cc17",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:crusade",
+      "bindings": {
+        "iconBook": "NH_spell_crusade-44.png",
+        "iconScroll": "NH_spell_crusade-32.png",
+        "iconEffect": "NH_spell_crusade-30.png",
+        "iconImmune": "NH_spell_crusade-30.png",
+        "iconScenarioBonus": "NH_spell_crusade-32.png"
+      },
+      "exports": {
+        "NH_spell_crusade-44.png": {
+          "sha256": "b2f8e5d91c6ecfcba0dfcff9cfed08f95b56097850419f631361d1480ae5122e",
+          "size": 44
+        },
+        "NH_spell_crusade-32.png": {
+          "sha256": "784eb8aaac4dbacad473ffed15bfbdd48bb9f593001e17e6cdaa15ada3901b72",
+          "size": 32
+        },
+        "NH_spell_crusade-30.png": {
+          "sha256": "c9f860ae300666da4fe16457bd820974dc1c14d8950845b624f25ca240b61e1e",
+          "size": 30
+        }
+      },
+      "handoffSha256": "49b9492a79a60fb2f34576bf54ce0c935869f8e9b671f9b0208aa4df1dbdd78d",
+      "masterSha256": "d328ad848fa1ee52e0e1113584f4d1ed453b5b0359e81c5a063814a2272dfdcd",
+      "promptSha256": "b99d36d24cfcf1efa175725c212416ae256ee5e1cb68f09a596e33338eb8068a",
+      "previewSha256": "1593eaed31d471c13918196ab82ce45b8fe8cc3b284194ca2490bcebfa4e767f",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:confusion",
+      "bindings": {
+        "iconBook": "NH_spell_confusion-44.png",
+        "iconScroll": "NH_spell_confusion-32.png",
+        "iconEffect": "NH_spell_confusion-30.png",
+        "iconImmune": "NH_spell_confusion-30.png",
+        "iconScenarioBonus": "NH_spell_confusion-32.png"
+      },
+      "exports": {
+        "NH_spell_confusion-44.png": {
+          "sha256": "a8915a8a7f83b770a0609b9195314323a6c5b734ef0865fcb25be365ab632fcf",
+          "size": 44
+        },
+        "NH_spell_confusion-32.png": {
+          "sha256": "11bf413cf2827c263c70a2fd40d6e4c48e04966e801e091287b0e70ac8e0e892",
+          "size": 32
+        },
+        "NH_spell_confusion-30.png": {
+          "sha256": "2031b89830fa0a839bbe0d1bf2590a617d82e39b4dd352112c10b5f19fc508c9",
+          "size": 30
+        }
+      },
+      "handoffSha256": "49b9492a79a60fb2f34576bf54ce0c935869f8e9b671f9b0208aa4df1dbdd78d",
+      "masterSha256": "941659ca5d228b7bf1a16d2265ad5b04806390c31acc0204100547dbe7e47a03",
+      "promptSha256": "8889cbf4cd9a4554631b4a0733054d8a9d283cd38356072023710f7dd1312c0a",
+      "previewSha256": "8e54f654def22f1231be445ab88c3feab37ff021c0a4d2392333215cbe26c26c",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "id": "new-horizons:puppetMaster",
+      "bindings": {
+        "iconBook": "NH_spell_puppet_master-44.png",
+        "iconScroll": "NH_spell_puppet_master-32.png",
+        "iconEffect": "NH_spell_puppet_master-30.png",
+        "iconImmune": "NH_spell_puppet_master-30.png",
+        "iconScenarioBonus": "NH_spell_puppet_master-32.png"
+      },
+      "exports": {
+        "NH_spell_puppet_master-44.png": {
+          "sha256": "052d83651f08b52f66dc84a6692bd71ffa4711390c4e77f1280f21d8ca406922",
+          "size": 44
+        },
+        "NH_spell_puppet_master-32.png": {
+          "sha256": "4b48095af9c7dccf578b6a50e6047ef0af7ae797b518e9fe13ce03cf415854a5",
+          "size": 32
+        },
+        "NH_spell_puppet_master-30.png": {
+          "sha256": "231ac3883118de85b2de0e16145d5c7eaa50022299ccaf34ddc1b2f29519d149",
+          "size": 30
+        }
+      },
+      "handoffSha256": "49b9492a79a60fb2f34576bf54ce0c935869f8e9b671f9b0208aa4df1dbdd78d",
+      "masterSha256": "17cb23f720e21483a963862e160b90eabd3efba684243804beddcd51d4dea19b",
+      "promptSha256": "9ea103bd241f1f645e2db9d51143453501b13d44f7181a3f61408a38a2271203",
+      "previewSha256": "1c24960320d68d539d2bc0ed534747f0a837aabb45481cd59b1afa1dc79196d5",
+      "origin": "original-generated-purpose-made-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    }
+  ],
+  "reusedScenarioBindings": {
+    "holyWrath": {
+      "iconScenarioBonus": "NH_holyWrath_32.png"
+    },
+    "regeneration": {
+      "iconScenarioBonus": "NH_regeneration_32.png"
+    }
+  },
+  "remainingRoles": [
+    "arcaneBreach remains outside this seventeen-family selection"
+  ],
+  "acceptance": "Source/container verified; native rendered contrast and Final approval pending"
+}
