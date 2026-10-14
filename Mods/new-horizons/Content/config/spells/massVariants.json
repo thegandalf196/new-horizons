@@ -361,7 +361,7 @@
 			"iconScroll": "NH_regeneration_44.png",
 			"iconEffect": "NH_regeneration_30.png",
 			"iconImmune": "NH_regeneration_30.png",
-			"iconScenarioBonus": "SPELLBON.def:0:15"
+			"iconScenarioBonus": "NH_regeneration_32.png"
 		},
 		"animation": {
 			"hit": ["C18SPW0"]

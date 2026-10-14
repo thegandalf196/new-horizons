@@ -1,5 +1,27 @@
 # New Horizons UI and asset status register
 
+## Additive provisional perk and status wave
+
+Twenty-four later completed perk drafts are provisionally selected, each with
+native44/32 exports and the existing four-state44 family. The original94
+selection proof and seventeen-spell proof remain unchanged. The explicit
+`assets/new-horizons/runtime-art-additions.json` ledger records each later
+wave's semantic IDs, provenance hashes, resource leaves and exact unchanged
+baseline proof; guards accept subsequent explicit waves without freezing the
+current total globally. This wave preserves all3846 previous resources and
+adds170:168 perk leaves and two dedicated thirty-pixel status images.
+
+Arcane Breach and Lucidity change only effect/immunity graphics. Both remain
+internal, non-castable statuses; original core spells, book/scroll/scenario
+aliases, gameplay and status badges are untouched. Mass Regeneration's scenario
+role reuses the already selected `NH_regeneration_32.png`, with no added bytes.
+The two status exports have transparent corners and faint resampling alpha at
+the edges; complete transparent edges are not claimed. Masters, prompts,
+comparisons and review materials remain private. Art stays **Provisional**,
+not Final. Source/container and failure-safety checks pass; build-specific
+playable delivery and native rendered review remain separate acceptance stages.
+Specialties and later perk handoffs are not implicitly selected.
+
 ## Selected provisional spell symbol batch
 
 Seventeen purpose-made original spell families now have dedicated book44,
@@ -16,9 +38,10 @@ not establish rendered acceptance: parchment contrast and dark status panels
 need native in-game review. Several exports have visible edge alpha; full-edge
 transparency or an eight-percent inset is not claimed. Small details may merge
 at30px, especially Master Chain Lightning targets, Phantom Army helmets and
-Puppet Master strings. Arcane Breach remains a separate placeholder status,
-outside these seventeen spell families. Specialty and later perk drafts are
-not included. Build-specific delivery and native rendered review remain separate
+Puppet Master strings. Arcane Breach is outside these seventeen spell families;
+its later separate status selection is recorded above. Specialty and later perk
+drafts are not included in this original selection. Build-specific delivery
+and native rendered review remain separate
 acceptance stages; these source and package checks do not establish either.
 
 ## Selected provisional perk draft batch
