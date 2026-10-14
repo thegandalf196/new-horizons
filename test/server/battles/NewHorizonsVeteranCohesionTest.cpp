@@ -64,7 +64,7 @@ protected:
 		const auto lookup = [this](const std::string & skill) { return attackerSideHero->getPerkSkillRank(skill); };
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, seed);
+			const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t i = 0; i < offers.size(); ++i)
 				if(offers[i].selection.skillId == newHorizonsDiscipline::SKILL && offers[i].selection.perkId == perk)
 				{

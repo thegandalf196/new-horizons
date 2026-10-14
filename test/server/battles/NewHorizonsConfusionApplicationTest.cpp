@@ -111,7 +111,7 @@ protected:
 		const auto rank = [hero](const std::string & name) { return hero->getPerkSkillRank(name); };
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rank, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rank, seed, hero->getPerkOfferWeightContext());
 			for(size_t i = 0; i < offer.size(); ++i)
 				if(offer[i].selection.skillId == skill && offer[i].selection.perkId == perk)
 				{

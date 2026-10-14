@@ -169,7 +169,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offer.begin(), offer.end(), [perkId](const auto & entry)
 			{
 				return entry.selection.perkId == perkId;

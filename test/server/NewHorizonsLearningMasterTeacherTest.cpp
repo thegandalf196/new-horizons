@@ -94,7 +94,7 @@ protected:
 		const auto rankLookup = [this](const std::string & skill) { return teacher->getPerkSkillRank(skill); };
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = teacher->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = teacher->getPerkState().prepareOffer(rankLookup, seed, teacher->getPerkOfferWeightContext());
 			const auto found = std::find_if(offers.begin(), offers.end(), [id](const auto & offer)
 			{
 				return offer.selection.skillId == learningId && offer.selection.perkId == id;

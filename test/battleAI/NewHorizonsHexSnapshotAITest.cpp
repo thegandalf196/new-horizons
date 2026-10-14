@@ -56,6 +56,7 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepareAdditionalScene(bool withHex, bool withCleave, CStack * & actor,

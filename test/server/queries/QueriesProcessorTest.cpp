@@ -590,7 +590,7 @@ TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpValidatesAndAppliesOnlyTheStor
 	levelUp.perks = state.prepareOffer([hero](const std::string & id)
 	{
 		return hero->getPerkSkillRank(id);
-	}, levelUp.perkOfferSeed);
+	}, levelUp.perkOfferSeed, hero->getPerkOfferWeightContext());
 	ASSERT_FALSE(levelUp.perks.empty());
 
 	CHeroLevelUpDialogQuery query(&gh, levelUp, hero);
@@ -606,7 +606,7 @@ TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpValidatesAndAppliesOnlyTheStor
 	levelUp.perks = state.prepareOffer([hero](const std::string & id)
 	{
 		return hero->getPerkSkillRank(id);
-	}, levelUp.perkOfferSeed);
+	}, levelUp.perkOfferSeed, hero->getPerkOfferWeightContext());
 
 	auto liveQuery = std::make_shared<CHeroLevelUpDialogQuery>(&gh, levelUp, hero);
 	gh.queries->addQuery(liveQuery);
@@ -644,7 +644,7 @@ TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpReplicatesPerkChoiceBeforeReso
 	levelUp.perks = state.prepareOffer([hero](const std::string & id)
 	{
 		return hero->getPerkSkillRank(id);
-	}, levelUp.perkOfferSeed);
+	}, levelUp.perkOfferSeed, hero->getPerkOfferWeightContext());
 	ASSERT_FALSE(levelUp.perks.empty());
 	auto liveQuery = std::make_shared<CHeroLevelUpDialogQuery>(&gh, levelUp, hero);
 	gh.queries->addQuery(liveQuery);

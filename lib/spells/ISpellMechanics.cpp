@@ -35,6 +35,7 @@
 #include "NewHorizonsSpellcraft.h"
 
 #include "../GameLibrary.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../CStack.h"
 #include "../CCreatureHandler.h"
 #include "../mapObjects/army/CStackBasicDescriptor.h"
@@ -1381,6 +1382,11 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 					? hero->getNonDamageSpellSpecialtyBonusPercent(owner->getId()) : 0;
 				auto powerHealing = scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
 					3LL * effectPower, 2, spellPowerCoefficientBasisPoints, specialtyPercent);
+				if(const auto specialty = hero
+					? hero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::RESTORATIVE_SORCERESS)
+					: std::nullopt)
+					powerHealing += newHorizonsHeroes::druidSpecialtyExtra(powerHealing,
+						newHorizonsHeroes::druidSpecialtyPercent(hero->level, specialty->restorativeSorceress));
 				if(hero && hero->hasActivePerk(
 					"new-horizons:lightMagic", "new-horizons:lightMagic.healer"))
 					powerHealing = powerHealing * 120 / 100;

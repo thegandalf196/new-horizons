@@ -104,6 +104,7 @@ protected:
 			// the v2 placement and damage-snapshot protocol.
 			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
 		}
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 };
@@ -241,7 +242,7 @@ class NewHorizonsInstalledSkillGrowthTest : public HeroCommandFixture
 		};
 		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, offerSeed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offer.begin(), offer.end(), matches);
 			if(candidate == offer.end())
 				continue;
@@ -412,7 +413,7 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesLegalWisdomRanksAnd
 	ASSERT_EQ(initialView->extraGrowth.size(), 5u);
 	EXPECT_EQ(growthChance(*initialView, wisdom), 10);
 	EXPECT_FALSE(hero->getPerkState().canAdvanceSkillNormally(WISDOM_SKILL_ID, MasteryLevel::BASIC));
-	const auto basicOffer = hero->getPerkState().prepareOffer(rankLookup, 0);
+	const auto basicOffer = hero->getPerkState().prepareOffer(rankLookup, 0, hero->getPerkOfferWeightContext());
 	EXPECT_FALSE(std::any_of(basicOffer.begin(), basicOffer.end(), [](const auto & candidate)
 	{
 		return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;
@@ -483,7 +484,7 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesLegalWisdomRanksAnd
 	const auto plannedOffer = plannedState.prepareOffer([loaded](const std::string & skillId)
 	{
 		return loaded->getPerkSkillRank(skillId);
-	}, 7);
+	}, 7, loaded->getPerkOfferWeightContext());
 	EXPECT_FALSE(std::any_of(plannedOffer.begin(), plannedOffer.end(), [](const auto & candidate)
 	{
 		return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;

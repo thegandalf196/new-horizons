@@ -133,7 +133,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 10000; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offer.size(); ++index)
 			{
 				if(offer[index].selection.perkId != perkId)
@@ -155,7 +155,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 2048; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			if(std::ranges::any_of(offer, [perkId](const auto & candidate)
 				{
 					return candidate.selection.perkId == perkId;

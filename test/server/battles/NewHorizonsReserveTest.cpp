@@ -100,7 +100,7 @@ protected:
 
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 			{
 				return candidate.selection.skillId == battlecraftSkill

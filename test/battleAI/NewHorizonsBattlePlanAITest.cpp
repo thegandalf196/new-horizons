@@ -72,7 +72,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offers.size(); ++choice)
 			{
 				if(offers[choice].selection.skillId == commandSkill

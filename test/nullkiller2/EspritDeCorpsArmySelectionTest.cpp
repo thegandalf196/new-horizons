@@ -75,7 +75,7 @@ protected:
 		const auto rankLookup = [hero](const std::string & skill) { return hero->getPerkSkillRank(skill); };
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto entry = std::ranges::find_if(offers, [](const auto & offer)
 			{
 				return offer.selection.skillId == newHorizonsDiscipline::SKILL

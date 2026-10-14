@@ -65,7 +65,7 @@ ExpectedOffer prepareExpectedOffer(GameRandomizer & randomizer, const CGHeroInst
 	result.perks = perkState.prepareOffer([hero](const std::string & skillId)
 	{
 		return hero->getPerkSkillRank(skillId);
-	}, static_cast<uint64_t>(result.perkOfferSeed));
+	}, static_cast<uint64_t>(result.perkOfferSeed), hero->getPerkOfferWeightContext());
 	return result;
 }
 

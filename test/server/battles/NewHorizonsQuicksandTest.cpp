@@ -27,6 +27,7 @@ protected:
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepareQuicksand()
@@ -46,7 +47,7 @@ protected:
 		const auto rankLookup = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offers.size(); ++choice)
 			{
 				if(offers[choice].selection.skillId != skill || offers[choice].selection.perkId != perk)

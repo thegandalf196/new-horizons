@@ -63,6 +63,7 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void acquire(const std::string & perk, int rank)
@@ -73,7 +74,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			const auto found = std::find_if(offers.begin(), offers.end(), [&](const auto & offer)
 			{
 				return offer.selection.skillId == spellcraft && offer.selection.perkId == perk;

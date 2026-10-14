@@ -149,7 +149,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offer.begin(), offer.end(), [&](const auto & entry)
 			{
 				return entry.selection.skillId == WISDOM_SKILL && entry.selection.perkId == perkId;
@@ -488,7 +488,7 @@ TEST_F(NewHorizonsPreparedCasterTest, PlannedArchmageIsInactiveAndDoesNotDiscoun
 	};
 	for(uint64_t seed = 0; seed < 128; ++seed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.skillId == WISDOM_SKILL && candidate.selection.perkId == ARCHMAGE;
@@ -717,7 +717,7 @@ TEST_F(NewHorizonsPreparedCasterTest, WizardSelectsPreparedCasterThroughTheNorma
 	bool selectedThroughOffer = false;
 	for(uint64_t seed = 0; seed < 4096 && !selectedThroughOffer; ++seed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		const auto prepared = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == PREPARED_CASTER;
@@ -752,7 +752,7 @@ TEST_F(NewHorizonsPreparedCasterTest, CapturedPlannedSnapshotDoesNotOfferOrActiv
 	};
 	for(uint64_t seed = 0; seed < 128; ++seed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == PREPARED_CASTER;

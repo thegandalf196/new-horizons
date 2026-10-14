@@ -100,7 +100,7 @@ protected:
 		const auto rankLookup = [this](const std::string & skillId) { return attackerSideHero->getPerkSkillRank(skillId); };
 		for(uint64_t seed = 0; seed < 10000; ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.perkId == perk)
 				{

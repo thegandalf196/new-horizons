@@ -109,7 +109,7 @@ protected:
 		{
 			for(uint64_t seed = 0; seed < 4096; ++seed)
 			{
-				const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+				const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 				const auto selected = std::find_if(offers.begin(), offers.end(), [&](const auto & offer)
 				{
 					return offer.selection.skillId == CHAOS_MAGIC_SKILL

@@ -108,7 +108,7 @@ protected:
 		const auto lookup = [this](const std::string & skill) { return hero->getPerkSkillRank(skill); };
 		for(uint64_t seed = 0; seed < 10000; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(lookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(lookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offer.size(); ++index)
 				if(offer[index].selection.skillId == DIPLOMACY && offer[index].selection.perkId == perk
 					&& offer[index].requiredRank == rank)

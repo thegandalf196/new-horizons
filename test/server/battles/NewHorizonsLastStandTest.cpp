@@ -81,6 +81,7 @@ protected:
 		if(!activatePerk(perkRules, lastStandPerkId))
 			throw std::runtime_error("Missing Last Stand from the New Horizons Armorer registry");
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void acceptPerkThroughOffer(CGHeroInstance * hero, std::string_view perkId,
@@ -93,7 +94,7 @@ protected:
 
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offers.begin(), offers.end(), [perkId](const auto & offer)
 			{
 				return offer.selection.skillId == armorerSkillId

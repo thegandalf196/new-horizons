@@ -82,7 +82,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			for(const auto & offer : offers)
 				if(offer.selection.skillId == commandSkill && offer.selection.perkId == perkId)
 					return true;
@@ -98,7 +98,7 @@ protected:
 		};
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offers.size(); ++choice)
 			{
 				if(offers[choice].selection.skillId == commandSkill && offers[choice].selection.perkId == perkId)

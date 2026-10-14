@@ -72,7 +72,7 @@ protected:
 		const auto lookup = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(lookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(lookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offers.size(); ++choice)
 				if(offers[choice].selection.skillId == skill && offers[choice].selection.perkId == perk)
 				{

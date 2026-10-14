@@ -65,7 +65,7 @@ protected:
 		// never queried/reset and no action/proc is performed before saving.
 		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(ranks, offerSeed);
+			const auto offer = hero->getPerkState().prepareOffer(ranks, offerSeed, hero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offer.size(); ++choice)
 				if(offer[choice].selection.skillId == skill && offer[choice].selection.perkId == perk)
 				{

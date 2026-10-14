@@ -99,7 +99,7 @@ protected:
 		const auto lookup = [hero](const std::string & skill) { return hero->getPerkSkillRank(skill); };
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(lookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(lookup, seed, hero->getPerkOfferWeightContext());
 			const auto found = std::find_if(offers.begin(), offers.end(), [&](const auto & offer)
 			{
 				return offer.selection.skillId == skillKey && offer.selection.perkId == perk;

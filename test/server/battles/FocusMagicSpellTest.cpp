@@ -94,6 +94,7 @@ protected:
 		newHorizonsMagic::validateRules(magicRules);
 		// Exercise installed roster eligibility, not a test-only spell entry.
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	bool configureCaster(CGHeroInstance * hero, int32_t spellPower,

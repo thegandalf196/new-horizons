@@ -107,6 +107,7 @@ protected:
 		if(!spellwardActiveInFixture && !setSpellwardStatus(perkRules, "planned"))
 			throw std::runtime_error("Missing Spellward from the New Horizons perk registry");
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	SecondarySkill warcasting() const
@@ -125,7 +126,7 @@ protected:
 
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offers.begin(), offers.end(), [](const auto & offer)
 			{
 				return offer.selection.skillId == warcastingSkillId
@@ -319,7 +320,7 @@ TEST_F(NewHorizonsSpellwardTest, PlannedPerkCannotBeOfferedOrForceSelectedAndAdd
 	};
 	for(uint64_t seed = 0; seed < 512; ++seed)
 	{
-		const auto offers = defenderSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		const auto offers = defenderSideHero->getPerkState().prepareOffer(rankLookup, seed, defenderSideHero->getPerkOfferWeightContext());
 		EXPECT_EQ(std::find_if(offers.begin(), offers.end(), [](const auto & offer)
 		{
 			return offer.selection.skillId == warcastingSkillId && offer.selection.perkId == spellwardPerkId;

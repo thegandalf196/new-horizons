@@ -14,6 +14,7 @@
 #include "../battle/HeroCommand.h"
 #include "CGHeroInstance.h"
 #include "../entities/hero/HeroStartingProjection.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsDiplomacy.h"
 #include "NewHorizonsGlyphsOfFear.h"
 
@@ -1586,7 +1587,52 @@ TExpType CGHeroInstance::calculateXp(TExpType exp) const
 
 TExpType CGHeroInstance::calculateXp(TExpType exp, int32_t additionalPercent) const
 {
-	return static_cast<TExpType>(exp * (valOfBonuses(BonusType::HERO_EXPERIENCE_GAIN_PERCENT) + additionalPercent) / 100.0);
+	const auto specialty = getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::NATURAL_PHILOSOPHER);
+	if(!specialty || exp <= 0)
+		return static_cast<TExpType>(
+			exp * (valOfBonuses(BonusType::HERO_EXPERIENCE_GAIN_PERCENT) + additionalPercent) / 100.0);
+	const auto scaledExperience = [](TExpType base, int64_t percent) -> TExpType
+	{
+		const bool negative = percent < 0;
+		const auto magnitude = static_cast<uint64_t>(negative ? -percent : percent);
+		if(magnitude == 0)
+			return 0;
+		const auto maximum = std::numeric_limits<TExpType>::max();
+		const uint64_t limit = static_cast<uint64_t>(maximum) + (negative ? 1 : 0);
+		const auto whole = static_cast<uint64_t>(base) / 100;
+		const auto remainder = (static_cast<uint64_t>(base) % 100) * magnitude / 100;
+		const auto saturated = negative ? std::numeric_limits<TExpType>::min() : maximum;
+		if(whole > limit / magnitude)
+			return saturated;
+		const auto product = whole * magnitude;
+		if(remainder > limit - product)
+			return saturated;
+		const auto value = product + remainder;
+		if(negative && value == limit)
+			return saturated;
+		return negative ? -static_cast<TExpType>(value) : static_cast<TExpType>(value);
+	};
+	// Only the captured specialty path uses checked integer scaling. The old
+	// policy-absent calculation retains its established floating-point behavior.
+	const auto ordinary = scaledExperience(exp,
+		static_cast<int64_t>(valOfBonuses(BonusType::HERO_EXPERIENCE_GAIN_PERCENT)) + additionalPercent);
+	const auto learning = LIBRARY->identifiers()->getIdentifier(
+		ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:learning", true);
+	if(!learning)
+		return ordinary;
+	const auto coreBonuses = getAllBonuses(Selector::type()(BonusType::HERO_EXPERIENCE_GAIN_PERCENT)
+		.And(Selector::source(BonusSource::SECONDARY_SKILL, BonusSourceID(SecondarySkill(*learning)))));
+	int64_t corePercent = 0;
+	for(const auto & bonus : *coreBonuses)
+		if(bonus->valType == BonusValueType::PERCENT_TO_BASE)
+			corePercent += bonus->val;
+	const auto coreExperience = scaledExperience(exp,
+		static_cast<int>(std::clamp<int64_t>(corePercent, 0, std::numeric_limits<int>::max())));
+	const auto extra = newHorizonsHeroes::druidSpecialtyExtra(coreExperience,
+		newHorizonsHeroes::druidSpecialtyPercent(level, specialty->naturalPhilosopher));
+	if(ordinary > 0 && extra > std::numeric_limits<TExpType>::max() - ordinary)
+		return std::numeric_limits<TExpType>::max();
+	return ordinary + extra;
 }
 
 int32_t CGHeroInstance::getCasterUnitId() const
@@ -2232,6 +2278,41 @@ std::string CGHeroInstance::nodeName() const
 	return "Hero " + getNameTextID();
 }
 
+std::optional<newHorizonsHeroes::DruidSpecialtyRules> CGHeroInstance::getDruidSpecialtyRules(
+	newHorizonsHeroes::DruidSpecialtyKind specialty) const
+{
+	const auto rules = newHorizonsHeroes::druidSpecialtyRules(primaryGrowthRules);
+	if(!rules)
+		return std::nullopt;
+	const auto * heroType = getHeroType();
+	if(!heroType)
+		return std::nullopt;
+	const char * identity = nullptr;
+	switch(specialty)
+	{
+	case newHorizonsHeroes::DruidSpecialtyKind::HIGH_LORE: identity = "core:elleshar"; break;
+	case newHorizonsHeroes::DruidSpecialtyKind::RESTORATIVE_SORCERESS: identity = "core:gem"; break;
+	case newHorizonsHeroes::DruidSpecialtyKind::NATURAL_PHILOSOPHER: identity = "core:malcom"; break;
+	}
+	if(!identity || heroType->getJsonKey() != identity)
+		return std::nullopt;
+	return rules;
+}
+
+int64_t CGHeroInstance::getHighLoreManaBonus() const
+{
+	const auto rules = getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::HIGH_LORE);
+	if(!rules || !newHorizonsMagic::spellPointRulesActive(getMagicRules())
+		|| !perkState.hasSelection("new-horizons:wisdom", "new-horizons:wisdom.intelligence")
+		|| !hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence"))
+		return 0;
+	const int64_t knowledge = std::max<int64_t>(0, getPrimSkillLevel(PrimarySkill::KNOWLEDGE));
+	const auto ordinaryIntelligenceGain = std::max<int64_t>(0,
+		knowledge * newHorizonsMagic::spellPointsIntelligenceMaximumPercent(getMagicRules()) / 100 - knowledge);
+	return newHorizonsHeroes::druidSpecialtyExtra(ordinaryIntelligenceGain,
+		newHorizonsHeroes::druidSpecialtyPercent(level, rules->highLore));
+}
+
 si32 CGHeroInstance::manaLimit() const
 {
 	if(newHorizonsMagic::spellPointRulesActive(getMagicRules()))
@@ -2246,7 +2327,7 @@ si32 CGHeroInstance::manaLimit() const
 		const int64_t arcaneReservoirBonus = hasActivePerk(
 			"new-horizons:wisdom", "new-horizons:wisdom.arcaneReservoir") ? 25 : 0;
 		return static_cast<si32>(std::min<int64_t>(
-			knowledgeCapacity + arcaneReservoirBonus, std::numeric_limits<si32>::max()));
+			knowledgeCapacity + arcaneReservoirBonus + getHighLoreManaBonus(), std::numeric_limits<si32>::max()));
 	}
 
 	// Existing cache has a 1000% (ten mana/Knowledge) base. Normalize that
@@ -2926,6 +3007,34 @@ bool CGHeroInstance::hasNewHorizonsLearningMentorUseFor(ObjectInstanceID recipie
 bool CGHeroInstance::canGrantNewHorizonsLearningMentorTo(const CGHeroInstance & recipient, int32_t week) const
 {
 	return this != &recipient && level > recipient.level && hasNewHorizonsLearningMentorUseFor(recipient.id, week);
+}
+
+newHorizonsHeroes::PerkState::OfferWeightContext CGHeroInstance::getPerkOfferWeightContext() const
+{
+	// The hero-owned captured snapshot, never a live/default class table.
+	const auto captured = getPrimaryGrowthRules();
+	newHorizonsHeroes::validateResolvedHeroRules(captured);
+	using Mode = newHorizonsHeroes::PerkState::OfferWeightMode;
+	if(!newHorizonsHeroes::usesSkillOfferWeights(captured))
+		return {Mode::IntentionalLegacyNoCapturedTable, {}};
+
+	// Decode against the initialized skill service on each context construction.
+	// Reject unscoped aliases even though legacy decode accepts suffix fallback.
+	for(const auto & [skillId, weight] : captured["skillOfferWeights"].Struct())
+	{
+		const auto decoded = LIBRARY->identifiers()->getIdentifier(
+			ModScope::scopeGame(), SecondarySkill::entityType(), skillId, true);
+		if(!decoded || *decoded < 0 || SecondarySkill::encode(*decoded) != skillId)
+			throw std::runtime_error("Captured perk offer weights require exact scoped skill identities");
+	}
+	return {Mode::CapturedTable, [captured](const std::string & skillId) -> std::optional<int>
+	{
+		const auto decoded = LIBRARY->identifiers()->getIdentifier(
+			ModScope::scopeGame(), SecondarySkill::entityType(), skillId, true);
+		if(!decoded || *decoded < 0 || SecondarySkill::encode(*decoded) != skillId)
+			throw std::runtime_error("Perk parent skill identity does not match its captured weight table");
+		return newHorizonsHeroes::skillOfferWeight(captured, SecondarySkill(*decoded));
+	}};
 }
 
 int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const

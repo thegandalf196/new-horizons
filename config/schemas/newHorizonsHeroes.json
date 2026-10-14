@@ -51,11 +51,39 @@
 				"damageSpellSpecialties": {"$ref": "#/definitions/damageSpellSpecialties"},
 				"nonDamageSpellSpecialties": {"$ref": "#/definitions/nonDamageSpellSpecialties"},
 				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"},
+				"druidSpecialties": {"$ref": "#/definitions/druidSpecialties"},
 				"remainingSpellSpecialtyReplacements": {"type": "boolean", "description": "Captured six authored spell-specialty successors. Absence or false preserves original producers; any key presence requires its serialization feature."}
 			}
 		}
 	],
 	"definitions": {
+		"druidSpecialties": {
+			"description": "Optional captured authored Druid replacements. Absence retains the prior specialty context; present coefficients are configurable provisional values.",
+			"type": "object", "additionalProperties": false,
+			"required": ["version", "highLore", "restorativeSorceress", "naturalPhilosopher"],
+			"properties": {
+				"version": {"type": "integer", "enum": [1]},
+				"highLore": {"$ref": "#/definitions/levelScaledDruidSpecialty"},
+				"restorativeSorceress": {"$ref": "#/definitions/levelScaledDruidSpecialty"},
+				"naturalPhilosopher": {
+					"type": "object", "additionalProperties": false,
+					"required": ["percentPerLevel", "maximumPercent", "knowledgeObjectExperiencePercent"],
+					"properties": {
+						"percentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000},
+						"maximumPercent": {"type": "integer", "minimum": 0, "maximum": 1000},
+						"knowledgeObjectExperiencePercent": {"type": "integer", "minimum": 0, "maximum": 1000}
+					}
+				}
+			}
+		},
+		"levelScaledDruidSpecialty": {
+			"type": "object", "additionalProperties": false,
+			"required": ["percentPerLevel", "maximumPercent"],
+			"properties": {
+				"percentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000},
+				"maximumPercent": {"type": "integer", "minimum": 0, "maximum": 1000}
+			}
+		},
 		"profile": {
 			"type": "object",
 			"required": ["starting", "growth"],

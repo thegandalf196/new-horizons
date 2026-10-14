@@ -276,9 +276,9 @@ TEST_F(NewHorizonsMassBlessTest, AdvancedLitanyOfferGrantsAndRankDowngradeRevoke
 			return offer.selection.perkId == benedictionPerk && offer.requiredRank == MasteryLevel::BASIC;
 		});
 	};
-	auto basicOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 0);
+	auto basicOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 0, attackerSideHero->getPerkOfferWeightContext());
 	for(int seed = 1; seed < 4096 && !hasBenediction(basicOffer); ++seed)
-		basicOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		basicOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 	ASSERT_TRUE(hasBenediction(basicOffer))
 		<< "A deterministic bounded seed search finds the Basic Benediction offer in the full active pool";
 	attackerSideHero->applyPerkSelection({lightMagicSkill, benedictionPerk});
@@ -290,9 +290,9 @@ TEST_F(NewHorizonsMassBlessTest, AdvancedLitanyOfferGrantsAndRankDowngradeRevoke
 			return offer.selection.perkId == litanyPerk && offer.requiredRank == MasteryLevel::ADVANCED;
 		});
 	};
-	auto advancedOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 0);
+	auto advancedOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 0, attackerSideHero->getPerkOfferWeightContext());
 	for(int seed = 1; seed < 4096 && !hasLitany(advancedOffer); ++seed)
-		advancedOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		advancedOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 	const auto litanyOffer = std::ranges::find_if(advancedOffer, [](const auto & offer)
 	{
 		return offer.selection.perkId == litanyPerk && offer.requiredRank == MasteryLevel::ADVANCED;

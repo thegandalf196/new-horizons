@@ -6,6 +6,10 @@
 
 #include "../../client/windows/NewHorizonsPerkAvailability.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
+#include "../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../lib/GameLibrary.h"
+#include "../../lib/modding/ModScope.h"
+#include "../../lib/modding/IdentifierStorage.h"
 
 #include <algorithm>
 #include <array>
@@ -39,6 +43,25 @@ newHorizonsHeroes::PerkDefinition definition(const newHorizonsHeroes::PerkState 
 	return *perk;
 }
 
+newHorizonsHeroes::PerkState::OfferWeightContext capturedAvailabilityWeights()
+{
+	const auto classId = LIBRARY->identifiers()->getIdentifier(
+		ModScope::scopeGame(), HeroClassID::entityType(), "core:knight", true);
+	if(!classId)
+		throw std::runtime_error("Missing canonical Knight class for availability fixture");
+	const auto captured = newHorizonsHeroes::resolveHeroRules(
+		JsonNode(JsonPath::builtin("config/newHorizonsHeroes")), HeroClassID(*classId));
+	return {newHorizonsHeroes::PerkState::OfferWeightMode::CapturedTable,
+		[captured](const std::string & skillId) -> std::optional<int>
+		{
+			const auto decoded = LIBRARY->identifiers()->getIdentifier(
+				ModScope::scopeGame(), SecondarySkill::entityType(), skillId, true);
+			if(!decoded || SecondarySkill::encode(*decoded) != skillId)
+				throw std::runtime_error("Noncanonical parent skill in availability fixture");
+			return newHorizonsHeroes::skillOfferWeight(captured, SecondarySkill(*decoded));
+		}};
+}
+
 int rankFor(const std::string & skillId)
 {
 	return skillId == SKILL ? 3 : 0;
@@ -57,7 +80,7 @@ TEST(NewHorizonsPerkAvailability, MirrorsLearnedRankAndServerOfferEligibility)
 	EXPECT_EQ(available.status, newHorizonsPerkAvailability::Status::AVAILABLE);
 	EXPECT_EQ(available.reason, newHorizonsPerkAvailability::Reason::NONE);
 
-	const auto offer = state.prepareOffer(rankFor, 42);
+	const auto offer = state.prepareOffer(rankFor, 42, capturedAvailabilityWeights());
 	ASSERT_FALSE(offer.empty());
 	for(const auto & candidate : offer)
 	{
@@ -81,7 +104,7 @@ TEST(NewHorizonsPerkAvailability, ExceptionalRankDoesNotSkipEarlierPerkTier)
 	EXPECT_EQ(locked.status, newHorizonsPerkAvailability::Status::LOCKED);
 	EXPECT_EQ(locked.reason, newHorizonsPerkAvailability::Reason::EARLIER_TIER_MISSING);
 
-	const auto offer = state.prepareOffer(rankFor, 43);
+	const auto offer = state.prepareOffer(rankFor, 43, capturedAvailabilityWeights());
 	ASSERT_FALSE(offer.empty());
 	for(const auto & candidate : offer)
 		EXPECT_EQ(candidate.requiredRank, 1);
@@ -89,7 +112,7 @@ TEST(NewHorizonsPerkAvailability, ExceptionalRankDoesNotSkipEarlierPerkTier)
 	state.select(std::string(SKILL), std::string(BASIC), 3);
 	const auto nextTier = newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3, advanced);
 	EXPECT_EQ(nextTier.status, newHorizonsPerkAvailability::Status::AVAILABLE);
-	const auto advancedOffer = state.prepareOffer(rankFor, 44);
+	const auto advancedOffer = state.prepareOffer(rankFor, 44, capturedAvailabilityWeights());
 	ASSERT_FALSE(advancedOffer.empty());
 	for(const auto & candidate : advancedOffer)
 		EXPECT_EQ(candidate.requiredRank, 2);

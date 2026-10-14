@@ -2189,7 +2189,7 @@ void GameStatePackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 		const auto expected = hero->getPerkState().prepareOffer([hero](const std::string & skillId)
 		{
 			return hero->getPerkSkillRank(skillId);
-		}, static_cast<uint64_t>(pack.perkOfferSeed));
+		}, static_cast<uint64_t>(pack.perkOfferSeed), hero->getPerkOfferWeightContext());
 		if(expected != pack.perks)
 			throw std::runtime_error("Forged New Horizons level-up perk offer");
 	}

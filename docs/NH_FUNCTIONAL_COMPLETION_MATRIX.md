@@ -333,8 +333,11 @@ adapter preserves hostile-locked duration while applying damage and propagation
 once per round, including automatic normal-slot forfeitures. The current focused
 39-case native gate passes server completion, detached attack/Frozen completion,
 captured mitigation, lethal propagation and timer isolation. This is not complete
-AI action coverage: Defend/creature-cast and explicit movement projections,
-compound control and whole-game save/resume remain separate integration work.
+AI action coverage. Subsequent detached adapters include Defend, completing
+creature casts and ordinary movement projections, with focused action/movement
+completion suites. Compound control and whole-game save/resume remain separate
+integration work; no fresh execution of those suites on each later build is
+implied by this source accounting.
 
 New principal crash found by the Frozen acceptance setup: a bare creature popup
 before gameplay unconditionally dereferences the absent player interface while

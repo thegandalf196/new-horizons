@@ -59,7 +59,7 @@ protected:
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
 			const auto offer = hero->getPerkState().prepareOffer(
-				[hero](const std::string & name) { return hero->getPerkSkillRank(name); }, seed);
+				[hero](const std::string & name) { return hero->getPerkSkillRank(name); }, seed, hero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offer.size(); ++index)
 				if(offer[index].selection.skillId == skill && offer[index].selection.perkId == perk)
 				{

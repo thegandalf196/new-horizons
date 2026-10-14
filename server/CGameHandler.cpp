@@ -201,7 +201,7 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero,
 	// Validate without mutating authoritative state. The replicated pack below is
 	// the sole state-change path for the server and every connected client.
 	auto validated = hero->getPerkState();
-	validated.acceptOffer(offer, choice, rankLookup, seed);
+	validated.acceptOffer(offer, choice, rankLookup, seed, hero->getPerkOfferWeightContext());
 
 	HeroPerkChosen chosen;
 	chosen.hero = hero->id;
@@ -316,7 +316,7 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 		hlu.perks = perkState.prepareOffer([hero](const std::string & skillId)
 		{
 			return hero->getPerkSkillRank(skillId);
-		}, hlu.perkOfferSeed);
+		}, hlu.perkOfferSeed, hero->getPerkOfferWeightContext());
 	};
 	prepareChoices();
 

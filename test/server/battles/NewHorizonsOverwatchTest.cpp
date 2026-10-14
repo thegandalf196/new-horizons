@@ -164,7 +164,7 @@ protected:
 			bool accepted = false;
 			for(uint64_t seed = 0; seed < 4096 && !accepted; ++seed)
 			{
-				const auto offers = defenderSideHero->getPerkState().prepareOffer(lookup, seed);
+				const auto offers = defenderSideHero->getPerkState().prepareOffer(lookup, seed, defenderSideHero->getPerkOfferWeightContext());
 				for(size_t index = 0; index < offers.size(); ++index)
 					if(offers[index].selection.skillId == skillKey && offers[index].selection.perkId == perkKey)
 					{

@@ -237,6 +237,25 @@ void validateOptionalSkillSpecialtyRules(const JsonNode & rules)
 		validateSkillSpecialtyRules(found->second);
 }
 
+void validateDruidSpecialtyRules(const JsonNode & rules)
+{
+	fields(rules, {"version", "highLore", "restorativeSorceress", "naturalPhilosopher"});
+	require(integer(rules["version"], 1, 1), "Druid specialty version");
+	for(const char * key : {"highLore", "restorativeSorceress", "naturalPhilosopher"})
+	{
+		const auto & row = rules[key];
+		if(std::string_view(key) == "naturalPhilosopher")
+		{
+			fields(row, {"percentPerLevel", "maximumPercent", "knowledgeObjectExperiencePercent"});
+			require(integer(row["knowledgeObjectExperiencePercent"], 0, 1000), "knowledge-object XP percentage");
+		}
+		else
+			fields(row, {"percentPerLevel", "maximumPercent"});
+		require(integer(row["percentPerLevel"], 0, 1000), "Druid specialty percentage per level");
+		require(integer(row["maximumPercent"], 0, 1000), "Druid specialty maximum percentage");
+	}
+}
+
 void validateExcludedSkills(const JsonNode & excludedSkills)
 {
 	if(excludedSkills.isNull())
@@ -518,13 +537,14 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements"});
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateOptionalDamageSpellSpecialtyRules(rules);
 	validateOptionalNonDamageSpellSpecialtyRules(rules);
 	validateOptionalSkillSpecialtyRules(rules);
+	validateDruidSpecialtySerialization(rules, true);
 	validateRemainingSpellSpecialtySerialization(rules, true);
 	validateDefaultCreatureLineSerialization(rules, true);
 	if(rules.Struct().contains("defaultCreatureLineReplacements"))
@@ -557,13 +577,14 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget"});
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateOptionalDamageSpellSpecialtyRules(rules);
 	validateOptionalNonDamageSpellSpecialtyRules(rules);
 	validateOptionalSkillSpecialtyRules(rules);
+	validateDruidSpecialtySerialization(rules, true);
 	validateRemainingSpellSpecialtySerialization(rules, true);
 	validateDefaultCreatureLineSerialization(rules, true);
 	if(rules.Struct().contains("defaultCreatureLineReplacements"))
@@ -594,6 +615,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 		result["remainingSpellSpecialtyReplacements"] = rules["remainingSpellSpecialtyReplacements"];
 	if(rules.Struct().contains("skillSpecialties"))
 		result["skillSpecialties"] = rules["skillSpecialties"];
+	if(rules.Struct().contains("druidSpecialties"))
+		result["druidSpecialties"] = rules["druidSpecialties"];
 	if(rules.Struct().contains("lighthouseDeparture"))
 		result["lighthouseDeparture"] = rules["lighthouseDeparture"];
 	if(rules["skillOfferWeights"].isStruct())
@@ -605,6 +628,56 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	result["profile"] = rules["classProfiles"][HeroClassID::encode(heroClass.getNum())];
 	validateResolvedHeroRules(result);
 	return result;
+}
+
+void validateDruidSpecialtySerialization(const JsonNode & development, bool supported)
+{
+	const auto & rules = development["druidSpecialties"];
+	if(rules.isNull())
+		return;
+	validateDruidSpecialtyRules(rules);
+	if(!supported)
+		throw std::runtime_error("Captured Druid specialties require the new save format");
+}
+
+std::optional<DruidSpecialtyRules> druidSpecialtyRules(const JsonNode & development)
+{
+	if(!usesRules(development) || development["druidSpecialties"].isNull())
+		return std::nullopt;
+	validateDruidSpecialtySerialization(development, true);
+	const auto & rules = development["druidSpecialties"];
+	const auto levelRule = [](const JsonNode & row)
+	{
+		return LevelScaledSpecialty{static_cast<int>(row["percentPerLevel"].Integer()),
+			static_cast<int>(row["maximumPercent"].Integer())};
+	};
+	return DruidSpecialtyRules{1, levelRule(rules["highLore"]), levelRule(rules["restorativeSorceress"]),
+		levelRule(rules["naturalPhilosopher"]),
+		static_cast<int>(rules["naturalPhilosopher"]["knowledgeObjectExperiencePercent"].Integer())};
+}
+
+int druidSpecialtyPercent(int level, const LevelScaledSpecialty & rule)
+{
+	if(level < 0 || rule.percentPerLevel < 0 || rule.percentPerLevel > 1000
+		|| rule.maximumPercent < 0 || rule.maximumPercent > 1000)
+		throw std::invalid_argument("Invalid Druid specialty level coefficients");
+	return static_cast<int>(std::min<int64_t>(static_cast<int64_t>(level) * rule.percentPerLevel,
+		rule.maximumPercent));
+}
+
+int64_t druidSpecialtyExtra(int64_t ordinaryContribution, int percent)
+{
+	if(ordinaryContribution < 0 || percent < 0 || percent > 1000)
+		throw std::invalid_argument("Invalid Druid specialty contribution");
+	if(percent == 0)
+		return 0;
+	const auto maximum = std::numeric_limits<int64_t>::max();
+	const auto whole = ordinaryContribution / 100;
+	if(whole > maximum / percent)
+		return maximum;
+	const auto result = whole * percent;
+	const auto remainder = ordinaryContribution % 100 * percent / 100;
+	return result > maximum - remainder ? maximum : result + remainder;
 }
 
 std::optional<CreatureLineSpecialtyRules> creatureLineSpecialtyRules(const JsonNode & resolvedRules)
@@ -1297,6 +1370,49 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 	if(capturedHero && (capturedHero->getHeroType() != heroType
 		|| capturedHero->getPrimaryGrowthRules() != development || capturedHero->getMagicRules() != magic))
 		throw std::invalid_argument("Specialty presentation requires the matching captured context");
+
+	if(const auto druids = druidSpecialtyRules(development))
+	{
+		const auto identity = heroType->getJsonKey();
+		const LevelScaledSpecialty * scaling = nullptr;
+		MetaString description;
+		if(identity == "core:elleshar")
+		{
+			result.name = "High Lore";
+			result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
+			scaling = &druids->highLore;
+			description.appendRawString("The extra maximum Spell Points granted by Intelligence increase by ");
+		}
+		else if(identity == "core:gem")
+		{
+			result.name = "Restorative Sorceress";
+			result.spell = SpellID::CURE;
+			scaling = &druids->restorativeSorceress;
+			description.appendRawString("The Spell Power healing component of Cure and creature healing by the First Aid Tent increase by ");
+		}
+		else if(identity == "core:malcom")
+		{
+			result.name = "Natural Philosopher";
+			result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
+			scaling = &druids->naturalPhilosopher;
+			description.appendRawString("The core experience bonus from Learning increases by ");
+		}
+		if(scaling)
+		{
+			description.appendNumber(scaling->percentPerLevel);
+			description.appendRawString("% per hero level, up to ");
+			description.appendNumber(scaling->maximumPercent);
+			description.appendRawString("%. Fractions round down.");
+			if(identity == "core:malcom")
+			{
+				description.appendRawString(" Learning Stones and Trees of Knowledge grant ");
+				description.appendNumber(druids->knowledgeObjectExperiencePercent);
+				description.appendRawString("% additional raw experience before ordinary experience modifiers.");
+			}
+			result.description = description.toString(LIBRARY->generaltexth.get());
+			return result;
+		}
+	}
 
 	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(development);
 	const BonusList empty;

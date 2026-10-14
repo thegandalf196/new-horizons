@@ -118,6 +118,7 @@ protected:
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRulesForFixture(omitStructures));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepare(const std::string_view spellKey, const bool siege = false, const bool legacy = false)

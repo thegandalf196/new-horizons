@@ -95,6 +95,7 @@ protected:
 			|| !setPerkActive(perkRules, bastionPerkId))
 			throw std::runtime_error("Missing Armorer prerequisite or Bastion perk from New Horizons rules");
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void acceptPerkThroughOffer(CGHeroInstance * hero, std::string_view perkId,
@@ -107,7 +108,7 @@ protected:
 
 		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [perkId](const auto & candidate)
 			{
 				return candidate.selection.skillId == armorerSkillId

@@ -398,6 +398,7 @@ set(test_SRCS
 		server/battles/NewHorizonsBastionTest.cpp
 		server/battles/NewHorizonsPhantomArmyTest.cpp
 		server/battles/NewHorizonsCureTest.cpp
+		server/battles/NewHorizonsDruidConsumerTest.cpp
 		server/battles/NewHorizonsCanonicalSpellClausesSerializationTest.cpp
 		server/battles/NewHorizonsImplosionTest.cpp
 		server/battles/NewHorizonsTemporaryMagicDispelTest.cpp
@@ -519,6 +520,7 @@ set(test_SRCS
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp
 		server/queries/QueriesProcessorTest.cpp
 		server/queries/NewHorizonsPerkVerticalSliceTest.cpp
+		server/queries/NewHorizonsPerkRewardContextTest.cpp
 		server/queries/NewHorizonsQuickStudyTest.cpp
 		server/queries/NewHorizonsUniqueBuildingTrainingTest.cpp
 		server/queries/NewHorizonsNecromancyAmplifierTest.cpp

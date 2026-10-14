@@ -131,10 +131,12 @@ struct DLL_LINKAGE Reward final
 
 	/// Generates list of components that describes reward for a specific hero
 	/// If hero is nullptr, then rewards will be generated without accounting for hero
-	void loadComponents(std::vector<Component> & comps, const CGHeroInstance * h) const;
+	void loadComponents(std::vector<Component> & comps, const CGHeroInstance * h,
+		std::optional<Obj> sourceObject = std::nullopt) const;
 	
-	Component getDisplayedComponent(const CGHeroInstance * h) const;
-	TExpType calculateHeroExperience(const CGHeroInstance * hero, bool includePrimaryExperienceBonus = true) const;
+	Component getDisplayedComponent(const CGHeroInstance * h, std::optional<Obj> sourceObject = std::nullopt) const;
+	TExpType calculateHeroExperience(const CGHeroInstance * hero, bool includePrimaryExperienceBonus = true,
+		std::optional<Obj> sourceObject = std::nullopt) const;
 
 	si32 calculateManaPoints(const CGHeroInstance * h) const;
 	si32 calculateMovePoints(const CGHeroInstance * h) const;

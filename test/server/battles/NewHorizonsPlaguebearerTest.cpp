@@ -90,7 +90,7 @@ protected:
 		const auto ranks = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
 		for(uint64_t seed = 0; seed < 10000 && !hero->hasActivePerk(newHorizonsPlague::SKILL, prerequisite); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(ranks, seed);
+			const auto offers = hero->getPerkState().prepareOffer(ranks, seed, hero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.perkId == prerequisite)
 				{
@@ -254,7 +254,7 @@ protected:
 		const auto ranks = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
 		for(uint64_t seed = 0; seed < 10000; ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(ranks, seed);
+			const auto offers = attackerSideHero->getPerkState().prepareOffer(ranks, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.perkId == newHorizonsPlague::PLAGUEBEARER)
 				{

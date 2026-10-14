@@ -352,7 +352,7 @@ TEST_F(NewHorizonsLearningMentorAITest, NullkillerSelectsTheLegallyOfferedAdvanc
 	{
 		return mentor->getPerkSkillRank(skillId);
 	};
-	const auto legalOffer = mentor->getPerkState().prepareOffer(rankLookup, 0);
+	const auto legalOffer = mentor->getPerkState().prepareOffer(rankLookup, 0, mentor->getPerkOfferWeightContext());
 	ASSERT_EQ(legalOffer.size(), 1u);
 	EXPECT_EQ(legalOffer.front().selection, (newHorizonsHeroes::PerkSelection{LEARNING_SKILL, FIELD_STUDY_PERK}));
 	EXPECT_EQ(legalOffer.front().requiredRank, MasteryLevel::ADVANCED);

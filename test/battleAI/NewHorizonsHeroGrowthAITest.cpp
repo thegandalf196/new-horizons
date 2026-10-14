@@ -48,6 +48,7 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		// Isolated native mechanics configuration, not canonical activation proof.
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
+		captureLegacyPerkOfferPolicy(*map);
 	}
 };
 

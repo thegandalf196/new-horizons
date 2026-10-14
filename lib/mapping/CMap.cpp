@@ -1318,6 +1318,32 @@ void CMap::validateNewHorizonsLighthouseSerialization(bool supported) const
 			newHorizonsLighthouse::validateRulesSerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
+
+void CMap::validateNewHorizonsWeightedPerkSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsWeightedPerkSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported);
+}
+
+
+void CMap::validateNewHorizonsDruidSpecialtySerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsDruidSpecialtySerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateDruidSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateDruidSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
 void CMap::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
 {
 	if(gameSettings)
