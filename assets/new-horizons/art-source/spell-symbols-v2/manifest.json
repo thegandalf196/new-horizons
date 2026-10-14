@@ -36,7 +36,7 @@
       "spellKey": "holyWrath",
       "name": "Holy Wrath",
       "status": "converted",
-      "liveBindings": {"iconBook": "NH_holyWrath_44.png", "iconScroll": "NH_holyWrath_44.png", "iconEffect": "NH_holyWrath_30.png", "iconImmune": "NH_holyWrath_30.png", "iconScenarioBonus": "SPELLBON.def:0:15"},
+      "liveBindings": {"iconBook": "NH_holyWrath_44.png", "iconScroll": "NH_holyWrath_44.png", "iconEffect": "NH_holyWrath_30.png", "iconImmune": "NH_holyWrath_30.png", "iconScenarioBonus": "NH_holyWrath_32.png"},
       "reference": {"master": "assets/new-horizons/art-source/holy-wrath-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/holy-wrath-v1/holy-wrath-44.png", "32": "assets/new-horizons/art-source/holy-wrath-v1/holy-wrath-32.png", "30": "assets/new-horizons/art-source/holy-wrath-v1/effect-30-export/holy-wrath-30.png"}},
       "symbol": {
         "master": "assets/new-horizons/art-source/holy-wrath-symbol-v2/master.png",
@@ -292,7 +292,7 @@
       "spellKey": "regeneration",
       "name": "Regeneration",
       "status": "converted",
-      "liveBindings": {"iconBook": "NH_regeneration_44.png", "iconScroll": "NH_regeneration_44.png", "iconEffect": "NH_regeneration_30.png", "iconImmune": "NH_regeneration_30.png", "iconScenarioBonus": "SPELLBON.def:0:15"},
+      "liveBindings": {"iconBook": "NH_regeneration_44.png", "iconScroll": "NH_regeneration_44.png", "iconEffect": "NH_regeneration_30.png", "iconImmune": "NH_regeneration_30.png", "iconScenarioBonus": "NH_regeneration_32.png"},
       "reference": {"master": "assets/new-horizons/art-source/regeneration-v1/selected/master.png", "exports": {"44": "assets/new-horizons/art-source/regeneration-v1/selected/NH_regeneration-44.png", "32": "assets/new-horizons/art-source/regeneration-v1/selected/NH_regeneration-32.png", "30": "assets/new-horizons/art-source/regeneration-v1/selected/NH_regeneration-30.png"}},
       "symbol": {
         "master": "assets/new-horizons/art-source/regeneration-symbol-v2/master.png",

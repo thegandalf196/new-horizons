@@ -12,11 +12,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:60",
-			"iconScroll": "SPELLSCR.def:0:60",
-			"iconEffect": "SPELLINT.def:0:61",
-			"iconImmune": "SPELLINT.def:0:61",
-			"iconScenarioBonus": "SPELLBON.def:0:60"
+			"iconBook": "NH_spell_confusion-44.png",
+			"iconScroll": "NH_spell_confusion-32.png",
+			"iconEffect": "NH_spell_confusion-30.png",
+			"iconImmune": "NH_spell_confusion-30.png",
+			"iconScenarioBonus": "NH_spell_confusion-32.png"
 		},
 		"animation": {"affect": ["C10SPA0"]},
 		"sounds": {"cast": "HYPNOTIZ"},
@@ -53,11 +53,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:60",
-			"iconScroll": "SPELLSCR.def:0:60",
-			"iconEffect": "SPELLINT.def:0:61",
-			"iconImmune": "SPELLINT.def:0:61",
-			"iconScenarioBonus": "SPELLBON.def:0:60"
+			"iconBook": "NH_spell_puppet_master-44.png",
+			"iconScroll": "NH_spell_puppet_master-32.png",
+			"iconEffect": "NH_spell_puppet_master-30.png",
+			"iconImmune": "NH_spell_puppet_master-30.png",
+			"iconScenarioBonus": "NH_spell_puppet_master-32.png"
 		},
 		"animation": {"affect": ["C10SPA0"]},
 		"sounds": {"cast": "HYPNOTIZ"},
@@ -294,11 +294,11 @@
 		"gainChance" : {},
 		"targetType" : "OBSTACLE",
 		"graphics" : {
-			"iconBook" : "SPELLS.def:0:64",
-			"iconScroll" : "SPELLSCR.def:0:64",
-			"iconEffect" : "SPELLINT.def:0:65",
-			"iconImmune" : "SPELLINT.def:0:65",
-			"iconScenarioBonus" : "SPELLBON.def:0:64"
+			"iconBook" : "NH_spell_transfigure_matter-44.png",
+			"iconScroll" : "NH_spell_transfigure_matter-32.png",
+			"iconEffect" : "NH_spell_transfigure_matter-30.png",
+			"iconImmune" : "NH_spell_transfigure_matter-30.png",
+			"iconScenarioBonus" : "NH_spell_transfigure_matter-32.png"
 		},
 		"animation" : {
 			"hit" : ["C18SPW0"]
@@ -428,11 +428,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:27",
-			"iconScroll": "SPELLS.def:0:27",
-			"iconEffect": "SPELLINT.def:0:27",
-			"iconImmune": "SPELLINT.def:0:27",
-			"iconScenarioBonus": "SPELLBON.def:0:27"
+			"iconBook": "NH_spell_shield_of_chaos-44.png",
+			"iconScroll": "NH_spell_shield_of_chaos-32.png",
+			"iconEffect": "NH_spell_shield_of_chaos-30.png",
+			"iconImmune": "NH_spell_shield_of_chaos-30.png",
+			"iconScenarioBonus": "NH_spell_shield_of_chaos-32.png"
 		},
 		"animation": {
 			"affect": [
@@ -629,11 +629,11 @@
 		"gainChance" : {},
 		"targetType" : "CREATURE",
 		"graphics" : {
-			"iconBook" : "SPELLS.def:0:15",
-			"iconScroll" : "SPELLS.def:0:15",
-			"iconEffect" : "SPELLINT.def:0:15",
-			"iconImmune" : "SPELLINT.def:0:15",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+			"iconBook" : "NH_spell_hand_of_fate-44.png",
+			"iconScroll" : "NH_spell_hand_of_fate-32.png",
+			"iconEffect" : "NH_spell_hand_of_fate-30.png",
+			"iconImmune" : "NH_spell_hand_of_fate-30.png",
+			"iconScenarioBonus" : "NH_spell_hand_of_fate-32.png"
 		},
 		"animation" : {"hit" : ["C18SPW0"]},
 		"sounds" : {"cast" : "MAGICBLT"},
@@ -690,7 +690,7 @@
 			"iconScroll" : "NH_holyWrath_44.png",
 			"iconEffect" : "NH_holyWrath_30.png",
 			"iconImmune" : "NH_holyWrath_30.png",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+			"iconScenarioBonus" : "NH_holyWrath_32.png"
 		},
 		"animation" : {
 			"hit" : ["C18SPW0"]
@@ -1149,11 +1149,11 @@
 		"gainChance": {},
 		"targetType": "LOCATION",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:69",
-			"iconScroll": "SPELLSCR.def:0:69",
-			"iconScenarioBonus": "SPELLBON.def:0:69",
-			"iconEffect": "SPELLINT.def:0:70",
-			"iconImmune": "SPELLINT.def:0:70"
+			"iconBook": "NH_spell_elemental_convergence-44.png",
+			"iconScroll": "NH_spell_elemental_convergence-32.png",
+			"iconScenarioBonus": "NH_spell_elemental_convergence-32.png",
+			"iconEffect": "NH_spell_elemental_convergence-30.png",
+			"iconImmune": "NH_spell_elemental_convergence-30.png"
 		},
 		"animation": {"hit": ["C18SPW0"]},
 		"sounds": {"cast": "SUMNELM"},
@@ -1185,11 +1185,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:65",
-			"iconScroll": "SPELLSCR.def:0:65",
-			"iconScenarioBonus": "SPELLBON.def:0:65",
-			"iconEffect": "SPELLINT.def:0:66",
-			"iconImmune": "SPELLINT.def:0:66"
+			"iconBook": "NH_spell_reality_warp-44.png",
+			"iconScroll": "NH_spell_reality_warp-32.png",
+			"iconScenarioBonus": "NH_spell_reality_warp-32.png",
+			"iconEffect": "NH_spell_reality_warp-30.png",
+			"iconImmune": "NH_spell_reality_warp-30.png"
 		},
 		"animation": {"affect": ["C10SPA0"]},
 		"sounds": {"cast": "CLONE"},
@@ -1220,11 +1220,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:65",
-			"iconScroll": "SPELLSCR.def:0:65",
-			"iconScenarioBonus": "SPELLBON.def:0:65",
-			"iconEffect": "SPELLINT.def:0:66",
-			"iconImmune": "SPELLINT.def:0:66"
+			"iconBook": "NH_spell_polymorph-44.png",
+			"iconScroll": "NH_spell_polymorph-32.png",
+			"iconScenarioBonus": "NH_spell_polymorph-32.png",
+			"iconEffect": "NH_spell_polymorph-30.png",
+			"iconImmune": "NH_spell_polymorph-30.png"
 		},
 		"animation": {"affect": ["C10SPA0"]},
 		"sounds": {"cast": "CLONE"},
@@ -1255,11 +1255,11 @@
 		"gainChance": {},
 		"targetType": "NO_TARGET",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:26",
-			"iconScroll": "SPELLSCR.def:0:26",
-			"iconScenarioBonus": "SPELLBON.def:0:26",
-			"iconEffect": "SPELLINT.def:0:27",
-			"iconImmune": "SPELLINT.def:0:27"
+			"iconBook": "NH_spell_pandemonium-44.png",
+			"iconScroll": "NH_spell_pandemonium-32.png",
+			"iconScenarioBonus": "NH_spell_pandemonium-32.png",
+			"iconEffect": "NH_spell_pandemonium-30.png",
+			"iconImmune": "NH_spell_pandemonium-30.png"
 		},
 		"animation": {"hit": ["C06SPF0"]},
 		"sounds": {"cast": "ARMGEDN"},
@@ -1290,11 +1290,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:19",
-			"iconScroll": "SPELLSCR.def:0:19",
-			"iconScenarioBonus": "SPELLBON.def:0:19",
-			"iconEffect": "SPELLINT.def:0:20",
-			"iconImmune": "SPELLINT.def:0:20"
+			"iconBook": "NH_spell_natures_wrath-44.png",
+			"iconScroll": "NH_spell_natures_wrath-32.png",
+			"iconScenarioBonus": "NH_spell_natures_wrath-32.png",
+			"iconEffect": "NH_spell_natures_wrath-30.png",
+			"iconImmune": "NH_spell_natures_wrath-30.png"
 		},
 		"animation": {"affect": [{"defName": "C11SPA0", "verticalPosition": "bottom"}, "C11SPA1"]},
 		"sounds": {"cast": "CHAINLTE"},
@@ -1453,11 +1453,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:48",
-			"iconScroll": "SPELLSCR.def:0:48",
-			"iconEffect": "SPELLINT.def:0:49",
-			"iconImmune": "SPELLINT.def:0:49",
-			"iconScenarioBonus": "SPELLBON.def:0:48"
+			"iconBook": "NH_spell_crusade-44.png",
+			"iconScroll": "NH_spell_crusade-32.png",
+			"iconEffect": "NH_spell_crusade-30.png",
+			"iconImmune": "NH_spell_crusade-30.png",
+			"iconScenarioBonus": "NH_spell_crusade-32.png"
 		},
 		"animation": {
 			"affect": [
@@ -1947,11 +1947,11 @@
 		"gainChance" : {},
 		"targetType" : "CREATURE",
 		"graphics" : {
-			"iconBook" : "SPELLS.def:0:15",
-			"iconScroll" : "SPELLSCR.def:0:15",
-			"iconEffect" : "SPELLINT.def:0:16",
-			"iconImmune" : "SPELLINT.def:0:16",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+			"iconBook" : "NH_spell_disintegrate-44.png",
+			"iconScroll" : "NH_spell_disintegrate-32.png",
+			"iconEffect" : "NH_spell_disintegrate-30.png",
+			"iconImmune" : "NH_spell_disintegrate-30.png",
+			"iconScenarioBonus" : "NH_spell_disintegrate-32.png"
 		},
 		"animation" : {
 			"projectile" : [
@@ -2039,11 +2039,11 @@
 		"gainChance" : {},
 		"targetType" : "CREATURE",
 		"graphics" : {
-			"iconBook" : "SPELLS.def:0:15",
-			"iconScroll" : "SPELLSCR.def:0:15",
-			"iconEffect" : "SPELLINT.def:0:16",
-			"iconImmune" : "SPELLINT.def:0:16",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+			"iconBook" : "NH_spell_phantom_army-44.png",
+			"iconScroll" : "NH_spell_phantom_army-32.png",
+			"iconEffect" : "NH_spell_phantom_army-30.png",
+			"iconImmune" : "NH_spell_phantom_army-30.png",
+			"iconScenarioBonus" : "NH_spell_phantom_army-32.png"
 		},
 		"animation" : {
 			"hit" : ["C18SPW0"]
@@ -2123,7 +2123,7 @@
 			"iconScroll" : "NH_regeneration_44.png",
 			"iconEffect" : "NH_regeneration_30.png",
 			"iconImmune" : "NH_regeneration_30.png",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+			"iconScenarioBonus" : "NH_regeneration_32.png"
 		},
 		"animation" : {
 			"hit" : ["C18SPW0"]
@@ -2230,11 +2230,11 @@
 		"gainChance" : {},
 		"targetType" : "LOCATION",
 		"graphics" : {
-			"iconBook" : "SPELLS.def:0:15",
-			"iconScroll" : "SPELLSCR.def:0:15",
-			"iconEffect" : "SPELLINT.def:0:16",
-			"iconImmune" : "SPELLINT.def:0:16",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+			"iconBook" : "NH_spell_time_stop-44.png",
+			"iconScroll" : "NH_spell_time_stop-32.png",
+			"iconEffect" : "NH_spell_time_stop-30.png",
+			"iconImmune" : "NH_spell_time_stop-30.png",
+			"iconScenarioBonus" : "NH_spell_time_stop-32.png"
 		},
 		"animation" : {
 			"hit" : ["C18SPW0"]
@@ -2305,11 +2305,11 @@
 		"gainChance" : {},
 		"targetType" : "CREATURE",
 		"graphics" : {
-			"iconBook" : "SPELLS.def:0:19",
-			"iconScroll" : "SPELLSCR.def:0:19",
-			"iconEffect" : "SPELLINT.def:0:16",
-			"iconImmune" : "SPELLINT.def:0:16",
-			"iconScenarioBonus" : "SPELLBON.def:0:19"
+			"iconBook" : "NH_spell_master_chain_lightning-44.png",
+			"iconScroll" : "NH_spell_master_chain_lightning-32.png",
+			"iconEffect" : "NH_spell_master_chain_lightning-30.png",
+			"iconImmune" : "NH_spell_master_chain_lightning-30.png",
+			"iconScenarioBonus" : "NH_spell_master_chain_lightning-32.png"
 		},
 		"animation" : {
 			"affect" : [{"defName" : "C11SPA0", "verticalPosition" : "bottom"}, "C11SPA1"],
@@ -2409,11 +2409,11 @@
 		"gainChance" : {},
 		"targetType" : "CREATURE",
 		"graphics" : {
-			"iconBook" : "SPELLS.def:0:15",
-			"iconScroll" : "SPELLSCR.def:0:15",
-			"iconEffect" : "SPELLINT.def:0:16",
-			"iconImmune" : "SPELLINT.def:0:16",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+			"iconBook" : "NH_spell_spell_lock-44.png",
+			"iconScroll" : "NH_spell_spell_lock-32.png",
+			"iconEffect" : "NH_spell_spell_lock-30.png",
+			"iconImmune" : "NH_spell_spell_lock-30.png",
+			"iconScenarioBonus" : "NH_spell_spell_lock-32.png"
 		},
 		"animation" : {
 			"hit" : ["C18SPW0"]
@@ -2483,13 +2483,13 @@
 		"defaultGainChance" : 0,
 		"gainChance" : {},
 		"targetType" : "CREATURE",
-		// Existing spellLock frames are unrelated graphic placeholders; no Focus Magic art is defined here.
+		// Purpose-made Focus Magic symbols are selected provisionally for all icon roles.
 		"graphics" : {
-			"iconBook" : "SPELLS.def:0:15",
-			"iconScroll" : "SPELLSCR.def:0:15",
-			"iconEffect" : "SPELLINT.def:0:16",
-			"iconImmune" : "SPELLINT.def:0:16",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+			"iconBook" : "NH_spell_focus_magic-44.png",
+			"iconScroll" : "NH_spell_focus_magic-32.png",
+			"iconEffect" : "NH_spell_focus_magic-30.png",
+			"iconImmune" : "NH_spell_focus_magic-30.png",
+			"iconScenarioBonus" : "NH_spell_focus_magic-32.png"
 		},
 		"levels" : {
 			"none" : {

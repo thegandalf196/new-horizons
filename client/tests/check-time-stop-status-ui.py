@@ -81,9 +81,10 @@ class TimeStopStatusUiSourceTest(unittest.TestCase):
             self.assertNotIn("isFocusMagic", time_stop_predicate)
             self.assertNotIn("isArcaneBreach", time_stop_predicate)
 
-    def test_time_stop_keeps_existing_registered_placeholder_icon(self):
-        self.assertIn('"iconEffect" : "SPELLINT.def:0:16"', SPELLS)
-        self.assertIn('"iconImmune" : "SPELLINT.def:0:16"', SPELLS)
+    def test_time_stop_uses_registered_purpose_made_status_icon(self):
+        time_stop = SPELLS.split('\t"timeStop" : {', 1)[1].split('\n\t"', 1)[0]
+        self.assertIn('"iconEffect" : "NH_spell_time_stop-30.png"', time_stop)
+        self.assertIn('"iconImmune" : "NH_spell_time_stop-30.png"', time_stop)
 
 
 if __name__ == "__main__":

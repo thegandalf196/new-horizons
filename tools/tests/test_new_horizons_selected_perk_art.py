@@ -50,12 +50,21 @@ class SelectedPerkArtTest(unittest.TestCase):
                              open_image('SPRITES/' + stem + '.png').convert('RGBA').tobytes())
         self.assertEqual(len(added), 658)
         self.assertTrue(added <= verified_index().keys())
-        baseline = sorted((row for row in self.manifest['entries'] if row['resource'] not in added),
+        # Later explicitly selected spell families are not part of this batch's
+        # historical baseline. Keep its exact provenance hash, not a looser count.
+        spell_record = ROOT / 'assets/new-horizons/spell-art-selections.json'
+        later = set()
+        if spell_record.exists():
+            spells = json.loads(spell_record.read_text())
+            later = {'SPRITES/' + filename for row in spells['entries'] for filename in row['exports']}
+            self.assertEqual(len(later), 51)
+            self.assertFalse(later & added)
+        baseline = sorted((row for row in self.manifest['entries'] if row['resource'] not in added | later),
                           key=lambda row: row['resource'].encode())
         self.assertEqual(len(baseline), 3137)
         self.assertEqual(hashlib.sha256(json.dumps(baseline, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
                          self.selection['baselineEntriesSha256'])
-        self.assertEqual(len(self.manifest['entries']), 3795)
+        self.assertEqual(len(self.manifest['entries']), 3795 + len(later))
 
     def test_public_provenance_has_no_private_paths_or_loose_runtime_images(self):
         text = json.dumps(self.selection)
