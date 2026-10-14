@@ -96,8 +96,8 @@
 		"graphics": {
 			"iconBook": "SPELLS.def:0:60",
 			"iconScroll": "SPELLSCR.def:0:60",
-			"iconEffect": "SPELLINT.def:0:61",
-			"iconImmune": "SPELLINT.def:0:61",
+			"iconEffect": "NH_status_lucidity-30.png",
+			"iconImmune": "NH_status_lucidity-30.png",
 			"iconScenarioBonus": "SPELLBON.def:0:60"
 		},
 		"levels": {
@@ -3208,12 +3208,12 @@
 		"defaultGainChance" : 0,
 		"gainChance" : {},
 		"targetType" : "CREATURE",
-		// Existing spellLock frames are an unrelated internal placeholder; no Arcane Breach art is defined here.
+		// Purpose-made internal Arcane Breach status art is selected provisionally; castable spell aliases are unchanged.
 		"graphics" : {
 			"iconBook" : "SPELLS.def:0:15",
 			"iconScroll" : "SPELLSCR.def:0:15",
-			"iconEffect" : "SPELLINT.def:0:16",
-			"iconImmune" : "SPELLINT.def:0:16",
+			"iconEffect" : "NH_status_arcane_breach-30.png",
+			"iconImmune" : "NH_status_arcane_breach-30.png",
 			"iconScenarioBonus" : "SPELLBON.def:0:15"
 		},
 		"levels" : {

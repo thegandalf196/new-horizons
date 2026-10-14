@@ -6,10 +6,24 @@ import hashlib
 import importlib.util
 from PIL import Image
 from pathlib import Path, PurePosixPath
+import json
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCHIVE = ROOT / "Mods/new-horizons/NewHorizons.nhart"
 MANIFEST = ROOT / "assets/new-horizons/runtime-art-manifest.json"
+
+
+def later_art_waves():
+    """Explicit additive selection ledger, absent on pre-ledger revisions."""
+    path = ROOT / 'assets/new-horizons/runtime-art-additions.json'
+    return json.loads(path.read_text(encoding='utf-8'))['waves'] if path.exists() else []
+
+
+def later_art_resources():
+    names = [name for wave in later_art_waves() for name in wave['resources']]
+    if len(names) != len(set(names)):
+        raise ValueError('Duplicate later-art resource selection')
+    return set(names)
 _spec = importlib.util.spec_from_file_location("nhart_test_reader", ROOT / "tools/nhart.py")
 _reader = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_reader)

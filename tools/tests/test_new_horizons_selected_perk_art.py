@@ -8,9 +8,9 @@ import re
 import unittest
 
 if __package__:
-    from .nhart_test_resources import verified_index, read_resource, open_image
+    from .nhart_test_resources import verified_index, read_resource, open_image, later_art_resources
 else:
-    from nhart_test_resources import verified_index, read_resource, open_image
+    from nhart_test_resources import verified_index, read_resource, open_image, later_art_resources
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -59,6 +59,8 @@ class SelectedPerkArtTest(unittest.TestCase):
             later = {'SPRITES/' + filename for row in spells['entries'] for filename in row['exports']}
             self.assertEqual(len(later), 51)
             self.assertFalse(later & added)
+        later.update(later_art_resources())
+        self.assertFalse(later & added)
         baseline = sorted((row for row in self.manifest['entries'] if row['resource'] not in added | later),
                           key=lambda row: row['resource'].encode())
         self.assertEqual(len(baseline), 3137)
