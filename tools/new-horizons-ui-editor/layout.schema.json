@@ -155,7 +155,8 @@
               "perk",
               "text",
               "button",
-              "image"
+              "image",
+              "placeholder"
             ]
           },
           "label": {
@@ -214,8 +215,21 @@
           },
           "locked": {
             "type": "boolean"
+          },
+          "role": {
+            "enum": ["skill-icon", "perk-icon", "parent-skill-icon"]
+          },
+          "parentId": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^(?:[a-zA-Z][a-zA-Z0-9_-]{0,63})?$"
           }
-        }
+        },
+        "allOf": [{
+          "if": {"properties": {"type": {"const": "placeholder"}}},
+          "then": {"required": ["role", "parentId"]},
+          "else": {"not": {"anyOf": [{"required": ["role"]}, {"required": ["parentId"]}]}}
+        }]
       }
     }
   }

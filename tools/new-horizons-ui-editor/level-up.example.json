@@ -351,6 +351,22 @@
       "assetRef": "",
       "visible": true,
       "locked": false
+    },
+    {
+      "id": "skill-icon-0", "type": "placeholder", "label": "Skill icon", "role": "skill-icon", "parentId": "skill-0",
+      "x": 12, "y": 26, "w": 44, "h": 44, "anchor": "top-left", "binding": "", "material": "", "assetRef": "", "visible": true, "locked": false
+    },
+    {
+      "id": "skill-icon-1", "type": "placeholder", "label": "Skill icon", "role": "skill-icon", "parentId": "skill-1",
+      "x": 12, "y": 26, "w": 44, "h": 44, "anchor": "top-left", "binding": "", "material": "", "assetRef": "", "visible": true, "locked": false
+    },
+    {
+      "id": "perk-icon-0", "type": "placeholder", "label": "Perk icon", "role": "perk-icon", "parentId": "perk-0",
+      "x": 12, "y": 26, "w": 44, "h": 44, "anchor": "top-left", "binding": "", "material": "", "assetRef": "", "visible": true, "locked": false
+    },
+    {
+      "id": "perk-icon-1", "type": "placeholder", "label": "Perk icon", "role": "perk-icon", "parentId": "perk-1",
+      "x": 12, "y": 26, "w": 44, "h": 44, "anchor": "top-left", "binding": "", "material": "", "assetRef": "", "visible": true, "locked": false
     }
   ]
 }

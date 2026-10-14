@@ -9,6 +9,7 @@
 <label>Zoom <select id="zoom"><option value=".5">50%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
 <label>Grid <input id="grid-size" type="number" min="1" max="64" value="8"></label>
 <label><input id="snap" type="checkbox" checked> Snap</label><label><input id="grid-visible" type="checkbox" checked> Show grid</label>
+<label><input id="guides-visible" type="checkbox" checked> Guides / rulers</label><label><input id="alignment-snap" type="checkbox"> Align snap</label>
 <button id="import">Import JSON</button><button id="export">Export JSON</button>
 <button id="translation">Check native mapping</button>
 <input id="layout-file" type="file" accept=".json,application/json" hidden>
@@ -17,15 +18,17 @@
 <aside class="palette"><h2>Layers <small>back → front</small></h2><div id="layers"></div>
 <label>Add <select id="add-type"></select></label><button id="add">Add layer</button>
 <div class="row"><button id="back">Backward</button><button id="front">Forward</button><button id="delete">Delete</button></div>
+<h2>Role placeholders</h2><label>Role <select id="placeholder-role"></select></label><button id="add-placeholder">Add role box</button><p>Select a panel/offer area to nest a box. Labels show the intended role and current pixel dimensions; no artwork or game binding is invented.</p>
 <h2>Private preview assets</h2><p>PNG only; local memory, never uploaded or embedded in JSON. Export keeps portable references only.</p>
 <label>Import as <select id="asset-kind"><option value="material">Tiled material</option><option value="ornament">Ornament / portrait / icon</option></select></label>
 <button id="asset-import">Load private PNG</button><input id="asset-file" type="file" accept="image/png,.png" hidden>
 <p id="asset-note">Engine references are labels, not extracted game artwork.</p></aside>
-<section class="workspace" aria-label="Layout preview"><div id="scaled-board"><div id="board" role="region" aria-label="Editable native-pixel canvas"></div></div><p class="caption">Procedural/editor-only materials and placeholders; not final artwork. Shift-drag bypasses snap. Arrow keys move; Delete removes; Ctrl/Cmd-Z undoes. Export before closing.</p></section>
+<section class="workspace" aria-label="Layout preview"><div id="scaled-board"><div id="board" role="region" aria-label="Editable native-pixel canvas"></div><div id="rulers" aria-hidden="true"></div><div id="guides" aria-hidden="true"></div></div><p class="caption">Procedural/editor-only materials and placeholders; not final artwork. Shift-drag bypasses grid/alignment snap. Guides and rulers are editor-only. Arrow keys move; Delete removes; Ctrl/Cmd-Z undoes. Export before closing.</p></section>
 <aside class="inspector"><h2>Selected layer</h2><form id="properties">
 <label>ID <input id="prop-id" readonly></label><label>Label <input id="prop-label" maxlength="160"></label>
 <label>Binding <input id="prop-binding" maxlength="160" placeholder="hero.name / offers.perks[0]"></label>
 <label>Anchor <select id="prop-anchor"></select></label>
+<fieldset id="placeholder-properties" hidden><legend>Editor role box</legend><label>Role <select id="prop-role"></select></label><label>Parent <input id="prop-parent" readonly></label></fieldset>
 <div class="pair"><label>X offset <input id="prop-x" type="number"></label><label>Y offset <input id="prop-y" type="number"></label></div>
 <div class="pair"><label>Width <input id="prop-w" type="number" min="8"></label><label>Height <input id="prop-h" type="number" min="8"></label></div>
 <label>Material <select id="prop-material"></select></label><label>Resource reference <input id="prop-assetRef" maxlength="160" placeholder="private:portrait-1"></label>

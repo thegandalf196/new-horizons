@@ -130,7 +130,7 @@ void CComponent::init(ComponentType Type, ComponentSubType Subtype, std::optiona
 	}
 }
 
-void CComponent::setHorizontalLayout(int width, int height)
+void CComponent::setHorizontalLayout(int width, int height, bool centerContent)
 {
 	OBJECT_CONSTRUCTION;
 	lines.clear();
@@ -143,6 +143,18 @@ void CComponent::setHorizontalLayout(int width, int height)
 	// better fallback than pushing the second offer into the confirmation row.
 	if(label->textSize.y > height)
 		label = std::make_shared<CMultiLineLabel>(caption, FONT_TINY, ETextAlignment::CENTERLEFT, Colors::WHITE, getSubtitle());
+	if(centerContent)
+	{
+		// Wrap against the available width first, then center the actual icon
+		// and text together rather than leaving the icon at the card's edge.
+		const int captionWidth = std::clamp(label->textSize.x, 0, caption.w);
+		const int groupWidth = image->pos.w + 8 + captionWidth;
+		const int groupLeft = (width - groupWidth) / 2;
+		image->moveTo(pos.topLeft() + Point(groupLeft, (height - image->pos.h) / 2));
+		label->pos.w = captionWidth;
+		label->moveTo(pos.topLeft() + Point(groupLeft + image->pos.w + 8, 0));
+		label->setVisibleSize(Rect(0, 0, captionWidth, height), false);
+	}
 	lines.push_back(label);
 }
 

@@ -35,7 +35,7 @@ class LevelSnapshotTest(unittest.TestCase):
         self.assertIn('CButton>(Point(288, 532)', source)
         self.assertLess(516 + 6, 532)
         self.assertLessEqual(532 + 32, 568)
-        self.assertLessEqual(294 + 108 + 96, 516 - 12)
+        self.assertLessEqual(300 + 96 + 84, 516 - 12)
         # CWindowObject::showAll adds these native DIALGBOX border dimensions.
         self.assertLessEqual(640 + 28, 800)
         self.assertLessEqual(568 + 29, 600)
@@ -47,7 +47,63 @@ class LevelSnapshotTest(unittest.TestCase):
         self.assertIn('CComponent::small', component)
         self.assertIn('parentSkill->customSubtitle = parentName', component)
         self.assertIn('translate("core.skilllev", requiredRank - 1)', component)
-        self.assertIn('parentSkill->setHorizontalLayout(226, 40)', component)
+        self.assertIn('parentSkill->setHorizontalLayout(228, 34, true)', component)
+        self.assertIn('parentSkill->moveTo(pos.topLeft() + Point(8, 48))', component)
+
+    def test_compact_one_and_two_choice_extents_match_recesses(self):
+        source = (ROOT / 'client/windows/GUIClasses.cpp').read_text()
+        choices = source.split('void CLevelWindow::createSkillBox()', 1)[1]
+        perk = source.split('class CLevelUpPerkComponent', 1)[1].split('CLevelWindow::CLevelWindow', 1)[0]
+        background = (ROOT / 'client/render/AssetGenerator.cpp').read_text().split(
+            'AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground()', 1
+        )[1].split('AssetGenerator::CanvasPtr', 1)[0]
+        self.assertIn('comp->setHorizontalLayout(244, 84, true)', choices)
+        self.assertIn('setHorizontalLayout(244, 46, true)', perk)
+        self.assertIn('pos.h = 84', perk)
+        for left, category in ((44, 'skillComps'), (352, 'perkComps')):
+            self.assertIn(f'Rect({left}, 300, 244, static_cast<int>({category}.size()) * 96 - 12)', choices)
+            self.assertIn(f'recessed(Rect({left}, 300 + row * 96, 244, 84))', background)
+            for rows in (1, 2):
+                box_height = rows * 96 - 12
+                for row in range(rows):
+                    self.assertLessEqual(row * 96 + 84, box_height)
+                self.assertLessEqual(300 + box_height, 516 - 12)
+        # Cards must fit before CComponentBox computes its rows; an oversized
+        # first card can create an empty row in the unchanged global algorithm.
+        self.assertNotIn('setHorizontalLayout(284', choices)
+        self.assertNotIn('setHorizontalLayout(284', perk)
+        self.assertLess(choices.index('comp->setHorizontalLayout(244, 84, true)'),
+                        choices.index('std::make_shared<CComponentBox>(skillComps'))
+        self.assertLessEqual(8 + 228, 244)
+        self.assertLessEqual(48 + 34, 84)
+
+    def test_centering_is_opt_in_and_moves_the_complete_horizontal_group(self):
+        header = (ROOT / 'client/widgets/CComponent.h').read_text()
+        source = (ROOT / 'client/widgets/CComponent.cpp').read_text()
+        layout = source.split('void CComponent::setHorizontalLayout', 1)[1].split(
+            'std::vector<AnimationPath> CComponent::getFileName()', 1)[0]
+        self.assertIn('bool centerContent = false', header)
+        self.assertIn('if(centerContent)', layout)
+        self.assertIn('std::clamp(label->textSize.x, 0, caption.w)', layout)
+        self.assertIn('const int groupWidth = image->pos.w + 8 + captionWidth', layout)
+        self.assertIn('const int groupLeft = (width - groupWidth) / 2', layout)
+        self.assertIn('Point(groupLeft, (height - image->pos.h) / 2)', layout)
+        self.assertIn('Point(groupLeft + image->pos.w + 8, 0)', layout)
+        self.assertIn('setVisibleSize(Rect(0, 0, captionWidth, height), false)', layout)
+        self.assertIn('FONT_TINY, ETextAlignment::CENTERLEFT', layout)
+        # Bound arithmetic witnesses for short and wrapped/extended captions.
+        # These are source/geometry checks, not rendered glyph measurements.
+        for width in (244, 228):
+            for icon_width in (32, 42, 44):
+                for measured_caption in (0, 25, 100, 500):
+                    caption_width = min(max(measured_caption, 0), width - icon_width - 12)
+                    group_width = icon_width + 8 + caption_width
+                    left = (width - group_width) // 2
+                    right = width - left - group_width
+                    self.assertGreaterEqual(left, 0)
+                    self.assertGreaterEqual(right, 0)
+                    self.assertLessEqual(abs(left - right), 1)
+                    self.assertLessEqual(left + group_width, width)
 
     def test_actual_snapshot_preserves_hero_level_type(self):
         snapshot = (ROOT / 'client/windows/GUIClasses.h').read_text()

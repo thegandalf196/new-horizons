@@ -926,14 +926,14 @@ public:
 	{
 		OBJECT_CONSTRUCTION;
 		setCustomIcon(icon);
-		setHorizontalLayout(284, 46);
-		pos.h = 96;
+		setHorizontalLayout(244, 46, true);
+		pos.h = 84;
 		parentSkill = std::make_shared<CComponent>(hasSkill ? ComponentType::SEC_SKILL : ComponentType::NONE,
 			hasSkill ? skill : SecondarySkill(0), requiredRank, CComponent::small);
 		parentSkill->customSubtitle = parentName + "\n"
 			+ GAME->translator().translate("core.skilllev", requiredRank - 1);
-		parentSkill->setHorizontalLayout(226, 40);
-		parentSkill->moveTo(pos.topLeft() + Point(52, 50));
+		parentSkill->setHorizontalLayout(228, 34, true);
+		parentSkill->moveTo(pos.topLeft() + Point(8, 48));
 	}
 };
 }
@@ -1131,7 +1131,7 @@ void CLevelWindow::createSkillBox()
 						+ LIBRARY->skillh->getById(skill)->getNameTranslated();
 				}
 				skillComps.push_back(comp);
-				comp->setHorizontalLayout(284, 96);
+				comp->setHorizontalLayout(244, 84, true);
 			}
 			else
 			{
@@ -1162,7 +1162,7 @@ void CLevelWindow::createSkillBox()
 		if(!skillComps.empty())
 		{
 			skillChoiceBox = std::make_shared<CComponentBox>(skillComps,
-				Rect(24, 294, 284, static_cast<int>(skillComps.size()) * 108 - 12),
+				Rect(44, 300, 244, static_cast<int>(skillComps.size()) * 96 - 12),
 				[this](int){
 					perkChoiceActive = false;
 					if(perkChoiceBox)
@@ -1172,7 +1172,7 @@ void CLevelWindow::createSkillBox()
 		if(!perkComps.empty())
 		{
 			perkChoiceBox = std::make_shared<CComponentBox>(perkComps,
-				Rect(332, 294, 284, static_cast<int>(perkComps.size()) * 108 - 12),
+				Rect(352, 300, 244, static_cast<int>(perkComps.size()) * 96 - 12),
 				[this](int){
 					perkChoiceActive = true;
 					if(skillChoiceBox)

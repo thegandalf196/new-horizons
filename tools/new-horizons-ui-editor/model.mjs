@@ -1,7 +1,8 @@
 /* Offline layout prototype, part of VCMI. GPL-2.0-or-later; see license.txt. */
 export const FORMAT = 'new-horizons-ui-layout';
 export const VERSION = 1;
-export const TYPES = ['panel', 'frame', 'banner', 'crest', 'hero', 'icon', 'perk', 'text', 'button', 'image'];
+export const TYPES = ['panel', 'frame', 'banner', 'crest', 'hero', 'icon', 'perk', 'text', 'button', 'image', 'placeholder'];
+export const PLACEHOLDER_ROLES = {'skill-icon': 'Skill icon', 'perk-icon': 'Perk icon', 'parent-skill-icon': 'Parent Skill icon'};
 export const ANCHORS = ['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right'];
 const POINTS = [[0, 0], [.5, 0], [1, 0], [0, .5], [.5, .5], [1, .5], [0, 1], [.5, 1], [1, 1]];
 const LAYER_KEYS = ['id', 'type', 'label', 'x', 'y', 'w', 'h', 'anchor', 'binding', 'material', 'assetRef', 'visible', 'locked'];
@@ -37,6 +38,22 @@ function place(layer, bounds, canvas)
 	return {...layer, x: bounds.x - Math.floor(canvas.width * point[0]) + Math.floor(bounds.w * point[0]),
 		y: bounds.y - Math.floor(canvas.height * point[1]) + Math.floor(bounds.h * point[1]), w: bounds.w, h: bounds.h};
 }
+function container(document, layer)
+{
+	const parent = layer.type === 'placeholder' && layer.parentId ? document.layers.find(item => item.id === layer.parentId) : null;
+	if(!parent) return {x: 0, y: 0, w: document.canvas.width, h: document.canvas.height};
+	check(['panel', 'perk'].includes(parent.type), 'Placeholder parent must be a panel or offer area');
+	return rect(parent, document.canvas);
+}
+export function resolvedRect(document, layer)
+{
+	const parent = container(document, layer), local = rect(layer, {width: parent.w, height: parent.h});
+	return {...local, x: parent.x + local.x, y: parent.y + local.y};
+}
+export function displayLabel(layer)
+{
+	return layer.type === 'placeholder' ? `${PLACEHOLDER_ROLES[layer.role]} · ${layer.w}×${layer.h}` : layer.label || layer.binding || layer.type;
+}
 export function validate(document)
 {
 	object(document, ['format', 'version', 'status', 'name', 'canvas', 'grid', 'materials', 'layers'], 'Layout');
@@ -64,7 +81,7 @@ export function validate(document)
 	const ids = new Set();
 	for(const layer of document.layers)
 	{
-		object(layer, LAYER_KEYS, 'Layer');
+		object(layer, layer.type === 'placeholder' ? [...LAYER_KEYS, 'role', 'parentId'] : LAYER_KEYS, 'Layer');
 		text(layer.id, 64, 'Layer ID');
 		check(ID.test(layer.id) && !forbidden.has(layer.id) && !ids.has(layer.id), 'Invalid/duplicate layer ID');
 		ids.add(layer.id);
@@ -78,7 +95,15 @@ export function validate(document)
 		check(layer.material === '' || Object.hasOwn(document.materials, layer.material), 'Unknown material');
 		reference(layer.assetRef);
 		check(typeof layer.visible === 'boolean' && typeof layer.locked === 'boolean', 'Layer flags must be boolean');
-		const bounds = rect(layer, document.canvas);
+		if(layer.type === 'placeholder')
+		{
+			check(typeof layer.role === 'string' && Object.hasOwn(PLACEHOLDER_ROLES, layer.role), 'Unknown placeholder role');
+			text(layer.parentId, 64, 'Placeholder parent');
+			check(!layer.parentId || document.layers.some(item => item.id === layer.parentId && ['panel', 'perk'].includes(item.type)), 'Unknown/non-container placeholder parent');
+		}
+		const parent = container(document, layer), local = rect(layer, {width: parent.w, height: parent.h});
+		check(local.x >= 0 && local.y >= 0 && local.x + local.w <= parent.w && local.y + local.h <= parent.h, 'Layer outside parent');
+		const bounds = resolvedRect(document, layer);
 		check(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.w <= document.canvas.width && bounds.y + bounds.h <= document.canvas.height, 'Layer outside canvas');
 	}
 	return document;
@@ -95,20 +120,21 @@ export function updateRect(document, id, bounds, snap = document.grid.snap)
 	check(index >= 0 && !result.layers[index].locked, 'Layer missing or locked');
 	const step = snap ? result.grid.size : 1;
 	const quantize = value => Math.round(value / step) * step;
-	const current = result.layers[index];
-	const w = Math.max(8, Math.min(result.canvas.width, bounds.w === current.w ? current.w : quantize(bounds.w)));
-	const h = Math.max(8, Math.min(result.canvas.height, bounds.h === current.h ? current.h : quantize(bounds.h)));
-	const x = Math.max(0, Math.min(result.canvas.width - w, quantize(bounds.x)));
-	const y = Math.max(0, Math.min(result.canvas.height - h, quantize(bounds.y)));
-	result.layers[index] = place(result.layers[index], {x, y, w, h}, result.canvas);
+	const current = result.layers[index], parent = container(result, current);
+	const w = Math.max(8, Math.min(parent.w, bounds.w === current.w ? current.w : quantize(bounds.w)));
+	const h = Math.max(8, Math.min(parent.h, bounds.h === current.h ? current.h : quantize(bounds.h)));
+	const x = Math.max(parent.x, Math.min(parent.x + parent.w - w, quantize(bounds.x)));
+	const y = Math.max(parent.y, Math.min(parent.y + parent.h - h, quantize(bounds.y)));
+	result.layers[index] = place(current, {x: x - parent.x, y: y - parent.y, w, h}, {width: parent.w, height: parent.h});
 	return validate(result);
 }
 export function reanchor(document, id, anchor)
 {
 	const result = clone(document), layer = result.layers.find(item => item.id === id);
 	check(layer && ANCHORS.includes(anchor), 'Unknown layer/anchor');
-	const bounds = rect(layer, result.canvas);
-	Object.assign(layer, place({...layer, anchor}, bounds, result.canvas));
+	const parent = container(result, layer), canvas = {width: parent.w, height: parent.h};
+	const bounds = rect(layer, canvas);
+	Object.assign(layer, place({...layer, anchor}, bounds, canvas));
 	return validate(result);
 }
 export function editLayer(document, id, changes)
@@ -121,6 +147,7 @@ export function editLayer(document, id, changes)
 export function addLayer(document, type)
 {
 	check(TYPES.includes(type), 'Unknown layer type');
+	if(type === 'placeholder') return addPlaceholder(document);
 	const result = clone(document);
 	let number = 1; while(result.layers.some(layer => layer.id === `${type}-${number}`)) ++number;
 	const x = Math.min(24, result.canvas.width - 8), y = Math.min(24, result.canvas.height - 8);
@@ -130,11 +157,25 @@ export function addLayer(document, type)
 		assetRef: '', visible: true, locked: false});
 	return validate(result);
 }
+export function addPlaceholder(document, parentId = '', role = 'skill-icon')
+{
+	const result = clone(document);
+	check(Object.hasOwn(PLACEHOLDER_ROLES, role), 'Unknown placeholder role');
+	const parent = parentId ? result.layers.find(item => item.id === parentId && ['panel', 'perk'].includes(item.type)) : null;
+	check(!parentId || (parent && !parent.locked), 'Select an unlocked panel or offer area');
+	let number = 1; while(result.layers.some(layer => layer.id === `placeholder-${number}`)) ++number;
+	const w = Math.min(44, parent?.w ?? result.canvas.width), h = Math.min(44, parent?.h ?? result.canvas.height);
+	result.layers.push({id: `placeholder-${number}`, type: 'placeholder', label: PLACEHOLDER_ROLES[role], role, parentId,
+		x: Math.min(12, (parent?.w ?? result.canvas.width) - w), y: Math.floor(((parent?.h ?? result.canvas.height) - h) / 2), w, h,
+		anchor: 'top-left', binding: '', material: '', assetRef: '', visible: true, locked: false});
+	return validate(result);
+}
 export function removeLayer(document, id)
 {
 	const result = clone(document), layer = result.layers.find(item => item.id === id);
 	check(layer && !layer.locked, 'Layer missing or locked');
-	result.layers = result.layers.filter(item => item.id !== id);
+	check(!result.layers.some(item => item.parentId === id && item.locked), 'Unlock child placeholders before deleting their parent');
+	result.layers = result.layers.filter(item => item.id !== id && item.parentId !== id);
 	return validate(result);
 }
 export function reorderLayer(document, id, direction)
@@ -163,11 +204,51 @@ export class History
 export function materialStyle(document, layer, assetUrl = '')
 {
 	if(!layer.material) return {};
-	const material = document.materials[layer.material], bounds = rect(layer, document.canvas);
+	const material = document.materials[layer.material], bounds = resolvedRect(document, layer);
 	check(!assetUrl || assetUrl.startsWith('blob:'), 'Only session-local imported images may be previewed');
 	return {backgroundRepeat: 'repeat', backgroundSize: `${material.tileWidth}px ${material.tileHeight}px`,
 		backgroundPosition: material.origin === 'canvas' ? `${-bounds.x}px ${-bounds.y}px` : '0px 0px',
 		...(assetUrl ? {backgroundImage: `url("${assetUrl}")`} : {})};
+}
+export function alignmentGuides(document, id, bounds, resize = false, tolerance = 3)
+{
+	const layer = document.layers.find(item => item.id === id);
+	check(layer, 'Unknown guide layer');
+	const targets = [{id: 'canvas', rect: {x: 0, y: 0, w: document.canvas.width, h: document.canvas.height}}];
+	if(layer.parentId) targets.push({id: layer.parentId, rect: container(document, layer)});
+	for(const sibling of document.layers)
+		if(sibling.id !== id && sibling.visible && sibling.parentId !== id
+			&& (sibling.parentId || '') === (layer.parentId || '')) targets.push({id: sibling.id, rect: resolvedRect(document, sibling)});
+	const guides = [];
+	for(const axis of ['x', 'y'])
+	{
+		const size = axis === 'x' ? 'w' : 'h', positions = resize ? [bounds[axis] + bounds[size]] : [bounds[axis], bounds[axis] + bounds[size] / 2, bounds[axis] + bounds[size]];
+		let best;
+		for(const target of targets)
+			for(const coordinate of [target.rect[axis], target.rect[axis] + target.rect[size] / 2, target.rect[axis] + target.rect[size]])
+				for(const position of positions)
+				{
+					const delta = coordinate - position;
+					if(Math.abs(delta) <= tolerance && (!best || Math.abs(delta) < Math.abs(best.delta))) best = {axis, coordinate, delta, target: target.id};
+				}
+		if(best) guides.push(best);
+	}
+	return guides;
+}
+export function gestureLayout(document, id, bounds, {resize = false, snapGrid = document.grid.snap, snapAlignment = false} = {})
+{
+	let next = updateRect(document, id, bounds, snapGrid);
+	let actual = resolvedRect(next, next.layers.find(layer => layer.id === id));
+	if(snapAlignment)
+	{
+		for(const guide of alignmentGuides(document, id, actual, resize))
+		{
+			if(resize) actual[guide.axis === 'x' ? 'w' : 'h'] += Math.round(guide.delta);
+			else actual[guide.axis] += Math.round(guide.delta);
+		}
+		next = updateRect(document, id, actual, false);
+	}
+	return next;
 }
 export function pngDimensions(buffer)
 {
