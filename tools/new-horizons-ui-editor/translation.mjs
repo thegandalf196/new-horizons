@@ -1,5 +1,5 @@
 /* Offline diagnostic only, part of VCMI. GPL-2.0-or-later. */
-import {validate, rect} from './model.mjs';
+import {validate, resolvedRect} from './model.mjs';
 
 const PRIMARY = ['attack', 'defense', 'spellPower', 'knowledge'];
 const issue = (code, message) => ({code, message});
@@ -72,8 +72,9 @@ export function translationReport(document)
 	const bound = new Set();
 	const layers = document.layers.map(layer =>
 	{
-		const bounds = rect(layer, document.canvas), issues = [];
-		const geometryProposal = semanticGeometry(layer, bounds, issues);
+		const bounds = resolvedRect(document, layer), issues = [];
+		const geometryProposal = layer.type === 'placeholder' ? null : semanticGeometry(layer, bounds, issues);
+		if(layer.type === 'placeholder') issues.push(issue('EDITOR_ROLE_ONLY', 'Labeled nested role/dimensions are authoring intent, not a native icon resource or game binding.'));
 		if(geometryProposal?.position)
 		{
 			geometryProposal.approvedReferencePosition = referencePosition(layer.binding);
@@ -96,6 +97,7 @@ export function translationReport(document)
 			if(material.resource.startsWith('private:')) issues.push(issue('PRIVATE_MATERIAL', 'Session-private PNG references are not packaged engine resources.'));
 		}
 		return {id: layer.id, binding: layer.binding, visible: layer.visible, editorAnchor: layer.anchor,
+			...(layer.type === 'placeholder' ? {editorRole: layer.role, editorParent: layer.parentId} : {}),
 			resolvedRect: bounds, geometryProposal, materialProposal, blockers: issues};
 	});
 	return {format: 'new-horizons-ui-translation-report', version: 1, runtimeReady: false,

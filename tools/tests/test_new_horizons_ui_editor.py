@@ -104,7 +104,7 @@ await import({json.dumps((EDITOR / 'editor.mjs').as_uri())});
 await new Promise(resolve=>setImmediate(resolve));
 assert.equal(elements.get('add-type').children.length,m.TYPES.length);
 assert.equal(elements.get('prop-anchor').children.length,m.ANCHORS.length);
-assert.equal(elements.get('board').children.length,seed.layers.length);
+const rootCount=seed.layers.filter(x=>!x.parentId).length;assert.equal(elements.get('board').children.length,rootCount);
 assert(elements.get('board').children[0].className.includes('preview-leather'));
 const portrait=elements.get('board').children.find(x=>x.dataset.id==='portrait');
 portrait.onpointerdown({{button:0,preventDefault:()=>{{}},clientX:100,clientY:100,pointerId:1,target:portrait}});
@@ -113,10 +113,10 @@ assert.equal(elements.get('prop-w').value,58);assert.equal(elements.get('prop-x'
 elements.get('undo').onclick();assert.equal(elements.get('prop-x').value,297);
 elements.get('redo').onclick();assert.equal(elements.get('prop-x').value,320);
 elements.get('add-type').value='crest';elements.get('add').onclick();
-assert.equal(elements.get('prop-id').value,'crest-1');assert.equal(elements.get('board').children.length,seed.layers.length+1);
-elements.get('delete').onclick();assert.equal(elements.get('board').children.length,seed.layers.length);
+assert.equal(elements.get('prop-id').value,'crest-1');assert.equal(elements.get('board').children.length,rootCount+1);
+elements.get('delete').onclick();assert.equal(elements.get('board').children.length,rootCount);
 assert.equal(typeof handlers.keydown,'function');
-elements.get('translation').onclick();assert.equal(JSON.parse(elements.get('translation-report').textContent).runtimeReady,false);assert.equal(elements.get('translation-preview').open,true);assert.equal(elements.get('board').children.length,seed.layers.length);
+elements.get('translation').onclick();assert.equal(JSON.parse(elements.get('translation-report').textContent).runtimeReady,false);assert.equal(elements.get('translation-preview').open,true);assert.equal(elements.get('board').children.length,rootCount);
 """)
 
     def test_frontend_syntax_bindings_and_schema(self):
@@ -131,6 +131,10 @@ elements.get('translation').onclick();assert.equal(JSON.parse(elements.get('tran
         self.assertIn('URL.revokeObjectURL', js)
         self.assertIn('model.TYPES', js)
         self.assertIn('model.ANCHORS', js)
+        css = (EDITOR / 'style.css').read_text()
+        self.assertIn('.type-panel > .placeholder, .type-frame > .placeholder { display: none; }', css)
+        self.assertNotIn('.type-panel .placeholder', css)
+        self.assertNotIn('.type-frame .placeholder', css)
         schema = json.loads((EDITOR / 'layout.schema.json').read_text())
         self.assertEqual(schema['properties']['version']['const'], 1)
         self.assertEqual(schema['properties']['materials']['additionalProperties']['properties']['kind']['const'], 'tile')
@@ -260,6 +264,52 @@ assert.equal(decoders.length,4);elements.get('seed').onclick();await flush();
 for(const promise of pending){finishDecode();await promise;}assert.equal(revoked.length,4);
 select('portrait');const retry=beginImport(8*1024*1024);await flush();assert.equal(decoders.length,1);finishDecode();await retry;
 assert.equal((await exportDoc()).layers.find(x=>x.id==='portrait').assetRef,'private:image-1');
+""")
+
+    def test_nested_role_geometry_export_and_parent_lifetime(self):
+        self.node("""
+const child=seed.layers.find(x=>x.id==='skill-icon-0');assert.equal(m.displayLabel(child),'Skill icon · 44×44');assert.deepEqual(m.resolvedRect(seed,child),{x:36,y:320,w:44,h:44});
+for(const anchor of m.ANCHORS){const d=m.reanchor(seed,child.id,anchor);assert.deepEqual(m.resolvedRect(d,d.layers.find(x=>x.id===child.id)),{x:36,y:320,w:44,h:44});}
+const moved=m.updateRect(seed,'skill-0',{x:32,y:300,w:284,h:96},false);assert.deepEqual(m.resolvedRect(moved,moved.layers.find(x=>x.id===child.id)),{x:44,y:326,w:44,h:44});
+const dragged=m.updateRect(seed,child.id,{x:999,y:999,w:52,h:52},false);const r=m.resolvedRect(dragged,dragged.layers.find(x=>x.id===child.id));assert.deepEqual(r,{x:256,y:338,w:52,h:52});assert.equal(m.displayLabel(dragged.layers.find(x=>x.id===child.id)),'Skill icon · 52×52');
+assert.equal(m.parseLayout(m.exportLayout(dragged)).layers.find(x=>x.id===child.id).parentId,'skill-0');
+assert.throws(()=>m.updateRect(seed,'skill-0',{x:24,y:294,w:20,h:20},false));
+const locked=m.editLayer(seed,child.id,{locked:true});assert.throws(()=>m.removeLayer(locked,'skill-0'));const removed=m.removeLayer(seed,'skill-0');assert(!removed.layers.some(x=>x.id===child.id));
+const added=m.addPlaceholder(seed,'perk-0','parent-skill-icon');assert.equal(added.layers.at(-1).role,'parent-skill-icon');assert.equal(added.layers.at(-1).parentId,'perk-0');
+const report=t.translationReport(added);assert.equal(report.runtimeReady,false);assert(report.layers.find(x=>x.id===added.layers.at(-1).id).blockers.some(x=>x.code==='EDITOR_ROLE_ONLY'));
+""")
+
+    def test_role_schema_invalid_parent_and_legacy_layout(self):
+        self.node("""
+for(const patch of [{role:'unknown'},{role:['skill-icon']},{parentId:null},{parentId:'portrait'},{parentId:'skill-icon-1'},{parentId:'missing'},{x:-1}]){const d=m.clone(seed);Object.assign(d.layers.find(x=>x.id==='skill-icon-0'),patch);assert.throws(()=>m.validate(d));}
+const legacy=m.clone(seed);legacy.layers=legacy.layers.filter(x=>x.type!=='placeholder');assert.deepEqual(m.parseLayout(m.exportLayout(legacy)),legacy);
+const d=m.clone(legacy);d.layers[2].role='skill-icon';assert.throws(()=>m.validate(d));
+""")
+
+    def test_alignment_guides_snap_and_resize(self):
+        self.node("""
+const bounds={x:290,y:66,w:58,h:64};let guides=m.alignmentGuides(seed,'portrait',bounds);assert(guides.some(x=>x.axis==='x'&&x.coordinate===320&&x.delta===1));
+let d=m.gestureLayout(seed,'portrait',bounds,{snapGrid:false,snapAlignment:false});assert.equal(d.layers.find(x=>x.id==='portrait').x,290);
+d=m.gestureLayout(seed,'portrait',bounds,{snapGrid:false,snapAlignment:true});assert.equal(d.layers.find(x=>x.id==='portrait').x,291);
+const resizeTarget=m.addLayer(seed,'icon');Object.assign(resizeTarget.layers.at(-1),{x:338,y:80,w:40,h:40});d=m.gestureLayout(resizeTarget,'portrait',{x:297,y:66,w:40,h:64},{resize:true,snapGrid:true,snapAlignment:true});assert.equal(d.layers.find(x=>x.id==='portrait').w,42);assert.equal(d.layers.find(x=>x.id==='portrait').x+d.layers.find(x=>x.id==='portrait').w,338);
+const sibling=m.addLayer(seed,'icon');Object.assign(sibling.layers.at(-1),{x:100,y:80,w:40,h:40});assert(m.alignmentGuides(sibling,'portrait',{x:101,y:200,w:58,h:64}).some(x=>x.axis==='x'&&x.target==='icon-1'&&x.coordinate===100));sibling.layers.at(-1).visible=false;assert(!m.alignmentGuides(sibling,'portrait',{x:101,y:200,w:58,h:64}).some(x=>x.target==='icon-1'));
+const before=m.exportLayout(seed);m.alignmentGuides(seed,'portrait',bounds);assert.equal(m.exportLayout(seed),before);
+""")
+
+    def test_frontend_role_and_guide_events(self):
+        self.node(self.asset_environment() + """
+elements.get('guides-visible').checked=true;
+const parent=elements.get('board').children.find(x=>x.dataset.id==='skill-0');parent.onpointerdown({button:0,preventDefault:()=>{},clientX:100,clientY:100,pointerId:1,target:parent});parent.onpointerup();
+elements.get('placeholder-role').value='parent-skill-icon';elements.get('add-placeholder').onclick();assert.equal(elements.get('prop-parent').value,'skill-0');
+const container=elements.get('board').children.find(x=>x.dataset.id==='skill-0'), child=container.children.find(x=>x.dataset.id==='placeholder-1');assert(child);assert(child.children[0].textContent.includes('44×44'));
+child.onpointerdown({button:0,preventDefault:()=>{},stopPropagation:()=>{},clientX:100,clientY:100,pointerId:1,target:child});child.onpointermove({clientX:108,clientY:100,shiftKey:true});assert(elements.get('guides').children.some(x=>x.className==='measurement-label'));child.onpointerup();assert.equal(elements.get('guides').children.length,0);
+const exported=await exportDoc();assert.equal(exported.layers.find(x=>x.id==='placeholder-1').parentId,'skill-0');assert.equal(exported.layers.find(x=>x.id==='placeholder-1').x,20);assert.equal(exported.layers.find(x=>x.id==='skill-0').x,24);
+elements.get('undo').onclick();assert.equal((await exportDoc()).layers.find(x=>x.id==='placeholder-1').x,12);
+elements.get('prop-anchor').value='center';elements.get('prop-anchor').onchange();
+elements.get('layers').children.find(x=>x.textContent==='skill-0').onclick();
+const area=elements.get('board').children.find(x=>x.dataset.id==='skill-0'), handle=area.children.find(x=>x.className==='resize');
+area.onpointerdown({button:0,preventDefault:()=>{},clientX:100,clientY:100,pointerId:1,target:handle});area.onpointermove({clientX:132,clientY:116,shiftKey:false});
+const anchored=area.children.find(x=>x.dataset.id==='placeholder-1');assert.equal(anchored.style.left,'30px');assert.equal(anchored.style.top,'34px');area.onpointerup();
 """)
 
 if __name__ == '__main__':

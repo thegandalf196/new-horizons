@@ -95,3 +95,39 @@ canvas-origin tiling is explicitly incompatible with the current configurable
 ornaments are never represented as packaged engine assets. These reports are
 geometry proposals, **not loadable widget JSON or authorization to change the
 approved shipping layout**. Existing JSON import/export is unchanged.
+
+## Guides and nested role boxes
+
+Guides/rulers can be toggled independently of the grid. During a drag, the editor
+shows the nearest canvas/sibling edge or center alignment within three native
+pixels, plus position and size. Resize guides follow the moving right/bottom edges.
+**Align snap** is optional and off by default: grid rounding happens first, then
+nearby alignment can override it. Shift bypasses both snaps; measurements remain
+visible. Guides, rulers and measurements are never saved as layout layers.
+
+The seed includes nested `Skill icon · 44×44` and `Perk icon · 44×44` role boxes
+inside each offer area. Use **Add role box** with a selected unlocked panel/offer
+area to add a child, or without a container selection to add a canvas-level box.
+Choose Skill icon, Perk icon or Parent Skill icon; select, move and resize the box
+normally. Its label always reflects current dimensions. These are labeled empty
+editor placeholders, not artwork, engine resources or actual hero/perk bindings.
+
+Version1 adds a strict `placeholder` layer type with `role` and `parentId` fields;
+older version1 layouts without this type remain accepted. An older editor that
+does not know the new type will refuse it rather than silently drop metadata.
+Child positions/anchors are relative to their panel/offer area; moving the area
+moves its children. Children cannot leave their parent, and a resize that would
+clip children is refused rather than silently scaling them. Deleting a parent
+deletes its child boxes in the same undoable action (locked children must first be
+unlocked). Parenting is one level only, not an arbitrary widget-tree framework.
+The offline translation report preserves roles/parents/resolved rectangles and
+adds `EDITOR_ROLE_ONLY` blockers; `runtimeReady` remains false.
+
+The 2026-10-14 offscreen Chrome check exercised visible drag guides/rulers,
+optional center snapping, nested role selection/resize with live size labels,
+undo/redo, adding/moving a Parent Skill icon box, live centered-child updates
+during parent resize, and role/parent/dimension JSON export/import. The final
+bounded run passed and all observed browser/server processes exited. An earlier
+harness assertion expected canvas-center alignment with grid snapping enabled;
+the valid nearer button-edge alignment was not a product defect. That failed
+receipt is retained separately. These are editor checks, not game rendering.
