@@ -1,5 +1,21 @@
 # Bonus System
 
+## Random creature enchantment targeting
+
+`RANDOM_SPELLCASTER.val` remains the creature's spell proficiency. Absent
+`addInfo` (or `addInfo: 0`) preserves the allied beneficial pool. The opt-in
+`addInfo: 1` also permits hostile targets through a fixed temporary,
+single-creature debuff pool: Curse, Weakness, Slow, Misfortune, Sorrow and
+Forgetfulness. The actual proficiency and battlefield proficiency raise apply
+to target legality; mass forms, unavailable spells, immunities and current
+target restrictions are filtered before drawing. Recipient selection does not
+select the outcome. The server draws once from the legal pool using its RNG;
+client legality and AI expected-value predictions inspect that same pool
+without drawing. Both polarities use the existing `CASTS` allowance.
+The opt-in accepts only an explicitly stored scalar integer0 or1. Present
+nulls, fractional numbers, arrays, booleans and unknown values are rejected
+by the parser; runtime metadata with a different scalar type fails closed.
+
 ## Elemental final spell damage
 
 `ELEMENTAL_SPELL_DAMAGE` grants a percentage bonus to final magical damage for

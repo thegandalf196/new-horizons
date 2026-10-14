@@ -59,6 +59,74 @@ TEST(NewHorizonsHeroRulesTest, NamedSchemaAcceptsFullAndEmptyAndRejectsMalformed
 	EXPECT_FALSE(valid(bad));
 }
 
+TEST(NewHorizonsHeroRulesTest, ArcanePreparationPolicyCapturesCoefficientsAndKeepsOlderAbsence)
+{
+	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
+	auto rules = testHeroRules();
+	rules["arcanePreparationSpecialty"] = configured["arcanePreparationSpecialty"];
+	EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "Arcane Preparation policy"));
+	ASSERT_NO_THROW(validateHeroRules(rules, true));
+	const auto captured = resolveHeroRules(rules, HeroClassID(0));
+	const auto policy = arcanePreparationSpecialtyRules(captured);
+	ASSERT_TRUE(policy);
+	EXPECT_EQ(policy->initialPercent, 25);
+	EXPECT_EQ(policy->percentPerLevel, 5);
+	EXPECT_EQ(policy->maximumPercent, 100);
+	EXPECT_NO_THROW(validateIndividualSpecialtiesSerialization(captured, true));
+	EXPECT_THROW(validateIndividualSpecialtiesSerialization(captured, false), std::runtime_error);
+	rules["arcanePreparationSpecialty"]["initialPercent"].Integer() = 50;
+	EXPECT_EQ(arcanePreparationSpecialtyRules(captured)->initialPercent, 25);
+	auto old = captured;
+	old.Struct().erase("arcanePreparationSpecialty");
+	const auto before = old;
+	EXPECT_FALSE(arcanePreparationSpecialtyRules(old));
+	EXPECT_NO_THROW(validateResolvedHeroRules(old));
+	EXPECT_NO_THROW(validateIndividualSpecialtiesSerialization(old, false));
+	EXPECT_EQ(old, before);
+	std::vector<JsonNode> invalid(6, captured);
+	invalid[0]["arcanePreparationSpecialty"]["version"].Integer() = 2;
+	invalid[1]["arcanePreparationSpecialty"]["initialPercent"].Integer() = -1;
+	invalid[2]["arcanePreparationSpecialty"]["percentPerLevel"].Float() = 1.5;
+	invalid[3]["arcanePreparationSpecialty"]["maximumPercent"].Integer() = 101;
+	invalid[4]["arcanePreparationSpecialty"]["unexpected"].Bool() = true;
+	invalid[5]["arcanePreparationSpecialty"] = JsonNode();
+	for(const auto & malformed : invalid)
+		EXPECT_THROW(arcanePreparationSpecialtyRules(malformed), std::runtime_error);
+}
+
+TEST(NewHorizonsHeroRulesTest, FortuneChildPolicyCapturesCoefficientsAndKeepsOlderAbsence)
+{
+	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
+	auto rules = testHeroRules();
+	rules["fortuneChildSpecialty"] = configured["fortuneChildSpecialty"];
+	EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "Fortune's Child policy"));
+	ASSERT_NO_THROW(validateHeroRules(rules, true));
+	const auto captured = resolveHeroRules(rules, HeroClassID(0));
+	ASSERT_TRUE(fortuneChildSpecialtyRules(captured));
+	EXPECT_EQ(fortuneChildSpecialtyRules(captured)->luckPerStep, 1);
+	EXPECT_EQ(fortuneChildSpecialtyRules(captured)->levelStep, 5);
+	EXPECT_NO_THROW(validateIndividualSpecialtiesSerialization(captured, true));
+	EXPECT_THROW(validateIndividualSpecialtiesSerialization(captured, false), std::runtime_error);
+	rules["fortuneChildSpecialty"]["levelStep"].Integer() = 10;
+	EXPECT_EQ(fortuneChildSpecialtyRules(captured)->levelStep, 5);
+	auto old = captured;
+	old.Struct().erase("fortuneChildSpecialty");
+	const auto before = old;
+	EXPECT_FALSE(fortuneChildSpecialtyRules(old));
+	EXPECT_NO_THROW(validateResolvedHeroRules(old));
+	EXPECT_NO_THROW(validateIndividualSpecialtiesSerialization(old, false));
+	EXPECT_EQ(old, before);
+	std::vector<JsonNode> invalid(6, captured);
+	invalid[0]["fortuneChildSpecialty"]["version"].Integer() = 2;
+	invalid[1]["fortuneChildSpecialty"]["levelStep"].Integer() = 0;
+	invalid[2]["fortuneChildSpecialty"]["luckPerStep"].Float() = 1.5;
+	invalid[3]["fortuneChildSpecialty"]["luckPerStep"].Integer() = -1;
+	invalid[4]["fortuneChildSpecialty"]["unexpected"].Bool() = true;
+	invalid[5]["fortuneChildSpecialty"] = JsonNode();
+	for(const auto & malformed : invalid)
+		EXPECT_THROW(fortuneChildSpecialtyRules(malformed), std::runtime_error);
+}
+
 TEST(NewHorizonsHeroRulesTest, DruidPolicyCapturesExactCoefficientsAndKeepsOlderAbsence)
 {
 	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));

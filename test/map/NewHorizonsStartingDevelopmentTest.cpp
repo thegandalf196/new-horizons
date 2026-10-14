@@ -71,7 +71,7 @@ const std::array<ExpectedStart, 5> rampartStarts{{
 
 const std::array<ExpectedStart, 4> towerStarts{{
 	{"core:astral", "new-horizons:spellcraft", 1, "new-horizons:spellcraft.concentration", "new-horizons:metamagic", MasteryLevel::ADVANCED},
-	{"core:serena", "new-horizons:learning", 1, "new-horizons:learning.eagleEye", "new-horizons:metamagic"},
+	{"core:serena", "new-horizons:wisdom", 1, "new-horizons:wisdom.intelligence", "new-horizons:metamagic"},
 	{"core:daremyth", "new-horizons:luck", 1, "new-horizons:luck.secondChance", "new-horizons:metamagic"},
 	{"core:aine", "new-horizons:estates", 1, "new-horizons:estates.taxCollector", "new-horizons:metamagic"}
 }};
@@ -114,6 +114,7 @@ class NewHorizonsStartingDevelopmentTest : public TinyMapGameTest
 protected:
 	bool absent = false;
 	bool absentDruidSpecialty = false;
+	bool previousFormatContext = false;
 	bool legacy = false;
 	bool explicitSkills = false;
 	bool ownedTown = false;
@@ -129,10 +130,12 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
-		if(absentDruidSpecialty)
+		if(absentDruidSpecialty || previousFormatContext)
 			rules.Struct().erase("druidSpecialties");
 		if(absent)
 		{
+			rules.Struct().erase("fortuneChildSpecialty");
+			rules.Struct().erase("arcanePreparationSpecialty");
 			rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 			rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 			rules["startingSkills"].Struct().erase("startingBookReplacements");
@@ -156,6 +159,27 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
 		if(absent)
 			isolateHistoricalAdventurePolicies(*loaded);
+		if(previousFormatContext)
+		{
+			// The positive writer targets the epoch before starting profiles.
+			// Capture the absence of later spell clauses, weighted offers and
+			// Crisis Command, rather than bypass their production downwrite guards.
+			auto magic = loaded->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+			magic["spells"]["core:implosion"].Struct().erase("implosion");
+			magic["spells"]["core:teleport"].Struct().erase("ignoreInterveningBarriers");
+			magic["spells"]["core:dispel"].Struct().erase("temporaryMagicalEffectsOnly");
+			magic["spells"]["core:curse"].Struct().erase("schoolRankDurations");
+			magic["spells"]["core:fireWall"].Struct().erase("burnGroundedFlyers");
+			magic.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perks.Struct().erase("offerWeightPolicyVersion");
+			for(auto & perk : perks["skills"]["new-horizons:command"]["perks"].Vector())
+				if(perk["id"].String() == "new-horizons:command.crisisCommand")
+					perk["effect"]["status"].String() = "planned";
+			perks.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+		}
 	}
 	void prepare(const ExpectedStart & value = starts[0])
 	{
@@ -492,15 +516,28 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AxsisDefaultMysticismFeedsRealDailyRe
 	EXPECT_EQ(actor()->getManaNewTurn(true), 10);
 }
 
-TEST_F(NewHorizonsStartingDevelopmentTest, SerenaDefaultEagleEyeSelectsUnknownObservedSpellWithoutMutation)
+TEST_F(NewHorizonsStartingDevelopmentTest, SerenaDefaultIntelligenceFeedsArcanePreparationWithoutCapacityRider)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(towerStarts[1]));
-	const SpellID observed(SpellID::HASTE);
-	actor()->removeSpellFromSpellbook(observed);
-	ASSERT_TRUE(actor()->canLearnSpell(observed.toSpell()));
-	ASSERT_TRUE(newHorizonsEagleEye::enabled(actor()));
-	EXPECT_EQ(newHorizonsEagleEye::selectSpell(actor(), {observed}), std::optional<SpellID>(observed));
-	EXPECT_FALSE(actor()->spellbookContainsSpell(observed));
+	EXPECT_FALSE(newHorizonsEagleEye::enabled(actor()));
+	actor()->setPrimarySkill(PrimarySkill::KNOWLEDGE, 101, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(actor()->manaLimit(), 131);
+	EXPECT_EQ(actor()->getArcanePreparationPercent(), 30);
+	EXPECT_EQ(actor()->getArcanePreparationBufferBonus(), 9);
+	const auto view = newHorizonsHeroes::resolveSpecialtyPresentation(*actor()->getHeroType(),
+		actor()->getPrimaryGrowthRules(), actor()->getMagicRules(), std::nullopt, actor());
+	EXPECT_EQ(view.name, "Arcane Preparation");
+	EXPECT_NE(view.description.find("Current: 30%, +9 temporary Buffer"), std::string::npos);
+	EXPECT_EQ(actor()->getBufferSpellPoints(), 0);
+	while(actor()->level < 15)
+		actor()->levelUp({});
+	EXPECT_EQ(actor()->getArcanePreparationPercent(), 100);
+	EXPECT_EQ(actor()->getArcanePreparationBufferBonus(), 30);
+	EXPECT_EQ(actor()->manaLimit(), 131);
+	actor()->setPrimarySkill(PrimarySkill::KNOWLEDGE, 4, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(actor()->getArcanePreparationBufferBonus(), 1);
+	actor()->setPrimarySkill(PrimarySkill::KNOWLEDGE, 0, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(actor()->getArcanePreparationBufferBonus(), 0);
 }
 
 TEST_F(NewHorizonsStartingDevelopmentTest, AineDefaultTaxCollectorUsesActualOwnedTownAndPreservesGoldSpecialty)
@@ -782,6 +819,7 @@ TEST_F(NewHorizonsStartingDevelopmentTest, KeyPresenceAdmissionDistinguishesAbse
 TEST_F(NewHorizonsStartingDevelopmentTest, AbsentCollectionRemainsWritableInPreviousFormat)
 {
 	absent = true;
+	previousFormatContext = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CMemorySerializer bytes;
 	bytes.oser.version = static_cast<ESerializationVersion>(

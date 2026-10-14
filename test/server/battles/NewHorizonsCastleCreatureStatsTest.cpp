@@ -78,9 +78,9 @@ TEST_F(NewHorizonsCastleCreatureStatsTest, LoadedCastleFormsUseCanonicalStatsEco
 			newHorizonsCreatures::CreatureCategory::CORE},
 		{creature("core:crusader"), 10, 11, 6, 8, 35, 6, 6, 7, 350, 180,
 			newHorizonsCreatures::CreatureCategory::CORE},
-		{creature("core:griffin"), 9, 9, 4, 7, 30, 7, 7, 5, 300, 220,
+		{creature("core:griffin"), 12, 12, 7, 10, 45, 7, 7, 5, 300, 220,
 			newHorizonsCreatures::CreatureCategory::ELITE},
-		{creature("core:royalGriffin"), 11, 11, 6, 9, 40, 9, 9, 5, 450, 260,
+		{creature("core:royalGriffin"), 14, 14, 9, 12, 55, 9, 9, 5, 450, 260,
 			newHorizonsCreatures::CreatureCategory::ELITE}
 	}};
 

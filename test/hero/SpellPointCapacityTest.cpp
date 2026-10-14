@@ -267,6 +267,41 @@ protected:
 	}
 };
 
+class ArcanePreparationCapacityTest : public SpellPointCapacityTest
+{
+protected:
+	virtual bool capturePreparation() const { return true; }
+	void mapLoaded(CMap * loaded) override
+	{
+		SpellPointCapacityTest::mapLoaded(loaded);
+		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(!capturePreparation())
+			development.Struct().erase("arcanePreparationSpecialty");
+		development.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
+		for(const auto & object : loaded->objects)
+			if(auto * hero = dynamic_cast<CGHeroInstance *>(object.get()); hero && hero->getOwner() == PlayerColor(0))
+				hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:serena")));
+	}
+	void activateIntelligence()
+	{
+		ASSERT_TRUE(attackerSideHero->getPerkState().hasSelection(WISDOM_SKILL_ID, INTELLIGENCE_PERK_ID));
+		SetSecSkill rank;
+		rank.id = attackerSideHero->id;
+		rank.which = SecondarySkill(SecondarySkill::decode(WISDOM_SKILL_ID));
+		rank.val = MasteryLevel::BASIC;
+		rank.mode = ChangeValueMode::ABSOLUTE;
+		gameState()->apply(rank);
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, INTELLIGENCE_PERK_ID));
+	}
+};
+
+class ArcanePreparationAbsentCapacityTest : public ArcanePreparationCapacityTest
+{
+protected:
+	bool capturePreparation() const override { return false; }
+};
+
 class HighLoreCapacityTest : public SpellPointCapacityTest
 {
 protected:
@@ -276,6 +311,10 @@ protected:
 		SpellPointCapacityTest::mapLoaded(loaded);
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 		ASSERT_TRUE(development["druidSpecialties"].isStruct());
+		// This fixture isolates the preceding Druid epoch, including its
+		// faithful policy-absent full-world round trip.
+		development.Struct().erase("fortuneChildSpecialty");
+		development.Struct().erase("arcanePreparationSpecialty");
 		// Isolate Druid admission/codec guards from the same-epoch weighted
 		// offer feature; the existing fixture uses its historical offer helper.
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
@@ -571,6 +610,12 @@ TEST_F(HighLoreCapacityTest, ArcaneReservoirStaysTwentyFiveAndCurrentWorldCodecR
 
 TEST_F(HighLoreAbsentCapacityTest, OlderCapturedAbsenceKeepsOrdinaryCapacityAndSurvivesPriorEpoch)
 {
+	for(const char * key : {"fortuneChildSpecialty", "arcanePreparationSpecialty"})
+	{
+		EXPECT_FALSE(gameState()->getHeroDevelopmentRules().Struct().contains(key));
+		EXPECT_FALSE(attackerSideHero->getPrimaryGrowthRules().Struct().contains(key));
+		EXPECT_FALSE(defenderSideHero->getPrimaryGrowthRules().Struct().contains(key));
+	}
 	ASSERT_TRUE(attackerSideHero->getPrimaryGrowthRules()["druidSpecialties"].isNull());
 	setKnowledge(attackerSideHero, 101);
 	setNormal(attackerSideHero, 60);
@@ -595,6 +640,11 @@ TEST_F(HighLoreAbsentCapacityTest, OlderCapturedAbsenceKeepsOrdinaryCapacityAndS
 	ASSERT_NE(hero, nullptr);
 	EXPECT_TRUE(hero->getPrimaryGrowthRules()["druidSpecialties"].isNull());
 	EXPECT_FALSE(hero->getPerkState().rules.Struct().contains("offerWeightPolicyVersion"));
+	for(const char * key : {"fortuneChildSpecialty", "arcanePreparationSpecialty"})
+	{
+		EXPECT_FALSE(restored.getHeroDevelopmentRules().Struct().contains(key));
+		EXPECT_FALSE(hero->getPrimaryGrowthRules().Struct().contains(key));
+	}
 	EXPECT_EQ(hero->getHighLoreManaBonus(), 0);
 	expectPools(hero, 60, 17, 131);
 }
@@ -1101,6 +1151,106 @@ TEST_F(SpellPointCapacityTest, InvalidManaMutationPayloadsAreRejectedWithoutChan
 	invalidMode.mode = static_cast<ChangeValueMode>(99);
 	EXPECT_THROW(gameState()->apply(invalidMode), std::runtime_error);
 	expectPools(attackerSideHero, 40, 30, 80);
+}
+
+TEST_F(ArcanePreparationCapacityTest, StartSpendSaveAndResultsUseExistingTemporaryBufferLifecycle)
+{
+	ASSERT_NO_FATAL_FAILURE(activateIntelligence());
+	setKnowledge(attackerSideHero, 100);
+	attackerSideHero->initializeSpellPoints(5, 2);
+	EXPECT_EQ(attackerSideHero->manaLimit(), 130);
+	ASSERT_EQ(attackerSideHero->getArcanePreparationBufferBonus(), 9);
+	startBattle();
+	expectPools(attackerSideHero, 5, 11, 130);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 9);
+	gameHandler->grantBufferSpellPoints(attackerSideHero->id, 6);
+	gameHandler->spendSpellPoints(attackerSideHero->id, 4);
+	expectPools(attackerSideHero, 5, 13, 130);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 5);
+	const auto savedBattle = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	EXPECT_EQ(savedBattle->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 5);
+	BattleResultsApplied completed;
+	completed.battleID = BattleID(0);
+	gameState()->apply(completed);
+	expectPools(attackerSideHero, 5, 8, 130);
+}
+
+TEST_F(ArcanePreparationCapacityTest, FullTemporarySpendPreservesPermanentBufferAtResults)
+{
+	ASSERT_NO_FATAL_FAILURE(activateIntelligence());
+	setKnowledge(attackerSideHero, 100);
+	attackerSideHero->initializeSpellPoints(5, 2);
+	startBattle();
+	gameHandler->grantBufferSpellPoints(attackerSideHero->id, 6);
+	gameHandler->spendSpellPoints(attackerSideHero->id, 9);
+	expectPools(attackerSideHero, 5, 8, 130);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 0);
+	BattleResultsApplied completed;
+	completed.battleID = BattleID(0);
+	gameState()->apply(completed);
+	expectPools(attackerSideHero, 5, 8, 130);
+}
+
+TEST_F(ArcanePreparationCapacityTest, InactiveIntelligenceAndArtifactManaModifiersCannotCreateSpecialtyBuffer)
+{
+	setKnowledge(attackerSideHero, 100);
+	EXPECT_EQ(attackerSideHero->getArcanePreparationBufferBonus(), 0);
+	ASSERT_NO_FATAL_FAILURE(activateIntelligence());
+	EXPECT_EQ(attackerSideHero->getArcanePreparationBufferBonus(), 9);
+	Bonus capacity;
+	capacity.type = BonusType::MANA_PER_KNOWLEDGE_PERCENTAGE;
+	capacity.source = BonusSource::ARTIFACT;
+	capacity.val = 100;
+	GiveBonus grant(GiveBonus::ETarget::OBJECT, attackerSideHero->id, capacity);
+	gameHandler->sendAndApply(grant);
+	EXPECT_EQ(attackerSideHero->getArcanePreparationBufferBonus(), 9);
+	setKnowledge(attackerSideHero, 0);
+	EXPECT_EQ(attackerSideHero->getArcanePreparationBufferBonus(), 0);
+}
+
+TEST_F(ArcanePreparationCapacityTest, CancellationRestoresOriginalPoolsAndNextBattleGetsOneFreshGrant)
+{
+	ASSERT_NO_FATAL_FAILURE(activateIntelligence());
+	setKnowledge(attackerSideHero, 100);
+	attackerSideHero->initializeSpellPoints(5, 2);
+	startBattle();
+	auto freshDescriptor = battleStartFixture::snapshot(*battle(), gameState().get());
+	gameHandler->spendSpellPoints(attackerSideHero->id, 4);
+	BattleCancelled cancelled;
+	cancelled.battleID = BattleID(0);
+	gameState()->apply(cancelled);
+	expectPools(attackerSideHero, 5, 2, 130);
+	BattleStart next;
+	const BattleID nextID = gameState()->nextBattleID;
+	next.battleID = nextID;
+	next.info = std::move(freshDescriptor);
+	gameHandler->sendAndApply(next);
+	expectPools(attackerSideHero, 5, 11, 130);
+	const auto * freshBattle = gameState()->getBattle(nextID);
+	ASSERT_NE(freshBattle, nullptr);
+	EXPECT_EQ(freshBattle->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 9);
+}
+
+TEST_F(ArcanePreparationAbsentCapacityTest, OlderCapturedAbsenceDoesNotGrantTemporaryBuffer)
+{
+	ASSERT_NO_FATAL_FAILURE(activateIntelligence());
+	setKnowledge(attackerSideHero, 100);
+	attackerSideHero->initializeSpellPoints(5, 2);
+	EXPECT_EQ(attackerSideHero->getArcanePreparationBufferBonus(), 0);
+	startBattle();
+	expectPools(attackerSideHero, 5, 2, 130);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 0);
+}
+
+TEST_F(ArcanePreparationCapacityTest, ExistingBufferNearIntegerLimitBoundsTheBattleGrant)
+{
+	ASSERT_NO_FATAL_FAILURE(activateIntelligence());
+	setKnowledge(attackerSideHero, 100);
+	attackerSideHero->initializeSpellPoints(5, std::numeric_limits<int32_t>::max() - 2);
+	startBattle();
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 5);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), std::numeric_limits<int32_t>::max());
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 2);
 }
 
 TEST_F(SpellPointCapacityTest, SnapshotRestoreDuringBattleIsRejectedAtomically)

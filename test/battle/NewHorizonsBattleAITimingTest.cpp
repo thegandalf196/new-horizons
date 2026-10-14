@@ -2588,6 +2588,182 @@ TEST(DamageCacheProbeTimingTest, AggregationPreservesNanosecondsAndExcludesInFli
 	expectProbeCacheClosure(total);
 }
 
+TEST_F(NewHorizonsExchangeReadParityTest, CanonicalOrderlessCacheMatchesDirectDamageAcrossCountExpiryAndDefend)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	ASSERT_TRUE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE));
+	ASSERT_TRUE(battle()->getHeroOrderStates(BattleSide::ATTACKER).empty());
+	ASSERT_TRUE(battle()->getHeroOrderStates(BattleSide::DEFENDER).empty());
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto attacker = model->getForUpdate(ordinary->unitId());
+	auto defender = model->getForUpdate(enemy->unitId());
+	const auto liveAttacker = ordinary->acquireState()->save();
+	const auto liveDefender = enemy->acquireState()->save();
+	DamageCache parent;
+	parent.buildDamageCache(model, BattleSide::ATTACKER);
+	DamageCache child(&parent);
+	const auto check = [&]()
+	{
+		const auto attackerBefore = attacker->save();
+		const auto defenderBefore = defender->save();
+		const auto direct = model->battleExpectedLuckDamage(BattleAttackInfo(attacker.get(), defender.get(), 0, false));
+		DamageCacheProbeTiming timing;
+		EXPECT_EQ(parent.getDamage(attacker.get(), defender.get(), model), direct);
+		EXPECT_EQ(child.getDamage(attacker.get(), defender.get(), model, &timing), direct);
+		EXPECT_EQ(timing.dynamicBypasses, 1u);
+		EXPECT_EQ(timing.cacheFillCalls, 0u);
+		expectProbeCacheClosure(timing);
+		EXPECT_EQ(attacker->save(), attackerBefore);
+		EXPECT_EQ(defender->save(), defenderBefore);
+	};
+	check();
+	// Keep the same ID-only maps while changing count. Observe the established
+	// float-normalized original snapshot; do not require it to equal fresh damage.
+	const auto openingDamage = model->battleExpectedLuckDamage(BattleAttackInfo(attacker.get(), defender.get(), 0, false));
+	const auto openingCount = attacker->getCount();
+	int64_t injury = attacker->getAvailableHealth() - attacker->getMaxHealth() * 7;
+	ASSERT_GT(injury, 0);
+	attacker->damage(injury);
+	ASSERT_EQ(attacker->getCount(), 7);
+	check();
+	const auto normalized = static_cast<float>(openingDamage) / openingCount;
+	EXPECT_EQ(child.getOriginalDamage(attacker.get(), defender.get(), model),
+		static_cast<int64_t>(normalized * attacker->getCount()));
+	RecordProperty("orderlessOriginalFloatDamage", std::to_string(child.getOriginalDamage(attacker.get(), defender.get(), model)));
+	// Opening round preserves enchantments' full duration. Enter it before
+	// installing a one-round marker, so the next transition actually ages it.
+	model->nextRound();
+	check();
+	// Timed spell effects participate in the projection's round clock. Generic
+	// OTHER bonuses are outside that lifecycle contract, even with N_TURNS.
+	Bonus temporary(BonusDuration::N_TURNS, BonusType::PERCENTAGE_DAMAGE_BOOST,
+		BonusSource::SPELL_EFFECT, 37, BonusSourceID(SpellID(SpellID::BLOODLUST)));
+	temporary.turnsRemain = 1;
+	const CSelector temporaryMarker([](const Bonus * bonus)
+	{
+		return bonus && bonus->type == BonusType::PERCENTAGE_DAMAGE_BOOST
+			&& bonus->source == BonusSource::SPELL_EFFECT
+			&& bonus->sid == BonusSourceID(SpellID(SpellID::BLOODLUST)) && bonus->val == 37;
+	});
+	ASSERT_FALSE(attacker->hasBonus(temporaryMarker));
+	attacker->addUnitBonus({temporary});
+	ASSERT_TRUE(attacker->hasBonus(temporaryMarker));
+	ASSERT_EQ(attacker->getBonus(temporaryMarker)->turnsRemain, 1);
+	check();
+	model->nextRound();
+	ASSERT_FALSE(attacker->hasBonus(temporaryMarker));
+	check();
+	EXPECT_EQ(ordinary->acquireState()->save(), liveAttacker);
+	EXPECT_EQ(enemy->acquireState()->save(), liveDefender);
+	// Defend is admitted by the authoritative processor, not a hand-set flag.
+	BattleSetActiveStack activation;
+	activation.battleID = BattleID(0);
+	activation.stack = enemy->unitId();
+	activation.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activation);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), BattleAction::makeDefend(enemy)));
+	auto defendedModel = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto * defended = defendedModel->battleGetUnitByID(enemy->unitId());
+	ASSERT_TRUE(defended->defended());
+	const auto * currentAttacker = defendedModel->battleGetUnitByID(ordinary->unitId());
+	EXPECT_EQ(child.getDamage(currentAttacker, defended, defendedModel),
+		defendedModel->battleExpectedLuckDamage(BattleAttackInfo(currentAttacker, defended, 0, false)));
+	EXPECT_NE(enemy->acquireState()->save(), liveDefender);
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheResolvesAcceptedProtectAdjacencyAndSpentBudget)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	auto * protector = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 100);
+	auto * ward = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(71), 100);
+	auto * striker = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(72), 1);
+	auto opening = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache parent;
+	parent.buildDamageCache(opening, BattleSide::ATTACKER);
+	DamageCache child(&parent);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT, protector->unitId(), ward->unitId())));
+	const auto check = [&](const std::shared_ptr<HypotheticBattle> & state, uint32_t resolvedId)
+	{
+		const auto * attacker = state->battleGetUnitByID(striker->unitId());
+		const auto * target = state->battleGetUnitByID(ward->unitId());
+		const auto * resolved = state->battleResolveHeroOrderTarget(attacker, target, false);
+		ASSERT_EQ(resolved->unitId(), resolvedId);
+		BattleAttackInfo direct(attacker, resolved, 0, false);
+		direct.protectIntercepted = resolvedId != ward->unitId();
+		const auto orders = state->getHeroOrderStates(BattleSide::ATTACKER);
+		const auto targetBefore = target->acquireState()->save();
+		const auto resolvedBefore = resolved->acquireState()->save();
+		DamageCacheProbeTiming timing;
+		EXPECT_EQ(child.getDamage(attacker, target, state, &timing), state->battleExpectedLuckDamage(direct));
+		EXPECT_EQ(timing.dynamicBypasses, 1u);
+		EXPECT_EQ(state->getHeroOrderStates(BattleSide::ATTACKER), orders);
+		EXPECT_EQ(target->acquireState()->save(), targetBefore);
+		EXPECT_EQ(resolved->acquireState()->save(), resolvedBefore);
+	};
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	check(projected, protector->unitId());
+	projected->moveUnit(protector->unitId(), BattleHex(3, 8));
+	check(projected, ward->unitId());
+	projected->moveUnit(protector->unitId(), protector->getPosition());
+	const auto broken = projected->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::PROTECT);
+	ASSERT_TRUE(broken);
+	EXPECT_TRUE(broken->protectBroken);
+	check(projected, ward->unitId()); // Returning does not repair the broken pair.
+	check(std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0))), protector->unitId());
+	// BLOCKS_RETALIATION belongs to the outgoing attacker, not its defender.
+	// Keep the striker alive to exercise damage after the interception is spent.
+	blockRetaliation(striker);
+	BattleSetActiveStack activation;
+	activation.battleID = BattleID(0);
+	activation.stack = striker->unitId();
+	activation.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activation);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
+		BattleAction::makeMeleeAttack(striker, ward->getPosition(), striker->getPosition())));
+	const auto spent = battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::PROTECT);
+	ASSERT_TRUE(spent);
+	ASSERT_EQ(spent->protectInterceptionsConsumed, spent->protectInterceptionLimit);
+	ASSERT_TRUE(striker->alive());
+	check(std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0))), ward->unitId());
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheMatchesAcceptedFocusFireControlAndRoundExpiry)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 7);
+	auto opening = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache parent;
+	parent.buildDamageCache(opening, BattleSide::ATTACKER);
+	DamageCache child(&parent);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeTargetedHeroCommand(BattleSide::ATTACKER, HeroCommand::FOCUS_FIRE, enemy->unitId())));
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto check = [&]()
+	{
+		const auto * attacker = projected->battleGetUnitByID(shooter->unitId());
+		const auto * target = projected->battleGetUnitByID(enemy->unitId());
+		const bool shooting = projected->battleCanShoot(attacker, target->getPosition());
+		const auto before = target->acquireState()->save();
+		EXPECT_EQ(child.getDamage(attacker, target, projected),
+			projected->battleExpectedLuckDamage(BattleAttackInfo(attacker, target, 0, shooting)));
+		EXPECT_EQ(target->acquireState()->save(), before);
+	};
+	ASSERT_TRUE(projected->battleIsFocusFireTargetActive(BattleSide::ATTACKER));
+	check();
+	const Bonus control(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID());
+	projected->addUnitBonus(enemy->unitId(), {control});
+	ASSERT_FALSE(projected->battleIsFocusFireTargetActive(BattleSide::ATTACKER));
+	check();
+	projected->removeUnitBonus(enemy->unitId(), {control});
+	ASSERT_TRUE(projected->battleIsFocusFireTargetActive(BattleSide::ATTACKER));
+	check();
+	projected->nextRound();
+	ASSERT_FALSE(projected->getFocusFireState(BattleSide::ATTACKER));
+	check();
+	EXPECT_TRUE(battle()->battleGetFocusFireState(BattleSide::ATTACKER));
+}
+
 TEST_F(NewHorizonsBattleAITimingTest, ProbeCacheLegacyHitsAndImmediateParentFallbackPreserveNullSinkValues)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, true));

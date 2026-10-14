@@ -120,6 +120,7 @@ def main():
         'config/creatures/special.json',
         'config/creatures/tower.json',
         'config/creatures/conflux.json',
+        'config/creatures/experimentalValues.json',
     ]
     hero_class_patch_files = [
         'config/heroClasses/names.json',
@@ -248,7 +249,13 @@ def main():
     expected = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
     biographies = json.dumps(biography_patch(root), indent='\t', ensure_ascii=False) + '\n'
     biography_destination = root / 'Mods/new-horizons/Content/config/heroes/biographies.json'
+    creature_values = json.dumps(canonical('newHorizonsCreatureExperimentalValues.json'),
+                                indent='\t', ensure_ascii=False) + '\n'
+    creature_values_destination = root / 'Mods/new-horizons/Content/config/creatures/experimentalValues.json'
     if args.check:
+        if (not creature_values_destination.is_file()
+                or creature_values_destination.read_text(encoding='utf-8') != creature_values):
+            parser.exit(1, 'Curated creature experimental values are stale; run tools/update-new-horizons-module.py\n')
         if not destination.is_file() or destination.read_text(encoding='utf-8') != expected:
             parser.exit(1, 'Curated module metadata is stale; run tools/update-new-horizons-module.py\n')
         if (not biography_destination.is_file()
@@ -259,6 +266,8 @@ def main():
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(expected, encoding='utf-8')
         if preview_output is None:
+            creature_values_destination.parent.mkdir(parents=True, exist_ok=True)
+            creature_values_destination.write_text(creature_values, encoding='utf-8')
             biography_destination.parent.mkdir(parents=True, exist_ok=True)
             biography_destination.write_text(biographies, encoding='utf-8')
         print('Updated ' + str(destination.relative_to(root)))

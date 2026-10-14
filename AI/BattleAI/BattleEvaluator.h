@@ -46,11 +46,12 @@ class DLL_EXPORT BattleEvaluator
 		uint32_t spentCasterId, DamageCache & cache) const;
 	float beneficialCreatureOutcomeValue(const CStack * caster, const battle::Unit * recipient,
 		const CSpell * spell, int spellLevel, float baselinePressure) const;
-	static int creatureAbilitySpellLevel(const CStack * caster, const CSpell * spell, int abilityLevel);
 	/// Leaves cast-only admission/value in ps; returns HP and future-DPS completion values.
 	std::pair<float, float> evaluateCreatureCastBeforeCompletion(const CStack * stack, PossibleSpellcast & ps);
 
 public:
+	/// Effective chosen-spell proficiency, matching authoritative creature-cast resolution.
+	static int creatureAbilitySpellLevel(const CStack * caster, const CSpell * spell, int abilityLevel);
 	/// Optional call-local wall diagnostics. Not gameplay state and never serialized.
 	struct DLL_LINKAGE SelectionTiming
 	{

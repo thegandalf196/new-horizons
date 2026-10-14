@@ -4178,9 +4178,7 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 		std::optional<PossibleSpellcast> best;
 		for(const auto * recipient : battle->battleAliveUnits())
 		{
-			if(!battle->battleMatchActionController(stack, recipient, true))
-				continue;
-			const auto pool = battle->getAvailableBeneficialSpells(stack, recipient);
+			const auto pool = battle->getAvailableRandomCreatureSpells(stack, recipient);
 			if(pool.empty())
 				continue;
 			double total = 0;
@@ -4297,6 +4295,9 @@ float BattleEvaluator::beneficialCreaturePressure(const std::shared_ptr<Hypothet
 int BattleEvaluator::creatureAbilitySpellLevel(const CStack * caster, const CSpell * spell, int abilityLevel)
 {
 	int spellLevel = std::max(0, abilityLevel);
+	if(const auto spellAbility = caster->getBonus(Selector::typeSubtype(
+		BonusType::SPELLCASTER, BonusSubtypeID(spell->getId()))))
+		vstd::amax(spellLevel, spellAbility->val);
 	// Match BattleActionProcessor: only the ANY-school battlefield raise is
 	// applied to creature casts, not school-specific hero proficiency.
 	if(spell->getLevel() > 0)
@@ -4331,10 +4332,9 @@ float BattleEvaluator::expectedBeneficialCreatureSpellValue(const CStack * caste
 	const battle::Unit * recipient) const
 {
 	const auto battle = cb->getBattle(battleID);
-	if(!caster || !caster->canCast() || !recipient
-		|| !battle->battleMatchActionController(caster, recipient, true))
+	if(!caster || !caster->canCast() || !recipient)
 		return 0;
-	const auto pool = battle->getAvailableBeneficialSpells(caster, recipient);
+	const auto pool = battle->getAvailableRandomCreatureSpells(caster, recipient);
 	const auto ability = caster->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
 	if(pool.empty() || !ability)
 		return 0;

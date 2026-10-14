@@ -2096,6 +2096,13 @@ void CGameState::validateNewHorizonsWeightedPerkSerialization(bool supported) co
 }
 
 
+void CGameState::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateIndividualSpecialtiesSerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsIndividualSpecialtiesSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsDruidSpecialtySerialization(bool supported) const
 {
 	newHorizonsHeroes::validateDruidSpecialtySerialization(heroDevelopmentRules, supported);

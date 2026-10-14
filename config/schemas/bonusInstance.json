@@ -314,6 +314,10 @@
 	"additionalProperties" : false,
 	"allOf" : [
 		{
+			"if" : { "properties" : { "type" : { "enum" : [ "RANDOM_SPELLCASTER" ] } } },
+			"then" : { "properties" : { "addInfo" : { "type" : "integer", "enum" : [ 0, 1 ] } } }
+		},
+		{
 			"if" : {
 				"properties" : {
 					"type" : {

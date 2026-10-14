@@ -192,7 +192,7 @@ ACCEPTED_STARTS = {
     'core:torosar': ('warMachines.masterGunner', 1, 'metamagic', 1),
     'core:iona': ('learning.scholar', 1, 'metamagic', 1),
     'core:astral': ('spellcraft.concentration', 1, 'metamagic', 2),
-    'core:serena': ('learning.eagleEye', 1, 'metamagic', 1),
+    'core:serena': ('wisdom.intelligence', 1, 'metamagic', 1),
     'core:daremyth': ('luck.secondChance', 1, 'metamagic', 1),
     'core:aine': ('estates.taxCollector', 1, 'metamagic', 1),
     'core:thane': ('learning.scholar', 2, 'metamagic', 1),
@@ -228,6 +228,31 @@ ACCEPTED_STARTS = {
 }
 
 class HeroDataTest(unittest.TestCase):
+    def test_arcane_preparation_policy_and_generated_starting_package(self):
+        policy = self.rules['arcanePreparationSpecialty']
+        self.assertEqual(policy, {'version': 1, 'initialPercent': 25,
+                                 'percentPerLevel': 5, 'maximumPercent': 100})
+        generated = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())['settings']['heroes']['newHorizons']
+        self.assertEqual(generated['arcanePreparationSpecialty'], policy)
+        self.assertEqual(generated['startingSkills']['startingDevelopmentProfiles']['core:serena'], {
+            'skills': [{'skill': 'new-horizons:wisdom', 'rank': 1},
+                       {'skill': 'new-horizons:metamagic', 'rank': 1}],
+            'startingPerks': [{'skill': 'new-horizons:wisdom', 'perk': 'new-horizons:wisdom.intelligence'}]})
+
+    def test_fortune_child_policy_and_generated_capture_keep_native_prototype(self):
+        policy = self.rules['fortuneChildSpecialty']
+        self.assertEqual(policy, {'version': 1, 'luckPerStep': 1, 'levelStep': 5})
+        module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
+        self.assertEqual(module['settings']['heroes']['newHorizons']['fortuneChildSpecialty'], policy)
+        prototype = json.loads((ROOT / 'config/heroes/tower.json').read_text())['daremyth']
+        self.assertEqual(prototype['specialty']['bonuses']['fortune'], {
+            'type': 'SPECIAL_FIXED_VALUE_ENCHANT', 'subtype': 'fortune', 'addInfo': 3})
+        self.assertEqual(prototype['spellbook'], ['fortune'])
+        self.assertEqual(self.rules['startingSkills']['startingDevelopmentProfiles']['core:daremyth'], {
+            'skills': [{'skill': 'new-horizons:luck', 'rank': 1},
+                {'skill': 'new-horizons:metamagic', 'rank': 1}],
+            'startingPerks': [{'skill': 'new-horizons:luck', 'perk': 'new-horizons:luck.secondChance'}]})
+
     def setUp(self):
         self.rules = json.loads((ROOT / 'config/newHorizonsHeroes.json').read_text())
 

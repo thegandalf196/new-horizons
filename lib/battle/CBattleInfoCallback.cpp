@@ -72,6 +72,7 @@ constexpr auto WARCASTING_SKILL_ID = "new-horizons:warcasting";
 constexpr auto SPELLWARD_PERK_ID = "new-horizons:warcasting.spellward";
 constexpr int SPELLWARD_REDUCTION_BASIS_POINTS = 1000;
 constexpr int NEW_HORIZONS_MAGIC_RESISTANCE_CAP_PERCENT = 75;
+constexpr int RANDOM_CREATURE_HOSTILE_ENCHANTMENTS_POLICY = 1;
 
 int64_t scaledBattleOutput(int64_t base, int32_t outputPercent)
 {
@@ -5916,6 +5917,16 @@ std::vector<SpellID> CBattleInfoCallback::getAvailableBeneficialSpells(const bat
 		target.emplace_back(subject);
 
 		spells::BattleCast cast(this, &actionCaster, spells::Mode::CREATURE_ACTIVE, spellPtr);
+		if(const auto ability = caster->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER)))
+		{
+			int level = std::max(0, ability->val);
+			if(const auto spellAbility = caster->getBonus(Selector::typeSubtype(
+				BonusType::SPELLCASTER, BonusSubtypeID(spellID))))
+				vstd::amax(level, spellAbility->val);
+			if(spellPtr->getLevel() > 0)
+				vstd::amax(level, caster->valOfBonuses(BonusType::MAGIC_SCHOOL_SKILL, BonusSubtypeID(SpellSchool::ANY)));
+			cast.setSpellLevel(level);
+		}
 
 		auto m = spellPtr->battleMechanics(&cast);
 		if (!m->canBeCastAt(target))
@@ -5993,6 +6004,59 @@ std::vector<SpellID> CBattleInfoCallback::getAvailableBeneficialSpells(const bat
 	}
 
 	return beneficialSpells;
+}
+
+std::vector<SpellID> CBattleInfoCallback::getAvailableRandomCreatureSpells(const battle::Unit * caster,
+	const battle::Unit * subject) const
+{
+	RETURN_IF_NOT_BATTLE({});
+	if(!caster || !subject || !subject->alive())
+		return {};
+	if(battleMatchActionController(caster, subject, true))
+		return getAvailableBeneficialSpells(caster, subject);
+	const auto ability = caster->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
+	if(!ability || !ability->parameters)
+		return {};
+	const auto policy = ability->parameters->toJsonNode();
+	if(policy.getType() != JsonNode::JsonType::DATA_INTEGER
+		|| policy.Integer() != RANDOM_CREATURE_HOSTILE_ENCHANTMENTS_POLICY)
+		return {};
+	// Temporary single-creature enchantments only. No damage, area effects,
+	// control transfer, or arbitrary newly installed spells enter the wish pool.
+	static const std::set<SpellID> curses = {
+		SpellID::CURSE, SpellID::WEAKNESS, SpellID::SLOW,
+		SpellID::MISFORTUNE, SpellID::SORROW, SpellID::FORGETFULNESS
+	};
+	std::vector<SpellID> result;
+	newHorizonsPuppetMaster::ActionControllerCaster actionCaster(caster, battleGetActionController(caster));
+	for(const auto id : curses)
+	{
+		if(subject->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(id))))
+			continue;
+		const auto * spell = id.toSpell();
+		if(!spell->isNegative() || spell->isDamage())
+			continue;
+		spells::BattleCast cast(this, &actionCaster, spells::Mode::CREATURE_ACTIVE, spell);
+		int level = std::max(0, ability->val);
+		if(const auto spellAbility = caster->getBonus(Selector::typeSubtype(
+			BonusType::SPELLCASTER, BonusSubtypeID(id))))
+			vstd::amax(level, spellAbility->val);
+		if(spell->getLevel() > 0)
+			vstd::amax(level, caster->valOfBonuses(BonusType::MAGIC_SCHOOL_SKILL, BonusSubtypeID(SpellSchool::ANY)));
+		cast.setSpellLevel(level);
+		const spells::Target target{spells::Destination(subject)};
+		const auto mechanics = spell->battleMechanics(&cast);
+		if(!mechanics->isMassive() && mechanics->canBeCastAt(target))
+			result.push_back(id);
+	}
+	return result;
+}
+
+SpellID CBattleInfoCallback::getRandomCreatureSpell(vstd::RNG & rand, const battle::Unit * caster,
+	const battle::Unit * subject) const
+{
+	const auto pool = getAvailableRandomCreatureSpells(caster, subject);
+	return pool.empty() ? SpellID::NONE : *RandomGeneratorUtil::nextItem(pool, rand);
 }
 
 SpellID CBattleInfoCallback::getRandomBeneficialSpell(vstd::RNG & rand, const battle::Unit * caster, const battle::Unit * subject) const

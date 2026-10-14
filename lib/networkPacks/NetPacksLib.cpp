@@ -1113,6 +1113,12 @@ void LobbyStartGame::validateNewHorizonsWeightedPerkSerialization(bool supported
 }
 
 
+void LobbyStartGame::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsIndividualSpecialtiesSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsDruidSpecialtySerialization(bool supported) const
 {
 	if(initializedGameState)

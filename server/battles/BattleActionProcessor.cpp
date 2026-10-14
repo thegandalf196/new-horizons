@@ -2519,7 +2519,7 @@ bool BattleActionProcessor::prepareUnitSpellAction(const CBattleInfoCallback & b
 			return false;
 		}
 
-		spellID = battle.getRandomBeneficialSpell(gameHandler->getRandomGenerator(), stack, subject);
+		spellID = battle.getRandomCreatureSpell(gameHandler->getRandomGenerator(), stack, subject);
 
 		if (spellID == SpellID::NONE)
 		{

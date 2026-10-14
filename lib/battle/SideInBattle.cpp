@@ -25,6 +25,7 @@ void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army
 		initialBufferSpellPoints = Hero->getBufferSpellPoints();
 		// NOTE: hero is not attached to town directly at this point, only indirectly via townAndVis
 		int64_t additionalManaTotal = Hero->valOfBonuses(BonusType::COMBAT_MANA_BONUS);
+		additionalManaTotal += Hero->getArcanePreparationBufferBonus();
 		demonicReserve = Hero->getDemonicReserve();
 		if (town)
 			additionalManaTotal += town->valOfBonuses(BonusType::COMBAT_MANA_BONUS);
