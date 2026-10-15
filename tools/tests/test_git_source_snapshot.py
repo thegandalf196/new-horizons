@@ -110,9 +110,10 @@ class GitSourceSnapshotTest(unittest.TestCase):
             self.assertEqual((self.root / name).read_bytes(), b'Uncommitted future documentation\n')
 
     def test_historical_revision_does_not_opt_in_from_mutable_or_untracked_policy(self):
-        path = self.root / 'docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md'
-        path.parent.mkdir()
-        path.write_text('Synthetic historical private content')
+        names = ['docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md', 'docs/NH_UI_ASSET_INVENTORY.csv']
+        (self.root / 'docs').mkdir()
+        for name in names:
+            (self.root / name).write_text('Synthetic historical private content')
         revision = self.commit(self.root)
         policy = self.root / 'docs/NH_DOCUMENTATION_POLICY.md'
         policy.write_text('Untracked future policy')
@@ -120,8 +121,38 @@ class GitSourceSnapshotTest(unittest.TestCase):
             if label == 'committed-later':
                 self.commit(self.root)
             result = source_snapshot(self.root, revision, self.base / (label + '.tar.gz'))
-            self.assertEqual(result['excluded'], ['docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md'])
+            self.assertEqual(result['excluded'], sorted(names))
             self.assertEqual(result['source_entries'], 0)
+
+    def test_public_ui_inventory_survives_both_exports_without_private_lookalikes(self):
+        attributes = Path(__file__).resolve().parents[2] / '.gitattributes'
+        (self.root / '.gitattributes').write_bytes(attributes.read_bytes())
+        (self.root / 'docs').mkdir()
+        inventory = 'docs/NH_UI_ASSET_INVENTORY.csv'
+        content = b'Item / ID,Art\nSynthetic public fixture,Provisional\n'
+        (self.root / inventory).write_bytes(content)
+        (self.root / 'docs/NH_DOCUMENTATION_POLICY.md').write_text('Synthetic reviewed policy\n')
+        private = ['docs/NH_PRIVATE.md', 'docs/NH_PRIVATE.csv',
+                   'docs/NH_UI_ASSET_INVENTORY_PRIVATE.csv',
+                   'docs/NH_UI_ASSET_INVENTORY.csv.backup']
+        for name in private:
+            (self.root / name).write_text('Excluded synthetic fixture\n')
+        revision = self.commit(self.root)
+        (self.root / inventory).write_bytes(b'Uncommitted future inventory\n')
+        (self.root / '.gitattributes').write_text('/docs/NH_* export-ignore\n')
+
+        raw = subprocess.check_output(['git', '-C', str(self.root), 'archive', revision])
+        with tarfile.open(fileobj=BytesIO(raw)) as archive:
+            self.assertEqual(archive.extractfile(inventory).read(), content)
+            self.assertTrue(set(private).isdisjoint(archive.getnames()))
+        output = self.base / 'inventory-source.tar.gz'
+        result = source_snapshot(self.root, revision, output)
+        self.assertEqual(result['excluded'], sorted(private))
+        prefix = 'new-horizons-' + revision + '/'
+        with tarfile.open(output) as archive:
+            self.assertEqual(archive.extractfile(prefix + inventory).read(), content)
+            self.assertTrue({prefix + name for name in private}.isdisjoint(archive.getnames()))
+        self.assertEqual((self.root / inventory).read_bytes(), b'Uncommitted future inventory\n')
 
     def test_symlink_policy_does_not_enable_document_export(self):
         (self.root / 'docs').mkdir()
