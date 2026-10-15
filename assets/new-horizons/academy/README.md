@@ -24,13 +24,22 @@ selection or visual approval.
 
 The original archive is a visual-art handoff, not an installable mod or
 compatibility certificate. Its historical dimension/export reports were not
-engine acceptance. `handoff/PACKAGE-MANIFEST.json` is an unchanged inventory of
-that external archive, not a list of files available in a fresh checkout.
+engine acceptance. The original external archive's `PACKAGE-MANIFEST.json`
+inventories that handoff, not the files available in a fresh checkout.
 Historical prompt paths and digests in revision manifests identify external
 authoring inputs; retained digests do not grant access or new licensing.
 Authoring checks require the complete private project-shaped inputs, not merely
 this checkout or the package inventory. The package's Tower gameplay snapshot
 is not imported or used as the source of Tower rules.
+
+The original `integration/academy-assets.json` and `integration/town-layout.json`
+are likewise private authoring inputs. Selected revision manifests retain their
+exact historical source-registration paths and complete-file digests. Do not
+replace those original records with current configuration or a shortened file
+to satisfy a hash check. Public tests generate meaningful disposable registration
+records; those synthetic fixtures are not a replacement authoring archive.
+Ordinary consumers use the committed pack and selected runtime manifests without
+these private files. The installed rights and exclusion notice remains required.
 
 ## Pixel provenance and exclusions
 

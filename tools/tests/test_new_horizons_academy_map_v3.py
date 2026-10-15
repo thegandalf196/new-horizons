@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Focused pin, registration, and safe-install checks for Academy map v3."""
 
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -172,6 +173,70 @@ class NewHorizonsAcademyMapV3Test(unittest.TestCase):
                 )
             for runtime, expected in before_unknown.items():
                 self.assertEqual((temp_root / academy_importer.IMAGE_ROOT / runtime).read_bytes(), expected)
+
+
+class NewHorizonsAcademySourceRegistrationTest(unittest.TestCase):
+    def test_synthetic_registration_requires_present_exact_bytes(self):
+        for kind, revision in (("map", "v2"), ("map", "v3"), ("hall", "v2")):
+            with self.subTest(kind=kind, revision=revision), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                pin = private_revision_fixture(root, kind, revision)
+                loader = academy_importer.load_map_revision if kind == "map" else academy_importer.load_hall_revision
+                kwargs = {"revision": revision} if kind == "map" else {}
+                loaded = loader(root, pin, **kwargs)
+                manifest = loaded["manifest"]
+                source = root / academy_importer.SOURCE_ROOT / manifest["sourceRegistration"]["path"]
+                original = source.read_bytes()
+                data = json.loads(original)
+                if kind == "map":
+                    self.assertEqual(len(data), 3)
+                    self.assertEqual({row["master"] for row in data},
+                                     {row["sourceMaster"] for row in manifest["bodies"].values()})
+                    for row in data:
+                        expected = next(item for item in manifest["bodies"].values() if item["sourceMaster"] == row["master"])
+                        self.assertEqual([row["width"], row["height"]], expected["dimensions"])
+                        self.assertEqual(row["sourceSolidBox"], expected["sourceSolidBox"])
+                        self.assertEqual(row["masterSolidBox"], expected["masterSolidBox"])
+                else:
+                    self.assertEqual(data["resolution"], [800, 374])
+                    self.assertEqual(data["assets"], [manifest["sourceRegistration"]["record"]])
+                    self.assertEqual(data["assets"][0]["originalFrameCount"], 1)
+                source.write_bytes(original + b" ")
+                with self.assertRaisesRegex(ValueError, "source registration bytes do not match"):
+                    loader(root, pin, **kwargs)
+                source.unlink()
+                with self.assertRaisesRegex(ValueError, "file is missing or escapes"):
+                    loader(root, pin, **kwargs)
+                source.write_bytes(original)
+                loader(root, pin, **kwargs)
+
+    def test_hall_rejects_wrong_source_record_and_non_single_frame(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            pin = private_revision_fixture(root, "hall")
+            loaded = academy_importer.load_hall_revision(root, pin)
+            manifest_path = root / academy_importer.HALL_REVISION_MANIFEST
+            original_manifest = manifest_path.read_bytes()
+            source = root / academy_importer.SOURCE_ROOT / loaded["manifest"]["sourceRegistration"]["path"]
+            original_source = source.read_bytes()
+            for invalid in ("record", "frameCount"):
+                with self.subTest(invalid=invalid):
+                    manifest = json.loads(original_manifest)
+                    data = json.loads(original_source)
+                    if invalid == "record":
+                        data["assets"][0]["sourceBox"]["width"] += 1
+                    else:
+                        data["assets"][0]["originalFrameCount"] = 2
+                        manifest["sourceRegistration"]["record"]["originalFrameCount"] = 2
+                    source.write_text(json.dumps(data), encoding="utf-8")
+                    manifest["sourceRegistration"]["sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+                    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+                    changed_pin = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+                    with self.assertRaisesRegex(ValueError, "registration or original one-frame count changed"):
+                        academy_importer.load_hall_revision(root, changed_pin)
+            source.write_bytes(original_source)
+            manifest_path.write_bytes(original_manifest)
+            academy_importer.load_hall_revision(root, pin)
 
 
 if __name__ == "__main__":
