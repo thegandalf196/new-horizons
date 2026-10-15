@@ -113,6 +113,34 @@ You can get the latest source code with:
 
 ## Compilation
 
+### New Horizons focused state checks
+
+The `new-horizons-linux-test` configure preset enables test development. Its
+matching build and test presets select only eight reviewed standalone state
+checks, without original game data, a display, a user profile or private design
+files. Install the public development dependencies above and initialize the
+pinned test framework with `git submodule update --init test/googletest`, then:
+
+```sh
+cmake --preset new-horizons-linux-test -DPython3_EXECUTABLE="$NH_PYTHON"
+cmake --build --preset new-horizons-linux-test
+ctest --preset new-horizons-linux-test
+```
+
+Set `NH_PYTHON` to the environment's verified absolute Python interpreter.
+The build preset limits compilation to ten jobs. The test preset selects
+`nh-pure`, runs serially and rejects empty discovery. The repository-contracts
+workflow also compares actual CTest discovery with `tools/ci/test_inventory.json`.
+The inventory distinguishes lexical declarations and CMake references from
+configured discovery and executed results; neither source presence nor a managed
+test's skip establishes acceptance.
+
+`new-horizons-linux-native-tests` builds `vcmitest` separately. Running native
+gameplay tests still requires their documented isolated TEST profile and original
+resources. Enabling test compilation does not authorize graphical launches,
+fixture exports or access to the ordinary player profile. The focused preset is
+not a full engine build, rendered test or platform acceptance campaign.
+
 ### Configuring Makefiles
 
 ```sh

@@ -39,6 +39,18 @@
             }
         },
         {
+            "name": "new-horizons-linux-test",
+            "displayName": "New Horizons Linux test development",
+            "description": "Build native tests; the matching test preset runs only asset-free state checks. Native gameplay requires an isolated TEST profile and original data.",
+            "inherits": "new-horizons-linux",
+            "binaryDir": "${sourceDir}/build/new-horizons-linux-test",
+            "cacheVariables": {
+                "ENABLE_TEST": "ON",
+                "ENABLE_NEW_HORIZONS_MANAGED_TESTS": "OFF",
+                "ENABLE_NH_PERF_EXPERIMENTS": "OFF"
+            }
+        },
+        {
             "name": "new-horizons-windows-x64",
             "displayName": "New Horizons Windows x64 preview",
             "inherits": "windows-msvc-ninja-release",
@@ -464,6 +476,18 @@
     ],
     "buildPresets": [
         {
+            "name": "new-horizons-linux-test",
+            "configurePreset": "new-horizons-linux-test",
+            "targets": ["nhHeroDevelopmentNavigationTest", "nhHeroMasteryDialogStateTest", "nhExchangeSecondarySkillSlotsTest", "nhStackInfoPanelHoverStateTest", "nhProjectileFlightLifecycleTest", "nhWindowSceneRedrawTest", "nhHeroPositiveProcPresentationTest", "nhAnimationPhaseStartTest"],
+            "jobs": 10
+        },
+        {
+            "name": "new-horizons-linux-native-tests",
+            "configurePreset": "new-horizons-linux-test",
+            "targets": ["vcmitest"],
+            "jobs": 10
+        },
+        {
             "name": "new-horizons-linux",
             "configurePreset": "new-horizons-linux",
             "targets": ["vcmiclient"],
@@ -632,6 +656,13 @@
         }
     ],
     "testPresets": [
+        {
+            "name": "new-horizons-linux-test",
+            "configurePreset": "new-horizons-linux-test",
+            "filter": { "include": { "label": "^nh-pure$" } },
+            "output": { "outputOnFailure": true },
+            "execution": { "jobs": 1, "noTestsAction": "error" }
+        },
         {
             "name": "default-release",
             "hidden": true,

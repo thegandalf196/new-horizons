@@ -6,17 +6,31 @@ This is New Horizons, a VCMI fork for single-player play with original content.
 It is not the separate Reconstruction repository. Preserve VCMI licensing,
 third-party attribution, and existing gameplay outside the requested changes.
 
-Follow the user's current task and settled decisions. Before new feature work,
-read `docs/NEW_HORIZONS_MVP.md` and `docs/NEW_HORIZONS_DESIGN.md`.
-`docs/design-sources/New Horizons.md` is the canonical gameplay specification;
-proposed amendments belong in `docs/NEW_HORIZONS_PENDING_CHANGES.md` until
-incorporated. Read `docs/NH_VERSION_1_0_SCOPE.md` for current release boundaries. Code describes current behavior,
+Follow the user's current task and settled decisions. The private design and
+research destination is `https://github.com/thegandalf196/new-horizons-docs`.
+Use a sibling checkout `../new-horizons-docs` or an explicitly configured
+`NH_DOCS_ROOT` outside every public worktree. See `docs/NH_DOCUMENTATION_POLICY.md`
+for document routing, research status and publication rules.
+
+Until migration is verified, `docs/design-sources/New Horizons.md` remains the
+existing canonical gameplay specification, with unintegrated amendments in
+`docs/NEW_HORIZONS_PENDING_CHANGES.md`. Before feature work, also read
+`docs/NEW_HORIZONS_MVP.md`, `docs/NEW_HORIZONS_DESIGN.md` and
+`docs/NH_VERSION_1_0_SCOPE.md` for the existing implementation/release boundaries.
+After private migration, read the private repository's index and maintained canon;
+replace these transitional pointers rather than retaining parallel authorities.
+Research papers inform design but do not override accepted rules. Record accepted
+amendments and incorporate them into the canon. Code describes current behavior,
 not proof that the intended design has been implemented correctly.
 
 Read more specific `AGENTS.md` files for the area being changed. Read additional
 reference documents when relevant to the task, rather than loading every guide.
 
 ## Current priority and work tracking
+
+An explicit active user goal takes precedence over the default phase priorities
+below. Preserve a displaced goal's progress privately and resume it only when the
+user directs; do not silently return to its backlog after a task handoff.
 
 Current phase: **Phase 2 - stabilization and integration**.
 See `docs/NH_PHASE1_EXIT_AUDIT.md` for the Phase 1 exit evidence and
@@ -122,6 +136,15 @@ Follow `docs/developers/Coding_Guidelines.md` and C++20 conventions. Preserve
 `vcmi`, the `libFacade/` aggregate, rather than `vcmiMain` directly. AI modules
 are registered through `AIFactory`, not dynamically loaded libraries.
 
+Read `docs/developers/Code_Organization.md` before implementation and review.
+Keeping source files and functions focused is a standing requirement for all
+future changes. Review starts above 500 file lines or 80 function lines; new or
+expanded handwritten production units default to ceilings of 1,000 and 150.
+Existing oversized files require bounded extraction and a shrinking baseline,
+with narrowly justified exceptions under that policy. Every code handoff reports
+before/after size, responsibility changes and verification; a file move alone
+does not satisfy the rule.
+
 For bonus changes, read `docs/developers/Bonus_System.md`. Preserve serialization
 and save compatibility for state changes; read `docs/developers/Serialization.md`.
 For combat, inspect `lib/battle/`, `server/battles/`, `client/battle/`, and relevant
@@ -183,6 +206,14 @@ contributor understand the product, architecture, accepted design, tools, asset
 contracts, or reproducible verification. Use one canonical home per fact and
 update current sections in place rather than appending a report after every turn.
 
+Push detailed design, philosophy, research papers and design decisions only to
+`thegandalf196/new-horizons-docs`, after checking that the checkout's remote is the
+intended repository and authenticated metadata reports it as private. If access
+or privacy verification is unavailable, retain drafts outside the public checkout
+and report the gap; do not use the public repository as a fallback. Public runtime
+contracts, build guides and reproducible contributor documentation stay here.
+Keep credentials and unreviewed personal records out of both repositories.
+
 Keep chat/user-message copies, worker queues/handoffs, session/tmux IDs, wake
 protocols, token/model-reset notes, raw test receipts, temporary paths, exact
 art prompts/metadata, authoring masters, and rejected previews in configured
@@ -194,7 +225,11 @@ Before retiring a mixed document, preserve it privately and extract unresolved
 issues, accepted decisions, technical contracts, and important regression
 invariants into their maintained public homes. Update links and affected tests.
 Inspect tracked/staged files: ignore patterns do not untrack existing content.
-Do not rewrite history or claim old public copies have been erased.
+History remediation is a separate planned migration phase, after private
+preservation and public-build independence are verified. Prepare the historical
+path/content inventory and validate an isolated rewrite candidate before the
+owner approves a concrete remote rewrite. Do not force-push as routine cleanup
+or claim old public copies have been erased.
 
 ## Artwork, public identity, and distribution
 

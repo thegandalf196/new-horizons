@@ -17,6 +17,10 @@ and thread ownership, command validation, incorrect mechanics, missing
 registrations, UI/result disagreement, and material acceptance gaps. Check
 agreement with the authored specification and settled decisions. Give concrete
 file/symbol references, a reproducible trigger where possible, and severity.
+Apply docs/developers/Code_Organization.md to every code review. Check reported
+file/function sizes, affected responsibility boundaries, growth in existing
+hotspots and any scoped exception. Require cohesive extraction or a justified
+bounded deferral; moving complexity into another oversized helper is insufficient.
 Distinguish blocking defects from documented follow-up appropriate to the active
 phase. State checks you did and did not run. A review is not proof of rendered
 acceptance, balance, or authorization to publish or merge.

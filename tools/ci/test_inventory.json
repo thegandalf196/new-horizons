@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "roots": ["test", "client/tests", "tools/tests", "tools/ci"],
+  "excludedDirectories": ["googletest", "__pycache__"],
+  "cmakeFiles": ["CMakeLists.txt", "test/CMakeLists.txt", "clientapp/CMakeLists.txt", "clientsdl2/CMakeLists.txt", "clientsdl3/CMakeLists.txt"],
+  "pureCTestLabel": "nh-pure",
+  "pureTargets": ["nhHeroDevelopmentNavigationTest", "nhHeroMasteryDialogStateTest", "nhExchangeSecondarySkillSlotsTest", "nhStackInfoPanelHoverStateTest", "nhProjectileFlightLifecycleTest", "nhWindowSceneRedrawTest", "nhHeroPositiveProcPresentationTest", "nhAnimationPhaseStartTest"],
+  "unregistered": {
+    "test/standalone/NewHorizonsMagicNullAssert.cpp": {"classification": "manual", "reason": "Explicit assertion-enabled standalone probe; one negative mode intentionally aborts. Never ordinary Release vcmitest or default CTest."},
+    "tools/tests/nh-wine-bootstrap.cpp": {"classification": "managed", "reason": "Private Wine environment prerequisite compiled by the guarded platform workflow, never a player package or independently accepted test."},
+    "test/serializer/JsonUpdaterTest.cpp": {"classification": "manual", "reason": "Useful JSON partial-update candidate; review and compile independently before registration. Existing omission is not execution evidence."},
+    "test/rmg/CRmgTemplateTest.cpp": {"classification": "conditional", "reason": "Requires test/rmg/1.json, absent from tracked testdata. Restore a licensed fixture and verify template API before enabling."},
+    "test/vcai/ResourceManagerTest.cpp": {"classification": "retired", "reason": "Legacy VCAI fixture derives an incomplete old ResourceManager API, not the current Nullkiller2 resource trader. Retained source, not registered coverage."},
+    "test/nullkiller2/Engine/ResourceTraderTest.cpp": {"classification": "conditional", "reason": "Current Nullkiller2 trade-helper candidate. Needs ENABLE_NULLKILLER2_AI and review of global mock-class collisions before registration."},
+    "test/server/battles/NewHorizonsAreaFormulaTest.cpp": {"classification": "manual", "reason": "Explicit future historical ruleset2 Fireball primitive scenario; validate saved coefficient assumptions against current rules before enabling. Not new-spell acceptance."},
+    "test/server/battles/NewHorizonsManagedMissileFixtureExportTest.cpp": {"classification": "exporter", "reason": "Writes a map only under explicit NH_EXPORT_MANAGED_MISSILE_FIXTURE and isolated managed/player profile prerequisites; never default CI."},
+    "test/server/battles/NewHorizonsGuildLevelZeroTest.cpp": {"classification": "conditional", "reason": "Useful level-zero guild admission guard candidate; requires current world/hero fixture validation before registration."},
+    "test/server/battles/NewHorizonsCreatureCategoryLoadEntrypointTest.cpp": {"classification": "conditional", "reason": "Useful real loadFromMemory rejection candidate; audit commands-off captured hero/perk policy pairing before enabling."},
+    "client/tests/QuickSpellWidgetDriver.cpp": {"classification": "manual", "reason": "Explicit unregistered Linux actual-widget prototype; requires reviewed graphical integration and guarded owner, not an automatic test entry."},
+    "client/tests/QuickSpellWidgetCancellationTest.cpp": {"classification": "manual", "reason": "Explicit unregistered Linux cancellation driver entry; not SDL/widget/network acceptance and not portable default CI."},
+    "client/tests/OutlineMaskTest.cpp": {"classification": "manual", "reason": "Standalone diagnostic and stdin image tool. Runtime assertions disappear under NDEBUG; do not register a vacuous Release test."}
+  },
+  "rootPolicies": {
+    "test": "Explicit CMake references are lexical registration candidates only. vcmitest requires original assets and an isolated TEST profile; feature conditions remain visible. Exporters and managed fixtures are not default-public acceptance.",
+    "client/tests": "Registered standalone sources may be pure state checks; other scripts/drivers are manual diagnostics unless an explicit curated runner selects them. GUI probes require the maintained private owner.",
+    "tools/tests": "Python checks are conditional on their imports, fixtures and tool dependencies; source presence does not schedule execution. Public CI must choose a reviewed asset-free subset.",
+    "tools/ci": "Maintained helpers and explicit diagnostic/delivery entry points, not automatically executed tests. Snapshot/owner tools never gain runtime authority from this inventory."
+  }
+}
