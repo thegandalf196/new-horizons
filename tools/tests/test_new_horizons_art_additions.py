@@ -74,6 +74,34 @@ class ArtAdditionsTest(unittest.TestCase):
         cls.header = (ROOT / importer.HEADER).read_text()
         cls.config = importer.spells.parse_jsonc((ROOT / importer.spells.CONFIG).read_text())
 
+    def test_public_atlas_recipes_keep_bounded_geometry_without_authoring_prompts(self):
+        families = [('active-perks-v1', [6, 6, 6, 6], [1536, 1024]),
+                    ('sylvan-luck-perks-v1', [3], [2172, 724]),
+                    ('sylvan-luck-perks-v2', [4], [2172, 724])]
+        for family, counts, dimensions in families:
+            with self.subTest(family=family):
+                recipe = json.loads((ROOT / 'assets/new-horizons/art-source' / family / 'generation.json').read_text())
+                self.assertFalse('promptSummary' in recipe, 'Public recipe must omit authoring summaries')
+                self.assertEqual(recipe['license'], 'CC0-1.0')
+                atlases = recipe.get('atlases', [recipe])
+                self.assertEqual([len(atlas['cells']) for atlas in atlases], counts)
+                keys = []
+                for atlas in atlases:
+                    self.assertFalse('prompt' in atlas, 'Public recipe must omit raw authoring prompts')
+                    self.assertEqual(atlas['dimensions'], dimensions)
+                    self.assertTrue(atlas.get('file', recipe.get('atlas', '')).endswith('.png'))
+                    for cell in atlas['cells']:
+                        self.assertTrue(cell['key'].startswith('NH_'))
+                        keys.append(cell['key'])
+                        if 'atlases' in recipe:
+                            self.assertTrue(cell['id'])
+                        self.assertEqual(len(cell['box']), 4)
+                        self.assertTrue(all(type(value) is int for value in cell['box']))
+                        left, top, right, bottom = cell['box']
+                        self.assertTrue(0 <= left < right <= dimensions[0])
+                        self.assertTrue(0 <= top < bottom <= dimensions[1])
+                self.assertEqual(len(keys), len(set(keys)))
+
     def test_each_wave_has_exact_baseline_payload_and_provenance_proof(self):
         self.assertTrue(self.waves)
         self.assertEqual(len(later_art_resources()), sum(len(wave['resources']) for wave in self.waves))
