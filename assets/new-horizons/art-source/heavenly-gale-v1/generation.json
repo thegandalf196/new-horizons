@@ -19,9 +19,7 @@
   },
   "generation_history": [
     {
-      "imagegen_output_id": "exec-35bec7b1-a1fa-4dd6-a658-07b56118e4e1",
       "operation": "generate",
-      "generated_image_reference": "exec-35bec7b1-a1fa-4dd6-a658-07b56118e4e1",
       "prompt_file": "prompt-original.txt",
       "style_references": [
         {
@@ -35,10 +33,7 @@
       ]
     },
     {
-      "imagegen_output_id": "exec-d3c0f722-cad4-4fd0-ba7c-42c5d1f39e8b",
       "operation": "edit",
-      "generated_image_reference": "exec-d3c0f722-cad4-4fd0-ba7c-42c5d1f39e8b",
-      "input_generated_image_reference": "exec-35bec7b1-a1fa-4dd6-a658-07b56118e4e1",
       "prompt_file": "prompt-arrow-direction.txt",
       "style_references": [
         "Mods/new-horizons/Images/NH_spell_guardian_spirit_44.png",
@@ -46,10 +41,7 @@
       ]
     },
     {
-      "imagegen_output_id": "exec-11b240a8-ef2b-4230-809f-22773317a2ca",
       "operation": "edit",
-      "generated_image_reference": "exec-11b240a8-ef2b-4230-809f-22773317a2ca",
-      "input_generated_image_reference": "exec-d3c0f722-cad4-4fd0-ba7c-42c5d1f39e8b",
       "prompt_file": "prompt-single-arrow-safe-inset.txt",
       "style_references": [
         "Mods/new-horizons/Images/NH_spell_guardian_spirit_44.png",
@@ -57,9 +49,7 @@
       ]
     },
     {
-      "imagegen_output_id": "exec-5d9206fe-71e4-4209-93ab-b34b49ebe59f",
       "operation": "edit",
-      "generated_image_reference": "exec-5d9206fe-71e4-4209-93ab-b34b49ebe59f",
       "input_generated_image_path": "master.png",
       "prompt_file": "prompt-30px-readability.txt",
       "style_references": [

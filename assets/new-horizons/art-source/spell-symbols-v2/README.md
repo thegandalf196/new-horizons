@@ -12,9 +12,11 @@ final-art approval or rendered/native-resolution in-game acceptance. The
 runtime spell graphics bindings remain unchanged, including legacy atlas
 aliases.
 
-Each revision's exact image-generation prompt and original-master reference
-are recorded in that source family's README under `Exact edit prompt`. The
-existing source masters and exports are retained. Revised masters are exported
+Source-family READMEs retain provenance and the `Exact edit prompt` link target.
+Keep complete generation requests, masters and historical exports in the external
+authoring archive; a public heading or source filename does not promise those
+inputs are shipped. Public contracts and selected runtime resources do not
+require that archive for ordinary builds. Revised masters are exported
 with the HoMM3 art workflow's deterministic LANCZOS reducer, preserving alpha;
 the manifest records master/export/runtime SHA-256 values and the spell's
 unchanged live binding names. `tools/tests/test_new_horizons_spell_symbols.py`

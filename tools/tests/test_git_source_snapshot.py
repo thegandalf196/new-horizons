@@ -256,7 +256,7 @@ class GitSourceSnapshotTest(unittest.TestCase):
                   'assets/new-horizons/academy/README.md',
                   'assets/new-horizons/academy/masters/adventure/avctowr0.prompt.txt.example',
                   'docs/NH_AGENT_START.md.example']
-        self.assertEqual(len(RETIRED_PUBLIC_PATHS), 143)
+        self.assertEqual(len(RETIRED_PUBLIC_PATHS), 147)
         for name in [*RETIRED_PUBLIC_PATHS, *public]:
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
