@@ -354,6 +354,8 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsEagleEye.cpp
 	spells/NewHorizonsFriendlyFire.cpp
 	spells/NewHorizonsMagic.cpp
+	spells/NewHorizonsMagicPresentation.cpp
+	spells/NewHorizonsMagicReadouts.cpp
 	spells/NewHorizonsImplosion.cpp
 	spells/NewHorizonsPurify.cpp
 	spells/NewHorizonsRealityWarp.cpp
@@ -939,6 +941,8 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsPandemonium.h
 	spells/NewHorizonsDirectDamage.h
 	spells/NewHorizonsMagic.h
+	spells/NewHorizonsMagicInternal.h
+	spells/NewHorizonsMagicPresentation.h
 	spells/NewHorizonsImplosion.h
 	spells/NewHorizonsFireWall.h
 	spells/NewHorizonsPurify.h
