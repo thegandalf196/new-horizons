@@ -5,8 +5,9 @@ after native and enlarged private review. This is not Final artwork or user
 approval, and does not establish rendered recruitment or playable delivery.
 
 `masters/giant-sword-matte.png` is the single built-in imagegen revision, with
-its exact prompt alongside it. Mechanical LANCZOS reduction to 58x64 followed
-by grayscale threshold >=128 produces the generated geometry. The versioned
+its exact prompt preserved in the external authoring archive. Mechanical LANCZOS
+reduction to 58x64 followed by grayscale threshold >=128 produces the generated
+geometry. The versioned
 `mattes/giant-sword.png` preserves the old v1 body mask and combines its white
 pixels with generated white pixels only in the sword rectangle `(4,0,11,28)`
 (right/bottom excluded). Exactly 73 pixels are added; none are removed, and
@@ -26,7 +27,9 @@ composites are included here. Cool steel edge pixels near the guard remain a
 provisional visual uncertainty. Other creatures, old versions and private R1
 review outputs remain unchanged.
 
-Export only the Giant runtime mask with:
-`tools/export_new_horizons_academy_gremlin_portraits.py --creature giant`.
-Focused tests verify the pinned source/runtime bytes, reproducibility from the
-generated master, original body preservation and the bounded 73-pixel addition.
+For authoring, set `NH_ACADEMY_ROOT` to the complete external project-shaped
+workspace. Export only the Giant runtime mask with:
+`tools/export_new_horizons_academy_gremlin_portraits.py --private-root "$NH_ACADEMY_ROOT" --creature giant`.
+Public tests pin the selected runtime bytes and exercise reduction, original-body
+preservation and bounded addition using synthetic inputs. Regenerating the actual
+selected mask requires the complete external masters.

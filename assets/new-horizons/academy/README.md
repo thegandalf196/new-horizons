@@ -150,6 +150,41 @@ order, sprite or interaction masks. Registered mechanical composites are useful
 for alignment review but are not game screenshots. The background and hall
 exporters require explicit external `--private-root` inputs even in check mode.
 
+## Portrait mask and readability contracts
+
+Historical portrait revision paths refer to complete external authoring inputs,
+not adjacent files promised by this checkout. Keep exact prompts and rejected
+comparisons private. The selected pack, current creature configuration and
+`client/render/AssetGenerator.cpp` define runtime routes; an old draft or
+mechanical export does not select artwork or override a newer route.
+
+Geometry mattes reduce with LANCZOS to 58×64 grayscale and threshold at 128.
+Runtime masks contain only black (background) and white (foreground). Preserve
+actual anatomy, weapons, dark subject shadows and genuine open-air gaps;
+exclude snowy architecture and edge fringe without deleting pale foreground or
+dark body regions by color alone. Internal eyes, seams and material shading are
+not transparent holes. Reject a matte that retains scenery or nicks the real
+forearm, armor or wing contour, even when its reduction is reproducible.
+Original creature-color pixels remain purchaser-supplied external resources,
+not authoring files to commit. Preview-only painted alternatives and rejected
+Gargoyle masks are not authority to replace current portrait recipes.
+
+Preserve the historical internal Golem identifiers: `ironGolem` ID 32 uses
+TWCRPORT frame 34; `stoneGolem` ID 33 uses frame 35. The selected Giant sword
+correction adds foreground only within `(4,0,11,28)` (right/bottom exclusive),
+retaining the original body and all pixels outside that rectangle. Do not apply
+an earlier rejected draft's background classification to that selected weapon.
+The shipping portrait tests protect selected mask bytes and frame bindings;
+synthetic tests protect binary reduction and the additive bounded correction.
+Neither kind of test substitutes for native-size visual review.
+
+At native resolution, keep entrances, connected stairs, silhouette and upgrade
+variants readable without changing the independent registration or interaction
+masks. The importer splits the reviewed native guild/wall composite at y=175 on
+its 179×220 canvas, producing separate upper and lower layers. Keep those exact
+native bytes and stage bindings; rescaling an earlier high-resolution preview
+is not an equivalent reconstruction of that composite.
+
 ## Registration and verification contract
 
 - Keep the compatible `core:tower` identity. Academy's selected sand terrain is

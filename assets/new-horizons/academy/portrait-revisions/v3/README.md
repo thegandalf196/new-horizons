@@ -7,8 +7,9 @@ references remain external or in ignored `build/` diagnostics.
 
 The high-resolution masters are reduced mechanically to 58x64 grayscale using
 LANCZOS and threshold `>=128`; the native mattes exist only to produce the
-private original-frame composition previews. Each prompt is retained adjacent to
-its corresponding master.
+private original-frame composition previews. Exact prompts and corresponding
+masters remain preserved in the complete external authoring archive; these
+historical paths do not promise source images or prompts in a fresh checkout.
 
 ## Review disposition
 
