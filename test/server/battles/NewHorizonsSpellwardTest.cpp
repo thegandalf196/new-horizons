@@ -432,6 +432,7 @@ namespace
 class MasterSpellwardTest : public NewHorizonsSpellwardTest
 {
 protected:
+	bool historicalR2Progression = false;
 	virtual bool captureMasterSpellward() const { return true; }
 	void mapLoaded(CMap * loaded) override
 	{
@@ -449,6 +450,13 @@ protected:
 			// Preserve this preceding-epoch world's actual weighted policy1.
 			perks["offerWeightPolicyVersion"].Integer() = 1;
 			perks.Struct().erase("perkOfferNormalization");
+			perks.Struct().erase("perkProgressionPolicyVersion");
+			perks.setOverrideFlag(true);
+		}
+		if(historicalR2Progression)
+		{
+			// The original R2 epoch predates the separate strict progression policy.
+			perks.Struct().erase("perkProgressionPolicyVersion");
 			perks.setOverrideFlag(true);
 		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
@@ -601,9 +609,11 @@ TEST_F(MasterSpellwardTest, CurrentWorldKeepsPolicyAndUnsupportedEnclosingWriter
 
 TEST_F(MasterSpellwardTest, R2CapturedPolicyRejectsPreviousEnclosingWritersAndCurrentWorldRoundTrips)
 {
+	historicalR2Progression = true;
 	ASSERT_NO_FATAL_FAILURE(prepareMaster(false));
 	const auto globalPerks = gameState()->getHeroPerkRules();
 	const auto heroPerks = defenderSideHero->getPerkState().rules;
+	ASSERT_TRUE(globalPerks["perkProgressionPolicyVersion"].isNull());
 	ASSERT_EQ(globalPerks["offerWeightPolicyVersion"].Integer(), 2);
 	ASSERT_EQ(heroPerks["offerWeightPolicyVersion"].Integer(), 2);
 	ASSERT_EQ(heroPerks, globalPerks);
@@ -634,6 +644,53 @@ TEST_F(MasterSpellwardTest, R2CapturedPolicyRejectsPreviousEnclosingWritersAndCu
 	rejectPrevious(lobby);
 
 	// Actual current world save/load, not a forged old-world reader claim.
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	ASSERT_NO_THROW(restored.loadFromMemory(saved));
+	EXPECT_EQ(restored.getHeroPerkRules(), globalPerks);
+	EXPECT_EQ(restored.getMap().getSettings().getValue(
+		EGameSettings::HEROES_NEW_HORIZONS_PERKS), globalPerks);
+	const auto * hero = restored.getHero(defenderSideHero->id);
+	ASSERT_NE(hero, nullptr);
+	EXPECT_EQ(hero->getPerkState().rules, heroPerks);
+	EXPECT_EQ(hero->getPerkState().selected, selected);
+	EXPECT_EQ(hero->getPrimaryGrowthRules(), capturedClass);
+	EXPECT_TRUE(hero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
+}
+
+TEST_F(MasterSpellwardTest, StrictCapturedPolicyRejects1117EnclosingWritersAndCurrentWorldRoundTrips)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareMaster(false));
+	const auto globalPerks = gameState()->getHeroPerkRules();
+	const auto heroPerks = defenderSideHero->getPerkState().rules;
+	ASSERT_EQ(globalPerks["offerWeightPolicyVersion"].Integer(), 2);
+	ASSERT_EQ(globalPerks["perkProgressionPolicyVersion"].Integer(), 1);
+	ASSERT_EQ(heroPerks, globalPerks);
+	ASSERT_EQ(gameState()->getMap().getSettings().getValue(
+		EGameSettings::HEROES_NEW_HORIZONS_PERKS), globalPerks);
+	const auto selected = defenderSideHero->getPerkState().selected;
+	const auto capturedClass = defenderSideHero->getPrimaryGrowthRules();
+
+	const auto rejectPrevious = [](auto & value)
+	{
+		CMemorySerializer previous;
+		previous.oser.version = ESerializationVersion::NEW_HORIZONS_R2_PERK_OFFERS;
+		EXPECT_THROW(value.serialize(previous.oser), std::runtime_error);
+		EXPECT_TRUE(previous.extractBuffer().empty());
+	};
+	rejectPrevious(*defenderSideHero);
+	GameSettings settings;
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, gameState()->getHeroDevelopmentRules());
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, globalPerks);
+	rejectPrevious(settings);
+	rejectPrevious(gameState()->getMap());
+	rejectPrevious(*gameState());
+	LobbyStartGame lobby;
+	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
+	lobby.initializedGameState = gameState();
+	rejectPrevious(lobby);
+
 	const auto saved = gameState()->saveToMemory();
 	CGameState restored;
 	restored.preInit(LIBRARY);

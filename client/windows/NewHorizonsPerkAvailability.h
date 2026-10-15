@@ -204,11 +204,21 @@ inline Evaluation evaluatePerk(const newHorizonsHeroes::PerkState & state,
 			result.reason = Reason::EARLIER_TIER_MISSING;
 			return result;
 		}
-	if(!newHorizonsHeroes::usesR2PerkOffers(state.rules)
+	if((!newHorizonsHeroes::usesR2PerkOffers(state.rules)
+			|| newHorizonsHeroes::usesStrictPerkProgression(state.rules))
 		&& detail::tierSelected(state, skillId, result.requiredRank))
 	{
 		result.status = Status::LOCKED;
 		result.reason = Reason::TIER_OCCUPIED;
+		return result;
+	}
+
+	// Explanations above classify the reason; authoritative eligibility decides
+	// whether this read-only browser may actually label the perk available.
+	if(!state.canAcquirePerk(skillIdString, perk->id, skillRank))
+	{
+		result.status = Status::LOCKED;
+		result.reason = Reason::NO_CATALOGUE;
 		return result;
 	}
 
@@ -287,14 +297,15 @@ inline TierSlot evaluateTier(const newHorizonsHeroes::PerkState & state,
 	return result;
 }
 
-/// Policy2 cells represent the three selected perks, not one perk per tier.
+/// Historical non-strict policy2 cells represent selections, not authored tiers.
 /// Keep acquisition order and each selected perk's actual rank visible.
 inline TierSlot evaluateSelectionSlot(const newHorizonsHeroes::PerkState & state,
 	std::string_view skillId, int skillRank, size_t slotIndex)
 {
 	TierSlot result;
 	if(slotIndex >= newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL
-		|| !newHorizonsHeroes::usesR2PerkOffers(state.rules))
+		|| !newHorizonsHeroes::usesR2PerkOffers(state.rules)
+		|| newHorizonsHeroes::usesStrictPerkProgression(state.rules))
 		return result;
 	const auto skill = newHorizonsHeroes::perkSkill(state.rules, skillId);
 	if(!skill)

@@ -157,7 +157,7 @@ void validatePerkRules(const JsonNode & rules)
 	if(!usesPerkRules(rules))
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
-		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion", "perkOfferNormalization"});
+		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion", "perkOfferNormalization", "perkProgressionPolicyVersion"});
 	require(integer(rules["schemaVersion"], PERK_SCHEMA_VERSION, PERK_SCHEMA_VERSION), "schemaVersion");
 	require(integer(rules["rulesetVersion"], PERK_MIN_RULESET_VERSION, PERK_RULESET_VERSION), "rulesetVersion");
 	if(rules.Struct().contains("offerWeightPolicyVersion"))
@@ -175,6 +175,13 @@ void validatePerkRules(const JsonNode & rules)
 	}
 	else
 		require(!rules.Struct().contains("perkOfferNormalization"), "normalization requires policy2");
+	if(rules.Struct().contains("perkProgressionPolicyVersion"))
+	{
+		require(rules["perkProgressionPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& rules["perkProgressionPolicyVersion"].Integer() == PERK_PROGRESSION_POLICY_VERSION,
+			"perkProgressionPolicyVersion");
+		require(usesR2PerkOffers(rules), "strict perk progression requires captured weight policy2");
+	}
 	require(rules["sourceDocument"].isString() && !rules["sourceDocument"].String().empty(), "sourceDocument");
 	require(rules["sourceSha256"].isString() && rules["sourceSha256"].String().size() == 64, "sourceSha256");
 	for(const auto c : rules["sourceSha256"].String())
@@ -237,8 +244,21 @@ bool usesR2PerkOffers(const JsonNode & rules)
 		&& rules["offerWeightPolicyVersion"].Integer() == 2;
 }
 
-void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported)
+bool usesStrictPerkProgression(const JsonNode & rules)
 {
+	return usesPerkRules(rules)
+		&& rules["perkProgressionPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& rules["perkProgressionPolicyVersion"].Integer() == PERK_PROGRESSION_POLICY_VERSION;
+}
+
+void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported, bool strictSupported)
+{
+	if(rules.isStruct() && rules.Struct().contains("perkProgressionPolicyVersion"))
+	{
+		validatePerkRules(rules);
+		if(!strictSupported)
+			throw std::runtime_error("Cannot serialize strict perk progression to an older format");
+	}
 	if(usesWeightedPerkOffers(rules) && !supported)
 		throw std::runtime_error("Cannot serialize weighted perk offers to an older format");
 	if(usesR2PerkOffers(rules) && !r2Supported)

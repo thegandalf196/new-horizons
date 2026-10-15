@@ -119,7 +119,11 @@ Accordingly:
 
 This creates a deliberate rhythm of **learn → specialize → advance → specialize** . Increasing a Skill's rank therefore requires some investment in the Skill's perk structure rather than allowing a hero to rush directly from Basic to Expert while ignoring its perks.
 
-Each Skill has exactly one perk slot at each tier: one Basic perk, one Advanced perk, and one Expert perk. A hero cannot spend multiple perk slots in the same tier. Normal progression therefore follows Basic Skill -> one Basic perk -> Advanced Skill -> one Advanced perk -> Expert Skill -> one Expert perk. Exceptional rank advancement may bypass the Skill-rank step, but it never bypasses this perk order: missing perk tiers must still be filled Basic, then Advanced, then Expert.
+Each Skill has three perk tiers: Basic, Advanced, and Expert. A hero may acquire exactly one perk from each tier. Once a perk has been selected from a tier, the remaining perks of that tier become unavailable to that hero. Skill-rank advancement and perk-tier advancement normally alternate. Exceptional Skill-rank advancement does not bypass the required perk-tier order.
+
+“Exactly one” describes a fully developed Skill: partially developed Skills may have zero, one, or two perks. The ten-perk pool contains alternatives, not ten eventual acquisitions. A hero cannot select the same perk twice or acquire a second perk from an occupied tier. A fully developed Skill therefore has one Basic, one Advanced, and one Expert perk.
+
+Only learned Skills with a legal next perk tier enter the perk-parent lottery. Two eligible parents supply distinct parents sampled without replacement; when only one eligible parent remains, offer one perk from that parent, not two alternatives. Choose the individual perk uniformly from that parent's legal next-tier alternatives. A Basic Skill with its Basic perk has no eligible perk until Advanced rank; an Advanced Skill with its Advanced perk waits for Expert rank. An exceptionally granted Expert Skill without perks must still acquire Basic, Advanced, and Expert perks in order.
 
 ###### **Exceptional Skill advancement**
 
@@ -3883,7 +3887,11 @@ New Horizons uses per-class relative Skill weights rather than fixed displayed p
 
 eligible pool. The weight is not itself a percentage. Primary Attributes constrain the class's overall Might/Magic tendency, while faction and class identity determine how that tendency is distributed among individual Skills.
 
-For an eligible Skill s: P(s) = weight(s) / sum(weights of all currently eligible Skills). If two Skill choices are offered at the same level-up, draw without replacement. A weight of 0 means the Skill cannot appear through ordinary level-up for that class. Class restrictions, faction restrictions, already-maxed Skills, and other legality checks are applied before the draw. Perk offers use their own eligibility rules and do not use this table.
+For an eligible Skill s: P(s) = weight(s) / sum(weights of all currently eligible Skills). If two Skill choices are offered at the same level-up, draw without replacement. A weight of 0 means the Skill cannot appear through ordinary level-up for that class. Class restrictions, faction restrictions, already-maxed Skills, and other legality checks are applied before the draw. Perk offers reuse these class weights through the separate compressed parent-weight transformation below, not the ordinary Skill lottery.
+
+For perk-parent weights, take the smallest and largest strictly positive weights, w_min and w_max, from the complete class distribution, including unlearned, Expert and perk-exhausted Skills. With configurable maximum preference ratio R = 2.0, set gamma = ln(R) / ln(w_max / w_min) and W(w) = (w / w_min)^gamma. Uniform positive distributions or R = 1 give every parent weight 1. A legitimately learned zero-weight Skill receives weight 1 without changing ordinary acquisition or class/faction restrictions. R must be finite and at least 1.
+
+Filter illegal parents before sampling and renormalize over the remaining weights. Eligibility changes the probability denominator, not the reference bounds or relative transformed weights. The number of eligible perks within a parent does not increase its parent weight. Ordinary Skill weights, perk-tier eligibility, and the mathematical preference ratio are separate rules; this transformation changes neither the XP curve nor rank prerequisites.
 
 The authored class tables below are the authoritative relative Skill weights. The former formula derived from ten-point Primary growth and a fixed 50-point Might/Magic budget is retired; changing the current 20-point growth vectors does not silently recalculate these tables. Primary growth still informs class identity, but every weight change must be authored explicitly. Ordinary offers use the eligible weighted pool without a forced Wisdom or Magic School cadence. Strategic Skills remain independently weighted by class fantasy. The hero's own Faction Skill has weight 10; all other Faction Skills are ineligible. Command is ineligible for Magic classes and Wisdom is ineligible for Might classes.
 

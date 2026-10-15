@@ -128,10 +128,10 @@ public:
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
-	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false) const
+	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const
 	{
 		newHorizonsHeroes::validateWeightedPerkSerialization(
-			getAllOverrides()["heroes"]["newHorizonsPerks"], supported, r2Supported);
+			getAllOverrides()["heroes"]["newHorizonsPerks"], supported, r2Supported, strictSupported);
 	}
 
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const
@@ -261,7 +261,8 @@ public:
 			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
 			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(overrides["heroes"]["newHorizons"],
@@ -321,7 +322,8 @@ public:
 			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
 			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(overrides["heroes"]["newHorizons"],

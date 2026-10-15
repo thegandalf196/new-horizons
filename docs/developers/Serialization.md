@@ -1,5 +1,22 @@
 # Serialization
 
+## Strict perk-tier progression
+
+`NEW_HORIZONS_STRICT_PERK_PROGRESSION` (1118) protects captured
+`perkProgressionPolicyVersion: 1`. It permits one Basic, one Advanced and one
+Expert perk per Skill, in order. The marker is independent of weighting
+`offerWeightPolicyVersion: 2` and its configurable preference ratio; it does not
+change the class-weight table or XP curve.
+
+Missing progression markers preserve the world's historical rules, including
+previously legal duplicate tiers under weighting policy2 and pending offers.
+Do not inject current defaults into an old hero or remove its legal selections.
+Strict captures reject duplicate/gapped tiers instead of running the historical
+tier-conflict normalizer. Direct and enclosing unsupported writers/readers must
+reject strict rules, including settings/worlds without heroes, rather than drop
+the marker or silently reinterpret them. Historical marker-absent policy2 remains
+representable at its original 1117 boundary.
+
 ## Combat activation snapshot state
 
 `NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT` appends two existing combat receipts:

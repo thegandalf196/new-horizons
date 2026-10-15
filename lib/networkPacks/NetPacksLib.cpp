@@ -1106,10 +1106,10 @@ void LobbyStartGame::validateNewHorizonsLighthouseSerialization(bool supported) 
 }
 
 
-void LobbyStartGame::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported) const
+void LobbyStartGame::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported) const
 {
 	if(initializedGameState)
-		initializedGameState->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported);
+		initializedGameState->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported, strictSupported);
 }
 
 

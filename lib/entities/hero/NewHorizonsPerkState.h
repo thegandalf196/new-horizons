@@ -82,6 +82,8 @@ public:
 	/// Whether ordinary advancement from currentRank to currentRank + 1 is unlocked.
 	/// Exceptional external rank grants intentionally bypass this check.
 	bool canAdvanceSkillNormally(std::string_view skillId, int currentRank) const;
+	/// Shared captured-policy admission; exceptional Skill ranks do not skip perk tiers.
+	bool canAcquirePerk(const std::string & skillId, const std::string & perkId, int currentRank) const;
 	void validate() const;
 	void select(const std::string & skillId, const std::string & perkId, int currentRank);
 	/// Weight lookup reads captured hero rules. Old captured policy ignores it.
@@ -130,12 +132,14 @@ public:
 		if(h.saving)
 			validateWeightedPerkSerialization(capturedRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
 		h & rules;
 		if(!h.saving)
 			validateWeightedPerkSerialization(capturedRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
 		if(!h.saving)
 			validateCrisisCommandProfileSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		h & selected;

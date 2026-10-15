@@ -203,6 +203,7 @@ protected:
 class NewHorizonsPerkAITest : public TinyMapGameTest
 {
 protected:
+	bool historicalR2 = false;
 	void SetUp() override
 	{
 		TinyMapGameTest::SetUp();
@@ -215,8 +216,13 @@ protected:
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		if(historicalR2)
+		{
+			perks.Struct().erase("perkProgressionPolicyVersion");
+			perks.setOverrideFlag(true); // Capture absence; do not merge installed strict defaults back in.
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES, JsonNode());
 	}
 
@@ -243,6 +249,21 @@ protected:
 
 	std::tuple<int, bool, std::string> answerPerkQuery(CGameHandler & handler,
 		const CGHeroInstance * hero, const std::shared_ptr<CHeroLevelUpDialogQuery> & query);
+
+	void startHistoricalR2Game(HeroTypeID heroType)
+	{
+		historicalR2 = true; // Capture before initialization; never replace a live hero's rules.
+		RecordProperty("capturedProgression", "historical R2: strict progression marker absent");
+		startGame(heroType);
+		const auto * hero = findHeroByOwner(PlayerColor(1));
+		ASSERT_NE(hero, nullptr);
+		ASSERT_FALSE(hero->getPerkState().rules.Struct().contains("perkProgressionPolicyVersion"));
+		ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(hero->getPerkState().rules));
+		ASSERT_FALSE(newHorizonsHeroes::usesStrictPerkProgression(hero->getPerkState().rules));
+		ASSERT_FALSE(gameState()->getHeroPerkRules().Struct().contains("perkProgressionPolicyVersion"));
+		ASSERT_FALSE(gameState()->getMap().getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS)
+			.Struct().contains("perkProgressionPolicyVersion"));
+	}
 
 	void startGame(HeroTypeID heroType = HeroTypeID(0))
 	{
@@ -402,6 +423,7 @@ protected:
 		const auto & state = hero->getPerkState();
 		ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.rules));
 		auto expectedRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
 		expectedRules["perkOfferNormalization"]["maximumPreferenceRatio"].Float() = ratio;
 		ASSERT_EQ(state.rules, expectedRules);
 		const JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
@@ -901,7 +923,7 @@ TEST_F(NewHorizonsPerkAITest, computerPlayerChoosesPerkThroughAuthoritativeLevel
 
 TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillRank)
 {
-	startGame(HeroTypeID(16)); // Mephala, a Rampart Ranger.
+	startHistoricalR2Game(HeroTypeID(16)); // Retain this actual historical R2 mixed-offer control.
 	auto * hero = findHeroByOwner(PlayerColor(1));
 	ASSERT_NE(hero, nullptr);
 	const auto owner = hero->getOwner();
@@ -1017,7 +1039,7 @@ TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillR
 
 TEST_F(NewHorizonsPerkAITest, r2AIChoosesSafeFirstBasicPerkWithoutMatchingRankOffer)
 {
-	startGame(HeroTypeID(16));
+	startHistoricalR2Game(HeroTypeID(16));
 	auto * hero = findHeroByOwner(PlayerColor(1));
 	ASSERT_NE(hero, nullptr);
 	GameHandlerTestServer server(gameState(), hero->getOwner());
@@ -1058,7 +1080,7 @@ TEST_F(NewHorizonsPerkAITest, r2AIChoosesSafeFirstBasicPerkWithoutMatchingRankOf
 
 TEST_F(NewHorizonsPerkAITest, r2AITwoBasicSelectionsStillAcceptsAdvancedPerk)
 {
-	startGame(HeroTypeID(16));
+	startHistoricalR2Game(HeroTypeID(16));
 	auto * hero = findHeroByOwner(PlayerColor(1));
 	ASSERT_NE(hero, nullptr);
 	GameHandlerTestServer server(gameState(), hero->getOwner());
@@ -1102,7 +1124,7 @@ TEST_F(NewHorizonsPerkAITest, r2AITwoBasicSelectionsStillAcceptsAdvancedPerk)
 
 TEST_F(NewHorizonsPerkAITest, r2AIOnlyDuplicateTierOfferStillAnswersLegally)
 {
-	startGame(HeroTypeID(16));
+	startHistoricalR2Game(HeroTypeID(16));
 	auto * hero = findHeroByOwner(PlayerColor(1));
 	ASSERT_NE(hero, nullptr);
 	GameHandlerTestServer server(gameState(), hero->getOwner());
@@ -1135,6 +1157,116 @@ TEST_F(NewHorizonsPerkAITest, r2AIOnlyDuplicateTierOfferStillAnswersLegally)
 	EXPECT_EQ(state.selected.back(), query->hlu.perks.at(choice).selection);
 	EXPECT_EQ(hero->getSecSkillLevel(sylvan), MasteryLevel::BASIC);
 	EXPECT_FALSE(gh.queries->topQuery(hero->getOwner()));
+}
+
+TEST_F(NewHorizonsPerkAITest, strictAICompletesOnePerTierWithSingleParentOffersAndNormalRankQueries)
+{
+	startGame(HeroTypeID(16));
+	auto * hero = findHeroByOwner(PlayerColor(1));
+	ASSERT_NE(hero, nullptr);
+	GameHandlerTestServer server(gameState(), hero->getOwner());
+	CGameHandler handler(server, gameState());
+	ASSERT_NO_FATAL_FAILURE(isolatePerkDevelopment(handler, hero));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(hero->getPerkState().rules));
+	const std::string skillId = "new-horizons:sylvanLuck";
+	const SecondarySkill skill(SecondarySkill::decode(skillId));
+	handler.changeSecSkill(hero, skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	// A single eligible parent, not a forced offer. Keep every captured table key.
+	auto & growth = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
+	growth["skillOfferWeights"][skillId].Integer() = 10;
+	handler.randomizer->setSeed(17);
+	const auto & state = hero->getPerkState();
+	for(int step = 0; step < 5; ++step)
+	{
+		SCOPED_TRACE(step);
+		const bool perkStep = step % 2 == 0;
+		const auto selectedBefore = state.selected;
+		const auto levelBefore = hero->level;
+		hero->setExperience(LIBRARY->heroh->reqExp(levelBefore + 1), ChangeValueMode::ABSOLUTE);
+		handler.levelUpHero(hero);
+		const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(handler.queries->topQuery(hero->getOwner()));
+		ASSERT_NE(query, nullptr);
+		handler.onAdvInterfaceReady(hero->getOwner());
+		ASSERT_TRUE(query->prompted);
+		if(perkStep)
+		{
+			ASSERT_TRUE(query->hlu.skills.empty());
+			ASSERT_EQ(query->hlu.perks.size(), 1u);
+			EXPECT_EQ(query->hlu.perks.front().selection.skillId, skillId);
+			EXPECT_EQ(query->hlu.perks.front().requiredRank, step / 2 + 1);
+		}
+		else
+		{
+			ASSERT_TRUE(query->hlu.perks.empty());
+			ASSERT_EQ(query->hlu.skills, (std::vector<SecondarySkill>{skill}));
+		}
+		const auto [choice, accepted, error] = answerPerkQuery(handler, hero, query);
+		ASSERT_TRUE(accepted) << error;
+		EXPECT_EQ(choice, 0);
+		EXPECT_EQ(hero->level, levelBefore + 1);
+		EXPECT_FALSE(handler.queries->topQuery(hero->getOwner()));
+		if(perkStep)
+		{
+			ASSERT_EQ(state.selected.size(), selectedBefore.size() + 1);
+			EXPECT_EQ(state.selected.back(), query->hlu.perks.front().selection);
+		}
+		else
+		{
+			EXPECT_EQ(state.selected, selectedBefore);
+			EXPECT_EQ(hero->getSecSkillLevel(skill), step / 2 + 2);
+		}
+		ASSERT_NO_THROW(state.validate());
+	}
+	EXPECT_EQ(hero->getSecSkillLevel(skill), MasteryLevel::EXPERT);
+	ASSERT_EQ(state.selected.size(), 3u);
+	std::set<int> tiers;
+	for(const auto & selected : state.selected)
+	{
+		const auto definition = newHorizonsHeroes::perkDefinition(state.rules, skillId, selected.perkId);
+		ASSERT_TRUE(definition);
+		EXPECT_TRUE(tiers.insert(newHorizonsHeroes::perkRequiredRank(definition->requiredRank)).second);
+	}
+	EXPECT_EQ(tiers, (std::set<int>{1, 2, 3}));
+}
+
+TEST_F(NewHorizonsPerkAITest, strictAuthoritativeReplyRejectsStaleOccupiedTierWithoutRemovingQuery)
+{
+	startGame(HeroTypeID(16));
+	auto * hero = findHeroByOwner(PlayerColor(1));
+	ASSERT_NE(hero, nullptr);
+	GameHandlerTestServer server(gameState(), hero->getOwner());
+	CGameHandler handler(server, gameState());
+	ASSERT_NO_FATAL_FAILURE(isolatePerkDevelopment(handler, hero));
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
+	const std::string skillId = "new-horizons:sylvanLuck";
+	const SecondarySkill skill(SecondarySkill::decode(skillId));
+	handler.changeSecSkill(hero, skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	hero->setExperience(LIBRARY->heroh->reqExp(hero->level + 1), ChangeValueMode::ABSOLUTE);
+	handler.levelUpHero(hero);
+	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(handler.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(query, nullptr);
+	handler.onAdvInterfaceReady(hero->getOwner());
+	ASSERT_TRUE(query->hlu.skills.empty());
+	ASSERT_EQ(query->hlu.perks.size(), 1u);
+	const auto offered = query->hlu.perks.front().selection;
+	// Model another authoritative source granting a different Basic after prompt.
+	// The stale request must not acquire a second Basic, even though its index is valid.
+	const auto options = newHorizonsHeroes::perkOptions(state.rules, skillId);
+	const auto alternative = std::find_if(options.begin(), options.end(), [&](const auto & option)
+	{
+		return newHorizonsHeroes::perkRequiredRank(option.requiredRank) == 1
+			&& option.effect["status"].String() == "active" && option.id != offered.perkId;
+	});
+	ASSERT_NE(alternative, options.end());
+	state.select(skillId, alternative->id, 1);
+	const auto before = state.toJson();
+	EXPECT_FALSE(query->isValidReply(0));
+	EXPECT_FALSE(handler.queryReply(query->queryID, 0, hero->getOwner()));
+	EXPECT_EQ(handler.queries->topQuery(hero->getOwner()), query);
+	EXPECT_EQ(state.toJson(), before);
+	EXPECT_FALSE(state.hasSelection(skillId, offered.perkId));
+	ASSERT_NO_THROW(state.validate());
 }
 
 TEST_F(NewHorizonsPerkAIJourneyTest, SolmyrRatioOneSeed17LevelsOneThroughTwenty)

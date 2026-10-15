@@ -362,6 +362,7 @@ protected:
 			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
 			perks["offerWeightPolicyVersion"].Integer() = 1;
 			perks.Struct().erase("perkOfferNormalization");
+			perks.Struct().erase("perkProgressionPolicyVersion");
 			perks.setOverrideFlag(true);
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		}
@@ -440,6 +441,7 @@ protected:
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 		perks.Struct().erase("offerWeightPolicyVersion");
 		perks.Struct().erase("perkOfferNormalization");
+		perks.Struct().erase("perkProgressionPolicyVersion");
 		perks.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		if(!captureHighLore())
