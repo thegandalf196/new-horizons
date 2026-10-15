@@ -1621,7 +1621,8 @@ SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection(
 	for(const auto & eligible : eligibleStacks)
 	{
 		const auto * unit = callback->battleGetUnitByID(static_cast<uint32_t>(eligible.unitId));
-		if(!unit || !unit->alive() || unit->unitSide() != spellMechanics->getCasterSide())
+		// Shared eligibility already resolves effective allegiance (including Hypnotize).
+		if(!unit || !unit->alive())
 			continue;
 
 		float physicalPoisonValue = 0.0f;
@@ -1668,6 +1669,15 @@ SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection(
 
 			const auto bonuses = newHorizonsPurify::spellEffectGroupBonuses(unit, effectSpell);
 			if(bonuses.empty())
+				continue;
+			// Cleansing the transfer itself would return this recruited enemy to
+			// its original hostile side. Do not score that group as a benefit.
+			// Inspect actual bonuses, not a particular spell's authored identity.
+			if(unit->unitSide() != spellMechanics->getCasterSide()
+				&& std::ranges::any_of(bonuses, [](const Bonus & bonus)
+				{
+					return bonus.type == BonusType::HYPNOTIZED;
+				}))
 				continue;
 
 			int remainingRounds = 0;
