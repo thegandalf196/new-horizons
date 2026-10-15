@@ -35,6 +35,7 @@ newHorizonsHeroes::PerkState makeState()
 	// Existing cases explicitly exercise captured policy1 semantics.
 	result.rules["offerWeightPolicyVersion"].Integer() = 1;
 	result.rules.Struct().erase("perkOfferNormalization");
+	result.rules.Struct().erase("perkProgressionPolicyVersion");
 	return result;
 }
 
@@ -42,6 +43,7 @@ newHorizonsHeroes::PerkState makeR2State()
 {
 	newHorizonsHeroes::PerkState result;
 	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	result.rules.Struct().erase("perkProgressionPolicyVersion"); // Captured historical R2.
 	return result;
 }
 
@@ -230,6 +232,49 @@ TEST(NewHorizonsPerkAvailability, R2SameTierAlternativesRemainAvailableUntilCap)
 	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(
 		state, SKILL, 3, definition(state, EXPERT)).reason,
 		newHorizonsPerkAvailability::Reason::PER_SKILL_CAP);
+}
+
+TEST(NewHorizonsPerkAvailability, StrictCurrentOccupiedTierMatchesAuthoritativeAcquisitionPredicate)
+{
+	newHorizonsHeroes::PerkState state;
+	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
+	state.select(std::string(SKILL), std::string(BASIC), 1);
+	const auto before = state.toJson();
+	EXPECT_FALSE(state.canAcquirePerk(std::string(SKILL), std::string(BASIC_ALTERNATIVE), 3));
+	const auto occupied = newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, BASIC_ALTERNATIVE));
+	EXPECT_EQ(occupied.status, newHorizonsPerkAvailability::Status::LOCKED);
+	EXPECT_EQ(occupied.reason, newHorizonsPerkAvailability::Reason::TIER_OCCUPIED);
+	EXPECT_TRUE(state.canAcquirePerk(std::string(SKILL), std::string(ADVANCED), 3));
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, ADVANCED)).status, newHorizonsPerkAvailability::Status::AVAILABLE);
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, EXPERT)).reason, newHorizonsPerkAvailability::Reason::EARLIER_TIER_MISSING);
+	EXPECT_EQ(state.toJson(), before);
+}
+
+TEST(NewHorizonsPerkAvailability, StrictExceptionalExpertSlotsFollowBasicAdvancedExpertWithoutRepeatedTier)
+{
+	newHorizonsHeroes::PerkState state;
+	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
+	const std::array<std::string_view, 3> selected = {BASIC, ADVANCED, EXPERT};
+	for(size_t index = 0; index < selected.size(); ++index)
+	{
+		ASSERT_TRUE(state.canAcquirePerk(std::string(SKILL), std::string(selected[index]), 3));
+		state.select(std::string(SKILL), std::string(selected[index]), 3);
+		const auto slot = newHorizonsPerkAvailability::evaluateTier(state, SKILL, 3, index + 1);
+		ASSERT_TRUE(slot.selectedPerk);
+		EXPECT_EQ(slot.selectedPerk->id, selected[index]);
+		EXPECT_EQ(slot.requiredRank, index + 1);
+		EXPECT_EQ(slot.status, newHorizonsPerkAvailability::Status::ACQUIRED);
+	}
+	const auto capped = newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, ADVANCED_ALTERNATIVE));
+	EXPECT_EQ(capped.status, newHorizonsPerkAvailability::Status::LOCKED);
+	EXPECT_EQ(capped.reason, newHorizonsPerkAvailability::Reason::PER_SKILL_CAP);
+	EXPECT_FALSE(state.canAcquirePerk(std::string(SKILL), std::string(ADVANCED_ALTERNATIVE), 3));
 }
 
 TEST(NewHorizonsPerkAvailability, R2SlotsDisplayAllSelectionsIncludingRepeatedTier)

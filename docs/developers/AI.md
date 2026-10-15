@@ -91,20 +91,28 @@ Adventure AI responsible for moving heroes on map, gathering things, developing 
 
 ### R2 perk development
 
-Under captured perk policy2, Nullkiller first prefers offered perks that do not
+For new strict progression, Nullkiller checks offered perks through the shared
+`canAcquirePerk` rule and retains its faction, tactical and value preferences.
+An occupied tier cannot supply another legal choice, so no capacity-reservation
+heuristic runs for these worlds. Weight policy2 and preference ratio `R = 2.0`
+control parent probabilities, not tier legality.
+
+Only historical captured policy2 without the strict progression marker first
+prefers offered perks that do not
 increase the shortage of slots needed for the parent's remaining active tiers.
 The calculation uses the hero's saved registry, selected tiers and per-Skill cap;
 it does not change eligibility, class weights or offer generation. Existing
 faction/value preferences then rank the capacity-preserving candidates. If only
 capacity-consuming perks compete with a Skill choice, the existing Skill
-evaluator decides. Historical perk policies retain their previous preferences.
+evaluator decides. Other historical perk policies retain their previous preferences.
 
 If no Skill or capacity-preserving perk is offered, the AI still selects a legal
 offered perk. This is a preference, not a guarantee of reaching every tier:
 forced offers, class restrictions and earlier investments can prevent that.
 Faction-path fixtures must isolate both learned Skills and authored starting
-perks while retaining the captured rules. Current mixed-offer tests must not
-assume that selecting a Basic perk removes all other Basic choices.
+perks while retaining the captured rules. Historical duplicate-tier tests must
+explicitly capture that old policy; current strict tests must reject a second
+Basic, Advanced or Expert choice for the same Skill.
 
 With Nullkiller2 enabled, run
 `vcmitest --gtest_filter='NewHorizonsPerkAIJourneyTest.*' --gtest_output=xml:journeys.xml`

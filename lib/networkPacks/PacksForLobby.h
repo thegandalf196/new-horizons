@@ -159,7 +159,7 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
-	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false) const;
+	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported) const;
 	void validateNewHorizonsBottomlessMindSerialization(bool supported) const;
@@ -204,7 +204,8 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 			validateNewHorizonsLighthouseSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 		if(h.saving)
 			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
 		if(h.saving)
 			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)

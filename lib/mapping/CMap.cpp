@@ -1319,16 +1319,16 @@ void CMap::validateNewHorizonsLighthouseSerialization(bool supported) const
 }
 
 
-void CMap::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported) const
+void CMap::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported) const
 {
 	if(gameSettings)
-		gameSettings->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported);
+		gameSettings->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported, strictSupported);
 	for(const auto & object : objects)
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported);
+			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported, strictSupported);
 	for(const auto & hero : heroesPool)
 		if(hero)
-			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported);
+			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported, strictSupported);
 }
 
 

@@ -177,6 +177,7 @@ protected:
 			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
 			perks.Struct().erase("offerWeightPolicyVersion");
 			perks.Struct().erase("perkOfferNormalization");
+			perks.Struct().erase("perkProgressionPolicyVersion");
 			for(auto & perk : perks["skills"]["new-horizons:command"]["perks"].Vector())
 				if(perk["id"].String() == "new-horizons:command.crisisCommand")
 					perk["effect"]["status"].String() = "planned";
@@ -1316,7 +1317,7 @@ TEST_F(NewHorizonsStartingPerkOverlapTest, ConflictingDifferentBasicPerkStillRej
 	}
 	catch(const std::runtime_error & error)
 	{
-		EXPECT_STREQ(error.what(), "New Horizons perk tier already occupied for skill");
+		EXPECT_STREQ(error.what(), "Unavailable strict New Horizons perk selection");
 	}
 }
 }

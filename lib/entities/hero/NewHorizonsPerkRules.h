@@ -26,6 +26,7 @@ constexpr int PERK_MIN_RULESET_VERSION = 1;
 constexpr int PERK_RULESET_VERSION = 2;
 constexpr int PERK_SCHEMA_VERSION = 1;
 constexpr int PERK_OFFER_WEIGHT_POLICY_VERSION = 2;
+constexpr int PERK_PROGRESSION_POLICY_VERSION = 1;
 constexpr double PERK_DEFAULT_MAXIMUM_PREFERENCE_RATIO = 2.0;
 constexpr int PERK_OFFER_NORMALIZATION_MATH_VERSION = 1;
 constexpr unsigned PERK_OFFER_WEIGHT_FRACTION_BITS = 32;
@@ -92,9 +93,12 @@ DLL_LINKAGE void validatePerkRules(const JsonNode & rules);
 /// Only the explicit captured marker opts into weighted perk selection.
 /// Old registries remain legacy; a present malformed marker is rejected.
 DLL_LINKAGE bool usesWeightedPerkOffers(const JsonNode & rules);
-/// Policy2 also permits additional same-tier choices within the three-per-Skill cap.
+/// Parent-first normalized weighting; progression is independently captured.
 DLL_LINKAGE bool usesR2PerkOffers(const JsonNode & rules);
-DLL_LINKAGE void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported = false);
+/// Absence preserves historical progression, including policy2 same-tier choices.
+DLL_LINKAGE bool usesStrictPerkProgression(const JsonNode & rules);
+DLL_LINKAGE void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported = false,
+	bool strictSupported = false);
 /// Fresh-world paired admission only; historical resolved snapshots are not
 /// retrofitted with a table or rejected for their intentionally absent marker.
 DLL_LINKAGE void validateWeightedPerkCapture(const JsonNode & development, const JsonNode & perks);

@@ -30,13 +30,23 @@ This is a quantized distribution, not a claim of exact real arithmetic or of
 unperformed cross-platform certification. Keep the transaction-local normalized
 row reusable when a pending query is reopened, but reevaluate eligibility live.
 
-Parent selection and uniform perk selection are separate. Two eligible parents
-produce distinct parents; one parent may produce two distinct perks. Zero-weight
-learned exceptions receive the minimum perk weight without changing acquisition
-rules. Captured policy1 and absent-policy worlds keep their historical behavior.
-Same-tier selections under policy2 still consume the three-total cap, and every
-selected perk must remain visible in the hero screen. Test offer realization,
-captured context, query reuse, selection validation and serialization together.
+Parent selection and uniform perk selection are separate. New games also capture
+`perkProgressionPolicyVersion: 1`: one selected perk per Basic/Advanced/Expert
+tier, in that order, with ordinary rank advancement alternating with perks.
+Exceptional rank grants do not grant or skip perk tiers. Two eligible parents
+produce distinct parents; a sole eligible parent supplies only one offer. Filter
+exhausted or rank-blocked parents before sampling. Reuse `canAcquirePerk` for
+authoritative offers, selection and consumer legality rather than UI/AI rules.
+
+The progression marker is separate from weighting policy2 and the mathematical
+ratio `R`. Marker absence preserves historical policy2 duplicate-tier selections,
+its two-distinct-perk sole-parent fallback, and its existing captured queries.
+Policy1 and absent-weighting-policy worlds retain their earlier behavior.
+Never add the strict marker to an old world or normalize an invalid strict save
+by dropping selections. `NEW_HORIZONS_STRICT_PERK_PROGRESSION` (1118) protects
+strict captures; older formats must refuse them rather than omit the rule.
+Zero-weight learned exceptions retain minimum parent weight and all existing
+acquisition restrictions. Test offers, query replies and serialization together.
 
 Principal consumers are entity handlers/bonus rules in `lib/`, validated
 execution in `server/`, detached projections and target valuation in

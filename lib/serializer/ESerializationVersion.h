@@ -262,13 +262,17 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_MASTER_SPELLWARD,
 	NEW_HORIZONS_R2_PERK_OFFERS, // captured parent-first normalization and same-tier selection policy
+	NEW_HORIZONS_STRICT_PERK_PROGRESSION, // independently captured next-tier and distinct offered-parent policy
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_R2_PERK_OFFERS,
+	CURRENT = NEW_HORIZONS_STRICT_PERK_PROGRESSION,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_STRICT_PERK_PROGRESSION
+	> ESerializationVersion::NEW_HORIZONS_R2_PERK_OFFERS, "Strict perk progression must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION > ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES,
 	"Individual hero specialties must remain append-only");

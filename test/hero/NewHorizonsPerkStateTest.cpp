@@ -22,6 +22,7 @@ newHorizonsHeroes::PerkState state()
 	// Weighted-policy fixtures explicitly opt back into version1 below.
 	result.rules.Struct().erase("offerWeightPolicyVersion");
 	result.rules.Struct().erase("perkOfferNormalization");
+	result.rules.Struct().erase("perkProgressionPolicyVersion");
 	return result;
 }
 
@@ -966,6 +967,8 @@ namespace
 newHorizonsHeroes::PerkState r2State(double ratio = 2.0)
 {
 	auto result = weightedOfferState();
+	// Explicit historical R2 capture: keep normalized weights and repeated tiers.
+	result.rules.Struct().erase("perkProgressionPolicyVersion");
 	result.rules["offerWeightPolicyVersion"].Integer() = 2;
 	result.rules["perkOfferNormalization"]["maximumPreferenceRatio"].Float() = ratio;
 	result.rules["perkOfferNormalization"]["mathVersion"].Integer() = 1;
@@ -998,6 +1001,128 @@ TEST(NewHorizonsPerkState, R2DrawsDistinctParentsInsteadOfWeightingEachPerk)
 		EXPECT_NE(offer[0].selection.skillId, offer[1].selection.skillId);
 		EXPECT_EQ(offer, saved.prepareOffer(weightedOfferRank, seed, context));
 	}
+}
+
+TEST(NewHorizonsPerkState, StrictCurrentProgressionUsesSixAlternatingRankAndPerkSteps)
+{
+	newHorizonsHeroes::PerkState saved;
+	saved.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(saved.rules));
+	const auto options = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
+	int rank = 0;
+	const auto ranks = [&](const std::string & id) { return id == SKILL ? rank : 0; };
+	const auto context = r2Weights(saved);
+	for(int tier = 1; tier <= 3; ++tier)
+	{
+		SCOPED_TRACE(tier);
+		ASSERT_TRUE(saved.canAdvanceSkillNormally(SKILL, rank));
+		++rank; // The rank half of the normal six-step progression.
+		EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, rank));
+		const auto offer = saved.prepareOffer(ranks, tier, context);
+		ASSERT_EQ(offer.size(), 1u); // Sole eligible parent never duplicates a card.
+		EXPECT_EQ(offer.front().requiredRank, tier);
+		ASSERT_TRUE(saved.canAcquirePerk(SKILL, offer.front().selection.perkId, rank));
+		saved.acceptOffer(offer, 0, ranks, tier, context);
+		ASSERT_EQ(saved.selected.size(), static_cast<size_t>(tier));
+		for(const auto & option : options)
+		{
+			if(newHorizonsHeroes::perkRequiredRank(option.requiredRank) != tier)
+				continue;
+			EXPECT_FALSE(saved.canAcquirePerk(SKILL, option.id, rank));
+			EXPECT_THROW(saved.select(SKILL, option.id, rank), std::runtime_error);
+		}
+	}
+	EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, 3));
+	EXPECT_TRUE(saved.prepareOffer(ranks, 9, context).empty());
+	EXPECT_EQ(newHorizonsHeroes::PerkState::fromJson(saved.toJson()).selected, saved.selected);
+}
+
+TEST(NewHorizonsPerkState, StrictExceptionalExpertStillRequiresBasicThenAdvancedThenExpert)
+{
+	newHorizonsHeroes::PerkState saved;
+	saved.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(saved.rules));
+	const auto expert = [](const std::string & id) { return id == SKILL ? 3 : 0; };
+	const auto context = r2Weights(saved);
+	const auto options = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
+	EXPECT_THROW(saved.select(SKILL, options.at(4).id, 3), std::runtime_error);
+	EXPECT_THROW(saved.select(SKILL, options.at(8).id, 3), std::runtime_error);
+	for(int tier = 1; tier <= 3; ++tier)
+	{
+		const auto offer = saved.prepareOffer(expert, tier + 10, context);
+		ASSERT_EQ(offer.size(), 1u);
+		EXPECT_EQ(offer.front().requiredRank, tier);
+		saved.acceptOffer(offer, 0, expert, tier + 10, context);
+	}
+	EXPECT_EQ(saved.selected.size(), 3u);
+	EXPECT_TRUE(saved.prepareOffer(expert, 20, context).empty());
+}
+
+TEST(NewHorizonsPerkState, StrictCaptureRejectsHistoricalDuplicateOrGappedPrefixesWithoutNormalization)
+{
+	auto historical = r2State();
+	historical.select("new-horizons:luck", "new-horizons:luck.opportunist", 1);
+	historical.select("new-horizons:luck", "new-horizons:luck.secondChance", 1);
+	const auto oldJson = historical.toJson();
+	EXPECT_EQ(newHorizonsHeroes::PerkState::fromJson(oldJson).selected, historical.selected);
+	auto forged = oldJson;
+	forged["rules"]["perkProgressionPolicyVersion"].Integer() = 1;
+	EXPECT_THROW(newHorizonsHeroes::PerkState::fromJson(forged), std::runtime_error);
+	EXPECT_EQ(historical.toJson(), oldJson);
+
+	newHorizonsHeroes::PerkState strict;
+	strict.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	const auto options = newHorizonsHeroes::perkOptions(strict.rules, SKILL);
+	strict.selected.push_back({SKILL, options.at(4).id}); // Forged Advanced without Basic.
+	EXPECT_THROW(strict.validate(), std::runtime_error);
+	strict.selected = {{SKILL, options.at(0).id}, {SKILL, options.at(8).id}};
+	EXPECT_THROW(strict.validate(), std::runtime_error); // Expert without Advanced.
+}
+
+TEST(NewHorizonsPerkState, StrictEligibilityDoesNotRebaseFullClassRelativeParentWeights)
+{
+	newHorizonsHeroes::PerkState saved;
+	saved.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(saved.rules));
+	const auto context = r2Weights(saved, 1, 10);
+	const auto before = saved.quantizedParentWeights(context);
+	const auto both = saved.prepareOffer(weightedOfferRank, 17, context);
+	ASSERT_EQ(both.size(), 2u);
+	EXPECT_NE(both.front().selection.skillId, both.back().selection.skillId);
+	saved.select("new-horizons:luck", "new-horizons:luck.opportunist", 1);
+	const auto remaining = saved.prepareOffer(weightedOfferRank, 17, context);
+	ASSERT_EQ(remaining.size(), 1u);
+	EXPECT_EQ(remaining.front().selection.skillId, "new-horizons:discipline");
+	EXPECT_EQ(saved.quantizedParentWeights(context), before);
+	const auto luckAdvanced = [](const std::string & id)
+	{
+		return id == "new-horizons:luck" ? 2 : id == "new-horizons:discipline" ? 1 : 0;
+	};
+	const auto reopened = saved.prepareOffer(luckAdvanced, 17, context);
+	ASSERT_EQ(reopened.size(), 2u);
+	for(const auto & candidate : reopened)
+		EXPECT_EQ(candidate.requiredRank, candidate.selection.skillId == "new-horizons:luck" ? 2 : 1);
+	EXPECT_EQ(saved.quantizedParentWeights(context), before);
+}
+
+TEST(NewHorizonsPerkState, Strict1117WriterRefusesBeforePrefixWhileHistoricalR2RoundTrips)
+{
+	newHorizonsHeroes::PerkState strict;
+	strict.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	CMemorySerializer refused;
+	refused.oser.version = ESerializationVersion::NEW_HORIZONS_R2_PERK_OFFERS;
+	EXPECT_THROW(refused.oser & strict, std::runtime_error);
+	EXPECT_TRUE(refused.extractBuffer().empty());
+	auto historical = r2State();
+	historical.select("new-horizons:luck", "new-horizons:luck.opportunist", 1);
+	historical.select("new-horizons:luck", "new-horizons:luck.secondChance", 1);
+	CMemorySerializer wire;
+	wire.oser.version = wire.iser.version = ESerializationVersion::NEW_HORIZONS_R2_PERK_OFFERS;
+	ASSERT_NO_THROW(wire.oser & historical);
+	newHorizonsHeroes::PerkState restored;
+	ASSERT_NO_THROW(wire.iser & restored);
+	EXPECT_EQ(restored.rules, historical.rules);
+	EXPECT_EQ(restored.selected, historical.selected);
 }
 
 TEST(NewHorizonsPerkState, R2LearnedZeroParentHasOneQuantumAndSoleParentHasTwoUniformChoices)

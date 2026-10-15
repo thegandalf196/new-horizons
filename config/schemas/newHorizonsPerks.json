@@ -4,6 +4,12 @@
 	"description": "Canonical data-only registry for the 31 New Horizons Skills and their ten-perk pools. Effect status is explicit: planned effects are source design records and must not be treated as active runtime behavior.",
 	"type": "object",
 	"additionalProperties": false,
+	"dependencies": {
+		"perkProgressionPolicyVersion": {
+			"properties": {"offerWeightPolicyVersion": {"enum": [2]}},
+			"dependencies": {"perkProgressionPolicyVersion": ["offerWeightPolicyVersion", "perkOfferNormalization"]}
+		}
+	},
 	"required": [
 		"schemaVersion",
 		"rulesetVersion",
@@ -17,7 +23,8 @@
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [1, 2]},
-		"offerWeightPolicyVersion": {"type": "integer", "enum": [1, 2], "description": "Captured policy:1 full per-perk raw weights;2 normalized parent-first offers and additional same-tier selections. Absence retains legacy."},
+		"offerWeightPolicyVersion": {"type": "integer", "enum": [1, 2], "description": "Captured weighting:1 full per-perk raw weights;2 normalized parent-first offers. Without an independent progression marker,2 retains historical same-tier selections."},
+		"perkProgressionPolicyVersion": {"type": "integer", "enum": [1], "not": {"type": "null"}, "description": "Captured1 requires weight policy2 and permits only the next missing perk tier, one perk per tier and one offered alternative per parent. Absence preserves historical progression."},
 		"perkOfferNormalization": {
 			"type": "object", "not": {"type": "null"}, "additionalProperties": false,
 			"minProperties": 2, "maxProperties": 2,
