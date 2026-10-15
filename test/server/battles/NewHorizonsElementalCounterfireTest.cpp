@@ -15,7 +15,10 @@
 
 #ifdef ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/AttackPossibility.h"
+#include "../../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../include/vcmi/Environment.h"
 #endif
 
@@ -262,5 +265,130 @@ TEST_F(NewHorizonsElementalCounterfireTest, DetachedOrdinaryElementalForecastInc
 	EXPECT_EQ(responder->shots.available(), liveAmmo - 1);
 	EXPECT_EQ(responder->archeryCounterfireRound, battle()->battleGetRound());
 	EXPECT_EQ(source->getAvailableHealth(), liveHealth);
+}
+
+class NewHorizonsCrossfireReplayTest : public NewHorizonsElementalCounterfireTest
+{
+protected:
+	void checkReplay(const char * creature, bool elemental)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepare(creature));
+		const SecondarySkill archery(SecondarySkill::decode(std::string(newHorizonsArchery::SKILL)));
+		defenderSideHero->setSecSkillLevel(archery, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		defenderSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL),
+			std::string(newHorizonsArchery::CROSSFIRE)});
+		ASSERT_TRUE(newHorizonsArchery::hasCrossfire(defenderSideHero));
+		auto * followup = addStack(BattleSide::DEFENDER, creatureByName("core:titan"), BattleHex(12, 7), 100);
+		forceMaximumDamage(followup);
+		ASSERT_TRUE(newHorizonsArchery::isOrdinaryPhysicalShooter(responder));
+		ASSERT_TRUE(newHorizonsArchery::isOrdinaryPhysicalShooter(followup));
+		const BattleAttackInfo reaction(responder, shooter, 0, true);
+		ASSERT_TRUE(reaction.physicalDamage);
+		ASSERT_TRUE(battle()->battleCanShoot(followup, shooter->getPosition()));
+		// Materialize the ordinary round-long retaliation latch before comparing
+		// live state. Its first getter call is intentionally not bitwise const.
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+		{
+			const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
+			ASSERT_NE(state, nullptr);
+			(void)state->counterAttacks.total();
+		}
+		const auto liveSource = shooter->acquireState()->save();
+		const auto liveResponder = responder->acquireState()->save();
+		const auto liveFollowup = followup->acquireState()->save();
+		const auto rng = [this]
+		{
+			CMemorySerializer wire;
+			wire.oser & *gameHandler->randomizer;
+			return wire.extractBuffer();
+		};
+		const auto rngBefore = rng();
+		CounterfireEnvironment environment(gameState());
+		const auto callback = std::shared_ptr<CBattleInfoCallback>(battle(), [](CBattleInfoCallback *) {});
+		auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			(void)parent->getForUpdate(unit->unitId())->counterAttacks.total();
+		const auto parentSource = parent->getForUpdate(shooter->unitId())->save();
+		const auto parentResponder = parent->getForUpdate(responder->unitId())->save();
+		const auto parentFollowup = parent->getForUpdate(followup->unitId())->save();
+		auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+		DamageCache cache;
+		cache.buildDamageCache(parent, BattleSide::ATTACKER);
+		BattleAttackInfo incoming(parent->battleGetUnitByID(shooter->unitId()),
+			parent->battleGetUnitByID(responder->unitId()), 0, true);
+		ASSERT_EQ(incoming.physicalDamage, !elemental);
+		const auto preview = AttackPossibility::evaluate(incoming, shooter->getPosition(), cache, parent);
+		ASSERT_NE(preview.attackerState, nullptr);
+		ASSERT_LT(preview.attackerState->getAvailableHealth(), shooter->getAvailableHealth());
+		ASSERT_TRUE(preview.attackerState->alive());
+		const auto round = battle()->battleGetRound();
+		const auto response = std::ranges::find_if(preview.affectedUnits, [this](const auto & unit)
+			{ return unit->unitId() == responder->unitId(); });
+		ASSERT_NE(response, preview.affectedUnits.end());
+		EXPECT_EQ((*response)->archeryCounterfireRound, round);
+		EXPECT_TRUE(preview.attackerState->archeryCrossfireAvailable(BattleSide::DEFENDER,
+			followup->unitId(), round));
+		EXPECT_FALSE(preview.attackerState->archeryCrossfireAvailable(BattleSide::DEFENDER,
+			responder->unitId(), round));
+
+		// Exercise the selected-AttackPossibility replay, not a manual updateUnit
+		// of its serialized snapshots, which bypasses this integration boundary.
+		auto replay = std::make_shared<HypotheticBattle>(&environment, parent);
+		BattleExchangeVariant exchange;
+		exchange.trackAttack(preview, replay, cache);
+		const auto replaySource = replay->getForUpdate(shooter->unitId());
+		const auto replayResponder = replay->getForUpdate(responder->unitId());
+		EXPECT_EQ(replayResponder->archeryCounterfireRound, round);
+		EXPECT_EQ(replaySource->archeryCrossfireRound, preview.attackerState->archeryCrossfireRound);
+		EXPECT_EQ(replaySource->archeryCrossfireAttackers, preview.attackerState->archeryCrossfireAttackers);
+		EXPECT_EQ(replaySource->archeryCrossfireDefenders, preview.attackerState->archeryCrossfireDefenders);
+		BattleAttackInfo next(replay->battleGetUnitByID(followup->unitId()), replaySource.get(), 0, true);
+		EXPECT_EQ(replay->calculateDmgRange(next).archeryCrossfireDamagePercent,
+			newHorizonsArchery::CROSSFIRE_DAMAGE_PERCENT);
+		BattleAttackInfo same(replayResponder.get(), replaySource.get(), 0, true);
+		EXPECT_EQ(replay->calculateDmgRange(same).archeryCrossfireDamagePercent, 0);
+		DamageCache repeatedCache;
+		repeatedCache.buildDamageCache(replay, BattleSide::ATTACKER);
+		BattleAttackInfo repeat(replaySource.get(), replayResponder.get(), 0, true);
+		const auto repeated = AttackPossibility::evaluate(repeat, shooter->getPosition(), repeatedCache, replay);
+		EXPECT_FLOAT_EQ(repeated.attackerDamageReduce, 0.f);
+		// Expiry belongs to this child only; both parent and sibling stay pristine.
+		replay->nextRound();
+		BattleAttackInfo expired(replay->battleGetUnitByID(followup->unitId()),
+			replay->battleGetUnitByID(shooter->unitId()), 0, true);
+		EXPECT_EQ(replay->calculateDmgRange(expired).archeryCrossfireDamagePercent, 0);
+		EXPECT_EQ(parent->getForUpdate(shooter->unitId())->save(), parentSource);
+		EXPECT_EQ(parent->getForUpdate(responder->unitId())->save(), parentResponder);
+		EXPECT_EQ(parent->getForUpdate(followup->unitId())->save(), parentFollowup);
+		EXPECT_EQ(sibling->getForUpdate(shooter->unitId())->save(), parentSource);
+		EXPECT_EQ(sibling->getForUpdate(responder->unitId())->save(), parentResponder);
+		EXPECT_EQ(sibling->getForUpdate(followup->unitId())->save(), parentFollowup);
+		EXPECT_EQ(shooter->acquireState()->save(), liveSource);
+		EXPECT_EQ(responder->acquireState()->save(), liveResponder);
+		EXPECT_EQ(followup->acquireState()->save(), liveFollowup);
+		EXPECT_EQ(rng(), rngBefore);
+
+		ASSERT_NO_FATAL_FAILURE(shoot());
+		ASSERT_EQ(server.attacks.size(), 2u);
+		EXPECT_EQ(server.attacks[1].stackAttacking, responder->unitId());
+		EXPECT_TRUE(server.attacks[1].counter());
+		EXPECT_TRUE(shooter->acquireState()->archeryCrossfireAvailable(BattleSide::DEFENDER,
+			followup->unitId(), round));
+		EXPECT_FALSE(shooter->acquireState()->archeryCrossfireAvailable(BattleSide::DEFENDER,
+			responder->unitId(), round));
+		BattleAttackInfo actualNext(followup, shooter, 0, true);
+		EXPECT_EQ(battle()->calculateDmgRange(actualNext).archeryCrossfireDamagePercent,
+			newHorizonsArchery::CROSSFIRE_DAMAGE_PERCENT);
+	}
+};
+
+TEST_F(NewHorizonsCrossfireReplayTest, ElementalPrimaryKeepsPhysicalCounterfireHistoryAcrossExchangeReplay)
+{
+	ASSERT_NO_FATAL_FAILURE(checkReplay("core:magog", true));
+}
+
+TEST_F(NewHorizonsCrossfireReplayTest, PhysicalPrimaryKeepsCounterfireHistoryAcrossExchangeReplay)
+{
+	ASSERT_NO_FATAL_FAILURE(checkReplay("core:archer", false));
 }
 #endif

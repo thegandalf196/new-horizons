@@ -93,12 +93,26 @@ bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell
 	});
 }
 
+bool isSnapshotHeroSpecialEffect(const Bonus * bonus)
+{
+	if(!bonus || bonus->source != BonusSource::HERO_SPECIAL)
+		return false;
+	// Preserve arrival timers. Inspirational Leader is a separate, unit-local
+	// activation receipt; unrelated HERO_SPECIAL activation bonuses stay lazy.
+	return Bonus::NTurns(bonus)
+		|| (bonus->duration == BonusDuration::STACK_ACTIVATION
+			&& bonus->type == BonusType::PERCENTAGE_DAMAGE_BOOST
+			&& bonus->stacking == "new-horizons:discipline.inspirationalLeader"
+			&& (bonus->subtype == BonusSubtypeID(BonusCustomSubtype::damageTypeMelee)
+				|| bonus->subtype == BonusSubtypeID(BonusCustomSubtype::damageTypeRanged)));
+}
+
 bool projectedEffect(const Bonus * bonus)
 {
-	// Current timed HERO_SPECIAL producers are unit-local arrival bonuses.
-	// Do not generalize to all timed sources: upstream auras may use another clock.
+	// Capture only identified unit-local HERO_SPECIAL clocks; upstream auras
+	// and unrelated activation bonuses may have different ownership.
 	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND
-		|| (bonus->source == BonusSource::HERO_SPECIAL && Bonus::NTurns(bonus))
+		|| isSnapshotHeroSpecialEffect(bonus)
 		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus)
 		|| newHorizonsDivineMandate::isSharedPurposeMoraleBonus(bonus)
 		|| newHorizonsTraining::isTrainingBonus(bonus)
@@ -142,14 +156,11 @@ bool hasTimedMagicalSpellEffects(const IBonusBearer & bearer)
 	}));
 }
 
-bool hasTimedHeroSpecialEffects(const IBonusBearer & bearer)
+bool hasSnapshotHeroSpecialEffects(const IBonusBearer & bearer)
 {
-	// Snapshot current unit-local arrival timers before a lazy descendant
-	// can observe a later parent/live boundary. Other timed sources stay lazy.
-	return bearer.hasBonus(CSelector([](const Bonus * bonus)
-	{
-		return bonus && bonus->source == BonusSource::HERO_SPECIAL && Bonus::NTurns(bonus);
-	}));
+	// Snapshot identified arrival timers and Inspirational activation receipts
+	// before a lazy descendant can observe a later parent/live boundary.
+	return bearer.hasBonus(CSelector(isSnapshotHeroSpecialEffect));
 }
 
 bool isActivationClockPlague(const Bonus * bonus)
@@ -352,7 +363,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 		|| hasElementalMemory(*this)
 		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
 		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers
-		|| hasTimedHeroSpecialEffects(*this))
+		|| hasSnapshotHeroSpecialEffects(*this))
 		captureEffects();
 }
 
@@ -383,7 +394,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 		|| hasElementalMemory(*this)
 		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
 		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers
-		|| hasTimedHeroSpecialEffects(*this))
+		|| hasSnapshotHeroSpecialEffects(*this))
 		captureEffects();
 }
 
@@ -1273,7 +1284,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	for(const auto * unit : realBattle->battleGetAllUnits(false))
 		if(unit->unitId() == static_cast<uint32_t>(activeUnitId)
 			|| hasTimedMagicalSpellEffects(*unit)
-			|| hasTimedHeroSpecialEffects(*unit)
+			|| hasSnapshotHeroSpecialEffects(*unit)
 			|| newHorizonsFrozen::isFrozen(*unit)
 			|| (dynamic_cast<const battle::CUnitState *>(unit)
 				&& dynamic_cast<const battle::CUnitState *>(unit)->moraleExtraActivation))

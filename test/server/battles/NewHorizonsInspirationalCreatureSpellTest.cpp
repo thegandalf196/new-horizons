@@ -18,6 +18,8 @@
 #include "../../../server/battles/BattleProcessor.h"
 #if ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #endif
 
 namespace
@@ -103,6 +105,46 @@ protected:
 		ASSERT_EQ(actor->valOfBonuses(BonusType::PERCENTAGE_DAMAGE_BOOST,
 			BonusSubtypeID(BonusCustomSubtype::damageTypeMelee)), 10);
 	}
+#if ENABLE_BATTLE_AI
+	void expectInspirationalPair(const battle::Unit * unit, int amount)
+	{
+		ASSERT_NE(unit, nullptr);
+		const BonusSourceID source(attackerSideHero->id);
+		for(const auto subtype : {BonusCustomSubtype::damageTypeMelee, BonusCustomSubtype::damageTypeRanged})
+		{
+			const CSelector selector([source, subtype](const Bonus * bonus)
+			{
+				return bonus && bonus->source == BonusSource::HERO_SPECIAL && bonus->sid == source
+					&& bonus->duration == BonusDuration::STACK_ACTIVATION
+					&& bonus->stacking == "new-horizons:discipline.inspirationalLeader"
+					&& bonus->type == BonusType::PERCENTAGE_DAMAGE_BOOST
+					&& bonus->subtype == BonusSubtypeID(subtype);
+			});
+			const auto bonuses = unit->getBonuses(selector);
+			EXPECT_EQ(bonuses->size(), amount == 0 ? 0u : 1u);
+			if(!bonuses->empty())
+			{
+				EXPECT_EQ(bonuses->front()->val, amount);
+			}
+		}
+	}
+	void expectProjectedMultiplier(HypotheticBattle & model, int percent)
+	{
+		const auto * caster = model.battleGetUnitByID(actor->unitId());
+		ASSERT_NE(caster, nullptr);
+		spells::BattleCast cast(&model, caster, spells::Mode::CREATURE_ACTIVE, arrow.toSpell());
+		cast.setSpellLevel(MasteryLevel::ADVANCED);
+		auto context = arrow.toSpell()->battleMechanics(&cast);
+		EXPECT_EQ(context->getInspirationalLeaderCreatureDamagePercent(), percent);
+		EXPECT_EQ(context->getDirectCreatureActivationDamagePercent(), 75);
+	}
+	auto randomizerState()
+	{
+		CMemorySerializer wire;
+		wire.oser & *gameHandler->randomizer;
+		return wire.extractBuffer();
+	}
+#endif
 };
 #if ENABLE_BATTLE_AI
 class InspirationalEnvironment final : public Environment
@@ -243,5 +285,102 @@ TEST_F(NewHorizonsInspirationalCreatureSpellTest, DetachedCastMatchesActualDamag
 	EXPECT_EQ(actor->casts.available(), charges);
 	ASSERT_TRUE(castActive());
 	EXPECT_EQ(before - target->getAvailableHealth(), expected);
+}
+
+
+TEST_F(NewHorizonsInspirationalCreatureSpellTest,
+	ChildrenKeepInspirationalProducerUntilOwnActivationEndAfterParentExpires)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(earnMorale());
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(actor, 10));
+	// Warm the ordinary lazy retaliation latch before recording exact state.
+	(void)actor->counterAttacks.total();
+	(void)target->counterAttacks.total();
+	const auto liveActor = actor->acquireState()->save();
+	const auto liveTarget = target->acquireState()->save();
+	const auto rngBefore = randomizerState();
+	InspirationalEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
+	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(child->battleGetUnitByID(actor->unitId()), 10));
+	// Sibling has no explicit unit/bonus query before this completion boundary.
+	// Use the same selector as forecast activation-end adapters, not nextRound().
+	parent->getForUpdate(actor->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(parent->battleGetUnitByID(actor->unitId()), 0));
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(child->battleGetUnitByID(actor->unitId()), 10));
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(sibling->battleGetUnitByID(actor->unitId()), 10));
+	ASSERT_NO_FATAL_FAILURE(expectProjectedMultiplier(*child, 110));
+	ASSERT_NO_FATAL_FAILURE(expectProjectedMultiplier(*sibling, 110));
+	ASSERT_NO_FATAL_FAILURE(expectProjectedMultiplier(*parent, 100));
+	child->getForUpdate(actor->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
+	for(int query = 0; query < 2; ++query)
+	{
+		ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(child->battleGetUnitByID(actor->unitId()), 0));
+		ASSERT_NO_FATAL_FAILURE(expectProjectedMultiplier(*child, 100));
+	}
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(parent->battleGetUnitByID(actor->unitId()), 0));
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(sibling->battleGetUnitByID(actor->unitId()), 10));
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(actor, 10));
+	for(const auto & model : {parent, child, sibling})
+	{
+		EXPECT_EQ(model->getForUpdate(actor->unitId())->save(), liveActor);
+		EXPECT_EQ(model->getForUpdate(target->unitId())->save(), liveTarget);
+	}
+	EXPECT_EQ(actor->acquireState()->save(), liveActor);
+	EXPECT_EQ(target->acquireState()->save(), liveTarget);
+	EXPECT_EQ(randomizerState(), rngBefore);
+}
+
+TEST_F(NewHorizonsInspirationalCreatureSpellTest,
+	DetachedInspirationalProducerSurvivesLiveActivationEndUntilOwnExpiry)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(earnMorale());
+	(void)actor->counterAttacks.total();
+	(void)target->counterAttacks.total();
+	const auto projectedActor = actor->acquireState()->save();
+	const auto projectedTarget = target->acquireState()->save();
+	const auto full = mechanics()->adjustEffectValue(target);
+	InspirationalEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
+	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+	// Freeze target scalar state before the actual accepted spell changes HP.
+	for(const auto & model : {parent, child, sibling})
+	{
+		EXPECT_EQ(model->getForUpdate(target->unitId())->save(), projectedTarget);
+	}
+	const auto healthBefore = target->getAvailableHealth();
+	ASSERT_TRUE(castActive());
+	EXPECT_EQ(healthBefore - target->getAvailableHealth(), full * 75 * 110 / 10000);
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(actor, 0));
+	const auto liveActorAfter = actor->acquireState()->save();
+	const auto liveTargetAfter = target->acquireState()->save();
+	// The authoritative action may legitimately draw RNG. Subsequent detached
+	// observations/expiry must not draw any additional authoritative randomness.
+	const auto rngAfterLive = randomizerState();
+	for(const auto & model : {parent, child, sibling})
+	{
+		ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(model->battleGetUnitByID(actor->unitId()), 10));
+		ASSERT_NO_FATAL_FAILURE(expectProjectedMultiplier(*model, 110));
+	}
+	child->getForUpdate(actor->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(child->battleGetUnitByID(actor->unitId()), 0));
+	ASSERT_NO_FATAL_FAILURE(expectProjectedMultiplier(*child, 100));
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(parent->battleGetUnitByID(actor->unitId()), 10));
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(sibling->battleGetUnitByID(actor->unitId()), 10));
+	for(const auto & model : {parent, child, sibling})
+	{
+		EXPECT_EQ(model->getForUpdate(actor->unitId())->save(), projectedActor);
+		EXPECT_EQ(model->getForUpdate(target->unitId())->save(), projectedTarget);
+	}
+	EXPECT_EQ(actor->acquireState()->save(), liveActorAfter);
+	EXPECT_EQ(target->acquireState()->save(), liveTargetAfter);
+	ASSERT_NO_FATAL_FAILURE(expectInspirationalPair(actor, 0));
+	EXPECT_EQ(randomizerState(), rngAfterLive);
 }
 #endif

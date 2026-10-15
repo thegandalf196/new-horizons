@@ -2134,7 +2134,7 @@ AttackPossibility AttackPossibility::evaluate(
 					}
 					projectVampirismHealing(counterShooter.get(), counterfireDamage,
 						ap.vampirismHealingByUnit);
-					if(counterfireDamage > 0 && attackInfo.physicalDamage
+					if(counterfireDamage > 0 && counterfire.physicalDamage
 						&& newHorizonsArchery::isOrdinaryPhysicalShooter(counterShooter.get()))
 					{
 						const auto shooterSide = state->playerToSide(state->battleGetOwner(counterShooter.get()));
