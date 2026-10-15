@@ -13,12 +13,18 @@
 #include <chrono>
 #include <iostream>
 #include <sstream>
+#include <charconv>
+#include <algorithm>
+#include <string_view>
 
 namespace
 {
 using Bytes = std::vector<ui8>;
-constexpr size_t EXPECTED_RESOURCES = 3137;
-constexpr const char * EXPECTED_PACK_SHA256 = "45583f1f3e133ec81b849b52cd8d5df1decfd84e740b15244c46e277b1d426c5";
+struct ExpectedPack
+{
+	std::string sha256;
+	size_t resources = 0;
+};
 
 void require(bool valid, const std::string & message)
 {
@@ -61,10 +67,10 @@ void requirePlainRoot(const boost::filesystem::path & root)
 	}
 }
 
-void compareAll(CNhArtLoader & prepared, CNhArtLoader & direct, ui64 & comparedBytes)
+void compareAll(CNhArtLoader & prepared, CNhArtLoader & direct, const ExpectedPack & expected, ui64 & comparedBytes)
 {
 	const auto resources = prepared.getFilteredFiles([](const auto &) { return true; });
-	require(resources.size() == EXPECTED_RESOURCES, "Unexpected committed resource count");
+	require(resources.size() == expected.resources, "Unexpected committed resource count");
 	require(resources == direct.getFilteredFiles([](const auto &) { return true; }), "Resource namespace mismatch");
 	require(!prepared.existsResource(ResourcePath(".nhart/manifest.json")), "Metadata became a game resource");
 	for(const auto & resource : resources)
@@ -75,24 +81,24 @@ void compareAll(CNhArtLoader & prepared, CNhArtLoader & direct, ui64 & comparedB
 	}
 }
 
-void requireSingleCache(const boost::filesystem::path & owned)
+void requireSingleCache(const boost::filesystem::path & owned, const ExpectedPack & expected)
 {
 	const auto version = owned / "new-horizons-art" / "v1";
 	size_t children = 0;
 	for(const auto & entry : boost::filesystem::directory_iterator(version))
 	{
 		++children;
-		require(entry.path().filename().string() == EXPECTED_PACK_SHA256, "Unexpected cache stage/lock/hash directory");
+		require(entry.path().filename().string() == expected.sha256, "Unexpected cache stage/lock/hash directory");
 		require(boost::filesystem::is_directory(entry.symlink_status()) && !boost::filesystem::is_symlink(entry.symlink_status()), "Linked cache directory");
 	}
 	require(children == 1, "Mounts did not share one prepared cache");
 	size_t files = 0;
-	for(const auto & entry : boost::filesystem::directory_iterator(version / EXPECTED_PACK_SHA256))
+	for(const auto & entry : boost::filesystem::directory_iterator(version / expected.sha256))
 	{
 		++files;
 		require(boost::filesystem::is_regular_file(entry.symlink_status()) && !boost::filesystem::is_symlink(entry.symlink_status()), "Non-regular cache payload");
 	}
-	require(files == EXPECTED_RESOURCES + 1, "Cache inventory differs (including hidden manifest)");
+	require(files == expected.resources + 1, "Cache inventory differs (including hidden manifest)");
 }
 
 void measureWarmReads(CNhArtLoader & prepared, CNhArtLoader & direct)
@@ -125,15 +131,29 @@ void measureWarmReads(CNhArtLoader & prepared, CNhArtLoader & direct)
 
 int main(int argc, char ** argv)
 {
-	if(argc != 5 || std::string(argv[1]) != "--pack" || std::string(argv[3]) != "--cache-root")
+	if(argc != 9 || std::string(argv[1]) != "--pack" || std::string(argv[3]) != "--cache-root"
+		|| std::string(argv[5]) != "--expected-pack-sha256" || std::string(argv[7]) != "--expected-resources")
 	{
-		std::cerr << "Usage: nhArtStartupRuntimeTest --pack NewHorizons.nhart --cache-root EXISTING-DISPOSABLE-ROOT\n";
+		std::cerr << "Usage: nhArtStartupRuntimeTest --pack NewHorizons.nhart --cache-root EXISTING-DISPOSABLE-ROOT"
+			<< " --expected-pack-sha256 HEX64 --expected-resources POSITIVE-COUNT\n";
 		return 2;
 	}
 	std::string phase = "arguments";
 	std::string childName;
 	try
 	{
+		phase = "expected-pin-arguments";
+		ExpectedPack expected;
+		expected.sha256 = argv[6];
+		require(expected.sha256.size() == 64 && std::all_of(expected.sha256.begin(), expected.sha256.end(), [](char character)
+		{
+			return std::string_view("0123456789abcdef").find(character) != std::string_view::npos;
+		}), "Expected pack SHA256 must be lowercase hex64");
+		const std::string countArgument = argv[8];
+		const auto parsedCount = std::from_chars(countArgument.data(), countArgument.data() + countArgument.size(), expected.resources);
+		// The NHART physical-index ceiling includes its one hidden manifest.
+		require(parsedCount.ec == std::errc() && parsedCount.ptr == countArgument.data() + countArgument.size()
+			&& expected.resources > 0 && expected.resources < 1000000, "Expected payload count is outside NHART bounds");
 		const auto pack = boost::filesystem::canonical(boost::filesystem::path(argv[2]));
 		const auto root = boost::filesystem::absolute(boost::filesystem::path(argv[4])).lexically_normal();
 		phase = "private-root";
@@ -143,7 +163,7 @@ int main(int argc, char ** argv)
 		phase = "committed-pack-pin";
 		std::ifstream input(pack.string(), std::ios::binary);
 		require(static_cast<bool>(input), "Pack input unavailable");
-		require(nhart::hex(nhart::sha256(input, boost::filesystem::file_size(pack))) == EXPECTED_PACK_SHA256, "Unexpected committed pack");
+		require(nhart::hex(nhart::sha256(input, boost::filesystem::file_size(pack))) == expected.sha256, "Unexpected committed pack");
 		childName = boost::filesystem::unique_path("nhart-runtime-%%%%-%%%%-%%%%-%%%%").string();
 		const auto owned = root / childName;
 		require(boost::filesystem::create_directory(owned), "Owned child already exists or is unwritable");
@@ -159,7 +179,7 @@ int main(int argc, char ** argv)
 				<< " ms (OS-cache state uncontrolled)\n";
 			CNhArtLoader direct("", pack, owned, CNhArtLoader::Backing::DirectArchiveForTests);
 			phase = "all-resource-parity";
-			compareAll(builtin, direct, comparedBytes);
+			compareAll(builtin, direct, expected, comparedBytes);
 			const auto resources = builtin.getFilteredFiles([](const auto &) { return true; });
 			for(const auto & resource : resources)
 			{
@@ -167,8 +187,8 @@ int main(int argc, char ** argv)
 				require(mod.existsResource(mounted), "Mod-scope identity missing");
 				require(read(mod, mounted) == read(builtin, resource), "Mod-scope bytes differ");
 			}
-			require(mod.getFilteredFiles([](const auto &) { return true; }).size() == EXPECTED_RESOURCES, "Mod-scope resource count");
-			requireSingleCache(owned);
+			require(mod.getFilteredFiles([](const auto &) { return true; }).size() == expected.resources, "Mod-scope resource count");
+			requireSingleCache(owned, expected);
 			phase = "warm-read-measurements";
 			measureWarmReads(builtin, direct);
 		}
@@ -178,10 +198,10 @@ int main(int argc, char ** argv)
 		{
 			CNhArtLoader reopened("", pack, owned);
 			CNhArtLoader direct("", pack, owned, CNhArtLoader::Backing::DirectArchiveForTests);
-			compareAll(reopened, direct, comparedBytes);
-			requireSingleCache(owned);
+			compareAll(reopened, direct, expected, comparedBytes);
+			requireSingleCache(owned, expected);
 		}
-		std::cout << "PASS: SHA256 vectors; " << EXPECTED_RESOURCES << " resources; both scopes; fresh/reused cache; "
+		std::cout << "PASS: SHA256 vectors; " << expected.resources << " resources; both scopes; fresh/reused cache; "
 			<< comparedBytes << " parity bytes\n";
 		return 0;
 	}

@@ -480,8 +480,12 @@ jobs:
           mkdir -p build/new-horizons-windows-x64/nhart-regression-cache
           export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy SDL_VIDEO_DRIVER=dummy SDL_AUDIO_DRIVER=dummy
           unset DISPLAY WAYLAND_DISPLAY
+          pin_args_file=build/new-horizons-windows-x64/nhart-native-pin-args.bin
+          python tools/ci/prepare_nhart_native_pin.py --repo . \
+            --pack build/new-horizons-windows-x64/install/Mods/new-horizons/NewHorizons.nhart > "$pin_args_file"
+          mapfile -d '' -t pin_args < "$pin_args_file"
           "$test_exe" --pack build/new-horizons-windows-x64/install/Mods/new-horizons/NewHorizons.nhart \
-            --cache-root build/new-horizons-windows-x64/nhart-regression-cache
+            --cache-root build/new-horizons-windows-x64/nhart-regression-cache "${pin_args[@]}"
 
       - name: Package client, recursive PE closure, licenses and corresponding sources
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
