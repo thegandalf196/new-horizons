@@ -288,6 +288,17 @@ void validateOptionalBottomlessMindSpecialtyRules(const JsonNode & rules)
 	require(integer(row["pointsPerLevel"], 0, 1000000), "Bottomless Mind points per level");
 }
 
+void validateOptionalMasterSpellwardSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("masterSpellwardSpecialty"))
+		return;
+	const auto & row = rules["masterSpellwardSpecialty"];
+	fields(row, {"version", "percentPerLevel", "maximumExtraPercent"});
+	require(integer(row["version"], 1, 1), "Master Spellward version");
+	require(integer(row["percentPerLevel"], 0, 100), "Master Spellward percentage per level");
+	require(integer(row["maximumExtraPercent"], 0, 100), "Master Spellward maximum extra percentage");
+}
+
 void validateExcludedSkills(const JsonNode & excludedSkills)
 {
 	if(excludedSkills.isNull())
@@ -569,10 +580,11 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty"});
 	validateOptionalFortuneChildSpecialtyRules(rules);
 	validateOptionalArcanePreparationSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
+	validateOptionalMasterSpellwardSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
@@ -612,10 +624,11 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty"});
 	validateOptionalFortuneChildSpecialtyRules(rules);
 	validateOptionalArcanePreparationSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
+	validateOptionalMasterSpellwardSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
@@ -661,6 +674,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 		result["arcanePreparationSpecialty"] = rules["arcanePreparationSpecialty"];
 	if(rules.Struct().contains("bottomlessMindSpecialty"))
 		result["bottomlessMindSpecialty"] = rules["bottomlessMindSpecialty"];
+	if(rules.Struct().contains("masterSpellwardSpecialty"))
+		result["masterSpellwardSpecialty"] = rules["masterSpellwardSpecialty"];
 	if(rules.Struct().contains("lighthouseDeparture"))
 		result["lighthouseDeparture"] = rules["lighthouseDeparture"];
 	if(rules["skillOfferWeights"].isStruct())
@@ -896,6 +911,26 @@ void validateBottomlessMindSerialization(const JsonNode & development, bool supp
 	validateOptionalBottomlessMindSpecialtyRules(development);
 	if(!supported)
 		throw std::runtime_error("Captured Bottomless Mind requires the new save format");
+}
+
+std::optional<MasterSpellwardSpecialtyRules> masterSpellwardSpecialtyRules(const JsonNode & development)
+{
+	if(!usesRules(development) || !development.isStruct()
+		|| !development.Struct().contains("masterSpellwardSpecialty"))
+		return std::nullopt;
+	validateOptionalMasterSpellwardSpecialtyRules(development);
+	const auto & row = development["masterSpellwardSpecialty"];
+	return MasterSpellwardSpecialtyRules{static_cast<int>(row["percentPerLevel"].Integer()),
+		static_cast<int>(row["maximumExtraPercent"].Integer())};
+}
+
+void validateMasterSpellwardSerialization(const JsonNode & development, bool supported)
+{
+	if(!development.isStruct() || !development.Struct().contains("masterSpellwardSpecialty"))
+		return;
+	validateOptionalMasterSpellwardSpecialtyRules(development);
+	if(!supported)
+		throw std::runtime_error("Captured Master Spellward requires the new save format");
 }
 
 bool usesRemainingSpellSpecialties(const JsonNode & rules)
@@ -1466,6 +1501,20 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 		|| capturedHero->getPrimaryGrowthRules() != development || capturedHero->getMagicRules() != magic))
 		throw std::invalid_argument("Specialty presentation requires the matching captured context");
 
+	if(const auto ward = masterSpellwardSpecialtyRules(development);
+		ward && heroType->getJsonKey() == "core:thorgrim"
+		&& newHorizonsMagic::rulesActive(magic) && magic["spells"].isStruct()
+		&& magic["spells"].Struct().contains("new-horizons:holyArmor"))
+	{
+		result.name = "Master Spellward";
+		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:warcasting"));
+		result.description = "While Spellward is active, its magical-damage reduction contribution increases by "
+			+ std::to_string(ward->percentPerLevel) + "% per hero level, up to +"
+			+ std::to_string(ward->maximumExtraPercent)
+			+ "% of its ordinary value. This strengthens one Spellward source, not spell resistance."
+			+ " Other magical defenses and the ordinary total reduction cap still apply.";
+		return result;
+	}
 	if(const auto bottomless = bottomlessMindSpecialtyRules(development);
 		bottomless && heroType->getJsonKey() == "core:andra"
 		&& newHorizonsMagic::spellPointRulesActive(magic))

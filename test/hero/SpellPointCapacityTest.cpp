@@ -355,7 +355,10 @@ protected:
 		SpellPointCapacityTest::mapLoaded(loaded);
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(!captureBottomlessMind())
+		{
 			development.Struct().erase("bottomlessMindSpecialty");
+			development.Struct().erase("masterSpellwardSpecialty"); // Explicit pre-Bottomless capture.
+		}
 		development.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
 	}
@@ -425,6 +428,7 @@ protected:
 		development.Struct().erase("fortuneChildSpecialty");
 		development.Struct().erase("arcanePreparationSpecialty");
 		development.Struct().erase("bottomlessMindSpecialty");
+		development.Struct().erase("masterSpellwardSpecialty");
 		// Isolate Druid admission/codec guards from the same-epoch weighted
 		// offer feature; the existing fixture uses its historical offer helper.
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));

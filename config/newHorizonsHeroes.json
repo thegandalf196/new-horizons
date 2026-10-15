@@ -82,6 +82,11 @@
 		"version": 1,
 		"pointsPerLevel": 2
 	},
+	"masterSpellwardSpecialty": {
+		"version": 1,
+		"percentPerLevel": 5,
+		"maximumExtraPercent": 100
+	},
 	"nonDamageSpellSpecialties": {
 		"version": 1,
 		"aenainFrailtyReplacement": true,

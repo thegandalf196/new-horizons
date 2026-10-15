@@ -61,6 +61,17 @@
 						"levelStep": {"type": "integer", "minimum": 1, "maximum": 1000}
 					}
 				},
+				"masterSpellwardSpecialty": {
+					"type": "object", "additionalProperties": false,
+					"not": {"type": "null"},
+					"minProperties": 3, "maxProperties": 3,
+					"required": ["version", "percentPerLevel", "maximumExtraPercent"],
+					"properties": {
+						"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
+						"percentPerLevel": {"type": "integer", "minimum": 0, "maximum": 100, "not": {"type": "null"}},
+						"maximumExtraPercent": {"type": "integer", "minimum": 0, "maximum": 100, "not": {"type": "null"}}
+					}
+				},
 				"bottomlessMindSpecialty": {
 					"type": "object", "additionalProperties": false,
 					"not": {"type": "null"},

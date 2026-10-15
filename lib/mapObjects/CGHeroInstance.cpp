@@ -2380,6 +2380,24 @@ int64_t CGHeroInstance::getBottomlessMindManaBonus() const
 		static_cast<int64_t>(level) * rules->pointsPerLevel);
 }
 
+int CGHeroInstance::getMasterSpellwardExtraBasisPoints(int ordinaryBasisPoints) const
+{
+	const auto rules = newHorizonsHeroes::masterSpellwardSpecialtyRules(primaryGrowthRules);
+	if(!rules)
+		return 0;
+	const auto * heroType = getHeroType();
+	if(!heroType || heroType->getJsonKey() != "core:thorgrim"
+		|| !perkState.hasSelection("new-horizons:warcasting", "new-horizons:warcasting.spellward")
+		|| !hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.spellward"))
+		return 0;
+	const int64_t ordinary = std::clamp(ordinaryBasisPoints, 0, 10000);
+	const int64_t percent = std::min<int64_t>(rules->maximumExtraPercent,
+		static_cast<int64_t>(level) * rules->percentPerLevel);
+	// Keep fractional percentage points; the damage pipeline performs its own
+	// final floor and aggregate cap. No bonus or RNG state is changed here.
+	return static_cast<int>(std::min<int64_t>(10000 - ordinary, ordinary * percent / 100));
+}
+
 si32 CGHeroInstance::manaLimit() const
 {
 	if(newHorizonsMagic::spellPointRulesActive(getMagicRules()))

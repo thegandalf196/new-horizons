@@ -219,6 +219,7 @@ public:
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported) const;
 	void validateNewHorizonsBottomlessMindSerialization(bool supported) const;
+	void validateNewHorizonsMasterSpellwardSerialization(bool supported) const;
 	void validateNewHorizonsArtifactManaRegenerationSerialization(bool supported) const;
 	void validateNewHorizonsGlyphsOfFearSerialization(bool supported) const;
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
@@ -391,6 +392,8 @@ public:
 			validateNewHorizonsIndividualSpecialtiesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
 		if(h.saving)
 			validateNewHorizonsBottomlessMindSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
+		if(h.saving)
+			validateNewHorizonsMasterSpellwardSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SPELLWARD));
 		if(h.saving)
 			validateNewHorizonsStartingDevelopmentSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)

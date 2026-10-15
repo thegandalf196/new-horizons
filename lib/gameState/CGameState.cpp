@@ -2110,6 +2110,13 @@ void CGameState::validateNewHorizonsBottomlessMindSerialization(bool supported) 
 		map->validateNewHorizonsBottomlessMindSerialization(supported);
 }
 
+void CGameState::validateNewHorizonsMasterSpellwardSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateMasterSpellwardSerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsMasterSpellwardSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsDruidSpecialtySerialization(bool supported) const
 {
 	newHorizonsHeroes::validateDruidSpecialtySerialization(heroDevelopmentRules, supported);

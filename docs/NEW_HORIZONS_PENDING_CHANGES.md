@@ -575,3 +575,19 @@ Arcane Reservoir and other capacity terms; do not multiply it by Intelligence or
 artifact mana percentages. It does not refill Normal, grant Buffer, or alter
 Andra's starting Dispel, class, skills, army or equipment. Historical captured
 absence is inert. These provisional coefficients need Phase 3 playtesting.
+
+## Thorgrim — Master Spellward (provisional relative scaling)
+
+The authored level-scaling rider strengthens Spellward's one existing magical
+reduction source while that selected perk is active. Proposed captured version 1
+uses `extraBP = floor(ordinaryBP × min(100, 5 × hero level) / 100)`.
+Configurable defaults are 5% relative improvement per level, capped at +100% of
+the ordinary contribution: ordinary1000bp becomes1050/1500/2000bp at levels
+1/10/20. These coefficients are provisional judgments, not workbook numbers.
+Keep other reduction sources independent and the existing aggregate95% cap,
+penetration and final rounding. This is not Resistance chance or another aura.
+Preserve Thorgrim's settled Advanced Warcasting profile and all starting content.
+Historical captured absence keeps ordinary Spellward. The implementation uses
+the compatibility boundary following Andra's captured capacity policy. Focused
+native verification is recorded in the provisional-rule review; it does not
+establish rendered acceptance or a released playable build.

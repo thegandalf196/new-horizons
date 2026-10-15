@@ -137,6 +137,15 @@ struct DLL_LINKAGE BottomlessMindSpecialtyRules
 DLL_LINKAGE std::optional<BottomlessMindSpecialtyRules> bottomlessMindSpecialtyRules(const JsonNode & development);
 DLL_LINKAGE void validateBottomlessMindSerialization(const JsonNode & development, bool supported);
 
+/// Captured Thorgrim scaling of the existing Spellward source.
+struct DLL_LINKAGE MasterSpellwardSpecialtyRules
+{
+	int percentPerLevel = 5;
+	int maximumExtraPercent = 100;
+};
+DLL_LINKAGE std::optional<MasterSpellwardSpecialtyRules> masterSpellwardSpecialtyRules(const JsonNode & development);
+DLL_LINKAGE void validateMasterSpellwardSerialization(const JsonNode & development, bool supported);
+
 /// Read-only live-hero presentation. No secondary attributes or masteries are
 /// fabricated here. Primary growth is the fixed class vector; version 3 also
 /// exposes the owned skills' independent bonus opportunities.

@@ -1310,3 +1310,24 @@ origins and unusual scripted spell actions remain Phase2.
   no-refill/Buffer invariants, related Wisdom recovery and saved policy absence.
   Rendered and native Windows acceptance remain unverified. Revisit points-per-level
   balance and event paths that change effective Intelligence or hero level.
+
+## Thorgrim: Master Spellward strengthens one contribution
+
+- Interpretation: only actual Thorgrim with active selected Spellward increases
+  that source by5% of its ordinary value per level, capped at100% extra.
+- Rationale: the workbook requires improvement with level but gives no numbers.
+  Relative scaling provides a distinct useful rider without turning a10%
+  defense into +5 percentage points each level or duplicating Resistance RNG.
+- Contract: optional captured `masterSpellwardSpecialty` version1; absence
+  remains ordinary Spellward. Query-only integer basis points, no grants/RNG,
+  one existing source, current effective allegiance, unchanged MDR pipeline.
+- Implementation: HeroRules policy/presentation, CGHeroInstance identity getter,
+  CBattleInfoCallback's common Spellward contribution and existing serialization
+  envelope guards. A focused 35-test native gate passes, covering relative
+  scaling, paid/projected damage, rank loss/reacquisition, current-world policy
+  persistence, unsupported writers and historical absence, alongside existing
+  Spellward and mana-capacity controls. Source and resource bytes were unchanged
+  by the run. Rendered and native Windows acceptance remain unverified.
+- Revisit coefficients/cap during Phase3. Magical-ability consumers intentionally
+  share Spellward; non-damage control and physical attacks do not gain protection.
+  Do not change the settled starting Warcasting rank or faction skill.

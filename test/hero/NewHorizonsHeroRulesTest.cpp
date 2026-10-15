@@ -624,3 +624,99 @@ TEST(NewHorizonsHeroRulesTest, BottomlessMindGlobalSettingsCodecGuardsPreviousFo
 	EXPECT_THROW(oldDecoded.serialize(oldRead.iser), std::runtime_error);
 	EXPECT_EQ(oldDecoded.getValue(EGameSettings::HEROES_NEW_HORIZONS), legacy);
 }
+
+TEST(NewHorizonsHeroRulesTest, MasterSpellwardCapturesStrictGlobalAndResolvedPolicyWithoutOldFallback)
+{
+	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
+	auto global = testHeroRules();
+	global["masterSpellwardSpecialty"] = configured["masterSpellwardSpecialty"];
+	ASSERT_NO_THROW(validateHeroRules(global, true));
+	ASSERT_TRUE(JsonUtils::validate(global, "vcmi:newHorizonsHeroes", "Master Spellward global baseline"));
+	const auto captured = resolveHeroRules(global, HeroClassID(0));
+	ASSERT_TRUE(masterSpellwardSpecialtyRules(captured));
+	EXPECT_EQ(masterSpellwardSpecialtyRules(captured)->percentPerLevel, 5);
+	EXPECT_EQ(masterSpellwardSpecialtyRules(captured)->maximumExtraPercent, 100);
+	auto modified = global;
+	modified["masterSpellwardSpecialty"]["percentPerLevel"].Integer() = 9;
+	EXPECT_EQ(masterSpellwardSpecialtyRules(captured)->percentPerLevel, 5);
+	auto absent = captured;
+	absent.Struct().erase("masterSpellwardSpecialty");
+	EXPECT_FALSE(masterSpellwardSpecialtyRules(absent));
+	EXPECT_NO_THROW(validateMasterSpellwardSerialization(absent, false));
+	auto absentGlobal = global;
+	absentGlobal.Struct().erase("masterSpellwardSpecialty");
+	ASSERT_NO_THROW(validateHeroRules(absentGlobal, true));
+	ASSERT_TRUE(JsonUtils::validate(absentGlobal, "vcmi:newHorizonsHeroes", "absent Master Spellward"));
+	ASSERT_NO_THROW(validateResolvedHeroRules(captured));
+	std::vector<JsonNode> bad(13, global);
+	bad[0]["masterSpellwardSpecialty"]["version"].Integer() = 2;
+	bad[1]["masterSpellwardSpecialty"]["percentPerLevel"].Integer() = -1;
+	bad[2]["masterSpellwardSpecialty"]["maximumExtraPercent"].Integer() = 101;
+	bad[3]["masterSpellwardSpecialty"]["percentPerLevel"].Float() = 2.5;
+	bad[4]["masterSpellwardSpecialty"]["maximumExtraPercent"].Bool() = true;
+	bad[5]["masterSpellwardSpecialty"]["unknown"].Integer() = 0;
+	bad[6]["masterSpellwardSpecialty"] = JsonNode();
+	bad[7]["masterSpellwardSpecialty"].Struct().erase("percentPerLevel");
+	bad[8]["masterSpellwardSpecialty"]["percentPerLevel"] = JsonNode();
+	bad[9]["masterSpellwardSpecialty"]["maximumExtraPercent"] = JsonNode();
+	bad[10]["masterSpellwardSpecialty"]["version"] = JsonNode();
+	bad[11]["masterSpellwardSpecialty"].Struct().erase("version");
+	bad[12]["masterSpellwardSpecialty"].Struct().erase("maximumExtraPercent");
+	for(size_t index = 0; index < bad.size(); ++index)
+	{
+		SCOPED_TRACE(index);
+		const auto & malformed = bad[index];
+		EXPECT_FALSE(JsonUtils::validate(malformed, "vcmi:newHorizonsHeroes", "malformed Master Spellward"));
+		EXPECT_THROW(validateHeroRules(malformed, true), std::runtime_error);
+		EXPECT_THROW(masterSpellwardSpecialtyRules(malformed), std::runtime_error);
+		auto resolved = captured;
+		resolved["masterSpellwardSpecialty"] = malformed["masterSpellwardSpecialty"];
+		EXPECT_THROW(validateResolvedHeroRules(resolved), std::runtime_error);
+		EXPECT_THROW(masterSpellwardSpecialtyRules(resolved), std::runtime_error);
+		// Core metadata intentionally relaxes required checks. Exact policy
+		// cardinality must still reject every missing row without that shortcut.
+		auto coreGlobal = malformed;
+		coreGlobal.setModScope("core");
+		EXPECT_FALSE(JsonUtils::validate(coreGlobal, "vcmi:newHorizonsHeroes", "malformed core Master Spellward"));
+	}
+	auto coreGlobal = global;
+	coreGlobal.setModScope("core");
+	ASSERT_TRUE(JsonUtils::validate(coreGlobal, "vcmi:newHorizonsHeroes", "valid core Master Spellward"));
+}
+
+TEST(NewHorizonsHeroRulesTest, MasterSpellwardGlobalCodecRejectsUnsupportedPolicyBeforeInstallation)
+{
+	auto global = testHeroRules();
+	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
+	global["masterSpellwardSpecialty"] = configured["masterSpellwardSpecialty"];
+	global.setOverrideFlag(true);
+	GameSettings source;
+	source.addOverride(EGameSettings::HEROES_NEW_HORIZONS, global);
+	CMemorySerializer previous;
+	previous.oser.version = ESerializationVersion::NEW_HORIZONS_BOTTOMLESS_MIND;
+	EXPECT_THROW(source.serialize(previous.oser), std::runtime_error);
+	EXPECT_TRUE(previous.extractBuffer().empty());
+	CMemorySerializer current;
+	ASSERT_NO_THROW(source.serialize(current.oser));
+	GameSettings decoded;
+	ASSERT_NO_THROW(decoded.serialize(current.iser));
+	EXPECT_EQ(decoded.getValue(EGameSettings::HEROES_NEW_HORIZONS), global);
+	auto legacy = global;
+	legacy.Struct().erase("masterSpellwardSpecialty");
+	GameSettings oldSource;
+	oldSource.addOverride(EGameSettings::HEROES_NEW_HORIZONS, legacy);
+	CMemorySerializer oldWire;
+	oldWire.oser.version = ESerializationVersion::NEW_HORIZONS_BOTTOMLESS_MIND;
+	oldWire.iser.version = oldWire.oser.version;
+	ASSERT_NO_THROW(oldSource.serialize(oldWire.oser));
+	GameSettings oldDecoded;
+	ASSERT_NO_THROW(oldDecoded.serialize(oldWire.iser));
+	EXPECT_EQ(oldDecoded.getValue(EGameSettings::HEROES_NEW_HORIZONS), legacy);
+	JsonNode raw;
+	raw["heroes"]["newHorizons"] = global;
+	CMemorySerializer oldRead;
+	oldRead.oser & raw;
+	oldRead.iser.version = oldWire.oser.version;
+	EXPECT_THROW(oldDecoded.serialize(oldRead.iser), std::runtime_error);
+	EXPECT_EQ(oldDecoded.getValue(EGameSettings::HEROES_NEW_HORIZONS), legacy);
+}

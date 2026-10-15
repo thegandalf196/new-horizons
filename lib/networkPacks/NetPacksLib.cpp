@@ -1125,6 +1125,12 @@ void LobbyStartGame::validateNewHorizonsBottomlessMindSerialization(bool support
 		initializedGameState->validateNewHorizonsBottomlessMindSerialization(supported);
 }
 
+void LobbyStartGame::validateNewHorizonsMasterSpellwardSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsMasterSpellwardSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsDruidSpecialtySerialization(bool supported) const
 {
 	if(initializedGameState)
