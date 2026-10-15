@@ -6201,7 +6201,7 @@
 					"maximumPreferenceRatio": 2.0,
 					"mathVersion": 1
 				},
-				"sourceDocument": "docs/design-sources/New Horizons.md",
+				"sourceDocument": "new-horizons-docs:canon/game-design.md",
 				"sourceSha256": "35dd37344fadd274ef04152fd4adbcfe24ae018f94923282b1938a1f3c76760d",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,

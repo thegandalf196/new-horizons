@@ -2,11 +2,12 @@
 
 The Overrides transition was completed in September 2026 while the DOCX was
 canonical. All 41 entries received incorporated, reconciled or superseded
-dispositions. [New Horizons.md](design-sources/New%20Horizons.md) subsequently
+dispositions. The [private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md) subsequently
 became the sole gameplay authority; the DOCX remains historical comparison.
 This record is retained to explain accepted replacements, not to reopen a
-runtime override layer or repeat execution diaries. New amendments belong only
-in [Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md).
+runtime override layer or repeat execution diaries. New amendments belong in the
+private design library's `proposals/`. Public Pending Changes is a read-only
+legacy migration input; its accepted decisions are preserved until incorporated.
 
 ## Substantive resolutions
 
@@ -84,6 +85,5 @@ and [regression guards](NH_REGRESSION_GUARDS.md) for engineering acceptance.
 | L39 | Ordered Skill and perk progression | Resolved: ordinary alternation, one perk per tier, exceptional rank bypass without perk-order bypass |
 | L40 | Passive Grand Metamagic | Older rejection explicitly superseded by newer canonical automatic Grand Metamagic; source/AI verification remains separate |
 | L41 | Dynamic Overcharge outcome preview | Canonical refresh, current-state mitigation, casualty comparison and honest uncertainty incorporated |
-
 
 Design migration does not imply native, rendered or playable certification.

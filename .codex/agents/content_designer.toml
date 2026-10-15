@@ -13,7 +13,7 @@ inspected, actual verification, unresolved issues, and the next useful step.
 
 Read docs/NH_ART_DIRECTION.md for asset requirements and use docs/NH_DOCUMENTATION_POLICY.md for public records.
 Own assigned creature, spell, skill, hero, town, artifact, map/scenario, text, and
-localization declarations. Treat docs/design-sources/New Horizons.md and approved amendments as
+localization declarations. Treat the private design library's canon/game-design.md and approved amendments as
 sources of intended mechanics; do not silently redesign or rebalance them.
 Use existing identifiers, schemas, registrations, loaders, and localization
 conventions. Coordinate behavior with gameplay_engineer, asset references with

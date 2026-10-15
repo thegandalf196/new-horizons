@@ -19,10 +19,12 @@ artifact, source bundle or copied fallback. Before pushing private documents,
 verify the intended remote and authenticated repository visibility. If unavailable,
 preserve drafts externally and report the access/verification gap.
 
-The existing tracked canonical specification remains authoritative until its
-private migration is preserved and verified. Update source pointers and move
-document-fidelity checks with it; public builds and runtime tests must work
-without private design input. Avoid two active copies of the same specification.
+The private library's `canon/game-design.md` is the active specification.
+Public builds and runtime tests consume shipped configuration, not that private
+document. Private fidelity checks take an explicitly configured public checkout.
+Do not restore a public copy as an access fallback or create parallel authority.
+Legacy mixed documents and pending amendments still require reviewed migration;
+their remaining public presence does not make them a second canon.
 
 ## Canonical design and research
 

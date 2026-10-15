@@ -27,15 +27,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "79b754724efaebac53aaf906a1382711ea280074f20adde336ea30991b62965a"
     },
-    ".github/workflows/github.yml": {
-      "diagnostics": [],
-      "language": "workflow-yaml",
-      "owner": "engine_engineer",
-      "reason": "Unsupported embedded/build-language function parser. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "4e22ded995202e1bb9a7f15c489c3be37f1dd29c6c80dd4eac6f7d3c58503582"
-    },
     ".github/workflows/new-horizons-windows-notices.yml": {
       "diagnostics": [],
       "language": "workflow-yaml",
@@ -510,36 +501,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "fa7d594295c478a7bd62ed361f628ad4071cb99a4cf5b357b6f1f073107261da"
     },
-    "client/mainmenu/ReleaseUpdateTransport.cpp": {
-      "diagnostics": [
-        {
-          "end": 65,
-          "start": 65,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 65-65. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "b449ce20a22fe0128033741db4af3613d95b4681a35da9e47287730ceb9883a8"
-    },
-    "client/render/CDefFile.h": {
-      "diagnostics": [
-        {
-          "end": 28,
-          "start": 28,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 28-28. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "b33029043607d4434c68f89a9af83b96616c622224f5ff12ddff29e9c66e0010"
-    },
     "client/render/ColorFilter.cpp": {
       "diagnostics": [
         {
@@ -845,21 +806,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "def20ce6ef0903385fdf6208f30ea49ed977b064da9e0334b1a55c8571f87ad1"
     },
-    "clientsdl3/events/NotificationHandler.cpp": {
-      "diagnostics": [
-        {
-          "end": 50,
-          "start": 50,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 50-50. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "67c48828987aa9c886c2e27b8fecfbb71f7401d5813b1f28468707ea5060cda5"
-    },
     "clientsdl3/render/SDLImage.h": {
       "diagnostics": [
         {
@@ -874,46 +820,6 @@
       "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "4c8653456866d73e964b72742a7e268f228eeccf561d07dad8c7c7fc37b9032c"
-    },
-    "clientsdl3/render/SDLRWwrapper.cpp": {
-      "diagnostics": [
-        {
-          "end": 23,
-          "start": 23,
-          "type": "ERROR"
-        },
-        {
-          "end": 28,
-          "start": 28,
-          "type": "ERROR"
-        },
-        {
-          "end": 44,
-          "start": 44,
-          "type": "ERROR"
-        },
-        {
-          "end": 55,
-          "start": 55,
-          "type": "ERROR"
-        },
-        {
-          "end": 62,
-          "start": 62,
-          "type": "ERROR"
-        },
-        {
-          "end": 67,
-          "start": 67,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 23-23, ERROR at physical lines 28-28, ERROR at physical lines 44-44, ERROR at physical lines 55-55, ERROR at physical lines 62-62, ERROR at physical lines 67-67. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "f30bd8710e9f919107ec1afbffec3a590f00b91ecc34978d2161dff79b5b4338"
     },
     "include/vcmi/events/EventBus.h": {
       "diagnostics": [
@@ -1274,21 +1180,6 @@
       "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "00f2d9c402a747e6b4b34dd8cef10a2ea9f3b35f8c3e2e54a1b98ead1a62b93b"
-    },
-    "lib/CConsoleHandler.cpp": {
-      "diagnostics": [
-        {
-          "end": 117,
-          "start": 117,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 117-117. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "dc0d4d5eb831411f0a082c4b5a94810aa10d76a0bf5e6b93f79a01012ea1e331"
     },
     "lib/CSoundBase.h": {
       "diagnostics": [
@@ -2405,26 +2296,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "74c3cb9610170e57b38db133eb3dea5c4c511cc6928b6405884c70d48ee24147"
     },
-    "lib/vcmi_endian.h": {
-      "diagnostics": [
-        {
-          "end": 30,
-          "start": 30,
-          "type": "ERROR"
-        },
-        {
-          "end": 31,
-          "start": 31,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 30-30, ERROR at physical lines 31-31. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "fb36126274fa73d3b26a9ecf9fef7de21c669c22bd751d9b6aca04af309a5869"
-    },
     "luascript/LuaCallWrapper.h": {
       "diagnostics": [
         {
@@ -2735,21 +2606,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "5d17aabe7ae00bf26f13f3f87a1cffc1778fabec821256f2842ee8785cd4f135"
     },
-    "server/CGameHandler.cpp": {
-      "diagnostics": [
-        {
-          "end": 4844,
-          "start": 4844,
-          "type": "missing:identifier"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:identifier at physical lines 4844-4844. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "b36128aea823215d239213c3ca412fa7321b8de7b52e9be0e7b18bb6980f5d27"
-    },
     "server/CGameHandler.h": {
       "diagnostics": [
         {
@@ -2822,79 +2678,20 @@
       "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "674f37ac905c805cba37cac3737eb0dc416ded62f5a771e014063b9e17fd58c4"
-    },
-    "vcmiqt/jsonutils.h": {
-      "diagnostics": [
-        {
-          "end": 20,
-          "start": 20,
-          "type": "ERROR"
-        },
-        {
-          "end": 21,
-          "start": 21,
-          "type": "ERROR"
-        },
-        {
-          "end": 23,
-          "start": 23,
-          "type": "ERROR"
-        },
-        {
-          "end": 24,
-          "start": 24,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 20-20, ERROR at physical lines 21-21, ERROR at physical lines 23-23, ERROR at physical lines 24-24. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "c04fb963a0ccb17756f3ce9942faad524a59816558b982197b37127798ebba0a"
-    },
-    "vcmiqt/launcherdirs.h": {
-      "diagnostics": [
-        {
-          "end": 17,
-          "start": 17,
-          "type": "ERROR"
-        },
-        {
-          "end": 19,
-          "start": 19,
-          "type": "ERROR"
-        },
-        {
-          "end": 20,
-          "start": 20,
-          "type": "ERROR"
-        },
-        {
-          "end": 21,
-          "start": 21,
-          "type": "ERROR"
-        },
-        {
-          "end": 22,
-          "start": 22,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 17-17, ERROR at physical lines 19-19, ERROR at physical lines 20-20, ERROR at physical lines 21-21, ERROR at physical lines 22-22. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "52e468cc274df6e3ee3f375d5add0b481447ac407f91a22bba11ebe85e56bb74"
     }
   },
   "manual_functions": {
+    ".github/workflows/github.yml": {
+      "functions": [],
+      "rationale": "Complete independent review of all 55 embedded run blocks (52 Bash, two PowerShell, one CMD): commands, conditionals, loops and JSON data heredocs, no inline callable definitions. Sourced scripts remain separately inventoried.",
+      "review": "ROOT-LEGACY-CI-709a32fe-20261015",
+      "sha256": "709a32fe2882e293a3b4f12f3c99352066714652b2c50861b0d046d915d6f6f8"
+    },
     ".github/workflows/instruction-portability.yml": {
       "functions": [],
-      "rationale": "Whole-file and all eight embedded run blocks reviewed: command sequences and one conditional assignment block; no shell functions, inline Python bodies or other embedded callable definitions. Jobs and steps invoke separately inventoried scripts.",
-      "review": "IR-WORKFLOW-MANUAL-b2e71cef-20261015",
-      "sha256": "b2e71cef6d297ce3326eeeaf464ed0997e0e50a013cf7fd32a0bb2238dae31a9"
+      "rationale": "Complete independent review of all nine embedded run blocks: shell command sequences and one conditional assignment block; no inline shell/Python callable definitions. Calls target separately inventoried scripts.",
+      "review": "IR-REPOSITORY-CONTRACTS-52d1bbe4-20261015",
+      "sha256": "52d1bbe4a8df245c2fbc9a8eaf3e0c7f84259f5e6fa8768bb299541547f6ce5e"
     },
     "config/lobby.sql": {
       "functions": [],
@@ -2973,12 +2770,12 @@
   "units": {
     ".github/workflows/github.yml": {
       "kind": "legacy",
-      "lines": 999,
+      "lines": 998,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 999 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Automatic pull-request responsibility moved to the focused repository-contracts workflow; legacy platform push/manual routes retained byte-for-byte. One trigger line removed, not a whitespace reduction or semantic-quality exception. Existing structural debt remains frozen and requires scoped extraction before expansion.",
+      "review": "ROOT-LEGACY-CI-709a32fe-20261015",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4e22ded995202e1bb9a7f15c489c3be37f1dd29c6c80dd4eac6f7d3c58503582"
+      "sha256": "709a32fe2882e293a3b4f12f3c99352066714652b2c50861b0d046d915d6f6f8"
     },
     ".github/workflows/new-horizons-windows.yml": {
       "kind": "legacy",

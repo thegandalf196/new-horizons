@@ -1,6 +1,6 @@
 # Phase 1 implementation-coverage exit evidence
 
-Audit date 2026-10-10, source `6e21523dfef8c71151605f8d722f11962d4c3311`. This is bounded historical evidence, not a certificate for current builds. Canonical [design](design-sources/New%20Horizons.md), [release scope](NH_VERSION_1_0_SCOPE.md) and accepted amendments remain authoritative.
+Audit date 2026-10-10, source `6e21523dfef8c71151605f8d722f11962d4c3311`. This is bounded historical evidence, not a certificate for current builds. The private [design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md), [release scope](NH_VERSION_1_0_SCOPE.md) and accepted amendments remain authoritative.
 
 Phase 1 principal implementation coverage was judged substantially complete; development moved to **Phase 2 — stabilization and integration**. Neither the product number nor registration counts establish final 1.0. The experimental `v0.85.0` release/tag was subsequently withdrawn and is not a current download.
 

@@ -39,8 +39,8 @@ DLL_LINKAGE SpecialtyPresentation resolveSpecialtyPresentation(const CHero & her
 	const CGHeroInstance * capturedHero = nullptr);
 
 constexpr int HERO_RULESET_VERSION = 1;
-/// The canonical New Horizons offer table covers the 31 skills in Tables
-/// 45-47 of the archival New Horizons.docx. Keep this count beside the runtime validator
+/// The New Horizons offer table must cover the complete 31-Skill runtime roster.
+/// Keep this count beside the runtime validator
 /// so an incomplete table cannot silently fall back to legacy chances.
 constexpr size_t HERO_SKILL_OFFER_COUNT = 31;
 

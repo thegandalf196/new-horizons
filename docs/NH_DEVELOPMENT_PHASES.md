@@ -2,7 +2,7 @@
 
 Current phase: **Phase 2 - stabilization and integration**, as recorded in
 [the Phase 1 exit audit](NH_PHASE1_EXIT_AUDIT.md). The canonical design is
-[New Horizons.md](design-sources/New%20Horizons.md); the
+[the private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md); the
 [Version 1.0 scope](NH_VERSION_1_0_SCOPE.md) defines release boundaries.
 Phase names describe engineering priorities, not active agent sessions or tool goals.
 

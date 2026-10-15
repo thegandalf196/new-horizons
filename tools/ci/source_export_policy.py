@@ -5,6 +5,11 @@ blanket NH_ exclusion. Callers determine that opt-in from the exact exported tre
 never from an unrelated or untracked working-tree file.
 """
 
+import argparse
+import json
+from pathlib import Path
+import subprocess
+
 DOCUMENTATION_POLICY = 'docs/NH_DOCUMENTATION_POLICY.md'
 MAINTAINED_NH_DOCUMENTS = frozenset({
     'docs/NH_AI_EXCHANGES.md',
@@ -48,9 +53,37 @@ MAINTAINED_NH_DOCUMENTS = frozenset({
 })
 
 
+def private_design_path(name):
+    if name.startswith('docs/design-sources/'):
+        return name != 'docs/design-sources/README.md'
+    return name == 'tools/migrate-new-horizons-canonical-docx.py'
+
+
 def exclude_source_path(name, *, documentation_policy):
-    if name == 'CI/deploy_rsa.enc':
+    if name == 'CI/deploy_rsa.enc' or private_design_path(name):
         return True
     if name.startswith('docs/NH_'):
         return not documentation_policy or name not in MAINTAINED_NH_DOCUMENTS
     return False
+
+
+def forbidden_tracked_design(root):
+    root = root.resolve(strict=True)
+    actual = subprocess.check_output(['git', '-C', str(root), 'rev-parse', '--show-toplevel'], text=True).strip()
+    if Path(actual).resolve() != root:
+        raise ValueError('--root must be the actual public Git root')
+    names = subprocess.check_output(['git', '-C', str(root), 'ls-files', '-z']).decode().split('\0')
+    return sorted(name for name in names if private_design_path(name))
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Reject retired private design inputs in the tracked public tree.')
+    parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[2])
+    args = parser.parse_args()
+    forbidden = forbidden_tracked_design(args.root)
+    print(json.dumps({'forbiddenDesignPaths': forbidden}))
+    return bool(forbidden)
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

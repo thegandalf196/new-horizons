@@ -129,22 +129,187 @@ def node_text(node, data: bytes) -> str:
     return re.sub(r'\s+', ' ', data[node.start_byte:node.end_byte].decode('utf-8', 'replace')).strip()
 
 
+def cpp_prefix_has_type(declaration, start: int, end: int, data: bytes, parser=None) -> bool:
+    """Confirm a prefix marker is followed by a separately parsed actual type."""
+    if parser is None:
+        from tree_sitter import Language, Parser
+        import tree_sitter_cpp
+        parser = Parser(Language(tree_sitter_cpp.language()))
+    offset = declaration.start_byte
+    fragment = bytearray(data[offset:declaration.end_byte])
+    fragment[start - offset:end - offset] = b' ' * (end - start)
+    tree = parser.parse(bytes(fragment))
+    node = next(iter(tree.root_node.named_children), None)
+    if node is None or node.type not in {'declaration', 'function_definition'}:
+        return False
+    actual_type = node.child_by_field_name('type')
+    declarator = node.child_by_field_name('declarator')
+    return (actual_type is not None and declarator is not None
+            and end - offset <= actual_type.start_byte < actual_type.end_byte <= declarator.start_byte)
+
+
+def cpp_annotation_position(marker: bytes, start: int, end: int, ancestors, data: bytes, parser=None) -> bool:
+    """Require a distinct real type/name; a marker spelling can itself be a type."""
+    if marker in {b'signals', b'slots'}:
+        return True  # Access-label spelling is checked by the caller.
+    if marker.startswith(b'VCMI_LIB_NAMESPACE_'):
+        following = re.sub(rb'\s+|//[^\n]*|/\*[\s\S]*?\*/', b'', data[end:])
+        if marker.endswith(b'BEGIN'):
+            return re.match(rb'(?:class|struct|template|namespace)\b', re.sub(
+                rb'//[^\n]*|/\*[\s\S]*?\*/', b'', data[end:]).lstrip()) is not None
+        return not following
+    if marker == b'PACKED_STRUCT_BEGIN':
+        return re.match(rb'\s*struct\s+[A-Za-z_]\w*\s*\{', data[end:]) is not None
+    linkage = {b'DLL_LINKAGE', b'DLL_EXPORT', b'VCMIQT_LINKAGE'}
+    if marker in linkage and re.search(rb'\b(?:class|struct)[ \t]+$', data[:start]):
+        following = re.match(rb'\s*([A-Za-z_]\w*)', data[end:])
+        return following is not None and following[1] != b'final'
+    if marker == b'Q_OBJECT' and re.match(
+            rb'\s*(?:(?:public|protected|private)\s*(?:slots\s*)?|signals)\s*:', data[end:]):
+        return True
+    if marker == b'Q_OBJECT' and re.match(
+            rb'\s*(?:class|struct|enum(?:\s+class)?)\s+[A-Za-z_]\w*\s*[:{]', data[end:]):
+        return True
+    if marker == b'Q_OBJECT' and re.match(rb'\s*#', data[end:]):
+        fields = next((node for node in ancestors if node.type == 'field_declaration_list'), None)
+        following = next((node for node in fields.named_children if node.start_byte >= end), None) if fields else None
+        if following and following.type.startswith('preproc_'):
+            field = next((node for node in descendants(following) if node.type == 'field_declaration'), None)
+            if field and field.child_by_field_name('type'):
+                return True  # The following branch has its own distinct field type.
+    declaration = next((node for node in ancestors
+                        if node.type in {'declaration', 'field_declaration', 'function_definition'}), None)
+    if declaration is None:
+        return False
+    real_type = declaration.child_by_field_name('type')
+    declarator = declaration.child_by_field_name('declarator')
+    if real_type is None or declarator is None:
+        return False
+    prefix = linkage | {b'Q_OBJECT', b'Q_INVOKABLE'}
+    if marker in prefix and (real_type.start_byte == start and real_type.end_byte == end
+                             or end <= real_type.start_byte):
+        return cpp_prefix_has_type(declaration, start, end, data, parser)
+    name = declarator
+    while True:
+        child = name.child_by_field_name('declarator') or name.child_by_field_name('name')
+        if child is None:
+            break
+        name = child
+    if not any((node.type == 'ERROR' or node.is_missing)
+               and start <= node.start_byte <= node.end_byte <= name.end_byte
+               for node in descendants(declaration)):
+        return False  # A valid type/qualified-name use needs no annotation recovery.
+    if real_type.end_byte <= start and end <= declarator.start_byte:
+        return True  # e.g. void SDLCALL callback(...), not SDLCALL as return type.
+    return False
+
+
+def cpp_measurement_source(data: bytes, root, parser=None) -> bytes:
+    """Mask known nonexecutable annotations only in declaration/Qt-label context.
+
+    The initial concrete tree supplies context even when an annotation caused
+    recovery. Literals, comments, preprocessor definitions and expression uses
+    remain byte-identical. This is not macro expansion or C++ semantic analysis.
+    """
+    markers = (rb'\b(?:DLL_LINKAGE|DLL_EXPORT|VCMI_LIB_NAMESPACE_BEGIN|VCMI_LIB_NAMESPACE_END|'
+               rb'Q_OBJECT|Q_INVOKABLE|ZCALLBACK|CALLBACK|WINAPI|SDLCALL|VCMIQT_LINKAGE|'
+               rb'MAIN_EXPORT|PACKED_STRUCT_BEGIN|PACKED_STRUCT_END|signals|slots)\b')
+    opaque = {'comment', 'string_literal', 'raw_string_literal', 'char_literal',
+              'preproc_def', 'preproc_function_def', 'preproc_include', 'preproc_call'}
+    expressions = {'return_statement', 'expression_statement', 'call_expression',
+                   'init_declarator', 'parameter_declaration', 'optional_parameter_declaration'}
+    declarations = {'declaration', 'field_declaration', 'class_specifier', 'struct_specifier'}
+    result = bytearray(data)
+    for match in re.finditer(markers, data):
+        start, end = match.span()
+        node = root.named_descendant_for_byte_range(start, end)
+        ancestors = []
+        while node:
+            ancestors.append(node)
+            node = node.parent
+        if any(node.type in opaque for node in ancestors):
+            continue
+        if any(node.type in {'identifier', 'field_identifier'} and node.parent
+               and node.parent.child_by_field_name('declarator') == node for node in ancestors):
+            continue
+        line_start = data.rfind(b'\n', 0, start) + 1
+        if data[line_start:start].lstrip().startswith(b'#'):
+            continue
+        declaration = False
+        for node in ancestors:
+            if node.type in expressions:
+                break
+            if node.type == 'function_definition':
+                body = node.child_by_field_name('body')
+                declaration = body is not None and end <= body.start_byte
+                break
+            if node.type in declarations:
+                declaration = True
+                break
+        marker = match[0]
+        namespace_end = (marker == b'VCMI_LIB_NAMESPACE_END'
+                         and not any(node.type == 'compound_statement' for node in ancestors))
+        if not declaration and not namespace_end:
+            continue
+        if not cpp_annotation_position(marker, start, end, ancestors, data, parser):
+            continue
+        if marker == b'slots':
+            if not re.search(rb'\b(?:public|protected|private)[ \t]+$', data[line_start:start]):
+                continue
+            if not re.match(rb'[ \t]*:', data[end:]):
+                continue
+        if marker == b'signals':
+            if not re.search(rb'(?:^|[;{}])[ \t]*$', data[line_start:start]):
+                continue
+            if not re.match(rb'[ \t]*:', data[end:]):
+                continue
+        result[start:end] = b'public ' if marker == b'signals' else b' ' * (end - start)
+    return bytes(result)
+
+
+def remember_cpp_function_starts(root, starts) -> None:
+    for node in descendants(root):
+        body = node.child_by_field_name('body')
+        if node.type == 'function_definition' and body is not None:
+            starts.setdefault((body.start_byte, body.end_byte), set()).add(
+                (node.start_point.row + 1, node.start_byte))
+
+
+def original_cpp_function_start(data: bytes, node, body, starts) -> int:
+    start = node.start_point.row + 1
+    annotation = (rb'(?:\s|DLL_LINKAGE\b|DLL_EXPORT\b|VCMIQT_LINKAGE\b|Q_INVOKABLE\b|'
+                  rb'MAIN_EXPORT\b|CALLBACK\b|WINAPI\b|SDLCALL\b|ZCALLBACK\b|'
+                  rb'//[^\n]*(?:\n|$)|/\*[\s\S]*?\*/)+')
+    for line, offset in starts.get((body.start_byte, body.end_byte), ()):
+        if offset < node.start_byte and re.fullmatch(annotation, data[offset:node.start_byte]):
+            start = min(start, line)
+    return start
+
+
 def tree_functions(data: bytes, lang: str) -> tuple[list[dict], list[dict]]:
     from tree_sitter import Language, Parser
     choices = ('objc', 'cpp') if lang == 'objc++' or (lang == 'cpp' and b'@interface' in data) else (lang,)
-    # These linkage/Qt markers have no executable body. Preserve every byte offset
-    # and newline; never preprocess conditional branches or expand gameplay macros.
-    markers = rb'\b(?:DLL_LINKAGE|DLL_EXPORT|VCMI_LIB_NAMESPACE_BEGIN|VCMI_LIB_NAMESPACE_END|Q_OBJECT|Q_INVOKABLE|ZCALLBACK)\b'
-    parsed_data = re.sub(markers, lambda match: b' ' * len(match[0]), data)
-    parsed_data = re.sub(rb'\bsignals(?=\s*:)', b'public ', parsed_data)
-    parsed_data = re.sub(rb'\bslots(?=\s*:)', b'     ', parsed_data)
     trees = []
     for choice in choices:
         module = importlib.import_module('tree_sitter_' + choice)
-        tree = Parser(Language(module.language())).parse(parsed_data)
+        parser = Parser(Language(module.language()))
+        tree = parser.parse(data)
+        raw_starts = {}
+        if choice in {'cpp', 'objc'}:
+            parsed_data = data
+            # Recover an outer class annotation before examining its Qt labels.
+            # A bounded fixed point cannot erase arbitrary unresolved syntax.
+            for _ in range(3):
+                if choice == 'cpp':
+                    remember_cpp_function_starts(tree.root_node, raw_starts)
+                normalized = cpp_measurement_source(parsed_data, tree.root_node, parser)
+                if normalized == parsed_data:
+                    break
+                parsed_data = normalized
+                tree = parser.parse(parsed_data)
         errors = [n for n in descendants(tree.root_node) if n.type == 'ERROR' or n.is_missing]
-        trees.append((tree, errors))
-    tree, errors = min(trees, key=lambda entry: sum(n.end_byte - n.start_byte + 1 for n in entry[1]))
+        trees.append((tree, errors, raw_starts))
+    tree, errors, raw_starts = min(trees, key=lambda entry: sum(n.end_byte - n.start_byte + 1 for n in entry[1]))
     functions = []
     for node in descendants(tree.root_node):
         if node.type == 'preproc_function_def':
@@ -176,6 +341,9 @@ def tree_functions(data: bytes, lang: str) -> tuple[list[dict], list[dict]]:
         signature = re.sub(r'\s+', ' ', data[node.start_byte:body.start_byte].decode('utf-8', 'replace')).strip()
         symbol = '::'.join([*reversed(scope), signature])
         start = node.start_point.row + 1
+        if node.type == 'function_definition':
+            # An annotation on its own line still belongs to the signature.
+            start = original_cpp_function_start(data, node, body, raw_starts)
         if node.parent and node.parent.type == 'template_declaration':
             start = node.parent.start_point.row + 1
         end = node.end_point.row + (1 if node.end_point.column else 0)

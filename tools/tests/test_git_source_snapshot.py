@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Source archives must use pinned objects, not mutable shared files."""
 from pathlib import Path
+from io import BytesIO
 import subprocess
 import sys
 import tarfile
@@ -9,6 +10,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
 from git_source_snapshot import source_snapshot
+from source_export_policy import forbidden_tracked_design
 
 
 class GitSourceSnapshotTest(unittest.TestCase):
@@ -166,6 +168,54 @@ class GitSourceSnapshotTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'already exists'):
             source_snapshot(self.root, revision, output)
         self.assertEqual(output.read_bytes(), b'previous evidence')
+
+    def test_private_design_is_excluded_without_losing_runtime_source(self):
+        public = {'source.cpp': b'int value;\n', 'license.txt': b'Synthetic notice\n',
+                  'docs/design-sources/README.md': b'Public provenance pointer\n'}
+        private = {'docs/design-sources/New Horizons.md': b'Synthetic design\n',
+                   'docs/design-sources/New Horizons.docx': b'Synthetic archive\n',
+                   'docs/design-sources/future-draft.txt': b'Synthetic draft\n',
+                   'tools/migrate-new-horizons-canonical-docx.py': b'# retired utility\n'}
+        for name, content in (public | private).items():
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+        revision = self.commit(self.root)
+        output = self.base / 'private-design.tar.gz'
+        result = source_snapshot(self.root, revision, output)
+        self.assertEqual(result['excluded'], sorted(private))
+        with tarfile.open(output) as archive:
+            prefix = 'new-horizons-' + revision + '/'
+            self.assertEqual(set(archive.getnames()), {prefix + name for name in public})
+            for name, content in public.items():
+                self.assertEqual(archive.extractfile(prefix + name).read(), content)
+
+    def test_git_archive_attributes_handle_design_paths_with_spaces(self):
+        attributes = Path(__file__).resolve().parents[2] / '.gitattributes'
+        (self.root / '.gitattributes').write_bytes(attributes.read_bytes())
+        folder = self.root / 'docs/design-sources'
+        folder.mkdir(parents=True)
+        for name in ('New Horizons.md', 'New Horizons.docx', 'README.md'):
+            (folder / name).write_text('Synthetic fixture\n')
+        revision = self.commit(self.root)
+        raw = subprocess.check_output(['git', '-C', str(self.root), 'archive', revision])
+        with tarfile.open(fileobj=BytesIO(raw)) as archive:
+            self.assertIn('docs/design-sources/README.md', archive.getnames())
+            self.assertNotIn('docs/design-sources/New Horizons.md', archive.getnames())
+            self.assertNotIn('docs/design-sources/New Horizons.docx', archive.getnames())
+
+    def test_publication_guard_rejects_force_added_design_and_retired_tool(self):
+        expected = ['docs/design-sources/future-draft.md', 'tools/migrate-new-horizons-canonical-docx.py']
+        for name in [*expected, 'docs/design-sources/README.md', 'source.cpp']:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('Synthetic fixture\n')
+        self.commit(self.root)
+        self.assertEqual(forbidden_tracked_design(self.root), expected)
+        self.run_git(self.root, 'rm', '--', *expected)
+        self.assertEqual(forbidden_tracked_design(self.root), [])
+        with self.assertRaisesRegex(ValueError, 'actual public Git root'):
+            forbidden_tracked_design(self.root / 'docs')
 
 
 if __name__ == '__main__':

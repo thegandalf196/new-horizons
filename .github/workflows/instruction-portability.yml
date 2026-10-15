@@ -21,11 +21,14 @@ jobs:
         id: python
         with:
           python-version: '3.14'
-      - name: Install hashed source-parser dependencies
+      - name: Install pinned maintenance dependencies
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}
-        run: '"$PYTHON" -m pip install --require-hashes --only-binary=:all: -r tools/ci/source_organization_requirements.txt'
+        run: |
+          "$PYTHON" -m pip install --require-hashes --only-binary=:all: -r tools/ci/source_organization_requirements.txt
+          "$PYTHON" -m pip install --require-hashes -r CI/requirements-validation.txt
       - name: Check portable instruction paths
+        id: markdown
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           PYTHON: ${{ steps.python.outputs.python-path }}
@@ -38,6 +41,7 @@ jobs:
           fi
           "$PYTHON" tools/check_instruction_home_paths.py --base "$base"
           "$PYTHON" tools/ci/source_organization.py check --base-ref "$base" --output "$RUNNER_TEMP/source-growth.json"
+          "$PYTHON" CI/changed_markdown.py --base "$base" --github-output "$GITHUB_OUTPUT"
       - name: Test maintenance contracts with synthetic inputs
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}
@@ -45,7 +49,25 @@ jobs:
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_instruction_home_paths.py
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_source_organization.py
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_test_inventory.py
+          "$PYTHON" -B -m unittest discover -s tools/tests -p test_text_line_endings.py
+          "$PYTHON" -B -m unittest discover -s tools/tests -p test_validate_json.py
+          "$PYTHON" -B -m unittest discover -s tools/tests -p test_changed_markdown.py
+          "$PYTHON" -B -m unittest discover -s tools/tests -p test_git_source_snapshot.py
           "$PYTHON" tools/ci/test_inventory.py
+      - name: Validate tracked public source contracts
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON" -B CI/check_text_line_endings.py
+          "$PYTHON" -B CI/validate_json.py
+          "$PYTHON" -B CI/normalize_relative_includes.py --repo .
+          "$PYTHON" -B tools/ci/source_export_policy.py
+      - name: Validate changed Markdown
+        if: steps.markdown.outputs.count != '0'
+        uses: DavidAnson/markdownlint-cli2-action@v24.2.0
+        with:
+          config: CI/example.markdownlint-cli2.jsonc
+          globs: ${{ steps.markdown.outputs.files }}
       - name: Verify generated module and committed artwork
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}

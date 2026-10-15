@@ -2,10 +2,11 @@
 
 ## Authority and release boundary
 
-[New Horizons.md](design-sources/New%20Horizons.md) is the sole gameplay
+The [private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md) is the sole gameplay
 specification; detailed system sections control over conflicting summaries.
-[Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) holds only amendments not yet
-integrated. The archival DOCX and [Overrides migration](NH_OVERRIDE_MIGRATION.md)
+[Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) is a read-only legacy amendment
+input pending private migration; existing accepted decisions remain in effect.
+New proposals belong in the private library. The archival DOCX and [Overrides migration](NH_OVERRIDE_MIGRATION.md)
 are comparison history, not additional precedence layers.
 
 Version 1.0 includes primary attributes, Skills and their perks, six magic schools,

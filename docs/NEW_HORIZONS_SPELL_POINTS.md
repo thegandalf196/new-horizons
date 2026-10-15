@@ -2,7 +2,7 @@
 
 This is bounded rationale for the accepted Normal/Buffer model, not a second
 specification. Current gameplay follows
-[New Horizons.md](design-sources/New%20Horizons.md).
+the [private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md).
 The [Overrides migration](NH_OVERRIDE_MIGRATION.md) records the legacy transition.
 
 ## Accepted model

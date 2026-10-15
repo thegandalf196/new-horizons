@@ -84,3 +84,6 @@ compile_commands.json
 /.agent-state/
 /agent-output/
 /NewHorizons-Codex-Kit/
+# Detailed design and archival inputs live in the separate private library.
+/docs/design-sources/*
+!/docs/design-sources/README.md

@@ -1,6 +1,6 @@
 # New Horizons integration limits
 
-Current phase: Phase 2 — stabilization and integration. The product version is not a completion percentage or a release-candidate declaration. The former 0.85 release/tag was withdrawn; do not describe it as a current download. Follow [release scope](NH_VERSION_1_0_SCOPE.md), [canonical design](design-sources/New%20Horizons.md) and [Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md).
+Current phase: Phase 2 — stabilization and integration. The product version is not a completion percentage or a release-candidate declaration. The former 0.85 release/tag was withdrawn; do not describe it as a current download. Follow [release scope](NH_VERSION_1_0_SCOPE.md), the private [canonical design](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md) and accepted amendments; [Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) is a legacy migration input.
 
 This is a bounded contributor-facing requirements list, not a worker queue. Raw attempts, receipts, profiles, saved inputs and task ownership remain in configured private storage.
 
