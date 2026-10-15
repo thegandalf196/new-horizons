@@ -220,6 +220,8 @@ private:
 	std::shared_ptr<CStack> ownedBearer;
 	std::shared_ptr<const StackWithBonuses> projectedBearer;
 	const IBonusBearer * origBearer;
+	/// Typed view of the final bearer binding; bonus values are still queried live.
+	const battle::Unit * originalUnit = nullptr;
 	const HypotheticBattle * owner;
 
 	// Immutable creature identity used as the native-bonus source when this view
