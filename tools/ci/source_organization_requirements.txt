@@ -1,0 +1,10 @@
+# Reviewed Linux x86_64 / CPython 3.14 wheel set; no runtime network fetches.
+# Install with pip --require-hashes --only-binary=:all: in isolated tooling.
+# Other platforms/interpreters require their own reviewed wheel hashes.
+tree-sitter==0.25.2 --hash=sha256:260586381b23be33b6191a07cea3d44ecbd6c01aa4c6b027a0439145fcbc3358
+tree-sitter-cpp==0.23.4 --hash=sha256:773d2cafc08bbc0f998687fa33f42f378c1a371cdb582870c4d13abb06092706
+tree-sitter-lua==0.5.0 --hash=sha256:5ec448c854fea32414a0449147d648bc5baddf7a0357008c4abe3269db35370a
+tree-sitter-java==0.23.5 --hash=sha256:370b204b9500b847f6d0c5ad584045831cee69e9a3e4d878535d39e4a7e4c4f1
+tree-sitter-javascript==0.25.0 --hash=sha256:9dc04ba91fc8583344e57c1f1ed5b2c97ecaaf47480011b92fbeab8dda96db75
+tree-sitter-objc==3.0.2 --hash=sha256:e71282ac9c096a966bf2fa6a4ecdbea4bd037d3e01ea4aa9bbc64d9a4c0022f6
+tree-sitter-bash==0.25.1 --hash=sha256:3f484c4bb8796cde7a87ca351e6116f09653edac0eb3c6d238566359dd28b117

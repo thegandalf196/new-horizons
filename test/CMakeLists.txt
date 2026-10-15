@@ -7,6 +7,8 @@ option(ENABLE_NEW_HORIZONS_MANAGED_TESTS
 # Pure saved-view navigation state; no renderer or gameplay fixture implied.
 add_executable(nhHeroDevelopmentNavigationTest ../client/tests/HeroDevelopmentNavigationTest.cpp)
 add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigationTest)
+add_executable(nhHeroMasteryDialogStateTest ../client/tests/HeroMasteryDialogStateTest.cpp)
+add_test(NAME nhHeroMasteryDialogStateTest COMMAND nhHeroMasteryDialogStateTest)
 add_executable(nhExchangeSecondarySkillSlotsTest ../client/tests/ExchangeSecondarySkillSlotsTest.cpp)
 add_test(NAME nhExchangeSecondarySkillSlotsTest COMMAND nhExchangeSecondarySkillSlotsTest)
 
@@ -850,6 +852,14 @@ add_executable(nhHeroPositiveProcPresentationTest ../client/tests/HeroPositivePr
 add_test(NAME nhHeroPositiveProcPresentationTest COMMAND nhHeroPositiveProcPresentationTest)
 add_executable(nhAnimationPhaseStartTest ../client/tests/AnimationPhaseStartTest.cpp)
 add_test(NAME nhAnimationPhaseStartTest COMMAND nhAnimationPhaseStartTest)
+
+# Asset-free state checks only; native authority tests retain their TEST profile.
+set_tests_properties(
+	nhHeroDevelopmentNavigationTest nhHeroMasteryDialogStateTest
+	nhExchangeSecondarySkillSlotsTest nhStackInfoPanelHoverStateTest
+	nhProjectileFlightLifecycleTest nhWindowSceneRedrawTest
+	nhHeroPositiveProcPresentationTest nhAnimationPhaseStartTest
+	PROPERTIES LABELS "nh-pure;ui;state" TIMEOUT 10)
 add_executable(nhReleaseUpdatePolicyTest
 	../client/tests/ReleaseUpdatePolicyTest.cpp
 	../client/mainmenu/ReleaseUpdatePolicy.cpp)

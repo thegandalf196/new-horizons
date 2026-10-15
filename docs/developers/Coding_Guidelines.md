@@ -1,5 +1,9 @@
 # Coding Guidelines
 
+For source size, responsibility boundaries and incremental decomposition, follow
+[Code Organization](Code_Organization.md). It is a standing requirement for new
+work and changes to existing code, in addition to the style rules below.
+
 ## C++ Standard
 
 VCMI implementation bases on C++20 standard. Any feature is acceptable as long as it's will pass build on our CI. At the time of writing, following compilers are supported, and any C++20 feature available across all these compilers can be used:
@@ -867,7 +871,10 @@ size_t getHeroesCount(); //gets count of heroes (surprise?)
 
 ### Class handling
 
-There is no definitive rule which has to be followed strictly. You can freely decide if you want to pack your own classes, where you are programming on, all in one file or each in one file. It's more important that you feel comfortable with the code, than consistency overall the project. VCMI has several container class files, so if you got one additional class to them than just add it to them instead of adding new files.
+Group classes by a coherent responsibility and explicit interface, following
+[Code Organization](Code_Organization.md). Related small value types may share a
+file; a central file is not the default home for unrelated new mechanics. Review
+the existing unit's responsibilities and size before expanding it.
 
 ### Functions and interfaces
 
