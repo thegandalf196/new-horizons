@@ -3,8 +3,8 @@
 ## Authority and source map
 
 Gameplay follows the [private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md) and only
-accepted amendments. [Pending Changes](../NEW_HORIZONS_PENDING_CHANGES.md) is a
-read-only legacy migration input, not a destination for new proposals; use the
+accepted amendments. The [amendment boundary](../NEW_HORIZONS_PENDING_CHANGES.md)
+retains public compatibility contracts, not new design proposals; use the
 private design library's `proposals/` and accepted-decision process.
 The current phase is stabilization/integration. Governors/Castellans and Caravans
 are deferred; Doctrine is retired. Provisional coefficients are tunable, not final

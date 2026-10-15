@@ -5,9 +5,9 @@ The exporter reuses the reviewed v2 master/source registration boxes exactly.
 It writes only native-size PNG exports and private before/after comparisons;
 it does not recolor, repaint, or touch the live module images.
 
-Usage:
-    /usr/bin/python3 tools/export_new_horizons_academy_map_v3.py
-    /usr/bin/python3 tools/export_new_horizons_academy_map_v3.py --check
+Use the verified Python interpreter with --private-root PATH, optionally --check.
+PATH must contain the complete private v2 baseline and v3 authoring inputs;
+neither source images nor prompts are reconstructed from the shipping pack.
 """
 
 from __future__ import annotations
@@ -23,6 +23,8 @@ import import_new_horizons_academy_assets as academy_importer
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
+PRIVATE_ROOT = None
 SOURCE_ROOT = academy_importer.SOURCE_ROOT
 REVISION_ROOT = ROOT / SOURCE_ROOT / "map-revisions/v3"
 BASELINE_ROOT = ROOT / SOURCE_ROOT / "map-revisions/v2"
@@ -50,6 +52,36 @@ REGISTRATIONS = {
     }
     for name, record in academy_importer.MAP_REVISION_SLOTS.items()
 }
+
+
+def external_root(path: Path) -> Path:
+    requested = path.expanduser().absolute()
+    if any(part.is_symlink() for part in (requested, *requested.parents)):
+        raise ValueError("private authoring paths must not traverse symlinks")
+    resolved = requested.resolve()
+    if resolved.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(resolved):
+        raise ValueError("private root must be outside and not overlap the checkout")
+    return resolved
+
+
+def configure_private_root(path: Path) -> None:
+    global ROOT, PRIVATE_ROOT, REVISION_ROOT, BASELINE_ROOT
+    ROOT = PRIVATE_ROOT = external_root(path)
+    REVISION_ROOT = ROOT / SOURCE_ROOT / "map-revisions/v3"
+    BASELINE_ROOT = ROOT / SOURCE_ROOT / "map-revisions/v2"
+
+
+def private_output_path(path: Path) -> Path:
+    if PRIVATE_ROOT is None or ROOT != PRIVATE_ROOT:
+        raise ValueError("authoring requires an explicit private root")
+    if external_root(PRIVATE_ROOT) != PRIVATE_ROOT:
+        raise ValueError("configured private root changed")
+    requested = path.absolute()
+    if any(part.is_symlink() for part in (requested, *requested.parents)):
+        raise ValueError("private output paths must not traverse symlinks")
+    if not requested.is_relative_to(PRIVATE_ROOT) or not requested.resolve().is_relative_to(PRIVATE_ROOT):
+        raise ValueError("authoring output escapes the private root")
+    return requested
 
 
 def sha256_hex(payload: bytes) -> str:
@@ -172,15 +204,24 @@ def build_revision() -> tuple[dict, dict[str, bytes], dict[str, tuple[bytes, byt
 
 
 def write_or_check(path: Path, payload: bytes, check_only: bool) -> None:
+    path = private_output_path(path)
     if check_only:
         if not path.is_file() or path.read_bytes() != payload:
             raise RuntimeError(f"Generated Academy map v3 file is missing or stale: {path.relative_to(ROOT)}")
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
+        private_output_path(path)
         path.write_bytes(payload)
 
 
 def process(check_only: bool) -> None:
+    outputs = [REVISION_ROOT / "manifest.json"]
+    for name, registration in REGISTRATIONS.items():
+        outputs.append(REVISION_ROOT / registration["export"])
+        stem = f"{name}-map-body-v3-before-after"
+        outputs.extend(REVISION_ROOT / "comparisons" / f"{stem}.{suffix}" for suffix in ("png", "json"))
+    for path in outputs:
+        private_output_path(path)
     manifest, exports, comparisons = build_revision()
     write_or_check(REVISION_ROOT / "manifest.json", compact_json(manifest), check_only)
     for name, registration in REGISTRATIONS.items():
@@ -196,8 +237,11 @@ def process(check_only: bool) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="verify manifest, exports, and comparisons without writing")
+    parser.add_argument("--private-root", required=True, type=Path,
+                        help="complete private authoring workspace outside the checkout")
     args = parser.parse_args()
     try:
+        configure_private_root(args.private_root)
         process(args.check)
     except (OSError, ValueError, RuntimeError, KeyError) as error:
         parser.exit(1, f"Academy map v3 export failed: {error}\n")

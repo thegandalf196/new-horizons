@@ -4,8 +4,10 @@
 
 The [private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md) is the sole gameplay
 specification; detailed system sections control over conflicting summaries.
-[Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) is a read-only legacy amendment
-input pending private migration; existing accepted decisions remain in effect.
+The [amendment boundary](NEW_HORIZONS_PENDING_CHANGES.md) retains public capture and
+compatibility contracts; selected legacy decisions and unresolved alternatives
+are [private](https://github.com/thegandalf196/new-horizons-docs/blob/main/proposals/legacy-amendments.md).
+Existing accepted decisions remain in effect; migration does not adopt drafts.
 New proposals belong in the private library. The archival DOCX and [Overrides migration](NH_OVERRIDE_MIGRATION.md)
 are comparison history, not additional precedence layers.
 
