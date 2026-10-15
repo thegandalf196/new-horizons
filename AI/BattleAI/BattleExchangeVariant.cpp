@@ -734,6 +734,12 @@ float BattleExchangeVariant::trackAttack(
 		// CAmmo assignment keeps this unit's owner-bound bonus caches intact.
 		static_cast<battle::CAmmo &>(unitToUpdate->shots) = affectedUnit->shots;
 		static_cast<battle::CAmmo &>(unitToUpdate->counterAttacks) = affectedUnit->counterAttacks;
+		// Preserve the physical reaction's round receipt and target provenance
+		// when this selected preview becomes a later exchange's starting state.
+		unitToUpdate->archeryCounterfireRound = affectedUnit->archeryCounterfireRound;
+		unitToUpdate->archeryCrossfireRound = affectedUnit->archeryCrossfireRound;
+		unitToUpdate->archeryCrossfireAttackers = affectedUnit->archeryCrossfireAttackers;
+		unitToUpdate->archeryCrossfireDefenders = affectedUnit->archeryCrossfireDefenders;
 		unitToUpdate->battlecraftWaitBonusUsed = affectedUnit->battlecraftWaitBonusUsed;
 		unitToUpdate->battlecraftWaitMasteryDoubled = affectedUnit->battlecraftWaitMasteryDoubled;
 		unitToUpdate->battlecraftDefendMasteryDoubled = affectedUnit->battlecraftDefendMasteryDoubled;
