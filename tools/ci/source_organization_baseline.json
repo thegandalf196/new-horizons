@@ -197,21 +197,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "af5fda1738b43fedabbc7fc1b06e04024b498d3959662b30da6cfb77ae382374"
     },
-    "lib/CSoundBase.h": {
-      "diagnostics": [
-        {
-          "end": 16,
-          "start": 14,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 14-16. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "b510e3c2aec7a67625dbc8a06b7b94eca8c790f2bdb63511e118500f47b94f90"
-    },
     "lib/battle/HeroActionAllowanceState.h": {
       "diagnostics": [
         {
@@ -241,26 +226,6 @@
       "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "c134dee2b3b15c39dd5c56bd1b7823a9e55cbad463055f5936d198b221d207e7"
-    },
-    "lib/constants/EntityIdentifiers.h": {
-      "diagnostics": [
-        {
-          "end": 869,
-          "start": 869,
-          "type": "missing:field_identifier"
-        },
-        {
-          "end": 959,
-          "start": 959,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:field_identifier at physical lines 869-869, ERROR at physical lines 959-959. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "886d53e54b076fc7f423cb7f51bbd83537d8446aafe1eb102c4f6fac99e13b23"
     },
     "lib/mapObjects/CGHeroInstance.h": {
       "diagnostics": [
@@ -386,21 +351,6 @@
       "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "c434bc9a615a8b5edc517dff2b3ad33d438ce0614c824ac6b85fdfd441bd2bba"
-    },
-    "server/battles/BattleActionProcessor.cpp": {
-      "diagnostics": [
-        {
-          "end": 5708,
-          "start": 5708,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 5708-5708. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "4488e81991003a8c45dabbbf2605c26efdd89292979d8684aff965cc7607cba1"
     }
   },
   "manual_functions": {
@@ -6299,6 +6249,842 @@
           "end": 850
         }
       ]
+    },
+    "lib/CSoundBase.h": {
+      "functions": [
+        {
+          "symbol": "#define VCMI_SOUND_NAME#1",
+          "start": 1037,
+          "end": 1037
+        },
+        {
+          "symbol": "#define VCMI_SOUND_FILE#1",
+          "start": 1038,
+          "end": 1038
+        }
+      ],
+      "rationale": "Entire1047-line header read. VCMI_SOUND_LIST14–1030 is an object-like macro (no parameter list after its name) containing only comments and VCMI_SOUND_NAME/VCMI_SOUND_FILE invocations; invocations do not define callables and expansions are not counted again. The only function-like macro definitions are VCMI_SOUND_NAME(x)1037 and VCMI_SOUND_FILE(y)1038, each one physical line, even though replacements only build enum entries. soundBase contains an enum1039–1044, no handwritten methods or lambdas. Raw parser's1017-line '#define VCMI_SOUND_NAME#1' is a false positive caused by recovery14–16, not a function or valid function-like macro. Manual names are ordinal1 for each actual definition. The obsolete numeric record for that parser artifact is removed under independent review IR-SOUND-FALSE-MACRO-RATCHET-20261015; the physical file freeze remains. No ceiling exception or source edit is authorized.",
+      "review": "IR-MANUAL-SOUND-ENTITY-46409b73-20261015",
+      "sha256": "b510e3c2aec7a67625dbc8a06b7b94eca8c790f2bdb63511e118500f47b94f90"
+    },
+    "lib/constants/EntityIdentifiers.h": {
+      "functions": [
+        {
+          "symbol": "HeroTypeID::bool isValid() const#1",
+          "start": 118,
+          "end": 121
+        },
+        {
+          "symbol": "SlotID::bool validSlot() const#1",
+          "start": 134,
+          "end": 137
+        },
+        {
+          "symbol": "FactionID::bool isValid() const#1",
+          "start": 277,
+          "end": 280
+        },
+        {
+          "symbol": "BuildingID::static std::array<std::array<BuildingID, 8>, 6> getDwellings()#1",
+          "start": 322,
+          "end": 334
+        },
+        {
+          "symbol": "BuildingID::static BuildingID HALL_LEVEL(unsigned int level)#1",
+          "start": 339,
+          "end": 343
+        },
+        {
+          "symbol": "BuildingID::static BuildingID FORT_LEVEL(unsigned int level)#1",
+          "start": 344,
+          "end": 348
+        },
+        {
+          "symbol": "BuildingID::int getMagesGuildLevel() const#1",
+          "start": 353,
+          "end": 364
+        },
+        {
+          "symbol": "BuildingID::static BuildingID getDwellingFromLevel(const int levelIndex, const int upgradeIndex)#1",
+          "start": 366,
+          "end": 372
+        },
+        {
+          "symbol": "BuildingID::static int getLevelIndexFromDwelling(BuildingID dwelling)#1",
+          "start": 375,
+          "end": 385
+        },
+        {
+          "symbol": "BuildingID::static int getUpgradeNoFromDwelling(BuildingID dwelling)#1",
+          "start": 388,
+          "end": 399
+        },
+        {
+          "symbol": "BuildingID::static void advanceDwelling(BuildingID & dwelling)#1",
+          "start": 401,
+          "end": 406
+        },
+        {
+          "symbol": "BuildingID::bool isDwelling() const#1",
+          "start": 408,
+          "end": 416
+        },
+        {
+          "symbol": "MapObjectID::constexpr operator int32_t () const#1",
+          "start": 618,
+          "end": 621
+        },
+        {
+          "symbol": "MapObjectSubID::constexpr MapObjectSubID(const IdentifierBase & value): Identifier<MapObjectSubID>(value.getNum())#1",
+          "start": 629,
+          "end": 631
+        },
+        {
+          "symbol": "MapObjectSubID::constexpr MapObjectSubID(int32_t value = -1): Identifier<MapObjectSubID>(value)#1",
+          "start": 632,
+          "end": 634
+        },
+        {
+          "symbol": "MapObjectSubID::MapObjectSubID & operator =(int32_t value)#1",
+          "start": 636,
+          "end": 640
+        },
+        {
+          "symbol": "MapObjectSubID::MapObjectSubID & operator =(const IdentifierBase & value)#1",
+          "start": 642,
+          "end": 646
+        },
+        {
+          "symbol": "MapObjectSubID::constexpr operator int32_t () const#1",
+          "start": 652,
+          "end": 655
+        },
+        {
+          "symbol": "MapObjectSubID::void serializeIdentifier(Handler &h, const MapObjectID & primaryID)#1",
+          "start": 657,
+          "end": 669
+        },
+        {
+          "symbol": "ArtifactPosition::constexpr operator int32_t () const#1",
+          "start": 776,
+          "end": 779
+        },
+        {
+          "symbol": "SpellSchool::void serialize(Handler & h)#1",
+          "start": 1065,
+          "end": 1078
+        },
+        {
+          "symbol": "BuildingTypeUniqueID::void serialize(Handler & h)#1",
+          "start": 1142,
+          "end": 1153
+        }
+      ],
+      "rationale": "Entire1181-line header read. Complete22 callable bodies: HeroTypeID118–121,SlotID134–137,FactionID277–280; BuildingID nine methods322–334/339–343/344–348/353–364/366–372/375–385/388–399/401–406/408–416; MapObjectID conversion618–621; MapObjectSubID two explicit empty-body constructors629–631/632–634,two assignment overloads636–640/642–646,conversion652–655,templated serializeIdentifier657–669; ArtifactPosition conversion776–779; SpellSchool serialize1065–1078; BuildingTypeUniqueID serialize1142–1153. Includes template signature lines per maintained metric. All22 genuine parser symbols/spans retained. Numerous enum/catalogue entries, inherited constructor using-declarations and function prototypes are not callable bodies. No locally defined function-like macros, lambdas, conditional callable branches or hidden definitions; diagnostics869/959 lie in SpellIDBase enum near deprecated enumerator/closing brace, not missing bodies. Maximum function14lines; existing1181-line physical file debt unchanged.",
+      "review": "IR-MANUAL-SOUND-ENTITY-46409b73-20261015",
+      "sha256": "886d53e54b076fc7f423cb7f51bbd83537d8446aafe1eb102c4f6fac99e13b23"
+    },
+    "server/battles/BattleActionProcessor.cpp": {
+      "functions": [
+        {
+          "symbol": "bool armorerLastStandEndedActivation(const CStack * stack)#1",
+          "start": 69,
+          "end": 75
+        },
+        {
+          "symbol": "bool consumeDefiant(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause)#1",
+          "start": 77,
+          "end": 94
+        },
+        {
+          "symbol": "bool isLongReachAttack(const CBattleInfoCallback & battle, const battle::Unit * attacker, const battle::Unit * defender)#1",
+          "start": 96,
+          "end": 104
+        },
+        {
+          "symbol": "void awardBattlefieldMasteryIfEligible(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const CStack * stack, BattlecraftMasteryAction action)#1",
+          "start": 106,
+          "end": 128
+        },
+        {
+          "symbol": "BattleSide activeDeploymentSide(const CBattleInfoCallback & battle)#1",
+          "start": 130,
+          "end": 145
+        },
+        {
+          "symbol": "bool isDeploymentPositionLegal(const CBattleInfoCallback & battle, const battle::Unit & unit, const BattleHex & position, BattleSide side)#1",
+          "start": 147,
+          "end": 181
+        },
+        {
+          "symbol": "isDeploymentPositionLegal(const CBattleInfoCallback & battle, const battle::Unit & unit, const BattleHex & position, BattleSide side)::[side, distance](const BattleHex & hex)#1",
+          "start": 163,
+          "end": 176
+        },
+        {
+          "symbol": "BattleHex resolveMovementDestination(const CBattleInfoCallback & battle, const battle::Unit & unit, const BattleHex & requested)#1",
+          "start": 183,
+          "end": 200
+        },
+        {
+          "symbol": "bool hasLegalHostileBallistaShot(const CBattleInfoCallback & battle, const battle::Unit * shooter)#1",
+          "start": 202,
+          "end": 218
+        },
+        {
+          "symbol": "void publishRangedFollowUpState(const CBattleInfoCallback & battle, CGameHandler & gameHandler, const battle::Unit * unit, int percent)#1",
+          "start": 220,
+          "end": 236
+        },
+        {
+          "symbol": "void logRangedFollowUp(const CBattleInfoCallback & battle, CGameHandler & gameHandler, const battle::Unit * unit, std::string text)#1",
+          "start": 238,
+          "end": 250
+        },
+        {
+          "symbol": "bool isCreatureActionAllowedDuringForgetfulness(const CBattleInfoCallback & battle, const BattleAction & action)#1",
+          "start": 252,
+          "end": 277
+        },
+        {
+          "symbol": "static AttackedTarget unitAboutToBeAttacked(const battle::Unit * unit)#1",
+          "start": 282,
+          "end": 288
+        },
+        {
+          "symbol": "static SpellID divineRetributionSpellID()#1",
+          "start": 290,
+          "end": 294
+        },
+        {
+          "symbol": "static void recordDivineRetributionDamage(const CBattleInfoCallback & battle, CGameHandler & gameHandler, const battle::Unit * attacker, const battle::Unit * protectedUnit, int64_t actualHpDamage)#1",
+          "start": 296,
+          "end": 391
+        },
+        {
+          "symbol": "static bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle, const AccessibilityInfo & accessibility, const BattleHex & hex)#1",
+          "start": 393,
+          "end": 416
+        },
+        {
+          "symbol": "static bool isTimeStopHeroAction(const BattleAction & action)#1",
+          "start": 418,
+          "end": 424
+        },
+        {
+          "symbol": "static bool shouldActivateGrandMetamagic(const CBattleInfoCallback & battle, BattleSide side, const CGHeroInstance * hero, bool metamagicFollowup)#1",
+          "start": 426,
+          "end": 437
+        },
+        {
+          "symbol": "static const char * heroOrderDisplayName(HeroCommand command)#1",
+          "start": 439,
+          "end": 453
+        },
+        {
+          "symbol": "static bool isSanctifiedHostileTarget(const CBattleInfoCallback & battle, const battle::Unit * attacker, const battle::Unit * target)#1",
+          "start": 455,
+          "end": 460
+        },
+        {
+          "symbol": "static bool creatureSpellDirectlyTargetsSanctified(const CBattleInfoCallback & battle, const CStack * caster, SpellID spellID, const battle::Target & target, BonusType abilityType)#1",
+          "start": 462,
+          "end": 493
+        },
+        {
+          "symbol": "static bool actionDirectlyTargetsSanctified(const CBattleInfoCallback & battle, const BattleAction & action, const CStack * stack)#1",
+          "start": 495,
+          "end": 523
+        },
+        {
+          "symbol": "static void appendHeroOrderCauseName(MetaString & line, const CBattleInfoCallback & battle, const battle::Unit * unit, HeroCommand command)#1",
+          "start": 525,
+          "end": 538
+        },
+        {
+          "symbol": "static void appendHeroOrderCauseNames(MetaString & line, const CBattleInfoCallback & battle, const battle::Unit * unit, const std::vector<HeroCommand> & commands)#1",
+          "start": 540,
+          "end": 549
+        },
+        {
+          "symbol": "static std::vector<HeroCommand> damageOrderCauses(const DamageEstimation & estimation, bool attacker)#1",
+          "start": 551,
+          "end": 558
+        },
+        {
+          "symbol": "static MetaString orderDamageLogLine(const CBattleInfoCallback & battle, const CStack * attacker, const battle::Unit * target, const BattleStackAttacked & hit, const std::vector<HeroCommand> & attackerOrderCauses, const std::vector<HeroCommand> & defenderOrderCauses)#1",
+          "start": 560,
+          "end": 611
+        },
+        {
+          "symbol": "static void appendHeroOrderTarget(MetaString & line, const CBattleInfoCallback & battle, uint32_t unitId)#1",
+          "start": 613,
+          "end": 620
+        },
+        {
+          "symbol": "static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSide side, const HeroOrderState & state)#1",
+          "start": 622,
+          "end": 721
+        },
+        {
+          "symbol": "static bool validateCanonicalLandMineTargets(const CBattleInfoCallback & battle, const spells::Mechanics & mechanics, const battle::Target & target)#1",
+          "start": 723,
+          "end": 740
+        },
+        {
+          "symbol": "static bool validateCanonicalQuicksandTargets(const CBattleInfoCallback & battle, const spells::Mechanics & mechanics, const battle::Target & target)#1",
+          "start": 742,
+          "end": 758
+        },
+        {
+          "symbol": "static bool validateShadowGiftAction(const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const CSpell * spell, const battle::Target & target)#1",
+          "start": 760,
+          "end": 786
+        },
+        {
+          "symbol": "static void applyShadowGiftSacrifice(CGameHandler & handler, const CBattleInfoCallback & battle, const BattleAction & action, const CStack & recipient, const int32_t costBasisPoints)#1",
+          "start": 788,
+          "end": 813
+        },
+        {
+          "symbol": "static std::vector<std::shared_ptr<Bonus>> activeShadowGiftStatusBonuses( const CStack & recipient, const SpellID spell)#1",
+          "start": 815,
+          "end": 828
+        },
+        {
+          "symbol": "activeShadowGiftStatusBonuses( const CStack & recipient, const SpellID spell)::[](const auto & bonus)#1",
+          "start": 823,
+          "end": 826
+        },
+        {
+          "symbol": "static bool hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell, const std::vector<std::shared_ptr<Bonus>> & previous)#1",
+          "start": 830,
+          "end": 841
+        },
+        {
+          "symbol": "hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell, const std::vector<std::shared_ptr<Bonus>> & previous)::[&](const auto & bonus)#1",
+          "start": 834,
+          "end": 840
+        },
+        {
+          "symbol": "hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell, const std::vector<std::shared_ptr<Bonus>> & previous)::(const auto & bonus)::[&](const auto & oldBonus)#1",
+          "start": 836,
+          "end": 839
+        },
+        {
+          "symbol": "static bool canonicalFireWallDirection(BattleHex::EDir direction)#1",
+          "start": 843,
+          "end": 846
+        },
+        {
+          "symbol": "static bool chainGateKillQualifies(const CBattleInfoCallback & battle, const CStack * attacker, const std::vector<BattleStackAttacked> & hits)#1",
+          "start": 848,
+          "end": 872
+        },
+        {
+          "symbol": "chainGateKillQualifies(const CBattleInfoCallback & battle, const CStack * attacker, const std::vector<BattleStackAttacked> & hits)::[&battle, attacker, rewardSide](const auto & hit)#1",
+          "start": 865,
+          "end": 871
+        },
+        {
+          "symbol": "static bool demonicGateFootprintHasObstacle(const CBattleInfoCallback & battle, const BattleHex & position, bool doubleWide, BattleSide side)#1",
+          "start": 874,
+          "end": 883
+        },
+        {
+          "symbol": "static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)#1",
+          "start": 885,
+          "end": 936
+        },
+        {
+          "symbol": "validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)::[](const auto & destination)#1",
+          "start": 889,
+          "end": 892
+        },
+        {
+          "symbol": "static bool validateCanonicalFireWallAction(const CBattleInfoCallback & battle, const BattleAction & action, battle::Target & expandedTarget)#1",
+          "start": 938,
+          "end": 961
+        },
+        {
+          "symbol": "BattleActionProcessor::BattleActionProcessor(BattleProcessor * owner, CGameHandler * newGameHandler) : owner(owner) , gameHandler(newGameHandler)#1",
+          "start": 963,
+          "end": 967
+        },
+        {
+          "symbol": "void BattleActionProcessor::publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const#1",
+          "start": 969,
+          "end": 981
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doEmptyAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 983,
+          "end": 1010
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doEndTacticsAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 1012,
+          "end": 1015
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doWaitAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 1017,
+          "end": 1041
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doRetreatAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 1043,
+          "end": 1053
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doSurrenderAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 1055,
+          "end": 1074
+        },
+        {
+          "symbol": "static bool validatePurifyAction(const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const battle::Target & target)#1",
+          "start": 1076,
+          "end": 1126
+        },
+        {
+          "symbol": "validatePurifyAction(const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const battle::Target & target)::[](const auto & stack)#1",
+          "start": 1121,
+          "end": 1124
+        },
+        {
+          "symbol": "static std::vector<uint32_t> applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const bool purifyingMandate)#1",
+          "start": 1128,
+          "end": 1299
+        },
+        {
+          "symbol": "bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 1301,
+          "end": 1357
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 1359,
+          "end": 1612
+        },
+        {
+          "symbol": "BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[&spellAllowance](const auto & entry)#1",
+          "start": 1508,
+          "end": 1511
+        },
+        {
+          "symbol": "BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[](const auto & entry)#1",
+          "start": 1534,
+          "end": 1538
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doWalkAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 1614,
+          "end": 1665
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 1667,
+          "end": 1674
+        },
+        {
+          "symbol": "bool BattleActionProcessor::applyDefendStance(const CBattleInfoCallback & battle, const CStack * stack, bool voluntary)#1",
+          "start": 1676,
+          "end": 1749
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1",
+          "start": 1751,
+          "end": 2099
+        },
+        {
+          "symbol": "BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)::[&]() -> const CStack *#1",
+          "start": 1932,
+          "end": 1935
+        },
+        {
+          "symbol": "BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)::[&](const BattleHex & hex)#1",
+          "start": 2041,
+          "end": 2045
+        },
+        {
+          "symbol": "void BattleActionProcessor::finalizeOpportunistSequence(const CBattleInfoCallback & battle, const CStack * stack, int remainingMovement, bool allowMovement) const#1",
+          "start": 2101,
+          "end": 2117
+        },
+        {
+          "symbol": "void BattleActionProcessor::setPursuitMovementRemaining(const CBattleInfoCallback & battle, const CStack * stack, int32_t remaining) const#1",
+          "start": 2119,
+          "end": 2132
+        },
+        {
+          "symbol": "void BattleActionProcessor::setCleaveUsed(const CBattleInfoCallback & battle, const CStack * stack) const#1",
+          "start": 2134,
+          "end": 2146
+        },
+        {
+          "symbol": "void BattleActionProcessor::removeBonuses(const CBattleInfoCallback & battle, const battle::Unit * stack, BonusList bonuses)#1",
+          "start": 2148,
+          "end": 2167
+        },
+        {
+          "symbol": "BattleActionProcessor::RainOfArrowsAction BattleActionProcessor::beginRainOfArrows( const CBattleInfoCallback & battle, const CStack * attacker, const CStack * primaryTarget) const#1",
+          "start": 2169,
+          "end": 2191
+        },
+        {
+          "symbol": "void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)#1",
+          "start": 2193,
+          "end": 2298
+        },
+        {
+          "symbol": "BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)::[&action](const battle::Unit * candidate)#1",
+          "start": 2199,
+          "end": 2210
+        },
+        {
+          "symbol": "BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)::[](const battle::Unit * unit)#1",
+          "start": 2211,
+          "end": 2218
+        },
+        {
+          "symbol": "BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)::[](const battle::Unit * unit)#2",
+          "start": 2220,
+          "end": 2221
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1",
+          "start": 2300,
+          "end": 2455
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doCatapultAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 2457,
+          "end": 2479
+        },
+        {
+          "symbol": "bool BattleActionProcessor::prepareUnitSpellAction(const CBattleInfoCallback & battle, BattleAction & ba)#1",
+          "start": 2481,
+          "end": 2559
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doUnitSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 2561,
+          "end": 2587
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 2589,
+          "end": 2755
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doWalkAndSpellcastAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 2757,
+          "end": 2826
+        },
+        {
+          "symbol": "bool BattleActionProcessor::canStackAct(const CBattleInfoCallback & battle, const CStack * stack)#1",
+          "start": 2828,
+          "end": 2868
+        },
+        {
+          "symbol": "bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1",
+          "start": 2870,
+          "end": 2922
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 2924,
+          "end": 3037
+        },
+        {
+          "symbol": "BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[&ba](const auto & gate)#1",
+          "start": 2986,
+          "end": 2989
+        },
+        {
+          "symbol": "BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[&ba](const auto & gate)#2",
+          "start": 3015,
+          "end": 3018
+        },
+        {
+          "symbol": "bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 3039,
+          "end": 3148
+        },
+        {
+          "symbol": "bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba, bool * masterGateActivationContinuationOut, bool voluntary)#1",
+          "start": 3150,
+          "end": 3633
+        },
+        {
+          "symbol": "BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba, bool * masterGateActivationContinuationOut, bool voluntary)::MovementProvenanceGuard::~MovementProvenanceGuard()#1",
+          "start": 3157,
+          "end": 3157
+        },
+        {
+          "symbol": "void BattleActionProcessor::breakSanctuary(const CBattleInfoCallback & battle, const battle::Unit * stack)#1",
+          "start": 3635,
+          "end": 3674
+        },
+        {
+          "symbol": "void BattleActionProcessor::resolveOverwatch(const CBattleInfoCallback & battle, const CStack * mover, const BattleHex & from, const BattleHex & to)#1",
+          "start": 3676,
+          "end": 3709
+        },
+        {
+          "symbol": "BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1",
+          "start": 3711,
+          "end": 4258
+        },
+        {
+          "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[](const std::shared_ptr<const CObstacleInstance> & obst)#1",
+          "start": 3803,
+          "end": 3806
+        },
+        {
+          "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & hex) -> bool#1",
+          "start": 3808,
+          "end": 3818
+        },
+        {
+          "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & hex) -> bool#2",
+          "start": 3820,
+          "end": 3833
+        },
+        {
+          "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[hasWideMoat, i, unitPath = unitPath](const BattleHex & hex) -> bool#1",
+          "start": 3881,
+          "end": 3891
+        },
+        {
+          "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&]() -> int#1",
+          "start": 3932,
+          "end": 3965
+        },
+        {
+          "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#1",
+          "start": 3986,
+          "end": 3990
+        },
+        {
+          "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#2",
+          "start": 3992,
+          "end": 3998
+        },
+        {
+          "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#3",
+          "start": 4001,
+          "end": 4005
+        },
+        {
+          "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#4",
+          "start": 4033,
+          "end": 4036
+        },
+        {
+          "symbol": "void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const#1",
+          "start": 4260,
+          "end": 4360
+        },
+        {
+          "symbol": "BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const::[this, ownerArmy, attackerLuck]()#1",
+          "start": 4288,
+          "end": 4291
+        },
+        {
+          "symbol": "BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const::[this, ownerArmy, deathBlowChance]()#1",
+          "start": 4334,
+          "end": 4337
+        },
+        {
+          "symbol": "BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const::[this, ownerArmy, chance]()#1",
+          "start": 4349,
+          "end": 4352
+        },
+        {
+          "symbol": "void BattleActionProcessor::describeUpcomingAttack(CombatEventPayload & payload, const CStack * defender, const battle::Units & secondaryTargets) const#1",
+          "start": 4362,
+          "end": 4369
+        },
+        {
+          "symbol": "battle::Units BattleActionProcessor::collectSecondaryTargets(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, BattleAttack & bat) const#1",
+          "start": 4371,
+          "end": 4415
+        },
+        {
+          "symbol": "BattleActionProcessor::collectSecondaryTargets(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, BattleAttack & bat) const::[&result, defender](const battle::Unit * unit)#1",
+          "start": 4375,
+          "end": 4379
+        },
+        {
+          "symbol": "void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleAttack & bat) const#1",
+          "start": 4417,
+          "end": 4432
+        },
+        {
+          "symbol": "void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)#1",
+          "start": 4434,
+          "end": 5617
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const DamageEstimation & estimation, const battle::Unit * target)#1",
+          "start": 4579,
+          "end": 4608
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const DamageEstimation & estimation, const battle::Unit * target)#2",
+          "start": 4609,
+          "end": 4627
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[defender](const auto & hit)#1",
+          "start": 4753,
+          "end": 4756
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&battle](const BattleStackAttacked & hit)#1",
+          "start": 4839,
+          "end": 4848
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const BattleStackAttacked & hit)#1",
+          "start": 4855,
+          "end": 4858
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&target](const auto & hit)#1",
+          "start": 4874,
+          "end": 4874
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[defender](const BattleStackAttacked & hit)#1",
+          "start": 5046,
+          "end": 5049
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const Bonus * bonus)#1",
+          "start": 5168,
+          "end": 5171
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const Bonus * bonus)#2",
+          "start": 5199,
+          "end": 5202
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const Bonus * bonus)#3",
+          "start": 5310,
+          "end": 5313
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const auto & target)#1",
+          "start": 5352,
+          "end": 5355
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[defender](const battle::Unit * unit)#1",
+          "start": 5468,
+          "end": 5469
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const battle::Unit * unit)#1",
+          "start": 5575,
+          "end": 5581
+        },
+        {
+          "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const battle::Unit * left, const battle::Unit * right)#1",
+          "start": 5582,
+          "end": 5588
+        },
+        {
+          "symbol": "void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender)#1",
+          "start": 5619,
+          "end": 5697
+        },
+        {
+          "symbol": "BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender)::[this, ownerArmy, effectiveChance]()#1",
+          "start": 5675,
+          "end": 5678
+        },
+        {
+          "symbol": "std::set<SpellID> BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)#1",
+          "start": 5699,
+          "end": 5750
+        },
+        {
+          "symbol": "BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)::[&](int layer) -> void#1",
+          "start": 5714,
+          "end": 5725
+        },
+        {
+          "symbol": "BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)::[&](const std::shared_ptr<Bonus> spell)#1",
+          "start": 5736,
+          "end": 5740
+        },
+        {
+          "symbol": "void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload)#1",
+          "start": 5754,
+          "end": 5761
+        },
+        {
+          "symbol": "DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted, int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent, bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack) const#1",
+          "start": 5763,
+          "end": 5909
+        },
+        {
+          "symbol": "void BattleActionProcessor::addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const#1",
+          "start": 5911,
+          "end": 5937
+        },
+        {
+          "symbol": "void BattleActionProcessor::addGenericDamageLog(BattleLogMessage& blm, const std::shared_ptr<battle::CUnitState> &attackerState, int64_t damageDealt) const#1",
+          "start": 5939,
+          "end": 5946
+        },
+        {
+          "symbol": "bool BattleActionProcessor::makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
+          "start": 5948,
+          "end": 5951
+        },
+        {
+          "symbol": "bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction &ba, BattleAction * effectiveActionOut, bool * masterGateActivationContinuationOut)#1",
+          "start": 5953,
+          "end": 6117
+        },
+        {
+          "symbol": "void BattleActionProcessor::runPredefinedReaction(const CBattleInfoCallback & battle, const Bonus & bonus, const battle::Unit * self, const battle::Unit * other)#1",
+          "start": 6119,
+          "end": 6158
+        },
+        {
+          "symbol": "void BattleActionProcessor::collectEventTriggers(const CBattleInfoCallback & battle, std::vector<PendingTrigger> & pending, CombatEventType event, const battle::Unit * self, const battle::Unit * other) const#1",
+          "start": 6160,
+          "end": 6208
+        },
+        {
+          "symbol": "BattleActionProcessor::collectEventTriggers(const CBattleInfoCallback & battle, std::vector<PendingTrigger> & pending, CombatEventType event, const battle::Unit * self, const battle::Unit * other) const::[&pending, event, self, other](const std::shared_ptr<const Bonus> & bonus, int priority, const ICombatEventScript * script)#1",
+          "start": 6162,
+          "end": 6172
+        },
+        {
+          "symbol": "void BattleActionProcessor::runEventTriggers(const CBattleInfoCallback & battle, std::vector<PendingTrigger> & pending, const CombatEventPayload & payload)#1",
+          "start": 6210,
+          "end": 6245
+        },
+        {
+          "symbol": "void BattleActionProcessor::processBattleEventTriggers(const CBattleInfoCallback & battle, CombatEventType event, const battle::Unit * target, const battle::Unit * secondary, const CombatEventPayload & payload)#1",
+          "start": 6247,
+          "end": 6252
+        },
+        {
+          "symbol": "void BattleActionProcessor::processAttackTriggers(const CBattleInfoCallback & battle, CombatEventType attackerEvent, CombatEventType targetEvent, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload)#1",
+          "start": 6254,
+          "end": 6263
+        }
+      ],
+      "rationale": "Entire 6263-line source read, including all attack/movement/event branches and local class bodies. All 139 genuine maintained parser units retained exactly: 92 function definitions (including the constructor and local MovementProvenanceGuard destructor3157) plus47 nested/generic/capturing lambdas. No function-like macro definitions, conditional-compilation branches, defaulted/deleted definitions or additional unparsed callable bodies are present. Sole recovery at5708 is the member-expression token ->operator[] in spells->operator[](i), an invocation within getSpellsForAttackCasting5699-5750; it defines no callable, and that complete52-line function and its two lambdas5714-5725/5736-5740 are already retained. Existing16 >80-line functions, including9 >150, are genuine unchanged numeric debt and all17 existing file/function pins remain untouched; this inventory neither approves behavior nor grants numeric exception/growth. Full-file hash pins this completeness judgment; any source edit requires refreshed independent review, not automatic inheritance.",
+      "review": "IR-MANUAL-BATTLE-ACTION-59c1a4e4-20261015",
+      "sha256": "4488e81991003a8c45dabbbf2605c26efdd89292979d8684aff965cc7607cba1"
     }
   },
   "schema": 1,
@@ -10256,13 +11042,13 @@
     },
     "lib/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 1095,
+      "lines": 1096,
       "owner": "engine_engineer",
-      "rationale": "Independently reviewed mechanical registry exception: exactly two focused spell-presentation translation units and their two private headers are registered in the existing coherent library source/header lists. No build behavior or existing entry changes; the extraction reduces the owning implementation rather than relocating concentration.",
-      "review": "IR-CMAKE-MAGIC-REGISTRATION-2fe4f64b-20261015",
-      "review_scope": "exact-four-registration-lines-only",
-      "deferral": "Only this exact 1095-line registry and hash are authorized. Further edits or growth require a new independent review; this is not a general allowance for new implementation in CMake or continued registry expansion.",
-      "sha256": "2fe4f64bacd8f37454dcd4eef2b730d4520caa627a00fa483affc49f5784518f"
+      "rationale": "Independently reviewed mechanical registry exception: exactly one compatibility-composer header is added after BattleChanges.h in the existing coherent header list. Removing that line recovers the previous registry byte-for-byte; no existing entry or build behavior changes. The helper centralizes existing ordered validation without adding state or encoding.",
+      "review": "IR-STAGE5-REGISTRY-6b27a8f0-20261015",
+      "review_scope": "exact-one-header-registration-line-only",
+      "deferral": "Only this exact 1096-line registry and hash are authorized. Further edits or growth require a new independent review; this is not a general allowance for implementation in CMake or continued registry expansion.",
+      "sha256": "6b27a8f078398d2cc8d80a5310040a89fbfc9ae37fcbe91466fc9ca95ff9c2b8"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -10281,15 +11067,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "b510e3c2aec7a67625dbc8a06b7b94eca8c790f2bdb63511e118500f47b94f90"
-    },
-    "lib/CSoundBase.h::#define VCMI_SOUND_NAME#1": {
-      "kind": "legacy",
-      "lines": 1017,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1017 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "0b69edc96d565531c24907c6e6018985ac170fdc698d336d013485cf54b7538a"
     },
     "lib/CStack.cpp": {
       "kind": "legacy",
@@ -12084,21 +12861,21 @@
     },
     "lib/networkPacks/PacksForClientBattle.h": {
       "kind": "legacy",
-      "lines": 2253,
+      "lines": 2218,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 2253 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "10b05f76402285570c09c905797b9c51ebe238750abf95ee035994a0a50f0c3c"
+      "rationale": "Reviewed bounded extraction of five repeated envelope preflight sequences into a 39-line ordered unit-state compatibility composer. Inlining its three ordinary and two synchronous Frozen-feedback calls recovers the previous header byte-for-byte. Direct UnitChanges, envelope ownership, fields and historical rejection timing remain unchanged. Remaining packet responsibilities are frozen at this reduced size, not certified as fully decomposed.",
+      "review": "IR-STAGE5-COMPOSER-55d1f20b-20261015",
+      "review_scope": "bounded-five-envelope-preflight-extraction",
+      "sha256": "55d1f20be0624521fff223328bbae5134a8f1a7fae492cada9782b1206adbb11"
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleAttack::void serialize(Handler & h)#1": {
       "kind": "legacy",
-      "lines": 156,
+      "lines": 142,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 156 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "2d6ce7efcdf35aabc55e54d568b0ad6cd490d916c2bb544c46ca5adbb8d53b62"
+      "rationale": "Reviewed reduction from 156 to 142 lines by composing the existing ordered unit-state preflights in both attack containers. The target-side Shatter check remains between Frozen and BattleForm validation; outer checks, nested validation, encoded fields and late historical guards are unchanged. Further edits require a reviewed reduction or separately bounded exception.",
+      "review": "IR-STAGE5-COMPOSER-55d1f20b-20261015",
+      "review_scope": "bounded-two-attack-container-preflight-extraction",
+      "sha256": "745d19c5bbeece6fb1b9a4d56c5ed71310e52c314f694967fab2f41cb5d35b7b"
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleHeroOrderStateChanged::void serialize(Handler & h)#1": {
       "kind": "legacy",

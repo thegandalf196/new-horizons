@@ -17,6 +17,7 @@
 
 #include "NetPacksBase.h"
 #include "BattleChanges.h"
+#include "BattleUnitStateCompatibility.h"
 #include "PacksForClient.h"
 #include "../battle/BattleAction.h"
 #include "../battle/BattleDisplacementCause.h"
@@ -1015,15 +1016,7 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 				throw std::runtime_error("Cannot discard Rebirth Chain consumption from an older packet");
 			for(const auto & change : changedStacks)
 			{
-				change.validateOverwatchSerialization(h);
-				change.validateVeteranCohesionSerialization(h);
-				change.validateTrainingSerialization(h);
-				change.validatePlagueSerialization(h);
-				change.validateFrozenSerialization(h);
-				change.validateBattleFormSerialization(h);
-				change.validateConfusionSerialization(h);
-				change.validateMoraleActivationSerialization(h);
-				change.validateOpportunistSerialization(h);
+				battleUnitStateCompatibility::validateForEnvelope(change, h);
 			}
 		}
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP)
@@ -1148,15 +1141,7 @@ struct BattleStackAttacked
 	{
 		if(h.saving)
 		{
-			newState.validateOverwatchSerialization(h);
-			newState.validateVeteranCohesionSerialization(h);
-			newState.validateTrainingSerialization(h);
-			newState.validatePlagueSerialization(h);
-			newState.validateFrozenSerialization(h);
-			newState.validateBattleFormSerialization(h);
-			newState.validateConfusionSerialization(h);
-			newState.validateMoraleActivationSerialization(h);
-			newState.validateOpportunistSerialization(h);
+			battleUnitStateCompatibility::validateForEnvelope(newState, h);
 		}
 		if(h.saving)
 			validateArmorerLastStandShape();
@@ -1316,29 +1301,15 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 				throw std::runtime_error("Cannot discard Perfect Fortune strike state");
 			for(const auto & change : attackerChanges.changedStacks)
 			{
-				change.validateOverwatchSerialization(h);
-				change.validateVeteranCohesionSerialization(h);
-				change.validateTrainingSerialization(h);
-				change.validatePlagueSerialization(h);
-				change.validateFrozenSerialization(h);
-				change.validateBattleFormSerialization(h);
-				change.validateConfusionSerialization(h);
-				change.validateMoraleActivationSerialization(h);
-				change.validateOpportunistSerialization(h);
+				battleUnitStateCompatibility::validateForEnvelope(change, h);
 			}
 			for(const auto & hit : bsa)
 			{
-				hit.newState.validateOverwatchSerialization(h);
-				hit.newState.validateVeteranCohesionSerialization(h);
-				hit.newState.validateTrainingSerialization(h);
-				hit.newState.validatePlagueSerialization(h);
-				hit.newState.validateFrozenSerialization(h);
-				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
-					throw std::runtime_error("Cannot discard Frozen Shatter in an older battle attack format");
-				hit.newState.validateBattleFormSerialization(h);
-				hit.newState.validateConfusionSerialization(h);
-				hit.newState.validateMoraleActivationSerialization(h);
-				hit.newState.validateOpportunistSerialization(h);
+				battleUnitStateCompatibility::validateForEnvelope(hit.newState, h, [&]()
+				{
+					if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
+						throw std::runtime_error("Cannot discard Frozen Shatter in an older battle attack format");
+				});
 			}
 		}
 		if(h.saving)
@@ -1937,17 +1908,11 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 		{
 			for(const auto & hit : stacks)
 			{
-				hit.newState.validateOverwatchSerialization(h);
-				hit.newState.validateVeteranCohesionSerialization(h);
-				hit.newState.validateTrainingSerialization(h);
-				hit.newState.validatePlagueSerialization(h);
-				hit.newState.validateFrozenSerialization(h);
-				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
-					throw std::runtime_error("Cannot discard Frozen Shatter in an older injury format");
-				hit.newState.validateBattleFormSerialization(h);
-				hit.newState.validateConfusionSerialization(h);
-				hit.newState.validateMoraleActivationSerialization(h);
-				hit.newState.validateOpportunistSerialization(h);
+				battleUnitStateCompatibility::validateForEnvelope(hit.newState, h, [&]()
+				{
+					if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
+						throw std::runtime_error("Cannot discard Frozen Shatter in an older injury format");
+				});
 			}
 		}
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
