@@ -54,24 +54,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "fb33696429c9eba08c2bbe09406cc1551bb4ca2d299131c13d64a758893540fc"
     },
-    "CI/NSIS.template.in": {
-      "diagnostics": [],
-      "language": "nsis",
-      "owner": "engine_engineer",
-      "reason": "Unsupported embedded/build-language function parser. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "126360b823716cc2d0de38761d6dc220c6e3fdc2b34890ab4a6125c5cccffdd6"
-    },
-    "CI/wininstaller/installer.iss": {
-      "diagnostics": [],
-      "language": "inno",
-      "owner": "engine_engineer",
-      "reason": "Unsupported embedded/build-language function parser. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "0ddd0469bc1426151d011e634bb9d549b241c56191f0d8703c1be31b0cdcf20e"
-    },
     "client/xBRZ/xbrz.cpp": {
       "diagnostics": [
         {
@@ -8553,6 +8535,335 @@
       "rationale": "Entire998-line menu source read including all constructors, explicit empty-bodied loading-screen destructor960-962, JoinScreen destructor659-663, command factory and its nested shutdown lambda229, video callback nesting414-436, release-offer callbacks407-410, discovery callback nesting665-685, network continuation900-903 and VCMI_MOBILE conditional736-738. All83 genuine maintained parser units retained exactly:55 handwritten definition bodies plus28 lambdas. CMainMenu::~CMainMenu384 is defaulted/bodyless and excluded under maintained body metric; no function-like macro definitions. OBJECT_CONSTRUCTION uses are invocations, not definitions in this file. Both diagnostics at186 arise within existing `(void(CMenuScreen::*)(size_t))` pointer-to-member cast used by std::bind; it declares no implemented function and genCommand165-245 is fully retained, with all13 contained lambdas. The VCMI_MOBILE arm contains only giveFocus() statement, no conditional callable. No unparsed callable bodies identified. Existing81-line genCommand and998-line file numeric pins unchanged; no behavior/thread/lifecycle certification or exception.",
       "review": "IR-MANUAL-CALLBACK-MAINMENU-ed3114ef-20261015",
       "sha256": "c263066f072412a6cc21ef389529483766da1677b19888778653aee0743031bd"
+    },
+    "CI/NSIS.template.in": {
+      "functions": [
+        {
+          "symbol": "!macro LoadSectionSelectedIntoVar SecName VarName#1",
+          "start": 59,
+          "end": 62
+        },
+        {
+          "symbol": "!macro LoadVar VarName#1",
+          "start": 65,
+          "end": 67
+        },
+        {
+          "symbol": "!macro StoreVar VarName IntValue#1",
+          "start": 70,
+          "end": 72
+        },
+        {
+          "symbol": "!macro InitSection SecName#1",
+          "start": 74,
+          "end": 99
+        },
+        {
+          "symbol": "!macro FinishSection SecName#1",
+          "start": 101,
+          "end": 124
+        },
+        {
+          "symbol": "!macro RemoveSection_CPack SecName#1",
+          "start": 126,
+          "end": 132
+        },
+        {
+          "symbol": "!macro MaybeSelectionChanged SecName#1",
+          "start": 135,
+          "end": 152
+        },
+        {
+          "symbol": "!macro select_NT_profile UN#1",
+          "start": 172,
+          "end": 183
+        },
+        {
+          "symbol": "!macro select_NT_profile UN::Function ${UN}select_NT_profile#1",
+          "start": 173,
+          "end": 182
+        },
+        {
+          "symbol": "Function AddToPath#1",
+          "start": 203,
+          "end": 285
+        },
+        {
+          "symbol": "Function un.RemoveFromPath#1",
+          "start": 291,
+          "end": 382
+        },
+        {
+          "symbol": "!macro IsNT un#1",
+          "start": 406,
+          "end": 421
+        },
+        {
+          "symbol": "!macro IsNT un::Function ${un}IsNT#1",
+          "start": 407,
+          "end": 420
+        },
+        {
+          "symbol": "!macro StrStr un#1",
+          "start": 438,
+          "end": 467
+        },
+        {
+          "symbol": "!macro StrStr un::Function ${un}StrStr#1",
+          "start": 439,
+          "end": 466
+        },
+        {
+          "symbol": "Function Trim#1",
+          "start": 471,
+          "end": 487
+        },
+        {
+          "symbol": "Function ConditionalAddToRegistry#1",
+          "start": 489,
+          "end": 498
+        },
+        {
+          "symbol": "Function DownloadFile#1",
+          "start": 503,
+          "end": 524
+        },
+        {
+          "symbol": "Section \"-Core installation\"#1",
+          "start": 641,
+          "end": 728
+        },
+        {
+          "symbol": "Section \"-Add to path\"#1",
+          "start": 730,
+          "end": 736
+        },
+        {
+          "symbol": "Function InstallOptionsPage#1",
+          "start": 740,
+          "end": 744
+        },
+        {
+          "symbol": "Function un.onInit#1",
+          "start": 748,
+          "end": 770
+        },
+        {
+          "symbol": "!macro SectionList MacroName#1",
+          "start": 773,
+          "end": 777
+        },
+        {
+          "symbol": "Section -FinishComponents#1",
+          "start": 779,
+          "end": 799
+        },
+        {
+          "symbol": "Function .onSelChange#1",
+          "start": 804,
+          "end": 806
+        },
+        {
+          "symbol": "Section \"Uninstall\"#1",
+          "start": 811,
+          "end": 895
+        },
+        {
+          "symbol": "Function .onInit#1",
+          "start": 907,
+          "end": 982
+        }
+      ],
+      "rationale": "Entire982-line maintained NSIS template read across all preprocessor branches. Complete physical-source inventory includes11 !macro definitions,12 Function/FunctionEnd bodies and4 executable Section/SectionEnd entry bodies. Three parameterized Function templates inside select_NT_profile/IsNT/StrStr macros have distinct physical body spans inside their containing macro spans; each physical template is counted once, not once per !insertmacro expansion. DownloadFile503-524 is included regardless of CPACK_USES_DOWNLOAD. Sections641-728,730-736,779-799,811-895 are authored executable entry units, not discarded as configuration; labels/jumps/plugin calls are statements, not separate functions. Constant !define directives and !insertmacro invocations do not define extra authored callables. CPack @...@ substitution slots and external NSIS library includes may generate additional output; generated/expanded output is not invented as handwritten bodies of this physical template. Four genuine newly measured >80 units83/92/88/85 require SEPARATE reviewed numeric admission, not supplied by this coverage entry. Existing file pin unchanged; no vendor/generated reclassification, compiler/runtime/semantic approval or numeric exception.",
+      "review": "IR-MANUAL-INSTALLERS-b29761df-20261015",
+      "sha256": "126360b823716cc2d0de38761d6dc220c6e3fdc2b34890ab4a6125c5cccffdd6"
+    },
+    "CI/wininstaller/installer.iss": {
+      "functions": [
+        {
+          "symbol": "function RegistryQueryPath(Key, ValueName: String): String;#1",
+          "start": 239,
+          "end": 245
+        },
+        {
+          "symbol": "function ShouldRunLauncher(): Boolean;#1",
+          "start": 248,
+          "end": 257
+        },
+        {
+          "symbol": "function FolderSize(FolderPath: String): Int64;#1",
+          "start": 260,
+          "end": 278
+        },
+        {
+          "symbol": "function IsFolderValid(FolderPath: String): Boolean;#1",
+          "start": 281,
+          "end": 284
+        },
+        {
+          "symbol": "procedure CopyFolderContents(SourceDir, DestDir: String; Overwrite: Boolean);#1",
+          "start": 287,
+          "end": 328
+        },
+        {
+          "symbol": "function GetCurrentSessionUserName: string;#1",
+          "start": 346,
+          "end": 376
+        },
+        {
+          "symbol": "function GetBranchSuffix(Param: string): string;#1",
+          "start": 379,
+          "end": 392
+        },
+        {
+          "symbol": "function GetCommonProgramFilesDir: String;#1",
+          "start": 395,
+          "end": 418
+        },
+        {
+          "symbol": "function GetDefaultDir(Default: String): String;#1",
+          "start": 421,
+          "end": 429
+        },
+        {
+          "symbol": "function GetUserFolderPath(Constant: String): String;#1",
+          "start": 432,
+          "end": 452
+        },
+        {
+          "symbol": "procedure OnTaskCheck(Sender: TObject);#1",
+          "start": 455,
+          "end": 471
+        },
+        {
+          "symbol": "function GetUserDocsFolder: String;#1",
+          "start": 475,
+          "end": 478
+        },
+        {
+          "symbol": "function GetUserAppdataFolder: String;#1",
+          "start": 481,
+          "end": 484
+        },
+        {
+          "symbol": "function GetUserDesktopFolder(Default: String): String;#1",
+          "start": 487,
+          "end": 490
+        },
+        {
+          "symbol": "function IsUCRTNeeded: Boolean;#1",
+          "start": 493,
+          "end": 518
+        },
+        {
+          "symbol": "function IsHeroes3Installed(): Boolean;#1",
+          "start": 521,
+          "end": 528
+        },
+        {
+          "symbol": "function IsCopyFilesNeeded(): Boolean;#1",
+          "start": 531,
+          "end": 536
+        },
+        {
+          "symbol": "function IsPRInstaller(): Boolean;#1",
+          "start": 539,
+          "end": 544
+        },
+        {
+          "symbol": "function InitializeSetup(): Boolean;#1",
+          "start": 547,
+          "end": 585
+        },
+        {
+          "symbol": "function InitializeUninstall(): Boolean;#1",
+          "start": 588,
+          "end": 596
+        },
+        {
+          "symbol": "procedure InitializeWizard();#1",
+          "start": 599,
+          "end": 655
+        },
+        {
+          "symbol": "function ShouldSkipPage(PageID: Integer): Boolean;#1",
+          "start": 658,
+          "end": 684
+        },
+        {
+          "symbol": "procedure CurPageChanged(CurPageID: Integer);#1",
+          "start": 687,
+          "end": 691
+        },
+        {
+          "symbol": "function NextButtonClick(CurPageID: Integer): Boolean;#1",
+          "start": 694,
+          "end": 719
+        },
+        {
+          "symbol": "function TryReadUninstallExeFromHKLM(const SubKey: String; var UninstallerPath: String): Boolean;#1",
+          "start": 721,
+          "end": 731
+        },
+        {
+          "symbol": "function GetLegacyUninstallerPath(var UninstallerPath: String): Boolean;#1",
+          "start": 733,
+          "end": 736
+        },
+        {
+          "symbol": "procedure RemoveLegacyInstaller();#1",
+          "start": 739,
+          "end": 763
+        },
+        {
+          "symbol": "procedure PerformHeroes3FileCopy();#1",
+          "start": 766,
+          "end": 796
+        },
+        {
+          "symbol": "procedure CreateDefaultSettingsFile();#1",
+          "start": 799,
+          "end": 824
+        },
+        {
+          "symbol": "procedure RunPreInstallTasks();#1",
+          "start": 827,
+          "end": 835
+        },
+        {
+          "symbol": "function DeleteFolderContents(const FolderPath: String): Boolean;#1",
+          "start": 846,
+          "end": 888
+        },
+        {
+          "symbol": "procedure PerformFileDeletion;#1",
+          "start": 891,
+          "end": 910
+        },
+        {
+          "symbol": "procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);#1",
+          "start": 913,
+          "end": 920
+        },
+        {
+          "symbol": "procedure UninsNextButtonOnClick(Sender: TObject);#1",
+          "start": 923,
+          "end": 934
+        },
+        {
+          "symbol": "procedure UninsCancelButtonOnClick(Sender: TObject);#1",
+          "start": 937,
+          "end": 940
+        },
+        {
+          "symbol": "procedure InitializeUninstallProgressForm();#1",
+          "start": 943,
+          "end": 1013
+        }
+      ],
+      "rationale": "Entire1013-line CRLF Inno script read, including declarative sections1-225 and all Code226-1013. Complete handwritten body inventory comprises36 Pascal Script function/procedure implementations; none nested or anonymous. Three external declarations332-333,335-336,338-339 bind existing DLL functions and contain no handwritten body; excluded consistently with body metric, not treated as empty implementations. Preprocessor #define entries87-99 are object constants; no function-like macro/#sub implementation. Declarative Setup/Languages/Files/Icons/Tasks/Registry/Run/UninstallRun tables define installer entries and command invocations, not script callable bodies. Run208/209/211 and UninstallRun216-219/222-223 explicitly carry executable process commands interpreted by installer builtins; all remain included in whole physical-file coverage, and their referenced Check/BeforeInstall/code callbacks are separately inventoried where implemented here. No arbitrary spanning of an entire table as one Pascal function or silent claim of no behavior. All36 implementation spans manually matched through complete terminating end; including nested begin/end, try/finally, repeat/until and with blocks. Maximum71 lines943-1013; file pin1013 unchanged, no new numeric unit/exception or installer execution.",
+      "review": "IR-MANUAL-INSTALLERS-b29761df-20261015",
+      "sha256": "0ddd0469bc1426151d011e634bb9d549b241c56191f0d8703c1be31b0cdcf20e"
     }
   },
   "schema": 1,
@@ -16918,6 +17229,38 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "a784286ae9bc1f0b10823ae82cccd7369172b947b5c15796872173091d51926b"
+    },
+    "CI/NSIS.template.in::Function AddToPath#1": {
+      "kind": "review",
+      "lines": 83,
+      "sha256": "21b687375d6be6c72ee33564bdc6b8c1e0708b6bba5cda7d9e2970dec8f4a770",
+      "review": "IR-INSTALLER-NUMERIC-DEBT-070889bb-20261015",
+      "rationale": "Exact existing-byte numeric debt admission only: Function AddToPath#1 at physical lines203-285 (83lines), source identical to HEAD and cf2e62f9. This is an authored NSIS executable body, not a generated/vendor exemption. Freeze exact current size/hash only; no semantic/behavior approval or permanent ceiling exception. Before editing this area, extract cohesive PATH/registry or install/uninstall task groups as appropriate and reduce the reviewed body count, or obtain a separately bounded independently reviewed deferral.",
+      "owner": "engine_engineer: build and packaging"
+    },
+    "CI/NSIS.template.in::Function un.RemoveFromPath#1": {
+      "kind": "review",
+      "lines": 92,
+      "sha256": "8b37e2e4887952c6aad4218002584d5d053389ec1ff3800b7c979f2a17f9dba2",
+      "review": "IR-INSTALLER-NUMERIC-DEBT-070889bb-20261015",
+      "rationale": "Exact existing-byte numeric debt admission only: Function un.RemoveFromPath#1 at physical lines291-382 (92lines), source identical to HEAD and cf2e62f9. This is an authored NSIS executable body, not a generated/vendor exemption. Freeze exact current size/hash only; no semantic/behavior approval or permanent ceiling exception. Before editing this area, extract cohesive PATH/registry or install/uninstall task groups as appropriate and reduce the reviewed body count, or obtain a separately bounded independently reviewed deferral.",
+      "owner": "engine_engineer: build and packaging"
+    },
+    "CI/NSIS.template.in::Section \"-Core installation\"#1": {
+      "kind": "review",
+      "lines": 88,
+      "sha256": "2f40503357b48cb98160127a59be57ed24ddd4c7d180386e63245606c6be0a18",
+      "review": "IR-INSTALLER-NUMERIC-DEBT-070889bb-20261015",
+      "rationale": "Exact existing-byte numeric debt admission only: Section \"-Core installation\"#1 at physical lines641-728 (88lines), source identical to HEAD and cf2e62f9. This is an authored NSIS executable body, not a generated/vendor exemption. Freeze exact current size/hash only; no semantic/behavior approval or permanent ceiling exception. Before editing this area, extract cohesive PATH/registry or install/uninstall task groups as appropriate and reduce the reviewed body count, or obtain a separately bounded independently reviewed deferral.",
+      "owner": "engine_engineer: build and packaging"
+    },
+    "CI/NSIS.template.in::Section \"Uninstall\"#1": {
+      "kind": "review",
+      "lines": 85,
+      "sha256": "6d5d2994c0be8d4c64337b74059becc9147ad362da2a18cbbcfc5283ef2365f5",
+      "review": "IR-INSTALLER-NUMERIC-DEBT-070889bb-20261015",
+      "rationale": "Exact existing-byte numeric debt admission only: Section \"Uninstall\"#1 at physical lines811-895 (85lines), source identical to HEAD and cf2e62f9. This is an authored NSIS executable body, not a generated/vendor exemption. Freeze exact current size/hash only; no semantic/behavior approval or permanent ceiling exception. Before editing this area, extract cohesive PATH/registry or install/uninstall task groups as appropriate and reduce the reviewed body count, or obtain a separately bounded independently reviewed deferral.",
+      "owner": "engine_engineer: build and packaging"
     }
   }
 }
