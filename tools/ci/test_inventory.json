@@ -8,7 +8,6 @@
   "unregistered": {
     "test/standalone/NewHorizonsMagicNullAssert.cpp": {"classification": "manual", "reason": "Explicit assertion-enabled standalone probe; one negative mode intentionally aborts. Never ordinary Release vcmitest or default CTest."},
     "tools/tests/nh-wine-bootstrap.cpp": {"classification": "managed", "reason": "Private Wine environment prerequisite compiled by the guarded platform workflow, never a player package or independently accepted test."},
-    "test/serializer/JsonUpdaterTest.cpp": {"classification": "manual", "reason": "Useful JSON partial-update candidate; review and compile independently before registration. Existing omission is not execution evidence."},
     "test/rmg/CRmgTemplateTest.cpp": {"classification": "conditional", "reason": "Requires test/rmg/1.json, absent from tracked testdata. Restore a licensed fixture and verify template API before enabling."},
     "test/vcai/ResourceManagerTest.cpp": {"classification": "retired", "reason": "Legacy VCAI fixture derives an incomplete old ResourceManager API, not the current Nullkiller2 resource trader. Retained source, not registered coverage."},
     "test/nullkiller2/Engine/ResourceTraderTest.cpp": {"classification": "conditional", "reason": "Current Nullkiller2 trade-helper candidate. Needs ENABLE_NULLKILLER2_AI and review of global mock-class collisions before registration."},
