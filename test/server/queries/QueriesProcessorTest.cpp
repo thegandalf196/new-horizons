@@ -34,6 +34,7 @@
 #include "../../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/serializer/CTypeList.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../server/ServerNetPackVisitors.h"
 #include <chrono>
 #include <future>
@@ -374,6 +375,157 @@ std::tuple<int, bool, std::string> NewHorizonsPerkAITest::answerPerkQuery(CGameH
 	const auto outcome = result.get();
 	return {outcome.choice, outcome.accepted, outcome.error};
 }
+
+class NewHorizonsPerkAIJourneyTest : public NewHorizonsPerkAITest
+{
+	// A separate map/hero lifetime for every ratio; no isolated development or
+	// offer rewriting. Masteries remain disabled by the parent fixture.
+	double preferenceRatio = 2.0;
+
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsPerkAITest::mapLoaded(loaded);
+		auto rules = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+		rules["perkOfferNormalization"]["maximumPreferenceRatio"].Float() = preferenceRatio;
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, rules);
+	}
+
+protected:
+	void runJourney(const std::string & heroId, const std::string & classId, double ratio)
+	{
+		preferenceRatio = ratio;
+		startGame(HeroTypeID(HeroTypeID::decode(heroId)));
+		auto * hero = findHeroByOwner(PlayerColor(1));
+		ASSERT_NE(hero, nullptr);
+		ASSERT_EQ(hero->getHeroClassID(), HeroClassID(HeroClassID::decode(classId)));
+		ASSERT_EQ(hero->level, 1);
+		const auto & state = hero->getPerkState();
+		ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.rules));
+		auto expectedRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		expectedRules["perkOfferNormalization"]["maximumPreferenceRatio"].Float() = ratio;
+		ASSERT_EQ(state.rules, expectedRules);
+		const JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
+		const auto initialWeights = hero->getPrimaryGrowthRules()["skillOfferWeights"];
+		ASSERT_EQ(initialWeights.Struct().size(), newHorizonsHeroes::PERK_CANONICAL_SKILL_COUNT);
+		ASSERT_EQ(initialWeights, heroRules["skillOfferWeights"][classId]);
+		ASSERT_EQ(state.selected.size(), 1u);
+		EXPECT_EQ(state.selected.front().perkId, heroId == "core:solmyr"
+			? "new-horizons:havocMagic.stormcaller" : "new-horizons:warMachines.masterGunner");
+		ASSERT_EQ(hero->secSkills.size(), 2u);
+		for(const auto & skillId : heroId == "core:solmyr"
+			? std::vector<std::string>{"new-horizons:metamagic", "new-horizons:havocMagic"}
+			: std::vector<std::string>{"new-horizons:divineMandate", "new-horizons:warMachines"})
+		{
+			ASSERT_EQ(hero->getPerkSkillRank(skillId), MasteryLevel::BASIC);
+		}
+
+		GameHandlerTestServer server(gameState(), hero->getOwner());
+		CGameHandler handler(server, gameState());
+		handler.randomizer->setSeed(17); // Once, before the first advancement roll.
+		const auto rngHex = [&]
+		{
+			CMemorySerializer memory;
+			memory.oser & *handler.randomizer;
+			std::string result;
+			for(auto byte : memory.extractBuffer())
+			{
+				const auto value = std::to_integer<unsigned>(byte);
+				result += "0123456789abcdef"[value >> 4];
+				result += "0123456789abcdef"[value & 15];
+			}
+			return result;
+		};
+		const auto snapshot = [&]
+		{
+			JsonNode result;
+			for(const auto & [skillId, weight] : initialWeights.Struct())
+			{
+				auto & parent = result[skillId];
+				const auto rank = hero->getPerkSkillRank(skillId);
+				parent["rank"].Integer() = rank;
+				parent["ordinaryAdvanceUnlocked"].Bool() = state.canAdvanceSkillNormally(skillId, rank);
+				int selectedCount = 0;
+				for(const auto & selected : state.selected)
+				{
+					if(selected.skillId != skillId)
+						continue;
+					++selectedCount;
+					parent["selected"].Vector().push_back(JsonNode(selected.perkId));
+					const auto definition = newHorizonsHeroes::perkDefinition(state.rules, skillId, selected.perkId);
+					if(definition)
+						parent["selectedTier"].Vector().push_back(JsonNode(static_cast<double>(newHorizonsHeroes::perkRequiredRank(definition->requiredRank))));
+				}
+				parent["perkCapacityFull"].Bool() = selectedCount >= state.rules["maxPerksPerSkill"].Integer();
+			}
+			return result;
+		};
+		RecordProperty("scope", "synthetic XP; canonical starting Skills/perks/weights; masteries disabled; not a campaign");
+		RecordProperty("armyScope", "fixture 10 Pikemen, not the authored starting army; AI army-sensitive valuations use this fixture");
+		RecordProperty("aiLifetime", "new interface per level; not persistent campaign AI memory");
+		RecordProperty("hero", heroId);
+		RecordProperty("class", classId);
+		RecordProperty("seed", 17);
+		RecordProperty("initialRngHex", rngHex());
+		RecordProperty("initialDevelopment", snapshot().toCompactString());
+		for(int level = 2; level <= 20; ++level)
+		{
+			SCOPED_TRACE(level);
+			JsonNode row;
+			row["before"] = snapshot();
+			const auto selectedBefore = state.selected;
+			hero->setExperience(LIBRARY->heroh->reqExp(level), ChangeValueMode::ABSOLUTE);
+			handler.levelUpHero(hero);
+			auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(handler.queries->topQuery(hero->getOwner()));
+			ASSERT_NE(query, nullptr);
+			handler.onAdvInterfaceReady(hero->getOwner());
+			ASSERT_TRUE(query->prompted);
+			row["perkOfferSeed"].String() = std::to_string(query->hlu.perkOfferSeed);
+			for(const auto skill : query->hlu.skills)
+				row["offeredSkills"].Vector().push_back(JsonNode(SecondarySkill::encode(skill.getNum())));
+			for(const auto & perk : query->hlu.perks)
+			{
+				JsonNode candidate;
+				candidate["skill"].String() = perk.selection.skillId;
+				candidate["perk"].String() = perk.selection.perkId;
+				candidate["tier"].Integer() = perk.requiredRank;
+				row["offeredPerks"].Vector().push_back(candidate);
+			}
+			const auto [choice, accepted, error] = answerPerkQuery(handler, hero, query);
+			row["choice"].Integer() = choice;
+			row["accepted"].Bool() = accepted;
+			row["error"].String() = error;
+			row["after"] = snapshot();
+			RecordProperty("level" + std::to_string(level), row.toCompactString());
+			ASSERT_TRUE(accepted) << error;
+			ASSERT_GE(choice, 0);
+			ASSERT_LT(static_cast<size_t>(choice), query->hlu.skills.size() + query->hlu.perks.size());
+			EXPECT_EQ(hero->level, level);
+			EXPECT_FALSE(handler.queries->topQuery(hero->getOwner()));
+			ASSERT_NO_THROW(state.validate());
+			EXPECT_EQ(hero->getPrimaryGrowthRules()["skillOfferWeights"], initialWeights);
+			if(static_cast<size_t>(choice) < query->hlu.skills.size())
+			{
+				EXPECT_EQ(state.selected, selectedBefore);
+				const auto skillId = SecondarySkill::encode(query->hlu.skills.at(choice).getNum());
+				EXPECT_EQ(hero->getPerkSkillRank(skillId), row["before"][skillId]["rank"].Integer() + 1);
+			}
+			else
+			{
+				ASSERT_EQ(state.selected.size(), selectedBefore.size() + 1);
+				EXPECT_TRUE(std::equal(selectedBefore.begin(), selectedBefore.end(), state.selected.begin()));
+				EXPECT_EQ(state.selected.back(), query->hlu.perks.at(choice - query->hlu.skills.size()).selection);
+			}
+			for(const auto & [skillId, weight] : initialWeights.Struct())
+			{
+				const bool chosenRank = static_cast<size_t>(choice) < query->hlu.skills.size()
+					&& skillId == SecondarySkill::encode(query->hlu.skills.at(choice).getNum());
+				EXPECT_EQ(hero->getPerkSkillRank(skillId), row["before"][skillId]["rank"].Integer() + (chosenRank ? 1 : 0));
+			}
+		}
+		RecordProperty("acceptedDecisions", 19);
+		RecordProperty("finalRngHex", rngHex()); // Real offers consume RNG; not a zero-draw oracle.
+	}
+};
 #endif
 
 }
@@ -983,6 +1135,46 @@ TEST_F(NewHorizonsPerkAITest, r2AIOnlyDuplicateTierOfferStillAnswersLegally)
 	EXPECT_EQ(state.selected.back(), query->hlu.perks.at(choice).selection);
 	EXPECT_EQ(hero->getSecSkillLevel(sylvan), MasteryLevel::BASIC);
 	EXPECT_FALSE(gh.queries->topQuery(hero->getOwner()));
+}
+
+TEST_F(NewHorizonsPerkAIJourneyTest, SolmyrRatioOneSeed17LevelsOneThroughTwenty)
+{
+	runJourney("core:solmyr", "core:wizard", 1.0);
+}
+
+TEST_F(NewHorizonsPerkAIJourneyTest, SolmyrRatioOnePointFiveSeed17LevelsOneThroughTwenty)
+{
+	runJourney("core:solmyr", "core:wizard", 1.5);
+}
+
+TEST_F(NewHorizonsPerkAIJourneyTest, SolmyrRatioTwoSeed17LevelsOneThroughTwenty)
+{
+	runJourney("core:solmyr", "core:wizard", 2.0);
+}
+
+TEST_F(NewHorizonsPerkAIJourneyTest, SolmyrRatioThreeSeed17LevelsOneThroughTwenty)
+{
+	runJourney("core:solmyr", "core:wizard", 3.0);
+}
+
+TEST_F(NewHorizonsPerkAIJourneyTest, ChristianRatioOneSeed17LevelsOneThroughTwenty)
+{
+	runJourney("core:christian", "core:knight", 1.0);
+}
+
+TEST_F(NewHorizonsPerkAIJourneyTest, ChristianRatioOnePointFiveSeed17LevelsOneThroughTwenty)
+{
+	runJourney("core:christian", "core:knight", 1.5);
+}
+
+TEST_F(NewHorizonsPerkAIJourneyTest, ChristianRatioTwoSeed17LevelsOneThroughTwenty)
+{
+	runJourney("core:christian", "core:knight", 2.0);
+}
+
+TEST_F(NewHorizonsPerkAIJourneyTest, ChristianRatioThreeSeed17LevelsOneThroughTwenty)
+{
+	runJourney("core:christian", "core:knight", 3.0);
 }
 #endif
 

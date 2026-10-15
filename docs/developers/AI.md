@@ -106,6 +106,16 @@ Faction-path fixtures must isolate both learned Skills and authored starting
 perks while retaining the captured rules. Current mixed-offer tests must not
 assume that selecting a Basic perk removes all other Basic choices.
 
+With Nullkiller2 enabled, run
+`vcmitest --gtest_filter='NewHorizonsPerkAIJourneyTest.*' --gtest_output=xml:journeys.xml`
+for the bounded sequential-offer pilot. It compares policy2 ratios1/1.5/2/3
+for canonical Solmyr/Christian starting Skills, perks and class weights, using
+seed17 and synthetic next-level XP through level20. XML properties retain offers,
+accepted replies, development snapshots and initial/final RNG state. The fixture
+uses ten Pikemen, disables Masteries and creates a fresh AI interface per level;
+it is not a campaign, persistent-AI-memory test or estimate of population odds.
+Different ratios can legitimately produce different downstream RNG histories.
+
 ### Parts
 
 Gateway - a callback for server used to invoke AI actions when server thinks it is time to do something. Through this callback AI is informed about various events like hero level up, tile revialed, blocking dialogs and so on. In order to do this Gaateway implements specific interface. The interface is exactly the same for human and AI
