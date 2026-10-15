@@ -63,6 +63,14 @@ gameplay acceptance. Failure, timeout, changed or superseded bytes leave the
 current selection unchanged. Explicit promotion is for reviewed rollback or
 separately managed previews, not routine delivery.
 
+Exact-PID graphical owners must not be wrapped by an incompatible process-group
+supervisor. The [snapshot runbook](../tools/ci/LINUX_PLAYABLE_SNAPSHOT.md#signal-free-completion-for-externally-owned-acceptance)
+documents the signal-free alternative: a separately reviewed endpoint retains
+the original in-process validation ticket from before launch through actual
+acceptance and full preservation checks, then completes the same atomic
+selection transaction. Saved receipts cannot substitute for that endpoint or
+authorize later manual promotion.
+
 Before rollback or cleanup, verify the selected manifest, checksums, process and
 worktree references, and preserved original inputs. Keep raw execution receipts
 and local recovery paths private. The withdrawn 0.85 preview is not a current
