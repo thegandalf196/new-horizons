@@ -831,6 +831,7 @@ set(lib_MAIN_HEADERS
 
 	networkPacks/ArtifactLocation.h
 	networkPacks/BattleChanges.h
+	networkPacks/BattleUnitStateCompatibility.h
 	networkPacks/Component.h
 	networkPacks/EInfoWindowMode.h
 	networkPacks/EntityChanges.h
