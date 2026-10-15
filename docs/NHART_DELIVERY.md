@@ -119,6 +119,30 @@ selection record and earlier additive waves remain unchanged. Perks may share
 this wave, but status and reused-scenario modes cannot. The same fresh-output,
 history-preservation, READY and separate-adoption requirements above apply.
 
+### Bounded in-game artwork witness
+
+The opt-in native test
+`NewHorizonsHeroFixtureExportTest.ExportOrdinaryFactionBrowsersWithNearbyExperienceQuest`
+exports `NHFactionBrowsersXP.h3m` when
+`NH_EXPORT_HERO_FACTION_BROWSER_FIXTURE=1` is set in an isolated test profile
+with the ordinary New Horizons preset active. It checks canonical Lorelei,
+Bron and Thunar starts and captured R2 rules before writing the map. The map
+keeps ordinary hero initialization and gives Lorelei a nearby, hero-specific
+1000-XP Seer Hut reward; it does not force a perk offer or grant.
+
+Audit the resulting file with the separate header-only family check:
+
+```sh
+"$NH_PYTHON" tools/tests/nh-command-fixture-audit.py \
+  --hero-faction-browser "$NH_FIXTURE_MAP"
+```
+
+Use the maintained silent, isolated graphical-testing path for actual play.
+Clicking each hero's learned faction Skill icon opens its read-only catalogue;
+visiting the hut exercises a real level-up. The catalogue renders normal frame0
+at24 pixels, not native44/32 or pressed/disabled states. Neither export nor
+header audit proves rendering, legal client interaction or playable delivery.
+
 Builtin bootstrap and module scope mount the same full-path pack. Explicit
 overlay ordering gives builtin custom art precedence over original archives;
 the module mounts its pack after readable Content configuration. No alternate

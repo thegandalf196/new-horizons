@@ -86,6 +86,24 @@ def self_test():
         except ValueError:
             continue
         raise AssertionError("Hero fixture cross-family substitution accepted")
+    browser_raw = struct.pack("<IBIB", 0x1c, 1, 36, 0) + field("NHFactionBrowsersXP") + field("header-only control")
+    encoder = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+    browser = encoder.compress(browser_raw) + encoder.flush()
+    browser_names = {"NHFactionBrowsersXP"}
+    assert inspect(browser, browser_names)["name"] == "NHFactionBrowsersXP"
+    for other, names in ((good, EXPECTED_NAMES), (magic, magic_names), (hero, hero_names)):
+        for data, expected in ((browser, names), (other, browser_names)):
+            try:
+                inspect(data, expected)
+            except ValueError:
+                continue
+            raise AssertionError("Faction-browser fixture cross-family substitution accepted")
+    for bad in (browser[:-1], browser + browser):
+        try:
+            inspect(bad, browser_names)
+        except (ValueError, zlib.error):
+            continue
+        raise AssertionError("Malformed faction-browser gzip accepted")
     print("PASS: header-only controls accepted; malformed gzip and cross-family substitution rejected")
 
 
@@ -99,8 +117,11 @@ def main():
                         help="Audit the single NHMagicFullBookRanks export instead of the command pair")
     family.add_argument("--hero-growth", action="store_true",
                         help="Audit the single NHHeroGrowthXP export; native semantics remain separate")
+    family.add_argument("--hero-faction-browser", action="store_true",
+                        help="Audit the single NHFactionBrowsersXP export; native canonical-start/R2 assertions remain separate")
     args = parser.parse_args()
-    expected = ({"NHHeroGrowthXP"} if args.hero_growth else
+    expected = ({"NHFactionBrowsersXP"} if args.hero_faction_browser else
+                {"NHHeroGrowthXP"} if args.hero_growth else
                 {"NHMagicFullBookRanks"} if args.magic_fullbook else EXPECTED_NAMES)
     if args.self_test:
         self_test()
