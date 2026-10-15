@@ -3,6 +3,7 @@
 """Prepare an external additive perk/status-art wave, preserving earlier selections."""
 import argparse
 import csv
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -45,7 +46,76 @@ def reject_artist_overlap(roots, artist_roots):
                 raise ValueError('Preparation/output overlaps protected artist inputs')
 
 
-def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scenario=False):
+def history_bytes(path):
+    if path.is_symlink():
+        raise ValueError('Baseline history must not be a symlink')
+    try:
+        return path.read_bytes()
+    except FileNotFoundError:
+        return None
+
+
+def require_virgin_perk_header(header):
+    # This is the maintained literal map format, not a general C++ parser.
+    # Recognize its complete initializer or refuse; zero regex hits must never
+    # be mistaken for evidence of an empty/neutral selection map.
+    header = re.sub(r'/\*.*?\*/|//[^\n]*', '', header, flags=re.DOTALL)
+    maps = re.findall(r'static\s+const\s+std::map\s*<\s*std::string\s*,\s*std::string\s*>'
+                      r'\s+icons\s*=\s*\{(.*?)\}\s*;', header, flags=re.DOTALL)
+    entry = r'\{\s*"(new-horizons:[A-Za-z0-9_.-]+)"\s*,\s*"(NH_perk_[a-z0-9_]+)"\s*\}'
+    if len(maps) != 1 or not re.fullmatch(r'\s*(?:' + entry + r'(?:\s*,\s*' + entry + r')*\s*,?)?\s*', maps[0]):
+        raise ValueError('Cannot recognize complete baseline perk icons map for virgin bootstrap')
+    if any(icon != 'NH_perk_neutral' for identity, icon in re.findall(entry, maps[0])):
+        raise ValueError('Unrecorded selected perk history prevents virgin bootstrap')
+
+
+def baseline_history(repo, archive_hash, entry_count, expected_sha256, bootstrap):
+    if (expected_sha256 is not None) == bool(bootstrap):
+        raise ValueError('Choose expected baseline ledger SHA256 or explicit no-ledger bootstrap')
+    snapshots = {name: history_bytes(repo / name) for name in (LEDGER, PERK_RECORD)}
+    initial = None
+    if snapshots[PERK_RECORD] is not None:
+        initial = json.loads(snapshots[PERK_RECORD])
+        if (not isinstance(initial, dict) or not isinstance(initial.get('entries'), list)
+                or type(initial.get('entryCount')) is not int or initial['entryCount'] < 0
+                or not isinstance(initial.get('newArchiveSha256'), str)
+                or not re.fullmatch('[0-9a-f]{64}', initial['newArchiveSha256'])):
+            raise ValueError('Malformed initial selection proof')
+    if bootstrap:
+        if snapshots[LEDGER] is not None:
+            raise ValueError('No-ledger bootstrap requires an absent additive ledger')
+        if initial is not None:
+            if initial['newArchiveSha256'] != archive_hash or initial['entryCount'] != entry_count:
+                raise ValueError('Baseline advanced beyond initial selection proof; additive ledger required')
+        else:
+            header = (repo / HEADER).read_text(encoding='utf-8')
+            require_virgin_perk_header(header)
+        ledger = {'format': 1, 'waves': []}
+    else:
+        if not isinstance(expected_sha256, str) or not re.fullmatch('[0-9a-f]{64}', expected_sha256):
+            raise ValueError('Invalid expected baseline ledger SHA256')
+        raw = snapshots[LEDGER]
+        if raw is None or hashlib.sha256(raw).hexdigest() != expected_sha256:
+            raise ValueError('Missing or changed pinned baseline additive ledger')
+        ledger = json.loads(raw)
+        if (not isinstance(ledger, dict) or type(ledger.get('format')) is not int
+                or ledger['format'] != 1 or not isinstance(ledger.get('waves'), list) or not ledger['waves']):
+            raise ValueError('Malformed baseline additive ledger')
+        if ledger['waves']:
+            latest = ledger['waves'][-1]
+            if (not isinstance(latest, dict) or latest.get('newArchiveSha256') != archive_hash
+                    or type(latest.get('entryCount')) is not int or latest['entryCount'] != entry_count):
+                raise ValueError('Additive ledger does not anchor the current baseline')
+    return ledger, snapshots
+
+
+def require_unchanged_history(repo, snapshots):
+    if any(history_bytes(repo / name) != raw for name, raw in snapshots.items()):
+        raise ValueError('Baseline history changed during preparation')
+
+
+def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scenario=False,
+            *, expected_ledger_sha256=None, bootstrap_no_ledger=False):
     roots = [path.resolve() for path in (work, output)]
     if any(path.exists() or path.is_symlink() or path.resolve().is_relative_to(repo.resolve())
            for path in (work, output)) or roots[0].is_relative_to(roots[1]) or roots[1].is_relative_to(roots[0]):
@@ -54,6 +124,13 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
     reject_artist_overlap(roots, [path.parent for path in [*handoffs, *status_handoffs]])
     baseline = nhart.verify(repo / spells.ARCHIVE, repo / spells.MANIFEST)
     archive_hash, manifest_hash = perks.digest(repo / spells.ARCHIVE), perks.digest(repo / spells.MANIFEST)
+    ledger, history = baseline_history(repo, archive_hash, len(baseline['manifest']['entries']),
+                                       expected_ledger_sha256, bootstrap_no_ledger)
+    # Metadata is a single baseline epoch too, not just the package payload.
+    metadata = {name: (repo / name).read_bytes() for name in (spells.MANIFEST, HEADER, INVENTORY)}
+    metadata.update(history)
+    for name in (spells.CONFIG, MASS_CONFIG, 'config/newHorizonsPerks.json'):
+        metadata[name] = history_bytes(repo / name)
     plan_rows, seen, handoff_hashes = [], set(), []
     for handoff in handoffs:
         evidence = json.loads(handoff.read_text(encoding='utf-8'))
@@ -209,7 +286,6 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
     if any(resulting[row['resource']] != row for row in baseline['manifest']['entries']):
         raise ValueError('Baseline resource or provenance changed')
     record = json.loads((perk_output / PERK_RECORD).read_text(encoding='utf-8'))
-    ledger = json.loads((repo / LEDGER).read_text(encoding='utf-8')) if (repo / LEDGER).exists() else {'format': 1, 'waves': []}
     resources = sorted([name for row in record['entries'] + status_records for name in row['resources']])
     ledger['waves'].append({'baselineArchiveSha256': archive_hash, 'baselineManifestSha256': manifest_hash,
         'baselineEntriesSha256': entries_digest(baseline['manifest']['entries']),
@@ -244,6 +320,7 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
         HEADER: (perk_output / HEADER).read_text(encoding='utf-8'), INVENTORY: inventory_text}
     if mass_text is not None:
         outputs[MASS_CONFIG] = mass_text
+    require_unchanged_history(repo, metadata)
     output.mkdir(parents=True)
     for name, text in outputs.items():
         path = output / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text(text, encoding='utf-8')
@@ -251,10 +328,14 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
     nhart.verify(target, output / spells.MANIFEST)
     if archive_hash != perks.digest(repo / spells.ARCHIVE) or manifest_hash != perks.digest(repo / spells.MANIFEST):
         raise ValueError('Baseline changed during preparation')
+    require_unchanged_history(repo, metadata)
     result = {'perkCount': len(plan_rows), 'statusCount': len(status_records), 'addedResources': len(resources),
         'baselinePreserved': len(baseline['manifest']['entries']), 'entryCount': len(manifest['entries']),
+        'baselineLedgerSha256': expected_ledger_sha256, 'bootstrapNoLedger': bootstrap_no_ledger,
         'sha256': perks.digest(target), 'files': {name: perks.digest(output / name) for name in [spells.ARCHIVE, *outputs]}}
-    (output / 'READY.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
+    ready = output / '.READY.json.pending'
+    ready.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
+    ready.replace(output / 'READY.json')
     return result
 
 
@@ -266,9 +347,16 @@ def main():
     parser.add_argument('--mass-regeneration-scenario', action='store_true')
     parser.add_argument('--work-root', type=Path, required=True)
     parser.add_argument('--output-root', type=Path, required=True)
+    baseline = parser.add_mutually_exclusive_group(required=True)
+    baseline.add_argument('--expected-baseline-ledger-sha256', dest='expected_ledger_sha256')
+    baseline.add_argument('--bootstrap-no-ledger', action='store_true',
+                          help='Explicit first-wave/virgin baseline; initial selection proof must still anchor it')
     args = parser.parse_args()
     try:
-        print(json.dumps(prepare(args.repo, args.perk_handoff, args.status_handoff, args.work_root, args.output_root, args.mass_regeneration_scenario), sort_keys=True))
+        print(json.dumps(prepare(args.repo, args.perk_handoff, args.status_handoff, args.work_root,
+                                 args.output_root, args.mass_regeneration_scenario,
+                                 expected_ledger_sha256=args.expected_ledger_sha256,
+                                 bootstrap_no_ledger=args.bootstrap_no_ledger), sort_keys=True))
     except OSError:
         parser.exit(1, 'Private input/output operation failed; repository unchanged\n')
     except (ValueError, KeyError, nhart.NHArtError) as error:

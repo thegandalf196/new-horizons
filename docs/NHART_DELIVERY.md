@@ -67,6 +67,40 @@ The packer stages and verifies its output before replacement.
 For repacking, set `NH_ART_INPUT_ROOT` to the verified external staging directory;
 do not use this command during an ordinary build or with incomplete inputs.
 
+### Additive perk/status artwork waves
+
+Use the maintained additive wrapper for reviewed perk/status handoffs; do not
+adopt its intermediate standalone perk-selection record. Set `NH_PYTHON` to
+the verified local interpreter, `NH_REPO` to the checkout, and the handoff,
+work and output variables to explicitly configured private paths. Work and
+output roots must be fresh, external, mutually nonoverlapping and outside all
+artist-input directories.
+
+For a baseline with an additive ledger, supply its independently reviewed
+SHA256 (not a value silently accepted from an unreviewed current file):
+
+```sh
+"$NH_PYTHON" tools/import_new_horizons_art_wave.py \
+  --repo "$NH_REPO" --perk-handoff "$NH_PERK_HANDOFF" \
+  --work-root "$NH_WAVE_WORK" --output-root "$NH_WAVE_OUTPUT" \
+  --expected-baseline-ledger-sha256 "$NH_BASELINE_LEDGER_SHA256"
+```
+
+Only a reviewed first-wave/virgin baseline may replace the last option with
+`--bootstrap-no-ledger`. Its additive ledger must be absent; an existing initial
+selection proof must still anchor the actual package/count. Without an initial
+proof, the tool requires a completely recognized empty/neutral perk-icon map.
+This option is not recovery for a lost ledger on an advanced baseline.
+
+The wrapper prepares an external delta bundle without changing the repository
+pack or existing selection history. It preserves earlier wave records and the
+initial selection proof, checks baseline stability, and publishes `READY.json`
+only after verification. A failed attempt may retain a partial fresh bundle;
+without a complete `READY.json`, do not adopt it. Existing output directories
+are refused rather than overwritten. Review the complete prepared delta before
+a separately authorized import; preparation does not install artwork, grant
+Final approval, or justify regeneration during ordinary builds.
+
 Builtin bootstrap and module scope mount the same full-path pack. Explicit
 overlay ordering gives builtin custom art precedence over original archives;
 the module mounts its pack after readable Content configuration. No alternate
