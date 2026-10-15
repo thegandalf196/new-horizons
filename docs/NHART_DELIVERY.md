@@ -130,11 +130,12 @@ Bron and Thunar starts and captured R2 rules before writing the map. The map
 keeps ordinary hero initialization and gives Lorelei a nearby, hero-specific
 1000-XP Seer Hut reward; it does not force a perk offer or grant.
 
-Audit the resulting file with the separate header-only family check:
+Audit the resulting file with the separate header-only family check, writing
+its receipt to an explicitly configured private output file:
 
 ```sh
 "$NH_PYTHON" tools/tests/nh-command-fixture-audit.py \
-  --hero-faction-browser "$NH_FIXTURE_MAP"
+  --hero-faction-browser "$NH_FIXTURE_MAP" --manifest "$NH_FIXTURE_AUDIT"
 ```
 
 Use the maintained silent, isolated graphical-testing path for actual play.
