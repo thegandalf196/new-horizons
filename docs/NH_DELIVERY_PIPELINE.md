@@ -30,6 +30,14 @@ closure are required for a distributable package. A linked executable is not a
 self-contained download. Review [release failures](NH_RELEASE_FAILURES.md) and the
 whole workflow graph before CI changes.
 
+Observe a dispatched CI build's terminal result for the intended revision;
+dispatch or preflight success is not build acceptance. Diagnose failed runs and
+retain failure evidence privately. Retry an unchanged revision only when evidence
+identifies a transient infrastructure failure; otherwise correct the cause in a
+new revision. Before announcing delivery, audit the actual downloadable assets
+and their source/content identity, and verify the release has its intended
+visibility. A successful build alone does not prove publication.
+
 ## Gates
 
 1. Define player-visible scope, actual identifiers, provisional rules, AI and
