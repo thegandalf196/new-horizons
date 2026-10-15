@@ -21,6 +21,11 @@ Flank and Second Wind. Doctrine is not active New Horizons gameplay.
   formats reject required new state rather than dropping it.
 - Show availability, disabled reasons, targeting, effect values/durations and
   meaningful causal logs. Cancellation, modal return and battle shutdown work.
+- Numerical combat logs use the authoritative resolved calculation, with defined
+  rounding and modifier order; never derive prevented damage from a tooltip.
+  Emit gameplay outcomes for resolved actions, not hypothetical AI evaluations.
+  Name the actor, action, actual effect and responsible mechanic across Orders,
+  spells, perks and their interactions; example mechanics do not limit coverage.
 
 ## Source and evidence
 

@@ -10,6 +10,11 @@ See the [combat restart guardrail](NH_PERFORMANCE_EXPERIMENT.md#combat-restart-g
 
 - A range-for over a dereferenced temporary shared BonusList owner can dangle. Retain the owning list through iteration. Keep distinct equal bonus identities, ordered/raw aliases, child ADD/removal/UPDATE and branch aging isolation controls.
 - Use authoritative action/activation/controller APIs and legally earned perk/Metamagic allowances in fixtures. Do not forge state to bypass admission. Damage must be meaningful and survivable where later assertions require a living stack.
+- Exercise unselected, cancelled and valid Gating reserve choices; an unset creature
+  identity must not be dereferenced. Check localization separately. Cover field
+  and siege battles with heroes and war machines when validating fortification
+  target indexes. Preserve the exact reproducer when assigning a cause or proving
+  a repair; do not attribute a failure to a unit without evidence.
 - Finalize Plague at actual completion, not WAIT/free cast; hostile Spell Lock pauses countdown, Time Stop uses its distinct clock and Frozen retains its same-round receipt.
 - Applied attacks retain pre-hit/after-attack snapshots needed for native Rebirth, Elemental Memory, Hex and Cleave. Skip only data mathematically unused by probes; compare exact scores/actions/state/RNG.
 - Deep Flank uses pre-hit contact geometry for the primary shot, but friendly Magog splash casualties must disappear from the next live and freshly detached contact/damage query. `AcceptedMagogSplashDeathRemovesCurrentContactPremium` requires a real accepted shot and both recorded collateral deaths; do not replace these with injected casualty packets or retroactively strip the first shot's premium.

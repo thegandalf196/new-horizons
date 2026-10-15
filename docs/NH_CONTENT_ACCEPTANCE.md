@@ -36,6 +36,13 @@ save/quit/reload/continue, victory or defeat. Exercise normal UI navigation,
 cancellation and return paths, not only constructed dialogs. Verify the committed
 art pack without loose custom-art fallbacks.
 
+For a Tower-versus-Inferno acceptance milestone, enumerate every building in both
+actual town rosters. Check prerequisites, construction, triggered or passive
+effects, repeat/visit restrictions, applicable AI use, persistence and player
+feedback against the accepted specification. Record evidence and remaining gaps
+per building; selected unique-building tests do not establish complete-roster
+acceptance.
+
 Separate source/data consistency, native mechanics, package integrity, ordinary
 rendered acceptance and platform coverage. Report exact scope and limitations;
 do not derive a whole-product percentage from active flags or test totals.
