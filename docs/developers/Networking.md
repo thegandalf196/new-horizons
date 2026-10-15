@@ -4,7 +4,10 @@
 
 For implementation details see files located at `lib/network` directory.
 
-VCMI uses connection using TCP to communicate with server, even in single-player games. However, even though TCP is stream-based protocol, VCMI uses atomic messages for communication. Each message is a serialized stream of bytes, preceded by 4-byte message size:
+Networked VCMI sessions use TCP. New Horizons single-player instead uses an
+in-process runner and internal connection, retaining serialized requests and
+authoritative validation. On TCP connections, each atomic message is a serialized
+byte stream preceded by a four-byte size:
 
 ```cpp
 int32_t messageSize;
@@ -26,6 +29,24 @@ Following connections can be established during game lifetime:
 ## Gameplay communication
 
 For gameplay, VCMI serializes data into a binary stream. See [Serialization](Serialization.md) for more information.
+
+## Local startup lifecycle
+
+Start discovery only for explicit listening, after successful network startup.
+Runner startup completion means preparation is ready, not that the client
+connection callback has run. Preparation failure must join the failed worker,
+discard partial server state and preserve the original exception; do not connect
+or automatically fall back to a process/TCP retry. Serialize lifecycle calls on
+the owning client thread: repeated sequential waits are not concurrent-join safety.
+
+Cancellation must arrange cleanup even after connection establishment. Gate a new
+setup/restart or retain stable session and runner ownership so old callbacks cannot
+attach an old connection, reset a newer runner or race a join. Stop the event loop
+thread-safely; finalize simulation state/discovery on its owner thread. Release the
+interface mutex around joins while retaining the joined runner's lifetime.
+Cleanup cannot depend on a future callback that may never arrive. Stopping an
+internal loop is not a client disconnect notification; preserve ordinary
+packet-based disconnect.
 
 ## Global lobby communication
 

@@ -20,6 +20,33 @@ One important class is `HypotheticBattle`. It is used to evaluate the effects of
 
 ## BattleAI
 
+### Detached forecast integrity
+
+Use current allegiance/controller and caster perspective where authority requires
+them; original side is not a substitute for current hostility. Preserve exact
+creature-target IDs through enumeration, validation and reacquisition. A missing
+ID must not select another unit sharing its hex; neutral location targets retain
+their separate contract.
+
+Position, alive/ghost state, clone backlinks, visible obstacles and wall/gate
+changes must invalidate corresponding projected geometry and caches. Reserve
+inherited live/ghost unit identities without silently changing legacy allocation.
+Keep live/parent/sibling branches isolated and capture branch-owned effect values
+before an ancestor expires. Age only effects owned by the modeled clock; the
+source-specific timed-arrival limits below still apply.
+
+Merge pending effect updates before selector filtering. Preserve distinct equal
+bonuses, source/identity/value-type distinctions and ordered add/refresh/remove
+behavior. Copy actual affected shot/retaliation consumption while retaining each
+resource cache's owner binding. Per-strike eligibility and later exchange loops
+must agree with authority; a direct-helper test does not prove that the production
+caller supplies the required sequence information. Temporary-unit healing/damage
+scoring needs explicit Boolean predicates, not signed flags used as truth values.
+
+Compare actual health, actions, resources and RNG; AI scores are not physical hit
+counts. Retain the legal, meaningful AI/server controls and fixture boundaries
+described below rather than forcing a chosen action through invented setup.
+
 ### Current-rule spell fixtures
 
 Current weighted-perk capture requires active hero development rules and their

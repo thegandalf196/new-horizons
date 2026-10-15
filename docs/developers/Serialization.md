@@ -1,5 +1,33 @@
 # Serialization
 
+## Captured contexts and detached descriptors
+
+Append serialization features before the CURRENT/MINIMAL aliases and keep version
+progression monotonic; a new enumerator must not lower the advertised current
+format. Preserve full counter width and explicit domain limits rather than
+narrowing a value to bypass an unsupported-type guard.
+
+New-game registry completeness and loaded-snapshot validity are separate checks.
+Preserve captured absence on reused objects and reinitialization; never fill it
+from installed defaults or mutate shared prototypes. Use the owning world/battle
+snapshot, not a conflicting fallback. Keep explicit zero in optional value APIs
+distinct from legacy numeric zero-as-absence sentinels.
+
+Where a setting explicitly supports null, preserve absent/null/object distinctions
+through JSON, binary, copies and load/resave. Write authored map overrides, not an
+installed snapshot invented by the writer. Do not generalize one setting's nullable
+exception to unrelated settings or infer runtime admission from header/schema
+acceptance alone.
+
+Validate raw structural references before post-deserialization binding can
+dereference them; initialized alive/ghost/controller checks follow the appropriate
+local initialization. Detached battle teardown must not clear army links owned by
+another battle. Descriptor fixtures must project independent stacks and faithful
+metadata without mutating the original graph or serializing attached live stacks
+as independent. The [battle descriptor limits](#new-horizons-immediate-double-command-continuation)
+below still apply; this does not add ongoing-battle world-save or general health
+restoration support.
+
 ## Strict perk-tier progression
 
 `NEW_HORIZONS_STRICT_PERK_PROGRESSION` (1118) protects captured
@@ -503,7 +531,7 @@ VCMI uses binary format. The primitive types are simply copied from memory, more
 
 #### Bumping a version number
 
-Different major version of VCMI likely change the format of the save game. Every save game needs a version identifier, that loading can work properly. Backward compatibility isn't supported for now. The version identifier is a constant named version in Connection.h and should be updated every major VCMI version or development version if the format has been changed. Do not change this constant if it's not required as it leads to full rebuilds. Why should the version be updated? If VCMI cannot detect "invalid" save games the program behaviour is random and undefined. It mostly results in a crash. The reason can be anything from null pointer exceptions, index out of bounds exceptions(ok, they aren't available in c++, but you know what I mean:) or invalid objects loading(too much elements in a vector, etc...) This should be avoided at least for public VCMI releases.
+Different major version of VCMI likely change the format of the save game. Every save game needs a version identifier, that loading can work properly. Compatibility depends on the format and its supported feature guards. The version identifier is a constant named version in Connection.h and should be updated every major VCMI version or development version if the format has been changed. Do not change this constant if it's not required as it leads to full rebuilds. Why should the version be updated? If VCMI cannot detect "invalid" save games the program behaviour is random and undefined. It mostly results in a crash. The reason can be anything from null pointer exceptions, index out of bounds exceptions(ok, they aren't available in c++, but you know what I mean:) or invalid objects loading(too much elements in a vector, etc...) This should be avoided at least for public VCMI releases.
 
 #### Adding a new class
 
@@ -597,7 +625,9 @@ struct DLL_LINKAGE Rumor
 
 Serializer, before sending any data, stores its version number. It is passed as the parameter to the serialize method, so conditional code ensuring backwards compatibility can be added.
 
-Yet, because of numerous changes to our game data structure, providing means of backwards compatibility is not feasible. The versioning feature is rarely used.
+The generic example below illustrates version-conditioned reads. New Horizons
+feature contracts above define supported captured formats and fail-closed
+boundaries; absent fields are not permission to install current defaults.
 
 Sample:
 
