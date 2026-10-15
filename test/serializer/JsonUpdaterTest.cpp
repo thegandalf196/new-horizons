@@ -49,8 +49,8 @@ public:
 		std::string s1 = "s1s1s1s1";
 		std::string s2 = "s2s2s2s2";
 
-		JsonNode j1 = JsonUtils::stringNode("j1");
-		JsonNode j2 = JsonUtils::stringNode("j2");
+		JsonNode j1 = JsonNode("j1");
+		JsonNode j2 = JsonNode("j2");
 
 		Inner inner1;
 		Inner inner2;
@@ -95,7 +95,7 @@ public:
 			EXPECT_EQ(s2, rhs.s2);
 
 			EXPECT_EQ(j1, rhs.j1);
-			EXPECT_EQ(j2, rhs.j2) << j2.toJson(true) << " " << rhs.j2.toJson(true);
+			EXPECT_EQ(j2, rhs.j2) << j2.toCompactString() << " " << rhs.j2.toCompactString();
 
 			EXPECT_EQ(inner1.i, rhs.inner1.i);
 			EXPECT_EQ(inner2.i, rhs.inner2.i);
@@ -176,11 +176,11 @@ TEST_F(JsonUpdaterTest, String)
 TEST_F(JsonUpdaterTest, Raw)
 {
 	JsonNode j;
-	j["j2"] = JsonUtils::intNode(42);
+	j["j2"] = JsonNode(42);
 
 	Object obj;
 	Object exp = obj;
-	exp.j2 = JsonUtils::intNode(42);
+	exp.j2 = JsonNode(42);
 
 	JsonUpdater subject(nullptr, j);
 	obj.serializeJson(subject);
