@@ -53,7 +53,16 @@ jobs:
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_validate_json.py
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_changed_markdown.py
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_git_source_snapshot.py
+          "$PYTHON" -B -m unittest discover -s tools/tests -p test_publication_content.py
           "$PYTHON" tools/ci/test_inventory.py
+      - name: Check publication content in the exact commit
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          git --no-lazy-fetch --no-replace-objects --version
+          test "$(git --no-replace-objects rev-parse HEAD)" = "$TARGET_SHA"
+          "$PYTHON" -B tools/ci/publication_content.py --root . --revision "$TARGET_SHA"
       - name: Validate tracked public source contracts
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}

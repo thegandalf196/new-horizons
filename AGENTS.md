@@ -101,7 +101,6 @@ let specialists wait when no eligible task exists. Do not invent filler work.
 Respect the capacity configured in the local Codex settings; never interrupt
 unrelated user work to reclaim slots. Keep allocation and session bookkeeping
 in private coordination records, not in tracked contributor instructions.
-Additional research specialists may be assigned when needed.
 
 Native specialist definitions live in `.codex/agents/`. They configure reusable
 roles; the orchestrator assigns work and reuses their threads. Models, reasoning
