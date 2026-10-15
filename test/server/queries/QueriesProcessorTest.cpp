@@ -225,6 +225,24 @@ protected:
 			settings.connectedPlayerIDs.clear();
 	}
 
+	void isolatePerkDevelopment(CGameHandler & handler, CGHeroInstance * hero)
+	{
+		for(int index = 0; index < LIBRARY->skillh->size(); ++index)
+			handler.changeSecSkill(hero, SecondarySkill(index), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+		auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+		ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.rules));
+		state.selected.clear();
+		ASSERT_NO_THROW(state.validate());
+		// Isolate perk valuation from Skill rolls; preserve the current R2
+		// registry and every key in the captured parent-weight reference table.
+		auto & growth = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
+		for(auto & [skillId, weight] : growth["skillOfferWeights"].Struct())
+			weight.Integer() = 0;
+	}
+
+	std::tuple<int, bool, std::string> answerPerkQuery(CGameHandler & handler,
+		const CGHeroInstance * hero, const std::shared_ptr<CHeroLevelUpDialogQuery> & query);
+
 	void startGame(HeroTypeID heroType = HeroTypeID(0))
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -338,6 +356,24 @@ public:
 		return request;
 	}
 };
+
+std::tuple<int, bool, std::string> NewHorizonsPerkAITest::answerPerkQuery(CGameHandler & handler,
+	const CGHeroInstance * hero, const std::shared_ptr<CHeroLevelUpDialogQuery> & query)
+{
+	auto transport = std::make_shared<PerkLevelUpLoopback>(handler);
+	const auto callback = makeCallback(hero->getOwner(), transport.get());
+	const auto ai = AIFactory::createAdventureAI("Nullkiller2");
+	transport->ai = ai;
+	ai->initGameInterface(std::make_shared<PerkLevelUpEnvironment>(gameState()), callback);
+	auto result = transport->completed.get_future();
+	ai->heroGotLevel(hero, query->hlu.primskill, query->hlu.skills, query->hlu.perks, query->queryID);
+	const auto ready = result.wait_for(std::chrono::seconds(10));
+	ai->finish();
+	if(ready != std::future_status::ready)
+		return {-1, false, "Nullkiller did not answer the perk query"};
+	const auto outcome = result.get();
+	return {outcome.choice, outcome.accepted, outcome.error};
+}
 #endif
 
 }
@@ -726,10 +762,14 @@ TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillR
 	CGameHandler gh(server, gameState());
 
 	// Isolate the faction path. The hero keeps only the canonical faction Skill;
-	// this makes the second level-up's rank choice unambiguous while still
-	// exercising the normal server-authored offer and AI reply transport.
+	// retain its captured current rules, but remove authored starting selections.
 	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
 		gh.changeSecSkill(hero, SecondarySkill(index), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(perkState.rules));
+	perkState.selected.clear();
+	ASSERT_NO_THROW(perkState.validate());
+	ASSERT_TRUE(perkState.selected.empty());
 	gh.changeSecSkill(hero, sylvanLuck, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	ASSERT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::BASIC);
 
@@ -778,6 +818,7 @@ TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillR
 	ASSERT_EQ(hero->getPerkState().selected.size(), 1u);
 	EXPECT_EQ(hero->getPerkState().selected.front(), chosenPerk.selection);
 	EXPECT_TRUE(hero->hasActivePerk(chosenPerk.selection.skillId, chosenPerk.selection.perkId));
+	const auto firstSelection = chosenPerk.selection;
 
 	// Second level-up: isolate the AI's faction-skill rank decision from the
 	// Ranger's weighted new-skill pool. Sylvan Luck is a positive-weight choice,
@@ -790,13 +831,25 @@ TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillR
 		if(skillId != sylvanLuckId)
 			weight.Integer() = 0;
 
-	// The server-authored second offer now has only the faction Skill rank-up;
-	// the AI must choose it rather than rely on unrelated RNG outcomes.
+	// R2 still offers unselected Basic perks alongside the faction Skill rank-up.
+	// The AI must choose the rank rather than fill another Basic slot.
 	hero->setExperience(LIBRARY->heroh->reqExp(hero->level + 1), ChangeValueMode::ABSOLUTE);
 	gh.levelUpHero(hero);
 	query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gh.queries->topQuery(owner));
 	ASSERT_NE(query, nullptr);
-	ASSERT_TRUE(query->hlu.perks.empty());
+	ASSERT_EQ(query->hlu.perks.size(), 2u);
+	std::set<std::string> offeredPerks;
+	for(const auto & candidate : query->hlu.perks)
+	{
+		EXPECT_EQ(candidate.selection.skillId, "new-horizons:sylvanLuck");
+		EXPECT_EQ(candidate.requiredRank, 1);
+		EXPECT_NE(candidate.selection, firstSelection);
+		EXPECT_TRUE(offeredPerks.insert(candidate.selection.perkId).second);
+		const auto definition = newHorizonsHeroes::perkDefinition(perkState.rules,
+			candidate.selection.skillId, candidate.selection.perkId);
+		ASSERT_TRUE(definition.has_value());
+		EXPECT_EQ(definition->effect["status"].String(), "active");
+	}
 	ASSERT_EQ(query->hlu.skills.size(), 1u);
 	const auto skillChoice = std::find(query->hlu.skills.begin(), query->hlu.skills.end(), sylvanLuck);
 	ASSERT_NE(skillChoice, query->hlu.skills.end());
@@ -806,6 +859,130 @@ TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillR
 	ASSERT_TRUE(secondOutcome.accepted) << secondOutcome.error;
 	EXPECT_EQ(secondOutcome.choice, skillIndex);
 	EXPECT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::ADVANCED);
+	ASSERT_EQ(hero->getPerkState().selected.size(), 1u);
+	EXPECT_EQ(hero->getPerkState().selected.front(), firstSelection);
+}
+
+TEST_F(NewHorizonsPerkAITest, r2AIChoosesSafeFirstBasicPerkWithoutMatchingRankOffer)
+{
+	startGame(HeroTypeID(16));
+	auto * hero = findHeroByOwner(PlayerColor(1));
+	ASSERT_NE(hero, nullptr);
+	GameHandlerTestServer server(gameState(), hero->getOwner());
+	CGameHandler gh(server, gameState());
+	ASSERT_NO_FATAL_FAILURE(isolatePerkDevelopment(gh, hero));
+	const SecondarySkill sylvan(SecondarySkill::decode("new-horizons:sylvanLuck"));
+	const SecondarySkill armorer(SecondarySkill::decode("new-horizons:armorer"));
+	gh.changeSecSkill(hero, sylvan, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	gh.changeSecSkill(hero, armorer, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	state.select("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision", 1);
+	const auto firstSelection = state.selected.front();
+	hero->setExperience(LIBRARY->heroh->reqExp(hero->level + 1), ChangeValueMode::ABSOLUTE);
+	gh.levelUpHero(hero);
+	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gh.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(query, nullptr);
+	ASSERT_TRUE(query->hlu.skills.empty());
+	ASSERT_EQ(query->hlu.perks.size(), 2u);
+	std::set<std::string> parents;
+	for(const auto & candidate : query->hlu.perks)
+	{
+		EXPECT_EQ(candidate.requiredRank, 1);
+		EXPECT_FALSE(state.hasSelection(candidate.selection.skillId, candidate.selection.perkId));
+		EXPECT_TRUE(parents.insert(candidate.selection.skillId).second);
+	}
+	EXPECT_EQ(parents, (std::set<std::string>{"new-horizons:sylvanLuck", "new-horizons:armorer"}));
+	gh.onAdvInterfaceReady(hero->getOwner());
+	const auto [choice, accepted, error] = answerPerkQuery(gh, hero, query);
+	ASSERT_TRUE(accepted) << error;
+	ASSERT_GE(choice, 0);
+	ASSERT_LT(static_cast<size_t>(choice), query->hlu.perks.size());
+	EXPECT_EQ(query->hlu.perks.at(choice).selection.skillId, "new-horizons:armorer");
+	ASSERT_EQ(state.selected.size(), 2u);
+	EXPECT_EQ(state.selected.front(), firstSelection);
+	EXPECT_EQ(state.selected.back(), query->hlu.perks.at(choice).selection);
+	EXPECT_FALSE(gh.queries->topQuery(hero->getOwner()));
+}
+
+TEST_F(NewHorizonsPerkAITest, r2AITwoBasicSelectionsStillAcceptsAdvancedPerk)
+{
+	startGame(HeroTypeID(16));
+	auto * hero = findHeroByOwner(PlayerColor(1));
+	ASSERT_NE(hero, nullptr);
+	GameHandlerTestServer server(gameState(), hero->getOwner());
+	CGameHandler gh(server, gameState());
+	ASSERT_NO_FATAL_FAILURE(isolatePerkDevelopment(gh, hero));
+	const SecondarySkill sylvan(SecondarySkill::decode("new-horizons:sylvanLuck"));
+	gh.changeSecSkill(hero, sylvan, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	state.select("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision", 2);
+	state.select("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.forestSFavor", 2);
+	const auto initialSelections = state.selected;
+	hero->setExperience(LIBRARY->heroh->reqExp(hero->level + 1), ChangeValueMode::ABSOLUTE);
+	gh.levelUpHero(hero);
+	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gh.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(query, nullptr);
+	// Fixed authored server seed, not a search or a real-game chance assertion.
+	ASSERT_FALSE(query->prompted);
+	query->hlu.perkOfferSeed = 0;
+	gh.onAdvInterfaceReady(hero->getOwner());
+	ASSERT_TRUE(query->prompted);
+	ASSERT_TRUE(query->hlu.skills.empty());
+	ASSERT_EQ(query->hlu.perks.size(), 2u);
+	for(const auto & candidate : query->hlu.perks)
+	{
+		EXPECT_EQ(candidate.selection.skillId, "new-horizons:sylvanLuck");
+		EXPECT_EQ(candidate.requiredRank, 2);
+		EXPECT_FALSE(state.hasSelection(candidate.selection.skillId, candidate.selection.perkId));
+	}
+	const auto [choice, accepted, error] = answerPerkQuery(gh, hero, query);
+	ASSERT_TRUE(accepted) << error;
+	ASSERT_GE(choice, 0);
+	ASSERT_LT(static_cast<size_t>(choice), query->hlu.perks.size());
+	EXPECT_EQ(query->hlu.perks.at(choice).requiredRank, 2);
+	ASSERT_EQ(state.selected.size(), 3u);
+	EXPECT_EQ(state.selected.at(0), initialSelections.at(0));
+	EXPECT_EQ(state.selected.at(1), initialSelections.at(1));
+	EXPECT_EQ(state.selected.back(), query->hlu.perks.at(choice).selection);
+	EXPECT_EQ(hero->getSecSkillLevel(sylvan), MasteryLevel::ADVANCED);
+	EXPECT_FALSE(gh.queries->topQuery(hero->getOwner()));
+}
+
+TEST_F(NewHorizonsPerkAITest, r2AIOnlyDuplicateTierOfferStillAnswersLegally)
+{
+	startGame(HeroTypeID(16));
+	auto * hero = findHeroByOwner(PlayerColor(1));
+	ASSERT_NE(hero, nullptr);
+	GameHandlerTestServer server(gameState(), hero->getOwner());
+	CGameHandler gh(server, gameState());
+	ASSERT_NO_FATAL_FAILURE(isolatePerkDevelopment(gh, hero));
+	const SecondarySkill sylvan(SecondarySkill::decode("new-horizons:sylvanLuck"));
+	gh.changeSecSkill(hero, sylvan, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	state.select("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision", 1);
+	const auto firstSelection = state.selected.front();
+	hero->setExperience(LIBRARY->heroh->reqExp(hero->level + 1), ChangeValueMode::ABSOLUTE);
+	gh.levelUpHero(hero);
+	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gh.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(query, nullptr);
+	ASSERT_TRUE(query->hlu.skills.empty());
+	ASSERT_EQ(query->hlu.perks.size(), 2u);
+	for(const auto & candidate : query->hlu.perks)
+	{
+		EXPECT_EQ(candidate.selection.skillId, "new-horizons:sylvanLuck");
+		EXPECT_EQ(candidate.requiredRank, 1);
+		EXPECT_FALSE(state.hasSelection(candidate.selection.skillId, candidate.selection.perkId));
+	}
+	gh.onAdvInterfaceReady(hero->getOwner());
+	const auto [choice, accepted, error] = answerPerkQuery(gh, hero, query);
+	ASSERT_TRUE(accepted) << error;
+	ASSERT_GE(choice, 0);
+	ASSERT_LT(static_cast<size_t>(choice), query->hlu.perks.size());
+	ASSERT_EQ(state.selected.size(), 2u);
+	EXPECT_EQ(state.selected.front(), firstSelection);
+	EXPECT_EQ(state.selected.back(), query->hlu.perks.at(choice).selection);
+	EXPECT_EQ(hero->getSecSkillLevel(sylvan), MasteryLevel::BASIC);
+	EXPECT_FALSE(gh.queries->topQuery(hero->getOwner()));
 }
 #endif
 
