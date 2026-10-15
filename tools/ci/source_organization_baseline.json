@@ -178,66 +178,6 @@
       "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "a54ebfc920af710d17a89aa32cdea21fd06dcb9a62ae20f4e23b5a6bbd589e0f"
-    },
-    "mapeditor/templateeditor/templateeditor.cpp": {
-      "diagnostics": [
-        {
-          "end": 266,
-          "start": 266,
-          "type": "missing:type_identifier"
-        },
-        {
-          "end": 266,
-          "start": 266,
-          "type": "ERROR"
-        },
-        {
-          "end": 269,
-          "start": 269,
-          "type": "missing:type_identifier"
-        },
-        {
-          "end": 269,
-          "start": 269,
-          "type": "ERROR"
-        },
-        {
-          "end": 488,
-          "start": 488,
-          "type": "missing:type_identifier"
-        },
-        {
-          "end": 488,
-          "start": 488,
-          "type": "ERROR"
-        },
-        {
-          "end": 493,
-          "start": 493,
-          "type": "missing:type_identifier"
-        },
-        {
-          "end": 493,
-          "start": 493,
-          "type": "ERROR"
-        },
-        {
-          "end": 498,
-          "start": 498,
-          "type": "missing:type_identifier"
-        },
-        {
-          "end": 498,
-          "start": 498,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:type_identifier at physical lines 266-266, ERROR at physical lines 266-266, missing:type_identifier at physical lines 269-269, ERROR at physical lines 269-269, missing:type_identifier at physical lines 488-488, ERROR at physical lines 488-488, missing:type_identifier at physical lines 493-493, ERROR at physical lines 493-493, missing:type_identifier at physical lines 498-498, ERROR at physical lines 498-498. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "c434bc9a615a8b5edc517dff2b3ad33d438ce0614c824ac6b85fdfd441bd2bba"
     }
   },
   "manual_functions": {
@@ -8906,6 +8846,553 @@
         }
       ],
       "rationale": "Complete current file read1–517 including every conditional OS/SDL/threading branch. Four static helpers87–104/106–121/123–127/129–139 and fatal handler504–517. One shared entry body148–500 with mutually exclusive signatures142(wmain),144(SDL_main),146(main), conservatively inventoried once142–500 including intervening alternatives/directives, not tripled or shortened to body-only. Seven genuine nested lambdas243–247/274–280/281–287/321–325/348–352/422–441/443–490 retained exactly with original parser symbols/spans. Recovery catch495–498 is an exception-handler statement, not a callable. SDL_MAIN_HANDLED55 and SDL_MAIN_NOIMPL60 are object-like macros; no function-like macro definitions. Included SDL-generated entrypoints are not handwritten bodies in this physical file. Full13-unit coverage does not approve newly exposed359-line function or startup/thread/shutdown behavior."
+    },
+    "mapeditor/templateeditor/templateeditor.cpp": {
+      "sha256": "c434bc9a615a8b5edc517dff2b3ad33d438ce0614c824ac6b85fdfd441bd2bba",
+      "review": "IR-MANUAL-TEMPLATEEDITOR-c434bc9a-20261015",
+      "rationale": "Complete physical source 1–1311 inspected, not a lexical function-name search. Exact 108 callable definitions: 87 TemplateEditor methods including constructor and destructor, plus 21 lambdas. All nested callbacks included, notably the setPlayersTable lambda 249–289 and its four callbacks 266–268, 269–271, 273–276, 284–287. Constructor initializer list 36–37 belongs to its 36–79 span. Control-flow blocks, aggregate/initializer braces, pointer-to-member type declarators, function calls, signal addresses and preprocessor directives are not separate callables. No function-like macro definitions or catch handlers occur. Android conditional 920–927 stays inside closeEvent 915–931; its callMethod<void> is an invocation. Tree-sitter diagnostics at 266,269,488,493,498 are recovery within static_cast<void(QSpinBox::*)(int)> type-ids, not missing function definitions. All callable spans and parser-compatible symbols were verified against whole-source inspection. No unresolved callable syntax. This is coverage evidence only: all five existing numeric debt records remain verbatim, with no growth waiver, ceiling exception or gameplay certification.",
+      "functions": [
+        {
+          "symbol": "TemplateEditor::TemplateEditor(QWidget * parent): QWidget{parent}, ui(new Ui::TemplateEditor)#1",
+          "start": 36,
+          "end": 79
+        },
+        {
+          "symbol": "TemplateEditor::~TemplateEditor()#1",
+          "start": 81,
+          "end": 84
+        },
+        {
+          "symbol": "void TemplateEditor::initContent()#1",
+          "start": 86,
+          "end": 101
+        },
+        {
+          "symbol": "void TemplateEditor::setDefaultContent(std::shared_ptr<CRmgTemplate> tpl)#1",
+          "start": 103,
+          "end": 106
+        },
+        {
+          "symbol": "void TemplateEditor::setDefaultContentZone(std::shared_ptr<rmg::ZoneOptions> zone, TRmgTemplateZoneId id)#1",
+          "start": 108,
+          "end": 140
+        },
+        {
+          "symbol": "void TemplateEditor::autoPositionZones()#1",
+          "start": 142,
+          "end": 175
+        },
+        {
+          "symbol": "TemplateEditor::autoPositionZones()::[item](auto & elem)#1",
+          "start": 164,
+          "end": 164
+        },
+        {
+          "symbol": "TemplateEditor::autoPositionZones()::[item](auto & elem)#2",
+          "start": 165,
+          "end": 165
+        },
+        {
+          "symbol": "void TemplateEditor::loadContent(bool autoPosition)#1",
+          "start": 177,
+          "end": 294
+        },
+        {
+          "symbol": "TemplateEditor::loadContent(bool autoPosition)::[](auto & item)#1",
+          "start": 190,
+          "end": 190
+        },
+        {
+          "symbol": "TemplateEditor::loadContent(bool autoPosition)::[this, svgItem](bool selected)#1",
+          "start": 196,
+          "end": 207
+        },
+        {
+          "symbol": "TemplateEditor::loadContent(bool autoPosition)::[this, svgItem](QPointF pos)#1",
+          "start": 208,
+          "end": 217
+        },
+        {
+          "symbol": "TemplateEditor::loadContent(bool autoPosition)::[this](int index) mutable#1",
+          "start": 232,
+          "end": 235
+        },
+        {
+          "symbol": "TemplateEditor::loadContent(bool autoPosition)::[this](QTableWidget * widget, std::vector<std::pair<int, int>> & range)#1",
+          "start": 249,
+          "end": 289
+        },
+        {
+          "symbol": "TemplateEditor::loadContent(bool autoPosition)::(QTableWidget * widget, std::vector<std::pair<int, int>> & range)::[i, &range](int val)#1",
+          "start": 266,
+          "end": 268
+        },
+        {
+          "symbol": "TemplateEditor::loadContent(bool autoPosition)::(QTableWidget * widget, std::vector<std::pair<int, int>> & range)::[i, &range](int val)#2",
+          "start": 269,
+          "end": 271
+        },
+        {
+          "symbol": "TemplateEditor::loadContent(bool autoPosition)::(QTableWidget * widget, std::vector<std::pair<int, int>> & range)::[this, i, &range]()#1",
+          "start": 273,
+          "end": 276
+        },
+        {
+          "symbol": "TemplateEditor::loadContent(bool autoPosition)::(QTableWidget * widget, std::vector<std::pair<int, int>> & range)::[this, &range]()#1",
+          "start": 284,
+          "end": 287
+        },
+        {
+          "symbol": "void TemplateEditor::updateZonePositions()#1",
+          "start": 296,
+          "end": 306
+        },
+        {
+          "symbol": "QString TemplateEditor::getZoneToolTip(std::shared_ptr<rmg::ZoneOptions> zone)#1",
+          "start": 308,
+          "end": 316
+        },
+        {
+          "symbol": "void TemplateEditor::updateZoneCards(TRmgTemplateZoneId id)#1",
+          "start": 318,
+          "end": 347
+        },
+        {
+          "symbol": "void TemplateEditor::loadZoneMenuContent(bool onlyPosition)#1",
+          "start": 349,
+          "end": 442
+        },
+        {
+          "symbol": "TemplateEditor::loadZoneMenuContent(bool onlyPosition)::[](auto& target, const auto& newValue)#1",
+          "start": 354,
+          "end": 354
+        },
+        {
+          "symbol": "void TemplateEditor::loadZoneConnectionMenuContent()#1",
+          "start": 444,
+          "end": 527
+        },
+        {
+          "symbol": "TemplateEditor::loadZoneConnectionMenuContent()::[this, i, &connections](int val)#1",
+          "start": 488,
+          "end": 492
+        },
+        {
+          "symbol": "TemplateEditor::loadZoneConnectionMenuContent()::[this, i, &connections](int val)#2",
+          "start": 493,
+          "end": 497
+        },
+        {
+          "symbol": "TemplateEditor::loadZoneConnectionMenuContent()::[this, i, &connections](int val)#3",
+          "start": 498,
+          "end": 502
+        },
+        {
+          "symbol": "TemplateEditor::loadZoneConnectionMenuContent()::[this, i, &connections, connectionType](int val)#1",
+          "start": 503,
+          "end": 507
+        },
+        {
+          "symbol": "TemplateEditor::loadZoneConnectionMenuContent()::[this, i, &connections, hasRoad](int val)#1",
+          "start": 508,
+          "end": 512
+        },
+        {
+          "symbol": "TemplateEditor::loadZoneConnectionMenuContent()::[this, i, &connections]()#1",
+          "start": 513,
+          "end": 518
+        },
+        {
+          "symbol": "void TemplateEditor::updateConnectionAddButton()#1",
+          "start": 529,
+          "end": 533
+        },
+        {
+          "symbol": "void TemplateEditor::saveZoneMenuContent()#1",
+          "start": 535,
+          "end": 576
+        },
+        {
+          "symbol": "void TemplateEditor::updateConnectionLines(bool recreate)#1",
+          "start": 578,
+          "end": 627
+        },
+        {
+          "symbol": "TemplateEditor::updateConnectionLines(bool recreate)::[this, line]()#1",
+          "start": 592,
+          "end": 595
+        },
+        {
+          "symbol": "TemplateEditor::updateConnectionLines(bool recreate)::[](auto & i)#1",
+          "start": 609,
+          "end": 611
+        },
+        {
+          "symbol": "void TemplateEditor::saveContent()#1",
+          "start": 629,
+          "end": 645
+        },
+        {
+          "symbol": "bool TemplateEditor::getAnswerAboutUnsavedChanges()#1",
+          "start": 647,
+          "end": 658
+        },
+        {
+          "symbol": "void TemplateEditor::setTitle()#1",
+          "start": 660,
+          "end": 665
+        },
+        {
+          "symbol": "void TemplateEditor::changed()#1",
+          "start": 667,
+          "end": 671
+        },
+        {
+          "symbol": "bool TemplateEditor::validate()#1",
+          "start": 673,
+          "end": 756
+        },
+        {
+          "symbol": "TemplateEditor::validate()::[zoneId](const rmg::ZoneConnection &c)#1",
+          "start": 717,
+          "end": 719
+        },
+        {
+          "symbol": "void TemplateEditor::saveTemplate()#1",
+          "start": 758,
+          "end": 764
+        },
+        {
+          "symbol": "void TemplateEditor::showTemplateEditor(QWidget *parent)#1",
+          "start": 766,
+          "end": 773
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionOpen_triggered()#1",
+          "start": 775,
+          "end": 796
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionSave_as_triggered()#1",
+          "start": 798,
+          "end": 823
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionNew_triggered()#1",
+          "start": 825,
+          "end": 838
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionSave_triggered()#1",
+          "start": 840,
+          "end": 847
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionAutoPosition_triggered()#1",
+          "start": 849,
+          "end": 857
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionZoom_in_triggered()#1",
+          "start": 859,
+          "end": 862
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionZoom_out_triggered()#1",
+          "start": 864,
+          "end": 867
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionZoom_auto_triggered()#1",
+          "start": 869,
+          "end": 872
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionZoom_reset_triggered()#1",
+          "start": 874,
+          "end": 877
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionAddZone_triggered()#1",
+          "start": 879,
+          "end": 895
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionRemoveZone_triggered()#1",
+          "start": 897,
+          "end": 902
+        },
+        {
+          "symbol": "void TemplateEditor::on_comboBoxTemplateSelection_activated(int index)#1",
+          "start": 904,
+          "end": 913
+        },
+        {
+          "symbol": "void TemplateEditor::closeEvent(QCloseEvent *event)#1",
+          "start": 915,
+          "end": 931
+        },
+        {
+          "symbol": "void TemplateEditor::changeEvent(QEvent *event)#1",
+          "start": 933,
+          "end": 938
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonAddSubTemplate_clicked()#1",
+          "start": 940,
+          "end": 961
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonRemoveSubTemplate_clicked()#1",
+          "start": 963,
+          "end": 976
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonRenameSubTemplate_clicked()#1",
+          "start": 978,
+          "end": 994
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxZoneVisPosX_valueChanged(int)#1",
+          "start": 996,
+          "end": 1000
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxZoneVisPosY_valueChanged(int)#1",
+          "start": 1002,
+          "end": 1006
+        },
+        {
+          "symbol": "void TemplateEditor::on_doubleSpinBoxZoneVisSize_valueChanged(double)#1",
+          "start": 1008,
+          "end": 1012
+        },
+        {
+          "symbol": "void TemplateEditor::on_comboBoxZoneType_currentTextChanged(const QString &text)#1",
+          "start": 1014,
+          "end": 1022
+        },
+        {
+          "symbol": "void TemplateEditor::on_comboBoxZoneOwner_currentTextChanged(const QString &text)#1",
+          "start": 1024,
+          "end": 1028
+        },
+        {
+          "symbol": "void TemplateEditor::on_comboBoxForcedLevel_currentTextChanged(const QString &text)#1",
+          "start": 1030,
+          "end": 1034
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxZoneSize_valueChanged(int)#1",
+          "start": 1036,
+          "end": 1040
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxTownCountPlayer_valueChanged(int)#1",
+          "start": 1042,
+          "end": 1046
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxCastleCountPlayer_valueChanged(int)#1",
+          "start": 1048,
+          "end": 1052
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxTownDensityPlayer_valueChanged(int)#1",
+          "start": 1054,
+          "end": 1058
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxCastleDensityPlayer_valueChanged(int)#1",
+          "start": 1060,
+          "end": 1064
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxTownCountNeutral_valueChanged(int)#1",
+          "start": 1066,
+          "end": 1070
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxCastleCountNeutral_valueChanged(int)#1",
+          "start": 1072,
+          "end": 1076
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxTownDensityNeutral_valueChanged(int)#1",
+          "start": 1078,
+          "end": 1082
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxCastleDensityNeutral_valueChanged(int)#1",
+          "start": 1084,
+          "end": 1088
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxMatchTerrainToTown_stateChanged(int state)#1",
+          "start": 1090,
+          "end": 1094
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxTownsAreSameType_stateChanged(int state)#1",
+          "start": 1096,
+          "end": 1100
+        },
+        {
+          "symbol": "void TemplateEditor::on_comboBoxMonsterStrength_currentTextChanged(const QString &text)#1",
+          "start": 1102,
+          "end": 1106
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxZoneId_valueChanged(int)#1",
+          "start": 1108,
+          "end": 1112
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxZoneLinkTowns_valueChanged(int)#1",
+          "start": 1114,
+          "end": 1118
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxZoneLinkMines_valueChanged(int)#1",
+          "start": 1120,
+          "end": 1124
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxZoneLinkTerrain_valueChanged(int)#1",
+          "start": 1126,
+          "end": 1130
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxZoneLinkTreasure_valueChanged(int)#1",
+          "start": 1132,
+          "end": 1136
+        },
+        {
+          "symbol": "void TemplateEditor::on_spinBoxZoneLinkCustomObjects_valueChanged(int)#1",
+          "start": 1138,
+          "end": 1142
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxZoneLinkTowns_stateChanged(int state)#1",
+          "start": 1144,
+          "end": 1152
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxZoneLinkMines_stateChanged(int state)#1",
+          "start": 1154,
+          "end": 1162
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxZoneLinkTerrain_stateChanged(int state)#1",
+          "start": 1164,
+          "end": 1172
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxZoneLinkTreasure_stateChanged(int state)#1",
+          "start": 1174,
+          "end": 1182
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxZoneLinkCustomObjects_stateChanged(int state)#1",
+          "start": 1184,
+          "end": 1192
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxAllowedWaterContentNone_stateChanged(int state)#1",
+          "start": 1194,
+          "end": 1198
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxAllowedWaterContentNormal_stateChanged(int state)#1",
+          "start": 1200,
+          "end": 1204
+        },
+        {
+          "symbol": "void TemplateEditor::on_checkBoxAllowedWaterContentIslands_stateChanged(int state)#1",
+          "start": 1206,
+          "end": 1210
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonConnectionAdd_clicked()#1",
+          "start": 1212,
+          "end": 1229
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonOpenTerrainTypes_clicked()#1",
+          "start": 1231,
+          "end": 1235
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonOpenBannedTerrainTypes_clicked()#1",
+          "start": 1237,
+          "end": 1241
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonAllowedTowns_clicked()#1",
+          "start": 1243,
+          "end": 1246
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonBannedTowns_clicked()#1",
+          "start": 1248,
+          "end": 1251
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonTownHints_clicked()#1",
+          "start": 1253,
+          "end": 1256
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonAllowedMonsters_clicked()#1",
+          "start": 1258,
+          "end": 1261
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonBannedMonsters_clicked()#1",
+          "start": 1263,
+          "end": 1266
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonTreasure_clicked()#1",
+          "start": 1268,
+          "end": 1271
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonMines_clicked()#1",
+          "start": 1273,
+          "end": 1277
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonCustomObjects_clicked()#1",
+          "start": 1279,
+          "end": 1282
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonEntitiesBannedSpells_clicked()#1",
+          "start": 1284,
+          "end": 1288
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonEntitiesBannedArtifacts_clicked()#1",
+          "start": 1290,
+          "end": 1294
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonEntitiesBannedSkills_clicked()#1",
+          "start": 1296,
+          "end": 1300
+        },
+        {
+          "symbol": "void TemplateEditor::on_pushButtonEntitiesBannedHeroes_clicked()#1",
+          "start": 1302,
+          "end": 1306
+        },
+        {
+          "symbol": "void TemplateEditor::on_actionExit_triggered()#1",
+          "start": 1308,
+          "end": 1311
+        }
+      ]
     }
   },
   "schema": 1,
