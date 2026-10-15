@@ -20,6 +20,57 @@ One important class is `HypotheticBattle`. It is used to evaluate the effects of
 
 ## BattleAI
 
+### Current-rule spell fixtures
+
+Current weighted-perk capture requires active hero development rules and their
+class-weight table. Do not disable Commands while retaining that current capture:
+expanded hero ratings also require Commands. To isolate spell valuation, keep the
+current rule pair and neutralize command effects in the fixture. Historical tests
+must explicitly preserve their matching captured context instead of weakening
+production validation or silently converting all fixtures to legacy rules.
+
+Retired hero spells need separate availability and historical-behavior fixtures.
+For example, current Sacrifice has `heroAccess=false`; an inscribed spell must
+still be rejected under that captured roster. A historical saved-v3 fixture may
+explicitly omit that marker to exercise its older default-access behavior. Keep
+the override local to the captured fixture, verify unrelated rows are unchanged,
+and retain a current-roster rejection control. Do not reactivate canonical data
+merely to preserve a positive AI test.
+
+Metamagic continuation tests must establish a typed spell allowance before AI
+evaluation. Legacy pending counters alone do not grant it in a Commands battle.
+Prefer accepted paid triggering casts and assert the resulting grant's source,
+legality and payment. Check that preview preserves the live allowance ledger,
+mana, serialized unit state and RNG; validate submitted follow-ups through the
+authoritative action path. Perk setup must retain Basic/Advanced prerequisites.
+These fixture grants do not prove ordinary class-weighted perk acquisition.
+
+Choose damage witnesses for their actual current semantics. Implosion uses a
+percentage of current aggregate Health with a final floor, so a one-HP target
+cannot establish positive damage credit. A generic flat-damage valuation test
+should use a current flat-damage spell, retaining meaningful victim, summon,
+partial-damage and read-only assertions rather than changing expected results.
+
+### New Horizons timed arrival snapshots
+
+`HypotheticBattle` branches must retain the timer state present when they are
+constructed, even if the underlying battle or another branch subsequently
+advances. Infernal Beacon and Reserve Discipline attach unit-local
+`HERO_SPECIAL` / `N_TURNS` bonuses when a gated creature arrives. These bonuses
+belong to the forecast's captured effects and age on its existing round clock.
+Inactive recipients must also be captured at branch construction; waiting until
+their first query would import a later parent's expiry.
+
+This classification is deliberately limited to those timed hero-special effects,
+not every timed bonus. Inherited bonuses may have a different owning clock.
+Future timed `HERO_SPECIAL` producers must be checked against that ownership
+assumption. Permanent specialties, Spell Lock preservation and activation-clock
+effects retain their existing paths. No save format or live battle rule changes
+are required for this forecast correction.
+
+The four real-arrival regressions in `NewHorizonsDemonicGatingTest` cover expiry,
+parent/sibling isolation and first reads after parent or live advancement.
+
 BattleAI's most important classes are the following:
 
 - AttackPossibility - one particular way to attack on the battlefield. Each AttackPossibility instance has multiple ...DamageReduce attributes. These represent how much damage an enemy will lose after our attack. Effects can reduce this damage. We add them up and this value is used as attack score.

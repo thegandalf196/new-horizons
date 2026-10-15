@@ -95,7 +95,10 @@ bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell
 
 bool projectedEffect(const Bonus * bonus)
 {
+	// Current timed HERO_SPECIAL producers are unit-local arrival bonuses.
+	// Do not generalize to all timed sources: upstream auras may use another clock.
 	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND
+		|| (bonus->source == BonusSource::HERO_SPECIAL && Bonus::NTurns(bonus))
 		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus)
 		|| newHorizonsDivineMandate::isSharedPurposeMoraleBonus(bonus)
 		|| newHorizonsTraining::isTrainingBonus(bonus)
@@ -136,6 +139,16 @@ bool hasTimedMagicalSpellEffects(const IBonusBearer & bearer)
 		return bonus && bonus->turnsRemain > 0
 			&& (newHorizonsSorcery::isPreservedSpellLockEffect(bonus, true)
 				|| newHorizonsSorcery::isPreservedSpellLockEffect(bonus, false));
+	}));
+}
+
+bool hasTimedHeroSpecialEffects(const IBonusBearer & bearer)
+{
+	// Snapshot current unit-local arrival timers before a lazy descendant
+	// can observe a later parent/live boundary. Other timed sources stay lazy.
+	return bearer.hasBonus(CSelector([](const Bonus * bonus)
+	{
+		return bonus && bonus->source == BonusSource::HERO_SPECIAL && Bonus::NTurns(bonus);
 	}));
 }
 
@@ -338,7 +351,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
 		|| hasElementalMemory(*this)
 		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
-		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers)
+		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers
+		|| hasTimedHeroSpecialEffects(*this))
 		captureEffects();
 }
 
@@ -368,7 +382,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
 		|| hasElementalMemory(*this)
 		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
-		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers)
+		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers
+		|| hasTimedHeroSpecialEffects(*this))
 		captureEffects();
 }
 
@@ -1258,6 +1273,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	for(const auto * unit : realBattle->battleGetAllUnits(false))
 		if(unit->unitId() == static_cast<uint32_t>(activeUnitId)
 			|| hasTimedMagicalSpellEffects(*unit)
+			|| hasTimedHeroSpecialEffects(*unit)
 			|| newHorizonsFrozen::isFrozen(*unit)
 			|| (dynamic_cast<const battle::CUnitState *>(unit)
 				&& dynamic_cast<const battle::CUnitState *>(unit)->moraleExtraActivation))

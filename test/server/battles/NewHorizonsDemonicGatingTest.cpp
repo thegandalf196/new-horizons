@@ -27,11 +27,23 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../lib/battle/CPlayerBattleCallback.h"
 
 #include <tuple>
 
 namespace
 {
+class DemonicGatingProjectionEnvironment final : public Environment
+{
+	std::shared_ptr<CGameState> state;
+public:
+	explicit DemonicGatingProjectionEnvironment(std::shared_ptr<CGameState> state_) : state(std::move(state_)) {}
+	const Services * services() const override { return LIBRARY; }
+	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
+	const GameCb * game() const override { return state.get(); }
+};
+
 class NewHorizonsDemonicGatingTest : public BattleTestFixture
 {
 protected:
@@ -167,6 +179,179 @@ protected:
 			"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate"));
 		ASSERT_EQ(attackerSideHero->hasActivePerk(
 			"new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate"), mobile);
+	}
+
+	void grantAdvancedGatingArrivalPerk(const std::string & perkId)
+	{
+		const std::string skillId = "new-horizons:demonicGating";
+		const SecondarySkill skill(SecondarySkill::decode(skillId));
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+		state.selected.clear();
+		attackerSideHero->applyPerkSelection({skillId, "new-horizons:demonicGating.wideGate"});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(skillId, "new-horizons:demonicGating.wideGate"));
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({skillId, perkId});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(skillId, "new-horizons:demonicGating.wideGate"));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(skillId, perkId));
+	}
+
+	void expectOneRoundArrivalProjectionExpiry(const CStack * gated, BonusType type, int value)
+	{
+		ASSERT_NE(gated, nullptr);
+		const BonusSourceID heroSource(attackerSideHero->id);
+		const CSelector arrivalMarker([type, value, heroSource](const Bonus * bonus)
+		{
+			return bonus && bonus->type == type && bonus->val == value
+				&& bonus->source == BonusSource::HERO_SPECIAL && bonus->sid == heroSource
+				&& bonus->duration == BonusDuration::N_TURNS;
+		});
+		const auto liveMarker = gated->getBonus(arrivalMarker);
+		ASSERT_NE(liveMarker, nullptr);
+		ASSERT_EQ(liveMarker->turnsRemain, 1);
+		const auto liveState = gated->acquireState()->save();
+		const auto arrivalInitiative = gated->getInitiative();
+		const auto arrivalMorale = gated->moraleVal();
+		const auto liveRound = battle()->getRound();
+
+		// All branches exist before another authoritative boundary. Advancing
+		// live first would let a live-backed marker disappear and mask this bug.
+		DemonicGatingProjectionEnvironment environment(gameState());
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+		const auto parentUnit = parent->getForUpdate(gated->unitId());
+		auto child = std::make_shared<HypotheticBattle>(&environment, parent);
+		const auto childUnit = child->getForUpdate(gated->unitId());
+		auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+		const auto siblingUnit = sibling->getForUpdate(gated->unitId());
+		for(const auto & unit : {parentUnit, childUnit, siblingUnit})
+		{
+			const auto marker = unit->getBonus(arrivalMarker);
+			ASSERT_NE(marker, nullptr);
+			ASSERT_EQ(marker->turnsRemain, 1);
+			EXPECT_EQ(unit->getInitiative(), arrivalInitiative);
+			EXPECT_EQ(unit->moraleVal(), arrivalMorale);
+		}
+
+		child->nextRound();
+		const auto childMarker = childUnit->getBonus(arrivalMarker);
+		RecordProperty("projectedArrivalMarkerTurns", childMarker ? childMarker->turnsRemain : -1);
+		EXPECT_EQ(child->battleGetRound(), liveRound + 1);
+		EXPECT_EQ(childMarker, nullptr) << "The real HERO_SPECIAL arrival marker must expire in the child";
+		if(type == BonusType::STACKS_INITIATIVE_FLAT)
+		{
+			EXPECT_EQ(childUnit->getInitiative(), arrivalInitiative - value);
+		}
+		// Reserve Discipline's exact floor must disappear even when this
+		// ordinary Inferno army has no negative Morale to expose a stat delta.
+		for(const auto & unit : {parentUnit, siblingUnit})
+		{
+			const auto marker = unit->getBonus(arrivalMarker);
+			ASSERT_NE(marker, nullptr);
+			EXPECT_EQ(marker->turnsRemain, 1);
+			EXPECT_EQ(unit->getInitiative(), arrivalInitiative);
+			EXPECT_EQ(unit->moraleVal(), arrivalMorale);
+			EXPECT_EQ(unit->save(), liveState);
+		}
+		EXPECT_EQ(parent->battleGetRound(), liveRound);
+		EXPECT_EQ(sibling->battleGetRound(), liveRound);
+		EXPECT_EQ(battle()->getRound(), liveRound);
+		EXPECT_EQ(gated->acquireState()->save(), liveState);
+		ASSERT_NE(gated->getBonus(arrivalMarker), nullptr);
+		EXPECT_EQ(gated->getBonus(arrivalMarker)->turnsRemain, 1);
+		EXPECT_EQ(gated->getInitiative(), arrivalInitiative);
+		EXPECT_EQ(gated->moraleVal(), arrivalMorale);
+
+		// The same producer expires normally on the authoritative boundary.
+		// Keep this after the projection assertions, including on their failure.
+		endRound();
+		EXPECT_FALSE(gated->hasBonus(arrivalMarker));
+		if(type == BonusType::STACKS_INITIATIVE_FLAT)
+		{
+			EXPECT_EQ(gated->getInitiative(), arrivalInitiative - value);
+		}
+	}
+
+	void expectInactiveLazyArrivalSnapshot(const CStack * gated, BonusType type, int value)
+	{
+		ASSERT_NE(gated, nullptr);
+		const auto initialRound = battle()->getRound();
+		// An active unit is already captured eagerly for other reasons. Use
+		// only ordinary accepted actions to move this arrival off that path.
+		for(int attempts = 0; attempts < 4 && battle()->battleActiveUnit() == gated; ++attempts)
+		{
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+				BattleAction::makeDefend(gated)));
+			ASSERT_EQ(battle()->getRound(), initialRound);
+		}
+		ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+		ASSERT_NE(battle()->battleActiveUnit(), gated);
+		ASSERT_EQ(battle()->getRound(), initialRound);
+		ASSERT_FALSE(gated->moraleExtraActivation);
+		ASSERT_FALSE(gated->hasBonus(CSelector([](const Bonus * bonus)
+		{
+			return bonus && bonus->source == BonusSource::SPELL_EFFECT && Bonus::NTurns(bonus);
+		}))) << "A preexisting magical timer must not trigger another eager-capture path";
+		const BonusSourceID heroSource(attackerSideHero->id);
+		const CSelector arrivalMarker([type, value, heroSource](const Bonus * bonus)
+		{
+			return bonus && bonus->type == type && bonus->val == value
+				&& bonus->source == BonusSource::HERO_SPECIAL && bonus->sid == heroSource
+				&& bonus->duration == BonusDuration::N_TURNS;
+		});
+		const auto liveMarker = gated->getBonus(arrivalMarker);
+		ASSERT_NE(liveMarker, nullptr);
+		ASSERT_EQ(liveMarker->turnsRemain, 1);
+		const auto arrivalInitiative = gated->getInitiative();
+		const auto liveState = gated->acquireState()->save();
+		DemonicGatingProjectionEnvironment environment(gameState());
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+		auto child = std::make_shared<HypotheticBattle>(&environment, parent);
+		auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+		// No getForUpdate/getUnit query for this inactive target before the
+		// parent advances: the constructor boundary must own its snapshot.
+		parent->nextRound();
+		EXPECT_FALSE(parent->getForUpdate(gated->unitId())->hasBonus(arrivalMarker));
+		const auto firstRead = [&](const std::shared_ptr<HypotheticBattle> & branch, const char * property)
+		{
+			const auto unit = branch->getForUpdate(gated->unitId());
+			const auto marker = unit->getBonus(arrivalMarker);
+			RecordProperty(property, marker ? marker->turnsRemain : -1);
+			EXPECT_NE(marker, nullptr) << "An inactive lazy descendant must not import a later parent/live expiry";
+			if(marker)
+			{
+				EXPECT_EQ(marker->turnsRemain, 1);
+			}
+			EXPECT_EQ(unit->getInitiative(), arrivalInitiative);
+			EXPECT_EQ(branch->battleGetRound(), initialRound);
+			return unit;
+		};
+		const auto childUnit = firstRead(child, "lazyChildAfterParentTurns");
+		const auto siblingUnit = firstRead(sibling, "lazySiblingAfterParentTurns");
+		ASSERT_NE(gated->getBonus(arrivalMarker), nullptr);
+		EXPECT_EQ(gated->getBonus(arrivalMarker)->turnsRemain, 1);
+		EXPECT_EQ(battle()->getRound(), initialRound);
+		EXPECT_EQ(gated->acquireState()->save(), liveState);
+		child->nextRound();
+		EXPECT_FALSE(childUnit->hasBonus(arrivalMarker));
+		EXPECT_TRUE(siblingUnit->hasBonus(arrivalMarker));
+
+		// A separate still-lazy family must survive an authoritative expiry
+		// too. None of these target projections is read before endRound().
+		auto liveParent = std::make_shared<HypotheticBattle>(&environment, callback);
+		auto liveChild = std::make_shared<HypotheticBattle>(&environment, liveParent);
+		auto liveSibling = std::make_shared<HypotheticBattle>(&environment, liveParent);
+		endRound();
+		EXPECT_FALSE(gated->hasBonus(arrivalMarker));
+		const auto liveParentUnit = firstRead(liveParent, "lazyParentAfterLiveTurns");
+		const auto liveChildUnit = firstRead(liveChild, "lazyChildAfterLiveTurns");
+		const auto liveSiblingUnit = firstRead(liveSibling, "lazySiblingAfterLiveTurns");
+		liveChild->nextRound();
+		EXPECT_FALSE(liveChildUnit->hasBonus(arrivalMarker));
+		EXPECT_TRUE(liveParentUnit->hasBonus(arrivalMarker));
+		EXPECT_TRUE(liveSiblingUnit->hasBonus(arrivalMarker));
+		EXPECT_FALSE(gated->hasBonus(arrivalMarker));
 	}
 
 	void addUntilActivationBonus(const battle::Unit * unit)
@@ -1080,6 +1265,58 @@ TEST_F(NewHorizonsDemonicGatingTest, InfernalBeaconIsNotClaimedWithoutAdjacentIn
 	EXPECT_FALSE(hasBattleLogFragment("Infernal Beacon grants"));
 }
 
+TEST_F(NewHorizonsDemonicGatingTest, InfernalBeaconRealArrivalExpiresInChildProjectionBeforeLiveAdvance)
+{
+	grantAdvancedGatingArrivalPerk("new-horizons:demonicGating.infernalBeacon");
+	ASSERT_FALSE(HasFatalFailure());
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const BattleHex destination = gateHexAtDistance(active, 1, 1);
+	ASSERT_TRUE(destination.isAvailable());
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(destination);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	endRound();
+	const auto gated = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSlot() == SlotID::SUMMONED_SLOT_PLACEHOLDER
+			&& stack->unitSide() == BattleSide::ATTACKER;
+	});
+	ASSERT_EQ(gated.size(), 1u);
+	ASSERT_TRUE(hasBattleLogFragment("Infernal Beacon grants +2 Initiative"));
+	expectOneRoundArrivalProjectionExpiry(gated.front(), BonusType::STACKS_INITIATIVE_FLAT, 2);
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, ReserveDisciplineRealArrivalExpiresInChildProjectionBeforeLiveAdvance)
+{
+	grantAdvancedGatingArrivalPerk("new-horizons:demonicGating.reserveDiscipline");
+	ASSERT_FALSE(HasFatalFailure());
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const BattleHex destination = legalGateHex(active);
+	ASSERT_TRUE(destination.isAvailable());
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(destination);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	endRound();
+	const auto gated = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSlot() == SlotID::SUMMONED_SLOT_PLACEHOLDER
+			&& stack->unitSide() == BattleSide::ATTACKER;
+	});
+	ASSERT_EQ(gated.size(), 1u);
+	ASSERT_TRUE(hasBattleLogFragment("Reserve Discipline prevents negative Morale"));
+	expectOneRoundArrivalProjectionExpiry(gated.front(), BonusType::MINIMUM_MORALE, 0);
+}
+
 TEST_F(NewHorizonsDemonicGatingTest, ReserveDisciplineFloorsNegativeArrivalMoraleAtZero)
 {
 	grantGatingPerk("new-horizons:demonicGating.reserveDiscipline", MasteryLevel::ADVANCED);
@@ -1111,6 +1348,58 @@ TEST_F(NewHorizonsDemonicGatingTest, ReserveDisciplineFloorsNegativeArrivalMoral
 	ASSERT_NE(floor, nullptr);
 	EXPECT_EQ(floor->turnsRemain, 1);
 	EXPECT_TRUE(hasBattleLogFragment("Reserve Discipline prevents negative Morale"));
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, InfernalBeaconInactiveLazyBranchesSnapshotBeforeParentAndLiveAdvance)
+{
+	grantAdvancedGatingArrivalPerk("new-horizons:demonicGating.infernalBeacon");
+	ASSERT_FALSE(HasFatalFailure());
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const BattleHex destination = gateHexAtDistance(active, 1, 1);
+	ASSERT_TRUE(destination.isAvailable());
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(destination);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	endRound();
+	const auto gated = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSlot() == SlotID::SUMMONED_SLOT_PLACEHOLDER
+			&& stack->unitSide() == BattleSide::ATTACKER;
+	});
+	ASSERT_EQ(gated.size(), 1u);
+	ASSERT_TRUE(hasBattleLogFragment("Infernal Beacon grants +2 Initiative"));
+	expectInactiveLazyArrivalSnapshot(gated.front(), BonusType::STACKS_INITIATIVE_FLAT, 2);
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, ReserveDisciplineInactiveLazyBranchesSnapshotBeforeParentAndLiveAdvance)
+{
+	grantAdvancedGatingArrivalPerk("new-horizons:demonicGating.reserveDiscipline");
+	ASSERT_FALSE(HasFatalFailure());
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const BattleHex destination = legalGateHex(active);
+	ASSERT_TRUE(destination.isAvailable());
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(destination);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	endRound();
+	const auto gated = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSlot() == SlotID::SUMMONED_SLOT_PLACEHOLDER
+			&& stack->unitSide() == BattleSide::ATTACKER;
+	});
+	ASSERT_EQ(gated.size(), 1u);
+	ASSERT_TRUE(hasBattleLogFragment("Reserve Discipline prevents negative Morale"));
+	expectInactiveLazyArrivalSnapshot(gated.front(), BonusType::MINIMUM_MORALE, 0);
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, MobileGateMovesWithinHalfSpeedThenCommitsFromNewPosition)
