@@ -689,6 +689,114 @@ protected:
 			EXPECT_EQ(cleaveTarget->save(), cleaveState);
 		}
 	}
+	void checkAppliedOnlyBookkeeping(bool blocked)
+	{
+		CStack * actor = nullptr;
+		CStack * target = nullptr;
+		CStack * secondary = nullptr;
+		ASSERT_NO_FATAL_FAILURE(prepareAdditionalScene(false, false, actor, target, secondary));
+		const SecondarySkill offense(SecondarySkill::decode(newHorizonsOffense::SKILL));
+		attackerSideHero->setSecSkillLevel(offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, "new-horizons:offense.shockAssault"});
+		attackerSideHero->setSecSkillLevel(offense, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE});
+		attackerSideHero->setSecSkillLevel(offense, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT));
+		if(blocked)
+			blockRetaliation(actor);
+		ASSERT_EQ(actor->hasBonusOfType(BonusType::BLOCKS_RETALIATION), blocked);
+		ASSERT_TRUE(target->ableToRetaliate());
+
+		HexSnapshotEnvironment environment(gameState());
+		auto parent = std::make_shared<HypotheticBattle>(&environment,
+			std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
+		auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+		const auto liveActor = actor->acquireState()->save();
+		const auto liveTarget = target->acquireState()->save();
+		const auto parentActor = parent->getForUpdate(actor->unitId())->save();
+		const auto parentTarget = parent->getForUpdate(target->unitId())->save();
+		const auto assaultBefore = parent->getRelentlessAssaultState(BattleSide::ATTACKER);
+		const auto rngBefore = randomizerSnapshot();
+
+		auto probeBranch = std::make_shared<HypotheticBattle>(&environment, parent);
+		auto probeActor = probeBranch->getForUpdate(actor->unitId());
+		auto probeTarget = probeBranch->getForUpdate(target->unitId());
+		DamageCache probeCache;
+		probeCache.buildDamageCache(probeBranch, BattleSide::ATTACKER);
+		const auto damage = probeCache.getDamage(probeActor.get(), probeTarget.get(), probeBranch);
+		ASSERT_GT(damage, 0);
+		ASSERT_LT(damage, probeTarget->getAvailableHealth());
+		// A nonlethal hit cannot trigger Cleave. Independent damage/DPS pricing
+		// is the probe oracle, not another invocation of trackAttack.
+		const auto expectedProbe = AttackPossibility::calculateDamageReduce(probeActor.get(),
+			probeTarget.get(), damage, probeCache, probeBranch);
+		BattleMovementTiming::StageTiming mainDamage;
+		BattleMovementTiming::StageTiming dpsScore;
+		const BattleTargetProbeTiming timing{&mainDamage, &dpsScore, nullptr};
+		BattleExchangeVariant probe;
+		EXPECT_FLOAT_EQ(probe.trackAttack(probeActor, probeTarget, false, true, probeCache,
+			probeBranch, true, true, nullptr, &timing), expectedProbe);
+		EXPECT_EQ(mainDamage.calls, 1u);
+		EXPECT_EQ(dpsScore.calls, 1u);
+		BattleExchangeVariant nullSinkProbe;
+		EXPECT_FLOAT_EQ(nullSinkProbe.trackAttack(probeActor, probeTarget, false, true,
+			probeCache, probeBranch, true, true), expectedProbe);
+		EXPECT_EQ(probeActor->save(), parentActor);
+		EXPECT_EQ(probeTarget->save(), parentTarget);
+		EXPECT_EQ(probeBranch->getRelentlessAssaultState(BattleSide::ATTACKER), assaultBefore);
+
+		auto expected = std::make_shared<HypotheticBattle>(&environment, parent);
+		auto expectedActor = expected->getForUpdate(actor->unitId());
+		auto expectedTarget = expected->getForUpdate(target->unitId());
+		DamageCache expectedCache;
+		expectedCache.buildDamageCache(expected, BattleSide::ATTACKER);
+		int64_t mainHit = expectedCache.getDamage(expectedActor.get(), expectedTarget.get(), expected);
+		ASSERT_EQ(mainHit, damage);
+		const float mainValue = AttackPossibility::calculateDamageReduce(expectedActor.get(),
+			expectedTarget.get(), mainHit, expectedCache, expected);
+		expectedTarget->damage(mainHit, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+		expectedActor->afterAttack(false, false, true);
+		float counterValue = 0;
+		if(!blocked)
+		{
+			BattleAttackInfo counter(expectedTarget.get(), expectedActor.get(), 0, false);
+			counter.retaliation = true;
+			int64_t counterHit = expected->battleExpectedLuckDamage(counter);
+			ASSERT_GT(counterHit, 0);
+			ASSERT_LT(counterHit, expectedActor->getAvailableHealth());
+			counterValue = AttackPossibility::calculateDamageReduce(expectedTarget.get(),
+				expectedActor.get(), counterHit, expectedCache, expected);
+			expectedActor->damage(counterHit, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+			expectedTarget->afterAttack(false, true, true);
+		}
+		auto expectedAssault = assaultBefore;
+		expectedAssault.recordAttack(target->unitId());
+
+		auto applied = std::make_shared<HypotheticBattle>(&environment, parent);
+		auto appliedActor = applied->getForUpdate(actor->unitId());
+		auto appliedTarget = applied->getForUpdate(target->unitId());
+		DamageCache appliedCache;
+		appliedCache.buildDamageCache(applied, BattleSide::ATTACKER);
+		BattleExchangeVariant exchange;
+		EXPECT_FLOAT_EQ(exchange.trackAttack(appliedActor, appliedTarget, false, true,
+			appliedCache, applied, false, true), mainValue - counterValue);
+		EXPECT_EQ(appliedActor->save(), expectedActor->save());
+		EXPECT_EQ(appliedTarget->save(), expectedTarget->save());
+		EXPECT_EQ(applied->getRelentlessAssaultState(BattleSide::ATTACKER), expectedAssault);
+		EXPECT_TRUE(expectedAssault.activationHadEligibleAttack);
+		EXPECT_EQ(expectedAssault.activationTargetUnitId, target->unitId());
+		EXPECT_EQ(randomizerSnapshot(), rngBefore);
+		EXPECT_EQ(actor->acquireState()->save(), liveActor);
+		EXPECT_EQ(target->acquireState()->save(), liveTarget);
+		EXPECT_EQ(parent->getForUpdate(actor->unitId())->save(), parentActor);
+		EXPECT_EQ(parent->getForUpdate(target->unitId())->save(), parentTarget);
+		EXPECT_EQ(sibling->getForUpdate(actor->unitId())->save(), parentActor);
+		EXPECT_EQ(sibling->getForUpdate(target->unitId())->save(), parentTarget);
+		EXPECT_EQ(parent->getRelentlessAssaultState(BattleSide::ATTACKER), assaultBefore);
+		EXPECT_EQ(sibling->getRelentlessAssaultState(BattleSide::ATTACKER), assaultBefore);
+	}
+
 };
 }
 
@@ -750,4 +858,14 @@ TEST_F(NewHorizonsHexSnapshotAITest, ActiveHexRetaliationKeepsPreTriggerScoringA
 TEST_F(NewHorizonsHexSnapshotAITest, ActiveHexCleaveProbeAndAppliedKeepExactSecondaryScore)
 {
 	checkActiveHexCleave();
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, ProbePreservesStateWhileUnblockedAppliedHitRetaliatesAndRecordsAssault)
+{
+	checkAppliedOnlyBookkeeping(false);
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, ProbePreservesStateWhileBlockedAppliedHitSuppressesRetaliationAndRecordsAssault)
+{
+	checkAppliedOnlyBookkeeping(true);
 }
