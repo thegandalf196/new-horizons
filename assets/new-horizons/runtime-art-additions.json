@@ -1512,6 +1512,225 @@
       "statuses": [],
       "reusedBindings": [],
       "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "f5ea075d2cbf6efa1e07013c155780e5adea83b10bb154b43174c2bc501e33dc",
+      "baselineManifestSha256": "3ccf6e5a64d13901dab02f784aa39aa0ef46e9d954fa295730257b6c41e0496c",
+      "baselineEntriesSha256": "f3607b380de4886afeb34c6e2a1101139d191763be7d004e1daa55fcfe7e9481",
+      "baselineHeaderSha256": "c099079f700eded31d11e97fd68453a20251b556c1068f14314094df018b0566",
+      "nonStatusConfigSha256": "6bcf78af32bc3739f491572a1705a1e9440dc76cc25b19947da8998d7fc5cba2",
+      "baselineCount": 4128,
+      "entryCount": 4140,
+      "newArchiveSha256": "5d46f476a6e53a95f6a5caf10edb45ca6b9f474cf0f190e72ec012ca51ac7711",
+      "resources": [
+        "SPRITES/NH_spell_mass_bless-30.png",
+        "SPRITES/NH_spell_mass_bless-32.png",
+        "SPRITES/NH_spell_mass_bless-44.png",
+        "SPRITES/NH_spell_mass_curse-30.png",
+        "SPRITES/NH_spell_mass_curse-32.png",
+        "SPRITES/NH_spell_mass_curse-44.png",
+        "SPRITES/NH_spell_mass_slow-30.png",
+        "SPRITES/NH_spell_mass_slow-32.png",
+        "SPRITES/NH_spell_mass_slow-44.png",
+        "SPRITES/NH_spell_mass_sorrow-30.png",
+        "SPRITES/NH_spell_mass_sorrow-32.png",
+        "SPRITES/NH_spell_mass_sorrow-44.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "approval": "Provisional; not Final; rendered acceptance pending",
+      "spells": [
+        {
+          "id": "new-horizons:massBless",
+          "config": "Mods/new-horizons/Content/config/spells/massVariants.json",
+          "bindings": {
+            "iconBook": "NH_spell_mass_bless-44.png",
+            "iconScroll": "NH_spell_mass_bless-32.png",
+            "iconEffect": "NH_spell_mass_bless-30.png",
+            "iconImmune": "NH_spell_mass_bless-30.png",
+            "iconScenarioBonus": "NH_spell_mass_bless-32.png"
+          },
+          "resources": [
+            "SPRITES/NH_spell_mass_bless-44.png",
+            "SPRITES/NH_spell_mass_bless-32.png",
+            "SPRITES/NH_spell_mass_bless-30.png"
+          ],
+          "exports": {
+            "NH_spell_mass_bless-44.png": {
+              "sha256": "5a816e0c4cbfae8b352ddf91932ec10213e633633bd6158a825aaed84ffc9125",
+              "size": 44
+            },
+            "NH_spell_mass_bless-32.png": {
+              "sha256": "f53867b87279ec6b3bbca3700f3bdf86ce4c5d2480633a5383798542a0a373c8",
+              "size": 32
+            },
+            "NH_spell_mass_bless-30.png": {
+              "sha256": "73346ec2471811b120bd4e367e4d24036a815380b079602670af8e4022acf984",
+              "size": 30
+            }
+          },
+          "handoffSha256": "e2627beb6a102fb419570a28596ff13d72e168a096f825ada558b315edac485f",
+          "selectionHandoffSha256": "d3fa39c55f78144c12ab12df41a93ded9aadf69b87d0163ad93d310d1b50b689",
+          "masterSha256": "eda3d1f1e13ee1163ca59d9006243a65082f42ee5a7d1dbdab61f6a0654f909d",
+          "promptSha256": "4b2260013b16a44ddc62d4dac647e6f261777024e10c88a64ec3c14c4d969983",
+          "reviewSha256": "2ff927bc073bb044e26e406841c3b374a93d411ed4396105ca328068e4ee6964",
+          "comparisonSha256": "398fe24c8cad698147c4bdb95dbce14ae8855e0edee5174e9c38736d096ea497",
+          "exportManifestSha256": "9d82bf46eba7a6118c43ccbe1e2935eea1b30f7b0f13c59ac348cd5b92ebc3b5",
+          "origin": "original-generated-purpose-made-mass-spell-symbol",
+          "selection": "user-authorized-provisional-runtime-2026-10-14",
+          "approval": "Provisional; not Final; rendered acceptance pending",
+          "previousBindings": {
+            "iconBook": "SPELLS.def:0:41",
+            "iconScroll": "SPELLSCR.def:0:41",
+            "iconEffect": "SPELLINT.def:0:42",
+            "iconImmune": "SPELLINT.def:0:42",
+            "iconScenarioBonus": "SPELLBON.def:0:41"
+          }
+        },
+        {
+          "id": "new-horizons:massCurse",
+          "config": "Mods/new-horizons/Content/config/spells/massVariants.json",
+          "bindings": {
+            "iconBook": "NH_spell_mass_curse-44.png",
+            "iconScroll": "NH_spell_mass_curse-32.png",
+            "iconEffect": "NH_spell_mass_curse-30.png",
+            "iconImmune": "NH_spell_mass_curse-30.png",
+            "iconScenarioBonus": "NH_spell_mass_curse-32.png"
+          },
+          "resources": [
+            "SPRITES/NH_spell_mass_curse-44.png",
+            "SPRITES/NH_spell_mass_curse-32.png",
+            "SPRITES/NH_spell_mass_curse-30.png"
+          ],
+          "exports": {
+            "NH_spell_mass_curse-44.png": {
+              "sha256": "3e3ef6752330c17ec016f22a0224d23dc6e69eb23e066476e3c6c7b641db517b",
+              "size": 44
+            },
+            "NH_spell_mass_curse-32.png": {
+              "sha256": "293fd078ab468696acc2d524b47a4739cfc99eee15d2aabe206d6930f7a3658e",
+              "size": 32
+            },
+            "NH_spell_mass_curse-30.png": {
+              "sha256": "060a97ebdb485da2237fccb851be9f233b41b1274fbfb841400583c877b218de",
+              "size": 30
+            }
+          },
+          "handoffSha256": "b3a5cbc48b7ba381f319cefa1035a154b47a9813af912db09bcfe9b84e464cfc",
+          "selectionHandoffSha256": "d3fa39c55f78144c12ab12df41a93ded9aadf69b87d0163ad93d310d1b50b689",
+          "masterSha256": "208f47a1fc822b3edcc7b58fae8aa97b72a01e1c68bc91908d90453d813f9498",
+          "promptSha256": "0d18bd2c2d75a159d34723d4f0452c575f0f41e85a2901d9bd3db6054c3b5fe4",
+          "reviewSha256": "c82be3154171aaa1bd65d59d1300c167f8186327d396d8d044b5de81c6e13a46",
+          "comparisonSha256": "00bdbde78071e92f1a8e5128d7e2ddbfe63bafed87e7ebd912983c9127699133",
+          "exportManifestSha256": "5d927d8f1ac1fe57a4733dee94dd0e5fb871da3712c438a5bca18c754184604c",
+          "origin": "original-generated-purpose-made-mass-spell-symbol",
+          "selection": "user-authorized-provisional-runtime-2026-10-14",
+          "approval": "Provisional; not Final; rendered acceptance pending",
+          "previousBindings": {
+            "iconBook": "SPELLS.def:0:42",
+            "iconScroll": "SPELLSCR.def:0:42",
+            "iconEffect": "SPELLINT.def:0:43",
+            "iconImmune": "SPELLINT.def:0:43",
+            "iconScenarioBonus": "SPELLBON.def:0:42"
+          }
+        },
+        {
+          "id": "new-horizons:massSorrow",
+          "config": "Mods/new-horizons/Content/config/spells/massVariants.json",
+          "bindings": {
+            "iconBook": "NH_spell_mass_sorrow-44.png",
+            "iconScroll": "NH_spell_mass_sorrow-32.png",
+            "iconEffect": "NH_spell_mass_sorrow-30.png",
+            "iconImmune": "NH_spell_mass_sorrow-30.png",
+            "iconScenarioBonus": "NH_spell_mass_sorrow-32.png"
+          },
+          "resources": [
+            "SPRITES/NH_spell_mass_sorrow-44.png",
+            "SPRITES/NH_spell_mass_sorrow-32.png",
+            "SPRITES/NH_spell_mass_sorrow-30.png"
+          ],
+          "exports": {
+            "NH_spell_mass_sorrow-44.png": {
+              "sha256": "1d9f4b736372f0c061c7ae22b15ffd97275366f1a77a3f7072ba877d4758f1ca",
+              "size": 44
+            },
+            "NH_spell_mass_sorrow-32.png": {
+              "sha256": "2272373272502d03237bf52fdc2faa7595e097acd650f0eecfc0f3062b0341bb",
+              "size": 32
+            },
+            "NH_spell_mass_sorrow-30.png": {
+              "sha256": "2c6e0dd94a5e56fc7cbbf58328db98c5877de75b36de5cb1c92b717cb432894b",
+              "size": 30
+            }
+          },
+          "handoffSha256": "279ca06fe76f1ab302973e959e2d6c75de7cd0b718c9d4a341e53ebb72104dd4",
+          "selectionHandoffSha256": "d3fa39c55f78144c12ab12df41a93ded9aadf69b87d0163ad93d310d1b50b689",
+          "masterSha256": "81ccb74824717e405f6ed25ee81c95d8aa488ee4b35551b81722b7131f5ce7ef",
+          "promptSha256": "2a2b50948da317f22698b8888ee33a53fbbb41f10aa7ef228ec35f9d52904b32",
+          "reviewSha256": "9e81dcba7ad423ef79ccf8ecd4f5831b0f015330c9f82d5cb4d7ab195e4a85a0",
+          "comparisonSha256": "54e90be8c94e6acc66e0133210bce3815767bf39b8817d7204b42544c2d8c8fb",
+          "exportManifestSha256": "6b6bce94056c2c68900e639521625796793af071f46251ad49a9d4a31e79fafb",
+          "origin": "original-generated-purpose-made-mass-spell-symbol",
+          "selection": "user-authorized-provisional-runtime-2026-10-14",
+          "approval": "Provisional; not Final; rendered acceptance pending",
+          "previousBindings": {
+            "iconBook": "SPELLS.def:0:50",
+            "iconScroll": "SPELLSCR.def:0:50",
+            "iconEffect": "SPELLINT.def:0:51",
+            "iconImmune": "SPELLINT.def:0:51",
+            "iconScenarioBonus": "SPELLBON.def:0:50"
+          }
+        },
+        {
+          "id": "new-horizons:massSlow",
+          "config": "Mods/new-horizons/Content/config/spells/massVariants.json",
+          "bindings": {
+            "iconBook": "NH_spell_mass_slow-44.png",
+            "iconScroll": "NH_spell_mass_slow-32.png",
+            "iconEffect": "NH_spell_mass_slow-30.png",
+            "iconImmune": "NH_spell_mass_slow-30.png",
+            "iconScenarioBonus": "NH_spell_mass_slow-32.png"
+          },
+          "resources": [
+            "SPRITES/NH_spell_mass_slow-44.png",
+            "SPRITES/NH_spell_mass_slow-32.png",
+            "SPRITES/NH_spell_mass_slow-30.png"
+          ],
+          "exports": {
+            "NH_spell_mass_slow-44.png": {
+              "sha256": "b45509086a99124fc6dd77581d8aa98bdb152db8574a1c511ba9d33fa3f6c98f",
+              "size": 44
+            },
+            "NH_spell_mass_slow-32.png": {
+              "sha256": "8ff7e393fd44221d327f2b312fbffbd6b262a3f371850007ae88f9ba5ae8571a",
+              "size": 32
+            },
+            "NH_spell_mass_slow-30.png": {
+              "sha256": "25d9cf5df06c0d4d704fff8fdb2444a25cbd2cffe43bb2b6d340ba4d8612e70b",
+              "size": 30
+            }
+          },
+          "handoffSha256": "9dd2529740744c882b4e67456f3019ddfac9dfb5b9a5dcd4fff7e5b63a34afb1",
+          "selectionHandoffSha256": "d3fa39c55f78144c12ab12df41a93ded9aadf69b87d0163ad93d310d1b50b689",
+          "masterSha256": "6afdafd2d6f5bd34f2a7aec3e9eed7db654db814ba48835eb7d8d9db4497fc08",
+          "promptSha256": "1a6c1998f48517e0698aeefe956d61c5c86d475848f7e3cf0091ddb931c0889b",
+          "reviewSha256": "84a9bd075d8f71312eeae7c02708e013e04fe359f3f15214fb3f1795ea912cd2",
+          "comparisonSha256": "fc9762045764ded160edfc9439c83cea518b168ac1b2f5a4d7afba0b26d2e6ca",
+          "exportManifestSha256": "54afc0a49733639615ae755190cc8d262a09418e16075d1c4fd7824a794ba0f3",
+          "origin": "original-generated-purpose-made-mass-spell-symbol",
+          "selection": "user-authorized-provisional-runtime-2026-10-14",
+          "approval": "Provisional; not Final; rendered acceptance pending",
+          "previousBindings": {
+            "iconBook": "SPELLS.def:0:54",
+            "iconScroll": "SPELLSCR.def:0:54",
+            "iconEffect": "SPELLINT.def:0:55",
+            "iconImmune": "SPELLINT.def:0:55",
+            "iconScenarioBonus": "SPELLBON.def:0:54"
+          }
+        }
+      ],
+      "massConfigNonGraphicsSha256": "24b98213f5cb285b4cfb06f64ec8f097e53bb50356988b7e99da8f6717f40fcc"
     }
   ]
 }

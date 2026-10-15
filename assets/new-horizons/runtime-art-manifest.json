@@ -41280,6 +41280,126 @@
       "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
       "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
       "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_bless-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_bless-44.png",
+      "size": 4583,
+      "sha256": "5a816e0c4cbfae8b352ddf91932ec10213e633633bd6158a825aaed84ffc9125",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_bless-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_bless-32.png",
+      "size": 2674,
+      "sha256": "f53867b87279ec6b3bbca3700f3bdf86ce4c5d2480633a5383798542a0a373c8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_bless-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_bless-30.png",
+      "size": 2422,
+      "sha256": "73346ec2471811b120bd4e367e4d24036a815380b079602670af8e4022acf984",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_curse-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_curse-44.png",
+      "size": 5013,
+      "sha256": "3e3ef6752330c17ec016f22a0224d23dc6e69eb23e066476e3c6c7b641db517b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_curse-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_curse-32.png",
+      "size": 2928,
+      "sha256": "293fd078ab468696acc2d524b47a4739cfc99eee15d2aabe206d6930f7a3658e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_curse-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_curse-30.png",
+      "size": 2649,
+      "sha256": "060a97ebdb485da2237fccb851be9f233b41b1274fbfb841400583c877b218de",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_sorrow-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_sorrow-44.png",
+      "size": 5029,
+      "sha256": "1d9f4b736372f0c061c7ae22b15ffd97275366f1a77a3f7072ba877d4758f1ca",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_sorrow-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_sorrow-32.png",
+      "size": 2939,
+      "sha256": "2272373272502d03237bf52fdc2faa7595e097acd650f0eecfc0f3062b0341bb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_sorrow-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_sorrow-30.png",
+      "size": 2620,
+      "sha256": "2c6e0dd94a5e56fc7cbbf58328db98c5877de75b36de5cb1c92b717cb432894b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_slow-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_slow-44.png",
+      "size": 5142,
+      "sha256": "b45509086a99124fc6dd77581d8aa98bdb152db8574a1c511ba9d33fa3f6c98f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_slow-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_slow-32.png",
+      "size": 3025,
+      "sha256": "8ff7e393fd44221d327f2b312fbffbd6b262a3f371850007ae88f9ba5ae8571a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_mass_slow-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_mass_slow-30.png",
+      "size": 2667,
+      "sha256": "25d9cf5df06c0d4d704fff8fdb2444a25cbd2cffe43bb2b6d340ba4d8612e70b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "original-generated-purpose-made-mass-spell-symbol",
+      "selection": "user-authorized-provisional-runtime-2026-10-14",
+      "approval": "Provisional; not Final; rendered acceptance pending"
     }
   ],
   "requiredFamilies": [
@@ -41294,7 +41414,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2050,
+    "builtin-skills-perks-orders-and-ui": 2062,
     "cabir-and-master": 214,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

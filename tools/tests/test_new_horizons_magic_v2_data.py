@@ -321,7 +321,7 @@ class MagicV2DataTest(unittest.TestCase):
                     changed['spells'][variant_id]['variant']['powerPercent'] = 60
                 self.assertFalse(validator.is_valid(changed))
 
-    def test_mass_slow_reuses_base_slow_effects_and_art(self):
+    def test_mass_slow_reuses_base_slow_effects_with_selected_mass_icons(self):
         variants = load('Mods/new-horizons/Content/config/spells/massVariants.json')
         timed_spells = load('config/spells/timed.json')
         mass_slow = variants['massSlow']
@@ -329,13 +329,11 @@ class MagicV2DataTest(unittest.TestCase):
 
         self.assertEqual(mass_slow['animation'], slow['animation'])
         self.assertEqual(mass_slow['sounds'], slow['sounds'])
-        self.assertEqual(mass_slow['graphics'], {
-            'iconBook': 'SPELLS.def:0:54',
-            'iconScroll': 'SPELLSCR.def:0:54',
-            'iconEffect': 'SPELLINT.def:0:55',
-            'iconImmune': 'SPELLINT.def:0:55',
-            'iconScenarioBonus': 'SPELLBON.def:0:54',
-        })
+        additions = load('assets/new-horizons/runtime-art-additions.json')
+        selected = [record for wave in additions['waves'] for record in wave.get('spells', [])
+                    if record['id'] == 'new-horizons:massSlow']
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(mass_slow['graphics'], selected[0]['bindings'])
         self.assertEqual(mass_slow['counters'], slow['counters'])
         self.assertEqual(mass_slow['flags'], slow['flags'])
         self.assertEqual(mass_slow['targetCondition'], slow['targetCondition'])

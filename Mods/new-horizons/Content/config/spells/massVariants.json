@@ -11,11 +11,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:41",
-			"iconScroll": "SPELLSCR.def:0:41",
-			"iconEffect": "SPELLINT.def:0:42",
-			"iconImmune": "SPELLINT.def:0:42",
-			"iconScenarioBonus": "SPELLBON.def:0:41"
+			"iconBook": "NH_spell_mass_bless-44.png",
+			"iconScroll": "NH_spell_mass_bless-32.png",
+			"iconEffect": "NH_spell_mass_bless-30.png",
+			"iconImmune": "NH_spell_mass_bless-30.png",
+			"iconScenarioBonus": "NH_spell_mass_bless-32.png"
 		},
 		"animation": {
 			"affect": [
@@ -122,11 +122,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:42",
-			"iconScroll": "SPELLSCR.def:0:42",
-			"iconEffect": "SPELLINT.def:0:43",
-			"iconImmune": "SPELLINT.def:0:43",
-			"iconScenarioBonus": "SPELLBON.def:0:42"
+			"iconBook": "NH_spell_mass_curse-44.png",
+			"iconScroll": "NH_spell_mass_curse-32.png",
+			"iconEffect": "NH_spell_mass_curse-30.png",
+			"iconImmune": "NH_spell_mass_curse-30.png",
+			"iconScenarioBonus": "NH_spell_mass_curse-32.png"
 		},
 		"animation": {
 			"affect": [
@@ -241,11 +241,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:50",
-			"iconScroll": "SPELLSCR.def:0:50",
-			"iconEffect": "SPELLINT.def:0:51",
-			"iconImmune": "SPELLINT.def:0:51",
-			"iconScenarioBonus": "SPELLBON.def:0:50"
+			"iconBook": "NH_spell_mass_sorrow-44.png",
+			"iconScroll": "NH_spell_mass_sorrow-32.png",
+			"iconEffect": "NH_spell_mass_sorrow-30.png",
+			"iconImmune": "NH_spell_mass_sorrow-30.png",
+			"iconScenarioBonus": "NH_spell_mass_sorrow-32.png"
 		},
 		"animation": {
 			"affect": [
@@ -475,11 +475,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:54",
-			"iconScroll": "SPELLSCR.def:0:54",
-			"iconEffect": "SPELLINT.def:0:55",
-			"iconImmune": "SPELLINT.def:0:55",
-			"iconScenarioBonus": "SPELLBON.def:0:54"
+			"iconBook": "NH_spell_mass_slow-44.png",
+			"iconScroll": "NH_spell_mass_slow-32.png",
+			"iconEffect": "NH_spell_mass_slow-30.png",
+			"iconImmune": "NH_spell_mass_slow-30.png",
+			"iconScenarioBonus": "NH_spell_mass_slow-32.png"
 		},
 		"animation": {
 			"affect": [
