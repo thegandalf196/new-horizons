@@ -2,6 +2,7 @@
 """Focused Academy art registration and provenance checks."""
 
 import hashlib
+from io import BytesIO
 import json
 from pathlib import Path
 import shutil
@@ -9,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 
 from PIL import Image, ImageDraw
 from tools.tests.nhart_test_resources import ArtPath
@@ -72,6 +74,9 @@ def private_revision_fixture(root, kind, revision="v2"):
         canvas.save(path)
         return hashlib.sha256(path.read_bytes()).hexdigest()
     if kind == "icon":
+        prompt = root / revision_root / manifest["provenance"]["prompt"]
+        prompt.write_text("synthetic icon provenance fixture\n", encoding="utf-8")
+        manifest["provenance"]["sha256"] = hashlib.sha256(prompt.read_bytes()).hexdigest()
         for record in manifest["masters"].values():
             record["sha256"] = image(revision_root / record["path"], [32, 32])
         for record in manifest["icons"].values():
@@ -89,6 +94,9 @@ def private_revision_fixture(root, kind, revision="v2"):
                 bounds = [box["left"], box["top"], box["left"]+box["width"], box["top"]+box["height"]]
                 record["sha256"] = image(revision_root / record["export"], record["dimensions"], bounds)
         else:
+            prompt = root / revision_root / manifest["prompt"]["path"]
+            prompt.write_text("synthetic hall provenance fixture\n", encoding="utf-8")
+            manifest["prompt"]["sha256"] = hashlib.sha256(prompt.read_bytes()).hexdigest()
             for record in manifest["baseline"].values():
                 record["sha256"] = image(academy_importer.SOURCE_ROOT / record["path"], record["dimensions"], record.get("alphaBounds"))
             for key in ("master", "export"):
@@ -99,6 +107,23 @@ def private_revision_fixture(root, kind, revision="v2"):
             shutil.copyfile(ROOT / "config/factions/tower.json", destination)
     manifest_path.write_text(json.dumps(manifest))
     return hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+
+
+def provenance_archive(omit=None):
+    """Disposable archive data, never original handoff material."""
+    payloads = {name: json.dumps({"synthetic": name}).encode("utf-8")
+                for name in academy_importer.PROVENANCE_FILES}
+    image = BytesIO()
+    Image.new("RGBA", (1, 1), (17, 41, 73, 255)).save(image, format="PNG")
+    payloads["masters/fixture.png"] = image.getvalue()
+    payloads["masters/fixture.prompt.txt"] = b"synthetic provenance fixture\n"
+    stream = BytesIO()
+    with zipfile.ZipFile(stream, "w") as archive:
+        for name, payload in payloads.items():
+            if name != omit:
+                archive.writestr(name, payload)
+    stream.seek(0)
+    return stream, payloads
 
 
 class NewHorizonsAcademyArtTest(unittest.TestCase):
@@ -254,6 +279,13 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "manifest changed"):
                 academy_importer.load_icon_revision(temp_root, pin)
             manifest_path.write_bytes(manifest_bytes)
+
+            prompt_path = target_revision / "PROMPT.md"
+            prompt_bytes = prompt_path.read_bytes()
+            prompt_path.write_bytes(prompt_bytes + b"changed")
+            with self.assertRaisesRegex(ValueError, "prompt provenance does not match"):
+                academy_importer.load_icon_revision(temp_root, pin)
+            prompt_path.write_bytes(prompt_bytes)
 
             export_path = target_revision / "exports/NH_academy_village_large_normal.png"
             export_bytes = export_path.read_bytes()
@@ -490,11 +522,48 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
         for relative in excluded:
             self.assertFalse((ACADEMY_SOURCE / relative).is_file(), relative)
 
-        validation = read_json("assets/new-horizons/academy/handoff/VALIDATION.json")
-        export_validation = read_json("assets/new-horizons/academy/integration/export-validation.json")
-        self.assertFalse(validation["VCMITested"])
-        self.assertFalse(export_validation["inGameTested"])
         self.assertTrue((ACADEMY_SOURCE / "README.md").is_file())
+
+    def test_archive_provenance_is_required_and_copied_without_reinterpretation(self):
+        expected = {
+            "README.md", "PACKAGE-MANIFEST.json", "VALIDATION.json",
+            "integration/VCMI-CHECKLIST.md", "integration/academy-assets.json",
+            "integration/export-validation.json", "integration/icon-mapping.json",
+            "integration/prompts.json", "integration/puzzle-layout.json",
+            "integration/town-layout.json", "integration/town-validation.json",
+        }
+        self.assertEqual(set(academy_importer.PROVENANCE_FILES), expected)
+        stream, payloads = provenance_archive()
+        with tempfile.TemporaryDirectory() as temporary, zipfile.ZipFile(stream) as archive:
+            root = Path(temporary)
+            names = academy_importer.validate_archive(archive)
+            with self.assertRaisesRegex(RuntimeError, "Expected generated file is missing"):
+                academy_importer.import_provenance(root, archive, names, check_only=True)
+            self.assertFalse((root / academy_importer.SOURCE_ROOT).exists())
+            academy_importer.import_provenance(root, archive, names, check_only=False)
+            for name, payload in payloads.items():
+                relative = name if name.startswith(("integration/", "masters/")) else "handoff/" + name
+                destination = root / academy_importer.SOURCE_ROOT / relative
+                self.assertEqual(destination.read_bytes(), payload, name)
+            academy_importer.import_provenance(root, archive, names, check_only=True)
+            destination = root / academy_importer.SOURCE_ROOT / "handoff/README.md"
+            destination.write_bytes(b"unrecognized local changes")
+            with self.assertRaisesRegex(RuntimeError, "Refusing to overwrite changed file"):
+                academy_importer.import_provenance(root, archive, names, check_only=False)
+            self.assertEqual(destination.read_bytes(), b"unrecognized local changes")
+
+    def test_archive_without_each_required_provenance_record_is_rejected(self):
+        for omitted in academy_importer.PROVENANCE_FILES:
+            with self.subTest(omitted=omitted), tempfile.TemporaryDirectory() as temporary:
+                stream, _ = provenance_archive(omitted)
+                with zipfile.ZipFile(stream) as archive:
+                    if omitted in {"integration/academy-assets.json", "integration/town-layout.json"}:
+                        with self.assertRaisesRegex(ValueError, "missing required registration metadata"):
+                            academy_importer.validate_archive(archive)
+                    else:
+                        names = academy_importer.validate_archive(archive)
+                        with self.assertRaisesRegex(ValueError, "missing provenance file"):
+                            academy_importer.import_provenance(Path(temporary), archive, names, check_only=False)
 
 
 if __name__ == "__main__":

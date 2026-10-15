@@ -31,6 +31,6 @@ The withdrawn delivery had Linux and Windows payload/source checks, external pur
 
 ## Continued work
 
-Use [integration gaps](NH_INTEGRATION_GAPS.md) for current bounded requirements, [regression guards](NH_REGRESSION_GUARDS.md) for durable invariants and [provisional rationale](NH_PROVISIONAL_RULE_REVIEW.md) for reviewable decisions. No fresh full-suite, whole interaction matrix, campaign completion or whole-family graphical claim follows from this exit audit.
+Use [integration gaps](NH_INTEGRATION_GAPS.md) for current bounded requirements, [regression guards](NH_REGRESSION_GUARDS.md) for durable invariants and [mechanic review contracts](NH_PROVISIONAL_RULE_REVIEW.md) for integration safeguards and private decision links. No fresh full-suite, whole interaction matrix, campaign completion or whole-family graphical claim follows from this exit audit.
 
 Governors/regional administration/caravans/anti-chaining and the experimental single-expeditionary-hero restriction remain outside Version1.0. Do not invent troop lines, undefined unique riders or unauthored Tome replacements to fill those boundaries.

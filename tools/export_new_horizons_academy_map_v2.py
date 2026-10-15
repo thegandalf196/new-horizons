@@ -4,10 +4,9 @@
 This tool performs only the existing masterSolidBox -> sourceSolidBox crop/fit
 registration. It does not repaint, recolor, sharpen, or touch runtime assets.
 
-Usage:
-    python3 tools/export_new_horizons_academy_map_v2.py --name fort
-    python3 tools/export_new_horizons_academy_map_v2.py --check --name fort
-    python3 tools/export_new_horizons_academy_map_v2.py  # all available bodies
+Use the verified Python interpreter with --private-root PATH, optionally
+--name fort (repeatable) or --check. PATH must be a complete external
+project-shaped authoring workspace, including retained baseline/revised masters.
 """
 
 from __future__ import annotations
@@ -22,6 +21,8 @@ import import_new_horizons_academy_assets as academy_importer
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
+PRIVATE_ROOT = None
 SOURCE_ROOT = academy_importer.SOURCE_ROOT
 REVISION_ROOT = academy_importer.MAP_REVISION_ROOT
 
@@ -38,6 +39,34 @@ REGISTRATIONS = {
     }
     for name, record in academy_importer.MAP_REVISION_SLOTS.items()
 }
+
+
+def external_root(path: Path) -> Path:
+    requested = path.expanduser().absolute()
+    if any(part.is_symlink() for part in (requested, *requested.parents)):
+        raise ValueError("private authoring paths must not traverse symlinks")
+    resolved = requested.resolve()
+    if resolved.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(resolved):
+        raise ValueError("private root must be outside and not overlap the checkout")
+    return resolved
+
+
+def configure_private_root(path: Path) -> None:
+    global ROOT, PRIVATE_ROOT
+    ROOT = PRIVATE_ROOT = external_root(path)
+
+
+def private_output_path(path: Path) -> Path:
+    if PRIVATE_ROOT is None or ROOT != PRIVATE_ROOT:
+        raise ValueError("authoring requires an explicit private root")
+    if external_root(PRIVATE_ROOT) != PRIVATE_ROOT:
+        raise ValueError("configured private root changed")
+    requested = path.absolute()
+    if any(part.is_symlink() for part in (requested, *requested.parents)):
+        raise ValueError("private output paths must not traverse symlinks")
+    if not requested.is_relative_to(PRIVATE_ROOT) or not requested.resolve().is_relative_to(PRIVATE_ROOT):
+        raise ValueError("authoring output escapes the private root")
+    return requested
 
 
 def png_bytes(image: Image.Image) -> bytes:
@@ -118,19 +147,23 @@ def comparison_bytes(baseline: Image.Image, candidate: Image.Image) -> tuple[byt
 
 
 def write_or_check(path: Path, payload: bytes, check_only: bool) -> None:
+    path = private_output_path(path)
     if check_only:
         if not path.is_file() or path.read_bytes() != payload:
             raise RuntimeError(f"Generated map v2 file is missing or stale: {path}")
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
+        private_output_path(path)
         path.write_bytes(payload)
 
 
 def process(name: str, check_only: bool) -> None:
-    candidate, baseline, registration = export_body(name)
     export_path = ROOT / REVISION_ROOT / "exports" / f"NH_academy_{name}_body.png"
     comparison_path = ROOT / REVISION_ROOT / "comparisons" / f"{name}-map-body-native-before-after.png"
     metrics_path = ROOT / REVISION_ROOT / "comparisons" / f"{name}-map-body-native-before-after.json"
+    for path in (export_path, comparison_path, metrics_path):
+        private_output_path(path)
+    candidate, baseline, registration = export_body(name)
     comparison, metrics = comparison_bytes(baseline, candidate)
     metrics["registration"] = registration
     metrics["candidateExport"] = str(export_path.relative_to(ROOT))
@@ -145,9 +178,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", choices=sorted(REGISTRATIONS), action="append", help="body to export; repeatable")
     parser.add_argument("--check", action="store_true", help="verify exports and comparisons without writing")
+    parser.add_argument("--private-root", required=True, type=Path,
+                        help="complete private authoring workspace outside the checkout")
     args = parser.parse_args()
     names = args.name or list(REGISTRATIONS)
     try:
+        configure_private_root(args.private_root)
         for name in names:
             process(name, args.check)
     except (OSError, ValueError, RuntimeError, KeyError) as error:
