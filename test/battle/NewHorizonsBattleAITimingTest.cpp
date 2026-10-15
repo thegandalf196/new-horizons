@@ -9,6 +9,7 @@
 #include "StdInc.h"
 
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../lib/GameLibrary.h"
@@ -2064,8 +2065,17 @@ TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, RepeatedCaptureKeepsRetainedSp
 class NewHorizonsBattleDwarfWaitTimingTest : public NewHorizonsBattleAITimingTest
 {
 protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		// This controlled workload retains legacy Commands-off hero arithmetic;
+		// it is not a shipping-Orders performance acceptance fixture.
+		if(!useCommands)
+			captureLegacyPerkOfferPolicy(*loaded);
+	}
+
 	void measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1,
-		bool stopAtFirstWait = false, const std::function<void()> & onWait = {})
+		bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)
 	{
 		ASSERT_TRUE(stackCount == 1 || stackCount == 7);
 		ASSERT_TRUE(opposingStackCount == 1 || opposingStackCount == 7);
@@ -2120,6 +2130,111 @@ protected:
 				if(callback->actions.back().actionType == EActionType::WAIT)
 					onWait();
 			};
+		const auto valueHex = [](const auto & value)
+		{
+			CMemorySerializer memory;
+			memory.oser & value;
+			const auto bytes = memory.extractBuffer();
+			if(bytes.size() > 256 * 1024)
+				throw std::runtime_error("Benchmark diagnostic value snapshot exceeded bound");
+			constexpr char digits[] = "0123456789abcdef";
+			std::string result;
+			result.reserve(bytes.size() * 2);
+			for(const auto byte : bytes)
+			{
+				const auto number = std::to_integer<unsigned char>(byte);
+				result.push_back(digits[number >> 4]);
+				result.push_back(digits[number & 15]);
+			}
+			return result;
+		};
+		const auto localBonuses = [&](const auto & node)
+		{
+			JsonNode result;
+			result.Vector();
+			for(const auto & bonus : node.getExportedBonusList())
+			{
+				JsonNode entry;
+				entry["json"] = bonus->toJsonNode();
+				entry["bonusOwner"].Integer() = bonus->bonusOwner.getNum();
+				entry["customIconHex"].String() = valueHex(bonus->customIconPath);
+				entry["descriptionHex"].String() = valueHex(bonus->description);
+				entry["hasUpdater"].Bool() = static_cast<bool>(bonus->updater);
+				entry["hasPropagationUpdater"].Bool() = static_cast<bool>(bonus->propagationUpdater);
+				entry["propagationUpdaterJson"] = bonus->propagationUpdater
+					? bonus->propagationUpdater->toJsonNode() : JsonNode();
+				// Updater JSON is its established public surface, not a full dynamic
+				// object codec; some implementations omit private parameters/children.
+				result.Vector().push_back(std::move(entry));
+			}
+			return result;
+		};
+		const auto stateSnapshot = [&]
+		{
+			JsonNode result;
+			const auto * currentBattle = gameState()->getBattle(BattleID(0));
+			if(!currentBattle || !gameHandler->randomizer)
+				throw std::runtime_error("Benchmark diagnostic battle/randomizer missing");
+			result["round"].Integer() = currentBattle->getRound();
+			result["activationSerial"].Integer() = currentBattle->getActivationSerial();
+			const auto * active = currentBattle->battleActiveUnit();
+			result["activeUnit"].Integer() = active ? static_cast<int64_t>(active->unitId()) : -1;
+			const auto units = currentBattle->battleGetAllUnits(false);
+			if(units.size() > 32)
+				throw std::runtime_error("Benchmark diagnostic unit snapshot exceeded bound");
+			for(const auto * unit : units)
+			{
+				const auto * stack = dynamic_cast<const CStack *>(unit);
+				if(!stack)
+					throw std::runtime_error("Benchmark diagnostic stack missing");
+				JsonNode entry;
+				entry["id"].Integer() = unit->unitId();
+				entry["side"].Integer() = static_cast<int>(unit->unitSide());
+				entry["creatureHex"].String() = valueHex(unit->creatureId());
+				entry["ownerHex"].String() = valueHex(currentBattle->battleGetOwner(unit));
+				entry["controllerHex"].String() = valueHex(currentBattle->battleGetActionController(unit));
+				const auto ownedState = unit->acquireState();
+				entry["state"] = ownedState->save();
+				entry["localBonuses"] = localBonuses(*stack);
+				result["units"].Vector().push_back(std::move(entry));
+			}
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				const auto * hero = side == BattleSide::ATTACKER ? attackerSideHero : defenderSideHero;
+				if(!hero)
+					throw std::runtime_error("Benchmark diagnostic hero missing");
+				JsonNode entry;
+				entry["side"].Integer() = static_cast<int>(side);
+				entry["playerHex"].String() = valueHex(currentBattle->getSidePlayer(side));
+				entry["heroHex"].String() = valueHex(hero->id);
+				entry["spellPointsInitialized"].Bool() = hero->areSpellPointsInitialized();
+				entry["normalSpellPoints"].Integer() = hero->getNormalSpellPoints();
+				entry["bufferSpellPoints"].Integer() = hero->getBufferSpellPoints();
+				entry["localBonuses"] = localBonuses(*hero);
+				entry["allowancesHex"].String() = valueHex(currentBattle->getHeroActionAllowances(side));
+				entry["ordersHex"].String() = valueHex(currentBattle->getHeroOrderStates(side));
+				entry["activeOrderHex"].String() = valueHex(currentBattle->getActiveOrder(side));
+				entry["focusFireHex"].String() = valueHex(currentBattle->getFocusFireState(side));
+				entry["warcastingHex"].String() = valueHex(currentBattle->getWarcastingState(side));
+				entry["doubleCommandHex"].String() = valueHex(currentBattle->getDoubleCommandState(side));
+				entry["castSpells"].Integer() = currentBattle->getCastSpells(side);
+				entry["usedSpellsHex"].String() = valueHex(currentBattle->getUsedSpells(side));
+				result["sides"].Vector().push_back(std::move(entry));
+			}
+			result["randomizerHex"].String() = valueHex(*gameHandler->randomizer);
+			if(result.toString().size() > 1024 * 1024)
+				throw std::runtime_error("Benchmark diagnostic combined snapshot exceeded bound");
+			return result;
+		};
+		// Same bounded value-only surface as Shipping; not a complete world or
+		// bonus-updater graph codec. All serialization is outside activeStack.
+		std::vector<BattleAction> appliedActions;
+		if(exportParity)
+		{
+			const auto initial = stateSnapshot();
+			EXPECT_EQ(stateSnapshot(), initial) << "Snapshot reads must preserve state/RNG";
+			RecordProperty("benchmarkStateBefore", initial.toString());
+		}
 		const auto openingRound = battle()->getRound();
 		unsigned decisions = 0;
 		unsigned waits = 0;
@@ -2134,8 +2249,10 @@ protected:
 			if(controller != PlayerColor(1))
 			{
 				ASSERT_EQ(controller, PlayerColor(0));
-				ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), controller,
-					BattleAction::makeDefend(active)));
+				const auto defend = BattleAction::makeDefend(active);
+				ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), controller, defend));
+				if(exportParity)
+					appliedActions.push_back(defend);
 				continue;
 			}
 			const auto * actor = battle()->getStack(active->unitId());
@@ -2146,11 +2263,16 @@ protected:
 			for(const auto * unit : battle()->battleGetAllUnits(false))
 				snapshots.emplace(unit->unitId(), unit->acquireState()->save());
 			const auto submitted = callback->actions.size();
+			const auto rngBefore = exportParity ? valueHex(*gameHandler->randomizer) : std::string{};
 			ai->activeStack(BattleID(0), actor);
 			if(stopAtFirstWait && callback->actions.size() == submitted + 1
 				&& callback->actions.back().actionType == EActionType::WAIT)
 				return; // The bounded diagnostic controls observe this actual selection.
 			const auto after = summary();
+			if(exportParity)
+			{
+				EXPECT_EQ(valueHex(*gameHandler->randomizer), rngBefore) << "AI preview must preserve full RNG state";
+			}
 			ASSERT_EQ(callback->actions.size(), submitted + 1);
 			ASSERT_TRUE(callback->heroActions.empty());
 			ASSERT_NE(gameState()->getBattle(BattleID(0)), nullptr);
@@ -2165,6 +2287,8 @@ protected:
 			ASSERT_EQ(action.stackNumber, actor->unitId());
 			ASSERT_EQ(action.side, BattleSide::DEFENDER);
 			const auto prefix = "decision" + std::to_string(decisions++) + "_";
+			if(exportParity)
+				RecordProperty(prefix + "actionHex", valueHex(action));
 			RecordProperty(prefix + "action", std::to_string(static_cast<int>(action.actionType)));
 			RecordProperty(prefix + "wallUs", std::to_string(after.activeStackTotalMicroseconds - before.activeStackTotalMicroseconds));
 			const auto stage = [&](const char * name, const auto & previous, const auto & current)
@@ -2249,12 +2373,24 @@ protected:
 			if(action.actionType == EActionType::WAIT)
 				++waits;
 			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), controller, action));
+			if(exportParity)
+				appliedActions.push_back(action);
 		}
 		ASSERT_NE(gameState()->getBattle(BattleID(0)), nullptr);
 		EXPECT_GT(battle()->getRound(), openingRound) << "Natural round exceeded bounded action budget";
 		EXPECT_GE(decisions, stackCount);
 		RecordProperty("decisions", std::to_string(decisions));
 		RecordProperty("naturalWaits", std::to_string(waits));
+		if(exportParity)
+		{
+			const auto final = stateSnapshot();
+			EXPECT_EQ(stateSnapshot(), final) << "Snapshot reads must preserve state/RNG";
+			RecordProperty("benchmarkStateAfter", final.toString());
+			RecordProperty("benchmarkUnitActionsHex", valueHex(callback->actions));
+			RecordProperty("benchmarkHeroActionsHex", valueHex(callback->heroActions));
+			RecordProperty("benchmarkAppliedActionsHex", valueHex(appliedActions));
+		}
+
 	}
 };
 
@@ -2429,7 +2565,7 @@ TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitRecordsMatchOptInAndCapturedIde
 TEST_F(NewHorizonsWaitDiagnosticTest, ProbeCacheAggregateRowsCarryCapturedBattleAndPlayerIdentity)
 {
 	ScopedWaitDiagnostics capture(ELogLevel::DEBUG, "BattleAI nested probe cache timing ");
-	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7, 7));
+	ASSERT_NO_FATAL_FAILURE(measureNaturalRound(7, 7, false, {}, true));
 	const auto before = summary();
 	ASSERT_EQ(before.activeStackInFlight, 0u);
 	ai->battleEnd(BattleID(0), nullptr, QueryID(-1));
