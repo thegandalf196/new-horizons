@@ -7,10 +7,36 @@ never from an unrelated or untracked working-tree file.
 
 import argparse
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import subprocess
 
 DOCUMENTATION_POLICY = 'docs/NH_DOCUMENTATION_POLICY.md'
+
+
+def load_retired_public_paths(path):
+    error = 'Invalid retired-path policy ' + path.name + ': '
+    try:
+        names = json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        raise ValueError(error + 'cannot read UTF-8 JSON') from None
+    if not isinstance(names, list) or not names:
+        raise ValueError(error + 'expected a nonempty array of unique relative paths')
+    for name in names:
+        if not isinstance(name, str) or not name:
+            raise ValueError(error + 'each path must be a nonempty string')
+        path_value = PurePosixPath(name)
+        if (name != name.strip() or '\\' in name or ':' in name
+                or any(ord(char) < 32 or ord(char) == 127 for char in name)
+                or path_value.is_absolute() or '..' in path_value.parts
+                or path_value.as_posix() != name or name == '.'):
+            raise ValueError(error + 'paths must be normalized relative POSIX paths')
+    if len(set(names)) != len(names):
+        raise ValueError(error + 'duplicate paths are not allowed')
+    return frozenset(names)
+
+
+# Exact reviewed retirements, not a ban on neighboring assets or public contracts.
+RETIRED_PUBLIC_PATHS = load_retired_public_paths(Path(__file__).with_name('retired_public_paths.json'))
 MAINTAINED_NH_DOCUMENTS = frozenset({
     'docs/NH_AI_EXCHANGES.md',
     'docs/NH_APPROVED_ART_WORKFLOW.md',
@@ -55,6 +81,8 @@ MAINTAINED_NH_DOCUMENTS = frozenset({
 
 
 def private_design_path(name):
+    if name in RETIRED_PUBLIC_PATHS:
+        return True
     if name.startswith('docs/design-sources/'):
         return name != 'docs/design-sources/README.md'
     return name == 'tools/migrate-new-horizons-canonical-docx.py'
@@ -78,7 +106,7 @@ def forbidden_tracked_design(root):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Reject retired private design inputs in the tracked public tree.')
+    parser = argparse.ArgumentParser(description='Reject retired private inputs in the tracked public index.')
     parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[2])
     args = parser.parse_args()
     forbidden = forbidden_tracked_design(args.root)
