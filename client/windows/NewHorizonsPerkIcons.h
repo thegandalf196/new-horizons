@@ -10,6 +10,18 @@
 inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 {
 	static const std::map<std::string, std::string> icons = {
+		{"new-horizons:bulwarkOfTheMire.bogAmbush", "NH_perk_bog_ambush"},
+		{"new-horizons:bulwarkOfTheMire.deepBulwark", "NH_perk_deep_bulwark"},
+		{"new-horizons:bulwarkOfTheMire.immovable", "NH_perk_immovable"},
+		{"new-horizons:bulwarkOfTheMire.mireborn", "NH_perk_mireborn"},
+		{"new-horizons:bulwarkOfTheMire.sharedCover", "NH_perk_shared_cover"},
+		{"new-horizons:bulwarkOfTheMire.vengefulMire", "NH_perk_vengeful_mire"},
+		{"new-horizons:elementalRebirth.elementalAttunement", "NH_perk_elemental_attunement"},
+		{"new-horizons:elementalRebirth.primalBurst", "NH_perk_primal_burst"},
+		{"new-horizons:elementalRebirth.rebirthChain", "NH_perk_rebirth_chain"},
+		{"new-horizons:shroudOfMalassa.deepFlank", "NH_perk_deep_flank"},
+		{"new-horizons:shroudOfMalassa.encircledDoom", "NH_perk_encircled_doom"},
+		{"new-horizons:shroudOfMalassa.vanish", "NH_perk_vanish"},
 		{"new-horizons:shroudOfMalassa.ambusher", "NH_perk_ambusher"},
 		{"new-horizons:shroudOfMalassa.evasiveShroud", "NH_perk_evasive_shroud"},
 		{"new-horizons:shroudOfMalassa.noEscape", "NH_perk_no_escape"},
