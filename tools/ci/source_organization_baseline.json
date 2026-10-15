@@ -24,41 +24,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "c63816a642f1b19e398f75f5a4ef45aa889242ba1dea8aee8664f5b83d4fcded"
     },
-    "AI/BattleAI/StackWithBonuses.h": {
-      "diagnostics": [
-        {
-          "end": 161,
-          "start": 161,
-          "type": "missing:type_identifier"
-        },
-        {
-          "end": 441,
-          "start": 441,
-          "type": "missing:type_identifier"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ai_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:type_identifier at physical lines 161-161, missing:type_identifier at physical lines 441-441. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "06042475550ebc85ccf130925f8afb1bf42b10c376fcce4028418fc757f1afdf"
-    },
-    "AI/MMAI/BAI/v13/BAI.cpp": {
-      "diagnostics": [
-        {
-          "end": 576,
-          "start": 576,
-          "type": "missing:literal_suffix"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ai_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:literal_suffix at physical lines 576-576. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "f6bc9c723a76cbc4e71cfac234942d029d3396e29737f61e25e43625f58b1ca5"
-    },
     "AI/MMAI/BAI/v13/render.cpp": {
       "diagnostics": [
         {
@@ -171,21 +136,6 @@
       "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "4bdef9fd27c73fad569ca0ba3663feffee90a050db9be17c1f9b0e3ba135540a"
-    },
-    "launcher/firstLaunch/firstlaunch_moc.cpp": {
-      "diagnostics": [
-        {
-          "end": 454,
-          "start": 454,
-          "type": "missing:type_identifier"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:type_identifier at physical lines 454-454. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "c1662e3bedacc11c2b7e30e8078154becdb76592b476f6541751330bd7add6c0"
     },
     "launcher/modManager/cmodlistview_moc.cpp": {
       "diagnostics": [
@@ -327,21 +277,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "b293d8fb0e967a15663f35fe85cd239a93cad7f7e9d29e749426e5dd76d12c58"
     },
-    "lib/spells/TargetCondition.cpp": {
-      "diagnostics": [
-        {
-          "end": 94,
-          "start": 94,
-          "type": "missing:type_identifier"
-        }
-      ],
-      "language": "cpp",
-      "owner": "gameplay_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:type_identifier at physical lines 94-94. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "b63ab36921cd5aa63ef8ba52ec91efa163902367d5e32bb00bf2443a234db5cd"
-    },
     "mapeditor/mainwindow.cpp": {
       "diagnostics": [
         {
@@ -391,26 +326,6 @@
       "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "a54ebfc920af710d17a89aa32cdea21fd06dcb9a62ae20f4e23b5a6bbd589e0f"
-    },
-    "mapeditor/mapview.cpp": {
-      "diagnostics": [
-        {
-          "end": 850,
-          "start": 58,
-          "type": "ERROR"
-        },
-        {
-          "end": 728,
-          "start": 728,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 58-850, ERROR at physical lines 728-728. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "641d658180dccf541329123b1e88978ee94c2384d9046a3f5df15a1eda0aa820"
     },
     "mapeditor/templateeditor/templateeditor.cpp": {
       "diagnostics": [
@@ -5197,6 +5112,1191 @@
           "symbol": "Where-Object::<scriptblock>($_.path -like 'Mp3\\\\*.mp3')#1",
           "start": 257,
           "end": 257
+        }
+      ]
+    },
+    "AI/BattleAI/StackWithBonuses.h": {
+      "sha256": "06042475550ebc85ccf130925f8afb1bf42b10c376fcce4028418fc757f1afdf",
+      "review": "IR-MANUAL-BATCH8-60e55007-20261015",
+      "rationale": "Whole 755 physical lines read. All 55 inline bodies, RNG overloads, nested receipt and callback bodies retained; prototypes, defaulted comparisons and default-argument/data initializer braces excluded. Diagnostics at 161/441 concern empty-brace default arguments, not missing callable bodies. No locally defined function-like macro.",
+      "functions": [
+        {
+          "symbol": "HypotheticLifecycleTiming::StageTiming::void accumulate(const StageTiming & sample)#1",
+          "start": 45,
+          "end": 50
+        },
+        {
+          "symbol": "RNGStub::int nextInt() override#1",
+          "start": 87,
+          "end": 90
+        },
+        {
+          "symbol": "RNGStub::int nextBinomialInt(int coinsCount, double coinChance) override#1",
+          "start": 92,
+          "end": 95
+        },
+        {
+          "symbol": "RNGStub::int nextInt(int lower, int upper) override#1",
+          "start": 97,
+          "end": 100
+        },
+        {
+          "symbol": "RNGStub::int64_t nextInt64(int64_t lower, int64_t upper) override#1",
+          "start": 101,
+          "end": 104
+        },
+        {
+          "symbol": "RNGStub::double nextDouble(double lower, double upper) override#1",
+          "start": 105,
+          "end": 108
+        },
+        {
+          "symbol": "RNGStub::int nextInt(int upper) override#1",
+          "start": 110,
+          "end": 113
+        },
+        {
+          "symbol": "RNGStub::int64_t nextInt64(int64_t upper) override#1",
+          "start": 114,
+          "end": 117
+        },
+        {
+          "symbol": "RNGStub::double nextDouble(double upper) override#1",
+          "start": 118,
+          "end": 121
+        },
+        {
+          "symbol": "HypotheticBattle::const SeizeInitiativeState & getSeizeInitiativeState() const override#1",
+          "start": 269,
+          "end": 269
+        },
+        {
+          "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
+          "start": 270,
+          "end": 274
+        },
+        {
+          "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
+          "start": 275,
+          "end": 275
+        },
+        {
+          "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
+          "start": 284,
+          "end": 284
+        },
+        {
+          "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
+          "start": 285,
+          "end": 285
+        },
+        {
+          "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
+          "start": 290,
+          "end": 293
+        },
+        {
+          "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
+          "start": 300,
+          "end": 300
+        },
+        {
+          "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
+          "start": 308,
+          "end": 312
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
+          "start": 315,
+          "end": 315
+        },
+        {
+          "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
+          "start": 336,
+          "end": 336
+        },
+        {
+          "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
+          "start": 337,
+          "end": 346
+        },
+        {
+          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
+          "start": 347,
+          "end": 350
+        },
+        {
+          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
+          "start": 351,
+          "end": 354
+        },
+        {
+          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
+          "start": 356,
+          "end": 356
+        },
+        {
+          "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
+          "start": 358,
+          "end": 358
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
+          "start": 359,
+          "end": 359
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
+          "start": 360,
+          "end": 360
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
+          "start": 361,
+          "end": 361
+        },
+        {
+          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
+          "start": 362,
+          "end": 362
+        },
+        {
+          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "start": 363,
+          "end": 363
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
+          "start": 364,
+          "end": 367
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
+          "start": 368,
+          "end": 371
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
+          "start": 372,
+          "end": 375
+        },
+        {
+          "symbol": "HypotheticBattle::ProjectedActionReceipt::bool isHeroAction() const#1",
+          "start": 385,
+          "end": 388
+        },
+        {
+          "symbol": "HypotheticBattle::ui8 getProjectedPendingTimeStopHeroActionSides() const#1",
+          "start": 450,
+          "end": 450
+        },
+        {
+          "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
+          "start": 456,
+          "end": 456
+        },
+        {
+          "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
+          "start": 457,
+          "end": 457
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
+          "start": 464,
+          "end": 464
+        },
+        {
+          "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
+          "start": 484,
+          "end": 484
+        },
+        {
+          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
+          "start": 485,
+          "end": 485
+        },
+        {
+          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
+          "start": 486,
+          "end": 486
+        },
+        {
+          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "start": 487,
+          "end": 491
+        },
+        {
+          "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
+          "start": 492,
+          "end": 496
+        },
+        {
+          "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
+          "start": 497,
+          "end": 497
+        },
+        {
+          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
+          "start": 498,
+          "end": 501
+        },
+        {
+          "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
+          "start": 502,
+          "end": 507
+        },
+        {
+          "symbol": "HypotheticBattle::void endFortuneActivation()#1",
+          "start": 508,
+          "end": 518
+        },
+        {
+          "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
+          "start": 521,
+          "end": 524
+        },
+        {
+          "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
+          "start": 525,
+          "end": 529
+        },
+        {
+          "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
+          "start": 534,
+          "end": 534
+        },
+        {
+          "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
+          "start": 598,
+          "end": 598
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
+          "start": 599,
+          "end": 599
+        },
+        {
+          "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
+          "start": 600,
+          "end": 600
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
+          "start": 601,
+          "end": 604
+        },
+        {
+          "symbol": "HypotheticBattle::void resetActiveUnit()#1",
+          "start": 615,
+          "end": 618
+        },
+        {
+          "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
+          "start": 703,
+          "end": 703
+        }
+      ]
+    },
+    "AI/MMAI/BAI/v13/BAI.cpp": {
+      "sha256": "f6bc9c723a76cbc4e71cfac234942d029d3396e29737f61e25e43625f58b1ca5",
+      "review": "IR-MANUAL-BATCH8-60e55007-20261015",
+      "rationale": "Whole 742 physical lines read, including constructor body, all action/fallback branches, assertion recovery site at 576 and comparator lambda at 232-235. All 20 parser callables are genuine and retained unchanged. No locally defined function-like macro.",
+      "functions": [
+        {
+          "symbol": "MMAI::BAI::V13::BAI::BAI(Schema::IModel * model, int version, const std::shared_ptr<Environment> & env, const std::shared_ptr<CBattleCallback> & cb, bool enableSpellsUsage) : model(model), version(version), logger(cb->getPlayerID()->toString()), env(env), cb(cb), enableSpellsUsage(enableSpellsUsage)#1",
+          "start": 33,
+          "end": 36
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Schema::Action BAI::getNonRenderAction()#1",
+          "start": 38,
+          "end": 58
+        },
+        {
+          "symbol": "MMAI::BAI::V13::std::unique_ptr<State> BAI::initState(const CPlayerBattleCallback * b)#1",
+          "start": 60,
+          "end": 63
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::battleStart( const BattleID & bid, const CCreatureSet * army1, const CCreatureSet * army2, int3 tile, const CGHeroInstance * hero1, const CGHeroInstance * hero2, BattleSide side, bool replayAllowed )#1",
+          "start": 65,
+          "end": 80
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::battleEnd(const BattleID & bid, const BattleResult * br, QueryID queryID)#1",
+          "start": 85,
+          "end": 128
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::battleStacksAttacked(const BattleID & bid, const std::vector<BattleStackAttacked> & bsa, bool ranged)#1",
+          "start": 130,
+          "end": 133
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::battleTriggerEffect(const BattleID & bid, const BattleTriggerEffect & bte)#1",
+          "start": 135,
+          "end": 138
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::yourTacticPhase(const BattleID & bid, int distance)#1",
+          "start": 140,
+          "end": 143
+        },
+        {
+          "symbol": "MMAI::BAI::V13::bool BAI::maybeCastSpell(const CStack * astack, const BattleID & bid)#1",
+          "start": 145,
+          "end": 167
+        },
+        {
+          "symbol": "MMAI::BAI::V13::std::shared_ptr<BattleAction> BAI::maybeBuildAutoAction(const CStack * astack, const BattleID & bid) const#1",
+          "start": 169,
+          "end": 243
+        },
+        {
+          "symbol": "MMAI::BAI::V13::BAI::maybeBuildAutoAction(const CStack * astack, const BattleID & bid) const::[](const CStack * a, const CStack * b)#1",
+          "start": 232,
+          "end": 235
+        },
+        {
+          "symbol": "MMAI::BAI::V13::std::optional<BattleAction> BAI::maybeFleeOrSurrender(const BattleID & bid)#1",
+          "start": 245,
+          "end": 279
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::activeStack(const BattleID & bid, const CStack * astack)#1",
+          "start": 281,
+          "end": 294
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::_activeStack(const BattleID & bid, const CStack * astack)#1",
+          "start": 296,
+          "end": 393
+        },
+        {
+          "symbol": "MMAI::BAI::V13::std::shared_ptr<BattleAction> BAI::buildBattleAction()#1",
+          "start": 395,
+          "end": 506
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::handleUnexpectedAction(const CStack * acstack, const Hex * hex, Action * action)#1",
+          "start": 508,
+          "end": 646
+        },
+        {
+          "symbol": "MMAI::BAI::V13::std::string BAI::debugInfo(Action * action, const CStack * astack, const BattleHex * const nbh) const#1",
+          "start": 648,
+          "end": 706
+        },
+        {
+          "symbol": "MMAI::BAI::V13::std::string BAI::renderANSI() const#1",
+          "start": 708,
+          "end": 730
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::actionStarted(const BattleID & bid, const BattleAction & action)#1",
+          "start": 732,
+          "end": 735
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void BAI::actionFinished(const BattleID & bid, const BattleAction & action)#1",
+          "start": 737,
+          "end": 740
+        }
+      ]
+    },
+    "launcher/firstLaunch/firstlaunch_moc.cpp": {
+      "sha256": "c1662e3bedacc11c2b7e30e8078154becdb76592b476f6541751330bd7add6c0",
+      "review": "IR-MANUAL-BATCH8-60e55007-20261015",
+      "rationale": "Whole 970 physical lines read, including VCMI_MOBILE/VCMI_WINDOWS/VCMI_IOS and ENABLE_INNOEXTRACT branches and all 10 lambdas. All 58 parser callables retained, defaulted destructor excluded; empty-brace lambda default argument at 454 is not an omitted body. QT_TRANSLATE_NOOP uses are invocations, not locally defined function macros.",
+      "functions": [
+        {
+          "symbol": "static ProgressOverlay* createOverlayWidget(QWidget *parent, const QString &title, bool indeterminate = true)#1",
+          "start": 30,
+          "end": 38
+        },
+        {
+          "symbol": "ProgressOverlay * FirstLaunchView::createOverlay(const QString & title, bool indeterminate)#1",
+          "start": 40,
+          "end": 48
+        },
+        {
+          "symbol": "* FirstLaunchView::createOverlay(const QString & title, bool indeterminate)::[this]()#1",
+          "start": 44,
+          "end": 46
+        },
+        {
+          "symbol": "FirstLaunchView::FirstLaunchView(QWidget * parent) : QWidget(parent) , ui(std::make_unique<Ui::FirstLaunchView>())#1",
+          "start": 50,
+          "end": 78
+        },
+        {
+          "symbol": "void FirstLaunchView::on_buttonTabLanguage_clicked()#1",
+          "start": 82,
+          "end": 85
+        },
+        {
+          "symbol": "void FirstLaunchView::on_buttonTabHeroesData_clicked()#1",
+          "start": 87,
+          "end": 90
+        },
+        {
+          "symbol": "void FirstLaunchView::on_buttonTabModPreset_clicked()#1",
+          "start": 92,
+          "end": 95
+        },
+        {
+          "symbol": "void FirstLaunchView::on_listWidgetLanguage_currentRowChanged(int currentRow)#1",
+          "start": 97,
+          "end": 100
+        },
+        {
+          "symbol": "void FirstLaunchView::changeEvent(QEvent * event)#1",
+          "start": 102,
+          "end": 111
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonLanguageNext_clicked()#1",
+          "start": 113,
+          "end": 116
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonDataNext_clicked()#1",
+          "start": 118,
+          "end": 121
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonDataBack_clicked()#1",
+          "start": 123,
+          "end": 126
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonDataSearch_clicked()#1",
+          "start": 128,
+          "end": 131
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonDataCopy_clicked()#1",
+          "start": 133,
+          "end": 143
+        },
+        {
+          "symbol": "FirstLaunchView::on_pushButtonDataCopy_clicked()::[this]#1",
+          "start": 137,
+          "end": 142
+        },
+        {
+          "symbol": "FirstLaunchView::on_pushButtonDataCopy_clicked()::<anonymous>::[this](const QString &picked)#1",
+          "start": 138,
+          "end": 141
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonGogInstall_clicked()#1",
+          "start": 145,
+          "end": 150
+        },
+        {
+          "symbol": "FirstLaunchView::on_pushButtonGogInstall_clicked()::[this]#1",
+          "start": 149,
+          "end": 149
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonDemo_clicked()#1",
+          "start": 152,
+          "end": 160
+        },
+        {
+          "symbol": "void FirstLaunchView::onInstallFinished()#1",
+          "start": 162,
+          "end": 167
+        },
+        {
+          "symbol": "void FirstLaunchView::onInstallError()#1",
+          "start": 169,
+          "end": 173
+        },
+        {
+          "symbol": "void FirstLaunchView::onInstallProgress(float percent)#1",
+          "start": 175,
+          "end": 179
+        },
+        {
+          "symbol": "void FirstLaunchView::enterSetup()#1",
+          "start": 181,
+          "end": 185
+        },
+        {
+          "symbol": "void FirstLaunchView::setSetupProgress(int progress)#1",
+          "start": 187,
+          "end": 192
+        },
+        {
+          "symbol": "void FirstLaunchView::activateTabLanguage()#1",
+          "start": 194,
+          "end": 201
+        },
+        {
+          "symbol": "void FirstLaunchView::activateTabHeroesData()#1",
+          "start": 203,
+          "end": 224
+        },
+        {
+          "symbol": "void FirstLaunchView::activateTabModPreset()#1",
+          "start": 226,
+          "end": 235
+        },
+        {
+          "symbol": "void FirstLaunchView::exitSetup(bool goToMods)#1",
+          "start": 237,
+          "end": 241
+        },
+        {
+          "symbol": "void FirstLaunchView::languageSelected(const QString & selectedLanguage)#1",
+          "start": 244,
+          "end": 251
+        },
+        {
+          "symbol": "bool FirstLaunchView::heroesDataUpdate(bool checkDemo)#1",
+          "start": 253,
+          "end": 261
+        },
+        {
+          "symbol": "void FirstLaunchView::heroesDataMissing()#1",
+          "start": 263,
+          "end": 290
+        },
+        {
+          "symbol": "void FirstLaunchView::heroesDataDetected()#1",
+          "start": 292,
+          "end": 320
+        },
+        {
+          "symbol": "bool FirstLaunchView::heroesDataDetect(bool checkDemo)#1",
+          "start": 323,
+          "end": 336
+        },
+        {
+          "symbol": "QString FirstLaunchView::getHeroesInstallDir()#1",
+          "start": 338,
+          "end": 360
+        },
+        {
+          "symbol": "static QString defaultStartDirForOpen()#1",
+          "start": 362,
+          "end": 390
+        },
+        {
+          "symbol": "QString FirstLaunchView::checkFileMagic(const QString &filename, const QString &filter, const QByteArray &magic, const QString &ext, bool &openFailed) const#1",
+          "start": 393,
+          "end": 449
+        },
+        {
+          "symbol": "void FirstLaunchView::extractGogData()#1",
+          "start": 451,
+          "end": 515
+        },
+        {
+          "symbol": "FirstLaunchView::extractGogData()::[this](const QString &title, QString filter, const QString &startPath = {})#1",
+          "start": 454,
+          "end": 463
+        },
+        {
+          "symbol": "FirstLaunchView::extractGogData()::[this, fileBin, fileExe]()#1",
+          "start": 509,
+          "end": 513
+        },
+        {
+          "symbol": "bool FirstLaunchView::performCopyFlow(const QString& path, ProgressOverlay* overlay, bool removeSource)#1",
+          "start": 517,
+          "end": 623
+        },
+        {
+          "symbol": "FirstLaunchView::performCopyFlow(const QString& path, ProgressOverlay* overlay, bool removeSource)::[](const QStringList &items)->QString#1",
+          "start": 532,
+          "end": 564
+        },
+        {
+          "symbol": "void FirstLaunchView::extractGogDataAsync(QString filePathBin, QString filePathExe)#1",
+          "start": 625,
+          "end": 768
+        },
+        {
+          "symbol": "FirstLaunchView::extractGogDataAsync(QString filePathBin, QString filePathExe)::[this, filePathBin, filePathExe]()#1",
+          "start": 631,
+          "end": 766
+        },
+        {
+          "symbol": "FirstLaunchView::extractGogDataAsync(QString filePathBin, QString filePathExe)::()::[overlayGuard = QPointer<ProgressOverlay>(overlay.data())](float progress)#1",
+          "start": 711,
+          "end": 718
+        },
+        {
+          "symbol": "void FirstLaunchView::copyHeroesData(const QString &path, bool removeSource)#1",
+          "start": 770,
+          "end": 790
+        },
+        {
+          "symbol": "FirstLaunchView::copyHeroesData(const QString &path, bool removeSource)::[this, path, removeSource, overlay]()#1",
+          "start": 774,
+          "end": 780
+        },
+        {
+          "symbol": "void FirstLaunchView::loadModPresets()#1",
+          "start": 793,
+          "end": 828
+        },
+        {
+          "symbol": "void FirstLaunchView::createModPresetWidgets()#1",
+          "start": 830,
+          "end": 864
+        },
+        {
+          "symbol": "void FirstLaunchView::updateModPresetTexts()#1",
+          "start": 866,
+          "end": 873
+        },
+        {
+          "symbol": "void FirstLaunchView::modPresetUpdate()#1",
+          "start": 875,
+          "end": 899
+        },
+        {
+          "symbol": "QString FirstLaunchView::findTranslationModName()#1",
+          "start": 901,
+          "end": 911
+        },
+        {
+          "symbol": "bool FirstLaunchView::checkCanInstallTranslation()#1",
+          "start": 913,
+          "end": 921
+        },
+        {
+          "symbol": "CModListView * FirstLaunchView::getModView()#1",
+          "start": 923,
+          "end": 932
+        },
+        {
+          "symbol": "bool FirstLaunchView::checkCanInstallMod(const QString & modID)#1",
+          "start": 934,
+          "end": 937
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonPresetBack_clicked()#1",
+          "start": 939,
+          "end": 942
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonPresetNext_clicked()#1",
+          "start": 944,
+          "end": 960
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonDiscord_clicked()#1",
+          "start": 962,
+          "end": 965
+        },
+        {
+          "symbol": "void FirstLaunchView::on_pushButtonGithub_clicked()#1",
+          "start": 967,
+          "end": 970
+        }
+      ]
+    },
+    "lib/spells/TargetCondition.cpp": {
+      "sha256": "b63ab36921cd5aa63ef8ba52ec91efa163902367d5e32bb00bf2443a234db5cd",
+      "review": "IR-MANUAL-BATCH8-60e55007-20261015",
+      "rationale": "Whole 793 physical lines read. All 64 genuine constructors/methods/functions and five nested lambdas retained; pure virtual declarations excluded. Constructor default-argument recovery at 94 does not hide body. No locally defined function-like macro.",
+      "functions": [
+        {
+          "symbol": "spells::SpellID savedEffectFamily(const Mechanics * mechanics)#1",
+          "start": 36,
+          "end": 42
+        },
+        {
+          "symbol": "spells::TargetConditionItemBase::void setInverted(bool value) override#1",
+          "start": 51,
+          "end": 54
+        },
+        {
+          "symbol": "spells::TargetConditionItemBase::void setExclusive(bool value) override#1",
+          "start": 56,
+          "end": 59
+        },
+        {
+          "symbol": "spells::TargetConditionItemBase::bool isExclusive() const override#1",
+          "start": 61,
+          "end": 64
+        },
+        {
+          "symbol": "spells::TargetConditionItemBase::bool isReceptive(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 66,
+          "end": 70
+        },
+        {
+          "symbol": "spells::TargetConditionItemBase::RecipientConditionResult checkRecipient(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 72,
+          "end": 79
+        },
+        {
+          "symbol": "spells::TargetConditionItemBase::bool supportsRecipientCheck() const override#1",
+          "start": 80,
+          "end": 80
+        },
+        {
+          "symbol": "spells::TargetConditionItemBase::static RecipientConditionResult verdict(bool value)#1",
+          "start": 83,
+          "end": 86
+        },
+        {
+          "symbol": "spells::SelectorCondition::SelectorCondition(const CSelector & csel, std::optional<BonusType> configuredBonusType = {}): sel(csel), configuredBonusType(configuredBonusType)#1",
+          "start": 94,
+          "end": 98
+        },
+        {
+          "symbol": "spells::SelectorCondition::SelectorCondition(const CSelector & csel, si32 minVal, si32 maxVal): sel(csel), minVal(minVal), maxVal(maxVal)#1",
+          "start": 99,
+          "end": 104
+        },
+        {
+          "symbol": "spells::SelectorCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext &, const battle::Unit * target) const override#1",
+          "start": 107,
+          "end": 110
+        },
+        {
+          "symbol": "spells::SelectorCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 111,
+          "end": 118
+        },
+        {
+          "symbol": "spells::SelectorCondition::bool isForgetfulnessShooterRequirement() const override#1",
+          "start": 120,
+          "end": 123
+        },
+        {
+          "symbol": "spells::ResistanceCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 135,
+          "end": 138
+        },
+        {
+          "symbol": "spells::ResistanceCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 139,
+          "end": 145
+        },
+        {
+          "symbol": "spells::CreatureCondition::CreatureCondition(const CreatureID & type_): type(type_)#1",
+          "start": 151,
+          "end": 151
+        },
+        {
+          "symbol": "spells::CreatureCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext &, const battle::Unit * target) const override#1",
+          "start": 154,
+          "end": 157
+        },
+        {
+          "symbol": "spells::CreatureCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 158,
+          "end": 161
+        },
+        {
+          "symbol": "spells::AbsoluteLevelCondition::AbsoluteLevelCondition()#1",
+          "start": 170,
+          "end": 174
+        },
+        {
+          "symbol": "spells::AbsoluteLevelCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 177,
+          "end": 187
+        },
+        {
+          "symbol": "spells::AbsoluteLevelCondition::checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override::[](const auto & bonus)#1",
+          "start": 182,
+          "end": 185
+        },
+        {
+          "symbol": "spells::AbsoluteLevelCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 188,
+          "end": 210
+        },
+        {
+          "symbol": "spells::AbsoluteSpellCondition::AbsoluteSpellCondition()#1",
+          "start": 216,
+          "end": 220
+        },
+        {
+          "symbol": "spells::AbsoluteSpellCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 223,
+          "end": 228
+        },
+        {
+          "symbol": "spells::AbsoluteSpellCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 229,
+          "end": 235
+        },
+        {
+          "symbol": "spells::ElementalCondition::ElementalCondition()#1",
+          "start": 242,
+          "end": 246
+        },
+        {
+          "symbol": "spells::ElementalCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 249,
+          "end": 262
+        },
+        {
+          "symbol": "spells::ElementalCondition::checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override::[&](const SpellSchool & school, bool & stop)#1",
+          "start": 255,
+          "end": 260
+        },
+        {
+          "symbol": "spells::ElementalCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 263,
+          "end": 289
+        },
+        {
+          "symbol": "spells::ElementalCondition::check(const Mechanics * m, const battle::Unit * target) const override::[&](const SpellSchool & cnf, bool & stop)#1",
+          "start": 271,
+          "end": 286
+        },
+        {
+          "symbol": "spells::NormalLevelCondition::NormalLevelCondition()#1",
+          "start": 295,
+          "end": 299
+        },
+        {
+          "symbol": "spells::NormalLevelCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 302,
+          "end": 308
+        },
+        {
+          "symbol": "spells::NormalLevelCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 309,
+          "end": 317
+        },
+        {
+          "symbol": "spells::NormalSpellCondition::NormalSpellCondition()#1",
+          "start": 323,
+          "end": 327
+        },
+        {
+          "symbol": "spells::NormalSpellCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 330,
+          "end": 335
+        },
+        {
+          "symbol": "spells::NormalSpellCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 336,
+          "end": 341
+        },
+        {
+          "symbol": "spells::HealthValueCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 348,
+          "end": 353
+        },
+        {
+          "symbol": "spells::HealthValueCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 354,
+          "end": 364
+        },
+        {
+          "symbol": "spells::SpellEffectCondition::SpellEffectCondition(const SpellID & spellID_): spellID(spellID_)#1",
+          "start": 370,
+          "end": 377
+        },
+        {
+          "symbol": "spells::SpellEffectCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext &, const battle::Unit * target) const override#1",
+          "start": 380,
+          "end": 383
+        },
+        {
+          "symbol": "spells::SpellEffectCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 384,
+          "end": 387
+        },
+        {
+          "symbol": "spells::ReceptiveFeatureCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 398,
+          "end": 401
+        },
+        {
+          "symbol": "spells::ReceptiveFeatureCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 402,
+          "end": 405
+        },
+        {
+          "symbol": "spells::ImmunityNegationCondition::RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override#1",
+          "start": 415,
+          "end": 426
+        },
+        {
+          "symbol": "spells::ImmunityNegationCondition::bool check(const Mechanics * m, const battle::Unit * target) const override#1",
+          "start": 427,
+          "end": 447
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createAbsoluteLevel() const override#1",
+          "start": 453,
+          "end": 457
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createAbsoluteSpell() const override#1",
+          "start": 459,
+          "end": 463
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createElemental() const override#1",
+          "start": 465,
+          "end": 469
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createResistance() const override#1",
+          "start": 471,
+          "end": 475
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createNormalLevel() const override#1",
+          "start": 477,
+          "end": 481
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createNormalSpell() const override#1",
+          "start": 483,
+          "end": 487
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createConfigurable(std::string scope, std::string type, std::string identifier) const override#1",
+          "start": 489,
+          "end": 530
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createFromJsonStruct(const JsonNode & jsonStruct) const override#1",
+          "start": 532,
+          "end": 550
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createReceptiveFeature() const override#1",
+          "start": 552,
+          "end": 556
+        },
+        {
+          "symbol": "spells::DefaultTargetConditionItemFactory::Object createImmunityNegation() const override#1",
+          "start": 558,
+          "end": 562
+        },
+        {
+          "symbol": "spells::const TargetConditionItemFactory * TargetConditionItemFactory::getDefault()#1",
+          "start": 565,
+          "end": 569
+        },
+        {
+          "symbol": "spells::bool TargetCondition::isReceptive(const Mechanics * m, const battle::Unit * target) const#1",
+          "start": 571,
+          "end": 582
+        },
+        {
+          "symbol": "spells::bool TargetCondition::isReceptiveIgnoringMagicResistance(const Mechanics * m, const battle::Unit * target) const#1",
+          "start": 584,
+          "end": 595
+        },
+        {
+          "symbol": "spells::RecipientConditionResult TargetCondition::checkRecipient(const RecipientConditionContext & context, const battle::Unit * target) const#1",
+          "start": 597,
+          "end": 667
+        },
+        {
+          "symbol": "spells::TargetCondition::checkRecipient(const RecipientConditionContext & context, const battle::Unit * target) const::[&](const ItemVector & items, Evaluated & results)#1",
+          "start": 612,
+          "end": 627
+        },
+        {
+          "symbol": "spells::TargetCondition::checkRecipient(const RecipientConditionContext & context, const battle::Unit * target) const::[](const Evaluated & results)#1",
+          "start": 628,
+          "end": 646
+        },
+        {
+          "symbol": "spells::void TargetCondition::serializeJson(JsonSerializeFormat & handler, const ItemFactory * itemFactory)#1",
+          "start": 669,
+          "end": 705
+        },
+        {
+          "symbol": "spells::bool TargetCondition::check(const ItemVector & condition, const Mechanics * m, const battle::Unit * target, const bool ignoreMagicResistance) const#1",
+          "start": 707,
+          "end": 735
+        },
+        {
+          "symbol": "spells::void TargetCondition::loadConditions(const JsonNode & source, bool exclusive, bool inverted, const ItemFactory * itemFactory)#1",
+          "start": 737,
+          "end": 791
+        }
+      ]
+    },
+    "mapeditor/mapview.cpp": {
+      "sha256": "641d658180dccf541329123b1e88978ee94c2384d9046a3f5df15a1eda0aa820",
+      "review": "IR-MANUAL-BATCH8-60e55007-20261015",
+      "rationale": "Whole 850 physical lines read, including ENABLE_SINGLE_APP_BUILD namespace guards and both Qt5/Qt6 drop branches. All 33 genuine bodies retained despite namespace recovery; initializers and control blocks are not functions. Existing 198/186-line handlers remain debt above 150, not newly approved exceptions.",
+      "functions": [
+        {
+          "symbol": "MinimapView::MinimapView(QWidget * parent): QGraphicsView(parent)#1",
+          "start": 22,
+          "end": 28
+        },
+        {
+          "symbol": "void MinimapView::dimensions()#1",
+          "start": 30,
+          "end": 33
+        },
+        {
+          "symbol": "void MinimapView::setController(MapController * ctrl)#1",
+          "start": 35,
+          "end": 38
+        },
+        {
+          "symbol": "void MinimapView::mouseMoveEvent(QMouseEvent *mouseEvent)#1",
+          "start": 40,
+          "end": 51
+        },
+        {
+          "symbol": "void MinimapView::mousePressEvent(QMouseEvent* event)#1",
+          "start": 53,
+          "end": 56
+        },
+        {
+          "symbol": "MapView::MapView(QWidget * parent): QGraphicsView(parent), selectionTool(MapView::SelectionTool::None), tileStart(int3{}), tilePrev(int3{}), pressedOnSelected(false)#1",
+          "start": 62,
+          "end": 71
+        },
+        {
+          "symbol": "void MapView::cameraChanged(const QPointF & pos)#1",
+          "start": 73,
+          "end": 76
+        },
+        {
+          "symbol": "void MapView::setController(MapController * ctrl)#1",
+          "start": 78,
+          "end": 81
+        },
+        {
+          "symbol": "void MapView::resetInteractionState()#1",
+          "start": 83,
+          "end": 92
+        },
+        {
+          "symbol": "void MapView::resizeEvent(QResizeEvent * event)#1",
+          "start": 94,
+          "end": 97
+        },
+        {
+          "symbol": "void MapView::mouseMoveEvent(QMouseEvent *mouseEvent)#1",
+          "start": 99,
+          "end": 296
+        },
+        {
+          "symbol": "void MapView::mousePressEvent(QMouseEvent *event)#1",
+          "start": 298,
+          "end": 483
+        },
+        {
+          "symbol": "void MapView::mouseReleaseEvent(QMouseEvent *event)#1",
+          "start": 485,
+          "end": 608
+        },
+        {
+          "symbol": "void MapView::dragEnterEvent(QDragEnterEvent * event)#1",
+          "start": 610,
+          "end": 641
+        },
+        {
+          "symbol": "void MapView::dropEvent(QDropEvent * event)#1",
+          "start": 643,
+          "end": 676
+        },
+        {
+          "symbol": "void MapView::moveNewObjectTo(const QPoint & viewportPos)#1",
+          "start": 678,
+          "end": 690
+        },
+        {
+          "symbol": "void MapView::dragMoveEvent(QDragMoveEvent * event)#1",
+          "start": 692,
+          "end": 700
+        },
+        {
+          "symbol": "void MapView::dragLeaveEvent(QDragLeaveEvent * event)#1",
+          "start": 702,
+          "end": 712
+        },
+        {
+          "symbol": "void MapView::setViewports()#1",
+          "start": 714,
+          "end": 725
+        },
+        {
+          "symbol": "MapSceneBase::MapSceneBase(int lvl): QGraphicsScene(nullptr), level(lvl)#1",
+          "start": 731,
+          "end": 735
+        },
+        {
+          "symbol": "void MapSceneBase::initialize(MapController & controller)#1",
+          "start": 737,
+          "end": 743
+        },
+        {
+          "symbol": "void MapSceneBase::createMap()#1",
+          "start": 745,
+          "end": 751
+        },
+        {
+          "symbol": "void MapSceneBase::updateMap()#1",
+          "start": 753,
+          "end": 759
+        },
+        {
+          "symbol": "MapScene::MapScene(int lvl): MapSceneBase(lvl), emptyLayer(this), gridView(this), passabilityView(this), selectionTerrainView(this), terrainView(this), objectsView(this), selectionObjectsView(this), objectPickerView(this), isTerrainSelected(false), isObjectSelected(false)#1",
+          "start": 761,
+          "end": 776
+        },
+        {
+          "symbol": "std::list<AbstractFixedLayer *> MapScene::getStaticLayers()#1",
+          "start": 778,
+          "end": 783
+        },
+        {
+          "symbol": "std::list<AbstractViewportLayer *> MapScene::getDynamicLayers()#1",
+          "start": 785,
+          "end": 797
+        },
+        {
+          "symbol": "void MapScene::createMap()#1",
+          "start": 799,
+          "end": 808
+        },
+        {
+          "symbol": "void MapScene::terrainSelected(bool anythingSelected)#1",
+          "start": 810,
+          "end": 814
+        },
+        {
+          "symbol": "void MapScene::objectSelected(bool anythingSelected)#1",
+          "start": 816,
+          "end": 820
+        },
+        {
+          "symbol": "MinimapScene::MinimapScene(int lvl): MapSceneBase(lvl), minimapView(this), viewport(this)#1",
+          "start": 822,
+          "end": 827
+        },
+        {
+          "symbol": "std::list<AbstractFixedLayer *> MinimapScene::getStaticLayers()#1",
+          "start": 829,
+          "end": 836
+        },
+        {
+          "symbol": "std::list<AbstractViewportLayer *> MinimapScene::getDynamicLayers()#1",
+          "start": 838,
+          "end": 842
+        },
+        {
+          "symbol": "void MinimapScene::createMap()#1",
+          "start": 844,
+          "end": 850
         }
       ]
     }
