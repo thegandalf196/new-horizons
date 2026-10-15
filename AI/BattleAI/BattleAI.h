@@ -98,6 +98,7 @@ public:
 		StageTiming movementExchangeProjectionSetup;
 		StageTiming movementExchangeTargetProbes;
 		/// Nested target-probe subsets, excluded from body closure.
+		StageTiming movementExchangeTargetProbePreparation;
 		StageTiming movementExchangeTargetProbeMainDamage;
 		StageTiming movementExchangeTargetProbeDpsScore;
 		DamageCacheProbeTiming movementExchangeProbeDamageCache;
@@ -123,6 +124,7 @@ public:
 		StageTiming bestTargetWaitedMembership;
 		StageTiming bestTargetWaitedProjectionSetup;
 		StageTiming bestTargetWaitedTargetProbes;
+		StageTiming bestTargetWaitedTargetProbePreparation;
 		StageTiming bestTargetWaitedTargetProbeMainDamage;
 		StageTiming bestTargetWaitedTargetProbeDpsScore;
 		DamageCacheProbeTiming bestTargetWaitedProbeDamageCache;
@@ -142,6 +144,7 @@ public:
 		StageTiming bestTargetNormalMembership;
 		StageTiming bestTargetNormalProjectionSetup;
 		StageTiming bestTargetNormalTargetProbes;
+		StageTiming bestTargetNormalTargetProbePreparation;
 		StageTiming bestTargetNormalTargetProbeMainDamage;
 		StageTiming bestTargetNormalTargetProbeDpsScore;
 		DamageCacheProbeTiming bestTargetNormalProbeDamageCache;

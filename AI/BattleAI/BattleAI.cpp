@@ -128,6 +128,7 @@ struct CBattleAI::TimingState
 			" exchange_membership_calls=%llu exchange_membership_us=%llu"
 			" exchange_projection_setup_calls=%llu exchange_projection_setup_us=%llu"
 			" exchange_target_probe_calls=%llu exchange_target_probe_us=%llu"
+			" exchange_target_probe_preparation_calls=%llu exchange_target_probe_preparation_us=%llu"
 			" exchange_target_probe_main_damage_calls=%llu exchange_target_probe_main_damage_us=%llu"
 			" exchange_target_probe_dps_score_calls=%llu exchange_target_probe_dps_score_us=%llu"
 			" exchange_applied_attack_calls=%llu exchange_applied_attack_us=%llu"
@@ -142,6 +143,7 @@ struct CBattleAI::TimingState
 			" best_target_waited_membership_calls=%llu best_target_waited_membership_us=%llu"
 			" best_target_waited_projectionsetup_calls=%llu best_target_waited_projectionsetup_us=%llu"
 			" best_target_waited_targetprobes_calls=%llu best_target_waited_targetprobes_us=%llu"
+			" best_target_waited_target_probe_preparation_calls=%llu best_target_waited_target_probe_preparation_us=%llu"
 			" best_target_waited_target_probe_main_damage_calls=%llu best_target_waited_target_probe_main_damage_us=%llu"
 			" best_target_waited_target_probe_dps_score_calls=%llu best_target_waited_target_probe_dps_score_us=%llu"
 			" best_target_waited_appliedattacks_calls=%llu best_target_waited_appliedattacks_us=%llu"
@@ -154,6 +156,7 @@ struct CBattleAI::TimingState
 			" best_target_normal_membership_calls=%llu best_target_normal_membership_us=%llu"
 			" best_target_normal_projectionsetup_calls=%llu best_target_normal_projectionsetup_us=%llu"
 			" best_target_normal_targetprobes_calls=%llu best_target_normal_targetprobes_us=%llu"
+			" best_target_normal_target_probe_preparation_calls=%llu best_target_normal_target_probe_preparation_us=%llu"
 			" best_target_normal_target_probe_main_damage_calls=%llu best_target_normal_target_probe_main_damage_us=%llu"
 			" best_target_normal_target_probe_dps_score_calls=%llu best_target_normal_target_probe_dps_score_us=%llu"
 			" best_target_normal_appliedattacks_calls=%llu best_target_normal_appliedattacks_us=%llu"
@@ -194,6 +197,8 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->movementExchangeProjectionSetup.totalMicroseconds),
 			static_cast<unsigned long long>(result->movementExchangeTargetProbes.calls),
 			static_cast<unsigned long long>(result->movementExchangeTargetProbes.totalMicroseconds),
+			static_cast<unsigned long long>(result->movementExchangeTargetProbePreparation.calls),
+			static_cast<unsigned long long>(result->movementExchangeTargetProbePreparation.totalMicroseconds),
 			static_cast<unsigned long long>(result->movementExchangeTargetProbeMainDamage.calls),
 			static_cast<unsigned long long>(result->movementExchangeTargetProbeMainDamage.totalMicroseconds),
 			static_cast<unsigned long long>(result->movementExchangeTargetProbeDpsScore.calls),
@@ -224,6 +229,8 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->bestTargetWaitedProjectionSetup.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbes.calls),
 			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbes.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbePreparation.calls),
+			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbePreparation.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbeMainDamage.calls),
 			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbeMainDamage.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetWaitedTargetProbeDpsScore.calls),
@@ -247,6 +254,8 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->bestTargetNormalProjectionSetup.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetNormalTargetProbes.calls),
 			static_cast<unsigned long long>(result->bestTargetNormalTargetProbes.totalMicroseconds),
+			static_cast<unsigned long long>(result->bestTargetNormalTargetProbePreparation.calls),
+			static_cast<unsigned long long>(result->bestTargetNormalTargetProbePreparation.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetNormalTargetProbeMainDamage.calls),
 			static_cast<unsigned long long>(result->bestTargetNormalTargetProbeMainDamage.totalMicroseconds),
 			static_cast<unsigned long long>(result->bestTargetNormalTargetProbeDpsScore.calls),
@@ -516,6 +525,7 @@ public:
 			accumulateSelection(state->summary.movementExchangeMembership, exchange.membership);
 			accumulateSelection(state->summary.movementExchangeProjectionSetup, exchange.projectionSetup);
 			accumulateSelection(state->summary.movementExchangeTargetProbes, exchange.targetProbes);
+			accumulateSelection(state->summary.movementExchangeTargetProbePreparation, exchange.targetProbePreparation);
 			accumulateSelection(state->summary.movementExchangeTargetProbeMainDamage, exchange.targetProbeMainDamage);
 			accumulateSelection(state->summary.movementExchangeTargetProbeDpsScore, exchange.targetProbeDpsScore);
 			if(traceRequested)
@@ -542,6 +552,7 @@ public:
 			accumulateSelection(state->summary.bestTargetWaitedMembership, bestTarget.waitedDetails.membership);
 			accumulateSelection(state->summary.bestTargetWaitedProjectionSetup, bestTarget.waitedDetails.projectionSetup);
 			accumulateSelection(state->summary.bestTargetWaitedTargetProbes, bestTarget.waitedDetails.targetProbes);
+			accumulateSelection(state->summary.bestTargetWaitedTargetProbePreparation, bestTarget.waitedDetails.targetProbePreparation);
 			accumulateSelection(state->summary.bestTargetWaitedTargetProbeMainDamage, bestTarget.waitedDetails.targetProbeMainDamage);
 			accumulateSelection(state->summary.bestTargetWaitedTargetProbeDpsScore, bestTarget.waitedDetails.targetProbeDpsScore);
 			if(traceRequested)
@@ -562,6 +573,7 @@ public:
 			accumulateSelection(state->summary.bestTargetNormalMembership, bestTarget.normalDetails.membership);
 			accumulateSelection(state->summary.bestTargetNormalProjectionSetup, bestTarget.normalDetails.projectionSetup);
 			accumulateSelection(state->summary.bestTargetNormalTargetProbes, bestTarget.normalDetails.targetProbes);
+			accumulateSelection(state->summary.bestTargetNormalTargetProbePreparation, bestTarget.normalDetails.targetProbePreparation);
 			accumulateSelection(state->summary.bestTargetNormalTargetProbeMainDamage, bestTarget.normalDetails.targetProbeMainDamage);
 			accumulateSelection(state->summary.bestTargetNormalTargetProbeDpsScore, bestTarget.normalDetails.targetProbeDpsScore);
 			if(traceRequested)

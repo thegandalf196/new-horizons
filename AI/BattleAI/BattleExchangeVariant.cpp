@@ -109,7 +109,8 @@ public:
 		if(timing->collectProbeDamageCache)
 			timing->targetProbeDamageCache.accumulate(local.targetProbeDamageCache);
 		// Nested subsets are aggregated separately, never added to classified body time.
-		for(auto member : {&ExchangeTiming::targetProbeMainDamage, &ExchangeTiming::targetProbeDpsScore})
+		for(auto member : {&ExchangeTiming::targetProbePreparation,
+			&ExchangeTiming::targetProbeMainDamage, &ExchangeTiming::targetProbeDpsScore})
 		{
 			const auto & sample = local.*member;
 			auto & aggregate = (*timing).*member;
@@ -860,6 +861,11 @@ float BattleExchangeVariant::trackAttack(
 	if(!attacker || attacker->armorerLastStandEndedActivation)
 		return 0;
 
+	// A nonadditive target-probe prefix. Early reaction returns finalize by RAII;
+	// applied/null-sink paths read no clocks and invalid actors keep zero samples.
+	MovementExchangeScope preparationMeasurement(
+		evaluateOnly && probeTiming ? probeTiming->preparation : nullptr);
+
 	// Future exchange actors need the same move-before-hit reaction forecast
 	// as the selected action. Leave the historical shortcut unchanged when no
 	// ready reactor is involved, and never mutate evaluateOnly's parent branch.
@@ -979,6 +985,7 @@ float BattleExchangeVariant::trackAttack(
 			target->armorerLastStandEndedActivation = true;
 	};
 
+	preparationMeasurement.finish();
 	int64_t attackDamage;
 	{
 		MovementExchangeScope damageMeasurement(evaluateOnly && probeTiming ? probeTiming->mainDamage : nullptr);
@@ -1974,7 +1981,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 						const BattleTargetProbeTiming probeTiming{
 							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeMainDamage),
 							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeDpsScore),
-							measurement.probeDamageCache()};
+							measurement.probeDamageCache(),
+							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbePreparation)};
 						return v.trackAttack(attacker, stackWithBonuses, shooting, isOur,
 							damageCache, exchangeBattle, true, true, &readyOverwatch, timing ? &probeTiming : nullptr);
 					});
