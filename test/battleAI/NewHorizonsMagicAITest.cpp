@@ -34,6 +34,8 @@
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/Problem.h"
+#include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/callback/GameRandomizer.h"
 
 #include <chrono>
 
@@ -344,6 +346,7 @@ protected:
 	bool useControlledBlast = false;
 	bool useFocusMagic = false;
 	bool historicalCounterspell = false;
+	bool historicalSacrifice = false;
 	int savedMagicRulesVersion = 0;
 	std::vector<std::string> fixtureActivePerkIds;
 
@@ -356,13 +359,26 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, legacyMagicRules(savedMagicRulesVersion));
 		else if(useSavedV3Formula)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, savedV3FormulaRules());
-		else if(useCurrentMagicRules || useLegacyTemporalField)
+		else if(useCurrentMagicRules || useLegacyTemporalField || historicalSacrifice)
 		{
 			JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 			if(useLegacyTemporalField)
 				rules["spells"].Struct().erase("new-horizons:massSlow");
 			if(historicalCounterspell)
 				rules["spells"]["new-horizons:counterspell"].Struct().erase("active");
+			if(historicalSacrifice)
+			{
+				// Older captured-v3 rules omitted heroAccess. Only this historical
+				// fixture may exercise the retired Sacrifice execution path.
+				ASSERT_TRUE(rules["spells"]["core:sacrifice"]["heroAccess"].isBool());
+				ASSERT_FALSE(rules["spells"]["core:sacrifice"]["heroAccess"].Bool());
+				const auto canonical = rules;
+				rules["spells"]["core:sacrifice"].Struct().erase("heroAccess");
+				auto restored = rules;
+				restored["spells"]["core:sacrifice"]["heroAccess"] = canonical["spells"]["core:sacrifice"]["heroAccess"];
+				ASSERT_EQ(restored, canonical); // All unrelated captured data is unchanged.
+				newHorizonsMagic::validateRules(rules);
+			}
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 		}
 		if(useRealHeroScale)
@@ -411,6 +427,13 @@ protected:
 		HeroCommandFixture::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires separate native curated preset";
+	}
+
+	std::vector<std::byte> randomizerBytes()
+	{
+		CMemorySerializer wire;
+		wire.oser & *gameHandler->randomizer;
+		return wire.extractBuffer();
 	}
 
 	void prepareVampirismCaster()
@@ -537,7 +560,7 @@ class NewHorizonsLegacyDoomAITest : public NewHorizonsMagicAITest,
 
 TEST_F(NewHorizonsMagicAITest, FocusMagicAIValuesSuccessiveShotsAndSelectsFriendlyShooter)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useFocusMagic = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
 	const SpellID spell(SpellID::decode(newHorizonsSorcery::FOCUS_MAGIC_SPELL));
@@ -587,14 +610,16 @@ TEST_F(NewHorizonsMagicAITest, FocusMagicAIValuesSuccessiveShotsAndSelectsFriend
 
 TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithoutFollowUpAttacks)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto id : initialSpells)
 		attackerSideHero->removeSpellFromSpellbook(id);
-	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
-	const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
+	// This generic damage-credit witness needs a positive flat hit on even a
+	// one-HP victim; current percentage-HP Implosion correctly floors it to zero.
+	attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+	const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER,
 		2 * attackerSideHero->getEffectPowerDivisor(spell), ChangeValueMode::ABSOLUTE);
 	setTestSpellPointTotal(attackerSideHero, 1000);
@@ -667,7 +692,7 @@ TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithou
 		evaluator.selectStackAction(active);
 		ASSERT_TRUE(evaluator.attemptCastingSpell(active));
 		ASSERT_EQ(callback->submitted.size(), 1u);
-		EXPECT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
+		EXPECT_EQ(callback->submitted.front().spell, SpellID::MAGIC_ARROW);
 		const auto target = callback->submitted.front().getTarget(battle());
 		ASSERT_EQ(target.size(), 1u);
 		EXPECT_EQ(target.front().unitValue, valuable);
@@ -948,7 +973,7 @@ TEST_F(NewHorizonsMagicAITest, SpellLockDoesNotBlockNonmagicalCreatureAbilityInR
 
 TEST_F(NewHorizonsMagicAITest, RepeatedMovementEvaluationWithSavedPerksIsStableAndReadOnly)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useSavedPerkRules = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
 
@@ -1253,7 +1278,7 @@ INSTANTIATE_TEST_SUITE_P(CommandRules, NewHorizonsDenseMagicAITest, ::testing::B
 
 TEST_F(NewHorizonsMagicAITest, PhantomArmyValuesTemporaryCombatPowerAndChoosesTheStrongestLegalSource)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
 
@@ -1503,7 +1528,7 @@ TEST_F(NewHorizonsMagicAITest, CounterspellAIRecognizesEnemyHatOnlyLevelFiveSpel
 
 TEST_F(NewHorizonsMagicAITest, MetamagicAIRetainsAllowanceInsteadOfCastingHarmfulFollowup)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
 
@@ -1542,14 +1567,38 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIRetainsAllowanceInsteadOfCastingHarmfu
 	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 	gameHandler->sendAndApply(activate);
 
-	// This is the state after the ordinary triggering spell.  The follow-up is
-	// legal even though the ordinary hero-spell budget is already spent.
+	// Earn the real typed continuation; writing legacy side counters does not
+	// create a METAMAGIC grant in a current Commands battle.
+	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+	BattleAction trigger;
+	trigger.actionType = EActionType::HERO_SPELL;
+	trigger.side = BattleSide::ATTACKER;
+	trigger.spell = SpellID::HASTE;
+	trigger.aimToUnit(active);
+	const auto ordinary = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, trigger.spell);
+	ASSERT_TRUE(ordinary.has_value());
+	ASSERT_EQ(ordinary->source, HeroActionAllowanceState::GrantSource::ROUND);
+	const auto triggerCost = battle()->battleGetSpellCost(SpellID(SpellID::HASTE).toSpell(), attackerSideHero);
+	const auto manaBeforeTrigger = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), trigger));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeTrigger - triggerCost);
+	attackerSideHero->removeSpellFromSpellbook(SpellID::HASTE);
+	ASSERT_EQ(attackerSideHero->getSpellsInSpellbook(), std::set<SpellID>{SpellID::DISPEL});
 	auto & side = battle()->getSide(BattleSide::ATTACKER);
-	side.castSpellsCount = 1;
-	side.metamagicPendingCount = 1;
-	side.metamagicFirstSpell = SpellID::HASTE;
-	side.metamagicFirstTargetUnitId = newHorizonsMagic::INVALID_METAMAGIC_TARGET;
-	side.metamagicSequenceSpells = {SpellID::HASTE};
+	const auto earned = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::DISPEL);
+	ASSERT_TRUE(earned.has_value());
+	ASSERT_EQ(earned->allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
+	ASSERT_EQ(earned->source, HeroActionAllowanceState::GrantSource::METAMAGIC);
+	ASSERT_TRUE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER, SpellID::DISPEL));
+	const auto pendingBeforeEvaluation = side.metamagicPendingCount;
+	ASSERT_GT(pendingBeforeEvaluation, 0);
+	ASSERT_EQ(side.metamagicUsesConsumed, 0);
+	ASSERT_FALSE(side.metamagicGrandUsed);
+	const auto allowancesBeforeEvaluation = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto rngBeforeEvaluation = randomizerBytes();
+	const auto manaBeforeEvaluation = attackerSideHero->getManaAvailable();
+	const auto activeBeforeEvaluation = active->acquireState()->save();
+	const auto enemyBeforeEvaluation = enemy->acquireState()->save();
 
 	const auto * dispel = SpellID(SpellID::DISPEL).toSpell();
 	spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, dispel);
@@ -1563,21 +1612,32 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIRetainsAllowanceInsteadOfCastingHarmfu
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
 		BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active);
-	EXPECT_FALSE(evaluator.attemptCastingSpell(active));
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_TRUE(callback->submitted.empty());
 	EXPECT_EQ(side.metamagicPendingCount, 1);
 	EXPECT_EQ(side.metamagicUsesConsumed, 0);
+	EXPECT_EQ(side.metamagicPendingCount, pendingBeforeEvaluation);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowancesBeforeEvaluation);
+	EXPECT_EQ(randomizerBytes(), rngBeforeEvaluation);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeEvaluation);
+	EXPECT_EQ(active->acquireState()->save(), activeBeforeEvaluation);
+	EXPECT_EQ(enemy->acquireState()->save(), enemyBeforeEvaluation);
 }
 
 TEST_F(NewHorizonsMagicAITest, MetamagicAIFirstSequenceDoesNotRequestGrand)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
 
 	const auto metamagic = SecondarySkill::decode("new-horizons:metamagic");
 	ASSERT_GE(metamagic, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 3, ChangeValueMode::ABSOLUTE);
+	// Match the validated tier setup used by NewHorizonsMetamagicTest.
+	// Neither prerequisite changes this Implosion follow-up.
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneAcquisition"});
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.echoedDuration"});
 	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.grandMetamagic"});
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -1597,18 +1657,61 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIFirstSequenceDoesNotRequestGrand)
 		if(unit != active && unit != enemy)
 			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 	gameHandler->sendAndApply(remove);
+	// Isolate the first-sequence cast metadata, not movement-versus-spell strength:
+	// keep the same stack/position/count/SP and no available creature attack.
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	ASSERT_EQ(active->getMovementRange(), 0);
+	ASSERT_FALSE(active->canShoot());
 	BattleSetActiveStack activate;
 	activate.battleID = BattleID(0);
 	activate.stack = active->unitId();
 	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 	gameHandler->sendAndApply(activate);
 
-	auto & metamagicState = battle()->getSide(BattleSide::ATTACKER);
-	metamagicState.castSpellsCount = 1;
-	metamagicState.metamagicPendingCount = 1;
-	metamagicState.metamagicFirstSpell = SpellID::IMPLOSION;
-	metamagicState.metamagicFirstTargetUnitId = enemy->unitId();
-	metamagicState.metamagicSequenceSpells = {SpellID::IMPLOSION};
+	const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
+	ASSERT_NE(spell, nullptr);
+	BattleAction trigger;
+	trigger.actionType = EActionType::HERO_SPELL;
+	trigger.side = BattleSide::ATTACKER;
+	trigger.spell = SpellID::IMPLOSION;
+	trigger.aimToUnit(enemy);
+	const auto ordinary = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, trigger.spell);
+	ASSERT_TRUE(ordinary.has_value());
+	ASSERT_EQ(ordinary->source, HeroActionAllowanceState::GrantSource::ROUND);
+	spells::BattleCast legalTrigger(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	ASSERT_TRUE(spell->battleMechanics(&legalTrigger)->canBeCastAt({spells::Destination(enemy)}));
+	const auto triggerCost = battle()->battleGetSpellCost(spell, attackerSideHero);
+	const auto manaBeforeTrigger = attackerSideHero->getManaAvailable();
+	const auto healthBeforeTrigger = enemy->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), trigger));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeTrigger - triggerCost);
+	ASSERT_TRUE(enemy->alive());
+	ASSERT_LT(enemy->getAvailableHealth(), healthBeforeTrigger);
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	auto & metamagicState = side;
+	const auto earned = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::IMPLOSION);
+	ASSERT_TRUE(earned.has_value());
+	ASSERT_EQ(earned->allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
+	ASSERT_EQ(earned->source, HeroActionAllowanceState::GrantSource::METAMAGIC);
+	ASSERT_TRUE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER, SpellID::IMPLOSION));
+	spells::BattleCast legalFollowup(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	legalFollowup.setMetamagicFollowup(true);
+	legalFollowup.setMetamagicTargetUnitId(enemy->unitId());
+	ASSERT_TRUE(spell->battleMechanics(&legalFollowup)->canBeCastAt({spells::Destination(enemy)}));
+	const auto pendingBeforeEvaluation = side.metamagicPendingCount;
+	ASSERT_GT(pendingBeforeEvaluation, 0);
+	ASSERT_EQ(side.metamagicUsesConsumed, 0);
+	ASSERT_FALSE(side.metamagicGrandUsed);
+	const auto allowancesBeforeEvaluation = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto rngBeforeEvaluation = randomizerBytes();
+	const auto manaBeforeEvaluation = attackerSideHero->getManaAvailable();
+	const auto activeBeforeEvaluation = active->acquireState()->save();
+	const auto enemyBeforeEvaluation = enemy->acquireState()->save();
+	const auto healthBeforeFollowup = enemy->getAvailableHealth();
 
 	auto environment = std::make_shared<MagicEnvironment>(gameState());
 	auto callback = std::make_shared<MagicCallback>();
@@ -1616,13 +1719,26 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIFirstSequenceDoesNotRequestGrand)
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
 		BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active);
-	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
 	EXPECT_TRUE(callback->submitted.front().metamagicFollowup);
 	EXPECT_FALSE(callback->submitted.front().metamagicGrand);
-	EXPECT_EQ(metamagicState.metamagicPendingCount, 1);
+	EXPECT_EQ(metamagicState.metamagicPendingCount, pendingBeforeEvaluation);
 	EXPECT_FALSE(metamagicState.metamagicGrandUsed);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowancesBeforeEvaluation);
+	EXPECT_EQ(randomizerBytes(), rngBeforeEvaluation);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeEvaluation);
+	EXPECT_EQ(active->acquireState()->save(), activeBeforeEvaluation);
+	EXPECT_EQ(enemy->acquireState()->save(), enemyBeforeEvaluation);
+	const auto selected = callback->submitted.front();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeEvaluation - battle()->battleGetSpellCost(spell, attackerSideHero));
+	EXPECT_LT(enemy->getAvailableHealth(), healthBeforeFollowup);
+	EXPECT_EQ(side.metamagicPendingCount, pendingBeforeEvaluation - 1);
+	EXPECT_EQ(side.metamagicUsesConsumed, 1);
+	EXPECT_FALSE(side.metamagicGrandUsed);
 }
 
 TEST_F(NewHorizonsMagicAITest, MetamagicAIThirdUsedSequenceSubmitsSpellWithoutManualGrandFlag)
@@ -1634,6 +1750,9 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIThirdUsedSequenceSubmitsSpellWithoutMa
 	const auto metamagic = SecondarySkill::decode("new-horizons:metamagic");
 	ASSERT_GE(metamagic, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 3, ChangeValueMode::ABSOLUTE);
+	// Same validated predecessors as the native Grand fixture.
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneAcquisition"});
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.echoedDuration"});
 	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.grandMetamagic"});
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -1643,6 +1762,7 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIThirdUsedSequenceSubmitsSpellWithoutMa
 	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
 	attackerSideHero->addSpellToSpellbook(SpellID::FIREBALL);
+	attackerSideHero->addSpellToSpellbook(SpellID::SLOW);
 	setTestSpellPointTotal(attackerSideHero, 1000);
 
 	ASSERT_NO_FATAL_FAILURE(startBattle());
@@ -1661,20 +1781,84 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIThirdUsedSequenceSubmitsSpellWithoutMa
 	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 	gameHandler->sendAndApply(activate);
 
+	// Reuse the native Grand test's paid Haste -> Slow pattern. These are
+	// controlled round packets, not a claim of an ordinary graphical journey.
+	// Accumulated Haste/Slow (including Echoed Duration) are real cast effects.
+	const auto acceptPaid = [&](SpellID spellId, const CStack * target, bool followup)
+	{
+		const auto allowance = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, spellId);
+		EXPECT_TRUE(allowance.has_value());
+		if(!allowance)
+			return false;
+		EXPECT_EQ(allowance->allowance, followup ? HeroActionAllowanceState::AllowanceKind::SPELL
+			: HeroActionAllowanceState::AllowanceKind::HERO);
+		EXPECT_EQ(allowance->source, followup ? HeroActionAllowanceState::GrantSource::METAMAGIC
+			: HeroActionAllowanceState::GrantSource::ROUND);
+		const auto * spell = spellId.toSpell();
+		spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, spell);
+		legal.setMetamagicFollowup(followup);
+		legal.setMetamagicTargetUnitId(target->unitId());
+		const bool legalTarget = spell->battleMechanics(&legal)->canBeCastAt({spells::Destination(target)});
+		EXPECT_TRUE(legalTarget);
+		if(!legalTarget)
+			return false;
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = spellId;
+		action.metamagicFollowup = followup;
+		action.aimToUnit(target);
+		const auto cost = battle()->battleGetSpellCost(spell, attackerSideHero);
+		const auto manaBefore = attackerSideHero->getManaAvailable();
+		const bool accepted = gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
+		EXPECT_TRUE(accepted);
+		if(accepted)
+		{
+			EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - cost);
+		}
+		return accepted;
+	};
 	auto & metamagicState = battle()->getSide(BattleSide::ATTACKER);
-	metamagicState.castSpellsCount = 1;
-	metamagicState.metamagicPendingCount = 1;
-	metamagicState.metamagicFirstSpell = SpellID::HASTE;
-	metamagicState.metamagicFirstTargetUnitId = newHorizonsMagic::INVALID_METAMAGIC_TARGET;
-	metamagicState.metamagicSequenceSpells = {SpellID::HASTE};
-	metamagicState.metamagicUsesConsumed = 2;
-	// Mirror the already accepted base cast in the typed action ledger too.
-	auto & ledger = metamagicState.heroActionAllowances;
-	const auto base = ledger.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, battle()->getRound());
-	ASSERT_TRUE(base);
-	ASSERT_TRUE(ledger.consumeAllowance(base->grantId, HeroActionAllowanceState::ActionKind::SPELL, battle()->getRound()));
-	ledger.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
-		HeroActionAllowanceState::GrantSource::METAMAGIC, battle()->getRound());
+	for(int used = 0; used < 2; ++used)
+	{
+		if(used != 0)
+		{
+			advanceRound();
+			gameHandler->sendAndApply(activate);
+		}
+		ASSERT_TRUE(acceptPaid(SpellID::HASTE, active, false));
+		ASSERT_EQ(metamagicState.metamagicUsesConsumed, used);
+		ASSERT_TRUE(acceptPaid(SpellID::SLOW, enemy, true));
+		ASSERT_EQ(metamagicState.metamagicUsesConsumed, used + 1);
+		ASSERT_EQ(metamagicState.metamagicPendingCount, 0);
+		ASSERT_FALSE(metamagicState.metamagicGrandUsed);
+	}
+	advanceRound();
+	gameHandler->sendAndApply(activate);
+	ASSERT_TRUE(acceptPaid(SpellID::HASTE, active, false));
+	ASSERT_EQ(metamagicState.metamagicUsesConsumed, 2);
+	ASSERT_EQ(metamagicState.metamagicPendingCount, 1);
+	ASSERT_FALSE(metamagicState.metamagicGrandUsed);
+	const auto earned = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::IMPLOSION);
+	ASSERT_TRUE(earned.has_value());
+	ASSERT_EQ(earned->source, HeroActionAllowanceState::GrantSource::METAMAGIC);
+	ASSERT_EQ(earned->allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
+	ASSERT_TRUE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER, SpellID::IMPLOSION));
+	// Isolate the metadata decision, not competition between different spells.
+	for(const auto spellId : {SpellID::HASTE, SpellID::SLOW, SpellID::FIREBALL})
+		attackerSideHero->removeSpellFromSpellbook(SpellID(spellId));
+	ASSERT_EQ(attackerSideHero->getSpellsInSpellbook(), std::set<SpellID>{SpellID::IMPLOSION});
+	const auto * implosion = SpellID(SpellID::IMPLOSION).toSpell();
+	spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, implosion);
+	legal.setMetamagicFollowup(true);
+	legal.setMetamagicTargetUnitId(enemy->unitId());
+	ASSERT_TRUE(implosion->battleMechanics(&legal)->canBeCastAt({spells::Destination(enemy)}));
+	const auto allowancesBefore = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto rngBefore = randomizerBytes();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto healthBefore = enemy->getAvailableHealth();
+	const auto activeBefore = active->acquireState()->save();
+	const auto enemyBefore = enemy->acquireState()->save();
 
 	auto environment = std::make_shared<MagicEnvironment>(gameState());
 	auto callback = std::make_shared<MagicCallback>();
@@ -1682,7 +1866,8 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIThirdUsedSequenceSubmitsSpellWithoutMa
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
 		BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active);
-	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
 	EXPECT_TRUE(callback->submitted.front().metamagicFollowup);
@@ -1691,6 +1876,23 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIThirdUsedSequenceSubmitsSpellWithoutMa
 	// real allowance or mark Grand used before the server accepts the cast.
 	EXPECT_EQ(metamagicState.metamagicUsesConsumed, 2);
 	EXPECT_FALSE(metamagicState.metamagicGrandUsed);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowancesBefore);
+	EXPECT_EQ(randomizerBytes(), rngBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(active->acquireState()->save(), activeBefore);
+	EXPECT_EQ(enemy->acquireState()->save(), enemyBefore);
+	const auto action = callback->submitted.front();
+	const auto cost = battle()->battleGetSpellCost(implosion, attackerSideHero);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - cost);
+	EXPECT_LT(enemy->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(metamagicState.metamagicUsesConsumed, 3);
+	EXPECT_TRUE(metamagicState.metamagicGrandUsed);
+	EXPECT_EQ(metamagicState.metamagicPendingCount, 1);
+	const auto grand = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::IMPLOSION);
+	ASSERT_TRUE(grand.has_value());
+	EXPECT_EQ(grand->allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
+	EXPECT_EQ(grand->source, HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND);
 }
 
 TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedStateFromLiveAimIdentity)
@@ -1824,7 +2026,7 @@ TEST_F(NewHorizonsMagicAITest, RemoveObstacleEnumeratesNormalizedLocationAndRemo
 
 TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIProducesCompactOrientedActionServerAcceptsIt)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -1926,7 +2128,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIProducesCompactOrientedActionS
 
 TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIAvoidsFriendlyGroundExposure)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -1988,7 +2190,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIAvoidsFriendlyGroundExposure)
 
 TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIRejectsZeroHostilePressure)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2032,7 +2234,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIRejectsZeroHostilePressure)
 
 TEST_F(NewHorizonsMagicAITest, LandMineAIUsesExactSpellPowerCountAndOnlyLiveLegalHexes)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2096,7 +2298,7 @@ TEST_F(NewHorizonsMagicAITest, LandMineAIUsesExactSpellPowerCountAndOnlyLiveLega
 
 TEST_F(NewHorizonsMagicAITest, LandMineAISelectsHostileGroundApproachPressureAndServerAcceptsAction)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2163,7 +2365,7 @@ TEST_F(NewHorizonsMagicAITest, LandMineAISelectsHostileGroundApproachPressureAnd
 
 TEST_F(NewHorizonsMagicAITest, LandMinePlacementIgnoresImmuneClusterForSusceptibleApproach)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2218,7 +2420,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementIgnoresImmuneClusterForSusceptib
 
 TEST_F(NewHorizonsMagicAITest, LandMinePlacementUsesDamageScaleAndSkipsTinyOrImmuneTargets)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2281,7 +2483,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementUsesDamageScaleAndSkipsTinyOrImm
 
 TEST_F(NewHorizonsMagicAITest, LandMinePlacementCountsEachConsumableMineOnceAcrossEnemies)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2328,7 +2530,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementCountsEachConsumableMineOnceAcro
 
 TEST_F(NewHorizonsMagicAITest, LandMinePlacementUsesMaximumWeightDistinctMineAssignment)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2375,7 +2577,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementUsesMaximumWeightDistinctMineAss
 
 TEST_F(NewHorizonsMagicAITest, LandMinePlacementIsInvariantToTargetVectorPermutation)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2417,7 +2619,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementIsInvariantToTargetVectorPermuta
 
 TEST_F(NewHorizonsMagicAITest, LandMineDoesNotOutrankImmediateMagicArrowOnTheSameApproach)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2898,7 +3100,7 @@ TEST_F(NewHorizonsMagicAITest, LandMineAILeavesLegacyNoTargetSelectionUntouched)
 
 TEST_F(NewHorizonsMagicAITest, QuicksandAISelectsExactLegalGroundAndValuesHostileApproach)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	attackerSideHero->addSpellToSpellbook(SpellID::QUICKSAND);
@@ -3097,8 +3299,12 @@ TEST_F(NewHorizonsMagicAITest, ForceFieldCastEvaluationCreatesIsolatedBlockingOb
 
 TEST_F(NewHorizonsMagicAITest, SacrificeAccountsForRemovedVictimAndKeepsHypotheticChangesPrivate)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
+	// Historical captured-policy compatibility, not current-roster availability.
+	historicalSacrifice = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	ASSERT_TRUE(battle()->getMagicRules()["spells"]["core:sacrifice"]["heroAccess"].isNull());
+	ASSERT_FALSE(battle()->getMagicRules()["spells"]["core:sacrifice"]["ordinaryAcquisition"].Bool());
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto spell : knownSpells)
 		attackerSideHero->removeSpellFromSpellbook(spell);
@@ -3175,9 +3381,68 @@ TEST_F(NewHorizonsMagicAITest, SacrificeAccountsForRemovedVictimAndKeepsHypothet
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 }
 
+TEST_F(NewHorizonsMagicAITest, CurrentSacrificeRosterRejectsInscribedHeroCastWithoutMutation)
+{
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const JsonNode canonical(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_EQ(battle()->getMagicRules(), canonical);
+	ASSERT_TRUE(canonical["spells"]["core:sacrifice"]["heroAccess"].isBool());
+	ASSERT_FALSE(canonical["spells"]["core:sacrifice"]["heroAccess"].Bool());
+	ASSERT_FALSE(canonical["spells"]["core:sacrifice"]["ordinaryAcquisition"].Bool());
+	const auto * spell = SpellID(SpellID::SACRIFICE).toSpell();
+	ASSERT_NE(spell, nullptr);
+	attackerSideHero->addSpellToSpellbook(SpellID::SACRIFICE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:shadowMagic")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+	ASSERT_TRUE(attackerSideHero->hasSpellbook());
+	ASSERT_TRUE(attackerSideHero->getSpellsInSpellbook().contains(SpellID::SACRIFICE));
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByHeroRoster(battle()->getMagicRules(), spell->getId()));
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(spell));
+	EXPECT_FALSE(spell->canBeCast(battle(), spells::Mode::HERO, attackerSideHero));
+
+	auto * victim = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(2, 5), 300);
+	auto * corpse = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(3, 5), 1);
+	auto deadState = corpse->acquireState();
+	auto damage = corpse->getAvailableHealth();
+	deadState->damage(damage);
+	BattleUnitsChanged setup;
+	setup.battleID = BattleID(0);
+	setup.changedStacks.emplace_back(corpse->unitId(), UnitChanges::EOperation::UPDATE);
+	setup.changedStacks.back().data = deadState->save();
+	setup.changedStacks.back().healthDelta = -damage;
+	gameHandler->sendAndApply(setup);
+	ASSERT_FALSE(corpse->alive());
+	ASSERT_FALSE(corpse->isGhost());
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = victim->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	const auto victimBefore = victim->acquireState()->save();
+	const auto corpseBefore = corpse->acquireState()->save();
+	const auto rngBefore = randomizerBytes();
+	const auto allowancesBefore = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::SACRIFICE;
+	action.setTarget(battle::Target{battle::Destination(corpse), battle::Destination(victim)});
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(victim->acquireState()->save(), victimBefore);
+	EXPECT_EQ(corpse->acquireState()->save(), corpseBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+	EXPECT_EQ(randomizerBytes(), rngBefore);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowancesBefore);
+	EXPECT_EQ(battle()->getMagicRules(), canonical);
+}
+
 TEST_F(NewHorizonsMagicAITest, TeleportEvaluatorMovesSlowArmyToDistantThreatWithoutMutatingLivePreview)
 {
-	useCommands = false; // Isolate the already-authored spell, not a new command rule.
+	neutralizeCommandEffects = true; // Isolate the already-authored spell, not a new command rule.
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto spell : knownSpells)
@@ -3225,7 +3490,7 @@ TEST_F(NewHorizonsMagicAITest, TeleportEvaluatorMovesSlowArmyToDistantThreatWith
 
 TEST_F(NewHorizonsMagicAITest, SelectiveDispelPreservesBeneficialEffectWhenFullDispelWouldLoseIt)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto spell : knownSpells)
@@ -3468,7 +3733,8 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAISelectsDistinctMassSlowAndServerAc
 
 TEST_F(NewHorizonsMagicAITest, CureAISelectsAndSubmitsAValidAfflictionThroughHypotheticalCastEvaluation)
 {
-	useCommands = false;
+	// Keep current development/perk capture valid while isolating spell value.
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -3915,7 +4181,7 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIRespectsConsumedBudget)
 
 TEST_F(NewHorizonsMagicAITest, TransfigureMatterAIChoosesPhysicalObstacleAndKeepsLiveBattleUntouched)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto spell : knownSpells)
@@ -4964,7 +5230,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalShadowSorrowAIUsesProjectedRankedMoraleT
 
 TEST_F(NewHorizonsMagicAITest, HexOfPainLowersProjectedAttackValueAndMakesItsCastValuable)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 
@@ -5289,7 +5555,7 @@ TEST_F(NewHorizonsMagicAITest, DoomValuesProjectedAttacksAndAppliesPartialResist
 
 TEST_F(NewHorizonsMagicAITest, FrailtyValuesProjectedPhysicalDamageIncreaseAgainstHighDefenseTarget)
 {
-	useCommands = false;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 
