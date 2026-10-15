@@ -36,15 +36,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "4e22ded995202e1bb9a7f15c489c3be37f1dd29c6c80dd4eac6f7d3c58503582"
     },
-    ".github/workflows/instruction-portability.yml": {
-      "diagnostics": [],
-      "language": "workflow-yaml",
-      "owner": "engine_engineer",
-      "reason": "Unsupported embedded/build-language function parser. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "8de16f569816fdfa4098d7a919085fb6c99fa25ac3f64a58d3329770a5f9db28"
-    },
     ".github/workflows/new-horizons-windows-notices.yml": {
       "diagnostics": [],
       "language": "workflow-yaml",
@@ -2899,6 +2890,12 @@
     }
   },
   "manual_functions": {
+    ".github/workflows/instruction-portability.yml": {
+      "functions": [],
+      "rationale": "Whole-file and all eight embedded run blocks reviewed: command sequences and one conditional assignment block; no shell functions, inline Python bodies or other embedded callable definitions. Jobs and steps invoke separately inventoried scripts.",
+      "review": "IR-WORKFLOW-MANUAL-b2e71cef-20261015",
+      "sha256": "b2e71cef6d297ce3326eeeaf464ed0997e0e50a013cf7fd32a0bb2238dae31a9"
+    },
     "config/lobby.sql": {
       "functions": [],
       "rationale": "Whole-file review: table schema only, no function definitions.",
