@@ -12,13 +12,13 @@ Use a sibling checkout `../new-horizons-docs` or an explicitly configured
 `NH_DOCS_ROOT` outside every public worktree. See `docs/NH_DOCUMENTATION_POLICY.md`
 for document routing, research status and publication rules.
 
-Until migration is verified, `docs/design-sources/New Horizons.md` remains the
-existing canonical gameplay specification, with unintegrated amendments in
-`docs/NEW_HORIZONS_PENDING_CHANGES.md`. Before feature work, also read
+The private repository's `canon/game-design.md` is the canonical gameplay
+specification. Read its index and governing relationships before feature work.
+Keep new amendments in the private library's `proposals/`; the existing public
+Pending Changes document is a legacy migration input, not a second canon.
+Before feature work, also read
 `docs/NEW_HORIZONS_MVP.md`, `docs/NEW_HORIZONS_DESIGN.md` and
 `docs/NH_VERSION_1_0_SCOPE.md` for the existing implementation/release boundaries.
-After private migration, read the private repository's index and maintained canon;
-replace these transitional pointers rather than retaining parallel authorities.
 Research papers inform design but do not override accepted rules. Record accepted
 amendments and incorporate them into the canon. Code describes current behavior,
 not proof that the intended design has been implemented correctly.
@@ -51,9 +51,10 @@ evidence, and remaining work.
 If all eligible tasks are blocked, request the missing decision or resource.
 
 For ambiguous gameplay details, make a reasoned provisional choice and record
-it in `docs/NH_PROVISIONAL_RULE_REVIEW.md` with rationale, code location, and
-verification. Respect settled decisions; specification amendments still belong
-in Pending Changes. Missing resources, external authority, licensing questions,
+it in the private library's `proposals/` with rationale, code location, and
+verification. Respect settled decisions; amendments require accepted decisions
+and incorporation into the private canon. The public provisional-review document
+is a legacy migration input. Missing resources, external authority, licensing questions,
 and crash/corruption risks are not gameplay choices to guess away.
 
 ## Orchestrator and standing specialist team

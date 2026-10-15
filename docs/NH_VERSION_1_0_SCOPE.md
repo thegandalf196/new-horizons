@@ -3,13 +3,14 @@
 ## Authoritative scope clarification
 
 The current user-supplied gameplay authority is
-[New Horizons.md](design-sources/New%20Horizons.md). Detailed system sections
+[private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md). Detailed system sections
 in that document override earlier summary lists and older repository planning.
 The Markdown is the sole canonical design specification. The legacy Overrides audit
 is complete and its historical dispositions remain in
 [NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md); the retired source is not a
-precedence layer. Temporary amendments belong in
-[Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md).
+precedence layer. New amendments belong in the private library's `proposals/`;
+[Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) is a read-only legacy input,
+whose existing accepted decisions remain in effect until incorporated.
 Version 1.0 replaces the seven-tier organization with Core, Elite, and Champion.
 Governors, regional administration, and Caravans are explicitly future work, not
 Version 1.0 dependencies.

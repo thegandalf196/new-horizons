@@ -134,3 +134,10 @@ manual spans. Parser recovery and unsupported dialects are explicit coverage
 gaps, not proof that no long function exists. A pending gap can freeze only
 unchanged pre-existing bytes; editing it requires resolving its function
 inventory before acceptance. Keep the remaining coverage visible until resolved.
+
+The repository-contracts workflow also checks tracked JSONC, text line endings
+and relative includes. Explicit Git attributes preserve intentional Windows CRLF
+and pinned byte inventories; binary packs are not text inputs. Markdown uses the
+existing lint configuration on changed tracked documents; a lint-configuration
+change selects all tracked Markdown. These source checks do not replace native
+or rendered acceptance.

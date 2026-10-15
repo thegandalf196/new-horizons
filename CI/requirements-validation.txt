@@ -1,0 +1,2 @@
+# JSON-with-comments parser used by CI/validate_json.py; input archive pinned.
+jstyleson==0.0.2 --hash=sha256:680003f3b15a2959e4e6a351f3b858e3c07dd3e073a0d54954e34d8ea5e1308e

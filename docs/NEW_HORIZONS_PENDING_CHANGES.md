@@ -1,5 +1,9 @@
 # New Horizons Pending Changes
 
+Read-only legacy migration input. Existing accepted amendments remain in effect
+until incorporated into the private canon; this does not adopt unapproved drafts.
+New proposals and decisions belong in the private design library, not this file.
+
 ## Griffin Elite statistics and Genie wishes — provisional experimental update
 
 Griffin: Attack12, Defense12, Damage7–10, HP45. Royal Griffin: Attack14,
@@ -65,8 +69,8 @@ The historical Daremyth Haste row below is superseded for this new policy.
 
 ## Compressed parent-first perk offers
 
-Integrated into canonical [Skill and perk development](design-sources/New%20Horizons.md#skill-and-perk-development)
-and [Class Skill offer weights](design-sources/New%20Horizons.md#class-skill-offer-weights).
+Integrated into canonical [Skill and perk development](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md#skill-and-perk-development)
+and [Class Skill offer weights](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md#class-skill-offer-weights).
 The earlier allowance for multiple selections from one tier is superseded by
 strict one-per-tier progression. The normalized parent lottery and experimental
 preference ratio `R = 2.0` remain unchanged; one eligible parent now supplies one
@@ -153,7 +157,7 @@ presence rather than dropping it. Actual campaign JSON pools and their outer
 StartInfo/world/lobby envelopes receive the same guard. No 144-hero completeness
 or playable-delivery claim follows from this bounded amendment.
 
-New Horizons.md is the sole canonical design specification. This document
+The private `canon/game-design.md` is the sole canonical design specification. This legacy document
 contains only temporary amendments awaiting integration into its appropriate
 sections; it is not a second permanent specification.
 
@@ -238,7 +242,7 @@ retain their book contents. Captured current specialty math is independent of
 an explicit map book, as with the other accepted conversion families.
 
 | Hero | Retired specialty | Existing successor | Strengthened component |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Ash | Bloodlust | core:fireball | +15% Spell Power damage term |
 | Darkstorn | Stone Skin | new-horizons:hexOfPain | +15% Spell Power flat-damage term |
 | Astral | Hypnotize | new-horizons:phantomArmy | +20% Spell Power Integrity term |
@@ -313,7 +317,7 @@ inscriptions, classes, development, armies, biographies and working specialties.
 Do not grant additional School ranks, variants or specialty bonuses.
 
 | Hero (`core:`) | Retired inscription (`core:`) | Successor |
-|---|---|---|
+| --- | --- | --- |
 | Rion | stoneSkin | new-horizons:guardianSpirit |
 | Aeris | protectAir | new-horizons:holyArmor |
 | Piquedram | shield | core:slow |
@@ -361,7 +365,6 @@ Seize chooses the next remaining friendly slot. Preserve enemy relative ordering
 and unique existing activations. This provisional simultaneous-promotion rule
 does not grant either stack an additional activation.
 
-
 ### Coronius — current offensive starting spell
 
 Provisionally, replace Coronius's retired Slayer default inscription and
@@ -373,7 +376,6 @@ within Rampart's preferred schools without inventing a Masterful spell, hero-lev
 rider or Elite/Champion multiplier. Preserve map-specified books, saved/crossover
 and legacy contexts, class, starting development, armies and biography.
 
-
 ### Plaguebearer — per-tick propagation limit
 
 Provisionally, Plague's normal propagation limit means its existing one
@@ -383,7 +385,6 @@ Capture the effective limit on the initial infection and inherit it on child
 infections. Do not alter damage, duration, number of ticks, resistance or the
 existing contagious chain, and do not retroactively change infections when
 the originating hero's perks change. Keep the normal limit configurable.
-
 
 ### Havoc structural perks — additive damage and ordinary obstacle scope
 
@@ -405,7 +406,6 @@ share a trigger spell with ordinary Land Mine. Fortifications remain their
 existing separate HP domain. AI uses the shared damage getter and branch-visible
 obstacles, never hidden live-state inspection for extra cleanup rewards.
 
-
 ### Mercenary Captain and Loyal Mercenaries — original recruitment cohorts
 
 Provisionally, accepted paid or free neutral joins record their original
@@ -418,7 +418,6 @@ Only positive actually admitted joins qualify; refusal and zero admission do not
 Loyal Mercenaries removes only the faction-mixing penalty contribution for the
 qualifying cohort under its original hero. Undead penalties and Morale immunity
 remain; excluded cohorts do not fabricate a positive faction-unity bonus.
-
 
 ### Rapid Response — earned extra-activation precedence
 
@@ -491,7 +490,7 @@ Provisionally retain each hero's current Basic faction Skill and replace its
 otherwise retired generic starting development with these existing legal choices:
 
 | Hero | Generic starting Skill | Selected Basic perk |
-|---|---|---|
+| --- | --- | --- |
 | Clancy | Basic Logistics | Pathfinding |
 | Piquedram | Basic Logistics | Scouting |
 | Thane | Advanced Learning | Scholar |
@@ -550,7 +549,6 @@ formats must reject unrepresentable state before writing prefix bytes, not lose
 the fourth use silently. Review this provisional clarification after focused
 Basic/Advanced/Expert and saved-state controls. Halon's removed Stone Skin start
 is a separate unimplemented replacement decision, not addressed by this repair.
-
 
 ### Merist and Labetha — provisional defensive specialty replacements
 

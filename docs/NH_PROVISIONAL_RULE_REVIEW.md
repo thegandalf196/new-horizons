@@ -1,6 +1,6 @@
 # New Horizons provisional rule review
 
-This document preserves chosen interpretations, rationale, implementation seams and second-look cases. It is not a specification override or execution diary. Canonical amendments belong in [Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md); current acceptance limits are in [integration gaps](NH_INTEGRATION_GAPS.md). Historical native counts below are bounded evidence for their named checkpoint, not certification of current builds or playable delivery. Raw receipts and earlier candidate states remain privately recoverable.
+This read-only legacy input preserves chosen interpretations, rationale, implementation seams and second-look cases pending private migration. It is not a specification override or execution diary. New proposals and provisional interpretations belong in the private design library; existing accepted decisions remain in effect. Current acceptance limits are in [integration gaps](NH_INTEGRATION_GAPS.md). Historical native counts below are bounded evidence for their named checkpoint, not certification of current builds or playable delivery. Raw receipts and earlier candidate states remain privately recoverable.
 
 ## Griffin Elite reinforcement and target-dependent Genie wishes
 
@@ -796,7 +796,6 @@ unclassified rewards are not silently migrated. Seven cases are authored and
 repaired v2 source review is clear; actual native gates remain pending. Review
 unusual mixed reward components and saved classification migration in Phase2.
 
-
 ## Swift Rebirth — normal birth-round activation
 
 Advance the reborn stack's one normal activation after the acting stack's
@@ -1057,12 +1056,13 @@ Broader casualty/capacity compositions remain Phase2; no rendered claim.
 The user authorizes reasoned provisional gameplay judgments when rules or
 interactions are unclear. Implement and verify the choice, rather than stopping
 the implementation loop for every ambiguity. This ledger identifies situations
-worth a second look; it does not replace the canonical New Horizons.md.
+worth a second look; it does not replace the private canonical `canon/game-design.md`.
 
-For each material choice record the specification clause, behavior, rationale,
-source paths, focused evidence and review scenarios. Preserve resolved entries
-and their eventual disposition. Actual specification amendments belong in
-Pending Changes until integrated. Explicit settled user decisions take priority.
+For future material choices record the specification clause, behavior, rationale,
+source paths, focused evidence and review scenarios in the private library's
+`proposals/`. Preserve existing resolved entries and their eventual disposition
+during migration. Amendments require accepted decisions and integration into the
+private canon. Explicit settled user decisions take priority.
 
 ## Terrain Rebirth selection and modifier composition
 
@@ -1167,7 +1167,6 @@ Hostile Spell Lock counts; protective friendly Spell Lock does not. Time Stop's
 incapacitation and Frenzy's forced zero Defense count as explicit harmful statuses.
 Review mixed-effect classification and simultaneous Poison variants. Metadata
 must be complete before activation; an unregistered helper is not coverage.
-
 
 ## Audited default-development replacement rationale
 

@@ -1,7 +1,7 @@
 # Cabir artwork reference
 
 This is visual direction, not gameplay authority. Gameplay is specified in
-[New Horizons.md](design-sources/New%20Horizons.md).
+the [private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md).
 
 ## Selected identity and motion
 

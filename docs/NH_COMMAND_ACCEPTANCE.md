@@ -1,6 +1,6 @@
 # Orders acceptance contract
 
-Canonical behavior is in [New Horizons.md](design-sources/New%20Horizons.md).
+Canonical behavior is in the [private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md).
 The eight Orders are Charge, Focus Fire, Riposte, Hold the Line, Brace, Protect,
 Flank and Second Wind. Doctrine is not active New Horizons gameplay.
 

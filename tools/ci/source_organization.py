@@ -56,8 +56,11 @@ def proposal(report: dict) -> dict:
 
 
 def apply_manual(report: dict, baseline: dict, read_source, previous: dict | None = None,
-                 old_baseline: dict | None = None) -> list[str]:
-    """Manual records enumerate exact named spans; they are not size exceptions."""
+                 old_baseline: dict | None = None, *, historical_baseline: bool = False) -> list[str]:
+    """Apply span records, not size exceptions.
+
+    Only the previous Git baseline may retain now-resolved frozen evidence.
+    """
     errors = []
     manual = baseline.get('manual_functions', {})
     pending = baseline.get('coverage_pending', {})
@@ -67,13 +70,15 @@ def apply_manual(report: dict, baseline: dict, read_source, previous: dict | Non
             continue
         needs_manual = file['measurement'] == 'manual-required' or bool(file['diagnostics'])
         entry = manual.get(file['path'])
-        if file['path'] in pending and (not needs_manual or entry is not None):
+        gap = pending.get(file['path'], {})
+        valid_gap = (gap.get('sha256') == file['sha256']
+                     and all(isinstance(gap.get(key), str) and gap[key].strip() for key in ('owner', 'reason')))
+        if file['path'] in pending and (entry is not None or not needs_manual
+                                        and not (historical_baseline and valid_gap)):
             errors.append(file['path'] + ': remove resolved/overlapping pending coverage entry')
         if not needs_manual and entry is None:
             continue
-        gap = pending.get(file['path'], {})
-        if (needs_manual and entry is None and gap.get('sha256') == file['sha256']
-                and all(isinstance(gap.get(key), str) and gap[key].strip() for key in ('owner', 'reason'))
+        if (needs_manual and entry is None and valid_gap
                 and old_files.get(file['path'], {}).get('sha256') == file['sha256']
                 and (old_baseline is None or old_baseline.get('coverage_pending', {}).get(file['path']) == gap)):
             file['measurement'] = 'coverage-pending-frozen'
@@ -191,7 +196,9 @@ def main(argv=None) -> int:
             except Exception as error:
                 raise ValueError('Base tree must contain reviewed baseline; bootstrap needs independent review') from error
             errors = apply_manual(current, baseline, lambda path: (root / path).read_bytes(), previous, old_baseline)
-            errors += apply_manual(previous, old_baseline, lambda path: git(root, 'show', args.base_ref + ':' + path))
+            errors += apply_manual(previous, old_baseline,
+                                   lambda path: git(root, 'show', args.base_ref + ':' + path),
+                                   historical_baseline=True)
             result = check(current, previous, baseline, old_baseline)
             result['errors'] = sorted(set(result['errors'] + errors))
             result['coverage_pending'] = [file['path'] for file in current['files']

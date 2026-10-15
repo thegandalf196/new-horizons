@@ -1,28 +1,17 @@
-# New Horizons source design
+# Design source boundary
 
-`New Horizons.md` is the sole canonical gameplay design specification.
-`New Horizons.docx` remains an archival conversion reference, not a competing
-authority. The conversion and repairs are documented in
-[`NH_MARKDOWN_CANONICAL_MIGRATION.md`](../NH_MARKDOWN_CANONICAL_MIGRATION.md).
-The original copy received on 2026-09-19 had SHA-256 digest
-`d0aa9c0017967e85120b4e63e04df3d58441d606ce9c496d29117515330654ce`.
-That historical digest does not identify the newly supplied revision. The
-current comparison baseline is recorded in
-[the legacy migration audit](../NH_OVERRIDE_MIGRATION.md).
+The sole gameplay specification is the private library's
+[canon/game-design.md](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md).
+Authorized maintainers use a sibling checkout or an explicit `NH_DOCS_ROOT`
+outside public worktrees. If unavailable, report that access gap; do not restore
+a public design copy as a fallback.
 
-The legacy Overrides audit is complete and the source has been retired. Its
-item-by-item dispositions and verification evidence remain in the migration
-audit. It is not a permanent precedence layer. Unintegrated amendments belong
-exclusively in [Pending Changes](../NEW_HORIZONS_PENDING_CHANGES.md).
+Ordinary builds and runtime tests use shipped JSON and the committed NHART pack,
+not private documents. See the [provenance contract](../NH_MARKDOWN_CANONICAL_MIGRATION.md)
+for metadata and fidelity-check boundaries. The archival DOCX is retained
+privately, is not a second canon, and its embedded illustration is not licensed
+runtime art merely because it appeared in a design document.
 
-The Markdown document is the newest authority for gameplay scope and mechanics. Detailed
-per-system sections take precedence over earlier roadmap and summary tables when
-the document conflicts with itself. Repository architecture, authoritative
-server-side validation, AI support, save compatibility, licensing, asset
-provenance, and validation requirements continue to come from
-`NEW_HORIZONS_MVP.md` and `NEW_HORIZONS_DESIGN.md` where the source document is
-silent.
-
-The DOCX's embedded Orders illustration was not carried into the Markdown. It
-remains reference material only; do not export or ship it as game art without a
-separate provenance and redistribution review.
+Removing the current copies does not erase previously published Git history,
+source archives or downloaded clones. Historical remediation is a separate,
+specifically approved operation.
