@@ -102,6 +102,24 @@ class NewHorizonsAcademyMapV3Test(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "export bytes do not match"):
                 academy_importer.load_map_revision(temp_root, pin, revision="v3")
 
+    def test_each_map_revision_rejects_changed_synthetic_prompt(self):
+        for revision in ("v2", "v3"):
+            with self.subTest(revision=revision), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                pin = private_revision_fixture(root, "map", revision)
+                loaded = academy_importer.load_map_revision(root, pin, revision=revision)
+                revision_root = academy_importer.MAP_REVISION_ROOT if revision == "v2" else academy_importer.MAP_REVISION_V3_ROOT
+                for name, record in loaded["manifest"]["bodies"].items():
+                    with self.subTest(body=name):
+                        prompt = root / revision_root / record["prompt"]
+                        original = prompt.read_bytes()
+                        self.assertEqual(original, f"synthetic {revision} {name} provenance fixture\n".encode("utf-8"))
+                        prompt.write_bytes(original + b"changed")
+                        with self.assertRaisesRegex(ValueError, "prompt bytes do not match"):
+                            academy_importer.load_map_revision(root, pin, revision=revision)
+                        prompt.write_bytes(original)
+                        academy_importer.load_map_revision(root, pin, revision=revision)
+
     def test_family_install_accepts_v2_and_legacy_then_rejects_unknown_atomically(self):
         runtimes = {record["runtime"] for record in academy_importer.MAP_REVISION_SLOTS.values()}
         v3 = shipping_revision("map", "v3")["exports_by_runtime"]

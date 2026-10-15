@@ -62,8 +62,9 @@ def private_revision_fixture(root, kind, revision="v2"):
     revision_root = {"icon": academy_importer.ICON_REVISION_ROOT,
                      "map": academy_importer.MAP_REVISION_V3_ROOT if revision == "v3" else academy_importer.MAP_REVISION_ROOT,
                      "hall": academy_importer.HALL_REVISION_ROOT}[kind]
-    shutil.copytree(ROOT / revision_root, root / revision_root)
     manifest_path = root / revision_root / "manifest.json"
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(ROOT / revision_root / "manifest.json", manifest_path)
     manifest = json.loads(manifest_path.read_text())
     def image(relative, size, bounds=None):
         path = root / relative
@@ -87,7 +88,11 @@ def private_revision_fixture(root, kind, revision="v2"):
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / academy_importer.SOURCE_ROOT / registration, destination)
         if kind == "map":
-            for record in manifest["bodies"].values():
+            for name, record in manifest["bodies"].items():
+                prompt = root / revision_root / record["prompt"]
+                prompt.parent.mkdir(parents=True, exist_ok=True)
+                prompt.write_text(f"synthetic {revision} {name} provenance fixture\n", encoding="utf-8")
+                record["promptSha256"] = hashlib.sha256(prompt.read_bytes()).hexdigest()
                 record["sourceMasterSha256"] = image(academy_importer.SOURCE_ROOT / record["sourceMaster"], [1, 1])
                 record["masterSha256"] = image(revision_root / record["master"], record["masterSize"])
                 box = record["sourceSolidBox"]
