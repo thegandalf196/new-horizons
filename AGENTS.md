@@ -162,6 +162,11 @@ are not gameplay acceptance. Failed, changed, timed-out, or superseded
 candidates leave the playable build unchanged. Preserve graphical ownership,
 isolation, and cleanup gates. Explicit promotion is for reviewed rollback or
 separately managed previews.
+For exact-PID graphical owners incompatible with the CLI's process-group
+contract, use the separately reviewed signal-free validation endpoint described
+in `tools/ci/LINUX_PLAYABLE_SNAPSHOT.md`. It must retain the original in-process
+ticket from before launch through actual acceptance and full postchecks; do not
+import a saved receipt or replace that transaction with manual promotion.
 
 Prefer incremental builds. Keep unique art, handoffs, saves, development
 worktrees, and selected playable deliveries outside disposable build trees.
