@@ -53,30 +53,4 @@ reload. Solmyr is explicitly selected as the Wizard representative. Mana checks
 account for genuine Intelligence perks instead of assuming every hero lacks one.
 These native checks do not establish rendered UI acceptance.
 
-Activation verification: the selected native growth, compatibility, capability,
-AI and spell-mechanics run passed 345 tests across 56 suites, with one opt-in
-capability-only export intentionally skipped. All 12 Python hero-data checks and
-the generated-module consistency check passed. The opt-in ordinary Knight
-experience-quest export also passed with its new starting ratings and mana.
-The committed `dcb01a936` build was frozen as snapshot
-`4f65c4825321d87c46ad18b2e1fedc3f3e0bdc05a68d1f0e54a75d896dc9f446`.
-That exact package completed 75 AI turns in a bounded 45-second headless
-`All for One` check, reaching the start of day 26. A fresh private profile used
-configured seed 1284510375, dummy media drivers, no autosaves, a 4 GiB memory
-limit and a 200% CPU quota. Maximum completed turn time was 3733 milliseconds;
-mean time was about 516 milliseconds. No checked crash, command rejection,
-Leadership-limit or unsupported-rules error appeared. The planned timeout
-stopped the active turn, and no launcher/client child remained afterward.
-
-That historical package was promoted for the ordinary Linux launcher and passed its
-non-launching path verification. This is a bounded new-game/AI smoke check,
-not evidence that the current version-3 profiles were built, tested, or promoted.
-
-## Remaining activation checks
-
-Verify version 3 with the integrated native regression set, a frozen candidate's headless
-new-game/AI flow, and displayed starts/growth before making a broad acceptance
-claim. In particular, retain old captured snapshots and their version-1 behavior.
-Complete legacy test contexts explicitly replace installed settings, preventing
-the new discriminator from being merged into deliberately unversioned fixtures.
-Primitive arithmetic and schema tests alone do not establish playability.
+The historical version-2 evidence does not certify every later version-3 build or rendered UI. Verify current integrated growth/save/campaign/AI gates and displayed starts before broad acceptance. Explicit legacy fixtures must pair legacy development/perk policy rather than merge current discriminators into absent saved rules.

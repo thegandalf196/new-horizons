@@ -79,3 +79,8 @@ compile_commands.json
 
 # CLion
 .idea/
+# Private development coordination and art-review staging.
+/.local-dev/
+/.agent-state/
+/agent-output/
+/NewHorizons-Codex-Kit/

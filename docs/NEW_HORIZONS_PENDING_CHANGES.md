@@ -19,11 +19,9 @@ activation, without hero mana. Other Genie statistics, economy and artwork
 remain unchanged. Core creature definitions and random casters without the
 explicit bonus opt-in retain the earlier allied-only policy.
 
-Implementation source: `config/newHorizonsCreatureExperimentalValues.json`,
-generated as the last curated creature patch. Linux compilation, 22 focused
-hero/creature data checks and 15 native creature/parser cases pass. The local
-Linux preview includes these changes; ordinary rendered selection and native
-Windows gameplay acceptance remain pending.
+Values are configurable in `config/newHorizonsCreatureExperimentalValues.json`,
+generated as the last curated creature patch. Implementation/acceptance evidence
+is maintained separately from this design amendment.
 Integrate these amendments into canonical Experimental Values after validation.
 
 ## Serena — Arcane Preparation
@@ -49,9 +47,6 @@ temporary provenance, unused temporary Buffer expires at battle end, and
 cancellation restores the precombat pools. Permanent Buffer granted by other
 effects remains governed by those effects. Policy absence retains the previous
 specialty behavior; older saved starting-development profiles remain captured.
-Source implementation and focused data checks are validated by the 24-case
-native hero/compatibility gate. The local Linux preview includes this specialty;
-ordinary rendered gameplay and native Windows acceptance remain pending.
 
 ## Daremyth — Fortune's Child
 
@@ -65,10 +60,7 @@ are unchanged; Fortune remains a retired hero spell.
 
 Only new heroes carrying this policy convert the exact native Fortune producer.
 Earlier captured worlds without the policy keep their existing Haste successor
-or original Fortune specialty. The current source implements the selected
-mechanic; Linux compilation and the 24-case native hero/compatibility gate pass.
-The local Linux preview includes it; ordinary rendered gameplay and native
-Windows acceptance remain pending.
+or original Fortune specialty.
 The historical Daremyth Haste row below is superseded for this new policy.
 
 ## Perk offers inherit full parent Skill weights
@@ -82,8 +74,7 @@ zero weight excludes the parent's perks. Skill-choice drawing remains separate.
 The explicit captured offer policy controls new worlds. Earlier captured
 registries without that policy retain their previous offers and pending-choice
 validation. Installed defaults must not reinterpret an old saved query.
-Runtime configuration and server validation are integrated; native and playable
-verification are pending. Integrate this settled rule into the canonical
+Integrate this settled rule into the canonical
 section after verification rather than retaining a second permanent rule source.
 
 ## Provisional coefficients for three authored Druid specialties
@@ -113,10 +104,8 @@ map armies and older captured requirement tables are not rewritten.
 The values provisionally match the maximum upgraded-source-line requirements
 (Arch Mage/Zealot and Marksman/Grand Elf respectively), not a final valuation
 of the stronger target creatures. No statistics, categories, specialties or
-upgrade graph changes. Nine focused native cases, seven capability data checks
-and module freshness pass; client and native tests build. See the provisional
-review ledger for rationale and verification scope. Integrate these entries into
-canonical Experimental
+upgrade graph changes. See the provisional review ledger for rationale and
+verification scope. Integrate these entries into canonical Experimental
 Values after verification; this amendment is not a new permanent authority.
 
 ## User-authored Thane / Halon class swap — New Horizons only
@@ -132,9 +121,7 @@ rules, resample armies or migrate development. Preserving historical per-instanc
 class identity would require separate engine state and is not claimed here.
 All other heroes, starting-development packages, books,
 specialties, biographies, portraits and original troop compositions are
-unchanged. Four focused data checks and the actual starting-army suite4/4 pass,
-including exact class, primary, Leadership and first-stack assertions. This
-amendment awaits canonical integration and changed playable delivery.
+unchanged. This amendment awaits canonical integration.
 
 Normal class-derived primary growth, skill weights and capabilities follow the
 chosen class. At level1 without additional bonuses, Halon's Leadership becomes
@@ -144,7 +131,7 @@ those consequences rather than separately authoring new troop quantities.
 
 ## Pasis / Monere — fresh-default Wisp-line specialty successor (provisional)
 
-Root authorizes the best-reasoned replacement for both fresh DEFAULT heroes:
+Provisionally select this replacement for both fresh DEFAULT heroes:
 their obsolete ordinary Psychic/Magic Elemental specialty enrolls the current
 `new-horizons:wisp` and its Greater Wisp upgrade. Preserve the existing creature
 specialty coefficients: +1 Speed, +1 Initiative, +1 Creature Attack and Defense
@@ -154,12 +141,11 @@ army count, class, starting-development rank or biography is authorized.
 Canonical creature roster and hero-specialty clauses motivate this amendment:
 Wisps replace the ordinary recruitment line, while the workbook's separate
 Magic Elemental/Rebirth proposal depends on the removed line and is not adopted.
-Accepted UP304 Psychic aliases remain the prototypes and explicit PRESET/map,
+Accepted Psychic aliases remain the prototypes and explicit PRESET/map,
 saved, absent-opt-in and crossover legacy contexts keep their original targets.
 A fresh DEFAULT captures its Wisp target once; refresh, level-up, description
 and replay follow that captured target without rereading installed defaults.
 
-Private source/test proposal only, native validation and root import pending.
 Two exact authored table entries and one per-instance resolved target require a
 new semantic save feature after Protected Adventure Barriers; older writers/readers reject key
 presence rather than dropping it. Actual campaign JSON pools and their outer
@@ -173,7 +159,9 @@ sections; it is not a second permanent specification.
 For each amendment record its user-approved decision, affected canonical
 section, unresolved questions, and integration evidence. Remove an amendment
 only after integration is verified, or an explicit decision supersedes it.
-Implementation status belongs in the completion audit, not here.
+Implementation and acceptance status belongs in the content/integration records,
+not in a permanent amendment history. Integrated decisions live in the canonical
+source; their former execution receipts are preserved privately.
 
 The completed legacy Overrides transition is retained as history in
 [NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md). Do not copy its retired
@@ -236,7 +224,7 @@ Phase1 may credit the conditional passive only after an actually executable
 typed authoritative server path, shared detached/UI query and focused state/
 compatibility controls prove it. A tooltip, dormant marker or missing consumer
 still earns no credit. Standard-game triggering and rendered exercise must
-remain explicitly unverified; this amends the earlier blanket UP-167 hold,
+remain explicitly unverified; this replaces the earlier blanket implementation hold,
 not the requirement for a genuine mechanic.
 
 ### Remaining spell specialties and Navigation specialists
@@ -576,319 +564,3 @@ unchanged. Preserve existing School/perk staging, other profiles, map books and
 captured legacy contexts. These are authored provisional identities, not the
 workbook's undefined Masterful variants. Independent review and focused live/
 detached/default/map/legacy/save evidence must precede canonical integration.
-
-## Integrated history
-
-### Training, War Machines and Spellcraft/Divine clarifications — 2026-10-09 (integrated)
-
-The exact eleven-perk principal128/128 and adjacent15/15 gates pass.
-The Training and War Machines provisional contracts move into their canonical
-perk pools. Spellcraft's prospective target count, accepted-cast duration receipt
-and disjoint captured-school history, plus Divine Discipline's recipient carry,
-are stated explicitly without changing the settled automatic Crown and Altar
-pair rule. Other hero/capacity amendments remain pending.
-
-Training79803 passes its actual entry/round1/expiry regression1/1 and
-setup92086 passes29/29 after the narrow typed-marker initialization repair.
-These subfilters are evidence for the repair, not acceptance of the full batch.
-
-Fresh v5 principal83705 completed128 cases:127 passed and1 failed in43.876s.
-The remaining failure exposed an authoritative duplicate-Order guard mismatch:
-the shared callback allowed next-round carried reissue, but StartAction rejected
-it. The reviewed correction retains same-round rejection and replaces only
-prior-round carried state. V6 linked9350 and privacy80564 pass; principal36894
-passes128/128 in43.678s and adjacent13551 passes15/15 in6.823s, with zero
-failures/errors/skips and exact binary/resource/isolated-child proof.
-
-Other bounded repairs preserve actual mechanics: typed Training markers export
-once through canonical localInit; empty valid tiles use ordinary terrain
-battlefield fallback; replay uses its actual original location; combat Attack
-includes the existing native-terrain bonus; detached forecasts use real-player
-callbacks; and Healer/Guardian use separate legal Basic-tier controls. Extend
-Spell now classifies the same legacy timed-effect fallback as the spell decoder.
-None loosens rank selection, receipts, immunity, caps or save admission.
-
-The focused accepted coverage delta is eleven perks,282 to293 of310. This
-does not establish rendered acceptance or a new selected playable delivery.
-
-### Contacts, Phoenix Spark, Arcane Memory and Aenain — 2026-10-09 (integrated)
-
-The canonical rows now record owned-entry/first-empty-row growth, actual scroll
-completion and ordinary acquisition, and fixed battle-start Phoenix substitution
-with once-use placement semantics. The hero section records Aenain's SP-only
-Frailty replacement and preserved default/map/legacy boundaries. Independently
-reviewed production and fixture repairs link14567; exact retry2 principal34618
-passes42/42 in13.975s and adjacent26046 passes23/23 in8.785s, zero failures,
-errors or skips. Initial failed logs/XML remain private. Provisional choices
-remain reviewable in the second-look ledger; implementation and playable
-delivery are distinguished in the queue.
-
-### Sage catalog and four Frailty specialties — 2026-10-09 (integrated)
-
-Both Sage rows now state the eligible undisplayed catalog, saved school labels,
-ordinary learning/map-ban rules, deterministic selection, first built-Guild
-visit receipt and separate reveal rows. The canonical hero-profile audit names
-Cuthbert, Olema, Mirlanda and Xsi's existing Frailty replacement, SP-component
-conversion, unchanged caps and preserved default/map/legacy boundaries.
-Independent source review and exact native70790 pass36/36, including Sage10,
-Frailty11 and Shared Purpose15; adjacent61175 passes12/12 after linked38972.
-Eligibility, initial corpse provenance and variant prerequisites were preserved
-through reviewed fixture-only repairs. These provisional choices remain in the
-second-look ledger; other missing hero identities remain separate gaps.
-
-### Thant — authored provisional specialty replacement — 2026-10-09 (integrated)
-
-Integrated into the canonical hero starting-profile audit: existing Re-animate
-replaces removed Animate Dead in fresh default starts and specialty, +20% only
-to its SP-derived restoration component. Fixed220, temporary casualty rules,
-map-prescribed spellbooks, legacy contexts and other profile choices remain.
-Source review and ten principal cases pass in native88843; fifteen adjacent
-controls pass in3070 after linked25787. Broader casualty/cap composition remains
-in the second-look ledger; no new rendered or playable acceptance is inferred.
-
-### Polymorph impossible-footprint restoration — 2026-10-09 (integrated)
-
-Provisional decision under the user's authorization to resolve rule ambiguity:
-Polymorph normally restores its original body after two rounds or Dispel, using
-the approved nearest legal position when necessary. If no legal position for
-the original footprint exists anywhere, retain the current form, surviving HP
-and position; retry safe restoration at later round boundaries. Never overlap
-another stack, delete creatures or heal them to force restoration. This is an
-exceptional delayed restoration, not a new normal duration or a successful
-immediate Dispel. It must be represented accurately in status/help text.
-
-Affected canonical section: Chaos School / Polymorph, restoration and duration.
-Second-look question: whether another explicit no-space policy is preferable.
-Integrated into Chaos / Polymorph together with the Phantom body/Integrity
-distinction and explicit Shapeshifter independent draws/whole-stack Army Value.
-These reasoned interpretations remain in the second-look ledger. Production
-implementation and focused evidence remain separately tracked; integration of
-wording is not gameplay completion.
-
-### Elemental Convergence terrain completion — 2026-10-09 (integrated)
-
-User approves Earth for Dirt, inland Sand and Wasteland, and Water for Swamp
-and coastal battlefields including coastal Sand. Integrated into the canonical
-Experimental Values terrain table, with captured coastal battlefield context
-taking precedence over forced Sand. Runtime and AI implementation of the spell
-and its terrain-dependent perks remain UP072 work, not completed coverage.
-
-### Battlefield Mastery and Last Stand scope — 2026-10-06 (integrated)
-
-User resolves Battlefield Mastery's award in favor of the first eligible ordinary
-stack: an ineligible War Machine leaves it available. Last Stand protects ordinary
-stack health, not clones/Phantom Integrity; when lethal retaliation triggers it,
-the surviving attacker's current activation ends. Integrated into both canonical
-perk rows. Production completion and delivery remain separate in UP-156/UP-079.
-
-### Both Cabir forms are ranged — 2026-10-06 (integrated)
-
-User explicitly directs both Cabir and Cabir Master to shoot. Apply to the
-canonical Academy creature roster/ability section; this supersedes inherited
-basic Gremlin melee-only gameplay. Preserve both forms' elemental defenses and
-Master's repair ability. Ranged art and ordinary ammunition/targeting must be
-implemented together; no implication of No Melee Penalty is granted.
-Integrated into the canonical Academy creature ability paragraph and roster row.
-Source/runtime and art acceptance remain tracked in UP-265; this document change
-does not claim shooting animations or playable delivery are complete.
-
-### Barehanded Cabir and repair abilities — 2026-10-06 (integrated)
-
-User explicitly removes the golden pot/fire vessel from both forms. Both get
-Fire resistance and Water weakness; Cabir Master repairs Golems and Gargoyles.
-Integrated into the canonical Academy creature presentation/ability rule,
-superseding the initial unchanged-gameplay restriction for these specified
-abilities only. User subsequently approves provisional50% less Fire damage and
-25% more Water/Frost damage, and healing plus restoration of fallen creatures
-within a surviving stack. These answers are integrated in the same canonical
-rule. The canonical implementation prototype now specifies one repair per
-combat, 10 HP per acting Cabir Master and a normal creature activation. These
-remain tunable values; implementation and artwork status remain in UP253.
-
-### Cabir replacement — 2026-10-06 (integrated)
-
-User-approved decision: replace Academy's Gremlins and Master Gremlins with
-original Cabir and Cabir Master artwork and names, retaining the current
-creatures' gameplay initially. Integrate into the canonical Academy roster;
-do not invent new stats or abilities from the Heroes VII reference. Full
-base/upgraded battle animation sets and all creature presentation bindings are
-required, not just portraits. Original artwork must use HoMM3 Art, including
-provisional assets. Integrated into the canonical creature roster and its
-Academy presentation rule. Implementation and delivery are tracked in UP248;
-the approved standing-frame draft is not a completed runtime animation set.
-
-### Academy visual identity — 2026-10-05 (integrated)
-
-The user supplied the Academy definitive art handoff and requested integration.
-Its visual direction is integrated into the canonical Tower section: Academy
-display name and scholarly sandstone presentation, existing Tower identity and
-New Horizons gameplay preserved. The user separately confirmed Sand as Academy's
-native terrain; existing authored map terrain is not repainted. Original retained pixels remain externally
-referenced. Asset integration and playable evidence are tracked in UP-235.
-
-### Crown and Altar automatic second-action bonus — 2026-10-05 (integrated)
-
-In response to predeclaring a pair target versus redesigning the perk, the user
-preferred the less-clicky option. The canonical perk now automatically boosts
-the second action's rating-derived components by20% on friendly recipients
-also affected by the first, in either pair direction. No additional button,
-target-preselection dialog or retrospective first-action change is introduced.
-The first action is unchanged. Integration verified in the Divine Mandate perk
-pool; its planned registry description is synchronized. Runtime implementation,
-recipient provenance, AI and focused evidence remain work tracked in UP108/
-UP023, not claimed complete by this specification change.
-
-### Commanding Presence effective lifetime — 2026-10-02 (integrated)
-
-User-approved decision: its negative-Morale floor ends for a recipient when
-that recipient's Order benefit is spent or broken. It does not persist solely
-because the Order snapshot remains until round end. Examples include a consumed
-Charge, a broken/exhausted Protect pair, and the end of Second Wind's extra
-activation. Affected canonical section: Command perk pool, Commanding Presence.
-No unresolved lifetime question remains. Integrated into the canonical Command
-perk pool's Commanding Presence row. Implementation and validation belong in
-UP-142, not in this amendment.
-
-### Polymorph footprint relocation — 2026-09-30 (integrated)
-
-The user chose relocation to the nearest legal position when a replacement
-footprint cannot fit at the original hex. Integrated into canonical Polymorph:
-do not exclude the form solely for its original-position footprint; retain
-ownership, allegiance and current Initiative queue position. Runtime coverage
-and the shared form/HP foundation remain tracked under UP-066.
-
-### Paradox Shield and damage caps — 2026-09-30 (integrated)
-
-The user selected the existing physical cap: Paradox Shield adds ten percentage
-points after the spell's own formula cap, but total Physical Damage Reduction
-still cannot exceed 80%. Magical protection can reach 90%, subject to its
-ordinary 95% total cap. This clarification is integrated into the canonical
-Shield of Chaos section; implementation evidence belongs in UP-063.
-
-### Hand of Fate secondary mitigation — 2026-09-30 (integrated)
-
-User-approved decision: after selecting the secondary recipient uniformly from
-the surviving friendly/enemy pool, apply that recipient's own magical defenses
-to the hit whose base is half the primary target's actual HP loss. Defenses do
-not affect selection and must not cause a reroll. This clarification is integrated
-into the detailed Chaos / Hand of Fate section of New Horizons.md.
-Runtime implementation and delivery remain tracked in the priority queue.
-
-### School-rank spell potency — 2026-09-27 (integrated)
-
-Basic, Advanced, and Expert rank in each of the six Magic Schools must
-progressively strengthen applicable spells of that school, in addition to
-gating ordinary acquisition of higher spell levels. A legitimately inscribed
-spell remains castable without the rank. Begin with a modest, coherent
-Heroes V-like damage rule: improve the coefficient that multiplies Spell Power,
-not merely flat base damage. Expert rank does not automatically grant Mass
-versions; those remain perk-granted. For non-damage spells, choose meaningful
-effect-appropriate rank improvements, with explicit exceptions instead of a
-blind numerical multiplier. The initial authored coefficient ladder (provisional
-balance) is: no School rank 100%, Basic 115%, Advanced 130%, Expert 145% of
-the spell's Spell Power coefficient. Apply it before existing integer rounding;
-preserve flat base terms, caps, costs, target shape, mitigation, and specialty
-rules. For a multi-school spell, use the highest applicable rank once, never
-stack the schools. Adventure Spells remain neutral and unscaled. Saved magic
-rules version 3 carries the ladder; v1/v2 saves retain 100% so an ongoing game
-does not silently change its formulas. Numeric healing, temporary HP, and
-restoration may follow the same coefficient principle where the formula has an
-actual Spell Power term. Discrete/binary spells need authored rank variants or
-an explicit exception. The shared rule is now in the canonical Markdown Magic
-Skills section; implementation and validation of specific spell effects remain
-tracked in UP-027.
-
-The five amendments approved before 2026-09-27 were integrated into the
-canonical DOCX: Spell Lock duration stacking, Arcane Acquisition target
-semantics, generic Faction-Skill combat statuses, consume-on-use Metamagic and
-its accompanying perks, and ordinary Mage / Arch Mage melee penalties. The
-edited document passed ZIP integrity and a complete 191-page LibreOffice render;
-the affected pages were visually inspected without clipping or overlap.
-
-### Bulwark of the Mire perk rules — 2026-09-27 (integrated)
-
-Affected canonical section: Fortress faction Skill, Bulwark of the Mire perk
-table. User-approved changes integrated into the repaired canonical
-`New Horizons.md`:
-
-- Toxic Spines: “the first melee attacker each round” is tracked separately
-  for **each Defending Bulwark stack**, not once per hero army. That attacker
-  must suffer Bulwark reflection before receiving physical Poison. Its base
-  damage is `max(1, floor(actual reflected HP damage / 4))`; on the victim's
-  next three real activations it deals base, `floor(1.5 × base)`, then
-  `2 × base` physical damage. A new application with equal or higher base
-  replaces the old potency and restarts three ticks; a weaker application is
-  ignored. Poison does not stack. Cure removes it; ordinary Dispel does not.
-- Immovable: its first-physical-creature-hit 25% final-damage reduction applies
-  **only while the particular Bulwark stack is Defending**. Track the first
-  qualifying hit separately per stack per round.
-
-The repaired Markdown contains both clarified rows, checked against the perk
-registry with no unapproved cell differences. The original DOCX remains an
-archival conversion reference. No design choice remains open for these rules.
-
-
-## All38 audited default-development replacements — private integrated provisional candidate
-
-The user authorizes the following exact fresh DEFAULT development profiles.
-Ranks1/2/3 mean Basic/Advanced/Expert. All selected perks are existing active Basic;
-no new spell, specialty rider, army, biography or class is introduced.
-
-| Hero | Generic parent and rank | Basic perk | Own faction and rank |
-| --- | --- | --- | --- |
-| core:adelaide | new-horizons:havocMagic 1 | cryomancer | new-horizons:divineMandate 2 |
-| core:aeris | new-horizons:logistics 1 | scouting | new-horizons:sylvanLuck 1 |
-| core:aine | new-horizons:estates 1 | taxCollector | new-horizons:metamagic 1 |
-| core:alamar | new-horizons:shadowMagic 1 | bloodDrinker | new-horizons:shroudOfMalassa 1 |
-| core:andra | new-horizons:wisdom 1 | intelligence | new-horizons:bulwarkOfTheMire 1 |
-| core:ash | new-horizons:chaosMagic 1 | frenziedCurse | new-horizons:demonicGating 1 |
-| core:astral | new-horizons:spellcraft 1 | concentration | new-horizons:metamagic 2 |
-| core:axsis | new-horizons:wisdom 1 | mysticism | new-horizons:demonicGating 1 |
-| core:ayden | new-horizons:wisdom 1 | intelligence | new-horizons:demonicGating 1 |
-| core:caitlin | new-horizons:wisdom 1 | intelligence | new-horizons:divineMandate 1 |
-| core:charna | new-horizons:battlecraft 1 | tactics | new-horizons:necromancy 1 |
-| core:coronius | new-horizons:spellcraft 1 | concentration | new-horizons:sylvanLuck 1 |
-| core:daremyth | new-horizons:luck 1 | secondChance | new-horizons:metamagic 1 |
-| core:deemer | new-horizons:logistics 2 | scouting | new-horizons:shroudOfMalassa 1 |
-| core:elleshar | new-horizons:wisdom 1 | intelligence | new-horizons:sylvanLuck 1 |
-| core:geon | new-horizons:learning 1 | eagleEye | new-horizons:shroudOfMalassa 1 |
-| core:ingham | new-horizons:wisdom 1 | mysticism | new-horizons:divineMandate 1 |
-| core:isra | new-horizons:learning 1 | historian | new-horizons:necromancy 2 |
-| core:jaegar | new-horizons:wisdom 1 | mysticism | new-horizons:shroudOfMalassa 1 |
-| core:jeddite | new-horizons:spellcraft 1 | concentration | new-horizons:shroudOfMalassa 2 |
-| core:malcom | new-horizons:learning 1 | eagleEye | new-horizons:sylvanLuck 1 |
-| core:mirlanda | new-horizons:shadowMagic 1 | witheringTouch | new-horizons:bulwarkOfTheMire 2 |
-| core:nagash | new-horizons:estates 1 | taxCollector | new-horizons:necromancy 1 |
-| core:nimbus | new-horizons:learning 1 | eagleEye | new-horizons:necromancy 1 |
-| core:oris | new-horizons:learning 1 | eagleEye | new-horizons:bloodrage 1 |
-| core:rosic | new-horizons:wisdom 1 | mysticism | new-horizons:bulwarkOfTheMire 1 |
-| core:sanya | new-horizons:learning 1 | eagleEye | new-horizons:divineMandate 1 |
-| core:saurug | new-horizons:estates 1 | prospector | new-horizons:bloodrage 1 |
-| core:sephinroth | new-horizons:estates 1 | prospector | new-horizons:shroudOfMalassa 1 |
-| core:septienna | new-horizons:spellcraft 1 | arcaneFocus | new-horizons:necromancy 1 |
-| core:serena | new-horizons:learning 1 | eagleEye | new-horizons:metamagic 1 |
-| core:straker | new-horizons:warcasting 1 | spellward | new-horizons:necromancy 1 |
-| core:terek | new-horizons:battlecraft 1 | tactics | new-horizons:bloodrage 1 |
-| core:thant | new-horizons:wisdom 1 | mysticism | new-horizons:necromancy 1 |
-| core:thorgrim | new-horizons:warcasting 2 | spellward | new-horizons:sylvanLuck 1 |
-| core:tiva | new-horizons:learning 1 | eagleEye | new-horizons:bulwarkOfTheMire 1 |
-| core:vidomina | new-horizons:learning 1 | scholar | new-horizons:necromancy 2 |
-| core:xyron | new-horizons:havocMagic 1 | pyromancer | new-horizons:demonicGating 1 |
-
-Preserve original8 profiles verbatim, PRESET/map-authored choices and captured
-absence/legacy/saved/reinitialization boundaries. Retain Advanced own-faction
-ranks for Mirlanda/Adelaide/Astral/Isra/Vidomina/Jeddite; retain native training
-through Thorgrim AdvancedWarcasting and Deemer AdvancedLogistics with Basicperks
-and no automatic Advancedperk. Planned Demolitionist/undefined IronDiscipline
-and workbook Masterful/class/book/raising/level-income riders are not adopted.
-The shared validated-profile initializer bypasses only legacy migration for an
-explicit profile, preventing Rosic/Andra/Caitlin Wisdom erasure; other paths remain.
-Structural rank1..3 supports retained faction ranks; genericparent remains<=Advanced.
-Root-imported newer hero flags/cloners/epoch guards and historical fixture key
-erasures are preserved; no semantic epoch is newly appended by this candidate.
-
-Private authored evidence:234 cases233map+1MirlandaFrailty, UNRUN. Existing8 and
-all family controls remain; publicqueries cover Mana/XP/learning/sight/fire/income
-and actualCrystal/GemProspector visits. Original39-gap disposition is38 profiles
-plus Voy separate Navigation candidate. Source review is separate from native
-acceptance/delivery and does not establish all144hero content coverage.

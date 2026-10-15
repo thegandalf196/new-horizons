@@ -9,6 +9,7 @@ import tarfile
 import tempfile
 
 from package_new_horizons_windows import validate_archive_link
+from source_export_policy import DOCUMENTATION_POLICY, exclude_source_path
 
 
 def git(root, *arguments):
@@ -22,6 +23,8 @@ def source_snapshot(root, revision, output, submodule_cache=None):
         raise RuntimeError('Source output already exists; refusing replacement')
     archive_root = 'new-horizons-' + revision
     excluded, count = [], 0
+    policy_entry = git(root, 'ls-tree', '-z', revision, '--', DOCUMENTATION_POLICY)
+    documentation_policy = policy_entry.startswith((b'100644 blob ', b'100755 blob '))
 
     def append(repository, commit, relative, archive):
         nonlocal count
@@ -43,7 +46,7 @@ def source_snapshot(root, revision, output, submodule_cache=None):
                 mode, kind, identifier = metadata.split()
                 name = name.decode('utf-8')
                 full_name = relative + name
-                if full_name == 'CI/deploy_rsa.enc' or full_name.startswith('docs/NH_'):
+                if exclude_source_path(full_name, documentation_policy=documentation_policy):
                     excluded.append(full_name)
                     continue
                 if kind == b'commit':

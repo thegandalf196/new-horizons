@@ -1,5 +1,9 @@
 # Deferred New Horizons investigations
 
+These are bounded measurement/continuation contracts, not a coordination queue.
+Open integration evidence belongs in [NH_INTEGRATION_GAPS.md](NH_INTEGRATION_GAPS.md);
+protected lifecycle invariants belong in [NH_REGRESSION_GUARDS.md](NH_REGRESSION_GUARDS.md).
+
 ## Adventure-map movement feels smoother than another VCMI installation
 
 Status: USER-REPORTED; deliberately deferred at the user's request. Do not restart
@@ -48,10 +52,10 @@ controller identity. Submission and UI intervals may overlap and
 must not be added together. Epilogue times include aggregation/observer work
 but exclude the final record's own output, not literal function-return latency.
 
-Focused native checks pass in separate default/OFF (five), ON (five) and cap-one
-(one) runs. They exercise actual selected WAITs, captured identity, monotonic
-boundaries, logger disablement, rethrows and owner destruction. Seven natural
-WAITs yield seven records normally or one record plus one notice at cap one.
+The focused `test/battle/NewHorizonsBattleAITimingTest.cpp` fixtures exercise
+actual selected WAITs, captured identity, monotonic boundaries, logger disablement,
+rethrows, owner destruction and capped records. The producer is in
+`AI/BattleAI/BattleAI.cpp`.
 These are callback/mock-submission checks, not graphical UI, CPU/GPU, physical
 presentation or Windows performance acceptance. Follow the existing guarded
 graphical-testing rules for runtime measurements; no speedup is established.
@@ -84,6 +88,7 @@ production world-file writer and loader, then submits an ordinary validated
 EndTurn request. It checks captured Luck/Morale rules, selected perks and ranks,
 positive Normal mana, nonzero permanent Buffer and a nonempty spellbook on the
 reloaded heroes. The existing presentation-export fixture remains unchanged.
+The fixture lives in `test/server/battles/NewHorizonsHeroFixtureExportTest.cpp`.
 
 Public service draws populate both heroes' dedicated Luck/Morale RNG streams.
 The test checks whole RNG-state equality across the disk save/load, then compares
@@ -105,6 +110,7 @@ critical damage, one Hero Action charge and a refund only to the original payer,
 including Normal/permanent/temporary Spell Point provenance. The fixture reaches
 the caster's activation through accepted actions before taking its snapshots;
 it does not overwrite initiative or relax cast validation.
+The fixture lives in `test/server/battles/NewHorizonsDirectDamageMechanicsTest.cpp`.
 
 This is focused native coverage, not graphical cue, exhaustive reflection or
 statistical probability certification.

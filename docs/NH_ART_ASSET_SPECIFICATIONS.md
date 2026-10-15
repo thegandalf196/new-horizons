@@ -1,112 +1,67 @@
-# Role-specific art delivery contracts
+# Consumer-backed runtime-art contracts
 
-## User clarification —2026-09-08
+Derive exports from actual product bindings, not from a generic square-icon request.
+Generation/review procedure belongs in
+[NH_APPROVED_ART_WORKFLOW.md](NH_APPROVED_ART_WORKFLOW.md); visual construction
+follows [Heroes III UI style](NH_HOMM3_UI_STYLE_GUIDE.md).
+No external plugin or workspace is a prerequisite for the contract.
 
-The automatic art workflow must deliver the correct family for each entity:
-secondary-skill ranks, spell icons, school bookmarks and the selected-school
-illustration have different requirements. Do not treat all requests as one square
-icon. The user provides artistic intent; the agent derives technical deliverables
-from actual product bindings. No manual masking/setup from the user.
+## Skill and school families
 
-The external HoMM3-art workspace now has ASSET_SPECIFICATIONS.md, linked from
-ART_WORKFLOW.md and AGENTS.md. It expands short requests into a per-request
-manifest. This document preserves the product-side source of that contract.
-See [NH_APPROVED_ART_WORKFLOW.md](NH_APPROVED_ART_WORKFLOW.md) for generation/QA.
+The verified school/associated-Skill family contains 24 role images:
 
-## Verified current Sorcery skill/school slots
+| Role | Family | Native resource contract |
+| --- | --- | --- |
+| Secondary Skill | Basic/Advanced/Expert × four sizes | 32×32, 44×44, 82×93, scenario 58×64 |
+| Spell mastery border | None/Basic/Advanced/Expert | 78×65 RGBA, ordered frames 0–3 |
+| School bookmark | Selected/unselected | 80×60 RGBA; also inspect compact 68×51 render |
+| Selected-school header | One | 160×96, top 28 transparent, visible 160×68 |
+| School emblem | One | 64×64 |
+| School button | Normal/pressed/disabled/highlighted | 64×64, descriptor order preserved |
 
-Existing custom PNG dimensions were checked in `Mods/new-horizons/Images/`,
-with runtime notes in [NH_ARTIST_SORCERY.md](NH_ARTIST_SORCERY.md). The newly
-identified spell-border dimensions instead come from private original DEF-frame
-inventory and source bindings, not existing custom border PNGs; see
-[NH_SCHOOL_ART_COMPLETENESS.md](NH_SCHOOL_ART_COMPLETENESS.md).
+Skill-only is twelve outputs; earlier twenty-image school counts omitted borders.
+Inspect current bindings in [school completeness](NH_SCHOOL_ART_COMPLETENESS.md)
+before changing a family. Spell paintings are additional roles, not rank duplicates.
+Magic Skills use the selected physical grammar Basic scroll, Advanced book,
+Expert orb, with recognizable silhouette progression at 32px. Other Skills and
+spell/bookmark/header roles do not inherit that grammar automatically.
+Sorcery's selected aether identity uses restrained blue flow, parchment and brass,
+not weather/lightning imagery or neon cyan; internal sorcery IDs are not renamed
+merely because an artistic brief calls the school Arcane.
 
-| Role | Family | Native contract |
-|---|---|---|
-| Secondary skill |Basic/Advanced/Expert x4 sizes =12|small32x32, medium44x44, large82x93, scenarioBonus58x64|
-| Spell mastery borders |none/basic/advanced/expert =4|78x65 RGBA, frames0..3; corner progression; currently reuses SplevA|
-| School bookmarks |selected/unselected =2|80x60 RGBA; also inspect actual compact68x51 render; frames0/1 respectively|
-| Selected-school header |1|160x96 RGBA, top28 transparent, visible160x68|
-| School emblem |1|64x64 RGBA|
-| School button states |normal/pressed/disabled/highlighted =4|64x64 RGBA, preserve descriptor bindings/order|
+## Spells, statuses and actual dimensions
 
-Complete school plus associated skill:24 images, excluding individual spells.
-The earlier20 count omitted four spell mastery borders; see
-[NH_SCHOOL_ART_COMPLETENESS.md](NH_SCHOOL_ART_COMPLETENESS.md) for actual bindings,
-private original-frame evidence, corner ordering and remaining integration gates. Skill-only:12 images. Names remain NH_sorceryMagic_<rank>_<size>.png and
-NH_sorcery_<component>.png as currently configured. User terminology Arcane is not
-authorization to rename internal sorcery identifiers.
+Trace `config/schemas/spell.json`, `lib/spells/CSpellHandler.cpp`,
+`CSpell::registerIcons` in `lib/spells/CSpell.cpp` and the actual client consumer.
+Fields route separately to spellbook, scroll, status/effect, scenario and immunity
+roles. Historical templates include book 67×48, scroll 83×61, effect 48×36 and
+scenario 58×64, but template/schema canvas sizes are not every consumer's rendered
+icon size. Current selected purpose-made families use book44, scroll/scenario32,
+effect/immunity30 where the actual consumer requires them. Verify before exporting.
 
-Ranks must have meaningful recognizable progression within one visual identity,
-not three identical paintings with tiny badges or hue changes. Review every rank
-at32px as well as larger sizes. Use role-specific compositions: the selected-school
-"splash" is the existing wide header, NOT a new full-book layout or stretched skill
-icon. Selected/unselected bookmark states are not generic button states. Original
-SPELTAB83x294 strips cannot be imported as independent custom bookmarks.
+Internal Arcane Breach and Lucidity statuses require effect/immunity icons, not
+invented castable book/scroll entries. Cast animations, projectiles, cursors and
+audio are independent contracts; static PNG roles do not complete them.
+Do not stretch an opaque painting into a transparent emblem or silently invent
+an immunity dimension.
 
-## User-directed magic-skill rank grammar
+## Selection, provenance and acceptance
 
-Magic-school secondary skills use **Basic = scroll; Advanced = book (open or
-closed); Expert = orb** as the shared physical rank progression. Schools retain
-distinct effects, palette and supporting materials. This default does not apply
-to every nonmagic skill, individual spell, bookmark or header. Preserve rank
-silhouettes at32px; do not obscure them with effects. Record this as the user's
-art direction, not an independently verified universal historical-image claim.
+Manifest each entity/role/rank/state with exact resource mapping, dimensions,
+alpha/margins, source concept/template provenance and review status.
+Selection, origin, approval and integration/rendered verification are distinct.
+Current authority permits suitable provisional purpose-made drafts in game;
+Final requires approval evidence. An unrelated borrowed icon remains Not done.
 
-For the next Sorcery/Arcane skill family, user accepted pure magic represented
-by blue aetheric flow: partly unfurled scroll with a small current; open book with
-a controlled arc; blue orb in restrained aged brass with circulating aether. Use
-pale highlights/subtle violet depth and warm parchment/brass; avoid neon cyan,
-lightning/weather imagery and confusion with Air Magic. This supersedes spindle/
-armillary motif exploration for this request, not the proven RGBA workflow.
-Concept direction is accepted; actual generated ranks and their12 native outputs
-still require user review. No live resource rename or import is authorized here.
+Review native and enlarged families for wrong/missing/duplicate roles, state order,
+rank readability, contrast, transparent edges and central-subject clipping.
+Transparent corners alone do not prove clear edges or an inset margin.
+Confirm actual parchment/dark-status backgrounds and compact scaling.
 
-## Spell graphics: separate role set
-
-Evidence: `config/schemas/spell.json` graphics fields and conditional required
-lists; `lib/spells/CSpellHandler.cpp` graphics loading; `CSpell::registerIcons`
-in `lib/spells/CSpell.cpp`.
-
-- iconBook -> SPELLS: spellbook illustration. Pinned blank template67x48.
-- iconScroll -> SPELLSCR: scroll art. Pinned blank83x61; small43x34 is a separate
-  candidate only where an actual consumer requires it.
-- iconEffect -> SPELLINT: battle effect/status icon. Pinned blank48x36.
-- iconScenarioBonus -> SPELLBON: schema explicitly58x64; matching bonus template.
-- iconImmune: schema's separate spell-immunity bonus icon. Not another frame in
-  CSpell::registerIcons; current consumer dimensions/margins must be inspected.
-
-Template dimensions are verified inventory facts, not proof of every runtime
-layout. Before final spell exports Frontend must confirm actual consumer placement,
-required fields for that spell type and any additional variants. Do not silently
-invent an immunity-icon size. Do not invent Basic/Advanced/Expert spell paintings
-merely because gameplay effects scale with mastery. Cast animations/projectiles/
-cursors/audio have separate contracts and are not completed by static icons.
-
-## Request expansion, staging and manifest
-
-"Create Sorcery secondary skill" means12 skill outputs. "Create Sorcery school
-art" means the corrected24-image school/skill set; individual spells are separate.
-"All school art including spells" adds the currently configured spell roster,
-not a guessed spell list. Specific bookmark/header requests remain component-only.
-Other orders/doctrines/creature-ability/menu/portrait roles require their own
-consumer-backed slot manifest, not the skill template by default.
-
-Create a manifest before generation: entity ID/scope; role; rank/state; dimensions;
-resource name/consumer; template/hash; alpha/margins; source concept; placement;
-expected review route and status. Mark planned/draft/technical-pass/user-approved/
-integrated/in-game-verified separately. Unknown bindings cannot be marked complete.
-No actual manifest/output is claimed created by this documentation update.
-
-Approve one representative visual direction before expanding a complete coherent
-family. The staged concept gate does not narrow or close the full requested scope.
-Review a rank-by-size grid, both bookmark states at native/compact sizes, the header
-with its transparent reserved region, button-state strip and spell-role rows.
-Check missing/duplicate/wrong-size items, frame order, margins and actual rank/state
-legibility. The agent handles technical work; only real artistic ambiguity needs
-a user question.
-
-Artist owns isolated production; Frontend confirms bindings/integrates approved
-art; Content checks independent evidence and selected-file rights; Build commits/
-packages. No asset import, runtime rename, full-family approval or template-rights
-clearance follows from this specification. Product development stays independent.
+Selected runtime art, including selected Cabirs, Magi, Guild composites and custom
+interface edits, is in NewHorizons.nhart. Preserve local originals/alternatives
+and complete inputs; do not publish loose runtime images or private paths.
+Packaging does not waive provenance/licensing obligations for original-based art.
+Ordinary builds consume the committed pack, not incomplete private inputs.
+See [content development](developers/NewHorizonsContent.md) and
+[asset status](NH_UI_ASSET_STATUS.md).

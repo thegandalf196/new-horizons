@@ -195,10 +195,15 @@ class WindowsSourceArchiveTest(unittest.TestCase):
             public_docs = {
                 'docs/NHART_FORMAT.md': b'Public NHART format fixture\n',
                 'docs/NHART_DELIVERY.md': b'Public NHART delivery fixture\n',
+                'docs/NH_DOCUMENTATION_POLICY.md': b'Synthetic reviewed documentation policy\n',
+                'docs/NH_ART_DIRECTION.md': b'Public art contract fixture\n',
+                'docs/NH_INTEGRATION_GAPS.md': b'Public integration issue fixture\n',
+                'docs/NH_REGRESSION_GUARDS.md': b'Public regression contract fixture\n',
+                'docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md': b'Public bounded coverage index fixture\n',
             }
             private_files = (
-                'docs/NH_USER_PRIORITY_QUEUE.md',
-                'docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md',
+                'docs/NH_PRIVATE_QUEUE_FIXTURE.md',
+                'docs/NH_PRIVATE_COVERAGE_FIXTURE.md',
                 'CI/deploy_rsa.enc',
             )
             for name, content in public_docs.items():
@@ -223,6 +228,20 @@ class WindowsSourceArchiveTest(unittest.TestCase):
                 self.assertEqual(set(archive.getnames()), {prefix + name for name in public_docs})
                 for name, content in public_docs.items():
                     self.assertEqual(archive.extractfile(prefix + name).read(), content)
+
+    def test_untracked_policy_does_not_enable_document_export(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / 'repository'
+            (root / 'docs').mkdir(parents=True)
+            name = 'docs/NH_INTEGRATION_GAPS.md'
+            (root / name).write_bytes(b'Synthetic historical private content\n')
+            subprocess.run(['git', 'init', '-q', str(root)], check=True, capture_output=True)
+            subprocess.run(['git', '-C', str(root), 'add', '.'], check=True, capture_output=True)
+            (root / 'docs/NH_DOCUMENTATION_POLICY.md').write_bytes(b'Untracked future policy\n')
+            output = Path(temporary) / 'source.tar.gz'
+            self.assertEqual(packager.source_archive(root, output, 'synthetic-source'), [name])
+            with tarfile.open(output) as archive:
+                self.assertEqual(archive.getnames(), [])
 
 
 if __name__ == "__main__":

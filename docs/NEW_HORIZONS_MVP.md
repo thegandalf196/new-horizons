@@ -1,113 +1,46 @@
-# Heroes III: New Horizons — MVP
+# New Horizons original-content compatibility baseline
 
-## Current phase: user-authorized redesign
+The full redesign in [NEW_HORIZONS_DESIGN.md](NEW_HORIZONS_DESIGN.md) builds on
+this compatibility baseline; it is not limited to an original-rules-only MVP.
+This repository is the VCMI-based New Horizons fork, not Reconstruction.
 
-The original-content single-player MVP remains the compatibility baseline. The
-user has now authorized full implementation of their mod philosophy: fun first,
-numerical balance deferred, AI support mandatory, reuse external original art
-where appropriate and create original assets where needed. Follow
-[NEW_HORIZONS_DESIGN.md](NEW_HORIZONS_DESIGN.md) for current feature scope,
-ownership and playable increments. This supersedes earlier restrictions against
-intentional gameplay redesign; it does not erase saved-game/asset provenance,
-correctness, privacy or release obligations. Continue the repaired Windows preview
-publication alongside feature work, without replacing its frozen payload.
+## Product and architecture
 
-## Product contract
+Provide a curated single-player edition with a straightforward menu, local
+scenario selection and ordinary game journey. Players must not manage an optional
+mod collection. Retain the internal mod/dependency loader and essential resources;
+curation is not permission to delete `Mods/vcmi` or bypass validation.
 
-Working title: Heroes III: New Horizons. This is a VCMI-derived, GPL-covered project, separate from the Reconstruction repository. Preserve upstream license notices and attribution. Naming/public distribution rights require separate review.
+Use VCMI's existing in-process authoritative simulation and internal connection.
+The frontend sends commands; authoritative validation remains mandatory.
+Historical references to a server describe its role, not a separate executable
+or socket requirement. Preserve working AI, ordinary saves and historical ruleset
+compatibility; never silently reinterpret an old save under new rules.
 
-Deliver a fully playable ordinary single-player game using purchaser-supplied original Heroes III Complete assets. Unchanged original resources and executables remain external. The selected New Horizons creations, deliberate modifications and composites are shipped in `NewHorizons.nhart` under the user's explicit packaging direction; this operational category does not assert independent authorship or change underlying license obligations. Do not bundle original archives or wholesale extracted collections. Preserve source, attribution and provenance notices.
+## Distribution and licensing
 
-Single-player must use one game process, with no separate vcmiserver child and no loopback TCP/UDP connection or listener. Keep authoritative simulation, AI, commands and presentation ordering intact. An in-process simulation thread is permitted. Current upstream ServerThreadRunner and createInternalConnection are the first implementation candidates, not a mandate to replace working logic.
+Preserve VCMI GPL notices, legitimate attribution and corresponding source.
+The purchaser supplies Heroes III Complete data externally: Data, Maps and Mp3,
+including relevant expansion/localization resources and audio/video.
+Do not redistribute original archives, executables, installers, extracted
+unchanged assets, saves or copied maps. HD Edition and native LOKI data are not
+the Complete acceptance baseline.
 
-The single-player frontend must read as a local game: Main Menu -> New Game -> Single Scenario -> map/options -> Begin -> Adventure. Load Game must likewise reach saves without hosting/address/port/connect decisions. Internal lobby/session classes may remain, but do not expose networking terminology or a separate join/host interaction in ordinary single-player. Preserve necessary loading progress, cancellation and actionable errors; no redesign of game rules is required.
+Selected custom runtime artwork, including selected original-based edits and
+composites, is delivered in NewHorizons.nhart with origin and approval records;
+this changes packaging, not underlying copyright or license obligations.
+Authoring masters and review materials remain local. See
+[content acceptance](NH_CONTENT_ACCEPTANCE.md).
 
-Players receive one curated original-content edition: no optional third-party mod installation/selection workflow. Preserve internal content/dependency loading and upstream-required engine resources for compatibility and future curated additions. Do not claim that GPL recipients are unable to modify the source.
+## Ordinary acceptance journey
 
-## First acceptance gate
+A bounded original-content journey must cover menu and scenario setup, map
+interaction and movement, pickups, town entry, building/recruitment, AI turns,
+combat and spellcasting, save/quit/reload/continue, and victory or defeat.
+A seven-turn AI sample is a useful initial route, not whole-product certification.
+Required UI should remain readable and usable at native resolution.
 
-Build and run the ordinary installed-asset journey: menu -> scenario selection -> start -> hero selection and multi-step movement -> resource pickup -> Town/build/recruit -> AI and at least seven turns -> combat and spell -> save -> quit -> reload -> continued play -> victory/defeat. Verify no separate server process or single-player socket transport. Source/tests alone do not establish graphical acceptance.
-
-Before execution, record platform/build/source identity and asset location without committing proprietary content. Existing physical-desktop/graphical automation restrictions are not lifted by this implementation request; obtain a separate explicit bounded run authorization. Native Linux first; preserve Windows buildability.
-
-## Current testing authorization and continuation
-
-The user explicitly authorized as much testing as needed, fixing actual failures,
-and using the agents. This lifts the earlier new-project graphical-run hold.
-Use one designated Tester and private background Xvfb/XTest only: no host focus or
-pointer interaction, portal, visible fallback, or simultaneous original execution.
-Original assets remain external/read-only. No package installation is inferred.
-Keep individual runs bounded, retain concise results and a few useful screenshots,
-and stop/rebuild on a concrete defect rather than repeat unchanged failures.
-
-Current shared-tree roles: Content transitions to sole graphical Tester (no
-product edits while executing); Runtime owns runtime fixes; Frontend owns UI
-fixes; Build owns serialized builds and is delegated integration responsibility
-for subsequent test/fix checkpoints, including scoped reviewed commits/pushes.
-Dispatcher does not concurrently stage or commit while Build integrates. Other
-workers never commit. Apply the identity/privacy/validation rules below; preserve
-all unrelated dirty files. Freeze candidate bytes during each run and communicate
-failures directly to the owner. Follow one failed run through fix, rebuild and
-retest; do not stop at reports or wait for a chat status request to integrate.
-
-After the complete MVP gate passes, continue implementing evidenced original
-Heroes III features/behavior missing from this fork. Use current VCMI source,
-upstream issue/test evidence and independently corroborated original references.
-Distinguish an omission from an intentional difference or an already-fixed issue.
-Reconstruction is reference evidence, not automatically validated implementation.
-Record uncertainty and add focused regression tests before importing behavior.
-
-## Current delivery priority: Windows download from GitHub
-
-The user requests a ready-to-run Windows download from the existing GitHub fork,
-not instructions to compile and not the Linux-only preview. This takes priority
-over further post-MVP feature expansion. Deliver a Windows x64 preview package
-through GitHub Releases, with matching runtime dependencies and engine resources,
-source revision/checksums, required GPL/resource notices, and straightforward
-extract/select-installed-Complete-assets/play instructions. Do not include original
-assets, saves, personal workstation paths or credentials. Preserve repository
-visibility and branches; this request does not authorize changing visibility.
-
-Build/Integrator owns CI, packaging and publication; Frontend owns the bounded
-Windows asset/setup path under `tools/windows/`; Runtime owns Windows runtime
-compatibility fixes; Tester independently audits package contents/instructions.
-Reuse upstream Windows CMake/Conan/CI mechanisms where practical. Drive the actual
-build through failures to an artifact rather than stopping after workflow creation.
-A Windows compile/package pass is not Windows graphical gameplay acceptance; name
-any untested platform behavior explicitly in the preview release. Keep the frozen
-Linux manual preview and accepted save profiles intact.
-
-## Delivery sequence
-
-1. Establish upstream build and dependency baseline; no new engine/framework.
-2. Trace and enforce the existing internal single-player transport; test start/load/shutdown and failure paths.
-3. Curate original content and hide unsupported mod/multiplayer entry points without deleting engine content mechanisms.
-4. Build one candidate and perform independently authorized normal-input play.
-5. Fix actual divergences; publish a known-tested preview with explicit limitations.
-
-The Reconstruction tree is read-only reference evidence. Do not automatically import its code. Any reuse requires original-behavior corroboration and provenance/license review. Do not continue the old reconstruction implementation program as part of this project.
-
-## Ownership
-
-- W1: server/simulation lifetime and existing internal single-player transport. Coordinate shared interface with W2.
-- W2: client single-player selection/connection flow and usable frontend. No gameplay rule rewrite.
-- W3: original-content/dependency inventory, curated-content policy; initially read-only proposal, then assigned non-overlapping config changes.
-- W4: save/load/campaign continuity regression inspection; preserve existing behavior, no speculative rewrite.
-- W5: independently verify no network/child-process path in single-player, propose focused negative tests; no overlapping W1 edits.
-- W6: CMake/dependency/build/package baseline, reuse one build root. Own build-file edits.
-- TESTER: independent normal-input acceptance plan and later authorized execution; no product source.
-- Scholar/Oracle: targeted existing-code/evidence/provenance review only when requested; no broad repeated study.
-- Taskmaster/Orchestrator: assign concrete non-overlapping work and integrate; no migration of the old watchdog project or receipt bureaucracy.
-
-Use new-project sessions rooted here with these instructions, not old Reconstruction sessions. Preserve old worker changes at safe checkpoints. Keep one shared clean integration branch and at most necessary worker worktrees; never reset others' work.
-
-## Git
-
-Current branch: `main`, in https://github.com/thegandalf196/new-horizons.
-The user authorized renaming the former definitive-mvp branch without rewriting
-its history, changing the default to main and removing the other inventoried
-public branches after verified private preservation. The original baseline was
-upstream develop bc0fc2a9f83c9caf0d90575e38ad4b7008b2764a. The unique older
-spellcast tooling is privately preserved, not merged into current gameplay.
-
-Commit tested coherent changes and push main to origin. Use author AND committer thegandalf196 <thegandalf196@users.noreply.github.com>. Scan staged diffs for credentials, personal data, assets and generated files. No force pushes, further branch deletion or default-branch changes without separate authorization. Source commits do not imply playable acceptance.
+A compile, source check, package checksum or startup alone is not gameplay
+acceptance. Windows build/package checks and native Windows interaction are
+separate evidence. Follow [delivery gates](NH_DELIVERY_PIPELINE.md); the withdrawn
+0.85 preview is not a current release candidate.

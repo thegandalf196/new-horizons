@@ -55,10 +55,10 @@ Generation and review workflows must use an explicit local output root rather
 than recreate loose artwork in publicly tracked directories.
 
 ```sh
-python3 tools/nhart.py pack --manifest assets/new-horizons/runtime-art-manifest.json --input-root "$NH_ART_INPUT_ROOT" --output Mods/new-horizons/NewHorizons.nhart
-python3 tools/nhart.py inspect Mods/new-horizons/NewHorizons.nhart
-python3 tools/nhart.py verify Mods/new-horizons/NewHorizons.nhart --manifest assets/new-horizons/runtime-art-manifest.json
-python3 tools/verify_new_horizons_art_install.py --resources installed-data --manifest assets/new-horizons/runtime-art-manifest.json
+"$NH_PYTHON" tools/nhart.py pack --manifest assets/new-horizons/runtime-art-manifest.json --input-root "$NH_ART_INPUT_ROOT" --output Mods/new-horizons/NewHorizons.nhart
+"$NH_PYTHON" tools/nhart.py inspect Mods/new-horizons/NewHorizons.nhart
+"$NH_PYTHON" tools/nhart.py verify Mods/new-horizons/NewHorizons.nhart --manifest assets/new-horizons/runtime-art-manifest.json
+"$NH_PYTHON" tools/verify_new_horizons_art_install.py --resources installed-data --manifest assets/new-horizons/runtime-art-manifest.json
 ```
 
 See [NHART_FORMAT.md](NHART_FORMAT.md) for byte fields and tool contracts.
@@ -106,7 +106,7 @@ checked at startup, not continuously against later same-user modifications.
 
 Container integrity, source compilation, resource/decoder integration, rendered
 clean-install acceptance, performance comparison and downloadable release
-integrity are separate gates. See the user-priority queue for actual progress;
+integrity are separate gates. See [integration gaps](NH_INTEGRATION_GAPS.md) for remaining acceptance breadth;
 these instructions do not claim completion of unexecuted gates.
 
 Performance comparisons must use identical payload bytes and distinguish

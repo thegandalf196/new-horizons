@@ -4,10 +4,17 @@
 sandbox. Requires Bash, GNU coreutils/findutils, and `flock` (util-linux), already
 available on the supported native Linux host. It does not install anything.
 
-The default client is repository-relative
-`build/new-horizons-linux/bin/vcmiclient`, as assigned in
-[`NH_BUILD_HANDOFF.md`](../docs/NH_BUILD_HANDOFF.md). Engine resources default to
-that binary's directory. The build owner must supply a matching Linux/XDG client,
+Source exporters share the reviewed contributor-document list in
+`ci/source_export_policy.py`. Revisions containing the tracked, regular
+`NH_DOCUMENTATION_POLICY.md` export those maintained guides; historical revisions
+retain the earlier privacy exclusions. Unknown `NH_` documents and the deploy key
+remain excluded. Review that list when moving a contributor contract; do not add
+coordination diaries to make a source-export test pass.
+
+The default client and resources come from the checksum-verified immutable
+snapshot selected in the local playable store. Follow the build and delivery
+procedure in [`NH_DELIVERY_PIPELINE.md`](../docs/NH_DELIVERY_PIPELINE.md).
+The build owner must supply a matching Linux/XDG client,
 `libvcmi.so`, `config/`, `scripts/`, and `Mods/vcmi/`. Use `--client` and
 `--resources` to select another owner-approved candidate; no binary is probed by
 executing it. This does not support Windows, macOS, PortMaster or AppImage layouts.

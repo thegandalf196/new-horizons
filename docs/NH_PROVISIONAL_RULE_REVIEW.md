@@ -1,5 +1,7 @@
 # New Horizons provisional rule review
 
+This document preserves chosen interpretations, rationale, implementation seams and second-look cases. It is not a specification override or execution diary. Canonical amendments belong in [Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md); current acceptance limits are in [integration gaps](NH_INTEGRATION_GAPS.md). Historical native counts below are bounded evidence for their named checkpoint, not certification of current builds or playable delivery. Raw receipts and earlier candidate states remain privately recoverable.
+
 ## Griffin Elite reinforcement and target-dependent Genie wishes
 
 Chosen Griffin12/12, Damage7–10, HP45; Royal14/14, Damage9–12, HP55.
@@ -212,15 +214,6 @@ state isolation; this is not world-save or battle-resume acceptance. Data/schema
 tests check defaults, strict bounds, optional old-snapshot shape, ranks/IDs and
 Sylvan isolation.
 
-Focused data evidence: 49 Python registry/schema cases pass, and the generated
-module freshness check passes. The first combined invocation had a test import-
-path error; the proper existing `tools/tests` import path was used for the pass.
-The combined Linux client and native tests build. A bounded ordinary Linux
-battle executed a legal Charge Order and returned safely through creature
-information and encyclopedia navigation. Successful hero horseshoe/eagle cues
-were not captured; their rendered acceptance, Windows gameplay and broad
-save/resume interactions remain pending.
-
 Second-look cases: zero-cost paid admission, split charge pools and rounding,
 negated multi-target casts, temporary Buffer expiry, independently admitted
 follow-ups versus internal echoes, delayed source-owner changes, structural
@@ -278,7 +271,7 @@ receive half the Shroud flanking premium under the current captured policy.
 Actual spell casts, indirect damage and magical collateral are not new
 consumers; historical contexts retain their prior behavior. Both the eligibility
 helper and attack payload currently exclude this principal path. A bounded
-private correction with actual attack and detached-preview witnesses is assigned;
+actual attack and detached-preview witnesses remain required;
 it is not yet implemented or verified. This does not override a settled user
 decision. Wider control/collateral interactions deserve Phase2 review.
 
@@ -380,7 +373,8 @@ captured old-format pre-prefix guards include actual campaign crossover pools.
 Principal authored cases exercise fresh defaults, both real Wisp identities,
 unrelated/Psychic controls, PRESET/legacy/absence, real level-up/cap, current
 world/crossover replay, repeat init, prototype isolation and guarded save
-envelopes. Cases are authored UNRUN; source review/native acceptance pending.
+envelopes. Current execution evidence belongs in the private acceptance record;
+these are required oracles, not a new unrun task assignment.
 
 Second look: a deliberate future change of the ordinary Conflux line, custom
 campaign identity transformations, exotic upgrade graphs and crossover travel
@@ -466,7 +460,7 @@ stack prevents its unfinished activation from becoming an accidental repeat.
 The first accepted Hero-paid Order is the once-combat trigger, even if the
 eligible set is empty; delaying consumption would change the authored first-time
 rule. Pending Changes records slot, enemy-order and immediate-extra precedence.
-Private implementation and focused evidence are pending; review full extra,
+Keep focused evidence tied to the current implementation; review full extra,
 control and forfeiture matrices in Phase2.
 
 ## Coronius — offensive successor without workbook-only riders
@@ -499,8 +493,7 @@ structural producer rather than inventing HP for binary scenery. Reserve fixed
 ABSOLUTE landmarks provisionally, not as a claimed authored classification.
 Ordinary magical cleanup is classified by creation spell, not obstacle trigger:
 Tower's ability-created moat mines must survive despite sharing a mine trigger
-with ordinary Land Mine. Pending Changes records these interpretations. Private
-implementation, actual structural arithmetic and cleanup controls are pending;
+with ordinary Land Mine. Pending Changes records these interpretations. Implementation, actual structural arithmetic and cleanup controls are pending;
 review scenery classification and wider structural/perk combinations in Phase2.
 
 ## Diplomacy recruitment cohorts — bounded whole-stack provenance
@@ -511,7 +504,7 @@ return or later perk acquisition. A bounded union preserves different origins
 through legal merges, using the existing whole-stack Training convention rather
 than inventing fractional creatures. Loyal Mercenaries removes faction-mixing
 penalties only; it neither erases undead penalties nor fabricates unity bonuses.
-Pending Changes records this interpretation; private implementation and focused
+Pending Changes records this interpretation; current implementation and focused
 transfer/merge/save/entry evidence are pending. Revisit whole-stack amplification,
 late acquisition and multi-origin mixed-army valuation during Phase2/3.
 
@@ -552,7 +545,7 @@ readiness, chooses the stronger eligible value and consumes both on the next
 accepted Order. This avoids reaction-based extension of stronger readiness and
 unexpected additive multipliers while honoring the next-Order wording. Pending
 Changes records these provisional contracts. Production locations and focused
-evidence are pending private implementation. Revisit Time Stop/cleansing/order
+evidence are subject to current-source verification. Revisit Time Stop/cleansing/order
 reissue and counterspell/resistance/recipient classification in Phase2.
 
 ## Eight retired-development starts — legal explicit replacements
@@ -628,12 +621,6 @@ accepted negated combat casts and future six-school Tomes in Phase2; this is not
 authorization to add missing Tome content or alter existing unlock prices.
 
 ## Recruitment training — whole resulting stacks
-
-Status: production producers and typed receipts are integrated; focused v6
-principal128/128 and adjacent15/15 pass with zero failures/errors/skips.
-Training79803 passes1/1 and setup92086 passes29/29. Fresh v5 completes127/128;
-its unrelated next-round carried-Order rejection is repaired for the v6 gate.
-Accepted perk coverage increases with the full gate; playable acceptance remains separate.
 
 Use whole-stack training after genuine direct recruitment, not mixed individual
 cohorts. This matches existing stack-level Attack/Morale/Initiative and avoids
@@ -722,22 +709,11 @@ or fully absorbed damage cannot earn it. Review temporary HP, polymorph and
 controller transitions in Phase2. Sources are the shared Discipline/unit-state
 and Rebirth paths, town/hero visitor helpers, NewTurnProcessor and existing
 netpack serialization. These four implementations are source-reviewed and
-accepted at native85299:36/36 principal cases pass after linked90928, zero
+accepted at the historical native gate:36/36 principal cases pass after the corresponding build, zero
 failures/errors/disabled/skips. Shared68621 passes33/33 on the same pair.
 These interpretations remain reviewable; broader interactions above are Phase2.
 
-## Prepared private candidates — not accepted implementation coverage
-
-Accepted batch status: Royal Standard, Deep Flank, Encircled Doom, Vanish,
-Historian, Scholar and Archivist now pass their principal gates in88843:79/79,
-with adjacent3070:15/15. Haste and Thant specialty paths pass in the same batch.
-The implementation interpretations below remain reviewable Phase2 items;
-earlier authored/unrun labels are historical, not the current acceptance state.
-Shared Purpose, both Sage perks and four Frailty replacements pass36/36 exact
-native70790 and12/12 adjacent61175 after linked38972, with independent source
-review. Perks279/310 are accepted; Sage/Frailty amendments are integrated into
-the canonical document. Phoenix Spark and Recruiter's Contacts remain private
-source-reviewed candidates without native credit.
+## Additional perk interpretations
 
 Recruiter's Contacts: provisionally an empty pool means an individual external
 dwelling row, not every row simultaneously. Replenish only the first empty row
@@ -745,8 +721,7 @@ with positive ordinary weekly growth in stable stored order; preserve base and
 upgrade sharing. Qualification uses ownership at entry, before the ordinary
 capture path. Only a successful positive stock grant spends the hero's weekly
 use; zero growth and failed/stale receipts do not. Reuse the external dwelling's
-own percent/flat growth formula, not town/Castle production. Private implementation
-is underway, with no activation/native evidence. Review multirow selection and
+own percent/flat growth formula, not town/Castle production. Review multirow selection and
 captured versus previously owned dwellings in Phase2.
 
 Phoenix Spark: provisionally its explicit25% battle-start maximum aggregate HP
@@ -757,7 +732,6 @@ placement does not shift 'first' to a later Champion or recursively retry.
 Use authoritative category and existing Rebirth eligibility, temporary summon,
 placement and lifecycle infrastructure. Related rebirth traits require explicit
 scope review rather than assuming Phoenix is an ordinary Elite Elemental.
-Private implementation is assigned; no activation or focused native evidence.
 Revisit failed-placement use and other Rebirth perk composition in Phase2.
 
 Both Sage perks: interpret the Guild's available schools and built levels as
@@ -771,7 +745,7 @@ hero's first built-Guild visit consumes its receipt even before perk/book
 acquisition; arriving with no Guild does not. Separate revealed rows preserve
 ordinary fixed slots and research. Existing-position overflow must remain
 accessible through a native component dialog, not disappear or overrun layout.
-Principal Sage10 passes in native70790; both perks are active and the authored
+Principal Sage10 passes in the historical native gate; both perks are active and the authored
 clarification is integrated. Review multiple holders, later Guild construction,
 school labels, rendered overflow and book acquisition timing in Phase2.
 
@@ -781,9 +755,7 @@ existing Pursuit by maximum, not addition; no extra attack/activation is granted
 Encircled Doom adds10 percentage points per additional distinct contact side,
 up to50, only to a qualifying physical melee flank. Existing contact geometry
 and controller filters apply. Review transient post-attack Speed forecasting and
-broader collateral/temporary-form cases in Phase2. These integrated candidates
-still await their combined native gate.
-
+broader collateral/temporary-form cases in Phase2.
 Scholar: choose both reciprocal teachings before either mutation, with scoped
 canonical identity ties and a symmetric pair/week receipt. No eligible teaching
 does not consume the use. Ordinary book/school/rank/banned-spell rules still
@@ -800,7 +772,7 @@ or Second Wind's activation finishes. Current hostile control suspends the
 floor; friendly control restores it within the original lifetime. This differs
 from Commanding Presence's explicitly settled benefit-consumption lifetime.
 Review Second Wind and future Divine Discipline extensions in Phase2. The
-shared morale callback and captured Order recipients implement the private
+shared morale callback and captured Order recipients implement the
 candidate; eight cases are authored and source review is clear, not executed.
 
 Deep Flank: interpret 'currently attacked from at least two distinct melee
@@ -810,7 +782,7 @@ one direction do not add sides, while a double-wide footprint can contact two
 distinct sides. Apply half the rank's base Shroud flanking damage bonus only
 to the qualifying physical ranged attack, with fractional precision preserved;
 do not halve unrelated Backstab or Ambusher bonuses. Existing Formation Fighting
-protection remains. Shared damage/callback and Lua context implement the private
+protection remains. Shared damage/callback and Lua context implement the
 candidate. Eight cases are authored and source review is clear, not executed.
 Review incapacitated contacts, walls/terrain and wider double-wide geometry in
 Phase2; this is not a completed AI-choice or rendered acceptance claim.
@@ -835,7 +807,7 @@ while genuine continuations remain legal. Frozen/Time Stop forfeiture spends
 the normal slot. Later rounds return to ordinary scheduling. Reasoning: the
 authored immediate turn is normal initiative promotion, not an extra-action
 generator. Shared callback/Swift lifecycle, server flow and detached AI consume
-the same typed receipt. Ten principal native cases pass after linked82853, including
+the same typed receipt. Ten principal native cases pass after the corresponding build, including
 incapacitation during an accepted action and nested detached replacement.
 Review lazy child materialization before first access and approximate projected
 mid-exchange rebirth valuation in Phase2; do not claim exhaustive AI forecasting.
@@ -850,7 +822,7 @@ independent absolute-week receipt published before resources are granted.
 Reasoning: use the authored common/rare distinction and avoid consuming a
 reward on an ineligible resource. The trigger is CGMine::onHeroVisit; tooltip
 and receipt serialization are shared. Nine principal and five minimum AI cases
-pass after linked82853. Review custom resource classification, multiple-goal AI
+pass after the corresponding build. Review custom resource classification, multiple-goal AI
 receipt forecasting and capture-followed-by-visit
 interaction in Phase2. This interpretation does not amend the canonical text.
 
@@ -863,7 +835,7 @@ fixed transfers and unsupported modes do not change. A real Marketplace remains
 required. No kingdom-wide count is mutated. Reasoning: the text grants one town
 modifier, not a kingdom-wide or per-holder count. Implementation is
 CGTownInstance::getMarketEfficiency; eight principal and three Resource Broker
-native cases pass after linked77224. Review future independent holder stacking
+native cases pass after the corresponding build. Review future independent holder stacking
 or new exchange modes if authored. These scope choices are provisional.
 
 ## Steward — resident contribution and day boundary
@@ -876,7 +848,7 @@ day transition and apply the town's ordinary handicap once to combined income;
 do not introduce a separate persistent end-turn receipt or treasury grant.
 Implementation candidate: CGTownInstance::dailyIncome consumed by
 NewTurnProcessor, existing town income label and passive right-click breakdown.
-Nine transition/handicap/ownership native cases pass after linked82853.
+Nine transition/handicap/ownership native cases pass after the corresponding build.
 Revisit captures or residence changes between individual player
 turns, asynchronous play and any explicitly authored future town-wide cap.
 The choice is provisional and does not amend the canonical wording.
@@ -906,7 +878,7 @@ Creature casts do not enter that history. Saved roster, school eligibility,
 already-known exclusion and selected current-v3 rules remain authoritative.
 The unselected/legacy bonus path remains unchanged. This scope is reviewable,
 not a claim that every retention/save interaction is certified. All11 principal
-cases pass after linked11731, including actual winner/retreat/surrender, creature
+cases pass after the corresponding build, including actual winner/retreat/surrender, creature
 history exclusion and defeated hero removal. Broader retained draw/troopless
 winner, tavern rerecruitment and save restoration remain Phase2.
 
@@ -924,7 +896,7 @@ selected, provisionally add their authored fractions and round down once:
 20% total, not two independently rounded ticks. Neither effect resurrects a
 dead attacker or applies to ranged/record-only forecasts. Review composition
 and delayed casualty interactions in Phase2. Focused live/detached cases are
-source/native accepted within the30-case gate after linked71404, zero skips.
+source/native accepted within the30-case gate after the corresponding build, zero skips.
 
 Avatar of Rage tests the attack's captured effective Bloodrage against that
 side's captured maximum. Blood Scent's existing attack-local increase may meet
@@ -960,13 +932,10 @@ stack melee attack/retaliation, not individual creatures; its roll is distinct
 from whether the surviving recipient remains eligible for application.
 Review bonus-slot scheduling and multi-strike attacks explicitly during focused
 acceptance; do not substitute existing Stone Gaze/Blind activation semantics.
-Status:source/native accepted in47/47 focused cases after linked6035; rendered
+Status:source/native accepted in47/47 focused cases after the corresponding build; rendered
 verification remains pending and is not inferred from native success.
 
 ## Reality Warp mixed-pair resistance and confirmation
-
-Status:source/native accepted in73/73 principal cases after linked6035;
-rendered verification remains separate.
 
 The canonical total exchange does not specify how a mixed friendly/enemy cast
 handles Resistance or Magic Mirror. Selected hostile endpoints, determined by
@@ -989,8 +958,6 @@ BattleActionsController and BattleAI. No rendered acceptance is implied.
 
 ## Fate Dealer spill candidate draws
 
-Status: provisional implementation; focused native22/22 passes after linked46720.
-
 Generate two independent uniform legal spill candidates with replacement,
 consistent with Shapeshifter. If exactly one is hostile to the caster's current
 ownership, choose it; otherwise choose fairly between the draws, including
@@ -1006,22 +973,13 @@ F/N²; without the perk each is1/N. Focused evidence must include duplicate and
 same-side draws, controlled ownership, recipient defenses without reroll, exact
 weighted AI expectation without live RNG, and paid AI with Orders competing.
 Accepted evidence: runtime17/17 in5.471s and AI5/5 in1.888s, zero skips,
-failures or errors. Receipt: build/nh-fate-dealer-native.oy8R/receipt.md. Runtime
+failures or errors.  Runtime
 and AI explicitly compare current combat controller against caster ownership;
 ordinary ownerMatches retains its existing initial-side semantics. Review wider
 control/casualty interactions in Phase2 and replacement versus distinct draws
 in a later gameplay review. Source/native acceptance is not rendered delivery.
 
 ## Polymorph footprint restoration and Phantom body
-
-Status: provisional implementation; principal25/25 and foundations17/17 pass.
-
-Final exact-pair native evidence: linked64681, principal24.210s and
-foundations1.831s, zero failures/errors/skips. Receipt:
-build/nh-polymorph-native.WSrQen7z/receipt.md. Paid registered AI casting with
-Orders and active Shapeshifter passes. Runtime, AI, status and protocol guards
-are accepted; older preparatory notes below preserve the selection rationale.
-No binary form snapshot, bespoke artwork or rendered delivery claim.
 
 Use the approved nearest-legal-position policy for the original footprint on
 expiry or Dispel. If no legal original footprint exists anywhere, retain the
@@ -1057,8 +1015,6 @@ detached forecasts must agree; no native proof yet.
 
 ## Reality Warp transferred-effect beneficiaries
 
-Status: provisional interpretation; next-slice preparation, not activated.
-
 Focus Magic's beneficiary follows the receiving stack's controlling side;
 Arcane Breach's beneficiary is the side opposing its new recipient. Preserve
 original caster attribution, captured strength/perk parameters and remaining
@@ -1073,8 +1029,6 @@ atomic packet application. No native proof yet.
 
 ## Mire Shaper additional Bog Ambush patch
 
-Status: provisional implementation; focused native acceptance passed10/10.
-
 Calculate the ordinary School/Spellcraft/Warcasting-scaled patch count with its
 five-patch cap, then add the selected perk's one additional patch. The perk thus
 permits three to six patches rather than disappearing at high Spell Power.
@@ -1084,11 +1038,9 @@ Implemented shared seam: NewHorizonsMagic::quicksandPatchCount in
 lib/spells/NewHorizonsMagic.cpp; client, Lua authority and AI consume that count.
 Focused count, paid placement and actual AI-submission fixtures are present.
 Final native10/10 passes, zero skips, in2.587s after fixture-only relink74808.
-Receipt: build/nh-mire-miracle-native.lBbjTbsn/receipt.md. No rendered claim.
+ No rendered claim.
 
 ## Miracle Worker casualty restoration
-
-Status: provisional implementation; focused native acceptance passed14/14.
 
 Preserve healing allocated to wounded surviving creatures, then increase the
 remaining casualty-restoration HP pool by25%, flooring once. A fully destroyed
@@ -1099,7 +1051,7 @@ wound healing. Review whether the intended design should instead boost the
 entire restoration pool. Implemented seam: scripts/spells/heal.lua amount
 calculation used by legality, forecast and execution. Fourteen focused native
 fixtures pass14/14, zero skips, in5.580s on the final exact pair, including
-paid AI with Orders. Receipt: build/nh-mire-miracle-native.lBbjTbsn/receipt.md.
+paid AI with Orders.
 Broader casualty/capacity compositions remain Phase2; no rendered claim.
 
 The user authorizes reasoned provisional gameplay judgments when rules or
@@ -1113,8 +1065,6 @@ and their eventual disposition. Actual specification amendments belong in
 Pending Changes until integrated. Explicit settled user decisions take priority.
 
 ## Terrain Rebirth selection and modifier composition
-
-Status: provisional interpretation; focused native acceptance passed25/25.
 
 The authored terrain table names one Elemental per context. Adaptive Element
 therefore selects that legal singleton; Perfect Convergence forces the same
@@ -1134,8 +1084,6 @@ continuation. Focused native results belong in the functional completion matrix.
 
 ## First-round Elemental Conjurer Initiative
 
-Status: provisional lifecycle implementation; normal-round native acceptance passed.
-
 Use the existing one-turn spell bonus for +2 Initiative through the summon
 round, preserving normal bonus transport and caching. Review Time Stop and
 Spell Lock interaction: those systems may freeze generic duration beyond the
@@ -1143,8 +1091,6 @@ literal first battlefield round. Production: scripts/spells/elementalConvergence
 Normal next-round expiration is included in the focused native fixture.
 
 ## Overwatch range and voluntary movement
-
-Status: provisional interpretation; principal native acceptance passed29/29.
 
 Use the ordinary unpenalized ranged distance (10 hexes), capped by an explicit
 limited shooting range. No-distance-penalty abilities do not make the trigger
@@ -1173,8 +1119,6 @@ in Phase2; do not duplicate attack-resolution machinery merely for this perk.
 
 ## Rapid Embarkation and Navigation
 
-Status: provisional interpretation; principal native acceptance passed29/29.
-
 Rapid Embarkation's explicit "costs only10% of maximum daily Movement" is a
 final boarding/disembarking cost, replacing the ordinary cost rather than an
 intermediate amount that Navigation halves again. This honors the named fixed
@@ -1189,8 +1133,6 @@ step-cost treatment. The perk must not increase the cost of an already-free acti
 
 ## Nature's Wrath conduction and range
 
-Status: provisional interpretation; Nature's Wrath focused acceptance passed16/16.
-
 The authored nearest-unvisited route has no numerical chaining radius. Use the
 whole playable battlefield and deterministic unit-ID ties, without changing
 generic Chain Lightning. Healthy friends conduct with zero healing; living
@@ -1204,8 +1146,6 @@ authored17/19 distinct-recipient caps,93% attenuation and survivor-only healing.
 
 ## Pursuit March daily recovery
 
-Status: provisional interpretation; Pursuit March focused acceptance passed13/13.
-
 After a surviving hero wins, including an opponent's retreat or surrender,
 restore floor(10% of the current travel-layer daily Movement maximum), capped
 at the missing daily Movement. Never reduce already-over-cap Movement. Consume
@@ -1216,8 +1156,6 @@ and whether zero recovery should consume the use. Persist the day through an
 authoritative atomic movement update, without per-update polling.
 
 ## Pandemonium logical debuff counting
-
-Status: provisional interpretation; principal Pandemonium native acceptance passed25/25.
 
 Count each distinct authored DEBUFF identity once per stack, not every Bonus
 component or repeated application. Snapshot all counts before damage resolves.
@@ -1231,7 +1169,7 @@ Review mixed-effect classification and simultaneous Poison variants. Metadata
 must be complete before activation; an unregistered helper is not coverage.
 
 
-## All38 audited default-development replacements — private integrated provisional candidate
+## Audited default-development replacement rationale
 
 The user authorizes the following exact fresh DEFAULT development profiles.
 Ranks1/2/3 mean Basic/Advanced/Expert. All selected perks are existing active Basic;
@@ -1290,12 +1228,6 @@ Structural rank1..3 supports retained faction ranks; genericparent remains<=Adva
 Root-imported newer hero flags/cloners/epoch guards and historical fixture key
 erasures are preserved; no semantic epoch is newly appended by this candidate.
 
-Private authored evidence:234 cases233map+1MirlandaFrailty, UNRUN. Existing8 and
-all family controls remain; publicqueries cover Mana/XP/learning/sight/fire/income
-and actualCrystal/GemProspector visits. Original39-gap disposition is38 profiles
-plus Voy separate Navigation candidate. Source review is separate from native
-acceptance/delivery and does not establish all144hero content coverage.
-
 Second-look priorities: retained Advanced rank balance, Isra/Vidomina generic
 knowledge differentiation, Ash controlspell availability, Oris futureMentor role,
 Deemer exploration/fire identity and resource-economy pacing. No workbook riders
@@ -1313,9 +1245,10 @@ restriction absent from the authored text.
 Source evidence: ordinary Magog/Lich shooting enters makeAttack/prepareAttack;
 the spell-like adapter enumerates collateral and marks presentation. Actual
 creature spellcasting instead enters CREATURE_ACTIVE BattleCast::cast. Current
-Divine Retribution judgment and AI threat gates exclude spell-like primary shots;
-a bounded correction and positive/actual-cast negative controls are assigned.
-Implementation and native acceptance remain pending. Recipient MDR applies to
+Divine Retribution source/AI gates must distinguish spell-like primary shots
+from actual creature casts; retain positive and actual-cast negative controls.
+Current implementation/acceptance must be checked rather than inferred from
+the historical source investigation. Recipient MDR applies to
 the eventual Holy payout under the existing general magical-damage rule, without
 a second cast, action, resistance roll or fabricated delayed caster.
 
@@ -1332,10 +1265,9 @@ preserving that composition and adjusting quantities to current independent
 slot Leadership limits. Prefer preserving ordinary random ranges where legal,
 not replacing every army with a fixed maximum. Preserve current creature-line
 successors and explicit map/saved-context behavior; do not invent additional
-troop types or redesign combat statistics. A dedicated implementation worker
-is inspecting the existing initializer and authoring seams before setting the
-actual144 dispositions. Source, capacity evidence and playable delivery remain
-pending. Revisit these prototypes during Phase3 for hero identity and opening
+troop types or redesign combat statistics. Actual144 dispositions and initializer contracts are maintained in
+[NH_STARTING_ARMIES_PROVISIONAL.md](NH_STARTING_ARMIES_PROVISIONAL.md).
+Build-specific playable acceptance remains separate. Revisit these prototypes during Phase3 for hero identity and opening
 economy rather than treating legal capacity as ideal starting strength.
 
 ## Bloodrage — ordinary elemental attacks
@@ -1346,7 +1278,7 @@ attacks receive their existing Rage premium; actual spellcasting, indirect damag
 and magical collateral do not gain an invented extra consumer. Avatar of Rage
 retains its separately settled physical Creature Defense channel. The current
 payload places all Rage damage inside a physical-only gate; a narrow correction
-and actual shot/detached/negative controls are assigned privately, not accepted.
+and actual shot/detached/negative controls are subject to focused acceptance.
 Preserve historical captured behavior where the existing policy supports it.
 Second look: unusual scripted attacks and collateral scope remain Phase2.
 
@@ -1355,9 +1287,8 @@ Second look: unusual scripted attacks and collateral scope remain Phase2.
 Provisionally its unqualified damage increase includes a direct active creature
 damage spell cast by the affected stack during that activation, as well as its
 ordinary attack. It does not enhance a Hero spell or unrelated damage-over-time.
-The present melee/ranged bonus producer covers ordinary elemental attacks but
-has no active-creature-spell consumer. A bounded source reconciliation and
-focused lifetime/actual-cast evidence are assigned; implementation is not yet
-accepted. Preserve the explicit75% Morale creature-spell policy and avoid a
+The historical melee/ranged-only consumer investigation requires current-source
+reconciliation and focused lifetime/actual-cast evidence before a completion
+claim. Preserve the explicit75% Morale creature-spell policy and avoid a
 global reinterpretation of all attack premiums. Second look: indirect/collateral
 origins and unusual scripted spell actions remain Phase2.

@@ -1,919 +1,226 @@
-# Repository Guidelines
-
-## New Horizons fork
-
-Read `docs/NEW_HORIZONS_MVP.md` before choosing work. It defines this fork's
-single-player, original-content MVP, ownership and validation contract. This is
-not the separate Reconstruction repository. Current full-scale mod implementation
-is authorized by `docs/NEW_HORIZONS_DESIGN.md`: prioritize fun and working AI;
-defer numerical balance. Read it alongside the MVP baseline before new feature work.
-Preserve VCMI licensing and existing
-gameplay; use its internal connection and simulation thread instead of a separate
-single-player server process. Historical references below to the server describe
-the authoritative simulation role, not a requirement for a separate executable
-or socket transport in this fork. Do not bypass command validation or directly
-mutate gameplay state from the frontend.
-
-## Important Patterns and Conventions
-
-### Protected regression invariants
-
-Before changing battle ownership, restart/quickload/game shutdown, window
-clearing or deferred rendering, read the combat-restart guardrail in
-`docs/NH_PERFORMANCE_EXPERIMENT.md`. Preserve its shutdown and repaint
-invariants, run the linked regression checks, and verify the ordinary rendered
-transition when touching those paths. A source-only check does not close a
-reported visual regression. Record recurrent defects with their previous fix,
-protected invariant, regression coverage and remaining acceptance evidence.
-
-### C++ style
-
-Follow the project's C++ conventions in [`docs/developers/Coding_Guidelines.md`](docs/developers/Coding_Guidelines.md) (formatting, naming, and general style).
-
-### Cross-DLL types (`DLL_LINKAGE`)
-
-For classes and structs that are serialized or otherwise shared across compile units, use the `DLL_LINKAGE` macro on the declaration:
-
-```cpp
-class DLL_LINKAGE CAddInfo {};
-struct DLL_LINKAGE Bonus {};
-```
-
-### Constants and identifiers
-
-Prefer existing constants over magic numbers or hard-coded strings:
-
-- **Numeric IDs** (creatures, buildings, and other entities): `lib/constants/EntityIdentifiers.h`
-- **String IDs** (configs, mods): `lib/constants/StringConstants.h`
-- **Sizes and counts** (gameplay-related): `lib/constants/NumericConstants.h`
-- **Game-related enums / mechanic states**: `lib/constants/Enumerations.h`
-
-### Serialization and state
-
-- **Serialization**: Use the custom serialization framework in `lib/serializer/`. Objects implement `h & object` pattern with serialization visitors. More details in [`docs/developers/Serialization.md`](docs/developers/Serialization.md).
-- **Game state modifications**: Only server can modify state. Client can only send requests to change gamestate to server, server validates requests and sends resulting changes in gamestate to clients
-
-## Code Architecture
-
-### Key Concepts
-
-#### Bonus System
-
-One of the most important systems. Every bonus (attribute, resistance, spell immunity, etc.) is stored in a bonus system that propagates through a DAG of nodes. Key files:
-
-- `lib/bonuses/Bonus.h` - Bonus structure
-- `lib/bonuses/CBonusSystemNode.h` - Node in the bonus graph
-- `lib/bonuses/IBonusBearer.h` - Interface for objects that can have bonuses
-
-Bonuses have:
-
-- **Propagators** - Rules for which ascendants receive the bonus
-- **Limiters** - Restrictions on which descendants receive the bonus (e.g., only griffins)
-- **Inheritance** is automatic through the DAG; propagation requires explicit propagators
-
-More details in [`docs/developers/Bonus_System.md`](docs/developers/Bonus_System.md).
-
-#### Game State
-
-Accessed through `CGameState` in `lib/gameState/CGameState.h`. Contains:
-
-- Map and all map objects
-- Player information
-- Heroes and their armies
-- Game settings and options
-
-See [`docs/developers/Code_Structure.md`](docs/developers/Code_Structure.md) for an overview of how game state fits into the overall architecture.
-
-#### Callbacks
-
-The lib exposes game state through callback interfaces:
-
-- `CGameInfoCallback` - Read-only game info
-- `CPlayerSpecificInfoCallback` - Player-specific visible state
-- `CBattleCallback` - Battle-specific state
-- `CCallback` - Server callback for client requests
-
-AI and player interfaces use these callbacks rather than directly accessing game state.
-
-#### Networking
-
-Network layer:
-
-- `lib/network/NetworkConnection.h` - Low-level connection
-- `lib/networkPacks/` - Serializable network packets
-
-All changes to game state must go through server via network packets. More details in [`docs/developers/Networking.md`](docs/developers/Networking.md).
-
-#### Threading Model
-
-- **MainGUI** - Main thread, input processing and rendering
-- **runNetwork** - Network thread, processes incoming packets, runs combat AI reactions
-- **runServer** - Server thread, processes requests and game state updates
-- **AI tasks** - TBB-based tasks for adventure AI (Nullkiller)
-
-See [`docs/developers/Code_Structure.md`](docs/developers/Code_Structure.md) for detailed threading information.
-
-### Directory Structure
-
-- **lib/** - Core static library `vcmiMain` with core game logic and data structures.
-  - Aggregated into the shipped shared library `vcmi` (`VCMI_lib.dll` / `libvcmi.so`) by the **libFacade/** target along with all AI implementations and `vcmiLua`. Consumers always link the facade target `vcmi`, not `vcmiMain` directly.
-  - **battle/** - Battle system (damage calculation, pathfinding, unit state)
-  - **bonuses/** - Bonus system (core mechanics for granting attributes to units/heroes)
-  - **callback/** - Interfaces for accessing game state (used by AI and client)
-  - **entities/** - Game objects (heroes, creatures, artifacts, spells, buildings)
-  - **gameState/** - CGameState and related classes
-  - **mapping/** - Map loading/saving
-  - **mapObjects/** - Adventure map objects (towns, dwellings, mines, etc.)
-  - **mapObjectConstructors/** - Constructors for map objects
-  - **network/** - Network layer (connection management)
-  - **networkPacks/** - Network packet definitions and serialization
-  - **json/** - JSON parsing/validation/writing
-  - **filesystem/** - Archive and file loading
-  - **spells/** - Spell definitions and casting logic
-  - **modding/** - Mod loading and content management
-  - **pathfinder/** - Hero pathfinding on adventure map
-  - **serializer/** - Serialization framework (save/load, network)
-  - **rmg/** - Random map generator
-  - **campaign/** - Campaign progression and scenario logic
-  - **texts/** - Text handling and localization support
-
-- **client/** - Game client (backend-agnostic UI, logic, and interfaces)
-  - **adventureMap/** - Adventure mode UI and logic
-  - **battle/** - Battle UI and rendering
-  - **gui/** - GUI framework (CIntObject base class and components)
-  - **lobby/** - Local game setup screens
-  - **globalLobby/** - Online/global lobby UI and client
-  - **mainmenu/** - Main menu and game selection
-  - **mapView/** - Map rendering
-  - **render/** - Rendering abstractions and interfaces (backend-agnostic)
-  - **widgets/** - Reusable UI widget components
-  - **windows/** - Game windows and dialogs
-
-- **clientsdl2/** - SDL2 rendering backend (events/, media/, render/)
-- **clientsdl3/** - SDL3/GPU rendering backend (events/, media/, render/)
-
-- **server/** - Game server (compiled as vcmiservercommon library, shared by serverapp)
-  - **battles/** - Battle flow processing
-  - **queries/** - Player queries and responses
-  - **processors/** - Game state processors (turns, heroes, etc.)
-
-- **serverapp/** - Standalone server executable entry point
-- **clientapp/** - Client executable entry point (also handles iOS/Android specifics)
-- **lobby/** - Standalone global lobby server (SQLite-backed, separate from game server)
-- **launcher/** - Qt-based game launcher
-- **mapeditor/** - Qt-based map editor
-- **luascript/** - Lua scripting host, built as the static library `vcmiLua` and aggregated into `vcmi` by libFacade
-- **libFacade/** - Tiny aggregator target that produces the shipped `vcmi` shared library by linking `vcmiMain` + `vcmiLua` + every enabled AI
-- **config/** - Game configuration file (json-with-comments format)
-- **scripts/** - Lua scripts used by the game
-- **AI/** - AI modules, each built as a static archive and linked into the `vcmi` facade. They are constructed by name through `AIFactory` in `lib/callback/AIFactory.h`; there is no dynamic library loading.
-  - **BattleAI/** - combat AI (default)
-  - **Nullkiller2/** - Modern adventure map AI (default)
-  - **MMAI/** - Machine-learning-based combat AI (experimental)
-  - **StupidAI/** - Minimal combat AI for neutral/passive players
-  - **EmptyAI/** - Stub AI (no-op, used for testing)
-
-## Project Overview
-
-VCMI is an engine for the game Heroes of Might and Magic III. The project is structured around a client-server architecture with a shared library. The codebase is primarily C++ with some CMake build configuration, Qt for UI (launcher and map editor), and Lua/ERM for scripting.
-
-**Architecture**: One server process handles game state and mechanics. One or more client processes display the game and collect player input. Both use the shared VCMI lib.
-
-## Build System
-
-### CMake
-
-The project uses CMake with Conan package manager for dependency management on Windows. On other platforms, system package managers are used. See [`docs/developers/CMake.md`](docs/developers/CMake.md) for all CMake options and [`docs/developers/Conan.md`](docs/developers/Conan.md) for Conan setup.
-
-### C++ standard
-
-VCMI is built as **C++20**: the root `CMakeLists.txt` sets `CMAKE_CXX_STANDARD` to `20` with `CMAKE_CXX_STANDARD_REQUIRED ON`. Treat C++20 as both the minimum supported language and the dialect to prefer for new code.
-
-For platform-specific build and test instructions see [`docs/developers/Building_Windows.md`](docs/developers/Building_Windows.md), [`docs/developers/Building_Linux.md`](docs/developers/Building_Linux.md), [`docs/developers/Building_macOS.md`](docs/developers/Building_macOS.md), [`docs/developers/Building_Android.md`](docs/developers/Building_Android.md), [`docs/developers/Building_iOS.md`](docs/developers/Building_iOS.md).
-
-## Common Development Tasks
-
-### Adding a New Game Mechanic
-
-1. Add bonus type or modify `lib/bonuses/BonusEnum.h` if needed
-2. Implement logic in lib (typically in entity handlers or callback implementations)
-3. Add serialization support if it affects saved games
-4. Add serialization compatibility for older saves
-5. Update network packets if client-server communication is needed
-6. Add tests in `test/`
-7. Update client UI if player-visible changes needed
-
-### Modifying Battle Logic
-
-Battle logic is split:
-
-- `lib/battle/` - Core rules and state
-- `server/battles/` - Server-side processing
-- `client/battle/` - Rendering and UI
-
-Changes to rules should go in `lib/battle/` (especially `BattleInfo.h`, `CBattleInfoCallback.h`, etc.), except for what an attack is worth - that is a Lua script, `scripts/damage/damageCalculator.lua`. See [`docs/developers/Battlefield.md`](docs/developers/Battlefield.md) for details on the battle system.
-
-### Working with Configuration Files
-
-Game configuration uses JSON:
-
-- `config` directory contains configuration of all game entities and settings. It also contains JSON schemas for entities, under `config/schemas` path.
-- JSON parsing: `lib/json/JsonParser.h`, `lib/json/JsonNode.h`
-- JSON validation: `lib/json/JsonValidator.h`
-
-Configuration is loaded by handlers in `lib/entities/` (creature handler, spell handler, hero handler, etc.).
-
-## Logging
-
-- `lib/logging/CLogger.h` - Logger class
-- Logs are written to `vcmi.log`
-- Most subsystems have named loggers: `logGlobal`, `logNetwork`, `logAi`, etc.
-
-More details in [`docs/developers/Logging_API.md`](docs/developers/Logging_API.md).
-
-## Dependencies
-
-Major dependencies (managed by Conan):
-
-- SDL2 - Graphics rendering
-- Qt5/Qt6 - Launcher and map editor UI
-- Boost - Various utilities
-- FFmpeg - Video support
-- Lua/LuaJIT - Scripting (optional), see [`docs/developers/Lua_Scripting_System.md`](docs/developers/Lua_Scripting_System.md)
-- FuzzyLite - Fuzzy logic for AI
-- Intel TBB - Parallel algorithms for AI and map generation
-
-
-# Codex project instructions
-
-## Public identity and privacy
-
-Refer to the project owner publicly only as `gandalf196` or `thegandalf196`.
-Do not publish personal names, workstation usernames, absolute personal paths,
-private contact details or identifying metadata in tracked files, commit/tag
-messages, packages, logs, screenshots or reports. Resolve portable home-relative
-paths at runtime and retain raw privacy findings and recovery materials locally.
-Check generated artifacts and Git author/committer identity before publication;
-use the owner's alias and GitHub noreply address for project commits. Preserve
-legitimate third-party attribution and license notices. Do not claim historical
-GitHub views, external copies or unexamined artifacts have been erased.
-
-For complex coding tasks, use the `astra-orchestrator` skill when its trigger conditions match.
-
-The root agent owns architecture, decomposition, integration, and final verification.
-Prefer specialized subagents for bounded exploration, implementation, testing, review, and technical research.
-
-Do not delegate trivial work merely for parallelism.
-Do not let multiple implementation agents edit the same files without explicit ownership boundaries.
-User instructions always take precedence over this orchestration policy.
-
-The user authorizes up to ten concurrent workers, excluding the root. Use
-independent, bounded ownership rather than inventing tasks to fill slots. When
-a spawn reports a thread limit, inspect the existing team and reuse completed
-workers with follow-up tasks before claiming a lower worker limit. Completed
-threads may remain allocated. Do not increase limits beyond ten workers or
-interrupt unrelated user tasks to reclaim capacity.
-
-### Automatic delegation checkpoints
-
-Worker scheduling is the root's responsibility; do not wait for the user to
-request delegation or remind the root that workers have finished. At the start
-of each continuation, on every worker completion or failure, and whenever a
-build/test becomes running, terminal or blocked, inspect the actual team and
-current priority/coverage backlog. Before the next substantial root-only task,
-assign eligible independent work to available workers with concrete ownership
-and acceptance criteria. Reuse completed threads through `followup_task`;
-sending a message or writing an assignment in notes does not start an idle
-worker. Confirm assignments against live agent status.
-
-A running build, test or priority repair is not by itself a reason to idle
-independent implementation workers. Keep frozen candidate sources unchanged:
-use private patches or isolated worktrees for parallel changes. If an available
-worker cannot safely advance a real task, record the specific dependency,
-ownership conflict or resource constraint in the priority queue and reassess it
-at the next checkpoint. Do not invent filler tasks, duplicate work, overrun the
-ten-worker authorization or confuse completed threads with running workers.
-
-Maintain specialist assignments for skills/perks, spells, hero redesigns,
-legacy-content access auditing, background playtesting, and independent review.
-Actual service capacity may be lower than authorization; rotate roles and report
-that limitation accurately. Workers use Sol 6.1 Medium; reviewers Sol 6.1 High.
-The playtester must use an isolated background Xvfb display and disposable
-profile/saves. Never use the host display, focus, mouse or keyboard, and never
-fall back to visible interaction. Keep runs bounded and resource-conscious.
-Background graphical tests must also be silent. Launch through the maintained
-guarded private-launch helper, which pins both SDL audio-driver variables to
-`dummy`; verify those variables in the actual child process before sending input.
-Do not bypass that helper with a custom launch inheriting host audio routes.
-
-## Persistent user-priority queue
-
-### Automatic local playable delivery
-
-The ordinary Linux launcher must follow the latest successfully validated
-immutable candidate, not the newest compiled binary. Run local delivery gates
-through `tools/ci/linux_playable_snapshot.py validate` so successful validation
-and atomic promotion are one operation; do not leave a passed candidate awaiting
-a separate manual pointer repair. Supply a reviewed, bounded validation driver
-that tests the exact snapshot identified by the helper's environment bindings.
-Compilation, checksum verification or a trivial zero-exit command alone is not
-gameplay acceptance. A failed, timed-out, changed or superseded candidate must
-leave the current playable build unchanged. Keep explicit promotion for reviewed
-rollback or separately managed previews, not the ordinary delivery path.
-Pinned graphical ownership protocols require their own reviewed integration;
-do not bypass their isolation, cleanup or acceptance gates to promote a build.
-
-Keep build directories disposable. Do not store unique artwork, handoffs,
-authoring masters, saves, development worktrees or the selected playable delivery
-inside them. Keep those in explicitly configured local storage outside the
-repository's build tree. Prefer one reusable build directory and incremental
-validation; do not accumulate full candidate builds or copied debug binaries.
-Before removing an old build tree, verify recoverable preservation of unique
-material and check worktree, launcher and live-process references. Build with
-at most ten jobs unless the user explicitly changes that limit.
-
-Maintain user-assigned tasks and coordination notes in a configured private task
-queue outside the repository and disposable build trees. Read that queue before
-choosing or resuming work, including after context compaction or an automatic
-goal continuation. Record requirements, blockers and acceptance evidence there.
-Do not commit conversation-derived task notes, chat transcripts, private input
-locations or raw execution receipts. If the private queue location is unavailable,
-request its configured location rather than creating a tracked fallback.
-`docs/NH_USER_PRIORITY_QUEUE.md` is a historical record, not a destination for new
-coordination notes. Public specifications and concise, sanitized technical
-documentation remain separate maintained project records.
-Resolve its open tasks before returning to the ordinary implementation backlog;
-do not silently substitute another workstream or drop an item from memory.
-If blocked, record the blocker and work on another unblocked queue item. Ask for
-direction if all queue items are blocked; do not silently bypass this priority.
-Preserve safely running processes and unrelated changes when switching work.
-Priority is not an exclusive single-worker lane. Keep independent missing
-Version1.0 feature workers progressing in parallel while the root, tester and
-reviewer handle priority fixes and delivery. Use non-overlapping ownership or
-isolated worktrees so feature work cannot change a frozen test candidate.
-Do not idle implementation workers merely because a crash reproduction,
-artwork revision, build or graphical acceptance is pending. Pause only affected
-workstreams when there is a concrete dependency, foundational failure, unsafe
-ownership overlap or resource constraint; record the
-reason and reassess it at each checkpoint. Never invent filler work to occupy
-slots. User-priority fixes retain integration/delivery precedence, and critical
-crash/corruption findings still require immediate repair.
-Distinguish source implementation, verification, and playable delivery. A source
-edit or build alone does not close a reported visual/runtime defect. Keep resolved
-entries with their evidence. This queue tracks work, not gameplay authority:
-`New Horizons.md` remains canonical and design amendments belong in Pending Changes.
-
-## Provisional gameplay judgments
-
-When a gameplay rule or interaction is ambiguous, use the best reasoned
-judgment and continue implementation instead of waiting for a ruling. The user
-explicitly authorizes provisional decisions. Record each material interpretation
-in `docs/NH_PROVISIONAL_RULE_REVIEW.md`: affected specification/feature, chosen
-behavior, rationale, implementation location, focused evidence and situations
-that deserve a second look. Tell workers about the decision and revisit existing
-design holds under this policy; do not leave the team idle merely for uncertainty.
-Keep approval, implementation, verification and playable delivery distinct.
-Do not silently contradict an explicit settled user decision. If a provisional
-choice amends the authored specification, record it in Pending Changes until
-integrated into the canonical document; the review ledger is not a second
-permanent specification. Crash/corruption, safety, licensing, external authority
-and missing resources remain real blockers, not design choices to guess away.
-
-## Heroes III UI visual construction
+# New Horizons repository instructions
+
+## Scope and sources of truth
+
+This is New Horizons, a VCMI fork for single-player play with original content.
+It is not the separate Reconstruction repository. Preserve VCMI licensing,
+third-party attribution, and existing gameplay outside the requested changes.
+
+Follow the user's current task and settled decisions. Before new feature work,
+read `docs/NEW_HORIZONS_MVP.md` and `docs/NEW_HORIZONS_DESIGN.md`.
+`docs/design-sources/New Horizons.md` is the canonical gameplay specification;
+proposed amendments belong in `docs/NEW_HORIZONS_PENDING_CHANGES.md` until
+incorporated. Read `docs/NH_VERSION_1_0_SCOPE.md` for current release boundaries. Code describes current behavior,
+not proof that the intended design has been implemented correctly.
+
+Read more specific `AGENTS.md` files for the area being changed. Read additional
+reference documents when relevant to the task, rather than loading every guide.
+
+## Current priority and work tracking
+
+Current phase: **Phase 2 - stabilization and integration**.
+See `docs/NH_PHASE1_EXIT_AUDIT.md` for the Phase 1 exit evidence and
+`docs/NH_DEVELOPMENT_PHASES.md` for detailed phase criteria.
+The withdrawn 0.85 experimental preview is not a current release or a Version 1.0 release candidate.
+
+Prioritize crashes/corruption, save/load, incorrect mechanics, action and
+activation integrity, initiative, targeting, effect lifecycles, interactions,
+AI use of implemented mechanics, and UI/result agreement. Avoid substantial
+new mechanics until integration is stable, unless the user directs otherwise.
+Defer numerical balance unless a value prevents meaningful functional testing.
+
+Keep user priorities and execution receipts in the configured private task queue
+outside tracked files and disposable build trees. Read it before selecting or
+resuming backlog work; do not invent a tracked fallback if its location is
+missing. Preserve unresolved requirements and record blockers, acceptance
+evidence, and remaining work.
+If all eligible tasks are blocked, request the missing decision or resource.
+
+For ambiguous gameplay details, make a reasoned provisional choice and record
+it in `docs/NH_PROVISIONAL_RULE_REVIEW.md` with rationale, code location, and
+verification. Respect settled decisions; specification amendments still belong
+in Pending Changes. Missing resources, external authority, licensing questions,
+and crash/corruption risks are not gameplay choices to guess away.
+
+## Orchestrator and standing specialist team
+
+Use Codex's native agents; no orchestration or art plugin is required.
+The main agent is the project orchestrator: own priorities, architecture, task
+boundaries, integration decisions, acceptance evidence, and communication with
+the user. Delegate substantive implementation, artwork, and gameplay validation
+to the appropriate specialists. Handle coordination and small integration fixes
+directly when appropriate; do not take over a specialist's active file ownership.
+
+Maintain these standing roles throughout the project:
+
+| Role | Responsibility |
+| --- | --- |
+| Artist | Heroes III visual style, icons, portraits, interface artwork, native-resolution previews, provenance, and selected asset packaging. |
+| Game tester | Reproducible gameplay scenarios, rendered transitions, save/load, AI behavior, and observed regression evidence. |
+| Gameplay engineer | Spells, Orders, Skills/perks, heroes, creatures, towns, and other specified mechanics and their focused tests. |
+| Engine engineer | Simulation boundaries, serialization, shutdown/thread ownership, rendering integration, builds, and performance. |
+| AI engineer | Adventure/combat decisions, use of new mechanics, legal actions, and AI evaluation scenarios. |
+| Independent reviewer | Correctness, memory/state/save risks, specification agreement, and missing acceptance evidence. |
+| UI developer | C++ widgets, layout, input, tooltips, and integration of approved artwork; coordinate with artist and gameplay engineer. |
+| Content designer | JSON definitions, text/localization, registrations, map/scenario content, and cross-reference validation; follow authored mechanics. |
+
+The artist and game tester remain designated members even during code-focused
+work. Engage the artist for visual changes and the tester for changes affecting
+observable gameplay. Specialists report to the orchestrator; they do not choose
+unrelated backlog work or change project priorities on their own. Every engineer
+still validates their own changes; the game tester provides independent evidence,
+and the reviewer does not approve their own implementation.
+
+Permanent means a stable role and retained project context, not continuous
+inference or an idle polling loop. Reuse named specialist threads for related
+assignments while available. Keep a compact handoff in the configured private
+queue so a role can be restored when a thread is closed, capacity is reclaimed,
+or a new main session starts. A role definition alone does not launch a session
+or provide tools; report unavailable image-generation or graphical-test tools.
+
+Give each assignment a bounded objective, file ownership, constraints, expected
+result, and acceptance criteria. Avoid concurrent edits to the same files;
+use isolated worktrees or private patches where appropriate. Keep frozen test
+candidates unchanged. Inspect and route real follow-up work at task handoffs;
+let specialists wait when no eligible task exists. Do not invent filler work.
+Respect actual capacity, with no more than four allocated subagent threads
+excluding the orchestrator; never interrupt unrelated user work to reclaim slots.
+Count retained idle or completed worker threads toward this project budget.
+Reuse them or deliberately close them before allocating replacements. A runtime
+releasing a completed worker's concurrency slot does not authorize a fifth
+retained project worker.
+Additional research specialists may be assigned when needed.
+
+Native specialist definitions live in `.codex/agents/`. They configure reusable
+roles; the orchestrator assigns work and reuses their threads. Models, reasoning
+effort, and thread limits belong in Codex configuration.
+Start a specialist with its named role and a bounded handoff. Verify the executing
+specialist's effective settings, not metadata copied from an earlier parent
+context or a role label applied to an existing thread.
+Distinguish assigned work, running work, verified results, and delivered playable
+builds. Report changes, evidence, limitations, and next steps; do not treat
+activity or test counts as completion.
+
+## Code ownership and architecture
+
+- `lib/`: mechanics, entities, bonuses, callbacks, game state, serialization,
+  configuration, and pathfinding. Use existing identifiers and constants.
+- `server/`: authoritative simulation and validated command processing.
+- `client/`: interfaces and rendering; `clientsdl2/` and `clientsdl3/` implement
+  the rendering backends.
+- `AI/`: combat and adventure AI. Use callback interfaces for visible game state.
+- `config/`, `Mods/new-horizons/`, and `scripts/`: data, mod content, and Lua logic.
+- `launcher/`, `mapeditor/`: Qt tools; `test/`: regression and mechanic tests.
+
+Use VCMI's internal connection and simulation thread for this single-player
+fork. References to a server mean simulation authority, not a requirement for a
+separate process or socket transport. Frontends submit validated commands;
+never directly mutate gameplay state from UI or bypass command validation.
+
+Follow `docs/developers/Coding_Guidelines.md` and C++20 conventions. Preserve
+`DLL_LINKAGE` where required across shared-library boundaries. Consumers link
+`vcmi`, the `libFacade/` aggregate, rather than `vcmiMain` directly. AI modules
+are registered through `AIFactory`, not dynamically loaded libraries.
+
+For bonus changes, read `docs/developers/Bonus_System.md`. Preserve serialization
+and save compatibility for state changes; read `docs/developers/Serialization.md`.
+For combat, inspect `lib/battle/`, `server/battles/`, `client/battle/`, and relevant
+Lua damage logic in `scripts/damage/damageCalculator.lua`. Use schemas and the
+existing JSON loader/validator for content changes. Consult the applicable
+code-structure, networking, battlefield, and logging guides as needed.
+
+Before changing battle ownership, restart, quickload, shutdown, window clearing,
+or deferred rendering, read the combat-restart guardrail in
+`docs/NH_PERFORMANCE_EXPERIMENT.md`. Preserve thread ownership, shutdown, and
+repaint invariants and run its regression checks and rendered-transition check.
+Record recurring defects with the previous fix, protected invariant, coverage,
+and any remaining acceptance evidence.
+
+## Build, tests, and playable delivery
+
+Use documented CMake and platform build commands. Read the relevant
+`docs/developers/Building_*.md` and Conan/CMake guides for the environment in use.
+Allow only one compilation invocation at a time across the team. Use at most ten
+build jobs within that invocation unless the user changes that limit. For Python tools,
+use the environment's verified absolute interpreter path; never bare `python`,
+`python3`, or `pytest`.
+
+Run focused checks for the changed behavior, then relevant integration and
+regression suites for Phase 2 changes and checkpoints. Fix material failures;
+record unrelated failures honestly. A build or source-level check does not
+establish rendered behavior, working AI, or successful gameplay.
+
+Automated graphical playtesting must use isolated background Xvfb, disposable
+profiles/saves, and the maintained guarded private-launch helper. Verify both
+SDL audio-driver variables are `dummy` in the actual child process. Keep runs
+bounded and silent; never use the host display, input, or audio as a fallback.
+If the required graphical environment is unavailable, report the verification
+gap rather than claiming a pass.
+
+The ordinary Linux launcher follows the latest validated immutable candidate.
+Use `tools/ci/linux_playable_snapshot.py validate` with a reviewed, bounded
+validation driver for that exact snapshot, so validation and atomic promotion
+remain one operation. Compilation, checksums, or a trivial successful command
+are not gameplay acceptance. Failed, changed, timed-out, or superseded
+candidates leave the playable build unchanged. Preserve graphical ownership,
+isolation, and cleanup gates. Explicit promotion is for reviewed rollback or
+separately managed previews.
+
+Prefer incremental builds. Keep unique art, handoffs, saves, development
+worktrees, and selected playable deliveries outside disposable build trees.
+Before removing a build, verify preservation and live process, launcher, and
+worktree references. Never discard unrelated changes or safely running work.
+
+## Repository documentation discipline
+
+Follow `docs/NH_DOCUMENTATION_POLICY.md`. Tracked prose must help a human
+contributor understand the product, architecture, accepted design, tools, asset
+contracts, or reproducible verification. Use one canonical home per fact and
+update current sections in place rather than appending a report after every turn.
+
+Keep chat/user-message copies, worker queues/handoffs, session/tmux IDs, wake
+protocols, token/model-reset notes, raw test receipts, temporary paths, exact
+art prompts/metadata, authoring masters, and rejected previews in configured
+private storage outside Git. Do not create another NH_* coordination diary or
+move an entire diary into docs/history to keep it public. Keep release evidence
+short, portable, versioned, and tied to the behavior actually verified.
+
+Before retiring a mixed document, preserve it privately and extract unresolved
+issues, accepted decisions, technical contracts, and important regression
+invariants into their maintained public homes. Update links and affected tests.
+Inspect tracked/staged files: ignore patterns do not untrack existing content.
+Do not rewrite history or claim old public copies have been erased.
+
+## Artwork, public identity, and distribution
+
+Before art production, read `docs/NH_ART_DIRECTION.md` and the relevant native
+asset contracts. Before UI work, read `docs/NH_HOMM3_UI_STYLE_GUIDE.md`; apply its panel-construction
+and native-resolution checklist. If the guide is missing, report its absence
+and use approved existing UI as reference without inventing a replacement
+style policy. Mockups guide layout and interaction. Preserve
+gameplay behavior unless a functional change is requested.
 
 Artwork awaiting user review must always be copied to `$HOME/Downloads/provisory/`. Resolve `$HOME` to the current user's home directory at runtime. Create the destination directory if it does not exist.
-Use a clearly named per-artwork subfolder.
-Provide a direct preview link there; keep native-resolution and enlarged previews
-when available. Do not overwrite existing review versions or treat a preview as
-approved or installed gameplay art.
-
-Before creating or revising New Horizons UI, read
-`docs/NH_HOMM3_UI_STYLE_GUIDE.md` and apply its outside-in panel-construction
-and native-resolution review checklist. Treat mockups as layout/interaction
-guides, not permission to reproduce pasted-together visual treatment. Preserve
-gameplay behavior unless the user separately requests a functional change.
-
-
-# New Horizons Development Phases
-
-## Selected runtime artwork delivery
-
-Selected runtime artwork is published through NewHorizons.nhart. Loose
-authoring files, runtime staging inputs, alternatives and review materials are
-maintained locally outside the repository and are not committed by default.
-The public repository retains the package, tools, manifests and records.
-Original-based edits and composites are included in this rule. Development or
-reference labels do not authorize public loose exports. Preserve and verify
-local originals before removing tracked copies; warn other worktree owners
-that pulling a removal commit can delete their tracked files. Authoring tools
-require explicitly configured local inputs/outputs; ordinary builds use the
-committed package without those inputs.
-
-The selected New Horizons runtime visuals, including deliberate modifications
-of original-based artwork and finished composites, belong in
-`Mods/new-horizons/NewHorizons.nhart`. The manifest records selection, approval
-and origin separately. Earlier automatic private-only exclusions must not strip
-selected Cabirs, turbaned Magi, Guild composites or custom interface resources
-from this package. This packaging direction does not change copyright ownership
-or license obligations. Unchanged original archives/resources remain external.
-Do not rebuild the committed pack from incomplete local inputs during ordinary
-builds. Preserve authoring masters and review materials. Verify distribution
-from the committed pack without private overlays, loose custom-art fallbacks or
-developer caches; source/container checks are not rendered acceptance.
-
-New Horizons is being developed in explicit phases.
-
-The root orchestrator owns the current phase, task prioritization, delegation,
-integration, and phase transitions.
-
-Do not optimize for the goals of a later phase while the current phase remains
-incomplete.
-
-Current phase: PHASE 2 — STABILIZATION AND INTEGRATION
-
-Phase 1 exit decision and evidence: `docs/NH_PHASE1_EXIT_AUDIT.md`.
-The published 0.85 experimental preview is not a Version 1.0 release candidate.
-
-The governing priorities are:
-
-PHASE 1:
-Specification coverage > test-suite perfection.
-
-PHASE 2:
-Integration correctness > new feature development.
-
-PHASE 3:
-Playtest evidence > theoretical balance assumptions.
-
-
-## Phase 1 — Implementation Coverage
-
-Primary objective:
-
-Implement the complete Version 1.0 specification.
-
-During this phase, maximize specification coverage. Missing specified mechanics
-and content take precedence over increasingly exhaustive verification of systems
-that already function.
-
-Track coverage explicitly.
-
-At minimum, maintain counts/status for:
-
-- Orders
-- combat Spells
-- Adventure Spells
-- Skills and Skill ranks
-- Skill perks
-- Faction Skills
-- Faction perks
-- Hero Action / Creature Activation mechanics
-- Leadership
-- Siege and War Machines
-- Luck and Morale
-- creature mechanics
-- town/building mechanics
-- artifacts and specialties
-- recruitment and Diplomacy
-- required combat UI
-- required hero-development UI
-- required adventure-magic UI
-- save-state representation
-- minimum AI hooks required to exercise implemented mechanics
-
-A missing specification item normally outranks additional integration tests for
-an already functioning item.
-
-### Phase 1 task priority
-
-Choose work in approximately this order:
-
-1. Missing foundational mechanic required by other Version 1.0 features
-2. Missing P0 Version 1.0 feature
-3. Missing P1 Version 1.0 feature
-4. Missing specified spell, Skill, perk, Order, faction mechanic, creature
-   mechanic, building, artifact, specialty, or other content
-5. Missing UI required to exercise an implemented mechanic
-6. Basic correctness defects blocking implementation
-7. Deferred integration hardening
-8. Optimization
-9. Polish
-10. Numerical balance refinement
-
-Do not repeatedly revisit an implemented subsystem merely because more tests,
-refactoring, or polish could be added.
-
-Do not allow broad integration work to consume the implementation schedule while
-substantial Version 1.0 specification coverage remains absent.
-
-
-### Phase 1 feature completion
-
-A feature is complete enough to move on when:
-
-1. The intended mechanic exists in production code.
-2. Required registration/data/configuration exists.
-3. Its principal execution path works.
-4. Required UI or interaction hooks exist sufficiently to exercise it.
-5. It builds successfully.
-6. It does not introduce an obvious crash, corrupt state, corrupt saves, or
-   violate a foundational invariant.
-7. Focused tests or deterministic verification establish basic correctness.
-8. Known cross-system interactions that remain unverified are recorded for
-   Phase 2.
-
-Do not require exhaustive cross-system validation before moving to the next
-specified feature.
-
-
-### Phase 1 testing policy
-
-Testing remains mandatory, but it is scoped to implementation.
-
-Workers should run focused validation for their own changes.
-
-Testers should prefer the smallest deterministic test command that establishes
-whether the delegated behavior works.
-
-Continuously enforce fast gates such as:
-
-- build/compile success
-- focused unit tests
-- relevant existing tests
-- registration/data validation
-- basic serialization sanity
-- deterministic mechanic tests
-- smoke tests
-- crash detection
-- important invariants
-
-Do not normally run the entire repository integration suite after every bounded
-feature.
-
-Do not block Phase 1 implementation on:
-
-- exhaustive interaction matrices
-- unrelated failing integration tests
-- broad regression suites unrelated to the change
-- large AI simulations
-- balance assertions
-- cosmetic discrepancies
-- numerical tuning disagreements
-- edge cases involving systems that have not themselves been implemented yet
-
-Broad integration suites should be run periodically in batches, at meaningful
-integration checkpoints, rather than mechanically after every implementation
-task.
-
-Immediately stop and repair a problem when it indicates:
-
-- crashes
-- memory/state corruption
-- save corruption
-- foundational architectural breakage
-- pervasive deterministic failure
-- an abstraction that prevents continued implementation
-
-Otherwise, record the integration issue and continue increasing specification
-coverage.
-
-
-### Phase 1 delegation
-
-Use explorers when the relevant implementation surface is genuinely unclear.
-
-Do not repeatedly re-explore already mapped architecture without evidence that
-it has changed.
-
-Use workers aggressively for independent missing specification items when file
-ownership can be separated safely.
-
-Parallelize independent implementation workstreams.
-
-Examples:
-
-- separate spell implementations
-- independent Skills/perk families
-- unrelated UI components
-- different town/building mechanics
-- isolated creature mechanics
-
-Do not assign multiple workers overlapping ownership of the same files unless
-the root has explicitly partitioned responsibilities.
-
-The tester should validate implemented behavior, not turn every feature into a
-full-system certification exercise.
-
-The reviewer should look for material correctness, regression, integrity,
-compatibility, and high-value missing-test risks. Phase 1 review findings should
-be classified as either:
-
-BLOCKING:
-crash, corruption, foundational regression, incorrect core mechanic, or issue
-that prevents continued implementation.
-
-DEFERRED:
-cross-system edge case, broad regression coverage, optimization, polish,
-non-critical compatibility concern, or balance issue suitable for Phase 2/3.
-
-Deferred findings must be recorded but should not automatically prevent the next
-coverage task.
-
-
-### Phase 1 numerical policy
-
-Most numerical values in New Horizons are prototypes or experimental balance
-values.
-
-Do not spend substantial Phase 1 time repeatedly tuning:
-
-- Spell coefficients
-- Mana costs
-- Order coefficients
-- Leadership progression
-- creature Leadership requirements
-- Skill weights
-- Luck/Morale curves
-- creature growth
-- creature prices
-- economy values
-- artifact values
-- AI valuation constants
-
-unless the current value prevents meaningful functional testing.
-
-Implement the specified mechanic faithfully first.
-
-Balance later.
-
-
-### Phase 1 progress metric
-
-The principal project metric during this phase is implementation coverage.
-
-Report concrete coverage rather than using test count as the primary measure of
-progress.
-
-Example:
-
-Orders:             8 / 8
-Combat Spells:     54 / 66
-Adventure Spells:   5 / 5
-Generic Skills:    21 / 21
-Generic Perks:    176 / 210
-Faction Skills:     9 / 9
-Faction Perks:     61 / 90
-
-Use actual specification-derived totals. Do not invent totals.
-
-At the end of each substantial orchestration cycle report:
-
-1. Current development phase
-2. Specification items completed
-3. Coverage changes
-4. Focused validation performed
-5. Deferred integration issues discovered
-6. Blocking issues, if any
-7. Next highest-priority missing specification item
-
-The preferred outcome of a Phase 1 cycle is increased specification coverage,
-not merely increased test count.
-
-
-### Phase 1 exit condition
-
-Do not leave Phase 1 because the test suite has become comprehensive.
-
-Leave Phase 1 when Version 1.0 specification coverage is substantially complete.
-
-Before transition, perform a specification audit and report:
-
-- implemented items
-- partially implemented items
-- missing Version 1.0 items
-- intentionally deferred non-Version-1.0 work
-- deferred integration defects
-- known failing broad tests
-- unverified interaction classes
-- provisional balance areas
-
-Then explicitly transition to Phase 2.
-
-
-## Phase 2 — Stabilization and Integration
-
-Primary objective:
-
-Make the implemented Version 1.0 systems work correctly together.
-
-During this phase:
-
-Integration correctness > new feature development.
-
-Feature creation largely stops.
-
-Resolve the deferred integration backlog systematically.
-
-Construct high-value interaction coverage, including where applicable:
-
-- Spell × Magic Resistance
-- Spell × Magical Damage Reduction
-- Spell × Dispel
-- Spell × Spell Lock
-- Spell × Time Stop
-- Spell × School perk
-- Spell × Spellcraft
-- Spell × Wisdom
-- Spell × Faction Skill
-
-- Order × Command
-- Order × perk
-- Order × Warcasting
-- Order × Faction Skill
-
-- Creature ability × Spell
-- Creature ability × Order
-- Creature ability × status
-
-- Creature Activation × initiative
-- Creature Activation × Wait
-- Creature Activation × Morale
-- Creature Activation × Second Wind
-- Creature Activation × Seize Initiative
-- extra activation × extra activation restrictions
-
-- death × Resurrection
-- death × Re-animate
-- death × Disintegrate
-- death × Necromancy
-- death × Elemental Rebirth
-- casualty provenance × restoration
-
-- Leadership × recruitment
-- Leadership × army transfer
-- Leadership × upgrades
-- Leadership × Diplomacy
-
-- Siege × War Machines
-- Siege × fortifications
-- Siege × repairs
-- Siege × defensive towers
-
-- save/load × permanent state
-- save/load × combat state
-- save/load × temporary effects
-- save/load × town state
-
-- UI prediction × actual resolution
-- AI decision-making × newly implemented mechanics
-
-During Phase 2, use the tester and reviewer substantially more aggressively.
-
-Run broad regression suites frequently.
-
-Fix interaction ordering, effect lifecycles, targeting legality, serialization,
-initiative consistency, action economy, AI integration, and UI/result
-disagreement.
-
-Do not introduce substantial new mechanics while integration remains unstable.
-
-
-### Phase 2 priority
-
-1. Crash/corruption
-2. Save/load correctness
-3. Deterministically incorrect mechanics
-4. Hero Action / Creature Activation integrity
-5. Initiative and extra-activation integrity
-6. targeting legality
-7. status/effect lifecycle
-8. cross-system interactions
-9. AI use of implemented systems
-10. UI prediction/result consistency
-11. remaining regression coverage
-
-
-### Phase 2 exit condition
-
-Enter Phase 3 when:
-
-- Version 1.0 mechanics reliably interact
-- major integration matrices have useful automated coverage
-- broad regression tests are consistently healthy
-- save/load is reliable
-- AI can exercise major new systems
-- UI predictions generally match actual outcomes
-- remaining issues are mainly balance, usability, polish, or isolated edge cases
-
-
-## Phase 3 — Playtesting, Balance, Polish, Release Hardening
-
-Primary objective:
-
-Determine whether the completed game plays well.
-
-During this phase:
-
-Playtest evidence > theoretical balance assumptions.
-
-Now tune:
-
-- spell costs and coefficients
-- Order strength
-- Attribute conversion
-- Leadership
-- creature requirements
-- creature stats
-- growth
-- recruitment costs
-- dwelling costs
-- Skill weights
-- perks
-- Faction Skills
-- Luck and Morale probabilities
-- War Machines and Siege
-- artifacts
-- specialties
-- Recruitment
-- Diplomacy
-- buildings
-- economy
-- adventure Movement
-- Adventure Magic
-- AI valuation
-- pacing
-
-Use reproducible gameplay evidence, controlled scenarios, simulations where
-appropriate, and real human playtests.
-
-When changing a value, identify the gameplay problem the change is intended to
-solve.
-
-Prefer isolated changes.
-
-Use:
-
-Observe
--> Reproduce
--> Identify responsible mechanic
--> Change smallest relevant rule/value
--> Run relevant regression tests
--> Replay scenario
--> Compare
--> Keep, revise, or revert
-
-Do not balance mechanics in isolation from the systems that determine their real
-value.
-
-
-### Phase 3 polish
-
-After mechanics and balance stabilize, address:
-
-- UI clarity
-- tooltips
-- targeting feedback
-- animation timing
-- sound
-- visual consistency
-- accessibility
-- error reporting
-- performance
-- loading
-- save compatibility
-- edge-case handling
-
-
-### Phase 3 exit condition
-
-Version 1.0 becomes a release candidate when:
-
-- intended specification coverage is complete
-- major integration defects are resolved
-- automated regression tests are healthy
-- representative games can be completed normally
-- AI can use the new systems
-- balance is acceptable for the release target
-- UI accurately communicates major mechanics
-- save/load is reliable
-- no known release blocker remains
-
-
-## Global anti-drift rule
-
-Before starting work, identify the current phase and ask:
-
-"What produces the greatest progress according to this phase's governing
-priority?"
-
-During Phase 1, another missing Spell, Skill, perk, creature mechanic, building,
-or required UI path is usually more valuable than another layer of tests around
-a feature that already has adequate focused verification.
-
-During Phase 2, fixing interactions is usually more valuable than adding another
-feature.
-
-During Phase 3, measured gameplay evidence is usually more valuable than
-speculative numerical redesign.
-
-Do not confuse engineering activity with progress.
+Use a new clearly named per-artwork subfolder. Provide direct preview links and
+native/enlarged previews where available; preserve previous versions. A preview
+is not Final approval. Selected provisional drafts may be integrated when explicitly
+authorized; keep selection, visual approval, technical verification and playable delivery distinct.
+
+Selected runtime artwork belongs in `Mods/new-horizons/NewHorizons.nhart`.
+Record selection, approval, and origin separately, including selected Cabirs,
+turbaned Magi, Guild composites, and custom interface resources. Preserve local
+authoring masters, inputs, alternatives, and review materials outside tracked
+files; tools require configured local paths. Ordinary builds use the committed
+pack without private inputs, overlays, loose fallbacks, or developer caches.
+Do not rebuild it from incomplete inputs. Keep unchanged original resources
+external and preserve copyright/license obligations. Verify rendered distribution.
+Before removing tracked art, verify local preservation and notify affected
+worktree owners about deletion on pull.
+
+Publicly identify the owner only as `gandalf196` or `thegandalf196`. Keep personal
+names, workstation usernames, absolute personal paths, private contacts,
+conversation notes, and raw receipts out of tracked files and public artifacts.
+Check packages, reports, screenshots, and Git author/committer identity before
+publication; use the owner's alias and GitHub noreply identity for project
+commits. Preserve legitimate third-party attribution. Keep raw privacy findings
+and recovery material local; do not claim historical external copies were erased.

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Reject literal personal home paths in tracked project instructions/docs.
 
-Default: inspect tracked Markdown/text files. --base REF or --staged inspects
+Default: inspect tracked Markdown/text and native agent role files. --base REF or --staged inspects
 only added lines, leaving unrelated historical findings for a private audit.
 Diagnostics deliberately omit matched paths and source snippets.
 """
@@ -38,6 +38,8 @@ def project_document(path):
     parts = Path(path).parts
     if any(part.lower() in EXTERNAL_DIRECTORIES for part in parts):
         return False
+    if len(parts) == 3 and parts[:2] == ('.codex', 'agents') and Path(path).suffix.lower() == '.toml':
+        return True
     return Path(path).suffix.lower() in {".md", ".txt"}
 
 

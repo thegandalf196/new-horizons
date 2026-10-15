@@ -10,7 +10,7 @@ only in `NEW_HORIZONS_PENDING_CHANGES.md`.
 | Artifact | SHA-256 | Role |
 |---|---|---|
 | `design-sources/New Horizons.docx` | `7c7c6c1a45c3b4ee4a3c5c625dd1b1d10eb46acdb6029aedfe8735a523c1108a` | Historical comparison source |
-| `design-sources/New Horizons.md` | `b9c3b35495bea2ba3f26d2b6d2529b6051bdd30a96c618df9f9071d28a250ee0` | Sole canonical gameplay source |
+| `design-sources/New Horizons.md` | `b9c3b35495bea2ba3f26d2b6d2529b6051bdd30a96c618df9f9071d28a250ee0` | Canonical source at this migration checkpoint; later amendments change its hash |
 
 ## Conversion audit and repairs
 
@@ -59,14 +59,13 @@ It remains subject to provenance and redistribution review. Historical DOCX
 links in dated migration records describe past checkpoints only; they confer
 no current authority.
 
-The pre-migration local tool `tools/migrate-new-horizons-canonical-docx.py` is
-retired. It targets and rewrites the archival DOCX and must not be run for new
-design amendments. It is an untracked local file, preserved as user-owned
-history rather than committed as an active repository workflow.
+The former DOCX-rewrite workflow is retired. Do not rewrite the archival DOCX
+for new amendments or introduce a second canonical source.
 
 ## Validation boundary
 
-`python3 -m unittest tools.tests.test_new_horizons_perk_data` passes 16
-checks, including source identity, 31/310 catalogue comparison, approved
-Bulwark differences, non-perk table anchors and table widths. This validates the source/catalogue migration,
-not gameplay implementation, a native build, or playable appearance.
+The maintained `tools/tests/test_new_horizons_perk_data.py` guards source identity,
+31/310 catalogue comparison, approved Bulwark differences, non-perk anchors and
+table widths. Run it with the verified configured interpreter. Historical passing
+checks establish source/catalogue migration, not gameplay implementation, native
+build or playable appearance.

@@ -22,6 +22,7 @@ cp -- "$repoRoot/tools/ci/linux_playable_snapshot.py" "$repo/tools/ci/linux_play
 cp -- "$repoRoot/tools/verify_new_horizons_art_install.py" "$repo/tools/verify_new_horizons_art_install.py"
 cp -- "$repoRoot/tools/nhart.py" "$repo/tools/nhart.py"
 cp -- "$repoRoot/tools/ci/package_new_horizons_windows.py" "$repo/tools/ci/package_new_horizons_windows.py"
+cp -- "$repoRoot/tools/ci/source_export_policy.py" "$repo/tools/ci/source_export_policy.py"
 cp -- "$repoRoot/tools/new-horizons-launch.sh" "$repo/tools/new-horizons-launch.sh"
 
 cat > "$repo/tools/new-horizons-launch.sh" <<'STUB'

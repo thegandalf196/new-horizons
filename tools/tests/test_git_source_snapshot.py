@@ -73,10 +73,15 @@ class GitSourceSnapshotTest(unittest.TestCase):
         public_docs = {
             'docs/NHART_FORMAT.md': b'Committed public NHART format fixture\n',
             'docs/NHART_DELIVERY.md': b'Committed public NHART delivery fixture\n',
+            'docs/NH_DOCUMENTATION_POLICY.md': b'Synthetic reviewed documentation policy\n',
+            'docs/NH_ART_DIRECTION.md': b'Public art contract fixture\n',
+            'docs/NH_INTEGRATION_GAPS.md': b'Public bounded integration issue fixture\n',
+            'docs/NH_REGRESSION_GUARDS.md': b'Public regression contract fixture\n',
+            'docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md': b'Public bounded coverage index fixture\n',
         }
         private_files = (
-            'docs/NH_USER_PRIORITY_QUEUE.md',
-            'docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md',
+            'docs/NH_PRIVATE_QUEUE_FIXTURE.md',
+            'docs/NH_PRIVATE_COVERAGE_FIXTURE.md',
             'CI/deploy_rsa.enc',
         )
         for name, content in public_docs.items():
@@ -101,6 +106,29 @@ class GitSourceSnapshotTest(unittest.TestCase):
                 self.assertEqual(archive.extractfile(prefix + name).read(), content)
         for name in public_docs:
             self.assertEqual((self.root / name).read_bytes(), b'Uncommitted future documentation\n')
+
+    def test_historical_revision_does_not_opt_in_from_mutable_or_untracked_policy(self):
+        path = self.root / 'docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md'
+        path.parent.mkdir()
+        path.write_text('Synthetic historical private content')
+        revision = self.commit(self.root)
+        policy = self.root / 'docs/NH_DOCUMENTATION_POLICY.md'
+        policy.write_text('Untracked future policy')
+        for label in ('untracked', 'committed-later'):
+            if label == 'committed-later':
+                self.commit(self.root)
+            result = source_snapshot(self.root, revision, self.base / (label + '.tar.gz'))
+            self.assertEqual(result['excluded'], ['docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md'])
+            self.assertEqual(result['source_entries'], 0)
+
+    def test_symlink_policy_does_not_enable_document_export(self):
+        (self.root / 'docs').mkdir()
+        (self.root / 'docs/NH_INTEGRATION_GAPS.md').write_text('Synthetic historical private content')
+        (self.root / 'docs/NH_DOCUMENTATION_POLICY.md').symlink_to('NH_INTEGRATION_GAPS.md')
+        revision = self.commit(self.root)
+        result = source_snapshot(self.root, revision, self.base / 'symlink-policy.tar.gz')
+        self.assertEqual(result['excluded'], ['docs/NH_DOCUMENTATION_POLICY.md', 'docs/NH_INTEGRATION_GAPS.md'])
+        self.assertEqual(result['source_entries'], 0)
 
     def test_uninitialized_submodule_requires_pinned_bare_cache(self):
         dependency = self.base / 'external'

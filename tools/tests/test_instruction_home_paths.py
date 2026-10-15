@@ -44,6 +44,22 @@ class HomePathPolicyTest(unittest.TestCase):
         for path in ("src/code.cpp", "assets/image.png", "vendor/reference.md", "third_party/README.txt"):
             self.assertFalse(POLICY.project_document(path))
 
+    def test_native_role_scope_is_direct_and_does_not_admit_general_toml(self):
+        self.assertTrue(POLICY.project_document('.codex/agents/game_tester.toml'))
+        for path in ('.codex/config.toml', 'config/game.toml',
+                     '.codex/agents/nested/role.toml', 'vendor/.codex/agents/role.toml'):
+            with self.subTest(path=path):
+                self.assertFalse(POLICY.project_document(path))
+
+    def test_tracked_native_role_instructions_have_the_same_privacy_guard(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            role = root / '.codex/agents/game_tester.toml'
+            role.parent.mkdir(parents=True)
+            role.write_text('developer_instructions = "/home/sample-account/private"\n')
+            with patch.object(POLICY, 'git', return_value=b'.codex/agents/game_tester.toml\0'):
+                self.assertEqual(POLICY.inspect(root), [POLICY.Finding('.codex/agents/game_tester.toml', 1)])
+
     def test_diff_checks_additions_not_removed_or_historical_lines(self):
         diff = "--- a/docs/sample.md\n+++ b/docs/sample.md\n@@ -4,2 +4,2 @@\n-/home/sample-account/removed\n+portable $HOME/new\n unchanged /home/sample-account/old\n@@ -20,0 +21 @@\n+/Users/sample-account/new\n"
         additions = list(POLICY.added_lines(diff))
