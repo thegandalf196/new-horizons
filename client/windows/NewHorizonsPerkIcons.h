@@ -10,6 +10,10 @@
 inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 {
 	static const std::map<std::string, std::string> icons = {
+		{"new-horizons:shroudOfMalassa.ambusher", "NH_perk_ambusher"},
+		{"new-horizons:shroudOfMalassa.evasiveShroud", "NH_perk_evasive_shroud"},
+		{"new-horizons:shroudOfMalassa.noEscape", "NH_perk_no_escape"},
+		{"new-horizons:shroudOfMalassa.shadowAssault", "NH_perk_shadow_assault"},
 		{"new-horizons:battlecraft.rapidResponse", "NH_perk_rapid_response"},
 		{"new-horizons:bloodrage.bloodScent", "NH_perk_blood_scent"},
 		{"new-horizons:bulwarkOfTheMire.thickHide", "NH_perk_thick_hide"},
