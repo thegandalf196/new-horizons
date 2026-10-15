@@ -17,6 +17,27 @@ hand-editing generated metadata. Confirm actual tool options before invocation.
 Canonical source identity and regeneration consistency are content gates, not
 gameplay certification.
 
+### Perk-offer policy2
+
+`offerWeightPolicyVersion: 2` selects the compressed parent-first lottery.
+`perkOfferNormalization.maximumPreferenceRatio` is a finite value at least1
+(default2); `mathVersion: 1` identifies its saved numerical policy. Reuse the
+complete captured class Skill row, including positive unlearned/capped Skills,
+to determine normalization bounds. Do not derive bounds from eligible parents.
+The implementation uses software-decimal normalization and a common2^32
+integer quantum, followed by integer sampling from the local seeded generator.
+This is a quantized distribution, not a claim of exact real arithmetic or of
+unperformed cross-platform certification. Keep the transaction-local normalized
+row reusable when a pending query is reopened, but reevaluate eligibility live.
+
+Parent selection and uniform perk selection are separate. Two eligible parents
+produce distinct parents; one parent may produce two distinct perks. Zero-weight
+learned exceptions receive the minimum perk weight without changing acquisition
+rules. Captured policy1 and absent-policy worlds keep their historical behavior.
+Same-tier selections under policy2 still consume the three-total cap, and every
+selected perk must remain visible in the hero screen. Test offer realization,
+captured context, query reuse, selection validation and serialization together.
+
 Principal consumers are entity handlers/bonus rules in `lib/`, validated
 execution in `server/`, detached projections and target valuation in
 `AI/BattleAI/`, adventure decisions in `AI/Nullkiller2/`, and presentation in

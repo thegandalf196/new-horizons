@@ -1,7 +1,8 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
-	"offerWeightPolicyVersion": 1,
+	"offerWeightPolicyVersion": 2,
+	"perkOfferNormalization": {"maximumPreferenceRatio": 2.0, "mathVersion": 1},
 	"sourceDocument": "docs/design-sources/New Horizons.md",
 	"sourceSha256": "daad4409e1086f45baa5f8bc19d008fffa6336ac2a5db8019d09def30c887008",
 	"maxSkillChoices": 2,

@@ -2088,11 +2088,11 @@ void CGameState::validateNewHorizonsLighthouseSerialization(bool supported) cons
 }
 
 
-void CGameState::validateNewHorizonsWeightedPerkSerialization(bool supported) const
+void CGameState::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported) const
 {
-	newHorizonsHeroes::validateWeightedPerkSerialization(heroPerkRules, supported);
+	newHorizonsHeroes::validateWeightedPerkSerialization(heroPerkRules, supported, r2Supported);
 	if(map)
-		map->validateNewHorizonsWeightedPerkSerialization(supported);
+		map->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported);
 }
 
 

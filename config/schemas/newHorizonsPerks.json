@@ -17,7 +17,16 @@
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [1, 2]},
-		"offerWeightPolicyVersion": {"type": "integer", "enum": [1], "description": "Optional captured weighted perk-selection policy. Absent historical registries retain legacy selection; present requires the weighted-perk serialization feature."},
+		"offerWeightPolicyVersion": {"type": "integer", "enum": [1, 2], "description": "Captured policy:1 full per-perk raw weights;2 normalized parent-first offers and additional same-tier selections. Absence retains legacy."},
+		"perkOfferNormalization": {
+			"type": "object", "not": {"type": "null"}, "additionalProperties": false,
+			"minProperties": 2, "maxProperties": 2,
+			"required": ["maximumPreferenceRatio", "mathVersion"],
+			"properties": {
+				"maximumPreferenceRatio": {"type": "number", "minimum": 1, "not": {"type": "null"}},
+				"mathVersion": {"type": "integer", "enum": [1], "not": {"type": "null"}}
+			}
+		},
 		"sourceDocument": {"type": "string", "minLength": 1},
 		"sourceSha256": {"type": "string", "minLength": 64, "maxLength": 64},
 		"maxSkillChoices": {"type": "integer", "enum": [2]},

@@ -829,11 +829,15 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				if(!learnedSkill || !skillDefinition)
 					continue;
 
-				const auto slot = newHorizonsPerkAvailability::evaluateTier(
-					perkState, skillId, skillRank, static_cast<int>(ability + 1));
+				const bool selectionSlots = newHorizonsHeroes::usesR2PerkOffers(perkState.rules);
+				const auto slot = selectionSlots
+					? newHorizonsPerkAvailability::evaluateSelectionSlot(perkState, skillId, skillRank, ability)
+					: newHorizonsPerkAvailability::evaluateTier(
+						perkState, skillId, skillRank, static_cast<int>(ability + 1));
 				cellLabels.at(labelIndex)->setText(slot.selectedPerk
 					? slot.selectedPerk->name : shortTierReason(slot.reason));
-				cellLabels.at(labelIndex + 1)->setText(newHorizonsPerkAvailability::tierName(slot.requiredRank));
+				cellLabels.at(labelIndex + 1)->setText(selectionSlots && !slot.selectedPerk
+					? "Perk slot" : newHorizonsPerkAvailability::tierName(slot.requiredRank));
 				cellLabels.at(labelIndex + 2)->setText(newHorizonsPerkAvailability::statusName(slot.status));
 				for(size_t label = 0; label < 3; ++label)
 					cellLabels.at(labelIndex + label)->setEnabled(true);
@@ -852,7 +856,11 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				}
 				else
 				{
-					const auto details = tierSlotText(slot, skillDefinition->name)
+					const auto details = (selectionSlots
+						? "An unfilled perk slot. Each Skill permits at most three selected perks.\n"
+							+ newHorizonsPerkAvailability::explanation(
+								{slot.status, slot.reason, slot.requiredRank}, skillDefinition->name)
+						: tierSlotText(slot, skillDefinition->name))
 						+ "\nClick the Skill to browse its ten perks; browsing never acquires a perk.";
 					area->text = details;
 					area->hoverText = details;

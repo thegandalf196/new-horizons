@@ -215,7 +215,7 @@ public:
 	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
-	void validateNewHorizonsWeightedPerkSerialization(bool supported) const;
+	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported) const;
 	void validateNewHorizonsBottomlessMindSerialization(bool supported) const;
@@ -385,7 +385,8 @@ public:
 		if(h.saving)
 			validateNewHorizonsLighthouseSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 		if(h.saving)
-			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS));
 		if(h.saving)
 			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)

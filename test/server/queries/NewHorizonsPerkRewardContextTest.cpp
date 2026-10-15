@@ -31,6 +31,7 @@ protected:
 		if(legacyPolicy)
 		{
 			perks.Struct().erase("offerWeightPolicyVersion");
+			perks.Struct().erase("perkOfferNormalization");
 			perks.setOverrideFlag(true);
 		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);

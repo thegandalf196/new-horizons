@@ -281,6 +281,19 @@ CHeroLevelUpDialogQuery::CHeroLevelUpDialogQuery(CGameHandler * owner, const Her
 	addPlayer(hero->tempOwner);
 }
 
+const newHorizonsHeroes::PerkState::OfferWeightContext & CHeroLevelUpDialogQuery::perkWeightContext() const
+{
+	auto current = hero->getPerkOfferWeightContext();
+	const auto & normalization = hero->getPerkState().rules["perkOfferNormalization"];
+	if(current.mode == cachedPerkWeightContext.mode
+		&& current.referenceWeights == cachedPerkWeightContext.referenceWeights
+		&& normalization == cachedPerkNormalization)
+		current.normalizedWeights = cachedPerkWeightContext.normalizedWeights;
+	cachedPerkWeightContext = std::move(current);
+	cachedPerkNormalization = normalization;
+	return cachedPerkWeightContext;
+}
+
 void CHeroLevelUpDialogQuery::refreshChoicesBeforePrompt()
 {
 	std::erase_if(hlu.skills, [this](SecondarySkill skill)
@@ -294,7 +307,7 @@ void CHeroLevelUpDialogQuery::refreshChoicesBeforePrompt()
 	hlu.perks = hero->getPerkState().prepareOffer([this](const std::string & skillId)
 	{
 		return hero->getPerkSkillRank(skillId);
-	}, hlu.perkOfferSeed, hero->getPerkOfferWeightContext());
+	}, hlu.perkOfferSeed, perkWeightContext());
 }
 
 bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
@@ -315,7 +328,7 @@ bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
 		validated.acceptOffer(hlu.perks, choice - hlu.skills.size(), [this](const std::string & skillId)
 		{
 			return hero->getPerkSkillRank(skillId);
-		}, hlu.perkOfferSeed, hero->getPerkOfferWeightContext());
+		}, hlu.perkOfferSeed, perkWeightContext());
 		return true;
 	}
 	catch(const std::exception &)
@@ -351,7 +364,7 @@ void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 	validated.acceptOffer(hlu.perks, perkChoice, [this](const std::string & skillId)
 	{
 		return hero->getPerkSkillRank(skillId);
-	}, hlu.perkOfferSeed, hero->getPerkOfferWeightContext());
+	}, hlu.perkOfferSeed, perkWeightContext());
 	logGlobal->trace("Completing hero level-up query. %s gains perk %s", hero->getNameTextID(),
 		hlu.perks.at(perkChoice).selection.perkId);
 	// HeroPerkChosen is the authoritative state transition. It must precede the
