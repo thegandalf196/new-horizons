@@ -72,26 +72,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "0ddd0469bc1426151d011e634bb9d549b241c56191f0d8703c1be31b0cdcf20e"
     },
-    "client/mainmenu/CMainMenu.cpp": {
-      "diagnostics": [
-        {
-          "end": 186,
-          "start": 186,
-          "type": "missing:type_identifier"
-        },
-        {
-          "end": 186,
-          "start": 186,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:type_identifier at physical lines 186-186, ERROR at physical lines 186-186. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "c263066f072412a6cc21ef389529483766da1677b19888778653aee0743031bd"
-    },
     "client/xBRZ/xbrz.cpp": {
       "diagnostics": [
         {
@@ -196,51 +176,6 @@
       "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "af5fda1738b43fedabbc7fc1b06e04024b498d3959662b30da6cfb77ae382374"
-    },
-    "lib/battle/HeroActionAllowanceState.h": {
-      "diagnostics": [
-        {
-          "end": 578,
-          "start": 578,
-          "type": "missing:type_identifier"
-        }
-      ],
-      "language": "cpp",
-      "owner": "gameplay_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:type_identifier at physical lines 578-578. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "fbf65065698acc2ebd1c7b5e93d0e230c4bb667c3a9cefb8fde5a866a9b19961"
-    },
-    "lib/callback/CGameInfoCallback.cpp": {
-      "diagnostics": [
-        {
-          "end": 585,
-          "start": 585,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 585-585. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "c134dee2b3b15c39dd5c56bd1b7823a9e55cbad463055f5936d198b221d207e7"
-    },
-    "lib/mapObjects/CGHeroInstance.h": {
-      "diagnostics": [
-        {
-          "end": 488,
-          "start": 488,
-          "type": "missing:type_identifier"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: missing:type_identifier at physical lines 488-488. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "b293d8fb0e967a15663f35fe85cd239a93cad7f7e9d29e749426e5dd76d12c58"
     },
     "mapeditor/mainwindow.cpp": {
       "diagnostics": [
@@ -7085,6 +7020,1539 @@
       "rationale": "Entire 6263-line source read, including all attack/movement/event branches and local class bodies. All 139 genuine maintained parser units retained exactly: 92 function definitions (including the constructor and local MovementProvenanceGuard destructor3157) plus47 nested/generic/capturing lambdas. No function-like macro definitions, conditional-compilation branches, defaulted/deleted definitions or additional unparsed callable bodies are present. Sole recovery at5708 is the member-expression token ->operator[] in spells->operator[](i), an invocation within getSpellsForAttackCasting5699-5750; it defines no callable, and that complete52-line function and its two lambdas5714-5725/5736-5740 are already retained. Existing16 >80-line functions, including9 >150, are genuine unchanged numeric debt and all17 existing file/function pins remain untouched; this inventory neither approves behavior nor grants numeric exception/growth. Full-file hash pins this completeness judgment; any source edit requires refreshed independent review, not automatic inheritance.",
       "review": "IR-MANUAL-BATTLE-ACTION-59c1a4e4-20261015",
       "sha256": "4488e81991003a8c45dabbbf2605c26efdd89292979d8684aff965cc7607cba1"
+    },
+    "lib/battle/HeroActionAllowanceState.h": {
+      "functions": [
+        {
+          "symbol": "HeroActionAllowanceState::Grant::void serialize(Handler & h)#1",
+          "start": 75,
+          "end": 110
+        },
+        {
+          "symbol": "HeroActionAllowanceState::Grant::void validateShape() const#1",
+          "start": 112,
+          "end": 138
+        },
+        {
+          "symbol": "HeroActionAllowanceState::void resetForRound(int32_t round)#1",
+          "start": 184,
+          "end": 202
+        },
+        {
+          "symbol": "HeroActionAllowanceState::resetForRound(int32_t round)::[round](const Grant & grant)#1",
+          "start": 193,
+          "end": 196
+        },
+        {
+          "symbol": "HeroActionAllowanceState::uint32_t grantAllowance(AllowanceKind allowance, GrantSource source, int32_t expiryRound)#1",
+          "start": 206,
+          "end": 220
+        },
+        {
+          "symbol": "HeroActionAllowanceState::static bool isHeroicSpiritTrigger(const Receipt & receipt)#1",
+          "start": 224,
+          "end": 230
+        },
+        {
+          "symbol": "HeroActionAllowanceState::bool canResolveHeroicSpirit(const Receipt & receipt) const#1",
+          "start": 232,
+          "end": 243
+        },
+        {
+          "symbol": "HeroActionAllowanceState::canResolveHeroicSpirit(const Receipt & receipt) const::[&receipt](const Grant & grant)#1",
+          "start": 239,
+          "end": 242
+        },
+        {
+          "symbol": "HeroActionAllowanceState::bool resolveHeroicSpirit(const Receipt & receipt, bool success)#1",
+          "start": 245,
+          "end": 257
+        },
+        {
+          "symbol": "HeroActionAllowanceState::std::optional<Selection> eligibleAllowance(ActionKind action, int32_t round) const#1",
+          "start": 261,
+          "end": 264
+        },
+        {
+          "symbol": "HeroActionAllowanceState::eligibleAllowance(ActionKind action, int32_t round) const::[](const Grant &)#1",
+          "start": 263,
+          "end": 263
+        },
+        {
+          "symbol": "HeroActionAllowanceState::std::optional<Selection> eligibleAllowance(ActionKind action, int32_t round, const GrantPredicate & grantPredicate) const#1",
+          "start": 266,
+          "end": 286
+        },
+        {
+          "symbol": "HeroActionAllowanceState::std::optional<Receipt> consumeAllowance(uint32_t grantId, ActionKind action, int32_t round)#1",
+          "start": 290,
+          "end": 293
+        },
+        {
+          "symbol": "HeroActionAllowanceState::consumeAllowance(uint32_t grantId, ActionKind action, int32_t round)::[](const Grant &)#1",
+          "start": 292,
+          "end": 292
+        },
+        {
+          "symbol": "HeroActionAllowanceState::std::optional<Receipt> consumeAllowance(uint32_t grantId, ActionKind action, int32_t round, const GrantPredicate & grantPredicate)#1",
+          "start": 295,
+          "end": 318
+        },
+        {
+          "symbol": "HeroActionAllowanceState::consumeAllowance(uint32_t grantId, ActionKind action, int32_t round, const GrantPredicate & grantPredicate)::[grantId](const Grant & grant)#1",
+          "start": 308,
+          "end": 311
+        },
+        {
+          "symbol": "HeroActionAllowanceState::Counts remainingCounts(int32_t round) const#1",
+          "start": 322,
+          "end": 349
+        },
+        {
+          "symbol": "HeroActionAllowanceState::void validateShape() const#1",
+          "start": 351,
+          "end": 394
+        },
+        {
+          "symbol": "HeroActionAllowanceState::validateShape() const::[this](uint32_t id)#1",
+          "start": 361,
+          "end": 367
+        },
+        {
+          "symbol": "HeroActionAllowanceState::validateShape() const::(uint32_t id)::[id](const Grant & grant)#1",
+          "start": 363,
+          "end": 366
+        },
+        {
+          "symbol": "HeroActionAllowanceState::void serialize(Handler & h)#1",
+          "start": 396,
+          "end": 456
+        },
+        {
+          "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#1",
+          "start": 400,
+          "end": 401
+        },
+        {
+          "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#2",
+          "start": 405,
+          "end": 408
+        },
+        {
+          "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#3",
+          "start": 411,
+          "end": 414
+        },
+        {
+          "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#4",
+          "start": 417,
+          "end": 420
+        },
+        {
+          "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#5",
+          "start": 432,
+          "end": 435
+        },
+        {
+          "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#6",
+          "start": 446,
+          "end": 447
+        },
+        {
+          "symbol": "HeroActionAllowanceState::void validateHeroicSpiritSerialization(Handler & h) const#1",
+          "start": 458,
+          "end": 464
+        },
+        {
+          "symbol": "HeroActionAllowanceState::validateHeroicSpiritSerialization(Handler & h) const::[](const Grant & grant)#1",
+          "start": 461,
+          "end": 462
+        },
+        {
+          "symbol": "HeroActionAllowanceState::void validateSharedPurposeSerialization(Handler & h) const#1",
+          "start": 466,
+          "end": 476
+        },
+        {
+          "symbol": "HeroActionAllowanceState::validateSharedPurposeSerialization(Handler & h) const::[](const Grant & grant)#1",
+          "start": 471,
+          "end": 474
+        },
+        {
+          "symbol": "HeroActionAllowanceState::uint32_t countDoubleCommandOrderGrants(int32_t round) const#1",
+          "start": 478,
+          "end": 489
+        },
+        {
+          "symbol": "HeroActionAllowanceState::countDoubleCommandOrderGrants(int32_t round) const::[round](const Grant & grant)#1",
+          "start": 483,
+          "end": 488
+        },
+        {
+          "symbol": "HeroActionAllowanceState::uint32_t countBattlePlanOrderGrants(int32_t round) const#1",
+          "start": 491,
+          "end": 502
+        },
+        {
+          "symbol": "HeroActionAllowanceState::countBattlePlanOrderGrants(int32_t round) const::[round](const Grant & grant)#1",
+          "start": 496,
+          "end": 501
+        },
+        {
+          "symbol": "HeroActionAllowanceState::static bool grantAllowedForSpell(const Grant & grant, bool isLightSpell)#1",
+          "start": 506,
+          "end": 509
+        },
+        {
+          "symbol": "HeroActionAllowanceState::static bool isValid(ActionKind value)#1",
+          "start": 512,
+          "end": 515
+        },
+        {
+          "symbol": "HeroActionAllowanceState::static bool isValid(AllowanceKind value)#1",
+          "start": 517,
+          "end": 520
+        },
+        {
+          "symbol": "HeroActionAllowanceState::static bool isValid(GrantSource value)#1",
+          "start": 522,
+          "end": 530
+        },
+        {
+          "symbol": "HeroActionAllowanceState::static bool canPay(AllowanceKind allowance, ActionKind action)#1",
+          "start": 532,
+          "end": 537
+        },
+        {
+          "symbol": "HeroActionAllowanceState::static std::tuple<uint8_t, int32_t, uint32_t> selectionKey(const Grant & grant, ActionKind action)#1",
+          "start": 539,
+          "end": 546
+        },
+        {
+          "symbol": "HeroActionAllowanceState::static void validateQuery(ActionKind action, int32_t round)#1",
+          "start": 548,
+          "end": 552
+        },
+        {
+          "symbol": "HeroActionAllowanceState::uint32_t appendGrant(AllowanceKind allowance, GrantSource source, int32_t expiryRound)#1",
+          "start": 554,
+          "end": 568
+        },
+        {
+          "symbol": "DivineMandateTransition::static std::vector<uint32_t> applyAcceptedAction(HeroActionAllowanceState & ledger, const HeroActionAllowanceState::Receipt & receipt, int32_t round, bool isLightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients = {})#1",
+          "start": 576,
+          "end": 633
+        },
+        {
+          "symbol": "DivineMandateTransition::applyAcceptedAction(HeroActionAllowanceState & ledger, const HeroActionAllowanceState::Receipt & receipt, int32_t round, bool isLightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients = {})::[](const auto & grant)#1",
+          "start": 619,
+          "end": 622
+        },
+        {
+          "symbol": "DoubleCommandState::bool orderPending() const#1",
+          "start": 658,
+          "end": 658
+        },
+        {
+          "symbol": "DoubleCommandState::bool secondWindReady() const#1",
+          "start": 659,
+          "end": 659
+        },
+        {
+          "symbol": "DoubleCommandState::bool begin( const HeroActionAllowanceState::Receipt & receipt, bool activePerk, HeroCommand order, int32_t round, uint32_t anchor, uint32_t deferredSecondWindTarget = INVALID_UNIT_ID)#1",
+          "start": 665,
+          "end": 689
+        },
+        {
+          "symbol": "DoubleCommandState::void completeFollowup(HeroCommand secondOrder)#1",
+          "start": 693,
+          "end": 704
+        },
+        {
+          "symbol": "DoubleCommandState::void exhaustPendingOrder()#1",
+          "start": 707,
+          "end": 717
+        },
+        {
+          "symbol": "DoubleCommandState::std::optional<uint32_t> consumeSecondWindContinuation()#1",
+          "start": 720,
+          "end": 729
+        },
+        {
+          "symbol": "DoubleCommandState::void validateShape() const#1",
+          "start": 731,
+          "end": 755
+        },
+        {
+          "symbol": "DoubleCommandState::void validateTransitionFrom(const DoubleCommandState & previous) const#1",
+          "start": 759,
+          "end": 779
+        },
+        {
+          "symbol": "DoubleCommandState::void serialize(Handler & h)#1",
+          "start": 781,
+          "end": 801
+        },
+        {
+          "symbol": "DoubleCommandState::void clearContext()#1",
+          "start": 804,
+          "end": 811
+        },
+        {
+          "symbol": "PreCombatOrderState::bool orderPending() const#1",
+          "start": 834,
+          "end": 834
+        },
+        {
+          "symbol": "PreCombatOrderState::bool isUnresolved() const#1",
+          "start": 835,
+          "end": 835
+        },
+        {
+          "symbol": "PreCombatOrderState::void beginOrderRequired(int32_t round, uint32_t anchor)#1",
+          "start": 837,
+          "end": 846
+        },
+        {
+          "symbol": "PreCombatOrderState::void complete()#1",
+          "start": 848,
+          "end": 857
+        },
+        {
+          "symbol": "PreCombatOrderState::void validateShape() const#1",
+          "start": 859,
+          "end": 871
+        },
+        {
+          "symbol": "PreCombatOrderState::void validateTransitionFrom(const PreCombatOrderState & previous) const#1",
+          "start": 873,
+          "end": 901
+        },
+        {
+          "symbol": "PreCombatOrderState::void serialize(Handler & h)#1",
+          "start": 903,
+          "end": 920
+        },
+        {
+          "symbol": "HeroSpellAllowanceTransition::static bool activatesGrand( bool metamagicFollowup, uint8_t metamagicPendingCount, size_t sequenceSpellCount, uint8_t metamagicUsesConsumed, uint8_t metamagicRank, bool grandPerkEnabled, bool metamagicGrandUsed)#1",
+          "start": 940,
+          "end": 956
+        },
+        {
+          "symbol": "HeroSpellAllowanceTransition::static std::optional<Result> commitAcceptedCast( HeroActionAllowanceState & ledger, uint32_t selectionGrantId, int32_t round, bool metamagicFollowup, bool grand, uint8_t metamagicRank, bool grandPerkEnabled, uint8_t & metamagicUsesConsumed, uint8_t & metamagicPendingCount, bool & metamagicGrandUsed, size_t sequenceSpellCount, uint8_t metamagicCapacity = 0)#1",
+          "start": 964,
+          "end": 981
+        },
+        {
+          "symbol": "HeroSpellAllowanceTransition::commitAcceptedCast( HeroActionAllowanceState & ledger, uint32_t selectionGrantId, int32_t round, bool metamagicFollowup, bool grand, uint8_t metamagicRank, bool grandPerkEnabled, uint8_t & metamagicUsesConsumed, uint8_t & metamagicPendingCount, bool & metamagicGrandUsed, size_t sequenceSpellCount, uint8_t metamagicCapacity = 0)::[](const HeroActionAllowanceState::Grant &)#1",
+          "start": 980,
+          "end": 980
+        },
+        {
+          "symbol": "HeroSpellAllowanceTransition::static std::optional<Result> commitAcceptedCast( HeroActionAllowanceState & ledger, uint32_t selectionGrantId, int32_t round, bool metamagicFollowup, bool grand, uint8_t metamagicRank, bool grandPerkEnabled, uint8_t & metamagicUsesConsumed, uint8_t & metamagicPendingCount, bool & metamagicGrandUsed, size_t sequenceSpellCount, const GrantPredicate & grantPredicate, uint8_t metamagicCapacity = 0)#1",
+          "start": 983,
+          "end": 1107
+        },
+        {
+          "symbol": "HeroSpellAllowanceTransition::static uint8_t countPendingMetamagicGrants(const HeroActionAllowanceState & ledger, int32_t round)#1",
+          "start": 1110,
+          "end": 1122
+        }
+      ],
+      "rationale": "Entire1123-line header read, including Grant serialization, ledger selection/consumption/validation, DivineMandateTransition, DoubleCommandState, PreCombatOrderState and both HeroSpellAllowanceTransition overloads/private counter. Complete body inventory retains all67 genuine maintained parser units exactly:48 callable bodies and19 lambdas, including nested processed-receipt lambdas361-367/363-366 and one-line predicate lambdas263/292/980. Seven defaulted equality declarations have no handwritten bodies and are excluded under the maintained body metric; no function-like macro definitions, conditional-compilation arms, handwritten constructors or unparsed callable bodies. After established bounded annotation normalization, sole missing:type_identifier578 is the empty braced default argument recipients={} in the already inventoried DivineMandateTransition signature576-633, not another function. Preserve full template/requires signature983-1107 for125-line commitAcceptedCast; no truncation to its later static signature. All existing numeric pins retained exactly; no exception or semantic approval.",
+      "review": "IR-MANUAL-ALLOWANCE-HERO-e2e2a79b-20261015",
+      "sha256": "fbf65065698acc2ebd1c7b5e93d0e230c4bb667c3a9cefb8fde5a866a9b19961"
+    },
+    "lib/mapObjects/CGHeroInstance.h": {
+      "functions": [
+        {
+          "symbol": "CGHeroPlaceholder::void serialize(Handler &h)#1",
+          "start": 57,
+          "end": 62
+        },
+        {
+          "symbol": "CGHeroInstance::IGameInfoCallback * getCallback() const final#1",
+          "start": 99,
+          "end": 99
+        },
+        {
+          "symbol": "CGHeroInstance::Patrol::void serialize(Handler &h)#1",
+          "start": 143,
+          "end": 148
+        },
+        {
+          "symbol": "CGHeroInstance::inline bool isInitialized() const#1",
+          "start": 151,
+          "end": 154
+        },
+        {
+          "symbol": "CGHeroInstance::bool areSpellPointsInitialized() const#1",
+          "start": 160,
+          "end": 160
+        },
+        {
+          "symbol": "CGHeroInstance::EPathfindingLayer getProtectedAdventureFlightLayer() const#1",
+          "start": 248,
+          "end": 248
+        },
+        {
+          "symbol": "CGHeroInstance::const JsonNode & getPrimaryGrowthRules() const#1",
+          "start": 285,
+          "end": 285
+        },
+        {
+          "symbol": "CGHeroInstance::const JsonNode & getCapabilityRules() const#1",
+          "start": 295,
+          "end": 295
+        },
+        {
+          "symbol": "CGHeroInstance::const newHorizonsHeroes::MasteryState & getMasteryState() const#1",
+          "start": 296,
+          "end": 296
+        },
+        {
+          "symbol": "CGHeroInstance::const newHorizonsHeroes::PerkState & getPerkState() const#1",
+          "start": 297,
+          "end": 297
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsInvestorDailyGold() const#1",
+          "start": 300,
+          "end": 300
+        },
+        {
+          "symbol": "CGHeroInstance::void setNewHorizonsInvestorDailyGold(int32_t value)#1",
+          "start": 301,
+          "end": 308
+        },
+        {
+          "symbol": "CGHeroInstance::const DemonicReserve & getDemonicReserve() const#1",
+          "start": 310,
+          "end": 310
+        },
+        {
+          "symbol": "CGHeroInstance::TQuantity getDemonicReserveCount(CreatureID creature) const#1",
+          "start": 311,
+          "end": 315
+        },
+        {
+          "symbol": "CGHeroInstance::void setDemonicReserve(DemonicReserve value)#1",
+          "start": 316,
+          "end": 316
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasNewHorizonsAdventureSpellCastToday() const#1",
+          "start": 317,
+          "end": 317
+        },
+        {
+          "symbol": "CGHeroInstance::void setNewHorizonsAdventureSpellCastToday(bool value)#1",
+          "start": 318,
+          "end": 318
+        },
+        {
+          "symbol": "CGHeroInstance::void resetNewHorizonsAdventureSpellCastToday()#1",
+          "start": 319,
+          "end": 319
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsCastleGateToday(int32_t day) const#1",
+          "start": 320,
+          "end": 320
+        },
+        {
+          "symbol": "CGHeroInstance::void markNewHorizonsCastleGateUsed(int32_t day)#1",
+          "start": 321,
+          "end": 321
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getTrainingDrillLastWeek() const#1",
+          "start": 322,
+          "end": 322
+        },
+        {
+          "symbol": "CGHeroInstance::void setTrainingDrillLastWeek(int32_t week)#1",
+          "start": 323,
+          "end": 328
+        },
+        {
+          "symbol": "CGHeroInstance::void validateRecruitmentTrainingSerialization(bool supported, bool cohortsSupported = true) const#1",
+          "start": 329,
+          "end": 334
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsPursuitMarchLastUseDay() const#1",
+          "start": 335,
+          "end": 335
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsPursuitMarchToday(int32_t day) const#1",
+          "start": 336,
+          "end": 336
+        },
+        {
+          "symbol": "CGHeroInstance::void setNewHorizonsPursuitMarchLastUseDay(int32_t day)#1",
+          "start": 337,
+          "end": 342
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsForcedMarchLastUseDay() const#1",
+          "start": 343,
+          "end": 343
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsForcedMarchPenaltyDay() const#1",
+          "start": 344,
+          "end": 344
+        },
+        {
+          "symbol": "CGHeroInstance::void setNewHorizonsForcedMarchState(int32_t lastUseDay, int32_t penaltyDay)#1",
+          "start": 345,
+          "end": 351
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsMuster(int32_t week) const#1",
+          "start": 352,
+          "end": 352
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsMusterLastWeek() const#1",
+          "start": 353,
+          "end": 353
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsMusterUsesThisWeek(int32_t week) const#1",
+          "start": 354,
+          "end": 357
+        },
+        {
+          "symbol": "CGHeroInstance::void markNewHorizonsMusterUsed(int32_t week, int32_t usesThisWeek = 1)#1",
+          "start": 358,
+          "end": 368
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsLearningMentorLastWeek() const#1",
+          "start": 369,
+          "end": 369
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsLegendaryReputationLastMonth() const#1",
+          "start": 370,
+          "end": 370
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsRecruitersContactsLastWeek() const#1",
+          "start": 374,
+          "end": 374
+        },
+        {
+          "symbol": "CGHeroInstance::const std::set<ObjectInstanceID> & getNewHorizonsSageGuildVisits() const#1",
+          "start": 377,
+          "end": 377
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsScholarWeek() const#1",
+          "start": 380,
+          "end": 380
+        },
+        {
+          "symbol": "CGHeroInstance::const std::vector<ObjectInstanceID> & getNewHorizonsScholarPartners() const#1",
+          "start": 381,
+          "end": 381
+        },
+        {
+          "symbol": "CGHeroInstance::void validateNewHorizonsScholarSerialization(bool supported) const#1",
+          "start": 383,
+          "end": 389
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsLearningMentor(int32_t week) const#1",
+          "start": 394,
+          "end": 394
+        },
+        {
+          "symbol": "CGHeroInstance::const LearningMentorRecipients & getNewHorizonsLearningMentorRecipients() const#1",
+          "start": 396,
+          "end": 396
+        },
+        {
+          "symbol": "CGHeroInstance::void markNewHorizonsLearningMentorUsed(int32_t week)#1",
+          "start": 400,
+          "end": 403
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsLandSurveyorLastWeek() const#1",
+          "start": 408,
+          "end": 408
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsLandSurveyor(int32_t week) const#1",
+          "start": 409,
+          "end": 409
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsProspectorLastWeek() const#1",
+          "start": 410,
+          "end": 410
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsProspector(int32_t week) const#1",
+          "start": 411,
+          "end": 411
+        },
+        {
+          "symbol": "CGHeroInstance::ObjectInstanceID getNewHorizonsMagnateLastTown() const#1",
+          "start": 412,
+          "end": 412
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsMagnateVisitWeek() const#1",
+          "start": 413,
+          "end": 413
+        },
+        {
+          "symbol": "CGHeroInstance::void recordNewHorizonsMagnateTownVisit(ObjectInstanceID town, int32_t week)#1",
+          "start": 414,
+          "end": 420
+        },
+        {
+          "symbol": "CGHeroInstance::void validateNewHorizonsMagnateSerialization(bool supported) const#1",
+          "start": 421,
+          "end": 428
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsPeacemakerLastWeek() const#1",
+          "start": 429,
+          "end": 429
+        },
+        {
+          "symbol": "CGHeroInstance::ObjectInstanceID getNewHorizonsPacifiedCreatureId() const#1",
+          "start": 430,
+          "end": 430
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsPeacemaker(int32_t week) const#1",
+          "start": 431,
+          "end": 431
+        },
+        {
+          "symbol": "CGHeroInstance::bool isNewHorizonsCreaturePacified(ObjectInstanceID creatureId, int32_t week) const#1",
+          "start": 432,
+          "end": 438
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsTributeLastWeek() const#1",
+          "start": 439,
+          "end": 439
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsTribute(int32_t week) const#1",
+          "start": 440,
+          "end": 440
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsRecruitmentPactExpiryDay() const#1",
+          "start": 441,
+          "end": 441
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasNewHorizonsRecruitmentPact(int32_t currentDay) const#1",
+          "start": 442,
+          "end": 447
+        },
+        {
+          "symbol": "CGHeroInstance::void setNewHorizonsDiplomacyState(int32_t peacemakerLastWeek, ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek, int32_t pactExpiryDay = -1)#1",
+          "start": 448,
+          "end": 457
+        },
+        {
+          "symbol": "CGHeroInstance::bool isPrimaryRatingNode() const override#1",
+          "start": 479,
+          "end": 479
+        },
+        {
+          "symbol": "CGHeroInstance::static bool isValidNewHorizonsDiplomacyState(int32_t peacemakerLastWeek, ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek, int32_t pactExpiryDay = -1)#1",
+          "start": 679,
+          "end": 685
+        },
+        {
+          "symbol": "CGHeroInstance::static bool isValidNewHorizonsForcedMarchState(int32_t lastUseDay, int32_t penaltyDay)#1",
+          "start": 686,
+          "end": 690
+        },
+        {
+          "symbol": "CGHeroInstance::void serialize(Handler &h)#1",
+          "start": 698,
+          "end": 1150
+        }
+      ],
+      "rationale": "Entire1151-line header read, including CGHeroPlaceholder, nested Patrol, all inline accessors/mutators/validators, private predicates and every branch of the453-line CGHeroInstance serialization698-1150. All64 genuine maintained parser bodies retained exactly; no lambdas, function-like macro definitions or conditional-compilation arms. CGHeroInstance constructor573 and destructor574 are declarations without bodies; inherited constructor using49 and other declarations do not add handwritten implementations. After established annotation normalization, sole missing:type_identifier488 is the empty braced default argument in bodyless levelUp(gains={}); its empty default initializer is not a callable body. Member initializer arrays/brace initialization and friend/using declarations are not functions. Existing453-line serialization and1151-line file are unchanged numeric debt, not a new exception or permission to expand.",
+      "review": "IR-MANUAL-ALLOWANCE-HERO-e2e2a79b-20261015",
+      "sha256": "b293d8fb0e967a15663f35fe85cd239a93cad7f7e9d29e749426e5dd76d12c58"
+    },
+    "lib/callback/CGameInfoCallback.cpp": {
+      "functions": [
+        {
+          "symbol": "#define ERROR_VERBOSE_OR_NOT_RET_VAL_IF#1",
+          "start": 35,
+          "end": 35
+        },
+        {
+          "symbol": "#define ERROR_RET_IF#1",
+          "start": 36,
+          "end": 36
+        },
+        {
+          "symbol": "#define ERROR_RET_VAL_IF#1",
+          "start": 37,
+          "end": 37
+        },
+        {
+          "symbol": "const JsonNode & CGameInfoCallback::getMagicRules() const#1",
+          "start": 39,
+          "end": 42
+        },
+        {
+          "symbol": "const JsonNode & CGameInfoCallback::getHeroDevelopmentRules() const#1",
+          "start": 44,
+          "end": 47
+        },
+        {
+          "symbol": "const JsonNode & CGameInfoCallback::getHeroCapabilityRules() const#1",
+          "start": 49,
+          "end": 52
+        },
+        {
+          "symbol": "const JsonNode & CGameInfoCallback::getHeroMasteryRules() const#1",
+          "start": 54,
+          "end": 57
+        },
+        {
+          "symbol": "const JsonNode & IGameInfoCallback::getHeroPerkRules() const#1",
+          "start": 59,
+          "end": 63
+        },
+        {
+          "symbol": "const std::set<ArtifactID> & IGameInfoCallback::getRandomArtifactPoolExclusions() const#1",
+          "start": 65,
+          "end": 69
+        },
+        {
+          "symbol": "std::vector<const CGObjectInstance *> IGameInfoCallback::getGuardingCreatures(int3 pos, const CGHeroInstance * hero) const#1",
+          "start": 71,
+          "end": 84
+        },
+        {
+          "symbol": "IGameInfoCallback::getGuardingCreatures(int3 pos, const CGHeroInstance * hero) const::[hero](const CGObjectInstance * guardian)#1",
+          "start": 79,
+          "end": 82
+        },
+        {
+          "symbol": "const JsonNode & CGameInfoCallback::getHeroPerkRules() const#1",
+          "start": 86,
+          "end": 89
+        },
+        {
+          "symbol": "const newHorizonsCreatures::CreatureCategoryRules & CGameInfoCallback::getCreatureCategoryRules() const#1",
+          "start": 91,
+          "end": 94
+        },
+        {
+          "symbol": "const std::set<ArtifactID> & CGameInfoCallback::getRandomArtifactPoolExclusions() const#1",
+          "start": 96,
+          "end": 99
+        },
+        {
+          "symbol": "const IMarket * CGameInfoCallback::getMarket(ObjectInstanceID objid) const#1",
+          "start": 101,
+          "end": 105
+        },
+        {
+          "symbol": "int CGameInfoCallback::getResource(PlayerColor Player, GameResID which) const#1",
+          "start": 107,
+          "end": 113
+        },
+        {
+          "symbol": "const PlayerSettings * CGameInfoCallback::getPlayerSettings(PlayerColor color) const#1",
+          "start": 115,
+          "end": 118
+        },
+        {
+          "symbol": "std::optional<PlayerColor> CGameInfoCallback::getPlayerID() const#1",
+          "start": 120,
+          "end": 123
+        },
+        {
+          "symbol": "const Player * CGameInfoCallback::getPlayer(PlayerColor color) const#1",
+          "start": 125,
+          "end": 128
+        },
+        {
+          "symbol": "const PlayerState * CGameInfoCallback::getPlayerState(PlayerColor color, bool verbose) const#1",
+          "start": 130,
+          "end": 156
+        },
+        {
+          "symbol": "TurnTimerInfo CGameInfoCallback::getPlayerTurnTime(PlayerColor color) const#1",
+          "start": 158,
+          "end": 172
+        },
+        {
+          "symbol": "const CGObjectInstance * CGameInfoCallback::getObj(const ObjectInstanceID objId, const bool verbose) const#1",
+          "start": 178,
+          "end": 192
+        },
+        {
+          "symbol": "void CGameInfoCallback::fillUpgradeInfo(const CArmedInstance *obj, SlotID stackPos, UpgradeInfo & out) const#1",
+          "start": 194,
+          "end": 228
+        },
+        {
+          "symbol": "const StartInfo * CGameInfoCallback::getStartInfo() const#1",
+          "start": 230,
+          "end": 233
+        },
+        {
+          "symbol": "const StartInfo * CGameInfoCallback::getInitialStartInfo() const#1",
+          "start": 235,
+          "end": 238
+        },
+        {
+          "symbol": "const scripting::Pool & CGameInfoCallback::getScriptContextPool() const#1",
+          "start": 240,
+          "end": 243
+        },
+        {
+          "symbol": "int32_t CGameInfoCallback::getSpellCost(const spells::Spell * sp, const CGHeroInstance * caster) const#1",
+          "start": 245,
+          "end": 256
+        },
+        {
+          "symbol": "SpellCostBreakdown CGameInfoCallback::getSpellCostBreakdown(const spells::Spell * sp, const CGHeroInstance * caster, bool metamagicFollowup) const#1",
+          "start": 258,
+          "end": 280
+        },
+        {
+          "symbol": "int64_t CGameInfoCallback::estimateSpellDamage(const CSpell * sp, const CGHeroInstance * hero) const#1",
+          "start": 282,
+          "end": 290
+        },
+        {
+          "symbol": "void CGameInfoCallback::getThievesGuildInfo(SThievesGuildInfo & thi, const CGObjectInstance * obj)#1",
+          "start": 292,
+          "end": 307
+        },
+        {
+          "symbol": "int CGameInfoCallback::howManyTowns(PlayerColor Player) const#1",
+          "start": 309,
+          "end": 313
+        },
+        {
+          "symbol": "bool CGameInfoCallback::getTownInfo(const CGObjectInstance * town, InfoAboutTown & dest, const CGObjectInstance * selectedObject) const#1",
+          "start": 315,
+          "end": 336
+        },
+        {
+          "symbol": "int3 CGameInfoCallback::guardingCreaturePosition (int3 pos) const#1",
+          "start": 338,
+          "end": 342
+        },
+        {
+          "symbol": "std::vector<const CGObjectInstance*> CGameInfoCallback::getGuardingCreatures (int3 pos) const#1",
+          "start": 344,
+          "end": 353
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isTileGuardedUnchecked(int3 tile) const#1",
+          "start": 355,
+          "end": 358
+        },
+        {
+          "symbol": "bool CGameInfoCallback::getHeroInfo(const CGObjectInstance * hero, InfoAboutHero & dest, const CGObjectInstance * selectedObject) const#1",
+          "start": 360,
+          "end": 478
+        },
+        {
+          "symbol": "CGameInfoCallback::getHeroInfo(const CGObjectInstance * hero, InfoAboutHero & dest, const CGObjectInstance * selectedObject) const::[](InfoAboutHero & info)#1",
+          "start": 401,
+          "end": 422
+        },
+        {
+          "symbol": "CGameInfoCallback::getHeroInfo(const CGObjectInstance * hero, InfoAboutHero & dest, const CGObjectInstance * selectedObject) const::[&doBasicDisguise](InfoAboutHero & info)#1",
+          "start": 424,
+          "end": 430
+        },
+        {
+          "symbol": "CGameInfoCallback::getHeroInfo(const CGObjectInstance * hero, InfoAboutHero & dest, const CGObjectInstance * selectedObject) const::[this,h](InfoAboutHero & info)#1",
+          "start": 432,
+          "end": 454
+        },
+        {
+          "symbol": "Calendar CGameInfoCallback::getCalendar() const#1",
+          "start": 480,
+          "end": 483
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isVisibleFor(int3 pos, PlayerColor player) const#1",
+          "start": 485,
+          "end": 488
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isVisible(int3 pos) const#1",
+          "start": 490,
+          "end": 500
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isVisibleFor(const CGObjectInstance * obj, PlayerColor player) const#1",
+          "start": 502,
+          "end": 505
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isVisible(const CGObjectInstance * obj) const#1",
+          "start": 507,
+          "end": 522
+        },
+        {
+          "symbol": "CGameInfoCallback::isVisible(const CGObjectInstance * obj) const::[this](const int3 & pos) -> bool#1",
+          "start": 514,
+          "end": 517
+        },
+        {
+          "symbol": "std::vector <const CGObjectInstance *> CGameInfoCallback::getBlockingObjs( int3 pos ) const#1",
+          "start": 524,
+          "end": 533
+        },
+        {
+          "symbol": "std::vector <const CGObjectInstance *> CGameInfoCallback::getVisitableObjs(int3 pos, bool verbose) const#1",
+          "start": 535,
+          "end": 551
+        },
+        {
+          "symbol": "std::vector<const CGObjectInstance *> CGameInfoCallback::getAllVisitableObjs() const#1",
+          "start": 553,
+          "end": 561
+        },
+        {
+          "symbol": "const CGObjectInstance * CGameInfoCallback::getTopObj(int3 pos) const#1",
+          "start": 563,
+          "end": 566
+        },
+        {
+          "symbol": "std::vector <const CGObjectInstance *> CGameInfoCallback::getFlaggableObjects(int3 pos) const#1",
+          "start": 568,
+          "end": 580
+        },
+        {
+          "symbol": "std::vector<const CGHeroInstance *> CGameInfoCallback::getAvailableHeroes(const CGObjectInstance * townOrTavern) const#1",
+          "start": 582,
+          "end": 593
+        },
+        {
+          "symbol": "const TerrainTile * CGameInfoCallback::getTile(int3 tile, bool verbose) const#1",
+          "start": 595,
+          "end": 603
+        },
+        {
+          "symbol": "const TerrainTile * CGameInfoCallback::getTileUnchecked(int3 tile) const#1",
+          "start": 605,
+          "end": 611
+        },
+        {
+          "symbol": "EDiggingStatus CGameInfoCallback::getTileDigStatus(int3 tile, bool verbose) const#1",
+          "start": 613,
+          "end": 624
+        },
+        {
+          "symbol": "EBuildingState CGameInfoCallback::canBuildStructure( const CGTownInstance *t, BuildingID ID ) const#1",
+          "start": 626,
+          "end": 693
+        },
+        {
+          "symbol": "CGameInfoCallback::canBuildStructure( const CGTownInstance *t, BuildingID ID ) const::[&](const BuildingID & id) -> bool#1",
+          "start": 642,
+          "end": 645
+        },
+        {
+          "symbol": "CGameInfoCallback::canBuildStructure( const CGTownInstance *t, BuildingID ID ) const::[&](const BuildingID & id) -> bool#2",
+          "start": 647,
+          "end": 650
+        },
+        {
+          "symbol": "CGameInfoCallback::canBuildStructure( const CGTownInstance *t, BuildingID ID ) const::[&](const BuildingID & id) -> bool#3",
+          "start": 677,
+          "end": 680
+        },
+        {
+          "symbol": "const CMap * CGameInfoCallback::getMapConstPtr() const#1",
+          "start": 695,
+          "end": 698
+        },
+        {
+          "symbol": "bool CGameInfoCallback::hasAccess(std::optional<PlayerColor> playerId) const#1",
+          "start": 700,
+          "end": 703
+        },
+        {
+          "symbol": "EPlayerStatus CGameInfoCallback::getPlayerStatus(PlayerColor player, bool verbose) const#1",
+          "start": 705,
+          "end": 711
+        },
+        {
+          "symbol": "std::string CGameInfoCallback::getTavernRumor(const CGObjectInstance * townOrTavern, const ITranslator * translator) const#1",
+          "start": 713,
+          "end": 744
+        },
+        {
+          "symbol": "PlayerRelations CGameInfoCallback::getPlayerRelations( PlayerColor color1, PlayerColor color2 ) const#1",
+          "start": 746,
+          "end": 749
+        },
+        {
+          "symbol": "bool CGameInfoCallback::canGetFullInfo(const CGObjectInstance *obj) const#1",
+          "start": 751,
+          "end": 754
+        },
+        {
+          "symbol": "int CGameInfoCallback::getHeroCount( PlayerColor player, bool includeGarrisoned ) const#1",
+          "start": 756,
+          "end": 769
+        },
+        {
+          "symbol": "std::vector<const CGHeroInstance*> CGameInfoCallback::getHeroes(PlayerColor player) const#1",
+          "start": 771,
+          "end": 783
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isPlayerMakingTurn(PlayerColor player) const#1",
+          "start": 785,
+          "end": 788
+        },
+        {
+          "symbol": "const TeamState * CGameInfoCallback::getTeam( TeamID teamID ) const#1",
+          "start": 790,
+          "end": 816
+        },
+        {
+          "symbol": "const TeamState * CGameInfoCallback::getPlayerTeam( PlayerColor color ) const#1",
+          "start": 818,
+          "end": 829
+        },
+        {
+          "symbol": "void CGameInfoCallback::getVisibleTilesInRange(FowTilesType &tiles, int3 pos, int radious, int3::EDistanceFormula distanceFormula) const#1",
+          "start": 831,
+          "end": 834
+        },
+        {
+          "symbol": "void CGameInfoCallback::calculatePaths(const std::shared_ptr<PathfinderConfig> & config) const#1",
+          "start": 836,
+          "end": 839
+        },
+        {
+          "symbol": "const CArtifactSet * CGameInfoCallback::getArtSet(const ArtifactLocation & loc) const#1",
+          "start": 841,
+          "end": 845
+        },
+        {
+          "symbol": "std::vector<ObjectInstanceID> CGameInfoCallback::getVisibleTeleportObjects(std::vector<ObjectInstanceID> ids, PlayerColor player) const#1",
+          "start": 847,
+          "end": 855
+        },
+        {
+          "symbol": "CGameInfoCallback::getVisibleTeleportObjects(std::vector<ObjectInstanceID> ids, PlayerColor player) const::[&](const ObjectInstanceID & id) -> bool#1",
+          "start": 849,
+          "end": 853
+        },
+        {
+          "symbol": "std::vector<ObjectInstanceID> CGameInfoCallback::getTeleportChannelEntrances(TeleportChannelID id, PlayerColor player) const#1",
+          "start": 857,
+          "end": 860
+        },
+        {
+          "symbol": "std::vector<ObjectInstanceID> CGameInfoCallback::getTeleportChannelExits(TeleportChannelID id, PlayerColor player) const#1",
+          "start": 862,
+          "end": 865
+        },
+        {
+          "symbol": "ETeleportChannelType CGameInfoCallback::getTeleportChannelType(TeleportChannelID id, PlayerColor player) const#1",
+          "start": 867,
+          "end": 884
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isTeleportChannelImpassable(TeleportChannelID id, PlayerColor player) const#1",
+          "start": 886,
+          "end": 889
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isTeleportChannelBidirectional(TeleportChannelID id, PlayerColor player) const#1",
+          "start": 891,
+          "end": 894
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isTeleportChannelUnidirectional(TeleportChannelID id, PlayerColor player) const#1",
+          "start": 896,
+          "end": 899
+        },
+        {
+          "symbol": "bool CGameInfoCallback::isTeleportEntrancePassable(const CGTeleport * obj, PlayerColor player) const#1",
+          "start": 901,
+          "end": 904
+        },
+        {
+          "symbol": "void CGameInfoCallback::getFreeTiles(std::vector<int3> & tiles, bool skipIfNearbyGuarded) const#1",
+          "start": 906,
+          "end": 941
+        },
+        {
+          "symbol": "void CGameInfoCallback::getTilesInRange(FowTilesType & tiles, const int3 & pos, int radious, ETileVisibility mode, std::optional<PlayerColor> player, int3::EDistanceFormula distanceFormula) const#1",
+          "start": 943,
+          "end": 978
+        },
+        {
+          "symbol": "CGameInfoCallback::getTilesInRange(FowTilesType & tiles, const int3 & pos, int radious, ETileVisibility mode, std::optional<PlayerColor> player, int3::EDistanceFormula distanceFormula) const::[](auto * tile)#1",
+          "start": 956,
+          "end": 956
+        },
+        {
+          "symbol": "void CGameInfoCallback::getAllTiles(FowTilesType & tiles, std::optional<PlayerColor> Player, int level, const std::function<bool(const TerrainTile *)> & filter) const#1",
+          "start": 980,
+          "end": 1011
+        },
+        {
+          "symbol": "void CGameInfoCallback::getAllowedSpells(std::vector<SpellID> & out, std::optional<ui16> level) const#1",
+          "start": 1013,
+          "end": 1027
+        },
+        {
+          "symbol": "bool CGameInfoCallback::checkForVisitableDir(const int3 & src, const int3 & dst) const#1",
+          "start": 1029,
+          "end": 1034
+        }
+      ],
+      "rationale": "Entire1034-line callback source read, including every callback definition, all disguise/visibility/building/teleport/tile-filter lambdas and preprocessor definitions. Complete inventory retains87 genuine maintained parser units:74 definition bodies,10 lambdas and the3 function-like macro definitions ERROR_VERBOSE_OR_NOT_RET_VAL_IF35, ERROR_RET_IF36, ERROR_RET_VAL_IF37 (one physical line each, irrespective of their control-flow replacements). ASSERT_IF_CALLED_WITH_PLAYER32 is object-like, not function-like: the macro name has no parameter list; its replacement contains only if/log/assert calls, no callable definition. Sole recovery ERROR585 occurs after its bare invocation584 before local vector ret585 inside getAvailableHeroes582-593. Actual function is fully retained; no hidden function/lambda in macro or recovery region. No conditional-compilation arms, handwritten constructors/destructors or additional unparsed callables. Existing119-line getHeroInfo360-478 and1034-line file numeric pins unchanged; no numeric exception or behavior approval.",
+      "review": "IR-MANUAL-CALLBACK-MAINMENU-ed3114ef-20261015",
+      "sha256": "c134dee2b3b15c39dd5c56bd1b7823a9e55cbad463055f5936d198b221d207e7"
+    },
+    "client/mainmenu/CMainMenu.cpp": {
+      "functions": [
+        {
+          "symbol": "CMenuScreen::CMenuScreen(const JsonNode & configNode) : CWindowObject(BORDERED), config(configNode)#1",
+          "start": 72,
+          "end": 124
+        },
+        {
+          "symbol": "std::shared_ptr<CIntObject> CMenuScreen::createTab(size_t index)#1",
+          "start": 126,
+          "end": 132
+        },
+        {
+          "symbol": "void CMenuScreen::show(Canvas & to)#1",
+          "start": 134,
+          "end": 138
+        },
+        {
+          "symbol": "void CMenuScreen::activate()#1",
+          "start": 140,
+          "end": 143
+        },
+        {
+          "symbol": "void CMenuScreen::switchToTab(size_t index)#1",
+          "start": 145,
+          "end": 148
+        },
+        {
+          "symbol": "void CMenuScreen::switchToTab(std::string name)#1",
+          "start": 150,
+          "end": 153
+        },
+        {
+          "symbol": "size_t CMenuScreen::getActiveTab() const#1",
+          "start": 155,
+          "end": 158
+        },
+        {
+          "symbol": "void CMenuScreen::keyPressed(EShortcut key)#1",
+          "start": 159,
+          "end": 163
+        },
+        {
+          "symbol": "static std::function<void()> genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)#1",
+          "start": 165,
+          "end": 245
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#1",
+          "start": 199,
+          "end": 199
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#2",
+          "start": 201,
+          "end": 201
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#3",
+          "start": 203,
+          "end": 203
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#4",
+          "start": 205,
+          "end": 205
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#5",
+          "start": 207,
+          "end": 207
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#6",
+          "start": 216,
+          "end": 216
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#7",
+          "start": 218,
+          "end": 218
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#8",
+          "start": 220,
+          "end": 220
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#9",
+          "start": 222,
+          "end": 222
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#10",
+          "start": 229,
+          "end": 229
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::()::[]()#1",
+          "start": 229,
+          "end": 229
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#11",
+          "start": 234,
+          "end": 234
+        },
+        {
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#12",
+          "start": 238,
+          "end": 238
+        },
+        {
+          "symbol": "std::shared_ptr<CButton> CMenuEntry::createButton(CMenuScreen * parent, const JsonNode & button)#1",
+          "start": 247,
+          "end": 272
+        },
+        {
+          "symbol": "CMenuEntry::CMenuEntry(CMenuScreen * parent, const JsonNode & config)#1",
+          "start": 274,
+          "end": 331
+        },
+        {
+          "symbol": "CMainMenuConfig::CMainMenuConfig() : campaignSets(JsonUtils::assembleFromFiles(\"config/campaignSets.json\")) , config(JsonPath::builtin(\"config/mainmenu.json\")) , productVersionConfig(JsonPath::builtin(\"config/newHorizonsVersion.json\"))#1",
+          "start": 333,
+          "end": 345
+        },
+        {
+          "symbol": "const CMainMenuConfig & CMainMenuConfig::get()#1",
+          "start": 347,
+          "end": 351
+        },
+        {
+          "symbol": "const JsonNode & CMainMenuConfig::getConfig() const#1",
+          "start": 353,
+          "end": 356
+        },
+        {
+          "symbol": "const JsonNode & CMainMenuConfig::getCampaigns() const#1",
+          "start": 358,
+          "end": 361
+        },
+        {
+          "symbol": "std::string CMainMenuConfig::getProductVersion() const#1",
+          "start": 363,
+          "end": 366
+        },
+        {
+          "symbol": "CMainMenu::CMainMenu()#1",
+          "start": 368,
+          "end": 382
+        },
+        {
+          "symbol": "void CMenuScreen::tick(uint32_t)#1",
+          "start": 386,
+          "end": 389
+        },
+        {
+          "symbol": "void CMainMenu::pollReleaseUpdate()#1",
+          "start": 391,
+          "end": 412
+        },
+        {
+          "symbol": "CMainMenu::pollReleaseUpdate()::[page = offer->releasePage]()#1",
+          "start": 407,
+          "end": 410
+        },
+        {
+          "symbol": "CMainMenu::pollReleaseUpdate()::[]()#1",
+          "start": 410,
+          "end": 410
+        },
+        {
+          "symbol": "void CMainMenu::playIntroVideos()#1",
+          "start": 414,
+          "end": 436
+        },
+        {
+          "symbol": "CMainMenu::playIntroVideos()::[](std::string video, bool rim, float scaleFactor, std::function<void(bool)> cb)#1",
+          "start": 416,
+          "end": 421
+        },
+        {
+          "symbol": "CMainMenu::playIntroVideos()::(std::string video, bool rim, float scaleFactor, std::function<void(bool)> cb)::[cb](bool skipped)#1",
+          "start": 418,
+          "end": 418
+        },
+        {
+          "symbol": "CMainMenu::playIntroVideos()::[playVideo, this](bool skipped)#1",
+          "start": 423,
+          "end": 435
+        },
+        {
+          "symbol": "CMainMenu::playIntroVideos()::(bool skipped)::[playVideo, this](bool skipped)#1",
+          "start": 425,
+          "end": 432
+        },
+        {
+          "symbol": "CMainMenu::playIntroVideos()::(bool skipped)::(bool skipped)::[this](bool skipped)#1",
+          "start": 427,
+          "end": 429
+        },
+        {
+          "symbol": "void CMainMenu::playMusic()#1",
+          "start": 438,
+          "end": 441
+        },
+        {
+          "symbol": "void CMainMenu::activate()#1",
+          "start": 443,
+          "end": 450
+        },
+        {
+          "symbol": "void CMainMenu::onScreenResize()#1",
+          "start": 452,
+          "end": 461
+        },
+        {
+          "symbol": "void CMainMenu::makeActiveInterface()#1",
+          "start": 463,
+          "end": 468
+        },
+        {
+          "symbol": "static void openLocalGameSetup()#1",
+          "start": 470,
+          "end": 487
+        },
+        {
+          "symbol": "void CMainMenu::openLobby(ESelectionScreen screenType, bool host, const std::vector<std::string> & names, ELoadMode loadMode, bool battleMode, bool hotseatMode, std::string server, ui16 port)#1",
+          "start": 489,
+          "end": 501
+        },
+        {
+          "symbol": "void CMainMenu::openCampaignLobby(const std::string & campaignFileName, std::string campaignSet)#1",
+          "start": 503,
+          "end": 508
+        },
+        {
+          "symbol": "void CMainMenu::openCampaignLobby(std::shared_ptr<CampaignState> campaign)#1",
+          "start": 510,
+          "end": 515
+        },
+        {
+          "symbol": "void CMainMenu::openCampaignScreen(std::string name)#1",
+          "start": 517,
+          "end": 528
+        },
+        {
+          "symbol": "void CMainMenu::startTutorial()#1",
+          "start": 530,
+          "end": 543
+        },
+        {
+          "symbol": "void CMainMenu::openHighScoreScreen()#1",
+          "start": 545,
+          "end": 549
+        },
+        {
+          "symbol": "std::shared_ptr<CPicture> CMainMenu::createPicture(const JsonNode & config)#1",
+          "start": 551,
+          "end": 554
+        },
+        {
+          "symbol": "CMultiMode::CMultiMode(ESelectionScreen ScreenType) : screenType(ScreenType)#1",
+          "start": 556,
+          "end": 584
+        },
+        {
+          "symbol": "CMultiMode::CMultiMode(ESelectionScreen ScreenType)::[this]()#1",
+          "start": 583,
+          "end": 583
+        },
+        {
+          "symbol": "void CMultiMode::openLobby()#1",
+          "start": 586,
+          "end": 590
+        },
+        {
+          "symbol": "void CMultiMode::hostTCP(EShortcut shortcut)#1",
+          "start": 592,
+          "end": 597
+        },
+        {
+          "symbol": "void CMultiMode::joinTCP(EShortcut shortcut)#1",
+          "start": 599,
+          "end": 604
+        },
+        {
+          "symbol": "std::vector<std::string> CMultiMode::getPlayersNames()#1",
+          "start": 606,
+          "end": 625
+        },
+        {
+          "symbol": "void CMultiMode::onNameChange(std::string newText)#1",
+          "start": 627,
+          "end": 631
+        },
+        {
+          "symbol": "JoinScreen::JoinScreen(ESelectionScreen ScreenType, const std::vector<std::string> & PlayerNames) : screenType(ScreenType), playerNames(PlayerNames)#1",
+          "start": 633,
+          "end": 657
+        },
+        {
+          "symbol": "JoinScreen::JoinScreen(ESelectionScreen ScreenType, const std::vector<std::string> & PlayerNames)::[this]()#1",
+          "start": 646,
+          "end": 651
+        },
+        {
+          "symbol": "JoinScreen::JoinScreen(ESelectionScreen ScreenType, const std::vector<std::string> & PlayerNames)::[this]()#2",
+          "start": 656,
+          "end": 656
+        },
+        {
+          "symbol": "JoinScreen::~JoinScreen()#1",
+          "start": 659,
+          "end": 663
+        },
+        {
+          "symbol": "void JoinScreen::onServerDiscovered(const DiscoveredServer & server)#1",
+          "start": 665,
+          "end": 685
+        },
+        {
+          "symbol": "JoinScreen::onServerDiscovered(const DiscoveredServer & server)::[this, server]()#1",
+          "start": 667,
+          "end": 684
+        },
+        {
+          "symbol": "JoinScreen::onServerDiscovered(const DiscoveredServer & server)::()::[this, server]#1",
+          "start": 674,
+          "end": 679
+        },
+        {
+          "symbol": "CMultiPlayers::CMultiPlayers(const std::vector<std::string>& playerNames, ESelectionScreen ScreenType, bool Host, ELoadMode LoadMode, EShortcut shortcut) : host(Host), hotseat(shortcut == EShortcut::MAIN_MENU_HOTSEAT), loadMode(LoadMode), screenType(ScreenType)#1",
+          "start": 687,
+          "end": 739
+        },
+        {
+          "symbol": "CMultiPlayers::CMultiPlayers(const std::vector<std::string>& playerNames, ESelectionScreen ScreenType, bool Host, ELoadMode LoadMode, EShortcut shortcut)::[this]()#1",
+          "start": 727,
+          "end": 727
+        },
+        {
+          "symbol": "size_t CMultiPlayers::countEnteredNames() const#1",
+          "start": 741,
+          "end": 747
+        },
+        {
+          "symbol": "CMultiPlayers::countEnteredNames() const::[](const auto & playerName)#1",
+          "start": 743,
+          "end": 746
+        },
+        {
+          "symbol": "void CMultiPlayers::onChange(std::string newText)#1",
+          "start": 749,
+          "end": 752
+        },
+        {
+          "symbol": "void CMultiPlayers::enterSelectionScreen()#1",
+          "start": 754,
+          "end": 795
+        },
+        {
+          "symbol": "CSimpleJoinScreen::CSimpleJoinScreen(bool host, const std::string & server, ui16 port)#1",
+          "start": 797,
+          "end": 860
+        },
+        {
+          "symbol": "void CSimpleJoinScreen::connectToServer()#1",
+          "start": 862,
+          "end": 871
+        },
+        {
+          "symbol": "void CSimpleJoinScreen::leaveScreen()#1",
+          "start": 873,
+          "end": 883
+        },
+        {
+          "symbol": "void CSimpleJoinScreen::onChange(const std::string & newText)#1",
+          "start": 885,
+          "end": 889
+        },
+        {
+          "symbol": "void CSimpleJoinScreen::startConnection(const std::string & addr, ui16 port)#1",
+          "start": 891,
+          "end": 905
+        },
+        {
+          "symbol": "CSimpleJoinScreen::startConnection(const std::string & addr, ui16 port)::[addr, port]()#1",
+          "start": 900,
+          "end": 903
+        },
+        {
+          "symbol": "CLoadingScreen::CLoadingScreen() : CLoadingScreen(getBackground())#1",
+          "start": 907,
+          "end": 910
+        },
+        {
+          "symbol": "CLoadingScreen::CLoadingScreen(ImagePath background) : CWindowObject(BORDERED, background)#1",
+          "start": 912,
+          "end": 958
+        },
+        {
+          "symbol": "CLoadingScreen::~CLoadingScreen()#1",
+          "start": 960,
+          "end": 962
+        },
+        {
+          "symbol": "void CLoadingScreen::tick(uint32_t msPassed)#1",
+          "start": 964,
+          "end": 976
+        },
+        {
+          "symbol": "ImagePath CLoadingScreen::getBackground()#1",
+          "start": 978,
+          "end": 998
+        }
+      ],
+      "rationale": "Entire998-line menu source read including all constructors, explicit empty-bodied loading-screen destructor960-962, JoinScreen destructor659-663, command factory and its nested shutdown lambda229, video callback nesting414-436, release-offer callbacks407-410, discovery callback nesting665-685, network continuation900-903 and VCMI_MOBILE conditional736-738. All83 genuine maintained parser units retained exactly:55 handwritten definition bodies plus28 lambdas. CMainMenu::~CMainMenu384 is defaulted/bodyless and excluded under maintained body metric; no function-like macro definitions. OBJECT_CONSTRUCTION uses are invocations, not definitions in this file. Both diagnostics at186 arise within existing `(void(CMenuScreen::*)(size_t))` pointer-to-member cast used by std::bind; it declares no implemented function and genCommand165-245 is fully retained, with all13 contained lambdas. The VCMI_MOBILE arm contains only giveFocus() statement, no conditional callable. No unparsed callable bodies identified. Existing81-line genCommand and998-line file numeric pins unchanged; no behavior/thread/lifecycle certification or exception.",
+      "review": "IR-MANUAL-CALLBACK-MAINMENU-ed3114ef-20261015",
+      "sha256": "c263066f072412a6cc21ef389529483766da1677b19888778653aee0743031bd"
     }
   },
   "schema": 1,
