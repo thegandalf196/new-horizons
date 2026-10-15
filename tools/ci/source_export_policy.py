@@ -45,6 +45,7 @@ MAINTAINED_NH_DOCUMENTS = frozenset({
     'docs/NH_SORCERY_STYLE_BRIEF.md',
     'docs/NH_STARTING_ARMIES_PROVISIONAL.md',
     'docs/NH_TEMPLATE_ART_WORKFLOW.md',
+    'docs/NH_UI_ASSET_INVENTORY.csv',
     'docs/NH_UI_ASSET_STATUS.md',
     'docs/NH_UI_EDITOR.md',
     'docs/NH_VERSIONING.md',
