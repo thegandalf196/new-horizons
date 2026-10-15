@@ -91,6 +91,7 @@ set(test_SRCS
 		bonus/NewHorizonsCreatureProbabilityTest.cpp
 
 		combatScripts/CombatScriptDescriptionTest.cpp
+		spells/NewHorizonsMagicDescriptionTest.cpp
 
 		entity/CArtifactTest.cpp
 		entity/CCreatureTest.cpp

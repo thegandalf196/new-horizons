@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsMagicInternal.h"
+#include "NewHorizonsMagicPresentation.h"
 #include "NewHorizonsImplosion.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "ISpellMechanics.h"
@@ -17,12 +19,10 @@
 #include "../CStack.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "NewHorizonsSpellAvailability.h"
-#include "NewHorizonsSorcery.h"
 #include "CSpell.h"
 #include "CSpellHandler.h"
 #include "../constants/StringConstants.h"
 #include "../GameLibrary.h"
-#include "../texts/CGeneralTextHandler.h"
 #include "../modding/IdentifierStorage.h"
 #include "../modding/ModScope.h"
 #include "../callback/IGameInfoCallback.h"
@@ -38,8 +38,6 @@
 
 namespace
 {
-constexpr std::string_view NATURE_MIRE_SHAPER = "new-horizons:natureMagic.mireShaper";
-
 const JsonNode & battleMagicRules(const CBattleInfoCallback & callback)
 {
 	static const JsonNode legacy;
@@ -236,7 +234,10 @@ bool canonicalShadowStatusSpellRulesEnabled(const JsonNode & rules, SpellID spel
 
 	return true;
 }
+}
 
+namespace detail
+{
 bool hasMaledictionPerk(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.malediction");
@@ -253,35 +254,19 @@ int registeredSpellcraftRank(const CGHeroInstance * hero)
 	return std::clamp<int>(hero->getSecSkillLevel(SecondarySkill(*skillId)), 0, MasteryLevel::EXPERT);
 }
 
-std::string percentFromBasisPoints(int basisPoints)
+std::optional<size_t> schoolCoefficientRankIndex(int coefficientPercent)
 {
-	const int wholePercent = basisPoints / 100;
-	int hundredths = basisPoints % 100;
-	if(hundredths == 0)
-		return std::to_string(wholePercent) + "%";
-	if(hundredths < 10)
-		return std::to_string(wholePercent) + ".0" + std::to_string(hundredths) + "%";
-	if(hundredths % 10 == 0)
-		return std::to_string(wholePercent) + "." + std::to_string(hundredths / 10) + "%";
-	return std::to_string(wholePercent) + "." + std::to_string(hundredths) + "%";
+	const auto rank = std::find(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(),
+		SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end(), coefficientPercent);
+	if(rank == SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end())
+		return std::nullopt;
+	return static_cast<size_t>(std::distance(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(), rank));
+}
 }
 
-std::string fixedPointFromScaledValue(int64_t scaledValue, int decimalPlaces)
-{
-	int64_t scale = 1;
-	for(int index = 0; index < decimalPlaces; ++index)
-		scale *= 10;
-	const int64_t whole = scaledValue / scale;
-	int64_t fractional = scaledValue % scale;
-	if(fractional == 0)
-		return std::to_string(whole);
-	std::string fractionalText = std::to_string(fractional);
-	fractionalText.insert(0, static_cast<size_t>(decimalPlaces) - fractionalText.size(), '0');
-	while(!fractionalText.empty() && fractionalText.back() == '0')
-		fractionalText.pop_back();
-	return std::to_string(whole) + "." + fractionalText;
-}
-}
+using detail::hasMaledictionPerk;
+using detail::registeredSpellcraftRank;
+using detail::NATURE_MIRE_SHAPER;
 
 void validateWaterWalkDayEndSerialization(const JsonNode & rules, bool supported)
 {
@@ -855,462 +840,8 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		return {};
 
 	std::string result = spell->getDescriptionTranslated(schoolLevel);
-	if(hero && spell->getId() == SpellID(SpellID::TOWN_PORTAL)
-		&& isAdventureSpell(hero->getMagicRules(), spell->getId()))
-		result = LIBRARY->generaltexth->translate("new-horizons.adventure.townPortal.targetingHint");
-	else if(hero && earthquakeRulesEnabled(hero->getMagicRules(), spell->getId()))
-	{
-		const bool geomancer = hero->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.geomancer");
-		const auto & parameters = hero->getMagicRules()["spells"]["core:earthquake"]["earthquake"];
-		const int structuralDamage = parameters["structuralDamage"].Integer() * (geomancer ? 125 : 100) / 100;
-		result = "Siege: select an intact fortification section. Damages that section and the nearest eligible "
-			"wall, gate or tower sections, up to min(4, 2 + floor(scaled Spell Power / 80)). Each loses "
-			+ std::to_string(structuralDamage) + " structural HP. Field combat: select a radius-2 area. "
-			"Grounded stacks on either side take 30 + 0.8 x scaled Spell Power damage before defenses. "
-			"Fractured Ground lasts " + std::to_string(geomancer ? 4 : 3)
-			+ " rounds before eligible duration extensions; each entered hex costs one extra movement point. "
-			"Flying travel ignores this cost. No Initiative, Attack, Defense or retaliation penalty. "
-			"School rank, Spellcraft, Warcasting and Empower scale only Spell Power terms, not fixed bases or caps.";
-	}
-	else if(hero && spellVariantBase(hero->getMagicRules(), spell->getId()) == SpellID::SLOW
-		&& rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
-	{
-		const auto & rules = hero->getMagicRules();
-		int schoolRank = MasteryLevel::NONE;
-		for(const auto skill : spellSchoolSkills(rules, spell->getId()))
-			schoolRank = std::max(schoolRank, static_cast<int>(hero->getSecSkillLevel(skill)));
-		const int schoolCoefficientPercent = spellPowerCoefficientPercent(rules, hero, spell->getId());
-		const int combinedCoefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
-		const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const int64_t powerReduction = spellPower * combinedCoefficientBasisPoints
-			/ (5LL * SPELL_POWER_COEFFICIENT_BASIS_POINTS);
-		const int initiativeReduction = std::min(50, 20 + static_cast<int>(powerReduction));
-		const int variantPower = spellVariantPowerPercent(rules, spell->getId());
-		const int displayedReduction = initiativeReduction * variantPower / 100;
-		constexpr std::array<std::string_view, 4> rankNames{"No rank", "Basic", "Advanced", "Expert"};
-		const auto rankName = rankNames.at(static_cast<size_t>(std::clamp(schoolRank,
-			static_cast<int>(MasteryLevel::NONE), static_cast<int>(MasteryLevel::EXPERT))));
-
-		result = std::string(variantPower == 60 ? "Affects every eligible enemy stack. " : "Target one enemy stack. ")
-			+ "Reduces Initiative only, not Speed or movement. Fixed base duration: "
-			+ std::to_string(SLOW_BASE_DURATION_ROUNDS) + " rounds before Temporalist, other Spell Duration bonuses, "
-			"and eligible cast-specific extensions. Current Sorcery rank: "
-			+ std::string(rankName) + " (School factor " + std::to_string(schoolCoefficientPercent)
-			+ "%, combined School and Spellcraft factor " + percentFromBasisPoints(combinedCoefficientBasisPoints)
-			+ "). Initiative reduction = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
-			"current reduction before target-specific specialties at Spell Power "
-			+ std::to_string(spellPower) + ": " + std::to_string(displayedReduction)
-			+ "%. This estimate excludes battle-only Warcasting and the Inferno defender's Brimstone Stormclouds "
-			"+20 Spell Power bonus, which can further affect the battle cast.";
-		if(variantPower == 60)
-			result += " Mass Slow applies 60% of the final ordinary Slow reduction after its cap and target-specific "
-				"specialties, rounded toward zero; duration is unchanged. Temporal Field grants this distinct spell, "
-				"without a once-per-combat limit. Its listed Mana cost is three times Slow before Wisdom.";
-	}
-	else if(hero && spell->getId() == SpellID::MISFORTUNE
-		&& rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
-	{
-		result = "Target one enemy stack. Positive Luck cannot trigger; negative Luck is unchanged. "
-			"Favorable random creature abilities use max(25%, 75% - 0.25% x scaled Spell Power) "
-			"of their normal probability. Deterministic abilities remain deterministic. "
-			"Ordinary duration is min(4, 2 + floor(scaled Spell Power / 80)) rounds, "
-			"before eligible cast-specific duration extensions. School rank and Spellcraft scale "
-			"only the Spell Power terms, not the fixed base or the 25% floor.";
-		if(hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.misfortuneWeaver"))
-			result += " Misfortune Weaver subtracts another ten percentage points from the probability "
-				"multiplier, retaining the 25% floor.";
-	}
-	else if(hero && spell->getJsonKey() == "new-horizons:polymorph"
-		&& rulesActive(hero->getMagicRules())
-		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
-	{
-		result = "Target one enemy stack. Transform it into a random creature of the same tier "
-			"from any faction for two rounds. Preserve current aggregate HP, allegiance and Initiative position. "
-			"Use the new body's statistics, abilities and attack type; relocate to the nearest legal position if required. "
-			"Expiry or Dispel restores surviving HP to the original body. If no original footprint can fit anywhere, "
-			"keep the current form, HP and position with restoration pending, and retry at later round boundaries. "
-			"Phantom Army's offensive body transforms while its separate Integrity is unchanged. "
-			"School rank never makes this a mass spell.";
-		if(hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.shapeshifter"))
-			result += " Shapeshifter draws two forms independently with replacement, keeping the lower whole-stack "
-				"Army Value after exact HP conversion; ties use canonical creature order.";
-	}
-	else if(hero && spell->getJsonKey() == "new-horizons:handOfFate"
-		&& rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId())
-		&& hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.fateDealer"))
-	{
-		result += " Fate Dealer draws two spill candidates independently with replacement. "
-			"If exactly one is hostile to your current side, it receives the spill; otherwise a fair coin "
-			"chooses between the two draws, including duplicates. The selected recipient's own defenses "
-			"still apply, without a reroll or a second hit.";
-	}
-	else if(hero && spell->getId() == SpellID::FORGETFULNESS
-		&& rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
-	{
-		result = "Target one enemy stack. It may only move, make basic melee attacks, Wait and Defend. "
-			"Shooting, activated abilities, special attacks, triggered creature abilities and creature spellcasting "
-			"are suppressed. Ordinary retaliation and structural creature properties remain unchanged. "
-			"Duration = min(3, 1 + floor(scaled Spell Power / 80)) rounds before eligible duration extensions. "
-			"School rank scales the Spell Power term, not the fixed base or cap; Expert never makes this a mass spell.";
-		if(hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.mindbreaker"))
-			result += " Mindbreaker also suppresses intrinsic passive offensive abilities for this duration.";
-	}
-	else if(hero && newHorizonsImplosion::rulesFor(hero->getMagicRules(), spell->getId()))
-	{
-		const auto profile = *newHorizonsImplosion::rulesFor(hero->getMagicRules(), spell->getId());
-		result = "Deals min(" + std::to_string(profile.maximumBasisPoints / 100.0)
-			+ "%, " + std::to_string(profile.baseBasisPoints / 100.0)
-			+ "% + " + std::to_string(profile.powerBasisPointsPerSpellPower / 100.0)
-			+ "% x scaled Spell Power) of the target's current aggregate Health before magical defenses. "
-			"School rank scales only the Spell Power term, not the base or cap. "
-			"After resolved damage, other living stacks within " + std::to_string(profile.pullRadius)
-			+ " hexes are pulled one legal hex closer. Closest stacks move first, then clockwise from northeast. "
-			"The primary target stays in place; this magical displacement causes no retaliation.";
-	}
-	else if(hero && physicalPoisonEnabled(hero->getMagicRules(), spell->getId()))
-	{
-		result = "Target one enemy living stack. It suffers physical Poison damage on its next three activations: "
-			"20 + 0.5 x Spell Power, then 1.5x and 2x that amount. Nature rank scales only the Spell Power term. "
-			"The affliction does not spread; Cure removes it, while Dispel does not.";
-	}
-	else if(hero && spell->getId() == SpellID::BERSERK
-		&& berserkUsesSingleCreatureTarget(hero->getMagicRules()))
-	{
-		result = "Target one enemy stack. It attacks the nearest creature until its next attack. "
-			"Nearest is determined by battlefield movement cost, regardless of allegiance; tied stacks are chosen randomly. "
-			"Shooters are forced into melee. If out of range, the stack approaches the selected target. "
-			"The ordinary cast targets only the selected stack at every mastery rank.";
-	}
-	else if(hero && spell->getId() == SpellID::DISPEL
-		&& dispelUsesNewHorizonsRules(hero->getMagicRules()))
-	{
-		result = dispelRemovesTemporaryMagicalEffectsOnly(hero->getMagicRules())
-			? "Target one friendly or enemy stack. Removes all temporary magical buffs and debuffs. "
-			: "Target one friendly or enemy stack. Removes dispellable spell effects. ";
-		result += "Does not remove Orders, innate creature states, physical poison, terrain, or summoned creatures. "
-			"Sorcery rank does not make Dispel affect multiple stacks.";
-	}
-	else if(hero && spell->getId() == SpellID::CHAIN_LIGHTNING
-		&& rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-	{
-		result = "Select the first target. Lightning then jumps to the nearest eligible unstruck creature, "
-			"including friendly stacks. It can strike up to five different stacks at every mastery rank; "
-			"each later jump deals less damage.";
-	}
-	else if(hero && curseRulesEnabled(hero->getMagicRules(), spell->getId()))
-	{
-		const auto duration = curseDurationRounds(hero->getMagicRules(), hero, spell->getId())
-			.value_or(CURSE_BASE_DURATION_ROUNDS);
-		const bool mass = spellVariantBase(hero->getMagicRules(), spell->getId()) != spell->getId();
-		result = std::string(mass ? "Targets every eligible enemy stack for " : "Targets one enemy stack for ") + std::to_string(duration)
-			+ (duration == 1 ? " round. " : " rounds. ")
-			+ "It always rolls the minimum value of its normal creature damage range and changes no other statistic.";
-		if(hero->getMagicRules()["spells"]["core:curse"].Struct().contains("schoolRankDurations"))
-			result += " School rank sets the base duration to 3/4/4/5 rounds at no rank/Basic/Advanced/Expert; it does not grant Mass Curse.";
-		if(hasMaledictionPerk(hero))
-			result += " Malediction extends the duration by one round.";
-		if(mass)
-			result += " Granted by Grand Malediction; costs three times Curse before Mana reductions.";
-	}
-	else if(hero && sorrowRulesEnabled(hero->getMagicRules(), spell->getId()))
-	{
-		const auto & rules = hero->getMagicRules();
-		const int32_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const int schoolCoefficient = spellPowerCoefficientPercent(rules, hero, spell->getId());
-		const int combinedCoefficient = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
-		const auto penalty = sorrowMoralePenalty(rules, hero, spell->getId(), spellPower)
-			.value_or(SORROW_BASE_MORALE_PENALTY);
-		const auto duration = sorrowDurationRounds(rules, hero, spell->getId())
-			.value_or(SORROW_BASE_DURATION_ROUNDS);
-		const bool mass = spellVariantBase(rules, spell->getId()) != spell->getId();
-		result = std::string(mass ? "Targets every eligible enemy stack for " : "Targets one enemy stack for ") + std::to_string(duration)
-			+ (duration == 1 ? " round. " : " rounds. ")
-			+ "Morale penalty = min(3, 1 + floor(scaled raw Hero Spell Power / 70)). "
-			"Saved v3 Shadow rank scales the Spell Power term by 100% / 115% / 130% / 145% at no rank / Basic / "
-			"Advanced / Expert; Spellcraft efficiency multiplies the School factor. "
-			+ std::string(mass ? "The Mass cast affects every eligible enemy stack. " : "The ordinary cast is single-target at every rank. ")
-			+ "Current Shadow School factor: "
-			+ std::to_string(schoolCoefficient) + "%; combined School and Spellcraft factor: "
-			+ percentFromBasisPoints(combinedCoefficient) + ". At Spell Power " + std::to_string(spellPower)
-			+ ", the ordinary penalty is -" + std::to_string(penalty) + " Morale before battle-only Warcasting. "
-			"Morale remains subject to the global legal range.";
-		if(duration > SORROW_BASE_DURATION_ROUNDS)
-			result += " Malediction extends the duration by one round.";
-		if(mass)
-			result += " Granted by Grand Malediction; costs three times Sorrow before Mana reductions.";
-	}
-
-	if(hero && resurrectionRestorationEnabled(hero->getMagicRules(), spell->getId()))
-	{
-		const auto & rules = hero->getMagicRules();
-		result = "Restoration pool: " + std::to_string(RESURRECTION_BASE_POOL_HP)
-			+ " + " + std::to_string(RESURRECTION_SPELL_POWER_HP_PER_POINT)
-			+ " HP per Spell Power. School and Spellcraft scale only the Spell Power term; the current combined factor is "
-			+ percentFromBasisPoints(spellPowerCoefficientBasisPoints(rules, hero, spell->getId()))
-			+ ". Empower and battle-only Warcasting may further strengthen that term; eligible spell bonuses may modify the resulting pool. "
-			"The pool first heals the wounded surviving creature, then permanently restores casualties, "
-			"without exceeding the stack's battle-start capacity. Summoned, cloned, and Phantom stacks are ineligible.";
-		if(hero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.miracleWorker"))
-			result += " Miracle Worker adds 25% to the casualty HP pool only, rounded down after reserving the wound healing; it does not increase wound healing.";
-	}
-
-	if(hero && spell->getId() == SpellID(SpellID::QUICKSAND)
-		&& rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-	{
-		const auto & rules = hero->getMagicRules();
-		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
-		const auto patchCount = quicksandPatchCount(rules, hero, spell->getId(),
-			std::max<int32_t>(0, hero->getEffectPower(spell)),
-			std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)), 0, empowerBonusPercent);
-		if(patchCount)
-		{
-			result = "Places " + std::to_string(*patchCount)
-				+ " concealed Quicksand patches on legal empty ground hexes. The saved v3 base count is min(5, "
-				+ "2 + floor(Spell Power / 60)); Nature rank, Spellcraft, and Empower strengthen only the Spell Power term. "
-				+ "The current count excludes battle-only Warcasting, which may further strengthen the Spell Power term.";
-			if(hero->hasActivePerk(std::string(NATURE_MAGIC_SKILL), std::string(NATURE_MIRE_SHAPER)))
-				result += " Mire Shaper adds one patch after the ordinary five-patch cap, allowing up to six patches.";
-		}
-	}
-
-	if(hero && rulesActive(hero->getMagicRules())
-		&& spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL)
-	{
-		const auto & rules = hero->getMagicRules();
-		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
-		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
-		const int32_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const bool chronomancer = hero->hasActivePerk(
-			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::CHRONOMANCER_PERK);
-		const int radiusCap = newHorizonsSorcery::TIME_STOP_BASE_MAX_RADIUS
-			+ (chronomancer ? newHorizonsSorcery::TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
-		const int64_t radiusThreshold = static_cast<int64_t>(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS)
-			* SPELL_POWER_COEFFICIENT_BASIS_POINTS;
-		const int64_t scaledPowerTerm = static_cast<int64_t>(spellPower) * coefficientBasisPoints
-			* (100 + empowerBonusPercent) / (radiusThreshold * 100);
-		const int radius = std::min(radiusCap,
-			newHorizonsSorcery::TIME_STOP_BASE_RADIUS + static_cast<int>(scaledPowerTerm));
-		const bool schoolRankRules = rules["rulesetVersion"].Integer()
-			>= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
-
-		result = "Place the selected area outside time until the beginning of the caster's next Hero Action. ";
-		if(schoolRankRules)
-		{
-			result += "Under saved v3 rules, Sorcery rank scales only the Spell Power term: 100% with no rank, "
-				"115% at Basic, 130% at Advanced, and 145% at Expert. Spellcraft efficiency multiplies that School factor; "
-				"the current combined coefficient is " + percentFromBasisPoints(coefficientBasisPoints) + ". The radius is min("
-				+ std::to_string(radiusCap) + ", 1 + floor(" + std::to_string(coefficientBasisPoints)
-				+ " x Spell Power / (10000 x " + std::to_string(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS)
-				+ "))); Chronomancer raises the cap to 3 without "
-				"adding a free radius step. Current ordinary radius without battle-only Warcasting at Spell Power "
-				+ std::to_string(spellPower) + ": " + std::to_string(radius) + ". Warcasting also scales only this "
-				"Spell Power term when the shared cast scaler supplies its bonus. Duration and targeting do not "
-				"change with Sorcery rank.";
-		}
-		else
-		{
-			result += "Saved v1/v2 rules use a 100% Spell Power coefficient at every rank. Radius is min("
-				+ std::to_string(radiusCap) + ", 1 + floor(Spell Power / "
-				+ std::to_string(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS) + ")); Chronomancer raises "
-				"the cap to 3 without adding a free radius step. Current radius at Spell Power "
-				+ std::to_string(spellPower) + ": " + std::to_string(radius)
-				+ ". Warcasting also scales only this Spell Power term when the saved profile and shared cast scaler "
-				"supply its bonus. Duration and targeting are unchanged.";
-		}
-		result += " Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, "
-			"or lose duration from existing effects.";
-	}
-
-	if(hero && cureEnabled(hero->getMagicRules(), spell->getId()))
-	{
-		const auto & rules = hero->getMagicRules();
-		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
-		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
-		int64_t coefficientTenThousandths = 15'000LL * coefficientBasisPoints
-			* (100 + empowerBonusPercent) / (SPELL_POWER_COEFFICIENT_BASIS_POINTS * 100LL);
-		if(hero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.healer"))
-			coefficientTenThousandths = coefficientTenThousandths * 120 / 100;
-		const std::string spellPowerCoefficient = fixedPointFromScaledValue(coefficientTenThousandths, 4);
-		result = "Targets one friendly living stack. Base healing is 25 + " + spellPowerCoefficient
-			+ " \u00d7 Spell Power HP and cannot resurrect casualties. "
-			"If the target has Poison or Disease, choose one physical affliction to remove. "
-			"Cure does not remove magical effects.";
-	}
-
-	if(hero && rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& spellVariantBase(hero->getMagicRules(), spell->getId()) == SpellID::BLESS)
-	{
-		const auto & rules = hero->getMagicRules();
-		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
-		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
-		const int64_t power = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const int specialtyPercent = hero->getNonDamageSpellSpecialtyBonusPercent(SpellID(SpellID::BLESS));
-		const int64_t term = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-			power, BLESS_SPELL_POWER_DURATION_DIVISOR, coefficientBasisPoints, 0, empowerBonusPercent, specialtyPercent);
-		const int ordinaryDuration = blessDurationFromPowerTerm(term);
-		const int64_t spellDurationModifier = static_cast<int64_t>(hero->valOfBonuses(
-			BonusType::SPELL_DURATION, BonusSubtypeID()))
-			+ hero->valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID(SpellID(SpellID::BLESS)))
-			+ spellDurationBonus(hero, SpellID::BLESS);
-		const bool benediction = hasBenedictionPerk(hero);
-		const int64_t totalDuration = std::max<int64_t>(0, ordinaryDuration + spellDurationModifier
-			+ (benediction ? 1 : 0));
-		result += "\n\nCurrent ordinary duration: " + std::to_string(ordinaryDuration)
-			+ (ordinaryDuration == 1 ? " round" : " rounds") + " (combined Spell Power coefficient: "
-			+ percentFromBasisPoints(coefficientBasisPoints) + "). Current total before battle-only adjustments: "
-			+ std::to_string(totalDuration) + (totalDuration == 1 ? " round." : " rounds.");
-		if(spellDurationModifier != 0)
-			result += " SPELL_DURATION modifier: " + std::to_string(spellDurationModifier) + ".";
-		if(benediction)
-			result += " Benediction adds 1 round.";
-	}
-
-	if(hero && rulesActive(hero->getMagicRules())
-		&& spell->getJsonKey() == "new-horizons:masterChainLightning")
-	{
-		// Keep the translated base description complete for hero-independent help
-		// surfaces, then add the live value only where a hero context exists.
-		result += "\n\nCurrent retention: "
-			+ std::to_string(masterChainLightningRetentionPercent(hero->level)) + "%.";
-	}
-
-	if(hero && rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() >= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL)
-	{
-		const auto & rules = hero->getMagicRules();
-		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
-		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
-		const bool spellbinder = hero->hasActivePerk(
-			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK);
-		const int duration = newHorizonsSorcery::spellLockDurationBasisPoints(
-			hero->getEffectPower(spell), spellbinder, coefficientBasisPoints, 0, empowerBonusPercent);
-		result += "\n\nCurrent combined Spell Power coefficient: "
-			+ percentFromBasisPoints(coefficientBasisPoints)
-			+ (empowerBonusPercent > 0 ? " with Empower Spell +25%; ordinary duration at current Spell Power: "
-				: "; ordinary duration at current Spell Power: ") + std::to_string(duration)
-			+ (duration == 1 ? " round." : " rounds.");
-	}
-
-	if(hero && rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& hero->getMagicRules().Struct().contains("spellcraftEfficiencyPercent")
-		&& registeredSpellcraftRank(hero) > MasteryLevel::NONE
-		&& spell->isCommonHeroSpell() && spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId())
-		&& !isAdventureSpell(hero->getMagicRules(), spell->getId())
-		&& !spellSchoolSkills(hero->getMagicRules(), spell->getId()).empty())
-	{
-		const int efficiencyPercent = spellcraftEfficiencyPercent(hero->getMagicRules(), registeredSpellcraftRank(hero));
-		result += "\n\nSpellcraft efficiency: " + std::to_string(efficiencyPercent)
-			+ "% on Spell Power-derived terms, multiplying with School rank.";
-	}
-
-	if(!hero || !rulesActive(hero->getMagicRules()))
-		return result;
-	const auto & savedMagicRules = hero->getMagicRules();
-	const bool focusMagicCoefficient = spell->getJsonKey() == newHorizonsSorcery::FOCUS_MAGIC_SPELL;
-	const bool hasSavedSchoolRankCoefficient = savedMagicRules["rulesetVersion"].Integer()
-		>= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
-	if((!hasSavedSchoolRankCoefficient && !focusMagicCoefficient)
-		|| spellSchoolSkills(savedMagicRules, spell->getId()).empty())
-		return result;
-
-	const int coefficientPercent = spellPowerCoefficientPercent(savedMagicRules, hero, spell->getId());
-	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(savedMagicRules, hero, spell->getId());
-	const bool cureCoefficient = cureEnabled(hero->getMagicRules(), spell->getId());
-	const bool transfigureCoefficient = spell->getJsonKey() == "new-horizons:transfigureMatter";
-	const bool phantomCoefficient = spell->getJsonKey() == "new-horizons:phantomArmy";
-	const auto rawPower = std::max(0, hero->getEffectPower(spell));
-	if(phantomCoefficient)
-		result += "\nCurrent ordinary Integrity per 10,000 source current HP: "
-			+ std::to_string(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, rawPower,
-				hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.illusionist"),
-				coefficientBasisPoints, 0, empowerSpellBonusPercent(savedMagicRules, hero, spell->getId()),
-				hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId())))
-			+ " (before battle-only Warcasting; real HP floors only after the capped fraction and Illusionist).";
-	if(spell->getJsonKey() == "new-horizons:hexOfPain")
-		result += "\nCurrent ordinary captured flat damage: "
-			+ std::to_string(hexOfPainFlatDamage(rawPower, coefficientBasisPoints, 0,
-				empowerSpellBonusPercent(savedMagicRules, hero, spell->getId()),
-				hero->getDamageSpellSpecialtyBonusPercent(spell->getId()),
-				hasSavedSchoolRankCoefficient && hero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.painweaver")))
-			+ " (before battle-only Warcasting). Each trigger adds the unchanged 10% damage share.";
-	if(spell->getJsonKey() == "new-horizons:plague")
-		result += "\nCurrent captured raw tick damage: "
-			+ std::to_string(plagueTickDamage(rawPower, coefficientBasisPoints,
-				hero->getDamageSpellSpecialtyBonusPercent(spell->getId())))
-			+ ". Later ticks and child infections reuse this snapshot.";
-	if(phantomCoefficient && hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId()) > 0)
-		result += "\nAstral specialty: +20% to the Spell Power-derived Integrity fraction before the 40% base cap; "
-			"the fixed 20%, Illusionist multiplier and duration are unchanged.";
-	if((spell->getJsonKey() == "new-horizons:hexOfPain" || spell->getJsonKey() == "new-horizons:plague")
-		&& hero->getDamageSpellSpecialtyBonusPercent(spell->getId()) > 0)
-		result += "\nSpecialty: +15% to the initial Spell Power-derived flat damage only; "
-			"the fixed term and subsequent damage-share/spread snapshot are unchanged.";
-	const auto formula = spellDirectDamage(hero->getMagicRules(), spell->getJsonKey());
-	const bool damageCoefficient = spell->isDamage()
-		&& (spell->getBasePower() != 0 || (formula && formula->powerCoefficient != 0));
-	if(!focusMagicCoefficient && !cureCoefficient && !transfigureCoefficient && !phantomCoefficient && !damageCoefficient)
-		return result;
-
-	constexpr std::array<std::string_view, 4> rankNames{
-		"No School Rank", "Basic School", "Advanced School", "Expert School"};
-	if(focusMagicCoefficient)
-	{
-		if(hasSavedSchoolRankCoefficient)
-		{
-			const auto rank = std::find(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(),
-				SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end(), coefficientPercent);
-			if(rank == SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end())
-				return result;
-			const auto rankIndex = static_cast<size_t>(std::distance(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(), rank));
-			constexpr std::array<std::string_view, 4> sorceryRankNames{
-				"No Sorcery Rank", "Basic Sorcery", "Advanced Sorcery", "Expert Sorcery"};
-			result += "\n\n" + std::string(sorceryRankNames[rankIndex]) + ": "
-				+ std::to_string(coefficientPercent) + "% coefficient on the Spell Power term.";
-		}
-		else
-		{
-			result += "\n\nLegacy profile: 100% coefficient on the Spell Power term; "
-				"Sorcery rank does not scale Focus Magic.";
-		}
-
-		const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const int64_t scaledTerm = spellPower * newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS
-			* coefficientBasisPoints / SPELL_POWER_COEFFICIENT_BASIS_POINTS;
-		const int64_t penetrationBasisPoints = std::min<int64_t>(
-			newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS,
-			newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS + scaledTerm);
-		const auto fraction = penetrationBasisPoints % 100;
-		result += "\nCurrent ordinary per-mark penetration at Spell Power " + std::to_string(spellPower)
-			+ ": " + std::to_string(penetrationBasisPoints / 100) + "."
-			+ (fraction < 10 ? "0" : "") + std::to_string(fraction)
-			+ "% (before battle-only Warcasting).";
-		return result;
-	}
-
-	const auto rank = std::find(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(),
-		SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end(), coefficientPercent);
-	if(rank == SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end())
-		return result;
-	const auto rankIndex = static_cast<size_t>(std::distance(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(), rank));
-	result += "\n\n" + std::string(rankNames[rankIndex]) + ": "
-		+ std::to_string(coefficientPercent)
-		+ (transfigureCoefficient ? "% Spell Power-derived golem HP."
-			: phantomCoefficient ? "% Spell Power-derived Phantom Integrity."
-			: cureCoefficient ? "% Spell Power-derived healing."
-			: "% Spell Power damage coefficient.");
+	presentation::applyBaseDescription(result, hero, spell);
+	presentation::applyContextualOverrides(result, hero, spell);
 	return result;
 }
 
