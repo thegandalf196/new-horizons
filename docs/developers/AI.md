@@ -89,6 +89,23 @@ BattleAI itself handles all the rest and issues actual commands
 
 Adventure AI responsible for moving heroes on map, gathering things, developing town. Main idea is to gather all possible tasks on map, prioritize them and select the best one for each heroes. Initially was a fork of VCAI
 
+### R2 perk development
+
+Under captured perk policy2, Nullkiller first prefers offered perks that do not
+increase the shortage of slots needed for the parent's remaining active tiers.
+The calculation uses the hero's saved registry, selected tiers and per-Skill cap;
+it does not change eligibility, class weights or offer generation. Existing
+faction/value preferences then rank the capacity-preserving candidates. If only
+capacity-consuming perks compete with a Skill choice, the existing Skill
+evaluator decides. Historical perk policies retain their previous preferences.
+
+If no Skill or capacity-preserving perk is offered, the AI still selects a legal
+offered perk. This is a preference, not a guarantee of reaching every tier:
+forced offers, class restrictions and earlier investments can prevent that.
+Faction-path fixtures must isolate both learned Skills and authored starting
+perks while retaining the captured rules. Current mixed-offer tests must not
+assume that selecting a Basic perk removes all other Basic choices.
+
 ### Parts
 
 Gateway - a callback for server used to invoke AI actions when server thinks it is time to do something. Through this callback AI is informed about various events like hero level up, tile revialed, blocking dialogs and so on. In order to do this Gaateway implements specific interface. The interface is exactly the same for human and AI

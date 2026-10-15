@@ -840,6 +840,49 @@ void AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, s
 					const int armyStacks = std::max(1, static_cast<int>(observedHero->Slots().size()));
 					return positiveMorale * armyStacks;
 				};
+				// R2 permits several perks of the same tier. Prefer choices that
+				// leave room for the remaining active tiers before applying the
+				// existing faction/value preferences. This is AI valuation only:
+				// the server-authored offer and player eligibility remain intact.
+				const auto worsensTierReservation = [observedHero, &perks](size_t index)
+				{
+					const auto & state = observedHero->getPerkState();
+					if(!newHorizonsHeroes::usesR2PerkOffers(state.rules))
+						return false;
+
+					const auto & candidate = perks[index];
+					std::set<int> missingTiers;
+					for(const auto & definition : newHorizonsHeroes::perkOptions(state.rules, candidate.selection.skillId))
+						if(definition.effect["status"].String() == "active")
+							missingTiers.insert(newHorizonsHeroes::perkRequiredRank(definition.requiredRank));
+
+					si64 count = 0;
+					for(const auto & selection : state.selected)
+					{
+						if(selection.skillId != candidate.selection.skillId)
+							continue;
+						++count;
+						const auto definition = newHorizonsHeroes::perkDefinition(state.rules,
+							selection.skillId, selection.perkId);
+						if(definition)
+							missingTiers.erase(newHorizonsHeroes::perkRequiredRank(definition->requiredRank));
+					}
+					const auto remaining = state.rules["maxPerksPerSkill"].Integer() - count;
+					const auto before = std::max<si64>(0, static_cast<si64>(missingTiers.size()) - remaining);
+					missingTiers.erase(candidate.requiredRank);
+					const auto after = std::max<si64>(0, static_cast<si64>(missingTiers.size()) - (remaining - 1));
+					return after > before;
+				};
+				std::vector<size_t> preferredPerks;
+				std::copy_if(usablePerks.begin(), usablePerks.end(), std::back_inserter(preferredPerks),
+					[&](size_t index) { return !worsensTierReservation(index); });
+				if(preferredPerks.empty() && !skills.empty())
+					return answerQuery(queryID, sel);
+				if(!preferredPerks.empty())
+					usablePerks = std::move(preferredPerks);
+				// If only capacity-consuming perks are offered, a legal answer is
+				// still mandatory. Retain the original ranking rather than skip or
+				// fabricate a Skill choice; reservation is not a progression guarantee.
 				const auto best = std::max_element(usablePerks.begin(), usablePerks.end(),
 					[&](size_t leftIndex, size_t rightIndex)
 					{
