@@ -47,6 +47,33 @@ class NewHorizonsSpellSymbolTests(unittest.TestCase):
         cls.spells = parse_jsonc(SPELL_CONFIG.read_text(encoding="utf-8"))
         cls.families = cls.manifest["families"]
 
+    def test_heavenly_gale_provenance_keeps_export_identity_without_session_records(self):
+        base = ROOT / 'assets/new-horizons/art-source/heavenly-gale-v1'
+        recipe = json.loads((base / 'generation.json').read_text())
+        historical = json.loads((base / 'heavenly-gale-manifest.json').read_text())
+        self.assertEqual(recipe['status'], 'provisional')
+        self.assertEqual(recipe['final_master']['sha256'], historical['source']['sha256'])
+        self.assertEqual(recipe['final_master']['dimensions_pixels'], historical['source']['dimensions'])
+        self.assertEqual(recipe['final_master']['color_mode'], 'RGB')
+        self.assertEqual([row['operation'] for row in recipe['generation_history']],
+                         ['generate', 'edit', 'edit', 'edit'])
+        private_fields = {'imagegen_output_id', 'generated_image_reference', 'input_generated_image_reference'}
+        for row in recipe['generation_history']:
+            self.assertFalse(private_fields.intersection(row), 'Public provenance must omit session identifiers')
+            self.assertTrue(row['prompt_file'].endswith('.txt'))
+            self.assertFalse((base / row['prompt_file']).exists(), 'Raw requests belong in the external archive')
+        originals = {tuple(row['dimensions']): row['sha256'] for row in historical['outputs'] if row['kind'] == 'icon'}
+        self.assertEqual(set(originals), {(44, 44), (32, 32), (30, 30)})
+        self.assertEqual({tuple(row['dimensions_pixels']): row['sha256'] for row in recipe['export']['runtime_exports']}, originals)
+        family = next(row for row in self.families if row['spellKey'] == 'heavenlyGale')
+        target, fragment = family['symbol']['prompt'].split('#')
+        self.assertEqual(fragment, 'exact-edit-prompt')
+        contract = (ROOT / target).read_text()
+        for fact in ('## Exact edit prompt', 'GPL-2.0-or-later', 'RGBA', 'external authoring', 'LANCZOS'):
+            self.assertTrue(fact in contract, 'Public symbol contract must retain required provenance and native facts')
+        self.assertFalse(any(label in contract for label in ('Use case:', 'Primary request:', 'Constraints:')),
+                         'Public contract must not embed the raw edit request')
+
     def test_manifest_covers_inventory_and_preserves_existing_bindings(self):
         self.assertEqual(self.manifest["schemaVersion"], 1)
         self.assertEqual(len(self.families), 26)
