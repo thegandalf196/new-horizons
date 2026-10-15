@@ -272,7 +272,237 @@ class ArtWaveImporterTest(unittest.TestCase):
                                  {'bootstrap_no_ledger': False, 'expected_ledger_sha256': 'a' * 64})):
             with patch.object(sys, 'argv', base + extra), patch.object(importer, 'prepare', return_value={}) as prepare, patch('sys.stdout', io.StringIO()):
                 importer.main()
-            self.assertEqual(prepare.call_args.kwargs, expected)
+            self.assertEqual(prepare.call_args.kwargs, dict(expected, mass_spell_handoff=None))
+
+    def mass_selection(self):
+        artist = self.root / 'mass-artist'; artist.mkdir()
+        config = {}
+        selected = []
+        for key, slug in importer.MASS_SPELLS.items():
+            directory = artist / slug; directory.mkdir()
+            exports = []
+            for size in (44, 32, 30):
+                filename = slug + '-' + str(size) + '.png'
+                image = Image.new('RGBA', (size, size), (60, 90, 140, 255))
+                image.putpixel((0, 0), (0, 0, 0, 0)); image.save(directory / filename)
+                exports.append({'file': filename, 'sha256': importer.perks.digest(directory / filename)})
+            for filename in ('master.png', slug + '-comparison.png', 'PROMPT-AND-PROVENANCE.md', 'REVIEW.md'):
+                (directory / filename).write_text('Synthetic Mass fixture; not artwork')
+                if filename.endswith('.png'):
+                    exports.append({'file': filename, 'sha256': importer.perks.digest(directory / filename)})
+            (directory / 'EXPORT-MANIFEST.json').write_text(json.dumps({'outputs': exports}))
+            handoff = directory / 'HANDOFF.json'
+            handoff.write_text(json.dumps({'id': 'new-horizons:' + key, 'exports': exports}))
+            stem = 'NH_spell_' + slug.replace('-', '_')
+            selected.append({'id': 'new-horizons:' + key, 'directory': str(directory), 'handoff': str(handoff),
+                'handoffSha256': importer.perks.digest(handoff),
+                'proposedBindings': {role: stem + '-' + str(size) + '.png' for role, size in importer.spells.ROLES.items()}})
+            config[key] = {'name': key, 'power': 1, 'sounds': {'cast': 'unchanged'},
+                'animation': {'affect': ['unchanged']},
+                'graphics': {role: 'parent-native' for role in importer.spells.ROLES}}
+        config['unrelated'] = {'name': 'untouched', 'power': 99, 'graphics': {'iconBook': 'unchanged'}}
+        path = self.repo / importer.MASS_CONFIG; path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(config, indent='\t'))
+        inventory = self.repo / importer.INVENTORY
+        rows = list(csv.DictReader(io.StringIO(inventory.read_text())))
+        rows += [{'Item / ID': key + ' (new-horizons:' + key + ')', 'Art': 'Not done',
+                  'Live binding / source': 'native parent', 'Remaining work / evidence': 'Synthetic'}
+                 for key in importer.MASS_SPELLS]
+        stream = io.StringIO(); writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator='\n')
+        writer.writeheader(); writer.writerows(rows); inventory.write_text(stream.getvalue())
+        path = artist / 'SELECTED.json'; path.write_text(json.dumps({'count': 4, 'entries': selected}))
+        (self.repo / importer.SPELL_RECORD).write_text('{"old17record":"preserve exact bytes"}\n')
+        self.before = snapshot(self.repo)
+        self.mass_before = snapshot(artist)
+        return path
+
+    def run_mass(self, selection, handoffs=None):
+        return importer.prepare(self.repo, handoffs or [], None, self.root / 'mass-work', self.root / 'mass-output',
+                                bootstrap_no_ledger=True, mass_spell_handoff=selection)
+
+    def test_mass_only_preserves_history_and_changes_only_twenty_graphics_leaves(self):
+        selection = self.mass_selection()
+        old_config = importer.spells.parse_jsonc((self.repo / importer.MASS_CONFIG).read_text())
+        self.initial_proof(); previous = self.prior_ledger(); self.before = snapshot(self.repo)
+        result = importer.prepare(self.repo, [], None, self.root / 'mass-work', self.root / 'mass-output',
+            expected_ledger_sha256=importer.perks.digest(self.repo / importer.LEDGER), mass_spell_handoff=selection)
+        self.assertEqual((result['perkCount'], result['massSpellCount'], result['statusCount'], result['addedResources']), (0, 4, 0, 12))
+        self.assertEqual(result['entryCount'], 13)
+        out = self.root / 'mass-output'
+        self.assertEqual(snapshot(self.repo), self.before)
+        self.assertEqual(snapshot(selection.parent), self.mass_before)
+        self.assertFalse((out / importer.PERK_RECORD).exists())
+        self.assertFalse((out / importer.SPELL_RECORD).exists())
+        self.assertEqual((out / importer.HEADER).read_bytes(), (self.repo / importer.HEADER).read_bytes())
+        self.assertEqual((out / importer.spells.CONFIG).read_bytes(), (self.repo / importer.spells.CONFIG).read_bytes())
+        ledger = json.loads((out / importer.LEDGER).read_text())
+        self.assertEqual(ledger['waves'][0], previous['waves'][0])
+        self.assertEqual(ledger['extraTop'], previous['extraTop'])
+        wave = ledger['waves'][-1]
+        self.assertEqual(wave['perks'], []); self.assertEqual(wave['statuses'], [])
+        self.assertEqual(len(wave['spells']), 4)
+        actual = importer.spells.parse_jsonc((out / importer.MASS_CONFIG).read_text())
+        for record in wave['spells']:
+            key = record['id'].split(':')[1]
+            self.assertEqual(record['previousBindings'], old_config[key]['graphics'])
+            for role, size in {'iconBook': 44, 'iconScroll': 32, 'iconEffect': 30, 'iconImmune': 30, 'iconScenarioBonus': 32}.items():
+                self.assertEqual(actual[key]['graphics'][role], record['bindings'][role])
+                self.assertTrue(record['bindings'][role].endswith('-' + str(size) + '.png'))
+            actual[key]['graphics'] = old_config[key]['graphics']
+        self.assertEqual(actual, old_config)
+        self.assertNotRegex(json.dumps(wave), r'/home/|/tmp/')
+
+    def test_mass_and_perk_inputs_share_one_additive_wave(self):
+        selection = self.mass_selection()
+        previous = self.prior_ledger()
+        before = snapshot(self.repo)
+        result = importer.prepare(self.repo, [self.handoff], None, self.root / 'mass-work', self.root / 'mass-output',
+            expected_ledger_sha256=importer.perks.digest(self.repo / importer.LEDGER), mass_spell_handoff=selection)
+        self.assertEqual((result['perkCount'], result['massSpellCount'], result['addedResources']), (1, 4, 19))
+        ledger = json.loads((self.root / 'mass-output' / importer.LEDGER).read_text())
+        self.assertEqual(ledger['waves'][0], previous['waves'][0])
+        self.assertEqual(snapshot(self.repo), before)
+
+    def test_mass_identity_count_duplicates_and_role_mapping_fail_before_work(self):
+        selection = self.mass_selection(); baseline = json.loads(selection.read_text())
+        mutations = []
+        bad = json.loads(json.dumps(baseline)); bad['count'] = True; mutations.append(bad)
+        bad = json.loads(json.dumps(baseline)); bad['entries'][0]['id'] = 'new-horizons:bless'; mutations.append(bad)
+        bad = json.loads(json.dumps(baseline)); bad['entries'][0] = bad['entries'][1]; mutations.append(bad)
+        bad = json.loads(json.dumps(baseline)); bad['entries'][0]['proposedBindings']['iconBook'] = 'wrong.png'; mutations.append(bad)
+        for bad in mutations:
+            with self.subTest(bad=bad):
+                selection.write_text(json.dumps(bad))
+                with self.assertRaises(ValueError): self.run_mass(selection)
+                self.assertFalse((self.root / 'mass-work').exists())
+
+    def test_mass_selected_handoff_revision_pin_refuses_stale_sorrow(self):
+        selection = self.mass_selection(); chosen = json.loads(selection.read_text())
+        sorrow = next(row for row in chosen['entries'] if row['id'] == 'new-horizons:massSorrow')
+        path = Path(sorrow['handoff']); old = path.read_bytes(); path.write_bytes(old + b' ')
+        with self.assertRaisesRegex(ValueError, 'Selected Mass handoff changed'): self.run_mass(selection)
+        self.assertFalse((self.root / 'mass-work').exists())
+
+    def test_mass_native_corruption_and_dimensions_are_rejected(self):
+        selection = self.mass_selection(); chosen = json.loads(selection.read_text())
+        path = Path(chosen['entries'][0]['directory']) / 'mass-bless-44.png'
+        path.write_bytes(b'corrupt')
+        with self.assertRaisesRegex(ValueError, 'Pinned Mass native'): self.run_mass(selection)
+        self.assertFalse((self.root / 'mass-work').exists())
+
+    def test_mass_hash_valid_but_wrong_size_mode_or_alpha_is_rejected(self):
+        selection = self.mass_selection(); chosen = json.loads(selection.read_text())
+        entry = chosen['entries'][0]; directory = Path(entry['directory'])
+        handoff = Path(entry['handoff']); export_manifest = directory / 'EXPORT-MANIFEST.json'
+        for mode, size, transparent in (('RGB', 44, False), ('RGBA', 32, True), ('RGBA', 44, False)):
+            with self.subTest(mode=mode, size=size, transparent=transparent):
+                path = directory / 'mass-bless-44.png'
+                image = Image.new(mode, (size, size), 'blue')
+                if transparent: image.putpixel((0, 0), (0, 0, 0, 0))
+                image.save(path)
+                evidence = json.loads(handoff.read_text())
+                for row in evidence['exports']:
+                    if row['file'] == path.name: row['sha256'] = importer.perks.digest(path)
+                handoff.write_text(json.dumps(evidence))
+                export_manifest.write_text(json.dumps({'outputs': evidence['exports']}))
+                entry['handoffSha256'] = importer.perks.digest(handoff)
+                selection.write_text(json.dumps(chosen))
+                with self.assertRaisesRegex(ValueError, 'Incorrect Mass native'):
+                    self.run_mass(selection)
+                self.assertFalse((self.root / 'mass-work').exists())
+
+    def test_mass_inputs_changed_after_validation_cannot_emit_ready(self):
+        selection = self.mass_selection(); original = importer.nhart.pack
+        path = Path(json.loads(selection.read_text())['entries'][0]['directory']) / 'PROMPT-AND-PROVENANCE.md'
+        def mutate(*args, **kwargs):
+            result = original(*args, **kwargs); path.write_text('changed prompt epoch'); return result
+        with patch.object(importer.nhart, 'pack', side_effect=mutate), self.assertRaisesRegex(ValueError, 'Mass inputs changed'):
+            self.run_mass(selection)
+        self.assertFalse((self.root / 'mass-output/READY.json').exists())
+
+    def test_mass_export_manifest_disagreement_is_rejected(self):
+        selection = self.mass_selection()
+        directory = Path(json.loads(selection.read_text())['entries'][0]['directory'])
+        path = directory / 'EXPORT-MANIFEST.json'; value = json.loads(path.read_text())
+        value['outputs'][0]['sha256'] = 'a' * 64; path.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'manifest disagree'):
+            self.run_mass(selection)
+        self.assertFalse((self.root / 'mass-work').exists())
+
+    def test_mass_rejects_status_or_scenario_mix_without_changing_old_mode(self):
+        selection = self.mass_selection()
+        with self.assertRaisesRegex(ValueError, 'separately from status'):
+            self.run_import(mass_spell_handoff=selection, bootstrap_no_ledger=True)
+        with self.assertRaisesRegex(ValueError, 'separately from status'):
+            importer.prepare(self.repo, [], None, self.root / 'mass-work', self.root / 'mass-output',
+                mass_regeneration_scenario=True, bootstrap_no_ledger=True, mass_spell_handoff=selection)
+
+    def test_empty_and_status_only_inputs_still_refuse_without_fake_perks(self):
+        for statuses in (None, self.status):
+            with self.subTest(statuses=statuses), self.assertRaisesRegex(ValueError, 'No completed perk inputs'):
+                importer.prepare(self.repo, [], statuses, self.root / 'mass-work', self.root / 'mass-output',
+                                 bootstrap_no_ledger=True)
+            self.assertFalse((self.root / 'mass-work').exists())
+
+    def test_mass_resource_collision_refuses_without_ready(self):
+        selection = self.mass_selection()
+        original = importer.nhart.resource_identity
+        def collision(name):
+            return original('DATA/base.pcx') if name == 'SPRITES/NH_spell_mass_bless-44.png' else original(name)
+        with patch.object(importer.nhart, 'resource_identity', side_effect=collision), self.assertRaisesRegex(ValueError, 'collision'):
+            self.run_mass(selection)
+        self.assertFalse((self.root / 'mass-output/READY.json').exists())
+
+    def test_mass_non_graphics_changes_are_rejected(self):
+        selection = self.mass_selection(); original = importer.spells.replace_graphics
+        def change(text, key, bindings):
+            return original(text, key, bindings).replace('"power": 1', '"power": 2', 1)
+        with patch.object(importer.spells, 'replace_graphics', side_effect=change), self.assertRaisesRegex(ValueError, 'non-owned'):
+            self.run_mass(selection)
+        self.assertEqual(snapshot(self.repo), self.before)
+
+    def test_mass_cannot_change_existing_seventeen_spell_record_before_ready(self):
+        selection = self.mass_selection(); original = importer.nhart.pack
+        def mutate(*args, **kwargs):
+            result = original(*args, **kwargs)
+            (self.repo / importer.SPELL_RECORD).write_text('changed epoch')
+            return result
+        with patch.object(importer.nhart, 'pack', side_effect=mutate), self.assertRaisesRegex(ValueError, 'history changed'):
+            self.run_mass(selection)
+        self.assertFalse((self.root / 'mass-output/READY.json').exists())
+
+    def test_mass_artist_tree_overlap_refuses_before_work(self):
+        selection = self.mass_selection()
+        with self.assertRaisesRegex(ValueError, 'protected artist'):
+            importer.prepare(self.repo, [], None, selection.parent / 'work', self.root / 'mass-output',
+                             bootstrap_no_ledger=True, mass_spell_handoff=selection)
+
+    def test_mass_rejects_escaped_handoff_and_native_or_provenance_symlinks_before_read(self):
+        selection = self.mass_selection(); chosen = json.loads(selection.read_text())
+        original = Path.read_bytes
+        outside = self.root / 'not-an-authorized-art-input'
+        entry = chosen['entries'][0]; directory = Path(entry['directory'])
+        entry['handoff'] = str(outside); selection.write_text(json.dumps(chosen))
+        def guarded(path):
+            if path == outside or path.is_symlink(): raise AssertionError('Forbidden escaped read')
+            return original(path)
+        with patch.object(Path, 'read_bytes', guarded), self.assertRaisesRegex(ValueError, 'escaped'):
+            self.run_mass(selection)
+        entry['handoff'] = str(directory / 'HANDOFF.json'); selection.write_text(json.dumps(chosen))
+        for name in ('mass-bless-44.png', 'master.png', 'PROMPT-AND-PROVENANCE.md'):
+            path = directory / name; saved = path.read_bytes(); path.unlink(); path.symlink_to(outside)
+            with self.subTest(name=name), patch.object(Path, 'read_bytes', guarded), self.assertRaisesRegex(ValueError, 'symlink|escaped'):
+                self.run_mass(selection)
+            path.unlink(); path.write_bytes(saved)
+        self.assertFalse((self.root / 'mass-work').exists())
+
+    def test_mass_only_cli_forwards_explicit_selection_without_fake_perks(self):
+        argv = ['importer', '--repo', str(self.repo), '--mass-spell-handoff', str(self.root / 'selected.json'),
+                '--work-root', str(self.root / 'work'), '--output-root', str(self.root / 'output'), '--bootstrap-no-ledger']
+        with patch.object(sys, 'argv', argv), patch.object(importer, 'prepare', return_value={}) as prepare, patch('sys.stdout', io.StringIO()):
+            importer.main()
+        self.assertEqual(prepare.call_args.args[1], [])
+        self.assertEqual(prepare.call_args.kwargs['mass_spell_handoff'], self.root / 'selected.json')
 
     def assert_inputs_unchanged(self):
         self.assertEqual(snapshot(self.repo), self.before); self.assertEqual(snapshot(self.handoff.parent), self.artist_before)

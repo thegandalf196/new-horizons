@@ -13,6 +13,59 @@ import import_new_horizons_art_wave as importer
 from .nhart_test_resources import later_art_waves, later_art_resources, read_resource, open_image, verified_index
 
 
+def config_at_wave(config, waves, index, config_path):
+    """Undo later graphics edits only; historical nongraphics bytes stay checked."""
+    historical = json.loads(json.dumps(config))
+    for later in reversed(waves[index + 1:]):
+        # Producer applies reused roles before new spell roles within a wave.
+        edits = later.get('reusedBindings', []) + later.get('spells', [])
+        for row in reversed(edits):
+            if row['config'] == config_path:
+                historical[row['id'].split(':')[1]]['graphics'].update(row['previousBindings'])
+    return historical
+
+
+class ArtWaveHistoryTest(unittest.TestCase):
+    def test_mass_regeneration_proof_survives_later_mass_wave_without_loosening_digest(self):
+        original = {key: {'power': 7, 'graphics': {role: key + '-' + role
+                    for role in importer.spells.ROLES}}
+                    for key in (*importer.MASS_SPELLS, 'massRegeneration')}
+        reused = {'config': importer.MASS_CONFIG, 'id': 'new-horizons:massRegeneration',
+                  'bindings': {'iconScenarioBonus': 'NH_regeneration_32.png'},
+                  'previousBindings': {'iconScenarioBonus': original['massRegeneration']['graphics']['iconScenarioBonus']}}
+        current = json.loads(json.dumps(original))
+        current['massRegeneration']['graphics'].update(reused['bindings'])
+        old_digest = importer.non_status_config_digest(current, [reused])
+        records = []
+        for key in importer.MASS_SPELLS:
+            row = {'config': importer.MASS_CONFIG, 'id': 'new-horizons:' + key,
+                   'previousBindings': dict(current[key]['graphics']),
+                   'bindings': {role: 'selected-' + key + '-' + role for role in importer.spells.ROLES}}
+            current[key]['graphics'].update(row['bindings']); records.append(row)
+        waves = [{'reusedBindings': [reused]}, {'spells': records}]
+        self.assertNotEqual(importer.non_status_config_digest(current, [reused]), old_digest)
+        historical = config_at_wave(current, waves, 0, importer.MASS_CONFIG)
+        self.assertEqual(importer.non_status_config_digest(historical, [reused]), old_digest)
+        self.assertEqual(current['massBless']['graphics'], records[0]['bindings'])
+        current['massBless']['power'] += 1
+        mutated = config_at_wave(current, waves, 0, importer.MASS_CONFIG)
+        self.assertNotEqual(importer.non_status_config_digest(mutated, [reused]), old_digest)
+
+    def test_rollback_includes_later_same_config_reused_roles_in_reverse_order(self):
+        base = {'massBless': {'power': 7, 'graphics': {'iconBook': 'original'}}}
+        spell = {'config': importer.MASS_CONFIG, 'id': 'new-horizons:massBless',
+                 'previousBindings': {'iconBook': 'original'}}
+        reused = {'config': importer.MASS_CONFIG, 'id': 'new-horizons:massBless',
+                  'previousBindings': {'iconBook': 'first-spell'}}
+        unrelated = {'config': 'other.json', 'id': 'new-horizons:absent',
+                     'previousBindings': {'iconBook': 'must-not-apply'}}
+        current = {'massBless': {'power': 7, 'graphics': {'iconBook': 'latest'}}}
+        waves = [{}, {'spells': [spell]}, {'reusedBindings': [reused, unrelated]}]
+        self.assertEqual(config_at_wave(current, waves, 0, importer.MASS_CONFIG), base)
+        self.assertEqual(config_at_wave(current, waves, 1, importer.MASS_CONFIG),
+                         {'massBless': {'power': 7, 'graphics': {'iconBook': 'first-spell'}}})
+
+
 class ArtAdditionsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -42,7 +95,7 @@ class ArtAdditionsTest(unittest.TestCase):
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         current_ids = {row['id'] for skill in roster['skills'].values() for row in skill['perks']}
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) for name in row['resources']}
             self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
                 self.assertIn(row['id'], current_ids); self.assertEqual(lookup[row['id']], row['icon44'])
@@ -83,8 +136,9 @@ class ArtAdditionsTest(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(read_resource('SPRITES/' + filename)).hexdigest(), status['native30Sha256'])
             for reused in wave['reusedBindings']:
                 config = importer.spells.parse_jsonc((ROOT / reused['config']).read_text())
-                self.assertEqual(importer.non_status_config_digest(config, [reused]), reused['nonGraphicsConfigSha256'])
-                self.assertEqual(config[reused['id'].split(':')[1]]['graphics']['iconScenarioBonus'], 'NH_regeneration_32.png')
+                historical_config = config_at_wave(config, self.waves, index, reused['config'])
+                self.assertEqual(importer.non_status_config_digest(historical_config, [reused]), reused['nonGraphicsConfigSha256'])
+                self.assertEqual(historical_config[reused['id'].split(':')[1]]['graphics']['iconScenarioBonus'], 'NH_regeneration_32.png')
                 self.assertEqual(open_image('SPRITES/NH_regeneration_32.png').size, (32, 32))
 
     def test_sanitized_provisional_records_and_no_loose_images(self):
@@ -92,12 +146,45 @@ class ArtAdditionsTest(unittest.TestCase):
         self.assertNotRegex(text, r'(?i)/home/|/users/|[a-z]:[\\/]|\\\\')
         inventory = list(csv.DictReader(io.StringIO((ROOT / importer.INVENTORY).read_text())))
         for wave in self.waves:
-            for row in wave['perks'] + wave['statuses']:
-                self.assertIn('not Final' if row in wave['statuses'] else 'no Final', row['approval'])
+            for row in wave['perks'] + wave['statuses'] + wave.get('spells', []):
+                self.assertIn('no Final' if row in wave['perks'] else 'not Final', row['approval'])
                 matches = [entry for entry in inventory if entry['Item / ID'].endswith('(' + row['id'] + ')')]
                 self.assertEqual(len(matches), 1); self.assertEqual(matches[0]['Art'], 'Provisional')
             for name in wave['resources']:
                 self.assertFalse((ROOT / 'Mods/new-horizons/Images' / name.removeprefix('SPRITES/')).exists())
+
+    def test_optional_mass_spell_records_have_exact_roles_payloads_and_provenance(self):
+        for index, wave in enumerate(self.waves):
+            if 'spells' not in wave:
+                continue # Historical format1 waves retain their original shape.
+            records = wave['spells']
+            self.assertEqual(len(records), 4)
+            self.assertEqual({row['id'] for row in records},
+                             {'new-horizons:' + key for key in importer.MASS_SPELLS})
+            config = importer.spells.parse_jsonc((ROOT / importer.MASS_CONFIG).read_text())
+            config = config_at_wave(config, self.waves, index, importer.MASS_CONFIG)
+            self.assertEqual(importer.non_status_config_digest(config, records), wave['massConfigNonGraphicsSha256'])
+            for row in records:
+                key = row['id'].split(':')[1]
+                stem = 'NH_spell_' + importer.MASS_SPELLS[key].replace('-', '_')
+                expected = {role: stem + '-' + str(size) + '.png'
+                            for role, size in importer.spells.ROLES.items()}
+                self.assertEqual(row['config'], importer.MASS_CONFIG)
+                self.assertEqual(row['bindings'], expected)
+                self.assertEqual(set(row['previousBindings']), set(expected))
+                self.assertEqual(config[key]['graphics'], expected)
+                self.assertEqual(set(row['exports']), set(expected.values()))
+                self.assertEqual(set(row['resources']), {'SPRITES/' + name for name in expected.values()})
+                for filename, metadata in row['exports'].items():
+                    size = metadata['size']; self.assertIn(size, (44, 32, 30))
+                    resource = 'SPRITES/' + filename
+                    self.assertEqual(hashlib.sha256(read_resource(resource)).hexdigest(), metadata['sha256'])
+                    image = open_image(resource)
+                    self.assertEqual(image.size, (size, size)); self.assertEqual(image.mode, 'RGBA')
+                    self.assertEqual(image.getchannel('A').getextrema(), (0, 255))
+                for field in ('handoffSha256', 'selectionHandoffSha256', 'masterSha256', 'promptSha256',
+                              'reviewSha256', 'comparisonSha256', 'exportManifestSha256'):
+                    self.assertRegex(row[field], r'^[0-9a-f]{64}$')
 
 
 if __name__ == '__main__':
