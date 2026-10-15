@@ -1,7 +1,0 @@
-Use case: precise-object-edit
-Asset type: geometry-only foreground matte for the external TWCRPORT creature portrait compositor.
-Input images: Image 1 is original color TWCRPORT frame 32, read-only anatomy reference; Image 2 is the current rejected v2 black/white matte and the edit target.
-Primary request: Make one focused correction to Image 2 and output a crisp binary mask on the same portrait canvas and aspect ratio. Pure white marks only actual Stone Gargoyle foreground; pure black marks all scenery/background.
-Preserve: the complete Stone Gargoyle body, head, both curved stone wings, glowing red eyes, horns, arms/claws, and curled tail as foreground. Keep the actual left wing's curved contour intact.
-Remove only false background inclusions: the brown roof and vertical pillar beneath/behind the Gargoyle's left wing, and the snowy fringe along its rightmost contour. The brown roof and pillar are angular architecture; the real wing is the curved stone form with an inward bend and pointed tip. Do not mistake that architecture for the curved wing. Keep every genuine stone-wing pixel white while turning the adjacent roof/pillar pixels black.
-Constraints: use Image 1 only to identify the original creature anatomy; do not copy its color or scenery. Preserve the v2 subject shape except for those specific background corrections. Keep the same crop and proportions. Hard binary edges only: no gray, antialiasing, soft edges, shadow, texture, labels, or text. Do not add, remove, or redesign any Gargoyle anatomy.

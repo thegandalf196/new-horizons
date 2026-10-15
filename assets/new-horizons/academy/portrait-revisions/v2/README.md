@@ -1,8 +1,8 @@
 # Gargoyle portrait alternative — preview only
 
 `masters/stoneGargoyle-painted.png` is newly generated full-colour artwork through
-the built-in image tool and HoMM3 Art workflow. Its adjacent prompt records the
-exact request. The original game portrait was a pose/identity reference only;
+the built-in image tool and HoMM3 Art workflow. Its exact prompt is preserved in
+the external authoring archive; the manifest records its historical input path. The original game portrait was a pose/identity reference only;
 no purchaser-colour extraction or comparison is included in this directory.
 
 This is NOT a background-only cutout: head, anatomy and silhouette are newly

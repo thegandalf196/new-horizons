@@ -90,20 +90,34 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
                     ("stoneGargoyle", "obsidianGargoyle", "ironGolem", "stoneGolem", "genie", "masterGenie", "naga", "nagaQueen", "giant", "titan")}
         expected.update(mage="NH_academy_mageHolding_icon_large.png", archMage="magi-vcmi-complete/icons/archmagi-portrait-58x64.png")
         generator = (ROOT / "client/render/AssetGenerator.cpp").read_text()
+        recipe_source = (ROOT / "lib/filesystem/GeneratedImageRecipes.cpp").read_text()
+        records = re.findall(
+            r'\{\s*"([^"\n]+)"\s*,\s*"([^"\n]+)"\s*,\s*EResType::(ANIMATION|IMAGE)\s*,\s*"([^"\n]+)"\s*\}',
+            recipe_source)
+        self.assertEqual(len(records), 3)
+        recipes = {output: (source, kind, backdrop) for output, source, kind, backdrop in records}
+        backdrop = "NH_academy_creature_portrait_backdrop.png"
+        holding = "magi-vcmi-complete/battle/magi/idle/000.png"
+        self.assertEqual(recipes, {
+            expected["stoneGargoyle"]: ("CGARGO", "ANIMATION", backdrop),
+            expected["obsidianGargoyle"]: ("COGARG", "ANIMATION", backdrop),
+            expected["mage"]: (holding, "IMAGE", backdrop),
+        })
+        self.assertIn("generatedImageRecipes::creaturePortraits()", generator)
+        self.assertIn("imageFiles[ImagePath::builtin(std::string(recipe.output))]", generator)
+        self.assertIn("recipe.sourceType == EResType::ANIMATION", generator)
+        self.assertIn("createCreatureFramePortrait(AnimationPath::builtin(std::string(recipe.source))", generator)
+        self.assertIn("createCreatureImagePortrait(ImagePath::builtin(std::string(recipe.source))", generator)
         for creature, route in expected.items():
             self.assertEqual(config[f"core:{creature}"]["graphics"]["iconLarge"], route)
             if creature not in ("stoneGargoyle", "obsidianGargoyle", "mage"):
                 self.assertTrue((IMAGES / route).is_file(), route)
                 with (IMAGES / route).open_image() as image:
                     self.assertEqual(image.size, (58, 64))
-            if route.startswith("NH_academy_"):
+            if route.startswith("NH_academy_") and route not in recipes:
                 self.assertIn(f'ImagePath::builtin("{route}")', generator)
         # These routes are generated, not missing packed PNGs. Gargoyle bodies
         # deliberately remain purchaser-original CGARGO/COGARG frames.
-        self.assertIn('AnimationPath::builtin("CGARGO")', generator)
-        self.assertIn('AnimationPath::builtin("COGARG")', generator)
-        holding = "magi-vcmi-complete/battle/magi/idle/000.png"
-        self.assertIn(f'ImagePath::builtin("{holding}")', generator)
         self.assertTrue((IMAGES / holding).is_file())
 
     def test_portrait_frame_ids_preserve_hottraits_reversal(self):

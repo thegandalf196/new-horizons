@@ -51,8 +51,9 @@ cutouts. This asset alone is not completion of UP239 or user visual approval.
 
 ## Additional drafts, 2026-10-05
 
-Each new master's exact prompt is in its adjacent `.prompt.txt`. The shared
-exporter accepts `--creature` or `--all`; mechanical reproducibility does not
+Historical master and prompt paths in this document identify inputs in the
+complete external authoring archive, not files available in this checkout. The
+shared exporter accepts `--creature` or `--all`; mechanical reproducibility does not
 approve a silhouette. Private native/8× compositions remain ignored build output.
 
 - `masterGremlin`: root inspected the composed native and8× portrait. It removes
@@ -85,7 +86,7 @@ portraits must be reviewed independently; no complete-family approval is implied
 Master Genie focused revision: the initial matte incorrectly masks six native
 pixels of red/gold clothing at x45–47,y35–37 as background. The built-in-generated
 `masters/masterGenie-matte-v2.png` fills that isolated hole; its exact targeted
-prompt is retained alongside it. Mechanical reduction also changes two silhouette
+prompt remains preserved in that private archive. Mechanical reduction also changes two silhouette
 edge pixels (43,13 and4,26), so review the native composite before selecting it.
 Root inspected the native/8× composite and accepted v2 provisionally; its two
 minor edge changes are not visually prominent. The exporter and runtime use v2,
@@ -123,7 +124,3 @@ AssetGenerator prefers the generated composition and reads the external raw
 TWCRPORT frames30/31/34/35/36/37/38/39/40/41 through the masks. No small-icon
 overrides are installed.
 Build and actual scaled-consumer verification are recorded separately in the queue.
-
-## Exact correction prompt
-
-Use case: precise-object-edit. Image1 is the authoritative enlarged 58x64 Gremlin portrait. Image2 is the faulty binary matte to correct. Return ONE pure white subject / pure black background segmentation matte, exact Image1 58:64 aspect ratio and framing. IMPORTANT correction: the tall blue pointed spire on the LEFT, from the top edge to just below half height, is BACKGROUND ARCHITECTURE, NOT a weapon or part of the Gremlin. Remove ALL that spire from the white matte; its silhouette must be BLACK. Only the Gremlin himself is white: pointed red cap, green face, both ears, hair, green/red clothing, arms, lower body, and the foreground hand/club below the left shoulder. Preserve the original exact pixel contour from Image1, including where lower-left forearm/hand meets background. Do not make holes through solid clothing or cut off the lower torso; black holes only where genuine background is visible between subject parts. No subject movement, pose changes, contour smoothing, thickening or inferred weapon. Matte only: pure black and pure white, no grayscale shading, no colored character, no label, no text, no panels or border. Match reference pixel geometry precisely; the result will mask the original creature pixels at native58x64.

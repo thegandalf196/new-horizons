@@ -17,11 +17,10 @@ Academy art/map tests pass; independent review finds no blocker. Full handoff
 archive reimport is unavailable and user visual approval is not claimed.
 The engine ownership overlay and shadow composition must remain unchanged.
 
-Input: `../v2/masters/fort.png` (edit target).
-Output: `masters/fort.png`, generated with the host built-in image generator.
-Earlier masters are retained. This revision assigns no new licence to the
+Historical input: `../v2/masters/fort.png` (edit target).
+Historical output: `masters/fort.png`, generated with the built-in image tool.
+These source paths, exact prompts and review previews identify the complete
+external authoring archive, not files available in a fresh checkout. Earlier
+masters remain preserved there. See the Academy [registration contract](../../README.md#adventure-map-body-revisions)
+for selected runtime resources and unchanged external ownership layers. This revision assigns no new licence to the
 underlying supplied artwork and does not claim user visual approval.
-
-## Exact generation prompt
-
-Use case: precise-object-edit. Edit target is the supplied transparent Academy fortified-town sprite. Remove ONLY the two bright yellow entrance flags and their two standalone flagpoles at the bottom foreground, one on each side of the paved entrance. Reconstruct the tiny areas of paving/rock concealed behind them where appropriate; otherwise retain transparent exterior. No yellow flag cloth or poles should remain. Preserve the exact town architecture, towers, roofs, stone texture, light direction, camera, composition, rocky footing, entrance, scale and framing. Preserve genuinely transparent background. This is an original late-1990s Heroes III style miniature modeled fantasy sprite. Do not redesign, add detail, smooth surfaces, change roof shapes, add flags, text or decorative borders. Keep all other pixels/regions as unchanged as possible.
