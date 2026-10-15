@@ -12,6 +12,7 @@ See the [combat restart guardrail](NH_PERFORMANCE_EXPERIMENT.md#combat-restart-g
 - Use authoritative action/activation/controller APIs and legally earned perk/Metamagic allowances in fixtures. Do not forge state to bypass admission. Damage must be meaningful and survivable where later assertions require a living stack.
 - Finalize Plague at actual completion, not WAIT/free cast; hostile Spell Lock pauses countdown, Time Stop uses its distinct clock and Frozen retains its same-round receipt.
 - Applied attacks retain pre-hit/after-attack snapshots needed for native Rebirth, Elemental Memory, Hex and Cleave. Skip only data mathematically unused by probes; compare exact scores/actions/state/RNG.
+- Deep Flank uses pre-hit contact geometry for the primary shot, but friendly Magog splash casualties must disappear from the next live and freshly detached contact/damage query. `AcceptedMagogSplashDeathRemovesCurrentContactPremium` requires a real accepted shot and both recorded collateral deaths; do not replace these with injected casualty packets or retroactively strip the first shot's premium.
 - Persist source-owned control, caster provenance and casualty cohorts. A packet reconstruction is not ordinary world mid-battle save support.
 - Read saved policies from the captured context. Missing historical blocks retain documented compatibility; malformed present data is not absence. Reject contradictory current retired Gambler flags before reader installation, visitor mutation and server broadcast.
 

@@ -150,7 +150,7 @@ JsonNode deepFlankSavedV2Rules()
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
 	// Derive an actual historical v2 snapshot, not v3 data with a relabelled version.
-	for(const auto * key : {"morale", "creatureAbilities", "protectedAdventureBarriers"})
+	for(const auto * key : {"morale", "creatureAbilities", "protectedAdventureBarriers", "heroLuck", "heroMorale"})
 		rules.Struct().erase(key);
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
@@ -408,6 +408,91 @@ TEST_F(NewHorizonsDeepFlankTest, AcceptedPhysicalShotUsesSharedEnhancedDamage)
 TEST_F(NewHorizonsDeepFlankElementalTest, AcceptedMagogPrimaryShotUsesEnhancedFinalDamage)
 {
 	acceptedElementalShot("core:magog");
+}
+
+TEST_F(NewHorizonsDeepFlankElementalTest, AcceptedMagogSplashDeathRemovesCurrentContactPremium)
+{
+	prepare(true, "core:magog");
+	// Ordinary one-creature stacks make collateral death a range-bound premise,
+	// not a favorable damage roll or a directly manufactured casualty packet.
+	for(const auto hex : target->getSurroundingHexes())
+	{
+		if(!hex.isAvailable() || battle()->battleGetStackByPos(hex))
+			continue;
+		if(!first)
+			first = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), hex, 1);
+		else
+		{
+			second = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), hex, 1);
+			break;
+		}
+	}
+	ASSERT_NE(first, nullptr);
+	ASSERT_NE(second, nullptr);
+	beginCombat();
+	BattleSetActiveStack active;
+	active.battleID = BattleID(0);
+	active.stack = shooter->unitId();
+	active.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(active);
+	ASSERT_TRUE(battle()->battleCanShoot(shooter, target->getPosition()));
+	ASSERT_FALSE(shot().physicalDamage);
+	ASSERT_EQ(battle()->battleShroudMeleeContactSideCount(shot()), 2);
+	ASSERT_DOUBLE_EQ(battle()->battleDeepFlankDamagePercent(shot()), 20.0);
+	for(const auto * contact : {first, second})
+	{
+		ASSERT_TRUE(contact->alive());
+		ASSERT_EQ(BattleHex::getDistance(contact->getPosition(), target->getPosition()), 1);
+		BattleAttackInfo collateral(shooter, contact, 0, true);
+		collateral.secondaryAttack = true;
+		ASSERT_DOUBLE_EQ(battle()->battleDeepFlankDamagePercent(collateral), 0.0);
+		// Even a halved minimum kills; no seed/chance/maximum-damage forcing.
+		ASSERT_GT(battle()->calculateDmgRange(collateral).damage.min / 2,
+			contact->getAvailableHealth());
+	}
+	const auto primaryRange = battle()->calculateDmgRange(shot()).damage;
+	ASSERT_LT(primaryRange.max * 2, target->getAvailableHealth());
+	const auto previousAttacks = server.attacks.size();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeShotAttack(shooter, target)));
+	// Require the real server attack to contain both friendly splash casualties.
+	for(const auto * contact : {first, second})
+	{
+		bool recordedCollateral = false;
+		for(size_t i = previousAttacks; i < server.attacks.size(); ++i)
+		{
+			for(const auto & hit : server.attacks[i].bsa)
+			{
+				if(hit.attackerID == shooter->unitId() && hit.stackAttacked == contact->unitId())
+				{
+					EXPECT_TRUE(hit.isSecondary());
+					EXPECT_GT(hit.damageAmount, 0);
+					recordedCollateral = true;
+				}
+			}
+		}
+		ASSERT_TRUE(recordedCollateral);
+		ASSERT_FALSE(contact->alive());
+	}
+	ASSERT_TRUE(shooter->alive());
+	ASSERT_TRUE(target->alive());
+	const auto afterSplash = shot();
+	ASSERT_EQ(battle()->battleShroudMeleeContactSideCount(afterSplash), 0);
+	ASSERT_DOUBLE_EQ(battle()->battleDeepFlankDamagePercent(afterSplash), 0.0);
+	const auto ordinary = battle()->calculateDmgRange(afterSplash).damage;
+	EXPECT_GT(ordinary.min, 0);
+	// Fresh detached prediction must see the SAME surviving-state geometry.
+	// The first shot legitimately used the pre-hit premium; do not undo it.
+	DeepFlankEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto preview = std::make_shared<HypotheticBattle>(&environment, callback);
+	BattleAttackInfo projected(preview->getForUpdate(shooter->unitId()).get(),
+		preview->getForUpdate(target->unitId()).get(), 0, true);
+	EXPECT_EQ(preview->battleShroudMeleeContactSideCount(projected), 0);
+	EXPECT_DOUBLE_EQ(preview->battleDeepFlankDamagePercent(projected), 0.0);
+	const auto projectedDamage = preview->calculateDmgRange(projected).damage;
+	EXPECT_EQ(projectedDamage.min, ordinary.min);
+	EXPECT_EQ(projectedDamage.max, ordinary.max);
 }
 
 TEST_F(NewHorizonsDeepFlankElementalTest, AcceptedLichPrimaryShotUsesEnhancedFinalDamage)
