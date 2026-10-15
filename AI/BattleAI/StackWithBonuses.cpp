@@ -327,14 +327,16 @@ void StackWithBonuses::setOriginalBearer(const IBonusBearer * bearer)
 {
 	origBearer = bearer;
 	const auto * projected = dynamic_cast<const StackWithBonuses *>(bearer);
-	if(!projected)
-		return;
-	capturedPhysicalAfflictionGroups = projected->capturedPhysicalAfflictionGroups;
+	if(projected)
+	{
+		capturedPhysicalAfflictionGroups = projected->capturedPhysicalAfflictionGroups;
 
-	projectedBearer = projected->weak_from_this().lock();
-	ownedBearer = projected->ownedBearer;
-	if(projectedBearer)
-		origBearer = projectedBearer.get();
+		projectedBearer = projected->weak_from_this().lock();
+		ownedBearer = projected->ownedBearer;
+		if(projectedBearer)
+			origBearer = projectedBearer.get();
+	}
+	originalUnit = dynamic_cast<const battle::Unit *>(origBearer);
 }
 
 StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle::CUnitState * Stack)
@@ -418,7 +420,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	ownedBearer->summoned = info.summoned;
 	ownedBearer->natureSummoned = info.natureSummoned;
 	ownedBearer->initialPosition = info.position;
-	origBearer = ownedBearer.get();
+	setOriginalBearer(ownedBearer.get());
 	if(const auto * army = Owner->getSideArmy(side))
 		ownedBearer->attachToSource(*army);
 	ownedBearer->attachToSource(*type);
@@ -537,7 +539,7 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 	const auto & mergeSelector = bonusesToUpdate.empty() ? selector : Selector::all;
 	const auto originalCachingStr = bonusesToUpdate.empty() ? cachingStr : std::string();
 	TConstBonusListPtr originalList;
-	if(const auto * originalUnit = dynamic_cast<const battle::Unit *>(origBearer))
+	if(originalUnit)
 		originalList = originalUnit->getBonusesBeforeCreatureAbilitySuppression(
 			mergeSelector, originalCachingStr, unstacked);
 	else

@@ -12,6 +12,7 @@
 #include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/BattleAction.h"
@@ -22,6 +23,7 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/bonuses/CBonusSystemNode.h"
 #include "../../lib/bonuses/Updaters.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/callback/GameRandomizer.h"
@@ -1575,6 +1577,218 @@ TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIg
 	EXPECT_EQ(rngBytes(), rngBefore);
 	EXPECT_TRUE(callback->actions.empty());
 	EXPECT_TRUE(callback->heroActions.empty());
+}
+
+class NewHorizonsOriginalBearerBindingTest : public NewHorizonsBattleAITimingTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		// Pair the inherited Commands-off development capture with legacy offers.
+		if(!useCommands)
+			captureLegacyPerkOfferPolicy(*loaded);
+	}
+
+	static Bonus sentinel(int value)
+	{
+		Bonus result(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+			BonusSource::OTHER, value, BonusSourceID());
+		result.turnsRemain = 2;
+		result.stacking = "test:original-bearer-binding";
+		return result;
+	}
+
+	static CSelector sentinels()
+	{
+		return CSelector([](const Bonus * bonus)
+		{
+			return bonus->stacking == "test:original-bearer-binding";
+		});
+	}
+
+	static std::vector<JsonNode> metadata(const TConstBonusListPtr & bonuses)
+	{
+		std::vector<JsonNode> result;
+		for(const auto & bonus : *bonuses)
+			result.push_back(bonus->toJsonNode());
+		return result;
+	}
+
+	static void expectCurrentQueries(const StackWithBonuses & projected, const IBonusBearer & source)
+	{
+		const std::string key = "NewHorizonsOriginalBearerBindingTest.sentinels";
+		EXPECT_EQ(metadata(projected.getAllBonuses(sentinels(), key)),
+			metadata(source.getAllBonuses(sentinels(), key)));
+		EXPECT_EQ(metadata(projected.getUnstackedBonuses(sentinels())),
+			metadata(source.getUnstackedBonuses(sentinels())));
+		const auto melee = sentinels().And(CSelector([](const Bonus * bonus)
+		{
+			return bonus->effectRange == BonusLimitEffect::ONLY_MELEE_FIGHT;
+		}));
+		EXPECT_EQ(metadata(projected.getAllBonuses(melee, key + ".melee")),
+			metadata(source.getAllBonuses(melee, key + ".melee")));
+	}
+};
+
+TEST_F(NewHorizonsOriginalBearerBindingTest, UnitAndStateConstructorsKeepLiveStackedAndRawQueries)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto fromUnit = std::make_shared<StackWithBonuses>(model.get(),
+		static_cast<const battle::Unit *>(ordinary));
+	const auto fromState = std::make_shared<StackWithBonuses>(model.get(),
+		static_cast<const battle::CUnitState *>(ordinary));
+	const auto liveState = ordinary->acquireState()->save();
+	const auto rngBytes = [&]
+	{
+		CMemorySerializer memory;
+		memory.oser & *gameHandler->randomizer;
+		return memory.extractBuffer();
+	};
+	const auto rngBefore = rngBytes();
+	const auto first = std::make_shared<Bonus>(sentinel(103));
+	const auto second = std::make_shared<Bonus>(sentinel(104));
+	second->effectRange = BonusLimitEffect::ONLY_MELEE_FIGHT;
+	ordinary->addNewBonus(first);
+	for(const auto & projected : {fromUnit, fromState})
+	{
+		expectCurrentQueries(*projected, *ordinary);
+		ASSERT_EQ(projected->getUnstackedBonuses(sentinels())->size(), 1u);
+	}
+	ordinary->addNewBonus(second);
+	for(const auto & projected : {fromUnit, fromState})
+	{
+		expectCurrentQueries(*projected, *ordinary);
+		ASSERT_EQ(projected->getUnstackedBonuses(sentinels())->size(), 2u);
+		ASSERT_EQ(projected->getAllBonuses(sentinels())->size(), 1u);
+		EXPECT_EQ(projected->getAllBonuses(sentinels())->front()->val, 104);
+	}
+	ordinary->removeBonus(second);
+	for(const auto & projected : {fromUnit, fromState})
+		expectCurrentQueries(*projected, *ordinary);
+
+	// State assignment does not rebind this projection to the other unit's bearer.
+	*fromState = *static_cast<const battle::CUnitState *>(enemy);
+	expectCurrentQueries(*fromState, *ordinary);
+	Bonus localBonus = sentinel(105);
+	localBonus.source = BonusSource::SPELL_EFFECT;
+	localBonus.sid = BonusSourceID(SpellID(SpellID::HASTE));
+	fromUnit->addUnitBonus({localBonus});
+	Bonus refresh = localBonus;
+	refresh.turnsRemain = 8;
+	fromUnit->updateUnitBonus({refresh});
+	const auto local = fromUnit->getUnstackedBonuses(sentinels());
+	ASSERT_EQ(local->size(), 2u);
+	const auto refreshed = local->getFirst(CSelector([](const Bonus * bonus) { return bonus->val == 105; }));
+	ASSERT_TRUE(refreshed);
+	EXPECT_EQ(refreshed->turnsRemain, 8);
+	expectCurrentQueries(*fromState, *ordinary);
+	fromUnit->removeUnitBonus(CSelector([](const Bonus * bonus) { return bonus->val == 105; }));
+	expectCurrentQueries(*fromUnit, *ordinary);
+	EXPECT_EQ(first->turnsRemain, 2);
+	ordinary->removeBonus(first);
+	expectCurrentQueries(*fromUnit, *ordinary);
+	expectCurrentQueries(*fromState, *ordinary);
+	EXPECT_EQ(ordinary->acquireState()->save(), liveState);
+	EXPECT_EQ(rngBytes(), rngBefore);
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_TRUE(callback->heroActions.empty());
+}
+
+TEST_F(NewHorizonsOriginalBearerBindingTest, SummonAndNestedConstructorsRetainOwnedBearerAfterSourceRelease)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	battle::UnitInfo info;
+	info.id = model->battleNextUnitId();
+	info.type = creatureByName("core:pikeman");
+	info.count = 3;
+	info.side = BattleSide::ATTACKER;
+	info.position = BattleHex(8, 5);
+	info.summoned = true;
+	auto source = std::make_shared<StackWithBonuses>(model.get(), info);
+	const auto nativeBefore = metadata(source->getUnstackedBonuses(Selector::all));
+	ASSERT_FALSE(nativeBefore.empty());
+	auto child = std::make_shared<StackWithBonuses>(model.get(), static_cast<const battle::Unit *>(source.get()));
+	auto sibling = std::make_shared<StackWithBonuses>(model.get(),
+		static_cast<const battle::CUnitState *>(source.get()));
+	auto grandchild = std::make_shared<StackWithBonuses>(model.get(),
+		static_cast<const battle::CUnitState *>(child.get()));
+	const std::weak_ptr<StackWithBonuses> retainedSource = source;
+	const std::weak_ptr<StackWithBonuses> retainedChild = child;
+	source->addUnitBonus({sentinel(103)});
+	for(const auto & projected : {child, sibling, grandchild})
+		expectCurrentQueries(*projected, *source);
+	const auto retainedBonuses = grandchild->getUnstackedBonuses(Selector::all);
+	const auto retainedMetadata = metadata(retainedBonuses);
+	source.reset();
+	child.reset();
+	ASSERT_FALSE(retainedSource.expired());
+	ASSERT_FALSE(retainedChild.expired());
+	EXPECT_EQ(metadata(grandchild->getUnstackedBonuses(Selector::all)), retainedMetadata);
+	EXPECT_EQ(grandchild->getCount(), info.count);
+	EXPECT_EQ(grandchild->unitType()->getId(), info.type);
+	ASSERT_EQ(grandchild->getUnstackedBonuses(sentinels())->size(), 1u);
+	grandchild->addUnitBonus({sentinel(104)});
+	EXPECT_EQ(grandchild->getUnstackedBonuses(sentinels())->size(), 2u);
+	EXPECT_EQ(sibling->getUnstackedBonuses(sentinels())->size(), 1u);
+	grandchild->removeUnitBonus(sentinels());
+	EXPECT_TRUE(grandchild->getUnstackedBonuses(sentinels())->empty());
+	EXPECT_EQ(sibling->getUnstackedBonuses(sentinels())->size(), 1u);
+	EXPECT_EQ(ordinary->getUnstackedBonuses(sentinels())->size(), 0u);
+	grandchild.reset();
+	EXPECT_TRUE(retainedChild.expired());
+	EXPECT_FALSE(retainedSource.expired());
+	sibling.reset();
+	EXPECT_TRUE(retainedSource.expired());
+	EXPECT_EQ(metadata(retainedBonuses), retainedMetadata);
+}
+
+TEST_F(NewHorizonsOriginalBearerBindingTest, NonUnitBearerFallbackKeepsLiveStackedAndRawQueries)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	class NonUnitBearerStack final : public CStack
+	{
+		const IBonusBearer & bearer;
+	public:
+		NonUnitBearerStack(const CStackBasicDescriptor & descriptor, const CStack & source,
+			const IBonusBearer & bearer)
+			: CStack(&descriptor, source.unitOwner(), source.unitId(), source.unitSide(), source.unitSlot()),
+			bearer(bearer)
+		{
+		}
+		const IBonusBearer * getBonusBearer() const override { return &bearer; }
+	};
+	CBonusSystemNode bearer(BonusNodeType::STACK_INSTANCE);
+	bearer.attachToSource(*ordinary->unitType());
+	CStackBasicDescriptor descriptor(ordinary->unitType()->getId(), ordinary->getCount());
+	NonUnitBearerStack source(descriptor, *ordinary, bearer);
+	source.localInit(battle());
+	ASSERT_EQ(dynamic_cast<const battle::Unit *>(source.getBonusBearer()), nullptr);
+	const auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto fromUnit = std::make_shared<StackWithBonuses>(model.get(), static_cast<const battle::Unit *>(&source));
+	const auto fromState = std::make_shared<StackWithBonuses>(model.get(),
+		static_cast<const battle::CUnitState *>(&source));
+	const auto first = std::make_shared<Bonus>(sentinel(103));
+	const auto second = std::make_shared<Bonus>(sentinel(104));
+	for(const auto & bonus : {first, second})
+	{
+		bearer.addNewBonus(bonus);
+		for(const auto & projected : {fromUnit, fromState})
+			expectCurrentQueries(*projected, bearer);
+	}
+	ASSERT_EQ(fromUnit->getUnstackedBonuses(sentinels())->size(), 2u);
+	ASSERT_EQ(fromUnit->getAllBonuses(sentinels())->size(), 1u);
+	bearer.removeBonus(second);
+	for(const auto & projected : {fromUnit, fromState})
+		expectCurrentQueries(*projected, bearer);
+	bearer.removeBonus(first);
+	for(const auto & projected : {fromUnit, fromState})
+	{
+		expectCurrentQueries(*projected, bearer);
+		EXPECT_TRUE(projected->getUnstackedBonuses(sentinels())->empty());
+	}
 }
 
 class NewHorizonsDetachedBonusRemovalTimingTest : public NewHorizonsBattleAITimingTest
