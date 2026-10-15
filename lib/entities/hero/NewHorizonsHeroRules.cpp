@@ -278,6 +278,16 @@ void validateOptionalArcanePreparationSpecialtyRules(const JsonNode & rules)
 		require(integer(row[key], 0, 100), "Arcane Preparation percentage");
 }
 
+void validateOptionalBottomlessMindSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("bottomlessMindSpecialty"))
+		return;
+	const auto & row = rules["bottomlessMindSpecialty"];
+	fields(row, {"version", "pointsPerLevel"});
+	require(integer(row["version"], 1, 1), "Bottomless Mind version");
+	require(integer(row["pointsPerLevel"], 0, 1000000), "Bottomless Mind points per level");
+}
+
 void validateExcludedSkills(const JsonNode & excludedSkills)
 {
 	if(excludedSkills.isNull())
@@ -559,9 +569,10 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty"});
 	validateOptionalFortuneChildSpecialtyRules(rules);
 	validateOptionalArcanePreparationSpecialtyRules(rules);
+	validateOptionalBottomlessMindSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
@@ -601,9 +612,10 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty"});
 	validateOptionalFortuneChildSpecialtyRules(rules);
 	validateOptionalArcanePreparationSpecialtyRules(rules);
+	validateOptionalBottomlessMindSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
@@ -647,6 +659,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 		result["fortuneChildSpecialty"] = rules["fortuneChildSpecialty"];
 	if(rules.Struct().contains("arcanePreparationSpecialty"))
 		result["arcanePreparationSpecialty"] = rules["arcanePreparationSpecialty"];
+	if(rules.Struct().contains("bottomlessMindSpecialty"))
+		result["bottomlessMindSpecialty"] = rules["bottomlessMindSpecialty"];
 	if(rules.Struct().contains("lighthouseDeparture"))
 		result["lighthouseDeparture"] = rules["lighthouseDeparture"];
 	if(rules["skillOfferWeights"].isStruct())
@@ -864,6 +878,24 @@ void validateIndividualSpecialtiesSerialization(const JsonNode & development, bo
 		throw std::runtime_error("Individual hero specialties require the new save format");
 	validateOptionalFortuneChildSpecialtyRules(development);
 	validateOptionalArcanePreparationSpecialtyRules(development);
+}
+
+std::optional<BottomlessMindSpecialtyRules> bottomlessMindSpecialtyRules(const JsonNode & development)
+{
+	if(!usesRules(development) || !development.isStruct()
+		|| !development.Struct().contains("bottomlessMindSpecialty"))
+		return std::nullopt;
+	validateOptionalBottomlessMindSpecialtyRules(development);
+	return BottomlessMindSpecialtyRules{static_cast<int>(development["bottomlessMindSpecialty"]["pointsPerLevel"].Integer())};
+}
+
+void validateBottomlessMindSerialization(const JsonNode & development, bool supported)
+{
+	if(!development.isStruct() || !development.Struct().contains("bottomlessMindSpecialty"))
+		return;
+	validateOptionalBottomlessMindSpecialtyRules(development);
+	if(!supported)
+		throw std::runtime_error("Captured Bottomless Mind requires the new save format");
 }
 
 bool usesRemainingSpellSpecialties(const JsonNode & rules)
@@ -1433,6 +1465,22 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 	if(capturedHero && (capturedHero->getHeroType() != heroType
 		|| capturedHero->getPrimaryGrowthRules() != development || capturedHero->getMagicRules() != magic))
 		throw std::invalid_argument("Specialty presentation requires the matching captured context");
+
+	if(const auto bottomless = bottomlessMindSpecialtyRules(development);
+		bottomless && heroType->getJsonKey() == "core:andra"
+		&& newHorizonsMagic::spellPointRulesActive(magic))
+	{
+		result.name = "Bottomless Mind";
+		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
+		result.description = "While Intelligence is active, Andra gains +"
+			+ std::to_string(bottomless->pointsPerLevel)
+			+ " maximum Normal Spell Points per hero level, added after other capacity bonuses."
+			+ " This does not refill Spell Points or grant Buffer.";
+		if(capturedHero)
+			result.description += " Current specialty bonus: +"
+				+ std::to_string(capturedHero->getBottomlessMindManaBonus()) + " maximum Normal Spell Points.";
+		return result;
+	}
 
 	const std::string fortuneMarker = "new-horizons:fortune-child:" + std::to_string(heroType->getId().getNum());
 	if(const auto preparation = arcanePreparationSpecialtyRules(development);

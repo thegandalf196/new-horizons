@@ -29,6 +29,7 @@
 #include "../../lib/bonuses/Updaters.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/entities/hero/CHero.h"
+#include "../../lib/entities/hero/CHeroClass.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/MiscObjects.h"
 #include "../../lib/mapObjects/army/CSimpleArmy.h"
@@ -36,6 +37,7 @@
 #include "../../lib/mapObjects/ObjectTemplate.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForClient.h"
+#include "../../lib/networkPacks/PacksForLobby.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../server/CGameHandler.h"
@@ -125,7 +127,7 @@ protected:
 		gameState()->apply(change);
 	}
 
-	void setWisdomRank(CGHeroInstance * hero, int32_t rank)
+	virtual void setWisdomRank(CGHeroInstance * hero, int32_t rank)
 	{
 		// Wisdom is Magic-exclusive. Use a real Wizard hero for the normal perk-offer path.
 		const auto solmyr = HeroTypeID(HeroTypeID::decode("core:solmyr"));
@@ -267,6 +269,113 @@ protected:
 	}
 };
 
+// Current weighted offers need the same Wizard identity at rule capture and
+// selection. Keep the generic arithmetic/explicit legacy fixtures unchanged.
+class SpellPointCapacityWizardTest : public SpellPointCapacityTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		SpellPointCapacityTest::mapLoaded(loaded);
+		const HeroTypeID solmyr(HeroTypeID::decode("core:solmyr"));
+		const HeroTypeID aine(HeroTypeID::decode("core:aine"));
+		ASSERT_NE(solmyr, HeroTypeID::NONE);
+		ASSERT_NE(aine, HeroTypeID::NONE);
+		for(const auto & object : loaded->objects)
+			if(auto * hero = dynamic_cast<CGHeroInstance *>(object.get()))
+			{
+				if(hero->getOwner() == PlayerColor(0))
+					hero->setHeroType(solmyr);
+				else if(hero->getOwner() == PlayerColor(1))
+					hero->setHeroType(aine);
+			}
+	}
+	void SetUp() override
+	{
+		SpellPointCapacityTest::SetUp();
+		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_NE(defenderSideHero, nullptr);
+		ASSERT_EQ(attackerSideHero->getHeroType()->getJsonKey(), "core:solmyr");
+		ASSERT_EQ(defenderSideHero->getHeroType()->getJsonKey(), "core:aine");
+		for(const auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			ASSERT_EQ(hero->getHeroClass()->getJsonKey(), "core:wizard");
+			ASSERT_TRUE(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()));
+			ASSERT_EQ(hero->getPrimaryGrowthRules(), newHorizonsHeroes::resolveHeroRules(
+				gameState()->getHeroDevelopmentRules(), hero->getHeroClass()->getId()));
+			const auto context = hero->getPerkOfferWeightContext();
+			ASSERT_EQ(context.mode, newHorizonsHeroes::PerkState::OfferWeightMode::CapturedTable);
+			ASSERT_TRUE(context.lookup);
+			EXPECT_EQ(context.lookup(WISDOM_SKILL_ID), std::optional<int>(9));
+		}
+	}
+	void setWisdomRank(CGHeroInstance * hero, int32_t rank) override
+	{
+		// Identity and captured weights already agree. Never replace identity or
+		// overwrite captured rules to make a formerly zero-weight offer appear.
+		ASSERT_EQ(hero->getHeroClass()->getJsonKey(), "core:wizard");
+		SetSecSkill change;
+		change.id = hero->id;
+		change.which = SecondarySkill(SecondarySkill::decode(WISDOM_SKILL_ID));
+		change.val = rank;
+		change.mode = ChangeValueMode::ABSOLUTE;
+		gameState()->apply(change);
+	}
+};
+
+class BottomlessMindCapacityTest : public SpellPointCapacityTest
+{
+protected:
+	virtual bool captureBottomlessMind() const { return true; }
+	void SetUp() override
+	{
+		BattleTestFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires New Horizons";
+		// Initialize the actual authored Andra profile. Unlike BattleTestFixture's
+		// damage-isolation setup, do not strip her native skills or replace identity.
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).name("Bottomless Mind")
+			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:andra")), PlayerColor(0))
+			.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:serena")), PlayerColor(1));
+		startWithMap(std::move(builder));
+		server.gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(server, gameState());
+		attackerSideHero = findHeroByOwner(PlayerColor(0));
+		defenderSideHero = findHeroByOwner(PlayerColor(1));
+		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_NE(defenderSideHero, nullptr);
+		ASSERT_EQ(attackerSideHero->getHeroType()->getJsonKey(), "core:andra");
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, INTELLIGENCE_PERK_ID));
+		ASSERT_TRUE(newHorizonsHeroes::usesSkillOfferWeights(attackerSideHero->getPrimaryGrowthRules()));
+	}
+	void mapLoaded(CMap * loaded) override
+	{
+		SpellPointCapacityTest::mapLoaded(loaded);
+		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(!captureBottomlessMind())
+			development.Struct().erase("bottomlessMindSpecialty");
+		development.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
+	}
+	void setWisdomActive(bool active)
+	{
+		SetSecSkill rank;
+		rank.id = attackerSideHero->id;
+		rank.which = SecondarySkill(SecondarySkill::decode(WISDOM_SKILL_ID));
+		rank.val = active ? MasteryLevel::BASIC : MasteryLevel::NONE;
+		rank.mode = ChangeValueMode::ABSOLUTE;
+		gameState()->apply(rank);
+	}
+};
+
+class BottomlessMindAbsentCapacityTest : public BottomlessMindCapacityTest
+{
+protected:
+	bool captureBottomlessMind() const override { return false; }
+};
+
 class ArcanePreparationCapacityTest : public SpellPointCapacityTest
 {
 protected:
@@ -315,6 +424,7 @@ protected:
 		// faithful policy-absent full-world round trip.
 		development.Struct().erase("fortuneChildSpecialty");
 		development.Struct().erase("arcanePreparationSpecialty");
+		development.Struct().erase("bottomlessMindSpecialty");
 		// Isolate Druid admission/codec guards from the same-epoch weighted
 		// offer feature; the existing fixture uses its historical offer helper.
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
@@ -349,12 +459,39 @@ protected:
 	bool captureHighLore() const override { return false; }
 };
 
-class SpellPointCapacityPlannedMysticismTest : public SpellPointCapacityTest
+class SpellPointCapacityPlannedMysticismTest : public SpellPointCapacityWizardTest
 {
 protected:
 	void mapLoaded(CMap * loaded) override
 	{
-		SpellPointCapacityTest::mapLoaded(loaded);
+		SpellPointCapacityWizardTest::mapLoaded(loaded);
+		// A planned perk cannot remain an active starting selection elsewhere in
+		// the initialized hero pool. Change only this fixture's five conflicting
+		// captured starts; Solmyr/Aine, all skills and weighted tables stay current.
+		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+		auto & profiles = development["startingSkills"]["startingDevelopmentProfiles"].Struct();
+		const std::array<std::string, 5> mysticismStarts = {
+			"core:jaegar", "core:thant", "core:axsis", "core:ingham", "core:rosic"};
+		size_t conflicts = 0;
+		for(const auto & [hero, profile] : profiles)
+			for(const auto & start : profile["startingPerks"].Vector())
+				if(start["perk"].String() == MYSTICISM_PERK_ID)
+				{
+					ASSERT_NE(std::find(mysticismStarts.begin(), mysticismStarts.end(), hero), mysticismStarts.end());
+					++conflicts;
+				}
+		ASSERT_EQ(conflicts, mysticismStarts.size());
+		for(const auto & hero : mysticismStarts)
+		{
+			ASSERT_TRUE(profiles.contains(hero));
+			auto & starts = profiles.at(hero)["startingPerks"].Vector();
+			ASSERT_EQ(starts.size(), 1);
+			ASSERT_EQ(starts.front()["skill"].String(), WISDOM_SKILL_ID);
+			ASSERT_EQ(starts.front()["perk"].String(), MYSTICISM_PERK_ID);
+			starts.front()["perk"].String() = INTELLIGENCE_PERK_ID;
+		}
+		development.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
 		{
@@ -363,14 +500,22 @@ protected:
 		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
+	void SetUp() override
+	{
+		SpellPointCapacityWizardTest::SetUp();
+		for(const auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			ASSERT_FALSE(hero->getPerkState().hasSelection(WISDOM_SKILL_ID, MYSTICISM_PERK_ID));
+		}
+	}
 };
 
-class SpellPointCapacityPlannedMeditationTest : public SpellPointCapacityTest
+class SpellPointCapacityPlannedMeditationTest : public SpellPointCapacityWizardTest
 {
 protected:
 	void mapLoaded(CMap * loaded) override
 	{
-		SpellPointCapacityTest::mapLoaded(loaded);
+		SpellPointCapacityWizardTest::mapLoaded(loaded);
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
 		{
@@ -381,12 +526,12 @@ protected:
 	}
 };
 
-class SpellPointCapacityPlannedArcaneReservoirTest : public SpellPointCapacityTest
+class SpellPointCapacityPlannedArcaneReservoirTest : public SpellPointCapacityWizardTest
 {
 protected:
 	void mapLoaded(CMap * loaded) override
 	{
-		SpellPointCapacityTest::mapLoaded(loaded);
+		SpellPointCapacityWizardTest::mapLoaded(loaded);
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
 		{
@@ -397,7 +542,7 @@ protected:
 	}
 };
 
-class SpellPointCapacityMageGuildTest : public SpellPointCapacityTest
+class SpellPointCapacityMageGuildTest : public SpellPointCapacityWizardTest
 {
 protected:
 	bool startsWithFortifiedTown() const override
@@ -446,20 +591,20 @@ TEST_F(SpellPointCapacityTest, KnowledgeEquipmentRaisesCapacityWithoutRefillAndR
 	grantBuffer(attackerSideHero, 17);
 	expectPools(attackerSideHero, 80, 17, 80);
 
-	// These four real artifacts contribute +20 effective Knowledge in total.
+	// These four real artifacts contribute +100 effective Knowledge in total.
 	equipKnowledgeSet(attackerSideHero);
-	EXPECT_EQ(attackerSideHero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 100);
-	expectPools(attackerSideHero, 80, 17, 100);
+	EXPECT_EQ(attackerSideHero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 180);
+	expectPools(attackerSideHero, 80, 17, 180);
 
-	setNormal(attackerSideHero, 100);
-	expectPools(attackerSideHero, 100, 17, 100);
+	setNormal(attackerSideHero, 180);
+	expectPools(attackerSideHero, 180, 17, 180);
 	eraseKnowledgeSet(attackerSideHero);
 	EXPECT_EQ(attackerSideHero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 80);
 	expectPools(attackerSideHero, 80, 17, 80);
 
 	// Restoring the same capacity later cannot recover the points lost on removal.
 	equipKnowledgeSet(attackerSideHero);
-	expectPools(attackerSideHero, 80, 17, 100);
+	expectPools(attackerSideHero, 80, 17, 180);
 }
 
 TEST_F(SpellPointCapacityTest, EqualCapacityBulkArtifactSwapDoesNotClampEitherHeroMidTransaction)
@@ -472,10 +617,10 @@ TEST_F(SpellPointCapacityTest, EqualCapacityBulkArtifactSwapDoesNotClampEitherHe
 	grantBuffer(defenderSideHero, 29);
 	equipKnowledgeSet(attackerSideHero);
 	equipKnowledgeSet(defenderSideHero);
-	setNormal(attackerSideHero, 100);
-	setNormal(defenderSideHero, 100);
-	expectPools(attackerSideHero, 100, 17, 100);
-	expectPools(defenderSideHero, 100, 29, 100);
+	setNormal(attackerSideHero, 180);
+	setNormal(defenderSideHero, 180);
+	expectPools(attackerSideHero, 180, 17, 180);
+	expectPools(defenderSideHero, 180, 29, 180);
 
 	BulkMoveArtifacts swap(PlayerColor(0), attackerSideHero->id, defenderSideHero->id, true);
 	for(const auto & [artifact, slot] : knowledgeArtifacts())
@@ -488,8 +633,8 @@ TEST_F(SpellPointCapacityTest, EqualCapacityBulkArtifactSwapDoesNotClampEitherHe
 
 	// The visitor removes both sets before putting either back. Only the complete
 	// top-level pack has the unchanged capacities, so neither hero may lose Normal.
-	expectPools(attackerSideHero, 100, 17, 100);
-	expectPools(defenderSideHero, 100, 29, 100);
+	expectPools(attackerSideHero, 180, 17, 180);
+	expectPools(defenderSideHero, 180, 29, 180);
 }
 
 TEST_F(SpellPointCapacityTest, IntelligenceRaisesKnowledgeCapacityByThirtyPercentWithoutFillingIt)
@@ -517,23 +662,23 @@ TEST_F(SpellPointCapacityTest, IntelligenceRaisesKnowledgeCapacityByThirtyPercen
 	expectPools(attackerSideHero, 100, 37, 130);
 
 	equipKnowledgeSet(attackerSideHero);
-	EXPECT_EQ(attackerSideHero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 120);
-	expectPools(attackerSideHero, 100, 37, 156);
+	EXPECT_EQ(attackerSideHero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 200);
+	expectPools(attackerSideHero, 100, 37, 260);
 
-	setNormal(attackerSideHero, 156);
+	setNormal(attackerSideHero, 260);
 	eraseKnowledgeSet(attackerSideHero);
 	expectPools(attackerSideHero, 130, 37, 130);
 	equipKnowledgeSet(attackerSideHero);
-	expectPools(attackerSideHero, 130, 37, 156);
+	expectPools(attackerSideHero, 130, 37, 260);
 
 	// Removing the skill disables the learned perk and must invalidate capacity.
-	setNormal(attackerSideHero, 156);
+	setNormal(attackerSideHero, 260);
 	rank.val = 0;
 	gameState()->apply(rank);
-	expectPools(attackerSideHero, 120, 37, 120);
+	expectPools(attackerSideHero, 200, 37, 200);
 }
 
-TEST_F(SpellPointCapacityTest, ExpertArcaneReservoirAddsTwentyFiveAfterIntelligenceWithoutRefilling)
+TEST_F(SpellPointCapacityWizardTest, ExpertArcaneReservoirAddsTwentyFiveAfterIntelligenceWithoutRefilling)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 64);
@@ -649,7 +794,7 @@ TEST_F(HighLoreAbsentCapacityTest, OlderCapturedAbsenceKeepsOrdinaryCapacityAndS
 	expectPools(hero, 60, 17, 131);
 }
 
-TEST_F(SpellPointCapacityTest, LosingExpertWisdomClampsNormalCapacityAndPreservesBuffer)
+TEST_F(SpellPointCapacityWizardTest, LosingExpertWisdomClampsNormalCapacityAndPreservesBuffer)
 {
 	setKnowledge(attackerSideHero, 100);
 	ASSERT_TRUE(selectArcaneReservoirThroughLegalExpertOffer(attackerSideHero));
@@ -663,7 +808,7 @@ TEST_F(SpellPointCapacityTest, LosingExpertWisdomClampsNormalCapacityAndPreserve
 	expectPools(attackerSideHero, 130, 23, 130); // The authoritative rank-change event clamps Normal only.
 }
 
-TEST_F(SpellPointCapacityTest, ExpertArcaneReservoirSelectionSurvivesSaveLoad)
+TEST_F(SpellPointCapacityWizardTest, ExpertArcaneReservoirSelectionSurvivesSaveLoad)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 48);
@@ -726,7 +871,7 @@ TEST_F(SpellPointCapacityPlannedArcaneReservoirTest, SavedPlannedSnapshotCannotO
 	}
 }
 
-TEST_F(SpellPointCapacityTest, WisdomMysticismUsesFiveMinimumTenPercentAndOnlyRestoresNormalMana)
+TEST_F(SpellPointCapacityWizardTest, WisdomMysticismUsesFiveMinimumTenPercentAndOnlyRestoresNormalMana)
 {
 	setKnowledge(attackerSideHero, 20);
 	setNormal(attackerSideHero, 0);
@@ -754,7 +899,7 @@ TEST_F(SpellPointCapacityTest, WisdomMysticismUsesFiveMinimumTenPercentAndOnlyRe
 	expectPools(attackerSideHero, 106, 13, 109);
 }
 
-TEST_F(SpellPointCapacityTest, MysticismIsARegenerationFloorAndStrongerExistingRegenerationWins)
+TEST_F(SpellPointCapacityWizardTest, MysticismIsARegenerationFloorAndStrongerExistingRegenerationWins)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 0);
@@ -776,7 +921,7 @@ TEST_F(SpellPointCapacityTest, MysticismIsARegenerationFloorAndStrongerExistingR
 	attackerSideHero->removeBonus(strongerRegeneration);
 }
 
-TEST_F(SpellPointCapacityTest, BasicWisdomCanSelectMysticismLegallyAndSelectionSurvivesSaveLoad)
+TEST_F(SpellPointCapacityWizardTest, BasicWisdomCanSelectMysticismLegallyAndSelectionSurvivesSaveLoad)
 {
 	setKnowledge(attackerSideHero, 40);
 	setNormal(attackerSideHero, 0);
@@ -828,7 +973,7 @@ TEST_F(SpellPointCapacityPlannedMysticismTest, SavedPlannedSnapshotDoesNotOfferO
 	EXPECT_EQ(restoredHero->getBufferSpellPoints(), 9);
 }
 
-TEST_F(SpellPointCapacityTest, NewTurnPacketAppliesDailyMysticismRecoveryToNormalPoolOnly)
+TEST_F(SpellPointCapacityWizardTest, NewTurnPacketAppliesDailyMysticismRecoveryToNormalPoolOnly)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 40);
@@ -852,7 +997,7 @@ TEST_F(SpellPointCapacityTest, NewTurnPacketAppliesDailyMysticismRecoveryToNorma
 	expectPools(attackerSideHero, 50, 11, 100);
 }
 
-TEST_F(SpellPointCapacityTest, MeditationUsesExactMovementThresholdAddsToBaselineAndCapsMissingNormal)
+TEST_F(SpellPointCapacityWizardTest, MeditationUsesExactMovementThresholdAddsToBaselineAndCapsMissingNormal)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 0);
@@ -874,7 +1019,7 @@ TEST_F(SpellPointCapacityTest, MeditationUsesExactMovementThresholdAddsToBaselin
 	expectPools(attackerSideHero, 125, 23, 130); // Only missing Normal is restored; Buffer is untouched.
 }
 
-TEST_F(SpellPointCapacityTest, NewTurnPacketExcludesInitialDayAndAddsMeditationAfterMysticismAndStrongerRegen)
+TEST_F(SpellPointCapacityWizardTest, NewTurnPacketExcludesInitialDayAndAddsMeditationAfterMysticismAndStrongerRegen)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 0);
@@ -925,7 +1070,7 @@ TEST_F(SpellPointCapacityTest, NewTurnPacketExcludesInitialDayAndAddsMeditationA
 	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), attackerSideHero->movementPointsLimit());
 }
 
-TEST_F(SpellPointCapacityTest, AdvancedMeditationSelectionSurvivesSaveAndRankLossDisablesIt)
+TEST_F(SpellPointCapacityWizardTest, AdvancedMeditationSelectionSurvivesSaveAndRankLossDisablesIt)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 0);
@@ -1446,4 +1591,111 @@ TEST_F(SpellPointCapacityTest, BattleSerializationPreservesInitialPoolsAndTempor
 	EXPECT_EQ(side.initialNormalSpellPoints, 30);
 	EXPECT_EQ(side.initialBufferSpellPoints, 50);
 	EXPECT_EQ(side.temporaryBufferRemaining, 5);
+}
+
+TEST_F(BottomlessMindCapacityTest, ActualAndraAddsFlatLevelCapacityWithoutRefillOrForeignBenefit)
+{
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode(WISDOM_SKILL_ID))), MasteryLevel::BASIC);
+	EXPECT_NE(attackerSideHero->getArt(ArtifactPosition::SPELLBOOK), nullptr);
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(SpellID::DISPEL));
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 10);
+	grantBuffer(attackerSideHero, 17);
+	const auto rngBytes = [&]()
+	{
+		CMemorySerializer wire;
+		wire.oser & *gameHandler->randomizer;
+		return wire.extractBuffer();
+	};
+	const auto beforeQueries = rngBytes();
+	for(const auto level : {1u, 5u, 20u})
+	{
+		SCOPED_TRACE(level);
+		attackerSideHero->level = level;
+		EXPECT_EQ(attackerSideHero->getBottomlessMindManaBonus(), 2 * level);
+		expectPools(attackerSideHero, 10, 17, 130 + 2 * level);
+	}
+	EXPECT_EQ(rngBytes(), beforeQueries);
+	ASSERT_TRUE(defenderSideHero->hasActivePerk(WISDOM_SKILL_ID, INTELLIGENCE_PERK_ID));
+	EXPECT_EQ(defenderSideHero->getBottomlessMindManaBonus(), 0);
+	// This follows the existing capacity contract, not multiplicative artifact
+	// mana scaling: the flat specialty remains +40 at L20.
+	Bonus artifact;
+	artifact.type = BonusType::MANA_PER_KNOWLEDGE_PERCENTAGE;
+	artifact.source = BonusSource::ARTIFACT;
+	artifact.val = 100;
+	GiveBonus grant(GiveBonus::ETarget::OBJECT, attackerSideHero->id, artifact);
+	gameHandler->sendAndApply(grant);
+	expectPools(attackerSideHero, 10, 17, 170);
+	setNormal(attackerSideHero, 170);
+	setWisdomActive(false);
+	EXPECT_EQ(attackerSideHero->getBottomlessMindManaBonus(), 0);
+	expectPools(attackerSideHero, 100, 17, 100);
+	setWisdomActive(true);
+	expectPools(attackerSideHero, 100, 17, 170); // reactivation does not refill.
+}
+
+TEST_F(BottomlessMindCapacityTest, ReservoirIsUnscaledAndWorldCodecKeepsPolicyLevelAndPools)
+{
+	const SecondarySkill wisdom(SecondarySkill::decode(WISDOM_SKILL_ID));
+	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
+	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, DEEP_KNOWLEDGE_PERK_ID));
+	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
+	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, ARCANE_RESERVOIR_PERK_ID));
+	attackerSideHero->level = 20;
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 10);
+	grantBuffer(attackerSideHero, 17);
+	expectPools(attackerSideHero, 10, 17, 195); // 130 + unchanged25 + flat40.
+	const auto policy = attackerSideHero->getPrimaryGrowthRules();
+	const auto bytes = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(bytes);
+	const auto * hero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(hero, nullptr);
+	EXPECT_EQ(hero->getPrimaryGrowthRules(), policy);
+	EXPECT_EQ(hero->getBottomlessMindManaBonus(), 40);
+	expectPools(hero, 10, 17, 195);
+	const auto reject = [](auto & value)
+	{
+		CMemorySerializer previous;
+		previous.oser.version = ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION;
+		EXPECT_THROW(value.serialize(previous.oser), std::runtime_error);
+		EXPECT_TRUE(previous.extractBuffer().empty());
+	};
+	reject(*attackerSideHero);
+	GameSettings settings;
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, gameState()->getHeroDevelopmentRules());
+	reject(settings);
+	reject(gameState()->getMap());
+	reject(*gameState());
+	LobbyStartGame lobby;
+	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
+	lobby.initializedGameState = gameState();
+	reject(lobby);
+}
+
+TEST_F(BottomlessMindAbsentCapacityTest, PreviousCapturedAbsenceStaysInertThroughPreviousWorldCodec)
+{
+	attackerSideHero->level = 20;
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 10);
+	grantBuffer(attackerSideHero, 17);
+	EXPECT_EQ(attackerSideHero->getBottomlessMindManaBonus(), 0);
+	expectPools(attackerSideHero, 10, 17, 130);
+	CMemorySerializer wire;
+	wire.oser.version = ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION;
+	wire.iser.version = wire.oser.version;
+	ASSERT_NO_THROW(wire.oser & *gameState());
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	wire.iser.loadingGamestate = true;
+	wire.iser.cb = &restored;
+	ASSERT_NO_THROW(wire.iser & restored);
+	const auto * hero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(hero, nullptr);
+	EXPECT_FALSE(hero->getPrimaryGrowthRules().Struct().contains("bottomlessMindSpecialty"));
+	EXPECT_EQ(hero->getBottomlessMindManaBonus(), 0);
+	expectPools(hero, 10, 17, 130);
 }

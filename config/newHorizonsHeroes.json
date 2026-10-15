@@ -78,6 +78,10 @@
 	"remainingSpellSpecialtyReplacements": true,
 	"fortuneChildSpecialty": {"version": 1, "luckPerStep": 1, "levelStep": 5},
 	"arcanePreparationSpecialty": {"version": 1, "initialPercent": 25, "percentPerLevel": 5, "maximumPercent": 100},
+	"bottomlessMindSpecialty": {
+		"version": 1,
+		"pointsPerLevel": 2
+	},
 	"nonDamageSpellSpecialties": {
 		"version": 1,
 		"aenainFrailtyReplacement": true,

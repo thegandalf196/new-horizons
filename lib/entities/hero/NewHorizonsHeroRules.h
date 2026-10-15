@@ -129,6 +129,14 @@ struct DLL_LINKAGE ArcanePreparationSpecialtyRules
 DLL_LINKAGE std::optional<ArcanePreparationSpecialtyRules> arcanePreparationSpecialtyRules(const JsonNode & development);
 DLL_LINKAGE void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported);
 
+/// Captured Andra capacity coefficient; absent historical policy is inert.
+struct DLL_LINKAGE BottomlessMindSpecialtyRules
+{
+	int pointsPerLevel = 2;
+};
+DLL_LINKAGE std::optional<BottomlessMindSpecialtyRules> bottomlessMindSpecialtyRules(const JsonNode & development);
+DLL_LINKAGE void validateBottomlessMindSerialization(const JsonNode & development, bool supported);
+
 /// Read-only live-hero presentation. No secondary attributes or masteries are
 /// fabricated here. Primary growth is the fixed class vector; version 3 also
 /// exposes the owned skills' independent bonus opportunities.

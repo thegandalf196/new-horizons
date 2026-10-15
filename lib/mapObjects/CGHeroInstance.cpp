@@ -2363,6 +2363,23 @@ int32_t CGHeroInstance::getArcanePreparationBufferBonus() const
 		std::max<int64_t>(1, intelligence * getArcanePreparationPercent() / 100)));
 }
 
+int64_t CGHeroInstance::getBottomlessMindManaBonus() const
+{
+	const auto rules = newHorizonsHeroes::bottomlessMindSpecialtyRules(primaryGrowthRules);
+	if(!rules)
+		return 0;
+	const auto * heroType = getHeroType();
+	if(!heroType || heroType->getJsonKey() != "core:andra"
+		|| !newHorizonsMagic::spellPointRulesActive(getMagicRules())
+		|| !perkState.hasSelection("new-horizons:wisdom", "new-horizons:wisdom.intelligence")
+		|| !hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence"))
+		return 0;
+	// ui32 level times the bounded coefficient fits int64_t. Saturate before
+	// adding to existing capacity; neither this query nor manaLimit refills pools.
+	return std::min<int64_t>(std::numeric_limits<int32_t>::max(),
+		static_cast<int64_t>(level) * rules->pointsPerLevel);
+}
+
 si32 CGHeroInstance::manaLimit() const
 {
 	if(newHorizonsMagic::spellPointRulesActive(getMagicRules()))
@@ -2377,7 +2394,7 @@ si32 CGHeroInstance::manaLimit() const
 		const int64_t arcaneReservoirBonus = hasActivePerk(
 			"new-horizons:wisdom", "new-horizons:wisdom.arcaneReservoir") ? 25 : 0;
 		return static_cast<si32>(std::min<int64_t>(
-			knowledgeCapacity + arcaneReservoirBonus + getHighLoreManaBonus(), std::numeric_limits<si32>::max()));
+			knowledgeCapacity + arcaneReservoirBonus + getHighLoreManaBonus() + getBottomlessMindManaBonus(), std::numeric_limits<si32>::max()));
 	}
 
 	// Existing cache has a 1000% (ten mana/Knowledge) base. Normalize that

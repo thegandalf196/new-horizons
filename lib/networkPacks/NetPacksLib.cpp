@@ -1119,6 +1119,12 @@ void LobbyStartGame::validateNewHorizonsIndividualSpecialtiesSerialization(bool 
 		initializedGameState->validateNewHorizonsIndividualSpecialtiesSerialization(supported);
 }
 
+void LobbyStartGame::validateNewHorizonsBottomlessMindSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsBottomlessMindSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsDruidSpecialtySerialization(bool supported) const
 {
 	if(initializedGameState)

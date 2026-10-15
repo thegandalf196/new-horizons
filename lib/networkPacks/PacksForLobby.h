@@ -162,6 +162,7 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateNewHorizonsWeightedPerkSerialization(bool supported) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported) const;
+	void validateNewHorizonsBottomlessMindSerialization(bool supported) const;
 	void validateNewHorizonsArtifactManaRegenerationSerialization(bool supported) const;
 	void validateNewHorizonsGlyphsOfFearSerialization(bool supported) const;
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
@@ -206,6 +207,8 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)
 			validateNewHorizonsIndividualSpecialtiesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
+		if(h.saving)
+			validateNewHorizonsBottomlessMindSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 		if(h.saving)
 			validateNewHorizonsRemainingStartSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 		if(h.saving)

@@ -258,11 +258,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES, // captured weighted offers and authored Druid specialty policies
 	NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION, // captured Daremyth Luck and Serena temporary combat Buffer
 
+	NEW_HORIZONS_BOTTOMLESS_MIND,
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION,
+	CURRENT = NEW_HORIZONS_BOTTOMLESS_MIND,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION > ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES,
@@ -518,3 +520,6 @@ static_assert(ESerializationVersion::NEW_HORIZONS_RANGED_FOLLOW_UP > ESerializat
 	"Ranged follow-up state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_REDUCED_EXTRA_ACTIVATION > ESerializationVersion::NEW_HORIZONS_RANGED_FOLLOW_UP,
 	"Reduced extra activation state must remain append-only");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_BOTTOMLESS_MIND > ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION,
+	"Bottomless Mind must remain append-only");
