@@ -2,6 +2,7 @@
 """Source archives must use pinned objects, not mutable shared files."""
 from pathlib import Path
 from io import BytesIO
+import json
 import subprocess
 import sys
 import tarfile
@@ -10,7 +11,9 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
 from git_source_snapshot import source_snapshot
-from source_export_policy import forbidden_tracked_design
+from source_export_policy import (
+    RETIRED_PUBLIC_PATHS, forbidden_tracked_design, load_retired_public_paths, private_design_path,
+)
 
 
 class GitSourceSnapshotTest(unittest.TestCase):
@@ -247,6 +250,89 @@ class GitSourceSnapshotTest(unittest.TestCase):
         self.assertEqual(forbidden_tracked_design(self.root), [])
         with self.assertRaisesRegex(ValueError, 'actual public Git root'):
             forbidden_tracked_design(self.root / 'docs')
+
+    def test_all_exact_retired_paths_are_excluded_without_neighboring_contracts(self):
+        public = ['source.cpp', 'license.txt', 'docs/NH_AI_EXCHANGES.md',
+                  'assets/new-horizons/academy/README.md',
+                  'assets/new-horizons/academy/masters/adventure/avctowr0.prompt.txt.example',
+                  'docs/NH_AGENT_START.md.example']
+        self.assertEqual(len(RETIRED_PUBLIC_PATHS), 143)
+        for name in [*RETIRED_PUBLIC_PATHS, *public]:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('Synthetic placeholder only\n')
+        self.assertTrue(all(private_design_path(name) for name in RETIRED_PUBLIC_PATHS))
+        self.assertTrue(all(not private_design_path(name) for name in public))
+        historical = self.commit(self.root)
+        (self.root / 'docs/NH_DOCUMENTATION_POLICY.md').write_text('Synthetic reviewed policy\n')
+        current = self.commit(self.root)
+        for label, revision in [('historical', historical), ('current', current)]:
+            output = self.base / (label + '-retired.tar.gz')
+            result = source_snapshot(self.root, revision, output)
+            expected = set(RETIRED_PUBLIC_PATHS)
+            if label == 'historical':
+                expected.add('docs/NH_AI_EXCHANGES.md')
+                expected.add('docs/NH_AGENT_START.md.example')
+            else:
+                expected.add('docs/NH_AGENT_START.md.example')
+            self.assertEqual(result['excluded'], sorted(expected))
+            with tarfile.open(output) as archive:
+                prefix = 'new-horizons-' + revision + '/'
+                actual = {name.removeprefix(prefix) for name in archive.getnames()}
+                self.assertTrue(RETIRED_PUBLIC_PATHS.isdisjoint(actual))
+                self.assertIn('license.txt', actual)
+                self.assertIn('assets/new-horizons/academy/README.md', actual)
+                self.assertIn(public[-2], actual)
+
+    def test_retired_force_added_index_entry_is_rejected_even_without_worktree_file(self):
+        name = 'assets/new-horizons/academy/masters/adventure/avctowr0.prompt.txt'
+        (self.root / '.gitignore').write_text('*.prompt.txt\n')
+        path = self.root / name
+        path.parent.mkdir(parents=True)
+        path.write_text('Synthetic placeholder only\n')
+        self.run_git(self.root, 'add', '-f', '--', name)
+        path.unlink()
+        self.assertEqual(forbidden_tracked_design(self.root), [name])
+        self.run_git(self.root, 'rm', '--cached', '--', name)
+        self.assertEqual(forbidden_tracked_design(self.root), [])
+
+    def test_rename_into_exact_retired_name_is_rejected_not_its_neighbor(self):
+        name = 'assets/new-horizons/academy/integration/town-layout.json'
+        neighbor = name + '.example'
+        path = self.root / neighbor
+        path.parent.mkdir(parents=True)
+        path.write_text('{}\n')
+        self.commit(self.root)
+        self.assertEqual(forbidden_tracked_design(self.root), [])
+        self.run_git(self.root, 'mv', '--', neighbor, name)
+        self.assertEqual(forbidden_tracked_design(self.root), [name])
+        self.run_git(self.root, 'rm', '-f', '--', name)
+        self.assertEqual(forbidden_tracked_design(self.root), [])
+
+    def test_retired_policy_rejects_wrong_shapes_and_nonportable_paths(self):
+        path = self.base / 'retired_public_paths.json'
+        invalid = [{}, [], 'docs/example.md', {'paths': []}, [None], [1], [True],
+                   [[]], [{}], [''], ['.'], ['..'], ['../example'], ['docs/../example'],
+                   ['/docs/example'], ['docs//example'], ['docs/./example'], ['docs/'],
+                   ['C:/docs/example'], ['docs\\example'], [' docs/example'],
+                   ['docs/example\n'], ['docs/\0example'], ['docs/\x7fexample'],
+                   ['docs/example', 'docs/example']]
+        for value in invalid:
+            with self.subTest(value=value):
+                path.write_text(json.dumps(value), encoding='utf-8')
+                with self.assertRaisesRegex(ValueError, 'Invalid retired-path policy retired_public_paths.json:'):
+                    load_retired_public_paths(path)
+        path.write_text('["docs/example.md", "assets/example.json"]', encoding='utf-8')
+        self.assertEqual(load_retired_public_paths(path), {'docs/example.md', 'assets/example.json'})
+
+    def test_retired_policy_missing_malformed_and_non_utf8_refuse(self):
+        path = self.base / 'retired_public_paths.json'
+        for content in (None, b'[broken', b'["\xff"]'):
+            with self.subTest(content=content):
+                if content is not None:
+                    path.write_bytes(content)
+                with self.assertRaisesRegex(ValueError, 'retired_public_paths.json: cannot read UTF-8 JSON'):
+                    load_retired_public_paths(path)
 
 
 if __name__ == '__main__':
