@@ -98,13 +98,9 @@ result, and acceptance criteria. Avoid concurrent edits to the same files;
 use isolated worktrees or private patches where appropriate. Keep frozen test
 candidates unchanged. Inspect and route real follow-up work at task handoffs;
 let specialists wait when no eligible task exists. Do not invent filler work.
-Respect actual capacity, with no more than six allocated subagent threads
-excluding the orchestrator; never interrupt unrelated user work to reclaim slots.
-Count retained idle or completed worker threads toward this project budget.
-Reuse them or deliberately close them before allocating replacements. A runtime
-releasing a completed worker's concurrency slot does not authorize a seventh
-retained project worker.
-Additional research specialists may be assigned when needed.
+Respect the capacity configured in the local Codex settings; never interrupt
+unrelated user work to reclaim slots. Keep allocation and session bookkeeping
+in private coordination records, not in tracked contributor instructions.
 
 Native specialist definitions live in `.codex/agents/`. They configure reusable
 roles; the orchestrator assigns work and reuses their threads. Models, reasoning
