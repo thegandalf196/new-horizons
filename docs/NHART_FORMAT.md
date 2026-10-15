@@ -113,11 +113,15 @@ configure with `-DENABLE_NH_ART_CACHE_REGRESSION=ON`, build
 `nhArtStartupRuntimeTest`, and run:
 
 ```sh
-nhArtStartupRuntimeTest --pack Mods/new-horizons/NewHorizons.nhart --cache-root EXISTING-DISPOSABLE-DIRECTORY
+nhArtStartupRuntimeTest --pack Mods/new-horizons/NewHorizons.nhart --cache-root EXISTING-DISPOSABLE-DIRECTORY \
+  --expected-pack-sha256 "$NH_EXPECTED_PACK_SHA256" --expected-resources "$NH_EXPECTED_RESOURCES"
 ```
 
-This probe pins the currently selected package count/hash; update its explicit
-oracles when intentionally updating the selected pack. It verifies both scopes,
+Pass the expected package hash and selected-resource count as explicit arguments.
+`tools/ci/prepare_nhart_native_pin.py --repo "$NH_REPO" --pack "$NH_PACK"`
+emits those arguments NUL-separated after checking the committed package and
+manifest against the installed bytes; do not guess or hardcode a stale count.
+The probe verifies both scopes,
 all payload bytes and persisted-cache reuse, then reports three warm read loops
 for identical resources. It does not initialize SDL, control the OS file cache,
 measure rendering, or delete the generated cache child. See

@@ -27,7 +27,7 @@ The authoritative Plague/Spell Lock adapter preserves hostile sealed Plague, pau
 
 Ordinary world save excludes active battles. Detached codecs/composed reconstruction are not an ordinary mid-battle save feature. BattleStart intentionally resets initial mana; never claim paid-pool persistence from that packet alone. Native tests embed engine code and do not certify a shipped facade, whole campaign or physical rendering.
 
-The withdrawn delivery had Linux and Windows payload/source checks, external purchaser resources and selected NHART with no loose fallback. Its historical 3,137-art inventory is not current; current manifest has 4,016 selected payloads. Static Windows build/import/source/notice checks were not native Windows gameplay/media acceptance.
+The withdrawn delivery had Linux and Windows payload/source checks, external purchaser resources and selected NHART with no loose fallback. Its historical 3,137-art inventory is not current; the [artwork manifest](../assets/new-horizons/runtime-art-manifest.json) maintains the current selection. Static Windows build/import/source/notice checks were not native Windows gameplay/media acceptance.
 
 ## Continued work
 
