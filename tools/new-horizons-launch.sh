@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Linux/XDG VCMI only. See docs/NH_BUILD_HANDOFF.md and NH_CONTENT_ACCEPTANCE.md.
+# Linux/XDG VCMI only. See docs/NH_DELIVERY_PIPELINE.md and NH_CONTENT_ACCEPTANCE.md.
 set -euo pipefail
 umask 077
 fail() { printf 'New Horizons: %s\n' "$*" >&2; exit 1; }
@@ -49,7 +49,7 @@ if [[ -z $client ]]; then
 	[[ -n $resources ]] || resources=$snapshot
 fi
 [[ -d $assets ]] || fail 'Asset installation directory does not exist.'
-[[ -f $client && -x $client ]] || fail 'Client is not an executable file; consult NH_BUILD_HANDOFF.md.'
+[[ -f $client && -x $client ]] || fail 'Client is not an executable file; consult NH_DELIVERY_PIPELINE.md.'
 client=$(realpath -e -- "$client")
 [[ $client != *:* ]] || fail 'Client path cannot contain the LD_LIBRARY_PATH separator (:).'
 [[ -n $resources ]] || resources=$(dirname -- "$client")

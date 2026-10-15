@@ -71,7 +71,8 @@ The names below document presentation and bindings, not loose output locations.
   four normal/pressed/disabled/highlighted frames and matching editable SVGs.
   Uses our original growth motif. CHeroWindow gates it on actual saved development
   views, never a hero-type template or installed defaults alone. Separate growth/
-  capability GUI evidence is recorded in `docs/NH_FRONTEND_HANDOFF.md`.
+  capability and rendering requirements are described in
+  `docs/NH_CONTENT_ACCEPTANCE.md`.
 - Future post-Expert Artillery mastery options: `NH_mastery_<option>_<size>.png`
   with matching editable SVGs, **32x32** and **64x64**. Option keys supplied by
   Runtime: `artilleryVolley`, `artilleryPrecision`, `artilleryRepair`; full IDs

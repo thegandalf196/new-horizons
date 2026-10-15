@@ -1,207 +1,81 @@
-# New Horizons redesign — implementation contract
+# New Horizons implementation contract
 
-## Version1.0 scope — latest user confirmation
+## Authority and release boundary
 
-Read [NH_VERSION_1_0_SCOPE.md](NH_VERSION_1_0_SCOPE.md) for the user-confirmed
-release boundary: primary attributes, secondary skills with associated abilities
-(replacing old masteries), six magic schools, Core/Elite/Champion creature
-organization, and Commands. Governors/Castellans and Caravans remain future work.
-The single-expeditionary-Hero restriction is NOT implicitly included. Older
-conflicting passages below remain historical; do not use them to undo this
-direction or infer unspecified castellan/Siege rules.
+[New Horizons.md](design-sources/New%20Horizons.md) is the sole gameplay
+specification; detailed system sections control over conflicting summaries.
+[Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) holds only amendments not yet
+integrated. The archival DOCX and [Overrides migration](NH_OVERRIDE_MIGRATION.md)
+are comparison history, not additional precedence layers.
 
-## Canonical gameplay source
+Version 1.0 includes primary attributes, Skills and their perks, six magic schools,
+Core/Elite/Champion creatures and Commands. Governors/Castellans and Caravans are
+future work; a single-expeditionary-Hero restriction is not implicitly authorized.
+Doctrine is retired, apart from narrowly necessary historical-save reading.
+The Sorcery roster uses Magic Arrow with Overcharge, not the superseded Magic
+Missile summary. See [release scope](NH_VERSION_1_0_SCOPE.md).
 
-The user supplied the current gameplay specification as
-[New Horizons.md](design-sources/New%20Horizons.md). It is the newest
-authority for gameplay scope and mechanics. When its roadmap or summary tables
-conflict with a later detailed system section, the detailed section controls.
-The Markdown is the sole canonical design specification. The DOCX is retained
-only as the historical source used to audit the conversion.
-[Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) contains only temporary
-amendments awaiting integration. The item-by-item legacy Overrides transition is
-complete; its dispositions and verification evidence are retained in
-[NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md), and the retired Overrides
-file is not a runtime or precedence layer. Governors and Caravans remain future
-work; the detailed Sorcery
-roster's Magic Arrow with Overcharge controls over the earlier Magic Missile
-summary entry; and the superseded Doctrine experiment is not part of New
-Horizons. Orders remain in scope. Existing Doctrine code must not be exposed as
-active New Horizons gameplay; retain only narrowly required legacy-save reading
-until that compatibility path can be retired safely.
+Current phase is Phase 2: stabilization and integration. The Phase 1 exit decision
+is in [NH_PHASE1_EXIT_AUDIT.md](NH_PHASE1_EXIT_AUDIT.md). The 0.85 experimental
+preview was withdrawn and is not a Version 1.0 release candidate.
 
-The MVP and this contract remain authoritative where the source is silent:
-server-side command validation, working AI, save/version compatibility,
-single-process architecture, licensing, asset provenance, and validation gates.
+## Implementation invariants
 
-## Authority and intent
+Fun and working AI take precedence over numerical balance. Experimental numbers
+must remain tunable and clearly provisional; correctness, understandable feedback,
+crash prevention and save integrity are not optional balance work.
 
-The user supplied their gameplay document and explicitly authorized full-scale
-implementation. This is an intentional gameplay redesign on VCMI, not a requirement
-to preserve every original rule. The stable original-content MVP is the foundation.
-The exact source is retained under `docs/design-sources/` at the user's direction.
-Its embedded illustration remains provenance-restricted reference material and
-must not be exported as runtime art without a separate rights review.
+Preserve VCMI licensing and the original-content compatibility foundation in
+[NEW_HORIZONS_MVP.md](NEW_HORIZONS_MVP.md). Single-player uses the existing internal
+connection and authoritative simulation thread, not a new external server or
+loopback transport. UI submits requests; authoritative code validates and changes
+state. Ruleset activation and historical saved-rule snapshots must remain explicit.
 
-FUN FIRST. Numerical balance is deferred until much later. Do not gate a working
-feature on balanced numbers, multiplayer fairness or exhaustive comparative tuning.
-Provisional tunable numbers are acceptable. Correctness, AI support, understandable
-feedback, crash prevention and save integrity are not optional balance work.
-Single-player is the primary product. Keep existing VCMI execution architecture;
-the prior architectural experiment is closed. Deferred smoothness research is in
-[NH_INVESTIGATIONS.md](NH_INVESTIGATIONS.md).
+Orders and spells compete for the shared Hero Action; Orders have no mana-like
+currency. Human and AI decisions must use the same legal action/target rules.
+Expanded Hero Attack/Defense ratings feed the specified command/formula systems,
+not unchanged original creature damage arithmetic.
 
-## Full authorized scope
+Class growth totals twenty deterministic primary points per level. Starting
+attributes are five times the class vector; base attributes follow
+`Attribute(L) = growth * (L + 4)`. Offense and Archery independently roll +1
+Attack, Armorer +1 Defense, Spellcraft +1 Spell Power, and Wisdom +1 Knowledge
+at 10/20/30% for Basic/Advanced/Expert. There is no level-ten transition.
+Knowledge supplies base Normal Spell Point capacity. Skills use ordered Basic,
+Advanced and Expert perk choices, not the retired post-Expert mastery proposal.
 
-- Orders complement spells. Every hero can issue Orders, and an Order competes
-  with spellcasting for the shared hero action. Orders have no mana-like currency.
-  Might Command and Magic Wisdom specialization distinguish effectiveness/access
-  to advanced development, not faction-exclusive Order lists.
-- Hero Attack/Defense become inputs to command-specific formulas, rather than
-  blindly adding expanded ratings to all creature statistics. Do not apply new
-  rating magnitudes to unchanged original damage math.
-- Six magic schools: Light, Nature, Sorcery, Havoc, Shadow, Chaos. Towns receive
-  distinct major/minor identities. Existing and new spells need real effects,
-  AI valuation/targeting, costs, school UI and descriptions.
-- Deterministic base primary growth totaling twenty points per level, with each
-  hero class granting its fixed four-attribute vector on every level and starting
-  attributes equal to five times that vector. The base rule is
-  `Attribute(L) = growth * (L + 4)`, before bonuses. In addition, Offense and
-  Archery each independently roll for +1 Attack, Armorer for +1 Defense,
-  Spellcraft for +1 Spell Power, and Wisdom for +1 Knowledge, at 10/20/30%
-  for Basic/Advanced/Expert. There is no level-10 transition. This replaces the
-  older ten-point/no-extra-roll contract; the user retained the new DOCX model
-  during migration review. Knowledge directly supplies base mana; all relevant
-  formulas/tooltips must use the new scale coherently.
-- Secondary attributes include mana, leadership capacity, movement, morale, luck
-  and siege capability. Skills modify capabilities; leadership capacity and siege
-  are not additional automatically rolled primary stats.
-- Skills use their ten-perk pools with rank-specific choices, not the historical
-  post-Expert three-mastery proposal. Follow the accepted perk-rank override;
-  numerical balance is not a reason to block functional implementation.
-- Core/Elite/Champion creature categorization. Conflux proposal: Pixies/Sprites
-  as separate Core choices, five elementals as Elite, Phoenix as Champion.
-  Preserve actual creature/army functionality while category/UI changes land.
-- Hero screen expresses primary growth, derived attributes, skills/masteries,
-  class and military identity clearly. Concept images are visual direction,
-  not finished sprite sheets or authoritative numerical rules.
+The six schools are Light, Nature, Sorcery, Havoc, Shadow and Chaos. Preferred
+schools are equal rather than Major/Minor weighted: Necropolis Shadow/Sorcery,
+Fortress Nature/Shadow. Core/Elite/Champion categorization must preserve physical
+armies, recruitment and capacity; capacity never silently deletes creatures.
 
-## Curated usability additions
+## Content and visual acceptance
 
-User authorized visible quick-save/load buttons and creature ability/status icons
-(including Undead), matching the familiar conveniences supplied by VCMI Extras.
-Follow [NH_USER_FEEDBACK.md](NH_USER_FEEDBACK.md) for exact scope, ownership,
-acceptance and unresolved third-party art permissions. These are presentation
-additions, not changes to working F8/F9 or creature rules. Integrate directly into
-the curated edition; use independently authored artwork if Extras redistribution
-rights cannot be established. Do not delay useful equivalent implementation on
-optional unlicensed art, or claim that public availability grants reuse rights.
+Registration, source-backed coverage and consumer tests are documented in
+[NewHorizonsContent](developers/NewHorizonsContent.md). A catalogue entry, tooltip,
+active flag, image or focused test is not complete gameplay acceptance.
+[Integration gaps](NH_INTEGRATION_GAPS.md) and
+[regression guards](NH_REGRESSION_GUARDS.md) separate unresolved interactions
+from protected invariants. [Delivery pipeline](NH_DELIVERY_PIPELINE.md) defines
+candidate and distribution gates.
 
-## Asset policy
+Follow [Heroes III UI style](NH_HOMM3_UI_STYLE_GUIDE.md) from the outer frame
+inward. Live labels, numbers and controls remain code-owned. Concept art conveys
+layout intent, not new rules or rights clearance. Actual native-resolution
+rendering is required for visual acceptance.
 
-For every New Horizons UI layout or visual revision, follow the persistent
-[Heroes III UI style guide](NH_HOMM3_UI_STYLE_GUIDE.md). Build coherent panels
-from the outer frame inward and review them at native game resolution before
-calling a visual change complete.
+Selected runtime visuals are delivered through `Mods/new-horizons/NewHorizons.nhart`,
+with portable selection/origin/approval records. This includes selected Cabir,
+turbaned Magi, Guild composites and custom UI resources; original-based editing
+does not make selected runtime art automatically private-only. Unchanged purchaser
+archives remain external. Preserve local masters, alternatives and review materials;
+do not publish loose runtime exports or rebuild the pack from incomplete inputs.
+Provisional purpose-made drafts may be selected under the current authorization;
+selection, approval and rendered acceptance are distinct. Final requires approval
+evidence. See [asset specifications](NH_ART_ASSET_SPECIFICATIONS.md) and the
+[asset register](NH_UI_ASSET_STATUS.md).
 
-Maintain the [UI and asset status register](NH_UI_ASSET_STATUS.md) alongside
-runtime UI/asset changes. Its coverage is the live New Horizons content and UI,
-not just previously reported examples. Use **Not done**, **Provisional**, or
-**Final** for each tracked item. An unrelated borrowed icon is **Not done**;
-a purpose-made draft is **Provisional**; **Final** requires approval evidence,
-not merely an existing file. Track incorrect bindings or layout defects
-separately from the approval status of the artwork itself. All new artwork,
-including provisional artwork, must use the HoMM3 art skill.
-
-Inspect actual installed Heroes III spellbook/school artwork and VCMI lookups before
-asserting what exists or choosing replacement dimensions. Record external resource
-names, sizes, palette/transparency, frame/state needs and placement. Do not launch
-Heroes3.exe for this inventory. Purchaser assets remain external/read-only.
-
-Reuse original assets by reference where suitable; never commit extracted original
-art or assume another Heroes game's art is redistributable. New school emblems,
-Order/Doctrine icons, hero-attribute/mastery indicators and needed UI states require
-original editable source art plus runtime outputs, with explicit provenance/license.
-Create functional bespoke assets now; mark placeholders honestly. Do not claim a
-procedural icon is finished commissioned illustration or invent an art generator.
-No assets from the supplied concept images may be treated as rights-cleared without
-provenance review. Scope later new creature animation sets explicitly.
-
-## Unresolved choices — keep visible, do not silently decide
-
-- Primary growth is resolved by the accepted class-specific fixed-vector rule.
-  Missing authored class data is an implementation/data gap, not permission to
-  restore probabilistic growth or a level-10 transition.
-- The old preferred-school conflict is resolved by the canonical faction table:
-  Necropolis prefers Shadow/Sorcery and Fortress Nature/Shadow. Preferred schools
-  are equal, without Major/Minor weight; do not revive the old ambiguity.
-- Early Orders grant raw hero stats; later scale discussion explicitly replaces
-  these with coefficients. Use tunable coefficients for the first playable slice.
-- Command ranks, target coverage and Leadership capacity need
-  provisional declared rules. Army capacity must never silently delete creatures.
-- New spells/masteries imply additional mechanics (forced movement, flanking,
-  damage sharing, resurrection timing). Implement their prerequisites explicitly;
-  a tooltip or inert icon is not a completed feature.
-
-## Delivery plan — full scope, incremental playable commits
-
-1. Combat command foundation: implement the eight canonical Orders—Charge,
-   Focus Fire, Riposte, Hold the Line, Brace, Protect, Flank and Second Wind—with
-   a common spell/Order hero-action budget, clear UI and original icons. Human and
-   AI must both choose/execute legally. No default AI auto-picking a fixed Order
-   irrespective of available spells. Provide deterministic tests, active effect
-   feedback and save/load behavior. Unsupported combinations fail visibly rather
-   than pretending success. This is first delivery, not the full project scope.
-2. Add the six-school definitions/artwork and migrate spellbook/classification and
-   casts as a coherent ruleset. Implement required new spell effects and AI logic
-   in families, rather than displaying a fictional complete spell list.
-3. Integrate primary profiles/scaled formulas and secondary attributes, followed
-   by mastery progression and hero-screen implementation. Preserve separate content
-   identity/version checks so old saves are not silently interpreted as new rules.
-4. Expand remaining Orders, masteries, spell roster and creature tiers.
-   Test real journeys across implemented systems; replace provisional assets where
-   required. Balance tuning is later, not a reason to stop a functioning feature.
-
-A fixed internal content module is compatible with the curated edition: players
-must not have to manage a mod collection. Preserve original-mode saves/candidates
-and make ruleset activation explicit to serialization/compatibility checks. Keep
-Windows/Linux source portability, ordinary in-process runtime, GPL attribution,
-required source/dependency notices and asset exclusion in distributions.
-
-## Active ownership
-
-User has additionally commissioned a fifth worker, **Artist (Sorcery)**, under
-[NH_ARTIST_SORCERY.md](NH_ARTIST_SORCERY.md). It owns isolated original-art drafts
-and exports only; Frontend/Build retain live asset/UI integration, Content retains
-graphical acceptance. This explicitly activates an art role, not the optional
-packaging worker. The full Sorcery family needs user visual approval before it
-is called definitive; preserve references as purchaser-only material.
-
-Use [NH_WORKER_PLAN.md](NH_WORKER_PLAN.md) for each active worker's objective,
-acceptance criteria, next checkpoint and existing durable handoff. Follow
-[NH_DELIVERY_PIPELINE.md](NH_DELIVERY_PIPELINE.md) for separate feature/release
-lanes and early cross-platform/testing gates; [NH_AGENT_START.md](NH_AGENT_START.md)
-contains role-specific `/goal` startup prompts. Markdown alone does not activate
-a session's Goal mode; the harness contract is authoritative.
-
-- Runtime: authoritative combat commands and hero-action gating,
-  packets/validation/save integration in lib/server plus AI/ logic and native tests.
-  New common API and data schema must be sent to Frontend promptly. No UI edits.
-- Frontend: client/clientsdl UI and input, actual installed-resource inspection,
-  original editable icon art under assets/new-horizons/ and generated game artwork
-  under Mods/new-horizons/Images/. Coordinate data identifiers with Runtime.
-  No AI/lib/server edits or unreviewed changes to the Windows launch helper.
-- Build/Integrator: CMake, required content registration/config/Mods-new-horizons
-  metadata and non-Image data, serialized builds, scoped commits/pushes and ongoing
-  repaired Windows preview publication. Preserve frozen accepted candidates.
-- Content/Tester: independent asset provenance/packaging review, normal-input
-  graphical execution and tests/results; no product source/art implementation.
-  Only this worker launches private guarded Xvfb/XTest game journeys. Never use
-  host desktop input or launch the original binary. No competing GUI sessions.
-
-Workers implement now, not proposals awaiting another approval. Coordinate exact
-files and packet/schema/API ownership before crossing boundaries. Build remains
-sole integrator; Dispatcher edits these design/investigation docs only while it
-integrates. Every feature checkpoint reports working behavior, AI integration,
-source/build identity, validation and unfinished breadth. UI screenshots and real
-journeys are necessary for usability claims; native tests are complementary.
+Convenience additions such as QS/QL and creature status/ability icons must preserve
+existing keyboard actions and gameplay. Review compatible Extras components and
+their individual provenance rather than treating public availability as a license.
+See [Extras integration](NH_EXTRAS_INTEGRATION.md).

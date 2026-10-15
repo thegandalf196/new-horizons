@@ -23,7 +23,9 @@ import zipfile
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import nhart
+from source_export_policy import DOCUMENTATION_POLICY, exclude_source_path
 
 
 # NCrypt is supplied by Windows, not FFmpeg or the application:
@@ -474,10 +476,12 @@ def source_archive(root, output, revision):
     # git's recursive tracked-file list excludes build products, purchaser assets and .git credentials.
     tracked = subprocess.check_output(["git", "ls-files", "-z", "--recurse-submodules"], cwd=root).decode().split("\0")
     excluded = []
+    policy = root / DOCUMENTATION_POLICY
+    documentation_policy = DOCUMENTATION_POLICY in tracked and policy.is_file() and not policy.is_symlink()
     with tarfile.open(output, "w:gz", format=tarfile.PAX_FORMAT) as archive:
         for name in sorted(filter(None, tracked)):
-            # Internal acceptance diaries contain local purchaser paths, not corresponding build source.
-            if name == "CI/deploy_rsa.enc" or name.startswith("docs/NH_"):
+            # Only reviewed contributor contracts opt in; unknown coordination files stay excluded.
+            if exclude_source_path(name, documentation_policy=documentation_policy):
                 excluded.append(name)
                 continue
             path = root / name

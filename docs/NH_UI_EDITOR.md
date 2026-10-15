@@ -1,8 +1,7 @@
 # Offline New Horizons UI layout prototype
 
-Run `python3 tools/new-horizons-ui-editor/serve.py`, then open
-`http://127.0.0.1:8766` yourself. The server binds loopback only, serves seven
-fixed files, accepts no uploads and launches no browser/game. No dependencies
+Run `"$NH_PYTHON" tools/new-horizons-ui-editor/serve.py` with a verified absolute interpreter, then open
+`http://127.0.0.1:8766` yourself. The server binds loopback only, serves only its fixed editor files, accepts no uploads and launches no browser/game. No dependencies
 or remote services are required; a modern browser with ES modules is needed.
 
 Select layers in the canvas or list. Drag to move; drag the bottom-right handle
@@ -47,19 +46,10 @@ and portable references. This is not a runtime adapter or proof of rendered
 game behavior. No client/config/package files are written. Final game integration,
 font metrics, assets, responsive behavior and native visual review remain separate.
 
-Focused checks: `python3 -m unittest tools.tests.test_new_horizons_ui_editor`.
+Focused checks: `"$NH_PYTHON" -m unittest tools.tests.test_new_horizons_ui_editor`.
 These exercise the actual model and server admission without launching a browser.
 
-Offscreen verification on 2026-10-13 used installed Chrome 155 with a disposable
-profile and loopback server, without a host display. Actual rendering, mouse
-drag/resize, undo/redo, JSON file import/export, synthetic PNG ornament import
-and tile-size preservation after panel resize were checked. Two editor previews
-were captured. The harness exited 1 because it expected a second download filename;
-Chrome overwrote the same export filename. The resulting final JSON was independently
-checked for the edited geometry, tiled material and reference-only/privacy contract.
-The original failed harness result is retained; all observed processes exited and
-both owned ports closed. This is scoped editor evidence, not game integration or
-final-art approval. A human authoring trial and broader browser coverage remain open.
+Scoped offscreen editor trials covered rendering, drag/resize, undo/redo, JSON import/export and synthetic PNG/tile behavior. Original failed harness receipts remain private; a failure is not reclassified as PASS. These checks are editor-only, not game integration or final-art approval. Human authoring and broader browser coverage remain separate.
 
 ## Offline native-mapping check
 
@@ -122,12 +112,3 @@ deletes its child boxes in the same undoable action (locked children must first 
 unlocked). Parenting is one level only, not an arbitrary widget-tree framework.
 The offline translation report preserves roles/parents/resolved rectangles and
 adds `EDITOR_ROLE_ONLY` blockers; `runtimeReady` remains false.
-
-The 2026-10-14 offscreen Chrome check exercised visible drag guides/rulers,
-optional center snapping, nested role selection/resize with live size labels,
-undo/redo, adding/moving a Parent Skill icon box, live centered-child updates
-during parent resize, and role/parent/dimension JSON export/import. The final
-bounded run passed and all observed browser/server processes exited. An earlier
-harness assertion expected canvas-center alignment with grid snapping enabled;
-the valid nearer button-edge alignment was not a product defect. That failed
-receipt is retained separately. These are editor checks, not game rendering.

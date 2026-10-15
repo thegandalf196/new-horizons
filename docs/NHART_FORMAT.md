@@ -74,11 +74,11 @@ manifest fields, duplicate JSON members and nonfinite numbers are rejected.
 ## Maintained commands
 
 ```sh
-python3 tools/nhart.py pack --manifest selected.json --input-root selected-inputs --output NewHorizons.nhart
-python3 tools/nhart.py verify NewHorizons.nhart
-python3 tools/nhart.py verify NewHorizons.nhart --manifest selected.json
-python3 tools/nhart.py inspect NewHorizons.nhart
-python3 -m unittest discover -s tools/tests -p test_nhart.py
+"$NH_PYTHON" tools/nhart.py pack --manifest selected.json --input-root selected-inputs --output NewHorizons.nhart
+"$NH_PYTHON" tools/nhart.py verify NewHorizons.nhart
+"$NH_PYTHON" tools/nhart.py verify NewHorizons.nhart --manifest selected.json
+"$NH_PYTHON" tools/nhart.py inspect NewHorizons.nhart
+"$NH_PYTHON" -m unittest discover -s tools/tests -p test_nhart.py
 ```
 
 Packing reads only explicitly selected files; it does not sweep directories.

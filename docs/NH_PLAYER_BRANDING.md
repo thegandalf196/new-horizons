@@ -15,17 +15,7 @@ credits. No license or source notice is removed.
 
 ## Application icon boundary
 
-No reviewed New Horizons application/executable icon was found in the selected
-runtime-art inventory. Skill, creature and town icons are not implicitly approved
-product logos. An unchanged original Heroes III installation icon must not be
-committed or redistributed as the executable/desktop icon.
-
-Until an authorized New Horizons product icon is supplied or reviewed, the
-existing GPL-covered upstream VCMI icon remains an explicit temporary fallback.
-The requested final application icon is therefore **not delivered**. No icon art
-was generated or imported by this branding change. A private icon from a user's
-original installation would need a separately specified local-only loading or
-shortcut path; no such supported path is invented here.
+The supplied New Horizons product icon is embedded in `clientapp/icons/new-horizons.ico` and nine Linux desktop derivatives. Exact authorization/conversion/hash provenance is in `assets/new-horizons/platform-icon-provenance.json`; authoring masters and reviews remain private. This is a narrow pre-NHART platform-bootstrap exception, not permission for loose runtime artwork or redistribution of purchaser originals.
 
 ## Integration and acceptance
 
@@ -38,10 +28,10 @@ existing upstream attribution and license files.
 Run the focused source/Windows metadata contract gate:
 
 ```sh
-python3 -m unittest tools.tests.test_new_horizons_branding
+"$NH_PYTHON" -m unittest tools.tests.test_new_horizons_branding
 ```
 
 These checks are not a linked-client build or rendered delivery claim. Final
 acceptance still requires serialized desktop builds, matching launch/package
 paths, Windows resource inspection and an isolated graphical check of the title,
-desktop launch and credits. The final product-icon blocker remains explicit.
+desktop launch and credits. OS-shell appearance remains a separate platform check.
