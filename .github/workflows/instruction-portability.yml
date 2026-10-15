@@ -1,20 +1,9 @@
-name: Instruction portability
+name: Repository contracts
 
 on:
   push:
-    paths:
-      - '**/*.md'
-      - '**/*.txt'
-      - 'tools/check_instruction_home_paths.py'
-      - 'tools/tests/test_instruction_home_paths.py'
-      - '.github/workflows/instruction-portability.yml'
+    branches: [main]
   pull_request:
-    paths:
-      - '**/*.md'
-      - '**/*.txt'
-      - 'tools/check_instruction_home_paths.py'
-      - 'tools/tests/test_instruction_home_paths.py'
-      - '.github/workflows/instruction-portability.yml'
   workflow_dispatch:
 
 permissions:
@@ -22,17 +11,24 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v5
+        id: python
         with:
-          python-version: '3.x'
+          python-version: '3.14'
+      - name: Install hashed source-parser dependencies
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+        run: '"$PYTHON" -m pip install --require-hashes --only-binary=:all: -r tools/ci/source_organization_requirements.txt'
       - name: Check portable instruction paths
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          PYTHON: ${{ steps.python.outputs.python-path }}
         run: |
           # A rewritten push can name an obsolete base outside current ancestry.
           # Never restore that ancestry merely to run the documentation guard.
@@ -40,6 +36,56 @@ jobs:
           if ! git rev-parse --verify --quiet "$base^{commit}" >/dev/null || ! git merge-base --is-ancestor "$base" HEAD; then
             base=$(git rev-parse HEAD^)
           fi
-          python3 tools/check_instruction_home_paths.py --base "$base"
-      - name: Test synthetic examples
-        run: python3 -m unittest discover -s tools/tests -p test_instruction_home_paths.py
+          "$PYTHON" tools/check_instruction_home_paths.py --base "$base"
+          "$PYTHON" tools/ci/source_organization.py check --base-ref "$base" --output "$RUNNER_TEMP/source-growth.json"
+      - name: Test maintenance contracts with synthetic inputs
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON" -B -m unittest discover -s tools/tests -p test_instruction_home_paths.py
+          "$PYTHON" -B -m unittest discover -s tools/tests -p test_source_organization.py
+          "$PYTHON" -B -m unittest discover -s tools/tests -p test_test_inventory.py
+          "$PYTHON" tools/ci/test_inventory.py
+      - name: Verify generated module and committed artwork
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON" tools/update-new-horizons-module.py --check
+          "$PYTHON" tools/nhart.py verify Mods/new-horizons/NewHorizons.nhart --manifest assets/new-horizons/runtime-art-manifest.json
+
+  pure-state:
+    # These eight state-machine checks need no original game data or display.
+    # Native engine and rendered acceptance remain separate managed checks.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned test framework only
+        run: git submodule update --init --depth 1 test/googletest
+      - uses: actions/setup-python@v5
+        id: python
+        with:
+          python-version: '3.14'
+      - name: Install public build dependencies
+        run: |
+          sudo apt-get -q update
+          sudo apt-get -y --no-install-recommends install \
+            cmake ninja-build g++ libboost-filesystem-dev libboost-date-time-dev \
+            libboost-program-options-dev libboost-iostreams-dev \
+            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            zlib1g-dev libavformat-dev libswscale-dev libtbb-dev \
+            libluajit-5.1-dev libminizip-dev libsqlite3-dev libcurl4-openssl-dev \
+            libsquish-dev libfmt-dev liblzma-dev
+      - name: Configure and build reviewed standalone checks
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+        run: |
+          cmake --preset new-horizons-linux-test -DPython3_EXECUTABLE="$PYTHON"
+          cmake --build --preset new-horizons-linux-test
+      - name: Verify registration and run checks
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+        run: |
+          ctest --preset new-horizons-linux-test --show-only=json-v1 > "$RUNNER_TEMP/pure-tests.json"
+          "$PYTHON" tools/ci/test_inventory.py --ctest-json "$RUNNER_TEMP/pure-tests.json"
+          ctest --preset new-horizons-linux-test
