@@ -73,6 +73,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsIronWill.cpp
 	battle/NewHorizonsElementalRebirth.cpp
 	battle/NewHorizonsHeroLuck.cpp
+	battle/OrderActionTransition.cpp
 	battle/NewHorizonsSwiftRebirth.cpp
 	battle/NewHorizonsMagicalAbilityDamage.cpp
 	battle/NewHorizonsCreatureAbilitySuppression.cpp
@@ -583,6 +584,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsIronWill.h
 	battle/NewHorizonsElementalRebirth.h
 	battle/NewHorizonsHeroLuck.h
+	battle/OrderActionTransition.h
 	battle/NewHorizonsSwiftRebirth.h
 	battle/NewHorizonsMagicalAbilityDamage.h
 	battle/NewHorizonsCreatureAbilitySuppression.h

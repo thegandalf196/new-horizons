@@ -45,6 +45,14 @@ Distinct active Orders coexist for their normal durations. Issuing a second
 different Order does not replace the first, and no grant may create a recursive
 extra-action loop unless a canonical rule explicitly says so.
 
+Shared deterministic Order composition lives in
+`lib/battle/OrderActionTransition.{h,cpp}`. It delegates selection/payment to the
+typed allowance ledger and composes receipts, Double Command continuation and
+Heroic Spirit capacity checks. Callers retain admission, grant predicates, staged
+state, RNG, publication and commit timing. The helper does not add rollback:
+detached projections preserve their existing partial-failure behavior. Server
+preparation and replicated-state validation remain independent trust boundaries.
+
 ## Metamagic
 
 When the ordinary Hero Action is used to cast a spell, Metamagic may open one

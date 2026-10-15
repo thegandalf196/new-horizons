@@ -69,6 +69,7 @@ set(test_SRCS
 		battle/CasualtyProvenanceTest.cpp
 		battle/HeroActionAllowanceStateTest.cpp
 		battle/HeroSpellAllowanceTransitionTest.cpp
+		battle/OrderTransitionCharacterizationTest.cpp
 		battle/BattleHexTest.cpp
 		battle/BattleResultReplyTest.cpp
 		battle/BattleFieldReachabilityTest.cpp
