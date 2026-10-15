@@ -286,18 +286,21 @@ protected:
 			std::tuple{&timing.bestTargetWaitedProbeDamageCache, &timing.bestTargetWaitedTargetProbeMainDamage, &timing.bestTargetWaitedTargetProbeDpsScore},
 			std::tuple{&timing.bestTargetNormalProbeDamageCache, &timing.bestTargetNormalTargetProbeMainDamage, &timing.bestTargetNormalTargetProbeDpsScore}})
 			expectProbeCacheParent(*cache, main->totalMicroseconds + dps->totalMicroseconds, main->calls + dps->calls);
-		const auto probeChildren = [](const CBattleAI::StageTiming & mainDamage,
-			const CBattleAI::StageTiming & dpsScore, const CBattleAI::StageTiming & parent)
+		const auto probeChildren = [](const CBattleAI::StageTiming & preparation,
+			const CBattleAI::StageTiming & mainDamage, const CBattleAI::StageTiming & dpsScore,
+			const CBattleAI::StageTiming & parent)
 		{
-			EXPECT_LE(mainDamage.totalMicroseconds + dpsScore.totalMicroseconds, parent.totalMicroseconds);
+			EXPECT_LE(preparation.totalMicroseconds + mainDamage.totalMicroseconds
+				+ dpsScore.totalMicroseconds, parent.totalMicroseconds);
 			EXPECT_LE(dpsScore.calls, mainDamage.calls);
-			EXPECT_LE(mainDamage.calls, parent.calls);
+			EXPECT_LE(mainDamage.calls, preparation.calls);
+			EXPECT_LE(preparation.calls, parent.calls);
 		};
-		probeChildren(timing.movementExchangeTargetProbeMainDamage, timing.movementExchangeTargetProbeDpsScore,
+		probeChildren(timing.movementExchangeTargetProbePreparation, timing.movementExchangeTargetProbeMainDamage, timing.movementExchangeTargetProbeDpsScore,
 			timing.movementExchangeTargetProbes);
-		probeChildren(timing.bestTargetWaitedTargetProbeMainDamage, timing.bestTargetWaitedTargetProbeDpsScore,
+		probeChildren(timing.bestTargetWaitedTargetProbePreparation, timing.bestTargetWaitedTargetProbeMainDamage, timing.bestTargetWaitedTargetProbeDpsScore,
 			timing.bestTargetWaitedTargetProbes);
-		probeChildren(timing.bestTargetNormalTargetProbeMainDamage, timing.bestTargetNormalTargetProbeDpsScore,
+		probeChildren(timing.bestTargetNormalTargetProbePreparation, timing.bestTargetNormalTargetProbeMainDamage, timing.bestTargetNormalTargetProbeDpsScore,
 			timing.bestTargetNormalTargetProbes);
 		const auto subsets = [](const CBattleAI::StageTiming & expiry, const CBattleAI::StageTiming & gambler,
 			const CBattleAI::StageTiming & roundTimed, const CBattleAI::StageTiming & activation,
@@ -1093,12 +1096,23 @@ TEST_F(NewHorizonsExchangeReadParityTest, FrozenNoQuarterControllerAndFocusFireF
 class NewHorizonsExchangeTimingTest : public NewHorizonsBattleAITimingTest
 {
 protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		// These scope/parity controls deliberately keep the Commands-off legacy
+		// arithmetic. Pair its empty development capture with legacy perk offers.
+		if(!useCommands)
+			captureLegacyPerkOfferPolicy(*loaded);
+	}
+
 	void expectLifecycleSubsets(const BattleMovementTiming::ExchangeTiming & exchange) const
 	{
-		EXPECT_LE(exchange.targetProbeMainDamage.totalMicroseconds + exchange.targetProbeDpsScore.totalMicroseconds,
+		EXPECT_LE(exchange.targetProbePreparation.totalMicroseconds
+			+ exchange.targetProbeMainDamage.totalMicroseconds + exchange.targetProbeDpsScore.totalMicroseconds,
 			exchange.targetProbes.totalMicroseconds);
 		EXPECT_LE(exchange.targetProbeDpsScore.calls, exchange.targetProbeMainDamage.calls);
-		EXPECT_LE(exchange.targetProbeMainDamage.calls, exchange.targetProbes.calls);
+		EXPECT_LE(exchange.targetProbeMainDamage.calls, exchange.targetProbePreparation.calls);
+		EXPECT_LE(exchange.targetProbePreparation.calls, exchange.targetProbes.calls);
 		expectProbeCacheParent(exchange.targetProbeDamageCache,
 			exchange.targetProbeMainDamage.totalMicroseconds + exchange.targetProbeDpsScore.totalMicroseconds,
 			exchange.targetProbeMainDamage.calls + exchange.targetProbeDpsScore.calls);
@@ -1272,7 +1286,8 @@ TEST_F(NewHorizonsExchangeTimingTest, BestTargetAlreadyWaitedSkipsWaitBuckets)
 	EXPECT_EQ(timing.waitedDetails.body.calls, 0u);
 	EXPECT_EQ(timing.waitedDetails.remainderMicroseconds, 0u);
 	for(const auto * stage : {&timing.waitedDetails.activationStart, &timing.waitedDetails.activationEnd,
-		&timing.waitedDetails.roundAdvance, &timing.waitedDetails.targetProbeMainDamage,
+		&timing.waitedDetails.roundAdvance, &timing.waitedDetails.targetProbePreparation,
+		&timing.waitedDetails.targetProbeMainDamage,
 		&timing.waitedDetails.targetProbeDpsScore})
 	{
 		EXPECT_EQ(stage->calls, 0u);
@@ -1425,7 +1440,8 @@ TEST_F(NewHorizonsExchangeTimingTest, AdjacentTargetsReturnBeforeExchangeAndKeep
 	EXPECT_EQ(timing.findMoveExchange.calls, 0u);
 	const auto & exchange = timing.findMoveExchangeDetails;
 	for(const auto * stage : {&exchange.body, &exchange.membership, &exchange.projectionSetup,
-		&exchange.targetProbes, &exchange.targetProbeMainDamage, &exchange.targetProbeDpsScore,
+		&exchange.targetProbes, &exchange.targetProbePreparation,
+		&exchange.targetProbeMainDamage, &exchange.targetProbeDpsScore,
 		&exchange.appliedAttacks, &exchange.activationStart,
 		&exchange.activationEnd, &exchange.roundAdvance})
 	{
@@ -1481,6 +1497,13 @@ TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCount
 TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIgnoreAppliedOrNullActors)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	const auto rngBytes = [&]
+	{
+		CMemorySerializer memory;
+		memory.oser & *gameHandler->randomizer;
+		return memory.extractBuffer();
+	};
+	const auto rngBefore = rngBytes();
 	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
 	std::map<uint32_t, JsonNode> before;
 	for(const auto * unit : battle()->battleGetAllUnits(false))
@@ -1495,10 +1518,10 @@ TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIg
 		measuredCache.buildDamageCache(measured, BattleSide::ATTACKER);
 		BattleExchangeVariant controlExchange;
 		BattleExchangeVariant measuredExchange;
-		BattleMovementTiming::StageTiming mainDamage;
+		BattleMovementTiming::StageTiming preparation, mainDamage;
 		BattleMovementTiming::StageTiming dpsScore;
 		DamageCacheProbeTiming cacheTiming;
-		const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore, &cacheTiming};
+		const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore, &cacheTiming, &preparation};
 		const auto expected = controlExchange.trackAttack(control->getForUpdate(ordinary->unitId()),
 			control->getForUpdate(enemy->unitId()), false, true, controlCache, control, evaluateOnly);
 		const auto actual = measuredExchange.trackAttack(measured->getForUpdate(ordinary->unitId()),
@@ -1507,12 +1530,14 @@ TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIg
 		EXPECT_EQ(std::bit_cast<uint32_t>(actual), std::bit_cast<uint32_t>(expected));
 		EXPECT_EQ(measuredExchange.getScore().ourDamageReduce, controlExchange.getScore().ourDamageReduce);
 		EXPECT_EQ(measuredExchange.getScore().enemyDamageReduce, controlExchange.getScore().enemyDamageReduce);
-		EXPECT_EQ(mainDamage.calls, evaluateOnly ? 1u : 0u);
+		EXPECT_EQ(preparation.calls, evaluateOnly ? 1u : 0u);
+		EXPECT_EQ(mainDamage.calls, preparation.calls);
 		EXPECT_EQ(dpsScore.calls, mainDamage.calls);
 		expectProbeCacheClosure(cacheTiming);
 		EXPECT_EQ(cacheTiming.body.calls, evaluateOnly ? 2u : 0u);
 		if(!evaluateOnly)
 		{
+			EXPECT_EQ(preparation.totalMicroseconds, 0u);
 			EXPECT_EQ(mainDamage.totalMicroseconds, 0u);
 			EXPECT_EQ(dpsScore.totalMicroseconds, 0u);
 		}
@@ -1527,10 +1552,10 @@ TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIg
 			EXPECT_EQ(battle()->battleGetUnitByID(id)->acquireState()->save(), snapshot);
 		}
 	}
-	BattleMovementTiming::StageTiming mainDamage;
+	BattleMovementTiming::StageTiming preparation, mainDamage;
 	BattleMovementTiming::StageTiming dpsScore;
 	DamageCacheProbeTiming cacheTiming;
-	const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore, &cacheTiming};
+	const BattleTargetProbeTiming bundle{&mainDamage, &dpsScore, &cacheTiming, &preparation};
 	DamageCache cache;
 	cache.buildDamageCache(parent, BattleSide::ATTACKER);
 	BattleExchangeVariant empty;
@@ -1542,11 +1567,12 @@ TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIg
 	BattleExchangeVariant nullBundle;
 	EXPECT_EQ(nullBundle.trackAttack(nullptr, parent->getForUpdate(enemy->unitId()), false, true,
 		cache, parent, true, true, nullptr, &nullSinks), 0);
-	for(const auto * stage : {&mainDamage, &dpsScore})
+	for(const auto * stage : {&preparation, &mainDamage, &dpsScore})
 	{
 		EXPECT_EQ(stage->calls, 0u);
 		EXPECT_EQ(stage->totalMicroseconds, 0u);
 	}
+	EXPECT_EQ(rngBytes(), rngBefore);
 	EXPECT_TRUE(callback->actions.empty());
 	EXPECT_TRUE(callback->heroActions.empty());
 }
@@ -2302,6 +2328,7 @@ protected:
 			stage("movement", before.selectionMovementSearch, after.selectionMovementSearch);
 			stage("movementBody", before.movementExchangeBody, after.movementExchangeBody);
 			stage("movementProbes", before.movementExchangeTargetProbes, after.movementExchangeTargetProbes);
+			stage("movementProbePreparation", before.movementExchangeTargetProbePreparation, after.movementExchangeTargetProbePreparation);
 			stage("movementProbeMainDamage", before.movementExchangeTargetProbeMainDamage, after.movementExchangeTargetProbeMainDamage);
 			stage("movementProbeDpsScore", before.movementExchangeTargetProbeDpsScore, after.movementExchangeTargetProbeDpsScore);
 			stage("movementAppliedAttacks", before.movementExchangeAppliedAttacks, after.movementExchangeAppliedAttacks);
@@ -2318,8 +2345,10 @@ protected:
 			stage("normalBody", before.bestTargetNormalBody, after.bestTargetNormalBody);
 			stage("waitedProbes", before.bestTargetWaitedTargetProbes, after.bestTargetWaitedTargetProbes);
 			stage("normalProbes", before.bestTargetNormalTargetProbes, after.bestTargetNormalTargetProbes);
+			stage("waitedProbePreparation", before.bestTargetWaitedTargetProbePreparation, after.bestTargetWaitedTargetProbePreparation);
 			stage("waitedProbeMainDamage", before.bestTargetWaitedTargetProbeMainDamage, after.bestTargetWaitedTargetProbeMainDamage);
 			stage("waitedProbeDpsScore", before.bestTargetWaitedTargetProbeDpsScore, after.bestTargetWaitedTargetProbeDpsScore);
+			stage("normalProbePreparation", before.bestTargetNormalTargetProbePreparation, after.bestTargetNormalTargetProbePreparation);
 			stage("normalProbeMainDamage", before.bestTargetNormalTargetProbeMainDamage, after.bestTargetNormalTargetProbeMainDamage);
 			stage("normalProbeDpsScore", before.bestTargetNormalTargetProbeDpsScore, after.bestTargetNormalTargetProbeDpsScore);
 			stage("waitedActivationStart", before.bestTargetWaitedActivationStart, after.bestTargetWaitedActivationStart);
@@ -3280,6 +3309,7 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 		std::pair{"movementExchangeMembership", &CBattleAI::TimingSummary::movementExchangeMembership},
 		std::pair{"movementExchangeProjectionSetup", &CBattleAI::TimingSummary::movementExchangeProjectionSetup},
 		std::pair{"movementExchangeTargetProbes", &CBattleAI::TimingSummary::movementExchangeTargetProbes},
+		std::pair{"movementExchangeTargetProbePreparation", &CBattleAI::TimingSummary::movementExchangeTargetProbePreparation},
 		std::pair{"movementExchangeTargetProbeMainDamage", &CBattleAI::TimingSummary::movementExchangeTargetProbeMainDamage},
 		std::pair{"movementExchangeTargetProbeDpsScore", &CBattleAI::TimingSummary::movementExchangeTargetProbeDpsScore},
 		std::pair{"movementExchangeAppliedAttacks", &CBattleAI::TimingSummary::movementExchangeAppliedAttacks},
@@ -3297,6 +3327,7 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 		std::pair{"bestTargetWaitedMembership", &CBattleAI::TimingSummary::bestTargetWaitedMembership},
 		std::pair{"bestTargetWaitedProjectionSetup", &CBattleAI::TimingSummary::bestTargetWaitedProjectionSetup},
 		std::pair{"bestTargetWaitedTargetProbes", &CBattleAI::TimingSummary::bestTargetWaitedTargetProbes},
+		std::pair{"bestTargetWaitedTargetProbePreparation", &CBattleAI::TimingSummary::bestTargetWaitedTargetProbePreparation},
 		std::pair{"bestTargetWaitedTargetProbeMainDamage", &CBattleAI::TimingSummary::bestTargetWaitedTargetProbeMainDamage},
 		std::pair{"bestTargetWaitedTargetProbeDpsScore", &CBattleAI::TimingSummary::bestTargetWaitedTargetProbeDpsScore},
 		std::pair{"bestTargetWaitedAppliedAttacks", &CBattleAI::TimingSummary::bestTargetWaitedAppliedAttacks},
@@ -3311,6 +3342,7 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 		std::pair{"bestTargetNormalMembership", &CBattleAI::TimingSummary::bestTargetNormalMembership},
 		std::pair{"bestTargetNormalProjectionSetup", &CBattleAI::TimingSummary::bestTargetNormalProjectionSetup},
 		std::pair{"bestTargetNormalTargetProbes", &CBattleAI::TimingSummary::bestTargetNormalTargetProbes},
+		std::pair{"bestTargetNormalTargetProbePreparation", &CBattleAI::TimingSummary::bestTargetNormalTargetProbePreparation},
 		std::pair{"bestTargetNormalTargetProbeMainDamage", &CBattleAI::TimingSummary::bestTargetNormalTargetProbeMainDamage},
 		std::pair{"bestTargetNormalTargetProbeDpsScore", &CBattleAI::TimingSummary::bestTargetNormalTargetProbeDpsScore},
 		std::pair{"bestTargetNormalAppliedAttacks", &CBattleAI::TimingSummary::bestTargetNormalAppliedAttacks},
@@ -3416,6 +3448,13 @@ TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheNormalForecastPreservesNatur
 	setupCache.buildDamageCache(setupModel, BattleSide::ATTACKER);
 	PotentialTargets setupTargets(ordinary, setupCache, setupModel);
 	ASSERT_FALSE(setupTargets.unreachableEnemies.empty());
+	const auto binaryValue = [](const auto & value)
+	{
+		CMemorySerializer memory;
+		memory.oser & value;
+		return memory.extractBuffer();
+	};
+	const auto rngBefore = binaryValue(*gameHandler->randomizer);
 	std::map<uint32_t, JsonNode> before;
 	for(const auto * unit : battle()->battleGetAllUnits(false))
 		before.emplace(unit->unitId(), unit->acquireState()->save());
@@ -3431,7 +3470,10 @@ TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheNormalForecastPreservesNatur
 	BattleEvaluator disabled(environment, callback, ordinary, PlayerColor(0), BattleID(0),
 		BattleSide::ATTACKER, 1.0f, 2);
 	BattleEvaluator::SelectionTiming disabledTiming;
+	EXPECT_EQ(binaryValue(*gameHandler->randomizer), rngBefore);
 	const auto defaultMeasured = disabled.selectStackAction(ordinary, &disabledTiming);
+	EXPECT_EQ(binaryValue(defaultMeasured), binaryValue(expected));
+	EXPECT_EQ(binaryValue(*gameHandler->randomizer), rngBefore);
 	EXPECT_EQ(defaultMeasured.toString(), expected.toString());
 	EXPECT_EQ(defaultMeasured.perfectMoment, expected.perfectMoment);
 	EXPECT_EQ(defaultMeasured.archerySkirmisherAttack, expected.archerySkirmisherAttack);
@@ -3444,6 +3486,8 @@ TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheNormalForecastPreservesNatur
 		expectProbeCacheClosure(exchange->targetProbeDamageCache);
 	}
 	const auto actual = measured.selectStackAction(ordinary, &timing);
+	EXPECT_EQ(binaryValue(actual), binaryValue(expected));
+	EXPECT_EQ(binaryValue(*gameHandler->randomizer), rngBefore);
 	EXPECT_EQ(actual.toString(), expected.toString());
 	EXPECT_EQ(actual.perfectMoment, expected.perfectMoment);
 	EXPECT_EQ(actual.archerySkirmisherAttack, expected.archerySkirmisherAttack);
@@ -3458,6 +3502,10 @@ TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheNormalForecastPreservesNatur
 	for(const auto * exchange : {&timing.movementDetails.findMoveExchangeDetails,
 		&timing.bestTargetDetails.waitedDetails, &timing.bestTargetDetails.normalDetails})
 	{
+		EXPECT_EQ(exchange->targetProbePreparation.calls, exchange->targetProbes.calls);
+		EXPECT_LE(exchange->targetProbePreparation.totalMicroseconds
+			+ exchange->targetProbeMainDamage.totalMicroseconds + exchange->targetProbeDpsScore.totalMicroseconds,
+			exchange->targetProbes.totalMicroseconds);
 		expectProbeCacheParent(exchange->targetProbeDamageCache,
 			exchange->targetProbeMainDamage.totalMicroseconds + exchange->targetProbeDpsScore.totalMicroseconds,
 			exchange->targetProbeMainDamage.calls + exchange->targetProbeDpsScore.calls);
@@ -3518,6 +3566,8 @@ TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheAdjacentSingletonRetainsAdmi
 	{
 		EXPECT_TRUE(exchange->collectProbeDamageCache);
 		EXPECT_EQ(exchange->targetProbes.calls, 0u);
+		EXPECT_EQ(exchange->targetProbePreparation.calls, 0u);
+		EXPECT_EQ(exchange->targetProbePreparation.totalMicroseconds, 0u);
 		EXPECT_EQ(exchange->targetProbeMainDamage.calls, 0u);
 		EXPECT_EQ(exchange->targetProbeDpsScore.calls, 0u);
 		EXPECT_EQ(exchange->targetProbeDamageCache.body.calls, 0u);

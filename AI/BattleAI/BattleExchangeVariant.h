@@ -170,6 +170,7 @@ struct DLL_LINKAGE BattleMovementTiming
 		StageTiming projectionSetup;
 		StageTiming targetProbes;
 		/// Disjoint nested subsets of targetProbes, not extra classified body time.
+		StageTiming targetProbePreparation;
 		StageTiming targetProbeMainDamage;
 		StageTiming targetProbeDpsScore;
 		/// Nested cache subtree of primary damage and DPS probes; not extra body time.
@@ -200,6 +201,8 @@ struct DLL_LINKAGE BattleTargetProbeTiming
 	BattleMovementTiming::StageTiming * mainDamage = nullptr;
 	BattleMovementTiming::StageTiming * dpsScore = nullptr;
 	DamageCacheProbeTiming * damageCache = nullptr;
+	/// Prefix after the invalid-actor guard, finalized before primary damage.
+	BattleMovementTiming::StageTiming * preparation = nullptr;
 };
 
 /// Nonadditive candidate wrappers and disjoint calculateExchange subregions.
