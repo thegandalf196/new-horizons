@@ -8,178 +8,7 @@
     "target": "Foundation commit excluding instruction-portability workflow WIP",
     "working_tree_acceptance": "Not established; later workflow edit requires a separate exact-hash manual review"
   },
-  "coverage_pending": {
-    "AI/BattleAI/AttackPossibility.cpp": {
-      "diagnostics": [
-        {
-          "end": 107,
-          "start": 107,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ai_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 107-107. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "c63816a642f1b19e398f75f5a4ef45aa889242ba1dea8aee8664f5b83d4fcded"
-    },
-    "AI/MMAI/BAI/v13/render.cpp": {
-      "diagnostics": [
-        {
-          "end": 1032,
-          "start": 1032,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ai_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 1032-1032. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "d46dc1f37f6a6a990a135455069166d5f797a91e600be40f3f5e1996c5d1b416"
-    },
-    "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp": {
-      "diagnostics": [
-        {
-          "end": 1776,
-          "start": 1776,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ai_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 1776-1776. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "fb33696429c9eba08c2bbe09406cc1551bb4ca2d299131c13d64a758893540fc"
-    },
-    "client/xBRZ/xbrz.cpp": {
-      "diagnostics": [
-        {
-          "end": 394,
-          "start": 394,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 394-394. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "05c90d3c1b89d4d5406d58d9fbed19db3bfbf5db03a48f23acd3428eb67c8c21"
-    },
-    "launcher/modManager/cmodlistview_moc.cpp": {
-      "diagnostics": [
-        {
-          "end": 112,
-          "start": 112,
-          "type": "ERROR"
-        },
-        {
-          "end": 113,
-          "start": 113,
-          "type": "ERROR"
-        },
-        {
-          "end": 115,
-          "start": 115,
-          "type": "ERROR"
-        },
-        {
-          "end": 115,
-          "start": 115,
-          "type": "missing:identifier"
-        },
-        {
-          "end": 115,
-          "start": 115,
-          "type": "ERROR"
-        },
-        {
-          "end": 115,
-          "start": 115,
-          "type": "ERROR"
-        },
-        {
-          "end": 116,
-          "start": 116,
-          "type": "ERROR"
-        },
-        {
-          "end": 116,
-          "start": 116,
-          "type": "missing:identifier"
-        },
-        {
-          "end": 116,
-          "start": 116,
-          "type": "ERROR"
-        },
-        {
-          "end": 116,
-          "start": 116,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 112-112, ERROR at physical lines 113-113, ERROR at physical lines 115-115, missing:identifier at physical lines 115-115, ERROR at physical lines 115-115, ERROR at physical lines 115-115, ERROR at physical lines 116-116, missing:identifier at physical lines 116-116, ERROR at physical lines 116-116, ERROR at physical lines 116-116. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "af5fda1738b43fedabbc7fc1b06e04024b498d3959662b30da6cfb77ae382374"
-    },
-    "mapeditor/mainwindow.cpp": {
-      "diagnostics": [
-        {
-          "end": 1011,
-          "start": 1011,
-          "type": "ERROR"
-        },
-        {
-          "end": 1011,
-          "start": 1011,
-          "type": "missing:identifier"
-        },
-        {
-          "end": 1011,
-          "start": 1011,
-          "type": "ERROR"
-        },
-        {
-          "end": 1011,
-          "start": 1011,
-          "type": "ERROR"
-        },
-        {
-          "end": 1011,
-          "start": 1011,
-          "type": "ERROR"
-        },
-        {
-          "end": 1011,
-          "start": 1011,
-          "type": "missing:identifier"
-        },
-        {
-          "end": 1011,
-          "start": 1011,
-          "type": "ERROR"
-        },
-        {
-          "end": 1011,
-          "start": 1011,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "ui_developer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 1011-1011, missing:identifier at physical lines 1011-1011, ERROR at physical lines 1011-1011, ERROR at physical lines 1011-1011, ERROR at physical lines 1011-1011, missing:identifier at physical lines 1011-1011, ERROR at physical lines 1011-1011, ERROR at physical lines 1011-1011. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "a54ebfc920af710d17a89aa32cdea21fd06dcb9a62ae20f4e23b5a6bbd589e0f"
-    }
-  },
+  "coverage_pending": {},
   "manual_functions": {
     ".github/workflows/aab-from-build.yml": {
       "functions": [],
@@ -228,6 +57,473 @@
       "rationale": "Entire workflow is schedule/dispatch metadata and an external actions/stale invocation with configuration and prose. No run field or embedded shell/Python/JS callable body. External action implementation is outside this file.",
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "4e16898f372a3f2cc153db43b5326a4327a9156ee29722a3d3ce0e31b1b2dd09"
+    },
+    "AI/BattleAI/AttackPossibility.cpp": {
+      "sha256": "c63816a642f1b19e398f75f5a4ef45aa889242ba1dea8aee8664f5b83d4fcded",
+      "review": "IR-MANUAL-ATTACKPOSSIBILITY-c63816a6-20261015",
+      "rationale": "Whole handwritten physical source 1\u20132700 inspected; pure inventory only, not AI behavior implementation or review. Complete body-bearing inventory: 92 definitions = 42 functions/methods and 50 lambdas. Four deleted special members 74,75,118,119 accounted separately; no handwritten bodies, excluded by existing inventory body-required convention. Includes both timing-scope constructors/destructors, inline receiver/finish methods and AttackPossibility constructor initializer. evaluate is one 1838-line method 863\u20132700, not a collection of extracted functions; its 44 lambdas all inventoried, including nested pairs 1132/1134,1142/1144,1152/1154. Trace preprocessor branches remain inside their parent spans; no function-like macro definitions occur. Sole tree-sitter ERROR timing->* at 107 occurs in &(timing->*member), a pointer-to-member data access in DamageCachePhaseScope initializer, not a declaration. Full constructor 105\u2013117 includes signature and initializer 105\u2013109. All original symbols and physical spans verified against whole-source inspection. Calls, pointer-to-member type declaration, deleted members, control-flow, aggregate braces and preprocessor directives are not extra body-bearing definitions. No unresolved callable syntax found. Existing GPL2-or-later VCMI attribution preserved. Preserve all four numeric debt records verbatim; no numeric approval, growth waiver, ceiling exception or runtime certification.",
+      "functions": [
+        {
+          "symbol": "DamageCacheOperationScope::explicit DamageCacheOperationScope(DamageCacheProbeTiming * receiver) : timing(receiver)#1",
+          "start": 55,
+          "end": 73
+        },
+        {
+          "symbol": "DamageCacheOperationScope::DamageCacheProbeTiming * receiver() const#1",
+          "start": 76,
+          "end": 76
+        },
+        {
+          "symbol": "DamageCacheOperationScope::~DamageCacheOperationScope()#1",
+          "start": 77,
+          "end": 94
+        },
+        {
+          "symbol": "DamageCachePhaseScope::DamageCachePhaseScope(DamageCacheProbeTiming * timing, DamageCacheProbeTiming::StageTiming DamageCacheProbeTiming::* member) : timing(timing), stage(timing ? &(timing->*member) : nullptr), dynamic(member == &DamageCacheProbeTiming::dynamicDamage), started(stage ? Clock::now() : Clock::time_point{})#1",
+          "start": 105,
+          "end": 117
+        },
+        {
+          "symbol": "DamageCachePhaseScope::~DamageCachePhaseScope()#1",
+          "start": 120,
+          "end": 120
+        },
+        {
+          "symbol": "DamageCachePhaseScope::void finish()#1",
+          "start": 121,
+          "end": 133
+        },
+        {
+          "symbol": "bool projectDefiant(HypotheticBattle & battle, const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause, FortuneStrikeProjection & strike)#1",
+          "start": 136,
+          "end": 150
+        },
+        {
+          "symbol": "bool hasPendingRangedFollowUp(const battle::Unit * unit)#1",
+          "start": 152,
+          "end": 156
+        },
+        {
+          "symbol": "bool hasRangedMarkEffect(const battle::Unit * unit, const char * source)#1",
+          "start": 158,
+          "end": 167
+        },
+        {
+          "symbol": "bool hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attackingSide)#1",
+          "start": 169,
+          "end": 174
+        },
+        {
+          "symbol": "hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attackingSide)::[attackingSide](const Bonus * bonus)#1",
+          "start": 172,
+          "end": 173
+        },
+        {
+          "symbol": "bool hasNightProwlerBonus(const battle::Unit * unit)#1",
+          "start": 176,
+          "end": 179
+        },
+        {
+          "symbol": "int bulwarkPreemptivePercent(const battle::Unit * defender, const CBattleInfoCallback & state)#1",
+          "start": 181,
+          "end": 192
+        },
+        {
+          "symbol": "int bulwarkReflectionBasisPoints(const battle::Unit * defender, const CBattleInfoCallback & state, bool ranged)#1",
+          "start": 194,
+          "end": 203
+        },
+        {
+          "symbol": "int32_t noQuarterMoraleActivations(const CBattleInfoCallback & battle, uint32_t targetUnitId)#1",
+          "start": 205,
+          "end": 208
+        },
+        {
+          "symbol": "int64_t projectedPhysicalPoisonDamage(const battle::CUnitState * state)#1",
+          "start": 210,
+          "end": 221
+        },
+        {
+          "symbol": "int32_t vampirismHealBasisPoints(const battle::Unit * unit)#1",
+          "start": 223,
+          "end": 242
+        },
+        {
+          "symbol": "void projectVampirismHealing(battle::CUnitState * attacker, int64_t actualDamage, std::vector<std::pair<uint32_t, int64_t>> & healingByUnit)#1",
+          "start": 244,
+          "end": 265
+        },
+        {
+          "symbol": "void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)#1",
+          "start": 268,
+          "end": 271
+        },
+        {
+          "symbol": "void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing)#1",
+          "start": 273,
+          "end": 308
+        },
+        {
+          "symbol": "DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing)::[&]()#1",
+          "start": 301,
+          "end": 305
+        },
+        {
+          "symbol": "void DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)#1",
+          "start": 310,
+          "end": 361
+        },
+        {
+          "symbol": "DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)::[](const battle::Unit * u) -> bool#1",
+          "start": 337,
+          "end": 339
+        },
+        {
+          "symbol": "void DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)#1",
+          "start": 363,
+          "end": 400
+        },
+        {
+          "symbol": "DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)::[=](const battle::Unit * u) -> bool#1",
+          "start": 370,
+          "end": 373
+        },
+        {
+          "symbol": "bool DamageCache::tracksRangedMarks(uint32_t defenderId) const#1",
+          "start": 402,
+          "end": 408
+        },
+        {
+          "symbol": "bool DamageCache::tracksEvasiveShroud(uint32_t defenderId) const#1",
+          "start": 410,
+          "end": 416
+        },
+        {
+          "symbol": "bool DamageCache::tracksAmbusher(uint32_t attackerId) const#1",
+          "start": 418,
+          "end": 424
+        },
+        {
+          "symbol": "bool DamageCache::tracksShadowAssault(uint32_t defenderId) const#1",
+          "start": 426,
+          "end": 433
+        },
+        {
+          "symbol": "bool DamageCache::tracksNightProwler(uint32_t attackerId) const#1",
+          "start": 435,
+          "end": 441
+        },
+        {
+          "symbol": "bool DamageCache::tracksFrozen(uint32_t defenderId) const#1",
+          "start": 443,
+          "end": 449
+        },
+        {
+          "symbol": "int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)#1",
+          "start": 451,
+          "end": 454
+        },
+        {
+          "symbol": "int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)#1",
+          "start": 456,
+          "end": 583
+        },
+        {
+          "symbol": "DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)::[](const Bonus * bonus)#1",
+          "start": 496,
+          "end": 499
+        },
+        {
+          "symbol": "int64_t DamageCache::getObstacleDamage(const BattleHex & hex, const battle::Unit * defender)#1",
+          "start": 585,
+          "end": 600
+        },
+        {
+          "symbol": "int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)#1",
+          "start": 602,
+          "end": 605
+        },
+        {
+          "symbol": "int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)#1",
+          "start": 607,
+          "end": 641
+        },
+        {
+          "symbol": "AttackPossibility::AttackPossibility(const BattleHex & from, const BattleHex & dest, const BattleAttackInfo & attack) : from(from), dest(dest), attack(attack)#1",
+          "start": 643,
+          "end": 648
+        },
+        {
+          "symbol": "float AttackPossibility::damageDiff() const#1",
+          "start": 650,
+          "end": 653
+        },
+        {
+          "symbol": "float AttackPossibility::damageDiff(float positiveEffectMultiplier, float negativeEffectMultiplier) const#1",
+          "start": 655,
+          "end": 659
+        },
+        {
+          "symbol": "float AttackPossibility::attackValue() const#1",
+          "start": 661,
+          "end": 664
+        },
+        {
+          "symbol": "float hpFunction(uint64_t unitHealthStart, uint64_t unitHealthEnd, uint64_t maxHealth)#1",
+          "start": 666,
+          "end": 681
+        },
+        {
+          "symbol": "float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state)#1",
+          "start": 688,
+          "end": 696
+        },
+        {
+          "symbol": "float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1",
+          "start": 698,
+          "end": 797
+        },
+        {
+          "symbol": "AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)::[&](const battle::Unit * u) -> bool#1",
+          "start": 714,
+          "end": 722
+        },
+        {
+          "symbol": "int64_t AttackPossibility::evaluateBlockedShootersDmg( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state)#1",
+          "start": 799,
+          "end": 842
+        },
+        {
+          "symbol": "int AttackPossibility::getAttackCount(const battle::Unit & attacker, bool shooting, const CBattleInfoCallback & state)#1",
+          "start": 844,
+          "end": 861
+        },
+        {
+          "symbol": "AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1",
+          "start": 863,
+          "end": 2700
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](const battle::Unit * unit)#1",
+          "start": 879,
+          "end": 880
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const auto * unit)#1",
+          "start": 999,
+          "end": 1002
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Unit * unit, bool physicalDamage)#1",
+          "start": 1062,
+          "end": 1070
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](BattleSide side)#1",
+          "start": 1077,
+          "end": 1082
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](BattleSide side)#2",
+          "start": 1084,
+          "end": 1087
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const battle::Unit * unit)#1",
+          "start": 1118,
+          "end": 1118
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const battle::Unit * unit)#2",
+          "start": 1119,
+          "end": 1119
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const battle::Unit * unit)#3",
+          "start": 1120,
+          "end": 1121
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[requestedDefender](const battle::Unit * unit)#1",
+          "start": 1124,
+          "end": 1125
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[defender](const battle::Unit * unit)#1",
+          "start": 1127,
+          "end": 1128
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](battle::Units & units, const battle::Unit * primary)#1",
+          "start": 1132,
+          "end": 1138
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::(battle::Units & units, const battle::Unit * primary)::[primary](const battle::Unit * unit)#1",
+          "start": 1134,
+          "end": 1135
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Units & units)#1",
+          "start": 1142,
+          "end": 1146
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::(const battle::Units & units)::[](const battle::Unit * unit)#1",
+          "start": 1144,
+          "end": 1145
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Units & targets)#1",
+          "start": 1152,
+          "end": 1156
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::(const battle::Units & targets)::[&state](const battle::Unit * target)#1",
+          "start": 1154,
+          "end": 1155
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state, attacker, defender, currentRound, elementalPrimaryCounterfire](const battle::Unit * counterShooter)#1",
+          "start": 1175,
+          "end": 1188
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[state, currentRound](const battle::Unit * target)#1",
+          "start": 1190,
+          "end": 1194
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Unit * target)#1",
+          "start": 1219,
+          "end": 1224
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](const battle::Unit * primaryTarget)#1",
+          "start": 1225,
+          "end": 1236
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Unit * target)#2",
+          "start": 1248,
+          "end": 1257
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack, battle::CUnitState * target, int64_t incomingDamage)#1",
+          "start": 1279,
+          "end": 1301
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview, &endedActiveActivationByLastStand]( battle::CUnitState * target, bool retaliation)#1",
+          "start": 1303,
+          "end": 1316
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack)#1",
+          "start": 1317,
+          "end": 1326
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t targetUnitId)#1",
+          "start": 1327,
+          "end": 1332
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack)#2",
+          "start": 1333,
+          "end": 1342
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t attackerUnitId)#1",
+          "start": 1343,
+          "end": 1348
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack)#3",
+          "start": 1349,
+          "end": 1359
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t attackerUnitId)#2",
+          "start": 1360,
+          "end": 1364
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack) -> std::optional<BattleSide>#1",
+          "start": 1365,
+          "end": 1378
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t targetUnitId, BattleSide attackingSide)#1",
+          "start": 1379,
+          "end": 1385
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & attack, const std::vector<std::pair<uint32_t, int64_t>> & hits, battle::CUnitState * attackerState, FortuneStrikeProjection & receipt)#1",
+          "start": 1386,
+          "end": 1426
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](battle::CUnitState * recipient, int64_t damage)#1",
+          "start": 1427,
+          "end": 1438
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[unit](const battle::Unit * value)#1",
+          "start": 1466,
+          "end": 1467
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&strike](const auto & hit)#1",
+          "start": 2019,
+          "end": 2022
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&strike](const auto & hit)#2",
+          "start": 2025,
+          "end": 2028
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * unit)#1",
+          "start": 2194,
+          "end": 2200
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](const battle::Unit * left, const battle::Unit * right)#1",
+          "start": 2201,
+          "end": 2207
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * left, const battle::Unit * right)#1",
+          "start": 2209,
+          "end": 2212
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const auto & strike)#1",
+          "start": 2582,
+          "end": 2586
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&rainPrimaryFootprint](const battle::Unit * candidate)#1",
+          "start": 2621,
+          "end": 2632
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * unit)#2",
+          "start": 2633,
+          "end": 2640
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * unit)#3",
+          "start": 2643,
+          "end": 2643
+        },
+        {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[secondaryState](const auto & affected)#1",
+          "start": 2669,
+          "end": 2670
+        }
+      ]
     },
     "AI/BattleAI/AttackPossibility.h": {
       "sha256": "944041ee58963fb18c204868b6f3fbaab72c87a5fe3946a2577eaf9406ed07f6",
@@ -431,6 +727,183 @@
         }
       ]
     },
+    "AI/MMAI/BAI/v13/render.cpp": {
+      "sha256": "d46dc1f37f6a6a990a135455069166d5f797a91e600be40f3f5e1996c5d1b416",
+      "review": "IR-MANUAL-MMAI-V13-RENDER-d46dc1f3-20261015",
+      "rationale": "Complete handwritten physical source 1\u20131564 inspected. Exact inventory: 34 body-bearing definitions = 14 functions and 20 lambdas. Includes PadLeft, both expect overloads (variadic template declaration/requires clause 60\u201373), all validation helpers including abbreviated auto-parameter template 135\u2013144, Verify 287\u20131024 and Render 1028\u20131563. Functions ending }; retain closing physical line. Twenty lambdas include anyobstacle 467\u2013477 and its nested predicate 472\u2013475; repeated [&cstack] callbacks retain ordinals. All 18 Verify lambdas and two helper lambdas included; Render has no lambdas. Sole tree-sitter ERROR const ISupplementaryData * at 1032 is a type-id operand of typeid, not a declaration or callable. Complete Render body inventoried. Data-only Context struct, using aliases, aggregates, fold expression 70, switch/control-flow blocks and macro invocations are not independent definitions; no function-like macro definitions, deleted/defaulted members or conditional compilation branches occur. All original symbols/spans verified against whole-source inspection. No unresolved callable syntax found. Existing VCMI GPL2-or-later attribution preserved. Preserve all three numeric debt records verbatim; coverage only, no numeric approval, growth waiver, ceiling exception or native/rendered acceptance.",
+      "functions": [
+        {
+          "symbol": "MMAI::BAI::V13::std::string PadLeft(const std::string & input, size_t desiredLength, char paddingChar)#1",
+          "start": 44,
+          "end": 49
+        },
+        {
+          "symbol": "MMAI::BAI::V13::inline void expect(bool exp, std::string_view message)#1",
+          "start": 52,
+          "end": 58
+        },
+        {
+          "symbol": "MMAI::BAI::V13::inline void expect(bool exp, std::string_view format, const Args &... args) requires(sizeof...(Args) > 0)#1",
+          "start": 60,
+          "end": 73
+        },
+        {
+          "symbol": "MMAI::BAI::V13::std::vector<const CStack *> getAllStacksForSide(const Context & ctx, bool side)#1",
+          "start": 97,
+          "end": 100
+        },
+        {
+          "symbol": "MMAI::BAI::V13::bool isNA(int v, const CStack * stack, const std::string_view attrname)#1",
+          "start": 103,
+          "end": 112
+        },
+        {
+          "symbol": "MMAI::BAI::V13::bool checkReachable(const Context & ctx, BattleHex bh, bool v, const CStack * stack)#1",
+          "start": 114,
+          "end": 122
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void ensureReachability(const Context & ctx, BattleHex bh, bool v, const CStack * stack, const char * attrname)#1",
+          "start": 124,
+          "end": 127
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void ensureValueMatch(int have, int want, const std::string_view attrname, const std::string & desc = \"\")#1",
+          "start": 129,
+          "end": 133
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void ensureStackNullOrMatch(HexAttribute a, const CStack * cstack, int have, auto wantfunc, const std::string_view attrname)#1",
+          "start": 135,
+          "end": 144
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void ensureMeleeability(const Context & ctx, BattleHex bh, HexActMask mask, HexAction ha, const CStack * cstack, const char * attrname)#1",
+          "start": 146,
+          "end": 225
+        },
+        {
+          "symbol": "MMAI::BAI::V13::ensureMeleeability(const Context & ctx, BattleHex bh, HexActMask mask, HexAction ha, const CStack * cstack, const char * attrname)::[&nbh](const auto & stack)#1",
+          "start": 205,
+          "end": 208
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void ensureShootability(const Context & ctx, BattleHex bh, int v, const CStack * cstack, const char * attrname)#1",
+          "start": 229,
+          "end": 258
+        },
+        {
+          "symbol": "MMAI::BAI::V13::ensureShootability(const Context & ctx, BattleHex bh, int v, const CStack * cstack, const char * attrname)::[&bh](auto estack)#1",
+          "start": 236,
+          "end": 239
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void ensureCorrectMaskOrNA(const Context & ctx, BattleHex bh, int v, const CStack * cstack, const std::string_view attrname)#1",
+          "start": 260,
+          "end": 282
+        },
+        {
+          "symbol": "MMAI::BAI::V13::void Verify(const State * state) // NOSONAR - function used for debugging only#1",
+          "start": 287,
+          "end": 1024
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[](const CStack * a, const CStack * b)#1",
+          "start": 301,
+          "end": 304
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&obstacles](auto fn)#1",
+          "start": 467,
+          "end": 477
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::(auto fn)::[&fn](const std::shared_ptr<const CObstacleInstance> & obstacle)#1",
+          "start": 472,
+          "end": 475
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[side](const CObstacleInstance * o)#1",
+          "start": 533,
+          "end": 547
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[side](const CObstacleInstance * o)#2",
+          "start": 555,
+          "end": 569
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#1",
+          "start": 597,
+          "end": 600
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#2",
+          "start": 623,
+          "end": 626
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#3",
+          "start": 635,
+          "end": 638
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#4",
+          "start": 647,
+          "end": 650
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#5",
+          "start": 659,
+          "end": 662
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#6",
+          "start": 671,
+          "end": 674
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#7",
+          "start": 683,
+          "end": 686
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#8",
+          "start": 695,
+          "end": 698
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#9",
+          "start": 707,
+          "end": 710
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#10",
+          "start": 719,
+          "end": 722
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack]#11",
+          "start": 749,
+          "end": 752
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&cstack, &tot]#1",
+          "start": 767,
+          "end": 770
+        },
+        {
+          "symbol": "MMAI::BAI::V13::Verify(const State * state)::[&battle, &cstack](const auto & adjstack)#1",
+          "start": 840,
+          "end": 844
+        },
+        {
+          "symbol": "MMAI::BAI::V13::std::string Render(const Schema::IState * istate, const Action * action) // NOSONAR - function used for debugging only#1",
+          "start": 1028,
+          "end": 1563
+        }
+      ]
+    },
     "AI/MMAI/schema/v13/types.h": {
       "sha256": "ccc513f5bfb78a69b30da664fcc576c5480c3c4486f18cdb49571ccf22534577",
       "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015",
@@ -458,6 +931,523 @@
       "rationale": "Three inline implementations externalAmountMultiplier35–41, Candidate::isSplit56–59 and Candidate::valid61–69. Candidate/CoreMusterRow data and remaining amount/choose declarations are not bodies; modifiers={}31/98 are defaults. Every validity/split conditional read. No lambda/function-like macro definition.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "fd5f40caad7cbbd935b75d6121fd2733a7e58e28e8ae60e4441179e3d335e86d"
+    },
+    "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp": {
+      "sha256": "fb33696429c9eba08c2bbe09406cc1551bb4ca2d299131c13d64a758893540fc",
+      "review": "IR-MANUAL-AINODESTORAGE-fb336964-20261015",
+      "rationale": "Complete handwritten physical source 1\u20132364 inspected, including disabled preprocessor branches. Exact body-bearing inventory: 102 callables = 82 functions/methods and 20 lambdas. Defaulted destructor at 163 explicitly accounted for separately; it has no handwritten body and is excluded by the existing tool body-required convention, as are five class member declarations 697\u2013713 whose definitions occur later. Constructor initializer lists are included at 59\u201364,154\u2013161,650\u2013655,1563\u20131576,2236\u20132239. Template declarations 1667 and 1806 belong to their method spans. Disabled lambda 1766\u20131772 included. All nested callbacks included, especially reconstruction 2092\u20132109,2111\u20132231 containing 2121\u20132192 containing 2163\u20132166. Sole parser recovery is else at 1776: #if 0 starts at 1763, its if body closes 1775, but the else body follows #endif at 1777. This split preprocessor/control-flow syntax is not a definition and does not hide any callable; its complete surrounding method is 1736\u20131784. Comments, initializer/aggregate braces, control-flow blocks, declarations, operator[] invocations and macro calls are not extra callables; no function-like macro definitions occur. No unresolved callable syntax found. All six existing numeric debt entries must remain verbatim. Coverage proposal only: no numeric approval, growth waiver, ceiling exception or behavior certification.",
+      "functions": [
+        {
+          "symbol": "NK2AI::bool containsCastleGateAction(const std::shared_ptr<const SpecialAction> & action)#1",
+          "start": 41,
+          "end": 49
+        },
+        {
+          "symbol": "NK2AI::AIPathNodePool::AIPathNodePool(const int3 sizes, const size_t capacity) : sizes(sizes) , capacity(capacity) , tiles(static_cast<size_t>(sizes.x) * sizes.y * sizes.z)#1",
+          "start": 59,
+          "end": 64
+        },
+        {
+          "symbol": "NK2AI::size_t AIPathNodePool::tileIndex(const int3 & tile) const#1",
+          "start": 66,
+          "end": 69
+        },
+        {
+          "symbol": "NK2AI::AIPathNodePool::TileNodes & AIPathNodePool::getCurrentTile(const int3 & tile)#1",
+          "start": 71,
+          "end": 80
+        },
+        {
+          "symbol": "NK2AI::bool AIPathNodePool::beginGeneration()#1",
+          "start": 82,
+          "end": 94
+        },
+        {
+          "symbol": "NK2AI::AIPathNode * AIPathNodePool::allocate(const int3 & tile)#1",
+          "start": 96,
+          "end": 109
+        },
+        {
+          "symbol": "NK2AI::const AIPathNodePool::NodeList & AIPathNodePool::get(const int3 & tile) const#1",
+          "start": 111,
+          "end": 116
+        },
+        {
+          "symbol": "NK2AI::uint64_t AIPathNodePool::nextStorageOrder(const int3 & tile, const size_t offset) const#1",
+          "start": 118,
+          "end": 121
+        },
+        {
+          "symbol": "NK2AI::void AIPathNode::addSpecialAction(std::shared_ptr<const SpecialAction> action)#1",
+          "start": 123,
+          "end": 142
+        },
+        {
+          "symbol": "NK2AI::int AINodeStorage::getBucketCount() const#1",
+          "start": 144,
+          "end": 147
+        },
+        {
+          "symbol": "NK2AI::int AINodeStorage::getBucketSize() const#1",
+          "start": 149,
+          "end": 152
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::AINodeStorage(Nullkiller * aiNk, const int3 & sizes) : sizes(sizes) , aiNk(aiNk) , nodes(sizes, aiNk->settings->getPathfinderBucketSize() * aiNk->settings->getPathfinderBucketsCount())#1",
+          "start": 154,
+          "end": 161
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::initialize(const PathfinderOptions & options, const IGameInfoCallback & gameInfo)#1",
+          "start": 165,
+          "end": 181
+        },
+        {
+          "symbol": "NK2AI::EPathAccessibility AINodeStorage::getAccessibility( const int3 & pos, const EPathfindingLayer layer) const#1",
+          "start": 183,
+          "end": 229
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::clear()#1",
+          "start": 231,
+          "end": 241
+        },
+        {
+          "symbol": "NK2AI::std::optional<AIPathNode *> AINodeStorage::getOrCreateNode( const int3 & pos, const EPathfindingLayer layer, const ChainActor * actor, const DayFlags dayFlags)#1",
+          "start": 243,
+          "end": 286
+        },
+        {
+          "symbol": "NK2AI::std::vector<CGPathNode *> AINodeStorage::getInitialNodes()#1",
+          "start": 288,
+          "end": 342
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::prepareDestination(CDestinationNodeInfo & destination, const PathNodeInfo & source)#1",
+          "start": 344,
+          "end": 371
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::commit(CDestinationNodeInfo & destination, const PathNodeInfo & source)#1",
+          "start": 373,
+          "end": 470
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::commit(CDestinationNodeInfo & destination, const PathNodeInfo & source)::[&](AIPathNode * dstNode)#1",
+          "start": 418,
+          "end": 469
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::commit(CDestinationNodeInfo & destination, const PathNodeInfo & source)::(AIPathNode * dstNode)::[](const auto & pair) -> int#1",
+          "start": 443,
+          "end": 446
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::commit( AIPathNode * destination, const AIPathNode * source, EPathNodeAction action, int turn, int movementLeft, float cost, bool saveToCommitted)#1",
+          "start": 472,
+          "end": 513
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::calculateNeighbours( std::vector<CGPathNode *> & result, const PathNodeInfo & source, EPathfindingLayer layer, const PathfinderConfig * pathfinderConfig, const CPathfinderHelper * pathfinderHelper)#1",
+          "start": 515,
+          "end": 580
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::increaseHeroChainTurnLimit()#1",
+          "start": 584,
+          "end": 610
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::increaseHeroChainTurnLimit()::[&](const int3 & pos)#1",
+          "start": 594,
+          "end": 606
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::increaseHeroChainTurnLimit()::(const int3 & pos)::[&](AIPathNode & node)#1",
+          "start": 596,
+          "end": 605
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::calculateHeroChainFinal()#1",
+          "start": 612,
+          "end": 636
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::calculateHeroChainFinal()::[&](const int3 & pos)#1",
+          "start": 619,
+          "end": 632
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::calculateHeroChainFinal()::(const int3 & pos)::[&](AIPathNode & node)#1",
+          "start": 621,
+          "end": 631
+        },
+        {
+          "symbol": "NK2AI::HeroChainCalculationTask::HeroChainCalculationTask(AINodeStorage & storage, const std::vector<int3> & tiles, const uint64_t chainMask, const int heroChainTurn) : storage(storage), chainMask(chainMask), heroChainTurn(heroChainTurn), tiles(tiles)#1",
+          "start": 650,
+          "end": 655
+        },
+        {
+          "symbol": "NK2AI::HeroChainCalculationTask::void execute(const tbb::blocked_range<size_t> & r)#1",
+          "start": 657,
+          "end": 695
+        },
+        {
+          "symbol": "NK2AI::HeroChainCalculationTask::execute(const tbb::blocked_range<size_t> & r)::[this](AIPathNode & node)#1",
+          "start": 671,
+          "end": 675
+        },
+        {
+          "symbol": "NK2AI::HeroChainCalculationTask::void flushResult(std::vector<CGPathNode *> & result)#1",
+          "start": 715,
+          "end": 718
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::calculateHeroChain()#1",
+          "start": 721,
+          "end": 752
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::calculateHeroChain()::[&](const tbb::blocked_range<size_t> & chunkRange)#1",
+          "start": 734,
+          "end": 744
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::selectFirstActor()#1",
+          "start": 754,
+          "end": 768
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::selectFirstActor()::[](std::shared_ptr<ChainActor> actor) -> uint64_t#1",
+          "start": 759,
+          "end": 762
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::selectNextActor()#1",
+          "start": 770,
+          "end": 806
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::selectNextActor()::[&](std::shared_ptr<ChainActor> actor)-> bool#1",
+          "start": 772,
+          "end": 775
+        },
+        {
+          "symbol": "NK2AI::uint64_t evaluateArmyLossValue(uint64_t armyValue, uint64_t danger, double fightingStrength)#1",
+          "start": 808,
+          "end": 824
+        },
+        {
+          "symbol": "NK2AI::uint64_t AINodeStorage::evaluateArmyLoss(const CGHeroInstance * hero, uint64_t armyValue, uint64_t danger) const#1",
+          "start": 826,
+          "end": 829
+        },
+        {
+          "symbol": "NK2AI::void HeroChainCalculationTask::cleanupInefectiveChains(std::vector<ExchangeCandidate> & result) const#1",
+          "start": 831,
+          "end": 853
+        },
+        {
+          "symbol": "NK2AI::HeroChainCalculationTask::cleanupInefectiveChains(std::vector<ExchangeCandidate> & result) const::[&](const ExchangeCandidate & chainInfo) -> bool#1",
+          "start": 833,
+          "end": 852
+        },
+        {
+          "symbol": "NK2AI::void HeroChainCalculationTask::calculateHeroChain( AIPathNode * srcNode, const std::vector<AIPathNode *> & variants, std::vector<ExchangeCandidate> & result)#1",
+          "start": 855,
+          "end": 913
+        },
+        {
+          "symbol": "NK2AI::void HeroChainCalculationTask::calculateHeroChain( AIPathNode * carrier, AIPathNode * other, std::vector<ExchangeCandidate> & result)#1",
+          "start": 915,
+          "end": 972
+        },
+        {
+          "symbol": "NK2AI::void HeroChainCalculationTask::addHeroChain(const std::vector<ExchangeCandidate> & result)#1",
+          "start": 974,
+          "end": 1069
+        },
+        {
+          "symbol": "NK2AI::ExchangeCandidate HeroChainCalculationTask::calculateExchange( ChainActor * exchangeActor, AIPathNode * carrierParentNode, AIPathNode * otherParentNode) const#1",
+          "start": 1071,
+          "end": 1102
+        },
+        {
+          "symbol": "NK2AI::const std::set<const CGHeroInstance *> AINodeStorage::getAllHeroes() const#1",
+          "start": 1104,
+          "end": 1115
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::isDistanceLimitReached(const PathNodeInfo & source, CDestinationNodeInfo & destination) const#1",
+          "start": 1117,
+          "end": 1133
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::setHeroes(HeroMap<HeroRole> heroes)#1",
+          "start": 1135,
+          "end": 1161
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::setTownsAndDwellings( const std::vector<const CGTownInstance *> & towns, const std::set<const CGObjectInstance *> & visitableObjs)#1",
+          "start": 1163,
+          "end": 1214
+        },
+        {
+          "symbol": "NK2AI::std::vector<CGPathNode *> AINodeStorage::calculateTeleportations( const PathNodeInfo & source, const PathfinderConfig * pathfinderConfig, const CPathfinderHelper * pathfinderHelper)#1",
+          "start": 1216,
+          "end": 1230
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::isObjectTeleportation(const CGPathNode * destination) const#1",
+          "start": 1232,
+          "end": 1236
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::calculateObjectTeleportations( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode)#1",
+          "start": 1238,
+          "end": 1314
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::calculateObjectTeleportations( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode)::[&](const CGTownInstance * town)#1",
+          "start": 1267,
+          "end": 1270
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::canCalculateDimensionDoorTeleportations( const PathNodeInfo & source, const PathfinderConfig * pathfinderConfig, const AIPathNode * srcNode) const#1",
+          "start": 1316,
+          "end": 1327
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::calculateDimensionDoorTeleportations( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode)#1",
+          "start": 1329,
+          "end": 1346
+        },
+        {
+          "symbol": "NK2AI::const std::vector<AINodeStorage::DimensionDoorCapability> & AINodeStorage::getDimensionDoorCapabilities( const CGHeroInstance * hero)#1",
+          "start": 1348,
+          "end": 1373
+        },
+        {
+          "symbol": "NK2AI::& AINodeStorage::getDimensionDoorCapabilities( const CGHeroInstance * hero)::[&](const CSpell * spell, const auto & mechanics, const DimensionDoorEffect * effect)#1",
+          "start": 1357,
+          "end": 1370
+        },
+        {
+          "symbol": "NK2AI::std::optional<AINodeStorage::DimensionDoorSpellPlan> AINodeStorage::getDimensionDoorSpellPlan( const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode, const CGHeroInstance * hero, const DimensionDoorCapability & capability) const#1",
+          "start": 1375,
+          "end": 1424
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::calculateDimensionDoorTeleportationsForSpell( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const AIPathNode * srcNode, const DimensionDoorSpellPlan & plan)#1",
+          "start": 1426,
+          "end": 1456
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::isDimensionDoorDestinationValid( const PathNodeInfo & source, const CGHeroInstance * hero, const int3 & destination, const DimensionDoorSpellPlan & plan) const#1",
+          "start": 1458,
+          "end": 1466
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::DimensionDoorLandingInfo AINodeStorage::getDimensionDoorLandingInfo( const AIPathNode * srcNode, const CGHeroInstance * hero, const int3 & destination) const#1",
+          "start": 1468,
+          "end": 1498
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::addDimensionDoorTeleportation( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const AIPathNode * srcNode, const int3 & destination, const DimensionDoorSpellPlan & plan, const DimensionDoorLandingInfo & landing)#1",
+          "start": 1500,
+          "end": 1547
+        },
+        {
+          "symbol": "NK2AI::TownPortalFinder::TownPortalFinder(const ChainActor * actor, const std::vector<CGPathNode *> & initialNodes, const std::vector<const CGTownInstance *> & targetTowns, AINodeStorage * nodeStorage, SpellID spellID) : initialNodes(initialNodes) , actor(actor) , hero(actor->hero) , targetTowns(targetTowns) , nodeStorage(nodeStorage) , townPortal(spellID.toSpell()) , spellID(spellID) , usesSharedDailyOpportunity(newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), spellID))#1",
+          "start": 1563,
+          "end": 1576
+        },
+        {
+          "symbol": "NK2AI::TownPortalFinder::bool actorCanCastTownPortal()#1",
+          "start": 1578,
+          "end": 1581
+        },
+        {
+          "symbol": "NK2AI::TownPortalFinder::CGPathNode * getBestInitialNodeForTownPortal(const CGTownInstance * targetTown)#1",
+          "start": 1583,
+          "end": 1612
+        },
+        {
+          "symbol": "NK2AI::TownPortalFinder::std::optional<AIPathNode *> createTownPortalNode(const CGTownInstance * targetTown)#1",
+          "start": 1614,
+          "end": 1664
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::calculateTownPortal( const ChainActor * actor, const HeroMap<int> & maskMap, const std::vector<CGPathNode *> & initialNodes, TVector & output)#1",
+          "start": 1667,
+          "end": 1734
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::calculateTownPortal( const ChainActor * actor, const HeroMap<int> & maskMap, const std::vector<CGPathNode *> & initialNodes, TVector & output)::[&](const CGTownInstance * t) -> bool#1",
+          "start": 1676,
+          "end": 1679
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::calculateTownPortalTeleportations(std::vector<CGPathNode *> & initialNodes)#1",
+          "start": 1736,
+          "end": 1784
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::calculateTownPortalTeleportations(std::vector<CGPathNode *> & initialNodes)::[&](const tbb::blocked_range<size_t> & r)#1",
+          "start": 1766,
+          "end": 1772
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::hasBetterChain(const PathNodeInfo & source, CDestinationNodeInfo & destination) const#1",
+          "start": 1786,
+          "end": 1791
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode) const#1",
+          "start": 1793,
+          "end": 1804
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode) const::[this, &source, candidateNode](const AIPathNode & node) -> bool#1",
+          "start": 1800,
+          "end": 1803
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode, const NodeRange & nodes) const#1",
+          "start": 1806,
+          "end": 1819
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::isOtherChainBetter( const CGPathNode * source, const AIPathNode & candidateNode, const AIPathNode & other) const#1",
+          "start": 1821,
+          "end": 1909
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::isTileAccessible(const HeroPtr & heroPtr, const int3 & pos, const EPathfindingLayer layer) const#1",
+          "start": 1911,
+          "end": 1927
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::hasCurrentNodes(const int3 & pos) const#1",
+          "start": 1929,
+          "end": 1935
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::calculateChainInfo(std::vector<AIPath> & paths, const int3 & pos, const bool isOnLand) const#1",
+          "start": 1937,
+          "end": 1949
+        },
+        {
+          "symbol": "NK2AI::void AINodeStorage::calculatePathSummaries( std::vector<AIPathSummary> & summaries, const int3 & pos, const bool isOnLand) const#1",
+          "start": 1951,
+          "end": 1994
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathSummary & summary) const#1",
+          "start": 1996,
+          "end": 2007
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathNode * node) const#1",
+          "start": 2009,
+          "end": 2081
+        },
+        {
+          "symbol": "NK2AI::bool AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const#1",
+          "start": 2083,
+          "end": 2234
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[](const AIPathNode * exchangeNode, const AIPathNode * predecessor) -> std::optional<ExchangeMaskTransition>#1",
+          "start": 2092,
+          "end": 2109
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[this, &getVerifiedExchangeTransition](auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool#1",
+          "start": 2111,
+          "end": 2231
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::(auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool::[this, spineRoot, &currentMasks, &expectedTransition]( const AIPathNode * node, AIPath & pathToAppend, int parent, RealMoveMasksByHero & masks) -> std::optional<int>#1",
+          "start": 2121,
+          "end": 2192
+        },
+        {
+          "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::(auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool::( const AIPathNode * node, AIPath & pathToAppend, int parent, RealMoveMasksByHero & masks) -> std::optional<int>::[spineRoot, nodeMask](const RealMoveMaskCommitment & commitment)#1",
+          "start": 2163,
+          "end": 2166
+        },
+        {
+          "symbol": "NK2AI::AIPath::AIPath() : nodes({})#1",
+          "start": 2236,
+          "end": 2239
+        },
+        {
+          "symbol": "NK2AI::std::shared_ptr<const SpecialAction> AIPath::getFirstBlockedAction() const#1",
+          "start": 2241,
+          "end": 2250
+        },
+        {
+          "symbol": "NK2AI::int3 AIPath::firstTileToGet() const#1",
+          "start": 2252,
+          "end": 2260
+        },
+        {
+          "symbol": "NK2AI::int3 AIPath::targetTile() const#1",
+          "start": 2262,
+          "end": 2270
+        },
+        {
+          "symbol": "NK2AI::const AIPathNodeInfo & AIPath::firstNode() const#1",
+          "start": 2272,
+          "end": 2275
+        },
+        {
+          "symbol": "NK2AI::const AIPathNodeInfo & AIPath::targetNode() const#1",
+          "start": 2277,
+          "end": 2294
+        },
+        {
+          "symbol": "NK2AI::uint64_t AIPath::getPathDanger() const#1",
+          "start": 2296,
+          "end": 2302
+        },
+        {
+          "symbol": "NK2AI::float AIPath::movementCost() const#1",
+          "start": 2304,
+          "end": 2310
+        },
+        {
+          "symbol": "NK2AI::uint8_t AIPath::turn() const#1",
+          "start": 2312,
+          "end": 2318
+        },
+        {
+          "symbol": "NK2AI::uint64_t AIPath::getHeroStrength() const#1",
+          "start": 2320,
+          "end": 2324
+        },
+        {
+          "symbol": "NK2AI::uint64_t AIPath::getTotalDanger() const#1",
+          "start": 2326,
+          "end": 2332
+        },
+        {
+          "symbol": "NK2AI::bool AIPath::containsHero(const CGHeroInstance * hero) const#1",
+          "start": 2334,
+          "end": 2346
+        },
+        {
+          "symbol": "NK2AI::uint64_t AIPath::getTotalArmyLoss() const#1",
+          "start": 2348,
+          "end": 2351
+        },
+        {
+          "symbol": "NK2AI::std::string AIPath::toString() const#1",
+          "start": 2353,
+          "end": 2362
+        }
+      ]
     },
     "CI/wininstaller/build_installer.cmd": {
       "functions": [],
@@ -1103,6 +2093,438 @@
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "a4f1d34459c2107b37e0d2b4c9e587c2f135af4c55de6dbd16dfe5e9ff643651"
     },
+    "client/xBRZ/xbrz.cpp": {
+      "sha256": "05c90d3c1b89d4d5406d58d9fbed19db3bfbf5db03a48f23acd3428eb67c8c21",
+      "review": "IR-MANUAL-XBRZ-05c90d3c-20261015",
+      "rationale": "Whole physical source 1\u20131384 inspected. Retain existing conservative selected production coverage and numeric debt; do not reclassify by directory. Existing xBRZ third-party GPL3 attribution and special exception header are unchanged. Exact source matches Git blob 1eda5a46beb87ad49cdeca829f937581a58bbc43 in current reference and fork common ancestor bc0fc2a9. Complete inventory has 85 entries: 68 functions/methods, 13 lambdas, four DEF_GETTER function-like macro definitions at 333,340,346,352. Each macro has nine invocations; these 36 expansions share four authored replacement-list bodies, not 36 separately written implementations. Object-like FORCE_INLINE and b\u2013i definitions are not function-like macros. All templates, constructor initializers and disabled branches included: distRGB 144\u2013153; CPU helper 1287\u20131303 with lambdas 1295\u20131301 and 1300; AMP helper 1308\u20131383 with restrict(amp) lambda 1325\u20131381 and interpolation lambda 1354\u20131368. The sole parser ERROR is void at 394 after FORCE_INLINE; this macro is the inline/compiler-attribute spelling defined 81\u201387, not a return type or separate definition. Complete blendPixel span 392\u2013479 includes its template and all three lambdas. Original parser-compatible symbols retained. Commented functions, data-only type declarations, aggregate braces, invocations and control flow are not extra definitions. No unresolved callable syntax found. Preserve all three numeric debt records verbatim; no growth waiver, ceiling exception, provenance reassignment or runtime claim.",
+      "functions": [
+        {
+          "symbol": "inline uint32_t gradientRGB(uint32_t pixFront, uint32_t pixBack) //blend front color with opacity M / N over opaque background: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending#1",
+          "start": 33,
+          "end": 43
+        },
+        {
+          "symbol": "gradientRGB(uint32_t pixFront, uint32_t pixBack)::[](unsigned char colFront, unsigned char colBack) -> unsigned char#1",
+          "start": 38,
+          "end": 38
+        },
+        {
+          "symbol": "inline uint32_t gradientARGB(uint32_t pixFront, uint32_t pixBack) //find intermediate color between two colors with alpha channels (=> NO alpha blending!!!)#1",
+          "start": 46,
+          "end": 66
+        },
+        {
+          "symbol": "gradientARGB(uint32_t pixFront, uint32_t pixBack)::[=](unsigned char colFront, unsigned char colBack)#1",
+          "start": 57,
+          "end": 60
+        },
+        {
+          "symbol": "OutputMatrix::OutputMatrix(uint32_t* out, int outWidth) : //access matrix area, top-left at position \"out\" for image with given width out_(out), outWidth_(outWidth)#1",
+          "start": 121,
+          "end": 123
+        },
+        {
+          "symbol": "OutputMatrix::uint32_t& ref() const#1",
+          "start": 125,
+          "end": 131
+        },
+        {
+          "symbol": "inline T square(T value)#1",
+          "start": 139,
+          "end": 140
+        },
+        {
+          "symbol": "inline double distRGB(uint32_t pix1, uint32_t pix2)#1",
+          "start": 144,
+          "end": 153
+        },
+        {
+          "symbol": "inline double distYCbCr(uint32_t pix1, uint32_t pix2, double lumaWeight)#1",
+          "start": 157,
+          "end": 181
+        },
+        {
+          "symbol": "inline double distYCbCrBuffered(uint32_t pix1, uint32_t pix2)#1",
+          "start": 184,
+          "end": 234
+        },
+        {
+          "symbol": "distYCbCrBuffered(uint32_t pix1, uint32_t pix2)::[]#1",
+          "start": 189,
+          "end": 213
+        },
+        {
+          "symbol": "FORCE_INLINE //detect blend direction BlendResult preProcessCorners(const Kernel_4x4& ker, const xbrz::ScalerCfg& cfg) //result: F, G, J, K corners of \"GradientType\"#1",
+          "start": 290,
+          "end": 331
+        },
+        {
+          "symbol": "BlendResult preProcessCorners(const Kernel_4x4& ker, const xbrz::ScalerCfg& cfg)::[&](uint32_t pix1, uint32_t pix2)#1",
+          "start": 307,
+          "end": 307
+        },
+        {
+          "symbol": "#define DEF_GETTER#1",
+          "start": 333,
+          "end": 333
+        },
+        {
+          "symbol": "#define DEF_GETTER#2",
+          "start": 340,
+          "end": 340
+        },
+        {
+          "symbol": "#define DEF_GETTER#3",
+          "start": 346,
+          "end": 346
+        },
+        {
+          "symbol": "#define DEF_GETTER#4",
+          "start": 352,
+          "end": 352
+        },
+        {
+          "symbol": "inline BlendType getTopR (unsigned char b)#1",
+          "start": 361,
+          "end": 361
+        },
+        {
+          "symbol": "inline BlendType getBottomR(unsigned char b)#1",
+          "start": 362,
+          "end": 362
+        },
+        {
+          "symbol": "inline BlendType getBottomL(unsigned char b)#1",
+          "start": 363,
+          "end": 363
+        },
+        {
+          "symbol": "inline void clearAddTopL(unsigned char& b, BlendType bt)#1",
+          "start": 365,
+          "end": 365
+        },
+        {
+          "symbol": "inline void addTopR (unsigned char& b, BlendType bt)#1",
+          "start": 366,
+          "end": 366
+        },
+        {
+          "symbol": "inline void addBottomR (unsigned char& b, BlendType bt)#1",
+          "start": 367,
+          "end": 367
+        },
+        {
+          "symbol": "inline void addBottomL (unsigned char& b, BlendType bt)#1",
+          "start": 368,
+          "end": 368
+        },
+        {
+          "symbol": "inline bool blendingNeeded(unsigned char b)#1",
+          "start": 370,
+          "end": 374
+        },
+        {
+          "symbol": "inline unsigned char rotateBlendInfo(unsigned char b)#1",
+          "start": 376,
+          "end": 377
+        },
+        {
+          "symbol": "inline unsigned char rotateBlendInfo<ROT_90 >(unsigned char b)#1",
+          "start": 378,
+          "end": 378
+        },
+        {
+          "symbol": "inline unsigned char rotateBlendInfo<ROT_180>(unsigned char b)#1",
+          "start": 379,
+          "end": 379
+        },
+        {
+          "symbol": "inline unsigned char rotateBlendInfo<ROT_270>(unsigned char b)#1",
+          "start": 380,
+          "end": 380
+        },
+        {
+          "symbol": "FORCE_INLINE //perf: quite worth it! void blendPixel(const Kernel_3x3& ker, uint32_t* target, int trgWidth, unsigned char blendInfo, //result of preprocessing all four corners of pixel \"e\" const xbrz::ScalerCfg& cfg)#1",
+          "start": 392,
+          "end": 479
+        },
+        {
+          "symbol": "blendPixel(const Kernel_3x3& ker, uint32_t* target, int trgWidth, unsigned char blendInfo, //result of preprocessing all four corners of pixel \"e\" const xbrz::ScalerCfg& cfg)::[&](uint32_t pix1, uint32_t pix2)#1",
+          "start": 418,
+          "end": 418
+        },
+        {
+          "symbol": "blendPixel(const Kernel_3x3& ker, uint32_t* target, int trgWidth, unsigned char blendInfo, //result of preprocessing all four corners of pixel \"e\" const xbrz::ScalerCfg& cfg)::[&](uint32_t pix1, uint32_t pix2)#2",
+          "start": 419,
+          "end": 419
+        },
+        {
+          "symbol": "blendPixel(const Kernel_3x3& ker, uint32_t* target, int trgWidth, unsigned char blendInfo, //result of preprocessing all four corners of pixel \"e\" const xbrz::ScalerCfg& cfg)::[&]() -> bool#1",
+          "start": 421,
+          "end": 437
+        },
+        {
+          "symbol": "OobReaderTransparent::OobReaderTransparent(const uint32_t* src, int srcWidth, int srcHeight, int y) : s_m1(0 <= y - 1 && y - 1 < srcHeight ? src + srcWidth * (y - 1) : nullptr), s_0 (0 <= y && y < srcHeight ? src + srcWidth * y : nullptr), s_p1(0 <= y + 1 && y + 1 < srcHeight ? src + srcWidth * (y + 1) : nullptr), s_p2(0 <= y + 2 && y + 2 < srcHeight ? src + srcWidth * (y + 2) : nullptr), srcWidth_(srcWidth)#1",
+          "start": 485,
+          "end": 490
+        },
+        {
+          "symbol": "OobReaderTransparent::void readDhlp(Kernel_4x4& ker, int x) const //(x, y) is at kernel position F#1",
+          "start": 492,
+          "end": 508
+        },
+        {
+          "symbol": "OobReaderDuplicate::OobReaderDuplicate(const uint32_t* src, int srcWidth, int srcHeight, int y) : s_m1(src + srcWidth * std::clamp(y - 1, 0, srcHeight - 1)), s_0 (src + srcWidth * std::clamp(y, 0, srcHeight - 1)), s_p1(src + srcWidth * std::clamp(y + 1, 0, srcHeight - 1)), s_p2(src + srcWidth * std::clamp(y + 2, 0, srcHeight - 1)), srcWidth_(srcWidth)#1",
+          "start": 522,
+          "end": 527
+        },
+        {
+          "symbol": "OobReaderDuplicate::void readDhlp(Kernel_4x4& ker, int x) const //(x, y) is at kernel position F#1",
+          "start": 529,
+          "end": 536
+        },
+        {
+          "symbol": "void scaleImage(const uint32_t* src, uint32_t* trg, int srcWidth, int srcHeight, const xbrz::ScalerCfg& cfg, int yFirst, int yLast)#1",
+          "start": 547,
+          "end": 731
+        },
+        {
+          "symbol": "Scaler2x::static void alphaGrad(uint32_t& pixBack, uint32_t pixFront)#1",
+          "start": 740,
+          "end": 741
+        },
+        {
+          "symbol": "Scaler2x::static void blendLineShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 744,
+          "end": 749
+        },
+        {
+          "symbol": "Scaler2x::static void blendLineSteep(uint32_t col, OutputMatrix& out)#1",
+          "start": 751,
+          "end": 756
+        },
+        {
+          "symbol": "Scaler2x::static void blendLineSteepAndShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 758,
+          "end": 764
+        },
+        {
+          "symbol": "Scaler2x::static void blendLineDiagonal(uint32_t col, OutputMatrix& out)#1",
+          "start": 766,
+          "end": 770
+        },
+        {
+          "symbol": "Scaler2x::static void blendCorner(uint32_t col, OutputMatrix& out)#1",
+          "start": 772,
+          "end": 777
+        },
+        {
+          "symbol": "Scaler3x::static void alphaGrad(uint32_t& pixBack, uint32_t pixFront)#1",
+          "start": 786,
+          "end": 787
+        },
+        {
+          "symbol": "Scaler3x::static void blendLineShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 790,
+          "end": 798
+        },
+        {
+          "symbol": "Scaler3x::static void blendLineSteep(uint32_t col, OutputMatrix& out)#1",
+          "start": 800,
+          "end": 808
+        },
+        {
+          "symbol": "Scaler3x::static void blendLineSteepAndShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 810,
+          "end": 818
+        },
+        {
+          "symbol": "Scaler3x::static void blendLineDiagonal(uint32_t col, OutputMatrix& out)#1",
+          "start": 820,
+          "end": 826
+        },
+        {
+          "symbol": "Scaler3x::static void blendCorner(uint32_t col, OutputMatrix& out)#1",
+          "start": 828,
+          "end": 835
+        },
+        {
+          "symbol": "Scaler4x::static void alphaGrad(uint32_t& pixBack, uint32_t pixFront)#1",
+          "start": 844,
+          "end": 845
+        },
+        {
+          "symbol": "Scaler4x::static void blendLineShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 848,
+          "end": 859
+        },
+        {
+          "symbol": "Scaler4x::static void blendLineSteep(uint32_t col, OutputMatrix& out)#1",
+          "start": 861,
+          "end": 872
+        },
+        {
+          "symbol": "Scaler4x::static void blendLineSteepAndShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 874,
+          "end": 887
+        },
+        {
+          "symbol": "Scaler4x::static void blendLineDiagonal(uint32_t col, OutputMatrix& out)#1",
+          "start": 889,
+          "end": 895
+        },
+        {
+          "symbol": "Scaler4x::static void blendCorner(uint32_t col, OutputMatrix& out)#1",
+          "start": 897,
+          "end": 904
+        },
+        {
+          "symbol": "Scaler5x::static void alphaGrad(uint32_t& pixBack, uint32_t pixFront)#1",
+          "start": 913,
+          "end": 914
+        },
+        {
+          "symbol": "Scaler5x::static void blendLineShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 917,
+          "end": 931
+        },
+        {
+          "symbol": "Scaler5x::static void blendLineSteep(uint32_t col, OutputMatrix& out)#1",
+          "start": 933,
+          "end": 947
+        },
+        {
+          "symbol": "Scaler5x::static void blendLineSteepAndShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 949,
+          "end": 968
+        },
+        {
+          "symbol": "Scaler5x::static void blendLineDiagonal(uint32_t col, OutputMatrix& out)#1",
+          "start": 970,
+          "end": 981
+        },
+        {
+          "symbol": "Scaler5x::static void blendCorner(uint32_t col, OutputMatrix& out)#1",
+          "start": 983,
+          "end": 992
+        },
+        {
+          "symbol": "Scaler6x::static void alphaGrad(uint32_t& pixBack, uint32_t pixFront)#1",
+          "start": 1001,
+          "end": 1002
+        },
+        {
+          "symbol": "Scaler6x::static void blendLineShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 1005,
+          "end": 1023
+        },
+        {
+          "symbol": "Scaler6x::static void blendLineSteep(uint32_t col, OutputMatrix& out)#1",
+          "start": 1025,
+          "end": 1043
+        },
+        {
+          "symbol": "Scaler6x::static void blendLineSteepAndShallow(uint32_t col, OutputMatrix& out)#1",
+          "start": 1045,
+          "end": 1068
+        },
+        {
+          "symbol": "Scaler6x::static void blendLineDiagonal(uint32_t col, OutputMatrix& out)#1",
+          "start": 1070,
+          "end": 1080
+        },
+        {
+          "symbol": "Scaler6x::static void blendCorner(uint32_t col, OutputMatrix& out)#1",
+          "start": 1082,
+          "end": 1091
+        },
+        {
+          "symbol": "ColorDistanceRGB::static double dist(uint32_t pix1, uint32_t pix2, double luminanceWeight)#1",
+          "start": 1098,
+          "end": 1105
+        },
+        {
+          "symbol": "ColorDistanceARGB::static double dist(uint32_t pix1, uint32_t pix2, double luminanceWeight)#1",
+          "start": 1110,
+          "end": 1131
+        },
+        {
+          "symbol": "ColorDistanceUnbufferedARGB::static double dist(uint32_t pix1, uint32_t pix2, double luminanceWeight)#1",
+          "start": 1137,
+          "end": 1147
+        },
+        {
+          "symbol": "ColorGradientRGB::static void alphaGrad(uint32_t& pixBack, uint32_t pixFront)#1",
+          "start": 1153,
+          "end": 1157
+        },
+        {
+          "symbol": "ColorGradientARGB::static void alphaGrad(uint32_t& pixBack, uint32_t pixFront)#1",
+          "start": 1162,
+          "end": 1166
+        },
+        {
+          "symbol": "void xbrz::scale(size_t factor, const uint32_t* src, uint32_t* trg, int srcWidth, int srcHeight, ColorFormat colFmt, const xbrz::ScalerCfg& cfg, int yFirst, int yLast)#1",
+          "start": 1171,
+          "end": 1247
+        },
+        {
+          "symbol": "bool xbrz::equalColorTest(uint32_t col1, uint32_t col2, ColorFormat colFmt, double luminanceWeight, double equalColorTolerance)#1",
+          "start": 1250,
+          "end": 1264
+        },
+        {
+          "symbol": "void xbrz::bilinearScale(const uint32_t* src, int srcWidth, int srcHeight, /**/ uint32_t* trg, int trgWidth, int trgHeight)#1",
+          "start": 1267,
+          "end": 1273
+        },
+        {
+          "symbol": "xbrz::bilinearScale(const uint32_t* src, int srcWidth, int srcHeight, /**/ uint32_t* trg, int trgWidth, int trgHeight)::[](uint32_t pix)#1",
+          "start": 1272,
+          "end": 1272
+        },
+        {
+          "symbol": "void xbrz::nearestNeighborScale(const uint32_t* src, int srcWidth, int srcHeight, /**/ uint32_t* trg, int trgWidth, int trgHeight)#1",
+          "start": 1276,
+          "end": 1282
+        },
+        {
+          "symbol": "xbrz::nearestNeighborScale(const uint32_t* src, int srcWidth, int srcHeight, /**/ uint32_t* trg, int trgWidth, int trgHeight)::[](uint32_t pix)#1",
+          "start": 1281,
+          "end": 1281
+        },
+        {
+          "symbol": "void bilinearScaleCpu(const uint32_t* src, int srcWidth, int srcHeight, /**/ uint32_t* trg, int trgWidth, int trgHeight)#1",
+          "start": 1287,
+          "end": 1303
+        },
+        {
+          "symbol": "bilinearScaleCpu(const uint32_t* src, int srcWidth, int srcHeight, /**/ uint32_t* trg, int trgWidth, int trgHeight)::[=]#1",
+          "start": 1295,
+          "end": 1301
+        },
+        {
+          "symbol": "bilinearScaleCpu(const uint32_t* src, int srcWidth, int srcHeight, /**/ uint32_t* trg, int trgWidth, int trgHeight)::<anonymous>::[](uint32_t pix)#1",
+          "start": 1300,
+          "end": 1300
+        },
+        {
+          "symbol": "void bilinearScaleAmp(const uint32_t* src, int srcWidth, int srcHeight, //throw concurrency::runtime_exception /**/ uint32_t* trg, int trgWidth, int trgHeight)#1",
+          "start": 1308,
+          "end": 1383
+        },
+        {
+          "symbol": "bilinearScaleAmp(const uint32_t* src, int srcWidth, int srcHeight, //throw concurrency::runtime_exception /**/ uint32_t* trg, int trgWidth, int trgHeight)::[=](index<2> idx) restrict(amp) //throw ?#1",
+          "start": 1325,
+          "end": 1381
+        },
+        {
+          "symbol": "bilinearScaleAmp(const uint32_t* src, int srcWidth, int srcHeight, //throw concurrency::runtime_exception /**/ uint32_t* trg, int trgWidth, int trgHeight)::(index<2> idx) restrict(amp)::[=](int offset)#1",
+          "start": 1354,
+          "end": 1368
+        }
+      ]
+    },
     "clientapp/ios/GameChatKeyboardHandler.h": {
       "functions": [],
       "rationale": "Objective-C @interface declaration22–26 with one class-method prototype24 and @end; no @implementation, method body, or block literal. NS_ASSUME_NONNULL_BEGIN/END are annotations, SDL selection is include-only. Recovery at22/24/26 does not hide implementation bodies.",
@@ -1501,6 +2923,498 @@
           "symbol": "int ChroniclesExtractor::installChronicles(QStringList exe)#1",
           "start": 246,
           "end": 303
+        }
+      ]
+    },
+    "launcher/modManager/cmodlistview_moc.cpp": {
+      "sha256": "af5fda1738b43fedabbc7fc1b06e04024b498d3959662b30da6cfb77ae382374",
+      "review": "independent-cmodlistview-complete-callables-af5fda1738b4-20261015-v1",
+      "rationale": "Whole handwritten physical source 1\u20131966 inspected, despite the _moc filename. Complete inventory: 97 definitions, comprising 74 CModListView methods including constructor/destructor, nine free/helper functions (three templates), and 14 lambdas. Constructor signature/initializer lines 125\u2013127 belong to span 125\u2013162. Template declaration lines 1287,1300,1324 belong to their helper spans. Nested lambda 549 belongs within 544\u2013553 and nested lambda 1210 within 1208\u20131212; all are counted separately. Qt string-based SIGNAL/SLOT macro arguments at 112\u2013116 cause ten tree-sitter recoveries: const reference type spellings are parsed as expressions, not callable declarations. Every recovery is confined to these four macro arguments. Control flow, catch bodies, local result struct and enum, initializer braces, preprocessor branches, Qt signal addresses and invocations are not independent callables. No function-like macro definitions occur. All original callable symbols and physical spans verified against whole-source inspection. No unresolved callable syntax found. Coverage only: preserve all five existing numeric debt records verbatim; no growth waiver, ceiling exception or behavior certification is proposed.",
+      "functions": [
+        {
+          "symbol": "void CModListView::setupModModel()#1",
+          "start": 44,
+          "end": 61
+        },
+        {
+          "symbol": "void CModListView::changeEvent(QEvent *event)#1",
+          "start": 63,
+          "end": 71
+        },
+        {
+          "symbol": "void CModListView::setupFilterModel()#1",
+          "start": 73,
+          "end": 80
+        },
+        {
+          "symbol": "void CModListView::setupModsView()#1",
+          "start": 82,
+          "end": 123
+        },
+        {
+          "symbol": "CModListView::CModListView(QWidget * parent) : QWidget(parent) , ui(new Ui::CModListView)#1",
+          "start": 125,
+          "end": 162
+        },
+        {
+          "symbol": "bool CModListView::isDemoDataPresent()#1",
+          "start": 164,
+          "end": 172
+        },
+        {
+          "symbol": "void CModListView::showEvent(QShowEvent * event)#1",
+          "start": 174,
+          "end": 178
+        },
+        {
+          "symbol": "void CModListView::reload(const QString & modToSelect)#1",
+          "start": 180,
+          "end": 194
+        },
+        {
+          "symbol": "void CModListView::loadRepositories()#1",
+          "start": 196,
+          "end": 219
+        },
+        {
+          "symbol": "CModListView::~CModListView()#1",
+          "start": 221,
+          "end": 227
+        },
+        {
+          "symbol": "static QString replaceIfNotEmpty(QVariant value, QString pattern)#1",
+          "start": 229,
+          "end": 251
+        },
+        {
+          "symbol": "static QString replaceIfNotEmpty(QStringList value, QString pattern)#1",
+          "start": 253,
+          "end": 258
+        },
+        {
+          "symbol": "QString CModListView::genChangelogText(const ModState & mod)#1",
+          "start": 260,
+          "end": 287
+        },
+        {
+          "symbol": "CModListView::genChangelogText(const ModState & mod)::[](QString lesser, QString greater)#1",
+          "start": 272,
+          "end": 275
+        },
+        {
+          "symbol": "QStringList CModListView::getModNames(QString queryingModID, QStringList input)#1",
+          "start": 289,
+          "end": 328
+        },
+        {
+          "symbol": "QString CModListView::genModInfoText(const ModState & mod)#1",
+          "start": 330,
+          "end": 462
+        },
+        {
+          "symbol": "QString CModListView::getRepoUrl(const ModState & mod)#1",
+          "start": 464,
+          "end": 473
+        },
+        {
+          "symbol": "void CModListView::disableModInfo()#1",
+          "start": 475,
+          "end": 482
+        },
+        {
+          "symbol": "auto CModListView::buttonEnabledState(QString modName, ModState & mod)#1",
+          "start": 484,
+          "end": 530
+        },
+        {
+          "symbol": "void CModListView::onCustomContextMenu(const QPoint &point)#1",
+          "start": 532,
+          "end": 597
+        },
+        {
+          "symbol": "CModListView::onCustomContextMenu(const QPoint &point)::[this, &contextMenu, &actions, mod](bool visible, bool enabled, QIcon icon, QString name, std::function<void(ModState)> function)#1",
+          "start": 544,
+          "end": 553
+        },
+        {
+          "symbol": "CModListView::onCustomContextMenu(const QPoint &point)::(bool visible, bool enabled, QIcon icon, QString name, std::function<void(ModState)> function)::[mod, function]()#1",
+          "start": 549,
+          "end": 549
+        },
+        {
+          "symbol": "CModListView::onCustomContextMenu(const QPoint &point)::[this](ModState mod)#1",
+          "start": 560,
+          "end": 560
+        },
+        {
+          "symbol": "CModListView::onCustomContextMenu(const QPoint &point)::[this](ModState mod)#2",
+          "start": 565,
+          "end": 566
+        },
+        {
+          "symbol": "CModListView::onCustomContextMenu(const QPoint &point)::[this](ModState mod)#3",
+          "start": 570,
+          "end": 570
+        },
+        {
+          "symbol": "CModListView::onCustomContextMenu(const QPoint &point)::[this](ModState mod)#4",
+          "start": 575,
+          "end": 575
+        },
+        {
+          "symbol": "CModListView::onCustomContextMenu(const QPoint &point)::[this](ModState mod)#5",
+          "start": 580,
+          "end": 580
+        },
+        {
+          "symbol": "CModListView::onCustomContextMenu(const QPoint &point)::[this](ModState mod)#6",
+          "start": 585,
+          "end": 585
+        },
+        {
+          "symbol": "CModListView::onCustomContextMenu(const QPoint &point)::[this](ModState mod)#7",
+          "start": 590,
+          "end": 593
+        },
+        {
+          "symbol": "void CModListView::dataChanged(const QModelIndex & topleft, const QModelIndex & bottomRight)#1",
+          "start": 599,
+          "end": 602
+        },
+        {
+          "symbol": "static void scrollTextBrowserToTop(QTextBrowser* browser)#1",
+          "start": 604,
+          "end": 611
+        },
+        {
+          "symbol": "scrollTextBrowserToTop(QTextBrowser* browser)::[browser]()#1",
+          "start": 606,
+          "end": 610
+        },
+        {
+          "symbol": "void CModListView::selectMod(const QModelIndex & index)#1",
+          "start": 613,
+          "end": 655
+        },
+        {
+          "symbol": "void CModListView::modSelected(const QModelIndex & current, const QModelIndex &)#1",
+          "start": 657,
+          "end": 660
+        },
+        {
+          "symbol": "void CModListView::on_allModsView_activated(const QModelIndex & index)#1",
+          "start": 662,
+          "end": 666
+        },
+        {
+          "symbol": "void CModListView::on_lineEdit_textChanged(const QString & arg1)#1",
+          "start": 668,
+          "end": 680
+        },
+        {
+          "symbol": "void CModListView::on_comboBox_currentIndexChanged(int index)#1",
+          "start": 682,
+          "end": 686
+        },
+        {
+          "symbol": "QStringList CModListView::findUnavailableMods(QStringList candidates)#1",
+          "start": 688,
+          "end": 698
+        },
+        {
+          "symbol": "void CModListView::on_enableButton_clicked()#1",
+          "start": 700,
+          "end": 705
+        },
+        {
+          "symbol": "void CModListView::enableModByName(QString modName)#1",
+          "start": 707,
+          "end": 711
+        },
+        {
+          "symbol": "void CModListView::on_disableButton_clicked()#1",
+          "start": 713,
+          "end": 718
+        },
+        {
+          "symbol": "void CModListView::disableModByName(QString modName)#1",
+          "start": 720,
+          "end": 724
+        },
+        {
+          "symbol": "QStringList CModListView::getModsToInstall(QString mod)#1",
+          "start": 726,
+          "end": 767
+        },
+        {
+          "symbol": "void CModListView::on_updateButton_clicked()#1",
+          "start": 769,
+          "end": 788
+        },
+        {
+          "symbol": "void CModListView::doUpdateMod(const QString & modName)#1",
+          "start": 790,
+          "end": 804
+        },
+        {
+          "symbol": "void CModListView::openModDictionary(const QString & modName)#1",
+          "start": 806,
+          "end": 816
+        },
+        {
+          "symbol": "void CModListView::on_uninstallButton_clicked()#1",
+          "start": 818,
+          "end": 825
+        },
+        {
+          "symbol": "void CModListView::on_installButton_clicked()#1",
+          "start": 827,
+          "end": 834
+        },
+        {
+          "symbol": "void CModListView::downloadMod(const ModState & mod)#1",
+          "start": 836,
+          "end": 843
+        },
+        {
+          "symbol": "void CModListView::downloadFile(QString file, QUrl url, QString description, qint64 sizeBytes)#1",
+          "start": 845,
+          "end": 869
+        },
+        {
+          "symbol": "void CModListView::downloadProgress(QString currentFile, qint64 current, qint64 max)#1",
+          "start": 871,
+          "end": 883
+        },
+        {
+          "symbol": "void CModListView::onDownloadFileFinished(QString fileName)#1",
+          "start": 885,
+          "end": 891
+        },
+        {
+          "symbol": "void CModListView::extractionProgress(qint64 current, qint64 max)#1",
+          "start": 893,
+          "end": 899
+        },
+        {
+          "symbol": "void CModListView::contentExtractionProgress(QString modName, qint64 current, qint64 max)#1",
+          "start": 901,
+          "end": 909
+        },
+        {
+          "symbol": "void CModListView::downloadFinished(QStringList savedFiles, QStringList failedFiles, QStringList errors)#1",
+          "start": 911,
+          "end": 956
+        },
+        {
+          "symbol": "void CModListView::showExternalProgress(const QString & format, int current, int max)#1",
+          "start": 958,
+          "end": 964
+        },
+        {
+          "symbol": "void CModListView::hideExternalProgress()#1",
+          "start": 966,
+          "end": 974
+        },
+        {
+          "symbol": "void CModListView::hideProgressBar()#1",
+          "start": 976,
+          "end": 984
+        },
+        {
+          "symbol": "bool CModListView::askOverwriteDialog(const QString & windowTitle, const QString & message, int conflictCount, bool & applyToAll, bool & overwriteAll)#1",
+          "start": 986,
+          "end": 1025
+        },
+        {
+          "symbol": "EZipType classifyZipArchive(const std::vector<std::string> & fileList)#1",
+          "start": 1036,
+          "end": 1064
+        },
+        {
+          "symbol": "void CModListView::installFiles(QStringList files)#1",
+          "start": 1067,
+          "end": 1239
+        },
+        {
+          "symbol": "CModListView::installFiles(QStringList files)::[this, exe, &prog]()#1",
+          "start": 1208,
+          "end": 1212
+        },
+        {
+          "symbol": "CModListView::installFiles(QStringList files)::()::[&prog](float progress)#1",
+          "start": 1210,
+          "end": 1210
+        },
+        {
+          "symbol": "QString resolveSaveFileName(const QString & originalPath, const QString & realPath)#1",
+          "start": 1243,
+          "end": 1251
+        },
+        {
+          "symbol": "int countSaveConflicts(const QStringList & saves, const QString & saveDestDir)#1",
+          "start": 1253,
+          "end": 1285
+        },
+        {
+          "symbol": "bool shouldOverwriteSave(const AskOverwriteFn & askOverwrite, const QString & destinationPath, const QString & entryName)#1",
+          "start": 1287,
+          "end": 1298
+        },
+        {
+          "symbol": "void importSaveFromArchive(CModListView * view, ZipArchive & archive, const QString & realSavePath, const boost::filesystem::path & savesPath, const QString & saveDestDir, const AskOverwriteFn & askOverwrite, int & importedCount)#1",
+          "start": 1300,
+          "end": 1322
+        },
+        {
+          "symbol": "void importSingleSaveFile(CModListView * view, const QString & sourcePath, const QString & fileName, const QString & saveDestDir, const AskOverwriteFn & askOverwrite, int & importedCount)#1",
+          "start": 1324,
+          "end": 1339
+        },
+        {
+          "symbol": "void CModListView::installSaves(QStringList saves)#1",
+          "start": 1342,
+          "end": 1401
+        },
+        {
+          "symbol": "CModListView::installSaves(QStringList saves)::[this, conflictCount, &applyToAll, &overwriteAll](const QString & entryName)#1",
+          "start": 1363,
+          "end": 1371
+        },
+        {
+          "symbol": "void CModListView::installMods(QStringList archives)#1",
+          "start": 1403,
+          "end": 1524
+        },
+        {
+          "symbol": "void CModListView::installMaps(QStringList maps)#1",
+          "start": 1526,
+          "end": 1633
+        },
+        {
+          "symbol": "void CModListView::on_refreshButton_clicked()#1",
+          "start": 1635,
+          "end": 1638
+        },
+        {
+          "symbol": "void CModListView::on_abortButton_clicked()#1",
+          "start": 1640,
+          "end": 1650
+        },
+        {
+          "symbol": "void CModListView::modelReset()#1",
+          "start": 1652,
+          "end": 1655
+        },
+        {
+          "symbol": "void CModListView::checkManagerErrors()#1",
+          "start": 1657,
+          "end": 1666
+        },
+        {
+          "symbol": "void CModListView::on_tabWidget_currentChanged(int index)#1",
+          "start": 1668,
+          "end": 1671
+        },
+        {
+          "symbol": "void CModListView::loadScreenshots()#1",
+          "start": 1673,
+          "end": 1726
+        },
+        {
+          "symbol": "void CModListView::on_screenshotsList_clicked(const QModelIndex & index)#1",
+          "start": 1728,
+          "end": 1744
+        },
+        {
+          "symbol": "void CModListView::doInstallMod(const QString & modName)#1",
+          "start": 1746,
+          "end": 1756
+        },
+        {
+          "symbol": "void CModListView::doUninstallMod(const QString & modName, bool silent)#1",
+          "start": 1758,
+          "end": 1774
+        },
+        {
+          "symbol": "bool CModListView::isModAvailable(const QString & modName)#1",
+          "start": 1776,
+          "end": 1779
+        },
+        {
+          "symbol": "bool CModListView::isModEnabled(const QString & modName)#1",
+          "start": 1781,
+          "end": 1784
+        },
+        {
+          "symbol": "bool CModListView::isModInstalled(const QString & modName)#1",
+          "start": 1786,
+          "end": 1792
+        },
+        {
+          "symbol": "QStringList CModListView::getInstalledChronicles()#1",
+          "start": 1794,
+          "end": 1811
+        },
+        {
+          "symbol": "bool CModListView::isInstalledHd()#1",
+          "start": 1813,
+          "end": 1826
+        },
+        {
+          "symbol": "QStringList CModListView::getUpdateableMods()#1",
+          "start": 1828,
+          "end": 1846
+        },
+        {
+          "symbol": "QString CModListView::getTranslationModName(const QString & language)#1",
+          "start": 1848,
+          "end": 1864
+        },
+        {
+          "symbol": "void CModListView::on_allModsView_doubleClicked(const QModelIndex &index)#1",
+          "start": 1866,
+          "end": 1910
+        },
+        {
+          "symbol": "void CModListView::createNewPreset(const QString & presetName)#1",
+          "start": 1912,
+          "end": 1915
+        },
+        {
+          "symbol": "void CModListView::deletePreset(const QString & presetName)#1",
+          "start": 1917,
+          "end": 1920
+        },
+        {
+          "symbol": "void CModListView::activatePreset(const QString & presetName)#1",
+          "start": 1922,
+          "end": 1926
+        },
+        {
+          "symbol": "void CModListView::renamePreset(const QString & oldPresetName, const QString & newPresetName)#1",
+          "start": 1928,
+          "end": 1931
+        },
+        {
+          "symbol": "QStringList CModListView::getAllPresets() const#1",
+          "start": 1933,
+          "end": 1936
+        },
+        {
+          "symbol": "QString CModListView::getActivePreset() const#1",
+          "start": 1938,
+          "end": 1941
+        },
+        {
+          "symbol": "JsonNode CModListView::exportCurrentPreset() const#1",
+          "start": 1943,
+          "end": 1946
+        },
+        {
+          "symbol": "void CModListView::importPreset(const JsonNode & data)#1",
+          "start": 1948,
+          "end": 1966
         }
       ]
     },
@@ -4543,6 +6457,513 @@
       "rationale": "Constructor22–47, fillArtifacts49–62, destructor64–67 and nested [this]() lambda29–33. The lambda signature shares a physical line with connect and its closing brace shares line33 with );, so complete physical span29–33 is retained. Signal-pointer/static_cast and slot loop expressions are not extra function definitions. No function-like macro definitions.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "26018d8c67693fcb9c7589f655b259cddb3426afa74c7136ebaab8a46cac7ad5"
+    },
+    "mapeditor/mainwindow.cpp": {
+      "sha256": "a54ebfc920af710d17a89aa32cdea21fd06dcb9a62ae20f4e23b5a6bbd589e0f",
+      "review": "IR-MANUAL-EDITOR-MAINWINDOW-a54ebfc9-20261015",
+      "rationale": "Complete handwritten physical source 1\u20131942 inspected. Exact 100 callable definitions: 81 EditorMainWindow methods including constructor/destructor, four AndroidInputOffsetFix/local Accessor methods, two local RecentFileDialog methods, three free helpers, ten lambdas. Android-only constructor/eventFilter and both Accessor::set definitions at 81,83,101,115 are included. Constructor initializer lines 273\u2013276 are included in 273\u2013483; RecentFileDialog initializer 653\u2013654 is included in 653\u2013677. Nested local class methods 653\u2013677 and 679\u2013682 overlap enclosing on_actionOpenRecent_triggered 644\u2013695, with lambda 657\u2013660 inside the nested constructor. All Android/mobile/template-editor conditional branches inspected. Eight tree-sitter diagnostics at 1011 arise exclusively from const-reference type spellings inside Qt string-based SIGNAL/SLOT macro payloads, not definitions. Control flow, catch handlers, GroupCat enum, initializer braces, Qt signal addresses, calls and preprocessor directives are not independent callables; no function-like macro definitions occur. All callable symbols and spans verified against whole-source inspection; no unresolved callable syntax found. Preserve all four numeric debt records verbatim; this coverage proposal provides no numeric approval, growth waiver, ceiling exception or runtime certification.",
+      "functions": [
+        {
+          "symbol": "AndroidInputOffsetFix::AndroidInputOffsetFix(QObject * parent) : QObject(parent)#1",
+          "start": 81,
+          "end": 81
+        },
+        {
+          "symbol": "AndroidInputOffsetFix::bool eventFilter(QObject * obj, QEvent * event) override#1",
+          "start": 83,
+          "end": 123
+        },
+        {
+          "symbol": "AndroidInputOffsetFix::eventFilter(QObject * obj, QEvent * event) override::Accessor::void set(const QPointF & p)#1",
+          "start": 101,
+          "end": 101
+        },
+        {
+          "symbol": "AndroidInputOffsetFix::eventFilter(QObject * obj, QEvent * event) override::Accessor::void set(const QPointF & lp)#1",
+          "start": 115,
+          "end": 115
+        },
+        {
+          "symbol": "static void androidFinishActivity()#1",
+          "start": 126,
+          "end": 133
+        },
+        {
+          "symbol": "QJsonValue jsonFromPixmap(const QPixmap &p)#1",
+          "start": 136,
+          "end": 143
+        },
+        {
+          "symbol": "QPixmap pixmapFromJson(const QJsonValue &val)#1",
+          "start": 145,
+          "end": 151
+        },
+        {
+          "symbol": "void EditorMainWindow::loadUserSettings()#1",
+          "start": 153,
+          "end": 171
+        },
+        {
+          "symbol": "void EditorMainWindow::saveUserSettings()#1",
+          "start": 173,
+          "end": 179
+        },
+        {
+          "symbol": "void EditorMainWindow::parseCommandLine(ExtractionOptions & extractionOptions)#1",
+          "start": 181,
+          "end": 206
+        },
+        {
+          "symbol": "void EditorMainWindow::loadTranslation()#1",
+          "start": 208,
+          "end": 243
+        },
+        {
+          "symbol": "void EditorMainWindow::dragEnterEvent(QDragEnterEvent* event)#1",
+          "start": 245,
+          "end": 249
+        },
+        {
+          "symbol": "void EditorMainWindow::dropEvent(QDropEvent* event)#1",
+          "start": 251,
+          "end": 271
+        },
+        {
+          "symbol": "EditorMainWindow::EditorMainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::EditorMainWindow), controller(this)#1",
+          "start": 273,
+          "end": 483
+        },
+        {
+          "symbol": "EditorMainWindow::EditorMainWindow(QWidget* parent)::[](std::string filename, std::string message) -> bool#1",
+          "start": 310,
+          "end": 317
+        },
+        {
+          "symbol": "EditorMainWindow::EditorMainWindow(QWidget* parent)::[this, combo](int index)#1",
+          "start": 392,
+          "end": 405
+        },
+        {
+          "symbol": "EditorMainWindow::EditorMainWindow(QWidget* parent)::[&, i]()#1",
+          "start": 465,
+          "end": 465
+        },
+        {
+          "symbol": "EditorMainWindow::EditorMainWindow(QWidget* parent)::[&]()#1",
+          "start": 467,
+          "end": 467
+        },
+        {
+          "symbol": "EditorMainWindow::EditorMainWindow(QWidget* parent)::[this]()#1",
+          "start": 473,
+          "end": 477
+        },
+        {
+          "symbol": "EditorMainWindow::~EditorMainWindow()#1",
+          "start": 485,
+          "end": 489
+        },
+        {
+          "symbol": "bool EditorMainWindow::getAnswerAboutUnsavedChanges()#1",
+          "start": 491,
+          "end": 502
+        },
+        {
+          "symbol": "void EditorMainWindow::closeEvent(QCloseEvent *event)#1",
+          "start": 504,
+          "end": 520
+        },
+        {
+          "symbol": "void EditorMainWindow::setStatusMessage(const QString & status)#1",
+          "start": 522,
+          "end": 525
+        },
+        {
+          "symbol": "void EditorMainWindow::setTitle()#1",
+          "start": 527,
+          "end": 531
+        },
+        {
+          "symbol": "void EditorMainWindow::mapChanged()#1",
+          "start": 533,
+          "end": 537
+        },
+        {
+          "symbol": "void EditorMainWindow::initializeMap(bool isNew)#1",
+          "start": 539,
+          "end": 576
+        },
+        {
+          "symbol": "bool EditorMainWindow::openMap(const QString & filenameSelect)#1",
+          "start": 578,
+          "end": 612
+        },
+        {
+          "symbol": "void EditorMainWindow::openCampaign(const QString & filenameSelect)#1",
+          "start": 614,
+          "end": 617
+        },
+        {
+          "symbol": "void EditorMainWindow::updateRecentMenu(const QString & filenameSelect)#1",
+          "start": 619,
+          "end": 626
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionOpen_triggered()#1",
+          "start": 628,
+          "end": 642
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionOpenRecent_triggered()#1",
+          "start": 644,
+          "end": 695
+        },
+        {
+          "symbol": "EditorMainWindow::on_actionOpenRecent_triggered()::RecentFileDialog::RecentFileDialog(const QStringList& recentFiles, QWidget *parent) : QDialog(parent), layout(new QVBoxLayout(this)), listWidget(new QListWidget(this))#1",
+          "start": 653,
+          "end": 677
+        },
+        {
+          "symbol": "EditorMainWindow::on_actionOpenRecent_triggered()::RecentFileDialog::RecentFileDialog(const QStringList& recentFiles, QWidget *parent)::[this](QListWidgetItem *item)#1",
+          "start": 657,
+          "end": 660
+        },
+        {
+          "symbol": "EditorMainWindow::on_actionOpenRecent_triggered()::RecentFileDialog::QString getSelectedFilePath() const#1",
+          "start": 679,
+          "end": 682
+        },
+        {
+          "symbol": "void EditorMainWindow::on_menuOpenRecent_aboutToShow()#1",
+          "start": 697,
+          "end": 725
+        },
+        {
+          "symbol": "EditorMainWindow::on_menuOpenRecent_aboutToShow()::[this, file]()#1",
+          "start": 714,
+          "end": 718
+        },
+        {
+          "symbol": "void EditorMainWindow::saveMap(bool force)#1",
+          "start": 727,
+          "end": 780
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionSave_as_triggered()#1",
+          "start": 782,
+          "end": 807
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionCampaignEditor_triggered()#1",
+          "start": 809,
+          "end": 816
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionTemplateEditor_triggered()#1",
+          "start": 818,
+          "end": 827
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionNew_triggered()#1",
+          "start": 829,
+          "end": 833
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionSave_triggered()#1",
+          "start": 835,
+          "end": 844
+        },
+        {
+          "symbol": "void EditorMainWindow::currentCoordinatesChanged(int x, int y)#1",
+          "start": 846,
+          "end": 849
+        },
+        {
+          "symbol": "void EditorMainWindow::terrainButtonClicked(TerrainId terrain)#1",
+          "start": 851,
+          "end": 854
+        },
+        {
+          "symbol": "void EditorMainWindow::roadOrRiverButtonClicked(ui8 type, bool isRoad)#1",
+          "start": 856,
+          "end": 859
+        },
+        {
+          "symbol": "void EditorMainWindow::addGroupIntoCatalog(const QString & groupName, bool staticOnly)#1",
+          "start": 861,
+          "end": 871
+        },
+        {
+          "symbol": "void EditorMainWindow::addGroupIntoCatalog(const QString & groupName, bool useCustomName, bool staticOnly, int ID)#1",
+          "start": 873,
+          "end": 958
+        },
+        {
+          "symbol": "void EditorMainWindow::loadObjectsTree()#1",
+          "start": 960,
+          "end": 1170
+        },
+        {
+          "symbol": "EditorMainWindow::loadObjectsTree()::[this, terrainID=terrain->getId()]#1",
+          "start": 970,
+          "end": 970
+        },
+        {
+          "symbol": "EditorMainWindow::loadObjectsTree()::[this, roadID=road->getIndex()]#1",
+          "start": 985,
+          "end": 985
+        },
+        {
+          "symbol": "EditorMainWindow::loadObjectsTree()::[this, riverID=river->getIndex()]#1",
+          "start": 994,
+          "end": 994
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionUndo_triggered()#1",
+          "start": 1172,
+          "end": 1181
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionRedo_triggered()#1",
+          "start": 1183,
+          "end": 1192
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionPass_triggered(bool checked)#1",
+          "start": 1194,
+          "end": 1204
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionGrid_triggered(bool checked)#1",
+          "start": 1207,
+          "end": 1217
+        },
+        {
+          "symbol": "void EditorMainWindow::changeBrushState(int idx)#1",
+          "start": 1219,
+          "end": 1222
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionErase_triggered()#1",
+          "start": 1224,
+          "end": 1230
+        },
+        {
+          "symbol": "void EditorMainWindow::preparePreview(const QModelIndex &index)#1",
+          "start": 1232,
+          "end": 1248
+        },
+        {
+          "symbol": "void EditorMainWindow::treeViewSelected(const QModelIndex & index, const QModelIndex & deselected)#1",
+          "start": 1251,
+          "end": 1257
+        },
+        {
+          "symbol": "void EditorMainWindow::on_terrainFilterCombo_currentIndexChanged(int index)#1",
+          "start": 1259,
+          "end": 1275
+        },
+        {
+          "symbol": "void EditorMainWindow::on_filter_textChanged(const QString &arg1)#1",
+          "start": 1277,
+          "end": 1285
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionFill_triggered()#1",
+          "start": 1288,
+          "end": 1297
+        },
+        {
+          "symbol": "void EditorMainWindow::loadInspector(CGObjectInstance * obj, bool switchTab)#1",
+          "start": 1299,
+          "end": 1305
+        },
+        {
+          "symbol": "void EditorMainWindow::on_inspectorWidget_itemChanged(QTableWidgetItem *item)#1",
+          "start": 1307,
+          "end": 1330
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionMapSettings_triggered()#1",
+          "start": 1332,
+          "end": 1343
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionPlayers_settings_triggered()#1",
+          "start": 1346,
+          "end": 1352
+        },
+        {
+          "symbol": "QAction * EditorMainWindow::getActionPlayer(const PlayerColor & player)#1",
+          "start": 1354,
+          "end": 1365
+        },
+        {
+          "symbol": "void EditorMainWindow::switchDefaultPlayer(const PlayerColor & player)#1",
+          "start": 1367,
+          "end": 1382
+        },
+        {
+          "symbol": "void EditorMainWindow::onPlayersChanged()#1",
+          "start": 1384,
+          "end": 1401
+        },
+        {
+          "symbol": "void EditorMainWindow::enableUndo(bool enable)#1",
+          "start": 1405,
+          "end": 1408
+        },
+        {
+          "symbol": "void EditorMainWindow::enableRedo(bool enable)#1",
+          "start": 1410,
+          "end": 1413
+        },
+        {
+          "symbol": "void EditorMainWindow::onSelectionMade(int level, bool anythingSelected)#1",
+          "start": 1415,
+          "end": 1421
+        },
+        {
+          "symbol": "void EditorMainWindow::displayStatus(const QString& message, int timeout /* = 2000 */)#1",
+          "start": 1422,
+          "end": 1425
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionValidate_triggered()#1",
+          "start": 1427,
+          "end": 1430
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionUpdate_appearance_triggered()#1",
+          "start": 1433,
+          "end": 1503
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionRecreate_obstacles_triggered()#1",
+          "start": 1506,
+          "end": 1509
+        },
+        {
+          "symbol": "void EditorMainWindow::refreshLevelComboBoxes()#1",
+          "start": 1512,
+          "end": 1522
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionAddLevel_triggered()#1",
+          "start": 1524,
+          "end": 1570
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionMapLayer_triggered()#1",
+          "start": 1572,
+          "end": 1614
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionCut_triggered()#1",
+          "start": 1617,
+          "end": 1624
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionCopy_triggered()#1",
+          "start": 1627,
+          "end": 1633
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionPaste_triggered()#1",
+          "start": 1636,
+          "end": 1642
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionExport_triggered()#1",
+          "start": 1645,
+          "end": 1723
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionTranslations_triggered()#1",
+          "start": 1726,
+          "end": 1730
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionh3m_converter_triggered()#1",
+          "start": 1732,
+          "end": 1771
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionh3c_converter_triggered()#1",
+          "start": 1773,
+          "end": 1799
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionLock_triggered()#1",
+          "start": 1801,
+          "end": 1823
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionUnlock_triggered()#1",
+          "start": 1826,
+          "end": 1833
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionZoom_in_triggered()#1",
+          "start": 1836,
+          "end": 1841
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionZoom_out_triggered()#1",
+          "start": 1844,
+          "end": 1849
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionZoom_reset_triggered()#1",
+          "start": 1852,
+          "end": 1857
+        },
+        {
+          "symbol": "void EditorMainWindow::on_toolLine_toggled(bool checked)#1",
+          "start": 1860,
+          "end": 1867
+        },
+        {
+          "symbol": "void EditorMainWindow::on_toolBrush2_toggled(bool checked)#1",
+          "start": 1870,
+          "end": 1877
+        },
+        {
+          "symbol": "void EditorMainWindow::on_toolBrush_toggled(bool checked)#1",
+          "start": 1880,
+          "end": 1887
+        },
+        {
+          "symbol": "void EditorMainWindow::on_toolBrush4_toggled(bool checked)#1",
+          "start": 1890,
+          "end": 1897
+        },
+        {
+          "symbol": "void EditorMainWindow::on_toolLasso_toggled(bool checked)#1",
+          "start": 1900,
+          "end": 1907
+        },
+        {
+          "symbol": "void EditorMainWindow::on_toolArea_toggled(bool checked)#1",
+          "start": 1910,
+          "end": 1917
+        },
+        {
+          "symbol": "void EditorMainWindow::on_toolFill_toggled(bool checked)#1",
+          "start": 1920,
+          "end": 1927
+        },
+        {
+          "symbol": "void EditorMainWindow::on_toolSelect_toggled(bool checked)#1",
+          "start": 1930,
+          "end": 1937
+        },
+        {
+          "symbol": "void EditorMainWindow::on_actionExit_triggered()#1",
+          "start": 1939,
+          "end": 1942
+        }
+      ]
     },
     "mapeditor/playerparams.cpp": {
       "sha256": "3612550c17afecc63696693fc7105a2a5e0843cd109754a68daf2e86f6cd257c",
