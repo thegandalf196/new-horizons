@@ -94,6 +94,36 @@ use `tools/export_new_horizons_academy_icon_v2.py --check` with its required
 external workspace and complete pinned inputs.
 Faction-selection names are white; the existing activated border marks selection.
 
+The original badge sources used by `client/render/AssetGenerator.cpp` are:
+
+| Town variant | Size | Original animation | Normal frame | Built-today frame |
+| --- | --- | --- | --- | --- |
+| Fort | Large | ITPT | 4 | 5 |
+| Fort | Small | ITPA | 6 | 7 |
+| Village | Large | ITPT | 22 | 23 |
+| Village | Small | ITPA | 24 | 25 |
+
+Built-today is a construction state, not mouse selection. Keep the normal/built
+frame difference external; do not copy original badge pixels into the pack.
+
+## Adventure-map body revisions
+
+The v2 material edit is a historical baseline; the selected v3 body receipts
+preserve its registered master/source boxes. Use those revision manifests and
+the importer's corresponding mappings for exact identities and geometry, not
+old comparison metrics or incidental low-alpha shadow bounds. Village has a
+distinct registration from fort/capitol. Mechanical export crops the registered
+master box, fits the corresponding source box and places it on a transparent
+192×192 canvas. It does not authorize different entrances, blocked tiles or
+architecture. Runtime flags and shadows remain independent external-resource
+layers; an authored source pennant is not authority to replace those layers.
+
+Both map exporters require a complete external project-shaped `--private-root`,
+including in `--check` mode. v3 also requires its complete pinned v2 baseline.
+Exports and comparison reports belong only in that private workspace. Source
+prompts, old pixel-difference metrics and offline comparisons are not rendered
+acceptance or a way to reconstruct missing masters from selected runtime art.
+
 ## Bounded town revisions
 
 The Village Hall revision mechanically crops the generated master's alpha bounds
@@ -124,6 +154,10 @@ exporters require explicit external `--private-root` inputs even in check mode.
   masks and upgrade replacement. The joined guild/wall preview does not itself
   define every Mage Guild stage. Keep puzzle piece positions/reveal order and
   construction/campaign frame mappings, including intentional repeated frames.
+- Puzzle positions and reveal order remain inherited from
+  `config/factions/tower.json`'s `puzzleMap.pieces`. Academy changes only the
+  resource prefix in its faction patch; a historical authoring copy is not a
+  second source of that ordering.
 - Static illustrations do not certify complete animation coverage. Register
   frames deliberately; do not accidentally mix revised first frames with old
   snowy later frames. Test siege gate/wall damage states, shooter occlusion,
