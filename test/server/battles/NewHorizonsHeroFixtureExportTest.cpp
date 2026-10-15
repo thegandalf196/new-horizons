@@ -548,6 +548,93 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryCapabilityOnlyIdentityCon
 	ASSERT_NE(exported.loadMap(ResourcePath(name), gameState().get()), nullptr);
 }
 
+TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryFactionBrowsersWithNearbyExperienceQuest)
+{
+	const auto * enabled = std::getenv("NH_EXPORT_HERO_FACTION_BROWSER_FIXTURE");
+	if(!enabled || std::string(enabled) != "1")
+		GTEST_SKIP() << "Private opt-in export requires NH_EXPORT_HERO_FACTION_BROWSER_FIXTURE=1";
+	if(!newHorizonsHeroes::usesRules(LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS)))
+		GTEST_SKIP() << "Requires the activated New Horizons preset; no fixture rule overrides";
+	const JsonNode canonical(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode canonicalPerks(JsonPath::builtin("config/newHorizonsPerks"));
+	const HeroTypeID lorelei(HeroTypeID::decode("core:lorelei"));
+	const HeroTypeID bron(HeroTypeID::decode("core:bron"));
+	const HeroTypeID thunar(HeroTypeID::decode("core:thunar"));
+	const std::string name = "NHFactionBrowsersXP";
+	using Builder = TinyH3M::TinyH3MBuilder;
+	Builder builder(EMapFormat::SOD);
+	builder.size(36, false).name(name)
+		.description("Presentation diagnostic, not a balanced scenario. Red owns fresh Lorelei, Bron and Thunar "
+			"with ordinary authored starts: no map Skill, perk, primary, experience, army or book overrides. "
+			"Open each hero and click its faction Skill ICON to browse Shroud, Bulwark and Elemental Rebirth. "
+			"The catalogue paints normal frame0 at24px; locked cards do not test disabled frames. "
+			"Lorelei may visit the nearby Seer Hut east at19,10 for1000XP via ordinary dialogue. "
+			"Inspect the actual R2 level-up and accept one legal choice; no particular perk painting is guaranteed.")
+		.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+		.town({8, 10, 0}, FactionID::DUNGEON, PlayerColor(0)).townGarrison({})
+		.town({30, 30, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({})
+		// Omit every hero customisation setter: preserve the default sentinel.
+		.hero({17, 10, 0}, lorelei, PlayerColor(0))
+		.hero({17, 13, 0}, bron, PlayerColor(0))
+		.hero({17, 16, 0}, thunar, PlayerColor(0))
+		.seerHut({19, 10, 0}, Builder::missionHero(lorelei), Builder::rewardExperience(1000));
+	const auto expected = builder.build();
+	startWithMap(builder);
+	ASSERT_EQ(gameState()->getHeroDevelopmentRules(), canonical);
+	ASSERT_TRUE(gameState()->getPlayerState(PlayerColor(0))->isHuman());
+	ASSERT_FALSE(gameState()->getPlayerState(PlayerColor(1))->isHuman());
+	const std::array<std::pair<const char *, const char *>, 3> heroes{{
+		{"core:lorelei", "new-horizons:shroudOfMalassa"},
+		{"core:bron", "new-horizons:bulwarkOfTheMire"},
+		{"core:thunar", "new-horizons:elementalRebirth"}}};
+	for(const auto & [identity, factionSkill] : heroes)
+	{
+		SCOPED_TRACE(identity);
+		const auto * hero = gameState()->getMap().getHero(HeroTypeID(HeroTypeID::decode(identity)));
+		ASSERT_NE(hero, nullptr);
+		ASSERT_EQ(hero->getOwner(), PlayerColor(0));
+		ASSERT_EQ(hero->level, 1);
+		const auto & profile = canonical["startingSkills"]["startingDevelopmentProfiles"][identity];
+		ASSERT_EQ(hero->secSkills.size(), profile["skills"].Vector().size());
+		for(const auto & skill : profile["skills"].Vector())
+		{
+			ASSERT_EQ(hero->getPerkSkillRank(skill["skill"].String()), skill["rank"].Integer());
+		}
+		ASSERT_EQ(hero->getPerkSkillRank(factionSkill), MasteryLevel::BASIC);
+		const auto & perk = profile["startingPerks"].Vector().front();
+		ASSERT_EQ(hero->getPerkState().selected,
+			(std::vector<newHorizonsHeroes::PerkSelection>{{perk["skill"].String(), perk["perk"].String()}}));
+		ASSERT_EQ(hero->getPerkState().rules, canonicalPerks);
+		ASSERT_EQ(hero->getPerkState().rules["offerWeightPolicyVersion"].Integer(), 2);
+		ASSERT_TRUE(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()));
+		const auto & reference = canonical["skillOfferWeights"][HeroClassID::encode(hero->getHeroClassID().getNum())];
+		ASSERT_EQ(hero->getPrimaryGrowthRules()["skillOfferWeights"], reference);
+		const auto context = hero->getPerkOfferWeightContext();
+		ASSERT_EQ(context.mode, newHorizonsHeroes::PerkState::OfferWeightMode::CapturedTable);
+		ASSERT_EQ(context.referenceWeights.size(), canonicalPerks["skills"].Struct().size());
+		for(const auto & [skill, weight] : reference.Struct())
+		{
+			ASSERT_EQ(context.referenceWeights.at(skill), weight.Integer());
+		}
+	}
+	ASSERT_NE(findObjectAt({19, 10, 0}), nullptr);
+	ASSERT_EQ(builder.buildAndDump(name), expected);
+	const auto path = VCMIDirs::get().userCachePath() / "testMaps" / (name + ".h3m");
+	std::unique_ptr<gzFile_s, decltype(&gzclose)> input(gzopen(path.string().c_str(), "rb"), &gzclose);
+	ASSERT_NE(input, nullptr);
+	std::vector<uint8_t> actual;
+	std::array<uint8_t, 4096> chunk;
+	int count = 0;
+	while((count = gzread(input.get(), chunk.data(), chunk.size())) > 0)
+		actual.insert(actual.end(), chunk.begin(), chunk.begin() + count);
+	ASSERT_EQ(count, 0);
+	ASSERT_TRUE(gzeof(input.get()));
+	ASSERT_EQ(gzclose(input.release()), Z_OK);
+	ASSERT_EQ(actual, expected);
+	MapServiceTinyH3M exported(actual, nullptr);
+	ASSERT_NE(exported.loadMap(ResourcePath(name), gameState().get()), nullptr);
+}
+
 TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryKnightWithNearbyExperienceQuest)
 {
 	const auto * enabled = std::getenv("NH_EXPORT_HERO_FIXTURES");
