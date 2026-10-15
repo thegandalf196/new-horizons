@@ -69,36 +69,6 @@
       "scope": "unchanged-whole-file-parser-coverage-freeze",
       "sha256": "05c90d3c1b89d4d5406d58d9fbed19db3bfbf5db03a48f23acd3428eb67c8c21"
     },
-    "clientapp/EntryPoint.cpp": {
-      "diagnostics": [
-        {
-          "end": 518,
-          "start": 1,
-          "type": "ERROR"
-        },
-        {
-          "end": 147,
-          "start": 147,
-          "type": "ERROR"
-        },
-        {
-          "end": 366,
-          "start": 366,
-          "type": "ERROR"
-        },
-        {
-          "end": 500,
-          "start": 500,
-          "type": "ERROR"
-        }
-      ],
-      "language": "cpp",
-      "owner": "engine_engineer",
-      "reason": "Tree-sitter concrete syntax recovery: ERROR at physical lines 1-518, ERROR at physical lines 147-147, ERROR at physical lines 366-366, ERROR at physical lines 500-500. Freeze applies only while complete file bytes remain unchanged; any edit requires complete independently reviewed named-function spans.",
-      "resolution": "Assigned layer owner must establish complete named callable spans, including recovery branches or embedded scripts, before touching this source. Replace the freeze with a complete exact-hash independently reviewed manual inventory, or a characterized parser correction plus focused regression tests. The freeze does not authorize an edited file or a new size violation.",
-      "scope": "unchanged-whole-file-parser-coverage-freeze",
-      "sha256": "4bdef9fd27c73fad569ca0ba3663feffee90a050db9be17c1f9b0e3ba135540a"
-    },
     "launcher/modManager/cmodlistview_moc.cpp": {
       "diagnostics": [
         {
@@ -8864,6 +8834,78 @@
       "rationale": "Entire1013-line CRLF Inno script read, including declarative sections1-225 and all Code226-1013. Complete handwritten body inventory comprises36 Pascal Script function/procedure implementations; none nested or anonymous. Three external declarations332-333,335-336,338-339 bind existing DLL functions and contain no handwritten body; excluded consistently with body metric, not treated as empty implementations. Preprocessor #define entries87-99 are object constants; no function-like macro/#sub implementation. Declarative Setup/Languages/Files/Icons/Tasks/Registry/Run/UninstallRun tables define installer entries and command invocations, not script callable bodies. Run208/209/211 and UninstallRun216-219/222-223 explicitly carry executable process commands interpreted by installer builtins; all remain included in whole physical-file coverage, and their referenced Check/BeforeInstall/code callbacks are separately inventoried where implemented here. No arbitrary spanning of an entire table as one Pascal function or silent claim of no behavior. All36 implementation spans manually matched through complete terminating end; including nested begin/end, try/finally, repeat/until and with blocks. Maximum71 lines943-1013; file pin1013 unchanged, no new numeric unit/exception or installer execution.",
       "review": "IR-MANUAL-INSTALLERS-b29761df-20261015",
       "sha256": "0ddd0469bc1426151d011e634bb9d549b241c56191f0d8703c1be31b0cdcf20e"
+    },
+    "clientapp/EntryPoint.cpp": {
+      "sha256": "4bdef9fd27c73fad569ca0ba3663feffee90a050db9be17c1f9b0e3ba135540a",
+      "review": "IR-MANUAL-ENTRYPOINT-fdbb4da6-20261015",
+      "functions": [
+        {
+          "symbol": "static void init()#1",
+          "start": 87,
+          "end": 104
+        },
+        {
+          "symbol": "static void checkForModLoadingFailure()#1",
+          "start": 106,
+          "end": 121
+        },
+        {
+          "symbol": "static void prog_version()#1",
+          "start": 123,
+          "end": 127
+        },
+        {
+          "symbol": "static void prog_help(const po::options_description &opts)#1",
+          "start": 129,
+          "end": 139
+        },
+        {
+          "symbol": "conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1",
+          "start": 142,
+          "end": 500
+        },
+        {
+          "symbol": "[](std::string buffer, bool calledFromIngameConsole)#1",
+          "start": 243,
+          "end": 247
+        },
+        {
+          "symbol": "[&](const std::string & key, const std::string & arg)#1",
+          "start": 274,
+          "end": 280
+        },
+        {
+          "symbol": "[&](const std::string & key, const std::string & arg, si64 defaultValue)#1",
+          "start": 281,
+          "end": 287
+        },
+        {
+          "symbol": "[](const std::string & filename, const std::string & message)#1",
+          "start": 321,
+          "end": 325
+        },
+        {
+          "symbol": "[]()#1",
+          "start": 348,
+          "end": 352
+        },
+        {
+          "symbol": "[]()#2",
+          "start": 422,
+          "end": 441
+        },
+        {
+          "symbol": "[&logConfigurator]()#1",
+          "start": 443,
+          "end": 490
+        },
+        {
+          "symbol": "void handleFatalError(const std::string & message, bool terminate)#1",
+          "start": 504,
+          "end": 517
+        }
+      ],
+      "rationale": "Complete current file read1–517 including every conditional OS/SDL/threading branch. Four static helpers87–104/106–121/123–127/129–139 and fatal handler504–517. One shared entry body148–500 with mutually exclusive signatures142(wmain),144(SDL_main),146(main), conservatively inventoried once142–500 including intervening alternatives/directives, not tripled or shortened to body-only. Seven genuine nested lambdas243–247/274–280/281–287/321–325/348–352/422–441/443–490 retained exactly with original parser symbols/spans. Recovery catch495–498 is an exception-handler statement, not a callable. SDL_MAIN_HANDLED55 and SDL_MAIN_NOIMPL60 are object-like macros; no function-like macro definitions. Included SDL-generated entrypoints are not handwritten bodies in this physical file. Full13-unit coverage does not approve newly exposed359-line function or startup/thread/shutdown behavior."
     }
   },
   "schema": 1,
@@ -17261,6 +17303,16 @@
       "review": "IR-INSTALLER-NUMERIC-DEBT-070889bb-20261015",
       "rationale": "Exact existing-byte numeric debt admission only: Section \"Uninstall\"#1 at physical lines811-895 (85lines), source identical to HEAD and cf2e62f9. This is an authored NSIS executable body, not a generated/vendor exemption. Freeze exact current size/hash only; no semantic/behavior approval or permanent ceiling exception. Before editing this area, extract cohesive PATH/registry or install/uninstall task groups as appropriate and reduce the reviewed body count, or obtain a separately bounded independently reviewed deferral.",
       "owner": "engine_engineer: build and packaging"
+    },
+    "clientapp/EntryPoint.cpp::conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1": {
+      "kind": "exception",
+      "review": "IR-ENTRYPOINT-EXACT-DEBT-959aff23-20261015",
+      "lines": 359,
+      "sha256": "c250d31fe9cb871e4aa5b182126dbdac2efde6e3e550b29964293b8898f17b30",
+      "owner": "engine_engineer",
+      "review_scope": "exact-existing-content-newly-visible-numeric-debt-only",
+      "rationale": "Independently reviewed exact-content debt admission: pre-existing shared entrypoint142–500 is359 physical lines, current=HEAD=cf2e62f9. Parser recovery previously hid this unit. Not new source or semantic certification; not a permanent ceiling waiver. All existing numeric pins remain unchanged. The maintained gate requires explicit exception kind for a newly visible unit above150; Separate independent numeric review admits only these exact existing bytes, not startup/lifecycle behavior or future expansion.",
+      "deferral": "Before any affected entrypoint edit, engine owner must propose and characterize a bounded cohesive startup/configuration or lifecycle extraction preserving platform branches, initialization order, ownership, thread joins and shutdown cleanup, then reduce this exact359-line pin. No growth/rename/move inherits this record; urgent fixes need a fresh scoped independent review. No production extraction is authorized by this inventory."
     }
   }
 }
