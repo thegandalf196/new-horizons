@@ -1356,6 +1356,18 @@ void CMap::validateNewHorizonsBottomlessMindSerialization(bool supported) const
 			newHorizonsHeroes::validateBottomlessMindSerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
+void CMap::validateNewHorizonsMasterSpellwardSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsMasterSpellwardSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateMasterSpellwardSerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateMasterSpellwardSerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
 void CMap::validateNewHorizonsDruidSpecialtySerialization(bool supported) const
 {
 	if(gameSettings)

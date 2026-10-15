@@ -287,6 +287,7 @@ public:
 		newHorizonsHeroes::DruidSpecialtyKind specialty) const;
 	int64_t getHighLoreManaBonus() const;
 	int64_t getBottomlessMindManaBonus() const;
+	int getMasterSpellwardExtraBasisPoints(int ordinaryBasisPoints) const;
 	/// Only the captured exact native Daremyth producer contributes this Luck.
 	int getFortuneChildLuckBonus() const;
 	int getArcanePreparationPercent() const;
@@ -748,6 +749,9 @@ public:
 			newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 		if(h.saving)
+			newHorizonsHeroes::validateMasterSpellwardSerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SPELLWARD));
+		if(h.saving)
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
@@ -904,6 +908,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
 				newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
+				newHorizonsHeroes::validateMasterSpellwardSerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SPELLWARD));
 				newHorizonsHeroes::validateRemainingStartSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,

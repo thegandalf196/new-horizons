@@ -2052,7 +2052,8 @@ int CBattleInfoCallback::battleGetPerkMagicalReductionBasisPoints(const battle::
 	// units all use the same current-controller query.
 	const auto * controllerHero = battleGetOwnerHero(unit);
 	return controllerHero && controllerHero->hasActivePerk(WARCASTING_SKILL_ID, SPELLWARD_PERK_ID)
-		? SPELLWARD_REDUCTION_BASIS_POINTS : 0;
+		? SPELLWARD_REDUCTION_BASIS_POINTS
+			+ controllerHero->getMasterSpellwardExtraBasisPoints(SPELLWARD_REDUCTION_BASIS_POINTS) : 0;
 }
 
 bool CBattleInfoCallback::battleCanTriggerHeroOrderBrace(const battle::Unit * attacker,

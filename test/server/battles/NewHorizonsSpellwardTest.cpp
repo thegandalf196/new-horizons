@@ -13,12 +13,18 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/battle/BattleLayout.h"
+#include "../../../lib/modding/IdentifierStorage.h"
+#include "../../../lib/modding/ModScope.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapping/CMap.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../../lib/networkPacks/PacksForLobby.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
@@ -419,4 +425,226 @@ TEST_F(NewHorizonsSpellwardTest, SpellwardDoesNotTurnIntoSpellResistanceOrReduce
 	EXPECT_GE(actualDamage, ordinaryDamage.min);
 	EXPECT_LE(actualDamage, ordinaryDamage.max)
 		<< "Spellward protects only magical damage; an ordinary creature attack stays in its normal range";
+}
+
+namespace
+{
+class MasterSpellwardTest : public NewHorizonsSpellwardTest
+{
+protected:
+	virtual bool captureMasterSpellward() const { return true; }
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(!captureMasterSpellward())
+			rules.Struct().erase("masterSpellwardSpecialty");
+		rules.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+	void prepareMaster(bool combat = true)
+	{
+		// Real DEFAULT identities/profiles, not post-initialization replacement or
+		// the generic damage fixture's makeNeutral/legacy capture.
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).name("Master Spellward")
+			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:straker")), PlayerColor(0))
+			.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:thorgrim")), PlayerColor(1));
+		startWithMap(std::move(builder));
+		server.gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(server, gameState());
+		attackerSideHero = findHeroByOwner(PlayerColor(0));
+		defenderSideHero = findHeroByOwner(PlayerColor(1));
+		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_NE(defenderSideHero, nullptr);
+		ASSERT_EQ(defenderSideHero->getHeroType()->getJsonKey(), "core:thorgrim");
+		ASSERT_EQ(defenderSideHero->getSecSkillLevel(warcasting()), MasteryLevel::ADVANCED);
+		ASSERT_TRUE(defenderSideHero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
+		ASSERT_TRUE(newHorizonsHeroes::usesSkillOfferWeights(defenderSideHero->getPrimaryGrowthRules()));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
+		// The foreign default Spellward hero also supplies the controlled paid
+		// Magic Arrow witness; these caster grants are not starting-book claims.
+		if(!attackerSideHero->getArt(ArtifactPosition::SPELLBOOK))
+			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		attackerSideHero->removeAllSpells();
+		attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+		ASSERT_NE(attackerSideHero->getArt(ArtifactPosition::SPELLBOOK), nullptr);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+		if(!combat)
+			return;
+		startBattle();
+		removeDeployedUnits();
+		attackerCaster = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 1000);
+		protectedStack = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(rightHex), 10000);
+		independentlyProtectedStack = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 10000);
+		cappedStack = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(14, 5), 10000);
+		ASSERT_NE(attackerCaster, nullptr);
+		ASSERT_NE(protectedStack, nullptr);
+		ASSERT_NE(independentlyProtectedStack, nullptr);
+		ASSERT_NE(cappedStack, nullptr);
+		independentlyProtectedStack->addNewBonus(spellDamageReduction(50));
+		cappedStack->addNewBonus(spellDamageReduction(95));
+		beginCombat();
+	}
+	void setThorgrimWarcasting(int rank)
+	{
+		SetSecSkill change;
+		change.id = defenderSideHero->id;
+		change.which = warcasting();
+		change.val = rank;
+		change.mode = ChangeValueMode::ABSOLUTE;
+		gameHandler->sendAndApply(change);
+	}
+};
+
+class MasterSpellwardAbsentTest : public MasterSpellwardTest
+{
+protected:
+	bool captureMasterSpellward() const override { return false; }
+};
+}
+
+TEST_F(MasterSpellwardTest, RealThorgrimScalesOneSpellwardSourceAndPaidDamageMatchesProjection)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareMaster());
+	const auto raw = rawDamage(attackerSideHero);
+	ASSERT_GT(raw, 0);
+	// Preserve the complete live unit state after the documented retaliation-cap
+	// getter latch, rather than claiming cold-cache bitwise immutability.
+	const auto * state = dynamic_cast<const battle::CUnitState *>(protectedStack);
+	ASSERT_NE(state, nullptr);
+	(void)state->counterAttacks.total();
+	const auto liveBefore = protectedStack->acquireState()->save();
+	const auto normalBefore = attackerSideHero->getNormalSpellPoints();
+	const auto bufferBefore = attackerSideHero->getBufferSpellPoints();
+	for(const auto & [level, reduction] : {std::pair{1u, 1050}, {10u, 1500}, {20u, 2000}, {40u, 2000}})
+	{
+		SCOPED_TRACE(level);
+		defenderSideHero->level = level;
+		EXPECT_EQ(battle()->battleGetPerkMagicalReductionBasisPoints(protectedStack), reduction);
+		CMemorySerializer before;
+		before.oser & *gameHandler->randomizer;
+		const auto expected = raw * (10000 - reduction) / 10000;
+		EXPECT_EQ(forecastDamage(attackerSideHero, battle(), protectedStack), expected);
+		const auto detached = detachedDamage(attackerSideHero, protectedStack);
+		EXPECT_EQ(detached.forecast, expected);
+		EXPECT_EQ(detached.applied, expected);
+		CMemorySerializer after;
+		after.oser & *gameHandler->randomizer;
+		EXPECT_EQ(after.extractBuffer(), before.extractBuffer());
+		EXPECT_EQ(protectedStack->acquireState()->save(), liveBefore);
+		EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalBefore);
+		EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBefore);
+	}
+	// At the cap there is ONE20% Spellward source, not two independent10% layers.
+	EXPECT_EQ(forecastDamage(attackerSideHero, battle(), independentlyProtectedStack), raw * 40 / 100);
+	EXPECT_EQ(forecastDamage(attackerSideHero, battle(), cappedStack), raw * 5 / 100);
+	EXPECT_EQ(attackerSideHero->getMasterSpellwardExtraBasisPoints(1000), 0);
+	EXPECT_EQ(battle()->battleGetPerkMagicalReductionBasisPoints(attackerCaster), 1000);
+	const auto healthBefore = protectedStack->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(castPaid(BattleSide::ATTACKER, attackerCaster, SpellID::MAGIC_ARROW, protectedStack));
+	EXPECT_EQ(healthBefore - protectedStack->getAvailableHealth(), raw * 80 / 100);
+	EXPECT_LT(attackerSideHero->getManaAvailable(), manaBefore);
+	setThorgrimWarcasting(MasteryLevel::NONE);
+	EXPECT_EQ(battle()->battleGetPerkMagicalReductionBasisPoints(protectedStack), 0);
+	setThorgrimWarcasting(MasteryLevel::ADVANCED);
+	EXPECT_EQ(battle()->battleGetPerkMagicalReductionBasisPoints(protectedStack), 2000);
+}
+
+TEST_F(MasterSpellwardTest, CurrentWorldKeepsPolicyAndUnsupportedEnclosingWritersRefuseBeforePrefix)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareMaster(false));
+	defenderSideHero->level = 10;
+	const auto rules = defenderSideHero->getPrimaryGrowthRules();
+	const auto saved = gameState()->saveToMemory(); // world only; no mid-battle save claim.
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * hero = restored.getHero(defenderSideHero->id);
+	ASSERT_NE(hero, nullptr);
+	EXPECT_EQ(hero->getPrimaryGrowthRules(), rules);
+	EXPECT_EQ(hero->getMasterSpellwardExtraBasisPoints(1000), 500);
+	EXPECT_TRUE(hero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
+	const auto reject = [](auto & value)
+	{
+		CMemorySerializer wire;
+		wire.oser.version = ESerializationVersion::NEW_HORIZONS_BOTTOMLESS_MIND;
+		EXPECT_THROW(value.serialize(wire.oser), std::runtime_error);
+		EXPECT_TRUE(wire.extractBuffer().empty());
+	};
+	reject(*defenderSideHero);
+	GameSettings settings;
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, gameState()->getHeroDevelopmentRules());
+	reject(settings);
+	reject(gameState()->getMap());
+	reject(*gameState());
+	LobbyStartGame lobby;
+	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
+	lobby.initializedGameState = gameState();
+	reject(lobby);
+}
+
+TEST_F(MasterSpellwardAbsentTest, OlderWorldAbsenceRemainsOrdinarySpellwardWithoutInstalledFallback)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareMaster(false));
+	defenderSideHero->level = 20;
+	EXPECT_EQ(defenderSideHero->getMasterSpellwardExtraBasisPoints(1000), 0);
+	CMemorySerializer wire;
+	wire.oser.version = ESerializationVersion::NEW_HORIZONS_BOTTOMLESS_MIND;
+	wire.iser.version = wire.oser.version;
+	ASSERT_NO_THROW(wire.oser & *gameState());
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	wire.iser.loadingGamestate = true;
+	wire.iser.cb = &restored;
+	ASSERT_NO_THROW(wire.iser & restored);
+	const auto * hero = restored.getHero(defenderSideHero->id);
+	ASSERT_NE(hero, nullptr);
+	ASSERT_EQ(hero->getHeroType()->getJsonKey(), "core:thorgrim");
+	ASSERT_EQ(hero->level, 20);
+	ASSERT_EQ(hero->getSecSkillLevel(warcasting()), MasteryLevel::ADVANCED);
+	ASSERT_TRUE(hero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
+	ASSERT_FALSE(hero->getPrimaryGrowthRules().Struct().contains("masterSpellwardSpecialty"));
+	EXPECT_EQ(hero->getMasterSpellwardExtraBasisPoints(1000), 0);
+	const auto * restoredAttacker = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(restoredAttacker, nullptr);
+	ASSERT_EQ(restoredAttacker->getHeroType()->getJsonKey(), "core:straker");
+	// Start an actual battle in the restored world with its restored DEFAULT
+	// armies. Do not query the original fixture's callback as a load oracle.
+	const int3 tile(4, 4, 0);
+	const auto terrain = restored.getTile(tile)->getTerrainID();
+	const auto layout = BattleLayout::createDefaultLayout(restored, restoredAttacker, hero);
+	const std::string battlefieldName = "core:sand_shore";
+	const auto battlefieldId = LIBRARY->identifiers()->getIdentifier(
+		ModScope::scopeGame(), "battlefield", battlefieldName);
+	ASSERT_TRUE(battlefieldId);
+	BattleSideArray<const CArmedInstance *> armies = {restoredAttacker, hero};
+	BattleSideArray<const CGHeroInstance *> heroes = {restoredAttacker, hero};
+	BattleStart start;
+	start.battleID = restored.nextBattleID;
+	const auto restoredBattleId = start.battleID;
+	start.info = BattleInfo::setupBattle(&restored, tile, terrain, BattleField(*battlefieldId),
+		armies, heroes, layout, nullptr);
+	ASSERT_NE(start.info, nullptr);
+	restored.apply(start);
+	const auto * restoredBattle = restored.getBattle(restoredBattleId);
+	ASSERT_NE(restoredBattle, nullptr);
+	const battle::Unit * target = nullptr;
+	for(const auto * unit : restoredBattle->battleGetAllUnits(false))
+		if(unit->unitSide() == BattleSide::DEFENDER && unit->alive() && !unit->isTurret())
+		{
+			target = unit;
+			break;
+		}
+	ASSERT_NE(target, nullptr);
+	ASSERT_EQ(restoredBattle->battleGetOwnerHero(target), hero);
+	EXPECT_EQ(restoredBattle->battleGetPerkMagicalReductionBasisPoints(target), 1000);
 }

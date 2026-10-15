@@ -260,11 +260,13 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_BOTTOMLESS_MIND,
 
+	NEW_HORIZONS_MASTER_SPELLWARD,
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_BOTTOMLESS_MIND,
+	CURRENT = NEW_HORIZONS_MASTER_SPELLWARD,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION > ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES,
@@ -523,3 +525,6 @@ static_assert(ESerializationVersion::NEW_HORIZONS_REDUCED_EXTRA_ACTIVATION > ESe
 
 static_assert(ESerializationVersion::NEW_HORIZONS_BOTTOMLESS_MIND > ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION,
 	"Bottomless Mind must remain append-only");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD > ESerializationVersion::NEW_HORIZONS_BOTTOMLESS_MIND,
+	"Master Spellward must remain append-only");
