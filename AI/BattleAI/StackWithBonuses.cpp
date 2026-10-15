@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
+#include "../../lib/battle/OrderActionTransition.h"
 #include "StackWithBonuses.h"
 #include "NewHorizonsHexOfPain.h"
 #include "../../lib/battle/BattleInfo.h"
@@ -1891,7 +1892,7 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 			return {};
 		const auto crisisFilter = [this, side](const HeroActionAllowanceState::Grant & grant)
 			{ return crisisCommand.allowsGrant(side, grant); };
-		const auto selection = nextLedger.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, projectedRound, crisisFilter);
+		const auto selection = orderActionTransition::select(nextLedger, projectedRound, crisisFilter);
 		if(!selection)
 			return {};
 		if(selection->allowance == HeroActionAllowanceState::AllowanceKind::HERO
@@ -1899,8 +1900,7 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 			&& !doubleCommandStates.at(side).used
 			&& heroCommands::hasDoubleCommand(battleGetFightingHero(side)))
 			return {};
-		const auto receipt = nextLedger.consumeAllowance(selection->grantId,
-			HeroActionAllowanceState::ActionKind::ORDER, projectedRound, crisisFilter);
+		const auto receipt = orderActionTransition::consume(nextLedger, selection->grantId, projectedRound, crisisFilter);
 		if(!receipt)
 			return {};
 		return ProjectedOrderAllowance{{side, *receipt, true, projectedActionEpochs.at(side)},
@@ -2193,7 +2193,7 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 	if(resolvingPreCombatOrder)
 		preCombatOrder.complete();
 	else if(resolvingDoubleCommand)
-		doubleCommand.completeFollowup(command);
+		doubleCommand = orderActionTransition::completeDoubleCommand(doubleCommand, command);
 	else if(projectingCommand && action.typedLedger && action.isHeroAction())
 	{
 		const auto * hero = battleGetFightingHero(side);
@@ -2204,9 +2204,11 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 			? active->unitId() : DoubleCommandState::INVALID_UNIT_ID;
 		const uint32_t deferredTarget = command == HeroCommand::SECOND_WIND && commandTargets.size() == 1
 			? commandTargets.front() : DoubleCommandState::INVALID_UNIT_ID;
-		if(doubleCommand.begin(action.receipt, heroCommands::hasDoubleCommand(hero), command,
-			projectedRound, anchor, deferredTarget))
+		const auto nextDoubleCommand = orderActionTransition::preparePrimaryDoubleCommand(
+			doubleCommand, action.receipt, heroCommands::hasDoubleCommand(hero), command, projectedRound, anchor, deferredTarget);
+		if(nextDoubleCommand)
 		{
+			doubleCommand = *nextDoubleCommand;
 			auto & allowances = heroActionAllowances.at(side);
 			allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
 				HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND, projectedRound);
@@ -2221,12 +2223,7 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 				});
 			if(!hasDistinctAlternative)
 			{
-				doubleCommand.exhaustPendingOrder();
-				std::erase_if(allowances.grants, [this](const HeroActionAllowanceState::Grant & grant)
-				{
-					return grant.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND
-						&& grant.grantedRound == projectedRound;
-				});
+				orderActionTransition::exhaustDoubleCommand(doubleCommand, allowances, projectedRound);
 			}
 		}
 	}

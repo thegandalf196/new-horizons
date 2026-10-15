@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
+#include "../../lib/battle/OrderActionTransition.h"
 #include "BattleActionProcessor.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
@@ -3443,17 +3444,16 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 					gameHandler->complain("Double Command follow-up has no matching continuation grant");
 					return false;
 				}
-				auto next = currentDoubleCommand;
 				try
 				{
-					next.completeFollowup(ba.command);
+					preparedDoubleCommandState = orderActionTransition::completeDoubleCommand(
+						currentDoubleCommand, ba.command);
 				}
 				catch(const std::exception &)
 				{
 					gameHandler->complain("Double Command follow-up Order is invalid");
 					return false;
 				}
-				preparedDoubleCommandState = std::move(next);
 			}
 			else if(!currentDoubleCommand.used && selected
 				&& selected->allowance == HeroActionAllowanceState::AllowanceKind::HERO
@@ -3470,14 +3470,11 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 					gameHandler->complain("Double Command has no accepted acting stack");
 					return false;
 				}
-				const HeroActionAllowanceState::Receipt receipt{selected->grantId,
-					HeroActionAllowanceState::ActionKind::ORDER, selected->allowance, selected->source,
-					battle.battleGetRound(), {}};
-				auto next = currentDoubleCommand;
+				const auto receipt = orderActionTransition::provisionalReceipt(*selected, battle.battleGetRound());
 				const auto deferredTarget = ba.command == HeroCommand::SECOND_WIND
 					? preparedOrderState->primaryTargetUnitId : DoubleCommandState::INVALID_UNIT_ID;
-				if(next.begin(receipt, true, ba.command, battle.battleGetRound(), anchor->unitId(), deferredTarget))
-					preparedDoubleCommandState = std::move(next);
+				preparedDoubleCommandState = orderActionTransition::preparePrimaryDoubleCommand(
+					currentDoubleCommand, receipt, true, ba.command, battle.battleGetRound(), anchor->unitId(), deferredTarget);
 			}
 		}
 	}

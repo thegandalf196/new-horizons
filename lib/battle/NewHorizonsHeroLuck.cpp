@@ -8,6 +8,7 @@
 #include "IBattleState.h"
 #include "HeroActionAllowanceState.h"
 #include "NewHorizonsHeroicSpirit.h"
+#include "OrderActionTransition.h"
 #include "NewHorizonsDivineMandate.h"
 
 #include "../json/JsonNode.h"
@@ -87,8 +88,7 @@ bool projectOrderAllowance(const CBattleInfoCallback & battle, BattleSide side,
 		return battle.getBattle()->getCrisisCommandState().allowsGrant(side, grant)
 			&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
 	};
-	const auto receipt = projected.consumeAllowance(selected->grantId,
-		HeroActionAllowanceState::ActionKind::ORDER, battle.battleGetRound(), filter);
+	const auto receipt = orderActionTransition::consume(projected, selected->grantId, battle.battleGetRound(), filter);
 	if(!receipt)
 		throw std::runtime_error("Order allowance changed during projection");
 	const auto * hero = battle.battleGetFightingHero(side);
@@ -101,16 +101,8 @@ bool projectOrderAllowance(const CBattleInfoCallback & battle, BattleSide side,
 		projected.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
 			HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND, battle.battleGetRound());
 	const bool eligible = newHorizonsHeroicSpirit::canRollOrderMorale(hero, *receipt);
-	if(eligible && !projected.canResolveHeroicSpirit(*receipt))
-		throw std::runtime_error("Heroic Spirit Order cannot fit in the remaining action allowance identity space");
 	if(eligible)
-	{
-		// Reserve the possible success on a second detached ledger too, so
-		// count/identity constraints fail before RNG even if this draw would fail.
-		auto success = projected;
-		if(!success.resolveHeroicSpirit(*receipt, true))
-			throw std::runtime_error("Heroic Spirit Order capacity cannot be reserved");
-	}
+		orderActionTransition::validateHeroicSpiritCapacity(projected, *receipt);
 	return eligible;
 }
 

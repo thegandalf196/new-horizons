@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../battle/NewHorizonsHeroicSpirit.h"
+#include "../battle/OrderActionTransition.h"
 #include "../battle/NewHorizonsHeroLuck.h"
 #include "../mapObjects/CGCreature.h"
 #include "../entities/hero/NewHorizonsDiplomacy.h"
@@ -2783,9 +2784,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				|| pack.ba.command == previousDoubleCommand.firstOrder
 				|| !selected || selected->source != HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
 				throw std::runtime_error("Canonical Order does not satisfy the pending Double Command continuation");
-			auto next = previousDoubleCommand;
-			next.completeFollowup(pack.ba.command);
-			expectedDoubleCommand = std::move(next);
+			expectedDoubleCommand = orderActionTransition::completeDoubleCommand(previousDoubleCommand, pack.ba.command);
 		}
 		else if(pack.doubleCommandState)
 		{
@@ -2797,15 +2796,13 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			// Reject allocation failure before consuming the primary Hero Action.
 			if(side.heroActionAllowances.nextGrantId == std::numeric_limits<uint32_t>::max())
 				throw std::runtime_error("Double Command allowance grant IDs are exhausted");
-			const HeroActionAllowanceState::Receipt receipt{selected->grantId,
-				HeroActionAllowanceState::ActionKind::ORDER, selected->allowance, selected->source,
-				battleContext->getRound()};
-			auto next = previousDoubleCommand;
+			const auto receipt = orderActionTransition::provisionalReceipt(*selected, battleContext->getRound());
 			const auto deferredTarget = pack.ba.command == HeroCommand::SECOND_WIND
 				? pack.orderState->primaryTargetUnitId : DoubleCommandState::INVALID_UNIT_ID;
-			if(!next.begin(receipt, true, pack.ba.command, battleContext->getRound(), anchor->unitId(), deferredTarget))
+			expectedDoubleCommand = orderActionTransition::preparePrimaryDoubleCommand(
+				previousDoubleCommand, receipt, true, pack.ba.command, battleContext->getRound(), anchor->unitId(), deferredTarget);
+			if(!expectedDoubleCommand)
 				throw std::runtime_error("Invalid Double Command primary Order transition");
-			expectedDoubleCommand = std::move(next);
 		}
 		if(pack.doubleCommandState != expectedDoubleCommand)
 			throw std::runtime_error("StartAction Double Command transition does not match its action receipt");
@@ -2882,16 +2879,14 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				return commandBattle->getCrisisCommandState().allowsGrant(pack.ba.side, grant)
 					&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
 			};
-			const auto selected = nextAllowances.eligibleAllowance(
-				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound(), orderGrantFilter);
+			const auto selected = orderActionTransition::select(nextAllowances, commandBattle->getRound(), orderGrantFilter);
 			if(!selected)
 				throw std::runtime_error("Accepted Order has no eligible action allowance");
 			if(acceptedPreCombatOrderState
 				&& (selected->allowance != HeroActionAllowanceState::AllowanceKind::ORDER
 					|| selected->source != HeroActionAllowanceState::GrantSource::BATTLE_PLAN))
 				throw std::runtime_error("Battle Plan Order has no selected dedicated allowance");
-			orderReceipt = nextAllowances.consumeAllowance(selected->grantId,
-				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound(), orderGrantFilter);
+			orderReceipt = orderActionTransition::consume(nextAllowances, selected->grantId, commandBattle->getRound(), orderGrantFilter);
 			if(!orderReceipt)
 				throw std::runtime_error("Could not commit accepted Order action allowance");
 			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
