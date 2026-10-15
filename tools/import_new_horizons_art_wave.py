@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Prepare an external additive perk/status-art wave, preserving earlier selections."""
+"""Prepare an external additive perk/status/Mass-spell art wave, preserving earlier selections."""
 import argparse
 import csv
 import hashlib
@@ -21,6 +21,9 @@ INVENTORY = 'docs/NH_UI_ASSET_INVENTORY.csv'
 PERK_RECORD = 'assets/new-horizons/perk-art-selections.json'
 STATUS_NAME = 'NH_status_arcane_breach-30.png'
 MASS_CONFIG = 'Mods/new-horizons/Content/config/spells/massVariants.json'
+MASS_SPELLS = {'massBless': 'mass-bless', 'massCurse': 'mass-curse',
+               'massSorrow': 'mass-sorrow', 'massSlow': 'mass-slow'}
+SPELL_RECORD = 'assets/new-horizons/spell-art-selections.json'
 
 
 def entries_digest(entries):
@@ -114,13 +117,98 @@ def require_unchanged_history(repo, snapshots):
         raise ValueError('Baseline history changed during preparation')
 
 
+def mass_spell_inputs(selection, roots):
+    """Read exact selected artist handoffs; no image transformation or staging."""
+    if selection is None:
+        return [], {}, {}
+    if selection.is_symlink():
+        raise ValueError('Selected Mass handoff must not be a symlink')
+    reject_artist_overlap(roots, [selection.parent])
+    raw = selection.read_bytes()
+    hashes = {selection: hashlib.sha256(raw).hexdigest()}
+    chosen = json.loads(raw)
+    if type(chosen.get('count')) is not int or chosen['count'] != 4 or len(chosen['entries']) != 4:
+        raise ValueError('Exactly four selected Mass spell identities required')
+    records, sources, seen = [], {}, set()
+    for entry in chosen['entries']:
+        key = entry['id'].removeprefix('new-horizons:')
+        if entry['id'] != 'new-horizons:' + key or key not in MASS_SPELLS or key in seen:
+            raise ValueError('Unexpected or duplicate Mass spell identity')
+        seen.add(key)
+        directory = Path(entry['directory']).resolve()
+        reject_artist_overlap(roots, [directory])
+        handoff = Path(entry['handoff'])
+        if handoff.is_symlink() or handoff.resolve() != directory / 'HANDOFF.json':
+            raise ValueError('Selected Mass handoff escaped its directory')
+        raw = handoff.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != entry['handoffSha256']:
+            raise ValueError('Selected Mass handoff changed or escaped its directory')
+        evidence = json.loads(raw)
+        hashes[handoff] = hashlib.sha256(raw).hexdigest()
+        if evidence['id'] != entry['id']:
+            raise ValueError('Mass artist identity mismatch')
+        exports = {row['file']: row for row in evidence['exports']}
+        if len(exports) != len(evidence['exports']):
+            raise ValueError('Duplicate Mass export filename')
+        stem = 'NH_spell_' + MASS_SPELLS[key].replace('-', '_')
+        bindings = {role: stem + '-' + str(size) + '.png' for role, size in spells.ROLES.items()}
+        if entry['proposedBindings'] != bindings:
+            raise ValueError('Mass roles must be the exact44/32/30 mapping')
+        native = {}
+        for size in (44, 32, 30):
+            source = directory / (MASS_SPELLS[key] + '-' + str(size) + '.png')
+            expected = exports[source.name]['sha256']
+            if source.is_symlink():
+                raise ValueError('Mass native symlink refused')
+            raw = source.read_bytes()
+            if hashlib.sha256(raw).hexdigest() != expected:
+                raise ValueError('Pinned Mass native export changed')
+            with Image.open(io.BytesIO(raw)) as image:
+                if image.mode != 'RGBA' or image.size != (size, size) or image.getchannel('A').getextrema() != (0, 255):
+                    raise ValueError('Incorrect Mass native dimensions or transparent RGBA')
+            filename = stem + '-' + str(size) + '.png'
+            sources[filename] = source
+            native[filename] = {'sha256': expected, 'size': size}
+            hashes[source] = expected
+        references = {'master': directory / 'master.png', 'prompt': directory / 'PROMPT-AND-PROVENANCE.md',
+                      'review': directory / 'REVIEW.md', 'comparison': directory / (MASS_SPELLS[key] + '-comparison.png'),
+                      'exportManifest': directory / 'EXPORT-MANIFEST.json'}
+        for path in references.values():
+            if path.is_symlink() or not path.resolve().is_relative_to(directory):
+                raise ValueError('Mass provenance path escaped selected directory')
+        for role in ('master', 'comparison'):
+            if perks.digest(references[role]) != exports[references[role].name]['sha256']:
+                raise ValueError('Pinned Mass master/comparison changed')
+        exported = json.loads(references['exportManifest'].read_bytes())
+        manifest_exports = {row['file']: row['sha256'] for row in exported['outputs']}
+        if len(manifest_exports) != len(exported['outputs']) or any(manifest_exports.get(name) != row['sha256'] for name, row in exports.items()):
+            raise ValueError('Mass handoff/export manifest disagree')
+        for path in [handoff, *references.values()]:
+            if path.is_symlink() or not path.resolve().is_relative_to(directory):
+                raise ValueError('Mass provenance path escaped selected directory')
+            value = perks.digest(path)
+            if path in hashes and hashes[path] != value:
+                raise ValueError('Selected Mass inputs changed during validation')
+            hashes[path] = value
+        records.append({'id': entry['id'], 'config': MASS_CONFIG, 'bindings': bindings,
+            'resources': ['SPRITES/' + name for name in native], 'exports': native,
+            'handoffSha256': entry['handoffSha256'], 'selectionHandoffSha256': hashes[selection],
+            **{role + 'Sha256': hashes[path] for role, path in references.items()},
+            'origin': 'original-generated-purpose-made-mass-spell-symbol',
+            'selection': 'user-authorized-provisional-runtime-2026-10-14',
+            'approval': 'Provisional; not Final; rendered acceptance pending'})
+    return records, sources, hashes
+
+
 def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scenario=False,
-            *, expected_ledger_sha256=None, bootstrap_no_ledger=False):
+            *, expected_ledger_sha256=None, bootstrap_no_ledger=False, mass_spell_handoff=None):
     roots = [path.resolve() for path in (work, output)]
     if any(path.exists() or path.is_symlink() or path.resolve().is_relative_to(repo.resolve())
            for path in (work, output)) or roots[0].is_relative_to(roots[1]) or roots[1].is_relative_to(roots[0]):
         raise ValueError('Fresh nonoverlapping external preparation/output directories required')
     status_handoffs = [status_handoff] if isinstance(status_handoff, Path) else (status_handoff or [])
+    if mass_spell_handoff is not None and (status_handoffs or mass_regeneration_scenario):
+        raise ValueError('Prepare Mass selection separately from status/scenario-reuse inputs')
     reject_artist_overlap(roots, [path.parent for path in [*handoffs, *status_handoffs]])
     baseline = nhart.verify(repo / spells.ARCHIVE, repo / spells.MANIFEST)
     archive_hash, manifest_hash = perks.digest(repo / spells.ARCHIVE), perks.digest(repo / spells.MANIFEST)
@@ -129,7 +217,7 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
     # Metadata is a single baseline epoch too, not just the package payload.
     metadata = {name: (repo / name).read_bytes() for name in (spells.MANIFEST, HEADER, INVENTORY)}
     metadata.update(history)
-    for name in (spells.CONFIG, MASS_CONFIG, 'config/newHorizonsPerks.json'):
+    for name in (spells.CONFIG, MASS_CONFIG, 'config/newHorizonsPerks.json', SPELL_RECORD):
         metadata[name] = history_bytes(repo / name)
     plan_rows, seen, handoff_hashes = [], set(), []
     for handoff in handoffs:
@@ -178,8 +266,9 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
                 'selection': 'user-authorized-provisional-perk-drafts-2026-10-14', 'approval': 'Provisional; no Final approval',
                 'resources': ['SPRITES/' + stem + suffix for suffix in (
                     '.png', '_32.png', '.json', '_normal.png', '_pressed.png', '_disabled.png', '_highlighted.png')]})
-    if not plan_rows:
+    if not plan_rows and mass_spell_handoff is None:
         raise ValueError('No completed perk inputs')
+    mass_records, mass_sources, mass_hashes = mass_spell_inputs(mass_spell_handoff, roots)
     status_records, status_sources = [], {}
     original_config = spells.parse_jsonc((repo / spells.CONFIG).read_text(encoding='utf-8'))
     for status_handoff in status_handoffs:
@@ -237,13 +326,36 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
     work.mkdir(parents=True)
     plan = {'entries': plan_rows, 'blocked': [], 'verifiedCount': len(plan_rows),
             'baselineArchiveSha256': archive_hash, 'baselineManifestSha256': manifest_hash,
-            'handoffSha256': handoff_hashes[0], 'additiveHandoffSha256': handoff_hashes[-1]}
+            'handoffSha256': handoff_hashes[0] if handoff_hashes else perks.digest(mass_spell_handoff),
+            'additiveHandoffSha256': handoff_hashes[-1] if handoff_hashes else perks.digest(mass_spell_handoff)}
     plan_path = work / 'private-plan.json'; plan_path.write_text(json.dumps(plan, indent=2), encoding='utf-8')
     # This maintained importer prepares only external outputs. Its temporary
     # standalone selection record is consumed below, never replacing the94 proof.
     perk_output, stage = work / 'perk-output', work / 'staging'
-    perks.import_art(repo, plan_path, stage, work / 'recovery', perk_output)
-    manifest = json.loads((perk_output / spells.MANIFEST).read_text(encoding='utf-8'))
+    if plan_rows:
+        perks.import_art(repo, plan_path, stage, work / 'recovery', perk_output)
+        manifest = json.loads((perk_output / spells.MANIFEST).read_text(encoding='utf-8'))
+        perk_records = json.loads((perk_output / PERK_RECORD).read_text(encoding='utf-8'))['entries']
+        header_text = (perk_output / HEADER).read_text(encoding='utf-8')
+        inventory_text = (perk_output / INVENTORY).read_text(encoding='utf-8')
+    else:
+        # A Mass-only wave has no fabricated perk handoff/standalone record.
+        recovery = work / 'recovery'; recovery.mkdir()
+        for name in (spells.ARCHIVE, spells.MANIFEST):
+            shutil.copyfile(repo / name, recovery / Path(name).name)
+        stage.mkdir()
+        manifest = json.loads(metadata[spells.MANIFEST])
+        index = {row['resource']: row for row in baseline['entries']}
+        with (repo / spells.ARCHIVE).open('rb') as stream:
+            for row in manifest['entries']:
+                target = stage / row['source']; target.parent.mkdir(parents=True, exist_ok=True)
+                stream.seek(index[row['resource']]['offset'])
+                target.write_bytes(stream.read(row['size']))
+                if perks.digest(target) != row['sha256']:
+                    raise ValueError('Mass-only baseline extraction changed bytes')
+        perk_records = []
+        header_text = metadata[HEADER].decode('utf-8')
+        inventory_text = metadata[INVENTORY].decode('utf-8')
     config_text = (repo / spells.CONFIG).read_text(encoding='utf-8')
     for status_record in status_records:
         filename = status_record['bindings']['iconEffect']
@@ -278,6 +390,28 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
                    'bindings': {'iconScenarioBonus': filename}, 'previousBindings': {'iconScenarioBonus': previous},
                    'nonGraphicsConfigSha256': non_status_config_digest(spells.parse_jsonc(mass_text),
                        [{'id': 'new-horizons:massRegeneration', 'bindings': {'iconScenarioBonus': filename}}])}]
+    if mass_records:
+        mass_text = mass_text if mass_text is not None else (repo / MASS_CONFIG).read_text(encoding='utf-8')
+        before_mass = spells.parse_jsonc(mass_text)
+        identities = {nhart.resource_identity(row['resource']) for row in manifest['entries']}
+        for row in mass_records:
+            key = row['id'].split(':')[1]
+            row['previousBindings'] = {role: before_mass[key]['graphics'][role] for role in row['bindings']}
+            for filename, native in row['exports'].items():
+                identity = nhart.resource_identity('SPRITES/' + filename)
+                if identity in identities:
+                    raise ValueError('Mass spell resource collision')
+                identities.add(identity)
+                target = stage / 'Mods/new-horizons/Images' / filename
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(mass_sources[filename], target)
+                manifest['entries'].append({'resource': 'SPRITES/' + filename,
+                    'source': 'Mods/new-horizons/Images/' + filename, 'size': target.stat().st_size,
+                    'sha256': native['sha256'], 'family': 'builtin-skills-perks-orders-and-ui',
+                    **{key: row[key] for key in ('origin', 'selection', 'approval')}})
+            mass_text = spells.replace_graphics(mass_text, key, row['bindings'])
+        if non_status_config_digest(before_mass, mass_records) != non_status_config_digest(spells.parse_jsonc(mass_text), mass_records):
+            raise ValueError('Mass edit changed non-owned configuration')
     manifest['requiredFamilyCounts'] = {family: sum(row['family'] == family for row in manifest['entries'])
                                        for family in manifest['requiredFamilies']}
     candidate = work / 'candidate.nhart'; nhart.pack(manifest, stage, candidate)
@@ -285,17 +419,18 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
     resulting = {row['resource']: row for row in verified['manifest']['entries']}
     if any(resulting[row['resource']] != row for row in baseline['manifest']['entries']):
         raise ValueError('Baseline resource or provenance changed')
-    record = json.loads((perk_output / PERK_RECORD).read_text(encoding='utf-8'))
-    resources = sorted([name for row in record['entries'] + status_records for name in row['resources']])
+    resources = sorted([name for row in perk_records + status_records + mass_records for name in row['resources']])
     ledger['waves'].append({'baselineArchiveSha256': archive_hash, 'baselineManifestSha256': manifest_hash,
         'baselineEntriesSha256': entries_digest(baseline['manifest']['entries']),
         'baselineHeaderSha256': perks.digest(repo / HEADER),
         'nonStatusConfigSha256': non_status_config_digest(spells.parse_jsonc(config_text), status_records),
         'baselineCount': len(baseline['manifest']['entries']), 'entryCount': len(manifest['entries']),
         'newArchiveSha256': perks.digest(candidate), 'resources': resources,
-        'perks': record['entries'], 'statuses': status_records, 'reusedBindings': reused,
+        'perks': perk_records, 'statuses': status_records, 'reusedBindings': reused,
         'approval': 'Provisional; not Final; rendered acceptance pending'})
-    inventory_text = (perk_output / INVENTORY).read_text(encoding='utf-8')
+    if mass_records:
+        ledger['waves'][-1]['spells'] = mass_records
+        ledger['waves'][-1]['massConfigNonGraphicsSha256'] = non_status_config_digest(spells.parse_jsonc(mass_text), mass_records)
     if status_records:
         rows = list(csv.DictReader(io.StringIO(inventory_text))); changed = 0
         for row in rows:
@@ -315,12 +450,25 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
             raise ValueError('Duplicate internal status inventory row')
         text = io.StringIO(); writer = csv.DictWriter(text, fieldnames=list(rows[0]), lineterminator='\n', quoting=csv.QUOTE_ALL)
         text.write(inventory_text.splitlines()[0] + '\n'); writer.writerows(rows); inventory_text = text.getvalue()
+    if mass_records:
+        rows = list(csv.DictReader(io.StringIO(inventory_text)))
+        for record in mass_records:
+            matches = [row for row in rows if row['Item / ID'].endswith('(' + record['id'] + ')')]
+            if len(matches) != 1:
+                raise ValueError('Exactly one Mass spell inventory row required')
+            matches[0]['Art'] = 'Provisional'
+            matches[0]['Live binding / source'] = MASS_CONFIG + '; ' + '; '.join(sorted(record['exports'])) + '; selected NHART'
+            matches[0]['Remaining work / evidence'] += ' Purpose-made Mass identity selected provisionally for five icon roles; gameplay, animation and sound unchanged. Native rendered acceptance and Final approval pending.'
+        text = io.StringIO(); writer = csv.DictWriter(text, fieldnames=list(rows[0]), lineterminator='\n', quoting=csv.QUOTE_ALL)
+        writer.writeheader(); writer.writerows(rows); inventory_text = text.getvalue()
     outputs = {spells.MANIFEST: json.dumps(manifest, indent=2) + '\n',
         LEDGER: json.dumps(ledger, indent=2) + '\n', spells.CONFIG: config_text,
-        HEADER: (perk_output / HEADER).read_text(encoding='utf-8'), INVENTORY: inventory_text}
+        HEADER: header_text, INVENTORY: inventory_text}
     if mass_text is not None:
         outputs[MASS_CONFIG] = mass_text
     require_unchanged_history(repo, metadata)
+    if any(perks.digest(path) != value for path, value in mass_hashes.items()):
+        raise ValueError('Selected Mass inputs changed during preparation')
     output.mkdir(parents=True)
     for name, text in outputs.items():
         path = output / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text(text, encoding='utf-8')
@@ -329,10 +477,14 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
     if archive_hash != perks.digest(repo / spells.ARCHIVE) or manifest_hash != perks.digest(repo / spells.MANIFEST):
         raise ValueError('Baseline changed during preparation')
     require_unchanged_history(repo, metadata)
+    if any(perks.digest(path) != value for path, value in mass_hashes.items()):
+        raise ValueError('Selected Mass inputs changed during preparation')
     result = {'perkCount': len(plan_rows), 'statusCount': len(status_records), 'addedResources': len(resources),
         'baselinePreserved': len(baseline['manifest']['entries']), 'entryCount': len(manifest['entries']),
         'baselineLedgerSha256': expected_ledger_sha256, 'bootstrapNoLedger': bootstrap_no_ledger,
         'sha256': perks.digest(target), 'files': {name: perks.digest(output / name) for name in [spells.ARCHIVE, *outputs]}}
+    if mass_records:
+        result['massSpellCount'] = len(mass_records)
     ready = output / '.READY.json.pending'
     ready.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     ready.replace(output / 'READY.json')
@@ -342,7 +494,8 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', type=Path, required=True)
-    parser.add_argument('--perk-handoff', type=Path, action='append', required=True)
+    parser.add_argument('--perk-handoff', type=Path, action='append', default=[])
+    parser.add_argument('--mass-spell-handoff', type=Path)
     parser.add_argument('--status-handoff', type=Path, action='append')
     parser.add_argument('--mass-regeneration-scenario', action='store_true')
     parser.add_argument('--work-root', type=Path, required=True)
@@ -356,7 +509,8 @@ def main():
         print(json.dumps(prepare(args.repo, args.perk_handoff, args.status_handoff, args.work_root,
                                  args.output_root, args.mass_regeneration_scenario,
                                  expected_ledger_sha256=args.expected_ledger_sha256,
-                                 bootstrap_no_ledger=args.bootstrap_no_ledger), sort_keys=True))
+                                 bootstrap_no_ledger=args.bootstrap_no_ledger,
+                                 mass_spell_handoff=args.mass_spell_handoff), sort_keys=True))
     except OSError:
         parser.exit(1, 'Private input/output operation failed; repository unchanged\n')
     except (ValueError, KeyError, nhart.NHArtError) as error:

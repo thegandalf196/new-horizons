@@ -101,6 +101,24 @@ are refused rather than overwritten. Review the complete prepared delta before
 a separately authorized import; preparation does not install artwork, grant
 Final approval, or justify regeneration during ordinary builds.
 
+The same wrapper supports one explicit selected Mass-spell handoff containing
+exactly Mass Bless, Mass Curse, Mass Sorrow and Mass Slow. Each entry pins its
+chosen standalone handoff by SHA256; selecting a newer revision requires a new
+selection handoff, not editing an earlier record. For a Mass-only wave:
+
+```sh
+"$NH_PYTHON" tools/import_new_horizons_art_wave.py \
+  --repo "$NH_REPO" --mass-spell-handoff "$NH_MASS_SPELL_HANDOFF" \
+  --work-root "$NH_WAVE_WORK" --output-root "$NH_WAVE_OUTPUT" \
+  --expected-baseline-ledger-sha256 "$NH_BASELINE_LEDGER_SHA256"
+```
+
+No dummy perk handoff is needed. These four families replace only their five
+graphics roles, using twelve selected 44/32/30-pixel PNGs. The original spell
+selection record and earlier additive waves remain unchanged. Perks may share
+this wave, but status and reused-scenario modes cannot. The same fresh-output,
+history-preservation, READY and separate-adoption requirements above apply.
+
 Builtin bootstrap and module scope mount the same full-path pack. Explicit
 overlay ordering gives builtin custom art precedence over original archives;
 the module mounts its pack after readable Content configuration. No alternate
