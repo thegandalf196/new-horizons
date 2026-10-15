@@ -64,8 +64,13 @@ for new amendments or introduce a second canonical source.
 
 ## Validation boundary
 
-The maintained `tools/tests/test_new_horizons_perk_data.py` guards source identity,
-31/310 catalogue comparison, approved Bulwark differences, non-perk anchors and
-table widths. Run it with the verified configured interpreter. Historical passing
-checks establish source/catalogue migration, not gameplay implementation, native
-build or playable appearance.
+The public `tools/tests/test_new_horizons_perk_data.py` validates shipped registry
+schema, provenance metadata, selection limits and runtime catalogue/effect
+contracts without opening design documents. The separate private design library
+retains source identity, the complete 31/310 catalogue comparison, non-perk
+anchors, table parsing and canonical Spell Point terminology checks. Its tests
+require an explicitly selected public checkout; public tests never require the
+private library. Relocating these comparisons does not itself switch the active
+canon: the transitional authority pointers remain in effect until the verified
+document migration. Historical passing comparisons establish source/catalogue
+fidelity, not gameplay implementation, native build or playable appearance.
