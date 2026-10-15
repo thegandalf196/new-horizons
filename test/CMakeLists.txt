@@ -52,6 +52,8 @@ set(test_SRCS
  		main.cpp
  		CMemoryBufferTest.cpp
 		serializer/JsonUpdaterTest.cpp
+		serializer/BattleUnitStateCompatibilityTest.cpp
+		serializer/BattlePacketReceiptCompatibilityTest.cpp
  		CVcmiTestConfig.cpp
  		JsonComparer.cpp
 		json/GeneratedImageRecipesTest.cpp
