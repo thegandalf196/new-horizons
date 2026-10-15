@@ -1,32 +1,37 @@
-# New Horizons generated UI art
+# Generated UI art provenance
 
-These masters were generated for the New Horizons prototype with the host image
-generator and are retained as editable provenance references. They are original
-artwork, not extracted or traced from Heroes III assets. The runtime exports are
-the small RGBA PNGs under `Mods/new-horizons/Images/`:
+These records describe original artwork generated for the New Horizons prototype,
+not artwork extracted or traced from Heroes III. Keep complete masters, exact
+prompts, generation notes, alternatives and comparison sheets privately outside
+the public checkout. Historical source paths in retained manifests identify those
+authoring inputs; they do not promise local files or permit recreating missing
+masters from installed images.
 
-- `orders-gauntlet-v4/master.png` supplies the current four 48x36 Orders button states.
-- `NH_perk_bone_collector_master.png` supplies the Bone Collector 44x44 icon.
-- `NH_perk_neutral_master.png` supplies the neutral unknown-perk fallback icon.
-- `active-perks-v2/` contains the three newly active provisional perk paintings
-  (Inspirational Leader, Wild Chance, and Perfect Moment), their exact prompts,
-  44x44/32x32 reductions, comparisons, and reproducible runtime export.
-- `spell-penetration-v1/` contains the purpose-made provisional Spell
-  Penetration painting, exact prompt and generator output identifier,
-  44x44/32x32 reductions, comparison, and reproducible four-state runtime art.
-- `empower-spell-v1/` contains the purpose-made provisional Empower Spell
-  crystal painting, exact prompt and generator output identifier, 44x44/32x32
-  reductions, comparison, and reproducible four-state runtime art.
+Ordinary builds consume selected runtime images in
+`Mods/new-horizons/NewHorizons.nhart`, current configuration and selected manifests,
+not loose authoring exports under `Mods/new-horizons/Images/`. Resource identity is
+independent of whether a historical master is present. Do not rebuild the pack
+from an incomplete authoring archive; see [NHART delivery](../../../docs/NHART_DELIVERY.md).
 
-Prompts:
+## Historical source-to-role records
 
-- Orders: “Original fantasy game UI asset ... heavily armored medieval steel gauntlet ...
-  clean horizontal four-panel sprite sheet ... normal, pressed, disabled, highlighted ...
-  no text, no letters, no book, no spell symbols ... original artwork.”
-- Bone Collector: “Original fantasy game UI icon ... ornate iron basket overflowing with
-  clean ivory bones and one tiny weathered skull ... modeled still-life ... no text ...”
-- Neutral fallback: “Original fantasy game UI icon ... neutral pending-perk emblem, an
-  unadorned bronze compass medallion ... no skill-specific symbols ... neutral fallback.”
+| Recorded source | Recorded resource role |
+| --- | --- |
+| `orders-gauntlet-v4/master.png` | Four 48×36 Orders button states, with a steel-gauntlet subject |
+| `NH_perk_bone_collector_master.png` | Bone Collector 44×44 icon, with a bone-basket subject |
+| `NH_perk_neutral_master.png` | Neutral unknown-perk fallback, without a Skill-specific symbol |
+| `active-perks-v2/` | Inspirational Leader, Wild Chance and Perfect Moment paintings and 44×44/32×32 reductions |
+| `spell-penetration-v1/` | Purpose-made Spell Penetration painting and four-state runtime-art provenance |
+| `empower-spell-v1/` | Purpose-made Empower Spell crystal painting and four-state runtime-art provenance |
 
-The generated masters are intentionally kept separate from the installed module
-exports so they can be replaced without changing code-level identity mappings.
+Retain original source hashes, generator/origin statements, per-file licensing
+and selected resource mappings in their existing provenance records. Prompt
+filenames in generation metadata refer to the complete external archive; removal
+of a public prompt copy does not change its historical identity or license.
+This index grants no new license to other families or third-party inputs.
+
+Authoring exporters require their actual external staging inputs and documented
+helpers. They are not automatic live installers. Keep source generation,
+mechanical export, selection, provisional visual review, Final approval and
+rendered verification distinct. Existing source/export records are not proof
+that every historical draft is selected or that an interface has been exercised.
