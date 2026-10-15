@@ -86,7 +86,19 @@ def private_revision_fixture(root, kind, revision="v2"):
         registration = manifest["sourceRegistration"]["path"]
         destination = root / academy_importer.SOURCE_ROOT / registration
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(ROOT / academy_importer.SOURCE_ROOT / registration, destination)
+        if kind == "map":
+            registration_data = [
+                {"master": row["sourceMaster"],
+                 "width": row["dimensions"][0], "height": row["dimensions"][1],
+                 "masterSolidBox": row["masterSolidBox"],
+                 "sourceSolidBox": row["sourceSolidBox"]}
+                for row in manifest["bodies"].values()
+            ]
+        else:
+            registration_data = {"resolution": [800, 374],
+                                 "assets": [manifest["sourceRegistration"]["record"]]}
+        destination.write_text(json.dumps(registration_data), encoding="utf-8")
+        manifest["sourceRegistration"]["sha256"] = hashlib.sha256(destination.read_bytes()).hexdigest()
         if kind == "map":
             for name, record in manifest["bodies"].items():
                 prompt = root / revision_root / record["prompt"]
