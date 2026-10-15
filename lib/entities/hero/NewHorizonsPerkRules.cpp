@@ -157,12 +157,24 @@ void validatePerkRules(const JsonNode & rules)
 	if(!usesPerkRules(rules))
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
-		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion"});
+		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion", "perkOfferNormalization"});
 	require(integer(rules["schemaVersion"], PERK_SCHEMA_VERSION, PERK_SCHEMA_VERSION), "schemaVersion");
 	require(integer(rules["rulesetVersion"], PERK_MIN_RULESET_VERSION, PERK_RULESET_VERSION), "rulesetVersion");
 	if(rules.Struct().contains("offerWeightPolicyVersion"))
-		require(integer(rules["offerWeightPolicyVersion"], PERK_OFFER_WEIGHT_POLICY_VERSION,
+		require(integer(rules["offerWeightPolicyVersion"], 1,
 			PERK_OFFER_WEIGHT_POLICY_VERSION), "offerWeightPolicyVersion");
+	if(rules["offerWeightPolicyVersion"].isNumber() && rules["offerWeightPolicyVersion"].Integer() == 2)
+	{
+		const auto & normalization = rules["perkOfferNormalization"];
+		fields(normalization, {"maximumPreferenceRatio", "mathVersion"});
+		const auto & ratio = normalization["maximumPreferenceRatio"];
+		require(ratio.isNumber() && std::isfinite(ratio.Float()) && ratio.Float() >= 1.0,
+			"finite maximumPreferenceRatio >= 1 required");
+		require(integer(normalization["mathVersion"], PERK_OFFER_NORMALIZATION_MATH_VERSION,
+			PERK_OFFER_NORMALIZATION_MATH_VERSION), "perk normalization mathVersion");
+	}
+	else
+		require(!rules.Struct().contains("perkOfferNormalization"), "normalization requires policy2");
 	require(rules["sourceDocument"].isString() && !rules["sourceDocument"].String().empty(), "sourceDocument");
 	require(rules["sourceSha256"].isString() && rules["sourceSha256"].String().size() == 64, "sourceSha256");
 	for(const auto c : rules["sourceSha256"].String())
@@ -219,10 +231,18 @@ bool usesWeightedPerkOffers(const JsonNode & rules)
 	return usesPerkRules(rules) && rules.Struct().contains("offerWeightPolicyVersion");
 }
 
-void validateWeightedPerkSerialization(const JsonNode & rules, bool supported)
+bool usesR2PerkOffers(const JsonNode & rules)
+{
+	return usesPerkRules(rules) && rules["offerWeightPolicyVersion"].isNumber()
+		&& rules["offerWeightPolicyVersion"].Integer() == 2;
+}
+
+void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported)
 {
 	if(usesWeightedPerkOffers(rules) && !supported)
 		throw std::runtime_error("Cannot serialize weighted perk offers to an older format");
+	if(usesR2PerkOffers(rules) && !r2Supported)
+		throw std::runtime_error("Cannot serialize R2 perk offers to an older format");
 }
 
 void validateWeightedPerkCapture(const JsonNode & development, const JsonNode & perks)

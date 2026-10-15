@@ -8,6 +8,9 @@
 
 #include <stdexcept>
 #include <array>
+#include <limits>
+#include <cmath>
+#include <boost/multiprecision/cpp_int.hpp>
 
 namespace
 {
@@ -18,6 +21,7 @@ newHorizonsHeroes::PerkState state()
 	// Historical pure-state tests exercise the captured legacy offer policy.
 	// Weighted-policy fixtures explicitly opt back into version1 below.
 	result.rules.Struct().erase("offerWeightPolicyVersion");
+	result.rules.Struct().erase("perkOfferNormalization");
 	return result;
 }
 
@@ -955,4 +959,380 @@ TEST(NewHorizonsPerkState, ActiveWeightedPolicyRefusesMissingContextOrLookup)
 	EXPECT_THROW(saved.prepareOffer(weightedOfferRank, 42, capturedWeights(allMissing)), std::runtime_error);
 	const auto offer = saved.prepareOffer(weightedOfferRank, 42, capturedWeights(parentOfferWeight));
 	EXPECT_THROW(saved.acceptOffer(offer, 0, weightedOfferRank, 42), std::runtime_error);
+}
+
+namespace
+{
+newHorizonsHeroes::PerkState r2State(double ratio = 2.0)
+{
+	auto result = weightedOfferState();
+	result.rules["offerWeightPolicyVersion"].Integer() = 2;
+	result.rules["perkOfferNormalization"]["maximumPreferenceRatio"].Float() = ratio;
+	result.rules["perkOfferNormalization"]["mathVersion"].Integer() = 1;
+	return result;
+}
+
+newHorizonsHeroes::PerkState::OfferWeightContext r2Weights(const newHorizonsHeroes::PerkState & saved,
+	int luck = 1, int discipline = 10)
+{
+	std::map<std::string, int> row;
+	for(const auto & [id, definition] : saved.rules["skills"].Struct())
+		row[id] = id == "new-horizons:luck" ? luck : id == "new-horizons:discipline" ? discipline : 1;
+	return {newHorizonsHeroes::PerkState::OfferWeightMode::CapturedTable,
+		[row](const std::string & id) -> std::optional<int>
+		{
+			const auto found = row.find(id);
+			return found == row.end() ? std::nullopt : std::optional<int>(found->second);
+		}, row};
+}
+}
+
+TEST(NewHorizonsPerkState, R2DrawsDistinctParentsInsteadOfWeightingEachPerk)
+{
+	const auto saved = r2State();
+	const auto context = r2Weights(saved);
+	for(uint64_t seed = 0; seed < 64; ++seed)
+	{
+		const auto offer = saved.prepareOffer(weightedOfferRank, seed, context);
+		ASSERT_EQ(offer.size(), 2u);
+		EXPECT_NE(offer[0].selection.skillId, offer[1].selection.skillId);
+		EXPECT_EQ(offer, saved.prepareOffer(weightedOfferRank, seed, context));
+	}
+}
+
+TEST(NewHorizonsPerkState, R2LearnedZeroParentHasOneQuantumAndSoleParentHasTwoUniformChoices)
+{
+	const auto saved = r2State();
+	const auto context = r2Weights(saved, 0, 10);
+	const auto both = saved.prepareOffer(weightedOfferRank, 4, context);
+	ASSERT_EQ(both.size(), 2u);
+	EXPECT_NE(both[0].selection.skillId, both[1].selection.skillId);
+	const auto luckOnly = [](const std::string & id) { return id == "new-horizons:luck" ? 1 : 0; };
+	for(uint64_t seed = 0; seed < 32; ++seed)
+	{
+		const auto offer = saved.prepareOffer(luckOnly, seed, context);
+		ASSERT_EQ(offer.size(), 2u);
+		EXPECT_EQ(offer[0].selection.skillId, "new-horizons:luck");
+		EXPECT_EQ(offer[1].selection.skillId, "new-horizons:luck");
+		EXPECT_NE(offer[0].selection, offer[1].selection);
+	}
+}
+
+TEST(NewHorizonsPerkState, R2FullReferenceAndNumericalCacheDoNotDependOnEligiblePool)
+{
+	const auto saved = r2State();
+	auto context = r2Weights(saved);
+	ASSERT_FALSE(saved.prepareOffer(weightedOfferRank, 1, context).empty());
+	const auto first = context.normalizedWeights;
+	ASSERT_NE(first, nullptr);
+	const auto luckOnly = [](const std::string & id) { return id == "new-horizons:luck" ? 1 : 0; };
+	ASSERT_FALSE(saved.prepareOffer(luckOnly, 1, context).empty());
+	EXPECT_EQ(context.normalizedWeights, first);
+	context.referenceWeights.erase(context.referenceWeights.begin());
+	EXPECT_THROW(saved.prepareOffer(luckOnly, 1, context), std::runtime_error);
+}
+
+TEST(NewHorizonsPerkState, R2AdditionalBasicChoicesSurviveJsonAndBinaryWithoutLegacyDeduplication)
+{
+	auto saved = r2State();
+	saved.select("new-horizons:luck", "new-horizons:luck.opportunist", 1);
+	const auto onlyLuck = [](const std::string & id) { return id == "new-horizons:luck" ? 1 : 0; };
+	const auto offer = saved.prepareOffer(onlyLuck, 5, r2Weights(saved));
+	ASSERT_EQ(offer.size(), 1u);
+	saved.acceptOffer(offer, 0, onlyLuck, 5, r2Weights(saved));
+	ASSERT_EQ(saved.selected.size(), 2u);
+	EXPECT_EQ(newHorizonsHeroes::PerkState::fromJson(saved.toJson()).selected, saved.selected);
+	CMemorySerializer memory;
+	memory.oser & saved;
+	newHorizonsHeroes::PerkState restored;
+	memory.iser & restored;
+	EXPECT_EQ(restored.selected, saved.selected);
+	EXPECT_TRUE(restored.canAdvanceSkillNormally("new-horizons:luck", 1));
+	EXPECT_FALSE(restored.canAdvanceSkillNormally("new-horizons:luck", 2));
+}
+
+TEST(NewHorizonsPerkState, R2RequiresItsCodecButPolicyOneRetainsPreviousWriter)
+{
+	auto saved = r2State();
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
+	EXPECT_THROW(old.oser & saved, std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+	auto prior = weightedOfferState();
+	CMemorySerializer policyOne;
+	policyOne.oser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
+	EXPECT_NO_THROW(policyOne.oser & prior);
+}
+
+TEST(NewHorizonsPerkState, R2FirstAndEitherSlotStatisticsRespectConfiguredParentRatio)
+{
+	for(double ratio : {1.0, 1.5, 2.0, 3.0})
+	{
+		SCOPED_TRACE(ratio);
+		auto saved = r2State(ratio);
+		const std::array<std::string, 3> ids = {"new-horizons:luck", "new-horizons:discipline", "new-horizons:offense"};
+		bool enabled = false;
+		for(auto & perk : saved.rules["skills"][ids[2]]["perks"].Vector())
+			if(!enabled && perk["requires"].String() == "basic")
+			{
+				perk["effect"]["status"].String() = "active";
+				enabled = true;
+			}
+		ASSERT_TRUE(enabled);
+		auto context = r2Weights(saved);
+		context.referenceWeights[ids[2]] = 5;
+		const auto row = context.referenceWeights;
+		context.lookup = [row](const std::string & id) -> std::optional<int> { return row.at(id); };
+		const auto ranks = [ids](const std::string & id)
+		{
+			return std::find(ids.begin(), ids.end(), id) != ids.end() ? 1 : 0;
+		};
+		std::array<size_t, 3> first{};
+		std::array<size_t, 3> either{};
+		constexpr size_t samples = 4000;
+		for(size_t seed = 0; seed < samples; ++seed)
+		{
+			const auto offer = saved.prepareOffer(ranks, seed, context);
+			ASSERT_EQ(offer.size(), 2u);
+			EXPECT_NE(offer[0].selection.skillId, offer[1].selection.skillId);
+			for(size_t i = 0; i < ids.size(); ++i)
+			{
+				first[i] += offer[0].selection.skillId == ids[i];
+				either[i] += offer[0].selection.skillId == ids[i] || offer[1].selection.skillId == ids[i];
+			}
+		}
+		const std::array<double, 3> weights = {1.0, ratio, std::pow(5.0, std::log(ratio) / std::log(10.0))};
+		const double total = weights[0] + weights[1] + weights[2];
+		for(size_t i = 0; i < ids.size(); ++i)
+		{
+			SCOPED_TRACE(ids[i]);
+			const double expectedFirst = weights[i] / total;
+			double expectedEither = expectedFirst;
+			for(size_t j = 0; j < ids.size(); ++j)
+				if(j != i)
+					expectedEither += weights[j] / total * weights[i] / (total - weights[j]);
+			EXPECT_NEAR(static_cast<double>(first[i]) / samples, expectedFirst, 0.035);
+			EXPECT_NEAR(static_cast<double>(either[i]) / samples, expectedEither, 0.035);
+			const auto prefix = "R" + std::to_string(static_cast<int>(ratio * 10)) + "_parent" + std::to_string(i);
+			RecordProperty(prefix + "_firstCount", std::to_string(first[i]));
+			RecordProperty(prefix + "_eitherCount", std::to_string(either[i]));
+			RecordProperty(prefix + "_samples", std::to_string(samples));
+		}
+	}
+}
+
+TEST(NewHorizonsPerkState, R2SupportsFiniteLargeRatiosWithoutUint64Overflow)
+{
+	const auto saved = r2State(std::numeric_limits<double>::max());
+	const auto context = r2Weights(saved);
+	const auto offer = saved.prepareOffer(weightedOfferRank, 42, context);
+	ASSERT_EQ(offer.size(), 2u);
+	EXPECT_EQ(offer.front().selection.skillId, "new-horizons:discipline");
+	EXPECT_NE(offer[0].selection.skillId, offer[1].selection.skillId);
+}
+
+TEST(NewHorizonsPerkState, R2WizardFourParentsUseFullClassBoundsRegardlessOfPerkPoolCardinality)
+{
+	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	std::map<std::string, int> row;
+	for(const auto & [id, value] : development["skillOfferWeights"]["core:wizard"].Struct())
+		row[id] = static_cast<int>(value.Integer());
+	ASSERT_EQ(row.size(), 31u);
+	const std::array<std::string, 4> ids = {"new-horizons:sorceryMagic", "new-horizons:spellcraft",
+		"new-horizons:havocMagic", "new-horizons:offense"};
+	const std::array<int, 4> authoredWeights = {10, 9, 8, 1};
+	for(size_t i = 0; i < ids.size(); ++i)
+		ASSERT_EQ(row.at(ids[i]), authoredWeights[i]);
+	const auto ranks = [ids](const std::string & id)
+	{
+		return std::find(ids.begin(), ids.end(), id) != ids.end() ? 1 : 0;
+	};
+	constexpr size_t samples = 4000;
+	for(double ratio : {1.0, 1.5, 2.0, 3.0})
+	{
+		SCOPED_TRACE(ratio);
+		std::array<std::array<size_t, 4>, 2> first{};
+		std::array<std::array<size_t, 4>, 2> either{};
+		for(size_t pool = 0; pool < 2; ++pool)
+		{
+			// Only pool cardinality is synthetic: the class row is the entire
+			// current authored Wizard row, including unlearned/zero parents.
+			auto saved = r2State(ratio);
+			std::array<size_t, 4> active{};
+			for(auto & [id, definition] : saved.rules["skills"].Struct())
+			{
+				const auto parent = std::find(ids.begin(), ids.end(), id);
+				for(auto & perk : definition["perks"].Vector())
+				{
+					bool enabled = false;
+					if(parent != ids.end() && perk["requires"].String() == "basic")
+					{
+						const auto index = static_cast<size_t>(std::distance(ids.begin(), parent));
+						enabled = active[index] < (pool == 0 ? 1u : index + 1);
+						active[index] += enabled;
+					}
+					perk["effect"]["status"].String() = enabled ? "active" : "planned";
+				}
+			}
+			for(size_t i = 0; i < active.size(); ++i)
+			{
+				ASSERT_EQ(active[i], pool == 0 ? 1u : i + 1);
+			}
+			const newHorizonsHeroes::PerkState::OfferWeightContext context{
+				newHorizonsHeroes::PerkState::OfferWeightMode::CapturedTable,
+				[row](const std::string & id) -> std::optional<int> { return row.at(id); }, row};
+			for(size_t seed = 0; seed < samples; ++seed)
+			{
+				const auto offer = saved.prepareOffer(ranks, seed, context);
+				ASSERT_EQ(offer.size(), 2u);
+				ASSERT_NE(offer[0].selection.skillId, offer[1].selection.skillId);
+				for(size_t i = 0; i < ids.size(); ++i)
+				{
+					first[pool][i] += offer[0].selection.skillId == ids[i];
+					either[pool][i] += offer[0].selection.skillId == ids[i] || offer[1].selection.skillId == ids[i];
+				}
+			}
+		}
+		std::array<double, 4> weights{};
+		double total = 0;
+		for(size_t i = 0; i < ids.size(); ++i)
+		{
+			weights[i] = std::pow(static_cast<double>(authoredWeights[i]), std::log(ratio) / std::log(10.0));
+			total += weights[i];
+		}
+		for(size_t i = 0; i < ids.size(); ++i)
+		{
+			const double expectedFirst = weights[i] / total;
+			double expectedEither = expectedFirst;
+			for(size_t j = 0; j < ids.size(); ++j)
+				if(j != i)
+					expectedEither += weights[j] / total * weights[i] / (total - weights[j]);
+			for(size_t pool = 0; pool < 2; ++pool)
+			{
+				EXPECT_NEAR(static_cast<double>(first[pool][i]) / samples, expectedFirst, 0.035);
+				EXPECT_NEAR(static_cast<double>(either[pool][i]) / samples, expectedEither, 0.035);
+				const auto prefix = "wizard_R" + std::to_string(static_cast<int>(ratio * 10))
+					+ "_pool" + std::to_string(pool) + "_parent" + std::to_string(i);
+				RecordProperty(prefix + "_firstCount", std::to_string(first[pool][i]));
+				RecordProperty(prefix + "_eitherCount", std::to_string(either[pool][i]));
+				RecordProperty(prefix + "_samples", std::to_string(samples));
+				RecordProperty(prefix + "_expectedFirst", std::to_string(expectedFirst));
+				RecordProperty(prefix + "_expectedEither", std::to_string(expectedEither));
+			}
+			EXPECT_EQ(first[0][i], first[1][i]);
+			EXPECT_NEAR(static_cast<double>(either[0][i]) / samples, static_cast<double>(either[1][i]) / samples, 0.05);
+		}
+	}
+}
+
+TEST(NewHorizonsPerkState, R2QuantizedWeightsHaveExactEndpointsRescalingAndStableFullBounds)
+{
+	const auto saved = r2State();
+	auto context = r2Weights(saved);
+	context.referenceWeights["new-horizons:offense"] = 5;
+	auto row = context.referenceWeights;
+	context.lookup = [row](const std::string & id) -> std::optional<int> { return row.at(id); };
+	const auto weights = saved.quantizedParentWeights(context);
+	EXPECT_EQ(weights.at("new-horizons:luck"), "4294967296");
+	EXPECT_EQ(weights.at("new-horizons:discipline"), "8589934592");
+	EXPECT_EQ(weights.at("new-horizons:offense"), "6972215446");
+	for(auto & [id, value] : context.referenceWeights)
+		value *= 2;
+	row = context.referenceWeights;
+	context.lookup = [row](const std::string & id) -> std::optional<int> { return row.at(id); };
+	EXPECT_EQ(saved.quantizedParentWeights(context), weights);
+	const std::array<double, 4> ratios = {1.0, 1.5, 2.0, 3.0};
+	const std::array<std::string, 4> intermediate = {"4294967296", "5702198997", "6972215446", "9256638568"};
+	for(size_t i = 0; i < ratios.size(); ++i)
+	{
+		const auto variant = r2State(ratios[i]);
+		EXPECT_EQ(variant.quantizedParentWeights(context).at("new-horizons:offense"), intermediate[i]);
+	}
+}
+
+TEST(NewHorizonsPerkState, R2QuantizedWeightsAreMonotonicAcrossEveryPositiveClassWeight)
+{
+	using Integer = boost::multiprecision::cpp_int;
+	for(double ratio : {1.0, 1.5, 2.0, 3.0})
+	{
+		SCOPED_TRACE(ratio);
+		const auto saved = r2State(ratio);
+		Integer previous = 0;
+		for(int value = 1; value <= 10; ++value)
+		{
+			// Luck and Discipline pin full-reference bounds at1 and10 while
+			// a third parent's weight traverses the entire positive interval.
+			auto context = r2Weights(saved, 1, 10);
+			context.referenceWeights["new-horizons:offense"] = value;
+			const auto row = context.referenceWeights;
+			context.lookup = [row](const std::string & id) -> std::optional<int> { return row.at(id); };
+			const auto weights = saved.quantizedParentWeights(context);
+			const Integer current(weights.at("new-horizons:offense"));
+			EXPECT_GE(current, previous);
+			if(value > 1 && ratio > 1)
+			{
+				EXPECT_GT(current, previous);
+			}
+			EXPECT_GE(current, Integer(weights.at("new-horizons:luck")));
+			EXPECT_LE(current, Integer(weights.at("new-horizons:discipline")));
+			previous = current;
+		}
+	}
+}
+
+TEST(NewHorizonsPerkState, R2UniformAllZeroAndLearnedZeroUseSameMinimumQuantum)
+{
+	const auto saved = r2State(3);
+	auto context = r2Weights(saved);
+	for(int value : {0, 7})
+	{
+		for(auto & [id, weight] : context.referenceWeights)
+			weight = value;
+		const auto row = context.referenceWeights;
+		context.lookup = [row](const std::string & id) -> std::optional<int> { return row.at(id); };
+		for(const auto & [id, weight] : saved.quantizedParentWeights(context))
+			EXPECT_EQ(weight, "4294967296");
+		EXPECT_EQ(saved.prepareOffer(weightedOfferRank, 123, context).size(), 2u);
+	}
+	const auto zero = r2Weights(saved, 0, 10);
+	EXPECT_EQ(saved.quantizedParentWeights(zero).at("new-horizons:luck"), "4294967296");
+}
+
+TEST(NewHorizonsPerkState, R2QuantizationKeepsLargestFiniteDoubleEndpointExact)
+{
+	const auto saved = r2State(std::numeric_limits<double>::max());
+	const auto actual = saved.quantizedParentWeights(r2Weights(saved));
+	using Integer = boost::multiprecision::cpp_int;
+	const Integer expected = ((Integer(1) << std::numeric_limits<double>::digits) - 1)
+		<< (std::numeric_limits<double>::max_exponent - std::numeric_limits<double>::digits
+			+ newHorizonsHeroes::PERK_OFFER_WEIGHT_FRACTION_BITS);
+	EXPECT_EQ(actual.at("new-horizons:discipline"), expected.convert_to<std::string>());
+}
+
+TEST(NewHorizonsPerkState, R2StillEnforcesThreeTotalUniquePerksAndEarlierTierPrerequisites)
+{
+	auto saved = r2State();
+	auto missingBasic = saved;
+	bool testedAdvanced = false;
+	for(auto & perk : missingBasic.rules["skills"]["new-horizons:luck"]["perks"].Vector())
+		if(!testedAdvanced && perk["requires"].String() == "advanced")
+		{
+			perk["effect"]["status"].String() = "active";
+			EXPECT_THROW(missingBasic.select("new-horizons:luck", perk["id"].String(), 3), std::runtime_error);
+			testedAdvanced = true;
+		}
+	ASSERT_TRUE(testedAdvanced);
+	std::vector<std::string> basic;
+	for(auto & perk : saved.rules["skills"]["new-horizons:luck"]["perks"].Vector())
+		if(perk["requires"].String() == "basic")
+		{
+			perk["effect"]["status"].String() = "active";
+			basic.push_back(perk["id"].String());
+		}
+	ASSERT_EQ(basic.size(), 4u);
+	for(size_t i = 0; i < 3; ++i)
+		saved.select("new-horizons:luck", basic[i], 1);
+	EXPECT_THROW(saved.select("new-horizons:luck", basic[3], 1), std::runtime_error);
+	EXPECT_THROW(saved.select("new-horizons:luck", basic[0], 1), std::runtime_error);
+	EXPECT_EQ(newHorizonsHeroes::PerkState::fromJson(saved.toJson()).selected, saved.selected);
 }

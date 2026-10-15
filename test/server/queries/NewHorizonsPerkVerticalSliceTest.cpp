@@ -15,6 +15,7 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/queries/QueriesProcessor.h"
 #include "../../../server/queries/MapQueries.h"
@@ -102,6 +103,49 @@ protected:
 		});
 	}
 };
+}
+
+
+TEST_F(NewHorizonsPerkVerticalSliceTest, R2PendingQueryRefreshAndReplyStayDeterministicAndDoNotDrawWorldRng)
+{
+	startGame(christianHeroId);
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(hero->getPerkState().rules));
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.onAdvInterfaceReady(hero->getOwner());
+	hero->setExperience(LIBRARY->heroh->reqExp(hero->level + 1), ChangeValueMode::ABSOLUTE);
+	gameHandler.levelUpHero(hero);
+	auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(query, nullptr);
+	ASSERT_FALSE(query->hlu.perks.empty());
+	const auto offered = query->hlu.perks;
+	const auto selected = offered.front().selection;
+	const auto beforePerks = hero->getPerkState().toJson();
+	const auto rng = [&]()
+	{
+		CMemorySerializer snapshot;
+		snapshot.oser & *gameHandler.randomizer;
+		return snapshot.extractBuffer();
+	};
+	const auto beforeRng = rng();
+	const int choice = static_cast<int>(query->hlu.skills.size());
+	for(int attempt = 0; attempt < 4; ++attempt)
+	{
+		query->onExposure(nullptr); // Actual query lifecycle, not a fabricated offer.
+		EXPECT_EQ(query->hlu.perks, offered);
+		EXPECT_TRUE(query->isValidReply(choice));
+	}
+	query->hlu.perks.front().description += " forged";
+	EXPECT_FALSE(query->isValidReply(choice));
+	query->hlu.perks = offered;
+	EXPECT_EQ(hero->getPerkState().toJson(), beforePerks);
+	EXPECT_EQ(rng(), beforeRng);
+	const auto selectedBefore = hero->getPerkState().selected.size();
+	ASSERT_TRUE(gameHandler.queryReply(query->queryID, choice, hero->getOwner()));
+	EXPECT_TRUE(hero->getPerkState().hasSelection(selected.skillId, selected.perkId));
+	EXPECT_EQ(hero->getPerkState().selected.size(), selectedBefore + 1);
 }
 
 TEST_F(NewHorizonsPerkVerticalSliceTest, ControlledBlastIsAcceptedThroughAdvancedHavocOfferAndSurvivesSaveLoad)
@@ -548,12 +592,17 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ChristianCanChooseInspirationalLeaderAn
 	ASSERT_EQ(hero->getFactionID(), FactionID::CASTLE);
 
 	const auto discipline = skill(disciplineId);
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	// Christian's authored start is War Machines, not Discipline. Assemble the
+	// learned-Skill fixture through the simulation; the perk is still chosen
+	// through the real ordinary level-up query below.
+	ASSERT_TRUE(hero->canLearnSkill(discipline));
+	gameHandler.changeSecSkill(hero, discipline, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	ASSERT_EQ(hero->getSecSkillLevel(discipline), MasteryLevel::BASIC);
 	const auto moraleWithDiscipline = hero->moraleVal();
 	EXPECT_GE(moraleWithDiscipline, 1);
 
-	GameHandlerTestServer server(gameState());
-	CGameHandler gameHandler(server, gameState());
 	const auto rankLookup = [hero](const std::string & skillId)
 	{
 		return hero->getPerkSkillRank(skillId);

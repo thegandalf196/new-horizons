@@ -701,6 +701,10 @@ public:
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 		if(h.saving)
+			newHorizonsHeroes::validateWeightedPerkSerialization(perkState.rules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS));
+		if(h.saving)
 			newHorizonsMagic::validateWaterWalkDayEndSerialization(getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
 		if(h.saving)

@@ -32,6 +32,16 @@ newHorizonsHeroes::PerkState makeState()
 {
 	newHorizonsHeroes::PerkState result;
 	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	// Existing cases explicitly exercise captured policy1 semantics.
+	result.rules["offerWeightPolicyVersion"].Integer() = 1;
+	result.rules.Struct().erase("perkOfferNormalization");
+	return result;
+}
+
+newHorizonsHeroes::PerkState makeR2State()
+{
+	newHorizonsHeroes::PerkState result;
+	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 	return result;
 }
 
@@ -142,6 +152,11 @@ TEST(NewHorizonsPerkAvailability, DistinguishesOccupiedTiersAndPerSkillCap)
 TEST(NewHorizonsPerkAvailability, PlannedAndMissingCataloguesFailClosed)
 {
 	auto state = makeState();
+	// Exercise a captured planned entry without depending on which current
+	// production effects have since been implemented.
+	for(auto & perk : state.rules["skills"][std::string(SKILL)]["perks"].Vector())
+		if(perk["id"].String() == BASIC_PLANNED)
+			perk["effect"]["status"].String() = "planned";
 	const auto planned = newHorizonsPerkAvailability::evaluatePerk(
 		state, SKILL, 3, definition(state, BASIC_PLANNED));
 	EXPECT_EQ(planned.status, newHorizonsPerkAvailability::Status::UNAVAILABLE);
@@ -196,4 +211,58 @@ TEST(NewHorizonsPerkAvailability, ReadOnlyEvaluationsDoNotMutateSavedState)
 
 	EXPECT_EQ(state.rules, rulesBefore);
 	EXPECT_EQ(state.selected, selectedBefore);
+}
+
+TEST(NewHorizonsPerkAvailability, R2SameTierAlternativesRemainAvailableUntilCap)
+{
+	auto state = makeR2State();
+	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.rules));
+	state.select(std::string(SKILL), std::string(BASIC), 1);
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(
+		state, SKILL, 1, definition(state, BASIC_ALTERNATIVE)).status,
+		newHorizonsPerkAvailability::Status::AVAILABLE);
+	state.select(std::string(SKILL), std::string(BASIC_ALTERNATIVE), 1);
+	// Two Basic perks still do not substitute for an Advanced-tier perk.
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(
+		state, SKILL, 3, definition(state, EXPERT)).reason,
+		newHorizonsPerkAvailability::Reason::EARLIER_TIER_MISSING);
+	state.select(std::string(SKILL), std::string(ADVANCED), 2);
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(
+		state, SKILL, 3, definition(state, EXPERT)).reason,
+		newHorizonsPerkAvailability::Reason::PER_SKILL_CAP);
+}
+
+TEST(NewHorizonsPerkAvailability, R2SlotsDisplayAllSelectionsIncludingRepeatedTier)
+{
+	auto state = makeR2State();
+	state.select(std::string(SKILL), std::string(BASIC), 1);
+	state.select(std::string(SKILL), std::string(BASIC_ALTERNATIVE), 1);
+	state.select(std::string(SKILL), std::string(ADVANCED), 2);
+	const auto before = state.toJson();
+	const std::array<std::string_view, 3> expected = {BASIC, BASIC_ALTERNATIVE, ADVANCED};
+	for(size_t index = 0; index < expected.size(); ++index)
+	{
+		const auto slot = newHorizonsPerkAvailability::evaluateSelectionSlot(state, SKILL, 2, index);
+		ASSERT_TRUE(slot.selectedPerk);
+		EXPECT_EQ(slot.selectedPerk->id, expected[index]);
+		EXPECT_EQ(slot.requiredRank, index == 2 ? 2 : 1);
+		EXPECT_EQ(slot.status, newHorizonsPerkAvailability::Status::ACQUIRED);
+	}
+	EXPECT_EQ(state.toJson(), before);
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluateSelectionSlot(state, SKILL, 2, 3).status,
+		newHorizonsPerkAvailability::Status::UNAVAILABLE);
+}
+
+TEST(NewHorizonsPerkAvailability, R2EmptySlotReportsCapacityWithoutInventingTier)
+{
+	auto state = makeR2State();
+	state.select(std::string(SKILL), std::string(BASIC), 1);
+	const auto empty = newHorizonsPerkAvailability::evaluateSelectionSlot(state, SKILL, 1, 1);
+	EXPECT_FALSE(empty.selectedPerk);
+	EXPECT_EQ(empty.requiredRank, 0);
+	EXPECT_EQ(empty.status, newHorizonsPerkAvailability::Status::AVAILABLE);
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluateSelectionSlot(state, SKILL, 0, 0).status,
+		newHorizonsPerkAvailability::Status::ACQUIRED);
+	const auto unlearned = newHorizonsPerkAvailability::evaluateSelectionSlot(makeR2State(), SKILL, 0, 0);
+	EXPECT_EQ(unlearned.reason, newHorizonsPerkAvailability::Reason::SKILL_NOT_LEARNED);
 }

@@ -13,9 +13,19 @@
 #include <set>
 #include <stdexcept>
 #include <tuple>
+#include <cmath>
+#include <boost/multiprecision/cpp_dec_float.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 namespace newHorizonsHeroes
 {
+struct R2WeightCache
+{
+	double ratio = 1;
+	std::map<std::string, int> reference;
+	std::map<std::string, boost::multiprecision::cpp_int> weights;
+};
+
 namespace
 {
 constexpr std::string_view METAMAGIC_SKILL = "new-horizons:metamagic";
@@ -38,6 +48,153 @@ void savedFields(const JsonNode & node, std::initializer_list<std::string_view> 
 	for(const auto & [key, value] : node.Struct())
 		if(std::find(keys.begin(), keys.end(), key) == keys.end())
 			throw std::runtime_error("Unknown New Horizons perk state field " + key);
+}
+
+const std::map<std::string, boost::multiprecision::cpp_int> & normalizedR2Weights(
+	const PerkState::OfferWeightContext & context, const JsonNode & rules)
+{
+	using Integer = boost::multiprecision::cpp_int;
+	using Decimal = boost::multiprecision::cpp_dec_float_100;
+	if(context.mode != PerkState::OfferWeightMode::CapturedTable || !context.lookup
+		|| context.referenceWeights.size() != rules["skills"].Struct().size())
+		throw std::runtime_error("R2 offers require the complete captured class reference");
+	int minimum = 101;
+	int maximum = 0;
+	for(const auto & [id, definition] : rules["skills"].Struct())
+	{
+		const auto found = context.referenceWeights.find(id);
+		if(found == context.referenceWeights.end() || found->second < 0 || found->second > 100
+			|| context.lookup(id) != std::optional<int>(found->second))
+			throw std::runtime_error("R2 reference differs from captured Skill weights");
+		if(found->second > 0)
+		{
+			minimum = std::min(minimum, found->second);
+			maximum = std::max(maximum, found->second);
+		}
+	}
+	// Software decimal math, then one common2^32 quantum. Sampling uses only
+	// integers. Endpoints are explicit; this is a quantized real distribution.
+	const double configuredRatio = rules["perkOfferNormalization"]["maximumPreferenceRatio"].Float();
+	if(!context.normalizedWeights || context.normalizedWeights->ratio != configuredRatio
+		|| context.normalizedWeights->reference != context.referenceWeights)
+	{
+		auto cache = std::make_shared<R2WeightCache>();
+		cache->ratio = configuredRatio;
+		cache->reference = context.referenceWeights;
+		const Decimal ratio(configuredRatio);
+		const uint64_t scaleInteger = uint64_t{1} << PERK_OFFER_WEIGHT_FRACTION_BITS;
+		const Integer quantum = scaleInteger;
+		const Decimal scale(scaleInteger);
+		const auto quantize = [](const Decimal & value) -> Integer
+		{
+			return floor(value + Decimal("0.5")).template convert_to<Integer>();
+		};
+		// Construct the endpoint from the exact binary double, not a rounded
+		// decimal approximation (large finite R may require over1000 bits).
+		static_assert(std::numeric_limits<double>::radix == 2 && std::numeric_limits<double>::digits <= 64);
+		int binaryExponent = 0;
+		const double mantissa = std::frexp(configuredRatio, &binaryExponent);
+		const auto significand = static_cast<uint64_t>(std::ldexp(mantissa, std::numeric_limits<double>::digits));
+		const int shift = binaryExponent - std::numeric_limits<double>::digits + static_cast<int>(PERK_OFFER_WEIGHT_FRACTION_BITS);
+		Integer upper = significand;
+		if(shift >= 0)
+			upper <<= shift;
+		else
+			upper = (upper + (Integer(1) << (-shift - 1))) >> -shift;
+		const bool uniform = maximum <= minimum || ratio == 1;
+		Decimal exponent = 0;
+		if(!uniform)
+			exponent = log(ratio) / log(Decimal(maximum) / minimum);
+		auto & weights = cache->weights;
+		for(const auto & [id, weight] : context.referenceWeights)
+		{
+			Integer normalized = quantum;
+			if(!uniform && weight > minimum)
+			{
+				normalized = weight == maximum ? upper
+					: quantize(exp(log(Decimal(weight) / minimum) * exponent) * scale);
+				normalized = std::max(quantum, std::min(upper, normalized));
+			}
+			weights.emplace(id, std::move(normalized));
+		}
+		context.normalizedWeights = std::move(cache);
+	}
+	return context.normalizedWeights->weights;
+}
+
+template<typename Candidates>
+std::vector<PerkOfferCandidate> prepareR2Offer(const Candidates & eligible, uint64_t seed,
+	const PerkState::OfferWeightContext & context, const JsonNode & rules)
+{
+	using Integer = boost::multiprecision::cpp_int;
+	const auto & weights = normalizedR2Weights(context, rules);
+	uint64_t randomState = seed;
+	const auto nextRandom = [&randomState]()
+	{
+		uint64_t value = (randomState += 0x9e3779b97f4a7c15ULL);
+		value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9ULL;
+		value = (value ^ (value >> 27)) * 0x94d049bb133111ebULL;
+		return value ^ (value >> 31);
+	};
+	const auto drawBelow = [&nextRandom](const Integer & total) -> Integer
+	{
+		if(total <= 0)
+			throw std::runtime_error("Empty R2 draw");
+		if(total == 1)
+			return 0;
+		const unsigned bits = boost::multiprecision::msb(Integer(total - 1)) + 1;
+		const Integer mask = (Integer(1) << bits) - 1;
+		Integer value;
+		do
+		{
+			value = 0;
+			for(unsigned filled = 0; filled < bits; filled += 64)
+			{
+				value <<= 64;
+				value += nextRandom();
+			}
+			value &= mask;
+		} while(value >= total);
+		return value;
+	};
+	std::map<std::string, std::vector<PerkOfferCandidate>> parents;
+	for(const auto & entry : eligible)
+		parents[entry.candidate.selection.skillId].push_back(entry.candidate);
+	for(auto & [id, candidates] : parents)
+		std::sort(candidates.begin(), candidates.end(), [](const auto & a, const auto & b)
+		{
+			return a.selection.perkId < b.selection.perkId;
+		});
+	std::vector<PerkOfferCandidate> result;
+	const bool soleParent = parents.size() == 1;
+	while(result.size() < static_cast<size_t>(rules["maxPerkChoices"].Integer()) && !parents.empty())
+	{
+		auto selectedParent = parents.begin();
+		if(!soleParent)
+		{
+			Integer total = 0;
+			for(const auto & [id, candidates] : parents)
+				total += weights.at(id);
+			Integer draw = drawBelow(total);
+			for(auto it = parents.begin(); it != parents.end(); ++it)
+			{
+				if(draw < weights.at(it->first))
+				{
+					selectedParent = it;
+					break;
+				}
+				draw -= weights.at(it->first);
+			}
+		}
+		auto & pool = selectedParent->second;
+		const size_t index = drawBelow(Integer(pool.size())).template convert_to<size_t>();
+		result.push_back(pool.at(index));
+		if(!soleParent || pool.size() == 1)
+			parents.erase(selectedParent);
+		else
+			pool.erase(pool.begin() + index);
+	}
+	return result;
 }
 
 void migrateLegacyHeroProcText(JsonNode & rules)
@@ -159,7 +316,7 @@ bool PerkState::canAdvanceSkillNormally(std::string_view skillId, int currentRan
 
 void PerkState::normalizeLegacyTierConflicts()
 {
-	if(!usesPerkRules(rules))
+	if(!usesPerkRules(rules) || usesR2PerkOffers(rules))
 		return;
 
 	std::set<std::pair<std::string, int>> occupiedTiers;
@@ -189,7 +346,7 @@ void PerkState::validate() const
 	{
 		const auto definition = perkDefinition(rules, entry.skillId, entry.perkId);
 		if(!definition || !identities.emplace(entry.skillId, entry.perkId).second
-			|| !occupiedTiers.emplace(entry.skillId, perkRequiredRank(definition->requiredRank)).second
+			|| (!usesR2PerkOffers(rules) && !occupiedTiers.emplace(entry.skillId, perkRequiredRank(definition->requiredRank)).second)
 			|| ++perSkill[entry.skillId] > cap)
 			throw std::runtime_error("Invalid saved New Horizons perk selection");
 	}
@@ -216,7 +373,7 @@ void PerkState::select(const std::string & skillId, const std::string & perkId, 
 		if(!prerequisiteSelected)
 			throw std::runtime_error("Earlier New Horizons perk tier is still required");
 	}
-	if(std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
+	if(!usesR2PerkOffers(rules) && std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
 	{
 		const auto existing = perkDefinition(rules, entry.skillId, entry.perkId);
 		return entry.skillId == skillId && existing
@@ -293,7 +450,7 @@ std::vector<PerkOfferCandidate> PerkState::prepareOffer(
 			if(hasSelection(skillId, perkId))
 				continue;
 			const int requiredRank = perkRequiredRank(perkNode["requires"].String());
-			if(rank < requiredRank || requiredRank != nextTier)
+			if(rank < requiredRank || (usesR2PerkOffers(rules) ? requiredRank > nextTier : requiredRank != nextTier))
 				continue;
 			const bool tierOccupied = std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
 			{
@@ -301,7 +458,7 @@ std::vector<PerkOfferCandidate> PerkState::prepareOffer(
 				return entry.skillId == skillId && existing
 					&& perkRequiredRank(existing->requiredRank) == requiredRank;
 			});
-			if(tierOccupied)
+			if(tierOccupied && !usesR2PerkOffers(rules))
 				continue;
 			PerkOfferCandidate candidate{{skillId, perkId}, perkNode["name"].String(),
 				perkNode["description"].String(), requiredRank};
@@ -313,6 +470,8 @@ std::vector<PerkOfferCandidate> PerkState::prepareOffer(
 		return std::tie(left.order, left.candidate.selection.skillId, left.candidate.selection.perkId)
 			< std::tie(right.order, right.candidate.selection.skillId, right.candidate.selection.perkId);
 	});
+	if(usesR2PerkOffers(rules))
+		return prepareR2Offer(eligible, seed, weightContext, rules);
 	// Absence is historical policy: never reinterpret an already captured save
 	// or its pending query merely because the current server knows new weights.
 	const auto & policy = rules["offerWeightPolicyVersion"];
@@ -399,6 +558,17 @@ std::vector<PerkOfferCandidate> PerkState::prepareOffer(
 	const size_t limit = std::min(eligible.size(), static_cast<size_t>(rules["maxPerkChoices"].Integer()));
 	for(size_t i = 0; i < limit; ++i)
 		result.push_back(std::move(eligible[i].candidate));
+	return result;
+}
+
+std::map<std::string, std::string> PerkState::quantizedParentWeights(const OfferWeightContext & context) const
+{
+	validate();
+	if(!usesR2PerkOffers(rules))
+		throw std::runtime_error("Quantized parent weights require captured R2 policy");
+	std::map<std::string, std::string> result;
+	for(const auto & [id, weight] : normalizedR2Weights(context, rules))
+		result.emplace(id, weight.convert_to<std::string>());
 	return result;
 }
 

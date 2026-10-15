@@ -218,6 +218,7 @@ TEST(NewHorizonsHeroRulesTest, FreshWeightedPerkCaptureRequiresWholeClassTableBu
 	EXPECT_THROW(validateWeightedPerkCapture(partial, perks), std::runtime_error);
 	auto legacyPerks = perks;
 	legacyPerks.Struct().erase("offerWeightPolicyVersion");
+	legacyPerks.Struct().erase("perkOfferNormalization");
 	const auto before = missing;
 	EXPECT_NO_THROW(validateWeightedPerkCapture(missing, legacyPerks));
 	EXPECT_NO_THROW(validateHeroRules(missing, true));

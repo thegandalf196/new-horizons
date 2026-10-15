@@ -120,11 +120,12 @@ TEST(NewHorizonsPerkRules, WeightedOfferPolicyIsExplicitAndAbsentCapturedRegistr
 	ASSERT_EQ(current["offerWeightPolicyVersion"].Integer(), PERK_OFFER_WEIGHT_POLICY_VERSION);
 	EXPECT_TRUE(usesWeightedPerkOffers(current));
 	EXPECT_TRUE(JsonUtils::validate(current, "vcmi:newHorizonsPerks", "weighted perk registry"));
-	EXPECT_NO_THROW(validateWeightedPerkSerialization(current, true));
+	EXPECT_NO_THROW(validateWeightedPerkSerialization(current, true, true));
 	EXPECT_THROW(validateWeightedPerkSerialization(current, false), std::runtime_error);
 
 	auto capturedLegacy = current;
 	capturedLegacy.Struct().erase("offerWeightPolicyVersion");
+	capturedLegacy.Struct().erase("perkOfferNormalization");
 	const auto before = capturedLegacy;
 	EXPECT_NO_THROW(validatePerkRules(capturedLegacy));
 	EXPECT_FALSE(usesWeightedPerkOffers(capturedLegacy));
@@ -141,7 +142,7 @@ TEST(NewHorizonsPerkRules, WeightedOfferPolicyRejectsMalformedAndUnknownVersions
 	using namespace newHorizonsHeroes;
 	const JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
 	std::vector<JsonNode> invalid = {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(-1),
-		JsonNode(2), JsonNode(1.5), JsonNode("1"), JsonNode(JsonMap{})};
+		JsonNode(3), JsonNode(1.5), JsonNode("1"), JsonNode(JsonMap{})};
 	JsonNode array;
 	array.Vector().emplace_back(1);
 	invalid.push_back(array);
@@ -163,6 +164,9 @@ TEST(NewHorizonsPerkRules, WeightedOfferPolicyRejectsMalformedAndUnknownVersions
 TEST(NewHorizonsPerkRules, GlobalSettingsCodecGuardsWeightedPolicyBeforeInstallingOverridesWithoutHeroes)
 {
 	JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	// Retain this exact historical policy1/1113 boundary control.
+	current["offerWeightPolicyVersion"].Integer() = 1;
+	current.Struct().erase("perkOfferNormalization");
 	current.setOverrideFlag(true);
 	JsonNode noDevelopment(JsonMap{});
 	noDevelopment.setOverrideFlag(true);
@@ -219,6 +223,9 @@ TEST(NewHorizonsPerkRules, GlobalSettingsCodecGuardsWeightedPolicyBeforeInstalli
 TEST(NewHorizonsPerkRules, EmptyMapCodecDelegatesGlobalWeightedGuardWithoutAnyHeroOrDruidPolicy)
 {
 	JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	// Retain this exact historical policy1/1113 boundary control.
+	current["offerWeightPolicyVersion"].Integer() = 1;
+	current.Struct().erase("perkOfferNormalization");
 	current.setOverrideFlag(true);
 	auto legacy = current;
 	legacy.Struct().erase("offerWeightPolicyVersion");
@@ -273,4 +280,161 @@ TEST(NewHorizonsPerkRules, EmptyMapCodecDelegatesGlobalWeightedGuardWithoutAnyHe
 	ASSERT_NO_THROW(oldDecoded.serialize(legacyWire.iser));
 	EXPECT_EQ(oldDecoded.getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), legacy);
 	EXPECT_FALSE(newHorizonsHeroes::usesWeightedPerkOffers(oldDecoded.getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS)));
+}
+
+TEST(NewHorizonsPerkRules, R2NormalizationRequiresFiniteRatioAtLeastOneAndExactMathVersion)
+{
+	const JsonNode baseline(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(baseline));
+	ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(baseline));
+	ASSERT_TRUE(JsonUtils::validate(baseline, "vcmi:newHorizonsPerks", "R2 baseline"));
+	for(const auto & invalid : {JsonNode(), JsonNode(false), JsonNode("2"), JsonNode(0.0), JsonNode(0.5)})
+	{
+		SCOPED_TRACE(invalid.toCompactString());
+		auto bad = baseline;
+		bad["perkOfferNormalization"]["maximumPreferenceRatio"] = invalid;
+		EXPECT_THROW(newHorizonsHeroes::validatePerkRules(bad), std::runtime_error);
+		EXPECT_FALSE(JsonUtils::validate(bad, "vcmi:newHorizonsPerks", "R2 malformed ratio"));
+	}
+	auto bad = baseline;
+	bad["perkOfferNormalization"] = JsonNode();
+	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(bad), std::runtime_error);
+	EXPECT_FALSE(JsonUtils::validate(bad, "vcmi:newHorizonsPerks", "R2 null normalization"));
+	bad = baseline;
+	bad["perkOfferNormalization"]["mathVersion"].Integer() = 2;
+	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(bad), std::runtime_error);
+	for(double ratio : {1.0, 1.5, 2.0, 3.0})
+	{
+		auto valid = baseline;
+		valid["perkOfferNormalization"]["maximumPreferenceRatio"].Float() = ratio;
+		EXPECT_NO_THROW(newHorizonsHeroes::validatePerkRules(valid));
+	}
+}
+
+TEST(NewHorizonsPerkRules, R2GlobalOnlyCodecRejectsPreviousEpochBeforeWritingAndPreservesOldAbsence)
+{
+	JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	current.setOverrideFlag(true);
+	GameSettings settings;
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, current);
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
+	EXPECT_THROW(settings.serialize(old.oser), std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+	CMemorySerializer wire;
+	ASSERT_NO_THROW(settings.serialize(wire.oser));
+	GameSettings decoded;
+	ASSERT_NO_THROW(decoded.serialize(wire.iser));
+	EXPECT_EQ(decoded.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), current);
+	auto legacy = current;
+	legacy.Struct().erase("offerWeightPolicyVersion");
+	legacy.Struct().erase("perkOfferNormalization");
+	GameSettings oldSettings;
+	oldSettings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, legacy);
+	CMemorySerializer oldWire;
+	oldWire.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
+	EXPECT_NO_THROW(oldSettings.serialize(oldWire.oser));
+}
+
+TEST(NewHorizonsPerkRules, R2RawPreviousSettingsReaderRejectsBeforeReplacingPolicyOne)
+{
+	JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_EQ(current["offerWeightPolicyVersion"].Integer(), 2);
+	current.setOverrideFlag(true);
+	auto policyOne = current;
+	policyOne["offerWeightPolicyVersion"].Integer() = 1;
+	policyOne.Struct().erase("perkOfferNormalization");
+	JsonNode noDevelopment(JsonMap{});
+	noDevelopment.setOverrideFlag(true);
+	GameSettings target;
+	target.addOverride(EGameSettings::HEROES_NEW_HORIZONS, noDevelopment);
+	target.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, policyOne);
+	// Successful binary loads deliberately capture these historical defaults.
+	// Make them explicit so full-byte equality also checks the policy-one round trip.
+	JsonNode finalLuck(false);
+	JsonNode moraleDamage(100);
+	target.addOverride(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, finalLuck);
+	target.addOverride(EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT, moraleDamage);
+	const auto snapshot = [](GameSettings & settings)
+	{
+		CMemorySerializer memory;
+		settings.serialize(memory.oser);
+		return memory.extractBuffer();
+	};
+	const auto before = snapshot(target);
+
+	// Forge only the raw settings payload; the normal writer refuses R2.
+	JsonNode raw;
+	raw["heroes"]["newHorizons"] = noDevelopment;
+	raw["heroes"]["newHorizonsPerks"] = current;
+	CMemorySerializer forged;
+	forged.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
+	forged.iser.version = forged.oser.version;
+	forged.oser & raw;
+	EXPECT_THROW(target.serialize(forged.iser), std::runtime_error);
+	EXPECT_EQ(snapshot(target), before);
+
+	CMemorySerializer previous;
+	previous.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
+	previous.iser.version = previous.oser.version;
+	ASSERT_NO_THROW(target.serialize(previous.oser));
+	GameSettings restored;
+	ASSERT_NO_THROW(restored.serialize(previous.iser));
+	EXPECT_EQ(snapshot(restored), before);
+	EXPECT_EQ(restored.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), policyOne);
+}
+
+TEST(NewHorizonsPerkRules, R2EmptyMapCodecGuardsPreviousEpochWithoutHeroesAndRetainsPolicyOne)
+{
+	JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_EQ(current["offerWeightPolicyVersion"].Integer(), 2);
+	current.setOverrideFlag(true);
+	auto policyOne = current;
+	policyOne["offerWeightPolicyVersion"].Integer() = 1;
+	policyOne.Struct().erase("perkOfferNormalization");
+	JsonNode noDevelopment(JsonMap{});
+	noDevelopment.setOverrideFlag(true);
+	CMap source(nullptr);
+	source.width = source.height = 1;
+	source.mapLayers = {MapLayerId::SURFACE};
+	source.initTerrain();
+	source.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, noDevelopment);
+	source.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, current);
+	ASSERT_TRUE(source.objects.empty());
+	ASSERT_TRUE(source.getHeroesOnMap().empty());
+	ASSERT_TRUE(source.getHeroesInPool().empty());
+	ASSERT_FALSE(newHorizonsHeroes::usesRules(
+		source.getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS)));
+	CMemorySerializer previousWrite;
+	previousWrite.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
+	EXPECT_THROW(source.serialize(previousWrite.oser), std::runtime_error);
+	EXPECT_TRUE(previousWrite.extractBuffer().empty());
+
+	CMemorySerializer currentWire;
+	ASSERT_NO_THROW(source.serialize(currentWire.oser));
+	const auto bytes = currentWire.extractBuffer();
+	CMemorySerializer currentRead(bytes);
+	CMap decoded(nullptr);
+	ASSERT_NO_THROW(decoded.serialize(currentRead.iser));
+	EXPECT_EQ(decoded.getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), current);
+	EXPECT_TRUE(decoded.objects.empty());
+	EXPECT_TRUE(decoded.getHeroesOnMap().empty());
+	EXPECT_TRUE(decoded.getHeroesInPool().empty());
+	CMemorySerializer previousRead(bytes);
+	previousRead.iser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
+	CMap refused(nullptr);
+	refused.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, noDevelopment);
+	refused.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, policyOne);
+	EXPECT_THROW(refused.serialize(previousRead.iser), std::runtime_error);
+	// Only override installation is atomic; the map header may be decoded.
+	EXPECT_EQ(refused.getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), policyOne);
+
+	source.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, policyOne);
+	CMemorySerializer policyOneWire;
+	policyOneWire.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
+	policyOneWire.iser.version = policyOneWire.oser.version;
+	ASSERT_NO_THROW(source.serialize(policyOneWire.oser));
+	CMap oldDecoded(nullptr);
+	ASSERT_NO_THROW(oldDecoded.serialize(policyOneWire.iser));
+	EXPECT_EQ(oldDecoded.getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), policyOne);
 }

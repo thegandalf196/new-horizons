@@ -105,6 +105,9 @@ class CHeroLevelUpDialogQuery : public CDialogQuery
 {
 private:
 	void refreshChoicesBeforePrompt();
+	const newHorizonsHeroes::PerkState::OfferWeightContext & perkWeightContext() const;
+	mutable newHorizonsHeroes::PerkState::OfferWeightContext cachedPerkWeightContext;
+	mutable JsonNode cachedPerkNormalization;
 
 public:
 	static constexpr QueryType TYPE = QueryType::HeroLevelUpDialog;

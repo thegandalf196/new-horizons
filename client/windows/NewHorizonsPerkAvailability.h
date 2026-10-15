@@ -204,7 +204,8 @@ inline Evaluation evaluatePerk(const newHorizonsHeroes::PerkState & state,
 			result.reason = Reason::EARLIER_TIER_MISSING;
 			return result;
 		}
-	if(detail::tierSelected(state, skillId, result.requiredRank))
+	if(!newHorizonsHeroes::usesR2PerkOffers(state.rules)
+		&& detail::tierSelected(state, skillId, result.requiredRank))
 	{
 		result.status = Status::LOCKED;
 		result.reason = Reason::TIER_OCCUPIED;
@@ -282,6 +283,60 @@ inline TierSlot evaluateTier(const newHorizonsHeroes::PerkState & state,
 	{
 		result.status = Status::UNAVAILABLE;
 		result.reason = Reason::NO_CATALOGUE;
+	}
+	return result;
+}
+
+/// Policy2 cells represent the three selected perks, not one perk per tier.
+/// Keep acquisition order and each selected perk's actual rank visible.
+inline TierSlot evaluateSelectionSlot(const newHorizonsHeroes::PerkState & state,
+	std::string_view skillId, int skillRank, size_t slotIndex)
+{
+	TierSlot result;
+	if(slotIndex >= newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL
+		|| !newHorizonsHeroes::usesR2PerkOffers(state.rules))
+		return result;
+	const auto skill = newHorizonsHeroes::perkSkill(state.rules, skillId);
+	if(!skill)
+		return result;
+	size_t selectedIndex = 0;
+	for(const auto & selection : state.selected)
+	{
+		if(selection.skillId != skillId)
+			continue;
+		if(selectedIndex++ != slotIndex)
+			continue;
+		const auto perk = newHorizonsHeroes::perkDefinition(state.rules, selection.skillId, selection.perkId);
+		if(!perk)
+			return result;
+		const auto evaluation = evaluatePerk(state, skillId, skillRank, *perk);
+		result.requiredRank = evaluation.requiredRank;
+		result.status = evaluation.status;
+		result.reason = evaluation.reason;
+		result.selectedPerk = *perk;
+		return result;
+	}
+
+	// Empty cells describe remaining capacity without implying that choosing
+	// another Basic perk grants Advanced/Expert eligibility.
+	std::optional<Evaluation> locked;
+	for(const auto & perk : skill->perks)
+	{
+		const auto evaluation = evaluatePerk(state, skillId, skillRank, perk);
+		if(evaluation.status == Status::AVAILABLE)
+		{
+			result.status = Status::AVAILABLE;
+			result.reason = Reason::NONE;
+			return result;
+		}
+		if(evaluation.status == Status::LOCKED && !locked)
+			locked = evaluation;
+	}
+	if(locked)
+	{
+		result.status = locked->status;
+		result.reason = locked->reason;
+		result.requiredRank = locked->requiredRank;
 	}
 	return result;
 }

@@ -176,6 +176,7 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
 			perks.Struct().erase("offerWeightPolicyVersion");
+			perks.Struct().erase("perkOfferNormalization");
 			for(auto & perk : perks["skills"]["new-horizons:command"]["perks"].Vector())
 				if(perk["id"].String() == "new-horizons:command.crisisCommand")
 					perk["effect"]["status"].String() = "planned";

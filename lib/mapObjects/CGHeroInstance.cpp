@@ -3112,6 +3112,9 @@ newHorizonsHeroes::PerkState::OfferWeightContext CGHeroInstance::getPerkOfferWei
 		if(!decoded || *decoded < 0 || SecondarySkill::encode(*decoded) != skillId)
 			throw std::runtime_error("Captured perk offer weights require exact scoped skill identities");
 	}
+	std::map<std::string, int> referenceWeights;
+	for(const auto & [skillId, weight] : captured["skillOfferWeights"].Struct())
+		referenceWeights.emplace(skillId, static_cast<int>(weight.Integer()));
 	return {Mode::CapturedTable, [captured](const std::string & skillId) -> std::optional<int>
 	{
 		const auto decoded = LIBRARY->identifiers()->getIdentifier(
@@ -3119,7 +3122,7 @@ newHorizonsHeroes::PerkState::OfferWeightContext CGHeroInstance::getPerkOfferWei
 		if(!decoded || *decoded < 0 || SecondarySkill::encode(*decoded) != skillId)
 			throw std::runtime_error("Perk parent skill identity does not match its captured weight table");
 		return newHorizonsHeroes::skillOfferWeight(captured, SecondarySkill(*decoded));
-	}};
+	}, std::move(referenceWeights)};
 }
 
 int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const

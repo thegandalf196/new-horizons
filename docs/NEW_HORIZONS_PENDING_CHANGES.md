@@ -63,19 +63,38 @@ Earlier captured worlds without the policy keep their existing Haste successor
 or original Fortune specialty.
 The historical Daremyth Haste row below is superseded for this new policy.
 
-## Perk offers inherit full parent Skill weights
+## Compressed parent-first perk offers
 
-Supersedes the final sentence of canonical "Class Skill offer weights": each
-eligible perk receives the hero class's full captured offer weight for its
-parent Skill. Do not divide that weight among a Skill's eligible perks. Apply
-existing perk legality and tier checks before drawing without replacement;
-zero weight excludes the parent's perks. Skill-choice drawing remains separate.
+Supersedes both the earlier full-parent-weight-per-perk amendment and canonical
+"Class Skill offer weights" for newly captured offer policy2. Ordinary Skill
+offers retain their existing class weights and eligibility. Perk offers use the
+same captured class row, but select a parent first and then an eligible perk
+uniformly. A parent's eligible perk count does not multiply its chance.
 
-The explicit captured offer policy controls new worlds. Earlier captured
-registries without that policy retain their previous offers and pending-choice
-validation. Installed defaults must not reinterpret an old saved query.
-Integrate this settled rule into the canonical
-section after verification rather than retaining a second permanent rule source.
+The configurable maximum preference ratio starts at `R = 2.0`. With `w_min`
+and `w_max` taken from the complete positive class distribution, not today's
+eligible subset, use `gamma = ln(R) / ln(w_max / w_min)` and
+`W(w) = (w / w_min)^gamma`. A legitimately learned zero-weight Skill receives
+weight1; this does not permit its ordinary acquisition or bypass faction/class
+restrictions. Uniform reference rows and `R = 1` yield uniform parent weights.
+
+Two eligible parents supply distinct parents sampled without replacement.
+One eligible parent may supply two distinct eligible perks, uniformly without
+replacement. One/no legal perk yields one/no offer. No pity or filler choices.
+
+Ranks, the eight-Skill capacity, three-per-Skill perk cap, normal rank-advancement
+prerequisites and exceptional rank-vs-perk progression remain distinct. Policy2
+permits additional legal same-tier perks within that cap; multiple Basic perks
+do not substitute for an Advanced perk. Spending all three choices on Basic
+perks can therefore prevent further ordinary rank development. The hero screen
+must show all selected perks, not hide same-tier selections behind one tier cell.
+
+Captured policy1 retains full parent weight per eligible perk and excludes
+zero-weight parents. Policy absence retains the earlier unweighted behavior.
+Installed defaults must not reinterpret old saved worlds or pending queries;
+unsupported older serialization formats must reject policy2 rather than lose it.
+The XP curve is separate and is not changed by this amendment. Integrate into
+the canonical section after verification rather than maintaining two rule sources.
 
 ## Provisional coefficients for three authored Druid specialties
 

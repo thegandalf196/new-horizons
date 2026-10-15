@@ -57,6 +57,7 @@ inline void captureLegacyPerkOfferPolicy(CMap & map)
 	if(!newHorizonsHeroes::usesPerkRules(perks))
 		return;
 	perks.Struct().erase("offerWeightPolicyVersion");
+	perks.Struct().erase("perkOfferNormalization");
 	perks.setOverrideFlag(true);
 	map.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 }

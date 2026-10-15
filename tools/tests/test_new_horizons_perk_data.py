@@ -456,6 +456,28 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
     def test_registry_validates_against_schema(self):
         Draft4Validator(self.schema).validate(self.rules)
 
+    def test_parent_first_policy_has_configurable_valid_normalization(self):
+        self.assertEqual(self.rules['offerWeightPolicyVersion'], 2)
+        self.assertEqual(self.rules['perkOfferNormalization'], {
+            'maximumPreferenceRatio': 2.0, 'mathVersion': 1})
+        self.assertEqual(self.rules['maxPerksPerSkill'], 3)
+        validator = Draft4Validator(self.schema)
+        for ratio in (1.0, 1.5, 2.0, 3.0):
+            with self.subTest(ratio=ratio):
+                candidate = json.loads(json.dumps(self.rules))
+                candidate['perkOfferNormalization']['maximumPreferenceRatio'] = ratio
+                validator.validate(candidate)
+        for normalization in (
+                {'maximumPreferenceRatio': 0.99, 'mathVersion': 1},
+                {'maximumPreferenceRatio': None, 'mathVersion': 1},
+                {'maximumPreferenceRatio': 2.0, 'mathVersion': 2},
+                {'maximumPreferenceRatio': 2.0},
+                {'maximumPreferenceRatio': 2.0, 'mathVersion': 1, 'unknown': 1}):
+            with self.subTest(invalid=normalization):
+                candidate = json.loads(json.dumps(self.rules))
+                candidate['perkOfferNormalization'] = normalization
+                self.assertTrue(list(validator.iter_errors(candidate)))
+
     def test_hero_luck_reworks_keep_saved_ids_ranks_and_sylvan_recovery(self):
         perks = {p['id']: p for p in self.rules['skills']['new-horizons:luck']['perks']}
         for identity, name, rank in (

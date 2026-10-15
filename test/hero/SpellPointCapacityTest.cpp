@@ -358,6 +358,12 @@ protected:
 		{
 			development.Struct().erase("bottomlessMindSpecialty");
 			development.Struct().erase("masterSpellwardSpecialty"); // Explicit pre-Bottomless capture.
+			// This historical world predates R2 but retains captured policy1.
+			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perks["offerWeightPolicyVersion"].Integer() = 1;
+			perks.Struct().erase("perkOfferNormalization");
+			perks.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		}
 		development.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
@@ -433,6 +439,7 @@ protected:
 		// offer feature; the existing fixture uses its historical offer helper.
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 		perks.Struct().erase("offerWeightPolicyVersion");
+		perks.Struct().erase("perkOfferNormalization");
 		perks.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		if(!captureHighLore())
@@ -1530,13 +1537,22 @@ TEST_F(SpellPointCapacityTest, HeroSerializationPreservesDistinctNormalAndBuffer
 
 TEST_F(SpellPointCapacityTest, LegacyHeroSerializationDoesNotManufactureBuffer)
 {
-	setKnowledge(attackerSideHero, 100);
-	attackerSideHero->initializeSpellPoints(80, 0);
+	// A historical codec fixture must not inherit the current world's captured
+	// spell/perk policies. Keep the current-world refusal as a separate control.
+	CMemorySerializer current;
+	current.oser.version = ESerializationVersion::NEW_HORIZONS_RANDOM_ARTIFACT_POOL;
+	EXPECT_THROW(current.oser & attackerSideHero, std::runtime_error);
+	auto legacyHero = std::make_unique<CGHeroInstance>(nullptr);
+	legacyHero->setHeroType(attackerSideHero->getHeroTypeID());
+	legacyHero->pushPrimSkill(PrimarySkill::KNOWLEDGE, 100);
+	ASSERT_TRUE(legacyHero->getMagicRules().isNull());
+	ASSERT_TRUE(legacyHero->getPerkState().rules.isNull());
+	ASSERT_TRUE(legacyHero->getPrimaryGrowthRules().isNull());
+	legacyHero->initializeSpellPoints(80, 0);
 	CMemorySerializer memory;
 	memory.oser.version = ESerializationVersion::NEW_HORIZONS_RANDOM_ARTIFACT_POOL;
 	memory.iser.version = ESerializationVersion::NEW_HORIZONS_RANDOM_ARTIFACT_POOL;
-	memory.iser.cb = gameState().get();
-	memory.oser & attackerSideHero;
+	memory.oser & legacyHero;
 	std::unique_ptr<CGHeroInstance> restored;
 	memory.iser & restored;
 	ASSERT_NE(restored, nullptr);
@@ -1547,11 +1563,26 @@ TEST_F(SpellPointCapacityTest, LegacyHeroSerializationDoesNotManufactureBuffer)
 
 TEST_F(SpellPointCapacityTest, LegacyHeroSerializationRejectsLossOfBuffer)
 {
-	setKnowledge(attackerSideHero, 100);
-	attackerSideHero->initializeSpellPoints(30, 50);
+	auto legacyHero = std::make_unique<CGHeroInstance>(nullptr);
+	legacyHero->setHeroType(attackerSideHero->getHeroTypeID());
+	legacyHero->pushPrimSkill(PrimarySkill::KNOWLEDGE, 100);
+	ASSERT_TRUE(legacyHero->getMagicRules().isNull());
+	ASSERT_TRUE(legacyHero->getPerkState().rules.isNull());
+	ASSERT_TRUE(legacyHero->getPrimaryGrowthRules().isNull());
+	legacyHero->initializeSpellPoints(30, 50);
 	CMemorySerializer memory;
 	memory.oser.version = ESerializationVersion::NEW_HORIZONS_RANDOM_ARTIFACT_POOL;
-	EXPECT_THROW(memory.oser & attackerSideHero, std::runtime_error);
+	try
+	{
+		memory.oser & legacyHero;
+		FAIL() << "An older format must not discard Buffer Spell Points";
+	}
+	catch(const std::runtime_error & error)
+	{
+		EXPECT_STREQ(error.what(), "Cannot discard Buffer Spell Points in an older save format");
+	}
+	EXPECT_EQ(legacyHero->getNormalSpellPoints(), 30);
+	EXPECT_EQ(legacyHero->getBufferSpellPoints(), 50);
 }
 
 TEST_F(SpellPointCapacityTest, BufferGrantedDuringCombatPreservesNormalAndTemporaryProvenance)

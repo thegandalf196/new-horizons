@@ -202,6 +202,8 @@ RUNTIME_ACTIVE_RANKS = {
     "shroudOfMalassa",
     "bloodrage",
     "bulwarkOfTheMire",
+    "spellcraft",
+    "diplomacy",
 }
 ACTIVE_GENERAL_GAIN_SKILLS = set(SCHOOL_SKILLS) | {"offense"}
 NO_OP = {
@@ -359,6 +361,10 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                             canonical["ranks"][rank]["effect"]["status"], "active"
                         )
                         self.assertTrue(skill[rank]["effects"])
+                        if key in {"spellcraft", "diplomacy"}:
+                            # Their active mechanics are resolved by the engine,
+                            # not a duplicate generic SecondarySkill bonus.
+                            self.assertEqual(skill[rank]["effects"], NO_OP)
                     else:
                         self.assertEqual(
                             canonical["ranks"][rank]["effect"]["status"], "planned"
