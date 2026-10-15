@@ -1292,3 +1292,21 @@ reconciliation and focused lifetime/actual-cast evidence before a completion
 claim. Preserve the explicit75% Morale creature-spell policy and avoid a
 global reinterpretation of all attack premiums. Second look: indirect/collateral
 origins and unusual scripted spell actions remain Phase2.
+
+## Andra: additive reserve capacity
+
+- Interpretation: Bottomless Mind contributes flat maximum Normal capacity,
+  gated by active Intelligence; proposed default is 2 points per level.
+- Rationale: the authored reserve distinguishes Andra from Elleshar's scaling of
+  Intelligence's contribution and Ayden's combat-start recovery. Multiplying the
+  whole mana pool or refilling it would duplicate unrelated mechanics.
+- Contract: optional captured `bottomlessMindSpecialty` version 1; absence stays
+  inert. Query-only capacity, existing event reconciliation, no RNG or Buffer.
+  Append-only `NEW_HORIZONS_BOTTOMLESS_MIND` rejects unsupported
+  serialization before installing or writing the policy.
+- Review surface: HeroRules capture/validation and specialty presentation,
+  CGHeroInstance capacity, existing global/map/world/lobby/hero codec envelopes.
+  The 25-case native capacity/save gate passes, including strict null admission,
+  no-refill/Buffer invariants, related Wisdom recovery and saved policy absence.
+  Rendered and native Windows acceptance remain unverified. Revisit points-per-level
+  balance and event paths that change effective Intelligence or hero level.

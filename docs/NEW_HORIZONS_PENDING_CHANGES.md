@@ -564,3 +564,14 @@ unchanged. Preserve existing School/perk staging, other profiles, map books and
 captured legacy contexts. These are authored provisional identities, not the
 workbook's undefined Masterful variants. Independent review and focused live/
 detached/default/map/legacy/save evidence must precede canonical integration.
+
+## Andra — Bottomless Mind (provisional implementation amendment)
+
+The authored reserve-capacity specialty is interpreted as a flat addition to
+maximum **Normal** Spell Points: `pointsPerLevel × hero level`, requiring the
+selected, active Intelligence perk. Provisional captured policy version 1 defaults
+to 2 points per level (+2/+10/+40 at levels 1/5/20). Add this after Intelligence,
+Arcane Reservoir and other capacity terms; do not multiply it by Intelligence or
+artifact mana percentages. It does not refill Normal, grant Buffer, or alter
+Andra's starting Dispel, class, skills, army or equipment. Historical captured
+absence is inert. These provisional coefficients need Phase 3 playtesting.

@@ -100,6 +100,9 @@ protected:
 			rules.Struct().erase("fortuneChildSpecialty"); // Historical six-successor captured policy.
 			rules.Struct().erase("arcanePreparationSpecialty");
 		}
+		// Preserve the explicitly isolated pre-Bottomless specialty contexts.
+		if(!fortuneChild || arcaneOnly || fortuneOnly)
+			rules.Struct().erase("bottomlessMindSpecialty");
 		if(arcaneOnly)
 			rules.Struct().erase("fortuneChildSpecialty");
 		if(fortuneOnly)
@@ -366,6 +369,7 @@ TEST_P(IndividualSpecialtyFormatAdmission, OlderEnclosingWritersRejectEachPolicy
 	GameSettings settings;
 	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	rules.Struct().erase(GetParam() ? "fortuneChildSpecialty" : "arcanePreparationSpecialty");
+	rules.Struct().erase("bottomlessMindSpecialty");
 	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, rules);
 	reject(settings);
 	reject(gameState()->getMap());
@@ -382,6 +386,7 @@ TEST_P(IndividualSpecialtyFormatAdmission, RawOlderSettingsReaderRejectsEachCapt
 	raw["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
 	raw["heroes"]["newHorizons"].Struct().erase(
 		GetParam() ? "fortuneChildSpecialty" : "arcanePreparationSpecialty");
+	raw["heroes"]["newHorizons"].Struct().erase("bottomlessMindSpecialty");
 	CMemorySerializer bytes;
 	bytes.oser & raw;
 	bytes.iser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;

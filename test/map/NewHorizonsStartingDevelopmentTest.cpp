@@ -136,6 +136,7 @@ protected:
 		{
 			rules.Struct().erase("fortuneChildSpecialty");
 			rules.Struct().erase("arcanePreparationSpecialty");
+			rules.Struct().erase("bottomlessMindSpecialty");
 			rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 			rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 			rules["startingSkills"].Struct().erase("startingBookReplacements");

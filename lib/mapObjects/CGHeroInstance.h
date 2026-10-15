@@ -286,6 +286,7 @@ public:
 	std::optional<newHorizonsHeroes::DruidSpecialtyRules> getDruidSpecialtyRules(
 		newHorizonsHeroes::DruidSpecialtyKind specialty) const;
 	int64_t getHighLoreManaBonus() const;
+	int64_t getBottomlessMindManaBonus() const;
 	/// Only the captured exact native Daremyth producer contributes this Luck.
 	int getFortuneChildLuckBonus() const;
 	int getArcanePreparationPercent() const;
@@ -744,6 +745,9 @@ public:
 			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
 		if(h.saving)
+			newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
+		if(h.saving)
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
@@ -898,6 +902,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 				newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
+				newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 				newHorizonsHeroes::validateRemainingStartSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,

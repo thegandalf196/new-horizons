@@ -146,6 +146,12 @@ public:
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
+	void validateNewHorizonsBottomlessMindSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateBottomlessMindSerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
 	{
 		newHorizonsHeroes::validateStartingDevelopmentSerialization(
@@ -254,6 +260,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
+			newHorizonsHeroes::validateBottomlessMindSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 			newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
 			h & overrides;
@@ -310,6 +318,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION));
+			newHorizonsHeroes::validateBottomlessMindSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 			loadSavedOverrides(overrides);

@@ -12,6 +12,8 @@
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/GameConstants.h"
+#include "../../lib/GameSettings.h"
+#include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/constants/StringConstants.h"
 #include "../../lib/modding/CModHandler.h"
 #include <limits>
@@ -536,4 +538,89 @@ TEST(NewHorizonsHeroRulesTest, RuntimeChecksSemanticsBeyondSchema)
 	rules = testHeroRules();
 	rules["classProfiles"].Struct().begin()->second["starting"].Vector()[0].Integer() = 1000001;
 	EXPECT_THROW(validateHeroRules(rules, true), std::runtime_error);
+}
+
+TEST(NewHorizonsHeroRulesTest, BottomlessMindCapturedPolicyIsStrictAndAbsenceStaysInert)
+{
+	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
+	auto rules = testHeroRules();
+	rules["bottomlessMindSpecialty"] = configured["bottomlessMindSpecialty"];
+	ASSERT_NO_THROW(validateHeroRules(rules, true));
+	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "Bottomless Mind policy"));
+	const auto global = rules;
+	const auto captured = resolveHeroRules(rules, HeroClassID(0));
+	ASSERT_TRUE(bottomlessMindSpecialtyRules(captured));
+	EXPECT_EQ(bottomlessMindSpecialtyRules(captured)->pointsPerLevel, 2);
+	rules["bottomlessMindSpecialty"]["pointsPerLevel"].Integer() = 9;
+	EXPECT_EQ(bottomlessMindSpecialtyRules(captured)->pointsPerLevel, 2);
+	auto old = captured;
+	old.Struct().erase("bottomlessMindSpecialty");
+	EXPECT_FALSE(bottomlessMindSpecialtyRules(old));
+	EXPECT_NO_THROW(validateBottomlessMindSerialization(old, false));
+	auto absentGlobal = global;
+	absentGlobal.Struct().erase("bottomlessMindSpecialty");
+	EXPECT_TRUE(JsonUtils::validate(absentGlobal, "vcmi:newHorizonsHeroes", "absent Bottomless Mind"));
+	// Schema admission takes the global shape, not the resolved hero shape.
+	ASSERT_TRUE(JsonUtils::validate(global, "vcmi:newHorizonsHeroes", "malformed-control baseline"));
+	std::vector<JsonNode> bad(9, global);
+	bad[0]["bottomlessMindSpecialty"]["version"].Integer() = 2;
+	bad[1]["bottomlessMindSpecialty"]["pointsPerLevel"].Integer() = -1;
+	bad[2]["bottomlessMindSpecialty"]["pointsPerLevel"].Integer() = 1000001;
+	bad[3]["bottomlessMindSpecialty"]["pointsPerLevel"].Float() = 2.5;
+	bad[4]["bottomlessMindSpecialty"]["pointsPerLevel"].Bool() = true;
+	bad[5]["bottomlessMindSpecialty"]["unknown"].Integer() = 0;
+	bad[6]["bottomlessMindSpecialty"] = JsonNode();
+	bad[7]["bottomlessMindSpecialty"].Struct().erase("pointsPerLevel");
+	bad[8]["bottomlessMindSpecialty"]["pointsPerLevel"] = JsonNode();
+	for(size_t index = 0; index < bad.size(); ++index)
+	{
+		SCOPED_TRACE(index);
+		const auto & malformed = bad[index];
+		EXPECT_THROW(bottomlessMindSpecialtyRules(malformed), std::runtime_error);
+		EXPECT_THROW(validateHeroRules(malformed, true), std::runtime_error);
+		EXPECT_FALSE(JsonUtils::validate(malformed, "vcmi:newHorizonsHeroes", "malformed Bottomless Mind"));
+		auto malformedCaptured = captured;
+		malformedCaptured["bottomlessMindSpecialty"] = malformed["bottomlessMindSpecialty"];
+		EXPECT_THROW(validateResolvedHeroRules(malformedCaptured), std::runtime_error);
+	}
+}
+
+TEST(NewHorizonsHeroRulesTest, BottomlessMindGlobalSettingsCodecGuardsPreviousFormatAndPreservesAbsence)
+{
+	// No heroes are needed: the captured global policy itself needs the epoch.
+	auto rules = testHeroRules();
+	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
+	rules["bottomlessMindSpecialty"] = configured["bottomlessMindSpecialty"];
+	rules.setOverrideFlag(true);
+	GameSettings source;
+	source.addOverride(EGameSettings::HEROES_NEW_HORIZONS, rules);
+	CMemorySerializer oldWrite;
+	oldWrite.oser.version = ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION;
+	EXPECT_THROW(source.serialize(oldWrite.oser), std::runtime_error);
+	EXPECT_TRUE(oldWrite.extractBuffer().empty());
+	CMemorySerializer current;
+	source.serialize(current.oser);
+	GameSettings decoded;
+	decoded.serialize(current.iser);
+	EXPECT_EQ(decoded.getValue(EGameSettings::HEROES_NEW_HORIZONS), rules);
+	auto legacy = rules;
+	legacy.Struct().erase("bottomlessMindSpecialty");
+	GameSettings oldSource;
+	oldSource.addOverride(EGameSettings::HEROES_NEW_HORIZONS, legacy);
+	CMemorySerializer oldWire;
+	oldWire.oser.version = ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION;
+	oldWire.iser.version = oldWire.oser.version;
+	ASSERT_NO_THROW(oldSource.serialize(oldWire.oser));
+	GameSettings oldDecoded;
+	ASSERT_NO_THROW(oldDecoded.serialize(oldWire.iser));
+	EXPECT_EQ(oldDecoded.getValue(EGameSettings::HEROES_NEW_HORIZONS), legacy);
+	// A raw JsonNode is still readable, but old typed admission cannot install
+	// the new policy. Existing overrides must stay unchanged on refusal.
+	JsonNode raw;
+	raw["heroes"]["newHorizons"] = rules;
+	CMemorySerializer oldRead;
+	oldRead.oser & raw;
+	oldRead.iser.version = oldWire.oser.version;
+	EXPECT_THROW(oldDecoded.serialize(oldRead.iser), std::runtime_error);
+	EXPECT_EQ(oldDecoded.getValue(EGameSettings::HEROES_NEW_HORIZONS), legacy);
 }

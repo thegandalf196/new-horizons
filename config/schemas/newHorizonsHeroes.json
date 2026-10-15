@@ -61,6 +61,16 @@
 						"levelStep": {"type": "integer", "minimum": 1, "maximum": 1000}
 					}
 				},
+				"bottomlessMindSpecialty": {
+					"type": "object", "additionalProperties": false,
+					"not": {"type": "null"},
+					"minProperties": 2, "maxProperties": 2,
+					"required": ["version", "pointsPerLevel"],
+					"properties": {
+						"version": {"type": "integer", "enum": [1]},
+						"pointsPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000000, "not": {"type": "null"}}
+					}
+				},
 				"arcanePreparationSpecialty": {
 					"type": "object", "additionalProperties": false,
 					"required": ["version", "initialPercent", "percentPerLevel", "maximumPercent"],

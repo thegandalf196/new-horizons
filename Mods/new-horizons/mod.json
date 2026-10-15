@@ -3053,6 +3053,10 @@
 					"percentPerLevel": 5,
 					"maximumPercent": 100
 				},
+				"bottomlessMindSpecialty": {
+					"version": 1,
+					"pointsPerLevel": 2
+				},
 				"nonDamageSpellSpecialties": {
 					"version": 1,
 					"aenainFrailtyReplacement": true,
