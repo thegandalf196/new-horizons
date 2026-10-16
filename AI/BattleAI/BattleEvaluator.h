@@ -19,6 +19,9 @@ class CSpell;
 class CBattleCallback;
 class BattleAction;
 class JsonNode;
+class CPlayerBattleCallback;
+class CGHeroInstance;
+struct DivineMandateStatus;
 
 struct CachedAttack
 {
@@ -43,6 +46,17 @@ class DLL_EXPORT BattleEvaluator
 	DamageCache damageCache;
 	float strengthRatio;
 	int simulationTurnsCount;
+	struct SpellOption
+	{
+		const CSpell * spell = nullptr;
+		bool metamagicFollowup = false;
+		bool divineMandateFollowup = false;
+		bool metamagicGrand = false;
+	};
+	std::vector<SpellOption> collectCastableHeroSpellOptions(
+		const std::shared_ptr<CPlayerBattleCallback> & battleView, const CGHeroInstance * hero,
+		bool allowSpells, bool mandatoryOrder, bool legacyMetamagicFollowup,
+		const DivineMandateStatus & divineMandateStatus) const;
 	float beneficialCreaturePressure(const std::shared_ptr<HypotheticBattle> & state,
 		uint32_t spentCasterId, DamageCache & cache) const;
 	float beneficialCreatureOutcomeValue(const CStack * caster, const battle::Unit * recipient,
