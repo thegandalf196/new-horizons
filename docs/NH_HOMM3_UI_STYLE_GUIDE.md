@@ -92,6 +92,8 @@ construction literally.
 
 ## Widget refresh and event safety
 
+Skip deliberately size-gated nested Adventure Map containers before widget registration, ownership retention or `addChild`. Do not turn unknown builders or other unexpected null widgets into silently omitted controls.
+
 Refresh dynamic availability and readback on both ordinary and full redraw paths.
 Redraw can synchronously reenter drawing: update cached state before setters that
 request redraw, and do not repeatedly set unchanged labels during painting.

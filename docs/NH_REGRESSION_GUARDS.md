@@ -6,6 +6,8 @@ Keep one maintained invariant and reproducer per recurring defect; retain raw fa
 
 See the [combat restart guardrail](NH_PERFORMANCE_EXPERIMENT.md#combat-restart-guardrail) for exact ownership/repaint ordering and Linux acceptance limits. Run `nhWindowSceneRedrawTest` and `client/tests/check-battle-restart-teardown.py`, then an ordinary human combat→Settings→Restart→new adventure and menu→new scenario witness. Source checks do not certify pixels.
 
+Generated user Maps must remain refreshable after initialization and resolve through the core resource origin before map/header loading, without losing user-map override precedence. Retain `GeneratedMapCreatedAfterInitializationIsRefreshable` and `LateGeneratedUserMapHasCoreOriginAndLoadsHeader`; these filesystem fixtures do not establish rendered Battle Only Begin acceptance.
+
 ## Gameplay and forecast integrity
 
 - A range-for over a dereferenced temporary shared BonusList owner can dangle. Retain the owning list through iteration. Keep distinct equal bonus identities, ordered/raw aliases, child ADD/removal/UPDATE and branch aging isolation controls.

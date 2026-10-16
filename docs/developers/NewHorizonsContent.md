@@ -83,6 +83,8 @@ Keep excluded stored quick-slot preferences reserved and noncastable rather than
 erasing or autofilling them; write canonical scoped keys only after valid explicit
 selection. These contracts do not activate an inactive roster policy.
 
+Use `SpellSchool::serializationKey()` when comparing module-qualified school identity; a bare `encode()` key cannot distinguish curated schools from third-party schools with the same local name. Preserve the supported legacy numeric decoding path separately.
+
 Creature-category presentation comes from the actual stack's saved battle context
 or its actual world callback, captured before a preview node is fabricated. Never
 infer a category from legacy tier, upgrade graph or installed defaults; an absent

@@ -9,8 +9,10 @@ Adapt the original Fortress shooting Lizardman: slightly shorter, bow removed,
 body recolored red. Use its native animation as the motion baseline rather than
 independently generated poses that drift in proportions. Both Cabir forms are
 ranged; preserve existing fire/Water defenses and Master Repair behavior.
-Both use the Gog projectile by resource reference; align its origin to the
-bare-hand shooting animation without changing damage or timing rules.
+Both forms spit fire from the mouth with empty hands. Preserve the selected
+`NH_CabirHandoffFireball.def` projectile binding and align its origin to the
+mouth-emission shooting animation without changing damage or timing rules.
+This direction does not establish rendered projectile alignment.
 
 The older lava/trousers generated design and its proportion studies are not the
 selected replacement identity. Standing previews are not complete walk cycles.

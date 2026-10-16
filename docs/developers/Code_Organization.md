@@ -93,6 +93,8 @@ isolation and UI session/teardown behavior where relevant. Update CMake, include
 tool consumers and test registration together. Preserve existing useful guards
 until their protected invariant has adequate replacement coverage.
 
+Keep exact deterministic state and packet comparisons separate from elapsed-clock observations; timings are not deterministic gameplay fields. Retain raw timing observations and evaluate performance separately under the [measurement protocol](../NH_PERFORMANCE_EXPERIMENT.md), without weakening semantic assertions.
+
 Organize large test files by coherent scenarios with reusable fixtures when that
 helps. Do not weaken assertions, skip coverage or duplicate entire fixtures to
 make a test file smaller. Research papers and design prose do not use source-code
