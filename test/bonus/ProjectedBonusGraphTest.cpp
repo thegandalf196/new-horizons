@@ -20,6 +20,7 @@
 #include "../../lib/CStack.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/UnitStateValueFields.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include "../../lib/mapObjects/army/CStackInstance.h"
@@ -134,7 +135,7 @@ protected:
 	void initialize()
 	{
 		unit = std::make_unique<battle::CUnitStateDetached>(&info, &graph.view(original));
-		static_cast<battle::CUnitState &>(*unit) = original;
+		battle::UnitStateValueFields::copy(*unit, original); // unbound snapshot, no hook
 		unit->bindStateEnvironment(&environment);
 		roster = std::make_unique<ProjectedBonusRoster>(std::vector<const battle::Unit *>{unit.get()});
 		graph.bind(original, *unit, *roster);
@@ -409,7 +410,7 @@ TEST_F(ProjectedBonusGraphTest, SameFinalFormRetainsEveryIntermediateGenerationE
 		authority.push_back(const_cast<CBonusSystemNode *>(node));
 	PreparedBonusGraphFinalization finalization(graph, authority);
 	ASSERT_TRUE(finalization.commit());
-	EXPECT_EQ(uint32_t(PreparedBonusGraphStorage::currentGeneration()), uint32_t(generation) + 4);
+	EXPECT_EQ(uint32_t(PreparedBonusGraphStorage::currentGeneration()), uint32_t(generation) + 8);
 	EXPECT_EQ(original.getParentNodes(), parents);
 	ASSERT_EQ(original.getExportedBonusList().size(), exported.size());
 	for(size_t index = 0; index < exported.size(); ++index)

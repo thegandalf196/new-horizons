@@ -538,6 +538,8 @@ public:
 	explicit CUnitStateDetached(const IUnitInfo * unit_, const IBonusBearer * bonus_);
 
 	CUnitStateDetached & operator= (const CUnitState & other);
+	void onBattleFormChanged() override;
+	bool usesBonusProvider(const IBonusBearer & expected) const noexcept;
 
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
 	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;

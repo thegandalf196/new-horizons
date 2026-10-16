@@ -12,7 +12,8 @@
 #include <map>
 
 class ProjectedBonusRoster;
-namespace battle { class CUnitState; }
+class JsonNode;
+namespace battle { class CUnitState; class CUnitStateDetached; }
 
 /// Query/preparation owner ONLY, not a live commit or UPDATE route. Caller holds
 /// all original/projected lifetimes and exclusive world lease. Shared Bonus
@@ -35,6 +36,9 @@ public:
 	/// Preserve authored sequential order after no-hook value edits. Queries
 	/// auto-synchronize a sole pending form, never guess several edits' order.
 	void synchronizeForm(const CStack & original);
+	/// Call only after world-level UPDATE ignore/occupancy checks. On load
+	/// failure discard this owner AND its possibly partially loaded private unit.
+	void loadBoundState(const CStack & original, battle::CUnitStateDetached & state, const JsonNode & data);
 	TConstBonusListPtr query(const CBonusSystemNode & node, const CSelector & selector, bool unstacked);
 
 	const BonusList & local(const CBonusSystemNode & node) const override;
@@ -52,6 +56,7 @@ private:
 	public:
 		View(ProjectedBonusGraph & graph, const CBonusSystemNode & node) : graph(graph), node(node) {}
 		const battle::Unit * evaluatedUnit() const override;
+		void onBattleFormChanged(const battle::CUnitState & unit) const override;
 		TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr) const override;
 		TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 		/// Witness only, NOT a projection epoch; isBonusCacheable() is false.
@@ -72,6 +77,7 @@ private:
 	bool unjournaledReplacement = false;
 	ProjectedBonusInvalidations invalidations;
 	void requireUsable() const;
+	bool hasExactView(const CStack & original, const battle::CUnitState & unit) const noexcept;
 	void validate() const;
 	void synchronizeForms();
 	void propagate(const CBonusSystemNode & destination, const CBonusSystemNode & source,

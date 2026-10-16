@@ -112,6 +112,8 @@ set(lib_MAIN_SRCS
 	battle/SiegeInfo.cpp
 	battle/Unit.cpp
 	battle/UnitAdjacency.cpp
+	battle/UnitMagicResistanceQuery.cpp
+	battle/ProjectedUnitMagicResistance.cpp
 	battle/BattleBonusAcceptance.cpp
 
 	bonuses/Bonus.cpp
@@ -122,6 +124,7 @@ set(lib_MAIN_SRCS
 	bonuses/ProjectedBonusGraph.cpp
 	bonuses/ProjectedBonusGraphEdits.cpp
 	bonuses/ProjectedBonusGraphValidation.cpp
+	bonuses/ProjectedBonusGraphFormEvents.cpp
 	bonuses/ProjectedBonusInvalidations.cpp
 	bonuses/PreparedBonusGraphFinalization.cpp
 	bonuses/BonusLimitation.cpp
@@ -643,6 +646,8 @@ set(lib_MAIN_HEADERS
 	battle/SiegeInfo.h
 	battle/Unit.h
 	battle/UnitAdjacency.h
+	battle/UnitMagicResistanceQuery.h
+	battle/ProjectedUnitMagicResistance.h
 	battle/BattleBonusAcceptance.h
 
 	bonuses/Bonus.h

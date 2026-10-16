@@ -75,6 +75,8 @@ void ProjectedBonusGraph::bind(const CStack & original, const battle::CUnitState
 	requireUsable();
 	BonusEvaluationContext check(original, unit, roster);
 	(void)check;
+	if(!hasExactView(original, unit))
+		throw std::invalid_argument("Projected binding requires this graph's exact original view");
 	if(bindings.contains(&original))
 		throw std::logic_error("Projected original already has a bound unit");
 	for(const auto & [source, binding] : bindings)

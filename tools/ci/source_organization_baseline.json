@@ -4513,9 +4513,9 @@
       "sha256": "f16b6dfd61b001dcf80880a9466faea4f575538b7d110d2ecc570e79bfab6a34"
     },
     "lib/battle/CUnitState.h": {
-      "sha256": "91348ddbcd41a41e13a5be9e3f3ac6e9a0575b5bbbf958375403484bb1e0bd9a",
-      "review": "IR-F08-FOUNDATIONS-MANUAL-20261016",
-      "rationale": "Five existing inline bodies and the braced-default reference declaration are completely mapped at the recorded offsets. The two new method declarations and API comment contain no new handwritten body. Old fields, defaults and serialization order are unchanged.",
+      "sha256": "3f11df1564c0492f454211b398aadd842af9063bc7a527e9d44c833c546dc825",
+      "review": "IR-F08-PROJECTED-FORM-OWNER-V2-20261016",
+      "rationale": "Complete exact 571-line header reviewed. Five unchanged inline bodies remain at 241/363/372/385/386. The unchanged default-reference prototype moves from 544-545 to 546-547; recovery at 547 is a declaration, not a body. Two detached method declarations add no implementation; fields, defaults, member order, deleted/defaulted declarations and serialization are unchanged.",
       "functions": [
         {
           "symbol": "battle::CUnitState::int32_t getActivationMovementBonus() const#1",
@@ -15698,13 +15698,13 @@
     },
     "lib/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 1129,
-      "sha256": "13e7fcb60b1cfe5deca55152b22485caa17cae0b5cfdd8c5f0e4faea773327ae",
+      "lines": 1134,
+      "sha256": "40768f4ad202b7214e989c64a366afcff699160af620898d9f5755ec6f8195ca",
       "owner": "engine_engineer",
-      "review": "IR-F08-FOUNDATIONS-REGISTRY-20261016",
-      "rationale": "Exact mechanical registry exception from 1104 to 1129 lines for 25 source/header registrations. Removing only those insertions restores the predecessor byte-for-byte. No target, linkage, option, existing registration or handwritten implementation changes.",
-      "review_scope": "exact-25-foundation-source-and-header-registration-insertions",
-      "deferral": "Limited to the exact 1129-line source and recorded hash. No future growth credit, handwritten-body allowance or blanket registry exemption; every subsequent edit requires renewed independent review and extraction obligations remain in force.",
+      "review": "IR-F08-PROJECTED-RESISTANCE-V1-20261016",
+      "rationale": "Exact mechanical registry exception from 1130 to 1134 lines over the independently reviewed form-owner prerequisite: two resistance implementation and two header registrations only. Removing those four lines restores that predecessor exactly; targets, linkage, options and all other registrations are unchanged.",
+      "review_scope": "exact-four-resistance-registrations-over-reviewed-form-owner-prerequisite",
+      "deferral": "Limited to the exact 1134-line combined registry and recorded hash. No generic registry exception, handwritten growth credit or future allowance; every subsequent edit requires renewed independent review and existing extraction obligations remain.",
       "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
@@ -15881,12 +15881,12 @@
     },
     "lib/battle/CBattleInfoCallback.cpp": {
       "kind": "legacy",
-      "lines": 6202,
+      "lines": 6176,
       "owner": "gameplay_engineer",
-      "rationale": "Adjacency predicate extracted to the shared UnitAdjacency owner. Exact 6210-to-6202 shrinking legacy freeze; unrelated function bodies and their existing debt records remain unchanged.",
-      "review": "IR-F08-FOUNDATIONS-RATCHET-20261016",
-      "review_scope": "exact-shrinking-legacy-file-freeze-no-function-growth-credit",
-      "sha256": "e5e8a1a64f44691a1b13d683d431188026fb4117d785749a4f7328af87af22f7",
+      "rationale": "Exact 6202-to-6176 shrinking legacy freeze: resistance calculation and its cap constant move to one shared live/projected query owner. All 276 other callable bodies and order are unchanged. No function debt transfer or future growth credit.",
+      "review": "IR-F08-PROJECTED-RESISTANCE-V1-20261016",
+      "review_scope": "exact-resistance-extraction-shrinking-file-freeze-only",
+      "sha256": "b578dfd1473b6298afeee66bf5380a137a822e99e8ba3ca3165c908aa41b2880",
       "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
     },
     "lib/battle/CBattleInfoCallback.cpp::AccessibilityInfo CBattleInfoCallback::getAccessibility() const#1": {
@@ -16081,14 +16081,14 @@
     },
     "lib/battle/CUnitState.h": {
       "kind": "exception",
-      "lines": 569,
+      "lines": 571,
       "owner": "gameplay_engineer",
-      "rationale": "Exact API-only exception from 566 to 569 lines: bindStateEnvironment declaration with its comment and isBonusCacheable override declaration. Removing those three lines restores the predecessor byte-for-byte. Five existing inline bodies, fields, defaults and serialization/member order remain unchanged; implementation stays in focused source owners.",
-      "review": "IR-F08-ENVIRONMENT-CACHE-API-20261016",
-      "review_scope": "exact-two-method-declarations-and-one-api-comment-only",
-      "sha256": "91348ddbcd41a41e13a5be9e3f3ac6e9a0575b5bbbf958375403484bb1e0bd9a",
+      "rationale": "Exact API-only exception from 569 to 571 lines for the detached form notification override and read-only provider identity declaration. Removing those two declarations restores the predecessor exactly. All five inline bodies, fields, defaults, member order and serialization are unchanged; implementation stays in focused units.",
+      "review": "IR-F08-PROJECTED-FORM-OWNER-V2-20261016",
+      "review_scope": "exact-two-detached-form-owner-API-declarations-only",
+      "sha256": "3f11df1564c0492f454211b398aadd842af9063bc7a527e9d44c833c546dc825",
       "review_status": "APPROVED_EXACT_SOURCE_SCOPE",
-      "deferral": "Limited to the exact 569-line header and recorded hash. No implementation dumping, future growth credit or waiver of existing structural debt; later changes require renewed independent review and a bounded extraction where appropriate."
+      "deferral": "Limited to the exact 571-line header and recorded hash. No implementation dumping, future growth credit or structural-debt waiver; later changes require renewed independent review and bounded extraction where appropriate."
     },
     "lib/battle/HeroActionAllowanceState.h": {
       "kind": "legacy",
