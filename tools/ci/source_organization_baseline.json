@@ -11951,14 +11951,14 @@
       "sha256": "f5874411e205e16343dbe37293373e2d81caa80c7c71a7a8bf76713d2671d89b"
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
-      "kind": "exception",
-      "lines": 6891,
+      "kind": "legacy",
+      "lines": 6856,
       "owner": "ai_engineer",
-      "rationale": "One-time exact +2 direct owning-include lines required by the cohesive Stage7 split; every existing include and noninclude byte/body remains unchanged. Reviewed dependency integration, not quality approval of existing evaluator debt. Exact maximum/hash only; no body growth, extra include or future growth permission.",
-      "review": "IR-STAGE7-OWNING-INCLUDES-9LINES-20261015",
-      "review_scope": "one-time-exact-owning-includes-only-no-body-or-future-growth",
-      "sha256": "d7117635d5178c5d63c7f9bc1d25dd4555444ab66c3a96b995e84f5ac66e532e",
-      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum."
+      "rationale": "Ordered hero-spell admission extracted into a focused 57-line unit with a 37-line helper; all other 206 callable bodies remain exact. Existing evaluator debt shrinks from 6891 to 6856 lines. This is an exact decreasing freeze, not approval of the remaining concentration or future growth.",
+      "review": "IR-STAGE8-ADMISSION-RATCHET-c13dfee8-20261016",
+      "review_scope": "bounded-admission-extraction-shrinking-freeze",
+      "sha256": "6c0451fc0a37b19e76ac3d1918c48f87cb8d0cdb890726ddcb5f2bcee7179195",
+      "deferral": "ai_engineer owns further staged candidate/projection/valuation extraction. The separately prepared queue component is the next bounded boundary and needs its own queue-path characterization, review and ratchet. The remaining large selector and projection lambda are unresolved debt; no regrowth to an earlier limit is permitted."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -11998,12 +11998,12 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)#1": {
       "kind": "legacy",
-      "lines": 1889,
+      "lines": 1854,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1889 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6d845c51399713449ab017d903e4338ec91c1ccad84c4c8a4572da5c539a164a"
+      "rationale": "The existing ordered admission loop moves intact to a private helper, reducing this selector from 1889 to 1854 lines. Capture, follow-up detection, pruning, scoring and dispatch order remain unchanged. Exact shrinking freeze only; remaining queue and projection responsibilities still require staged extraction and behavioral comparisons.",
+      "review": "IR-STAGE8-ADMISSION-RATCHET-c13dfee8-20261016",
+      "review_scope": "bounded-admission-extraction-shrinking-freeze",
+      "sha256": "ff5c2a79258541e5d47eb07dd0f813639fb300ecaf0d7723ab4a0725fa7628da"
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool defensiveStanceMakesDefendWorthwhile(const Environment * environment, const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack, DamageCache & damageCache)#1": {
       "kind": "legacy",

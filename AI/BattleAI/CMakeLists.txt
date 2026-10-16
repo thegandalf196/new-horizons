@@ -2,6 +2,7 @@ set(battleAI_SRCS
 		AttackPossibility.cpp
 		BattleAI.cpp
 		BattleEvaluator.cpp
+		BattleEvaluatorSpellCandidates.cpp
 		PossibleSpellcast.cpp
 		PotentialTargets.cpp
 		StackWithBonuses.cpp

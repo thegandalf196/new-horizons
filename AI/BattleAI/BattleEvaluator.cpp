@@ -4922,43 +4922,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	// Grand is an automatic outcome of the third used sequence, never a
 	// selectable alternative. Project exactly the transition the server applies.
 	//Get all spells we can cast
-	struct SpellOption
-	{
-		const CSpell * spell = nullptr;
-		bool metamagicFollowup = false;
-		bool divineMandateFollowup = false;
-		bool metamagicGrand = false;
-	};
-	std::vector<SpellOption> possibleSpells;
-
-	for(auto const & s : LIBRARY->spellh->objects)
-	{
-		if(!allowSpells || mandatoryOrder)
-			continue;
-
-		bool candidateMetamagicFollowup = legacyMetamagicFollowup;
-		bool divineMandateFollowup = false;
-		if(divineMandateStatus.active)
-		{
-			const auto selection = battleView->battleGetSpellActionAllowance(side, s->getId());
-			if(!selection)
-				continue;
-			candidateMetamagicFollowup = battleView->battleCanUseMetamagicFollowup(side, s->getId());
-			divineMandateFollowup = divineMandateStatus.pendingFollowup
-				&& selection->grantId == divineMandateStatus.pendingFollowup->id;
-		}
-
-		const bool activatesGrand = HeroSpellAllowanceTransition::activatesGrand(candidateMetamagicFollowup,
-			cb->getBattle(battleID)->battleMetamagicPendingCount(side),
-			cb->getBattle(battleID)->battleMetamagicSequenceSpells(side).size(),
-			cb->getBattle(battleID)->battleMetamagicUsesConsumed(side),
-			newHorizonsMagic::metamagicRank(hero),
-			newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-			cb->getBattle(battleID)->battleMetamagicGrandUsed(side));
-		if(s->canBeCast(battleView.get(), spells::Mode::HERO, hero, activatesGrand))
-			possibleSpells.push_back({s.get(), candidateMetamagicFollowup,
-				divineMandateFollowup, activatesGrand});
-	}
+	auto possibleSpells = collectCastableHeroSpellOptions(battleView, hero, allowSpells,
+		mandatoryOrder, legacyMetamagicFollowup, divineMandateStatus);
 	const bool hasFollowupCandidate = !mandatoryOrder && (divineMandateStatus.active
 		? std::any_of(possibleSpells.begin(), possibleSpells.end(), [](const SpellOption & option)
 		{
