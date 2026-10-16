@@ -19,6 +19,7 @@
 #include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/spells/effects/Effects.h"
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

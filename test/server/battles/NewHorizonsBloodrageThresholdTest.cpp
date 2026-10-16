@@ -19,6 +19,7 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/serializer/ESerializationVersion.h"
 #include "../../../server/CGameHandler.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

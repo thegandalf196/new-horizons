@@ -11,12 +11,14 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/IGameSettings.h"
 #include "../../lib/CStack.h"
 #include "../../lib/bonuses/BonusSelector.h"
 #include <vcmi/Environment.h>
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {
@@ -40,6 +42,16 @@ protected:
 		// Hypothetic Clone mechanics tests exercise core:clone independently of
 		// the New Horizons roster, which intentionally disables that spell.
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		// Preserve the effective captured hero rules, except the current-roster
+		// starting-book table that cannot belong to this explicit legacy-magic fixture.
+		JsonNode heroes = map->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+		if(heroes.isStruct() && heroes["startingSkills"].isStruct()
+			&& heroes["startingSkills"].Struct().contains("startingBookReplacements"))
+		{
+			heroes["startingSkills"].Struct().erase("startingBookReplacements");
+			heroes.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroes));
+		}
 	}
 
 	uint32_t originalId = 0;

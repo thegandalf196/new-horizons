@@ -38,6 +38,7 @@
 #include "../../lib/callback/GameRandomizer.h"
 
 #include <chrono>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

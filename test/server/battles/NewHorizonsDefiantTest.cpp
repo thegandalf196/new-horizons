@@ -16,6 +16,7 @@
 #include "../../../lib/battle/NewHorizonsShroud.h"
 #include "../../../lib/bonuses/BonusSelector.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

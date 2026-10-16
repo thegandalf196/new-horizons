@@ -13,6 +13,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

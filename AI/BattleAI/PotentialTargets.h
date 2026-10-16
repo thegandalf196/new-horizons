@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "AttackPossibility.h"
+#include "HypotheticBattle.h"
 
 class PotentialTargets
 {

@@ -28,6 +28,7 @@
 #include "../../lib/serializer/CMemorySerializer.h"
 
 #include <cstddef>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

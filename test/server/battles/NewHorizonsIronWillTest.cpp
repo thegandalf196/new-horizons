@@ -23,6 +23,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

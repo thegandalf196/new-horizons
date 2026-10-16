@@ -18,6 +18,8 @@
 #include "lib/bonuses/BonusParameters.h"
 #include "lib/gameState/CGameState.h"
 #include <vcmi/Environment.h>
+#include "../../AI/BattleAI/HypotheticBattle.h"
+#include "../../AI/BattleAI/StackWithBonuses.h"
 
 namespace
 {

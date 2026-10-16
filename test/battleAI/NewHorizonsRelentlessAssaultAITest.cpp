@@ -12,6 +12,7 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

@@ -29,6 +29,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

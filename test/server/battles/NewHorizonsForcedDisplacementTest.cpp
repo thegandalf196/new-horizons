@@ -19,6 +19,7 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #ifdef ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 #endif
 
 namespace

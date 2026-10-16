@@ -21,6 +21,7 @@
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

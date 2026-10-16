@@ -19,6 +19,7 @@
 #include "../../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

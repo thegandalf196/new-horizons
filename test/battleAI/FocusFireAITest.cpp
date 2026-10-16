@@ -17,6 +17,7 @@
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

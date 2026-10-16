@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

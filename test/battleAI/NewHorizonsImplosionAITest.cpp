@@ -15,6 +15,7 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/Problem.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

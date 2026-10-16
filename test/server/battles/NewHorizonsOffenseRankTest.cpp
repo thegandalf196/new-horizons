@@ -21,6 +21,7 @@
 #include "../../../server/queries/MapQueries.h"
 #include "../../../server/queries/QueriesProcessor.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

@@ -21,6 +21,7 @@
 #include "../../lib/modding/IdentifierStorage.h"
 #include "../../lib/modding/ModScope.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

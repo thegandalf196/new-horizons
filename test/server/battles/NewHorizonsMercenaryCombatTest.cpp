@@ -22,6 +22,7 @@
 #include "../../../lib/serializer/JsonSerializer.h"
 #include "../../../lib/serializer/JsonDeserializer.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

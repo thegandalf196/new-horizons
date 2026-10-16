@@ -141,6 +141,15 @@ resources. Enabling test compilation does not authorize graphical launches,
 fixture exports or access to the ordinary player profile. The focused preset is
 not a full engine build, rendered test or platform acceptance campaign.
 
+A test-target build may execute the test binary for GoogleTest discovery. For
+an explicitly compile-only route, configure discovery as `PRE_TEST` and inspect
+the generated target commands to confirm execution is deferred; a test filter
+does not bypass full-library startup or its resource requirements. The ordinary
+TEST bootstrap mounts test data and activates `vcmi-test` independently of the
+preset's mod list. A normal-player bootstrap witness must use the ordinary
+library preset and verify the actual active/registered scopes; TEST startup is
+not a substitute. Fixture exports and original-data use remain separate gates.
+
 ### Configuring Makefiles
 
 ```sh

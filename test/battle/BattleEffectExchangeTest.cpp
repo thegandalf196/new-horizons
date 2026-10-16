@@ -15,6 +15,7 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include <vcmi/Environment.h>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 #endif
 
 namespace

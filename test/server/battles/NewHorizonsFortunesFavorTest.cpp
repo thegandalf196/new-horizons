@@ -23,6 +23,7 @@
 #include "../../../server/CGameHandler.h"
 
 #include <algorithm>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

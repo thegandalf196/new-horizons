@@ -18,6 +18,7 @@
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../server/CGameHandler.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

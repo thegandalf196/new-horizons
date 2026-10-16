@@ -14,6 +14,7 @@
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

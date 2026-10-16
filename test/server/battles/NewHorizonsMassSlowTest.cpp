@@ -27,6 +27,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

@@ -17,6 +17,7 @@
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

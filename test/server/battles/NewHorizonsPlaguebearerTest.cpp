@@ -27,6 +27,7 @@
 #include "FullGameSnapshotTypes.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include <limits>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

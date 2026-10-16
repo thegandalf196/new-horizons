@@ -41,6 +41,7 @@
 
 #include <set>
 #include <tuple>
+#include "HypotheticBattle.h"
 
 using namespace spells;
 

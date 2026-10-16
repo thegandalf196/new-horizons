@@ -59,558 +59,558 @@
       "sha256": "4e16898f372a3f2cc153db43b5326a4327a9156ee29722a3d3ce0e31b1b2dd09"
     },
     "AI/BattleAI/AttackPossibility.cpp": {
-      "sha256": "c63816a642f1b19e398f75f5a4ef45aa889242ba1dea8aee8664f5b83d4fcded",
-      "review": "IR-MANUAL-ATTACKPOSSIBILITY-c63816a6-20261015",
-      "rationale": "Whole handwritten physical source 1\u20132700 inspected; pure inventory only, not AI behavior implementation or review. Complete body-bearing inventory: 92 definitions = 42 functions/methods and 50 lambdas. Four deleted special members 74,75,118,119 accounted separately; no handwritten bodies, excluded by existing inventory body-required convention. Includes both timing-scope constructors/destructors, inline receiver/finish methods and AttackPossibility constructor initializer. evaluate is one 1838-line method 863\u20132700, not a collection of extracted functions; its 44 lambdas all inventoried, including nested pairs 1132/1134,1142/1144,1152/1154. Trace preprocessor branches remain inside their parent spans; no function-like macro definitions occur. Sole tree-sitter ERROR timing->* at 107 occurs in &(timing->*member), a pointer-to-member data access in DamageCachePhaseScope initializer, not a declaration. Full constructor 105\u2013117 includes signature and initializer 105\u2013109. All original symbols and physical spans verified against whole-source inspection. Calls, pointer-to-member type declaration, deleted members, control-flow, aggregate braces and preprocessor directives are not extra body-bearing definitions. No unresolved callable syntax found. Existing GPL2-or-later VCMI attribution preserved. Preserve all four numeric debt records verbatim; no numeric approval, growth waiver, ceiling exception or runtime certification.",
+      "sha256": "7ac0de19b1893bd1af8e63573fc34b2ce1b843b72b9e6ccab35dd6946001d9d0",
+      "review": "IR-STAGE7-INCLUDE-MANUAL107-20261015",
+      "rationale": "Whole handwritten physical source 1\u20132700 inspected; pure inventory only, not AI behavior implementation or review. Complete body-bearing inventory: 92 definitions = 42 functions/methods and 50 lambdas. Four deleted special members 74,75,118,119 accounted separately; no handwritten bodies, excluded by existing inventory body-required convention. Includes both timing-scope constructors/destructors, inline receiver/finish methods and AttackPossibility constructor initializer. evaluate is one 1838-line method 863\u20132700, not a collection of extracted functions; its 44 lambdas all inventoried, including nested pairs 1132/1134,1142/1144,1152/1154. Trace preprocessor branches remain inside their parent spans; no function-like macro definitions occur. Sole tree-sitter ERROR timing->* at 107 occurs in &(timing->*member), a pointer-to-member data access in DamageCachePhaseScope initializer, not a declaration. Full constructor 105\u2013117 includes signature and initializer 105\u2013109. All original symbols and physical spans verified against whole-source inspection. Calls, pointer-to-member type declaration, deleted members, control-flow, aggregate braces and preprocessor directives are not extra body-bearing definitions. No unresolved callable syntax found. Existing GPL2-or-later VCMI attribution preserved. Preserve all four numeric debt records verbatim; no numeric approval, growth waiver, ceiling exception or runtime certification. Stage7 exact owning-include relocation independently reviewed under IR-STAGE7-INCLUDE-MANUAL107-20261015; all original complete bodies/symbols/sizes remain identical, only include-derived physical offsets and full-file identity change. Prior whole-source review remains provenance; diagnostics are covered by the relocated complete inventory. No callable-debt approval, numeric allowance or future growth is granted.",
       "functions": [
         {
           "symbol": "DamageCacheOperationScope::explicit DamageCacheOperationScope(DamageCacheProbeTiming * receiver) : timing(receiver)#1",
-          "start": 55,
-          "end": 73
+          "start": 57,
+          "end": 75
         },
         {
           "symbol": "DamageCacheOperationScope::DamageCacheProbeTiming * receiver() const#1",
-          "start": 76,
-          "end": 76
+          "start": 78,
+          "end": 78
         },
         {
           "symbol": "DamageCacheOperationScope::~DamageCacheOperationScope()#1",
-          "start": 77,
-          "end": 94
+          "start": 79,
+          "end": 96
         },
         {
           "symbol": "DamageCachePhaseScope::DamageCachePhaseScope(DamageCacheProbeTiming * timing, DamageCacheProbeTiming::StageTiming DamageCacheProbeTiming::* member) : timing(timing), stage(timing ? &(timing->*member) : nullptr), dynamic(member == &DamageCacheProbeTiming::dynamicDamage), started(stage ? Clock::now() : Clock::time_point{})#1",
-          "start": 105,
-          "end": 117
+          "start": 107,
+          "end": 119
         },
         {
           "symbol": "DamageCachePhaseScope::~DamageCachePhaseScope()#1",
-          "start": 120,
-          "end": 120
+          "start": 122,
+          "end": 122
         },
         {
           "symbol": "DamageCachePhaseScope::void finish()#1",
-          "start": 121,
-          "end": 133
+          "start": 123,
+          "end": 135
         },
         {
           "symbol": "bool projectDefiant(HypotheticBattle & battle, const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause, FortuneStrikeProjection & strike)#1",
-          "start": 136,
-          "end": 150
+          "start": 138,
+          "end": 152
         },
         {
           "symbol": "bool hasPendingRangedFollowUp(const battle::Unit * unit)#1",
-          "start": 152,
-          "end": 156
+          "start": 154,
+          "end": 158
         },
         {
           "symbol": "bool hasRangedMarkEffect(const battle::Unit * unit, const char * source)#1",
-          "start": 158,
-          "end": 167
+          "start": 160,
+          "end": 169
         },
         {
           "symbol": "bool hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attackingSide)#1",
-          "start": 169,
-          "end": 174
+          "start": 171,
+          "end": 176
         },
         {
           "symbol": "hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attackingSide)::[attackingSide](const Bonus * bonus)#1",
-          "start": 172,
-          "end": 173
+          "start": 174,
+          "end": 175
         },
         {
           "symbol": "bool hasNightProwlerBonus(const battle::Unit * unit)#1",
-          "start": 176,
-          "end": 179
+          "start": 178,
+          "end": 181
         },
         {
           "symbol": "int bulwarkPreemptivePercent(const battle::Unit * defender, const CBattleInfoCallback & state)#1",
-          "start": 181,
-          "end": 192
+          "start": 183,
+          "end": 194
         },
         {
           "symbol": "int bulwarkReflectionBasisPoints(const battle::Unit * defender, const CBattleInfoCallback & state, bool ranged)#1",
-          "start": 194,
-          "end": 203
+          "start": 196,
+          "end": 205
         },
         {
           "symbol": "int32_t noQuarterMoraleActivations(const CBattleInfoCallback & battle, uint32_t targetUnitId)#1",
-          "start": 205,
-          "end": 208
+          "start": 207,
+          "end": 210
         },
         {
           "symbol": "int64_t projectedPhysicalPoisonDamage(const battle::CUnitState * state)#1",
-          "start": 210,
-          "end": 221
+          "start": 212,
+          "end": 223
         },
         {
           "symbol": "int32_t vampirismHealBasisPoints(const battle::Unit * unit)#1",
-          "start": 223,
-          "end": 242
+          "start": 225,
+          "end": 244
         },
         {
           "symbol": "void projectVampirismHealing(battle::CUnitState * attacker, int64_t actualDamage, std::vector<std::pair<uint32_t, int64_t>> & healingByUnit)#1",
-          "start": 244,
-          "end": 265
+          "start": 246,
+          "end": 267
         },
         {
           "symbol": "void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)#1",
-          "start": 268,
-          "end": 271
+          "start": 270,
+          "end": 273
         },
         {
           "symbol": "void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing)#1",
-          "start": 273,
-          "end": 308
+          "start": 275,
+          "end": 310
         },
         {
           "symbol": "DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing)::[&]()#1",
-          "start": 301,
-          "end": 305
+          "start": 303,
+          "end": 307
         },
         {
           "symbol": "void DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)#1",
-          "start": 310,
-          "end": 361
+          "start": 312,
+          "end": 363
         },
         {
           "symbol": "DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)::[](const battle::Unit * u) -> bool#1",
-          "start": 337,
-          "end": 339
+          "start": 339,
+          "end": 341
         },
         {
           "symbol": "void DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)#1",
-          "start": 363,
-          "end": 400
+          "start": 365,
+          "end": 402
         },
         {
           "symbol": "DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)::[=](const battle::Unit * u) -> bool#1",
-          "start": 370,
-          "end": 373
+          "start": 372,
+          "end": 375
         },
         {
           "symbol": "bool DamageCache::tracksRangedMarks(uint32_t defenderId) const#1",
-          "start": 402,
-          "end": 408
+          "start": 404,
+          "end": 410
         },
         {
           "symbol": "bool DamageCache::tracksEvasiveShroud(uint32_t defenderId) const#1",
-          "start": 410,
-          "end": 416
+          "start": 412,
+          "end": 418
         },
         {
           "symbol": "bool DamageCache::tracksAmbusher(uint32_t attackerId) const#1",
-          "start": 418,
-          "end": 424
+          "start": 420,
+          "end": 426
         },
         {
           "symbol": "bool DamageCache::tracksShadowAssault(uint32_t defenderId) const#1",
-          "start": 426,
-          "end": 433
+          "start": 428,
+          "end": 435
         },
         {
           "symbol": "bool DamageCache::tracksNightProwler(uint32_t attackerId) const#1",
-          "start": 435,
-          "end": 441
+          "start": 437,
+          "end": 443
         },
         {
           "symbol": "bool DamageCache::tracksFrozen(uint32_t defenderId) const#1",
-          "start": 443,
-          "end": 449
+          "start": 445,
+          "end": 451
         },
         {
           "symbol": "int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)#1",
-          "start": 451,
-          "end": 454
+          "start": 453,
+          "end": 456
         },
         {
           "symbol": "int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)#1",
-          "start": 456,
-          "end": 583
+          "start": 458,
+          "end": 585
         },
         {
           "symbol": "DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)::[](const Bonus * bonus)#1",
-          "start": 496,
-          "end": 499
+          "start": 498,
+          "end": 501
         },
         {
           "symbol": "int64_t DamageCache::getObstacleDamage(const BattleHex & hex, const battle::Unit * defender)#1",
-          "start": 585,
-          "end": 600
+          "start": 587,
+          "end": 602
         },
         {
           "symbol": "int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)#1",
-          "start": 602,
-          "end": 605
+          "start": 604,
+          "end": 607
         },
         {
           "symbol": "int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)#1",
-          "start": 607,
-          "end": 641
+          "start": 609,
+          "end": 643
         },
         {
           "symbol": "AttackPossibility::AttackPossibility(const BattleHex & from, const BattleHex & dest, const BattleAttackInfo & attack) : from(from), dest(dest), attack(attack)#1",
-          "start": 643,
-          "end": 648
+          "start": 645,
+          "end": 650
         },
         {
           "symbol": "float AttackPossibility::damageDiff() const#1",
-          "start": 650,
-          "end": 653
+          "start": 652,
+          "end": 655
         },
         {
           "symbol": "float AttackPossibility::damageDiff(float positiveEffectMultiplier, float negativeEffectMultiplier) const#1",
-          "start": 655,
-          "end": 659
+          "start": 657,
+          "end": 661
         },
         {
           "symbol": "float AttackPossibility::attackValue() const#1",
-          "start": 661,
-          "end": 664
+          "start": 663,
+          "end": 666
         },
         {
           "symbol": "float hpFunction(uint64_t unitHealthStart, uint64_t unitHealthEnd, uint64_t maxHealth)#1",
-          "start": 666,
-          "end": 681
+          "start": 668,
+          "end": 683
         },
         {
           "symbol": "float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state)#1",
-          "start": 688,
-          "end": 696
+          "start": 690,
+          "end": 698
         },
         {
           "symbol": "float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1",
-          "start": 698,
-          "end": 797
+          "start": 700,
+          "end": 799
         },
         {
           "symbol": "AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)::[&](const battle::Unit * u) -> bool#1",
-          "start": 714,
-          "end": 722
+          "start": 716,
+          "end": 724
         },
         {
           "symbol": "int64_t AttackPossibility::evaluateBlockedShootersDmg( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state)#1",
-          "start": 799,
-          "end": 842
+          "start": 801,
+          "end": 844
         },
         {
           "symbol": "int AttackPossibility::getAttackCount(const battle::Unit & attacker, bool shooting, const CBattleInfoCallback & state)#1",
-          "start": 844,
-          "end": 861
+          "start": 846,
+          "end": 863
         },
         {
           "symbol": "AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1",
-          "start": 863,
-          "end": 2700
+          "start": 865,
+          "end": 2702
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](const battle::Unit * unit)#1",
-          "start": 879,
-          "end": 880
+          "start": 881,
+          "end": 882
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const auto * unit)#1",
-          "start": 999,
-          "end": 1002
+          "start": 1001,
+          "end": 1004
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Unit * unit, bool physicalDamage)#1",
-          "start": 1062,
-          "end": 1070
+          "start": 1064,
+          "end": 1072
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](BattleSide side)#1",
-          "start": 1077,
-          "end": 1082
+          "start": 1079,
+          "end": 1084
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](BattleSide side)#2",
-          "start": 1084,
-          "end": 1087
+          "start": 1086,
+          "end": 1089
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const battle::Unit * unit)#1",
-          "start": 1118,
-          "end": 1118
+          "start": 1120,
+          "end": 1120
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const battle::Unit * unit)#2",
-          "start": 1119,
-          "end": 1119
-        },
-        {
-          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const battle::Unit * unit)#3",
-          "start": 1120,
+          "start": 1121,
           "end": 1121
         },
         {
+          "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const battle::Unit * unit)#3",
+          "start": 1122,
+          "end": 1123
+        },
+        {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[requestedDefender](const battle::Unit * unit)#1",
-          "start": 1124,
-          "end": 1125
+          "start": 1126,
+          "end": 1127
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[defender](const battle::Unit * unit)#1",
-          "start": 1127,
-          "end": 1128
+          "start": 1129,
+          "end": 1130
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](battle::Units & units, const battle::Unit * primary)#1",
-          "start": 1132,
-          "end": 1138
+          "start": 1134,
+          "end": 1140
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::(battle::Units & units, const battle::Unit * primary)::[primary](const battle::Unit * unit)#1",
-          "start": 1134,
-          "end": 1135
+          "start": 1136,
+          "end": 1137
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Units & units)#1",
-          "start": 1142,
-          "end": 1146
+          "start": 1144,
+          "end": 1148
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::(const battle::Units & units)::[](const battle::Unit * unit)#1",
-          "start": 1144,
-          "end": 1145
+          "start": 1146,
+          "end": 1147
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Units & targets)#1",
-          "start": 1152,
-          "end": 1156
+          "start": 1154,
+          "end": 1158
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::(const battle::Units & targets)::[&state](const battle::Unit * target)#1",
-          "start": 1154,
-          "end": 1155
+          "start": 1156,
+          "end": 1157
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state, attacker, defender, currentRound, elementalPrimaryCounterfire](const battle::Unit * counterShooter)#1",
-          "start": 1175,
-          "end": 1188
+          "start": 1177,
+          "end": 1190
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[state, currentRound](const battle::Unit * target)#1",
-          "start": 1190,
-          "end": 1194
+          "start": 1192,
+          "end": 1196
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Unit * target)#1",
-          "start": 1219,
-          "end": 1224
+          "start": 1221,
+          "end": 1226
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](const battle::Unit * primaryTarget)#1",
-          "start": 1225,
-          "end": 1236
+          "start": 1227,
+          "end": 1238
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Unit * target)#2",
-          "start": 1248,
-          "end": 1257
+          "start": 1250,
+          "end": 1259
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack, battle::CUnitState * target, int64_t incomingDamage)#1",
-          "start": 1279,
-          "end": 1301
+          "start": 1281,
+          "end": 1303
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview, &endedActiveActivationByLastStand]( battle::CUnitState * target, bool retaliation)#1",
-          "start": 1303,
-          "end": 1316
+          "start": 1305,
+          "end": 1318
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack)#1",
-          "start": 1317,
-          "end": 1326
+          "start": 1319,
+          "end": 1328
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t targetUnitId)#1",
-          "start": 1327,
-          "end": 1332
+          "start": 1329,
+          "end": 1334
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack)#2",
-          "start": 1333,
-          "end": 1342
+          "start": 1335,
+          "end": 1344
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t attackerUnitId)#1",
-          "start": 1343,
-          "end": 1348
+          "start": 1345,
+          "end": 1350
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack)#3",
-          "start": 1349,
-          "end": 1359
+          "start": 1351,
+          "end": 1361
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t attackerUnitId)#2",
-          "start": 1360,
-          "end": 1364
+          "start": 1362,
+          "end": 1366
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack) -> std::optional<BattleSide>#1",
-          "start": 1365,
-          "end": 1378
+          "start": 1367,
+          "end": 1380
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t targetUnitId, BattleSide attackingSide)#1",
-          "start": 1379,
-          "end": 1385
+          "start": 1381,
+          "end": 1387
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & attack, const std::vector<std::pair<uint32_t, int64_t>> & hits, battle::CUnitState * attackerState, FortuneStrikeProjection & receipt)#1",
-          "start": 1386,
-          "end": 1426
+          "start": 1388,
+          "end": 1428
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](battle::CUnitState * recipient, int64_t damage)#1",
-          "start": 1427,
-          "end": 1438
+          "start": 1429,
+          "end": 1440
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[unit](const battle::Unit * value)#1",
-          "start": 1466,
-          "end": 1467
+          "start": 1468,
+          "end": 1469
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&strike](const auto & hit)#1",
-          "start": 2019,
-          "end": 2022
+          "start": 2021,
+          "end": 2024
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&strike](const auto & hit)#2",
-          "start": 2025,
-          "end": 2028
+          "start": 2027,
+          "end": 2030
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * unit)#1",
-          "start": 2194,
-          "end": 2200
+          "start": 2196,
+          "end": 2202
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](const battle::Unit * left, const battle::Unit * right)#1",
-          "start": 2201,
-          "end": 2207
+          "start": 2203,
+          "end": 2209
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * left, const battle::Unit * right)#1",
-          "start": 2209,
-          "end": 2212
+          "start": 2211,
+          "end": 2214
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const auto & strike)#1",
-          "start": 2582,
-          "end": 2586
+          "start": 2584,
+          "end": 2588
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&rainPrimaryFootprint](const battle::Unit * candidate)#1",
-          "start": 2621,
-          "end": 2632
+          "start": 2623,
+          "end": 2634
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * unit)#2",
-          "start": 2633,
-          "end": 2640
+          "start": 2635,
+          "end": 2642
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * unit)#3",
-          "start": 2643,
-          "end": 2643
+          "start": 2645,
+          "end": 2645
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[secondaryState](const auto & affected)#1",
-          "start": 2669,
-          "end": 2670
+          "start": 2671,
+          "end": 2672
         }
       ]
     },
     "AI/BattleAI/AttackPossibility.h": {
-      "sha256": "944041ee58963fb18c204868b6f3fbaab72c87a5fe3946a2577eaf9406ed07f6",
-      "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Five inline bodies: provenance22–30, damage projection42–59, timing accumulate141–155, two explicit empty DamageCache constructors182/183. Member-pointer loop147–154 is ordinary function code. Other structs contain data and remaining methods are declarations. BATTLE_TRACE_LEVEL17 is object-like. No lambda/function-like macro definitions.",
+      "sha256": "7fb1e78ec2c47bbbe7c20ae3c227e67764faf031c5f7c1db0a2b70c3423450c7",
+      "review": "IR-STAGE7-INCLUDE-MANUAL107-20261015",
+      "rationale": "Five inline bodies: provenance22\u201330, damage projection42\u201359, timing accumulate141\u2013155, two explicit empty DamageCache constructors182/183. Member-pointer loop147\u2013154 is ordinary function code. Other structs contain data and remaining methods are declarations. BATTLE_TRACE_LEVEL17 is object-like. No lambda/function-like macro definitions. Stage7 exact owning-include relocation independently reviewed under IR-STAGE7-INCLUDE-MANUAL107-20261015; all original complete bodies/symbols/sizes remain identical, only include-derived physical offsets and full-file identity change. Prior whole-source review remains provenance; diagnostics are covered by the relocated complete inventory. No callable-debt approval, numeric allowance or future growth is granted.",
       "functions": [
         {
           "symbol": "inline battle::DamageProvenance battleAIDamageProvenance(const battle::Unit * attacker, bool physicalDamage)#1",
-          "start": 22,
-          "end": 30
+          "start": 24,
+          "end": 32
         },
         {
           "symbol": "inline BattleAIDamageProjection battleAIProjectDamage(const battle::Unit * target, int64_t incomingDamage, battle::DamageProvenance provenance)#1",
-          "start": 42,
-          "end": 59
+          "start": 44,
+          "end": 61
         },
         {
           "symbol": "DamageCacheProbeTiming::void accumulate(const DamageCacheProbeTiming & sample)#1",
-          "start": 141,
-          "end": 155
+          "start": 143,
+          "end": 157
         },
         {
           "symbol": "DamageCache::DamageCache() : parent(nullptr)#1",
-          "start": 182,
-          "end": 182
+          "start": 184,
+          "end": 184
         },
         {
           "symbol": "DamageCache::DamageCache(DamageCache * parent) : parent(parent)#1",
-          "start": 183,
-          "end": 183
+          "start": 185,
+          "end": 185
         }
       ]
     },
     "AI/BattleAI/BattleExchangeVariant.h": {
-      "sha256": "89f29278a4f7c64c9b9ee4b2f5989999169cb0d0bb74af401facb61bf87e6faa",
-      "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Ten explicit bodies: BattleScore constructor23–26/default28/value30–33/operator35–43; EvaluationResult constructor75–78; BattleExchangeVariant constructor90–91/getScore111; evaluator constructor241–247/getters286/287. Empty constructor bodies count and initializer lists included. All other timing/reachability structs are data and methods are declarations; additionalUnits={}235/273 are defaults. No lambda/function-like macros.",
+      "sha256": "517768b9afb8dc67c02c02c9fae98c030bcefcd32173c09450bd31d2c2e32cb0",
+      "review": "IR-STAGE7-INCLUDE-MANUAL107-20261015",
+      "rationale": "Ten explicit bodies: BattleScore constructor23\u201326/default28/value30\u201333/operator35\u201343; EvaluationResult constructor75\u201378; BattleExchangeVariant constructor90\u201391/getScore111; evaluator constructor241\u2013247/getters286/287. Empty constructor bodies count and initializer lists included. All other timing/reachability structs are data and methods are declarations; additionalUnits={}235/273 are defaults. No lambda/function-like macros. Stage7 exact owning-include relocation independently reviewed under IR-STAGE7-INCLUDE-MANUAL107-20261015; all original complete bodies/symbols/sizes remain identical, only include-derived physical offsets and full-file identity change. Prior whole-source review remains provenance; diagnostics are covered by the relocated complete inventory. No callable-debt approval, numeric allowance or future growth is granted.",
       "functions": [
         {
           "symbol": "BattleScore::BattleScore(float enemyDamageReduce, float ourDamageReduce) :enemyDamageReduce(enemyDamageReduce), ourDamageReduce(ourDamageReduce)#1",
-          "start": 23,
-          "end": 26
-        },
-        {
-          "symbol": "BattleScore::BattleScore() : BattleScore(0, 0)#1",
-          "start": 28,
+          "start": 25,
           "end": 28
         },
         {
-          "symbol": "BattleScore::float value()#1",
+          "symbol": "BattleScore::BattleScore() : BattleScore(0, 0)#1",
           "start": 30,
-          "end": 33
+          "end": 30
+        },
+        {
+          "symbol": "BattleScore::float value()#1",
+          "start": 32,
+          "end": 35
         },
         {
           "symbol": "BattleScore::BattleScore operator+(BattleScore & other)#1",
-          "start": 35,
-          "end": 43
+          "start": 37,
+          "end": 45
         },
         {
           "symbol": "EvaluationResult::EvaluationResult(const AttackPossibility & ap) :wait(false), score(INEFFECTIVE_SCORE), bestAttack(ap), defend(false)#1",
-          "start": 75,
-          "end": 78
+          "start": 77,
+          "end": 80
         },
         {
           "symbol": "BattleExchangeVariant::BattleExchangeVariant() : dpsScore()#1",
-          "start": 90,
-          "end": 91
+          "start": 92,
+          "end": 93
         },
         {
           "symbol": "BattleExchangeVariant::const BattleScore & getScore() const#1",
-          "start": 111,
-          "end": 111
+          "start": 113,
+          "end": 113
         },
         {
           "symbol": "BattleExchangeEvaluator::BattleExchangeEvaluator( std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, float strengthRatio, int simulationTurnsCount): cb(cb), env(env), simulationTurnsCount(simulationTurnsCount)#1",
-          "start": 241,
-          "end": 247
+          "start": 243,
+          "end": 249
         },
         {
           "symbol": "BattleExchangeEvaluator::float getPositiveEffectMultiplier() const#1",
-          "start": 286,
-          "end": 286
+          "start": 288,
+          "end": 288
         },
         {
           "symbol": "BattleExchangeEvaluator::float getNegativeEffectMultiplier() const#1",
-          "start": 287,
-          "end": 287
+          "start": 289,
+          "end": 289
         }
       ]
     },
@@ -7314,286 +7314,10 @@
       ]
     },
     "AI/BattleAI/StackWithBonuses.h": {
-      "sha256": "06042475550ebc85ccf130925f8afb1bf42b10c376fcce4028418fc757f1afdf",
-      "review": "IR-MANUAL-BATCH8-60e55007-20261015",
-      "rationale": "Whole 755 physical lines read. All 55 inline bodies, RNG overloads, nested receipt and callback bodies retained; prototypes, defaulted comparisons and default-argument/data initializer braces excluded. Diagnostics at 161/441 concern empty-brace default arguments, not missing callable bodies. No locally defined function-like macro.",
-      "functions": [
-        {
-          "symbol": "HypotheticLifecycleTiming::StageTiming::void accumulate(const StageTiming & sample)#1",
-          "start": 45,
-          "end": 50
-        },
-        {
-          "symbol": "RNGStub::int nextInt() override#1",
-          "start": 87,
-          "end": 90
-        },
-        {
-          "symbol": "RNGStub::int nextBinomialInt(int coinsCount, double coinChance) override#1",
-          "start": 92,
-          "end": 95
-        },
-        {
-          "symbol": "RNGStub::int nextInt(int lower, int upper) override#1",
-          "start": 97,
-          "end": 100
-        },
-        {
-          "symbol": "RNGStub::int64_t nextInt64(int64_t lower, int64_t upper) override#1",
-          "start": 101,
-          "end": 104
-        },
-        {
-          "symbol": "RNGStub::double nextDouble(double lower, double upper) override#1",
-          "start": 105,
-          "end": 108
-        },
-        {
-          "symbol": "RNGStub::int nextInt(int upper) override#1",
-          "start": 110,
-          "end": 113
-        },
-        {
-          "symbol": "RNGStub::int64_t nextInt64(int64_t upper) override#1",
-          "start": 114,
-          "end": 117
-        },
-        {
-          "symbol": "RNGStub::double nextDouble(double upper) override#1",
-          "start": 118,
-          "end": 121
-        },
-        {
-          "symbol": "HypotheticBattle::const SeizeInitiativeState & getSeizeInitiativeState() const override#1",
-          "start": 269,
-          "end": 269
-        },
-        {
-          "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
-          "start": 270,
-          "end": 274
-        },
-        {
-          "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
-          "start": 275,
-          "end": 275
-        },
-        {
-          "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
-          "start": 284,
-          "end": 284
-        },
-        {
-          "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
-          "start": 285,
-          "end": 285
-        },
-        {
-          "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
-          "start": 290,
-          "end": 293
-        },
-        {
-          "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
-          "start": 300,
-          "end": 300
-        },
-        {
-          "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
-          "start": 308,
-          "end": 312
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
-          "start": 315,
-          "end": 315
-        },
-        {
-          "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-          "start": 336,
-          "end": 336
-        },
-        {
-          "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
-          "start": 337,
-          "end": 346
-        },
-        {
-          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
-          "start": 347,
-          "end": 350
-        },
-        {
-          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
-          "start": 351,
-          "end": 354
-        },
-        {
-          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 356,
-          "end": 356
-        },
-        {
-          "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
-          "start": 358,
-          "end": 358
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
-          "start": 359,
-          "end": 359
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
-          "start": 360,
-          "end": 360
-        },
-        {
-          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
-          "start": 361,
-          "end": 361
-        },
-        {
-          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
-          "start": 362,
-          "end": 362
-        },
-        {
-          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
-          "start": 363,
-          "end": 363
-        },
-        {
-          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
-          "start": 364,
-          "end": 367
-        },
-        {
-          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
-          "start": 368,
-          "end": 371
-        },
-        {
-          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
-          "start": 372,
-          "end": 375
-        },
-        {
-          "symbol": "HypotheticBattle::ProjectedActionReceipt::bool isHeroAction() const#1",
-          "start": 385,
-          "end": 388
-        },
-        {
-          "symbol": "HypotheticBattle::ui8 getProjectedPendingTimeStopHeroActionSides() const#1",
-          "start": 450,
-          "end": 450
-        },
-        {
-          "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 456,
-          "end": 456
-        },
-        {
-          "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
-          "start": 457,
-          "end": 457
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 464,
-          "end": 464
-        },
-        {
-          "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 484,
-          "end": 484
-        },
-        {
-          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
-          "start": 485,
-          "end": 485
-        },
-        {
-          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
-          "start": 486,
-          "end": 486
-        },
-        {
-          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
-          "start": 487,
-          "end": 491
-        },
-        {
-          "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-          "start": 492,
-          "end": 496
-        },
-        {
-          "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 497,
-          "end": 497
-        },
-        {
-          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
-          "start": 498,
-          "end": 501
-        },
-        {
-          "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
-          "start": 502,
-          "end": 507
-        },
-        {
-          "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 508,
-          "end": 518
-        },
-        {
-          "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 521,
-          "end": 524
-        },
-        {
-          "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 525,
-          "end": 529
-        },
-        {
-          "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 534,
-          "end": 534
-        },
-        {
-          "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
-          "start": 598,
-          "end": 598
-        },
-        {
-          "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-          "start": 599,
-          "end": 599
-        },
-        {
-          "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
-          "start": 600,
-          "end": 600
-        },
-        {
-          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
-          "start": 601,
-          "end": 604
-        },
-        {
-          "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 615,
-          "end": 618
-        },
-        {
-          "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 703,
-          "end": 703
-        }
-      ]
+      "sha256": "e69ad292ec1512d6e4401fe7c590a2cc4b0f945586610fee2100c237070a0ade",
+      "review": "IR-STAGE7-HEADERS-529-MANUAL55-20261015",
+      "rationale": "Exact final99f5 header inventory independently reviewed under IR-STAGE7-HEADERS-529-MANUAL55-20261015. Complete original55-body relocation: Stack0, battle46, shared types9; two private helper prototypes, 197 original/199 final genuine no-body declarations and four defaulted comparisons are separately accounted in final v3. Existing default-argument recoveries move to Stack63/battle211; no missing body and no coverage_pending. Retains original IR-MANUAL-BATCH8-60e55007-20261015 as provenance, not approval of old525/v1/v2 offsets. No numeric waiver or runtime/ABI acceptance.",
+      "functions": []
     },
     "AI/MMAI/BAI/v13/BAI.cpp": {
       "sha256": "f6bc9c723a76cbc4e71cfac234942d029d3396e29737f61e25e43625f58b1ca5",
@@ -11814,6 +11538,295 @@
           "end": 1311
         }
       ]
+    },
+    "AI/BattleAI/HypotheticBattle.h": {
+      "sha256": "9d6763a2fd58f687b9be5c6c3d9eb03d50887795518ce499ac15f8b80c2dd2bb",
+      "review": "IR-STAGE7-HEADERS-529-MANUAL55-20261015",
+      "rationale": "Exact final99f5 header inventory independently reviewed under IR-STAGE7-HEADERS-529-MANUAL55-20261015. Complete original55-body relocation: Stack0, battle46, shared types9; two private helper prototypes, 197 original/199 final genuine no-body declarations and four defaulted comparisons are separately accounted in final v3. Existing default-argument recoveries move to Stack63/battle211; no missing body and no coverage_pending. Retains original IR-MANUAL-BATCH8-60e55007-20261015 as provenance, not approval of old525/v1/v2 offsets. No numeric waiver or runtime/ABI acceptance.",
+      "functions": [
+        {
+          "symbol": "HypotheticBattle::const SeizeInitiativeState & getSeizeInitiativeState() const override#1",
+          "start": 39,
+          "end": 39
+        },
+        {
+          "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
+          "start": 40,
+          "end": 44
+        },
+        {
+          "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
+          "start": 45,
+          "end": 45
+        },
+        {
+          "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
+          "start": 54,
+          "end": 54
+        },
+        {
+          "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
+          "start": 55,
+          "end": 55
+        },
+        {
+          "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
+          "start": 60,
+          "end": 63
+        },
+        {
+          "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
+          "start": 70,
+          "end": 70
+        },
+        {
+          "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
+          "start": 78,
+          "end": 82
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
+          "start": 85,
+          "end": 85
+        },
+        {
+          "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
+          "start": 106,
+          "end": 106
+        },
+        {
+          "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
+          "start": 107,
+          "end": 116
+        },
+        {
+          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
+          "start": 117,
+          "end": 120
+        },
+        {
+          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
+          "start": 121,
+          "end": 124
+        },
+        {
+          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
+          "start": 126,
+          "end": 126
+        },
+        {
+          "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
+          "start": 128,
+          "end": 128
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
+          "start": 129,
+          "end": 129
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
+          "start": 130,
+          "end": 130
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
+          "start": 131,
+          "end": 131
+        },
+        {
+          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
+          "start": 132,
+          "end": 132
+        },
+        {
+          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "start": 133,
+          "end": 133
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
+          "start": 134,
+          "end": 137
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
+          "start": 138,
+          "end": 141
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
+          "start": 142,
+          "end": 145
+        },
+        {
+          "symbol": "HypotheticBattle::ProjectedActionReceipt::bool isHeroAction() const#1",
+          "start": 155,
+          "end": 158
+        },
+        {
+          "symbol": "HypotheticBattle::ui8 getProjectedPendingTimeStopHeroActionSides() const#1",
+          "start": 220,
+          "end": 220
+        },
+        {
+          "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
+          "start": 226,
+          "end": 226
+        },
+        {
+          "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
+          "start": 227,
+          "end": 227
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
+          "start": 234,
+          "end": 234
+        },
+        {
+          "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
+          "start": 254,
+          "end": 254
+        },
+        {
+          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
+          "start": 255,
+          "end": 255
+        },
+        {
+          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
+          "start": 256,
+          "end": 256
+        },
+        {
+          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "start": 257,
+          "end": 261
+        },
+        {
+          "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
+          "start": 262,
+          "end": 266
+        },
+        {
+          "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
+          "start": 267,
+          "end": 267
+        },
+        {
+          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
+          "start": 268,
+          "end": 271
+        },
+        {
+          "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
+          "start": 272,
+          "end": 277
+        },
+        {
+          "symbol": "HypotheticBattle::void endFortuneActivation()#1",
+          "start": 278,
+          "end": 288
+        },
+        {
+          "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
+          "start": 291,
+          "end": 294
+        },
+        {
+          "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
+          "start": 295,
+          "end": 299
+        },
+        {
+          "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
+          "start": 304,
+          "end": 304
+        },
+        {
+          "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
+          "start": 368,
+          "end": 368
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
+          "start": 369,
+          "end": 369
+        },
+        {
+          "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
+          "start": 370,
+          "end": 370
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
+          "start": 371,
+          "end": 374
+        },
+        {
+          "symbol": "HypotheticBattle::void resetActiveUnit()#1",
+          "start": 385,
+          "end": 388
+        },
+        {
+          "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
+          "start": 477,
+          "end": 477
+        }
+      ]
+    },
+    "AI/BattleAI/HypotheticBattleTypes.h": {
+      "sha256": "b7713bdd3beefb2d448056f2a1d12023e682e222b9f176c057e07f830eda7875",
+      "review": "IR-STAGE7-HEADERS-529-MANUAL55-20261015",
+      "rationale": "Exact final99f5 header inventory independently reviewed under IR-STAGE7-HEADERS-529-MANUAL55-20261015. Complete original55-body relocation: Stack0, battle46, shared types9; two private helper prototypes, 197 original/199 final genuine no-body declarations and four defaulted comparisons are separately accounted in final v3. Existing default-argument recoveries move to Stack63/battle211; no missing body and no coverage_pending. Retains original IR-MANUAL-BATCH8-60e55007-20261015 as provenance, not approval of old525/v1/v2 offsets. No numeric waiver or runtime/ABI acceptance.",
+      "functions": [
+        {
+          "symbol": "HypotheticLifecycleTiming::StageTiming::void accumulate(const StageTiming & sample)#1",
+          "start": 29,
+          "end": 34
+        },
+        {
+          "symbol": "RNGStub::int nextInt() override#1",
+          "start": 71,
+          "end": 74
+        },
+        {
+          "symbol": "RNGStub::int nextBinomialInt(int coinsCount, double coinChance) override#1",
+          "start": 76,
+          "end": 79
+        },
+        {
+          "symbol": "RNGStub::int nextInt(int lower, int upper) override#1",
+          "start": 81,
+          "end": 84
+        },
+        {
+          "symbol": "RNGStub::int64_t nextInt64(int64_t lower, int64_t upper) override#1",
+          "start": 85,
+          "end": 88
+        },
+        {
+          "symbol": "RNGStub::double nextDouble(double lower, double upper) override#1",
+          "start": 89,
+          "end": 92
+        },
+        {
+          "symbol": "RNGStub::int nextInt(int upper) override#1",
+          "start": 94,
+          "end": 97
+        },
+        {
+          "symbol": "RNGStub::int64_t nextInt64(int64_t upper) override#1",
+          "start": 98,
+          "end": 101
+        },
+        {
+          "symbol": "RNGStub::double nextDouble(double upper) override#1",
+          "start": 102,
+          "end": 105
+        }
+      ]
     }
   },
   "schema": 1,
@@ -11837,13 +11850,14 @@
       "sha256": "ef9f082a4476426871e71764e6651b8606e6efa04e89dcc51b903929d9cd08ce"
     },
     "AI/BattleAI/AttackPossibility.cpp": {
-      "kind": "legacy",
-      "lines": 2700,
+      "kind": "exception",
+      "lines": 2702,
       "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 2700 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c63816a642f1b19e398f75f5a4ef45aa889242ba1dea8aee8664f5b83d4fcded"
+      "rationale": "One-time exact +2 direct owning-include lines required by the cohesive Stage7 split; every existing include and noninclude byte/body remains unchanged. Reviewed dependency integration, not quality approval of existing evaluator debt. Exact maximum/hash only; no body growth, extra include or future growth permission.",
+      "review": "IR-STAGE7-OWNING-INCLUDES-9LINES-20261015",
+      "review_scope": "one-time-exact-owning-includes-only-no-body-or-future-growth",
+      "sha256": "7ac0de19b1893bd1af8e63573fc34b2ce1b843b72b9e6ccab35dd6946001d9d0",
+      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum."
     },
     "AI/BattleAI/AttackPossibility.cpp::AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1": {
       "kind": "legacy",
@@ -11873,13 +11887,14 @@
       "sha256": "a99d96c2107521bd822a17a084c2ae5f89db6844765aac113d0605cb108d3a5e"
     },
     "AI/BattleAI/BattleAI.cpp": {
-      "kind": "legacy",
-      "lines": 1456,
+      "kind": "exception",
+      "lines": 1457,
       "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1456 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "00b8ed2694511ffbcda0cee4a1a6b34535ba165caf11494b2b1fe0edd8ee703c"
+      "rationale": "One-time exact +1 direct owning-include lines required by the cohesive Stage7 split; every existing include and noninclude byte/body remains unchanged. Reviewed dependency integration, not quality approval of existing evaluator debt. Exact maximum/hash only; no body growth, extra include or future growth permission.",
+      "review": "IR-STAGE7-OWNING-INCLUDES-9LINES-20261015",
+      "review_scope": "one-time-exact-owning-includes-only-no-body-or-future-growth",
+      "sha256": "9b74108b9c9a666350a5de8a4b96fd6d6852851b6e75694c6757816141189d6e",
+      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum."
     },
     "AI/BattleAI/BattleAI.cpp::BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)#1": {
       "kind": "legacy",
@@ -11936,13 +11951,14 @@
       "sha256": "f5874411e205e16343dbe37293373e2d81caa80c7c71a7a8bf76713d2671d89b"
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
-      "kind": "legacy",
-      "lines": 6889,
+      "kind": "exception",
+      "lines": 6891,
       "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 6889 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c78e27559a816865854b7da8befa0dcbbda4a26c9a0f39ca9c09b5e2f92e65f1"
+      "rationale": "One-time exact +2 direct owning-include lines required by the cohesive Stage7 split; every existing include and noninclude byte/body remains unchanged. Reviewed dependency integration, not quality approval of existing evaluator debt. Exact maximum/hash only; no body growth, extra include or future growth permission.",
+      "review": "IR-STAGE7-OWNING-INCLUDES-9LINES-20261015",
+      "review_scope": "one-time-exact-owning-includes-only-no-body-or-future-growth",
+      "sha256": "d7117635d5178c5d63c7f9bc1d25dd4555444ab66c3a96b995e84f5ac66e532e",
+      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -12089,13 +12105,14 @@
       "sha256": "cfef4a8b887c5bfc9111edcac72cca0042a817cb76f26ffd557f2f2491d5118d"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp": {
-      "kind": "legacy",
-      "lines": 2365,
+      "kind": "exception",
+      "lines": 2368,
       "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 2365 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "79a4656bc760355a21f958246bd79cc599ffceda6f955ebd1cff9fc41029fdb9"
+      "rationale": "One-time exact +3 direct owning-include lines required by the cohesive Stage7 split; every existing include and noninclude byte/body remains unchanged. Reviewed dependency integration, not quality approval of existing evaluator debt. Exact maximum/hash only; no body growth, extra include or future growth permission.",
+      "review": "IR-STAGE7-OWNING-INCLUDES-9LINES-20261015",
+      "review_scope": "one-time-exact-owning-includes-only-no-body-or-future-growth",
+      "sha256": "c1f297669c2c663cdbe3605ed1314915707ed1061888b2654aaf5b849c8fca1a",
+      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum."
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::BattleScore BattleExchangeEvaluator::calculateExchange( const AttackPossibility & ap, uint8_t turn, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, const battle::Units & additionalUnits, BattleMovementTiming::ExchangeTiming * timing) const#1": {
       "kind": "legacy",
@@ -12161,13 +12178,14 @@
       "sha256": "b9e75bf1fd14d528099e8fe65fde6477b9a84c2521a6b04b3ce26fda0f46930e"
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp": {
-      "kind": "legacy",
-      "lines": 3185,
+      "kind": "exception",
+      "lines": 3186,
       "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 3185 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "41c2aec35146a406ce569390193fda17ac66ea246faa9d9dddfb361fd7e7367b"
+      "rationale": "One-time exact +1 direct owning-include lines required by the cohesive Stage7 split; every existing include and noninclude byte/body remains unchanged. Reviewed dependency integration, not quality approval of existing evaluator debt. Exact maximum/hash only; no body growth, extra include or future growth permission.",
+      "review": "IR-STAGE7-OWNING-INCLUDES-9LINES-20261015",
+      "review_scope": "one-time-exact-owning-includes-only-no-body-or-future-growth",
+      "sha256": "69bf508d7a2af4a664eb5886441a11a682a1a765e5dd18388afb6d0d6cd681ad",
+      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum."
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp::SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection( const Mechanics * spellMechanics, const Target & target)#1": {
       "kind": "legacy",
@@ -12250,24 +12268,6 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "af0aa7e491c96f836f71b7ac0825fd7aca7599f6af1547023a20d70cc083038f"
     },
-    "AI/BattleAI/StackWithBonuses.cpp": {
-      "kind": "legacy",
-      "lines": 3839,
-      "owner": "ai_engineer",
-      "rationale": "Shrinking legacy baseline after shared deterministic Order value-composition extraction. Caller-specific admission, predicates, partial-failure behavior, RNG, publication and commit timing remain owned by the existing consumer. Remaining oversized responsibility is legacy debt, not a ceiling exception or growth allowance.",
-      "review": "IR-F06-NUMERIC-RATCHET-ea6a6025-20261015",
-      "review_scope": "exact-shrinking-Order-composition-ratchet",
-      "sha256": "7470d778fbe400b29bb2e3b1025192cbf8342e8b6da668841e7d6d8c5105bcf4"
-    },
-    "AI/BattleAI/StackWithBonuses.cpp::HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle) : BattleProxy(realBattle), env(ENV), bonusTreeVersion(1)#1": {
-      "kind": "legacy",
-      "lines": 105,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 105 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "cefabd95ecebf14e92d29745507bb221b4f9a4c0e57cce7c3807a6486b211c77"
-    },
     "AI/BattleAI/StackWithBonuses.cpp::TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector, const std::string & cachingStr, bool unstacked) const#1": {
       "kind": "legacy",
       "lines": 109,
@@ -12276,87 +12276,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "6cc9e91567821a457e04828749721a4ec27d58ed0aec28b7a75946b03eb2d9f8"
-    },
-    "AI/BattleAI/StackWithBonuses.cpp::bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand command, const std::vector<uint32_t> & commandTargets, const ProjectedOrderAllowance & prepared)#1": {
-      "kind": "legacy",
-      "lines": 140,
-      "owner": "ai_engineer",
-      "rationale": "Shrinking legacy baseline after shared deterministic Order value-composition extraction. Caller-specific admission, predicates, partial-failure behavior, RNG, publication and commit timing remain owned by the existing consumer. Remaining oversized responsibility is legacy debt, not a ceiling exception or growth allowance.",
-      "review": "IR-F06-NUMERIC-RATCHET-ea6a6025-20261015",
-      "review_scope": "exact-shrinking-Order-composition-ratchet",
-      "sha256": "fa3e18575acb7b6c11619130c993821f7fe980c3b8185b7d2534dba2d13727c4"
-    },
-    "AI/BattleAI/StackWithBonuses.cpp::bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target, bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated, const ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & affectedRecipients)#1": {
-      "kind": "legacy",
-      "lines": 81,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 81 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6cf2bd3c87a0d02a31bfad489b95da662518fa8582fc94458e0ee8f94d927550"
-    },
-    "AI/BattleAI/StackWithBonuses.cpp::std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepareHeroSpellAllowance( BattleSide side, SpellID spell, bool metamagicFollowup, bool grand) const#1": {
-      "kind": "legacy",
-      "lines": 81,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 81 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "bc939a6cad754adc26e668c58ca6a95d2b9f9b124bc514177783acaa0e301fad"
-    },
-    "AI/BattleAI/StackWithBonuses.cpp::std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::Unit * postHitUnit, const newHorizonsElementalRebirth::DeathSnapshot & captured, const bool hitKilled, const bool cloneKilled, const bool nativeRebirth)#1": {
-      "kind": "legacy",
-      "lines": 163,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 163 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "5c6ce7452c6b6fbc777ef0f2f5edffe41e0f0278639c4afc4c76807e24260aa5"
-    },
-    "AI/BattleAI/StackWithBonuses.cpp::void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)#1": {
-      "kind": "legacy",
-      "lines": 97,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 97 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4ddb4c4eb9d43fd25629776a0d2bf3eb720ac0b1609a60d75ffddd09173e4130"
-    },
-    "AI/BattleAI/StackWithBonuses.cpp::void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw, HypotheticLifecycleTiming * timing)#1": {
-      "kind": "legacy",
-      "lines": 184,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 184 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "befc2cc555c4f065382caf7150d79ee837202b58ec2798855c0ad2f6aeac3ca8"
-    },
-    "AI/BattleAI/StackWithBonuses.cpp::void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack, const std::vector<std::pair<uint32_t, int64_t>> & hits, battle::CUnitState * attackerState, bool enemyStackKilled, std::optional<ProjectedLuckOutcome> resolvedLuck, bool applyAftermath, std::optional<bool> capturedPerfectFortune, BattleSide capturedPerfectFortuneSide, BattleSide capturedLuckSerendipitySide, std::optional<bool> capturedLuckSerendipityOrdinaryAttack)#1": {
-      "kind": "legacy",
-      "lines": 106,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 106 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ec12fee2f78a27d27d72ffb75e346e5f517a781020e11ec38f792d74f75bb5b3"
-    },
-    "AI/BattleAI/StackWithBonuses.cpp::void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTiming * timing)#1": {
-      "kind": "legacy",
-      "lines": 93,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 93 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "bef39555b89be6af407e7cc003d3319367393b43af17151ba629b7fe16fea6cd"
-    },
-    "AI/BattleAI/StackWithBonuses.h": {
-      "kind": "legacy",
-      "lines": 755,
-      "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 755 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "06042475550ebc85ccf130925f8afb1bf42b10c376fcce4028418fc757f1afdf"
     },
     "AI/BattleAI/TacticsHandler.cpp": {
       "kind": "legacy",
@@ -20221,6 +20140,132 @@
       "review_scope": "exact-existing-content-newly-visible-numeric-debt-only",
       "rationale": "Independently reviewed exact-content debt admission: pre-existing shared entrypoint142–500 is359 physical lines, current=HEAD=cf2e62f9. Parser recovery previously hid this unit. Not new source or semantic certification; not a permanent ceiling waiver. All existing numeric pins remain unchanged. The maintained gate requires explicit exception kind for a newly visible unit above150; Separate independent numeric review admits only these exact existing bytes, not startup/lifecycle behavior or future expansion.",
       "deferral": "Before any affected entrypoint edit, engine owner must propose and characterize a bounded cohesive startup/configuration or lifecycle extraction preserving platform branches, initialization order, ownership, thread joins and shutdown cleanup, then reduce this exact359-line pin. No growth/rename/move inherits this record; urgent fixes need a fresh scoped independent review. No production extraction is authorized by this inventory."
+    },
+    "AI/BattleAI/HypotheticActivation.cpp::void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)#1": {
+      "kind": "review",
+      "lines": 97,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "4ddb4c4eb9d43fd25629776a0d2bf3eb720ac0b1609a60d75ffddd09173e4130"
+    },
+    "AI/BattleAI/HypotheticActivation.cpp::void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw, HypotheticLifecycleTiming * timing)#1": {
+      "kind": "review",
+      "lines": 119,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "b0ff970156ee8a936ffe09502b4b6e7f2fd9a15c5b4e81bb72209693b6300e38"
+    },
+    "AI/BattleAI/HypotheticBattle.cpp": {
+      "kind": "review",
+      "lines": 856,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "63f1969d9fd6f99f2658a977b3ce77e05818cee9257004e62ccec993fe2e973c"
+    },
+    "AI/BattleAI/HypotheticBattle.cpp::HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle) : BattleProxy(realBattle), env(ENV), bonusTreeVersion(1)#1": {
+      "kind": "review",
+      "lines": 105,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "cefabd95ecebf14e92d29745507bb221b4f9a4c0e57cce7c3807a6486b211c77"
+    },
+    "AI/BattleAI/HypotheticBattle.h": {
+      "kind": "review",
+      "lines": 529,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-HEADERS-529-MANUAL55-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "9d6763a2fd58f687b9be5c6c3d9eb03d50887795518ce499ac15f8b80c2dd2bb"
+    },
+    "AI/BattleAI/HypotheticHeroActions.cpp": {
+      "kind": "review",
+      "lines": 560,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "16e42744c8556e120f73de8953dad61c4dda376968be1eac0e4180bdb27e98ba"
+    },
+    "AI/BattleAI/HypotheticHeroActions.cpp::bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand command, const std::vector<uint32_t> & commandTargets, const ProjectedOrderAllowance & prepared)#1": {
+      "kind": "review",
+      "lines": 140,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "fa3e18575acb7b6c11619130c993821f7fe980c3b8185b7d2534dba2d13727c4"
+    },
+    "AI/BattleAI/HypotheticHeroActions.cpp::bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target, bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated, const ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & affectedRecipients)#1": {
+      "kind": "review",
+      "lines": 81,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "6cf2bd3c87a0d02a31bfad489b95da662518fa8582fc94458e0ee8f94d927550"
+    },
+    "AI/BattleAI/HypotheticHeroActions.cpp::std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepareHeroSpellAllowance( BattleSide side, SpellID spell, bool metamagicFollowup, bool grand) const#1": {
+      "kind": "review",
+      "lines": 81,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "bc939a6cad754adc26e668c58ca6a95d2b9f9b124bc514177783acaa0e301fad"
+    },
+    "AI/BattleAI/HypotheticStrikeProjection.cpp": {
+      "kind": "review",
+      "lines": 523,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "3182ddfbc4aadebdad36dc9d033496babfde00d5d26cd7a5b815bd4d429faba6"
+    },
+    "AI/BattleAI/HypotheticStrikeProjection.cpp::std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::Unit * postHitUnit, const newHorizonsElementalRebirth::DeathSnapshot & captured, const bool hitKilled, const bool cloneKilled, const bool nativeRebirth)#1": {
+      "kind": "review",
+      "lines": 99,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "c6d0b019dbf10bc06bf3c21de36d470354680ee2e8cc7c5e4343b1a5d3d0b42f"
+    },
+    "AI/BattleAI/HypotheticStrikeProjection.cpp::void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack, const std::vector<std::pair<uint32_t, int64_t>> & hits, battle::CUnitState * attackerState, bool enemyStackKilled, std::optional<ProjectedLuckOutcome> resolvedLuck, bool applyAftermath, std::optional<bool> capturedPerfectFortune, BattleSide capturedPerfectFortuneSide, BattleSide capturedLuckSerendipitySide, std::optional<bool> capturedLuckSerendipityOrdinaryAttack)#1": {
+      "kind": "review",
+      "lines": 106,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "ec12fee2f78a27d27d72ffb75e346e5f517a781020e11ec38f792d74f75bb5b3"
+    },
+    "AI/BattleAI/StackWithBonusesEffects.cpp": {
+      "kind": "review",
+      "lines": 652,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "c7ab38e9c54b8e423183d9578b083c949c16a86f966158b821d649a92d478c66"
+    },
+    "AI/BattleAI/StackWithBonusesEffects.cpp::void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTiming * timing)#1": {
+      "kind": "review",
+      "lines": 93,
+      "owner": "ai_engineer",
+      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
+      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
+      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
+      "sha256": "bef39555b89be6af407e7cc003d3319367393b43af17151ba629b7fe16fea6cd"
     }
   }
 }

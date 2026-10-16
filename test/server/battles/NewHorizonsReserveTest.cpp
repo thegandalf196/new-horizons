@@ -29,6 +29,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

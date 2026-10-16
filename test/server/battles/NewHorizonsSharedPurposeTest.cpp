@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <string>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

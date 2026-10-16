@@ -45,6 +45,7 @@
 #include <mutex>
 #include <string_view>
 #include <utility>
+#include "HypotheticBattleTypes.h"
 
 #define LOGL(text) print(text)
 #define LOGFL(text, formattingEl) print(boost::str(boost::format(text) % formattingEl))

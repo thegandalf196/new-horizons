@@ -32,6 +32,7 @@
 #include "../../../server/battles/BattleProcessor.h"
 
 #include <algorithm>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

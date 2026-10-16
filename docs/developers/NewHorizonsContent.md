@@ -74,6 +74,21 @@ combat spells do not require School proficiency to cast; acquisition gates remai
 Hat access is temporary without erasing independent learning. See
 [Spell Point migration](../NEW_HORIZONS_SPELL_POINTS.md).
 
+Where a captured spell roster applies, admit IDs before definition, school, icon
+or castability lookup. Use one captured presentation context for filtering, counts,
+tabs, sorting and paging; show-all bypasses possession, not roster admission.
+Missing battle context must not fall back to the current world. Navigation follows
+available saved schools, with stale selection returning to All and a valid page.
+Keep excluded stored quick-slot preferences reserved and noncastable rather than
+erasing or autofilling them; write canonical scoped keys only after valid explicit
+selection. These contracts do not activate an inactive roster policy.
+
+Creature-category presentation comes from the actual stack's saved battle context
+or its actual world callback, captured before a preview node is fabricated. Never
+infer a category from legacy tier, upgrade graph or installed defaults; an absent
+battle view does not fall through to world data. Recapture and clear optional
+widgets when their subject changes, including commander rebuild paths.
+
 ## Focused verification
 
 Use the narrow fixtures corresponding to the changed consumer, then the relevant

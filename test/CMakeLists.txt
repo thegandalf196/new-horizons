@@ -715,6 +715,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp
 		battleAI/HypotheticObstacleTest.cpp
+		battleAI/HypotheticSpellServerRouteTest.cpp
 		battleAI/HypotheticWallTest.cpp
 		battleAI/NewHorizonsSylvanLuckAITest.cpp
 		battleAI/NewHorizonsNoQuarterAITest.cpp

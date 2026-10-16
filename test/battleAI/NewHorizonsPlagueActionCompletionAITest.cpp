@@ -22,6 +22,7 @@
 #include <vcmi/ServerCallback.h>
 #include <array>
 #include <map>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

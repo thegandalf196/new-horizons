@@ -31,6 +31,8 @@
 
 #include <algorithm>
 #include <memory>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
+#include "../../../AI/BattleAI/HypotheticBattleTypes.h"
 
 namespace
 {

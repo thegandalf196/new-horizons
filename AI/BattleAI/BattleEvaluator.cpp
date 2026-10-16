@@ -72,6 +72,8 @@
 // Eventually only IBattleInfoCallback and battle::Unit should be used,
 // CUnitState should be private and CStack should be removed completely
 #include "../../lib/CStack.h"
+#include "HypotheticBattle.h"
+#include "HypotheticBattleTypes.h"
 
 #define LOGL(text) print(text)
 #define LOGFL(text, formattingEl) print(boost::str(boost::format(text) % formattingEl))

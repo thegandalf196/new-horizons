@@ -31,6 +31,7 @@
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

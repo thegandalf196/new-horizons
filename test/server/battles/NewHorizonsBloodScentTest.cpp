@@ -25,6 +25,7 @@
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

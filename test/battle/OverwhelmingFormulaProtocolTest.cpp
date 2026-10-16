@@ -10,6 +10,7 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/gameState/GameStatePackVisitor.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

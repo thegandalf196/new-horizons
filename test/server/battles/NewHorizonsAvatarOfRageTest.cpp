@@ -12,6 +12,7 @@
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

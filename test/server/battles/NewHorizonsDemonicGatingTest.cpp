@@ -31,6 +31,7 @@
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 
 #include <tuple>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

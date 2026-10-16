@@ -24,6 +24,7 @@
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

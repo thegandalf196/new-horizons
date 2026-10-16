@@ -19,6 +19,7 @@
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

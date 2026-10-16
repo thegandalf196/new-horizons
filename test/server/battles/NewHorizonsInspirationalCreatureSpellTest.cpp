@@ -20,6 +20,7 @@
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 #endif
 
 namespace

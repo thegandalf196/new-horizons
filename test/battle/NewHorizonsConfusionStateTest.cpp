@@ -17,6 +17,7 @@
 #include "mock/mock_BonusBearer.h"
 #include "mock/mock_UnitEnvironment.h"
 #include "mock/mock_UnitInfo.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 using namespace battle;
 using namespace testing;

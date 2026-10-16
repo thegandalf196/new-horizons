@@ -22,6 +22,7 @@
 #include "../../lib/spells/Problem.h"
 #include <vcmi/ServerCallback.h>
 #include <vcmi/Environment.h>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

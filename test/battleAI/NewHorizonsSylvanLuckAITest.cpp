@@ -8,6 +8,8 @@
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
+#include "../../AI/BattleAI/HypotheticBattleTypes.h"
 
 namespace
 {

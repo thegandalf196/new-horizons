@@ -18,6 +18,19 @@ must follow actual bonuses/subtypes and tooltips: Pikeman/Halberdier Charge Immu
 must not be mislabelled First Strike or changed mechanically to repair an icon.
 One new icon does not complete the whole ability catalogue.
 
+Treat companion layout and controller changes as one component; importing only
+its background can misplace controls. Optional additive widget fragments must
+preserve the base layout, use the object shape expected by the builder and avoid
+duplicate controls in every supported layout branch. Verify actual image sizes
+and live shortcut/help routing rather than copying coordinates.
+
+Where the hint reader appends `.hover` and `.help`, supply the translation prefix,
+not a leaf key. Resolve trait graphics from actual bonus type/subtype and custom
+or spell-specific precedence. `BLOCKS_RETALIATION` is not `NO_RETALIATION`; a
+resolved icon does not make a hidden or empty-description trait visible. Do not
+weaken visibility filters, alter mechanics or silently change descriptions to
+make an icon audit pass.
+
 Templates are authoring references with native dimensions, margins, frame/state
 ordering and provenance, not gameplay dependencies. Do not execute bundled tools
 or redistribute the whole template pack merely to make authoring inputs available.
