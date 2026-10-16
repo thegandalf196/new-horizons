@@ -589,6 +589,7 @@ set(test_SRCS
 
 set(test_HEADERS
 		battleAI/HeroQueueSelectorFixture.h
+		battleAI/HeroExpectedSpellFixture.h
 		battleAI/HeroQueueBonusSnapshot.h
  		StdInc.h
 
@@ -667,6 +668,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroQueueCompletionSelectorTest.cpp
 		battleAI/HeroQueueContinuationSelectorTest.cpp
 		battleAI/HeroQueueOrderSelectorTest.cpp
+		battleAI/HeroExpectedSpellFixture.cpp
+		battleAI/HeroExpectedSpellSelectorTest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
 		battleAI/NewHorizonsBeneficialCreatureAITest.cpp
 		battleAI/NewHorizonsWispLongReachAITest.cpp
