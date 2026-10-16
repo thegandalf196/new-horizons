@@ -63,6 +63,8 @@ carrying an item, and distinguish picked state from an in-flight request ACK.
 Inactive-window layout refresh must not change the shared drag cursor, hover state
 or registered status bar. Use in-place layout fallback without replacing the holder.
 
+An exchange kept open through Mentor level-up must refresh both live Hero titles and all eight fixed secondary-Skill slots, including newly acquired Skills and changed ranks. Clear stale slots and overflow state when the list shrinks; opening with fewer Skills must not limit later refresh capacity.
+
 ## Query-backed mandatory choices
 
 For a mandatory choice, retain the authoritative offer and explicit offered index;

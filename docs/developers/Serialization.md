@@ -143,10 +143,11 @@ before payload bytes; the new state-update packet is unavailable to older wire
 formats. Malformed negative stamps and invalid packet targets are rejected.
 This representation does not enable complete ongoing-battle save/resume.
 
-Counterpressure remains planned/inactive pending its no-op recipient policy.
-Fifteen focused state/packet/live/detached native cases pass with zero skips;
-this does not imply full activation or completed specification coverage.
-Principal-path acceptance and remaining interactions are tracked in UP180.
+The current catalogue marks Counterpressure active. An accepted enemy Hero spell
+arms readiness only when it actually changes that side's army: Dispel removing
+its Curse counts even though beneficial, while rejected empty Dispel and a
+semantically identical effect refresh do not. Focused live/detached regression
+coverage does not establish complete interaction or platform acceptance.
 
 ## Ordinary Hero Action sequence (UP244; source/native accepted)
 
