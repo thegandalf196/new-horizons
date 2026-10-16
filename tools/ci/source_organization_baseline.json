@@ -11951,13 +11951,13 @@
       "sha256": "f5874411e205e16343dbe37293373e2d81caa80c7c71a7a8bf76713d2671d89b"
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
-      "kind": "legacy",
-      "lines": 6670,
+      "kind": "exception",
+      "lines": 6672,
       "owner": "ai_engineer",
-      "rationale": "Hero-action queue projection moves into a focused 223-line unit with a 66-line driver and a reviewed 119-line activation transaction. All 201 other core callables remain exact. The core shrinks from 6856 to 6670 lines; this is a decreasing freeze, not approval of remaining concentration or future growth.",
-      "review": "IR-STAGE8-HERO-QUEUE-V2-SOURCE-0bf53e22-20261016",
-      "review_scope": "bounded-hero-queue-extraction-shrinking-freeze",
-      "sha256": "f28e088705092d87b66cb72c6e644642049671f2aaeeb9b6d5d039027bcb20a1",
+      "rationale": "Narrow two-line correctness exception: resolve the post-cast copy-on-write target by stable ID before Puppet Master controller checks and valuation. The helper grows from 47 to 49 lines; all 201 other callables, formulas and Order competition remain unchanged. This prerequisite repair does not approve other growth or resolve existing selector concentration.",
+      "review": "IR-STAGE8-PUPPET-COW-UI-20261016",
+      "review_scope": "bounded-cow-target-correctness-exception",
+      "sha256": "077249112b9fad2ef64ea0e45255079f591f9d71b396ffe49bc7e3c42a4ed89e",
       "deferral": "ai_engineer owns later bounded candidate projection, scoring and typed-generation extractions with characterization and independent review. Remaining selector and parallel projection debt stays frozen; no regrowth to an earlier limit is permitted."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {

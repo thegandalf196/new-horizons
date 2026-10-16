@@ -503,7 +503,9 @@ float expectedPuppetMasterActivationSwing(const CSpell * spell, const spells::Ta
 	if(!projectedMechanics->canBeCastAt(projectedAim, problem))
 		return 0.0f;
 	projectedMechanics->castEval(projectedBattle->getServerCallback(), projectedAim);
-	if(projectedBattle->battleGetActionController(projectedTarget) != valuedPlayer
+	// The cast can materialize a copy-on-write unit; query its post-cast identity.
+	projectedTarget = projectedBattle->battleGetUnitByID(targetId);
+	if(!projectedTarget || projectedBattle->battleGetActionController(projectedTarget) != valuedPlayer
 		|| projectedBattle->playerToSide(projectedBattle->battleGetActionController(projectedTarget)) != valuedSide)
 		return 0.0f;
 
