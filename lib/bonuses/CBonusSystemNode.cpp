@@ -660,40 +660,25 @@ void CBonusSystemNode::limitBonuses(const BonusList &allBonuses, BonusList &out)
 	}
 }
 
+int32_t CBonusSystemNode::preparedGraphGeneration() noexcept
+{
+	return globalCounter.load();
+}
+
+bool CBonusSystemNode::reservePreparedGenerations(int32_t expected, int32_t final) noexcept
+{
+	return globalCounter.compare_exchange_strong(expected, final);
+}
+
+void CBonusSystemNode::publishPreparedInvalidation(int32_t version, const TNodesVector & targets) noexcept
+{
+	for(auto * target : targets)
+		target->nodeChanged.store(version);
+}
+
 void CBonusSystemNode::nodeHasChanged()
 {
 	invalidateChildrenNodes(++globalCounter);
-}
-
-std::unique_ptr<CBonusSystemNode::PreparedLocalBonusReplacement> CBonusSystemNode::prepareLocalBonusReplacement(
-	const std::vector<std::shared_ptr<Bonus>> & replacement)
-{
-	for(const auto & bonus : exportedBonuses)
-		if(bonus->propagator && !vstd::contains(replacement, bonus))
-			throw std::runtime_error("Exact local bonus replacement cannot remove a propagated bonus");
-	for(const auto & bonus : replacement)
-		if(!bonus || (bonus->propagator && !vstd::contains(exportedBonuses, bonus)))
-			throw std::runtime_error("Exact local bonus replacement cannot add a propagated bonus");
-	auto prepared = std::make_unique<PreparedLocalBonusReplacement>();
-	for(const auto & bonus : bonuses)
-		if(bonus->propagator || !vstd::contains(exportedBonuses, bonus))
-			prepared->accepted.push_back(bonus);
-	for(const auto & bonus : replacement)
-	{
-		prepared->exported.push_back(bonus);
-		if(!bonus->propagator)
-			prepared->accepted.push_back(bonus);
-	}
-	exportedBonuses.reserveForReplacement(prepared->exported.size());
-	bonuses.reserveForReplacement(prepared->accepted.size());
-	return prepared;
-}
-
-void CBonusSystemNode::commitLocalBonusReplacement(const PreparedLocalBonusReplacement & prepared) noexcept
-{
-	exportedBonuses.replacePrepared(prepared.exported);
-	bonuses.replacePrepared(prepared.accepted);
-	nodeHasChanged();
 }
 
 void CBonusSystemNode::invalidateChildrenNodes(int32_t changeCounter)

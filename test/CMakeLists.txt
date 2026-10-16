@@ -91,6 +91,7 @@ set(test_SRCS
 		battle/battle_UnitTest.cpp
 
 		bonus/BonusSystemTest.cpp
+		bonus/PreparedBonusGraphStorageTest.cpp
 		bonus/BonusStatusTagsTest.cpp
 		bonus/NewHorizonsUnstackedBonusTest.cpp
 		bonus/NewHorizonsCreatureProbabilityTest.cpp
@@ -240,6 +241,7 @@ set(test_SRCS
 		server/battles/AcidBreathTest.cpp
 		server/battles/BattleTestFixture.cpp
 		server/battles/PacketUpdateAtomicityTest.cpp
+		network/PacketUpdatePublicationTest.cpp
 		server/battles/CombatEventTriggerTest.cpp
 		server/battles/DamageCalculatorTest.cpp
 		server/battles/NewHorizonsMoraleActivationTest.cpp

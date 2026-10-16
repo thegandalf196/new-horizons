@@ -121,6 +121,7 @@ set(lib_MAIN_SRCS
 	bonuses/BonusMigration.cpp
 	bonuses/BonusParameters.cpp
 	bonuses/CBonusSystemNode.cpp
+	bonuses/PreparedBonusGraphStorage.cpp
 	bonuses/IBonusBearer.cpp
 	bonuses/Limiters.cpp
 	bonuses/Propagators.cpp
@@ -638,6 +639,7 @@ set(lib_MAIN_HEADERS
 	bonuses/BonusMigration.h
 	bonuses/BonusParameters.h
 	bonuses/CBonusSystemNode.h
+	bonuses/PreparedBonusGraphStorage.h
 	bonuses/IBonusBearer.h
 	bonuses/Limiters.h
 	bonuses/Propagators.h
