@@ -80,6 +80,7 @@ set(test_SRCS
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp
 		battle/CUnitStateTest.cpp
+		battle/UnitStateValueExchangeTest.cpp
 		battle/CUnitStateMagicTest.cpp
 		battle/PhysicalAfflictionTest.cpp
 		battle/NewHorizonsDebuffStatusesTest.cpp
