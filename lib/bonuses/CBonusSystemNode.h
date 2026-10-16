@@ -40,6 +40,8 @@ public:
 
 private:
 	friend class PreparedBonusGraphStorage;
+	friend class BonusEvaluationContext;
+	friend class LiveBonusGraphQuery;
 	static int32_t preparedGraphGeneration() noexcept;
 	static bool reservePreparedGenerations(int32_t expected, int32_t final) noexcept;
 	static void publishPreparedInvalidation(int32_t version, const TNodesVector & targets) noexcept;

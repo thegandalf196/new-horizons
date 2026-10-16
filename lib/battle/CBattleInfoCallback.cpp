@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CBattleInfoCallback.h"
+#include "UnitAdjacency.h"
 #include "../mapObjects/NewHorizonsGlyphsOfFear.h"
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsSwiftRebirth.h"
@@ -5843,19 +5844,10 @@ battle::Units CBattleInfoCallback::battleAdjacentUnits(const battle::Unit * unit
 	RETURN_IF_NOT_BATTLE({});
 
 	const auto & hexes = unit->getSurroundingHexes();
-
-	const auto & units = battleGetUnitsIf([&hexes](const battle::Unit * testedUnit)
+	return battleGetUnitsIf([&hexes](const battle::Unit * testedUnit)
 	{
-		if (!testedUnit->alive())
-			return false;
-		const auto & unitHexes = testedUnit->getHexes();
-		for (const auto & hex : unitHexes)
-			if (hexes.contains(hex))
-				return true;
-		return false;
+		return battle::isAdjacentLivingUnit(hexes, *testedUnit);
 	});
-
-	return units;
 }
 
 std::vector<SpellID> CBattleInfoCallback::getAvailableBeneficialSpells(const battle::Unit * caster, const battle::Unit * subject) const

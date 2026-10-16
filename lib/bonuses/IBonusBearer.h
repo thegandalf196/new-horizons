@@ -42,5 +42,7 @@ public:
 	TConstBonusListPtr getBonusesOfType(BonusType type) const;
 	TConstBonusListPtr getBonusesOfType(BonusType type, BonusSubtypeID subtype) const;
 
+	/// Explicit projected views bypass versioned caches; live default unchanged.
+	virtual bool isBonusCacheable() const { return true; }
 	virtual int32_t getTreeVersion() const = 0;
 };

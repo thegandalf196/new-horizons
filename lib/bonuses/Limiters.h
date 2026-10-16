@@ -11,6 +11,7 @@
 
 #include "BonusCustomTypes.h"
 #include "BonusEnum.h"
+#include "BonusEvaluationContext.h"
 #include "../battle/BattleHexArray.h"
 #include "../serializer/Serializeable.h"
 #include "../constants/Enumerations.h"
@@ -21,12 +22,17 @@ class CBonusSystemNode;
 class CCreature;
 class JsonNode;
 
-struct BonusLimitationContext
+struct DLL_LINKAGE BonusLimitationContext
 {
 	const Bonus & b;
 	const CBonusSystemNode & node;
 	const BonusList & alreadyAccepted;
 	const BonusList & stillUndecided;
+	BonusEvaluationContext evaluation;
+	BonusLimitationContext(const Bonus & bonus, const CBonusSystemNode & node,
+		const BonusList & accepted, const BonusList & undecided);
+	BonusLimitationContext(const Bonus & bonus, const CBonusSystemNode & node,
+		const BonusList & accepted, const BonusList & undecided, const BonusEvaluationContext & evaluation);
 };
 
 class DLL_LINKAGE ILimiter : public Serializeable

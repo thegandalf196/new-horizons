@@ -19,8 +19,36 @@
 #include "../IGameSettings.h"
 #include "../spells/SpellSchoolHandler.h"
 
+namespace
+{
+int bonusValue(const IBonusBearer & target, const CSelector & selector, BonusCacheMode mode)
+{
+	return mode == BonusCacheMode::VALUE ? target.valOfBonuses(selector) : target.hasBonus(selector);
+}
+
+int bonusValueForTurn(const BonusList & bonuses, int turns, BonusCacheMode mode)
+{
+	if (mode == BonusCacheMode::VALUE)
+	{
+		if (turns != 0)
+			return bonuses.valOfBonuses(Selector::turns(turns));
+		else
+			return bonuses.totalValue();
+	}
+	else
+	{
+		if (turns != 0)
+			return bonuses.getFirst(Selector::turns(turns)) != nullptr;
+		else
+			return !bonuses.empty();
+	}
+}
+}
+
 int BonusCacheBase::getBonusValueImpl(BonusCacheEntry & currentValue, const CSelector & selector, BonusCacheMode mode) const
 {
+	if(!target->isBonusCacheable())
+		return bonusValue(*target, selector, mode);
 	if (target->getTreeVersion() == currentValue.version)
 	{
 		return currentValue.value;
@@ -29,12 +57,7 @@ int BonusCacheBase::getBonusValueImpl(BonusCacheEntry & currentValue, const CSel
 	{
 		// NOTE: following code theoretically can fail if bonus tree was changed by another thread between two following lines
 		// However, this situation should not be possible - gamestate modification should only happen in single-treaded mode with locked gamestate mutex
-		int newValue;
-
-		if (mode == BonusCacheMode::VALUE)
-			newValue = target->valOfBonuses(selector);
-		else
-			newValue = target->hasBonus(selector);
+		int newValue = bonusValue(*target, selector, mode);
 		currentValue.value = newValue;
 		currentValue.version = target->getTreeVersion();
 
@@ -76,7 +99,7 @@ void MagicSchoolMasteryCache::update() const
 
 int32_t MagicSchoolMasteryCache::getMastery(const SpellSchool & school) const
 {
-	if (target->getTreeVersion() != version)
+	if (!target->isBonusCacheable() || target->getTreeVersion() != version)
 		update();
 	return schools[school.num + 1];
 }
@@ -123,13 +146,15 @@ void PrimarySkillsCache::update() const
 
 const std::array<std::atomic<int32_t>, 4> & PrimarySkillsCache::getSkills() const
 {
-	if (target->getTreeVersion() != version)
+	if (!target->isBonusCacheable() || target->getTreeVersion() != version)
 		update();
 	return skills;
 }
 
 int BonusCachePerTurn::getValueUncached(int turns) const
 {
+	if(!target->isBonusCacheable())
+		return bonusValueForTurn(*target->getBonuses(selector), turns, mode);
 	std::lock_guard lock(bonusListMutex);
 
 	int nodeTreeVersion = target->getTreeVersion();
@@ -140,24 +165,13 @@ int BonusCachePerTurn::getValueUncached(int turns) const
 		bonusListVersion = nodeTreeVersion;
 	}
 
-	if (mode == BonusCacheMode::VALUE)
-	{
-		if (turns != 0)
-			return bonusList->valOfBonuses(Selector::turns(turns));
-		else
-			return bonusList->totalValue();
-	}
-	else
-	{
-		if (turns != 0)
-			return bonusList->getFirst(Selector::turns(turns)) != nullptr;
-		else
-			return !bonusList->empty();
-	}
+	return bonusValueForTurn(*bonusList, turns, mode);
 }
 
 int BonusCachePerTurn::getValue(int turns) const
 {
+	if(!target->isBonusCacheable())
+		return getValueUncached(turns);
 	int nodeTreeVersion = target->getTreeVersion();
 
 	if (turns < cachedTurns)

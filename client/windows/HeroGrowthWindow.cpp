@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "SpellPointPresentation.h"
 #include "HeroGrowthWindow.h"
+#include "HeroGrowthPerkPresentation.h"
 
 #include "../GameEngine.h"
 #include "../GameInstance.h"
@@ -43,18 +44,6 @@ std::string perkRankName(int rank)
 	default:
 		return "Not learned";
 	}
-}
-
-std::string joinPerkNames(const std::vector<std::string> & names)
-{
-	std::string result;
-	for(size_t i = 0; i < names.size(); ++i)
-	{
-		if(i > 0)
-			result += ", ";
-		result += names[i];
-	}
-	return result;
 }
 
 size_t selectedPerksForSkill(const newHorizonsHeroes::PerkState & state, const std::string & skillId)
@@ -325,131 +314,10 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	}
 	if(perks)
 	{
-		const int maxPerksPerSkill = perkState.rules["maxPerksPerSkill"].Integer();
-		const int maxPerkChoices = perkState.rules["maxPerkChoices"].Integer();
-		const size_t selectedCount = perkState.selected.size();
-		size_t capacity = 0;
-		size_t eligibleCount = 0;
-		size_t lockedCount = 0;
-		const auto projected = perkState.project([&hero](const std::string & skillId)
+		perkText = heroGrowthPerkPresentation::summary(perkState, [&hero](const std::string & skillId)
 		{
 			return hero.getPerkSkillRank(skillId);
 		});
-
-		std::string details = "Perks\n";
-		details += "Selected: " + std::to_string(selectedCount);
-
-		std::vector<std::string> skillIds;
-		for(const auto & entry : perkState.rules["skills"].Struct())
-			skillIds.push_back(entry.first);
-		std::stable_sort(skillIds.begin(), skillIds.end(), [&hero, &perkState](const std::string & left, const std::string & right)
-		{
-			const auto selectedCountFor = [&perkState](const std::string & skillId)
-			{
-				return std::count_if(perkState.selected.begin(), perkState.selected.end(),
-					[&skillId](const auto & selection) { return selection.skillId == skillId; });
-			};
-			const bool leftLearned = hero.getPerkSkillRank(left) > 0 || selectedCountFor(left) > 0;
-			const bool rightLearned = hero.getPerkSkillRank(right) > 0 || selectedCountFor(right) > 0;
-			return leftLearned > rightLearned;
-		});
-
-		for(const auto & skillId : skillIds)
-		{
-			const auto skill = newHorizonsHeroes::perkSkill(perkState.rules, skillId);
-			if(!skill)
-				continue;
-
-			const int rank = hero.getPerkSkillRank(skillId);
-			const size_t selectedForSkill = std::count_if(perkState.selected.begin(), perkState.selected.end(),
-				[&skillId](const auto & selection) { return selection.skillId == skillId; });
-			if(rank > 0)
-				capacity += static_cast<size_t>(maxPerksPerSkill);
-
-			std::vector<std::string> learned;
-			std::vector<std::string> eligible;
-			std::array<size_t, 3> lockedByRank{};
-			std::array<size_t, 3> lockedByTier{};
-			std::array<bool, 3> occupiedTiers{};
-			size_t lockedByCapacity = 0;
-			for(const auto & selection : perkState.selected)
-			{
-				if(selection.skillId != skillId)
-					continue;
-				const auto selectedPerk = newHorizonsHeroes::perkDefinition(perkState.rules,
-					selection.skillId, selection.perkId);
-				if(selectedPerk)
-					occupiedTiers[static_cast<size_t>(newHorizonsHeroes::perkRequiredRank(selectedPerk->requiredRank) - 1)] = true;
-			}
-			for(const auto & perk : skill->perks)
-			{
-				if(perkState.hasSelection(skillId, perk.id))
-				{
-					const int requiredRank = newHorizonsHeroes::perkRequiredRank(perk.requiredRank);
-					const auto modifier = std::find_if(projected.begin(), projected.end(), [&](const auto & candidate)
-					{
-						return candidate.skillId == skillId && candidate.perkId == perk.id;
-					});
-					const bool active = modifier != projected.end() && modifier->enabled;
-					const bool planned = perk.effect["status"].String() != "active";
-					std::string status = planned ? "planned; inactive" : active ? "active" : "inactive";
-					if(!active && rank < requiredRank)
-						status += "; requires " + perkRankName(requiredRank);
-					learned.push_back(perk.name + " (" + status + ")");
-					continue;
-				}
-				if(rank <= 0)
-					continue;
-				if(selectedForSkill >= static_cast<size_t>(maxPerksPerSkill))
-				{
-					++lockedByCapacity;
-					continue;
-				}
-				const int requiredRank = newHorizonsHeroes::perkRequiredRank(perk.requiredRank);
-				if(rank < requiredRank)
-					++lockedByRank[static_cast<size_t>(requiredRank - 1)];
-				else if(occupiedTiers[static_cast<size_t>(requiredRank - 1)])
-					++lockedByTier[static_cast<size_t>(requiredRank - 1)];
-				else
-					eligible.push_back(perk.name);
-			}
-			if(rank <= 0)
-			{
-				lockedCount += skill->perks.size() - selectedForSkill;
-				details += "\n" + skill->name + " - locked: skill not learned";
-				if(!learned.empty())
-					details += "\n  Selected: " + joinPerkNames(learned);
-				continue;
-			}
-
-			eligibleCount += eligible.size();
-			lockedCount += lockedByCapacity;
-			lockedCount += lockedByRank[0] + lockedByRank[1] + lockedByRank[2];
-			lockedCount += lockedByTier[0] + lockedByTier[1] + lockedByTier[2];
-			details += "\n" + skill->name + " (" + perkRankName(rank) + ") - "
-				+ std::to_string(selectedForSkill) + "/" + std::to_string(maxPerksPerSkill) + " selected, "
-				+ std::to_string(static_cast<size_t>(maxPerksPerSkill) - std::min(selectedForSkill, static_cast<size_t>(maxPerksPerSkill))) + " remaining";
-			if(!learned.empty())
-				details += "\n  Selected: " + joinPerkNames(learned);
-			if(!eligible.empty())
-				details += "\n  Eligible for future level-up offers: " + joinPerkNames(eligible);
-			if(lockedByCapacity > 0)
-				details += "\n  Locked: " + std::to_string(lockedByCapacity) + " (per-skill capacity reached)";
-			for(int requiredRank = rank + 1; requiredRank <= 3; ++requiredRank)
-				if(lockedByRank[static_cast<size_t>(requiredRank - 1)] > 0)
-					details += "\n  Locked: " + std::to_string(lockedByRank[static_cast<size_t>(requiredRank - 1)])
-						+ " (requires " + perkRankName(requiredRank) + ")";
-			for(int requiredRank = 1; requiredRank <= 3; ++requiredRank)
-				if(lockedByTier[static_cast<size_t>(requiredRank - 1)] > 0)
-					details += "\n  Locked: " + std::to_string(lockedByTier[static_cast<size_t>(requiredRank - 1)])
-						+ " (" + perkRankName(requiredRank) + " tier already selected)";
-			}
-
-		perkText = "Selected: " + std::to_string(selectedCount) + " / " + std::to_string(capacity)
-			+ " capacity for learned skills; " + std::to_string(eligibleCount) + " eligible for future level-up offers; "
-			+ std::to_string(lockedCount) + " locked.\nEach learned skill can hold up to "
-			+ std::to_string(maxPerksPerSkill) + " perks; a level-up offers at most "
-			+ std::to_string(maxPerkChoices) + ".\n" + details;
 
 		if(showPerkPool)
 		{
@@ -529,57 +397,23 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 				{
 					const auto & perk = skill->perks[perkIndex];
 					const int requiredRank = newHorizonsHeroes::perkRequiredRank(perk.requiredRank);
-					const size_t selectedForSkill = selectedPerksForSkill(perkState, skillId);
-					std::array<bool, 3> occupiedTiers{};
-					for(const auto & selection : perkState.selected)
-					{
-						if(selection.skillId != skillId)
-							continue;
-						if(const auto selectedPerk = newHorizonsPerkHelp::perkDefinition(&hero, selection.skillId, selection.perkId))
-						{
-							const int selectedRank = newHorizonsHeroes::perkRequiredRank(selectedPerk->requiredRank);
-							if(selectedRank >= 1 && selectedRank <= 3)
-								occupiedTiers[static_cast<size_t>(selectedRank - 1)] = true;
-						}
-					}
-
-					std::string status;
-					std::string reason;
+					const auto presentation = heroGrowthPerkPresentation::card(perkState, *skill, rank, perk);
+					const auto & status = presentation.status;
+					const auto & reason = presentation.reason;
 					ColorRGBA borderColor = Colors::WHITE;
-					if(perkState.hasSelection(skillId, perk.id))
+					switch(presentation.evaluation.status)
 					{
-						status = "Acquired";
+					case newHorizonsPerkAvailability::Status::ACQUIRED:
 						borderColor = Colors::GREEN;
-					}
-					else if(hero.getPerkSkillRank(skillId) <= 0)
-					{
-						status = "Locked";
-						reason = "requires learning " + skill->name;
-						borderColor = Colors::RED;
-					}
-					else if(selectedForSkill >= static_cast<size_t>(std::max(0, maxPerksPerSkill)))
-					{
-						status = "Locked";
-						reason = "per-Skill limit reached (maximum " + std::to_string(maxPerksPerSkill) + ")";
-						borderColor = Colors::RED;
-					}
-					else if(hero.getPerkSkillRank(skillId) < requiredRank)
-					{
-						status = "Locked";
-						reason = "requires " + newHorizonsPerkHelp::tierName(requiredRank) + " " + skill->name;
-						borderColor = Colors::RED;
-					}
-					else if(requiredRank >= 1 && requiredRank <= 3 && occupiedTiers[static_cast<size_t>(requiredRank - 1)])
-					{
-						status = "Locked";
-						reason = newHorizonsPerkHelp::tierName(requiredRank) + " tier already selected";
-						borderColor = Colors::RED;
-					}
-					else
-					{
-						status = "Available";
-						reason = "eligible on a future level-up offer";
+						break;
+					case newHorizonsPerkAvailability::Status::AVAILABLE:
 						borderColor = Colors::YELLOW;
+						break;
+					case newHorizonsPerkAvailability::Status::LOCKED:
+						borderColor = Colors::RED;
+						break;
+					case newHorizonsPerkAvailability::Status::UNAVAILABLE:
+						break;
 					}
 
 					const int column = static_cast<int>(perkIndex % 2);

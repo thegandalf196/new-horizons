@@ -10,6 +10,7 @@
 #pragma once
 
 #include "Bonus.h"
+#include "BonusEvaluationContext.h"
 #include "../serializer/Serializeable.h"
 
 class AggregateLimiter;
@@ -30,7 +31,7 @@ class DLL_LINKAGE IUpdater : public Serializeable
 public:
 	virtual ~IUpdater() = default;
 
-	virtual std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & context) const;
+	virtual std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const;
 	virtual std::string toString() const;
 	virtual JsonNode toJsonNode() const;
 
@@ -55,7 +56,7 @@ public:
 		h & stepSize;
 	}
 
-	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & context) const override;
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
 };
@@ -77,7 +78,7 @@ public:
 		h & stepSize;
 	}
 
-	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & context) const override;
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
 };
@@ -99,7 +100,7 @@ public:
 		, stepValue(stepValue)
 	{}
 
-	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & context) const override;
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
 
@@ -123,7 +124,7 @@ public:
 	FactionID filteredFaction;
 	TimesArmySizeUpdater() = default;
 
-	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & context) const override;
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
 
@@ -144,7 +145,7 @@ class DLL_LINKAGE TimesStackLevelUpdater : public IUpdater
 	std::shared_ptr<Bonus> apply(const std::shared_ptr<Bonus> & b, int level) const;
 
 public:
-	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & context) const override;
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
 };
@@ -157,7 +158,7 @@ public:
 	// when non-zero, value is computed as val * (heroLevel / stackLevel) with H3 rounding instead of val / stackLevel
 	int heroLevel = 0;
 
-	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & context) const override;
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
 
@@ -183,7 +184,7 @@ public:
 		: divideStackLevel(std::make_shared<DivideStackLevelUpdater>())
 	{}
 
-	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & context) const override;
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
 };
@@ -191,7 +192,7 @@ public:
 class DLL_LINKAGE OwnerUpdater : public IUpdater
 {
 public:
-	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus>& b, const CBonusSystemNode& context) const override;
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus>& b, const BonusEvaluationContext& context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
 };
@@ -201,7 +202,7 @@ class DLL_LINKAGE CompositeUpdater : public IUpdater
 public:
 	std::vector<TUpdaterPtr> updaters;
 
-	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus>& b, const CBonusSystemNode& context) const override;
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus>& b, const BonusEvaluationContext& context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
 

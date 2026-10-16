@@ -10,6 +10,7 @@
 #pragma once
 
 #include "CBonusSystemNode.h"
+#include <optional>
 
 /// Owns original/proposed graph storage, not the borrowed graph nodes themselves.
 /// A future world owner must hold node lifetimes and exclude competing graph
@@ -41,6 +42,9 @@ public:
 	/// already-started legacy event; true starts the next generation. Leading
 	/// false events borrow prepare's exact generation, never silently advance.
 	void addInvalidation(bool advanceGeneration, std::vector<CBonusSystemNode *> targets);
+	/// Exact journal binding; default callers retain the existing rebase policy.
+	void requireGeneration(int32_t generation);
+	static int32_t currentGeneration() noexcept;
 	/// May allocate storage capacity, never changes logical live graph values.
 	void prepare();
 	bool stillCurrent() const noexcept;
@@ -52,6 +56,8 @@ public:
 	bool commit() noexcept;
 
 private:
+	friend class ProjectedBonusGraph;
+	friend class ProjectedBonusInvalidations;
 	enum class Phase { BUILDING, PREPARED, COMMITTED };
 	struct Entry
 	{
@@ -70,6 +76,7 @@ private:
 	std::vector<Invalidation> invalidations;
 	Phase phase = Phase::BUILDING;
 	int32_t preparedGeneration = 0;
+	std::optional<int32_t> requiredGeneration;
 
 	static Values read(const CBonusSystemNode & node);
 	static bool sameBonuses(const BonusList & first, const BonusList & second) noexcept;

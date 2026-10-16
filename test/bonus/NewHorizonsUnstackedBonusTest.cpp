@@ -24,7 +24,7 @@ public:
 	{}
 
 	std::shared_ptr<Bonus> createUpdatedBonus(
-		const std::shared_ptr<Bonus> & bonus, const CBonusSystemNode &) const override
+		const std::shared_ptr<Bonus> & bonus, const BonusEvaluationContext &) const override
 	{
 		auto updated = std::make_shared<Bonus>(*bonus);
 		updated->val += amount;

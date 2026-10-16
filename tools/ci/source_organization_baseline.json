@@ -3574,96 +3574,98 @@
       ]
     },
     "lib/CStack.h": {
-      "sha256": "c57951bc4e4e490efcddde36d14776d90b504ce247847a9edb59e8f4975af62b",
-      "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Seventeen bodies: queue validator62–70, TimeStop validator72–76, getters105/106/115/118/134–137, serialization validators139–148/150–156/158–164/166–171/173–179/181–185/187–191/192–202/204–211, serialize213–373161lines. Full feature-version save/load/fallback branches read. This serializer exceeds150 but exact prior161-line legacy freeze already exists; no new/moved/expanded code, no fresh exception proposed. Default cachingStr={} declarations79/82 are not bodies. No macros/lambdas.",
+      "sha256": "2da05461155b44fff57d52c68f64ce9200cd793f9e4f61de2c5c2d6797f7ba5b",
+      "review": "IR-F08-FOUNDATIONS-MANUAL-20261016",
+      "rationale": "Seventeen existing bodies and two braced-default declarations are completely mapped at the recorded offsets. The unchanged 161-line serializer retains its prior legacy function record; no new ceiling exception.",
       "functions": [
         {
           "symbol": "CStack::void validateRapidResponseSerialization(Handler & h) const#1",
-          "start": 62,
-          "end": 70
+          "start": 63,
+          "end": 71
         },
         {
           "symbol": "CStack::void validateTimeStopSerialization(bool supported) const#1",
-          "start": 72,
-          "end": 76
+          "start": 73,
+          "end": 77
         },
         {
           "symbol": "CStack::int64_t getBattleStartMaximumAggregateHP() const override#1",
-          "start": 105,
-          "end": 105
-        },
-        {
-          "symbol": "CStack::int64_t getRebirthOriginalAggregateHP() const override#1",
           "start": 106,
           "end": 106
         },
         {
+          "symbol": "CStack::int64_t getRebirthOriginalAggregateHP() const override#1",
+          "start": 107,
+          "end": 107
+        },
+        {
           "symbol": "CStack::bool doubleWide() const override#1",
-          "start": 115,
-          "end": 115
+          "start": 116,
+          "end": 116
         },
         {
           "symbol": "CStack::const BattleInfo * getBattle() const#1",
-          "start": 118,
-          "end": 118
+          "start": 119,
+          "end": 119
         },
         {
           "symbol": "CStack::PlayerColor getOwner() const override#1",
-          "start": 134,
-          "end": 137
+          "start": 135,
+          "end": 138
         },
         {
           "symbol": "CStack::void validateFrozenSerialization(Handler & h) const#1",
-          "start": 139,
-          "end": 148
+          "start": 140,
+          "end": 149
         },
         {
           "symbol": "CStack::void validateMoraleActivationSerialization(Handler & h) const#1",
-          "start": 150,
-          "end": 156
+          "start": 151,
+          "end": 157
         },
         {
           "symbol": "CStack::void validateHeroicSpiritSerialization(Handler & h) const#1",
-          "start": 158,
-          "end": 164
+          "start": 159,
+          "end": 165
         },
         {
           "symbol": "CStack::void validateSwiftRebirthSerialization(Handler & h) const#1",
-          "start": 166,
-          "end": 171
+          "start": 167,
+          "end": 172
         },
         {
           "symbol": "CStack::void validateVeteranDamageHistorySerialization(bool supported) const#1",
-          "start": 173,
-          "end": 179
+          "start": 174,
+          "end": 180
         },
         {
           "symbol": "CStack::void validateVeteranCohesionSerialization(Handler & h) const#1",
-          "start": 181,
-          "end": 185
+          "start": 182,
+          "end": 186
         },
         {
           "symbol": "CStack::void validatePlagueSerialization(Handler & h) const#1",
-          "start": 187,
-          "end": 191
+          "start": 188,
+          "end": 192
         },
         {
           "symbol": "CStack::void validateTrainingSerialization(Handler & h) const#1",
-          "start": 192,
-          "end": 202
+          "start": 193,
+          "end": 203
         },
         {
           "symbol": "CStack::void validateOpportunistSerialization(Handler & h) const#1",
-          "start": 204,
-          "end": 211
+          "start": 205,
+          "end": 212
         },
         {
           "symbol": "CStack::void serialize(Handler & h)#1",
-          "start": 213,
-          "end": 373
+          "start": 214,
+          "end": 374
         }
-      ]
+      ],
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE",
+      "review_scope": "complete-exact-body-and-default-declaration-recovery-inventory-only"
     },
     "lib/Color.h": {
       "functions": [
@@ -4511,9 +4513,9 @@
       "sha256": "f16b6dfd61b001dcf80880a9466faea4f575538b7d110d2ecc570e79bfab6a34"
     },
     "lib/battle/CUnitState.h": {
-      "sha256": "fc74dac09af78924d77284d5ff31255e3a9c4ee387006cf2d58088ef057ce805",
-      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
-      "rationale": "Complete original header and exact split reviewed; five unchanged inline accessor bodies relocate303/425/434/447/448 to241/363/372/385/386. Ammunition declarations move intact to CUnitAmmo.h; CHealth defaulted copy constructor125 relocates63, deleted specialmembers remain declarations. Exact two-line getBonusesBeforeCreatureAbilitySuppression prototype604-605 relocates542-543; default-reference {} is not a body. No new callable macros/lambdas or pending body gap.",
+      "sha256": "91348ddbcd41a41e13a5be9e3f3ac6e9a0575b5bbbf958375403484bb1e0bd9a",
+      "review": "IR-F08-FOUNDATIONS-MANUAL-20261016",
+      "rationale": "Five existing inline bodies and the braced-default reference declaration are completely mapped at the recorded offsets. The two new method declarations and API comment contain no new handwritten body. Old fields, defaults and serialization order are unchanged.",
       "functions": [
         {
           "symbol": "battle::CUnitState::int32_t getActivationMovementBonus() const#1",
@@ -4540,7 +4542,9 @@
           "start": 386,
           "end": 386
         }
-      ]
+      ],
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE",
+      "review_scope": "complete-exact-body-and-default-declaration-recovery-inventory-only"
     },
     "lib/battle/IBattleInfoCallback.h": {
       "functions": [
@@ -4966,82 +4970,92 @@
       ]
     },
     "lib/bonuses/IBonusBearer.h": {
-      "functions": [],
-      "rationale": "Entire class is method declarations and fields/comments. Constructor19 and virtual destructor20 are explicitly =default without handwritten bodies; body-required inventory rule excludes them. Other methods are prototypes/pure virtuals; default cachingStr={} initializers21/24–26 are not bodies. No macro definitions.",
-      "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
-      "sha256": "2698de0cddada336341c11e46f77debb88d436aa50e4ba4e7565a259b1b39638"
+      "functions": [
+        {
+          "symbol": "IBonusBearer::virtual bool isBonusCacheable() const#1",
+          "start": 46,
+          "end": 46
+        }
+      ],
+      "rationale": "Complete inventory includes the new one-line default-true isBonusCacheable body. Four braced-default declarations and defaulted constructor/destructor are not handwritten bodies. No unresolved recovery is treated as absent code.",
+      "review": "IR-F08-FOUNDATIONS-MANUAL-20261016",
+      "sha256": "ca796b9a7ad377a52fe58af8acbab78ad773a7f87ec78cec37fe446ca77a19cb",
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE",
+      "review_scope": "complete-exact-body-and-default-declaration-recovery-inventory-only"
     },
     "lib/bonuses/Limiters.h": {
-      "sha256": "1a1c5f86e6c3b59884483fa3bc9a124d2ec9d4d4b8ddfb1c4a437036e211bec5",
-      "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Thirteen serialize template bodies49–51/67–71/118–123/148–163/177–181/196–201/214–218/231–235/245–248/261–266/278–282/294–298/309–313, including explicit empty ILimiter serialization49–51. Complete BONUS_TRIGGER version branch158–162 read. =default destructors/constructors43/110/290 lack handwritten bodies; remaining constructors and virtuals are declarations, defaults={} are initializers. No macros/lambdas.",
+      "sha256": "5688df4010d5cb493e3d852e1d8c1b793bcf4947e5732012b1942461a40bfa24",
+      "review": "IR-F08-FOUNDATIONS-MANUAL-20261016",
+      "rationale": "Thirteen existing bodies and five braced-default declarations are completely mapped at the recorded offsets. Existing serialization bodies remain unchanged; no pending coverage gap or size allowance.",
       "functions": [
         {
           "symbol": "ILimiter::void serialize(Handler &h)#1",
-          "start": 49,
-          "end": 51
+          "start": 55,
+          "end": 57
         },
         {
           "symbol": "AggregateLimiter::void serialize(Handler & h)#1",
-          "start": 67,
-          "end": 71
+          "start": 73,
+          "end": 77
         },
         {
           "symbol": "CCreatureTypeLimiter::void serialize(Handler &h)#1",
-          "start": 118,
-          "end": 123
+          "start": 124,
+          "end": 129
         },
         {
           "symbol": "HasAnotherBonusLimiter::void serialize(Handler &h)#1",
-          "start": 148,
-          "end": 163
+          "start": 154,
+          "end": 169
         },
         {
           "symbol": "TerrainLimiter::void serialize(Handler &h)#1",
-          "start": 177,
-          "end": 181
+          "start": 183,
+          "end": 187
         },
         {
           "symbol": "CreatureLevelLimiter::void serialize(Handler &h)#1",
-          "start": 196,
-          "end": 201
+          "start": 202,
+          "end": 207
         },
         {
           "symbol": "FactionLimiter::void serialize(Handler &h)#1",
-          "start": 214,
-          "end": 218
+          "start": 220,
+          "end": 224
         },
         {
           "symbol": "CreatureAlignmentLimiter::void serialize(Handler &h)#1",
-          "start": 231,
-          "end": 235
+          "start": 237,
+          "end": 241
         },
         {
           "symbol": "OppositeSideLimiter::void serialize(Handler &h)#1",
-          "start": 245,
-          "end": 248
+          "start": 251,
+          "end": 254
         },
         {
           "symbol": "RankRangeLimiter::void serialize(Handler &h)#1",
-          "start": 261,
-          "end": 266
+          "start": 267,
+          "end": 272
         },
         {
           "symbol": "UnitOnHexLimiter::void serialize(Handler &h)#1",
-          "start": 278,
-          "end": 282
+          "start": 284,
+          "end": 288
         },
         {
           "symbol": "UnitAdjacentLimiter::void serialize(Handler &h)#1",
-          "start": 294,
-          "end": 298
+          "start": 300,
+          "end": 304
         },
         {
           "symbol": "HasChargesLimiter::void serialize(Handler &h)#1",
-          "start": 309,
-          "end": 313
+          "start": 315,
+          "end": 319
         }
-      ]
+      ],
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE",
+      "review_scope": "complete-exact-body-and-default-declaration-recovery-inventory-only"
     },
     "lib/campaign/CampaignBonus.h": {
       "sha256": "469faa24340c9571bf37ab6261623fd25a70da3b03c3fa37ed03ad7a96776a7f",
@@ -13205,13 +13219,14 @@
       "sha256": "1d18f6fb5bdce91f74fa6694c7bc6c5fd9cc728ea852542e0618fcc1a5db28b2"
     },
     "client/CMakeLists.txt": {
-      "kind": "legacy",
-      "lines": 560,
+      "kind": "exception",
+      "lines": 561,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 560 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c452b077459839693f08883b898df08923f5b801d4fd5778fdef7dd1f1b1146e"
+      "rationale": "Exactly one windows/HeroGrowthPerkPresentation.h source-header registry entry beside retained HeroGrowthWindow.h. No callable, target, link, backend or runtime change; narrowly bound +1 mechanical registry exception, no blanket growth allowance.",
+      "review": "IR-F16-CURRENT-MAIN-7022-V2",
+      "review_scope": "single-header-registry-entry-only",
+      "sha256": "63b56850bbae0deef0cbd1ba91624dda0fc03d743360a2d2dfaff21ee933255b",
+      "deferral": "Limited to the exact 561-line registry and recorded hash. Future edits require renewed independent review; no added implementation or general growth credit is authorized."
     },
     "client/CPlayerInterface.cpp": {
       "kind": "legacy",
@@ -14834,22 +14849,24 @@
       "sha256": "7321969ccf912ff5391648f483400bb40fcc27c63c8cdd1cd6abbe1bd780eaf0"
     },
     "client/windows/HeroGrowthWindow.cpp": {
+      "deferral": "Remaining 397-line refresh/515-line window remains UI-owned widget-construction debt; future affected expansion requires cohesive widget extraction, characterization and independent review, not restored old limits.",
       "kind": "legacy",
-      "lines": 681,
+      "lines": 515,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 681 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "cecd7457689b64225a6029f740365fc537e36021597cdb68dc237468eb1b0c99"
+      "rationale": "Bounded retained legacy consumer alignment delegates eligibility to canonical captured-state evaluatePerk; no gameplay policy or constructor route change. Exact shrinking freeze only, not semantic/rendered certification or future growth permission.",
+      "review": "IR-F16-CURRENT-MAIN-7022-V1",
+      "review_scope": "bounded-consumer-extraction-shrinking-baseline",
+      "sha256": "a1cadcbac1e56fba153adae8a1b81ff21a615da88bf51825684581c115df58c4"
     },
     "client/windows/HeroGrowthWindow.cpp::void HeroGrowthWindow::refresh(const CGHeroInstance & hero)#1": {
+      "deferral": "Remaining 397-line refresh/515-line window remains UI-owned widget-construction debt; future affected expansion requires cohesive widget extraction, characterization and independent review, not restored old limits.",
       "kind": "legacy",
-      "lines": 552,
+      "lines": 397,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 552 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ec40d455110f133532abe678cb70bb2b1888048e1883012905024938a1d03070"
+      "rationale": "Bounded retained legacy consumer alignment delegates eligibility to canonical captured-state evaluatePerk; no gameplay policy or constructor route change. Exact shrinking freeze only, not semantic/rendered certification or future growth permission.",
+      "review": "IR-F16-CURRENT-MAIN-7022-V1",
+      "review_scope": "bounded-consumer-extraction-shrinking-baseline",
+      "sha256": "ac48535515cd79fb7331a81e1430e8f8287f1ef9cb3bf30ad0c52b953c661754"
     },
     "client/windows/HeroSkillOddsWindow.cpp::HeroSkillOddsWindow::HeroSkillOddsWindow(const CGHeroInstance & hero) : CWindowObject(BORDERED)#1": {
       "kind": "legacy",
@@ -15681,13 +15698,14 @@
     },
     "lib/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 1104,
-      "sha256": "280be2e6c9ab2df2050e1fdba8bbbf994a225a234c5e534290d0d30bfd0916d2",
+      "lines": 1129,
+      "sha256": "13e7fcb60b1cfe5deca55152b22485caa17cae0b5cfdd8c5f0e4faea773327ae",
       "owner": "engine_engineer",
-      "review": "IR-STAGE10-F08-GRAPH-V3-fc3f58f4-20261016",
-      "rationale": "Mechanical registry exception for exactly PreparedBonusGraphStorage.cpp and PreparedBonusGraphStorage.h. Removing these two registrations restores the exact1102-line predecessor; targets, linkage, options, existing value-storage registrations and every other byte are unchanged.",
-      "review_scope": "exact-two-prepared-bonus-graph-source-and-header-registration-lines",
-      "deferral": "Limited to the exact1104-line registry and recorded hash. Every later change requires renewed independent review; no handwritten logic, future allowance or growth credit is granted. Source extraction and shrinking baseline obligations remain in force."
+      "review": "IR-F08-FOUNDATIONS-REGISTRY-20261016",
+      "rationale": "Exact mechanical registry exception from 1104 to 1129 lines for 25 source/header registrations. Removing only those insertions restores the predecessor byte-for-byte. No target, linkage, option, existing registration or handwritten implementation changes.",
+      "review_scope": "exact-25-foundation-source-and-header-registration-insertions",
+      "deferral": "Limited to the exact 1129-line source and recorded hash. No future growth credit, handwritten-body allowance or blanket registry exemption; every subsequent edit requires renewed independent review and extraction obligations remain in force.",
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -15709,12 +15727,13 @@
     },
     "lib/CStack.cpp": {
       "kind": "legacy",
-      "lines": 652,
+      "lines": 634,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 652 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "aabb32d640a6e171d5213c851c2317560f43a71443b274642b4cf23574cf9925"
+      "rationale": "Battle acceptance and adjacency predicates have focused shared owners. Exact 652-to-634 shrinking legacy freeze; unrelated long functions retain their existing records. No future growth allowance or runtime certification.",
+      "review": "IR-F08-FOUNDATIONS-RATCHET-20261016",
+      "review_scope": "exact-shrinking-legacy-file-freeze-no-function-growth-credit",
+      "sha256": "d962a58bccce1559fbabae1fa3d867ef80462099d656c867f6ddf3cfedfd5510",
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
     },
     "lib/CStack.cpp::void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, const std::shared_ptr<battle::CUnitState> & customState, bool destroyRemains, const bool bypassTemporaryHitPoints, battle::DamageProvenance provenance)#1": {
       "kind": "legacy",
@@ -15862,12 +15881,13 @@
     },
     "lib/battle/CBattleInfoCallback.cpp": {
       "kind": "legacy",
-      "lines": 6210,
+      "lines": 6202,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 6210 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "d630a17d29256d87f515305c599c844bd64fbbd86ba4a666991e0b4bdca4c320"
+      "rationale": "Adjacency predicate extracted to the shared UnitAdjacency owner. Exact 6210-to-6202 shrinking legacy freeze; unrelated function bodies and their existing debt records remain unchanged.",
+      "review": "IR-F08-FOUNDATIONS-RATCHET-20261016",
+      "review_scope": "exact-shrinking-legacy-file-freeze-no-function-growth-credit",
+      "sha256": "e5e8a1a64f44691a1b13d683d431188026fb4117d785749a4f7328af87af22f7",
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
     },
     "lib/battle/CBattleInfoCallback.cpp::AccessibilityInfo CBattleInfoCallback::getAccessibility() const#1": {
       "kind": "legacy",
@@ -16015,12 +16035,13 @@
     },
     "lib/battle/CUnitState.cpp": {
       "kind": "legacy",
-      "lines": 3194,
+      "lines": 3125,
       "owner": "gameplay_engineer",
-      "rationale": "Copy/value transfer responsibility extracted to CUnitStateValues.cpp and one ordered shared field inventory. Remaining235 callable bodies unchanged. Exact shrinking legacy freeze at3194; no regrowth or approval of untouched169-line debt.",
-      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
-      "review_scope": "exact-reviewed-value-storage-extraction-ratchet-only",
-      "sha256": "4fd62c1767265b88d73abd997e19d43c78f63cc631950935beaa7963dcde8ce4"
+      "rationale": "Detached bonus queries and environment binding have focused owners without resetting copied values. Exact 3194-to-3125 shrinking legacy freeze; serialization and untouched long functions remain unchanged.",
+      "review": "IR-F08-FOUNDATIONS-RATCHET-20261016",
+      "review_scope": "exact-shrinking-legacy-file-freeze-no-function-growth-credit",
+      "sha256": "de92acf4e80ebf535f395af26f693d9773024bc71602c11e54b6afee88539212",
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
     },
     "lib/battle/CUnitState.cpp::battle::HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power, const bool trackCasualtyProvenance)#1": {
       "kind": "legacy",
@@ -16059,13 +16080,15 @@
       "sha256": "4fcbac9527f2abae0804deda8baee6b45201b027681d1b5719196fda45ef0de3"
     },
     "lib/battle/CUnitState.h": {
-      "kind": "legacy",
-      "lines": 566,
+      "kind": "exception",
+      "lines": 569,
       "owner": "gameplay_engineer",
-      "rationale": "Ammunition declarations extracted intact to CUnitAmmo.h; only narrow friendship added. Layout/defaults/virtuals and five inline bodies unchanged. Exact shrinking legacy freeze at566; no future growth allowance.",
-      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
-      "review_scope": "exact-reviewed-value-storage-extraction-ratchet-only",
-      "sha256": "fc74dac09af78924d77284d5ff31255e3a9c4ee387006cf2d58088ef057ce805"
+      "rationale": "Exact API-only exception from 566 to 569 lines: bindStateEnvironment declaration with its comment and isBonusCacheable override declaration. Removing those three lines restores the predecessor byte-for-byte. Five existing inline bodies, fields, defaults and serialization/member order remain unchanged; implementation stays in focused source owners.",
+      "review": "IR-F08-ENVIRONMENT-CACHE-API-20261016",
+      "review_scope": "exact-two-method-declarations-and-one-api-comment-only",
+      "sha256": "91348ddbcd41a41e13a5be9e3f3ac6e9a0575b5bbbf958375403484bb1e0bd9a",
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE",
+      "deferral": "Limited to the exact 569-line header and recorded hash. No implementation dumping, future growth credit or waiver of existing structural debt; later changes require renewed independent review and a bounded extraction where appropriate."
     },
     "lib/battle/HeroActionAllowanceState.h": {
       "kind": "legacy",
@@ -16222,21 +16245,23 @@
     },
     "lib/bonuses/CBonusSystemNode.cpp": {
       "kind": "legacy",
-      "lines": 698,
+      "lines": 587,
       "owner": "engine_engineer",
-      "rationale": "Prepared graph storage extraction relocates both existing local replacement methods unchanged and leaves only private generation access, reservation and publication primitives in this node implementation. Exact713-to-698 shrink preserves all46 other original callable bodies. This is a decreasing legacy freeze, not semantic certification or future growth credit.",
-      "review": "IR-STAGE10-F08-GRAPH-V3-fc3f58f4-20261016",
-      "review_scope": "exact-prepared-bonus-storage-extraction-shrinking-freeze",
-      "sha256": "a45138c3ebc9b9221c285c5c149e1afe5914a2656024932a4c2d1e70bd41cbc2"
+      "rationale": "Recursive bonus collection, red relations, propagation transformation and limiter fixed point have focused shared owners. Exact 698-to-587 shrinking legacy freeze; live invalidation ordering and unrelated bodies remain unchanged.",
+      "review": "IR-F08-FOUNDATIONS-RATCHET-20261016",
+      "review_scope": "exact-shrinking-legacy-file-freeze-no-function-growth-credit",
+      "sha256": "32d7c8c5a8a2253eae807862654994dab180caaebf56529a9ed83684874e1db3",
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
     },
     "lib/bonuses/Limiters.cpp": {
       "kind": "legacy",
-      "lines": 629,
+      "lines": 601,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 629 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "1568d3473c2028837527ecb01b4cc6761e163163591a80e6d9ad7672aadaebe6"
+      "rationale": "Typed battle-context helpers are extracted to focused owners. Exact 629-to-601 shrinking legacy freeze includes the narrow 13-line correction over the extracted 588-line source: bound baseless stacks use existing battle terrain only when needed. Based/adventure/hero/town sources, explicit NONE and native-provider precedence remain unchanged. No complete generic-node domain or future growth approval.",
+      "review": "IR-F08-FOUNDATIONS-RATCHET-20261016",
+      "review_scope": "exact-shrinking-legacy-file-freeze-no-function-growth-credit",
+      "sha256": "7c18fd73c5428d661dcad0b214e94d0c7caeb3431305e1c5fe9248aae33ab182",
+      "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
     },
     "lib/callback/CGameInfoCallback.cpp": {
       "kind": "legacy",

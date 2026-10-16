@@ -439,6 +439,8 @@ public:
 	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power) override;
 
 	void localInit(const IUnitEnvironment * env_);
+	/// Bind copied/prepared state to its environment without resetting values.
+	void bindStateEnvironment(const IUnitEnvironment * env_);
 	void serializeJson(JsonSerializeFormat & handler);
 
 	FactionID getFactionID() const override;
@@ -543,6 +545,7 @@ public:
 		const CSelector & selector, const std::string & cachingStr = {}, bool unstacked = false) const override;
 
 	int32_t getTreeVersion() const override;
+	bool isBonusCacheable() const override;
 
 	uint32_t unitId() const override;
 	BattleSide unitSide() const override;
