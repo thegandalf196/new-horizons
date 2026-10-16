@@ -11,6 +11,7 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "BattleEvaluator.h"
 #include "BattleEvaluatorProjection.h"
+#include "HeroSpellExpectedValueProjection.h"
 #include "BattleExchangeVariant.h"
 
 #include "StackWithBonuses.h"
@@ -5575,85 +5576,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					continue;
 				}
-				// Hand of Fate's secondary recipient is random by design. Its signed
-				// expected value was computed across the complete pool during target
-				// enumeration; never replace that expectation with castEval's one
-				// RNGStub-selected recipient.
-				if(ps.command == HeroCommand::NONE && ps.spellHandOfFateExpectedValue.has_value())
-				{
-					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					targetId = ps.dest.front().unitValue->unitId();
-					if(counterspellNegated
-						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + *ps.spellHandOfFateExpectedValue;
+				if(heroSpellProjection::projectPrecomputedValue(ps, *state, side, baseline,
+					counterspell, counterspellNegated, spellAllowance, sharedPurposeSpellRecipients, targetId))
 					continue;
-				}
-				// Battle-form identity is an effect mechanic, not a registered spell
-				// ID. Its signed expectation covers the full shared form pool; skip the
-				// generic castEval projection so RNGStub cannot replace it with one form.
-				if(ps.command == HeroCommand::NONE && ps.spellBattleFormExpectedValue.has_value())
-				{
-					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					targetId = ps.dest.front().unitValue->unitId();
-					if(counterspellNegated
-						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + *ps.spellBattleFormExpectedValue;
-					continue;
-				}
-				if(ps.command == HeroCommand::NONE && ps.spellConfusionExpectedValue.has_value())
-				{
-					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					targetId = ps.dest.front().unitValue->unitId();
-					if(counterspellNegated
-						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + *ps.spellConfusionExpectedValue;
-					continue;
-				}
-				// Puppet Master has no immediate HP delta. Value the target's
-				// projected controlled activation from target enumeration, then keep
-				// that candidate-specific score instead of letting generic castEval
-				// collapse the control marker to zero.
-				if(ps.command == HeroCommand::NONE && ps.spellPuppetMasterExpectedValue.has_value())
-				{
-					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					targetId = ps.dest.front().unitValue->unitId();
-					if(counterspellNegated
-						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + *ps.spellPuppetMasterExpectedValue;
-					continue;
-				}
 				// Sanctuary has no immediate health delta. Price direct attacks on
 				// this primary target and, for an active Keeper, only the bad-Morale
 				// penalty avoided before Sanctuary breaks on the next action.

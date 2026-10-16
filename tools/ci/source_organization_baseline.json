@@ -11952,12 +11952,12 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "exception",
-      "lines": 6672,
+      "lines": 6597,
       "owner": "ai_engineer",
-      "rationale": "Narrow two-line correctness exception: resolve the post-cast copy-on-write target by stable ID before Puppet Master controller checks and valuation. The helper grows from 47 to 49 lines; all 201 other callables, formulas and Order competition remain unchanged. This prerequisite repair does not approve other growth or resolve existing selector concentration.",
-      "review": "IR-STAGE8-PUPPET-COW-UI-20261016",
-      "review_scope": "bounded-cow-target-correctness-exception",
-      "sha256": "077249112b9fad2ef64ea0e45255079f591f9d71b396ffe49bc7e3c42a4ed89e",
+      "rationale": "Bounded typed precomputed-value projection extraction reduces the core from 6672 to 6597 physical lines; the 49-line Puppet COW rebind helper remains exact. A focused 79-line TU and 24-line header own the four terminal expectation branches. Exact shrinking freeze only; remaining selector/projection/generation debt stays owned and no future growth is approved.",
+      "review": "IR-STAGE8-TYPED-COW-V2-UI-20261016",
+      "review_scope": "bounded-typed-expected-value-projection-shrinking-freeze",
+      "sha256": "0014238d72e69707f3181f06c8dac8a1d3eccbffc4cc571d5c76e8f9e87ee063",
       "deferral": "ai_engineer owns later bounded candidate projection, scoring and typed-generation extractions with characterization and independent review. Remaining selector and parallel projection debt stays frozen; no regrowth to an earlier limit is permitted."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
@@ -11980,21 +11980,21 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)::[&](const tbb::blocked_range<size_t> & r)#1": {
       "kind": "legacy",
-      "lines": 986,
+      "lines": 910,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 986 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "2c6fc531e757216a33f9d3eae9905476e8aeb527d7c4bfe33344623763d7a7c6"
+      "rationale": "The same four repeated terminal precomputed-value branches are replaced by one bounded component call, reducing the parallel projection lambda from 986 to 910 physical lines. All surrounding projection/scoring/callback and per-slot lifetime order remains exact. This ratchets existing debt down; it is not a new ceiling exception or future growth allowance.",
+      "review": "IR-STAGE8-TYPED-COW-V2-UI-20261016",
+      "review_scope": "bounded-typed-expected-value-projection-shrinking-freeze",
+      "sha256": "c84d1f903626a763929a33ca5be9e21f95fef69770e69ce84f483f984e8c23e2"
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)#1": {
       "kind": "legacy",
-      "lines": 1678,
+      "lines": 1602,
       "owner": "ai_engineer",
-      "rationale": "The existing 176-line queue lambda is decomposed into ordered round/stop policy and per-unit activation projection, reducing the selector from 1854 to 1678 lines. Its forecast call remains at the same point; the 986-line parallel projection body is unchanged. Exact shrinking freeze only; remaining responsibilities require later bounded extraction.",
-      "review": "IR-STAGE8-HERO-QUEUE-V2-SOURCE-0bf53e22-20261016",
-      "review_scope": "bounded-hero-queue-extraction-shrinking-freeze",
-      "sha256": "b260b3bda9f7d47c31233f35e741ad57542c51e66ad1ce604263502831f0827f"
+      "rationale": "The four terminal precomputed expectation branches move to a focused typed nonowning projection component at the same execution point, reducing the selector from 1678 to 1602 physical lines. Orders, allowance/counterspell sequencing, baseline, arithmetic precedence, ranking and dispatch remain exact. Remaining mixed generation/projection requires later bounded extraction.",
+      "review": "IR-STAGE8-TYPED-COW-V2-UI-20261016",
+      "review_scope": "bounded-typed-expected-value-projection-shrinking-freeze",
+      "sha256": "a1eae67c788ebca2f5969569168a652314c41a21c713642e250997cb2d898705"
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool defensiveStanceMakesDefendWorthwhile(const Environment * environment, const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack, DamageCache & damageCache)#1": {
       "kind": "legacy",
