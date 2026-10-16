@@ -16,6 +16,8 @@
 
 #include <tbb/concurrent_hash_map.h>
 
+class PreparedBonusGraphStorage;
+
 using TNodes = std::set<CBonusSystemNode *>;
 using TCNodes = std::set<const CBonusSystemNode *>;
 using TNodesVector = std::vector<CBonusSystemNode *>;
@@ -37,6 +39,11 @@ public:
 	};
 
 private:
+	friend class PreparedBonusGraphStorage;
+	static int32_t preparedGraphGeneration() noexcept;
+	static bool reservePreparedGenerations(int32_t expected, int32_t final) noexcept;
+	static void publishPreparedInvalidation(int32_t version, const TNodesVector & targets) noexcept;
+
 	/// List of bonuses that affect this node, whether local, or propagated to this node
 	BonusList bonuses;
 

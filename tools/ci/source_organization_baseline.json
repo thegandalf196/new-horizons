@@ -15681,13 +15681,13 @@
     },
     "lib/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 1102,
-      "sha256": "678f474d9b49f96cc9c596b4ce2b557761338a91b1e6a6944e788a3843ac99c5",
+      "lines": 1104,
+      "sha256": "280be2e6c9ab2df2050e1fdba8bbbf994a225a234c5e534290d0d30bfd0916d2",
       "owner": "engine_engineer",
-      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
-      "rationale": "Mechanical registry exception for exactly CUnitStateValues.cpp plus CUnitAmmo.h, UnitStateValueExchange.h and UnitStateValueFields.h. Removing these four registrations restores the exact1098-line predecessor; targets, linkage, options and all other bytes unchanged.",
-      "review_scope": "exact-four-value-storage-source-and-header-registration-lines",
-      "deferral": "Limited to the exact1102-line registry and recorded hash; renewed independent review is required for any later change. No handwritten logic or generic growth allowance; source extraction and baseline reductions remain required."
+      "review": "IR-STAGE10-F08-GRAPH-V3-fc3f58f4-20261016",
+      "rationale": "Mechanical registry exception for exactly PreparedBonusGraphStorage.cpp and PreparedBonusGraphStorage.h. Removing these two registrations restores the exact1102-line predecessor; targets, linkage, options, existing value-storage registrations and every other byte are unchanged.",
+      "review_scope": "exact-two-prepared-bonus-graph-source-and-header-registration-lines",
+      "deferral": "Limited to the exact1104-line registry and recorded hash. Every later change requires renewed independent review; no handwritten logic, future allowance or growth credit is granted. Source extraction and shrinking baseline obligations remain in force."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -16222,12 +16222,12 @@
     },
     "lib/bonuses/CBonusSystemNode.cpp": {
       "kind": "legacy",
-      "lines": 713,
+      "lines": 698,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 713 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6f018da3e09ea4642dd9aca34a8cd1a0ef94425fcbca5e86cce100052b3877e2"
+      "rationale": "Prepared graph storage extraction relocates both existing local replacement methods unchanged and leaves only private generation access, reservation and publication primitives in this node implementation. Exact713-to-698 shrink preserves all46 other original callable bodies. This is a decreasing legacy freeze, not semantic certification or future growth credit.",
+      "review": "IR-STAGE10-F08-GRAPH-V3-fc3f58f4-20261016",
+      "review_scope": "exact-prepared-bonus-storage-extraction-shrinking-freeze",
+      "sha256": "a45138c3ebc9b9221c285c5c149e1afe5914a2656024932a4c2d1e70bd41cbc2"
     },
     "lib/bonuses/Limiters.cpp": {
       "kind": "legacy",
