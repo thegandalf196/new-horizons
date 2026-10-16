@@ -99,6 +99,10 @@ Redraw can synchronously reenter drawing: update cached state before setters tha
 request redraw, and do not repeatedly set unchanged labels during painting.
 Recheck covered/uncovered windows as well as ordinary frame updates.
 
+Never wait synchronously for a simulation acknowledgement while holding the GUI
+mutex; reply delivery may need the same lock. Submit UI requests asynchronously
+with the existing [request identity and receiving-window lifetime guards](NH_HERO_ORDERS_UI_REDESIGN.md#query-backed-mandatory-choices).
+
 Decorative pictures must not intercept control input or help. Keep toggle press,
 hover and release behavior intact; hover styling must not erase the pressed state
 needed for selection. A disabled control may retain explicitly read-only help,
