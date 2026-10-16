@@ -670,6 +670,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroQueueOrderSelectorTest.cpp
 		battleAI/HeroExpectedSpellFixture.cpp
 		battleAI/HeroExpectedSpellSelectorTest.cpp
+		battleAI/HeroExpectedSpellComponentTest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
 		battleAI/NewHorizonsBeneficialCreatureAITest.cpp
 		battleAI/NewHorizonsWispLongReachAITest.cpp
