@@ -24,6 +24,7 @@
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 
 #include <array>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

@@ -25,6 +25,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

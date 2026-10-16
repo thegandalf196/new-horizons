@@ -27,6 +27,9 @@
 #include <tbb/parallel_for.h>
 #include <chrono>
 #include <utility>
+#include "HypotheticBattle.h"
+#include "HypotheticBattleTypes.h"
+#include "StackWithBonuses.h"
 
 namespace
 {

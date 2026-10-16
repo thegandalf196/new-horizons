@@ -19,6 +19,7 @@
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../server/CGameHandler.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

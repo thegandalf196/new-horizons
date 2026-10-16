@@ -21,6 +21,7 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 
 #include <set>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

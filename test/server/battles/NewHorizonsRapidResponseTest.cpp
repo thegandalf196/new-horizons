@@ -24,6 +24,7 @@
 #if ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 #endif
 
 namespace

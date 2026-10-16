@@ -42,6 +42,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

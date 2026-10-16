@@ -15,6 +15,7 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

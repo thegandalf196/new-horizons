@@ -12,6 +12,8 @@
 #include "../../lib/battle/ReachabilityInfo.h"
 #include "PotentialTargets.h"
 #include "StackWithBonuses.h"
+#include "HypotheticBattle.h"
+#include "HypotheticBattleTypes.h"
 
 struct DLL_LINKAGE BattleTargetProbeTiming;
 

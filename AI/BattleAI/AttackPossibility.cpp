@@ -39,6 +39,8 @@
 
 #include <vcmi/spells/Service.h>
 #include <vcmi/spells/Spell.h>
+#include "HypotheticBattle.h"
+#include "HypotheticBattleTypes.h"
 
 
 namespace

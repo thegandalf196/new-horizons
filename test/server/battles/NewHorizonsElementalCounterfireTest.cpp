@@ -20,6 +20,7 @@
 #include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../include/vcmi/Environment.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 #endif
 
 namespace

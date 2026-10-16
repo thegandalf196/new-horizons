@@ -26,6 +26,8 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
+#include "../../../AI/BattleAI/HypotheticBattleTypes.h"
 
 namespace
 {

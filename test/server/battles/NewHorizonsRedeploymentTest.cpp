@@ -45,6 +45,7 @@
 
 #include <vstd/ContainerUtils.h>
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

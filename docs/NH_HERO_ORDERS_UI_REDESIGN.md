@@ -34,6 +34,51 @@ Orders show actual ready capabilities, recipient state, duration/effective value
 disabled reasons, target/confirmation behavior and help. No Orders are invented
 from sketches and no extra action is granted by separating controls.
 
+Revalidate the current battle, Hero, controller, phase and action availability at
+activation, before closing a chooser, changing targeting state or reading a quick
+slot's roster. Reacquire from weak context identity and value IDs, not retained
+window/Hero/unit pointers. Reject changed or expired context; same-context panel
+recreation alone is not a different battle. Check slot bounds before lookup and
+preserve legal retargeting. Disabled-reason and target-help popups remain read-only.
+Distinguish immediate commands from selection followed by explicit confirmation;
+free selection/cancellation does not promise that another action remains unspent.
+
+## Saved presentation and lifetime
+
+Query each optional saved Hero view independently; absence must not be filled from
+Hero-type templates or installed defaults. Show actual totals without inventing
+base/growth data, and use shared saved-value formatters rather than UI formulas.
+Capture actual signed level gains and the full-width level by value before queuing
+level-up presentation; later reads can belong to another level. Preserve the
+applicable legacy path and existing validated secondary-choice callbacks.
+
+Preserve an available selected detail section on same-Hero refresh; if it disappears,
+choose an available section deterministically. Section changes must synchronize
+text and scrollbar position through the actual scrolling API. Rebuild/removal of
+overflow controls requires widget checks, not just a pure navigation-state test.
+
+Keep one artifact/garrison holder through tabs, resizing and layout fallback; its
+destruction can return or erase a carried artifact. Preserve equipment access while
+carrying an item, and distinguish picked state from an in-flight request ACK.
+Inactive-window layout refresh must not change the shared drag cursor, hover state
+or registered status bar. Use in-place layout fallback without replacing the holder.
+
+## Query-backed mandatory choices
+
+For a mandatory choice, retain the authoritative offer and explicit offered index;
+do not invent a default or optimistically change Hero state. A queued request or
+successful request ACK is not query completion. Immediate submission refusal restores
+explicit choice without waiting for an ACK. For a submitted request, match
+Hero/query/request identity: only its matching failure restores selection, and
+unrelated or late ACKs cannot unlock a newer request. Apply accepted state before
+completion presentation.
+
+Deliver matching ACK/resolution to a covered choice window as well as the topmost
+one. Latch resolution while covered, then close only when safely topmost; never
+blindly pop a help window or close reentrantly from activation. Defer subsequent
+prompts until closure is safe. Exercise help-popup failure/success, stale ACKs,
+double input and chained choices through the real query-backed UI route.
+
 ## Visual and acceptance contract
 
 Follow [Heroes III UI style](NH_HOMM3_UI_STYLE_GUIDE.md). Freeze logical canvas,

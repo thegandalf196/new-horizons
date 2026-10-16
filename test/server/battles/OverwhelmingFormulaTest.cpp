@@ -19,6 +19,7 @@
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/MagicalDamageReduction.h"
 #include "../../../lib/spells/ObstacleCasterProxy.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

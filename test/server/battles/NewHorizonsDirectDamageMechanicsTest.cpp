@@ -42,6 +42,7 @@
 #include <vcmi/Environment.h>
 #include <iostream>
 #include <limits>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

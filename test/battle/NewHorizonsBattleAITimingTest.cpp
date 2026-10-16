@@ -43,6 +43,9 @@
 #include <stdexcept>
 #include <string_view>
 #include <tuple>
+#include "../../AI/BattleAI/HypotheticBattle.h"
+#include "../../AI/BattleAI/HypotheticBattleTypes.h"
+#include "../../AI/BattleAI/StackWithBonuses.h"
 
 namespace
 {
@@ -1794,6 +1797,15 @@ TEST_F(NewHorizonsOriginalBearerBindingTest, NonUnitBearerFallbackKeepsLiveStack
 class NewHorizonsDetachedBonusRemovalTimingTest : public NewHorizonsBattleAITimingTest
 {
 protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		// This subclass retains Commands-off legacy development, like its sibling fixtures.
+		// Capture compatible offer metadata without changing any perk definition or status.
+		if(!useCommands)
+			captureLegacyPerkOfferPolicy(*loaded);
+	}
+
 	static Bonus genericRecord(int value = 103, SpellID sid = SpellID::HASTE)
 	{
 		return Bonus(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,

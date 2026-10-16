@@ -17,6 +17,7 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/Problem.h"
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

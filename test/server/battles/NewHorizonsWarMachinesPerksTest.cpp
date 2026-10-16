@@ -26,6 +26,7 @@
 #include "../../../AI/BattleAI/BattleAI.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/callback/CBattleCallback.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 #endif
 
 namespace

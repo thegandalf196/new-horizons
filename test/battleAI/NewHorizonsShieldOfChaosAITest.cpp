@@ -21,6 +21,7 @@
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

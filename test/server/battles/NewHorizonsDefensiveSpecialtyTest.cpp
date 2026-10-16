@@ -20,6 +20,7 @@
 #ifdef ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 #endif
 
 namespace

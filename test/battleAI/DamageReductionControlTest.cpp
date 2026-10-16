@@ -13,6 +13,7 @@
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

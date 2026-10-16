@@ -46,6 +46,7 @@
 #include "../../../lib/bonuses/Updaters.h"
 #include <vcmi/Environment.h>
 #include <cstdlib>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

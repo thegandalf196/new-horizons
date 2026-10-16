@@ -13,6 +13,8 @@
 #include <utility>
 #include "../../lib/battle/CUnitState.h"
 #include "StackWithBonuses.h"
+#include "HypotheticBattle.h"
+#include "HypotheticBattleTypes.h"
 
 #define BATTLE_TRACE_LEVEL 0
 

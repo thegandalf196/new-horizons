@@ -22,6 +22,7 @@
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../AI/BattleAI/AttackPossibility.h"
 #include <limits>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

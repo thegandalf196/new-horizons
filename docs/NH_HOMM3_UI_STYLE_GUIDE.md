@@ -90,6 +90,24 @@ Treat a supplied mockup as a guide to content placement and interaction. If
 its own construction is artificial or unattractive, do not reproduce that
 construction literally.
 
+## Widget refresh and event safety
+
+Refresh dynamic availability and readback on both ordinary and full redraw paths.
+Redraw can synchronously reenter drawing: update cached state before setters that
+request redraw, and do not repeatedly set unchanged labels during painting.
+Recheck covered/uncovered windows as well as ordinary frame updates.
+
+Decorative pictures must not intercept control input or help. Keep toggle press,
+hover and release behavior intact; hover styling must not erase the pressed state
+needed for selection. A disabled control may retain explicitly read-only help,
+but never its action or shortcut. Rendering a fallback frame does not unblock input.
+
+Measure actual font width, line height, translated text and image-native bounds;
+JSON rectangles are not implicit sprite scaling. Check selected, disabled and
+repeated-click states, scrolling and minimum supported viewports in the renderer.
+Attribute missing-frame diagnostics to the actual resource, frame and group size;
+do not suppress warnings or replace unrelated art to conceal a consumer mismatch.
+
 ## Delivery gate
 
 A working interaction is not a finished visual interface. Before marking a new

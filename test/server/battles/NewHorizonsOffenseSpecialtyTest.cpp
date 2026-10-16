@@ -39,6 +39,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

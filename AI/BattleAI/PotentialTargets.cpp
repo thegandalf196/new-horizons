@@ -16,6 +16,7 @@
 #include "../../lib/battle/NewHorizonsBerserk.h"
 #include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "HypotheticBattle.h"
 
 PotentialTargets::PotentialTargets(
 	const battle::Unit * attacker,

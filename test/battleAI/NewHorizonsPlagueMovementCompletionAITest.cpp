@@ -20,6 +20,7 @@
 #include "../../lib/spells/NewHorizonsSorcery.h"
 
 #include <map>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

@@ -30,6 +30,8 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/effects/BattleForm.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
+#include "../../AI/BattleAI/HypotheticBattleTypes.h"
 
 namespace
 {

@@ -22,6 +22,7 @@
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include <limits>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

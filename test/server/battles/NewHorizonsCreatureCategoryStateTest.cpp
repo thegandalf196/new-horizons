@@ -34,6 +34,7 @@
 #include "../../../lib/networkPacks/PacksForClient.h"
 #include <limits>
 #include <stdexcept>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 using namespace newHorizonsCreatures;
 

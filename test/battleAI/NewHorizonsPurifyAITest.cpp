@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <map>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

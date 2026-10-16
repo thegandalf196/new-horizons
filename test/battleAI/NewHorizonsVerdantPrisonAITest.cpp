@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

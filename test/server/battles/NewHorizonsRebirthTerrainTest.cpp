@@ -10,6 +10,7 @@
 #include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../../lib/callback/CBattleCallback.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

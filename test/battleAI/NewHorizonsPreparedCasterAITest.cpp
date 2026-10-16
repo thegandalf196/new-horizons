@@ -20,6 +20,7 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

@@ -34,6 +34,7 @@
 #include <cstddef>
 #include <numeric>
 #include <string>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

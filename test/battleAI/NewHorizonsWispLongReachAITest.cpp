@@ -14,6 +14,7 @@
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../server/battles/BattleProcessor.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

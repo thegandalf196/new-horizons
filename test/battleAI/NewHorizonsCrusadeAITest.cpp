@@ -19,6 +19,7 @@
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

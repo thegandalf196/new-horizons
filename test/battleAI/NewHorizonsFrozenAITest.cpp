@@ -17,6 +17,7 @@
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

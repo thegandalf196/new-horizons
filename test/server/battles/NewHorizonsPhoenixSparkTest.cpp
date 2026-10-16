@@ -16,6 +16,7 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

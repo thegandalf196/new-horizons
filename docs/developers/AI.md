@@ -43,6 +43,13 @@ must agree with authority; a direct-helper test does not prove that the producti
 caller supplies the required sequence information. Temporary-unit healing/damage
 scoring needs explicit Boolean predicates, not signed flags used as truth values.
 
+Forecast scripted post-strike state through an explicit deterministic bridge for
+the required mutation, not blanket dispatch of combat scripts that may cast,
+damage, heal, animate or log. Apply marks after the resolved hit, never during a
+read-only target probe. Retain the owning hypothetical battle for borrowed unit
+and bonus state, and preserve the pre-effect damage baseline while invalidating
+current marked-damage caches on removal or expiry.
+
 Compare actual health, actions, resources and RNG; AI scores are not physical hit
 counts. Retain the legal, meaningful AI/server controls and fixture boundaries
 described below rather than forcing a chosen action through invented setup.
@@ -150,6 +157,15 @@ accepted replies, development snapshots and initial/final RNG state. The fixture
 uses ten Pikemen, disables Masteries and creates a fresh AI interface per level;
 it is not a campaign, persistent-AI-memory test or estimate of population odds.
 Different ratios can legitimately produce different downstream RNG histories.
+
+### Adventure route integrity
+
+Keep adventure path storage bounded. Admission or reclamation changes must preserve
+queued/predecessor pointer identity, cheaper re-relaxation, required battle actions
+and deterministic route selection under saturation. An `UNKNOWN` action does not
+prove that a node is unreferenced or safe to recycle; allocation-limit warnings
+alone justify neither increasing capacity nor discarding route alternatives.
+Pair pool tests with saturated route-reconstruction controls.
 
 ### Parts
 

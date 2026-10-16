@@ -36,6 +36,7 @@
 #include <utility>
 #include <vector>
 #include <vcmi/Environment.h>
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

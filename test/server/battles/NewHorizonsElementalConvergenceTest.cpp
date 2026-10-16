@@ -18,6 +18,7 @@
 #include "../../../lib/spells/NewHorizonsElementalTerrain.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/effects/Effect.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 class NewHorizonsElementalConvergenceTest : public NewHorizonsElementalTerrainFixture
 {

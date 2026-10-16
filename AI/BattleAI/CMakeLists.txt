@@ -5,6 +5,13 @@ set(battleAI_SRCS
 		PossibleSpellcast.cpp
 		PotentialTargets.cpp
 		StackWithBonuses.cpp
+		StackWithBonusesEffects.cpp
+		HypotheticBattle.cpp
+		HypotheticHeroActions.cpp
+		HypotheticActivation.cpp
+		HypotheticUnitUpdates.cpp
+		HypotheticStrikeProjection.cpp
+		HypotheticSpellServer.cpp
 		SpellTargetsEvaluator.cpp
 		TacticsHandler.cpp
 		ThreatMap.cpp
@@ -21,6 +28,10 @@ set(battleAI_HEADERS
 		PossibleSpellcast.h
 		NewHorizonsHexOfPain.h
 		StackWithBonuses.h
+		HypotheticEffectSnapshotRules.h
+		HypotheticLifecycleTimingScope.h
+		HypotheticBattle.h
+		HypotheticBattleTypes.h
 		SpellTargetsEvaluator.h
 		TacticsHandler.h
 		ThreatMap.h

@@ -48,6 +48,13 @@ Cleanup cannot depend on a future callback that may never arrive. Stopping an
 internal loop is not a client disconnect notification; preserve ordinary
 packet-based disconnect.
 
+Preserve connection identity through queued packet delivery and reject packets
+from a replaced connection before applying them to the current session. Client
+connection allocation/posting can fail after runner readiness; join and discard
+that runner before propagating the failure. Cancellation must finish connection,
+retry-timer and pending-tutorial cleanup before allowing another setup. Late retry
+or connection callbacks must tolerate the old session already being cancelled.
+
 ## Global lobby communication
 
 For implementation details see:

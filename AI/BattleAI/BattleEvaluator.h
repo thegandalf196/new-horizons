@@ -13,6 +13,7 @@
 #include "PotentialTargets.h"
 #include "BattleExchangeVariant.h"
 #include <utility>
+#include "HypotheticBattle.h"
 
 class CSpell;
 class CBattleCallback;

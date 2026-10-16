@@ -18,6 +18,7 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsRealityWarp.h"
 #include "../../lib/spells/Problem.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

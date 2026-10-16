@@ -13,6 +13,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

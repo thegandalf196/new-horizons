@@ -35,6 +35,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

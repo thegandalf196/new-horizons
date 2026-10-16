@@ -21,6 +21,7 @@
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../server/CGameHandler.h"
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

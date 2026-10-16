@@ -22,6 +22,7 @@
 #include <cmath>
 #include <memory>
 #include <optional>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

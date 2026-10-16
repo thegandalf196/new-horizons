@@ -21,6 +21,7 @@
 #include <functional>
 #include <limits>
 #include <stdexcept>
+#include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
 {

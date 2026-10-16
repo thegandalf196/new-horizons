@@ -18,6 +18,7 @@
 #include "../../../server/battles/BattleProcessor.h"
 #if ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 #endif
 
 namespace

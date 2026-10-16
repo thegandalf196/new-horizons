@@ -16,6 +16,7 @@
 #include "PotentialTargets.h"
 #include "TacticsHandler.h"
 #include "StackWithBonuses.h"
+#include "HypotheticBattleTypes.h"
 
 class CSpell;
 class CBattleInfoCallback;
