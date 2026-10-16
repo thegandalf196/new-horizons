@@ -30,9 +30,9 @@
     },
     ".github/workflows/instruction-portability.yml": {
       "functions": [],
-      "rationale": "Complete independent review of all ten embedded shell blocks: command sequences, assignments, one conditional and GitHub expressions; command substitutions invoke commands, not function bodies. No inline callable definitions. External Python/CMake/tests remain separately inventoried.",
-      "review": "IR-PUBLICATION-INTEGRATION-0a34814e-20261015",
-      "sha256": "0a34814e02a255eaffced38680ba42e6de881edee9db973c16c92560ceca7b7d"
+      "rationale": "Complete current156-line workflow inventory: all13 embedded Bash run blocks28-29,36-44,49-57,68-76,82,88-90,97-99,104-107,118-119,129,136-143,148-149,154-156 are commands/assignments; two if groups39-41/68-75 and five command substitutions40/69/70/89/97 invoke git,dirname or external Python, not callable definitions. GitHub hashFiles/context expressions and external action invocations are not local function bodies. No shell function, inline Python/JavaScript/lambda, code heredoc or function-like macro definition occurs. External Python/CMake/tests remain separately inventoried. Empty functions does not exclude the156 physical lines, waive numeric growth or certify CI/runtime behavior.",
+      "review": "IR-CREDENTIAL-WORKFLOW-MANUAL-F8481C53-20261016",
+      "sha256": "f8481c534ca406bc5c5291ff819712875d363e6bbab1af908aeff9b6be2f78ff"
     },
     ".github/workflows/new-horizons-windows-notices.yml": {
       "functions": [],
