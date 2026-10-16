@@ -11952,13 +11952,13 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "legacy",
-      "lines": 6856,
+      "lines": 6670,
       "owner": "ai_engineer",
-      "rationale": "Ordered hero-spell admission extracted into a focused 57-line unit with a 37-line helper; all other 206 callable bodies remain exact. Existing evaluator debt shrinks from 6891 to 6856 lines. This is an exact decreasing freeze, not approval of the remaining concentration or future growth.",
-      "review": "IR-STAGE8-ADMISSION-RATCHET-c13dfee8-20261016",
-      "review_scope": "bounded-admission-extraction-shrinking-freeze",
-      "sha256": "6c0451fc0a37b19e76ac3d1918c48f87cb8d0cdb890726ddcb5f2bcee7179195",
-      "deferral": "ai_engineer owns further staged candidate/projection/valuation extraction. The separately prepared queue component is the next bounded boundary and needs its own queue-path characterization, review and ratchet. The remaining large selector and projection lambda are unresolved debt; no regrowth to an earlier limit is permitted."
+      "rationale": "Hero-action queue projection moves into a focused 223-line unit with a 66-line driver and a reviewed 119-line activation transaction. All 201 other core callables remain exact. The core shrinks from 6856 to 6670 lines; this is a decreasing freeze, not approval of remaining concentration or future growth.",
+      "review": "IR-STAGE8-HERO-QUEUE-V2-SOURCE-0bf53e22-20261016",
+      "review_scope": "bounded-hero-queue-extraction-shrinking-freeze",
+      "sha256": "f28e088705092d87b66cb72c6e644642049671f2aaeeb9b6d5d039027bcb20a1",
+      "deferral": "ai_engineer owns later bounded candidate projection, scoring and typed-generation extractions with characterization and independent review. Remaining selector and parallel projection debt stays frozen; no regrowth to an earlier limit is permitted."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -11978,15 +11978,6 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "c65dbb7341713c3e81f4ec9bf615271846947d96a0639b17d03934805fc88b97"
     },
-    "AI/BattleAI/BattleEvaluator.cpp::BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)::[&](ValueMap & values, const std::vector<battle::Units> & queue, std::shared_ptr<HypotheticBattle> state, size_t minTurnSpan, bool * enemyHadTurnOut) -> bool#1": {
-      "kind": "legacy",
-      "lines": 176,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 176 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "8d1ab4c6364f120cf49b1cd2b6f52c4557072942386989d4fce1095c47ae429b"
-    },
     "AI/BattleAI/BattleEvaluator.cpp::BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)::[&](const tbb::blocked_range<size_t> & r)#1": {
       "kind": "legacy",
       "lines": 986,
@@ -11998,12 +11989,12 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)#1": {
       "kind": "legacy",
-      "lines": 1854,
+      "lines": 1678,
       "owner": "ai_engineer",
-      "rationale": "The existing ordered admission loop moves intact to a private helper, reducing this selector from 1889 to 1854 lines. Capture, follow-up detection, pruning, scoring and dispatch order remain unchanged. Exact shrinking freeze only; remaining queue and projection responsibilities still require staged extraction and behavioral comparisons.",
-      "review": "IR-STAGE8-ADMISSION-RATCHET-c13dfee8-20261016",
-      "review_scope": "bounded-admission-extraction-shrinking-freeze",
-      "sha256": "ff5c2a79258541e5d47eb07dd0f813639fb300ecaf0d7723ab4a0725fa7628da"
+      "rationale": "The existing 176-line queue lambda is decomposed into ordered round/stop policy and per-unit activation projection, reducing the selector from 1854 to 1678 lines. Its forecast call remains at the same point; the 986-line parallel projection body is unchanged. Exact shrinking freeze only; remaining responsibilities require later bounded extraction.",
+      "review": "IR-STAGE8-HERO-QUEUE-V2-SOURCE-0bf53e22-20261016",
+      "review_scope": "bounded-hero-queue-extraction-shrinking-freeze",
+      "sha256": "b260b3bda9f7d47c31233f35e741ad57542c51e66ad1ce604263502831f0827f"
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool defensiveStanceMakesDefendWorthwhile(const Environment * environment, const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack, DamageCache & damageCache)#1": {
       "kind": "legacy",
@@ -20266,6 +20257,15 @@
       "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
       "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
       "sha256": "bef39555b89be6af407e7cc003d3319367393b43af17151ba629b7fe16fea6cd"
+    },
+    "AI/BattleAI/BattleEvaluatorHeroQueue.cpp::void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueMap & values, const std::shared_ptr<HypotheticBattle> & state, const battle::Unit * unit, battle::Units & remainingQueue, size_t queueIndex)#1": {
+      "kind": "review",
+      "lines": 119,
+      "owner": "ai_engineer",
+      "rationale": "One coherent per-unit projection transaction preserves ordered startup and Frozen forfeiture, best-action state application, signed valuation, completion and queue reorder. The separate 66-line driver owns round and stop policy. Independent source review covers the 119-line review trigger; it remains below the 150-line ceiling and grants no ceiling waiver or future growth credit.",
+      "review": "IR-STAGE8-HERO-QUEUE-V2-SOURCE-0bf53e22-20261016",
+      "review_scope": "coherent-hero-queue-activation-review-trigger",
+      "sha256": "b99d954d98e4e15dae2f3f403ac807aa6739f349c2df6b43854f6fd189d8fdf2"
     }
   }
 }
