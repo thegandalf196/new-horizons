@@ -103,6 +103,7 @@ set(lib_MAIN_SRCS
 	battle/CObstacleInstance.cpp
 	battle/CPlayerBattleCallback.cpp
 	battle/CUnitState.cpp
+	battle/CUnitStateDetachedBonuses.cpp
 	battle/CUnitStateValues.cpp
 	battle/Destination.cpp
 	battle/IBattleState.cpp
@@ -110,9 +111,21 @@ set(lib_MAIN_SRCS
 	battle/SideInBattle.cpp
 	battle/SiegeInfo.cpp
 	battle/Unit.cpp
+	battle/UnitAdjacency.cpp
+	battle/BattleBonusAcceptance.cpp
 
 	bonuses/Bonus.cpp
 	bonuses/BonusCache.cpp
+	bonuses/BonusEvaluationContext.cpp
+	bonuses/BonusBattleContext.cpp
+	bonuses/BonusGraphQuery.cpp
+	bonuses/ProjectedBonusGraph.cpp
+	bonuses/ProjectedBonusGraphEdits.cpp
+	bonuses/ProjectedBonusGraphValidation.cpp
+	bonuses/ProjectedBonusInvalidations.cpp
+	bonuses/PreparedBonusGraphFinalization.cpp
+	bonuses/BonusLimitation.cpp
+	bonuses/ProjectedBonusRoster.cpp
 	bonuses/BonusEnum.cpp
 	bonuses/BonusList.cpp
 	bonuses/BonusSelector.cpp
@@ -201,6 +214,7 @@ set(lib_MAIN_SRCS
 	gameState/InfoAboutArmy.cpp
 	gameState/QuestInfo.cpp
 	gameState/ReplayLog.cpp
+	gameState/PreparedReplayAppend.cpp
 	gameState/RumorState.cpp
 	gameState/TavernHeroesPool.cpp
 	gameState/GameStatistics.cpp
@@ -628,9 +642,19 @@ set(lib_MAIN_HEADERS
 	battle/SideInBattle.h
 	battle/SiegeInfo.h
 	battle/Unit.h
+	battle/UnitAdjacency.h
+	battle/BattleBonusAcceptance.h
 
 	bonuses/Bonus.h
 	bonuses/BonusCache.h
+	bonuses/BonusEvaluationContext.h
+	bonuses/BonusLimitation.h
+	bonuses/BonusGraphQuery.h
+	bonuses/ProjectedBonusGraph.h
+	bonuses/ProjectedBonusInvalidations.h
+	bonuses/PreparedBonusGraphFinalization.h
+	bonuses/ProjectedBonusView.h
+	bonuses/ProjectedBonusRoster.h
 	bonuses/BonusEnum.h
 	bonuses/BonusList.h
 	bonuses/BonusSelector.h
@@ -745,6 +769,7 @@ set(lib_MAIN_HEADERS
 	gameState/HighScore.h
 	gameState/InfoAboutArmy.h
 	gameState/ReplayLog.h
+	gameState/PreparedReplayAppend.h
 	gameState/RumorState.h
 	gameState/SThievesGuildInfo.h
 	gameState/TavernHeroesPool.h

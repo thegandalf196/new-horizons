@@ -29,6 +29,7 @@ class CArmedInstance;
 class DLL_LINKAGE CStack : public CBonusSystemNode, public battle::CUnitState, public battle::IUnitEnvironment
 {
 private:
+	friend class ProjectedBonusGraph;
 	ui32 ID = -1; //unique ID of stack
 	CreatureID typeID;
 	ui32 baseAmount = -1;

@@ -10,11 +10,13 @@
 #pragma once
 
 #include "../constants/EntityIdentifiers.h"
+#include <memory>
 
 struct CPack;
 struct CPackForClient;
 class CGameState;
 class IGameInfoCallback;
+class PreparedReplayAppend;
 
 /// Conversion of netpacks to and from the byte blobs kept in a ReplayLog.
 /// Lives in lib because both the recording server and the replaying client need it.
@@ -71,6 +73,10 @@ struct DLL_LINKAGE ReplayChapter
 /// it receives - so both sides end up with a log of their own that they can replay on their own.
 class DLL_LINKAGE ReplayLog
 {
+	friend class PreparedReplayAppend;
+	/// Ephemeral identity of this owner's prepared storage reservation. Never
+	/// copied/moved to a new owner or included in the save representation.
+	std::shared_ptr<const unsigned char> preparationStamp;
 	std::vector<ReplayChapter> chapters;
 
 	/// if set, no chapter is ever dropped and the whole game stays replayable
@@ -85,6 +91,12 @@ class DLL_LINKAGE ReplayLog
 	void dropExpiredData();
 
 public:
+	ReplayLog() = default;
+	ReplayLog(const ReplayLog & other);
+	ReplayLog & operator=(const ReplayLog & other);
+	ReplayLog(ReplayLog && other) noexcept;
+	ReplayLog & operator=(ReplayLog && other) noexcept;
+
 	void configure(bool recordEntireGame, uint32_t roundsKept);
 
 	/// Resumes a log restored from a savegame, keeping the recording mode it was started with
@@ -114,6 +126,8 @@ public:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(!h.saving)
+			preparationStamp.reset();
 		h & chapters;
 		h & recordEntireGame;
 		h & roundsKept;

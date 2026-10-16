@@ -412,6 +412,7 @@ set(vcmiclientcommon_HEADERS
 	windows/HeroSpecialtyPresentation.h
 	windows/CHeroWindow.h
 	windows/HeroGrowthWindow.h
+	windows/HeroGrowthPerkPresentation.h
 	windows/HeroSkillOddsWindow.h
 	windows/NewHorizonsPerkBrowser.h
 	windows/NewHorizonsPerkIcons.h

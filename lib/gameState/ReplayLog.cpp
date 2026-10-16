@@ -16,6 +16,51 @@
 #include "../networkPacks/PacksForClient.h"
 #include "../serializer/CMemorySerializer.h"
 
+#include <type_traits>
+#include <utility>
+
+ReplayLog::ReplayLog(const ReplayLog & other)
+	: chapters(other.chapters), recordEntireGame(other.recordEntireGame),
+	  roundsKept(other.roundsKept), recordingPacks(other.recordingPacks)
+{
+}
+
+ReplayLog & ReplayLog::operator=(const ReplayLog & other)
+{
+	if(this != &other)
+	{
+		preparationStamp.reset();
+		chapters = other.chapters;
+		recordEntireGame = other.recordEntireGame;
+		roundsKept = other.roundsKept;
+		recordingPacks = other.recordingPacks;
+	}
+	return *this;
+}
+
+ReplayLog::ReplayLog(ReplayLog && other) noexcept
+	: chapters(std::move(other.chapters)), recordEntireGame(other.recordEntireGame),
+	  roundsKept(other.roundsKept), recordingPacks(other.recordingPacks)
+{
+	static_assert(std::is_nothrow_move_constructible_v<decltype(chapters)>);
+	other.preparationStamp.reset();
+}
+
+ReplayLog & ReplayLog::operator=(ReplayLog && other) noexcept
+{
+	if(this != &other)
+	{
+		static_assert(std::is_nothrow_move_assignable_v<decltype(chapters)>);
+		preparationStamp.reset();
+		other.preparationStamp.reset();
+		chapters = std::move(other.chapters);
+		recordEntireGame = other.recordEntireGame;
+		roundsKept = other.roundsKept;
+		recordingPacks = other.recordingPacks;
+	}
+	return *this;
+}
+
 std::vector<std::byte> ReplayPackSerializer::write(const CPackForClient & pack)
 {
 	CMemorySerializer serializer;
@@ -40,6 +85,7 @@ std::unique_ptr<CPack> ReplayPackSerializer::read(const std::vector<std::byte> &
 
 void ReplayLog::configure(bool recordEntireGameValue, uint32_t roundsKeptValue)
 {
+	preparationStamp.reset();
 	recordEntireGame = recordEntireGameValue;
 	roundsKept = roundsKeptValue;
 	recordingPacks = true;
@@ -47,12 +93,14 @@ void ReplayLog::configure(bool recordEntireGameValue, uint32_t roundsKeptValue)
 
 void ReplayLog::reconfigureOnLoad(uint32_t roundsKeptValue)
 {
+	preparationStamp.reset();
 	roundsKept = roundsKeptValue;
 	recordingPacks = true;
 }
 
 void ReplayLog::beginDay(uint32_t day, std::vector<std::byte> gamestateSnapshot)
 {
+	preparationStamp.reset();
 	logGlobal->debug("Replay: new chapter, snapshot of %d bytes, %d chapters kept", gamestateSnapshot.size(), chapters.size() + 1);
 
 	chapters.emplace_back();
@@ -87,6 +135,7 @@ void ReplayLog::dropExpiredData()
 
 void ReplayLog::addTurn(const PlayerColor & player)
 {
+	preparationStamp.reset();
 	if(chapters.empty())
 		return;
 
@@ -104,6 +153,7 @@ void ReplayLog::addTurn(const PlayerColor & player)
 
 void ReplayLog::endTurn(const PlayerColor & player)
 {
+	preparationStamp.reset();
 	if(chapters.empty())
 		return;
 
@@ -138,6 +188,7 @@ void ReplayLog::recordPack(CPackForClient & pack, CGameState & gs)
 
 void ReplayLog::addPack(std::vector<std::byte> data)
 {
+	preparationStamp.reset();
 	if(chapters.empty())
 		return;
 

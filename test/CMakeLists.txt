@@ -81,6 +81,7 @@ set(test_SRCS
  		battle/CHealthTest.cpp
 		battle/CUnitStateTest.cpp
 		battle/UnitStateValueExchangeTest.cpp
+		battle/PreparedReplayAppendTest.cpp
 		battle/CUnitStateMagicTest.cpp
 		battle/PhysicalAfflictionTest.cpp
 		battle/NewHorizonsDebuffStatusesTest.cpp
@@ -91,6 +92,11 @@ set(test_SRCS
 		battle/battle_UnitTest.cpp
 
 		bonus/BonusSystemTest.cpp
+		bonus/BonusEvaluationContextTest.cpp
+		bonus/ProjectedBonusLimitationTest.cpp
+		bonus/TerrainAuthorityTest.cpp
+		bonus/ProjectedBonusGraphTest.cpp
+		bonus/PreparedBonusGraphFinalizationTest.cpp
 		bonus/PreparedBonusGraphStorageTest.cpp
 		bonus/BonusStatusTagsTest.cpp
 		bonus/NewHorizonsUnstackedBonusTest.cpp
@@ -142,6 +148,7 @@ set(test_SRCS
 		hero/NewHorizonsPerkRulesTest.cpp
 		hero/NewHorizonsPerkStateTest.cpp
 		hero/NewHorizonsPerkAvailabilityTest.cpp
+		hero/HeroGrowthPerkPresentationTest.cpp
 		hero/NewHorizonsPerkOfferWireTest.cpp
 		hero/NewHorizonsLogisticsMasteryStateTest.cpp
 		hero/NewHorizonsLogisticsLevelWireTest.cpp

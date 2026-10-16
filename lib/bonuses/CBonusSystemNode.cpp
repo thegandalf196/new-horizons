@@ -12,6 +12,8 @@
 
 #include "CBonusSystemNode.h"
 #include "Limiters.h"
+#include "BonusLimitation.h"
+#include "BonusGraphQuery.h"
 #include "Updaters.h"
 #include "Propagators.h"
 
@@ -52,37 +54,7 @@ void CBonusSystemNode::getDirectParents(TCNodes & out) const /*retrieves list of
 
 void CBonusSystemNode::getAllBonusesRec(BonusList &out, bool inherited) const
 {
-	BonusList beforeUpdate;
-
-	for(const auto * parent : parentsToInherit)
-		parent->getAllBonusesRec(beforeUpdate, true);
-
-	bonuses.getAllBonuses(beforeUpdate);
-
-	if(inherited && isPrimaryRatingNode())
-	{
-		BonusList updated;
-		for(const auto & b : beforeUpdate)
-			updated.push_back(b->updater ? getUpdatedBonus(b, b->updater) : b);
-		BonusList heroApplicable;
-		limitBonuses(updated, heroApplicable);
-		for(const auto & b : updated)
-		{
-			const bool rating = b->type == BonusType::PRIMARY_SKILL
-				&& (b->subtype == BonusSubtypeID(PrimarySkill::ATTACK) || b->subtype == BonusSubtypeID(PrimarySkill::DEFENSE));
-			// Keep creature-specific specialties/bonuses which do NOT apply as
-			// hero ratings; filter only the hero's own effective A/D contribution.
-			if(!rating || !vstd::contains(heroApplicable, b))
-				out.push_back(b);
-		}
-		return;
-	}
-
-	for(const auto & b : beforeUpdate)
-	{
-		auto updated = b->updater ? getUpdatedBonus(b, b->updater) : b;
-		out.push_back(updated);
-	}
+	collectLiveBonusGraph(*this, out, inherited);
 }
 
 TConstBonusListPtr CBonusSystemNode::getAllBonuses(const CSelector &selector, const std::string &cachingStr) const
@@ -409,25 +381,13 @@ void CBonusSystemNode::removeBonuses(const CSelector & selector)
 
 bool CBonusSystemNode::actsAsBonusSourceOnly() const
 {
-	switch(nodeType)
-	{
-	case BonusNodeType::CREATURE:
-	case BonusNodeType::ARTIFACT:
-	case BonusNodeType::ARTIFACT_INSTANCE:
-	case BonusNodeType::BOAT:
-		return true;
-	default:
-		return false;
-	}
+	return bonusSourceOnly(nodeType);
 }
 
 void CBonusSystemNode::propagateBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & source)
 {
-	if(b->propagator->shouldBeAttached(this))
+	if(auto propagated = propagatedBonus(b, *this, source))
 	{
-		auto propagated = b->propagationUpdater
-			? source.getUpdatedBonus(b, b->propagationUpdater)
-			: b;
 		bonuses.push_back(propagated);
 		logBonus->trace("Bonus (type=%d, val=%d) propagated to %s", static_cast<int>(propagated->type), propagated->val, nodeName());
 		invalidateChildrenNodes(globalCounter);
@@ -445,14 +405,11 @@ void CBonusSystemNode::unpropagateBonus(const std::shared_ptr<Bonus> & b)
 	{
 		if (b->propagationUpdater)
 		{
-			bonuses.remove_if([b](const auto & bonus)
-			{
-				return bonus->propagationUpdater && bonus->propagationUpdater == b->propagationUpdater;
-			});
+			removePropagatedBonus(bonuses, b);
 		}
 		else
 		{
-			if (bonuses -= b)
+			if (removePropagatedBonus(bonuses, b))
 				logBonus->trace("Bonus (type=%d, val=%d) is no longer propagated to %s", static_cast<int>(b->type), b->val, nodeName());
 			else
 				logBonus->warn("Attempt to remove bonus (type=%d, val=%d), which is not propagated to %s", static_cast<int>(b->type), b->val, nodeName());
@@ -495,42 +452,15 @@ std::string CBonusSystemNode::nodeShortInfo() const
 
 void CBonusSystemNode::getRedParents(TCNodes & out) const
 {
-	TCNodes lparents;
-	getDirectParents(lparents);
-	for(const CBonusSystemNode *pname : lparents)
-	{
-		if(pname->actsAsBonusSourceOnly())
-		{
-			out.insert(pname);
-		}
-	}
-
-	if(!actsAsBonusSourceOnly())
-	{
-		for(const CBonusSystemNode *child : children)
-		{
-			out.insert(child);
-		}
-	}
+	bonusRedParents(liveBonusGraph(), *this, out);
 }
 
 void CBonusSystemNode::getRedChildren(TNodes &out)
 {
-	for(CBonusSystemNode *pname : parentsToPropagate)
-	{
-		if(!pname->actsAsBonusSourceOnly())
-		{
-			out.insert(pname);
-		}
-	}
-
-	if(actsAsBonusSourceOnly())
-	{
-		for(CBonusSystemNode *child : children)
-		{
-			out.insert(child);
-		}
-	}
+	TCNodes selected;
+	bonusRedChildren(liveBonusGraph(), *this, selected);
+	for(const auto * child : selected)
+		out.insert(const_cast<CBonusSystemNode *>(child));
 }
 
 void CBonusSystemNode::newRedDescendant(CBonusSystemNode & descendant) const
@@ -572,13 +502,7 @@ void CBonusSystemNode::removedRedDescendant(CBonusSystemNode & descendant) const
 
 void CBonusSystemNode::getRedAncestors(TCNodes &out) const
 {
-	getRedParents(out);
-
-	TCNodes redParents;
-	getRedParents(redParents);
-
-	for(const CBonusSystemNode * parent : redParents)
-		parent->getRedAncestors(out);
+	bonusRedAncestors(liveBonusGraph(), *this, out);
 }
 
 void CBonusSystemNode::exportBonus(const std::shared_ptr<Bonus> & b)
@@ -622,42 +546,7 @@ const BonusList & CBonusSystemNode::getExportedBonusList() const
 
 void CBonusSystemNode::limitBonuses(const BonusList &allBonuses, BonusList &out) const
 {
-	assert(&allBonuses != &out); //todo should it work in-place?
-
-	BonusList undecided = allBonuses;
-	BonusList & accepted = out;
-
-	while(true)
-	{
-		int undecidedCount = static_cast<int>(undecided.size());
-		for(int i = 0; i < undecided.size(); i++)
-		{
-			auto b = undecided[i];
-			if(!acceptsBonus(*b))
-			{
-				undecided.erase(i);
-				i--; continue;
-			}
-			BonusLimitationContext context = {*b, *this, out, undecided};
-			auto decision = b->limiter ? b->limiter->limit(context) : ILimiter::EDecision::ACCEPT; //bonuses without limiters will be accepted by default
-			if(decision == ILimiter::EDecision::DISCARD || decision == ILimiter::EDecision::NOT_APPLICABLE)
-			{
-				undecided.erase(i);
-				i--; continue;
-			}
-			else if(decision == ILimiter::EDecision::ACCEPT)
-			{
-				accepted.push_back(b);
-				undecided.erase(i);
-				i--; continue;
-			}
-			else
-				assert(decision == ILimiter::EDecision::NOT_SURE);
-		}
-
-		if(undecided.size() == undecidedCount) //we haven't moved a single bonus -> limiters reached a stable state
-			return;
-	}
+	::limitBonuses(allBonuses, out, *this);
 }
 
 int32_t CBonusSystemNode::preparedGraphGeneration() noexcept

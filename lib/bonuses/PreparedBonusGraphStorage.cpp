@@ -85,6 +85,19 @@ bool PreparedBonusGraphStorage::payloadChanged(const Entry & entry) const noexce
 		|| entry.original.parents != entry.replacement.parents;
 }
 
+int32_t PreparedBonusGraphStorage::currentGeneration() noexcept
+{
+	return CBonusSystemNode::preparedGraphGeneration();
+}
+
+void PreparedBonusGraphStorage::requireGeneration(int32_t generation)
+{
+	requireBuilding();
+	if(requiredGeneration && *requiredGeneration != generation)
+		throw std::logic_error("Prepared graph generation is already bound");
+	requiredGeneration = generation;
+}
+
 int32_t PreparedBonusGraphStorage::nextGeneration(int32_t generation) noexcept
 {
 	return std::bit_cast<int32_t>(std::bit_cast<uint32_t>(generation) + uint32_t{1});
@@ -155,6 +168,8 @@ void PreparedBonusGraphStorage::validate(const Values & value)
 
 bool PreparedBonusGraphStorage::stillCurrent() const noexcept
 {
+	if(requiredGeneration && CBonusSystemNode::preparedGraphGeneration() != *requiredGeneration)
+		return false;
 	if(phase == Phase::PREPARED && borrowsGeneration()
 		&& CBonusSystemNode::preparedGraphGeneration() != preparedGeneration)
 		return false;
@@ -178,6 +193,8 @@ void PreparedBonusGraphStorage::prepare()
 	if(!stillCurrent())
 		throw std::runtime_error("Stale prepared bonus graph storage");
 	const auto generation = CBonusSystemNode::preparedGraphGeneration();
+	if(requiredGeneration && generation != *requiredGeneration)
+		throw std::runtime_error("Required prepared graph generation changed");
 	for(const auto & entry : entries)
 		validate(entry.replacement);
 	if(!validProgram(generation))
@@ -204,7 +221,8 @@ bool PreparedBonusGraphStorage::commit() noexcept
 	if(!readyToCommit())
 		return false;
 	const auto generation = CBonusSystemNode::preparedGraphGeneration();
-	if((borrowsGeneration() && generation != preparedGeneration) || !validProgram(generation)
+	if((requiredGeneration && generation != *requiredGeneration)
+		|| (borrowsGeneration() && generation != preparedGeneration) || !validProgram(generation)
 		|| !CBonusSystemNode::reservePreparedGenerations(generation, finalGeneration(generation)))
 		return false;
 	for(auto & entry : entries)
