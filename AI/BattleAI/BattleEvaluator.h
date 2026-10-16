@@ -57,6 +57,12 @@ class DLL_EXPORT BattleEvaluator
 		const std::shared_ptr<CPlayerBattleCallback> & battleView, const CGHeroInstance * hero,
 		bool allowSpells, bool mandatoryOrder, bool legacyMetamagicFollowup,
 		const DivineMandateStatus & divineMandateStatus) const;
+	bool evaluateHeroActionQueue(PossibleSpellcast::ValueMap & values,
+		const std::vector<battle::Units> & queue, std::shared_ptr<HypotheticBattle> state,
+		size_t minTurnSpan, bool * enemyHadTurnOut);
+	void projectHeroActionQueueActivation(PossibleSpellcast::ValueMap & values,
+		const std::shared_ptr<HypotheticBattle> & state, const battle::Unit * unit,
+		battle::Units & remainingQueue, size_t queueIndex);
 	float beneficialCreaturePressure(const std::shared_ptr<HypotheticBattle> & state,
 		uint32_t spentCasterId, DamageCache & cache) const;
 	float beneficialCreatureOutcomeValue(const CStack * caster, const battle::Unit * recipient,

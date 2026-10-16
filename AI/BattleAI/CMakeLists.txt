@@ -3,6 +3,7 @@ set(battleAI_SRCS
 		BattleAI.cpp
 		BattleEvaluator.cpp
 		BattleEvaluatorSpellCandidates.cpp
+		BattleEvaluatorHeroQueue.cpp
 		PossibleSpellcast.cpp
 		PotentialTargets.cpp
 		StackWithBonuses.cpp
@@ -25,6 +26,7 @@ set(battleAI_HEADERS
 		AttackPossibility.h
 		BattleAI.h
 		BattleEvaluator.h
+		BattleEvaluatorProjection.h
 		PotentialTargets.h
 		PossibleSpellcast.h
 		NewHorizonsHexOfPain.h

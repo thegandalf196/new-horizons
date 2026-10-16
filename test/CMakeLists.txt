@@ -588,6 +588,8 @@ set(test_SRCS
 )
 
 set(test_HEADERS
+		battleAI/HeroQueueSelectorFixture.h
+		battleAI/HeroQueueBonusSnapshot.h
  		StdInc.h
 
  		CVcmiTestConfig.h
@@ -659,6 +661,12 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsHalonMetamagicTest.cpp
 		battleAI/HeroCommandAITest.cpp
 		battleAI/SpellAdmissionCharacterizationTest.cpp
+		battleAI/HeroQueueSelectorFixture.cpp
+		battleAI/HeroQueueBonusSnapshot.cpp
+		battleAI/HeroQueueBonusSnapshotTest.cpp
+		battleAI/HeroQueueCompletionSelectorTest.cpp
+		battleAI/HeroQueueContinuationSelectorTest.cpp
+		battleAI/HeroQueueOrderSelectorTest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
 		battleAI/NewHorizonsBeneficialCreatureAITest.cpp
 		battleAI/NewHorizonsWispLongReachAITest.cpp
