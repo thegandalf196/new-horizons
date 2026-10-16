@@ -4511,34 +4511,34 @@
       "sha256": "f16b6dfd61b001dcf80880a9466faea4f575538b7d110d2ecc570e79bfab6a34"
     },
     "lib/battle/CUnitState.h": {
-      "sha256": "59f7e569cf75251de6ccc24f5e88df3b22fb6f771d491ae8eb0b8ebed3750d1a",
-      "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015",
-      "rationale": "Complete header read1–628 including all state/cohort/default/delete declarations. Exactly five inline accessor bodies303/425/434/447/448; defaulted CHealth copy constructor125 and deleted operations not handwritten bodies. Braced default argument605 is not hidden callable. No callable macros/lambdas.",
+      "sha256": "fc74dac09af78924d77284d5ff31255e3a9c4ee387006cf2d58088ef057ce805",
+      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
+      "rationale": "Complete original header and exact split reviewed; five unchanged inline accessor bodies relocate303/425/434/447/448 to241/363/372/385/386. Ammunition declarations move intact to CUnitAmmo.h; CHealth defaulted copy constructor125 relocates63, deleted specialmembers remain declarations. Exact two-line getBonusesBeforeCreatureAbilitySuppression prototype604-605 relocates542-543; default-reference {} is not a body. No new callable macros/lambdas or pending body gap.",
       "functions": [
         {
           "symbol": "battle::CUnitState::int32_t getActivationMovementBonus() const#1",
-          "start": 303,
-          "end": 303
+          "start": 241,
+          "end": 241
         },
         {
           "symbol": "battle::CUnitState::int32_t getPersonalBloodrageIncrement() const override#1",
-          "start": 425,
-          "end": 425
+          "start": 363,
+          "end": 363
         },
         {
           "symbol": "battle::CUnitState::int32_t getPhantomRoundsRemaining() const#1",
-          "start": 434,
-          "end": 434
+          "start": 372,
+          "end": 372
         },
         {
           "symbol": "battle::CUnitState::int32_t getBattleFormRoundsRemaining() const#1",
-          "start": 447,
-          "end": 447
+          "start": 385,
+          "end": 385
         },
         {
           "symbol": "battle::CUnitState::bool isBattleFormRestorationPending() const#1",
-          "start": 448,
-          "end": 448
+          "start": 386,
+          "end": 386
         }
       ]
     },
@@ -15681,13 +15681,13 @@
     },
     "lib/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 1098,
-      "sha256": "7ce4eb834146b20440f3a05e7c96d79b63ea8f9a3fd8ac245fba500a70f441b8",
+      "lines": 1102,
+      "sha256": "678f474d9b49f96cc9c596b4ce2b557761338a91b1e6a6944e788a3843ac99c5",
       "owner": "engine_engineer",
-      "review": "IR-F06-REGISTRY-1098-7ce4eb83-20261015",
-      "rationale": "Mechanical registry exception for exactly OrderActionTransition.cpp and OrderActionTransition.h after their NewHorizonsHeroLuck entries. Removing those two registrations restores the previous 1096-line registry. Existing library, target, linkage and options remain unchanged.",
-      "review_scope": "exact-two-OrderActionTransition-source-header-registration-lines",
-      "deferral": "Limited to the exact 1098-line registry and recorded hash. Future registry changes require renewed independent review; no implementation logic or general growth is authorized."
+      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
+      "rationale": "Mechanical registry exception for exactly CUnitStateValues.cpp plus CUnitAmmo.h, UnitStateValueExchange.h and UnitStateValueFields.h. Removing these four registrations restores the exact1098-line predecessor; targets, linkage, options and all other bytes unchanged.",
+      "review_scope": "exact-four-value-storage-source-and-header-registration-lines",
+      "deferral": "Limited to the exact1102-line registry and recorded hash; renewed independent review is required for any later change. No handwritten logic or generic growth allowance; source extraction and baseline reductions remain required."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -16004,23 +16004,23 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "44f61034b24d5c3d27b2cae99d223a9f93a90edaee3891f2242f52fef1baf06d"
     },
+    "lib/battle/UnitStateValueFields.h::battle::UnitStateValueFields::static auto references(State & unit) noexcept#1": {
+      "kind": "review",
+      "lines": 85,
+      "sha256": "9070a2df31e340c554aa60f108274d8d78e15c4a8ab5d4e28328cc6d1dc31715",
+      "owner": "gameplay_engineer",
+      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
+      "rationale": "One explicit ordered81-field value-reference inventory shared by legacy copy and prepared value exchange; not new gameplay logic or a second duplicated field list. Coherent mechanical inventory85 is below150 and independently reviewed. No future body growth or whole-world transaction approval.",
+      "review_scope": "exact-85-line-single-ordered-value-reference-inventory"
+    },
     "lib/battle/CUnitState.cpp": {
       "kind": "legacy",
-      "lines": 3286,
+      "lines": 3194,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 3286 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "573e0697b1fdbd43dc9df6407b105effbe1f0e4a99f59f60729fec1bb919b787"
-    },
-    "lib/battle/CUnitState.cpp::battle::CUnitState & CUnitState::operator=(const CUnitState & other)#1": {
-      "kind": "legacy",
-      "lines": 92,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 92 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "368289cb10d0c3024ffd1140794264282ea0956a5ece5d23e029b9ff21115f70"
+      "rationale": "Copy/value transfer responsibility extracted to CUnitStateValues.cpp and one ordered shared field inventory. Remaining235 callable bodies unchanged. Exact shrinking legacy freeze at3194; no regrowth or approval of untouched169-line debt.",
+      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
+      "review_scope": "exact-reviewed-value-storage-extraction-ratchet-only",
+      "sha256": "4fd62c1767265b88d73abd997e19d43c78f63cc631950935beaa7963dcde8ce4"
     },
     "lib/battle/CUnitState.cpp::battle::HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power, const bool trackCasualtyProvenance)#1": {
       "kind": "legacy",
@@ -16060,12 +16060,12 @@
     },
     "lib/battle/CUnitState.h": {
       "kind": "legacy",
-      "lines": 628,
+      "lines": 566,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 628 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "59f7e569cf75251de6ccc24f5e88df3b22fb6f771d491ae8eb0b8ebed3750d1a"
+      "rationale": "Ammunition declarations extracted intact to CUnitAmmo.h; only narrow friendship added. Layout/defaults/virtuals and five inline bodies unchanged. Exact shrinking legacy freeze at566; no future growth allowance.",
+      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
+      "review_scope": "exact-reviewed-value-storage-extraction-ratchet-only",
+      "sha256": "fc74dac09af78924d77284d5ff31255e3a9c4ee387006cf2d58088ef057ce805"
     },
     "lib/battle/HeroActionAllowanceState.h": {
       "kind": "legacy",

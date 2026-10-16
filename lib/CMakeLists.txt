@@ -103,6 +103,7 @@ set(lib_MAIN_SRCS
 	battle/CObstacleInstance.cpp
 	battle/CPlayerBattleCallback.cpp
 	battle/CUnitState.cpp
+	battle/CUnitStateValues.cpp
 	battle/Destination.cpp
 	battle/IBattleState.cpp
 	battle/ReachabilityInfo.cpp
@@ -613,7 +614,10 @@ set(lib_MAIN_HEADERS
 	battle/CBattleInfoEssentials.h
 	battle/CObstacleInstance.h
 	battle/CPlayerBattleCallback.h
+	battle/CUnitAmmo.h
 	battle/CUnitState.h
+	battle/UnitStateValueExchange.h
+	battle/UnitStateValueFields.h
 	battle/Destination.h
 	battle/IBattleInfoCallback.h
 	battle/IBattleState.h
