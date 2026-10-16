@@ -55,6 +55,31 @@ jobs:
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_git_source_snapshot.py
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_publication_content.py
           "$PYTHON" tools/ci/test_inventory.py
+      - name: Cache pinned credential detector archive
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/nh-gitleaks/gitleaks.tar.gz
+          key: credential-gitleaks-${{ runner.os }}-${{ hashFiles('tools/ci/gitleaks.lock.json') }}
+      - name: Fetch and authenticate pinned credential detector
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+          ARCHIVE: ${{ runner.temp }}/nh-gitleaks/gitleaks.tar.gz
+        run: |
+          if [ ! -e "$ARCHIVE" ]; then
+            mkdir -p "$(dirname "$ARCHIVE")"
+            url=$("$PYTHON" -B tools/ci/credential_archive.py --url)
+            curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+              --max-redirs 5 --connect-timeout 10 --max-time 60 --max-filesize 8230402 \
+              --output "$ARCHIVE.part" "$url"
+            mv "$ARCHIVE.part" "$ARCHIVE"
+          fi
+          "$PYTHON" -B tools/ci/credential_archive.py --verify "$ARCHIVE"
+      - name: Test credential prevention with synthetic inputs only
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+          NH_CREDENTIAL_TEST_ARCHIVE: ${{ runner.temp }}/nh-gitleaks/gitleaks.tar.gz
+        run: |
+          "$PYTHON" -B -m unittest discover -s tools/tests -p 'test_credential_*.py'
       - name: Check publication content in the exact commit
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}
@@ -63,6 +88,15 @@ jobs:
           git --no-lazy-fetch --no-replace-objects --version
           test "$(git --no-replace-objects rev-parse HEAD)" = "$TARGET_SHA"
           "$PYTHON" -B tools/ci/publication_content.py --root . --revision "$TARGET_SHA"
+      - name: Prevent credentials in supported text of the exact commit
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+          TARGET_SHA: ${{ github.sha }}
+          ARCHIVE: ${{ runner.temp }}/nh-gitleaks/gitleaks.tar.gz
+        run: |
+          test "$(git --no-replace-objects rev-parse HEAD)" = "$TARGET_SHA"
+          "$PYTHON" -B tools/ci/credential_text_gate.py --root . --revision "$TARGET_SHA" \
+            --gitleaks-archive "$ARCHIVE"
       - name: Validate tracked public source contracts
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}

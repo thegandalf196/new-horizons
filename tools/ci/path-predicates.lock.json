@@ -1,0 +1,13 @@
+{
+  "version": "8.30.1",
+  "source_commit": "83d9cd684c87d95d656c1458ef04895a7f1cbd8e",
+  "source_sha256": "e163e53b9e7e8a8511e77271e2b323ed057759542a6d988258afe3a1fa329caf",
+  "source_bytes": 97731,
+  "path_predicates": {
+    "freemius-secret-key": "(?i)\\.php$",
+    "hashicorp-tf-password": "(?i)\\.(?:tf|hcl)$",
+    "kubernetes-secret-yaml": "(?i)\\.ya?ml$",
+    "nuget-config-password": "(?i)nuget\\.config$",
+    "pkcs12-file": "(?i)(?:^|\\/)[^\\/]+\\.p(?:12|fx)$"
+  }
+}

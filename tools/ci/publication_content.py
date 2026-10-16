@@ -141,7 +141,7 @@ def inspect(root, *, staged=False, revision=None):
             issues.append({'path': blob['path'], 'code': 'structured-nesting-unsupported'})
     return {key: value for key, value in selected.items() if key != 'blobs'} | {
         'issues': issues, 'findings': findings, 'implemented_rules': ['R1', 'R2'],
-        'unimplemented': ['R3-authoring-request', 'credential-scanner'],
+        'unimplemented': ['R3-authoring-request', 'credentials-use-separate-credential-content-entrypoint'],
         'limits': 'Finite text suffix/name scope and framing dialects; not an exhaustive privacy verdict.'}
 
 
