@@ -15,6 +15,18 @@
 
 namespace battle
 {
+bool CUnitStateDetached::usesBonusProvider(const IBonusBearer & expected) const noexcept
+{
+	return bonus == &expected;
+}
+
+void CUnitStateDetached::onBattleFormChanged()
+{
+	CUnitState::onBattleFormChanged();
+	if(const auto * projected = dynamic_cast<const ProjectedBonusView *>(bonus))
+		projected->onBattleFormChanged(*this);
+}
+
 TConstBonusListPtr CUnitStateDetached::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
 	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);

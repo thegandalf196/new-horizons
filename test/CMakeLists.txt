@@ -95,7 +95,9 @@ set(test_SRCS
 		bonus/BonusEvaluationContextTest.cpp
 		bonus/ProjectedBonusLimitationTest.cpp
 		bonus/TerrainAuthorityTest.cpp
+		bonus/ProjectedUnitMagicResistanceTest.cpp
 		bonus/ProjectedBonusGraphTest.cpp
+		bonus/ProjectedFormTransitionTest.cpp
 		bonus/PreparedBonusGraphFinalizationTest.cpp
 		bonus/PreparedBonusGraphStorageTest.cpp
 		bonus/BonusStatusTagsTest.cpp

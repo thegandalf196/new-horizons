@@ -16,6 +16,7 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include "../../lib/mapObjects/army/CStackInstance.h"
+#include "../../lib/battle/UnitStateValueFields.h"
 #include <stdexcept>
 
 namespace
@@ -32,7 +33,7 @@ public:
 	explicit TerrainProjection(const CStack & original)
 		: state(&original, &graph.view(original)), roster({&state})
 	{
-		static_cast<battle::CUnitState &>(state) = original;
+		battle::UnitStateValueFields::copy(state, original); // unbound snapshot, no hook
 		state.bindStateEnvironment(&original);
 		graph.bind(original, state, roster);
 	}
