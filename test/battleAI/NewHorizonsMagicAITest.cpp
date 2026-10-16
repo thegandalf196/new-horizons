@@ -276,9 +276,21 @@ JsonNode legacyMagicRules(int version)
 	rules["rulesetVersion"].Integer() = version;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
+	// These captured systems require magic rules v3; they were absent in v1/v2.
+	if(version < newHorizonsMagic::CURRENT_RULESET_VERSION)
+	{
+		for(const auto * key : {"protectedAdventureBarriers", "heroLuck", "heroMorale", "creatureAbilities", "morale"})
+			rules.Struct().erase(key);
+	}
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
 		(void)name;
+		if(version < newHorizonsMagic::CURRENT_RULESET_VERSION)
+		{
+			for(const auto * key : {"heroAccess", "restoration", "implosion", "ignoreInterveningBarriers",
+				"temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"})
+				spell.Struct().erase(key);
+		}
 		spell.Struct().erase("selectedPlacement");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
@@ -419,7 +431,7 @@ protected:
 			heroCommands::validateRules(rules);
 			loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
 		}
-		if(useRealHeroScale)
+		if(useRealHeroScale || (!useCommands && savedMagicRulesVersion > 0))
 			captureLegacyPerkOfferPolicy(*loaded);
 	}
 

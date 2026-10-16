@@ -658,6 +658,7 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsReactiveWeaveTest.cpp
 		server/battles/NewHorizonsHalonMetamagicTest.cpp
 		battleAI/HeroCommandAITest.cpp
+		battleAI/SpellAdmissionCharacterizationTest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
 		battleAI/NewHorizonsBeneficialCreatureAITest.cpp
 		battleAI/NewHorizonsWispLongReachAITest.cpp
