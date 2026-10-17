@@ -26,6 +26,16 @@ Use tools/ci/stage_linux_client.py --help for final staging with independently
 verified source, provider, header, ELF and build-provenance evidence. Neither
 assembler is permission to publish an unverified candidate.
 
+Final staging requires the COMPLETE declared runtime provider set with repeated
+--runtime-library arguments. Each input must be a regular, non-symlink ELF64
+AMD64 shared library named by its incoming NEEDED SONAME, such as libSDL3.so.0.
+Prepare those regular SONAME files from the exact reviewed provider bytes; do not
+pass development symlinks or silently select another SDK. The tool checks the
+reviewed graph/inventory hashes and sizes, copies verified bytes beside the
+client before freezing, and records their original source-companion identities.
+Missing, altered, extra or duplicate provider inputs are refused. Validate the
+resulting player package without additional private runtime-library injection.
+
 Build platform: Ubuntu 26.04 x86-64, ordinary GCC/G++ 15.2.0, C++20, CMake/Ninja.
 Install suitable build tools and the development providers recorded in the header
 inventory: Boost, SDL3/image/mixer/ttf, LuaJIT, oneTBB, minizip/zlib, squish, libcurl and the
@@ -64,8 +74,9 @@ sources and recipe accompanying the dependency-source archive, including the
 matching libcurl headers. Select the matching system libcurl library explicitly;
 do not silently substitute undeclared headers or a private SDK.
 
-For the curated flat package retain only new-horizons, its matching libvcmi.so,
-config, scripts, Mods/vcmi and Mods/new-horizons, plus the launcher, notices and
+For the curated flat package retain new-horizons, its matching libvcmi.so, the
+explicitly admitted declared runtime providers, config, scripts, Mods/vcmi and
+Mods/new-horizons, plus the launcher, notices and
 identity/source records. Do not copy the installed optional demo, builder tools,
 purchaser assets or personal files. Recheck ELF imports, $ORIGIN, privacy and all
 hashes after installation; build-tree success alone is insufficient.

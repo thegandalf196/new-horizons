@@ -12,6 +12,7 @@ import shutil
 import subprocess
 
 from binary_privacy import inspect_bytes, require_clean
+from stage_runtime_libraries import admit_runtime_libraries, relocate_runtime_evidence, runtime_records
 
 
 def sha256(path):
@@ -65,12 +66,24 @@ def main():
                  'build-provenance', 'engine-source', 'dependency-source', 'packaging-source', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--packaging-revision', required=True)
+    parser.add_argument('--runtime-library', type=Path, action='append', default=[],
+                        help='regular ELF provider named by its incoming SONAME; repeat for the complete declared set')
     args = parser.parse_args()
-    if args.output.exists():
+    if args.output.exists() or args.output.is_symlink():
         raise RuntimeError('Refusing to replace an existing stage')
     identity = verify_candidate(args.candidate)
     if sha256(args.engine_source) != identity['source_archive_sha256']:
         raise RuntimeError('Engine source archive differs from candidate identity')
+    reports = {name: public_evidence(json.loads(source.read_text()), args.candidate)
+               for source, name in ((args.elf_audit, 'ELF-DEPENDENCIES.json'),
+                                    (args.inventory, 'DEPENDENCY-INVENTORY.json'),
+                                    (args.build_provenance, 'BUILD-PROVENANCE.json'))}
+    libraries = admit_runtime_libraries(args.runtime_library, args.candidate, identity,
+                                       reports, sha256(args.dependency_source))
+    reports = relocate_runtime_evidence(reports, libraries)
+    report_text = {name: json.dumps(data, indent=2) + '\n' for name, data in reports.items()}
+    if any(inspect_bytes(text.encode()) for text in report_text.values()):
+        raise RuntimeError('Personal profile path in public evidence')
     root = Path(__file__).resolve().parents[2]
     package = args.output / 'New-Horizons-Linux-x64'
     shutil.copytree(args.candidate, package)
@@ -78,6 +91,8 @@ def main():
     # Metadata is regenerated in the new owned stage only; frozen input is intact.
     for name in ('SHA256SUMS', 'BUILD-IDENTITY.json'):
         (package / name).chmod(0o644)
+    for name, record in libraries.items():
+        (package / name).write_bytes(record['payload'])  # Owned verified bytes; never modify the input provider.
     for source, name in (('tools/Play-New-Horizons.sh', 'Play-New-Horizons.sh'),
                          ('tools/linux/README-New-Horizons.txt', 'README-New-Horizons.txt'),
                          ('tools/linux/LEGAL-New-Horizons.txt', 'LEGAL-New-Horizons.txt'),
@@ -93,13 +108,7 @@ def main():
             if source.is_symlink():
                 raise RuntimeError('Header term symlink rejected')
             shutil.copy2(source, terms / source.name)
-    for source, name in ((args.elf_audit, 'ELF-DEPENDENCIES.json'),
-                         (args.inventory, 'DEPENDENCY-INVENTORY.json'),
-                         (args.build_provenance, 'BUILD-PROVENANCE.json')):
-        data = public_evidence(json.loads(source.read_text()), args.candidate)
-        text = json.dumps(data, indent=2) + '\n'
-        if inspect_bytes(text.encode()):
-            raise RuntimeError('Personal profile path in public evidence')
+    for name, text in report_text.items():
         (package / name).write_text(text)
     sources = {}
     for source in (args.engine_source, args.dependency_source, args.packaging_source):
@@ -107,7 +116,9 @@ def main():
             raise RuntimeError('Duplicate source archive name')
         sources[source.name] = {'bytes': source.stat().st_size, 'sha256': sha256(source)}
     identity.update({'scope': 'Ubuntu26.04 system-dependent Linux preview; acceptance evidence is separate',
-                     'packaging_commit': args.packaging_revision, 'source_archives': sources})
+                     'packaging_commit': args.packaging_revision, 'source_archives': sources,
+                     'bundled_runtime_libraries': runtime_records(libraries),
+                     'packaged_elfs': reports['ELF-DEPENDENCIES.json']['packaged_elfs']})
     (package / 'BUILD-IDENTITY.json').write_text(json.dumps(identity, indent=2) + '\n')
     sums = package / 'SHA256SUMS'
     sums.write_text(''.join(f'{sha256(p)}  {p.relative_to(package).as_posix()}\n'

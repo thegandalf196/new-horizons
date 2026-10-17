@@ -8,11 +8,16 @@ full GPLv3 text and all applicable component notices alongside the original core
 license.txt. New Horizons-authored geometry/icons remain CC0. Purchaser-supplied
 Heroes III art/content is external and is not relicensed or redistributed.
 
-The package contains the project client and facade, not the system shared
-ELFs recorded in its ELF-DEPENDENCIES.json. Those external platform dependencies and
-optional dlopen/audio/video/GPU-driver components are a separate boundary. The
-recorded graph does not establish compatibility with every driver or distro.
-Bundling any additional implementation requires a fresh source/license audit.
+The package contains the project client and facade plus the exact declared
+SDL3/image/mixer/ttf runtime providers recorded in BUILD-IDENTITY.json. Their
+original provider/header/source records and notices are retained; their source
+and build recipes accompany the dependency-source archive. The staged ELF graph
+labels those provider bytes as bundled, not as an undistributed private SDK.
+Remaining system shared ELFs and optional dlopen/audio/video/GPU-driver components
+are external. Strong-symbol evidence retains its reviewed aggregate scope and
+explicit checked-root list; staging relocates labels without new symbol checks.
+The graph does not establish compatibility with every driver or distro. Bundling
+any additional implementation requires a fresh source/license audit.
 
 The compiler/header/linker inventory explicitly records startup objects and
 libgcc.a, libc_nonshared.a and libdl.a. A linker search entry is not proof that all

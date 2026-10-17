@@ -2,9 +2,16 @@ HEROES III: NEW HORIZONS — Linux x86-64
 
 This build targets Ubuntu 26.04. It is system-library-dependent, not a universal
 Linux/AppImage bundle. Other distributions/releases are not verified. Keep the
-new-horizons executable, libvcmi.so, config, scripts, Mods and launcher files
+new-horizons executable, libvcmi.so, the four declared SDL3 runtime libraries,
+config, scripts, Mods and launcher files
 together. Extract the whole package into a directory you can read and execute;
 do not mix binaries or resources from different releases.
+
+The declared SDL3/image/mixer/ttf providers are included beside the executable
+under their incoming SONAME filenames. BUILD-IDENTITY.json records their exact
+bytes and source origins. Other system libraries and optional drivers remain
+external; see ELF-DEPENDENCIES.json and the accompanying dependency evidence.
+Do not add a private SDK or replacement libraries to make a broken package run.
 
 Original Heroes III Complete assets are REQUIRED and are NOT included.
 Your installation must contain Data, Maps and Mp3 directories. Asset directories
