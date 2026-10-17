@@ -11,16 +11,22 @@
 
 #include "NetworkDefines.h"
 #include "ExperimentalSetFormation.h"
-#ifdef NH_PERF_EXPERIMENTS
+#include "NetworkWriteFailureInfo.h"
 #include <atomic>
-#endif
 
-class NetworkConnection final : public INetworkConnection, public std::enable_shared_from_this<NetworkConnection>
+class NetworkWriteAllocationControl;
+class PreparedNetworkBatch;
+class PreparedGameConnectionBatch;
+
+class DLL_LINKAGE NetworkConnection final : public INetworkConnection, public std::enable_shared_from_this<NetworkConnection>
 {
+	friend class PreparedNetworkBatch;
+	friend class PreparedGameConnectionBatch;
 	static const int messageHeaderSize = sizeof(uint32_t);
 	static const int messageMaxSize = 64 * 1024 * 1024; // arbitrary size to prevent potential massive allocation if we receive garbage input
 
 	std::list<std::vector<std::byte>> dataToSend;
+	NetworkContext & context;
 	std::shared_ptr<NetworkSocket> socket;
 	std::shared_ptr<NetworkTimer> timer;
 	std::mutex writeMutex;
@@ -28,6 +34,18 @@ class NetworkConnection final : public INetworkConnection, public std::enable_sh
 	NetworkBuffer readBuffer;
 	INetworkConnectionListener & listener;
 	bool asyncWritesEnabled = false;
+	bool writeInProgress = false;
+	size_t writeOffset = 0;
+	std::atomic<bool> writeTerminal{false};
+	NetworkWriteFailureInfo writeFailure;
+	const std::string writeFailureMessage = "Queued network write failed";
+	std::shared_ptr<NetworkWriteAllocationControl> writeAllocationControl;
+	bool trySendData() noexcept;
+	void recordWriteFailure(NetworkWriteFailureInfo::Origin origin,
+		std::exception_ptr cause, const boost::system::error_code & error) noexcept;
+	void finishWriteFailure() noexcept;
+	boost::system::error_code drainSynchronousWrites();
+	void startPreparedWrites();
 
 	void heartbeat();
 	void onError(const std::string & message);
@@ -37,10 +55,14 @@ class NetworkConnection final : public INetworkConnection, public std::enable_sh
 	void onPacketReceived(const boost::system::error_code & ec, uint32_t expectedPacketSize);
 
 	void doSendData();
-	void onDataSent(const boost::system::error_code & ec);
+	void onDataSent(const boost::system::error_code & ec, size_t transferred);
 
 public:
 	NetworkConnection(INetworkConnectionListener & listener, const std::shared_ptr<NetworkSocket> & socket, NetworkContext & context);
+	NetworkConnection(INetworkConnectionListener & listener, const std::shared_ptr<NetworkSocket> & socket,
+		NetworkContext & context, std::shared_ptr<NetworkWriteAllocationControl> allocationControl);
+	bool hasTerminalWriteFailure() const noexcept;
+	NetworkWriteStatus writeStatus();
 
 	void start();
 	void close() override;
@@ -48,8 +70,11 @@ public:
 	void setAsyncWritesEnabled(bool on) override;
 };
 
-class InternalConnection final : public IInternalConnection, public std::enable_shared_from_this<InternalConnection>
+class DLL_LINKAGE InternalConnection final : public IInternalConnection, public std::enable_shared_from_this<InternalConnection>
 {
+	friend class PreparedNetworkBatch;
+	std::mutex deliveryMutex;
+	NetworkContext::strand deliveryStrand;
 	std::weak_ptr<IInternalConnection> otherSideWeak;
 	NetworkContext & context;
 	INetworkConnectionListener & listener;

@@ -6,7 +6,12 @@
 #include "StdInc.h"
 
 #include "../server/battles/HeroCommandFixture.h"
+#include "PurifyRuleFixtures.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/HeroPurifyProjection.h"
+#include "../../AI/BattleAI/PossibleSpellcast.h"
+
+#include <limits>
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include "../../lib/CStack.h"
@@ -57,46 +62,6 @@ public:
 	}
 };
 
-JsonNode savedV2MagicRules()
-{
-	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
-	// A historical v2 capture must not contain later v3-only policies.
-	for(const auto * key : {"protectedAdventureBarriers", "creatureAbilities", "morale"})
-		rules.Struct().erase(key);
-	rules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
-	for(auto & [name, spell] : rules["spells"].Struct())
-	{
-		(void)name;
-		spell.Struct().erase("selectedPlacement");
-		spell.Struct().erase("heroAccess");
-		spell.Struct().erase("earthquake");
-		spell.Struct().erase("structures");
-		spell.Struct().erase("restoration");
-		for(const auto * key : {"propagationLimit", "implosion", "ignoreInterveningBarriers",
-			"temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"})
-			spell.Struct().erase(key);
-		if(spell.Struct().contains("variant"))
-		{
-			spell.Struct().erase("variant");
-			spell["active"].Bool() = false;
-		}
-	}
-	if(newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION
-		< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-	{
-		auto & sorrow = rules["spells"]["core:sorrow"];
-		sorrow.Struct().erase("level");
-		sorrow.Struct().erase("costs");
-		sorrow["schools"].Vector().clear();
-		sorrow["schools"].Vector().emplace_back(std::string("new-horizons:chaos"));
-	}
-	newHorizonsMagic::validateRules(rules);
-	return rules;
-}
-
 SpellID purifySpell()
 {
 	return newHorizonsPurify::spellID();
@@ -146,6 +111,7 @@ class NewHorizonsPurifyAITest : public HeroCommandFixture
 {
 protected:
 	bool useSavedV2Rules = false;
+	bool neutralizeOptionalOrders = true;
 	static constexpr auto divineMandateSkill = "new-horizons:divineMandate";
 	static constexpr auto sacredCommandPerk = "new-horizons:divineMandate.sacredCommand";
 	static constexpr auto purifyingMandatePerk = "new-horizons:divineMandate.purifyingMandate";
@@ -153,8 +119,10 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
+		if(neutralizeOptionalOrders)
+			loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, purifyTest::neutralSpellCompetitionCommands());
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			useSavedV2Rules ? savedV2MagicRules()
+			useSavedV2Rules ? purifyTest::savedV2MagicRules()
 				: JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
@@ -205,7 +173,8 @@ protected:
 
 	void prepareCaster(bool purifier, bool savedV2, bool withPurifyingMandate)
 	{
-		useCommands = withPurifyingMandate;
+		useCommands = true; // current weighted perks require current Hero development/commands
+		neutralizeOptionalOrders = !withPurifyingMandate;
 		useSavedV2Rules = savedV2;
 		ASSERT_NO_FATAL_FAILURE(startGame());
 		if(withPurifyingMandate)
@@ -286,6 +255,122 @@ protected:
 		return evaluator.attemptCastingSpell(active);
 	}
 };
+
+TEST_F(NewHorizonsPurifyAITest, SelectedProjectionAcceptsBeforeNegatedScoreRejection)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCaster(false, false, true));
+	CStack * active = nullptr;
+	CStack * afflicted = nullptr;
+	ASSERT_NO_FATAL_FAILURE(addPurifyAiStacks(active, afflicted, true));
+	auto callback = makeCallback();
+	auto environment = std::make_shared<PurifyEnvironment>(gameState());
+	for(const bool negated : {false, true})
+	{
+		auto detached = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		const auto allowance = detached->prepareHeroSpellAllowance(BattleSide::ATTACKER, purifySpell(), false, false);
+		ASSERT_TRUE(allowance);
+		ASSERT_TRUE(allowance->action.typedLedger);
+		ASSERT_TRUE(detached->beginProjectedHeroAction(BattleSide::ATTACKER, *allowance));
+		const auto before = detached->getHeroActionAllowances(BattleSide::ATTACKER);
+		PossibleSpellcast candidate;
+		candidate.spell = purifySpell().toSpell();
+		candidate.spellPurifyChoices = {{static_cast<int32_t>(afflicted->unitId()), SpellID::SLOW}};
+		candidate.spellPurifyHeuristicValue = 7.0f;
+		const float baseline = 31.0f;
+		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
+		heroSpellProjection::projectPurifySelection(candidate, *detached, attackerSideHero,
+			BattleSide::ATTACKER, baseline, counterspell, negated, allowance, {},
+			std::numeric_limits<uint32_t>::max());
+		EXPECT_NE(detached->getHeroActionAllowances(BattleSide::ATTACKER), before);
+		EXPECT_EQ(candidate.value, negated ? std::numeric_limits<float>::lowest() : 38.0f);
+		EXPECT_FALSE(hasSpellEffect(detached->battleGetUnitByID(afflicted->unitId()), SpellID::SLOW));
+		EXPECT_TRUE(hasSpellEffect(afflicted, SpellID::SLOW));
+	}
+	EXPECT_TRUE(callback->submitted.empty());
+}
+
+TEST_F(NewHorizonsPurifyAITest, InvalidSelectedProjectionRetainsOnlyEarlierDetachedChanges)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCaster(false));
+	CStack * active = nullptr;
+	CStack * afflicted = nullptr;
+	ASSERT_NO_FATAL_FAILURE(addPurifyAiStacks(active, afflicted, true));
+	auto callback = makeCallback();
+	auto environment = std::make_shared<PurifyEnvironment>(gameState());
+	// Empty, nonexistent source, missing physical Poison, then failure after a valid earlier unit.
+	for(int invalidKind = 0; invalidKind < 4; ++invalidKind)
+	{
+		auto detached = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		const auto before = detached->getHeroActionAllowances(BattleSide::ATTACKER);
+		PossibleSpellcast candidate;
+		candidate.spell = purifySpell().toSpell();
+		candidate.spellPurifyHeuristicValue = 7.0f;
+		if(invalidKind == 1)
+			candidate.spellPurifyChoices = {{static_cast<int32_t>(afflicted->unitId()), SpellID::BLIND}};
+		if(invalidKind == 2)
+			candidate.spellPurifyPhysicalTargets = {static_cast<int32_t>(afflicted->unitId())};
+		if(invalidKind == 3)
+		{
+			// Reverse payload order distinguishes sorted unit traversal from input traversal.
+			candidate.spellPurifyChoices = {{-1, SpellID::SLOW},
+				{static_cast<int32_t>(afflicted->unitId()), SpellID::SLOW}};
+		}
+		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
+		const float baseline = 31.0f;
+		// No allowance is intentionally provided: invalid selections must short circuit before its use.
+		heroSpellProjection::projectPurifySelection(candidate, *detached, attackerSideHero,
+			BattleSide::ATTACKER, baseline, counterspell, false, std::nullopt, {},
+			std::numeric_limits<uint32_t>::max());
+		EXPECT_EQ(candidate.value, std::numeric_limits<float>::lowest());
+		EXPECT_EQ(detached->getHeroActionAllowances(BattleSide::ATTACKER), before);
+		EXPECT_EQ(hasSpellEffect(detached->battleGetUnitByID(afflicted->unitId()), SpellID::SLOW), invalidKind != 3);
+		EXPECT_TRUE(hasSpellEffect(afflicted, SpellID::SLOW));
+	}
+	EXPECT_TRUE(callback->submitted.empty());
+}
+
+TEST_F(NewHorizonsPurifyAITest, MissingSelectedUnitRefusesWithoutLosingEarlierPrivatePrefix)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCaster(false));
+	CStack * active = nullptr;
+	CStack * afflicted = nullptr;
+	ASSERT_NO_FATAL_FAILURE(addPurifyAiStacks(active, afflicted, true));
+	auto callback = makeCallback();
+	auto environment = std::make_shared<PurifyEnvironment>(gameState());
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto ledger = parent->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto liveState = afflicted->acquireState()->save();
+	const auto liveMana = attackerSideHero->getManaAvailable();
+	for(const bool validPrefix : {false, true})
+	{
+		auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		PossibleSpellcast candidate;
+		candidate.spell = purifySpell().toSpell();
+		candidate.spellPurifyHeuristicValue = 7.0f;
+		candidate.spellPurifyChoices = {{-1, SpellID::SLOW}};
+		if(validPrefix)
+			candidate.spellPurifyChoices.emplace_back(static_cast<int32_t>(afflicted->unitId()), SpellID::SLOW);
+		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
+		const float baseline = 31.0f;
+		heroSpellProjection::projectPurifySelection(candidate, *child, attackerSideHero,
+			BattleSide::ATTACKER, baseline, counterspell, false, std::nullopt, {}, std::numeric_limits<uint32_t>::max());
+		EXPECT_EQ(candidate.value, std::numeric_limits<float>::lowest());
+		EXPECT_EQ(hasSpellEffect(child->battleGetUnitByID(afflicted->unitId()), SpellID::SLOW), !validPrefix);
+		EXPECT_EQ(child->battleGetUnitByID(std::numeric_limits<uint32_t>::max()), nullptr);
+		for(const auto & outside : {parent, sibling})
+		{
+			EXPECT_EQ(outside->getHeroActionAllowances(BattleSide::ATTACKER), ledger);
+			EXPECT_TRUE(hasSpellEffect(outside->battleGetUnitByID(afflicted->unitId()), SpellID::SLOW));
+		}
+		EXPECT_EQ(child->getHeroActionAllowances(BattleSide::ATTACKER), ledger);
+		EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), ledger);
+		EXPECT_EQ(afflicted->acquireState()->save(), liveState);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), liveMana);
+		EXPECT_TRUE(hasSpellEffect(afflicted, SpellID::SLOW));
+	}
+	EXPECT_TRUE(callback->submitted.empty());
+}
 
 TEST_F(NewHorizonsPurifyAITest, SelectsBestAreaAndProjectsOnlyChosenGroupsWithoutMutatingTheBattle)
 {
@@ -642,19 +727,6 @@ protected:
 		// explicit historical-v3 case omits the retired spell's access marker.
 		useCommands = true;
 		NewHorizonsPurifyAITest::mapLoaded(loaded);
-		// Same current-command neutralizer as MagicAITest: preserve captured
-		// Hero rules/typed actions, isolate this spell-selection oracle from Orders.
-		const JsonNode combatRules(JsonPath::builtin("config/newHorizonsCombat"));
-		JsonNode commands = combatRules["combat"]["heroCommands"];
-		for(auto & command : commands["commands"].Struct())
-			for(auto & effect : command.second["effects"].Struct())
-			{
-				effect.second["base"].Float() = 0;
-				effect.second["attack"].Float() = 0;
-				effect.second["defense"].Float() = 0;
-			}
-		heroCommands::validateRules(commands);
-		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, commands);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 		ASSERT_FALSE(rules["spells"]["core:hypnotize"]["heroAccess"].Bool());
 		ASSERT_FALSE(rules["spells"]["core:hypnotize"]["ordinaryAcquisition"].Bool());

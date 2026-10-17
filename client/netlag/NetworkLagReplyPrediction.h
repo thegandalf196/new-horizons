@@ -10,6 +10,7 @@
 #pragma once
 
 #include "NetworkLagPredictedPack.h"
+#include <list>
 
 #include "../../lib/constants/EntityIdentifiers.h"
 
@@ -24,5 +25,5 @@ public:
 	uint32_t requestID;
 
 	/// One or more packs that client expects to receive from server as a reply
-	std::vector<NetworkLagPredictedPack> writtenPacks;
+	std::list<NetworkLagPredictedPack> writtenPacks;
 };

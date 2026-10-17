@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "PotentialTargets.h"
+#include "VisibleCandidateWorld.h"
 #include "SpellTargetsEvaluator.h"
 #include "../../lib/CStack.h"//todo: remove
 #include "../../lib/battle/ReachabilityInfo.h"
@@ -53,6 +54,7 @@ PotentialTargets::PotentialTargets(
 			forcedBerserkActions.push_back({EActionType::NO_ACTION, attackerInfo->getPosition(), nullptr});
 	}
 
+	const auto candidateWorld = std::make_shared<const VisibleCandidateWorld>(evaluationState);
 	auto aliveUnits = evaluationState->battleGetUnitsIf([=](const battle::Unit * unit)
 	{
 		return unit->isValidTarget() && unit->unitId() != attackerInfo->unitId();
@@ -75,12 +77,8 @@ PotentialTargets::PotentialTargets(
 			const int distance = hex.isValid()
 				? std::max(0, SpellTargetEvaluator::physicalTravelDistance(reachability, hex))
 				: 0;
-			auto bai = BattleAttackInfo(attackerInfo, defender, distance, shooting);
-			if(shooting && hex.isValid() && hex != attackerInfo->getPosition()
-				&& newHorizonsArchery::canUseSkirmisher(evaluationState->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
-				bai.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
-
-			return AttackPossibility::evaluate(bai, hex, actionDamageCache, evaluationState);
+			return VisibleCandidateWorld::evaluate(candidateWorld, attackerInfo, defender, distance,
+				shooting, hex, actionDamageCache);
 		};
 
 		if(berserk)
@@ -107,7 +105,7 @@ PotentialTargets::PotentialTargets(
 			if(canShootFromCurrentPosition)
 				possibleAttacks.push_back(GenerateAttackInfo(true, BattleHex::INVALID));
 
-			if(!sanctuaryEnemy && newHorizonsArchery::canUseSkirmisher(evaluationState->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
+			if(!sanctuaryEnemy && newHorizonsArchery::canUseSkirmisher(candidateWorld->heroPolicy(attackerInfo->unitSide()).legacyHero(), attackerInfo))
 			{
 				// Score every legal destination so the AI can trade movement, firing line,
 				// range, and Counterfire exposure instead of always choosing one nearest hex.

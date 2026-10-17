@@ -20,12 +20,15 @@ jobs:
       - uses: actions/setup-python@v5
         id: python
         with:
-          python-version: '3.14'
+          python-version: '3.15'
       - name: Install pinned maintenance dependencies
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}
         run: |
-          "$PYTHON" -m pip install --require-hashes --only-binary=:all: -r tools/ci/source_organization_requirements.txt
+          "$PYTHON" -m pip install --require-hashes --only-binary=:all: -r tools/ci/source_organization_build_requirements.txt
+          "$PYTHON" -m pip install --require-hashes --no-build-isolation --no-binary=tree-sitter \
+            --only-binary=tree-sitter-cpp,tree-sitter-lua,tree-sitter-java,tree-sitter-javascript,tree-sitter-objc,tree-sitter-bash \
+            -r tools/ci/source_organization_requirements.txt
           "$PYTHON" -m pip install --require-hashes -r CI/requirements-validation.txt
       - name: Check portable instruction paths
         id: markdown
@@ -130,7 +133,7 @@ jobs:
       - uses: actions/setup-python@v5
         id: python
         with:
-          python-version: '3.14'
+          python-version: '3.15'
       - name: Install public build dependencies
         run: |
           sudo apt-get -q update

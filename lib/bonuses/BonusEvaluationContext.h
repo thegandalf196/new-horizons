@@ -13,6 +13,8 @@
 
 class CBonusSystemNode;
 class CStack;
+class BattleInfo;
+class CGHeroInstance;
 class CCreature;
 class CStackInstance;
 class ProjectedBonusRoster;
@@ -25,9 +27,19 @@ namespace battle { class Unit; }
 /// Both identities/views must outlive evaluation under the world's access lease.
 class DLL_LINKAGE BonusEvaluationContext final
 {
+public:
+	/// Engaged optional means explicit native provenance, including null absence.
+	struct NativeContext
+	{
+		const CGHeroInstance * hero;
+		const BattleInfo * battle;
+		std::optional<TerrainId> queryTerrain = std::nullopt;
+	};
+private:
 	const CBonusSystemNode & original;
 	const battle::Unit * projected = nullptr;
 	const ProjectedBonusRoster * roster = nullptr;
+	std::optional<NativeContext> native;
 
 public:
 	/// Implicit adapter preserves existing live calls using a bonus node.
@@ -35,6 +47,13 @@ public:
 	/// Requires matching unit ID; the enclosing owner binds battle/lifetimes.
 	BonusEvaluationContext(const CStack & node, const battle::Unit & unit);
 	BonusEvaluationContext(const CStack & node, const battle::Unit & unit, const ProjectedBonusRoster & roster);
+	BonusEvaluationContext(const CStack & node, const battle::Unit & unit,
+		const ProjectedBonusRoster & roster, NativeContext provenance);
+	bool hasNativeContext() const noexcept;
+	const BattleInfo * battleContext() const;
+	std::optional<TerrainId> battleTerrain() const;
+	/// Terrain-only input never establishes battle/updater/adjacency membership.
+	std::optional<TerrainId> queryTerrain() const;
 	const CBonusSystemNode & originalNode() const noexcept;
 	BonusNodeType getNodeType() const;
 	PlayerColor getOwner() const;

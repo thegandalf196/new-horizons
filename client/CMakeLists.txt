@@ -87,9 +87,21 @@ set(vcmiclientcommon_SRCS
 	mapView/MapOverlayLogVisualizer.cpp
 
 	netlag/NetworkLagCompensator.cpp
+	netlag/NetworkLagPreparedReplay.cpp
+	netlag/NetworkLagPreparedRetirement.cpp
+	netlag/NetworkLagReplyState.cpp
+	netlag/NetworkLagRollbackCopy.cpp
+	netlag/PreparedNetworkLagRetirement.cpp
 	netlag/PackRollbackGeneratorVisitor.cpp
 
 	replay/GameplayReplayer.cpp
+	replay/ClientPacketReceiveSession.cpp
+	replay/ClientReceiveAccess.cpp
+	replay/ClientReceiveConsumedFactory.cpp
+	replay/PreparedClientBattleReplay.cpp
+	replay/PreparedClientReplayFactory.cpp
+	replay/PreparedClientWorldReplay.cpp
+	replay/PreparedConsumedBattleReply.cpp
 	replay/ReplayAbortOverlay.cpp
 	replay/ReplaySelectionWindow.cpp
 
@@ -324,12 +336,20 @@ set(vcmiclientcommon_HEADERS
 	mapView/MapOverlayLogVisualizer.h
 
 	netlag/NetworkLagCompensator.h
+	netlag/NetworkLagReplyState.h
+	netlag/NetworkLagReplyStateControl.h
+	netlag/NetworkLagRollbackCopy.h
+	netlag/PreparedNetworkLagRetirement.h
 	netlag/NetworkLagPredictedPack.h
 	netlag/NetworkLagPredictionTestVisitor.h
 	netlag/NetworkLagReplyPrediction.h
 	netlag/PackRollbackGeneratorVisitor.h
 
 	replay/GameplayReplayer.h
+	replay/ClientPacketReceiveSession.h
+	replay/ClientReceiveAccess.h
+	replay/ClientReplaySessionReadiness.h
+	replay/PreparedClientBattleReplay.h
 	replay/ReplayAbortOverlay.h
 	replay/ReplayPackFilter.h
 	replay/ReplaySelectionWindow.h

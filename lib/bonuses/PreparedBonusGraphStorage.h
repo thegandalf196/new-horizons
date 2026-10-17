@@ -36,6 +36,11 @@ public:
 	PreparedBonusGraphStorage(PreparedBonusGraphStorage &&) = delete;
 	PreparedBonusGraphStorage & operator=(PreparedBonusGraphStorage &&) = delete;
 	size_t capture(CBonusSystemNode & node);
+	/// Storage-only observation, NOT proof of immutability or a lifetime lease.
+	/// Never reserves/exchanges this row or accepts it as an invalidation target.
+	/// Classification cannot change after capture; shared Bonus aliases remain
+	/// caller-excluded and pointer identity is not a payload-value fingerprint.
+	size_t captureReadOnly(const CBonusSystemNode & node);
 	const Values & projected(size_t index) const;
 	void replace(size_t index, Values replacement);
 	/// false retains the current generation, matching propagation inside an
@@ -61,7 +66,8 @@ private:
 	enum class Phase { BUILDING, PREPARED, COMMITTED };
 	struct Entry
 	{
-		CBonusSystemNode * node;
+		const CBonusSystemNode * node;
+		CBonusSystemNode * writable;
 		int32_t version;
 		int32_t cachedVersion;
 		Values original;
@@ -82,7 +88,9 @@ private:
 	static bool sameBonuses(const BonusList & first, const BonusList & second) noexcept;
 	static void validate(const Values & value);
 	void requireBuilding() const;
-	bool captured(const CBonusSystemNode * node) const noexcept;
+	bool mutableCaptured(const CBonusSystemNode * node) const noexcept;
+	size_t captureImpl(const CBonusSystemNode & node, CBonusSystemNode * writable);
+	static bool sameValues(const Values & first, const Values & second) noexcept;
 	bool payloadChanged(const Entry & entry) const noexcept;
 	bool borrowsGeneration() const noexcept;
 	bool validProgram(int32_t generation) const noexcept;

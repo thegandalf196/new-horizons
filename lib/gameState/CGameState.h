@@ -31,6 +31,8 @@
 #include "GameStatistics.h"
 #include "NewHorizonsAstrology.h"
 #include "ReplayLog.h"
+#include "BattleRootLifetime.h"
+#include <optional>
 #include "RumorState.h"
 #include "mapObjects/CGObjectInstance.h"
 
@@ -78,7 +80,12 @@ public:
 
 class DLL_LINKAGE CGameState : public CNonConstInfoCallback, public Serializeable
 {
+	// Engaged only on native destruction; released after ALL native members.
+	std::optional<NativeBonusGraphAccess> nativeGraphRetirement; // Not serialized.
 	friend class CGameStateCampaign;
+	friend class BattleRootLifetime;
+	friend class GameStatePackVisitor;
+	BattleRootLifetime battleRootLifetime; // Not serialized; not graph/query exclusion.
 
 	std::shared_ptr<StartInfo> initialOpts; //copy of settings received from pregame (not randomized)
 	std::shared_ptr<StartInfo> scenarioOps;

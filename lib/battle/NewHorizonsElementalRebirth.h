@@ -11,6 +11,7 @@
 
 #include "AccessibilityInfo.h"
 #include "Unit.h"
+#include "UnitQueryTerrain.h"
 #include "../bonuses/Bonus.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
@@ -172,6 +173,9 @@ DLL_LINKAGE int64_t targetHP(const DeathSnapshot & snapshot, CreatureID creature
 /// Source-only hypothetical CStack probe; does not attach a live child or invalidate caches.
 DLL_LINKAGE int32_t effectiveSummonMaxHP(const CArmedInstance * sourceArmy,
 	CreatureID creature, PlayerColor owner, BattleSide side);
+/// Explicitly missing terrain never falls back to source or battle membership.
+DLL_LINKAGE int32_t effectiveSummonMaxHP(const CArmedInstance * sourceArmy,
+	CreatureID creature, PlayerColor owner, BattleSide side, UnitQueryTerrain terrain);
 DLL_LINKAGE std::optional<SpawnHealth> spawnHealth(int64_t targetAggregateHP, int32_t effectiveCreatureMaxHP);
 DLL_LINKAGE std::optional<SpawnDescriptor> makeSpawnDescriptor(uint32_t unitId, CreatureID creature,
 	BattleSide side, BattleHex corpsePosition, int64_t targetAggregateHP, int32_t effectiveCreatureMaxHP,

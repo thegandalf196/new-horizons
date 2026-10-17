@@ -11,17 +11,48 @@
 #include <stdexcept>
 
 ProjectedBonusRoster::ProjectedBonusRoster(std::vector<const battle::Unit *> values)
-	: units(std::move(values))
+	: ProjectedBonusRoster(std::move(values), Identity::UniqueIds)
+{
+}
+
+ProjectedBonusRoster::ProjectedBonusRoster(std::vector<const battle::Unit *> values, Identity identity)
+	: units(std::move(values)), orderedOccurrences(identity == Identity::OrderedOccurrences)
 {
 	std::set<uint32_t> identities;
+	std::set<const battle::Unit *> occurrences;
 	for(const auto * unit : units)
-		if(!unit || !identities.insert(unit->unitId()).second)
+	{
+		if(!unit || (orderedOccurrences ? !occurrences.insert(unit).second : !identities.insert(unit->unitId()).second))
 			throw std::invalid_argument("Projected bonus roster has null or duplicate units");
+	}
+}
+
+bool ProjectedBonusRoster::usesOrderedOccurrences() const noexcept { return orderedOccurrences; }
+
+const battle::Unit * ProjectedBonusRoster::firstById(uint32_t id) const
+{
+	const auto found = std::find_if(units.begin(), units.end(), [id](const battle::Unit * unit)
+	{
+		return unit->unitId() == id;
+	});
+	return found == units.end() ? nullptr : *found;
+}
+
+void ProjectedBonusRoster::appendOccurrence(const battle::Unit & unit)
+{
+	if(!orderedOccurrences || contains(unit))
+		throw std::invalid_argument("Projected append requires a new ordered occurrence");
+	units.push_back(&unit);
 }
 
 bool ProjectedBonusRoster::contains(const battle::Unit & unit) const
 {
 	return std::find(units.begin(), units.end(), &unit) != units.end();
+}
+
+std::span<const battle::Unit * const> ProjectedBonusRoster::orderedUnits() const noexcept
+{
+	return units;
 }
 
 std::vector<const battle::Unit *> ProjectedBonusRoster::adjacentUnits(const battle::Unit & unit) const

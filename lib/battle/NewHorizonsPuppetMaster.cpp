@@ -13,6 +13,7 @@
 
 #include "CBattleInfoEssentials.h"
 #include "Unit.h"
+#include "UnitOwnershipQuery.h"
 #include "../bonuses/BonusSelector.h"
 #include "../bonuses/BonusList.h"
 
@@ -61,8 +62,9 @@ bool isMentalControlSpell(std::string_view spellJsonKey)
 		|| spellJsonKey == "new-horizons:confusion";
 }
 
-bool isValidControlMarker(const CBattleInfoEssentials & battle, const battle::Unit * unit,
-	const Bonus * marker)
+namespace
+{
+bool validControlShape(const battle::Unit * unit, const Bonus * marker)
 {
 	if(!unit || !marker || marker->type != BonusType::PUPPET_MASTER_CONTROL || marker->val != 1
 		|| marker->source != BonusSource::SPELL_EFFECT
@@ -71,11 +73,30 @@ bool isValidControlMarker(const CBattleInfoEssentials & battle, const battle::Un
 		|| !marker->spellCasterOwner.isValidPlayer())
 		return false;
 
-	const auto controllerSide = battle.playerToSide(marker->spellCasterOwner);
+	return true;
+}
+bool validControlSide(BattleSide controllerSide, const battle::Unit * unit)
+{
 	return (controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
 		&& controllerSide != unit->unitSide();
 }
+}
 
+bool isValidControlMarker(const CBattleInfoEssentials & battle, const battle::Unit * unit,
+	const Bonus * marker)
+{
+	if(!validControlShape(unit, marker))
+		return false;
+	return validControlSide(battle.playerToSide(marker->spellCasterOwner), unit);
+}
+
+bool isValidControlMarker(const battle::UnitOwnershipQuery & ownership, const battle::Unit * unit,
+	const Bonus * marker)
+{
+	if(!validControlShape(unit, marker))
+		return false;
+	return validControlSide(ownership.playerToSide(marker->spellCasterOwner), unit);
+}
 Bonus controlMarker(SpellID spell, PlayerColor caster)
 {
 	Bonus marker(BonusDuration::ONE_BATTLE, BonusType::PUPPET_MASTER_CONTROL,

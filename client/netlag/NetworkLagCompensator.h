@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "NetworkLagReplyState.h"
 
 #include "../../lib/network/NetworkInterface.h"
 #include "../../server/IGameServer.h"
@@ -17,17 +18,17 @@ class CGameState;
 class GameConnection;
 
 class NetworkLagReplyPrediction;
+class PreparedClientBattleReplay;
+struct BattleUnitsChanged;
 
 /// Fake server that is used by client to make a quick prediction on what real server would reply without waiting for network latency
 class NetworkLagCompensator final : public IGameServer, public INetworkConnectionListener, boost::noncopyable
 {
-	std::vector<NetworkLagReplyPrediction> predictedReplies;
+	NetworkLagReplyState replyState;
 	std::shared_ptr<INetworkConnection> antilagNetConnection;
 	std::shared_ptr<GameConnection> antilagGameConnection;
 	std::shared_ptr<CGameState> gameState;
 
-	static constexpr uint32_t invalidPackageID = std::numeric_limits<uint32_t>::max();
-	uint32_t currentPackageID = invalidPackageID;
 
 	// IGameServer impl
 	void setState(EServerState value) override;
@@ -47,4 +48,8 @@ public:
 
 	void tryPredictReply(const CPackForServer & request);
 	bool verifyReply(const CPackForClient & reply);
+	std::unique_ptr<PreparedNetworkLagRetirement> prepareReplyRetirement(
+		const BattleReplyInspection & inspection, const std::unique_lock<std::mutex> & interfaceAccess);
+	std::unique_ptr<PreparedClientBattleReplay> prepareBattleReplayEntry(
+		const std::shared_ptr<CGameState> & world, BattleUnitsChanged & packet) const;
 };

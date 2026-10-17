@@ -32,6 +32,12 @@ set(lib_SRCS
 	logging/VisualLogger.cpp
 
 	network/NetworkConnection.cpp
+	network/InternalDelivery.cpp
+	network/NetworkPreparedWrites.cpp
+	network/NetworkWriteAllocation.cpp
+	network/NetworkWriteFailure.cpp
+	network/PreparedNetworkBatch.cpp
+	network/PreparedNetworkSchedule.cpp
 	network/NetworkDiscovery.cpp
 	network/NetworkHandler.cpp
 	network/NetworkServer.cpp
@@ -59,7 +65,12 @@ set(lib_MAIN_SRCS
 	battle/BattleHex.cpp
 	battle/BattleHexArray.cpp
 	battle/HeroCommand.cpp
+	battle/HeroOrderEffects.cpp
+	battle/HeroCommandCoefficient.cpp
+	battle/HeroCommandCoefficientMath.cpp
+	battle/HeroCommandCoefficientQueries.cpp
 	battle/BattleInfo.cpp
+	battle/BattleInfoUnitUpdate.cpp
 	battle/PhysicalAffliction.cpp
 	battle/NewHorizonsFrozen.cpp
 	battle/TimeStopState.cpp
@@ -99,12 +110,22 @@ set(lib_MAIN_SRCS
 	battle/BattleProxy.cpp
 	battle/BattleStateInfoForRetreat.cpp
 	battle/CBattleInfoCallback.cpp
+	battle/VisibleHeroBonusQueries.cpp
+	battle/FocusFireQueries.cpp
 	battle/CBattleInfoEssentials.cpp
+	battle/BattleHeroPolicyQueries.cpp
 	battle/CObstacleInstance.cpp
 	battle/CPlayerBattleCallback.cpp
 	battle/CUnitState.cpp
+	battle/CUnitStateLifecycle.cpp
 	battle/CUnitStateDetachedBonuses.cpp
 	battle/CUnitStateValues.cpp
+	battle/PreparedStackStateTransfer.cpp
+	battle/BattleUnitRootOrigin.cpp
+	battle/PreparedBattleUnitRoots.cpp
+	battle/PreparedBattleWorldCommit.cpp
+	battle/PreparedBattleWorldAccess.cpp
+	battle/PreparedBattleWorldReplayAdoption.cpp
 	battle/Destination.cpp
 	battle/IBattleState.cpp
 	battle/ReachabilityInfo.cpp
@@ -114,19 +135,70 @@ set(lib_MAIN_SRCS
 	battle/UnitAdjacency.cpp
 	battle/UnitMagicResistanceQuery.cpp
 	battle/ProjectedUnitMagicResistance.cpp
+	battle/UnitOwnershipQuery.cpp
+	battle/UnitEnvironmentQueries.cpp
+	battle/LiveUnitEnvironmentContext.cpp
+	battle/BattleAccessibilityQuery.cpp
+	battle/LiveBattleAccessibilityContext.cpp
+	battle/ProjectedBattleAccessibility.cpp
+	battle/ProjectedUnitEnvironmentState.cpp
+	battle/ProjectedUnitEnvironment.cpp
+	battle/ProjectedUnitRemoval.cpp
+	battle/StackInitializationReceipts.cpp
+	battle/SummonHealthQuery.cpp
+	battle/NativeSummonHealthQuery.cpp
+	battle/UnitQueryTerrain.cpp
+	battle/ProjectedSummonHealthQuery.cpp
+	battle/UnitAdditionRules.cpp
+	battle/UnitUpdateAdmission.cpp
+	battle/ProjectedBattleWorldArena.cpp
+	battle/ProjectedBattleWorldArenaAdd.cpp
+	battle/ProjectedBattleWorldArenaGraph.cpp
+	battle/ProjectedBattleWorldArenaUpdate.cpp
+	battle/ProjectedBattleWorldArenaSidecars.cpp
+	battle/OrdinaryMeleeRetaliation.cpp
+	battle/ProjectedBattleWorldArenaDurations.cpp
+	battle/ProjectedBattleWorldArenaExports.cpp
+	battle/ProjectedBattleWorldArenaForecast.cpp
+	battle/ProjectedBattleWorldArenaRecipientOverlay.cpp
+	battle/RoundBonusDuration.cpp
+	battle/StackEffectRemoval.cpp
+	battle/UnitTransitionSidecars.cpp
+	battle/CrisisCommandReferences.cpp
+	battle/CrisisCommandLiveReferences.cpp
+	battle/BloodrageDeathGrant.cpp
+	battle/ProjectedUnitPacketCapture.cpp
+	battle/ProjectedUnitPacketBloodrage.cpp
+	battle/ProjectedUnitPacketCrisis.cpp
+	battle/PreparedBattleUnitSidecars.cpp
+	battle/ProjectedUnitPacketProgram.cpp
+	battle/ElementalRebirthLineage.cpp
+	battle/ElementalConsumptionValidation.cpp
+	battle/LiveElementalConsumptionContext.cpp
+	battle/ProjectedUnitPacketStages.cpp
+	battle/ProjectedUnitPacketConsumption.cpp
+	battle/ProjectedUnitPacketWire.cpp
 	battle/BattleBonusAcceptance.cpp
 
 	bonuses/Bonus.cpp
 	bonuses/BonusCache.cpp
+	bonuses/PrimarySkillPolicy.cpp
 	bonuses/BonusEvaluationContext.cpp
 	bonuses/BonusBattleContext.cpp
 	bonuses/BonusGraphQuery.cpp
 	bonuses/ProjectedBonusGraph.cpp
+	bonuses/ProjectedBonusRecipientOverlay.cpp
+	bonuses/RecipientBonusOverlay.cpp
+	bonuses/ProjectedBonusGraphBindings.cpp
 	bonuses/ProjectedBonusGraphEdits.cpp
+	bonuses/ProjectedBonusGraphCleanup.cpp
+	bonuses/ProjectedBonusGraphRelations.cpp
 	bonuses/ProjectedBonusGraphValidation.cpp
 	bonuses/ProjectedBonusGraphFormEvents.cpp
+	bonuses/ProjectedBonusGraphDurations.cpp
 	bonuses/ProjectedBonusInvalidations.cpp
 	bonuses/PreparedBonusGraphFinalization.cpp
+	bonuses/PreparedBonusGraphCapture.cpp
 	bonuses/BonusLimitation.cpp
 	bonuses/ProjectedBonusRoster.cpp
 	bonuses/BonusEnum.cpp
@@ -137,9 +209,13 @@ set(lib_MAIN_SRCS
 	bonuses/BonusMigration.cpp
 	bonuses/BonusParameters.cpp
 	bonuses/CBonusSystemNode.cpp
+	bonuses/CBonusSystemNodeQueries.cpp
+	bonuses/NativeBonusGraphAccess.cpp
+	bonuses/NativeBonusGraphAdmission.cpp
 	bonuses/PreparedBonusGraphStorage.cpp
 	bonuses/IBonusBearer.cpp
 	bonuses/Limiters.cpp
+	bonuses/TerrainBonusLimiter.cpp
 	bonuses/Propagators.cpp
 	bonuses/Updaters.cpp
 
@@ -218,6 +294,10 @@ set(lib_MAIN_SRCS
 	gameState/QuestInfo.cpp
 	gameState/ReplayLog.cpp
 	gameState/PreparedReplayAppend.cpp
+	gameState/PreparedReplayBatch.cpp
+	gameState/PreparedReplaySnapshot.cpp
+	gameState/BattleRootLifetime.cpp
+	gameState/BattleRootCommitAdmission.cpp
 	gameState/RumorState.cpp
 	gameState/TavernHeroesPool.cpp
 	gameState/GameStatistics.cpp
@@ -236,6 +316,7 @@ set(lib_MAIN_SRCS
 	mapObjects/CGCreature.cpp
 	mapObjects/CGDwelling.cpp
 	mapObjects/CGHeroInstance.cpp
+	mapObjects/HeroPrimarySkillQueries.cpp
 	mapObjects/NewHorizonsGlyphsOfFear.cpp
 	mapObjects/CGMarket.cpp
 	mapObjects/CGObjectInstance.cpp
@@ -350,6 +431,7 @@ set(lib_MAIN_SRCS
 	serializer/CLoadFile.cpp
 	serializer/CMemorySerializer.cpp
 	serializer/GameConnection.cpp
+	serializer/PreparedGameConnectionBatch.cpp
 	serializer/CSaveFile.cpp
 	serializer/CTypeList.cpp
 	serializer/JsonDeserializer.cpp
@@ -429,6 +511,7 @@ set(lib_MAIN_SRCS
 	CRandomGenerator.cpp
 	CSkillHandler.cpp
 	CStack.cpp
+	CStackConstruction.cpp
 	ExceptionsCommon.cpp
 	GameSettings.cpp
 	IHandlerBase.cpp
@@ -499,6 +582,10 @@ set(lib_HEADERS
 	logging/VisualLogger.h
 
 	network/NetworkConnection.h
+	network/NetworkWriteAllocation.h
+	network/NetworkWriteFailureInfo.h
+	network/PreparedNetworkBatch.h
+	network/PreparedNetworkBatchState.h
 	network/NetworkDefines.h
 	network/NetworkDiscovery.h
 	network/NetworkHandler.h
@@ -572,7 +659,11 @@ set(lib_MAIN_HEADERS
 	battle/BattleHex.h
 	battle/BattleHexArray.h
 	battle/HeroCommand.h
+	battle/HeroOrderEffects.h
+	battle/HeroCommandCoefficient.h
+	battle/HeroCommandCoefficientMath.h
 	battle/FocusFireState.h
+	battle/FocusFireQueries.h
 	battle/SylvanLuckState.h
 	battle/LuckSerendipityState.h
 	battle/PerfectFortuneState.h
@@ -630,11 +721,18 @@ set(lib_MAIN_HEADERS
 	battle/BattleUnitTurnReason.h
 	battle/CBattleInfoCallback.h
 	battle/CBattleInfoEssentials.h
+	battle/VisibleHeroPolicy.h
 	battle/CObstacleInstance.h
 	battle/CPlayerBattleCallback.h
 	battle/CUnitAmmo.h
 	battle/CUnitState.h
 	battle/UnitStateValueExchange.h
+	battle/PreparedStackStateTransfer.h
+	battle/BattleUnitRootOrigin.h
+	battle/PreparedBattleUnitRoots.h
+	battle/PreparedBattleUnitRootsState.h
+	battle/PreparedBattleWorldCommit.h
+	battle/PreparedBattleWorldCommitState.h
 	battle/UnitStateValueFields.h
 	battle/Destination.h
 	battle/IBattleInfoCallback.h
@@ -648,15 +746,46 @@ set(lib_MAIN_HEADERS
 	battle/UnitAdjacency.h
 	battle/UnitMagicResistanceQuery.h
 	battle/ProjectedUnitMagicResistance.h
+	battle/UnitOwnershipQuery.h
+	battle/UnitEnvironmentQueries.h
+	battle/LiveUnitEnvironmentContext.h
+	battle/BattleAccessibilityQuery.h
+	battle/LiveBattleAccessibilityContext.h
+	battle/ProjectedBattleAccessibility.h
+	battle/ProjectedUnitEnvironmentState.h
+	battle/ProjectedUnitEnvironment.h
+	battle/ProjectedUnitRemoval.h
+	battle/StackInitializationReceipts.h
+	battle/SummonHealthQuery.h
+	battle/UnitQueryTerrain.h
+	battle/ProjectedSummonHealthQuery.h
+	battle/UnitAdditionRules.h
+	battle/UnitUpdateAdmission.h
+	battle/ProjectedBattleWorldArena.h
+	battle/ProjectedBattleWorldArenaState.h
+	battle/OrdinaryMeleeRetaliation.h
+	battle/RoundBonusDuration.h
+	battle/StackEffectRemoval.h
+	battle/PreparedBattleUnitSidecars.h
+	battle/BattleUnitSidecarFields.h
+	battle/UnitTransitionSidecars.h
+	battle/CrisisCommandReferences.h
+	battle/ElementalRebirthLineage.h
+	battle/ElementalConsumptionContext.h
 	battle/BattleBonusAcceptance.h
 
 	bonuses/Bonus.h
 	bonuses/BonusCache.h
+	bonuses/PrimarySkillPolicy.h
 	bonuses/BonusEvaluationContext.h
 	bonuses/BonusLimitation.h
 	bonuses/BonusGraphQuery.h
 	bonuses/ProjectedBonusGraph.h
+	bonuses/RecipientBonusOverlay.h
 	bonuses/ProjectedBonusInvalidations.h
+	bonuses/BonusDurationStep.h
+	bonuses/ProjectedDurationChange.h
+	bonuses/ProjectedExportRemoval.h
 	bonuses/PreparedBonusGraphFinalization.h
 	bonuses/ProjectedBonusView.h
 	bonuses/ProjectedBonusRoster.h
@@ -668,6 +797,8 @@ set(lib_MAIN_HEADERS
 	bonuses/BonusMigration.h
 	bonuses/BonusParameters.h
 	bonuses/CBonusSystemNode.h
+	bonuses/NativeBonusGraphAccess.h
+	bonuses/NativeBonusGraphAdmission.h
 	bonuses/PreparedBonusGraphStorage.h
 	bonuses/IBonusBearer.h
 	bonuses/Limiters.h
@@ -775,6 +906,8 @@ set(lib_MAIN_HEADERS
 	gameState/InfoAboutArmy.h
 	gameState/ReplayLog.h
 	gameState/PreparedReplayAppend.h
+	gameState/PreparedReplaySnapshot.h
+	gameState/BattleRootLifetime.h
 	gameState/RumorState.h
 	gameState/SThievesGuildInfo.h
 	gameState/TavernHeroesPool.h
@@ -952,6 +1085,8 @@ set(lib_MAIN_HEADERS
 	serializer/CLoadFile.h
 	serializer/CMemorySerializer.h
 	serializer/GameConnection.h
+	serializer/PreparedGameConnectionBatch.h
+	serializer/PreparedGameConnectionState.h
 	serializer/CSaveFile.h
 	serializer/CSerializer.h
 	serializer/CTypeList.h

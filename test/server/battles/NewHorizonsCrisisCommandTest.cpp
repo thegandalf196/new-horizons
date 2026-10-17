@@ -574,7 +574,7 @@ TEST_F(NewHorizonsCrisisCommandTest, DetachedFreeOrderProjectionUsesExactGrantWi
 	const auto heroCount = battle()->battleHeroActionAllowanceCounts(recipient).heroActions;
 	const auto prepared = child->prepareHeroOrderAllowance(recipient); ASSERT_TRUE(prepared);
 	EXPECT_EQ(prepared->action.receipt.source, HeroActionAllowanceState::GrantSource::CRISIS_COMMAND);
-	ASSERT_TRUE(child->beginProjectedHeroAction(recipient, *prepared));
+	ASSERT_TRUE(child->beginProjectedHeroOrder(recipient, HeroCommand::HOLD_THE_LINE, {}, *prepared));
 	ASSERT_TRUE(child->projectAcceptedHeroOrder(recipient, HeroCommand::HOLD_THE_LINE, {}, *prepared));
 	EXPECT_FALSE(child->getCrisisCommandState().choice());
 	EXPECT_TRUE(parent->getCrisisCommandState().choice()); EXPECT_TRUE(battle()->getCrisisCommandState().choice());
@@ -641,7 +641,7 @@ TEST_F(NewHorizonsCrisisCommandTest, SeizeInterruptedNormalContextSurvivesCurren
 	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
 	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
 	const auto prepared = child->prepareHeroOrderAllowance(recipient); ASSERT_TRUE(prepared);
-	ASSERT_TRUE(child->beginProjectedHeroAction(recipient, *prepared));
+	ASSERT_TRUE(child->beginProjectedHeroOrder(recipient, HeroCommand::HOLD_THE_LINE, {}, *prepared));
 	ASSERT_TRUE(child->projectAcceptedHeroOrder(recipient, HeroCommand::HOLD_THE_LINE, {}, *prepared));
 	EXPECT_TRUE(child->getCrisisCommandState().returns.empty());
 	EXPECT_EQ(child->getActiveStackID(), actor->unitId());

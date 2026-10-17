@@ -12,6 +12,7 @@
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../battle/NewHorizonsPlague.h"
 #include "CGameState.h"
+#include "../bonuses/NativeBonusGraphAdmission.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
 
 #include "EVictoryLossCheckResult.h"
@@ -207,6 +208,8 @@ CGameState::CGameState()
 
 CGameState::~CGameState()
 {
+	nativeGraphRetirement.emplace();
+	auto rootMutation = battleRootLifetime.mutate();
 	// explicitly delete all ongoing battles first - BattleInfo destructor requires valid CGameState
 	currentBattles.clear();
 }
@@ -1343,6 +1346,7 @@ PlayerRelations CGameState::getPlayerRelations( PlayerColor color1, PlayerColor 
 
 void CGameState::apply(CPackForClient & pack)
 {
+	NativeBonusGraphMutation nativeMutation;
 	// recorded first, so that a snapshot taken here holds the pre-pack state
 	if(replayLog.isRecordingPacks())
 		replayLog.recordPack(pack, *this);
@@ -2209,6 +2213,7 @@ void CGameState::saveGame(CSaveFile & file) const
 
 std::vector<std::byte> CGameState::saveToMemory()
 {
+	NativeBonusGraphAccess graphAccess;
 	// a snapshot is stored inside the replay log itself, so the log must not be part of it.
 	// Swapping keeps the serialized layout identical - an empty log is written instead.
 	ReplayLog logBackup;
@@ -2224,6 +2229,7 @@ std::vector<std::byte> CGameState::saveToMemory()
 
 void CGameState::loadFromMemory(std::vector<std::byte> data)
 {
+	auto rootMutation = battleRootLifetime.mutate();
 	// battles are not part of serialize(), so leftovers of the discarded state have to go explicitly
 	currentBattles.clear();
 

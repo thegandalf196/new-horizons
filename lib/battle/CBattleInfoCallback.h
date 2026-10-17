@@ -25,6 +25,7 @@
 #include "BattleDisplacementCause.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../spells/SpellCostBreakdown.h"
+#include "../bonuses/Bonus.h"
 
 class CGHeroInstance;
 class CStack;
@@ -122,6 +123,9 @@ class DLL_LINKAGE CBattleInfoCallback : public virtual CBattleInfoEssentials
 {
 public:
 
+	/// Empty for invalid, absent or hidden sides. Provider dispatch occurs only
+	/// after visibility admission; projected providers must not use native values.
+	TConstBonusListPtr battleGetHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked = false) const;
 	/// Battle snapshot only; never falls back to world or installed settings.
 	std::optional<newHorizonsCreatures::CreatureCategoryView> battleGetCreatureCategory(CreatureID creature) const;
 	/// Whether a living, actual defensive tower is controlled by the saved Fortification Engineer perk.
@@ -482,6 +486,15 @@ public:
 	/// find free hex suitable to place new unit. If no initial position was provided, hex located on left size (attacker) or right side (defender) will be selected
 	BattleHex getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos = {}) const override;
 protected:
+	/// Internal damage-calculation authority, preserving the caller's EXISTING
+	/// supplied-owner decision. Does not expose concealed hero lists/policy.
+	virtual int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
+		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const;
+	static int forwardHeroCommandCoefficient(const CBattleInfoCallback & source, const JsonNode & effect,
+		const CGHeroInstance & hero, int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent);
+	int heroOrderCoefficient(const JsonNode & formula, const CGHeroInstance * hero,
+		const HeroOrderState * orderState, uint32_t recipient, bool scaleLucky = true) const;
+	virtual TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const;
 	bool battleCanShootActionWithoutCounterBatteryRestriction(const battle::Unit * attacker, const BattleHex & dest) const;
 	heroCommands::TargetRejection battleFocusFireTargetRejection(BattleSide side, HeroCommand command,
 		uint32_t targetUnitId) const;

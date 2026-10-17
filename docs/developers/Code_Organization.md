@@ -109,16 +109,30 @@ boundaries are the acceptance criteria.
 
 ### Inventory and growth-check tooling
 
-Use an isolated Linux x86-64 CPython 3.14 environment for the pinned parsers:
+Use an isolated Linux x86-64 CPython 3.15 environment for the pinned parsers.
+Set `NH_PYTHON` explicitly to its verified absolute interpreter before running
+these commands; no system Python alias or private prebuilt wheel is required.
+A C compiler and the matching Python development headers must be available:
 
 ```sh
-"$NH_PYTHON" -m pip install --require-hashes --only-binary=:all: -r tools/ci/source_organization_requirements.txt
+"$NH_PYTHON" -I -B -m pip install --require-hashes --only-binary=:all: -r tools/ci/source_organization_build_requirements.txt
+"$NH_PYTHON" -I -B -m pip install --require-hashes --no-build-isolation --no-binary=tree-sitter \
+  --only-binary=tree-sitter-cpp,tree-sitter-lua,tree-sitter-java,tree-sitter-javascript,tree-sitter-objc,tree-sitter-bash \
+  -r tools/ci/source_organization_requirements.txt
 "$NH_PYTHON" tools/ci/source_organization.py inventory --output "$NH_REPORT"
 "$NH_PYTHON" tools/ci/source_organization.py check --base-ref "$NH_BASE_REVISION"
 ```
 
-Set `NH_PYTHON` to the verified absolute interpreter, `NH_REPORT` to a local
-report destination and `NH_BASE_REVISION` to the reviewed comparison commit.
+The core `tree-sitter` pin has no CPython 3.15 wheel: pip authenticates its source
+archive before building locally with the separately hash-pinned build tools and
+build isolation disabled. The six grammar packages remain binary-only ABI3
+wheels with unchanged hashes. The requirements retain the CPython 3.14 core
+wheel hash for compatibility; the source hash is not a hash of the locally built
+wheel. Fresh CI bootstraps from these public pinned artifacts, not a private
+wheel cache. Parser versions and growth-baseline semantics are unchanged.
+
+Set `NH_REPORT` to a local report destination and `NH_BASE_REVISION` to the
+reviewed comparison commit.
 The comparison commit must already contain the baseline; bootstrap review is
 not a normal growth-check bypass. Inventory/proposal commands measure debt but
 never approve it. Diagnostic `--include-untracked` is explicit and cannot be

@@ -8,10 +8,18 @@
  *
  */
 #include "StdInc.h"
+#include "../bonuses/NativeBonusGraphAccess.h"
+#include "../bonuses/NativeBonusGraphAdmission.h"
 #include "NewHorizonsHeroicSpirit.h"
 #include "NewHorizonsDivineMandate.h"
 #include "NewHorizonsIronWill.h"
 #include "BattleInfo.h"
+#include "RoundBonusDuration.h"
+#include "StackEffectRemoval.h"
+#include "FocusFireQueries.h"
+#include "UnitAdditionRules.h"
+#include "UnitUpdateAdmission.h"
+#include "UnitTransitionSidecars.h"
 #include "../entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "../entities/creature/NewHorizonsMusterRules.h"
 #include "NewHorizonsWarcasting.h"
@@ -56,20 +64,6 @@
 
 namespace
 {
-bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second)
-{
-	if(!first || !second)
-		return false;
-	for(const auto & firstHex : first->getHexes())
-	{
-		if(!firstHex.isValid())
-			continue;
-		for(const auto & secondHex : second->getHexes())
-			if(secondHex.isValid() && BattleHex::getDistance(firstHex, secondHex) == 1)
-				return true;
-	}
-	return false;
-}
 
 
 std::optional<SpellID> entangleSpellId()
@@ -370,12 +364,10 @@ void BattleInfo::recordBloodrageStackDeath(uint32_t unitId)
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto & state = sides.at(side);
-		const bool firstBlood = newHorizonsBloodrage::hasFirstBlood(getSideHero(side));
-		firstBloodSelected |= firstBlood;
-		const int increments = newHorizonsBloodrage::deathIncrementCount(!bloodrageFirstBloodUsed,
-			eliteOrChampion, firstBlood, newHorizonsBloodrage::hasSlayer(getSideHero(side)));
-		state.bloodrageDamagePercent = std::min(state.bloodrageCapPercent,
-			state.bloodrageDamagePercent + increments * newHorizonsBloodrage::incrementForRank(state.bloodrageRank));
+		const auto grant = newHorizonsBloodrage::deathGrant(getSideHero(side), !bloodrageFirstBloodUsed,
+			eliteOrChampion, state.bloodrageRank, state.bloodrageCapPercent, state.bloodrageDamagePercent);
+		firstBloodSelected |= grant.firstBloodSelected;
+		state.bloodrageDamagePercent = grant.damagePercent;
 	}
 	// A capped grant still spends First Blood; revived stacks never restore it.
 	bloodrageFirstBloodUsed |= firstBloodSelected;
@@ -609,7 +601,7 @@ void BattleInfo::expireSeparatedHeroOrderProtect()
 			continue;
 		const auto * protector = getStack(static_cast<int>(state->primaryTargetUnitId), false);
 		const auto * ward = getStack(static_cast<int>(state->secondaryTargetUnitId), false);
-		if(!protector || !ward || !protector->alive() || !ward->alive() || !orderUnitsAdjacent(protector, ward))
+		if(battle::protectOrderIsSeparated(protector, ward))
 			state->protectBroken = true;
 	}
 }
@@ -1517,13 +1509,7 @@ void BattleInfo::nextRound()
 		sides.at(side).warcastingState = sides.at(side).warcastingState.clearedIfExpired(round);
 	}
 
-	const auto plagueMarker = Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(SpellID(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)))))
-		.And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER));
-	// Plague's three-round countdown is advanced only after its end-of-stack-turn
-	// tick, so a cast made after the target already acted still receives all three
-	// scheduled ticks instead of expiring at the next round boundary.
-	const auto roundTimedEffects = CSelector(Bonus::NTurns).And(plagueMarker.Not());
+	const auto roundTimedEffects = battle::roundTimedBonuses();
 	std::vector<uint32_t> expiringBattleForms;
 	for(auto & s : stacks)
 	{
@@ -1533,17 +1519,7 @@ void BattleInfo::nextRound()
 		// new turn effects
 		if(!isFirstRound && !s->isTimeStopped())
 		{
-			const auto preserveBeneficial = newHorizonsSorcery::spellLockPreservesBeneficial(*s);
-			if(newHorizonsSorcery::isSpellLocked(*s) && preserveBeneficial.has_value())
-			{
-				const auto preservedMagic = CSelector([preserveBeneficial](const Bonus * bonus)
-				{
-					return newHorizonsSorcery::isPreservedSpellLockEffect(bonus, *preserveBeneficial);
-				});
-				s->reduceBonusDurations(roundTimedEffects.And(preservedMagic.Not()));
-			}
-			else
-				s->reduceBonusDurations(roundTimedEffects);
+			s->reduceBonusDurations(battle::roundTimedBonusesFor(*s, roundTimedEffects));
 		}
 
 		s->afterNewRound(isFirstRound, true, formPaused);
@@ -1858,33 +1834,13 @@ bool BattleInfo::hasRebirthOutputOriginalHPState() const
 
 void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 {
-	if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE) && id != nextUnitId())
-		throw std::runtime_error("Invalid New Horizons targeted unit allocation");
-	battle::UnitInfo info;
-	info.load(id, data);
-	if(info.rebirthOriginalAggregateHP < 0)
-		throw std::runtime_error("Invalid Rebirth output original HP");
-	if(info.phantomIntegrity < 0 || info.phantomDuration < 0
-		|| ((info.phantomIntegrity == 0) != (info.phantomDuration == 0)))
-		throw std::runtime_error("Invalid Phantom Army spawn profile");
-	if(info.phantomIntegrity > 0
-		&& (info.count <= 0 || !info.summoned || info.natureSummoned
-			|| !newHorizonsSorcery::phantomArmyDurationSupported(info.phantomDuration)))
-		throw std::runtime_error("Invalid Phantom Army spawn profile");
-	if(info.rebirthOriginalAggregateHP > 0
-		&& (info.count <= 0 || !info.type.hasValue() || !info.type.toCreature()
-			|| !info.summoned || info.natureSummoned || info.phantomIntegrity > 0))
-		throw std::runtime_error("Invalid Rebirth output spawn metadata");
+	const auto info = battle::decodeUnitAddition(id, data, heroCommandRules, stacks.size());
 	if(info.rebirthOriginalAggregateHP > 0)
 	{
-		if(info.side != BattleSide::ATTACKER && info.side != BattleSide::DEFENDER)
-			throw std::runtime_error("Invalid Rebirth output side");
+		battle::validateRebirthAdditionSide(info);
 		const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
 			getSideArmy(info.side), info.type, getSidePlayer(info.side), info.side);
-		if(effectiveMaxHP <= 0
-			|| info.count > std::numeric_limits<int64_t>::max() / effectiveMaxHP
-			|| info.rebirthOriginalAggregateHP > static_cast<int64_t>(info.count) * effectiveMaxHP)
-			throw std::runtime_error("Rebirth output original HP exceeds its aggregate capacity");
+		battle::validateUnitAdditionCapacity(info, effectiveMaxHP);
 	}
 
 	CStackBasicDescriptor base(info.type, info.count);
@@ -1908,16 +1864,8 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 		stacks.back()->initializePhantomProfile(info.phantomIntegrity, info.phantomDuration);
 	const auto * orderState = sides.at(info.side).findOrder(HeroCommand::RIPOSTE);
 	const auto * hero = battleGetFightingHero(info.side);
-	if(orderState && orderState->issuedRound == round
-		&& hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE))
-	{
-		auto * addedUnit = stacks.back().get();
-		if(addedUnit->alive() && !addedUnit->isGhost() && !addedUnit->isTurret()
-			&& !addedUnit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-			&& addedUnit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
-			&& !newHorizonsOffense::hasVengeanceRetaliationBonus(addedUnit))
-			addedUnit->addNewBonus(std::make_shared<Bonus>(newHorizonsOffense::vengeanceRetaliationBonus()));
-	}
+	if(battle::unitAdditionNeedsVengeance(*stacks.back(), orderState, round, hero))
+		stacks.back()->addNewBonus(std::make_shared<Bonus>(newHorizonsOffense::vengeanceRetaliationBonus()));
 	stacks.back()->nodeHasChanged();
 }
 
@@ -1965,105 +1913,6 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 	nodeHasChanged();
 }
 
-void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta)
-{
-	CStack * changedStack = getStack(id, false);
-	if(!changedStack)
-		throw std::runtime_error("Invalid unit id in BattleInfo update");
-	if(changedStack->isTimeStopped() && healthDelta != 0)
-	{
-		logNetwork->warn("Ignoring health update of Time Stop unit %d", id);
-		return;
-	}
-	if(changedStack->isTimeStopped())
-	{
-		// UnitChanges also carries a serialized state.  A stopped unit cannot
-		// move, wait, defend, cast, or otherwise mutate activation state; the
-		// authoritative flow advances it with a no-op instead.  Reject all
-		// external state updates until the marker is released.
-		logNetwork->warn("Ignoring state update of Time Stop unit %d", id);
-		return;
-	}
-
-	if(!changedStack->alive() && healthDelta > 0)
-	{
-		//checking if we resurrect a stack that is under a living stack
-		auto accessibility = getAccessibility();
-
-		if(!accessibility.accessible(changedStack->getPosition(), changedStack))
-		{
-			logNetwork->error("Cannot resurrect %s because hex %d is occupied!", changedStack->nodeName(), changedStack->getPosition());
-			return; //position is already occupied
-		}
-	}
-
-	bool killed = (-healthDelta) >= changedStack->getAvailableHealth();//todo: check using alive state once rebirth will be handled separately
-
-	bool resurrected = !changedStack->alive() && healthDelta > 0;
-
-	//applying changes
-	changedStack->load(data);
-	expireSeparatedHeroOrderProtect();
-
-
-	if(healthDelta < 0)
-	{
-		changedStack->removeBonusesRecursive(Bonus::UntilBeingAttacked);
-	}
-
-	if(healthDelta < 0)
-	{
-		changedStack->nodeHasChanged();	//bonuses with TIMES_STACK_SIZE updater may change
-	}
-
-	resurrected = resurrected || (killed && changedStack->alive());
-
-	if(killed)
-	{
-		if(changedStack->cloneID >= 0)
-		{
-			//remove clone as well
-			CStack * clone = getStack(changedStack->cloneID);
-			if(clone)
-				clone->makeGhost();
-
-			changedStack->cloneID = -1;
-		}
-	}
-
-	if(resurrected || killed)
-	{
-		//removing all spells effects
-		auto selector = [](const Bonus * b)
-		{
-			//Special case: persistent effects, such as DISRUPTING_RAY, survive death
-			return b->source == BonusSource::SPELL_EFFECT && !b->sid.as<SpellID>().toSpell()->isPersistent();
-		};
-		changedStack->removeBonusesRecursive(selector);
-	}
-
-	if(!changedStack->alive() && changedStack->isClone())
-	{
-		for(auto & s : stacks)
-		{
-			if(s->cloneID == changedStack->unitId())
-				s->cloneID = -1;
-		}
-	}
-	if(!changedStack->alive())
-	{
-		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		{
-			auto extraActivation = sides.at(side).reducedExtraActivation;
-			if(extraActivation.activeUnitId != id)
-				continue;
-			extraActivation.activeUnitId = ReducedExtraActivationState::INVALID_UNIT_ID;
-			extraActivation.outputPercent = 100;
-			sides.at(side).reducedExtraActivation = extraActivation;
-		}
-	}
-}
-
 void BattleInfo::removeUnit(uint32_t id)
 {
 	std::set<uint32_t> ids;
@@ -2105,12 +1954,7 @@ void BattleInfo::removeUnit(uint32_t id)
 	}
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		auto extraActivation = sides.at(side).reducedExtraActivation;
-		if(extraActivation.activeUnitId != id)
-			continue;
-		extraActivation.activeUnitId = ReducedExtraActivationState::INVALID_UNIT_ID;
-		extraActivation.outputPercent = 100;
-		sides.at(side).reducedExtraActivation = extraActivation;
+		battle::clearReducedActivationForUnit(sides.at(side).reducedExtraActivation, id);
 	}
 	expireSeparatedHeroOrderProtect();
 }
@@ -2133,6 +1977,7 @@ battle::BattleEffectSnapshot BattleInfo::captureBattleEffects(uint32_t id) const
 
 void BattleInfo::exchangeBattleEffects(const battle::BattleEffectExchange & exchange)
 {
+	NativeBonusGraphMutation nativeMutation;
 	exchange.validateShape();
 	for(const auto & endpoint : exchange.endpoints)
 		if(!battle::exactBattleEffectSnapshotEqual(captureBattleEffects(endpoint.id), endpoint.expected))
@@ -2284,16 +2129,7 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 		auto selector = [one](const Bonus * b)
 		{
-			//compare everything but turnsRemain, limiter and propagator
-			return one.duration == b->duration
-			&& one.type == b->type
-			&& one.subtype == b->subtype
-			&& one.source == b->source
-			&& one.val == b->val
-			&& one.sid == b->sid
-			&& one.valType == b->valType
-			&& one.effectRange == b->effectRange
-			&& (one.type != BonusType::CONFUSION_PENDING || one.spellCasterOwner == b->spellCasterOwner);
+			return battle::matchesStackEffectRemoval(one, *b);
 		};
 		const auto confusionMarkers = sta->getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
 		const bool removesConfusion = std::ranges::any_of(*confusionMarkers, [&](const auto & marker)
@@ -2407,10 +2243,7 @@ void BattleInfo::clearPendingTimeStopHeroAction(BattleSide side)
 
 uint32_t BattleInfo::nextUnitId() const
 {
-	if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE)
-		&& stacks.size() > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
-		throw std::runtime_error("New Horizons targeted unit identities exhausted");
-	return static_cast<uint32_t>(stacks.size());
+	return battle::nextUnitAdditionId(stacks.size(), heroCommandRules);
 }
 
 void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd)
@@ -2694,26 +2527,7 @@ void BattleInfo::validateFocusFireStates() const
 		}
 		else if(canonicalOrderRules && state.activeOrder != HeroCommand::NONE)
 			throw std::runtime_error("Missing New Horizons canonical Order state");
-		const bool focusFireOrderExists = state.findOrder(HeroCommand::FOCUS_FIRE) != nullptr;
-		const bool focusFireOrderExpected = canonicalOrderRules
-			? focusFireOrderExists : state.activeOrder == HeroCommand::FOCUS_FIRE;
-		if(state.focusFire.has_value() != focusFireOrderExpected)
-			throw std::runtime_error("Inconsistent New Horizons Focus Fire order state");
-		if(!state.focusFire)
-			continue;
-		const auto & mark = *state.focusFire;
-		mark.validateShape();
-		if(!heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE)
-			|| !getSideHero(side) || !state.findOrder(HeroCommand::FOCUS_FIRE)
-			|| mark.issuedRound != state.findOrder(HeroCommand::FOCUS_FIRE)->issuedRound
-			|| !battleGetUnitByID(mark.targetUnitId))
-			throw std::runtime_error("Invalid New Horizons Focus Fire battle context");
-		for(auto id : mark.recipientUnitIds)
-		{
-			// Ghosts and changed controllers are valid retained, possibly inactive references.
-			if(!battleGetUnitByID(id))
-				throw std::runtime_error("Invalid New Horizons Focus Fire recipient reference");
-		}
+		focusFireQueries::validateMarkContext(*this, side, state, canonicalOrderRules);
 	}
 }
 

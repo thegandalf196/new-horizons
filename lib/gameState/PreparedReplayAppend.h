@@ -12,6 +12,8 @@
 
 struct BattleUnitsChanged;
 class CGameState;
+class PreparedClientBattleReplay;
+namespace battle { class PreparedBattleWorldCommit; }
 
 /// Storage phase only: caller retains exclusive world/log/packet ownership until
 /// consumption. Does not apply units or authorize publication. Snapshot provider
@@ -22,18 +24,32 @@ class CGameState;
 /// owner alone does not invalidate the source, but never copies the token.
 class DLL_LINKAGE PreparedReplayAppend final
 {
+public:
+	using Records = std::vector<std::vector<std::byte>>;
+	enum class RecordingMode { WHEN_CONFIGURED, UNCONDITIONAL };
+private:
+	friend class battle::PreparedBattleWorldCommit;
+	friend class PreparedClientBattleReplay;
+	void exchangePreparedStorage() noexcept;
 	ReplayLog & owner;
 	std::shared_ptr<const unsigned char> stamp;
-	std::vector<std::byte> encoded;
+	std::shared_ptr<const unsigned char> retiredStamp;
+	Records encoded;
 	std::vector<ReplayChapter> firstChapters;
+	bool configured = false;
 	bool recording = false;
 	bool opensChapter = false;
 	bool consumed = false;
+	void reservePacks(size_t count);
 
 public:
 	using SnapshotProvider = std::function<std::vector<std::byte>()>;
 	PreparedReplayAppend(ReplayLog & log, const BattleUnitsChanged & pack,
 		uint32_t day, const SnapshotProvider & snapshot);
+	/// Preencoded records under ONE reservation. Capture a real pre-packet
+	/// snapshot BEFORE encoding when writers can mutate their private input.
+	PreparedReplayAppend(ReplayLog & log, Records records, uint32_t day,
+		const SnapshotProvider & snapshot, RecordingMode mode);
 	PreparedReplayAppend(const PreparedReplayAppend &) = delete;
 	PreparedReplayAppend & operator=(const PreparedReplayAppend &) = delete;
 	PreparedReplayAppend(PreparedReplayAppend &&) = delete;

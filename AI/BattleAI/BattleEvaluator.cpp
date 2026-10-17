@@ -12,6 +12,15 @@
 #include "BattleEvaluator.h"
 #include "BattleEvaluatorProjection.h"
 #include "HeroSpellExpectedValueProjection.h"
+#include "HeroPurifyProjection.h"
+#include "HeroTargetHeuristicProjection.h"
+#include "HeroOrderCandidates.h"
+#include "CanonicalOrderValue.h"
+#include "BattleDamageValue.h"
+#include "HeroOrderCandidateRules.h"
+#include "HeroActionAdmission.h"
+#include "HeroActionUtility.h"
+#include "HeroActionContinuation.h"
 #include "BattleExchangeVariant.h"
 
 #include "StackWithBonuses.h"
@@ -1615,146 +1624,15 @@ float counterspellThreatValue(const CBattleInfoCallback & battle, BattleSide sid
 
 namespace
 {
-constexpr HeroCommand riposteCommand()
-{
-	return HeroCommand::RIPOSTE;
-}
+using heroOrderCandidates::riposteCommand;
+using heroOrderCandidates::braceCommand;
+using heroOrderCandidates::protectCommand;
+using heroOrderCandidates::flankCommand;
+using heroOrderCandidates::secondWindCommand;
+using heroOrderCandidates::isEligibleOrderUnit;
+using heroOrderCandidates::commandTargetIsLegal;
 
-constexpr HeroCommand braceCommand()
-{
-	return HeroCommand::BRACE;
-}
-
-constexpr HeroCommand protectCommand()
-{
-	return HeroCommand::PROTECT;
-}
-
-constexpr HeroCommand flankCommand()
-{
-	return HeroCommand::FLANK;
-}
-
-constexpr HeroCommand secondWindCommand()
-{
-	return HeroCommand::SECOND_WIND;
-}
-
-bool isEligibleOrderUnit(const CBattleInfoCallback & battle, BattleSide side,
-	const battle::Unit * unit)
-{
-	return unit && unit->alive() && !unit->isGhost() && unit->isValidTarget()
-		&& battle.battleGetOwner(unit) == battle.sideToPlayer(side)
-		&& !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
-}
-
-bool adjacentForProtect(const battle::Unit * first, const battle::Unit * second)
-{
-	if(!first || !second || !first->getPosition().isValid() || !second->getPosition().isValid())
-		return false;
-	for(const auto & firstHex : first->getHexes())
-		for(const auto & secondHex : second->getHexes())
-			if(BattleHex::getDistance(firstHex, secondHex) <= 1)
-				return true;
-	return false;
-}
-
-/// A value-only fallback for older snapshots and for runtime APIs that expose
-/// only the ordinary one-target query.  It is intentionally conservative: the
-/// authoritative callback remains the final arbiter before an action is sent.
-template <typename Battle>
-std::vector<std::vector<uint32_t>> orderTargetOptions(const Battle & battle,
-	BattleSide side, HeroCommand command)
-{
-	std::vector<std::vector<uint32_t>> result;
-
-	// Canonical runtime builds validate the complete target tuple (including the
-	// Protector/Ward ordering and round eligibility) through this snapshot API.
-	// Enumerate only the small candidate identity set exposed by the callback;
-	// never infer authority from local geometry or activation flags.
-	if constexpr(requires { battle.battlePrepareHeroOrderState(side, command, std::vector<uint32_t>{}); })
-	{
-		// The method is present on every current callback, including legacy
-		// targeted-command snapshots.  Only the canonical ruleset gives it
-		// authority; legacy Focus Fire still uses its scalar validator below.
-		const bool canonicalRules = battle.getBattle()
-			&& heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules());
-		if(canonicalRules)
-		{
-			const auto candidates = battle.battleGetHeroCommandTargets(side, command);
-			if(command == protectCommand())
-			{
-				for(const auto protector : candidates)
-					for(const auto ward : candidates)
-						if(protector != ward && battle.battlePrepareHeroOrderState(side, command, {protector, ward}))
-							result.push_back({protector, ward});
-			}
-			else
-			{
-				for(const auto targetId : candidates)
-					if(battle.battlePrepareHeroOrderState(side, command, {targetId}))
-						result.push_back({targetId});
-			}
-			return result;
-		}
-	}
-
-	if(command == protectCommand())
-	{
-		const auto units = battle.battleGetAllUnits(false);
-		for(size_t i = 0; i < units.size(); ++i)
-		{
-			if(!isEligibleOrderUnit(battle, side, units[i]))
-				continue;
-			for(size_t j = 0; j < units.size(); ++j)
-			{
-				if(i != j && isEligibleOrderUnit(battle, side, units[j]) && adjacentForProtect(units[i], units[j]))
-					result.push_back({units[i]->unitId(), units[j]->unitId()});
-			}
-		}
-		return result;
-	}
-
-	// The existing callback already returns authoritative Focus Fire targets;
-	// the runtime extension uses the same shape for Flank and Second Wind.
-	for(const auto targetId : battle.battleGetHeroCommandTargets(side, command))
-		result.push_back({targetId});
-	return result;
-}
-
-template <typename Battle>
-bool commandTargetIsLegal(const Battle & battle, BattleSide side, HeroCommand command,
-	const std::vector<uint32_t> & targetIds)
-{
-	if(targetIds.empty())
-		return battle.battleCanUseHeroCommand(side, command);
-
-	if constexpr(requires { battle.battlePrepareHeroOrderState(side, command, targetIds); })
-	{
-		if(battle.getBattle() && heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
-			return battle.battlePrepareHeroOrderState(side, command, targetIds).has_value();
-	}
-	if constexpr(requires { battle.battleGetHeroCommandTargetOptions(side, command); })
-	{
-		for(const auto & option : battle.battleGetHeroCommandTargetOptions(side, command))
-			if(std::vector<uint32_t>(option.begin(), option.end()) == targetIds)
-				return true;
-		return false;
-	}
-	else if constexpr(requires { battle.battleCanConfirmHeroCommand(side, command, targetIds); })
-		return battle.battleCanConfirmHeroCommand(side, command, targetIds);
-	else if(targetIds.size() == 1)
-		return battle.battleCanConfirmHeroCommand(side, command, targetIds.front());
-	else
-		// Protect's pair legality is checked atomically by the new server API.
-		// No pair must be sent from a legacy callback that cannot validate it.
-		return false;
-}
-
-float averageOrderDamage(const DamageEstimation & damage)
-{
-	return static_cast<float>(std::max<int64_t>(0, damage.damage.min + damage.damage.max) / 2);
-}
+using battleDamageValue::averageOrderDamage;
 
 /// Values one immediately available direct attack from the chosen landing.
 /// This intentionally omits full-battle rollouts and movement/path simulation;
@@ -3127,359 +3005,54 @@ float canonicalOrderBaseHeuristic(const CBattleInfoCallback & battle, BattleSide
 	std::optional<int> focusFireSnapshotPercent, const Environment * environment,
 	DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> realBattle)
 {
-	const auto perspective = battle.battleGetMySide();
-	const bool heroKnown = perspective == BattleSide::ALL_KNOWING || perspective == side;
-	const auto * hero = heroKnown ? battle.battleGetFightingHero(side) : nullptr;
-	const auto units = battle.battleGetAllUnits(false);
-	const auto ownPlayer = battle.sideToPlayer(side);
-	std::vector<const battle::Unit *> ownUnits;
-	std::vector<const battle::Unit *> enemyUnits;
-	for(const auto * unit : units)
-	{
-		if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret())
-			continue;
-		if(battle.battleGetOwner(unit) == ownPlayer)
-			ownUnits.push_back(unit);
-		else
-			enemyUnits.push_back(unit);
-	}
+	heroOrderValue::CanonicalOrderValue valuation(battle, side, command, targetIds);
+	const auto direct = valuation.directValue(focusFireSnapshotPercent, environment, realBattle);
+	if(direct.direct)
+		return *direct.direct;
 
-	const auto & commandRules = battle.getBattle()->getHeroCommandRules()["commands"];
-	const bool combinedArmsEnabled = hero
-		&& heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
-		&& heroCommands::hasCombinedArms(hero);
-	const auto round = battle.battleGetRound();
-	const auto orderAllowance = battle.battleGetOrderActionAllowance(side);
-	const auto preparedOrder = hero
-		? battle.battlePrepareHeroOrderState(side, command, targetIds)
-		: std::optional<HeroOrderState>();
-	const int warcastingBonus = hero && orderAllowance
-		&& orderAllowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO
-		&& newHorizonsWarcasting::enabled(battle.getBattle()->getMagicRules())
-		? newHorizonsWarcasting::orderBonus(hero, battle.getBattle()->getWarcastingState(side), round) : 0;
-	const int divineMandateEfficiencyBonusPercent = preparedOrder
-		? preparedOrder->divineMandateEfficiencyBonusPercent() : 0;
-	const auto coefficient = [&](const char * commandKey, const char * effectKey)
+	float incoming = 0.0f;
+	for(const auto * own : valuation.ownUnits)
+		for(const auto * enemy : valuation.enemyUnits)
+			if(enemy->isMeleeAttacker())
+				incoming = std::max(incoming, valuation.meleeDamage(enemy, own));
+	float value = incoming * direct.holdPercent / 100.0f;
+	const bool hasIronDiscipline = valuation.hero && valuation.hero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
+		newHorizonsIronDiscipline::PERK);
+	const bool hasHoldFast = newHorizonsDiscipline::hasHoldFast(valuation.hero);
+	const auto prepared = (hasIronDiscipline || hasHoldFast)
+		? battle.battlePrepareHeroOrderState(side, command, {}) : std::optional<HeroOrderState>();
+	if(hasIronDiscipline)
 	{
-		const auto & formula = commandRules[commandKey]["effects"][effectKey];
-		return static_cast<float>(hero ? heroCommands::coefficient(formula, *hero, warcastingBonus,
-			divineMandateEfficiencyBonusPercent)
-			: heroCommands::coefficient(formula, 0, 0));
-	};
-	const auto meleeDamage = [&](const battle::Unit * attackerUnit, const battle::Unit * defenderUnit)
-	{
-		if(!attackerUnit || !defenderUnit || !attackerUnit->isMeleeAttacker())
-			return 0.0f;
-		return averageOrderDamage(battle.battleEstimateDamage(
-			BattleAttackInfo(attackerUnit, defenderUnit, 0, false)));
-	};
-	const auto anyDamage = [&](const battle::Unit * attackerUnit, const battle::Unit * defenderUnit)
-	{
-		if(!attackerUnit || !defenderUnit)
-			return 0.0f;
-		const bool shooting = battle.battleCanShoot(attackerUnit, defenderUnit->getPosition());
-		return averageOrderDamage(battle.battleEstimateDamage(
-			BattleAttackInfo(attackerUnit, defenderUnit, 0, shooting)));
-	};
-	const auto bestOwnMeleeDamage = [&](const battle::Unit * defenderUnit)
-	{
-		float best = 0.0f;
-		for(const auto * unit : ownUnits)
-			best = std::max(best, meleeDamage(unit, defenderUnit));
-		return best;
-	};
-	const auto bestEnemyMeleeDamage = [&](const battle::Unit * defenderUnit)
-	{
-		float best = 0.0f;
-		for(const auto * unit : enemyUnits)
-			best = std::max(best, meleeDamage(unit, defenderUnit));
-		return best;
-	};
-	const auto sumOwnMeleeDamage = [&]
-	{
-		float total = 0.0f;
-		for(const auto * own : ownUnits)
+		// Use the exact saved reduction that issuing Hold would snapshot.  The
+		// prepare query is read-only.  Threat estimation uses only public basic
+		// enemy-hero presence, visible allied health and visible creature spells.
+		if(prepared && prepared->holdMagicalReductionBasisPoints > 0)
 		{
-			float best = 0.0f;
-			for(const auto * enemy : enemyUnits)
-				best = std::max(best, meleeDamage(own, enemy));
-			total += best;
+			const auto visibleCreatureThreat = visibleCreatureSpellThreat(valuation.enemyUnits, true);
+			const auto publicHeroThreat = publicEnemyHeroSpellThreat(battle, side, valuation.ownUnits);
+			const auto magicalThreat = std::max(visibleCreatureThreat, publicHeroThreat);
+			value += magicalThreat * static_cast<float>(prepared->holdMagicalReductionBasisPoints) / 10000.0f;
 		}
-		return total;
-	};
-	const auto ownMeleePotential = sumOwnMeleeDamage();
-	if(command == HeroCommand::FOCUS_FIRE && targetIds.size() == 1)
-	{
-		const auto * target = battle.battleGetUnitByID(targetIds.front());
-		if(!target || !target->alive() || battle.battleGetOwner(target) == battle.sideToPlayer(side))
-			return 0.0f;
-		// The prepared snapshot is shared with the runtime, so Combined Arms uses
-		// precisely half of the Order's ranged coefficient (not a recomputed
-		// shooter-only extension such as Target Caller).
-		const auto rangedPercent = focusFireSnapshotPercent.value_or(
-			static_cast<int>(coefficient("focusFire", "rangedDamagePercent")));
-		const auto combinedArmsMeleePercent = combinedArmsEnabled
-			? static_cast<float>(heroCommands::combinedArmsFocusFirePercent(rangedPercent, *hero)) : 0.0f;
-		float potential = 0.0f;
-		for(const auto * unit : ownUnits)
-		{
-			if(!unit->willMove(0))
-				continue;
-			const bool canReceiveRangedBonus = unit->isShooter() && !unit->isTurret()
-				&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-				&& battle.battleCanShoot(unit, target->getPosition());
-			const float rangedValue = canReceiveRangedBonus
-				? anyDamage(unit, target) * static_cast<float>(rangedPercent) / 100.0f : 0.0f;
-			const bool canReceiveMeleeBonus = combinedArmsMeleePercent > 0.0f
-				&& isEligibleOrderUnit(battle, side, unit)
-				&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
-				&& unit->isMeleeAttacker();
-			const float meleeValue = canReceiveMeleeBonus
-				? meleeDamage(unit, target) * combinedArmsMeleePercent / 100.0f : 0.0f;
-			// A stack chooses one attack mode during its activation.  If a shooter
-			// can also make a melee attack, value the better Focus Fire benefit rather
-			// than counting the same stack twice.
-			potential += std::max(rangedValue, meleeValue);
-		}
-		return potential;
 	}
-	const auto chargePercent = coefficient("charge", "meleeDamagePercent");
-	const auto holdPercent = coefficient("holdTheLine", "damageReductionPercent");
-	const auto riposteReduction = coefficient("riposte", "meleeDamageReductionPercent");
-	const auto riposteDamage = coefficient("riposte", "retaliationDamagePercent");
-	const auto braceDamage = coefficient("brace", "preemptiveDamagePercent");
-	const auto protectReduction = coefficient("protect", "interceptedDamageReductionPercent");
-	const auto flankDamage = coefficient("flank", "meleeDamagePercent");
-	const auto & flankFormula = commandRules["flank"]["effects"]["meleeDamagePercent"];
-	const auto combinedArmsRangedPercent = combinedArmsEnabled
-		? static_cast<float>(heroCommands::combinedArmsFlankPercent(flankFormula, *hero, warcastingBonus,
-			divineMandateEfficiencyBonusPercent))
-		: 0.0f;
-
-	if(command == HeroCommand::CHARGE)
+	if(hasHoldFast && prepared && environment && realBattle)
 	{
-		const bool canCharge = std::any_of(ownUnits.begin(), ownUnits.end(), [](const auto * unit)
+		auto holdFastPreview = std::make_shared<HypotheticBattle>(environment, realBattle);
+		for(const auto & anchor : prepared->anchors)
 		{
-			return unit->isMeleeAttacker() && unit->getMovementRange(0) >= 3;
-		});
-		return canCharge ? ownMeleePotential * chargePercent / 100.0f : 0.0f;
-	}
-
-	if(command == HeroCommand::HOLD_THE_LINE)
-	{
-		float incoming = 0.0f;
-		for(const auto * own : ownUnits)
-			for(const auto * enemy : enemyUnits)
-				if(enemy->isMeleeAttacker())
-					incoming = std::max(incoming, meleeDamage(enemy, own));
-		float value = incoming * holdPercent / 100.0f;
-		const bool hasIronDiscipline = hero && hero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
-			newHorizonsIronDiscipline::PERK);
-		const bool hasHoldFast = newHorizonsDiscipline::hasHoldFast(hero);
-		const auto prepared = (hasIronDiscipline || hasHoldFast)
-			? battle.battlePrepareHeroOrderState(side, command, {}) : std::optional<HeroOrderState>();
-		if(hasIronDiscipline)
-		{
-			// Use the exact saved reduction that issuing Hold would snapshot.  The
-			// prepare query is read-only.  Threat estimation uses only public basic
-			// enemy-hero presence, visible allied health and visible creature spells.
-			if(prepared && prepared->holdMagicalReductionBasisPoints > 0)
-			{
-				const auto visibleCreatureThreat = visibleCreatureSpellThreat(enemyUnits, true);
-				const auto publicHeroThreat = publicEnemyHeroSpellThreat(battle, side, ownUnits);
-				const auto magicalThreat = std::max(visibleCreatureThreat, publicHeroThreat);
-				value += magicalThreat * static_cast<float>(prepared->holdMagicalReductionBasisPoints) / 10000.0f;
-			}
-		}
-		if(hasHoldFast && prepared && environment && realBattle)
-		{
-			auto holdFastPreview = std::make_shared<HypotheticBattle>(environment, realBattle);
-			for(const auto & anchor : prepared->anchors)
-			{
-				const auto * unit = battle.battleGetUnitByID(anchor.unitId);
-				if(!unit || !unit->alive() || unit->isGhost()
-					|| battle.battleGetOwner(unit) != ownPlayer
-					|| unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-					|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
-					|| unit->unaffectedByMorale() || battle.battleGetMorale(unit) >= 0)
-					continue;
-				auto projected = holdFastPreview->getForUpdate(unit->unitId());
-				projected->addUnitBonus(std::vector<Bonus>{
-					newHorizonsDiscipline::holdFastMoraleFloorBonus()});
-				value += holdFastMoraleGrantValue(battle, unit, projected.get(), damageCache, holdFastPreview);
-			}
-		}
-		return value;
-	}
-
-	if(command == riposteCommand())
-	{
-		float incoming = 0.0f;
-		float retaliation = 0.0f;
-		float vengeanceRetaliation = 0.0f;
-		static const auto firstStrikeSelector = Selector::typeSubtype(
-			BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
-			.Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
-		for(const auto * own : ownUnits)
-			for(const auto * enemy : enemyUnits)
-			{
-				if(!enemy->isMeleeAttacker())
-					continue;
-				const BattleAttackInfo incomingAttack(enemy, own, 0, false);
-				DamageEstimation retaliationEstimate;
-				const auto incomingEstimate = battle.battleEstimateDamage(incomingAttack, &retaliationEstimate);
-				incoming = std::max(incoming, averageOrderDamage(incomingEstimate));
-				retaliation = std::max(retaliation, averageOrderDamage(retaliationEstimate));
-				if(hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE)
-					&& isEligibleOrderUnit(battle, side, own)
-					&& own->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
-					&& !own->hasBonusOfType(BonusType::UNLIMITED_RETALIATIONS)
-					&& !own->isTimeStopped()
-					&& !own->hasBonusOfType(BonusType::NO_RETALIATION)
-					&& !enemy->hasBonusOfType(BonusType::BLOCKS_RETALIATION)
-					&& !enemy->isInvincible()
-					&& !battle.isLongWeaponAttack(enemy, own)
-					&& battle.isMeleeAttackPossible(enemy, own)
-					&& (!battle.battleShroudDeniesRetaliation(incomingAttack)
-						|| own->hasBonus(firstStrikeSelector))
-					&& !newHorizonsOffense::hasVengeanceRetaliationBonus(own))
-				{
-					// Vengeance supplies the charge that ableToRetaliate() would otherwise
-					// reject after a spent counter. Mirror the engine's non-ammunition
-					// restrictions above, then estimate from detached post-hit states.
-					const auto estimateExtraCounter = [&](int64_t projectedDamage)
-					{
-						auto projectedOwn = own->acquireState();
-						projectedOwn->damage(projectedDamage);
-						if(!projectedOwn->alive())
-							return DamageEstimation();
-						BattleAttackInfo extraRetaliation(projectedOwn.get(), enemy, 0, false);
-						extraRetaliation.retaliation = true;
-						return battle.battleEstimateDamage(extraRetaliation);
-					};
-					const auto counterAfterMinimumDamage = estimateExtraCounter(incomingEstimate.damage.min);
-					const auto counterAfterMaximumDamage = estimateExtraCounter(incomingEstimate.damage.max);
-					DamageEstimation projectedRetaliation;
-					projectedRetaliation.damage.min = std::min(counterAfterMinimumDamage.damage.min,
-						counterAfterMaximumDamage.damage.min);
-					projectedRetaliation.damage.max = std::max(counterAfterMinimumDamage.damage.max,
-						counterAfterMaximumDamage.damage.max);
-					projectedRetaliation.kills.min = std::min(counterAfterMinimumDamage.kills.min,
-						counterAfterMaximumDamage.kills.min);
-					projectedRetaliation.kills.max = std::max(counterAfterMinimumDamage.kills.max,
-						counterAfterMaximumDamage.kills.max);
-					vengeanceRetaliation = std::max(vengeanceRetaliation,
-						averageOrderDamage(projectedRetaliation));
-				}
-			}
-		const float extraRetaliation = vengeanceRetaliation * (100.0f + riposteDamage) / 100.0f;
-		return incoming * riposteReduction / 100.0f
-			+ retaliation * riposteDamage / 100.0f + extraRetaliation;
-	}
-
-	if(command == braceCommand())
-	{
-		float advancingDamage = 0.0f;
-		for(const auto * enemy : enemyUnits)
-			if(enemy->isMeleeAttacker() && enemy->getMovementRange(0) >= 3)
-				for(const auto * own : ownUnits)
-					// Brace is a pre-emptive blow by the defending friendly stack,
-					// not a multiplier on the advancing enemy's own attack.
-					advancingDamage = std::max(advancingDamage, meleeDamage(own, enemy));
-		const auto resolvedBraceDamage = newHorizonsCombatSkills::bracePreemptivePercent(braceDamage, hero);
-		return advancingDamage * resolvedBraceDamage / 100.0f;
-	}
-
-	if(command == protectCommand() && targetIds.size() == 2)
-	{
-		const auto * protector = battle.battleGetUnitByID(targetIds[0]);
-		const auto * ward = battle.battleGetUnitByID(targetIds[1]);
-		if(!isEligibleOrderUnit(battle, side, protector) || !isEligibleOrderUnit(battle, side, ward))
-			return 0.0f;
-		return bestEnemyMeleeDamage(ward) * protectReduction / 100.0f;
-	}
-
-	if(command == flankCommand() && targetIds.size() == 1)
-	{
-		const auto * target = battle.battleGetUnitByID(targetIds.front());
-		if(!target || !target->alive() || battle.battleGetOwner(target) == battle.sideToPlayer(side))
-			return 0.0f;
-		const bool targetCanBeFlanked = !battle.battleHasFormationFightingProtection(target);
-		// Estimate the immediate opportunity from allied melee stacks that have not
-		// acted yet. The authoritative attack path records exact sides as attacks
-		// resolve; this projection reads current contacts only and never mutates them.
-		uint8_t availableSides = 0;
-		for(const auto * unit : ownUnits)
-		{
-			if(!targetCanBeFlanked || !unit->isMeleeAttacker() || !unit->willMove(0))
-				continue;
-			availableSides |= battle.battleHeroOrderFlankSide(unit, target);
-		}
-		int distinctSides = 0;
-		for(auto bits = availableSides; bits; bits &= static_cast<uint8_t>(bits - 1))
-			++distinctSides;
-		const int additionalSides = std::max(0, distinctSides - 1);
-		const int additionalSidePercent = battle.battleHeroOrderFlankAdditionalSidePercent(
-			side, warcastingBonus, divineMandateEfficiencyBonusPercent);
-		const auto meleeOrderValue = targetCanBeFlanked
-			? bestOwnMeleeDamage(target) * (flankDamage + additionalSides * additionalSidePercent) / 100.0f
-			: 0.0f;
-		if(combinedArmsRangedPercent <= 0.0f)
-			return meleeOrderValue;
-
-		const battle::Unit * bestMeleeAttacker = nullptr;
-		float bestMeleeDamage = 0.0f;
-		for(const auto * unit : ownUnits)
-		{
-			const auto value = meleeDamage(unit, target);
-			if(value > bestMeleeDamage)
-			{
-				bestMeleeDamage = value;
-				bestMeleeAttacker = unit;
-			}
-		}
-		float rangedOpportunity = 0.0f;
-		float overlappingMeleeAttackerRangedOpportunity = 0.0f;
-		for(const auto * unit : ownUnits)
-		{
-			if(!isEligibleOrderUnit(battle, side, unit)
+			const auto * unit = battle.battleGetUnitByID(anchor.unitId);
+			if(!unit || !unit->alive() || unit->isGhost()
+				|| battle.battleGetOwner(unit) != valuation.ownPlayer
+				|| unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
 				|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
-				|| !unit->willMove(0) || !newHorizonsArchery::isOrdinaryPhysicalShooter(unit)
-				|| !battle.battleCanShoot(unit, target->getPosition()))
+				|| unit->unaffectedByMorale() || battle.battleGetMorale(unit) >= 0)
 				continue;
-			const auto opportunity = anyDamage(unit, target) * combinedArmsRangedPercent / 100.0f;
-			if(unit == bestMeleeAttacker)
-				overlappingMeleeAttackerRangedOpportunity = opportunity;
-			else
-				rangedOpportunity += opportunity;
+			auto projected = holdFastPreview->getForUpdate(unit->unitId());
+			projected->addUnitBonus(std::vector<Bonus>{
+				newHorizonsDiscipline::holdFastMoraleFloorBonus()});
+			value += holdFastMoraleGrantValue(battle, unit, projected.get(), damageCache, holdFastPreview);
 		}
-		// The leading melee attacker cannot both shoot and strike in the same
-		// activation. Preserve its existing melee valuation and only add ranged
-		// value where that alternative is better; other shooters remain separate
-		// future attacks.
-		rangedOpportunity += std::max(0.0f,
-			overlappingMeleeAttackerRangedOpportunity - meleeOrderValue);
-		return meleeOrderValue + rangedOpportunity;
 	}
-
-	if(command == secondWindCommand() && targetIds.size() == 1)
-	{
-		const auto * target = battle.battleGetUnitByID(targetIds.front());
-		const bool canonicalRules = heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules());
-		const bool hasSpentActivation = target
-			&& (target->moved(0) || (canonicalRules && target->defended()));
-		if(!isEligibleOrderUnit(battle, side, target) || !hasSpentActivation)
-			return 0.0f;
-		float extraAttack = 0.0f;
-		for(const auto * enemy : enemyUnits)
-			extraAttack = std::max(extraAttack, anyDamage(target, enemy));
-		const auto directDamagePercent = hero
-			? static_cast<float>(heroCommands::secondWindPercent(*hero, warcastingBonus,
-				divineMandateEfficiencyBonusPercent)) : 50.0f;
-		return extraAttack * directDamagePercent / 100.0f;
-	}
-
-	return 0.0f;
+	return value;
 }
 
 float sharedPurposeMoraleValue(const CBattleInfoCallback & battle,
@@ -3570,8 +3143,9 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	{
 		auto preview = std::make_shared<HypotheticBattle>(environment, realBattle);
 		const auto allowance = preview->prepareHeroOrderAllowance(side);
-		if(allowance && preview->beginProjectedHeroAction(side, *allowance)
-			&& preview->projectAcceptedHeroOrder(side, command, targetIds, *allowance))
+		const auto effects = allowance
+			? preview->beginProjectedHeroOrder(side, command, targetIds, *allowance) : std::nullopt;
+		if(effects && preview->projectAcceptedHeroOrder(side, *effects, *allowance))
 			baseValue += sharedPurposeMoraleValue(battle, preview, side, damageCache);
 	}
 	const auto prepared = battle.battlePrepareHeroOrderState(side, command, targetIds);
@@ -5329,86 +4903,22 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			}
 		}
 	}
-	// Authoritative queries decide whether an Order allowance is available.
-	// Possessing a Spell Action must not hide a separate legal Order Action.
-	// Side-wide Orders use the authoritative availability query.  Targeted Orders
-	// are enumerated through the callback's legal target-set query, with no local
-	// guess about action budget, ownership, or current-round state.
-	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
-		riposteCommand(), braceCommand()})
+	class OrderValuation final : public heroOrderCandidates::Valuation
 	{
-		const auto battleView = cb->getBattle(battleID);
-		if(battleView->battleCanUseHeroCommand(side, command))
+		const Environment * environment;
+		DamageCache & cache;
+	public:
+		OrderValuation(const Environment * environment, DamageCache & cache)
+			: environment(environment), cache(cache)
 		{
-			PossibleSpellcast candidate;
-			candidate.command = command;
-			if(heroCommands::isCanonicalRules(battleView->getBattle()->getHeroCommandRules()))
-			{
-				candidate.commandHeuristicValue = canonicalOrderHeuristic(
-					*battleView, side, command, {}, std::nullopt, env.get(), damageCache, battleView);
-				if(!mandatoryOrder && candidate.commandHeuristicValue <= 0.0f)
-					continue;
-			}
-			possibleCasts.push_back(candidate);
 		}
-	}
-	for(auto command : {HeroCommand::FOCUS_FIRE, protectCommand(), flankCommand(), secondWindCommand()})
-	{
-		for(const auto & targetIds : orderTargetOptions(*cb->getBattle(battleID), side, command))
+		float score(const heroOrderCandidates::ValuationRequest & request) const override
 		{
-			if(!commandTargetIsLegal(*cb->getBattle(battleID), side, command, targetIds))
-				continue;
-			const auto battleView = cb->getBattle(battleID);
-
-			PossibleSpellcast candidate;
-			candidate.command = command;
-			candidate.commandTargets = targetIds;
-			if(command == HeroCommand::FOCUS_FIRE)
-			{
-				if(targetIds.size() != 1)
-					continue;
-				candidate.focusFire = cb->getBattle(battleID)->battlePrepareFocusFireState(side, targetIds.front());
-				if(!candidate.focusFire)
-					continue;
-				const auto & recipients = candidate.focusFire->recipientUnitIds;
-				const bool hasRemainingShooter = std::any_of(recipients.begin(), recipients.end(), [&](uint32_t id)
-				{
-					const auto * unit = battleView->battleGetUnitByID(id);
-					return unit && unit->willMove(0) && unit->canShoot();
-				});
-				const bool canonicalRules = heroCommands::isCanonicalRules(
-					battleView->getBattle()->getHeroCommandRules());
-				// This is the evaluator's own side. Combined Arms may admit a living
-				// melee recipient even when no ordinary shooter remains; legacy
-				// snapshots retain their historical shooter-only candidate filter.
-				const auto * ownHero = canonicalRules ? battleView->battleGetFightingHero(side) : nullptr;
-				const bool hasRemainingCombinedArmsMelee = canonicalRules
-					&& heroCommands::hasCombinedArms(ownHero)
-					&& std::any_of(recipients.begin(), recipients.end(), [&](uint32_t id)
-					{
-						const auto * unit = battleView->battleGetUnitByID(id);
-						return isEligibleOrderUnit(*battleView, side, unit)
-							&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
-							&& unit->willMove(0) && unit->isMeleeAttacker();
-					});
-				if(!hasRemainingShooter && !hasRemainingCombinedArmsMelee)
-					continue;
-				candidate.commandHeuristicValue = canonicalOrderHeuristic(
-					*battleView, side, command, targetIds, candidate.focusFire->rangedDamagePercent,
-					env.get(), damageCache, battleView);
-				if(!mandatoryOrder && candidate.commandHeuristicValue <= 0.0f)
-					continue;
-			}
-			else
-			{
-				candidate.commandHeuristicValue = canonicalOrderHeuristic(
-					*battleView, side, command, targetIds, std::nullopt, env.get(), damageCache, battleView);
-				if(!mandatoryOrder && candidate.commandHeuristicValue <= 0.0f)
-					continue;
-			}
-			possibleCasts.push_back(std::move(candidate));
+			return canonicalOrderHeuristic(*request.battle, request.side, request.command,
+				request.targets, request.focusFirePercent, environment, cache, request.battle);
 		}
-	}
+	} orderValuation(env.get(), damageCache);
+	heroOrderCandidates::appendOrders(possibleCasts, *cb, battleID, side, mandatoryOrder, orderValuation);
 	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
 	if(possibleCasts.empty())
 		return false;
@@ -5493,52 +5003,21 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
 				const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
 					? cachedAttack.score : 0.0f;
-				std::optional<HypotheticBattle::ProjectedSpellAllowance> spellAllowance;
-				std::optional<HypotheticBattle::ProjectedOrderAllowance> orderAllowance;
-				HypotheticBattle::ProjectedCounterspellOutcome counterspell;
-				bool counterspellNegated = false;
+				heroActionProjection::Admission admission;
+				std::optional<HypotheticBattle::ProjectedOrderContinuation> orderContinuation;
+				const auto & spellAllowance = admission.spellAllowance;
+				const auto & orderAllowance = admission.orderAllowance;
+				const auto & counterspell = admission.counterspell;
+				const auto & counterspellNegated = admission.counterspellNegated;
 				uint32_t targetId = std::numeric_limits<uint32_t>::max();
 				std::vector<uint32_t> sharedPurposeSpellRecipients;
 				size_t verdantPrisonDendroidStackCount = 0;
 
-				if(ps.command == HeroCommand::NONE)
+				admission = heroActionProjection::admitCandidate(*state, side, ps);
+				if(!admission.admitted)
 				{
-					spellAllowance = state->prepareHeroSpellAllowance(side, ps.spell->getId(),
-						ps.metamagicFollowup, ps.metamagicGrand);
-					if(!spellAllowance)
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					if(!state->beginProjectedHeroAction(side, *spellAllowance))
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					counterspell = state->resolveProjectedCounterspell(side, ps.spell);
-					if(!counterspell.resolutionKnown || !counterspell.negated.has_value())
-					{
-						// The armed ward is public, but the opposing hero's mana and
-						// Countermage perk may be hidden from this player's callback.
-						// Do not invent either a successful or failed Counterspell result.
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					counterspellNegated = *counterspell.negated;
-				}
-				else
-				{
-					orderAllowance = state->prepareHeroOrderAllowance(side);
-					if(!orderAllowance)
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					if(!state->beginProjectedHeroAction(side, *orderAllowance))
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
+					ps.value = std::numeric_limits<float>::lowest();
+					continue;
 				}
 				if(ps.command == HeroCommand::NONE && !counterspellNegated
 					&& newHorizonsDivineMandate::needsRecipientCapture(hero)
@@ -5609,83 +5088,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = baseline + sanctuaryValue * scoreEvaluator.getPositiveEffectMultiplier();
 					continue;
 				}
-				// Purify's selected source groups are action metadata rather than a
-				// BattleCast variant. Apply those exact groups to the detached unit
-				// snapshots before valuing the accepted Hero Action; never mutate the
-				// live callback state during candidate evaluation.
+				// Purify projects exactly its selected groups on detached snapshots.
 				if(ps.command == HeroCommand::NONE && isCanonicalPurify(ps.spell)
 					&& ps.spellPurifyHeuristicValue > 0.0f)
 				{
-					std::map<uint32_t, std::vector<SpellID>> groupsByUnit;
-					std::set<uint32_t> physicalPoisonUnits;
-					std::set<uint32_t> selectedUnits;
-					for(const auto & [unitId, sourceSpell] : ps.spellPurifyChoices)
-					{
-						const auto id = static_cast<uint32_t>(unitId);
-						groupsByUnit[id].push_back(sourceSpell);
-						selectedUnits.insert(id);
-					}
-					for(const auto unitId : ps.spellPurifyPhysicalTargets)
-					{
-						const auto id = static_cast<uint32_t>(unitId);
-						physicalPoisonUnits.insert(id);
-						selectedUnits.insert(id);
-					}
-					const bool applyPurifyingMandate = ps.divineMandateFollowup
-						&& newHorizonsDivineMandate::hasPurifyingMandatePerk(hero);
-
-					bool selectionProjected = !selectedUnits.empty();
-					for(const auto id : selectedUnits)
-					{
-						auto projectedUnit = state->getForUpdate(id);
-						if(!projectedUnit || !projectedUnit->alive())
-						{
-							selectionProjected = false;
-							break;
-						}
-						const auto foundGroups = groupsByUnit.find(id);
-						bool removesMagicalSpellGroup = false;
-						if(foundGroups != groupsByUnit.end())
-							for(const auto sourceSpell : foundGroups->second)
-							{
-								if(sourceSpell == newHorizonsPurify::physicalPoisonChoiceID())
-								{
-									if(!newHorizonsPurify::hasPhysicalPoison(projectedUnit.get()))
-										selectionProjected = false;
-									continue;
-								}
-								if(newHorizonsPurify::spellEffectGroupBonuses(projectedUnit.get(), sourceSpell).empty())
-								{
-									selectionProjected = false;
-									continue;
-								}
-								removesMagicalSpellGroup = newHorizonsPurify::isMagicalSpellEffectGroup(
-									projectedUnit.get(), sourceSpell) || removesMagicalSpellGroup;
-							}
-						if(physicalPoisonUnits.contains(id)
-							&& !newHorizonsPurify::hasPhysicalPoison(projectedUnit.get()))
-							selectionProjected = false;
-						if(!selectionProjected)
-							break;
-
-						const auto groups = foundGroups == groupsByUnit.end()
-							? std::vector<SpellID>{} : foundGroups->second;
-						if(!projectedUnit->applyPurifySelection(groups, physicalPoisonUnits.contains(id),
-							applyPurifyingMandate && removesMagicalSpellGroup))
-						{
-							selectionProjected = false;
-							break;
-						}
-					}
-
-					if(!selectionProjected
-						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients)
-						|| counterspellNegated)
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + ps.spellPurifyHeuristicValue;
+					heroSpellProjection::projectPurifySelection(ps, *state, hero, side, baseline,
+						counterspell, counterspellNegated, spellAllowance, sharedPurposeSpellRecipients, targetId);
 					continue;
 				}
 				// Shadow Gift's immediate sacrifice is a real cost, but its value is in
@@ -5707,19 +5115,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(ps.command == HeroCommand::NONE && isCanonicalHydrasVitality(ps.spell)
 					&& ps.spellPlacementHeuristicValue > 0.0f)
 				{
-					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					targetId = ps.dest.front().unitValue->unitId();
-					if(counterspellNegated
-						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + ps.spellPlacementHeuristicValue;
+					heroSpellProjection::projectTargetHeuristic(ps,
+						heroSpellProjection::HydraRegenerationForecast{ps.spellPlacementHeuristicValue},
+						*state, side, baseline, counterspell, counterspellNegated, spellAllowance,
+						sharedPurposeSpellRecipients, targetId);
 					continue;
 				}
 				// Blink has no deterministic landing at cast time. Preserve its exact
@@ -5728,19 +5127,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(ps.command == HeroCommand::NONE && isCanonicalChaosBlink(ps.spell)
 					&& ps.spellPlacementHeuristicValue > 0.0f)
 				{
-					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
-					targetId = ps.dest.front().unitValue->unitId();
-					if(counterspellNegated
-						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + ps.spellPlacementHeuristicValue;
+					heroSpellProjection::projectTargetHeuristic(ps,
+						heroSpellProjection::BlinkLandingForecast{ps.spellPlacementHeuristicValue},
+						*state, side, baseline, counterspell, counterspellNegated, spellAllowance,
+						sharedPurposeSpellRecipients, targetId);
 					continue;
 				}
 				// Canonical delayed spells such as Land Mine, Fire Wall, and Plague may
@@ -5786,26 +5176,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellSoulChainDelayedValue;
-					continue;
-				}
-				// Contextual Orders have no faithful projection in the old
-				// hypothetical-battle model: targeted Orders and trigger/relationship
-				// state carry more information than ordinary unit bonuses.  Their
-				// deterministic read-only value was computed while enumerating the
-				// authoritative legal target set.  Keep that score intact so they
-				// still compete with spells and normal attacks.
-				if(ps.command != HeroCommand::NONE
-					&& (ps.commandHeuristicValue > 0.0f || mandatoryOrder))
-				{
-					// An Order consumes the hero's exchange but does not replace the
-					// unit action that follows it.  Keep the normal best-action score
-					// in the candidate value so contextual Orders compete on the same
-					// scale as spells and ordinary attacks rather than being treated as
-					// a small, standalone bonus.
-					if(!state->projectAcceptedHeroOrder(side, ps.command, ps.commandTargets, *orderAllowance))
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + ps.commandHeuristicValue;
 					continue;
 				}
 
@@ -5902,27 +5272,29 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						continue;
 					}
 				}
-				else if(ps.command == HeroCommand::FOCUS_FIRE)
-				{
-					state->setFocusFireState(side, ps.focusFire.value());
-				}
 				else
 				{
-					const auto effects = heroCommands::bonuses(state->getHeroCommandRules(), ps.command, *hero);
-					for(const auto * unit : state->battleGetAllStacks(true))
+					if(admission.legacyOrder)
 					{
-						if(state->battleGetOwner(unit) != playerID)
+						if(!state->projectAcceptedHeroOrder(side, ps.command, ps.commandTargets, *orderAllowance))
+						{
+							ps.value = std::numeric_limits<float>::lowest();
 							continue;
-						if(unit->alive() && !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
-							state->addUnitBonus(unit->unitId(), effects);
+						}
 					}
-				}
-
-				if(ps.command != HeroCommand::NONE
-					&& !state->projectAcceptedHeroOrder(side, ps.command, ps.commandTargets, *orderAllowance))
-				{
-					ps.value = std::numeric_limits<float>::lowest();
-					continue;
+					else
+					{
+						// Install the native pre-action snapshot, not a second locally
+						// reconstructed bonus set or an aggregate raw-HP utility prior.
+						if(!admission.orderEffects || !state->projectAcceptedHeroOrder(
+							side, *admission.orderEffects, *orderAllowance))
+						{
+							ps.value = std::numeric_limits<float>::lowest();
+							continue;
+						}
+						orderContinuation = state->projectOrderContinuation(side, *orderAllowance,
+							*admission.orderEffects);
+					}
 				}
 
 				// Removed sacrifice victims must remain in the health accounting below.
@@ -5950,7 +5322,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				const bool slowFamily = ps.spell
 					&& newHorizonsMagic::spellVariantBase(state->getMagicRules(), ps.spell->getId()) == SpellID::SLOW;
 
-				auto needFullEval = ps.command == HeroCommand::FOCUS_FIRE
+				auto needFullEval = ps.command != HeroCommand::NONE
 					|| state->hasObstacleChanges() || state->hasWallChanges()
 					|| vstd::contains_if(allUnits, [&](const battle::Unit * u) -> bool
 					{
@@ -5991,16 +5363,20 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					entangleMovementValue = movementThreat * applicationChance;
 				}
 
-				if(cachedAttack.ap && cachedAttack.waited)
+				if(cachedAttack.ap && cachedAttack.waited
+					&& (!orderContinuation || orderContinuation->actor == activeStack->unitId()))
 				{
 					state->makeWait(activeStack);
 				}
 
-				float stackActionScore = 0;
-				float damageToHostilesScore = sharedPurposeMoraleValue(*battleCallback, state, side, innerCache)
-					* scoreEvaluator.getPositiveEffectMultiplier();
-				float damageToFriendliesScore = 0;
-				float initiativeEffectScore = 0;
+				heroActionUtility::AbsoluteContinuationUtility continuation{0};
+				auto & stackActionScore = continuation.value;
+				heroActionUtility::ImmediateSignedUtility immediate{
+					sharedPurposeMoraleValue(*battleCallback, state, side, innerCache)
+						* scoreEvaluator.getPositiveEffectMultiplier(), 0, 0};
+				auto & damageToHostilesScore = immediate.toHostiles;
+				auto & damageToFriendliesScore = immediate.toFriendlies;
+				auto & initiativeEffectScore = immediate.initiative;
 				float projectedDebuffScore = 0;
 				float projectedCrusadeBonusScore = 0;
 				if(isCanonicalRegeneration(ps.spell, state->getBattle()->getMagicRules()))
@@ -6094,47 +5470,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(isCanonicalNatureEntangle(ps.spell))
 					damageToHostilesScore += entangleMovementValue
 						* scoreEvaluator.getPositiveEffectMultiplier();
-				const auto modelActive = state->getForUpdate(activeStack->unitId());
-				if(modelActive->alive() && (needFullEval || !cachedAttack.ap))
-				{
-#if BATTLE_TRACE_LEVEL >= 1
-					logAi->trace("Full evaluation: movement range/position changed or no cached attack.");
-#endif
-
-					PotentialTargets innerTargets(modelActive.get(), innerCache, state);
-					BattleExchangeEvaluator innerEvaluator(state, env, strengthRatio, simulationTurnsCount);
-
-					innerEvaluator.updateReachabilityMap(state);
-
-					auto moveTarget = innerEvaluator.findMoveTowardsUnreachable(modelActive.get(), innerTargets, innerCache, state);
-
-					if(!innerTargets.possibleAttacks.empty())
-					{
-						auto newStackAction = innerEvaluator.findBestTarget(modelActive.get(), innerTargets, innerCache, state);
-
-						stackActionScore = std::max(moveTarget.score, newStackAction.score);
-					}
-					else
-					{
-						stackActionScore = moveTarget.score;
-					}
-				}
-				else if(modelActive->alive())
-				{
-					auto updatedAttacker = state->getForUpdate(cachedAttack.ap->attack.attacker->unitId());
-					auto updatedDefender = state->getForUpdate(cachedAttack.ap->attack.defender->unitId());
-					auto updatedBai = BattleAttackInfo(
-						updatedAttacker.get(),
-						updatedDefender.get(),
-						cachedAttack.ap->attack.chargeDistance,
-						cachedAttack.ap->attack.shooting);
-
-					auto updatedAttack = AttackPossibility::evaluate(updatedBai, cachedAttack.ap->from, innerCache, state, cachedAttack.ap->perfectMoment);
-
-					BattleExchangeEvaluator innerEvaluator(scoreEvaluator);
-
-					stackActionScore = innerEvaluator.evaluateExchange(updatedAttack, cachedAttack.turn, *targets, innerCache, state);
-				}
+				// Future Hero choices and native-only activation outcomes remain
+				// explicit unvalued knowledge in orderContinuation. Both actions
+				// use the same existing approximate unit-exchange model here.
+				const auto modelActor = orderContinuation
+					? orderContinuation->actor.value() : activeStack->unitId();
+				const auto modelActive = state->getForUpdate(modelActor);
+				heroActionUtility::evaluateContinuation(continuation, modelActive, needFullEval,
+					cachedAttack, innerCache, state, env, strengthRatio, simulationTurnsCount,
+					scoreEvaluator, targets.get());
 				for(const auto & unit : allUnits)
 				{
 					if(!unit->isValidTarget(true) && !vstd::contains(healthOfStack, unit->unitId()))
@@ -6272,61 +5616,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 					if(oldHealth != newHealth)
 					{
-						if(state->isElementalRebirthSpawn(unit->unitId()) && oldHealth == 0
-							&& newHealth > 0 && unit->unitType())
-						{
-							// Elemental Rebirth is a newly-created temporary stack, but unlike
-							// generic magical summons it replaces destroyed army strength. Keep
-							// its score in the existing creature-value / exact-HP scale.
-							const auto maxHealth = std::max<int64_t>(1, unit->getMaxHealth());
-							const float spawnValue = static_cast<float>(newHealth)
-								* static_cast<float>(unit->unitType()->getAIValue())
-								/ static_cast<float>(maxHealth);
-							const bool ourUnit = state->battleGetOwner(unit) == playerID;
-							damageToHostilesScore += ourUnit ? spawnValue : -spawnValue;
+						const auto healthUtility = heroActionUtility::accumulateHealthDelta(
+							{nullptr, original, unit, oldHealth, newHealth, phantomArmyStack},
+							ps, playerID, innerCache, state, scoreEvaluator, immediate);
+						if(!healthUtility)
 							continue;
-						}
-
-						auto damage = std::abs(oldHealth - newHealth);
-						auto originalDefender = original;
-
-						auto dpsReduce = AttackPossibility::calculateDamageReduce(
-							nullptr,
-							originalDefender && originalDefender->alive() ? originalDefender : unit,
-							damage,
-							innerCache,
-							state);
-						const bool ourUnit = state->battleGetOwner(unit) == playerID;
-						const bool goodEffect = newHealth > oldHealth;
-						const bool naturesWrath = ps.spell
-							&& ps.spell->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY;
-						const bool pandemonium = ps.spell
-							&& ps.spell->getJsonKey() == newHorizonsPandemonium::SPELL_KEY;
-						if(original && !goodEffect && (pandemonium
-							|| ((ps.spellStormOfDaggers || naturesWrath) && !ourUnit)))
-						{
-							// Pandemonium also permits friendly resistance. castEval uses
-							// shared damage per recipient but leaves
-							// that random roll out, so value its expected hit probability here.
-							const int resistance = std::clamp(original->magicResistance(), 0, 100);
-							dpsReduce *= 1.0f - static_cast<float>(resistance) / 100.0f;
-						}
-
-						if(ourUnit == goodEffect)
-						{
-							auto isMagical = state->getForUpdate(unit->unitId())->summoned
-								|| unit->isClone()
-								|| unit->isGhost()
-								|| phantomArmyStack;
-
-							if(ourUnit && goodEffect && isMagical && !naturesWrath)
-								continue;
-
-							damageToHostilesScore += dpsReduce * scoreEvaluator.getPositiveEffectMultiplier();
-						}
-						else
-							// discourage AI making collateral damage with spells
-							damageToFriendliesScore -= 4 * dpsReduce * scoreEvaluator.getNegativeEffectMultiplier();
+						const auto dpsReduce = healthUtility->dpsReduce;
 
 #if BATTLE_TRACE_LEVEL >= 1
 						// Ensure ps.dest is not empty before accessing the first element
@@ -6378,14 +5673,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				damageToHostilesScore += projectedCrusadeBonusScore
 					* scoreEvaluator.getPositiveEffectMultiplier();
 
-				if (vstd::isAlmostEqual(stackActionScore, static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE)))
-				{
-					ps.value = damageToFriendliesScore + damageToHostilesScore + initiativeEffectScore;
-				}
-				else
-				{
-				ps.value = stackActionScore + damageToFriendliesScore + damageToHostilesScore + initiativeEffectScore;
-				}
+				ps.value = heroActionUtility::composeAbsoluteUtility(continuation, immediate).value;
 				if(!counterspellNegated && ps.command == HeroCommand::NONE && isHavocStructuralSpell(ps.spell))
 					ps.value += ps.spellPlacementHeuristicValue;
 #if BATTLE_TRACE_LEVEL >= 1

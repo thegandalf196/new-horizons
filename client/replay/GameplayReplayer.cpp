@@ -183,6 +183,7 @@ std::unique_ptr<CMapHandler> GameplayReplayer::beginPass(CClient & client, CGame
 
 void GameplayReplayer::endPass(CClient & client, const std::shared_ptr<CGameState> & state)
 {
+	auto rootRetirement = BattleRootLifetime::retire(state);
 	// windows go first, so that a battle window is gone before the interface it points to
 	ENGINE->windows().setOverlay(nullptr);
 	ENGINE->windows().clear();
@@ -195,7 +196,42 @@ void GameplayReplayer::endPass(CClient & client, const std::shared_ptr<CGameStat
 	ClientSession previous = client.swapSession(std::move(next));
 	previous = ClientSession();
 
+	auto rootMutation = rootRetirement.mutate();
 	state->currentBattles.clear();
+}
+
+static void restoreLiveSession(CClient & client, LiveSessionBackup & backup)
+{
+	std::scoped_lock interfaceLock(ENGINE->interfaceMutex);
+	auto retiringReplay = client.gameStatePtr();
+	auto rootRetirement = BattleRootLifetime::retire(retiringReplay, BattleRootLifetime::RetirementMode::PERMANENT);
+
+	// windows go first, so that a battle window is gone before the interface it points to
+	ENGINE->windows().setOverlay(nullptr);
+	ENGINE->windows().clear();
+	CPlayerInterface::battleInt.reset();
+
+	// dropping the replay session destroys its interfaces and callbacks
+	ClientSession replaySession = client.swapSession(std::move(backup.session));
+	if(replaySession.gamestate)
+	{
+		if(replaySession.gamestate != retiringReplay)
+			throw std::logic_error("Replay retirement owner changed during session restoration");
+		auto rootMutation = rootRetirement.mutate();
+		replaySession.gamestate->currentBattles.clear();
+	}
+	replaySession = ClientSession();
+
+	GAME->swapMapInstance(std::move(backup.mapHandler));
+
+	adventureInt = backup.adventureMap;
+	CPlayerInterface::battleInt = backup.battleInterface;
+	GAME->setInterfaceInstance(backup.playerInterface);
+
+	ENGINE->windows().attachAll(std::move(backup.windows));
+	ENGINE->windows().totalRedraw();
+
+	client.observerMode = false;
 }
 
 void GameplayReplayer::run(ReplaySequence sequence, PlayerColor observer, Options options)
@@ -330,31 +366,7 @@ void GameplayReplayer::run(ReplaySequence sequence, PlayerColor observer, Option
 	// 4. put the live session back. This has to happen even if the replay threw, otherwise the
 	// player would be left looking at a game that no longer exists.
 	if(sessionInstalled)
-	{
-		std::scoped_lock interfaceLock(ENGINE->interfaceMutex);
-
-		// windows go first, so that a battle window is gone before the interface it points to
-		ENGINE->windows().setOverlay(nullptr);
-		ENGINE->windows().clear();
-		CPlayerInterface::battleInt.reset();
-
-		// dropping the replay session destroys its interfaces and callbacks
-		ClientSession replaySession = client.swapSession(std::move(backup.session));
-		if(replaySession.gamestate)
-			replaySession.gamestate->currentBattles.clear();
-		replaySession = ClientSession();
-
-		GAME->swapMapInstance(std::move(backup.mapHandler));
-
-		adventureInt = backup.adventureMap;
-		CPlayerInterface::battleInt = backup.battleInterface;
-		GAME->setInterfaceInstance(backup.playerInterface);
-
-		ENGINE->windows().attachAll(std::move(backup.windows));
-		ENGINE->windows().totalRedraw();
-
-		client.observerMode = false;
-	}
+		restoreLiveSession(client, backup);
 
 	replayState.reset();
 	markFinished();

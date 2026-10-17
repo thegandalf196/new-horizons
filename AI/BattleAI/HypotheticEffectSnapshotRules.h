@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../../lib/bonuses/Bonus.h"
+#include "../../lib/bonuses/RecipientBonusOverlay.h"
 
 #include <set>
 #include <utility>
@@ -19,10 +20,9 @@ namespace battle { class Unit; }
 namespace hypotheticEffectSnapshotRules
 {
 bool hasElementalMemory(const battle::Unit & unit);
-bool isInPhysicalAfflictionGroup(const Bonus * bonus,
-	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory);
-bool isCapturedProjectionEffect(const Bonus * bonus,
-	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory);
+using recipientBonusOverlay::isSnapshotHeroSpecialEffect;
+using recipientBonusOverlay::isInPhysicalAfflictionGroup;
+using recipientBonusOverlay::isCapturedProjectionEffect;
 bool timedProjectionEffect(const Bonus * bonus,
 	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory);
 bool hasTimedMagicalSpellEffects(const IBonusBearer & bearer);

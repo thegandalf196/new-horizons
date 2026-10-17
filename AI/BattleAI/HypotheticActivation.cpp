@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "HypotheticBattle.h"
+#include "InitialExportBattleSubject.h"
+#include "../../lib/battle/RoundBonusDuration.h"
 #include "HypotheticLifecycleTimingScope.h"
 #include "../../lib/battle/BattleForm.h"
 #include "../../lib/battle/CObstacleInstance.h"
@@ -75,6 +77,8 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	}
 	std::vector<uint32_t> pendingRemoval;
 	std::vector<uint32_t> pendingFormRestoration;
+	const auto owned = initialExportSubject();
+	const auto ownedRoundSelector = owned ? battle::roundTimedBonuses() : CSelector();
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{
 		auto forUpdate = getForUpdate(unit->unitId());
@@ -87,7 +91,10 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 		if(!firstRound && !forUpdate->isTimeStopped())
 		{
 			LifecycleTimingScope measurement(timing ? &timing->roundTimedUpdates : nullptr);
-			forUpdate->advanceTimedRound(timing ? &timing->roundTimedWork : nullptr);
+			if(owned)
+				owned->advanceTimedRound(*this, unit->unitId(), ownedRoundSelector);
+			else
+				forUpdate->advanceTimedRound(timing ? &timing->roundTimedWork : nullptr);
 		}
 		forUpdate->afterNewRound(firstRound, true, formPaused);
 		if(forUpdate->ghostPending)
@@ -126,6 +133,8 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 		return spell && spell->turnsRemaining == 0;
 	});
 	obstacleChanges |= previousSize != projectedObstacles.size();
+	if(owned)
+		owned->captureBranchValues(*this);
 }
 
 bool HypotheticBattle::projectEarnedMoraleActivation(uint32_t unitId)
@@ -162,6 +171,10 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	const std::shared_ptr<StackWithBonuses> & unit, BattleUnitTurnReason reason,
 	HypotheticLifecycleTiming * timing)
 {
+	// Owned expiry journals serialize before afterGetsTurn. MORALE is already
+	// the accepted activation reason, so retain its earned receipt with the marker.
+	if(reason == BattleUnitTurnReason::MORALE)
+		unit->hadMorale = true;
 	unit->moraleExtraActivation = getMoraleExtraDamagePercent() != 100 && reason == BattleUnitTurnReason::MORALE;
 	newHorizonsHeroicSpirit::beginActivation(*unit, reason);
 	{
@@ -346,6 +359,8 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 		if(!deferFrozenThaw)
 			unit->removeUnitBonus(newHorizonsFrozen::removalPlan(*unit));
 	}
+	if(const auto owned = initialExportSubject())
+		owned->captureBranchValues(*this);
 }
 
 void HypotheticBattle::makeWait(const battle::Unit * activeStack)
@@ -366,6 +381,8 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 		awardBattlecraftMastery(side, unit->unitId(), round, BattlecraftMasteryAction::WAIT);
 	unit->setActivationMovementBonus(newHorizonsBattlecraft::delayedActivationMovementBonus(
 		battleGetOwnerHero(unit.get()), unit.get(), BattleUnitTurnReason::TURN_QUEUE));
+	if(const auto owned = initialExportSubject())
+		owned->captureBranchValues(*this);
 }
 
 void HypotheticBattle::completeSwiftNormalActivation(uint32_t unitId)

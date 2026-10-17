@@ -1,16 +1,56 @@
 set(battleAI_SRCS
 		AttackPossibility.cpp
+		AttackPreviewHitContext.cpp
+		PreemptiveAttackRequest.cpp
+		BracePrimaryState.cpp
 		BattleAI.cpp
 		BattleEvaluator.cpp
 		BattleEvaluatorSpellCandidates.cpp
 		BattleEvaluatorHeroQueue.cpp
 		HeroSpellExpectedValueProjection.cpp
+		HeroPurifyProjection.cpp
+		HeroTargetHeuristicProjection.cpp
+		CanonicalOrderValue.cpp
+		SecondWindOpportunity.cpp
+		BattleDamageValue.cpp
+		HeroOrderCandidates.cpp
+		HeroActionAdmission.cpp
+		HeroActionUtility.cpp
+		HeroActionContinuation.cpp
+		BracePreemptiveForecast.cpp
+		BraceStagePreparation.cpp
+		HypotheticExportSubject.cpp
+		InitialExportBattleSubject.cpp
+		InitialExportLifecycle.cpp
+		InitialExportSequenceBonuses.cpp
+		InitialExportWorld.cpp
+		InitialExportLegacyMovement.cpp
+		ProjectedHeroBonusQueries.cpp
+		ProjectedHeroCommandCoefficient.cpp
+		AttackCount.cpp
+		VisibleCandidateWorld.cpp
+		SelectedAttackReceipt.cpp
+		LegacyOriginalMeleeSequence.cpp
+		MeleeSequenceSupport.cpp
+		MovementBonusProvenance.cpp
+		OriginalMeleeSequence.cpp
+		ProjectedMeleeExpiry.cpp
+		ProjectedMeleeHit.cpp
+		ProjectedTargetHit.cpp
+		StackBonusApplications.cpp
+		StackInitialExportCache.cpp
+		StackMeleeBonusSource.cpp
+		StackMovementBonusProvenance.cpp
+		StackRecipientBonusOverlay.cpp
 		PossibleSpellcast.cpp
 		PotentialTargets.cpp
 		StackWithBonuses.cpp
 		StackWithBonusesEffects.cpp
 		HypotheticBattle.cpp
 		HypotheticHeroActions.cpp
+		HypotheticOrderActions.cpp
+		HypotheticLegacyOrders.cpp
+		HypotheticOrderContinuation.cpp
 		HypotheticActivation.cpp
 		HypotheticUnitUpdates.cpp
 		HypotheticStrikeProjection.cpp
@@ -25,10 +65,37 @@ set(battleAI_HEADERS
 		StdInc.h
 
 		AttackPossibility.h
+		AttackPreviewHitContext.h
+		PreemptiveAttackRequest.h
+		BracePrimaryState.h
 		BattleAI.h
 		BattleEvaluator.h
 		BattleEvaluatorProjection.h
 		HeroSpellExpectedValueProjection.h
+		HeroPurifyProjection.h
+		HeroTargetHeuristicProjection.h
+		CanonicalOrderValue.h
+		SecondWindOpportunity.h
+		BattleDamageValue.h
+		HeroOrderCandidates.h
+		HeroOrderCandidateRules.h
+		HeroActionAdmission.h
+		BracePreemptiveForecast.h
+		BraceStagePreparation.h
+		HeroActionUtility.h
+		HeroActionContinuation.h
+		HypotheticBonusApplication.h
+		InitialExportBattleSubject.h
+		InitialExportWorld.h
+		AttackCount.h
+		VisibleCandidateWorld.h
+		SelectedAttackReceipt.h
+		MeleeSequenceSupport.h
+		MovementBonusProvenance.h
+		OriginalMeleeSequence.h
+		ProjectedMeleeExpiry.h
+		ProjectedMeleeHit.h
+		ProjectedTargetHit.h
 		PotentialTargets.h
 		PossibleSpellcast.h
 		NewHorizonsHexOfPain.h

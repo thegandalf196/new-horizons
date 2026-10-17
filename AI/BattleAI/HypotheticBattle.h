@@ -24,6 +24,7 @@
 #include "StackWithBonuses.h"
 #include "../../lib/battle/BattleProxy.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
+#include "../../lib/battle/HeroOrderEffects.h"
 #include "../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../lib/battle/ReducedExtraActivationState.h"
 #include "../../lib/battle/SpellResponseState.h"
@@ -31,10 +32,16 @@
 #include "../../lib/battle/PerfectFortuneState.h"
 
 class CSpell;
+class InitialExportBattleSubject;
 
 class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment
 {
+	friend class InitialExportBattleSubject;
 	SeizeInitiativeState seizeInitiative;
+	battle::Units ownedExportUnitsIf(const battle::UnitFilter & predicate) const;
+	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
+		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const override;
+	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 public:
 	const SeizeInitiativeState & getSeizeInitiativeState() const override { return seizeInitiative; }
 	void setSeizeInitiativeState(const SeizeInitiativeState & state) override
@@ -48,6 +55,7 @@ public:
 	const Environment * env;
 
 	HypotheticBattle(const Environment * ENV, Subject realBattle);
+	std::shared_ptr<InitialExportBattleSubject> initialExportSubject() const;
 
 	bool unitHasAmmoCart(const battle::Unit * unit) const override;
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;
@@ -206,12 +214,35 @@ public:
 	std::optional<ProjectedOrderAllowance> prepareHeroOrderAllowance(BattleSide side) const;
 	bool beginProjectedHeroAction(BattleSide side, const ProjectedSpellAllowance & prepared);
 	bool beginProjectedHeroAction(BattleSide side, const ProjectedOrderAllowance & prepared);
+	/// Captures and binds the canonical effects to this branch immediately before cleanup.
+	std::optional<heroCommands::PreparedOrderEffects> beginProjectedHeroOrder(BattleSide side,
+		HeroCommand command, const std::vector<uint32_t> & targets, const ProjectedOrderAllowance & prepared);
+	/// Saved noncanonical Orders bind only their legacy command/target/mark before cleanup.
+	bool beginProjectedLegacyHeroOrder(BattleSide side, HeroCommand command,
+		const std::vector<uint32_t> & targets, const ProjectedOrderAllowance & prepared);
 	bool projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target,
 		bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated,
 		const ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & affectedRecipients = {});
 	bool projectAcceptedHeroOrder(BattleSide side, const ProjectedOrderAllowance & prepared);
 	bool projectAcceptedHeroOrder(BattleSide side, HeroCommand command,
 		const std::vector<uint32_t> & commandTargets, const ProjectedOrderAllowance & prepared);
+	bool projectAcceptedHeroOrder(BattleSide side, const heroCommands::PreparedOrderEffects & effects,
+		const ProjectedOrderAllowance & prepared);
+	struct ProjectedOrderContinuation
+	{
+		enum class Kind { CURRENT_ACTOR, SECOND_WIND_ACTOR, REQUIRES_PROJECTION };
+		Kind kind = Kind::REQUIRES_PROJECTION;
+		std::optional<uint32_t> actor;
+		/// Same unit-exchange horizon as spells; later Hero choices remain intact.
+		bool futureHeroChoicesUnvalued = false;
+		/// Deterministic mainline only; no Luck/Morale distribution was evaluated.
+		bool orderRandomOutcomesUnvalued = false;
+		/// Existing activation rules ran; native obstacle/Rebirth outcomes remain unvalued.
+		bool activationEffectsUnvalued = false;
+	};
+	/// Call once after accepted Order effects, before evaluating the continuation.
+	ProjectedOrderContinuation projectOrderContinuation(BattleSide side,
+		const ProjectedOrderAllowance & prepared, const heroCommands::PreparedOrderEffects & effects);
 	ProjectedCounterspellOutcome resolveProjectedCounterspell(BattleSide casterSide, const CSpell * spell) const;
 	bool projectHeroSpellAllowance(BattleSide side, SpellID spell, uint32_t target,
 		bool metamagicFollowup, bool grand);
@@ -436,6 +467,24 @@ private:
 	BattleSideArray<uint64_t> projectedActionEpochs{};
 	BattleSideArray<std::optional<ProjectedSpellAllowance>> begunProjectedSpellAllowances{};
 	BattleSideArray<std::optional<ProjectedOrderAllowance>> begunProjectedOrderAllowances{};
+	struct BoundProjectedOrderEffects
+	{
+		const HypotheticBattle * owner = nullptr;
+		heroCommands::PreparedOrderEffects effects;
+		std::vector<uint32_t> targets;
+	};
+	BattleSideArray<std::optional<BoundProjectedOrderEffects>> begunProjectedOrderEffects{};
+	struct BoundProjectedLegacyOrder
+	{
+		const HypotheticBattle * owner = nullptr;
+		HeroCommand command = HeroCommand::NONE;
+		std::vector<uint32_t> targets;
+		std::optional<FocusFireState> focusFire;
+	};
+	BattleSideArray<std::optional<BoundProjectedLegacyOrder>> begunProjectedLegacyOrders{};
+	void applyProjectedLegacyHeroOrder(BattleSide side);
+	bool commitProjectedHeroOrder(BattleSide side, const heroCommands::PreparedOrderEffects * effects,
+		const ProjectedOrderAllowance & prepared, HeroCommand legacyCommand = HeroCommand::NONE);
 	bool isCurrentPreparedSpellAction(BattleSide side, const ProjectedSpellAllowance & prepared,
 		bool requireBegun) const;
 	bool isCurrentPreparedOrderAction(BattleSide side, const ProjectedOrderAllowance & prepared,

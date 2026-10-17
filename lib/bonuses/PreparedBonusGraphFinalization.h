@@ -10,8 +10,10 @@
 class ProjectedBonusGraph;
 
 /// Nonrouting final storage transfer for the existing projected operations.
-/// Requires explicit mutable authority for EVERY captured node, including
-/// capacity-only reservation of unchanged nodes. Never casts away constness.
+/// Requires an exact explicit mutable/read-only partition of captured nodes.
+/// Read-only rows retain freshness checks, but cannot change storage or receive
+/// invalidations and never reserve/exchange native containers. No const cast.
+/// Classification is NOT proof of metadata/Bonus immutability or exclusion.
 /// Caller retains all original nodes/shared Bonus pointees and exclusive,
 /// nonreentrant graph access from capture through commit/destruction. This API
 /// creates no lock/world lease and does not enforce external readers' lifetime.
@@ -25,6 +27,8 @@ class DLL_LINKAGE PreparedBonusGraphFinalization final : boost::noncopyable
 {
 public:
 	PreparedBonusGraphFinalization(ProjectedBonusGraph & graph, const TNodesVector & mutableNodes);
+	PreparedBonusGraphFinalization(ProjectedBonusGraph & graph, const TNodesVector & mutableNodes,
+		const TCNodesVector & readOnlyNodes);
 	bool readyToCommit() const noexcept;
 	bool commit() noexcept;
 private:

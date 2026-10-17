@@ -474,7 +474,7 @@ TEST_F(NewHorizonsWarcastingTest, EnchantedCommandAcceptedEmpoweredOrderAndDetac
 	HypotheticBattle projection(&environment, callback);
 	const auto allowance = projection.prepareHeroOrderAllowance(side);
 	ASSERT_TRUE(allowance);
-	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *allowance));
+	ASSERT_TRUE(projection.beginProjectedHeroOrder(side, HeroCommand::CHARGE, {}, *allowance));
 	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, HeroCommand::CHARGE, {}, *allowance));
 	const auto * projected = projection.battleGetUnitByID(attacker->unitId());
 	ASSERT_TRUE(projected->hasBonus(selector));
@@ -538,7 +538,8 @@ TEST_F(NewHorizonsWarcastingTest, EnchantedCommandProtectHasOnlyPairInLiveAndDet
 	HypotheticBattle projection(&environment, callback);
 	const auto allowance = projection.prepareHeroOrderAllowance(side);
 	ASSERT_TRUE(allowance);
-	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *allowance));
+	ASSERT_TRUE(projection.beginProjectedHeroOrder(side, HeroCommand::PROTECT,
+		{attacker->unitId(), ward->unitId()}, *allowance));
 	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, HeroCommand::PROTECT,
 		{attacker->unitId(), ward->unitId()}, *allowance));
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
@@ -572,7 +573,8 @@ TEST_F(NewHorizonsWarcastingTest, EnchantedCommandSecondWindSelectedGrantExpires
 	ASSERT_TRUE(preparedOrder);
 	const auto allowance = projection.prepareHeroOrderAllowance(side);
 	ASSERT_TRUE(allowance);
-	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *allowance));
+	ASSERT_TRUE(projection.beginProjectedHeroOrder(side, HeroCommand::SECOND_WIND,
+		{target->unitId()}, *allowance));
 	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, HeroCommand::SECOND_WIND,
 		{target->unitId()}, *allowance));
 	EXPECT_TRUE(projection.battleGetUnitByID(target->unitId())->hasBonus(selector));
@@ -616,7 +618,8 @@ TEST_F(NewHorizonsWarcastingTest, EnchantedCommandFocusFireIncludesCombinedArmsM
 	HypotheticBattle projection(&environment, callback);
 	const auto allowance = projection.prepareHeroOrderAllowance(side);
 	ASSERT_TRUE(allowance);
-	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *allowance));
+	ASSERT_TRUE(projection.beginProjectedHeroOrder(side, HeroCommand::FOCUS_FIRE,
+		{defender->unitId()}, *allowance));
 	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, HeroCommand::FOCUS_FIRE,
 		{defender->unitId()}, *allowance));
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),

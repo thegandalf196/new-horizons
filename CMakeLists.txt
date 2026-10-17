@@ -1060,14 +1060,13 @@ elseif(MACOS AND NOT ENABLE_MONOLITHIC_INSTALL)
 	if(DEFINED ENV{GITHUB_RUN_ID})
 		set(CPACK_COMMAND_HDIUTIL "/usr/bin/sudo /usr/bin/hdiutil")
 	endif()
-	# CMake code for CPACK_DMG_DS_STORE executed before DS_STORE_SETUP_SCRIPT
-	# So we can keep both enabled and this shouldn't hurt
-	# set(CPACK_DMG_DS_STORE "${CMAKE_SOURCE_DIR}/osx/dmg_DS_Store")
+	# Generate Finder layout metadata during packaging.
+	# Do not require a pre-generated DS_Store from the source tree.
 	set(CPACK_DMG_DS_STORE_SETUP_SCRIPT "${CMAKE_SOURCE_DIR}/osx/DS_Store_Setup.scpt")
 
 	# Always use "VCMI" as volume name so full path will be /Volumes/VCMI/
 	# Otherwise DMG background image wouldn't work
-	# Pre-generated DS_Store use absolute path to background image
+	# Generated Finder aliases use an absolute path to the background image
 	set(CPACK_DMG_VOLUME_NAME "${CMAKE_PROJECT_NAME}")
 
 	include(GetGitRevisionDescription)

@@ -10,8 +10,11 @@
 #include "StdInc.h"
 #include "StackWithBonuses.h"
 #include "HypotheticBattle.h"
+#include "InitialExportBattleSubject.h"
 #include "HypotheticEffectSnapshotRules.h"
+#include "../../lib/bonuses/RecipientBonusOverlay.h"
 #include "../../lib/battle/BattleForm.h"
+#include "../../lib/battle/UnitQueryTerrain.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
@@ -23,7 +26,6 @@
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/CStack.h"
 
-#include <unordered_map>
 
 using hypotheticEffectSnapshotRules::hasElementalMemory;
 using hypotheticEffectSnapshotRules::hasSnapshotHeroSpecialEffects;
@@ -33,51 +35,12 @@ using hypotheticEffectSnapshotRules::isInPhysicalAfflictionGroup;
 
 namespace hypotheticEffectSnapshotRules
 {
-bool isSnapshotHeroSpecialEffect(const Bonus * bonus)
-{
-	if(!bonus || bonus->source != BonusSource::HERO_SPECIAL)
-		return false;
-	// Preserve arrival timers. Inspirational Leader is a separate, unit-local
-	// activation receipt; unrelated HERO_SPECIAL activation bonuses stay lazy.
-	return Bonus::NTurns(bonus)
-		|| (bonus->duration == BonusDuration::STACK_ACTIVATION
-			&& bonus->type == BonusType::PERCENTAGE_DAMAGE_BOOST
-			&& bonus->stacking == "new-horizons:discipline.inspirationalLeader"
-			&& (bonus->subtype == BonusSubtypeID(BonusCustomSubtype::damageTypeMelee)
-				|| bonus->subtype == BonusSubtypeID(BonusCustomSubtype::damageTypeRanged)));
-}
-
-bool projectedEffect(const Bonus * bonus)
-{
-	// Capture only identified unit-local HERO_SPECIAL clocks; upstream auras
-	// and unrelated activation bonuses may have different ownership.
-	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND
-		|| isSnapshotHeroSpecialEffect(bonus)
-		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus)
-		|| newHorizonsDivineMandate::isSharedPurposeMoraleBonus(bonus)
-		|| newHorizonsTraining::isTrainingBonus(bonus)
-		|| newHorizonsSwiftRebirth::isLifecycleMarker(*bonus)
-		|| newHorizonsElementalRebirth::isElementalMemoryBonus(*bonus));
-}
-
 bool hasElementalMemory(const battle::Unit & unit)
 {
 	return unit.hasBonus(CSelector([](const Bonus * bonus)
 	{
 		return bonus && newHorizonsElementalRebirth::isElementalMemoryBonus(*bonus);
 	}));
-}
-
-bool isInPhysicalAfflictionGroup(const Bonus * bonus,
-	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory)
-{
-	return bonus && groupHistory.contains({bonus->source, bonus->sid});
-}
-
-bool isCapturedProjectionEffect(const Bonus * bonus,
-	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory)
-{
-	return projectedEffect(bonus) || isInPhysicalAfflictionGroup(bonus, groupHistory);
 }
 
 bool timedProjectionEffect(const Bonus * bonus,
@@ -103,28 +66,6 @@ bool hasSnapshotHeroSpecialEffects(const IBonusBearer & bearer)
 	return bearer.hasBonus(CSelector(isSnapshotHeroSpecialEffect));
 }
 
-}
-
-void actualizeEffect(TBonusListPtr target, const Bonus & ef)
-{
-	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> updatedCopies;
-	for(auto & bonus : *target) //TODO: optimize
-	{
-		if(bonus->source == ef.source && bonus->sid == ef.sid && bonus->type == ef.type
-			&& bonus->subtype == ef.subtype && bonus->valType == ef.valType)
-		{
-			if(bonus->turnsRemain < ef.turnsRemain)
-			{
-				auto [copy, inserted] = updatedCopies.try_emplace(bonus.get());
-				if(inserted)
-				{
-					copy->second = std::make_shared<Bonus>(*bonus);
-					copy->second->turnsRemain = ef.turnsRemain;
-				}
-				bonus = copy->second;
-			}
-		}
-	}
 }
 
 void StackWithBonuses::setOriginalBearer(const IBonusBearer * bearer)
@@ -219,13 +160,16 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 {
 	player = Owner->getSidePlayer(side);
 	CStackBasicDescriptor descriptor(info.type, info.count);
+	// Capture terrain only from this exact bound source, not battle/updater membership.
+	const auto * army = Owner->getSideArmy(side);
+	const auto terrain = captureUnitQueryTerrain(army);
 	ownedBearer = std::make_shared<CStack>(&descriptor, player, static_cast<int>(id), side,
-		SlotID::SUMMONED_SLOT_PLACEHOLDER, true);
+		SlotID::SUMMONED_SLOT_PLACEHOLDER, true, terrain);
 	ownedBearer->summoned = info.summoned;
 	ownedBearer->natureSummoned = info.natureSummoned;
 	ownedBearer->initialPosition = info.position;
 	setOriginalBearer(ownedBearer.get());
-	if(const auto * army = Owner->getSideArmy(side))
+	if(army)
 		ownedBearer->attachToSource(*army);
 	ownedBearer->attachToSource(*type);
 
@@ -312,6 +256,10 @@ TConstBonusListPtr StackWithBonuses::getUnstackedBonuses(const CSelector & selec
 TConstBonusListPtr StackWithBonuses::getBonusesBeforeCreatureAbilitySuppression(
 	const CSelector & selector, const std::string & cachingStr, const bool unstacked) const
 {
+	if(!damageScoringBonuses)
+		if(const auto subject = owner->initialExportSubject())
+			return newHorizonsDiscipline::veteranCohesionBonuses(
+				subject->query(*owner, id, selector, unstacked), selector, veteranCohesionEarned);
 	return mergeBonuses(selector, cachingStr, unstacked);
 }
 
@@ -350,14 +298,8 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 		originalList = unstacked
 			? origBearer->getUnstackedBonuses(mergeSelector)
 			: origBearer->getAllBonuses(mergeSelector, originalCachingStr);
-	const bool hasProjectionSnapshot = unstacked
-		? projectedUnstackedEffects.has_value() : projectedEffects.has_value();
-
-	vstd::copy_if(*originalList, std::back_inserter(*ret), [this, hasProjectionSnapshot](const std::shared_ptr<Bonus> & b)
-	{
-		return !vstd::contains(bonusesToRemove, b)
-			&& !(hasProjectionSnapshot && isCapturedProjectionEffect(b.get(), capturedPhysicalAfflictionGroups));
-	});
+	const auto overlay = recipientOverlayView();
+	recipientBonusOverlay::copyInherited(*ret, *originalList, overlay, unstacked);
 	if(replaceNativeCreatureBonuses)
 		ret->remove_if(CSelector([this](const Bonus * bonus)
 		{
@@ -365,42 +307,7 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 				|| isBattleFormNativeBonus(bonus, sourceCreatureType);
 		}));
 
-	if(unstacked)
-	{
-		if(projectedUnstackedEffects)
-			for(const auto & bonus : *projectedUnstackedEffects)
-				if(bonus && mergeSelector(bonus.get()))
-					ret->push_back(bonus);
-	}
-	else if(projectedEffects)
-		for(const auto & bonus : *projectedEffects)
-			if(mergeSelector(&bonus))
-				ret->push_back(std::make_shared<Bonus>(bonus));
-
-	for(const auto & record : bonusesToUpdate)
-	{
-		const Bonus & bonus = *record;
-		if(mergeSelector(&bonus))
-		{
-			const bool markedAfflictionGroup = isInPhysicalAfflictionGroup(&bonus, capturedPhysicalAfflictionGroups);
-			const bool refreshableSource = bonus.source == BonusSource::SPELL_EFFECT || markedAfflictionGroup;
-			if(refreshableSource && ret->getFirst(Selector::source(bonus.source, bonus.sid)
-				.And(Selector::typeSubtypeValueType(bonus.type, bonus.subtype, bonus.valType))))
-			{
-				actualizeEffect(ret, bonus);
-			}
-			else
-			{
-				ret->push_back(record);
-			}
-		}
-	}
-
-	for(const auto & bonus : bonusesToAdd)
-	{
-		if(mergeSelector(bonus.get()))
-			ret->push_back(bonus);
-	}
+	recipientBonusOverlay::append(*ret, overlay, mergeSelector, unstacked);
 	if(replaceNativeCreatureBonuses)
 	{
 		const CStack * sourceStack = nullptr;
@@ -419,10 +326,8 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 		if(!unstacked)
 			ret->stackBonuses();
 	}
-	if(!bonusesToUpdate.empty())
-		ret->remove_if([&](const Bonus * bonus){ return !selector(bonus); });
-	//TODO limiters?
-	return newHorizonsDiscipline::veteranCohesionBonuses(ret, selector, veteranCohesionEarned);
+	// Recipient-local additions intentionally retain the legacy no-limiter policy.
+	return recipientBonusOverlay::finish(ret, overlay, selector);
 }
 
 int32_t StackWithBonuses::getTreeVersion() const

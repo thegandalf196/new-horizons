@@ -8,8 +8,12 @@
 #include "BattleBonusAcceptance.h"
 #include "../CStack.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include <optional>
 
-bool battle::acceptsBattleBonus(const CStack & original, const CUnitState & state, const Bonus & bonus)
+namespace
+{
+bool accepts(const CStack & original, const battle::CUnitState & state, const Bonus & bonus,
+	std::optional<const CGHeroInstance *> suppliedHero)
 {
 	if(state.hasBattleForm() && state.battleFormCreature() != state.battleFormOriginalCreature()
 		&& bonus.sid == BonusSourceID(state.battleFormOriginalCreature())
@@ -28,7 +32,19 @@ bool battle::acceptsBattleBonus(const CStack & original, const CUnitState & stat
 	if(bonus.sid.as<SecondarySkill>() != sylvanLuckSkill)
 		return true;
 
-	const auto * hero = original.getMyHero();
+	const auto * hero = suppliedHero ? *suppliedHero : original.getMyHero();
 	return state.natureSummoned && hero
 		&& hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.wildChance");
+}
+}
+
+bool battle::acceptsBattleBonus(const CStack & original, const CUnitState & state, const Bonus & bonus)
+{
+	return accepts(original, state, bonus, std::nullopt);
+}
+
+bool battle::acceptsBattleBonus(const CStack & original, const CUnitState & state, const Bonus & bonus,
+	const CGHeroInstance * hero)
+{
+	return accepts(original, state, bonus, hero);
 }

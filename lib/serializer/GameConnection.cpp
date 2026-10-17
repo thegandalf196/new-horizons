@@ -127,6 +127,7 @@ std::shared_ptr<INetworkConnection> GameConnection::getConnection()
 
 void GameConnection::enterLobbyConnectionMode()
 {
+	std::scoped_lock lock(writeMutex);
 	deserializer->clear();
 	serializer->clear();
 }
@@ -138,6 +139,7 @@ void GameConnection::setCallback(IGameInfoCallback & cb)
 
 void GameConnection::setSerializationVersion(ESerializationVersion version)
 {
+	std::scoped_lock lock(writeMutex);
 	deserializer->version = version;
 	serializer->version = version;
 }

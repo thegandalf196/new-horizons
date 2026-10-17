@@ -9,6 +9,7 @@
 #include "ProjectedBonusRoster.h"
 #include "BonusLimitation.h"
 #include "../CStack.h"
+#include "../battle/CUnitState.h"
 #include "../CCreatureHandler.h"
 #include <stdexcept>
 
@@ -16,6 +17,18 @@ void ProjectedBonusGraph::requireUsable() const
 {
 	if(poisoned || finalized)
 		throw std::logic_error("Projected graph preparation failed; discard its owner");
+	for(const auto & [original, binding] : bindings)
+		if(binding.occurrence && !hasExactView(*original, *binding.unit))
+			throw std::logic_error("Projected occurrence descriptor/provider was replaced");
+}
+
+void ProjectedBonusGraph::requireBoundUnit(const battle::Unit & unit) const
+{
+	requireUsable();
+	for(const auto & [original, binding] : bindings)
+		if(binding.unit == &unit && hasExactView(*original, *binding.unit))
+			return;
+	throw std::invalid_argument("Projected environment requires this graph's exact bound provider");
 }
 
 void ProjectedBonusGraph::capture(const CBonusSystemNode & node)
@@ -69,23 +82,6 @@ void ProjectedBonusGraph::replace(const CBonusSystemNode & node, Values value)
 	catch(...) { poisoned = true; throw; }
 }
 
-void ProjectedBonusGraph::bind(const CStack & original, const battle::CUnitState & unit,
-	const ProjectedBonusRoster & roster)
-{
-	requireUsable();
-	BonusEvaluationContext check(original, unit, roster);
-	(void)check;
-	if(!hasExactView(original, unit))
-		throw std::invalid_argument("Projected binding requires this graph's exact original view");
-	if(bindings.contains(&original))
-		throw std::logic_error("Projected original already has a bound unit");
-	for(const auto & [source, binding] : bindings)
-		if(binding.unit == &unit || source->unitId() == original.unitId())
-			throw std::invalid_argument("Projected unit identity is already bound");
-	capture(original);
-	bindings.emplace(&original, Binding{&unit, &roster, original.formBonusSource});
-}
-
 const BonusList & ProjectedBonusGraph::local(const CBonusSystemNode & node) const { return values(node).accepted; }
 const TCNodesVector & ProjectedBonusGraph::parents(const CBonusSystemNode & node) const { return values(node).parents; }
 const TNodesVector & ProjectedBonusGraph::propagatingParents(const CBonusSystemNode & node) const { return values(node).propagatingParents; }
@@ -95,11 +91,25 @@ BonusEvaluationContext ProjectedBonusGraph::evaluation(const CBonusSystemNode & 
 {
 	if(const auto * stack = dynamic_cast<const CStack *>(&node))
 		if(const auto found = bindings.find(stack); found != bindings.end())
+		{
+			if(found->second.nativeBattle)
+			{
+				const CGHeroInstance * hero = nullptr;
+				for(const auto * parent : parents(*stack))
+					if(parent->getNodeType() == BonusNodeType::HERO)
+					{
+						hero = dynamic_cast<const CGHeroInstance *>(parent);
+						break; // exact native first HERO parent, including failed typed cast
+					}
+				return BonusEvaluationContext(*stack, *found->second.unit, *found->second.roster,
+					{hero, *found->second.nativeBattle, stack->getQueryTerrain()});
+			}
 			return BonusEvaluationContext(*stack, *found->second.unit, *found->second.roster);
+		}
 	return node;
 }
 
-TConstBonusListPtr ProjectedBonusGraph::query(const CBonusSystemNode & node, const CSelector & selector, bool unstacked)
+TConstBonusListPtr ProjectedBonusGraph::queryOriginal(const CBonusSystemNode & node, const CSelector & selector, bool unstacked)
 {
 	requireUsable();
 	synchronizeForms();
@@ -112,6 +122,15 @@ TConstBonusListPtr ProjectedBonusGraph::query(const CBonusSystemNode & node, con
 		accepted.stackBonuses(); // live cached path stacks before selection
 	accepted.getBonuses(*result, selector);
 	return result;
+}
+
+TConstBonusListPtr ProjectedBonusGraph::query(const CBonusSystemNode & node, const CSelector & selector, bool unstacked)
+{
+	requireUsable();
+	if(const auto * stack = dynamic_cast<const CStack *>(&node))
+		if(const auto found = recipientOverlays.find(stack); found != recipientOverlays.end())
+			return queryRecipientLayer(*stack, found->second.size(), selector, unstacked);
+	return queryOriginal(node, selector, unstacked);
 }
 
 const ProjectedBonusView & ProjectedBonusGraph::view(const CBonusSystemNode & node)
@@ -131,6 +150,18 @@ const battle::Unit * ProjectedBonusGraph::View::evaluatedUnit() const
 	return found == graph.bindings.end() ? nullptr : found->second.unit;
 }
 
+std::vector<Bonus> ProjectedBonusGraph::View::sourceLocalSpellEffects() const
+{
+	graph.requireUsable();
+	graph.synchronizeForms();
+	graph.validate();
+	std::vector<Bonus> result;
+	for(const auto & bonus : graph.values(node).exported)
+		if(bonus->source == BonusSource::SPELL_EFFECT)
+			result.push_back(*bonus);
+	return result;
+}
+
 TConstBonusListPtr ProjectedBonusGraph::View::getAllBonuses(const CSelector & selector, const std::string &) const
 {
 	return graph.query(node, selector, false);
@@ -140,3 +171,17 @@ TConstBonusListPtr ProjectedBonusGraph::View::getUnstackedBonuses(const CSelecto
 	return graph.query(node, selector, true);
 }
 int32_t ProjectedBonusGraph::View::getTreeVersion() const { return node.getTreeVersion(); }
+
+void ProjectedBonusGraph::requireBoundUnit(const CStack & original, const battle::CUnitState & unit) const
+{
+	requireUsable();
+	const auto found = bindings.find(&original);
+	if(found == bindings.end() || found->second.unit != &unit || !hasExactView(original, unit))
+		throw std::invalid_argument("Projected operation requires this original and exact bound state");
+}
+
+const std::vector<ProjectedBonusInvalidations::Event> & ProjectedBonusGraph::invalidationEvents() const
+{
+	requireUsable();
+	return invalidations.recordedEvents();
+}

@@ -8,10 +8,12 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/OrdinaryMeleeRetaliation.h"
 #include "../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "../../lib/battle/OrderActionTransition.h"
 #include "BattleActionProcessor.h"
+#include "FrozenAttackResolution.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
@@ -21,7 +23,7 @@
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
-#include "../../lib/battle/NewHorizonsEnchantedCommand.h"
+#include "../../lib/battle/HeroOrderEffects.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
@@ -2007,15 +2009,8 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 				newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD))
 				shroudBlocked = false;
 		}
-		if(stack->alive()
-			&& !counterBlocked
-			&& !stack->isInvincible()
-			&& !longWeaponAttack
-			&& !longReachAttack
-			&& (i == 0 && !firstStrike)
-			&& !shroudBlocked
-			&& !frozenBeforeHit
-			&& attackTarget->ableToRetaliate())
+		if(battle::canRetaliateAfterOrdinaryMelee(*stack, *attackTarget,
+			{counterBlocked, longWeaponAttack, longReachAttack, i, firstStrike, shroudBlocked, frozenBeforeHit}))
 		{
 			makeAttack(battle, attackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
 				.counter = true, .retaliation = true});
@@ -3047,71 +3042,15 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 		const auto state = battle.getBattle()->getHeroOrderState(ba.side, ba.command);
 		if(!state || state->command != ba.command)
 			return false;
-		const auto * orderHero = battle.battleGetFightingHero(ba.side);
-		if(newHorizonsEnchantedCommand::eligible(battle.getBattle()->getMagicRules(), orderHero, *state))
+		const auto grants = heroCommands::prepareIssuedOrderGrants(battle, ba.side, *state);
+		for(const auto & batch : grants.batches)
 		{
 			SetStackEffect update;
 			update.battleID = battle.getBattle()->getBattleID();
-			const auto selector = newHorizonsEnchantedCommand::moraleBonusSelector();
-			for(const auto id : newHorizonsEnchantedCommand::recipientIds(battle, ba.side, *state))
-			{
-				const auto * unit = battle.battleGetUnitByID(id);
-				if(unit->hasBonus(selector))
-					continue;
-				update.toAdd.emplace_back(id, std::vector<Bonus>{newHorizonsEnchantedCommand::moraleBonus()});
-			}
-			if(!update.toAdd.empty())
-				gameHandler->sendAndApply(update);
+			update.toAdd = batch;
+			gameHandler->sendAndApply(update);
 		}
-		size_t holdFastRecipientCount = 0;
-		if(ba.command == HeroCommand::RIPOSTE)
-		{
-			const auto * hero = battle.battleGetFightingHero(ba.side);
-			if(hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE))
-			{
-				SetStackEffect update;
-				update.battleID = battle.getBattle()->getBattleID();
-				for(const auto * unit : battle.battleGetAllStacks(true))
-				{
-					if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret()
-						|| unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-						|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
-						|| battle.battleGetOwner(unit) != battle.sideToPlayer(ba.side)
-						|| newHorizonsOffense::hasVengeanceRetaliationBonus(unit))
-						continue;
-					update.toAdd.emplace_back(unit->unitId(),
-						std::vector<Bonus>{newHorizonsOffense::vengeanceRetaliationBonus()});
-				}
-				if(!update.toAdd.empty())
-					gameHandler->sendAndApply(update);
-			}
-		}
-		if(ba.command == HeroCommand::HOLD_THE_LINE
-			&& newHorizonsDiscipline::hasHoldFast(battle.battleGetFightingHero(ba.side)))
-		{
-			const auto currentOwner = battle.sideToPlayer(ba.side);
-			const auto holdFastSelector = newHorizonsDiscipline::holdFastMoraleFloorBonusSelector();
-			SetStackEffect update;
-			update.battleID = battle.getBattle()->getBattleID();
-			std::set<uint32_t> added;
-			for(const auto & anchor : state->anchors)
-			{
-				if(!added.insert(anchor.unitId).second)
-					continue;
-				const auto * unit = battle.battleGetUnitByID(anchor.unitId);
-				if(!unit || !unit->alive() || unit->isGhost()
-					|| battle.battleGetOwner(unit) != currentOwner
-					|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit))
-					continue;
-				++holdFastRecipientCount;
-				if(unit->hasBonus(holdFastSelector))
-					continue;
-				update.toAdd.emplace_back(unit->unitId(),
-					std::vector<Bonus>{newHorizonsDiscipline::holdFastMoraleFloorBonus()});
-			}
-			if(!update.toAdd.empty())
-				gameHandler->sendAndApply(update);
-		}
+		const auto holdFastRecipientCount = grants.holdFastRecipientCount;
 		BattleLogMessage message;
 		message.battleID = battle.getBattle()->getBattleID();
 		message.lines.push_back(heroOrderLogLine(battle, ba.side, *state));
@@ -3393,12 +3332,11 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 				targetUnitIds.push_back(static_cast<uint32_t>(target.unitValue));
 			}
 			if(validTargetShape && !ba.spell.hasValue())
-				preparedOrderState = battle.battlePrepareHeroOrderState(ba.side, ba.command, targetUnitIds);
-			// Focus Fire keeps its dedicated snapshot for the ranged damage path;
-			// the canonical Order snapshot is additionally required for every
-			// command and is what makes the command state serializable.
-			if(preparedOrderState && ba.command == HeroCommand::FOCUS_FIRE)
-				preparedFocusFire = battle.battlePrepareFocusFireState(ba.side, preparedOrderState->primaryTargetUnitId);
+			{
+				const auto effects = heroCommands::prepareOrderEffects(battle, ba.side, ba.command, targetUnitIds);
+				preparedOrderState = effects ? std::optional<HeroOrderState>(effects->order) : std::nullopt;
+				preparedFocusFire = effects ? effects->focusFire : std::nullopt;
+			}
 		}
 		else
 		{
@@ -5070,50 +5008,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				shadowAssaultTargetCount = defender->getCount();
 		}
 	}
-	SetStackEffect shatter;
-	shatter.battleID = battle.getBattle()->getBattleID();
-	bool primaryResolved = false;
-	const bool primaryFrozenBeforeHit = defender && newHorizonsFrozen::isFrozen(*defender);
-	for(auto & hit : bat.bsa)
-	{
-		// Reflected/indirect injury entries are not this creature's attack.
-		if(hit.attackerID != attacker->unitId())
-			continue;
-		const auto * target = battle.battleGetUnitByID(hit.stackAttacked);
-		if(!target)
-			continue;
-		BattleAttackInfo frozenHit(attacker, target, attack.distance, attack.ranged);
-		frozenHit.physicalDamage = frozenHit.physicalDamage && !bat.spellLike();
-		frozenHit.secondaryAttack = hit.isSecondary();
-		frozenHit.retaliation = counterAttack;
-		if(newHorizonsFrozen::qualifiesForShatter(frozenHit, battle.getBattle()->getMagicRules()))
-		{
-			hit.flags |= BattleStackAttacked::SHATTER;
-			shatter.toRemove.emplace_back(target->unitId(), newHorizonsFrozen::removalPlan(*target));
-		}
-		if(defender && target->unitId() == defender->unitId() && !hit.isSecondary())
-			primaryResolved = frozenHit.physicalDamage;
-	}
-	const bool freezingTouch = primaryResolved && !attack.ranged
-		&& newHorizonsFrozen::isFreezingTouchAttacker(*attacker, battle.getBattle()->getMagicRules());
+	const FrozenAttackContext frozenContext{battle, attacker, defender, attack.distance, attack.ranged, counterAttack};
+	auto frozenResolution = prepareFrozenAttack(frozenContext, bat);
 	gameHandler->sendAndApply(bat);
-	if(!shatter.toRemove.empty())
-		gameHandler->sendAndApply(shatter);
-	// One roll per resolved primary melee blow/retaliation, after injury and
-	// before the caller considers its defender's retaliation. Cleansing does
-	// not reset the per-round receipt. An already Frozen target cannot refresh
-	// its status through the same blow that Shatters it.
-	const bool freezingTouchRolled = freezingTouch && gameHandler->getRandomGenerator().nextInt(0, 99)
-		< newHorizonsFrozen::chancePercent(battle.getBattle()->getMagicRules());
-	if(freezingTouchRolled && defender && !primaryFrozenBeforeHit
-		&& newHorizonsFrozen::canApply(*defender->acquireState(), battle.battleGetRound()))
-	{
-		SetStackEffect frozen;
-		frozen.battleID = battle.getBattle()->getBattleID();
-		frozen.toAdd.emplace_back(defender->unitId(), std::vector<Bonus>{
-			newHorizonsFrozen::makeFrozenMarker(BonusSourceID(attacker->creatureId()), battle.battleGetRound())});
-		gameHandler->sendAndApply(frozen);
-	}
+	resolveFrozenAttack(*gameHandler, frozenContext, frozenResolution);
 	for(const BattleStackAttacked & hit : bat.bsa)
 	{
 		if(hit.armorerLastStandSide == BattleSide::NONE)

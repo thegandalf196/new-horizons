@@ -7,6 +7,7 @@
 #pragma once
 
 class CStack;
+class CGHeroInstance;
 struct Bonus;
 namespace battle
 {
@@ -14,4 +15,6 @@ class CUnitState;
 /// Original supplies the unchanged hero/perk identity; state supplies form and
 /// summon provenance. Does not collect or mutate either bonus graph.
 DLL_LINKAGE bool acceptsBattleBonus(const CStack & original, const CUnitState & state, const Bonus & bonus);
+DLL_LINKAGE bool acceptsBattleBonus(const CStack & original, const CUnitState & state, const Bonus & bonus,
+	const CGHeroInstance * hero);
 }

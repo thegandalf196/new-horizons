@@ -12,6 +12,10 @@
 
 PreparedBonusGraphFinalization::PreparedBonusGraphFinalization(ProjectedBonusGraph & graph,
 	const TNodesVector & mutableNodes)
+	: PreparedBonusGraphFinalization(graph, mutableNodes, {}) {}
+
+PreparedBonusGraphFinalization::PreparedBonusGraphFinalization(ProjectedBonusGraph & graph,
+	const TNodesVector & mutableNodes, const TCNodesVector & readOnlyNodes)
 {
 	graph.requireUsable();
 	if(graph.unjournaledReplacement)
@@ -24,14 +28,17 @@ PreparedBonusGraphFinalization::PreparedBonusGraphFinalization(ProjectedBonusGra
 	for(auto * node : mutableNodes)
 		if(!node || !authority.emplace(node, node).second)
 			throw std::invalid_argument("Final graph authority contains a null or repeated node");
+	for(const auto * node : readOnlyNodes)
+		if(!node || !authority.emplace(node, nullptr).second)
+			throw std::invalid_argument("Final read-only authority contains a null, repeat or mutable overlap");
 	if(authority.size() != graph.entries.size())
-		throw std::invalid_argument("Final graph requires exact mutable authority for captured closure");
+		throw std::invalid_argument("Final graph requires exact classified authority for captured closure");
 	for(const auto & [node, entry] : graph.entries)
 	{
 		const auto found = authority.find(node);
 		if(found == authority.end())
 			throw std::invalid_argument("Final graph authority does not match captured closure");
-		const auto index = storage.capture(*found->second);
+		const auto index = found->second ? storage.capture(*found->second) : storage.captureReadOnly(*node);
 		storage.replace(index, entry.current);
 	}
 	const auto & journal = graph.invalidations;
@@ -42,7 +49,12 @@ PreparedBonusGraphFinalization::PreparedBonusGraphFinalization(ProjectedBonusGra
 		TNodesVector targets;
 		targets.reserve(event.targets.size());
 		for(const auto * node : event.targets)
-			targets.push_back(authority.at(node));
+		{
+			auto * target = authority.at(node);
+			if(!target)
+				throw std::invalid_argument("Read-only final graph row is an invalidation target");
+			targets.push_back(target);
+		}
 		storage.addInvalidation(event.advance, std::move(targets));
 	}
 	storage.prepare();

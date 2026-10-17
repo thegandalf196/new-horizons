@@ -45,6 +45,7 @@ struct DLL_LINKAGE ReturnFrame
 	uint32_t suspendedSeizeActive = NO_UNIT;
 	bool suspendedSeizeActiveNormal = false;
 	bool sameContinuation(const ReturnFrame & other) const;
+	bool operator==(const ReturnFrame &) const = default;
 
 	template<typename Handler> void serialize(Handler & h)
 	{

@@ -155,6 +155,7 @@ void CClient::finishGameplay()
 
 void CClient::endGame()
 {
+	auto rootRetirement = BattleRootLifetime::retire(gamestate, BattleRootLifetime::RetirementMode::PERMANENT);
 	logNetwork->info("Ending current game!");
 
 	// A scenario restart/quickload can replace the game state without receiving
@@ -179,7 +180,10 @@ void CClient::endGame()
 	playerEnvironments.clear();
 
 	//FIXME: gamestate->currentBattles.clear() will use gamestate. So it shoule be callded before gamestate.reset()
-	gamestate->currentBattles.clear();
+	{
+		auto rootMutation = rootRetirement.mutate();
+		gamestate->currentBattles.clear();
+	}
 	gamestate.reset();
 
 	logNetwork->info("Deleted playerInts.");

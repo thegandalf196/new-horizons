@@ -465,7 +465,7 @@ TEST_F(OrderTransitionAICharacterizationTest, RealInactivePerkAcceptsChargeWitho
 	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
 	const auto prepared = child->prepareHeroOrderAllowance(SIDE); ASSERT_TRUE(prepared);
 	ASSERT_TRUE(prepared->action.typedLedger); ASSERT_TRUE(prepared->action.isHeroAction());
-	ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *prepared));
+	ASSERT_TRUE(child->beginProjectedHeroOrder(SIDE, HeroCommand::CHARGE, {}, *prepared));
 	ASSERT_TRUE(child->projectAcceptedHeroOrder(SIDE, HeroCommand::CHARGE, {}, *prepared));
 	EXPECT_EQ(child->getHeroActionAllowances(SIDE), prepared->allowancesAfter);
 	EXPECT_TRUE(child->getHeroActionAllowances(SIDE).heroicSpiritProcessedReceipts.empty());
@@ -522,7 +522,7 @@ TEST_F(OrderTransitionAICharacterizationTest, RealInactivePerkStillValidatesMalf
 	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
 	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
 	const auto prepared = child->prepareHeroOrderAllowance(SIDE); ASSERT_TRUE(prepared);
-	ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *prepared));
+	ASSERT_TRUE(child->beginProjectedHeroOrder(SIDE, HeroCommand::CHARGE, {}, *prepared));
 	auto row = outcome([&] { child->projectAcceptedHeroOrder(SIDE, HeroCommand::CHARGE, {}, *prepared); });
 	EXPECT_EQ(row["message"].String(), "Invalid cleared Double Command state");
 	// This legacy late failure is deliberately NOT modeled as an atomic operation.
@@ -610,9 +610,9 @@ TEST_F(OrderTransitionAICharacterizationTest, RealDoubleCommandPrimaryFollowupEx
 		auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
 		const auto prepared = child->prepareHeroOrderAllowance(SIDE); ASSERT_TRUE(prepared);
 		ASSERT_EQ(prepared->action.receipt.allowance, Allowance::HERO);
-		ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *prepared));
 		const auto command = mode == 2 ? HeroCommand::SECOND_WIND : HeroCommand::CHARGE;
 		const std::vector<uint32_t> targets = mode == 2 ? std::vector<uint32_t>{shooter->unitId()} : std::vector<uint32_t>{};
+		ASSERT_TRUE(child->beginProjectedHeroOrder(SIDE, command, targets, *prepared));
 		ASSERT_TRUE(child->battlePrepareHeroOrderState(SIDE, command, targets));
 		bool accepted = false;
 		auto row = outcome([&] { accepted = child->projectAcceptedHeroOrder(SIDE, command, targets, *prepared); });
@@ -633,7 +633,7 @@ TEST_F(OrderTransitionAICharacterizationTest, RealDoubleCommandPrimaryFollowupEx
 		{
 			const auto followup = child->prepareHeroOrderAllowance(SIDE); ASSERT_TRUE(followup);
 			ASSERT_EQ(followup->action.receipt.source, Source::DOUBLE_COMMAND);
-			ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *followup));
+			ASSERT_TRUE(child->beginProjectedHeroOrder(SIDE, HeroCommand::HOLD_THE_LINE, {}, *followup));
 			ASSERT_TRUE(child->projectAcceptedHeroOrder(SIDE, HeroCommand::HOLD_THE_LINE, {}, *followup));
 			EXPECT_TRUE(child->getDoubleCommandState(SIDE).used);
 			EXPECT_FALSE(child->getDoubleCommandState(SIDE).orderPending());

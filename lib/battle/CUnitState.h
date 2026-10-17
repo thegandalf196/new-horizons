@@ -30,6 +30,8 @@ namespace vstd
 namespace battle
 {
 class CUnitState;
+class PreparedStackStateTransfer;
+class PreparedBattleUnitRoots;
 /// Validate the typed JSON receipt, including absent legacy state.
 DLL_LINKAGE bool hasVeteranCohesionState(const JsonNode & unitSnapshot);
 
@@ -158,6 +160,8 @@ private:
 class DLL_LINKAGE CUnitState : public Unit
 {
 	friend class UnitStateValueFields;
+	friend class PreparedStackStateTransfer;
+	friend class PreparedBattleUnitRoots;
 public:
 	bool cloned;
 	bool defending;
@@ -440,7 +444,7 @@ public:
 
 	void localInit(const IUnitEnvironment * env_);
 	/// Bind copied/prepared state to its environment without resetting values.
-	void bindStateEnvironment(const IUnitEnvironment * env_);
+	void bindStateEnvironment(const IUnitEnvironment * env_) noexcept;
 	void serializeJson(JsonSerializeFormat & handler);
 
 	FactionID getFactionID() const override;
@@ -540,6 +544,8 @@ public:
 	CUnitStateDetached & operator= (const CUnitState & other);
 	void onBattleFormChanged() override;
 	bool usesBonusProvider(const IBonusBearer & expected) const noexcept;
+	bool usesUnitInfo(const IUnitInfo & expected) const noexcept;
+	const IBonusBearer * getBonusBearer() const override;
 
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
 	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;

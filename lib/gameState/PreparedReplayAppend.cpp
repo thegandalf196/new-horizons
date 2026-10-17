@@ -6,6 +6,7 @@
  */
 #include "StdInc.h"
 #include "PreparedReplayAppend.h"
+#include "PreparedReplaySnapshot.h"
 #include "CGameState.h"
 #include "../networkPacks/PacksForClientBattle.h"
 
@@ -16,7 +17,7 @@
 
 PreparedReplayAppend::PreparedReplayAppend(ReplayLog & log,
 	const BattleUnitsChanged & pack, uint32_t day, const SnapshotProvider & snapshot)
-	: owner(log), recording(log.recordingPacks), opensChapter(log.chapters.empty())
+	: owner(log), configured(log.recordingPacks), recording(configured), opensChapter(log.chapters.empty())
 {
 	if(!recording)
 		return;
@@ -34,15 +35,8 @@ PreparedReplayAppend::PreparedReplayAppend(ReplayLog & log,
 	}
 	else
 	{
-		encoded = ReplayPackSerializer::write(pack);
-		auto & packs = log.chapters.back().packs;
-		if(packs.size() == packs.max_size())
-			throw std::length_error("Replay pack vector is full");
-		if(packs.capacity() == packs.size())
-		{
-			const auto growth = std::min(std::max(packs.size(), size_t{1}), packs.max_size() - packs.size());
-			packs.reserve(packs.size() + growth);
-		}
+		encoded.push_back(ReplayPackSerializer::write(pack));
+		reservePacks(encoded.size());
 	}
 	if(!readyToCommit())
 		throw std::runtime_error("Replay log changed during preparation");
@@ -50,7 +44,7 @@ PreparedReplayAppend::PreparedReplayAppend(ReplayLog & log,
 
 bool PreparedReplayAppend::readyToCommit() const noexcept
 {
-	if(consumed || recording != owner.recordingPacks)
+	if(consumed || configured != owner.recordingPacks)
 		return false;
 	return !recording || (stamp && stamp == owner.preparationStamp);
 }
@@ -59,9 +53,15 @@ bool PreparedReplayAppend::commit() noexcept
 {
 	if(!readyToCommit())
 		return false;
+	exchangePreparedStorage();
+	return true;
+}
+
+void PreparedReplayAppend::exchangePreparedStorage() noexcept
+{
 	if(recording)
 	{
-		owner.preparationStamp.reset();
+		owner.preparationStamp.swap(retiredStamp); // retain the displaced reservation until retirement
 		if(opensChapter)
 		{
 			static_assert(noexcept(owner.chapters.swap(firstChapters)));
@@ -72,33 +72,18 @@ bool PreparedReplayAppend::commit() noexcept
 			static_assert(std::is_nothrow_move_constructible_v<std::vector<std::byte>>);
 			// Constructor reserved this slot; exclusive ownership forbids changes
 			// to capacity/size except through invalidating ReplayLog operations.
-			owner.chapters.back().packs.emplace_back(std::move(encoded));
+			for(auto & record : encoded)
+				owner.chapters.back().packs.emplace_back(std::move(record));
 		}
 	}
 	consumed = true;
-	return true;
 }
 
 std::unique_ptr<PreparedReplayAppend> prepareBattleReplayAppend(
 	CGameState & gs, const BattleUnitsChanged & pack)
 {
-	std::vector<std::byte> capturedSnapshot;
-	if(gs.replayLog.isRecordingPacks() && gs.replayLog.empty())
-	{
-		// Complete the legacy log swap roundtrip before acquiring this plan's
-		// reservation identity. Any older outstanding plans remain invalidated.
-		ReplayLog preserved = gs.replayLog;
-		try
-		{
-			capturedSnapshot = gs.saveToMemory();
-		}
-		catch(...)
-		{
-			static_assert(std::is_nothrow_move_assignable_v<ReplayLog>);
-			gs.replayLog = std::move(preserved);
-			throw;
-		}
-	}
+	auto capturedSnapshot = capturePreparedReplaySnapshot(gs, gs.replayLog.isRecordingPacks());
+
 	auto snapshot = [&capturedSnapshot]()
 	{
 		return std::move(capturedSnapshot);

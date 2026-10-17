@@ -36,6 +36,7 @@ struct CArtifactOperationPack;
 struct CGarrisonOperationPack;
 struct SetResources;
 struct NewStructures;
+struct SetStackEffect;
 
 class HeroPoolProcessor;
 class CVCMIServer;
@@ -342,6 +343,8 @@ public:
 
 	friend class CVCMIServer;
 private:
+	void stampPhysicalAfflictionEffects(SetStackEffect & effects);
+
 	struct LearningMentorAward
 	{
 		ObjectInstanceID mentorId;

@@ -19,8 +19,11 @@
 /// Primitives:    copy memory into underlying stream (defined in CSaverBase)
 /// Containers:    custom overloaded method that decouples class into primitives
 /// VCMI Classes:  recursively serialize them via ClassName::serialize( BinarySerializer &, int version) call
+class PreparedGameConnectionBatch;
+
 class BinarySerializer
 {
+	friend class PreparedGameConnectionBatch;
 public:
 	using Version = ESerializationVersion;
 	static constexpr bool saving = true;

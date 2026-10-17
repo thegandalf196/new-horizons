@@ -42,6 +42,10 @@ constexpr int deathIncrementCount(bool firstQualifyingDeath, bool eliteOrChampio
 {
 	return 1 + (firstQualifyingDeath && firstBlood ? 1 : 0) + (eliteOrChampion && slayer ? 1 : 0);
 }
+struct DeathGrant { int damagePercent; bool firstBloodSelected; };
+/// Shared original death formula; caller owns once-per-battle receipt ordering.
+DLL_LINKAGE DeathGrant deathGrant(const CGHeroInstance * hero, bool firstDeath, bool eliteOrChampion,
+	int rank, int cap, int currentPercent);
 DLL_LINKAGE bool hasRageThroughPain(const CGHeroInstance * hero);
 constexpr bool isValidPersonalIncrement(int value)
 {

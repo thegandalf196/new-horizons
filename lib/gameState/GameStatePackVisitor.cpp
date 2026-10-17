@@ -2217,6 +2217,7 @@ void GameStatePackVisitor::visitCommanderLevelUp(CommanderLevelUp & pack)
 
 void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 {
+	auto rootMutation = gs.battleRootLifetime.mutate();
 	if(pack.info)
 		pack.info->validateCapturedGamblerPolicy();
 	spellPointBonusGraphChanged = true;
@@ -2981,6 +2982,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		else
 		{
 			commandBattle->setHeroOrderStates(pack.ba.side, {});
+			side.activeOrder = pack.ba.command;
 		}
 		newHorizonsDivineMandate::applySharedPurpose(*commandBattle, *commandBattle, pack.ba.side,
 			sharedPurposeRecipients);
@@ -3725,6 +3727,7 @@ void GameStatePackVisitor::restorePreBattleState(BattleID battleID)
 
 void GameStatePackVisitor::visitBattleCancelled(BattleCancelled & pack)
 {
+	auto rootMutation = gs.battleRootLifetime.mutate();
 	spellPointBonusGraphChanged = true;
 	restorePreBattleState(pack.battleID);
 
@@ -3841,6 +3844,7 @@ void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack
 
 void GameStatePackVisitor::visitBattleEnded(BattleEnded & pack)
 {
+	auto rootMutation = gs.battleRootLifetime.mutate();
 	spellPointBonusGraphChanged = true;
 	auto battleIter = std::ranges::find_if(gs.currentBattles, [&](const auto & battle)
 	{

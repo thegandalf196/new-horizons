@@ -581,26 +581,6 @@ bool CBattleInfoCallback::battleCanUseHeroCommand(BattleSide side, HeroCommand c
 	return false;
 }
 
-bool CBattleInfoCallback::battleUnitHasAmmoCart(const battle::Unit * unit) const
-{
-	if(!getBattle() || !unit)
-		return false;
-	const auto carts = battleGetUnitsIf([this, unit](const battle::Unit * candidate)
-	{
-		return candidate->isAmmoCart() && battleMatchOwner(candidate, unit, true);
-	});
-	// Preserve the original first-matching-cart policy, including a destroyed cart.
-	// Hypothetical enumeration must retain real battle order, not sort by ID.
-	if(!carts.empty())
-		return carts.front()->alive();
-	const auto * hero = battleGetOwnerHero(unit);
-	if(!hero)
-		return false;
-	const auto artifact = hero->artifactsWorn.find(ArtifactPosition::MACH2);
-	return artifact != hero->artifactsWorn.end()
-		&& artifact->second.getArt()->getTypeId() == ArtifactID::AMMO_CART;
-}
-
 bool CBattleInfoCallback::battleIsFocusFireRecipient(const battle::Unit * unit, BattleSide side) const
 {
 	return unit && unit->alive() && !unit->isGhost() && unit->isShooter()
@@ -743,54 +723,6 @@ std::optional<FocusFireState> CBattleInfoCallback::battleGetFocusFireState(Battl
 	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
 		return {};
 	return getBattle()->getFocusFireState(side);
-}
-
-int CBattleInfoCallback::battleFortuneSpeed(const battle::Unit * unit) const
-{
-	if(!unit || !getBattle())
-		return 0;
-	const auto side = playerToSide(battleGetOwner(unit));
-	return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER
-		? getBattle()->getSylvanLuckState(side).speedBonus(unit->unitId()) : 0;
-}
-
-int CBattleInfoCallback::battleBloodrageSpeed(const battle::Unit * unit) const
-{
-	if(!getBattle() || !unit || !unit->alive() || unit->isGhost())
-		return 0;
-	const auto side = playerToSide(battleGetOwner(unit));
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return 0;
-	const int cap = getBattle()->getBloodrageCapPercent(side);
-	const int damage = battleGetBloodrageDamagePercent(unit);
-	const int bonus = std::max(0, getBattle()->getBloodrageSpeedBonus(side));
-	return cap > 0 && static_cast<int64_t>(damage) * 2 >= cap ? bonus : 0;
-}
-
-int CBattleInfoCallback::battleBloodrageRetaliations(const battle::Unit * unit) const
-{
-	if(!getBattle() || !unit || !unit->alive() || unit->isGhost())
-		return 0;
-	const auto side = playerToSide(battleGetOwner(unit));
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return 0;
-	const int cap = getBattle()->getBloodrageCapPercent(side);
-	const int damage = battleGetBloodrageDamagePercent(unit);
-	const int bonus = std::max(0, getBattle()->getBloodrageAdditionalRetaliations(side));
-	return cap > 0 && static_cast<int64_t>(damage) * 2 >= cap ? bonus : 0;
-}
-
-int CBattleInfoCallback::battleBloodragePainIncrement(const battle::Unit * unit) const
-{
-	if(!getBattle() || !unit || !unit->alive() || unit->isGhost())
-		return 0;
-	const auto side = playerToSide(battleGetOwner(unit));
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return 0;
-	const int rank = getBattle()->getBloodrageRank(side);
-	const int increment = getBattle()->getBloodragePainIncrement(side);
-	return getBattle()->getBloodrageCapPercent(side) > 0 && rank > 0
-		&& increment == newHorizonsBloodrage::incrementForRank(rank) ? increment : 0;
 }
 
 bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const
@@ -1077,22 +1009,6 @@ std::optional<HeroOrderState> CBattleInfoCallback::battleGetHeroOrderState(Battl
 	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
 		return {};
 	return getBattle()->getHeroOrderState(side);
-}
-
-int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * unit) const
-{
-	if(!getBattle() || !unit || !unit->alive() || unit->isGhost())
-		return 0;
-	const auto side = playerToSide(battleGetOwner(unit));
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return 0;
-	const int cap = std::max(0, getBattle()->getBloodrageCapPercent(side));
-	if(cap == 0)
-		return 0;
-	const int globalDamage = std::max(0, getBattle()->getBloodrageDamagePercent(side));
-	const int personalIncrement = std::max(0, unit->getPersonalBloodrageIncrement());
-	return static_cast<int>(std::min<int64_t>(cap,
-		static_cast<int64_t>(globalDamage) + personalIncrement));
 }
 
 int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * attacker,
@@ -2136,45 +2052,6 @@ int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide si
 		return heroCommands::coefficient(formula, *hero, warcastingBonusPercent,
 			divineMandateEfficiencyBonusPercent);
 	return heroCommands::coefficient(formula, 0, 0);
-}
-
-bool CBattleInfoCallback::battleIsFocusFireTargetActive(BattleSide side) const
-{
-	const auto mark = battleGetFocusFireState(side);
-	const auto order = battleGetHeroOrderState(side, HeroCommand::FOCUS_FIRE);
-	if(!mark || !order || !order->hasScheduledRecipients(battleGetRound()))
-		return false;
-	const auto * target = battleGetUnitByID(mark->targetUnitId);
-	return target && target->alive() && !target->isGhost() && battleGetOwner(target) != sideToPlayer(side);
-}
-
-bool CBattleInfoCallback::battleIsTargetedRangedCommand(const battle::Unit * attacker,
-	const battle::Unit * defender, bool shooting, bool secondaryAttack) const
-{
-	if(!shooting || secondaryAttack || !getBattle() || !attacker || !defender || !attacker->alive() || attacker->isGhost()
-		|| !defender->alive() || defender->isGhost() || battleGetOwner(attacker) == battleGetOwner(defender))
-		return false;
-	const auto side = playerToSide(battleGetOwner(attacker));
-	if(!battleIsFocusFireRecipient(attacker, side))
-		return false;
-	const auto mark = battleGetFocusFireState(side);
-	const auto order = battleGetHeroOrderState(side, HeroCommand::FOCUS_FIRE);
-	return mark && order && order->scheduledFor(attacker->unitId(), battleGetRound()) && mark->targetUnitId == defender->unitId()
-		&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), attacker->unitId());
-}
-
-int CBattleInfoCallback::battleTargetedRangedCommandPercent(const battle::Unit * attacker,
-	const battle::Unit * defender, bool shooting, bool secondaryAttack) const
-{
-	if(!battleIsTargetedRangedCommand(attacker, defender, shooting, secondaryAttack))
-		return 0;
-	const auto side = playerToSide(battleGetOwner(attacker));
-	const auto mark = battleGetFocusFireState(side);
-	const auto order = battleGetHeroOrderState(side, HeroCommand::FOCUS_FIRE);
-	const int value = order && order->crownAndAltarAppliesTo(attacker->unitId())
-		? order->crownAndAltarFocusFirePercent : mark->rangedDamagePercent;
-	return order ? heroCommands::orderPotency(mark->rangedDamagePercent, value,
-		*order, getBattle()->getMagicRules()) : value;
 }
 
 ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const
@@ -4046,19 +3923,6 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		const auto defenderSide = playerToSide(battleGetOwner(info.defender));
 		const auto attackerStates = battleGetHeroOrderStates(attackerSide);
 		const auto defenderStates = battleGetHeroOrderStates(defenderSide);
-		const auto coefficientFor = [this](const JsonNode & formula, const CGHeroInstance * hero,
-			const HeroOrderState * orderState, uint32_t recipient, bool scaleLucky = true)
-		{
-			const int intrinsic = hero ? heroCommands::coefficient(formula, *hero,
-				orderState ? orderState->warcastingBonusPercent : 0,
-				orderState ? orderState->divineMandateEfficiencyBonusPercent() : 0) : 0;
-			const int value = hero ? heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(formula,
-				orderState && orderState->crownAndAltarAppliesTo(recipient)), *hero,
-				orderState ? orderState->warcastingBonusPercent : 0,
-				orderState ? orderState->divineMandateEfficiencyBonusPercent() : 0) : 0;
-			return scaleLucky && orderState
-				? heroCommands::orderPotency(intrinsic, value, *orderState, getBattle()->getMagicRules()) : value;
-		};
 		const auto eligibleOrderUnit = [](const battle::Unit * unit)
 		{
 			return unit && unit->alive() && !unit->isGhost() && !unit->isTurret()
@@ -4109,10 +3973,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(eligibleOrderUnit(info.attacker) && !info.shooting && !info.secondaryAttack && info.chargeDistance >= 3
 					&& !attackerState.containsConsumed(info.attacker->unitId()))
 				{
-					const int intrinsic = heroCommands::coefficient(rules["charge"]["effects"]["meleeDamagePercent"],
+					const int intrinsic = heroCommandCoefficient(rules["charge"]["effects"]["meleeDamagePercent"],
 						*attack, attackerState.warcastingBonusPercent, attackerState.divineMandateEfficiencyBonusPercent());
 					const int orderDamagePercent = heroCommands::orderPotency(intrinsic + 2 * (info.chargeDistance - 3),
-						coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState, info.attacker->unitId(), false)
+						heroOrderCoefficient(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState, info.attacker->unitId(), false)
 							+ 2 * (info.chargeDistance - 3), attackerState, getBattle()->getMagicRules());
 					payload.heroOrderDamagePercent += orderDamagePercent;
 					if(orderDamagePercent > 0)
@@ -4125,7 +3989,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::RIPOSTE:
 				if(eligibleOrderUnit(info.attacker) && info.retaliation && !info.shooting)
 				{
-					const int orderDamagePercent = coefficientFor(rules["riposte"]["effects"]["retaliationDamagePercent"], attack, &attackerState, info.attacker->unitId());
+					const int orderDamagePercent = heroOrderCoefficient(rules["riposte"]["effects"]["retaliationDamagePercent"], attack, &attackerState, info.attacker->unitId());
 					payload.heroOrderDamagePercent += orderDamagePercent;
 					if(orderDamagePercent > 0)
 						recordAttackerCause(HeroCommand::RIPOSTE);
@@ -4134,10 +3998,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::BRACE:
 				if(eligibleOrderUnit(info.attacker) && info.bracePreemptive && !info.shooting)
 				{
-					const int ordinary = coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"],
+					const int ordinary = heroOrderCoefficient(rules["brace"]["effects"]["preemptiveDamagePercent"],
 						attack, &attackerState, info.attacker->unitId(), false);
 					const int companion = newHorizonsCombatSkills::bracePreemptivePercent(ordinary, attack) - ordinary;
-					const int intrinsic = heroCommands::coefficient(rules["brace"]["effects"]["preemptiveDamagePercent"],
+					const int intrinsic = heroCommandCoefficient(rules["brace"]["effects"]["preemptiveDamagePercent"],
 						*attack, attackerState.warcastingBonusPercent, attackerState.divineMandateEfficiencyBonusPercent());
 					const int orderMultiplier = heroCommands::orderPotency(intrinsic, ordinary,
 						attackerState, getBattle()->getMagicRules()) + companion;
@@ -4205,16 +4069,16 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			{
 			case HeroCommand::RIPOSTE:
 				if(!info.shooting)
-					orderDamageReductionPercent = coefficientFor(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend, &defenderState, info.defender->unitId());
+					orderDamageReductionPercent = heroOrderCoefficient(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend, &defenderState, info.defender->unitId());
 				break;
 			case HeroCommand::HOLD_THE_LINE:
 				if(battleIsHoldTheLineRecipient(defenderState, info.defender))
-					orderDamageReductionPercent = coefficientFor(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend, &defenderState, info.defender->unitId());
+					orderDamageReductionPercent = heroOrderCoefficient(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend, &defenderState, info.defender->unitId());
 				break;
 			case HeroCommand::PROTECT:
 				if(!info.shooting && info.protectIntercepted
 					&& defenderState.primaryTargetUnitId == info.defender->unitId())
-					orderDamageReductionPercent = coefficientFor(rules["protect"]["effects"]["interceptedDamageReductionPercent"], defend, &defenderState, info.defender->unitId());
+					orderDamageReductionPercent = heroOrderCoefficient(rules["protect"]["effects"]["interceptedDamageReductionPercent"], defend, &defenderState, info.defender->unitId());
 				break;
 			default:
 				break;
@@ -4661,117 +4525,9 @@ bool CBattleInfoCallback::handleObstacleTriggersForUnitWithObstacles(SpellCastEn
 	return unit.alive() && !movementStopped;
 }
 
-AccessibilityInfo CBattleInfoCallback::getAccessibility() const
-{
-	AccessibilityInfo ret;
-	ret.fill(EAccessibility::ACCESSIBLE);
-
-	//removing accessibility for side columns of hexes
-	for(int y = 0; y < GameConstants::BFIELD_HEIGHT; y++)
-	{
-		ret[BattleHex(GameConstants::BFIELD_WIDTH - 1, y).toInt()] = EAccessibility::SIDE_COLUMN;
-		ret[BattleHex(0, y).toInt()] = EAccessibility::SIDE_COLUMN;
-	}
-
-	//special battlefields with logically unavailable tiles
-	auto bFieldType = battleGetBattlefieldType();
-
-	if(bFieldType != BattleField::NONE)
-	{
-		for(const auto & hex : bFieldType.getInfo()->impassableHexes)
-			ret[hex.toInt()] = EAccessibility::UNAVAILABLE;
-	}
-
-	//gate -> should be before stacks
-	if(battleGetFortifications().wallsHealth > 0)
-	{
-		EAccessibility accessibility = EAccessibility::ACCESSIBLE;
-		switch(battleGetGateState())
-		{
-		case EGateState::CLOSED:
-			accessibility = EAccessibility::GATE;
-			break;
-
-		case EGateState::BLOCKED:
-			accessibility = EAccessibility::UNAVAILABLE;
-			break;
-		}
-		ret[BattleHex::GATE_OUTER] = ret[BattleHex::GATE_INNER] = accessibility;
-	}
-
-	//tiles occupied by standing stacks
-	for(const auto * unit : battleAliveUnits())
-	{
-		for(const auto & hex : unit->getHexes())
-			if(hex.isAvailable()) //towers can have <0 pos; we don't also want to overwrite side columns
-				ret[hex.toInt()] = EAccessibility::ALIVE_STACK;
-	}
-
-	//obstacles
-	for(const auto &obst : battleGetAllObstacles())
-	{
-		for(const auto & hex : obst->getBlockedTiles())
-			ret[hex.toInt()] = EAccessibility::OBSTACLE;
-	}
-
-	//walls
-	if(battleGetFortifications().wallsHealth > 0)
-	{
-		static const int permanentlyLocked[] = {12, 45, 62, 112, 147, 165};
-		for(const auto & hex : permanentlyLocked)
-			ret[hex] = EAccessibility::UNAVAILABLE;
-
-		//TODO likely duplicated logic
-		static const std::pair<EWallPart, BattleHex> lockedIfNotDestroyed[] =
-		{
-			//which part of wall, which hex is blocked if this part of wall is not destroyed
-			std::make_pair(EWallPart::BOTTOM_WALL, BattleHex(BattleHex::DESTRUCTIBLE_WALL_4)),
-			std::make_pair(EWallPart::BELOW_GATE, BattleHex(BattleHex::DESTRUCTIBLE_WALL_3)),
-			std::make_pair(EWallPart::OVER_GATE, BattleHex(BattleHex::DESTRUCTIBLE_WALL_2)),
-			std::make_pair(EWallPart::UPPER_WALL, BattleHex(BattleHex::DESTRUCTIBLE_WALL_1))
-		};
-
-		for(const auto & elem : lockedIfNotDestroyed)
-		{
-			if(battleGetWallState(elem.first) != EWallState::DESTROYED)
-				ret[elem.second.toInt()] = EAccessibility::DESTRUCTIBLE_WALL;
-		}
-	}
-
-	// Pending Gates own their requested landing footprint until they resolve.
-	// Keeping reservations in the same accessibility result makes movement,
-	// placement and battle AI agree on which hexes remain unavailable.
-	if(const auto * battleInfo = getBattle())
-	{
-		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		{
-			for(const auto & gate : battleInfo->getPendingDemonicGateFootprints(side))
-			{
-				if(!gate.creature.hasValue())
-					continue;
-				const auto * creature = gate.creature.toCreature();
-				if(creature)
-					ret.reserveDemonicGateFootprint(gate.position, creature->isDoubleWide(), side);
-			}
-		}
-	}
-
-	return ret;
-}
-
 AccessibilityInfo CBattleInfoCallback::getAccessibility(const battle::Unit * stack) const
 {
 	return getAccessibility(stack->getHexes());
-}
-
-AccessibilityInfo CBattleInfoCallback::getAccessibility(const BattleHexArray & accessibleHexes) const
-{
-	auto ret = getAccessibility();
-	for(const auto & hex : accessibleHexes)
-		if(hex.isValid() && !ret.isDemonicGateReserved(hex))
-			ret[hex.toInt()] = EAccessibility::ACCESSIBLE;
-
-	return ret;
 }
 
 ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const

@@ -15,63 +15,13 @@
 #include <stdexcept>
 #include <utility>
 
-PreparedBonusGraphStorage::Values PreparedBonusGraphStorage::read(const CBonusSystemNode & node)
-{
-	return {node.bonuses, node.exportedBonuses, node.parentsToInherit,
-		node.parentsToPropagate, node.children};
-}
-
-bool PreparedBonusGraphStorage::sameBonuses(const BonusList & first, const BonusList & second) noexcept
-{
-	return first.size() == second.size() && std::equal(first.begin(), first.end(), second.begin());
-}
-
-void PreparedBonusGraphStorage::requireBuilding() const
-{
-	if(phase != Phase::BUILDING)
-		throw std::logic_error("Prepared graph storage is no longer editable");
-}
-
-size_t PreparedBonusGraphStorage::capture(CBonusSystemNode & node)
-{
-	requireBuilding();
-	for(size_t index = 0; index < entries.size(); ++index)
-		if(entries[index].node == &node)
-			return index;
-	auto original = read(node);
-	Entry entry{&node, node.nodeChanged.load(), node.cachedLast, original, original};
-	entries.push_back(std::move(entry));
-	return entries.size() - 1;
-}
-
-const PreparedBonusGraphStorage::Values & PreparedBonusGraphStorage::projected(size_t index) const
-{
-	if(phase == Phase::COMMITTED)
-		throw std::logic_error("Prepared graph storage has been consumed");
-	return entries.at(index).replacement;
-}
-
-void PreparedBonusGraphStorage::replace(size_t index, Values replacement)
-{
-	requireBuilding();
-	entries.at(index).replacement = std::move(replacement);
-}
-
-bool PreparedBonusGraphStorage::captured(const CBonusSystemNode * node) const noexcept
-{
-	return std::any_of(entries.begin(), entries.end(), [node](const Entry & entry)
-	{
-		return entry.node == node;
-	});
-}
-
 void PreparedBonusGraphStorage::addInvalidation(bool advanceGeneration, std::vector<CBonusSystemNode *> targets)
 {
 	requireBuilding();
 	for(size_t index = 0; index < targets.size(); ++index)
 	{
-		if(!targets[index] || !captured(targets[index]))
-			throw std::invalid_argument("Prepared invalidation target was not captured");
+		if(!targets[index] || !mutableCaptured(targets[index]))
+			throw std::invalid_argument("Prepared invalidation target was not captured as mutable");
 		if(std::find(targets.begin(), targets.begin() + index, targets[index]) != targets.begin() + index)
 			throw std::invalid_argument("Prepared invalidation repeats a target within one generation");
 	}
@@ -131,6 +81,12 @@ bool PreparedBonusGraphStorage::validProgram(int32_t generation) const noexcept
 				final = current;
 				targeted = true;
 			}
+		}
+		if(!entry.writable)
+		{
+			if(targeted || !sameValues(entry.original, entry.replacement))
+				return false;
+			continue;
 		}
 		const bool changed = payloadChanged(entry);
 		if(!targeted)
@@ -201,8 +157,11 @@ void PreparedBonusGraphStorage::prepare()
 		throw std::invalid_argument("Prepared generation program would retain a stale bonus cache");
 	for(auto & entry : entries)
 	{
-		entry.node->bonuses.reserveForReplacement(entry.replacement.accepted.size());
-		entry.node->exportedBonuses.reserveForReplacement(entry.replacement.exported.size());
+		if(entry.writable)
+		{
+			entry.writable->bonuses.reserveForReplacement(entry.replacement.accepted.size());
+			entry.writable->exportedBonuses.reserveForReplacement(entry.replacement.exported.size());
+		}
 	}
 	if(borrowsGeneration() && CBonusSystemNode::preparedGraphGeneration() != generation)
 		throw std::runtime_error("Borrowed prepared graph generation changed");
@@ -227,7 +186,9 @@ bool PreparedBonusGraphStorage::commit() noexcept
 		return false;
 	for(auto & entry : entries)
 	{
-		auto & node = *entry.node;
+		if(!entry.writable)
+			continue;
+		auto & node = *entry.writable;
 		auto & prepared = entry.replacement;
 		static_assert(noexcept(node.parentsToInherit.swap(prepared.parents)));
 		static_assert(noexcept(node.parentsToPropagate.swap(prepared.propagatingParents)));

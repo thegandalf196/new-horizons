@@ -10,6 +10,8 @@
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/HeroOrderCandidates.h"
+#include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameSettings.h"
@@ -267,4 +269,40 @@ TEST_F(NewHorizonsDoubleCommandAITest, MandatoryChoiceSubmitsAndResolvesOneDisti
 	const auto resolved = battle()->getDoubleCommandState(BattleSide::ATTACKER);
 	EXPECT_TRUE(resolved.used);
 	EXPECT_EQ(resolved.phase, DoubleCommandState::Phase::NONE);
+}
+
+TEST_F(NewHorizonsDoubleCommandAITest, CandidateGenerationRetainsNonpositiveMandatoryContinuationWithoutSpendingIt)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePendingChoice());
+	class NegativeValuation final : public heroOrderCandidates::Valuation
+	{
+	public:
+		float score(const heroOrderCandidates::ValuationRequest &) const override { return -7.0f; }
+	} valuation;
+	const auto ledgerBefore = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto pendingBefore = battle()->getDoubleCommandState(BattleSide::ATTACKER);
+	const auto ordersBefore = battle()->battleGetHeroOrderStates(BattleSide::ATTACKER);
+	const auto actionsBefore = server.startedActions.size();
+	std::vector<PossibleSpellcast> optional, mandatory;
+	heroOrderCandidates::appendOrders(optional, *callback, BattleID(0), BattleSide::ATTACKER, false, valuation);
+	heroOrderCandidates::appendOrders(mandatory, *callback, BattleID(0), BattleSide::ATTACKER, true, valuation);
+	EXPECT_TRUE(optional.empty());
+	ASSERT_FALSE(mandatory.empty());
+	for(const auto & candidate : mandatory)
+	{
+		EXPECT_NE(candidate.command, pendingBefore.firstOrder);
+		EXPECT_FLOAT_EQ(candidate.commandHeuristicValue, -7.0f);
+	}
+	const auto wire = [](const auto & state)
+	{
+		CMemorySerializer memory;
+		memory.oser & state;
+		return memory.extractBuffer();
+	};
+	EXPECT_EQ(wire(battle()->getHeroActionAllowances(BattleSide::ATTACKER)), wire(ledgerBefore));
+	EXPECT_EQ(wire(battle()->getDoubleCommandState(BattleSide::ATTACKER)), wire(pendingBefore));
+	EXPECT_EQ(wire(battle()->battleGetHeroOrderStates(BattleSide::ATTACKER)), wire(ordersBefore));
+	EXPECT_EQ(server.startedActions.size(), actionsBefore);
+	EXPECT_TRUE(callback->heroActions.empty());
+	EXPECT_TRUE(callback->creatureActions.empty());
 }

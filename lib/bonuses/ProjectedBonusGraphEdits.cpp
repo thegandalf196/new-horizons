@@ -20,13 +20,13 @@ void ProjectedBonusGraph::propagate(const CBonusSystemNode & destination, const 
 		if(bonus->propagator->shouldBeAttached(const_cast<CBonusSystemNode *>(&destination)))
 		{
 			removePropagatedBonus(accepted, bonus);
-			invalidations.record(false, &destination, *this);
+			invalidations.record(true, &destination, *this);
 		}
 	}
 	else if(auto propagated = propagatedBonus(bonus, destination, evaluation(source)))
 	{
 		accepted.push_back(propagated);
-		invalidations.record(false, &destination, *this);
+		invalidations.record(true, &destination, *this);
 	}
 	TCNodes next;
 	bonusRedChildren(*this, destination, next);
@@ -34,11 +34,12 @@ void ProjectedBonusGraph::propagate(const CBonusSystemNode & destination, const 
 		propagate(*child, source, bonus, remove);
 }
 
-void ProjectedBonusGraph::addExported(const CBonusSystemNode & source, const std::shared_ptr<Bonus> & bonus)
+void ProjectedBonusGraph::addExported(const CBonusSystemNode & source, const std::shared_ptr<Bonus> & record)
 {
 	requireUsable();
 	synchronizeForms();
 	validate();
+	const auto bonus = currentDurationRecord(record);
 	if(!bonus || vstd::contains(values(source).exported, bonus))
 		throw std::invalid_argument("Projected exported bonus is null or already owned");
 	if((Bonus::NTurns(bonus.get()) || Bonus::NDays(bonus.get()) || Bonus::OneWeek(bonus.get())) && !bonus->turnsRemain)
@@ -62,8 +63,15 @@ void ProjectedBonusGraph::removeExported(const CBonusSystemNode & source, const 
 	requireUsable();
 	synchronizeForms();
 	validate();
-	if(!bonus || !vstd::contains(values(source).exported, bonus))
+	const auto current = currentDurationRecord(bonus);
+	if(!current || !vstd::contains(values(source).exported, current))
 		throw std::invalid_argument("Projected exported bonus is not owned");
+	removeCapturedExported(source, current);
+}
+
+void ProjectedBonusGraph::removeCapturedExported(const CBonusSystemNode & source,
+	const std::shared_ptr<Bonus> & bonus)
+{
 	try
 	{
 		entries.at(&source).current.exported -= bonus;
@@ -76,40 +84,6 @@ void ProjectedBonusGraph::removeExported(const CBonusSystemNode & source, const 
 		}
 	}
 	catch(...) { poisoned = true; throw; }
-}
-
-void ProjectedBonusGraph::sourceRelation(const CStack & node, const CCreature & source, bool attach)
-{
-	auto & edges = entries.at(&node).current.parents;
-	if(attach)
-	{
-		if(vstd::contains(edges, &source))
-			throw std::logic_error("Projected form source is already attached");
-		edges.push_back(&source);
-	}
-	invalidations.record(true, nullptr, *this); // ++globalCounter precedes propagation
-	if(!node.isHypothetic())
-	{
-		// Creature is source-only. This is the existing new/removedRedDescendant
-		// order: local exports, then pointer-ordered red ancestors, then each walk.
-		for(const auto & bonus : values(source).exported)
-			if(bonus->propagator)
-				propagate(node, source, bonus, !attach);
-		TCNodes ancestors;
-		bonusRedAncestors(*this, source, ancestors);
-		for(const auto * ancestor : ancestors)
-			for(const auto & bonus : values(*ancestor).exported)
-				if(bonus->propagator)
-					propagate(node, source, bonus, !attach);
-	}
-	if(!attach)
-	{
-		const auto found = std::find(edges.begin(), edges.end(), &source);
-		if(found == edges.end())
-			throw std::logic_error("Projected form source was not attached");
-		edges.erase(found);
-	}
-	invalidations.record(false, &node, *this); // final legacy child invalidation
 }
 
 void ProjectedBonusGraph::synchronizeForm(const CStack & original)

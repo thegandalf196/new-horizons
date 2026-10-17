@@ -15,6 +15,7 @@
 #include "IBattleState.h"
 #include "CObstacleInstance.h"
 #include "NewHorizonsPuppetMaster.h"
+#include "UnitOwnershipQuery.h"
 #include "GameLibrary.h"
 #include "IGameSettings.h"
 
@@ -497,13 +498,6 @@ const CStack* CBattleInfoEssentials::battleGetStackByID(int ID, bool onlyAlive) 
 		return stacks[0];
 }
 
-bool CBattleInfoEssentials::battleDoWeKnowAbout(BattleSide side) const
-{
-	RETURN_IF_NOT_BATTLE(false);
-	auto p = battleGetMySide();
-	return p == BattleSide::ALL_KNOWING || p == side;
-}
-
 si8 CBattleInfoEssentials::battleTacticDist() const
 {
 	RETURN_IF_NOT_BATTLE(0);
@@ -520,26 +514,6 @@ int32_t CBattleInfoEssentials::battleGetRound() const
 {
 	RETURN_IF_NOT_BATTLE(-1);
 	return getBattle()->getRound();
-}
-
-const CGHeroInstance * CBattleInfoEssentials::battleGetFightingHero(BattleSide side) const
-{
-	RETURN_IF_NOT_BATTLE(nullptr);
-	if(side != BattleSide::DEFENDER && side != BattleSide::ATTACKER)
-	{
-		logGlobal->error("FIXME: %s wrong argument!", __FUNCTION__);
-		return nullptr;
-	}
-
-	if(!battleDoWeKnowAbout(side))
-	{
-		// A player-scoped callback is expected to query hidden sides while
-		// evaluating battle state. Keep the visibility check, but do not turn
-		// every denied query into an error-level log entry.
-		return nullptr;
-	}
-
-	return getBattle()->getSideHero(side);
 }
 
 const CArmedInstance * CBattleInfoEssentials::battleGetArmyObject(BattleSide side) const
@@ -630,21 +604,6 @@ bool CBattleInfoEssentials::battleCanFlee(const PlayerColor & player) const
 	return battleGetRetreatPermission(side, BonusType::BATTLE_CAN_FLEE) >= 0;
 }
 
-BattleSide CBattleInfoEssentials::playerToSide(const PlayerColor & player) const
-{
-	RETURN_IF_NOT_BATTLE(BattleSide::NONE);
-
-	if(getBattle()->getSidePlayer(BattleSide::ATTACKER) == player)
-		return BattleSide::ATTACKER;
-
-	if(getBattle()->getSidePlayer(BattleSide::DEFENDER) == player)
-		return BattleSide::DEFENDER;
-
-	logGlobal->warn("Cannot find side for player %s", player.toString());
-
-	return BattleSide::INVALID;
-}
-
 PlayerColor CBattleInfoEssentials::sideToPlayer(BattleSide side) const
 {
 	RETURN_IF_NOT_BATTLE(PlayerColor::CANNOT_DETERMINE);
@@ -657,17 +616,6 @@ BattleSide CBattleInfoEssentials::otherSide(BattleSide side)
 		return BattleSide::DEFENDER;
 	else
 		return BattleSide::ATTACKER;
-}
-
-PlayerColor CBattleInfoEssentials::otherPlayer(const PlayerColor & player) const
-{
-	RETURN_IF_NOT_BATTLE(PlayerColor::CANNOT_DETERMINE);
-
-	auto side = playerToSide(player);
-	if(side == BattleSide::NONE)
-		return PlayerColor::CANNOT_DETERMINE;
-
-	return getBattle()->getSidePlayer(otherSide(side));
 }
 
 bool CBattleInfoEssentials::playerHasAccessToHeroInfo(const PlayerColor & player, const CGHeroInstance * h) const
@@ -752,36 +700,11 @@ bool CBattleInfoEssentials::battleIsGatePassable() const
 	return battleGetGateState() == EGateState::OPENED || battleGetGateState() == EGateState::DESTROYED; 
 }
 
-PlayerColor CBattleInfoEssentials::battleGetOwner(const battle::Unit * unit) const
-{
-	RETURN_IF_NOT_BATTLE(PlayerColor::CANNOT_DETERMINE);
-
-	PlayerColor initialOwner = getBattle()->getSidePlayer(unit->unitSide());
-
-	if(unit->isHypnotized())
-		return otherPlayer(initialOwner);
-	else
-		return initialOwner;
-}
-
 PlayerColor CBattleInfoEssentials::battleGetActionController(const battle::Unit * unit) const
 {
 	if(!unit || !getBattle())
 		return PlayerColor::CANNOT_DETERMINE;
-
-	const auto allegianceOwner = battleGetOwner(unit);
-
-	const auto markers = unit->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
-	if(!markers)
-		return allegianceOwner;
-
-	for(const auto & marker : *markers)
-		if(marker && newHorizonsPuppetMaster::isValidControlMarker(*this, unit, marker.get()))
-			return marker->spellCasterOwner;
-
-	// Invalid or legacy control metadata must never grant authority to an
-	// arbitrary player. Fall back to the existing allegiance controller.
-	return allegianceOwner;
+	return battle::LiveUnitOwnershipQuery(*this).actionController(*unit);
 }
 
 bool CBattleInfoEssentials::battleMatchActionController(const battle::Unit * actor,
@@ -804,22 +727,4 @@ const CGHeroInstance * CBattleInfoEssentials::battleGetOwnerHero(const battle::U
 	if(side == BattleSide::NONE)
 		return nullptr;
 	return getBattle()->getSideHero(side);
-}
-
-bool CBattleInfoEssentials::battleMatchOwner(const battle::Unit * attacker, const battle::Unit * defender, const bool sameOwner) const
-{
-	RETURN_IF_NOT_BATTLE(false);
-	if(attacker->unitId() == defender->unitId())
-		return sameOwner;
-	else
-		return battleMatchOwner(battleGetOwner(attacker), defender, sameOwner);
-}
-
-bool CBattleInfoEssentials::battleMatchOwner(const PlayerColor & attacker, const battle::Unit * defender, const bool sameOwner) const
-{
-	RETURN_IF_NOT_BATTLE(false);
-
-	PlayerColor initialOwner = getBattle()->getSidePlayer(defender->unitSide());
-
-	return (attacker == initialOwner) == sameOwner;
 }

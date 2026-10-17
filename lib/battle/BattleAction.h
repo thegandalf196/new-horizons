@@ -85,6 +85,7 @@ public:
 	bool archerySkirmisherAttack = false;
 
 	BattleAction();
+	bool operator==(const BattleAction &) const = default;
 	/// Explicitly closes a control-visible Time Stop activation without
 	/// changing the stack. The server accepts this only for the active stopped
 	/// stack; it is not a creature action or a way around stasis.
@@ -311,6 +312,7 @@ public:
 	{
 		int32_t unitValue;
 		BattleHex hexValue;
+		bool operator==(const DestinationInfo &) const = default;
 
 		template <typename Handler> void serialize(Handler & h)
 		{

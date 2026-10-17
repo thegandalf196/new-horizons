@@ -2,9 +2,11 @@ set(vcmiservercommon_SRCS
 		StdInc.cpp
 
 		battles/BattleActionProcessor.cpp
+		battles/FrozenAttackResolution.cpp
 		battles/BattleFlowProcessor.cpp
 		battles/BattleProcessor.cpp
 		battles/BattleResultProcessor.cpp
+		battles/PhysicalAfflictionEffectPreparation.cpp
 
 		queries/BattleQueries.cpp
 		queries/CQuery.cpp
@@ -22,6 +24,11 @@ set(vcmiservercommon_SRCS
 		GlobalLobbyProcessor.cpp
 		ServerSpellCastEnvironment.cpp
 		CVCMIServer.cpp
+		ClientPackPublication.cpp
+		BattleUnitsChangedInput.cpp
+		PreparedBattlePublication.cpp
+		PreparedBattleWorldPublication.cpp
+		PreparedBattleWorldPublicationFactory.cpp
 		NetPacksServer.cpp
 		NetPacksLobbyServer.cpp
 		TurnTimerHandler.cpp
@@ -32,6 +39,7 @@ set(vcmiservercommon_HEADERS
 		StdInc.h
 
 		battles/BattleActionProcessor.h
+		battles/FrozenAttackResolution.h
 		battles/BattleFlowProcessor.h
 		battles/BattleProcessor.h
 		battles/BattleResultProcessor.h
@@ -54,6 +62,8 @@ set(vcmiservercommon_HEADERS
 		IGameServer.h
 		ServerSpellCastEnvironment.h
 		CVCMIServer.h
+		BattleUnitsChangedInput.h
+		PreparedBattleWorldPublication.h
 		LobbyNetPackVisitors.h
 		ServerNetPackVisitors.h
 		TurnTimerHandler.h

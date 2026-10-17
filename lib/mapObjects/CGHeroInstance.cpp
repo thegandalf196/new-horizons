@@ -1486,14 +1486,6 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 	return result;
 }
 
-int CGHeroInstance::getPrimSkillLevel(PrimarySkill id) const
-{
-	if(usesPrimaryGrowth())
-		return std::clamp(valOfBonuses(BonusType::PRIMARY_SKILL, BonusSubtypeID(id)), 0,
-			static_cast<int>(primaryGrowthRules["maxPrimary"].Integer()));
-	return primarySkills.getSkill(id);
-}
-
 double CGHeroInstance::getFightingStrength() const
 {
 	if(usesPrimaryGrowth())

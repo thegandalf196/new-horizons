@@ -9,6 +9,9 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsElementalRebirth.h"
+#include "SummonHealthQuery.h"
+#include "ElementalConsumptionContext.h"
+#include "ElementalRebirthLineage.h"
 
 #include "../CStack.h"
 #include "../bonuses/BonusList.h"
@@ -48,36 +51,9 @@ constexpr std::string_view PHOENIX_SPARK_ID = "new-horizons:elementalRebirth.pho
 constexpr int GREATER_ESSENCE_HEALTH_PERCENTAGE_POINTS = 15;
 constexpr int ELEMENTAL_WARD_REDUCTION_BASIS_POINTS = 2000;
 
-const std::array<CreatureID, 5> & canonicalElementals()
-{
-	static const std::array<CreatureID, 5> ids = {
-		CreatureID(CreatureID::decode("core:airElemental")),
-		CreatureID(CreatureID::decode("core:waterElemental")),
-		CreatureID(CreatureID::decode("core:fireElemental")),
-		CreatureID(CreatureID::decode("core:earthElemental")),
-		CreatureID(CreatureID::decode("core:magicElemental"))
-	};
-	return ids;
-}
-
 bool isNormalSlot(const battle::Unit & unit)
 {
 	return unit.unitSlot().validSlot();
-}
-
-bool isCanonicalElemental(CreatureID creature)
-{
-	const auto & ids = canonicalElementals();
-	return creature.hasValue() && creature.toCreature()
-		&& std::find(ids.begin(), ids.end(), creature) != ids.end();
-}
-
-bool isFirstGenerationOutput(const battle::Unit & unit)
-{
-	return unit.unitType() && unit.isSummoned() && !unit.isClone()
-		&& unit.getPhantomInitialIntegrity() == 0
-		&& unit.getRebirthOriginalAggregateHP() > 0
-		&& isCanonicalElemental(unit.creatureId());
 }
 
 bool isValidProfile(const ActiveProfile & profile)
@@ -293,23 +269,8 @@ void PhoenixSparkConsumption::validateShape() const
 
 void validatePhoenixSparkConsumption(const IBattleInfo & battle, const PhoenixSparkConsumption & consumption)
 {
-	consumption.validateShape();
-	const auto profile = activeProfile(battle.getSideHero(consumption.side));
-	const auto sources = battle.getUnitsIf([&](const battle::Unit * unit)
-	{
-		return unit && unit->unitId() == consumption.sourceUnitId;
-	});
-	if(!profile || !profile->phoenixSpark || battle.getPhoenixSparkUsed(consumption.side) || sources.size() != 1)
-		throw std::runtime_error("Unavailable Phoenix Spark death receipt");
-	const auto * source = sources.front();
-	const auto category = source->unitType()
-		? battle.getCreatureCategoryRules().lookup(source->unitType()->getJsonKey()) : std::nullopt;
-	const DeathSnapshot snapshot{source->unitId(), consumption.side, source->getPosition(),
-		source->getBattleStartMaximumAggregateHP(), *profile};
-	if(source->isHypnotized() || source->isTimeStopped()
-		|| !category || category->category != newHorizonsCreatures::CreatureCategory::CHAMPION
-		|| !stillEligibleDeath(source, snapshot, true, false, false))
-		throw std::runtime_error("Invalid Phoenix Spark original Champion death");
+	LiveElementalConsumptionContext context(battle);
+	validatePhoenixSparkConsumption(context, consumption);
 }
 
 bool stillEligibleDeath(const battle::Unit * postHitUnit, const DeathSnapshot & snapshot,
@@ -348,66 +309,14 @@ void ChainConsumption::validateShape() const
 void validateChainConsumption(const IBattleInfo & battle, const ChainConsumption & consumption,
 	const battle::UnitInfo & spawn)
 {
-	consumption.validateShape();
-	if(consumption.rollback)
-		throw std::runtime_error("Rebirth Chain ADD cannot restore its combat token");
-	const auto sources = battle.getUnitsIf([&](const battle::Unit * unit)
-	{
-		return unit && unit->unitId() == consumption.sourceUnitId;
-	});
-	const auto profile = activeProfile(battle.getSideHero(consumption.side));
-	if(sources.size() != 1 || !profile || !profile->rebirthChain || battle.getRebirthChainUsed(consumption.side))
-		throw std::runtime_error("Unavailable Rebirth Chain consumption");
-	const auto * source = sources.front();
-	const auto existingOutput = battle.getUnitsIf([&](const battle::Unit * unit)
-	{
-		return unit && unit->unitId() == consumption.spawnUnitId;
-	});
-	if(source->alive() || source->unitSide() != consumption.side || !isFirstGenerationOutput(*source)
-		|| !existingOutput.empty() || !spawn.position.isValid()
-		|| spawn.id != consumption.spawnUnitId || spawn.side != consumption.side
-		|| spawn.position != source->getPosition() || !spawn.summoned || spawn.natureSummoned
-		|| spawn.phantomIntegrity != 0 || spawn.phantomDuration != 0 || spawn.rebirthOriginalAggregateHP != 0
-		|| !isCanonicalElemental(spawn.type))
-		throw std::runtime_error("Invalid Rebirth Chain source or output");
-	const auto category = battle.getCreatureCategoryRules().lookup(spawn.type.toCreature()->getJsonKey());
-	const auto sourceCategory = battle.getCreatureCategoryRules().lookup(source->unitType()->getJsonKey());
-	const auto maximumHP = effectiveSummonMaxHP(battle.getSideArmy(consumption.side), spawn.type,
-		battle.getSidePlayer(consumption.side), consumption.side);
-	const DeathSnapshot snapshot{source->unitId(), consumption.side, source->getPosition(), 0,
-		*profile, true, source->getRebirthOriginalAggregateHP()};
-	const auto primary = newHorizonsElementalTerrain::primaryElemental(battle);
-	if((profile->adaptiveElement || profile->perfectConvergence) && (!primary || spawn.type != *primary))
-		throw std::runtime_error("Invalid terrain-selected Rebirth Chain output");
-	const auto health = spawnHealth(targetHP(snapshot, spawn.type, battle), maximumHP);
-	if(!category || category->category != newHorizonsCreatures::CreatureCategory::ELITE
-		|| !sourceCategory || sourceCategory->category != newHorizonsCreatures::CreatureCategory::ELITE
-		|| !health || spawn.count != health->count)
-		throw std::runtime_error("Invalid Rebirth Chain output health or category");
+	LiveElementalConsumptionContext context(battle);
+	validateChainConsumption(context, consumption, spawn);
 }
 
 void validateChainRollback(const IBattleInfo & battle, const ChainConsumption & consumption)
 {
-	consumption.validateShape();
-	const auto sources = battle.getUnitsIf([&](const battle::Unit * unit)
-	{
-		return unit && unit->unitId() == consumption.sourceUnitId;
-	});
-	const auto outputs = battle.getUnitsIf([&](const battle::Unit * unit)
-	{
-		return unit && unit->unitId() == consumption.spawnUnitId;
-	});
-	if(!consumption.rollback || !battle.getRebirthChainUsed(consumption.side)
-		|| sources.size() != 1 || outputs.size() != 1)
-		throw std::runtime_error("Unavailable Rebirth Chain rollback");
-	const auto * source = sources.front();
-	const auto * output = outputs.front();
-	if(source->alive() || source->unitSide() != consumption.side || !isFirstGenerationOutput(*source)
-		|| !output->alive() || output->unitSide() != consumption.side || !output->isSummoned() || output->isClone()
-		|| output->getPhantomInitialIntegrity() != 0 || output->getRebirthOriginalAggregateHP() != 0
-		|| output->getPosition() != source->getPosition() || !isCanonicalElemental(output->creatureId())
-		|| output->getAvailableHealth() != static_cast<int64_t>(output->getCount()) * output->getMaxHealth())
-		throw std::runtime_error("Invalid Rebirth Chain rollback source or output");
+	LiveElementalConsumptionContext context(battle);
+	validateChainRollback(context, consumption);
 }
 
 std::vector<CreatureID> legalCandidatePool(const newHorizonsCreatures::CreatureCategoryRules & categoryRules,
@@ -484,40 +393,7 @@ int64_t targetHP(const DeathSnapshot & snapshot)
 
 int64_t targetHP(const DeathSnapshot & snapshot, CreatureID creature, const IBattleInfo & battle)
 {
-	const auto base = targetHP(snapshot);
-	if(base <= 0 || !snapshot.profile.elementalAttunement)
-		return base;
-	const auto primary = newHorizonsElementalTerrain::primaryElemental(battle);
-	if(!primary || creature != *primary)
-		return base;
-	// floor(120% of the computed pool), without multiplying a large HP value.
-	// Chain uses its captured first-output HP in targetHP above, never current wounds.
-	const auto additional = base / 5;
-	if(base > std::numeric_limits<int64_t>::max() - additional)
-		return 0;
-	return base + additional;
-}
-
-int32_t effectiveSummonMaxHP(const CArmedInstance * sourceArmy,
-	CreatureID creatureId, PlayerColor owner, BattleSide side)
-{
-	if(!creatureId.hasValue())
-		return 0;
-	const auto * creature = creatureId.toCreature();
-	if(!creature || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
-		return 0;
-
-	CStackBasicDescriptor descriptor(creature, 1);
-	CStack hypothetical(&descriptor, owner, -1, side, SlotID::SUMMONED_SLOT_PLACEHOLDER, true);
-	hypothetical.summoned = true;
-	hypothetical.natureSummoned = false;
-	if(sourceArmy)
-		hypothetical.attachToSource(*sourceArmy);
-	hypothetical.attachToSource(*creature);
-	const auto value = hypothetical.valOfBonuses(BonusType::STACK_HEALTH);
-	if(value > std::numeric_limits<int32_t>::max())
-		return 0;
-	return static_cast<int32_t>(std::max<int64_t>(1, value));
+	return targetHP(snapshot, creature, LiveElementalConsumptionContext(battle));
 }
 
 std::optional<SpawnHealth> spawnHealth(int64_t targetAggregateHP, int32_t effectiveCreatureMaxHP)

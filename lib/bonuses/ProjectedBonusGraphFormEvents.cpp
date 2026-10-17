@@ -14,8 +14,10 @@ bool ProjectedBonusGraph::hasExactView(const CStack & original, const battle::CU
 {
 	const auto * detached = dynamic_cast<const battle::CUnitStateDetached *>(&unit);
 	const auto found = views.find(&original);
+	const auto binding = bindings.find(&original);
 	return detached && found != views.end() && found->second
-		&& detached->usesBonusProvider(*found->second);
+		&& detached->usesBonusProvider(*found->second)
+		&& (binding == bindings.end() || !binding->second.occurrence || detached->usesUnitInfo(original));
 }
 
 void ProjectedBonusGraph::View::onBattleFormChanged(const battle::CUnitState & unit) const

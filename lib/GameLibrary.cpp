@@ -216,6 +216,7 @@ bool GameLibrary::isDemoData() const
 
 void GameLibrary::initializeLibrary()
 {
+	NativeBonusGraphAccess graphAccess;
 	createHandler(settingsHandler);
 	modh->initializeConfig();
 
@@ -252,4 +253,7 @@ void GameLibrary::initializeLibrary()
 }
 
 GameLibrary::GameLibrary() = default;
-GameLibrary::~GameLibrary() = default;
+GameLibrary::~GameLibrary()
+{
+	nativeGraphRetirement.emplace();
+}

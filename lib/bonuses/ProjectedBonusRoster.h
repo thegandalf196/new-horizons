@@ -8,6 +8,7 @@
 
 #include "../battle/Unit.h"
 #include <vector>
+#include <span>
 
 /// Borrowed, ordered complete battle roster for a single sequential projection.
 /// Unit identities/views must remain alive and ID-stable under the caller's
@@ -15,9 +16,19 @@
 /// Membership completeness and graph collection remain the world owner's duty.
 class DLL_LINKAGE ProjectedBonusRoster final
 {
+	friend class ProjectedBonusGraph;
 	std::vector<const battle::Unit *> units;
+	bool orderedOccurrences = false;
+	void appendOccurrence(const battle::Unit & unit);
 public:
+	/// Opt-in historical identity: distinct physical nodes may share packet IDs.
+	enum class Identity { UniqueIds, OrderedOccurrences };
 	explicit ProjectedBonusRoster(std::vector<const battle::Unit *> units);
+	ProjectedBonusRoster(std::vector<const battle::Unit *> units, Identity identity);
+	bool usesOrderedOccurrences() const noexcept;
+	/// No alive/ghost filtering: preserve first-match packet lookup order.
+	const battle::Unit * firstById(uint32_t id) const;
 	bool contains(const battle::Unit & unit) const;
+	std::span<const battle::Unit * const> orderedUnits() const noexcept;
 	std::vector<const battle::Unit *> adjacentUnits(const battle::Unit & unit) const;
 };

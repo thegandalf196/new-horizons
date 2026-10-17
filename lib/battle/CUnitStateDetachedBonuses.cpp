@@ -20,6 +20,17 @@ bool CUnitStateDetached::usesBonusProvider(const IBonusBearer & expected) const 
 	return bonus == &expected;
 }
 
+const IBonusBearer * CUnitStateDetached::getBonusBearer() const
+{
+	if(const auto * projected = dynamic_cast<const ProjectedBonusView *>(bonus))
+	{
+		if(projected->evaluatedUnit() != this)
+			throw std::logic_error("Projected bonus view belongs to another detached unit");
+		return projected;
+	}
+	return this; // Ordinary detached wrappers retain their existing query identity.
+}
+
 void CUnitStateDetached::onBattleFormChanged()
 {
 	CUnitState::onBattleFormChanged();
@@ -112,4 +123,9 @@ bool CUnitStateDetached::isBonusCacheable() const
 {
 	return bonus->isBonusCacheable();
 }
+}
+
+bool battle::CUnitStateDetached::usesUnitInfo(const IUnitInfo & expected) const noexcept
+{
+	return unit == &expected;
 }

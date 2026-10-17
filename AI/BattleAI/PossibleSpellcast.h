@@ -37,9 +37,9 @@ public:
 	/// payload so the AI can rank one-target and pair-target choices without
 	/// mutating the authoritative battle.
 	std::vector<uint32_t> commandTargets;
-	/// Orders whose effects are contextual (for example Protect and Second
-	/// Wind) are scored by a deterministic read-only heuristic.  A non-zero
-	/// value marks that the generic spell projection must not overwrite it.
+	/// Existing read-only generation prior for contextual Orders. This
+	/// retains candidate enumeration policy, but is not an absolute score:
+	/// accepted Orders use the shared post-action unit-exchange utility.
 	float commandHeuristicValue = 0.0f;
 	std::string name() const;
 	const CSpell * spell;

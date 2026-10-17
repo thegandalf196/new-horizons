@@ -454,7 +454,7 @@ TEST_F(NewHorizonsSharedPurposeTest, DetachedAcceptedPairMirrorsLiveWithoutChang
 	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
 	const auto prepared = child->prepareHeroOrderAllowance(BattleSide::ATTACKER);
 	ASSERT_TRUE(prepared);
-	ASSERT_TRUE(child->beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
+	ASSERT_TRUE(child->beginProjectedHeroOrder(BattleSide::ATTACKER, HeroCommand::CHARGE, {}, *prepared));
 	ASSERT_TRUE(child->projectAcceptedHeroOrder(BattleSide::ATTACKER, HeroCommand::CHARGE, {}, *prepared));
 	EXPECT_TRUE(hasPurpose(child->battleGetUnitByID(friendly->unitId())));
 	EXPECT_FALSE(hasPurpose(parent->battleGetUnitByID(friendly->unitId())));

@@ -22,6 +22,7 @@
 #include "../../../lib/serializer/ESerializationVersion.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
@@ -63,6 +64,7 @@ protected:
 	CStack * controllerAlly = nullptr;
 	CStack * protectedOriginalSideTarget = nullptr;
 	CStack * normalShooter = nullptr;
+	bool forcePositiveMorale = false;
 
 	void SetUp() override
 	{
@@ -74,8 +76,16 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+		if(forcePositiveMorale)
+		{
+			// Saved rules take precedence over the legacy COMBAT_* fallback.
+			rules["morale"]["goodChance"] = certainMorale();
+			rules["morale"]["diceSize"].Integer() = 100;
+			rules.setOverrideFlag(true);
+		}
+		newHorizonsMagic::validateRules(rules);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_MORALE_CHANCE, certainMorale());
 		loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_DICE_SIZE, JsonNode(100));
 	}
@@ -98,6 +108,7 @@ protected:
 
 	void prepare(bool rangedControlledStack = false, bool positiveMorale = false)
 	{
+		forcePositiveMorale = positiveMorale;
 		startGame();
 		configureHero(attackerSideHero);
 		configureHero(defenderSideHero);
@@ -258,6 +269,8 @@ TEST_F(NewHorizonsPuppetMasterTest, AcceptedHeroCastRecordsTheControllerWithoutC
 TEST_F(NewHorizonsPuppetMasterTest, WaitRetainsControlThenMeleeEndsItBeforeMoraleAndGrantsLucidity)
 {
 	prepare(false, true);
+	ASSERT_EQ(battle()->getMagicRules()["morale"]["goodChance"], certainMorale());
+	ASSERT_EQ(battle()->getMagicRules()["morale"]["diceSize"].Integer(), 100);
 	ASSERT_TRUE(castPuppetMaster());
 	ASSERT_TRUE(newHorizonsPuppetMaster::hasControlMarker(controlled));
 	ASSERT_TRUE(activate(controlled));
@@ -279,9 +292,11 @@ TEST_F(NewHorizonsPuppetMasterTest, WaitRetainsControlThenMeleeEndsItBeforeMoral
 	EXPECT_FALSE(battle()->battleCanAttackUnit(controlled, originalSideTarget));
 
 	const auto beforeAttack = originalSideTarget->getAvailableHealth();
+	const auto attackRound = battle()->getRound();
 	const auto melee = BattleAction::makeMeleeAttack(controlled, originalSideTarget->getPosition(),
 		controlled->getPosition(), false);
 	ASSERT_TRUE(submitControlledAction(controlled, melee));
+	EXPECT_EQ(battle()->getRound(), attackRound);
 	EXPECT_LT(originalSideTarget->getAvailableHealth(), beforeAttack);
 	EXPECT_EQ(controlled->unitSide(), BattleSide::DEFENDER);
 	EXPECT_EQ(battle()->battleGetOwner(controlled), PlayerColor(1));

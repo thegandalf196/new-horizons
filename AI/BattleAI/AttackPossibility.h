@@ -90,6 +90,8 @@ struct FortuneStrikeProjection
 	uint32_t defenderId = 0;
 	bool shooting = false;
 	bool retaliation = false;
+	/// Brace is reactive for Last Stand, but not damage/ordinary retaliation.
+	bool bracePreemptive = false;
 	/// Captures the actual attack-classification decision for Last Stand; damage
 	/// provenance alone is broader and can include non-attack physical sources.
 	bool eligibleForLastStand = false;
@@ -199,6 +201,8 @@ public:
 /// Evaluate attack value of one particular attack taking into account various effects like
 /// retaliation, 2-hex breath, collateral damage, shooters blocked damage
 /// </summary>
+class VisibleCandidateWorld;
+
 class AttackPossibility
 {
 public:
@@ -206,6 +210,8 @@ public:
 	BattleHex dest; //tile which we attack
 	BattleAttackInfo attack;
 	bool perfectMoment = false;
+	/// Actual generation-source owner; no hidden policy or complete-horizon claim.
+	std::shared_ptr<const VisibleCandidateWorld> queryWorld;
 
 	// Detached unit states borrow their bonus bearer. Keep a per-candidate
 	// mark projection alive for as long as its returned states can be read.

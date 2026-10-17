@@ -7,12 +7,21 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../server/CVCMIServer.h"
 #include "../../lib/json/JsonNode.h"
+#include "../../lib/bonuses/NativeBonusGraphAccess.h"
+#include "../../lib/battle/PreparedBattleWorldCommit.h"
+#include "../../lib/battle/ProjectedBattleWorldArena.h"
+#include "../../server/PreparedBattleWorldPublication.h"
+#include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/bonuses/PreparedBonusGraphStorage.h"
+#include <functional>
 #include "../../lib/network/NetworkInterface.h"
 #include "../../lib/serializer/GameConnection.h"
 
 #include <array>
 #include <future>
 #include <limits>
+#include <optional>
+#include <boost/asio/executor_work_guard.hpp>
 #include <thread>
 #include <utility>
 
@@ -102,6 +111,7 @@ protected:
 	PublicationWorld authorityWorld, receiverWorld;
 	std::unique_ptr<CVCMIServer> authority;
 	std::unique_ptr<INetworkHandler> clientNetwork;
+	std::optional<boost::asio::executor_work_guard<NetworkContext::executor_type>> receiverWork;
 	NetworkConnectionPtr clientEndpoint;
 	std::unique_ptr<GameConnection> clientConnection;
 	std::thread worker;
@@ -163,11 +173,13 @@ protected:
 		onAuthority([] {}); // Exact maintained FIFO barrier before polling the receiver.
 		clientNetwork->getContext().restart();
 		clientNetwork->getContext().poll();
+		EXPECT_FALSE(clientNetwork->getContext().stopped());
 	}
 	void stopScenario()
 	{
 		if(authority) authority->stop();
 		if(worker.joinable()) worker.join();
+		receiverWork.reset(); // Work must retire before its receiver context is destroyed.
 		authority.reset();
 		clientConnection.reset();
 		clientEndpoint.reset();
@@ -192,9 +204,11 @@ protected:
 		authority = std::make_unique<CVCMIServer>(0, true);
 		authority->prepare(false, false); // Internal-only: no TCP listen or UDP discovery.
 		clientNetwork = INetworkHandler::createHandler();
+		receiverWork.emplace(clientNetwork->getContext().get_executor());
 		clientNetwork->createInternalConnection(*this, authority->getNetworkServer());
 		clientNetwork->getContext().poll();
 		ASSERT_NE(clientConnection, nullptr);
+		ASSERT_FALSE(clientNetwork->getContext().stopped());
 		ASSERT_EQ(authority->activeConnections.size(), 1u);
 		authority->activeConnections.front()->connectionID = GameConnectionID::FIRST_CONNECTION;
 		authority->gh = std::make_shared<CGameHandler>(*authority, authorityWorld.state());
@@ -344,4 +358,373 @@ TEST_F(PacketUpdatePublicationTest, KnownFrozenPreflightFailurePublishesNoFrameA
 	EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
 	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
 	// No retry through the same writer: failure may leave private serializer staging state.
+}
+
+TEST_F(PacketUpdatePublicationTest, NativeGraphAdmissionCoversActualAuthoritativeStateMutation)
+{
+	auto pending = std::make_shared<BattleUnitsChanged>(pair());
+	auto started = std::make_shared<std::promise<void>>();
+	auto startedResult = started->get_future();
+	auto done = std::make_shared<std::promise<void>>();
+	auto completed = done->get_future();
+	{
+		NativeBonusGraphAccess graphAccess;
+		boost::asio::post(authority->getNetworkHandler().getContext(), [this, pending, started, done]
+		{
+			started->set_value();
+			try { authority->applyPack(*pending); done->set_value(); }
+			catch(...) { done->set_exception(std::current_exception()); }
+		});
+		ASSERT_EQ(startedResult.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+		EXPECT_EQ(completed.wait_for(std::chrono::milliseconds(20)), std::future_status::timeout);
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+		// Do NOT poll/notify the client or join while holding graph access. The
+		// worker may own state mutex while waiting; that reverse order is invalid.
+	}
+	ASSERT_EQ(completed.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+	ASSERT_NO_THROW(completed.get());
+	drain();
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+	EXPECT_EQ(authorityWorld.snapshot(), receiverWorld.snapshot());
+	EXPECT_TRUE(authorityWorld.first->defended());
+	EXPECT_TRUE(authorityWorld.second->defended());
+}
+
+TEST_F(PacketUpdatePublicationTest, PreparedOwnerRejectsMissingLaterReentryBeforeAnyFrameOrWorldPrefix)
+{
+	auto valid = pair();
+	auto rejected = valid;
+	rejected.changedStacks[1].id = std::numeric_limits<uint32_t>::max();
+	onAuthority([this, valid, rejected]() mutable
+	{
+		battle::PreparedBattleWorldCommit prepared(authorityWorld.state(),
+			std::unique_lock<std::shared_mutex>(CGameState::mutex), valid);
+		EXPECT_THROW(authority->gh->sendAndApply(rejected), std::logic_error);
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+	});
+	drain();
+	EXPECT_TRUE(receipts.empty());
+	EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+	// Once preparation retires, ordinary legal publication remains available.
+	ASSERT_EQ(publish(valid), "");
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+}
+
+TEST_F(PacketUpdatePublicationTest, PreparedOwnerRejectsMalformedLaterReentryBeforeAnyFrameOrWorldPrefix)
+{
+	auto valid = pair();
+	auto rejected = valid;
+	rejected.changedStacks[1].data["state"]["guardianSpiritHitPoints"].Integer() = -1;
+	onAuthority([this, valid, rejected]() mutable
+	{
+		battle::PreparedBattleWorldCommit prepared(authorityWorld.state(),
+			std::unique_lock<std::shared_mutex>(CGameState::mutex), valid);
+		EXPECT_THROW(authority->gh->sendAndApply(rejected), std::logic_error);
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+	});
+	drain();
+	EXPECT_TRUE(receipts.empty());
+	EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+}
+
+namespace
+{
+std::vector<std::byte> publicationReplayBytes(CGameState & state)
+{
+	CMemorySerializer memory;
+	memory.oser & state.replayLog;
+	return memory.extractBuffer();
+}
+
+void prepareOwnedOccurrenceRows(PreparedBattleWorldPublication & publication, CGameState & state)
+{
+	// Explicit actual native owners, not casts from captured const pointers.
+	TNodesVector writable;
+	for(const auto & battle : state.currentBattles)
+	{
+		writable.push_back(battle.get());
+		for(const auto & stack : battle->stacks)
+			writable.push_back(stack.get());
+	}
+	TNodesVector exactWritable;
+	TCNodesVector readonly;
+	for(const auto * node : publication.projected().capturedGraphNodes())
+		if(const auto found = std::find(writable.begin(), writable.end(), node); found != writable.end())
+			exactWritable.push_back(*found);
+		else
+			readonly.push_back(node);
+	publication.prepare(exactWritable, readonly);
+}
+}
+
+TEST_F(PacketUpdatePublicationTest, ActualServerFactoryRejectsMissingLaterBeforeFramesOrWorldPrefix)
+{
+	auto invalid = pair();
+	invalid.changedStacks[1].id = std::numeric_limits<uint32_t>::max();
+	onAuthority([this, invalid]() mutable
+	{
+		const auto replay = publicationReplayBytes(*authorityWorld.state());
+		EXPECT_THROW(authority->prepareBattleWorldPublication(invalid), std::runtime_error);
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+		EXPECT_EQ(publicationReplayBytes(*authorityWorld.state()), replay);
+	});
+	drain();
+	EXPECT_TRUE(receipts.empty());
+	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+}
+
+TEST_F(PacketUpdatePublicationTest, ActualServerFactoryRejectsMalformedLaterBeforeFramesOrWorldPrefix)
+{
+	auto invalid = pair();
+	invalid.changedStacks[1].data["state"]["guardianSpiritHitPoints"].Integer() = -1;
+	onAuthority([this, invalid]() mutable
+	{
+		const auto replay = publicationReplayBytes(*authorityWorld.state());
+		EXPECT_THROW(authority->prepareBattleWorldPublication(invalid), std::runtime_error);
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+		EXPECT_EQ(publicationReplayBytes(*authorityWorld.state()), replay);
+	});
+	drain();
+	EXPECT_TRUE(receipts.empty());
+	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+}
+
+TEST_F(PacketUpdatePublicationTest, ActualServerFactoryCommitsWorldThenOneFrameAndCallerWriterProjection)
+{
+	auto requested = pair();
+	onAuthority([this, requested]() mutable
+	{
+		const auto firstExpected = requested.changedStacks[0].data;
+		const auto secondExpected = requested.changedStacks[1].data;
+		auto publication = authority->prepareBattleWorldPublication(requested);
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+		prepareOwnedOccurrenceRows(*publication, *authorityWorld.state());
+		ASSERT_TRUE(publication->ready());
+		ASSERT_TRUE(publication->commit());
+		EXPECT_FALSE(publication->ready());
+		EXPECT_FALSE(publication->commit());
+		EXPECT_EQ(authorityWorld.first->save(), firstExpected);
+		EXPECT_EQ(authorityWorld.second->save(), secondExpected);
+		for(size_t index = 0; index < requested.changedStacks.size(); ++index)
+		{
+			auto projected = index == 0 ? firstExpected : secondExpected;
+			projected["state"]["activationMovementBonus"] = JsonNode();
+			projected["state"]["veteranPhysicalDamageSinceActivation"] = JsonNode();
+			EXPECT_EQ(requested.changedStacks[index].data, projected);
+		}
+	});
+	drain();
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+	EXPECT_EQ(authorityWorld.snapshot(), receiverWorld.snapshot());
+}
+
+TEST_F(PacketUpdatePublicationTest, ActualServerFactoryRejectsNestedPreparationBeforeStateRelock)
+{
+	auto requested = pair();
+	onAuthority([this, requested]() mutable
+	{
+		auto publication = authority->prepareBattleWorldPublication(requested);
+		EXPECT_THROW(authority->prepareBattleWorldPublication(requested), std::logic_error);
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+	});
+	drain();
+	EXPECT_TRUE(receipts.empty());
+}
+
+TEST_F(PacketUpdatePublicationTest, IncorrectReadonlyPartitionCancelsFramesAndPreservesWorldReplayAndCaller)
+{
+	auto requested = pair();
+	// A defending-only UPDATE changes scalar state, not graph storage. Make this
+	// a genuine graph-write request: placement UPDATE journals the battle root.
+	const auto moved = BattleHex(4, 5);
+	ASSERT_NE(authorityWorld.first->getPosition(), moved);
+	requested.changedStacks[0].data["state"]["position"].Integer() = moved.toInt();
+	ASSERT_EQ(requested.changedStacks[0].healthDelta, 0);
+	onAuthority([this, requested]() mutable
+	{
+		const auto caller = requested.changedStacks[0].data;
+		const auto replay = publicationReplayBytes(*authorityWorld.state());
+		auto publication = authority->prepareBattleWorldPublication(requested);
+		const auto generation = PreparedBonusGraphStorage::currentGeneration();
+		EXPECT_EQ(publication->projected().findUnit(authorityWorld.first->unitId())->getPosition(), BattleHex(4, 5));
+		std::string reason;
+		EXPECT_THROW(([&]
+		{
+			try { publication->prepare({}, publication->projected().capturedGraphNodes()); }
+			catch(const std::invalid_argument & error) { reason = error.what(); throw; }
+		}()), std::invalid_argument);
+		EXPECT_EQ(reason, "Read-only final graph row is an invalidation target");
+		EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
+		EXPECT_FALSE(publication->ready());
+		EXPECT_FALSE(publication->commit());
+		EXPECT_EQ(requested.changedStacks[0].data, caller);
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+		EXPECT_EQ(publicationReplayBytes(*authorityWorld.state()), replay);
+	});
+	drain();
+	EXPECT_TRUE(receipts.empty());
+	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+}
+
+namespace
+{
+std::vector<std::byte> rawCallerFields(const BattleUnitsChanged & packet)
+{
+	// Independent test oracle: field DTO only, NOT packet/envelope serialization.
+	// Invalid caller mutations must not be validated/normalized or invoke writers.
+	CMemorySerializer memory;
+	memory.oser & packet.battleID;
+	uint64_t count = packet.changedStacks.size();
+	memory.oser & count;
+	for(const auto & change : packet.changedStacks)
+	{
+		memory.oser & change.id;
+		memory.oser & change.operation;
+		memory.oser & change.healthDelta;
+		memory.oser & change.data;
+	}
+	bool chain = packet.rebirthChainConsumption.has_value(), phoenix = packet.phoenixSparkConsumption.has_value();
+	memory.oser & chain;
+	if(chain)
+	{
+		memory.oser & packet.rebirthChainConsumption->side;
+		memory.oser & packet.rebirthChainConsumption->sourceUnitId;
+		memory.oser & packet.rebirthChainConsumption->spawnUnitId;
+		memory.oser & packet.rebirthChainConsumption->rollback;
+	}
+	memory.oser & phoenix;
+	if(phoenix)
+	{
+		memory.oser & packet.phoenixSparkConsumption->side;
+		memory.oser & packet.phoenixSparkConsumption->sourceUnitId;
+	}
+	return memory.extractBuffer();
+}
+}
+
+TEST_F(PacketUpdatePublicationTest, EveryCallerCarrierMutationRefusesBeforeFramesWorldReplayOrCallerOverwrite)
+{
+	using Mutate = std::function<void(BattleUnitsChanged &)>;
+	const std::vector<std::pair<const char *, Mutate>> mutations{
+		{"battleID", [](auto & p) { p.battleID = BattleID(999); }},
+		{"unitID", [](auto & p) { ++p.changedStacks[0].id; }},
+		{"operation", [](auto & p) { p.changedStacks[0].operation = BattleChanges::EOperation::REMOVE; }},
+		{"healthDelta", [](auto & p) { ++p.changedStacks[0].healthDelta; }},
+		{"stateValue", [](auto & p) { p.changedStacks[0].data["state"]["defending"].Bool() = false; }},
+		{"unknownField", [](auto & p) { p.changedStacks[0].data["callerOnly"] = JsonNode(true); }},
+		{"type", [](auto & p) { p.changedStacks[0].data["state"]["defending"] = JsonNode(int64_t{1}); }},
+		{"metadata", [](auto & p) { p.changedStacks[0].data["state"].setModScope("changed", false); }},
+		{"override", [](auto & p) { p.changedStacks[0].data.setOverrideFlag(true); }},
+		{"entryOrder", [](auto & p) { std::swap(p.changedStacks[0], p.changedStacks[1]); }},
+		{"entryCount", [](auto & p) { p.changedStacks.pop_back(); }},
+		{"chainPresence", [](auto & p) { p.rebirthChainConsumption.emplace(); }},
+		{"phoenixPresence", [](auto & p) { p.phoenixSparkConsumption.emplace(); }}
+	};
+	for(const auto & [name, mutate] : mutations)
+	{
+		SCOPED_TRACE(name);
+		auto requested = pair();
+		onAuthority([this, requested, mutate]() mutable
+		{
+			const auto replay = publicationReplayBytes(*authorityWorld.state());
+			auto publication = authority->prepareBattleWorldPublication(requested);
+			prepareOwnedOccurrenceRows(*publication, *authorityWorld.state());
+			ASSERT_TRUE(publication->ready());
+			mutate(requested);
+			const auto untouchedCaller = rawCallerFields(requested);
+			const auto generation = PreparedBonusGraphStorage::currentGeneration();
+			EXPECT_FALSE(publication->ready());
+			EXPECT_FALSE(publication->commit());
+			EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
+			EXPECT_EQ(rawCallerFields(requested), untouchedCaller);
+			EXPECT_EQ(publicationReplayBytes(*authorityWorld.state()), replay);
+			EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+		});
+		drain();
+		EXPECT_TRUE(receipts.empty());
+		EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+	}
+}
+
+TEST_F(PacketUpdatePublicationTest, RestoringExactCallerInputBeforeCommitRemainsLegal)
+{
+	auto requested = pair();
+	onAuthority([this, requested]() mutable
+	{
+		auto publication = authority->prepareBattleWorldPublication(requested);
+		prepareOwnedOccurrenceRows(*publication, *authorityWorld.state());
+		const auto original = requested.battleID;
+		requested.battleID = BattleID(999);
+		EXPECT_FALSE(publication->ready());
+		requested.battleID = original;
+		ASSERT_TRUE(publication->ready());
+		ASSERT_TRUE(publication->commit());
+	});
+	drain();
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+}
+
+TEST_F(PacketUpdatePublicationTest, ExplicitlyStoppedReceiverRefusesValidPreparationWithoutWorldOrWirePrefix)
+{
+	auto requested = pair();
+	ASSERT_FALSE(clientNetwork->getContext().stopped());
+	clientNetwork->getContext().stop(); // Explicit stop still wins over outstanding work.
+	ASSERT_TRUE(clientNetwork->getContext().stopped());
+	onAuthority([this, requested]() mutable
+	{
+		const auto replay = publicationReplayBytes(*authorityWorld.state());
+		try
+		{
+			authority->prepareBattleWorldPublication(requested);
+			ADD_FAILURE() << "Stopped receiver preparation unexpectedly succeeded";
+		}
+		catch(const std::runtime_error & error)
+		{
+			EXPECT_STREQ(error.what(), "Prepared transport binding is closed, stopped or changed");
+		}
+		catch(...)
+		{
+			ADD_FAILURE() << "Stopped receiver preparation threw a different exception type";
+		}
+		EXPECT_EQ(publicationReplayBytes(*authorityWorld.state()), replay);
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+	});
+	EXPECT_TRUE(receipts.empty());
+	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+}
+
+TEST_F(PacketUpdatePublicationTest, ScalarOnlyUpdateMayObserveEveryUnchangedGraphNodeReadOnly)
+{
+	auto requested = pair();
+	onAuthority([this, requested]() mutable
+	{
+		const auto firstExpected = requested.changedStacks[0].data;
+		const auto secondExpected = requested.changedStacks[1].data;
+		const auto firstGraph = authorityWorld.first->getAllBonuses(Selector::all, "scalar-only-readonly.first");
+		const auto secondGraph = authorityWorld.second->getAllBonuses(Selector::all, "scalar-only-readonly.second");
+		const auto generation = PreparedBonusGraphStorage::currentGeneration();
+		auto publication = authority->prepareBattleWorldPublication(requested);
+		// Real world/mutex and mutable scalar transfer participants are owned by
+		// publication; this partition classifies ONLY unchanged graph storage.
+		publication->prepare({}, publication->projected().capturedGraphNodes());
+		ASSERT_TRUE(publication->ready());
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+		ASSERT_TRUE(publication->commit());
+		EXPECT_FALSE(publication->commit());
+		EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
+		EXPECT_EQ(authorityWorld.first->getAllBonuses(Selector::all, "scalar-only-readonly.first"), firstGraph);
+		EXPECT_EQ(authorityWorld.second->getAllBonuses(Selector::all, "scalar-only-readonly.second"), secondGraph);
+		EXPECT_EQ(authorityWorld.first->save(), firstExpected);
+		EXPECT_EQ(authorityWorld.second->save(), secondExpected);
+	});
+	drain();
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+	EXPECT_EQ(authorityWorld.snapshot(), receiverWorld.snapshot());
 }

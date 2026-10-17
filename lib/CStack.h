@@ -17,6 +17,7 @@
 #include "mapObjects/CGHeroInstance.h" // for commander serialization
 
 #include "battle/CUnitState.h"
+#include "battle/UnitQueryTerrain.h"
 #include "battle/NewHorizonsBloodrage.h"
 
 #include <utility>
@@ -30,6 +31,8 @@ class DLL_LINKAGE CStack : public CBonusSystemNode, public battle::CUnitState, p
 {
 private:
 	friend class ProjectedBonusGraph;
+	friend class battle::PreparedStackStateTransfer;
+	friend class battle::PreparedBattleUnitRoots;
 	ui32 ID = -1; //unique ID of stack
 	CreatureID typeID;
 	ui32 baseAmount = -1;
@@ -54,6 +57,9 @@ public:
 	CStack(const CStackInstance * base, const PlayerColor & O, int I, BattleSide Side, const SlotID & S);
 	CStack(const CStackBasicDescriptor * stack, const PlayerColor & O, int I, BattleSide Side,
 		const SlotID & S = SlotID(255), bool hypothetical = false);
+	CStack(const CStackBasicDescriptor * stack, const PlayerColor & O, int I, BattleSide Side,
+		const SlotID & S, bool hypothetical, UnitQueryTerrain terrain);
+	std::optional<TerrainId> getQueryTerrain() const;
 	CStack();
 	~CStack();
 
@@ -377,6 +383,7 @@ private:
 	void onBattleFormChanged() override;
 
 	const BattleInfo * battle = nullptr; //do not serialize
+	UnitQueryTerrain queryTerrain; // immutable query-only input, NOT serialized
 };
 
 /// Returns effective creature-native bonuses evaluated in a detached, read-only stack context.

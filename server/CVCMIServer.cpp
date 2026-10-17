@@ -1273,14 +1273,6 @@ bool CVCMIServer::hasBothPlayersAtSameConnection(PlayerColor left, PlayerColor r
 	return false;
 }
 
-void CVCMIServer::applyPack(CPackForClient & pack)
-{
-	logNetwork->trace("\tSending to all clients: %s", typeid(pack).name());
-	for (const auto & c : activeConnections)
-		c->sendPack(pack);
-	gh->gs->apply(pack);
-	logNetwork->trace("\tApplied on gameState(): %s", typeid(pack).name());
-}
 
 void CVCMIServer::sendPack(CPackForClient & pack, GameConnectionID connectionID)
 {

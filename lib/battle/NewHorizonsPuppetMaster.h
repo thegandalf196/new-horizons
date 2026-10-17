@@ -16,6 +16,7 @@
 namespace battle
 {
 	class Unit;
+	class UnitOwnershipQuery;
 }
 
 class CBattleInfoEssentials;
@@ -30,6 +31,9 @@ DLL_LINKAGE bool hasValidControlMarker(const CBattleInfoEssentials & battle, con
 DLL_LINKAGE bool hasLucidity(const battle::Unit * unit);
 DLL_LINKAGE bool isMentalControlSpell(std::string_view spellJsonKey);
 DLL_LINKAGE bool isValidControlMarker(const CBattleInfoEssentials & battle, const battle::Unit * unit,
+	const Bonus * marker);
+
+DLL_LINKAGE bool isValidControlMarker(const battle::UnitOwnershipQuery & ownership, const battle::Unit * unit,
 	const Bonus * marker);
 
 DLL_LINKAGE Bonus controlMarker(SpellID spell, PlayerColor caster);

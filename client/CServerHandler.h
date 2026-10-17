@@ -35,6 +35,9 @@ struct LobbyModsCheck;
 class HighScoreParameter;
 
 class NetworkLagCompensator;
+class PreparedClientBattleReplay;
+class ClientPacketReceiveSession;
+struct BattleUnitsChanged;
 class GameplayReplayer;
 class CClient;
 class CBaseForLobbyApply;
@@ -100,6 +103,7 @@ class CServerHandler final : public IServerAPI, public LobbyInfo, public INetwor
 {
 	friend class ApplyOnLobbyHandlerNetPackVisitor;
 
+	friend class ClientPacketReceiveSession;
 	std::unique_ptr<INetworkHandler> networkHandler;
 	std::shared_ptr<INetworkConnection> networkConnection;
 	std::unique_ptr<GlobalLobbyClient> lobbyClient;
@@ -240,6 +244,8 @@ public:
 
 	void visitForLobby(CPackForLobby & lobbyPack);
 	void visitForClient(CPackForClient & clientPack);
+	/// Opt-in replay storage only; ordinary dispatch remains unchanged.
+	std::unique_ptr<PreparedClientBattleReplay> prepareBattleReplayEntry(BattleUnitsChanged & packet);
 
 	GameplayReplayer & replayer();
 

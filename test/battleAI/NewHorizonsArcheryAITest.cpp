@@ -14,6 +14,7 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/CStack.h"
+#include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../server/CGameHandler.h"
@@ -65,13 +66,7 @@ protected:
 		startGame();
 		if(withSkirmisher)
 		{
-			const int decoded = SecondarySkill::decode(std::string(newHorizonsArchery::SKILL));
-			ASSERT_GE(decoded, 0);
-			attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC,
-				ChangeValueMode::ABSOLUTE);
-			attackerSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL),
-				std::string(newHorizonsArchery::SKIRMISHER)});
-			ASSERT_TRUE(newHorizonsArchery::hasSkirmisher(attackerSideHero));
+			ASSERT_NO_FATAL_FAILURE(selectFixtureSkirmisher());
 		}
 		startBattle();
 		shooter = addStack(BattleSide::ATTACKER,
@@ -92,6 +87,45 @@ protected:
 		callback = std::make_shared<ArcheryAICallback>();
 		callback->onBattleStarted(battle());
 		environment = std::make_shared<ArcheryAIEnvironment>(gameState());
+	}
+
+	void selectFixtureSkirmisher()
+	{
+		const auto skill = std::string(newHorizonsArchery::SKILL);
+		const auto desired = std::string(newHorizonsArchery::SKIRMISHER);
+		const int decoded = SecondarySkill::decode(skill);
+		ASSERT_GE(decoded, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC,
+			ChangeValueMode::ABSOLUTE);
+		auto & perks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+		ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(perks.rules));
+		const auto capturedRules = perks.rules;
+		const auto capturedWeights = attackerSideHero->getPerkOfferWeightContext().referenceWeights;
+		const auto rank = attackerSideHero->getPerkSkillRank(skill);
+		const auto definition = newHorizonsHeroes::perkDefinition(perks.rules, skill, desired);
+		ASSERT_TRUE(definition);
+		ASSERT_EQ(definition->requiredRank, "basic");
+		const newHorizonsHeroes::PerkSelection authored{skill, std::string(newHorizonsArchery::TARGET_CALLER)};
+		ASSERT_EQ(std::ranges::count_if(perks.selected, [&skill](const auto & entry) { return entry.skillId == skill; }), 1);
+		const auto starting = std::ranges::find(perks.selected, authored);
+		ASSERT_NE(starting, perks.selected.end());
+		ASSERT_FALSE(perks.canAcquirePerk(skill, desired, rank)); // Occupied Basic slot stays rejected.
+		// Test construction, not a gameplay respec: neutral skill ranks do not
+		// erase Orrin's authored choice. Replace that one fixture selection only.
+		auto expected = perks.selected;
+		expected.erase(expected.begin() + std::distance(perks.selected.begin(), starting));
+		perks.selected.erase(starting);
+		perks.validate();
+		ASSERT_EQ(perks.selected, expected);
+		ASSERT_TRUE(std::ranges::none_of(perks.selected, [&skill](const auto & entry) { return entry.skillId == skill; }));
+		ASSERT_TRUE(perks.canAcquirePerk(skill, desired, rank));
+		attackerSideHero->applyPerkSelection({skill, desired});
+		ASSERT_TRUE(newHorizonsArchery::hasSkirmisher(attackerSideHero));
+		expected.push_back({skill, desired});
+		ASSERT_EQ(perks.selected, expected);
+		ASSERT_EQ(perks.rules, capturedRules);
+		ASSERT_EQ(attackerSideHero->getPerkOfferWeightContext().referenceWeights, capturedWeights);
+		ASSERT_FALSE(perks.canAcquirePerk(skill, authored.perkId, rank));
 	}
 
 	BattleAction choose()
@@ -116,7 +150,11 @@ TEST_F(NewHorizonsArcheryAITest, OrdinaryShooterKeepsUsingDirectShotAction)
 TEST_F(NewHorizonsArcheryAITest, SkirmisherUsesCanonicalWalkAndAttackOnlyForLegalMoveThenShot)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	// A friendly midpoint stack does not block shots; moving must resolve range.
+	shooter->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::LIMITED_SHOOTING_RANGE, BonusSource::OTHER, 6, BonusSourceID()));
 	ASSERT_FALSE(battle()->battleCanShoot(shooter, target->getPosition()));
+	ASSERT_FALSE(battle()->battleCanShootAction(shooter, target->getPosition()));
 	const auto candidates = battle()->battleGetSkirmisherAttackFromHexes(shooter, target->getPosition());
 	ASSERT_FALSE(candidates.empty());
 

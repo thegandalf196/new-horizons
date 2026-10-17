@@ -8,9 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "bonuses/NativeBonusGraphAccess.h"
 #include "CStack.h"
 #include "battle/BattleBonusAcceptance.h"
-#include <tuple>
+#include "battle/StackInitializationReceipts.h"
 
 #include <vstd/RNG.h>
 
@@ -30,63 +31,11 @@
 #include "spells/CSpell.h"
 
 ///CStack
-CStack::CStack(const CStackInstance * Base, const PlayerColor & O, int I, BattleSide Side, const SlotID & S):
-	CBonusSystemNode(BonusNodeType::STACK_BATTLE),
-	base(Base),
-	ID(I),
-	typeID(Base->getId()),
-	baseAmount(Base->getCount()),
-	owner(O),
-	slot(S),
-	side(Side)
-{
-	health.init(); //???
-	doubleWideCached = battle::CUnitState::doubleWide();
-}
-
-CStack::CStack():
-	CBonusSystemNode(BonusNodeType::STACK_BATTLE),
-	owner(PlayerColor::NEUTRAL),
-	slot(SlotID(255)),
-	initialPosition(BattleHex())
-{
-}
-
-CStack::CStack(const CStackBasicDescriptor * stack, const PlayerColor & O, int I, BattleSide Side,
-	const SlotID & S, const bool hypothetical):
-	CBonusSystemNode(BonusNodeType::STACK_BATTLE, hypothetical),
-	ID(I),
-	typeID(stack->getId()),
-	baseAmount(stack->getCount()),
-	owner(O),
-	slot(S),
-	side(Side)
-{
-	health.init(); //???
-	doubleWideCached = battle::CUnitState::doubleWide();
-}
-
 void CStack::localInit(BattleInfo * battleInfo)
 {
 	battle = battleInfo;
 	assert(typeID.hasValue());
-	const int32_t restoredPersonalBloodrageIncrement = personalBloodrageIncrement;
-	const auto restoredQueueFlags = std::make_tuple(waiting, waitedThisTurn, movedThisRound,
-		defending, hadMorale, battlecraftWaitBonusUsed, battlecraftWaitMasteryDoubled);
-	const bool restoredVeteranCohesion = veteranCohesionEarned;
-	const auto restoredConfusionState = confusionState;
-	const int32_t restoredOverwatchReadyRound = battlecraftOverwatchReadyRound;
-	const int32_t restoredOverwatchUsedRound = battlecraftOverwatchUsedRound;
-	const bool restoredMoraleExtraActivation = moraleExtraActivation;
-	const bool restoredHeroicSpirit = heroicSpiritRetaliation;
-	const bool restoredHeroicSpiritPending = heroicSpiritMoralePending;
-	const int32_t restoredPostAttackMovement = pursuitMovementRemaining;
-	const bool restoredLuckyOwnAttackSequence = luckyOwnAttackSequence;
-	const int32_t restoredFrozenAppliedRound = frozenLastAppliedRound();
-	const bool restoredTimeStopTurnConsumed = timeStopTurnConsumedFlag;
-	const int64_t restoredVeteranDamageHistory = veteranPhysicalDamageSinceActivation;
-	const int32_t restoredNoQuarterLifetime = noQuarterMoraleActivationsRemaining;
-
+	const battle::StackInitializationReceipts receipts(*this);
 	// Battle setup already exports training bonuses for its preview. A direct
 	// BattleStart (or a decoded descriptor) must not export the same pointer
 	// twice: expiry would otherwise remove only one accepted occurrence.
@@ -113,28 +62,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 		// auras use this owned stack, not the ownerless creature definition.
 		attachTo(*army);
 	}
-	CUnitState::localInit(this); //it causes execution of the CStack::isOnNativeTerrain where nativeTerrain will be considered
-	// CUnitState::localInit resets ordinary per-battle transient state; preserve
-	// the one personal increment explicitly carried by this binary stack snapshot.
-	std::tie(waiting, waitedThisTurn, movedThisRound, defending, hadMorale,
-		battlecraftWaitBonusUsed, battlecraftWaitMasteryDoubled) = restoredQueueFlags;
-	personalBloodrageIncrement = restoredPersonalBloodrageIncrement;
-	veteranCohesionEarned = restoredVeteranCohesion;
-	// Binary stack descriptors carry pending Confusion and target history too;
-	// rebinding the stack to the battle must not consume either value.
-	confusionState = restoredConfusionState;
-	battlecraftOverwatchReadyRound = restoredOverwatchReadyRound;
-	battlecraftOverwatchUsedRound = restoredOverwatchUsedRound;
-	moraleExtraActivation = restoredMoraleExtraActivation;
-	heroicSpiritRetaliation = restoredHeroicSpirit;
-	heroicSpiritMoralePending = restoredHeroicSpiritPending;
-	restoreFrozenApplicationRound(restoredFrozenAppliedRound);
-	timeStopTurnConsumedFlag = restoredTimeStopTurnConsumed;
-	veteranPhysicalDamageSinceActivation = restoredVeteranDamageHistory;
-	noQuarterMoraleActivationsRemaining = restoredNoQuarterLifetime;
-	luckyOwnAttackSequence = restoredLuckyOwnAttackSequence;
-	pursuitMovementRemaining = restoredPostAttackMovement;
-	position = initialPosition;
+	receipts.initialize(*this, this, initialPosition);
 }
 
 void CStack::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration, bool pauseBattleForm)
@@ -392,6 +320,7 @@ const CCreature * CStack::unitType() const
 
 void CStack::onBattleFormChanged()
 {
+	NativeBonusGraphAccess graphAccess;
 	battle::CUnitState::onBattleFormChanged();
 
 	const CCreature * desiredBonusSource = nullptr;
@@ -425,6 +354,7 @@ TConstBonusListPtr getBattleFormNativeBonuses(
 	const CSelector & selector,
 	bool unstacked)
 {
+	NativeBonusGraphAccess graphAccess;
 	const CreatureID originalCreature = formState.battleFormOriginalCreature();
 	const CreatureID effectiveCreature = formState.battleFormCreature();
 	if(!originalCreature.hasValue() || !effectiveCreature.hasValue())
@@ -544,29 +474,11 @@ int CStack::unitBloodragePainIncrement(const battle::Unit * unit) const
 	return battle ? battle->battleBloodragePainIncrement(unit) : 0;
 }
 
-bool CStack::unitHasVeteranCohesion(const battle::Unit * unit) const
-{
-	if(!battle || !unit)
-		return false;
-	const auto owner = battle->battleGetOwner(unit);
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		if(battle->getSidePlayer(side) == owner)
-			return newHorizonsDiscipline::hasVeteranCohesion(battle->battleGetFightingHero(side));
-	return false;
-}
-
 std::optional<int> CStack::unitMagicResistance(const battle::Unit * unit) const
 {
 	if(!battle || !unit)
 		return std::nullopt;
 	return battle->battleGetMagicResistance(unit);
-}
-
-std::optional<std::pair<int32_t, int32_t>> CStack::unitMoraleLimits(const battle::Unit * unit) const
-{
-	if(!battle || !unit)
-		return std::nullopt;
-	return newHorizonsMagic::moraleLimits(battle->getMagicRules());
 }
 
 uint32_t CStack::unitId() const

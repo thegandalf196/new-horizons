@@ -430,7 +430,7 @@ TEST_F(NewHorizonsSeizeInitiativeTest, DetachedPaidOrderAndCompletionCopyIsolati
 	auto branch = std::make_shared<HypotheticBattle>(&env, std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
 	const auto prepared = branch->prepareHeroOrderAllowance(BattleSide::ATTACKER);
 	ASSERT_TRUE(prepared.has_value());
-	ASSERT_TRUE(branch->beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
+	ASSERT_TRUE(branch->beginProjectedHeroOrder(BattleSide::ATTACKER, HeroCommand::CHARGE, {}, *prepared));
 	ASSERT_TRUE(branch->projectAcceptedHeroOrder(BattleSide::ATTACKER, HeroCommand::CHARGE, {}, *prepared));
 	EXPECT_TRUE(branch->getSeizeInitiativeState().sides[0].triggered);
 	EXPECT_FALSE(battle()->getSeizeInitiativeState().sides[0].triggered);

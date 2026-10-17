@@ -47,6 +47,14 @@ else()
 endif()
 
 set(test_SRCS
+		# Pure queue/replay storage only; native Engine session/factories stay in client.
+		../client/netlag/NetworkLagReplyState.cpp
+		../client/netlag/NetworkLagRollbackCopy.cpp
+		../client/netlag/PreparedNetworkLagRetirement.cpp
+		../client/replay/ClientReceiveAccess.cpp
+		../client/replay/PreparedClientBattleReplay.cpp
+		../client/replay/PreparedClientWorldReplay.cpp
+		../client/replay/PreparedConsumedBattleReply.cpp
 		rmg/NewHorizonsRandomScrollTest.cpp
  		StdInc.cpp
  		main.cpp
@@ -80,10 +88,17 @@ set(test_SRCS
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp
 		battle/CUnitStateTest.cpp
+		battle/CUnitStateLifecycleTest.cpp
 		battle/UnitStateValueExchangeTest.cpp
+		battle/PreparedStackStateTransferTest.cpp
+		battle/PreparedBattleUnitRootsTest.cpp
+		battle/PreparedBattleWorldCommitTest.cpp
+		battle/BattleRootLifetimeTest.cpp
+		battle/BattleRootCommitAdmissionTest.cpp
 		battle/PreparedReplayAppendTest.cpp
 		battle/CUnitStateMagicTest.cpp
 		battle/PhysicalAfflictionTest.cpp
+		server/battles/PhysicalAfflictionStampingTest.cpp
 		battle/NewHorizonsDebuffStatusesTest.cpp
 		battle/NewHorizonsFrozenTest.cpp
 		battle/FocusFireStateTest.cpp
@@ -95,11 +110,34 @@ set(test_SRCS
 		bonus/BonusEvaluationContextTest.cpp
 		bonus/ProjectedBonusLimitationTest.cpp
 		bonus/TerrainAuthorityTest.cpp
+		bonus/TerrainLimiterSerializationTest.cpp
 		bonus/ProjectedUnitMagicResistanceTest.cpp
+		bonus/ProjectedUnitEnvironmentTest.cpp
+	bonus/ProjectedBonusCleanupTest.cpp
+	battle/ProjectedBattleAccessibilityTest.cpp
+	bonus/ProjectedBonusRelationsTest.cpp
+	bonus/ProjectedUnitInitializationTest.cpp
+	bonus/ColdBonusContextTest.cpp
+	bonus/ProjectedSummonHealthQueryTest.cpp
+	bonus/SummonQueryTerrainTest.cpp
+	battle/ProjectedUnitRemovalTest.cpp
+	battle/ProjectedBattleWorldArenaTest.cpp
+	battle/PlacementUpdateCacheTest.cpp
+	battle/UnitUpdateAdmissionTest.cpp
+	battle/ProjectedUnitTransitionTest.cpp
+	battle/ProjectedUnitPacketSidecarsTest.cpp
+	battle/PreparedBattleUnitSidecarsTest.cpp
+	battle/ProjectedRemoveSnapshotTest.cpp
+	battle/ProjectedUnitPacketWireTest.cpp
+		bonus/ProjectedUnitEnvironmentHeroInputsTest.cpp
+		bonus/ProjectedUnitEnvironmentFixture.h
 		bonus/ProjectedBonusGraphTest.cpp
+		bonus/ProjectedDurationHistoryTest.cpp
 		bonus/ProjectedFormTransitionTest.cpp
 		bonus/PreparedBonusGraphFinalizationTest.cpp
 		bonus/PreparedBonusGraphStorageTest.cpp
+		bonus/NativeBonusGraphAccessTest.cpp
+		bonus/NativeBonusGraphAdmissionTest.cpp
 		bonus/BonusStatusTagsTest.cpp
 		bonus/NewHorizonsUnstackedBonusTest.cpp
 		bonus/NewHorizonsCreatureProbabilityTest.cpp
@@ -251,6 +289,16 @@ set(test_SRCS
 		server/battles/BattleTestFixture.cpp
 		server/battles/PacketUpdateAtomicityTest.cpp
 		network/PacketUpdatePublicationTest.cpp
+		battle/PreparedReplayBatchTest.cpp
+		bonus/ReadOnlyBonusGraphParticipantTest.cpp
+		client/PreparedClientBattleReplayTest.cpp
+		client/PreparedClientReplaySnapshotTest.cpp
+		client/PreparedClientWorldReplayTest.cpp
+		client/PreparedConsumedBattleReplyTest.cpp
+		client/PreparedNetworkLagRetirementTest.cpp
+		network/BattleUnitsChangedInputTest.cpp
+		network/PreparedRecipientPublicationTest.cpp
+		network/PreparedWriteFailureTest.cpp
 		server/battles/CombatEventTriggerTest.cpp
 		server/battles/DamageCalculatorTest.cpp
 		server/battles/NewHorizonsMoraleActivationTest.cpp
@@ -321,6 +369,7 @@ set(test_SRCS
 		server/battles/HeroCommandCloneTest.cpp
 		server/battles/FocusFireLifecycleTest.cpp
 		server/battles/FocusFirePersistenceTest.cpp
+		server/battles/FocusFireCompatibilityTest.cpp
 		server/battles/FocusFireServerTest.cpp
 		server/battles/HeroCommandTurnLifecycleTest.cpp
 		server/battles/TeleporterPerkLifecycleTest.cpp
@@ -535,6 +584,8 @@ set(test_SRCS
 		server/battles/NewHorizonsFireWallTest.cpp
 		server/battles/NewHorizonsTimeStopTest.cpp
 		server/battles/NewHorizonsFrozenTest.cpp
+		server/battles/FrozenAttackCommitCharacterizationTest.cpp
+		server/battles/FrozenAttackResolutionTest.cpp
 		server/battles/NewHorizonsMasteryFixtureExportTest.cpp
 		server/battles/NewHorizonsConvenienceFixtureExportTest.cpp
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp
@@ -603,12 +654,18 @@ set(test_SRCS
 set(test_HEADERS
 		battleAI/HeroQueueSelectorFixture.h
 		battleAI/HeroExpectedSpellFixture.h
+		battleAI/PurifyRuleFixtures.h
 		battleAI/HeroQueueBonusSnapshot.h
  		StdInc.h
 
  		CVcmiTestConfig.h
 		JsonComparer.h
 		SpellPointTestUtils.h
+		battleAI/InitialExportWorldFixture.h
+		battleAI/OriginalMeleeSequenceFixture.h
+		battleAI/OwnedExportLifecycleFixture.h
+		battleAI/OwnedExportMeleeFixture.h
+		battleAI/ProjectedTargetHitFixture.h
 
 		map/MapComparer.h
 
@@ -619,6 +676,7 @@ set(test_HEADERS
 		spells/targetConditions/TargetConditionItemFixture.h
 
 		server/battles/BattleTestFixture.h
+		server/battles/FrozenAttackStageFixture.h
 		server/battles/HeroCommandFixture.h
 		server/battles/NewHorizonsElementalTerrainFixture.h
 		server/battles/FocusFireFixture.h
@@ -674,7 +732,35 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsReactiveWeaveTest.cpp
 		server/battles/NewHorizonsHalonMetamagicTest.cpp
 		battleAI/HeroCommandAITest.cpp
+		battleAI/CanonicalOrderValueTest.cpp
+		battleAI/SecondWindOpportunityTest.cpp
+		battleAI/HeroOrderCandidatesTest.cpp
 		battleAI/SpellAdmissionCharacterizationTest.cpp
+		battleAI/HeroActionAdmissionTest.cpp
+		battleAI/HeroActionUtilityTest.cpp
+		battleAI/HeroOrderEffectsProjectionTest.cpp
+		battleAI/LegacyHeroOrderProjectionTest.cpp
+		battleAI/BraceAttackPreviewTest.cpp
+		battleAI/BracePreemptiveForecastTest.cpp
+		battleAI/InitialExportWorldTest.cpp
+		battleAI/MeleeExpiryOwnershipTest.cpp
+		battleAI/MeleeResourceOrderTest.cpp
+		battleAI/MovementBonusProvenanceTest.cpp
+		battleAI/OrdinaryMeleeRetaliationTest.cpp
+		battleAI/OriginalMeleeSequenceTest.cpp
+		battleAI/OwnedExportBranchQueryTest.cpp
+		battleAI/OwnedExportLifecycleTest.cpp
+		battleAI/OwnedExportMeleeTest.cpp
+		battleAI/OwnedBraceArrivalTest.cpp
+		battleAI/VisibleHeroBonusQueryTest.cpp
+		battleAI/HeroCommandCoefficientInputsTest.cpp
+		battleAI/RecipientMeleeInjuryTest.cpp
+		battleAI/VisibleCandidateWorldTest.cpp
+		battleAI/SelectedAttackReceiptTest.cpp
+		battleAI/LegacyRecipientMovementTest.cpp
+		battleAI/OwnedExportRoundSequenceTest.cpp
+		battleAI/ProjectedTargetHitTest.cpp
+		battleAI/StackEffectRemovalTest.cpp
 		battleAI/HeroQueueSelectorFixture.cpp
 		battleAI/HeroQueueBonusSnapshot.cpp
 		battleAI/HeroQueueBonusSnapshotTest.cpp
@@ -695,6 +781,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/AttackResourceProjectionTest.cpp
 		battleAI/DamageReductionControlTest.cpp
 		battleAI/FocusFireAITest.cpp
+		battleAI/ProjectedAdditionTerrainTest.cpp
 		battleAI/NewHorizonsMagicAITest.cpp
 		battleAI/NewHorizonsImplosionAITest.cpp
 		server/battles/NewHorizonsTeleportFreedomTest.cpp
@@ -711,6 +798,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsHeavenlyGaleAITest.cpp
 		battleAI/NewHorizonsDivineRetributionAITest.cpp
 		battleAI/NewHorizonsPurifyAITest.cpp
+		battleAI/PurifyRuleFixtures.cpp
+		battleAI/PurifyRuleFixturesTest.cpp
 		battleAI/NewHorizonsCrusadeAITest.cpp
 		battleAI/NewHorizonsEntangleAITest.cpp
 		battleAI/NewHorizonsVengefulVinesAITest.cpp
@@ -784,6 +873,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Goals/CompositionTest.cpp
 		nullkiller2/Goals/ExploreNeighbourTileTest.cpp
 		nullkiller2/ArmyFormationLeadershipTest.cpp
+		nullkiller2/ArmyExchangeExecutionTest.cpp
 		nullkiller2/EspritDeCorpsArmySelectionTest.cpp
 		nullkiller2/Helpers/ExplorationHelperTest.cpp
 		nullkiller2/Helpers/NewHorizonsMusterTest.cpp

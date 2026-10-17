@@ -6,6 +6,7 @@
 #include "StdInc.h"
 #include "HeroExpectedSpellFixture.h"
 #include "../../AI/BattleAI/HeroSpellExpectedValueProjection.h"
+#include "../../AI/BattleAI/HeroTargetHeuristicProjection.h"
 #include "../../AI/BattleAI/PossibleSpellcast.h"
 #include "../../lib/spells/CSpell.h"
 
@@ -119,6 +120,28 @@ public:
 	const bool valid = std::feholdexcept(&saved) == 0;
 	~SavedFloatingEnvironment() { if(valid) std::fesetenv(&saved); }
 };
+
+// Preserved terminal body shared by the original Hydra/Blink branches. Canonical
+// admission and positive-value gates stay in the selector and are source-checked.
+void originalTargetProjection(PossibleSpellcast & ps, HypotheticBattle & state,
+	BattleSide side, const float & baseline, const HypotheticBattle::ProjectedCounterspellOutcome & counterspell,
+	bool counterspellNegated, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
+	const std::vector<uint32_t> & sharedPurposeSpellRecipients, uint32_t & targetId)
+{
+	if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+	{
+		ps.value = std::numeric_limits<float>::lowest();
+		return;
+	}
+	targetId = ps.dest.front().unitValue->unitId();
+	if(counterspellNegated
+		|| !state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+			ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+			counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
+		ps.value = std::numeric_limits<float>::lowest();
+	else
+		ps.value = baseline + ps.spellPlacementHeuristicValue;
+}
 }
 
 class HeroExpectedComponentTest : public HeroExpectedSpellTest
@@ -194,6 +217,57 @@ protected:
 		value.dest = {spells::Destination(enemy)};
 		return value;
 	}
+
+	void compareTarget(PossibleSpellcast input, bool blink, const float & baseline,
+		bool begin = true, bool negated = false, bool changeAfterBinding = false)
+	{
+		auto oldState = detached(), newState = detached();
+		const auto outside = observation();
+		std::optional<HypotheticBattle::ProjectedSpellAllowance> oldPrepared, newPrepared;
+		ASSERT_NO_FATAL_FAILURE(prepareTransition(oldState, oldPrepared, begin));
+		ASSERT_NO_FATAL_FAILURE(prepareTransition(newState, newPrepared, begin));
+		PossibleSpellcast oldCandidate = input, newCandidate = input;
+		heroSpellProjection::TargetHeuristicForecast forecast = blink
+			? heroSpellProjection::TargetHeuristicForecast{heroSpellProjection::BlinkLandingForecast{newCandidate.spellPlacementHeuristicValue}}
+			: heroSpellProjection::TargetHeuristicForecast{heroSpellProjection::HydraRegenerationForecast{newCandidate.spellPlacementHeuristicValue}};
+		if(changeAfterBinding)
+			oldCandidate.spellPlacementHeuristicValue = newCandidate.spellPlacementHeuristicValue = 7.0f;
+		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
+		counterspell.resolutionKnown = true;
+		counterspell.negated = negated;
+		if(negated || input.dest.size() != 1 || !input.dest.front().unitValue)
+		{
+			oldCandidate.spell = newCandidate.spell = nullptr;
+			oldPrepared.reset();
+			newPrepared.reset();
+		}
+		uint32_t oldTarget = 0xffffffff, newTarget = 0xffffffff;
+		SavedFloatingEnvironment floating;
+		ASSERT_TRUE(floating.valid);
+		ASSERT_EQ(std::fesetround(FE_TONEAREST), 0);
+		ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+		originalTargetProjection(oldCandidate, *oldState, BattleSide::ATTACKER, baseline,
+			counterspell, negated, oldPrepared, {}, oldTarget);
+		const int oldFlags = std::fetestexcept(FE_ALL_EXCEPT);
+		ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+		heroSpellProjection::projectTargetHeuristic(newCandidate, forecast, *newState,
+			BattleSide::ATTACKER, baseline, counterspell, negated, newPrepared, {}, newTarget);
+		const int newFlags = std::fetestexcept(FE_ALL_EXCEPT);
+		EXPECT_EQ(newTarget, oldTarget);
+		EXPECT_EQ(std::bit_cast<uint32_t>(newCandidate.value), std::bit_cast<uint32_t>(oldCandidate.value));
+		EXPECT_EQ(newFlags, oldFlags);
+		EXPECT_EQ(state(*newState), state(*oldState));
+		EXPECT_EQ(observation(), outside);
+		if(negated || !begin || input.dest.size() != 1 || !input.dest.front().unitValue)
+		{
+			EXPECT_EQ(newCandidate.value, std::numeric_limits<float>::lowest());
+			EXPECT_EQ(newFlags & FE_INVALID, 0);
+		}
+		else if(changeAfterBinding)
+		{
+			EXPECT_EQ(newCandidate.value, baseline + 7.0f);
+		}
+	}
 };
 
 TEST_F(HeroExpectedComponentTest, AfterOnlyAllMasksUseOriginalFirstFieldPrecedenceAndOrdersFallThrough)
@@ -266,6 +340,50 @@ TEST_F(HeroExpectedComponentTest, AfterOnlyFloatBitsAndExceptionFlagsMatchOrigin
 				ASSERT_EQ(std::bit_cast<uint32_t>(*(value.*field)), operand);
 				ASSERT_NO_FATAL_FAILURE(compare(value, std::bit_cast<float>(baseline)));
 			}
+	ASSERT_NO_FATAL_FAILURE(finishControls());
+}
+
+TEST_F(HeroExpectedComponentTest, TargetForecastRejectsMalformedTargetsBeforeSpellAndAllowanceAccess)
+{
+	ASSERT_NO_FATAL_FAILURE(beginControls());
+	for(bool blink : {false, true})
+	{
+		for(const auto & target : std::vector<spells::Target>{{}, {spells::Destination()},
+			{spells::Destination(enemy), spells::Destination(enemy)}})
+		{
+			auto value = candidate();
+			value.dest = target;
+			value.spellPlacementHeuristicValue = std::bit_cast<float>(uint32_t{0x7f800001});
+			ASSERT_NO_FATAL_FAILURE(compareTarget(value, blink, 0.0f));
+		}
+	}
+	ASSERT_NO_FATAL_FAILURE(finishControls());
+}
+
+TEST_F(HeroExpectedComponentTest, TargetForecastNegationAndUnbegunActionRejectBeforeValuation)
+{
+	ASSERT_NO_FATAL_FAILURE(beginControls());
+	for(bool blink : {false, true})
+	{
+		auto value = candidate();
+		value.spellPlacementHeuristicValue = std::bit_cast<float>(uint32_t{0x7f800001});
+		ASSERT_NO_FATAL_FAILURE(compareTarget(value, blink, 0.0f, true, true));
+		ASSERT_NO_FATAL_FAILURE(compareTarget(value, blink, 0.0f, false));
+	}
+	ASSERT_NO_FATAL_FAILURE(finishControls());
+}
+
+TEST_F(HeroExpectedComponentTest, TargetForecastUsesLateBoundOperandAndOriginalAcceptedTransition)
+{
+	ASSERT_NO_FATAL_FAILURE(beginControls());
+	for(bool blink : {false, true})
+	{
+		auto value = candidate();
+		value.spellPlacementHeuristicValue = 1.0f;
+		ASSERT_NO_FATAL_FAILURE(compareTarget(value, blink, 31.0f, true, false, true));
+		value.spellPlacementHeuristicValue = std::numeric_limits<float>::max();
+		ASSERT_NO_FATAL_FAILURE(compareTarget(value, blink, std::numeric_limits<float>::max()));
+	}
 	ASSERT_NO_FATAL_FAILURE(finishControls());
 }
 }

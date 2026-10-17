@@ -10,6 +10,7 @@
 #pragma once
 #include "IBattleInfoCallback.h"
 #include "BattleSide.h"
+#include "VisibleHeroPolicy.h"
 #include "HeroActionAllowanceState.h"
 #include "../bonuses/BonusEnum.h"
 
@@ -124,6 +125,8 @@ public:
 	/// sequences retain the normal spellbook legality rules.
 	bool battleCanUseMetamagicSpell(BattleSide side, SpellID spell, bool grand) const;
 	const CGHeroInstance * battleGetFightingHero(BattleSide side) const; //deprecated for players callback, easy to get wrong
+	/// Hidden is unknown, never proof that an opponent has no hero or policy.
+	VisibleHeroPolicy battleGetVisibleHeroPolicy(BattleSide side) const;
 	const CArmedInstance * battleGetArmyObject(BattleSide side) const;
 	InfoAboutHero battleGetHeroInfo(BattleSide side) const;
 

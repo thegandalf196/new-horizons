@@ -9,130 +9,23 @@
  */
 #include "StdInc.h"
 #include "HeroCommand.h"
+#include "HeroCommandCoefficient.h"
+#include "HeroCommandCoefficientMath.h"
 #include "IBattleState.h"
 #include "../bonuses/Bonus.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../callback/IGameInfoCallback.h"
-#include <boost/multiprecision/cpp_int.hpp>
 
 namespace heroCommands
 {
 namespace
 {
 constexpr char COMMAND_SKILL[] = "new-horizons:command";
-constexpr char AGGRESSIVE_COMMANDER_PERK[] = "new-horizons:command.aggressiveCommander";
-constexpr char DEFENSIVE_COMMANDER_PERK[] = "new-horizons:command.defensiveCommander";
 constexpr char VETERAN_COMMANDER_PERK[] = "new-horizons:command.veteranCommander";
 constexpr char COMBINED_ARMS_PERK[] = "new-horizons:command.combinedArms";
 constexpr char DOUBLE_COMMAND_PERK[] = "new-horizons:command.doubleCommand";
 constexpr char BATTLE_PLAN_PERK[] = "new-horizons:command.battlePlan";
-constexpr int BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT = 20;
 constexpr int VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT = 25;
-
-int exactBoundedCoefficient(const std::array<double, 3> & terms, const std::array<int, 3> & factors)
-{
-	// Only the overflow fallback uses exact arithmetic. Keep the ordinary double
-	// evaluation and its rounding unchanged, including for legacy saved rules.
-	using boost::multiprecision::cpp_int;
-	constexpr int digits = std::numeric_limits<double>::digits;
-	static_assert(std::numeric_limits<double>::radix == 2 && digits <= 63);
-	std::array<int64_t, 3> mantissas {};
-	std::array<int, 3> exponents {};
-	int lowestExponent = 0;
-	for(size_t i = 0; i < terms.size(); ++i)
-	{
-		if(!std::isfinite(terms[i]))
-			throw std::runtime_error("Invalid New Horizons command coefficient");
-		if(terms[i] == 0 || factors[i] == 0)
-			continue;
-		const double fraction = std::frexp(terms[i], &exponents[i]);
-		mantissas[i] = static_cast<int64_t>(std::ldexp(fraction, digits));
-		exponents[i] -= digits;
-		lowestExponent = std::min(lowestExponent, exponents[i]);
-	}
-	cpp_int sum = 0;
-	for(size_t i = 0; i < terms.size(); ++i)
-	{
-		if(mantissas[i] == 0)
-			continue;
-		cpp_int part = mantissas[i];
-		part *= factors[i];
-		part <<= exponents[i] - lowestExponent;
-		sum += part;
-	}
-	const bool negative = sum < 0;
-	cpp_int magnitude = sum;
-	if(negative)
-		magnitude = -magnitude;
-	if(lowestExponent < 0)
-	{
-		// Exact half-away-from-zero rounding, like lround, without passing NaN
-		// or an unbounded result to a floating-to-integer conversion.
-		cpp_int half = 1;
-		half <<= -lowestExponent - 1;
-		magnitude += half;
-		magnitude >>= -lowestExponent;
-	}
-	cpp_int rounded = magnitude;
-	if(negative)
-		rounded = -rounded;
-	// Integer endpoints make clamping before/after rounding equivalent.
-	if(rounded < MIN_EFFECT_PERCENT)
-		return MIN_EFFECT_PERCENT;
-	if(rounded > MAX_EFFECT_PERCENT)
-		return MAX_EFFECT_PERCENT;
-	return rounded.convert_to<int>();
-}
-
-int boundedCoefficient(const std::array<double, 3> & terms, const std::array<int, 3> & factors)
-{
-	const double value = terms[0] * factors[0] + terms[1] * factors[1] + terms[2] * factors[2];
-	if(!std::isfinite(value))
-		return exactBoundedCoefficient(terms, factors);
-	return static_cast<int>(std::lround(std::clamp(value,
-		static_cast<double>(MIN_EFFECT_PERCENT), static_cast<double>(MAX_EFFECT_PERCENT))));
-}
-
-int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute,
-	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)
-{
-	int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100)
-		+ std::clamp(divineMandateEfficiencyBonusPercent, 0, 15);
-	if(includeCommanderPerks && attribute == PrimarySkill::ATTACK
-		&& hero.hasActivePerk(COMMAND_SKILL, AGGRESSIVE_COMMANDER_PERK))
-		efficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
-	if(includeCommanderPerks && attribute == PrimarySkill::DEFENSE
-		&& hero.hasActivePerk(COMMAND_SKILL, DEFENSIVE_COMMANDER_PERK))
-		efficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
-	return efficiency;
-}
-
-double boundedCoefficientComponent(double coefficient, double factor)
-{
-	if(!std::isfinite(coefficient) || !std::isfinite(factor))
-		throw std::runtime_error("Invalid New Horizons command coefficient component");
-	if(coefficient == 0 || factor == 0)
-		return 0;
-	const bool positive = std::signbit(coefficient) == std::signbit(factor);
-	const double limit = positive ? MAX_EFFECT_PERCENT : -MIN_EFFECT_PERCENT;
-	const double magnitudeFactor = std::abs(factor);
-	if(std::abs(coefficient) > limit / magnitudeFactor)
-		return positive ? MAX_EFFECT_PERCENT : MIN_EFFECT_PERCENT;
-	return std::clamp(coefficient * factor,
-		static_cast<double>(MIN_EFFECT_PERCENT), static_cast<double>(MAX_EFFECT_PERCENT));
-}
-
-int heroCoefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent,
-	int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)
-{
-	const int attackEfficiency = attributeEfficiencyPercent(hero, PrimarySkill::ATTACK,
-		warcastingBonusPercent, divineMandateEfficiencyBonusPercent, includeCommanderPerks);
-	const int defenseEfficiency = attributeEfficiencyPercent(hero, PrimarySkill::DEFENSE,
-		warcastingBonusPercent, divineMandateEfficiencyBonusPercent, includeCommanderPerks);
-	return boundedCoefficient({effect["base"].Float(), effect["attack"].Float() * attackEfficiency / 100.0,
-		effect["defense"].Float() * defenseEfficiency / 100.0},
-		{1, hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE)});
-}
 
 bool legacyVersionOne(const JsonNode & value)
 {
@@ -439,28 +332,6 @@ void validateRules(const JsonNode & rules)
 	}
 }
 
-int coefficient(const JsonNode & effect, int attack, int defense)
-{
-	return boundedCoefficient({effect["base"].Float(), effect["attack"].Float(), effect["defense"].Float()},
-		{1, attack, defense});
-}
-
-int coefficient(const JsonNode & effect, const CGHeroInstance & hero)
-{
-	return coefficient(effect, hero, 0);
-}
-
-int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent)
-{
-	return coefficient(effect, hero, warcastingBonusPercent, 0);
-}
-
-int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent,
-	int divineMandateEfficiencyBonusPercent)
-{
-	return heroCoefficient(effect, hero, warcastingBonusPercent, divineMandateEfficiencyBonusPercent, true);
-}
-
 int orderPotency(int value, const HeroOrderState & state, const JsonNode & magicRules)
 {
 	return newHorizonsHeroLuck::orderPotency(value, magicRules, isActive(state.command) && state.luckyDay());
@@ -547,7 +418,7 @@ double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula, const CGHer
 	const double attackFactor = static_cast<double>(hero.getPrimSkillLevel(PrimarySkill::ATTACK))
 		* attributeEfficiencyPercent(hero, PrimarySkill::ATTACK, warcastingBonusPercent,
 			divineMandateEfficiencyBonusPercent, true) / 100.0;
-	return boundedCoefficientComponent(meleeDamageFormula["attack"].Float(), attackFactor) / 2.0;
+	return coefficientMath::boundedCoefficientComponent(meleeDamageFormula["attack"].Float(), attackFactor) / 2.0;
 }
 
 std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero)
@@ -572,7 +443,7 @@ std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CG
 		// Saved v1-v3 rules do not gain perks added to the current canonical
 		// Orders profile. Keep their historic rank scaling while excluding the
 		// attribute-specific Commander bonuses introduced with the canonical rules.
-		bonus.val = heroCoefficient(formula, hero, 0, 0, false);
+		bonus.val = coefficient(formula, CoefficientInputs::native(hero), 0, 0, false);
 		bonus.description.appendRawString("New Horizons: " + key(command));
 		if(effect == "speedPercent")
 		{

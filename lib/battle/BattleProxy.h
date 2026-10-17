@@ -27,6 +27,7 @@ public:
 
 	int32_t getActiveStackID() const override;
 	int32_t getActivationSerial() const override { return subject->getBattle()->getActivationSerial(); }
+	int32_t getMoraleExtraDamagePercent() const override { return subject->getBattle()->getMoraleExtraDamagePercent(); }
 
 	TStacks getStacksIf(const TStackFilter & predicate) const override;
 
@@ -176,5 +177,8 @@ public:
 
 	const IBonusBearer * getBonusBearer() const override;
 protected:
+	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
+		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const override;
+	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 	Subject subject;
 };

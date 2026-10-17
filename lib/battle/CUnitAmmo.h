@@ -50,7 +50,7 @@ public:
 	bool isLimited() const override;
 	int32_t total() const override;
 
-	void setEnv(const IUnitEnvironment * env_);
+	void setEnv(const IUnitEnvironment * env_) noexcept;
 private:
 	const IUnitEnvironment * env;
 
@@ -73,7 +73,7 @@ public:
 	bool isLimited() const override;
 	int32_t total() const override;
 	void reset() override;
-	void setEnv(const IUnitEnvironment * env_);
+	void setEnv(const IUnitEnvironment * env_) noexcept;
 
 	void serializeJson(JsonSerializeFormat & handler) override;
 private:

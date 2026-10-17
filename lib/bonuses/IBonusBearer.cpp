@@ -9,12 +9,14 @@
  */
 
 #include "StdInc.h"
+#include "NativeBonusGraphAccess.h"
 
 #include "IBonusBearer.h"
 #include "BonusList.h"
 
 int IBonusBearer::favorableCreatureAbilityChanceBasisPoints(int basePercentage) const
 {
+	NativeBonusGraphAccess graphAccess;
 	if(basePercentage <= 0)
 		return 0;
 	if(basePercentage >= 100)
@@ -26,23 +28,27 @@ int IBonusBearer::favorableCreatureAbilityChanceBasisPoints(int basePercentage) 
 
 int IBonusBearer::valOfBonuses(const CSelector &selector, const std::string &cachingStr, int baseValue) const
 {
+	NativeBonusGraphAccess graphAccess;
 	TConstBonusListPtr hlp = getAllBonuses(selector, cachingStr);
 	return hlp->totalValue(baseValue);
 }
 
 bool IBonusBearer::hasBonus(const CSelector &selector, const std::string &cachingStr) const
 {
+	NativeBonusGraphAccess graphAccess;
 	//TODO: We don't need to count all bonuses and could break on first matching
 	return !getBonuses(selector, cachingStr)->empty();
 }
 
 TConstBonusListPtr IBonusBearer::getBonuses(const CSelector &selector, const std::string &cachingStr) const
 {
+	NativeBonusGraphAccess graphAccess;
 	return getAllBonuses(selector, cachingStr);
 }
 
 TConstBonusListPtr IBonusBearer::getBonusesFrom(BonusSource source) const
 {
+	NativeBonusGraphAccess graphAccess;
 	std::string cachingStr = "source_" + std::to_string(static_cast<int>(source));
 	CSelector s = Selector::sourceTypeSel(source);
 	return getBonuses(s, cachingStr);
@@ -50,6 +56,7 @@ TConstBonusListPtr IBonusBearer::getBonusesFrom(BonusSource source) const
 
 TConstBonusListPtr IBonusBearer::getBonusesOfType(BonusType type) const
 {
+	NativeBonusGraphAccess graphAccess;
 	std::string cachingStr = "type_" + std::to_string(static_cast<int>(type));
 	CSelector s = Selector::type()(type);
 	return getBonuses(s, cachingStr);
@@ -57,6 +64,7 @@ TConstBonusListPtr IBonusBearer::getBonusesOfType(BonusType type) const
 
 TConstBonusListPtr IBonusBearer::getBonusesOfType(BonusType type, BonusSubtypeID subtype) const
 {
+	NativeBonusGraphAccess graphAccess;
 	std::string cachingStr = "type_" + std::to_string(static_cast<int>(type)) + "_" + std::to_string(subtype.getNum());
 	CSelector s = Selector::typeSubtype(type, subtype);
 	return getBonuses(s, cachingStr);
@@ -64,6 +72,7 @@ TConstBonusListPtr IBonusBearer::getBonusesOfType(BonusType type, BonusSubtypeID
 
 int IBonusBearer::applyBonuses(BonusType type, int baseValue) const
 {
+	NativeBonusGraphAccess graphAccess;
 	//This part is performance-critical
 	std::string cachingStr = "type_" + std::to_string(static_cast<int>(type));
 	CSelector s = Selector::type()(type);
@@ -72,11 +81,13 @@ int IBonusBearer::applyBonuses(BonusType type, int baseValue) const
 
 int IBonusBearer::valOfBonuses(BonusType type) const
 {
+	NativeBonusGraphAccess graphAccess;
 	return applyBonuses(type, 0);
 }
 
 bool IBonusBearer::hasBonusOfType(BonusType type) const
 {
+	NativeBonusGraphAccess graphAccess;
 	//This part is performance-critical
 	std::string cachingStr = "type_" + std::to_string(static_cast<int>(type));
 
@@ -87,6 +98,7 @@ bool IBonusBearer::hasBonusOfType(BonusType type) const
 
 int IBonusBearer::valOfBonuses(BonusType type, BonusSubtypeID subtype) const
 {
+	NativeBonusGraphAccess graphAccess;
 	//This part is performance-critical
 	std::string cachingStr = "type_" + std::to_string(static_cast<int>(type)) + "_" + std::to_string(subtype.getNum());
 
@@ -97,6 +109,7 @@ int IBonusBearer::valOfBonuses(BonusType type, BonusSubtypeID subtype) const
 
 bool IBonusBearer::hasBonusOfType(BonusType type, BonusSubtypeID subtype) const
 {
+	NativeBonusGraphAccess graphAccess;
 	//This part is performance-critical
 	std::string cachingStr = "type_" + std::to_string(static_cast<int>(type)) + "_" + std::to_string(subtype.getNum());
 
@@ -107,18 +120,21 @@ bool IBonusBearer::hasBonusOfType(BonusType type, BonusSubtypeID subtype) const
 
 bool IBonusBearer::hasBonusFrom(BonusSource source, BonusSourceID sourceID) const
 {
+	NativeBonusGraphAccess graphAccess;
 	std::string cachingStr = "source_" + std::to_string(static_cast<int>(source)) + "_" + std::to_string(sourceID.getNum());
 	return hasBonus(Selector::source(source,sourceID), cachingStr);
 }
 
 bool IBonusBearer::hasBonusFrom(BonusSource source) const
 {
+	NativeBonusGraphAccess graphAccess;
 	std::string cachingStr = "source_" + std::to_string(static_cast<int>(source));
 	return hasBonus((Selector::sourceTypeSel(source)), cachingStr);
 }
 
 std::shared_ptr<const Bonus> IBonusBearer::getBonus(const CSelector &selector) const
 {
+	NativeBonusGraphAccess graphAccess;
 	auto bonuses = getAllBonuses(selector);
 	return bonuses->getFirst(Selector::all);
 }

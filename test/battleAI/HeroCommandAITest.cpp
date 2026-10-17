@@ -367,6 +367,21 @@ TEST_F(CanonicalOrderAITest, VengeanceValuesSpentBeforeIssueRetaliationWithoutMu
 	ASSERT_GE(offense, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(offense), MasteryLevel::ADVANCED,
 		ChangeValueMode::ABSOLUTE);
+	// A legitimate Basic prefix is required even when the Skill rank was granted directly.
+	const auto offenseRank = attackerSideHero->getPerkSkillRank(newHorizonsOffense::SKILL);
+	const auto & perks = attackerSideHero->getPerkState();
+	const std::string pursuit = "new-horizons:offense.pursuit";
+	ASSERT_FALSE(perks.hasSelection(newHorizonsOffense::SKILL, pursuit));
+	ASSERT_TRUE(perks.canAcquirePerk(newHorizonsOffense::SKILL, pursuit, offenseRank));
+	ASSERT_FALSE(perks.canAcquirePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE, offenseRank));
+	attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, pursuit});
+	ASSERT_TRUE(perks.hasSelection(newHorizonsOffense::SKILL, pursuit));
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsOffense::SKILL, pursuit));
+	ASSERT_TRUE(perks.canAcquirePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE, offenseRank));
+	// Pursuit grants kill-triggered movement, not retaliation or an immediate activation budget.
+	ASSERT_EQ(active->counterAttacks.total(), baselineTotal);
+	ASSERT_EQ(active->counterAttacks.available(), baselineAvailable);
+	ASSERT_EQ(active->pursuitMovementRemaining, 0);
 	attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE));
 	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,

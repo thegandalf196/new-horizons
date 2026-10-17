@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HypotheticBattle.h"
+#include "InitialExportBattleSubject.h"
 #include "HypotheticEffectSnapshotRules.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/BattleLayout.h"
@@ -34,7 +35,7 @@ using hypotheticEffectSnapshotRules::hasSnapshotHeroSpecialEffects;
 using hypotheticEffectSnapshotRules::hasTimedMagicalSpellEffects;
 
 HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
-	: BattleProxy(realBattle),
+	: BattleProxy(InitialExportBattleSubject::forkForBranch(realBattle)),
 	env(ENV),
 	bonusTreeVersion(1)
 {
@@ -209,6 +210,8 @@ std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdate(uint32_t id)
 
 battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate) const
 {
+	if(initialExportSubject())
+		return ownedExportUnitsIf(predicate);
 	const auto original = BattleProxy::getUnitsIf([](const battle::Unit *)
 	{
 		return true;
@@ -643,7 +646,7 @@ void HypotheticBattle::consumeArmorerLastStand(BattleSide side)
 		throw std::runtime_error("Invalid hypothetical Armorer Last Stand side");
 	if(armorerLastStandUsedStates.at(side))
 		throw std::runtime_error("Hypothetical Armorer Last Stand was already consumed");
-	if(!newHorizonsArmorer::hasLastStand(battleGetFightingHero(side)))
+	if(!newHorizonsArmorer::hasLastStand(getSideHero(side)))
 		throw std::runtime_error("Hypothetical Armorer Last Stand requires the active hero perk");
 	armorerLastStandUsedStates.at(side) = true;
 }

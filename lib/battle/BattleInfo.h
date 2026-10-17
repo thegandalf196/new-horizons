@@ -33,9 +33,11 @@ class CStackInstance;
 class CStackBasicDescriptor;
 class BattleField;
 struct BattleLayout;
+namespace battle { struct BattleUnitSidecarFields; }
 
 class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallback, public IBattleState, public GameCallbackHolder
 {
+	friend struct battle::BattleUnitSidecarFields;
 	BattleSideArray<SideInBattle> sides; //sides[0] - attacker, sides[1] - defender
 	std::unique_ptr<BattleLayout> layout;
 	si32 round;

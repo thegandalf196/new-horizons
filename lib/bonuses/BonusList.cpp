@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "NativeBonusGraphAccess.h"
 #include "CBonusSystemNode.h"
 #include "../json/JsonNode.h"
 
@@ -53,6 +54,7 @@ void BonusList::stackBonuses()
 
 int BonusList::totalValue(int baseValue) const
 {
+	NativeBonusGraphAccess graphAccess;
 	if (bonuses.empty())
 		return baseValue;
 
@@ -155,6 +157,7 @@ int BonusList::totalValue(int baseValue) const
 
 std::shared_ptr<Bonus> BonusList::getFirst(const CSelector &select)
 {
+	NativeBonusGraphAccess graphAccess;
 	for (auto & b : bonuses)
 	{
 		if(select(b.get()))
@@ -165,6 +168,7 @@ std::shared_ptr<Bonus> BonusList::getFirst(const CSelector &select)
 
 std::shared_ptr<const Bonus> BonusList::getFirst(const CSelector &selector) const
 {
+	NativeBonusGraphAccess graphAccess;
 	for(const auto & b : bonuses)
 	{
 		if(selector(b.get()))
@@ -175,6 +179,7 @@ std::shared_ptr<const Bonus> BonusList::getFirst(const CSelector &selector) cons
 
 void BonusList::getBonuses(BonusList & out, const CSelector &selector) const
 {
+	NativeBonusGraphAccess graphAccess;
 	for(const auto & b : bonuses)
 	{
 		if(selector(b.get()))
@@ -184,12 +189,14 @@ void BonusList::getBonuses(BonusList & out, const CSelector &selector) const
 
 void BonusList::getAllBonuses(BonusList &out) const
 {
+	NativeBonusGraphAccess graphAccess;
 	for(const auto & b : bonuses)
 		out.push_back(b);
 }
 
 int BonusList::valOfBonuses(const CSelector &select, int baseValue) const
 {
+	NativeBonusGraphAccess graphAccess;
 	BonusList ret;
 	getBonuses(ret, select);
 	return ret.totalValue(baseValue);
@@ -197,6 +204,7 @@ int BonusList::valOfBonuses(const CSelector &select, int baseValue) const
 
 JsonNode BonusList::toJsonNode() const
 {
+	NativeBonusGraphAccess graphAccess;
 	JsonNode node;
 	for(const std::shared_ptr<Bonus> & b : bonuses)
 		node.Vector().push_back(b->toJsonNode());

@@ -18,15 +18,22 @@
 #include "HypotheticBattleTypes.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/bonuses/IBonusBearer.h"
+#include "../../lib/bonuses/RecipientBonusOverlay.h"
 #include "../../lib/battle/CUnitState.h"
 
 class HypotheticBattle;
 class CStack;
+class InitialExportBattleSubject;
+struct MeleeBonusSource;
 
 class StackWithBonuses : public battle::CUnitState, public virtual IBonusBearer,
 	public std::enable_shared_from_this<StackWithBonuses>
 {
+	friend class InitialExportBattleSubject;
 public:
+	/// Exact original export owner plus uncopied unit-local overlay identities.
+	bool captureMeleeBonusSource(MeleeBonusSource & result) const;
+	void suppressMeleeBonusIdentities(const std::set<std::shared_ptr<Bonus>> & records);
 	// Queries must retain each local record's identity: descendant removals
 	// suppress the original pointer, not every bonus with an equal value.
 	std::vector<std::shared_ptr<Bonus>> bonusesToAdd;
@@ -63,6 +70,16 @@ public:
 		const CSelector & selector, const std::string & cachingStr = {}, bool unstacked = false) const override;
 
 	int32_t getTreeVersion() const override;
+	bool isBonusCacheable() const override;
+	/// Conservative raw-source proof for movement forecasts, not a re-evaluation
+	/// of limited bonuses. Caller retains the original immutable world/graph.
+	bool hasMovementInvariantBonusSources() const;
+	/// Exact canonical branch query route, not an inference from effective lists.
+	/// Does not prove preceding reactions or projected typed-hero semantics.
+	bool usesCanonicalMovementQuery(const HypotheticBattle & branch) const;
+	recipientBonusOverlay::View recipientOverlayView() const;
+	bool captureRecipientOverlayLayers(std::vector<recipientBonusOverlay::Layer> & layers,
+		const CStack * & native) const;
 
 	void addUnitBonus(const std::vector<Bonus> & bonus);
 	std::vector<Bonus> localSpellEffects() const;

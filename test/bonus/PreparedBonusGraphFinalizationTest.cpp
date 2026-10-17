@@ -145,32 +145,56 @@ TEST_F(PreparedBonusGraphFinalizationTest, StaleLaterNodeAndUnrelatedGenerationR
 	EXPECT_EQ(pointers(root.getExportedBonusList()), before);
 }
 
-TEST_F(PreparedBonusGraphFinalizationTest, LegitimateAdvanceThenPropagationBorrowsWithoutInflation)
+TEST_F(PreparedBonusGraphFinalizationTest, OrdinaryAddAndPropagationOwnSeparateFreshGenerations)
 {
 	const auto generation = PreparedBonusGraphStorage::currentGeneration();
-	graph.addExported(root, speed(1)); // owns the subsequent propagation generation
+	graph.addExported(root, speed(1));
 	auto aura = speed(7);
 	aura->propagator = std::make_shared<CPropagatorNodeType>(BonusNodeType::PLAYER);
 	graph.addExported(child, aura);
 	PreparedBonusGraphFinalization plan(graph, authority);
 	ASSERT_TRUE(plan.commit());
 	EXPECT_EQ(root.valOfBonuses(BonusType::STACKS_SPEED), 10);
-	EXPECT_EQ(uint32_t(PreparedBonusGraphStorage::currentGeneration()), uint32_t(generation) + 1);
+	EXPECT_EQ(uint32_t(PreparedBonusGraphStorage::currentGeneration()), uint32_t(generation) + 2);
 }
 
-TEST_F(PreparedBonusGraphFinalizationTest, BorrowedWarmDependencyCollisionRefusesRatherThanPromoting)
+TEST_F(PreparedBonusGraphFinalizationTest, PropagationOwnsFreshGenerationAcrossWarmDependentCollision)
 {
 	// root has an older stamp, child/leaf own the current global generation.
-	EXPECT_EQ(leaf.getAllBonuses(Selector::all, "borrowed-collision")->totalValue(), 5);
+	const auto held = leaf.getAllBonuses(Selector::all, "propagated-collision");
+	ASSERT_EQ(held->totalValue(), 5);
 	const auto before = pointers(root.getExportedBonusList());
 	const auto generation = PreparedBonusGraphStorage::currentGeneration();
 	auto aura = speed(7);
 	aura->propagator = std::make_shared<CPropagatorNodeType>(BonusNodeType::PLAYER);
 	graph.addExported(child, aura);
-	EXPECT_THROW((PreparedBonusGraphFinalization(graph, authority)), std::logic_error);
+	PreparedBonusGraphFinalization plan(graph, authority);
 	EXPECT_EQ(pointers(root.getExportedBonusList()), before);
-	EXPECT_EQ(leaf.getAllBonuses(Selector::all, "borrowed-collision")->totalValue(), 5);
+	EXPECT_EQ(leaf.getAllBonuses(Selector::all, "propagated-collision")->totalValue(), 5);
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
+	ASSERT_TRUE(plan.commit());
+	EXPECT_EQ(leaf.getAllBonuses(Selector::all, "propagated-collision")->totalValue(), 12);
+	EXPECT_EQ(held->totalValue(), 5);
+	EXPECT_EQ(uint32_t(PreparedBonusGraphStorage::currentGeneration()), uint32_t(generation) + 1);
+}
+
+TEST_F(PreparedBonusGraphFinalizationTest, PropagatedAddAndRemovalKeepNativeAndPreparedGenerationDeltasEqual)
+{
+	auto aura = speed(7);
+	aura->propagator = std::make_shared<CPropagatorNodeType>(BonusNodeType::PLAYER);
+	const auto initial = PreparedBonusGraphStorage::currentGeneration();
+	graph.addExported(child, aura);
+	graph.removeExported(child, aura);
+	PreparedBonusGraphFinalization plan(graph, authority);
+	ASSERT_TRUE(plan.commit());
+	const auto preparedDelta = uint32_t(PreparedBonusGraphStorage::currentGeneration()) - uint32_t(initial);
+	const auto nativeInitial = PreparedBonusGraphStorage::currentGeneration();
+	child.addNewBonus(aura);
+	ASSERT_EQ(leaf.valOfBonuses(BonusType::STACKS_SPEED), 12);
+	child.removeBonus(aura);
+	EXPECT_EQ(leaf.valOfBonuses(BonusType::STACKS_SPEED), 5);
+	EXPECT_EQ(uint32_t(PreparedBonusGraphStorage::currentGeneration()) - uint32_t(nativeInitial), preparedDelta);
+	EXPECT_EQ(preparedDelta, 2);
 }
 
 TEST_F(PreparedBonusGraphFinalizationTest, AllocationRejectionDuringProjectionCannotExposeLivePrefix)

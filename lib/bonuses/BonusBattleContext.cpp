@@ -71,6 +71,8 @@ std::vector<const battle::Unit *> BonusEvaluationContext::adjacentUnits() const
 	{
 		if(!roster)
 			throw std::logic_error("Projected adjacency requires its complete roster");
+		if(native && !native->battle)
+			throw std::logic_error("Explicitly unbound projected unit has no battle adjacency domain");
 		return roster->adjacentUnits(*projected);
 	}
 	const auto & stack = dynamic_cast<const CStack &>(original);
@@ -85,5 +87,38 @@ bool BonusEvaluationContext::acceptsBonus(const Bonus & bonus) const
 	const auto * state = dynamic_cast<const battle::CUnitState *>(projected);
 	if(!state)
 		throw std::logic_error("Projected acceptance requires a CUnitState view");
+	if(native)
+		return battle::acceptsBattleBonus(dynamic_cast<const CStack &>(original), *state, bonus, native->hero);
 	return battle::acceptsBattleBonus(dynamic_cast<const CStack &>(original), *state, bonus);
+}
+
+BonusEvaluationContext::BonusEvaluationContext(const CStack & node, const battle::Unit & unit,
+	const ProjectedBonusRoster & roster, NativeContext provenance)
+	: BonusEvaluationContext(node, unit, roster)
+{
+	native = provenance;
+}
+
+bool BonusEvaluationContext::hasNativeContext() const noexcept { return native.has_value(); }
+
+const BattleInfo * BonusEvaluationContext::battleContext() const
+{
+	if(native)
+		return native->battle;
+	const auto * stack = dynamic_cast<const CStack *>(&original);
+	return stack ? stack->getBattle() : nullptr;
+}
+
+std::optional<TerrainId> BonusEvaluationContext::battleTerrain() const
+{
+	const auto * battle = battleContext();
+	return battle ? std::optional<TerrainId>(battle->getTerrainType()) : std::nullopt;
+}
+
+std::optional<TerrainId> BonusEvaluationContext::queryTerrain() const
+{
+	if(native)
+		return native->queryTerrain; // explicit missing provenance never falls back
+	const auto * stack = dynamic_cast<const CStack *>(&original);
+	return stack ? stack->getQueryTerrain() : std::nullopt;
 }

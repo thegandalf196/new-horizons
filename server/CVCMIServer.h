@@ -16,6 +16,9 @@
 #include "../lib/StartInfo.h"
 
 class CMapInfo;
+class PreparedGameConnectionBatch;
+class PreparedBattleWorldPublication;
+struct BattleUnitsChanged;
 
 struct CPackForLobby;
 
@@ -73,6 +76,8 @@ public:
 	bool hasPlayerAt(PlayerColor player, GameConnectionID connectionID) const override;
 	bool hasBothPlayersAtSameConnection(PlayerColor left, PlayerColor right) const override;
 	void applyPack(CPackForClient & pack) override;
+	std::unique_ptr<PreparedGameConnectionBatch> prepareBattlePublication(const BattleUnitsChanged & packet);
+	std::unique_ptr<PreparedBattleWorldPublication> prepareBattleWorldPublication(BattleUnitsChanged & packet);
 	void sendPack(CPackForClient & pack, GameConnectionID connectionID) override;
 
 	/// List of all active connections

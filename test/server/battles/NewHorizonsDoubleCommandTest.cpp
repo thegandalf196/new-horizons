@@ -381,7 +381,8 @@ TEST_F(NewHorizonsDoubleCommandTest, PendingChoiceDescriptorRoundTripsAndDetache
 	ASSERT_TRUE(projectedOrder);
 	EXPECT_EQ(projectedOrder->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
 	EXPECT_EQ(projectedOrder->action.receipt.source, HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND);
-	ASSERT_TRUE(branch->beginProjectedHeroAction(BattleSide::ATTACKER, *projectedOrder));
+	ASSERT_TRUE(branch->beginProjectedHeroOrder(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE,
+		{}, *projectedOrder));
 	ASSERT_TRUE(branch->projectAcceptedHeroOrder(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE,
 		{}, *projectedOrder));
 	EXPECT_FALSE(branch->getDoubleCommandState(BattleSide::ATTACKER).orderPending());

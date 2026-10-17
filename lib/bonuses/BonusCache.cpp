@@ -9,11 +9,13 @@
  */
 
 #include "StdInc.h"
+#include "NativeBonusGraphAccess.h"
 #include "BonusCache.h"
 #include "IBonusBearer.h"
 
 #include "BonusSelector.h"
 #include "BonusList.h"
+#include "PrimarySkillPolicy.h"
 
 #include "../GameLibrary.h"
 #include "../IGameSettings.h"
@@ -47,6 +49,7 @@ int bonusValueForTurn(const BonusList & bonuses, int turns, BonusCacheMode mode)
 
 int BonusCacheBase::getBonusValueImpl(BonusCacheEntry & currentValue, const CSelector & selector, BonusCacheMode mode) const
 {
+	NativeBonusGraphAccess graphAccess;
 	if(!target->isBonusCacheable())
 		return bonusValue(*target, selector, mode);
 	if (target->getTreeVersion() == currentValue.version)
@@ -99,6 +102,7 @@ void MagicSchoolMasteryCache::update() const
 
 int32_t MagicSchoolMasteryCache::getMastery(const SpellSchool & school) const
 {
+	NativeBonusGraphAccess graphAccess;
 	if (!target->isBonusCacheable() || target->getTreeVersion() != version)
 		update();
 	return schools[school.num + 1];
@@ -116,26 +120,12 @@ void PrimarySkillsCache::update() const
 	static const CSelector spellPowerSelector = Selector::subtype()(PrimarySkill::SPELL_POWER);
 	static const CSelector knowledgeSelector = Selector::subtype()(PrimarySkill::KNOWLEDGE);
 
-	std::array<int, 4> minValues = {
-		LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MINIMAL_PRIMARY_SKILLS, PrimarySkill::ATTACK),
-		LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MINIMAL_PRIMARY_SKILLS, PrimarySkill::DEFENSE),
-		LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MINIMAL_PRIMARY_SKILLS, PrimarySkill::SPELL_POWER),
-		LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MINIMAL_PRIMARY_SKILLS, PrimarySkill::KNOWLEDGE)
-	};
-
-	std::array<int, 4> maxValues = {
-		LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MAXIMAL_PRIMARY_SKILLS, PrimarySkill::ATTACK),
-		LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MAXIMAL_PRIMARY_SKILLS, PrimarySkill::DEFENSE),
-		LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MAXIMAL_PRIMARY_SKILLS, PrimarySkill::SPELL_POWER),
-		LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MAXIMAL_PRIMARY_SKILLS, PrimarySkill::KNOWLEDGE)
-	};
-
+	const auto bounds = primarySkillPolicy::legacyBounds();
 	auto list = target->getBonuses(primarySkillsSelector);
-	auto clampSkill = [&minValues, &maxValues](PrimarySkill skill, int value) -> int
+	auto clampSkill = [&bounds](PrimarySkill skill, int value) -> int
 	{
-		return std::clamp(value, minValues[skill.getNum()], std::max(minValues[skill.getNum()], maxValues[skill.getNum()]));
+		return bounds.value(skill, value);
 	};
-
 	skills[PrimarySkill::ATTACK] = clampSkill(PrimarySkill::ATTACK, list->valOfBonuses(attackSelector));
 	skills[PrimarySkill::DEFENSE] = clampSkill(PrimarySkill::DEFENSE, list->valOfBonuses(defenceSelector));
 	skills[PrimarySkill::SPELL_POWER] = clampSkill(PrimarySkill::SPELL_POWER, list->valOfBonuses(spellPowerSelector));
@@ -146,6 +136,7 @@ void PrimarySkillsCache::update() const
 
 const std::array<std::atomic<int32_t>, 4> & PrimarySkillsCache::getSkills() const
 {
+	NativeBonusGraphAccess graphAccess;
 	if (!target->isBonusCacheable() || target->getTreeVersion() != version)
 		update();
 	return skills;
@@ -153,6 +144,7 @@ const std::array<std::atomic<int32_t>, 4> & PrimarySkillsCache::getSkills() cons
 
 int BonusCachePerTurn::getValueUncached(int turns) const
 {
+	NativeBonusGraphAccess graphAccess;
 	if(!target->isBonusCacheable())
 		return bonusValueForTurn(*target->getBonuses(selector), turns, mode);
 	std::lock_guard lock(bonusListMutex);
@@ -170,6 +162,7 @@ int BonusCachePerTurn::getValueUncached(int turns) const
 
 int BonusCachePerTurn::getValue(int turns) const
 {
+	NativeBonusGraphAccess graphAccess;
 	if(!target->isBonusCacheable())
 		return getValueUncached(turns);
 	int nodeTreeVersion = target->getTreeVersion();

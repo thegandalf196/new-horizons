@@ -1,7 +1,8 @@
-# Reviewed Linux x86_64 / CPython 3.14 wheel set; no runtime network fetches.
-# Install with pip --require-hashes --only-binary=:all: in isolated tooling.
-# Other platforms/interpreters require their own reviewed wheel hashes.
-tree-sitter==0.25.2 --hash=sha256:260586381b23be33b6191a07cea3d44ecbd6c01aa4c6b027a0439145fcbc3358
+# Reviewed Linux x86_64 parsers: CPython 3.15 source core plus ABI3 grammars.
+# Bootstrap pinned build tools first; see Code_Organization.md for install flags.
+# Core hashes allow the source archive and the retained CPython 3.14 wheel.
+# Other platforms/interpreters require their own reviewed artifact hashes.
+tree-sitter==0.25.2 --hash=sha256:260586381b23be33b6191a07cea3d44ecbd6c01aa4c6b027a0439145fcbc3358 --hash=sha256:fe43c158555da46723b28b52e058ad444195afd1db3ca7720c59a254544e9c20
 tree-sitter-cpp==0.23.4 --hash=sha256:773d2cafc08bbc0f998687fa33f42f378c1a371cdb582870c4d13abb06092706
 tree-sitter-lua==0.5.0 --hash=sha256:5ec448c854fea32414a0449147d648bc5baddf7a0357008c4abe3269db35370a
 tree-sitter-java==0.23.5 --hash=sha256:370b204b9500b847f6d0c5ad584045831cee69e9a3e4d878535d39e4a7e4c4f1

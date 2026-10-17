@@ -10,6 +10,8 @@
 #pragma once
 
 #include <vcmi/Services.h>
+#include "bonuses/NativeBonusGraphAccess.h"
+#include <optional>
 
 class CConsoleHandler;
 class ScriptHandler;
@@ -48,6 +50,8 @@ class MapLayerTypeHandler;
 /// Loads and constructs several handlers
 class DLL_LINKAGE GameLibrary final : public Services
 {
+	// First declared, last retired: metadata handlers die inside the interval.
+	std::optional<NativeBonusGraphAccess> nativeGraphRetirement;
 public:
 	enum class GameDataMode
 	{

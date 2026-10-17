@@ -30,7 +30,7 @@ public:
 };
 
 NetworkLagCompensator::NetworkLagCompensator(INetworkHandler & network, const std::shared_ptr<CGameState> & gs)
-	: gameState(gs)
+	: replyState(ENGINE ? &ENGINE->interfaceMutex : nullptr), gameState(gs)
 {
 	antilagNetConnection = network.createAsyncConnection(*this);
 	antilagGameConnection = std::make_shared<GameConnection>(antilagNetConnection);
@@ -58,10 +58,7 @@ void NetworkLagCompensator::onPacketReceived(const std::shared_ptr<INetworkConne
 
 	logGlobal->trace("Predicting effects of pack '%s'", typeid(*serverPack).name());
 
-	NetworkLagReplyPrediction newPrediction;
-	newPrediction.requestID = serverPack->requestID;
-	newPrediction.senderID = serverPack->player;
-	predictedReplies.push_back(std::move(newPrediction));
+	replyState.beginPrediction(*serverPack);
 
 	try
 	{
@@ -82,68 +79,55 @@ void NetworkLagCompensator::tryPredictReply(const CPackForServer & request)
 
 bool NetworkLagCompensator::verifyReply(const CPackForClient & pack)
 {
+	replyState.invalidateInspection();
 	logGlobal->trace("Verifying reply: received pack '%s'", typeid(pack).name());
 
 	const auto * packageReceived = dynamic_cast<const PackageReceived *>(&pack);
 	const auto * packageApplied = dynamic_cast<const PackageApplied *>(&pack);
 
 	if(packageReceived)
-	{
-		assert(currentPackageID == invalidPackageID);
+		replyState.openReplyPackage(*packageReceived);
 
-		if(!predictedReplies.empty() && predictedReplies.front().requestID == packageReceived->requestID)
-		{
-			[[maybe_unused]] const auto & nextPrediction = predictedReplies.front();
-			assert(nextPrediction.senderID == packageReceived->player);
-			assert(nextPrediction.requestID == packageReceived->requestID);
-			currentPackageID = packageReceived->requestID;
-		}
-	}
-
-	if(currentPackageID == invalidPackageID)
+	if(replyState.currentPackageID == replyState.invalidPackageID)
 	{
 		// this is system package or reply to actions of another player
 		// TODO: consider reapplying all our predictions, in case if this event invalidated our prediction
 		return false;
 	}
 
-	NetworkLagPredictedPack packWriter;
-	BinarySerializer serializer(&packWriter);
-	serializer & &pack;
-
-	if(packWriter.predictedPackData == predictedReplies.front().writtenPacks.front().predictedPackData)
+	if(replyState.matchesNextReply(pack))
 	{
 		// Our prediction was sucessful - drop rollback information for this pack
-		predictedReplies.front().writtenPacks.erase(predictedReplies.front().writtenPacks.begin());
+		replyState.predictedReplies.front().writtenPacks.erase(replyState.predictedReplies.front().writtenPacks.begin());
 
-		if(predictedReplies.front().writtenPacks.empty())
+		if(replyState.predictedReplies.front().writtenPacks.empty())
 		{
-			predictedReplies.erase(predictedReplies.begin());
-			currentPackageID = invalidPackageID;
+			replyState.predictedReplies.erase(replyState.predictedReplies.begin());
+			replyState.currentPackageID = replyState.invalidPackageID;
 			return true;
 		}
 	}
 	else
 	{
 		// Prediction was incorrect - rollback everything that is left in this prediction and use real server packs
-		for(auto & prediction : std::views::reverse(predictedReplies.front().writtenPacks))
+		for(auto & prediction : std::views::reverse(replyState.predictedReplies.front().writtenPacks))
 		{
 			for(auto & pack : prediction.rollbackPacks)
 				GAME->server().client->handlePack(*pack);
 		}
-		predictedReplies.erase(predictedReplies.begin());
-		currentPackageID = invalidPackageID;
+		replyState.predictedReplies.erase(replyState.predictedReplies.begin());
+		replyState.currentPackageID = replyState.invalidPackageID;
 		return false;
 	}
 
 	if(packageApplied)
 	{
-		assert(currentPackageID == packageApplied->requestID);
-		assert(!predictedReplies.empty());
-		assert(currentPackageID == predictedReplies.front().requestID);
-		assert(predictedReplies.front().writtenPacks.empty());
-		predictedReplies.erase(predictedReplies.begin());
-		currentPackageID = invalidPackageID;
+		assert(replyState.currentPackageID == packageApplied->requestID);
+		assert(!replyState.predictedReplies.empty());
+		assert(replyState.currentPackageID == replyState.predictedReplies.front().requestID);
+		assert(replyState.predictedReplies.front().writtenPacks.empty());
+		replyState.predictedReplies.erase(replyState.predictedReplies.begin());
+		replyState.currentPackageID = replyState.invalidPackageID;
 	}
 
 	return true;
@@ -190,7 +174,7 @@ void NetworkLagCompensator::applyPack(CPackForClient & pack)
 	BinarySerializer serializer(&packWriter);
 	serializer & &pack;
 	packWriter.rollbackPacks = visitor.acquireRollbackPacks();
-	predictedReplies.back().writtenPacks.push_back(std::move(packWriter));
+	replyState.appendPrediction(std::move(packWriter));
 
 	GAME->server().client->handlePack(pack);
 }

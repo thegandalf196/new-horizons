@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../lib/bonuses/NativeBonusGraphAccess.h"
+#include "../lib/bonuses/NativeBonusGraphAdmission.h"
 #include "CServerHandler.h"
 
 #ifdef NH_PERF_EXPERIMENTS
@@ -38,6 +40,7 @@
 
 #include "netlag/NetworkLagCompensator.h"
 #include "replay/GameplayReplayer.h"
+#include "replay/ClientPacketReceiveSession.h"
 
 #include "render/SDL_Extensions.h"
 
@@ -1075,10 +1078,11 @@ class ServerHandlerCPackVisitor : public ::ICPackVisitor
 {
 private:
 	CServerHandler & handler;
+	ClientPacketReceiveSession & receive;
 
 public:
-	ServerHandlerCPackVisitor(CServerHandler & handler)
-			:handler(handler)
+	ServerHandlerCPackVisitor(CServerHandler & handler, ClientPacketReceiveSession & receive)
+			:handler(handler), receive(receive)
 	{
 	}
 
@@ -1091,7 +1095,7 @@ public:
 
 	void visitForClient(CPackForClient & clientPack) override
 	{
-		handler.visitForClient(clientPack);
+		receive.visitForClient(clientPack);
 	}
 };
 
@@ -1106,7 +1110,9 @@ void CServerHandler::onPacketReceived(const std::shared_ptr<INetworkConnection> 
 		return;
 
 	auto pack = logicConnection->retrievePack(message);
-	ServerHandlerCPackVisitor visitor(*this);
+	// Move the ACTUAL existing unique_lock once; never reacquire interfaceMutex.
+	ClientPacketReceiveSession receive(*this, std::move(interfaceLock), ENGINE.get(), connection);
+	ServerHandlerCPackVisitor visitor(*this, receive);
 	pack->visit(visitor);
 }
 
@@ -1218,7 +1224,10 @@ void CServerHandler::visitForClient(CPackForClient & clientPack)
 
 	// not done in CGameState::apply() - lag compensation applies predictions and rollbacks there
 	if(client)
+	{
+		NativeBonusGraphMutation nativeMutation;
 		client->gameState().replayLog.recordPack(clientPack, client->gameState());
+	}
 
 	if (networkLagCompensator && networkLagCompensator->verifyReply(clientPack))
 		return;

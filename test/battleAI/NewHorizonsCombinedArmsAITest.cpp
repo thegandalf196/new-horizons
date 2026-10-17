@@ -7,9 +7,12 @@
 #include "../SpellPointTestUtils.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/HeroOrderCandidates.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/CCreatureHandler.h"
+#include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/HeroCommand.h"
@@ -251,6 +254,23 @@ TEST_F(NewHorizonsCombinedArmsAITest, CombinedArmsAdmitsMeleeOnlyFocusFireAndMat
 	EXPECT_EQ(std::fmod(expectedMeleeBonus, 1.0), 0.5)
 		<< "An odd snapshot percentage must remain fractional through the shared helper";
 
+	// The sand-shore backdrop does not replace the TinyMap's native grass ground.
+	ASSERT_EQ(battle()->getTerrainType(), TerrainId(ETerrainId::GRASS));
+	const auto nativeAttack = Selector::typeSubtype(BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::ATTACK))
+		.And(Selector::sourceTypeSel(BonusSource::TERRAIN_NATIVE));
+	const auto nativeDefense = Selector::typeSubtype(BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::DEFENSE))
+		.And(Selector::sourceTypeSel(BonusSource::TERRAIN_NATIVE));
+	for(const auto * unit : {active, enemy})
+	{
+		ASSERT_NE(unit->unitType(), nullptr);
+		ASSERT_EQ(unit->unitType()->getBaseAttack(), 20);
+		ASSERT_EQ(unit->unitType()->getBaseDefense(), 20);
+		ASSERT_EQ(unit->getCurrentTerrain(), TerrainId(ETerrainId::GRASS));
+		ASSERT_TRUE(unit->isOnNativeTerrain());
+		ASSERT_EQ(unit->valOfBonuses(nativeAttack), 1);
+		ASSERT_EQ(unit->valOfBonuses(nativeDefense), 1);
+	}
+
 	const BattleAttackInfo meleeAttack(active, enemy, 0, false);
 	const auto beforeProjection = battle()->battleEstimateDamage(meleeAttack);
 	const auto healthBeforeProjection = enemy->getAvailableHealth();
@@ -259,10 +279,11 @@ TEST_F(NewHorizonsCombinedArmsAITest, CombinedArmsAdmitsMeleeOnlyFocusFireAndMat
 	projected.setHeroOrderState(BattleSide::ATTACKER, preparedOrder);
 	const auto projectedDamage = projected.calculateDmgRange(meleeAttack);
 	// NH hero ratings feed Orders, not passive creature Attack. With fixed
-	// Angel damage (50 x 100), equal creature Attack/Defense, and no other
+	// Angel damage (50 x 100), equal effective Attack/Defense (base20 + native1), and no other
 	// damage modifier, half of the 15% snapshot must yield exactly 5,375.
-	ASSERT_EQ(active->getAttack(false), 20);
-	ASSERT_EQ(enemy->getDefense(false), 20);
+	ASSERT_EQ(active->getAttack(false), 21);
+	ASSERT_EQ(enemy->getDefense(false), 21);
+	ASSERT_EQ(active->getAttack(false), enemy->getDefense(false));
 	ASSERT_EQ(beforeProjection.damage.min, 5000);
 	ASSERT_EQ(beforeProjection.damage.max, 5000);
 	EXPECT_DOUBLE_EQ(expectedMeleeBonus, 7.5);
@@ -382,4 +403,39 @@ TEST_F(NewHorizonsCombinedArmsAITest, FlankValuesRangedAttackOnlyAndShooterDoesN
 	ASSERT_NE(resolvedTarget, nullptr);
 	EXPECT_EQ(resolvedTarget->sideMask, 0)
 		<< "A shot receives the Combined Arms bonus but must not establish a Flank side";
+}
+
+TEST_F(NewHorizonsCombinedArmsAITest, CandidateGenerationKeepsPreparedMeleeOnlyFocusFireSnapshot)
+{
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	ASSERT_NO_FATAL_FAILURE(configureHero(AGGRESSIVE_COMMANDER, 47));
+	ASSERT_TRUE(heroCommands::hasCombinedArms(attackerSideHero));
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	removeInitialBattleStacks();
+	active = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(3, 5), 100);
+	enemy = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(4, 5), 1000);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	ASSERT_NO_FATAL_FAILURE(prepareAI(active));
+	ASSERT_FALSE(active->isShooter());
+	const auto prepared = battle()->battlePrepareFocusFireState(BattleSide::ATTACKER, enemy->unitId());
+	ASSERT_TRUE(prepared);
+	class PositiveValuation final : public heroOrderCandidates::Valuation
+	{
+	public:
+		float score(const heroOrderCandidates::ValuationRequest &) const override { return 1.0f; }
+	} valuation;
+	std::vector<PossibleSpellcast> candidates;
+	heroOrderCandidates::appendOrders(candidates, *callback, BattleID(0), BattleSide::ATTACKER, false, valuation);
+	const auto found = std::find_if(candidates.begin(), candidates.end(), [&](const auto & candidate)
+	{
+		return candidate.command == HeroCommand::FOCUS_FIRE
+			&& candidate.commandTargets == std::vector<uint32_t>{enemy->unitId()};
+	});
+	ASSERT_NE(found, candidates.end());
+	ASSERT_TRUE(found->focusFire);
+	EXPECT_EQ(*found->focusFire, *prepared);
+	EXPECT_FALSE(battle()->battleGetFocusFireState(BattleSide::ATTACKER));
+	EXPECT_TRUE(callback->submitted.empty());
 }

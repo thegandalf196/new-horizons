@@ -8,7 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "BracePrimaryState.h"
 #include "BattleExchangeVariant.h"
+#include "ProjectedTargetHit.h"
+#include "SelectedAttackReceipt.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "BattleEvaluator.h"
 #include "NewHorizonsHexOfPain.h"
@@ -477,20 +480,15 @@ float BattleExchangeVariant::trackAttack(
 		attacker->setPosition(ap.from);
 
 	float attackValue = ap.attackValue();
-	auto affectedUnits = ap.affectedUnits;
+	SelectedAttackReceipt selected(ap);
 
 	dpsScore.ourDamageReduce += ap.attackerDamageReduce + ap.collateralDamageReduce;
 	dpsScore.enemyDamageReduce += ap.defenderDamageReduce + ap.shootersBlockedDmg;
 	attackerValue[attacker->unitId()].value = attackValue;
 
-	affectedUnits.push_back(ap.attackerState);
-	std::map<uint32_t, int64_t> finalDamage;
-	for(const auto & affectedUnit : affectedUnits)
-	{
-		auto unitToUpdate = hb->getForUpdate(affectedUnit->unitId());
-		finalDamage[unitToUpdate->unitId()] = std::max<int64_t>(0,
-			unitToUpdate->getAvailableHealth() - affectedUnit->getAvailableHealth());
-	}
+	selected.captureDamage(*hb);
+	const auto & affectedUnits = selected.affectedUnits();
+	auto & finalDamage = selected.damage();
 
 	// Reapply the selected preview strike-by-strike.  This is intentionally
 	// separate from the final-state snapshots: Fortune aftermath belongs
@@ -522,6 +520,7 @@ float BattleExchangeVariant::trackAttack(
 			projectedAttack.physicalDamage = strike.damageProvenance
 				== battle::DamageProvenance::PHYSICAL_CREATURE;
 			projectedAttack.retaliation = strike.retaliation;
+			projectedAttack.bracePreemptive = strike.bracePreemptive;
 			projectedAttack.cleaveDamagePercent = strike.cleaveDamagePercent;
 			projectedAttack.attackerPos = projectedAttacker->getPosition();
 			projectedAttack.defenderPos = projectedDefender->getPosition();
@@ -560,20 +559,9 @@ float BattleExchangeVariant::trackAttack(
 			for(const auto & [unitId, damage] : strike.hits)
 			{
 				auto target = hb->getForUpdate(unitId);
-				auto appliedDamage = std::max<int64_t>(0, damage);
-				const auto standSide = hb->playerToSide(hb->battleGetOwner(target.get()));
-				const bool validStandSide = standSide == BattleSide::ATTACKER || standSide == BattleSide::DEFENDER;
-				const bool eligibleForLastStand = strike.eligibleForLastStand && validStandSide
-					&& newHorizonsArmorer::canTriggerLastStand(hb->battleGetOwnerHero(target.get()), target.get());
-				const auto lastStand = validStandSide
-					? newHorizonsArmorer::resolveLastStandDamage(appliedDamage,
-						target->getGuardianSpiritHitPoints(), target->getGuardianSpiritRoundsRemaining(),
-						target->getAvailableHealth(), eligibleForLastStand,
-						hb->armorerLastStandUsed(standSide))
-					: newHorizonsArmorer::ArmorerLastStandDamageResult{appliedDamage, false};
-				appliedDamage = lastStand.damageToApply;
-				if(lastStand.triggered)
-					hb->consumeArmorerLastStand(standSide);
+				const auto preparedHit = projectedTargetHit::prepare(*hb, *target, damage,
+					{unitId, strike.eligibleForLastStand, strike.retaliation, strike.retaliation || strike.bracePreemptive});
+				auto appliedDamage = preparedHit.damageToApply;
 				const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 					projectedAttacker.get(), strike.damageProvenance == battle::DamageProvenance::PHYSICAL_CREATURE)
 					&& hb->battleHasBastionProtection(target.get());
@@ -588,20 +576,13 @@ float BattleExchangeVariant::trackAttack(
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
 				target->damage(appliedDamage, false, strike.damageProvenance);
+				if(strike.bracePreemptive && unitId == strike.defenderId)
+					attackPreview::finishBracePrimaryState(*hb, strike.attackerId, unitId, healthBefore);
 				for(const auto & receipt : strike.defiantDenials)
 					if(receipt.phase == DefiantDenialProjection::Phase::AFTER_TARGET_HIT && receipt.targetId == unitId)
 						replayDefiant(*hb, receipt);
-				if(lastStand.triggered)
-				{
-					hb->applyArmorerLastStandDefend(unitId);
-					const auto activeStackId = hb->getActiveStackID();
-					if(strike.retaliation && activeStackId >= 0
-						&& unitId == static_cast<uint32_t>(activeStackId))
-					{
-						target->armorerLastStandEndedActivation = true;
-						endedActiveActivationThisStrike = true;
-					}
-				}
+				if(projectedTargetHit::finishAfterDefiant(*hb, *target, preparedHit))
+					endedActiveActivationThisStrike = true;
 				if(consumesBastion)
 					target->armorerBastionRound = hb->battleGetRound();
 				const auto healthLoss = std::max<int64_t>(0,
@@ -733,55 +714,7 @@ float BattleExchangeVariant::trackAttack(
 	for(auto affectedUnit : affectedUnits)
 	{
 		auto unitToUpdate = hb->getForUpdate(affectedUnit->unitId());
-		// The preview may contain several strikes or consume only one of several
-		// retaliations. Copy consumption, not a boolean can-retaliate transition.
-		// CAmmo assignment keeps this unit's owner-bound bonus caches intact.
-		static_cast<battle::CAmmo &>(unitToUpdate->shots) = affectedUnit->shots;
-		static_cast<battle::CAmmo &>(unitToUpdate->counterAttacks) = affectedUnit->counterAttacks;
-		// Preserve the physical reaction's round receipt and target provenance
-		// when this selected preview becomes a later exchange's starting state.
-		unitToUpdate->archeryCounterfireRound = affectedUnit->archeryCounterfireRound;
-		unitToUpdate->archeryCrossfireRound = affectedUnit->archeryCrossfireRound;
-		unitToUpdate->archeryCrossfireAttackers = affectedUnit->archeryCrossfireAttackers;
-		unitToUpdate->archeryCrossfireDefenders = affectedUnit->archeryCrossfireDefenders;
-		unitToUpdate->battlecraftWaitBonusUsed = affectedUnit->battlecraftWaitBonusUsed;
-		unitToUpdate->battlecraftWaitMasteryDoubled = affectedUnit->battlecraftWaitMasteryDoubled;
-		unitToUpdate->battlecraftDefendMasteryDoubled = affectedUnit->battlecraftDefendMasteryDoubled;
-		unitToUpdate->battlecraftPreemptiveStrikeRound = affectedUnit->battlecraftPreemptiveStrikeRound;
-		unitToUpdate->battlecraftOverwatchReadyRound = affectedUnit->battlecraftOverwatchReadyRound;
-		unitToUpdate->battlecraftOverwatchUsedRound = affectedUnit->battlecraftOverwatchUsedRound;
-		unitToUpdate->cleaveUsedThisActivation = affectedUnit->cleaveUsedThisActivation;
-		unitToUpdate->bulwarkPreemptiveUsed = affectedUnit->bulwarkPreemptiveUsed;
-		unitToUpdate->bulwarkMireGripApplied = affectedUnit->bulwarkMireGripApplied;
-		unitToUpdate->bulwarkDefendPhysicalDamage = affectedUnit->bulwarkDefendPhysicalDamage;
-		unitToUpdate->bulwarkImmovableRound = affectedUnit->bulwarkImmovableRound;
-		unitToUpdate->armorerBastionRound = affectedUnit->armorerBastionRound;
-		unitToUpdate->armorerLastStandEndedActivation = affectedUnit->armorerLastStandEndedActivation;
-		unitToUpdate->armorerLastStandDefending = affectedUnit->armorerLastStandDefending;
-		unitToUpdate->bulwarkToxicSpinesRound = affectedUnit->bulwarkToxicSpinesRound;
-		unitToUpdate->physicalPoisonBaseDamage = affectedUnit->physicalPoisonBaseDamage;
-		unitToUpdate->physicalPoisonActivationsRemaining = affectedUnit->physicalPoisonActivationsRemaining;
-		unitToUpdate->physicalPoisonSourceStackId = affectedUnit->physicalPoisonSourceStackId;
-		unitToUpdate->guardianSpiritHitPoints = affectedUnit->guardianSpiritHitPoints;
-		unitToUpdate->guardianSpiritRoundsRemaining = affectedUnit->guardianSpiritRoundsRemaining;
-		unitToUpdate->luckyOwnAttackSequence = affectedUnit->luckyOwnAttackSequence;
-		if(unitToUpdate->unitId() == attacker->unitId()
-			&& newHorizonsOpportunist::hasPerk(*hb, unitToUpdate.get()))
-			unitToUpdate->pursuitMovementRemaining = affectedUnit->pursuitMovementRemaining;
-		unitToUpdate->rangedFollowUpDamagePercent = affectedUnit->rangedFollowUpDamagePercent;
-		// The forecasted continuation is one accepted shot. Consume its copied
-		// allowance here so this detached branch cannot price another reduced
-		// shot on the same activation or carry it into the next one.
-		if(unitToUpdate->unitId() == attacker->unitId()
-			&& ap.attack.shooting && ap.attack.physicalDamage
-			&& unitToUpdate->rangedFollowUpDamagePercent > 0)
-			unitToUpdate->rangedFollowUpDamagePercent = 0;
-		// The detached forecast records explicitly classified hits and reactions
-		// even when they are not represented by a Fortune strike. Copy its total
-		// interval rather than guessing that residual HP loss was physical.
-		unitToUpdate->veteranPhysicalDamageSinceActivation =
-			affectedUnit->veteranPhysicalDamageSinceActivation;
-
+		selectedAttackReceipt::restoreResources(ap, *affectedUnit, unitToUpdate, attacker, *hb);
 		if(unitToUpdate->unitSide() == attacker->unitSide())
 		{
 			if(unitToUpdate->unitId() == attacker->unitId())
