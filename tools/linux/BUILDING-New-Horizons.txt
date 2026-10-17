@@ -28,7 +28,7 @@ assembler is permission to publish an unverified candidate.
 
 Build platform: Ubuntu 26.04 x86-64, ordinary GCC/G++ 15.2.0, C++20, CMake/Ninja.
 Install suitable build tools and the development providers recorded in the header
-inventory: Boost, SDL2/image/mixer/ttf, LuaJIT, oneTBB, minizip/zlib, squish, libcurl and the
+inventory: Boost, SDL3/image/mixer/ttf, LuaJIT, oneTBB, minizip/zlib, squish, libcurl and the
 FFmpeg codec/format/util/swscale/swresample development packages. Their exact
 observed versions/source records accompany the package. No proprietary compiler
 IR/plugin or LTO step was used in the recorded application build.
@@ -41,6 +41,10 @@ spaces for the following source/build aliases. Do not overwrite existing paths:
 Configure:
   cmake -S /tmp/nh-linux-source -B /tmp/nh-linux-build --preset new-horizons-linux \
     -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON \
+    -DENABLE_SDL3=ON -DCMAKE_PREFIX_PATH=/path/to/declared-provider-prefix \
+    -DCURL_NO_CURL_CMAKE=ON \
+    -DCURL_INCLUDE_DIR=/path/to/declared-provider-prefix/include \
+    -DCURL_LIBRARY_RELEASE=/path/to/matching/system/libcurl.so \
     '-DCMAKE_INSTALL_RPATH=$ORIGIN' -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
     '-DCMAKE_C_FLAGS=-ffile-prefix-map=/tmp/nh-linux-source=. -ffile-prefix-map=/tmp/nh-linux-build=./build' \
     '-DCMAKE_CXX_FLAGS=-ffile-prefix-map=/tmp/nh-linux-source=. -ffile-prefix-map=/tmp/nh-linux-build=./build'
@@ -54,6 +58,11 @@ Stage to a NEW owned directory, not /usr:
 
 These are generic rebuild aliases. BUILD-PROVENANCE.json retains the actual
 candidate's configure options, including its specific source/build prefix maps.
+The Linux baseline preset defaults to SDL2; the explicit SDL3 option above is
+required for this package. Prepare the declared provider prefix from the SDL
+sources and recipe accompanying the dependency-source archive, including the
+matching libcurl headers. Select the matching system libcurl library explicitly;
+do not silently substitute undeclared headers or a private SDK.
 
 For the curated flat package retain only new-horizons, its matching libvcmi.so,
 config, scripts, Mods/vcmi and Mods/new-horizons, plus the launcher, notices and

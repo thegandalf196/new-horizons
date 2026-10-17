@@ -8,46 +8,47 @@ full GPLv3 text and all applicable component notices alongside the original core
 license.txt. New Horizons-authored geometry/icons remain CC0. Purchaser-supplied
 Heroes III art/content is external and is not relicensed or redistributed.
 
-The package contains the project client and facade, not the 176 system shared
-ELFs observed on its build/test host. Those external platform dependencies and
+The package contains the project client and facade, not the system shared
+ELFs recorded in its ELF-DEPENDENCIES.json. Those external platform dependencies and
 optional dlopen/audio/video/GPU-driver components are a separate boundary. The
 recorded graph does not establish compatibility with every driver or distro.
 Bundling any additional implementation requires a fresh source/license audit.
 
 The compiler/header/linker inventory explicitly records startup objects and
 libgcc.a, libc_nonshared.a and libdl.a. A linker search entry is not proof that all
-archive members were incorporated; the recorded libdl.a is empty. Exact glibc
+archive members were incorporated. Exact glibc
 sources and Debian patches, at the version recorded in DEPENDENCY-INVENTORY.json,
 accompany the application source/build instructions for the nonshared/startup
 boundary and rebuilding/relinking.
 
-GCC runtime components and the 386 of 394 recorded GCC 15 headers carrying RLE
-text are assessed under the retained Runtime Library Exception 3.1, conditional
+GCC runtime components and recorded GCC headers carrying RLE text are assessed
+under the retained Runtime Library Exception 3.1, conditional
 on Eligible Compilation. The recorded build used ordinary GCC/G++ C++20 source
 compilation and no incompatible proprietary IR or compiler plugin. This is not
 a generic waiver for all GCC files or arbitrary static libraries.
 
-The other eight GCC headers are retained verbatim with per-file provenance:
-five pstl headers identify Apache-2.0 WITH LLVM-exception (unlike oneTBB);
+Exceptional GCC headers are retained verbatim with per-file provenance:
+pstl headers identify Apache-2.0 WITH LLVM-exception (unlike oneTBB);
 quadmath.h identifies GNU Library GPL version 2-or-later and contains three small
 inline bodies; stdint.h and syslimits.h are tiny generated/forwarding wrappers
 without file-level license markers. Their package and generation context is
 recorded rather than inventing an RLE marker. Full Apache/LLVM-exception and
 GNU Library GPL terms accompany these actual header sources.
 
-The 35 recorded Linux UAPI headers are also retained: 26 carry explicit GPL2(+)
-WITH Linux-syscall-note identifiers and nine are generated/forwarding headers.
+The recorded Linux UAPI headers are also retained, including explicit GPL2(+)
+WITH Linux-syscall-note identifiers and generated/forwarding headers.
 Their specific identifiers, source-package provenance and the full syscall note
 are separate from GCC's exception; no kernel implementation is bundled or
 relicensed by this assessment.
 
 Exact preferred Boost 1.90.0-6ubuntu1 and oneTBB 2022.3.0-2 sources/patches are
-provided. All 3649 used Boost headers and 64 oneTBB headers were byte-matched to
-those patched source trees; Boost's installed flat include tree is assembled
-from its modular source include directories. Exact source archives/patches for
-the eight remaining API-header source providers are also provided, with source
-versions, file hashes and acquisition URLs. Copyright files alone are not
-represented as preferred-source or generation proof.
+provided. The inventory records the actual compiled header paths, hashes and
+package ownership; it does not by itself prove correspondence to patched source
+trees. Boost's installed flat include tree is assembled from its modular source
+include directories. Additional declared API-header providers have source
+archives/patches, versions, file hashes and acquisition records in the accompanying
+provider-source manifest. Copyright files alone are not represented as
+preferred-source or generation proof.
 
 Source archive signatures are retained. Where dpkg-source reported unavailable
 public keys, OpenPGP validation is NOT claimed; source-file sizes/SHA256 checks
