@@ -738,6 +738,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/SpellAdmissionCharacterizationTest.cpp
 		battleAI/HeroActionAdmissionTest.cpp
 		battleAI/HeroActionUtilityTest.cpp
+		battleAI/ProtectAttackPreviewTest.cpp
 		battleAI/HeroOrderEffectsProjectionTest.cpp
 		battleAI/LegacyHeroOrderProjectionTest.cpp
 		battleAI/BraceAttackPreviewTest.cpp

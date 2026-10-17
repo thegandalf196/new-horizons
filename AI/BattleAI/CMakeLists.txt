@@ -1,6 +1,7 @@
 set(battleAI_SRCS
 		AttackPossibility.cpp
 		AttackPreviewHitContext.cpp
+		AttackPreviewTargets.cpp
 		PreemptiveAttackRequest.cpp
 		BracePrimaryState.cpp
 		BattleAI.cpp
@@ -66,6 +67,7 @@ set(battleAI_HEADERS
 
 		AttackPossibility.h
 		AttackPreviewHitContext.h
+		AttackPreviewTargets.h
 		PreemptiveAttackRequest.h
 		BracePrimaryState.h
 		BattleAI.h

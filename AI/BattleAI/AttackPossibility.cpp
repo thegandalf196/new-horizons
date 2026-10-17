@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "AttackPossibility.h"
 #include "AttackPreviewHitContext.h"
+#include "AttackPreviewTargets.h"
 #include "PreemptiveAttackRequest.h"
 #include "BracePrimaryState.h"
 #include "AttackCount.h"
@@ -1078,50 +1079,11 @@ AttackPossibility AttackPossibility::evaluate(
 		|| (!attackInfo.shooting && newHorizonsHexOfPainAI::hasEffect(defender));
 		const bool projectsProtect = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
-		battle::Units defenderUnits;
-		battle::Units requestedDefenderUnits;
-		battle::Units retaliatedUnits = {attacker};
-		if(attackInfo.shooting)
-			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, true, hex, defender->getPosition());
-		else if(longReachAttack)
-		{
-			// The server does not enumerate adjacency-based breath/sweep targets
-			// or counters for a distant Long Reach strike. Those shared collateral
-			// helpers require a mutual adjacent direction and must not be called.
-			defenderUnits = {defender};
-			requestedDefenderUnits = {requestedDefender};
-		}
-		else
-		{
-			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, false, hex, defender->getPosition());
-			requestedDefenderUnits = state->getAttackedBattleUnits(attacker, requestedDefender, defHex,
-				false, hex, requestedDefender->getPosition());
-			retaliatedUnits = state->getAttackedBattleUnits(defender, attacker, hex, false, defender->getPosition(), hex);
-
-			vstd::erase_if(defenderUnits, [attacker](const battle::Unit * unit) { return unit->unitId() == attacker->unitId(); });
-			vstd::erase_if(requestedDefenderUnits, [attacker](const battle::Unit * unit) { return unit->unitId() == attacker->unitId(); });
-			if(!vstd::contains_if(retaliatedUnits, [attacker](const battle::Unit * unit)
-				{ return unit->unitId() == attacker->unitId(); }))
-				retaliatedUnits.push_back(attacker);
-		}
-		if(projectsProtect && !vstd::contains_if(requestedDefenderUnits, [requestedDefender](const battle::Unit * unit)
-			{ return unit->unitId() == requestedDefender->unitId(); }))
-			requestedDefenderUnits.push_back(requestedDefender);
-		if(!vstd::contains_if(defenderUnits, [defender](const battle::Unit * unit)
-			{ return unit->unitId() == defender->unitId(); }))
-			defenderUnits.push_back(defender);
-		// Resolve the primary hit before splash targets, as the authoritative
-		// attack path does. Once-per-side defenses depend on that ordering.
-		const auto primaryFirst = [](battle::Units & units, const battle::Unit * primary)
-		{
-			const auto position = std::ranges::find_if(units, [primary](const battle::Unit * unit)
-				{ return unit->unitId() == primary->unitId(); });
-			if(position != units.end())
-				std::rotate(units.begin(), position, std::next(position));
-		};
-		primaryFirst(defenderUnits, defender);
-		primaryFirst(requestedDefenderUnits, requestedDefender);
-		primaryFirst(retaliatedUnits, attacker);
+		auto targets = attackPreview::targets(*state, attacker, requestedDefender,
+			defender, hex, defHex, attackInfo.shooting, longReachAttack);
+		auto & defenderUnits = targets.resolved;
+		auto & requestedDefenderUnits = targets.requested;
+		auto & retaliatedUnits = targets.counter;
 		const auto hasNightProwlerBonusIn = [](const battle::Units & units)
 		{
 			return std::ranges::any_of(units, [](const battle::Unit * unit)
@@ -1213,8 +1175,8 @@ AttackPossibility AttackPossibility::evaluate(
 				return true;
 			if(longReachAttack)
 				return false;
-			const auto possibleVictims = state->getAttackedBattleUnits(attacker, primaryTarget,
-				defHex, false, hex, primaryTarget->getPosition());
+			const auto & possibleVictims = primaryTarget->unitId() == defender->unitId()
+				? defenderUnits : requestedDefenderUnits;
 			return std::ranges::any_of(possibleVictims, qualifiesForMireGrip);
 		};
 		const bool mireGripTargetCanBeHit = !attackInfo.shooting
@@ -1806,8 +1768,9 @@ AttackPossibility AttackPossibility::evaluate(
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate()
 					&& (!counterAttacksBlocked || (ignoredInnate && !fortunePreview->battleHasMagicalRetaliationBlock(ap.attackerState.get())))
 					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector) || ignoredShroud)
-					&& !ap.attackerState->isInvincible() && !state->isLongWeaponAttack(ap.attackerState.get(), defenderState.get())
-					&& state->isMeleeAttackPossible(ap.attackerState.get(), defenderState.get()))
+					&& !ap.attackerState->isInvincible()
+					&& !state->isLongWeaponAttack(ap.attackerState.get(), projectsProtect ? requestedDefender : defenderState.get())
+					&& state->isMeleeAttackPossible(ap.attackerState.get(), projectsProtect ? requestedDefender : defenderState.get()))
 				{
 					retaliation.emplace();
 					retaliation->attackerId = retaliatorState->unitId();
