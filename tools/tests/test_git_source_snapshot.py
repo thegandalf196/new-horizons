@@ -8,12 +8,24 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
 from git_source_snapshot import source_snapshot
 from source_export_policy import (
     RETIRED_PUBLIC_PATHS, forbidden_tracked_design, load_retired_public_paths, private_design_path,
 )
+
+
+class RetiredFinderMetadataTest(unittest.TestCase):
+    def test_exact_index_entry_is_rejected_without_payload_or_worktree_reads(self):
+        root = Path(__file__).resolve().parents[2]
+        names = b'osx/dmg_DS_Store\0osx/DS_Store_Setup.scpt\0osx/dmg_background.png\0osx/dmg_background.psd\0osx/vcmi.icns\0osx/dmg_DS_Store.example\0'
+        with patch('source_export_policy.subprocess.check_output', side_effect=[str(root) + '\n', names]) as metadata, \
+                patch.object(Path, 'open', side_effect=AssertionError('metadata-only guard must not read a payload')):
+            self.assertEqual(forbidden_tracked_design(root), ['osx/dmg_DS_Store'])
+        self.assertEqual(metadata.call_count, 2)
+        self.assertEqual(metadata.call_args.args[0][-2:], ['ls-files', '-z'])
 
 
 class GitSourceSnapshotTest(unittest.TestCase):
@@ -254,9 +266,11 @@ class GitSourceSnapshotTest(unittest.TestCase):
     def test_all_exact_retired_paths_are_excluded_without_neighboring_contracts(self):
         public = ['source.cpp', 'license.txt', 'docs/NH_AI_EXCHANGES.md',
                   'assets/new-horizons/academy/README.md',
+                  'osx/DS_Store_Setup.scpt', 'osx/dmg_background.png',
+                  'osx/dmg_background.psd', 'osx/vcmi.icns', 'osx/dmg_DS_Store.example',
                   'assets/new-horizons/academy/masters/adventure/avctowr0.prompt.txt.example',
                   'docs/NH_AGENT_START.md.example']
-        self.assertEqual(len(RETIRED_PUBLIC_PATHS), 147)
+        self.assertEqual(len(RETIRED_PUBLIC_PATHS), 148)
         for name in [*RETIRED_PUBLIC_PATHS, *public]:
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -283,6 +297,7 @@ class GitSourceSnapshotTest(unittest.TestCase):
                 self.assertIn('license.txt', actual)
                 self.assertIn('assets/new-horizons/academy/README.md', actual)
                 self.assertIn(public[-2], actual)
+                self.assertTrue({name for name in public if name.startswith('osx/')}.issubset(actual))
 
     def test_retired_force_added_index_entry_is_rejected_even_without_worktree_file(self):
         name = 'assets/new-horizons/academy/masters/adventure/avctowr0.prompt.txt'
