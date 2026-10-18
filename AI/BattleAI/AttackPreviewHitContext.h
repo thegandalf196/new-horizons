@@ -11,7 +11,7 @@
 #include <vector>
 
 class HypotheticBattle;
-class BattleAttackInfo;
+struct BattleAttackInfo;
 struct FortuneStrikeProjection;
 namespace battle { class CUnitState; }
 namespace newHorizonsArmorer { struct ArmorerLastStandDamageResult; }
