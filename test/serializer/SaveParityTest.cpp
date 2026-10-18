@@ -424,6 +424,68 @@ TEST(SaveParityCoverageTest, ExactStartingPrefixAndCompletedNextDayAreRequired)
 	EXPECT_THROW(saveParity::requireTurnCoverage(start, bad), std::runtime_error);
 }
 
+TEST(SaveParityCoverageTest, LeadingInitializationDayZeroAllowsDayOneToDayTwoCoverage)
+{
+	auto start = coverageStart();
+	start.day = 1;
+	start.chapters.front().day = 1;
+	const auto ordinaryStart = start;
+	const auto finish = coverageFinish(start);
+	ReplayChapter initialization;
+	initialization.day = 0;
+	start.chapters.insert(start.chapters.begin(), initialization);
+	EXPECT_NO_THROW(saveParity::requireTurnCoverage(start, finish));
+	auto retainedFinish = finish;
+	retainedFinish.chapters.insert(retainedFinish.chapters.begin(), initialization);
+	EXPECT_NO_THROW(saveParity::requireTurnCoverage(start, retainedFinish));
+	EXPECT_NO_THROW(saveParity::requireTurnCoverage(ordinaryStart, retainedFinish));
+}
+
+TEST(SaveParityCoverageTest, DuplicateDayZeroIsRejectedInEitherInput)
+{
+	const auto start = coverageStart();
+	const auto finish = coverageFinish(start);
+	ReplayChapter initialization;
+	initialization.day = 0;
+	auto badStart = start;
+	badStart.chapters.insert(badStart.chapters.begin(), {initialization, initialization});
+	EXPECT_THROW(saveParity::requireTurnCoverage(badStart, finish), std::runtime_error);
+	auto badFinish = finish;
+	badFinish.chapters.insert(badFinish.chapters.begin(), {initialization, initialization});
+	EXPECT_THROW(saveParity::requireTurnCoverage(start, badFinish), std::runtime_error);
+}
+
+TEST(SaveParityCoverageTest, DescentToDayZeroIsStillRejected)
+{
+	auto start = coverageStart();
+	const auto finish = coverageFinish(start);
+	ReplayChapter preceding;
+	preceding.day = 1;
+	ReplayChapter initialization;
+	initialization.day = 0;
+	start.chapters.insert(start.chapters.begin(), {preceding, initialization});
+	EXPECT_THROW(saveParity::requireTurnCoverage(start, finish), std::runtime_error);
+}
+
+TEST(SaveParityCoverageTest, SingleStartingChapterRemainsAccepted)
+{
+	const auto start = coverageStart();
+	ASSERT_EQ(start.chapters.size(), 1);
+	EXPECT_NO_THROW(saveParity::requireTurnCoverage(start, coverageFinish(start)));
+}
+
+TEST(SaveParityCoverageTest, EmptyChaptersRemainRejectedInEitherInput)
+{
+	const auto start = coverageStart();
+	const auto finish = coverageFinish(start);
+	auto badStart = start;
+	badStart.chapters.clear();
+	EXPECT_THROW(saveParity::requireTurnCoverage(badStart, finish), std::runtime_error);
+	auto badFinish = finish;
+	badFinish.chapters.clear();
+	EXPECT_THROW(saveParity::requireTurnCoverage(start, badFinish), std::runtime_error);
+}
+
 TEST(SaveParityCoverageTest, ChangedPacketOrderCountAndMarksRemainDifferent)
 {
 	auto left = coverageFinish(coverageStart());

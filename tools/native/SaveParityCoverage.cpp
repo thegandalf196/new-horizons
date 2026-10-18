@@ -17,11 +17,13 @@ const ReplayChapter & chapterAt(const Evidence & evidence, uint32_t day)
 		throw std::runtime_error("Replay does not end at the inspected world day");
 	const ReplayChapter * found = nullptr;
 	uint32_t prior = 0;
+	bool hasPrior = false;
 	for(const auto & chapter : evidence.chapters)
 	{
-		if(chapter.day <= prior)
+		if(hasPrior && chapter.day <= prior)
 			throw std::runtime_error("Replay chapter days must be strictly ordered");
 		prior = chapter.day;
+		hasPrior = true;
 		if(chapter.day == day)
 			found = &chapter;
 		for(const auto & mark : chapter.turns)
