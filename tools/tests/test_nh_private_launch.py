@@ -20,6 +20,49 @@ HELPER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(HELPER)
 
 
+class BootstrapClientArgumentsTest(unittest.TestCase):
+    def test_absent_optin_preserves_ordinary_argument_policy(self):
+        with mock.patch.dict(HELPER.os.environ, {}, clear=True):
+            for arguments in ([], ["--disable-video", "--savefrequency", "0"],
+                              ["--testmap", "Maps/map.vmap", "--spectate"]):
+                HELPER.validate_client_args(arguments)
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.validate_client_args(["--onlyAI"])
+
+    def test_invalid_or_empty_present_optin_refuses(self):
+        for value in ("", "1", "Ordinary44b24", "ordinary44b24 ", "Maps/other.vmap"):
+            with self.subTest(value=value), mock.patch.dict(HELPER.os.environ,
+                    {"NH_CURE_BOOTSTRAP": value, "NH_CURE_CALLBACK_CASE": "same-session"}, clear=True):
+                with self.assertRaises(HELPER.Refusal):
+                    HELPER.validate_client_args([])
+
+    def test_exact_optin_requires_selected_callback_mode(self):
+        for mode in (None, "", "same-session ", "unsupported"):
+            environment = {"NH_CURE_BOOTSTRAP": "ordinary44b24"}
+            if mode is not None:
+                environment["NH_CURE_CALLBACK_CASE"] = mode
+            with self.subTest(mode=mode), mock.patch.dict(HELPER.os.environ, environment, clear=True):
+                with self.assertRaises(HELPER.Refusal):
+                    HELPER.validate_client_args([])
+        for mode in ("same-session", "late-session", "replaced-owner"):
+            with mock.patch.dict(HELPER.os.environ,
+                    {"NH_CURE_BOOTSTRAP": "ordinary44b24", "NH_CURE_CALLBACK_CASE": mode}, clear=True):
+                HELPER.validate_client_args(["--disable-video", "--savefrequency", "0"])
+
+    def test_conflicts_refuse_without_process_dispatch(self):
+        environment = {"NH_CURE_BOOTSTRAP": "ordinary44b24", "NH_CURE_CALLBACK_CASE": "same-session"}
+        with mock.patch.dict(HELPER.os.environ, environment, clear=True), \
+                mock.patch.object(HELPER.subprocess, "Popen") as popen, \
+                mock.patch.object(HELPER.subprocess, "run") as run:
+            for arguments in (["--testmap", "Maps/map.vmap"], ["--testsave", "Saves/map.vcgm1"],
+                              ["--onlyAI"], ["--headless"], ["--spectate"], ["--spectate=true"],
+                              ["--testmap=Maps/map.vmap"]):
+                with self.subTest(arguments=arguments), self.assertRaises(HELPER.Refusal):
+                    HELPER.validate_client_args(arguments)
+            popen.assert_not_called()
+            run.assert_not_called()
+
+
 class PrivateLaunchTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

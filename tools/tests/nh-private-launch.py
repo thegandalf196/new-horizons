@@ -461,6 +461,15 @@ def verify_owned_xvfb(guard_path, *, proc_root=None, boot_id_path=None,
 
 def validate_client_args(client_args):
     """Allow only a small set of known test/UI switches and safe values."""
+    if "NH_CURE_BOOTSTRAP" in os.environ:
+        if os.environ["NH_CURE_BOOTSTRAP"] != "ordinary44b24":
+            raise Refusal("Invalid fixed Cure bootstrap opt-in")
+        if os.environ.get("NH_CURE_CALLBACK_CASE") not in (
+                "same-session", "late-session", "replaced-owner"):
+            raise Refusal("Fixed Cure bootstrap requires one selected callback mode")
+        if any(value in client_args for value in
+               ("--testmap", "--testsave", "--onlyAI", "--headless", "--spectate")):
+            raise Refusal("Conflicting client arguments with fixed human bootstrap")
     index = 0
     seen = set()
     while index < len(client_args):
