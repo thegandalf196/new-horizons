@@ -279,6 +279,8 @@ namespace
 struct PlaguePrefixProbe
 {
 	using Version = ESerializationVersion;
+	// Omit only Plaguebearer in the domain probe, not unrelated nested formats.
+	Version version = Version::CURRENT;
 	bool saving = true;
 	bool loadingGamestate = false;
 	int fields = 0;

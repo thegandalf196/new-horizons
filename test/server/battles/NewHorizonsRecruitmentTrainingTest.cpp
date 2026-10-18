@@ -49,6 +49,9 @@ public:
 struct TrainingPrefixProbe
 {
 	using Version = ESerializationVersion;
+	// Selectively omit only Training; nested format checks stay current so
+	// they cannot mask the enclosing Training-domain rejection under test.
+	Version version = Version::CURRENT;
 	bool saving = true;
 	bool loadingGamestate = false;
 	int fields = 0;

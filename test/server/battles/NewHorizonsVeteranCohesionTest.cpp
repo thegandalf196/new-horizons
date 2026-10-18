@@ -32,6 +32,7 @@ public:
 struct CohesionPrefixProbe
 {
 	using Version = ESerializationVersion;
+	Version version = Version::NEW_HORIZONS_SWIFT_REBIRTH;
 	bool saving = true;
 	bool loadingGamestate = false;
 	int fields = 0;

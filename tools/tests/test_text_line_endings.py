@@ -47,6 +47,57 @@ class TextLineEndingsTest(unittest.TestCase):
         (self.root / 'windows.bat').write_bytes(b'echo wrong\n')
         self.assertTrue(CHECKER.check(self.root)['violations'])
 
+    def test_inherited_installer_crlf_blobs_survive_late_attributes_and_checkout(self):
+        patterns = ('/CI/wininstaller/build_installer.cmd',
+                    '/CI/wininstaller/installer.iss', '/CI/wininstaller/lang/*.isl')
+        payloads = {'CI/wininstaller/build_installer.cmd': b'echo installer\r\n',
+                    'CI/wininstaller/installer.iss': b'[Setup]\r\nAppName=Example\r\n',
+                    'CI/wininstaller/lang/example.isl': b'[Messages]\r\nWelcome=Example\r\n'}
+        auto_rules = ''.join(pattern + ' text=auto eol=crlf\n' for pattern in patterns).encode()
+        forced_rules = auto_rules.replace(b'text=auto', b'text')
+        commit = lambda: self.git('-c', 'user.name=Line-ending regression',
+                                  '-c', 'user.email=tests@invalid',
+                                  '-c', 'core.hooksPath=/dev/null', 'commit', '-qm', 'fixture')
+        for name, raw in payloads.items():
+            self.tracked(name, raw)
+        commit()  # Upstream CRLF blobs predate the attributes being tested.
+        for name, raw in payloads.items():
+            self.assertEqual(self.git('show', 'HEAD:' + name), raw)
+
+        def fresh_checkout(label):
+            clone = self.root / label
+            self.git('clone', '-q', '--no-local', '--no-checkout', str(self.root), str(clone))
+            subprocess.check_call(['/usr/bin/git', '-C', str(clone), 'config', 'core.autocrlf', 'false'])
+            subprocess.check_call(['/usr/bin/git', '-C', str(clone), '-c', 'core.hooksPath=/dev/null',
+                                   'checkout', '-q', '--force', 'HEAD'])
+            return clone
+
+        self.tracked('.gitattributes', forced_rules)
+        commit()
+        forced = fresh_checkout('forced-checkout')
+        dirty = subprocess.check_output(['/usr/bin/git', '-C', str(forced), 'status', '--porcelain'])
+        self.assertEqual(set(dirty.decode().splitlines()), {' M ' + name for name in payloads})
+        for name, raw in payloads.items():
+            self.assertEqual((forced / name).read_bytes(), raw)
+
+        self.tracked('.gitattributes', auto_rules)
+        commit()
+        automatic = fresh_checkout('auto-checkout')
+        self.assertEqual(subprocess.check_output(
+            ['/usr/bin/git', '-C', str(automatic), 'status', '--porcelain']), b'')
+        self.assertFalse(CHECKER.check(automatic)['violations'])
+        for name, raw in payloads.items():
+            with self.subTest(path=name):
+                self.assertEqual((automatic / name).read_bytes(), raw)
+                self.assertEqual(self.git('show', 'HEAD:' + name), raw)
+                (automatic / name).write_bytes(raw.replace(b'\r\n', b'\n'))
+                self.assertEqual(CHECKER.check(automatic)['violations'],
+                                 [{'path': name, 'errors': ['bare LF in explicit CRLF text']}])
+                (automatic / name).write_bytes(raw)
+        actual_rules = [line for line in (ROOT / '.gitattributes').read_text().splitlines()
+                        if any(line.startswith(pattern + ' ') for pattern in patterns)]
+        self.assertEqual(actual_rules, auto_rules.decode().splitlines())
+
     def test_pinned_minus_text_is_preserved(self):
         self.tracked('.gitattributes', b'/dependencies/** -text\n')
         self.tracked('dependencies/recipe.cpp', b'pinned\r\nbytes\0')

@@ -4,9 +4,9 @@
 
 *.bat text eol=crlf
 # Preserve the existing Windows installer script and Inno translation convention.
-/CI/wininstaller/build_installer.cmd text eol=crlf
-/CI/wininstaller/installer.iss text eol=crlf
-/CI/wininstaller/lang/*.isl text eol=crlf
+/CI/wininstaller/build_installer.cmd text=auto eol=crlf
+/CI/wininstaller/installer.iss text=auto eol=crlf
+/CI/wininstaller/lang/*.isl text=auto eol=crlf
 /android/gradlew text eol=lf
 
 # Preserve the exact pinned upstream recipe inventory on every platform.
