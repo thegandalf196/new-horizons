@@ -80,6 +80,9 @@ if(ENABLE_NH_CURE_CLIENT_INTEGRATION)
 		StdInc.cpp EntryPoint.cpp
 		../client/tests/CureIntegrationDriver.cpp
 		../client/tests/CureIntegrationDriver.h
+		../client/tests/CureIntegrationBootstrap.cpp
+		../client/tests/CureIntegrationBootstrap.h
+		../client/tests/CureIntegrationBootstrapState.h
 		../client/tests/CureCallbackRequestLease.cpp
 		../client/tests/CureCallbackRequestLease.h)
 	target_compile_definitions(nhCureClientIntegration PRIVATE NH_CURE_CLIENT_INTEGRATION VCMI_SDL3)

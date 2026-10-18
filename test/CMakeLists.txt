@@ -11,6 +11,11 @@ add_executable(nhHeroMasteryDialogStateTest ../client/tests/HeroMasteryDialogSta
 add_test(NAME nhHeroMasteryDialogStateTest COMMAND nhHeroMasteryDialogStateTest)
 add_executable(nhCureAfflictionSessionTest ../client/tests/CureAfflictionSessionTest.cpp)
 add_test(NAME nhCureAfflictionSessionTest COMMAND nhCureAfflictionSessionTest)
+if(ENABLE_NH_CURE_CLIENT_INTEGRATION)
+	add_executable(nhCureIntegrationBootstrapStateTest ../client/tests/CureIntegrationBootstrapStateTest.cpp)
+	add_test(NAME nhCureIntegrationBootstrapStateTest COMMAND nhCureIntegrationBootstrapStateTest)
+	set_tests_properties(nhCureIntegrationBootstrapStateTest PROPERTIES LABELS "nh-integration;state" TIMEOUT 10)
+endif()
 add_executable(nhExchangeSecondarySkillSlotsTest ../client/tests/ExchangeSecondarySkillSlotsTest.cpp)
 add_test(NAME nhExchangeSecondarySkillSlotsTest COMMAND nhExchangeSecondarySkillSlotsTest)
 

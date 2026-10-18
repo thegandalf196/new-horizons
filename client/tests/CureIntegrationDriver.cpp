@@ -1,6 +1,7 @@
 /* License: GNU General Public License v2.0 or later; see license.txt. */
 #include "StdInc.h"
 #include "CureIntegrationDriver.h"
+#include "CureIntegrationBootstrap.h"
 #include "CureCallbackRequestLease.h"
 #include "../CPlayerInterface.h"
 #include "../CServerHandler.h"
@@ -35,6 +36,7 @@ void require(bool value, const char * reason)
 
 struct CureIntegrationDriver::State final : CureAfflictionPresenter
 {
+	CureIntegrationBootstrap bootstrap{std::getenv("NH_CURE_BOOTSTRAP")};
 	std::string scenario;
 	std::weak_ptr<BattleInterface> observedOwner;
 	std::weak_ptr<CObjectListWindow> modal;
@@ -209,6 +211,7 @@ void CureIntegrationDriver::onUpdate()
 	try
 	{
 		state->tick(state);
+		state->bootstrap.update();
 	}
 	catch(const std::exception & error)
 	{
