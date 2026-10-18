@@ -7,9 +7,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
-from source_organization import apply_manual, check, proposal, units
+from source_organization import apply_manual, check, main, proposal, units
 from source_organization_inventory import classification, cpp_measurement_source, inventory, language, measure
 
 
@@ -242,6 +243,161 @@ VCMI_LIB_NAMESPACE_END
         self.assertIsNone(language('launcher/translation/english.ts'))
         self.assertIsNone(language('docs/maintainers/scripts/web/wiki.vcmi.eu'))
         self.assertEqual(measure('CMakeLists.txt', b'function(f)\nendfunction()')['measurement'], 'balanced-cmake-commands')
+
+    def test_first_party_test_paths_measure_cpp_and_python_long_functions(self):
+        cases = [
+            ('test/serializer/LongTest.cpp', b'int long_test() {\n'
+             + b'// retained line\n' * 78 + b'return 0;\n}\n'),
+            ('tools/tests/test_long.py', b'def long_test():\n'
+             + b'    # retained line\n' * 79 + b'    return 0\n'),
+        ]
+        for path, data in cases:
+            with self.subTest(path=path):
+                file = measure(path, data)
+                production = measure('first_party' + Path(path).suffix, data)
+                self.assertEqual(file['classification'], 'test')
+                self.assertEqual(file['measurement'], 'parser')
+                self.assertEqual(file['diagnostics'], [])
+                self.assertEqual(file['functions'], production['functions'])
+                self.assertEqual([(f['start'], f['end'], f['lines'])
+                                  for f in file['functions']], [(1, 81, 81)])
+                self.assertTrue(file['functions'][0]['symbol'].endswith('#1'))
+
+    def test_gtest_bodies_and_python_unittest_method_have_measured_spans(self):
+        for macro in (b'TEST', b'TEST_F'):
+            data = macro + b'(ScopeSuite, LongBody) {\n' + b'// body line\n' * 79 + b'}\n'
+            with self.subTest(macro=macro):
+                file = measure('test/serializer/ScopeTest.cpp', data)
+                self.assertEqual(file['diagnostics'], [])
+                self.assertEqual([(f['start'], f['end'], f['lines'])
+                                  for f in file['functions']], [(1, 81, 81)])
+                self.assertIn(macro.decode(), file['functions'][0]['symbol'])
+                self.assertIn('LongBody', file['functions'][0]['symbol'])
+        data = (b'class ScopeTest(unittest.TestCase):\n def test_long(self):\n'
+                + b'  # body line\n' * 79 + b'  return 0\n')
+        file = measure('tools/tests/test_scope.py', data)
+        self.assertEqual(file['diagnostics'], [])
+        self.assertEqual([(f['symbol'], f['start'], f['end'], f['lines'])
+                          for f in file['functions']], [('ScopeTest.test_long#1', 2, 82, 81)])
+
+    def test_first_party_test_parser_gaps_are_visible_but_exclusions_remain(self):
+        for path, data in [('client/tests/BrokenTest.cpp', b'void f( {\n nonsense\n'),
+                           ('tools/tests/test_broken.py', b'def broken(:\n')]:
+            with self.subTest(path=path):
+                file = measure(path, data)
+                self.assertEqual(file['classification'], 'test')
+                self.assertEqual(file['measurement'], 'parser')
+                self.assertTrue(file['diagnostics'])
+        for path in ['test/googletest/test/broken.cpp', 'dependencies/test/broken.py',
+                     'docs/modders/Lua_Reference/broken.lua']:
+            with self.subTest(path=path):
+                file = measure(path, b'not valid syntax {{{\n')
+                self.assertIn(file['classification'], {'vendor', 'documentation-example'})
+                self.assertEqual(file['measurement'], 'excluded')
+                self.assertEqual(file['functions'], [])
+                self.assertEqual(file['diagnostics'], [])
+
+    def test_measured_test_functions_do_not_expand_production_growth_gate(self):
+        data = b'def long_test():\n' + b'    pass\n' * 150
+        test = report('tools/tests/test_long.py', data)
+        production = report('tools/ci/long.py', data)
+        self.assertEqual(test['files'][0]['functions'][0]['lines'], 151)
+        self.assertEqual(units(test), {})
+        self.assertEqual(check(test, {'files': []}, {'units': {}}, {})['errors'], [])
+        self.assertEqual(proposal(test)['units'], {})
+        self.assertEqual(len(units(production)), 2)
+        self.assertTrue(check(production, {'files': []}, {'units': {}}, {})['errors'])
+        malformed = report('tools/tests/test_broken.py', b'def broken(:\n')
+        self.assertTrue(malformed['files'][0]['diagnostics'])
+        self.assertIn('tools/tests/test_broken.py', proposal(malformed)['coverage_pending'])
+        self.assertTrue(apply_manual(malformed, {}, lambda path: b''))
+
+    def test_test_manual_coverage_is_current_exact_hash_not_historical_growth(self):
+        path, data = 'test/fixture.nix', b'function f()\n return 1;\nend\n'
+        current = report(path, data)
+        self.assertIn(path, proposal(current)['coverage_pending'])
+        self.assertEqual(units(current), {})
+        self.assertTrue(apply_manual(copy.deepcopy(current), {}, lambda path: data))
+        self.assertEqual(apply_manual(copy.deepcopy(current), {}, lambda path: data,
+                                      historical_baseline=True), [])
+        record = {'sha256': current['files'][0]['sha256'], 'review': 'synthetic-test-coverage',
+                  'rationale': 'Complete synthetic function list',
+                  'functions': [{'symbol': 'f', 'start': 1, 'end': 3}]}
+        baseline = {'manual_functions': {path: record}}
+        measured = copy.deepcopy(current)
+        self.assertEqual(apply_manual(measured, baseline, lambda path: data), [])
+        self.assertEqual(measured['files'][0]['measurement'], 'manual-reviewed')
+        self.assertEqual(measured['files'][0]['functions'][0]['lines'], 3)
+        self.assertEqual(units(measured), {})
+        for key, value in [('sha256', 'stale'), ('review', ''), ('functions', None)]:
+            invalid = copy.deepcopy(baseline)
+            invalid['manual_functions'][path][key] = value
+            self.assertTrue(apply_manual(copy.deepcopy(current), invalid, lambda path: data))
+        production = report('fixture.nix', data)
+        self.assertTrue(apply_manual(production, {}, lambda path: data,
+                                     historical_baseline=True))
+
+    def test_inventory_cli_requires_reviewed_coverage_and_rejects_frozen_gaps(self):
+        path, data = 'test/fixture.nix', b'function f()\n return 1;\nend\n'
+        raw = report(path, data)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'test').mkdir()
+            (root / path).write_bytes(data)
+            baseline_path, output = root / 'baseline.json', root / 'inventory.json'
+            command = ['inventory', '--root', str(root), '--baseline', str(baseline_path),
+                       '--output', str(output)]
+            baseline_path.write_text(json.dumps({'schema': 1, 'units': {}}))
+            with patch('source_organization.inventory', side_effect=lambda *args: copy.deepcopy(raw)):
+                self.assertEqual(main(command), 1)
+                self.assertTrue(json.loads(output.read_text())['errors'])
+                baseline = {'schema': 1, 'manual_functions': {path: {
+                    'sha256': raw['files'][0]['sha256'], 'review': 'synthetic-coverage',
+                    'rationale': 'Complete fixture',
+                    'functions': [{'symbol': 'f', 'start': 1, 'end': 3}]}}}
+                baseline_path.write_text(json.dumps(baseline))
+                for revision in ([], ['--revision', 'pinned-fixture']):
+                    with patch('source_organization.git', return_value=data) as read_git:
+                        self.assertEqual(main(command + revision), 0)
+                        self.assertEqual(read_git.call_count, int(bool(revision)))
+                    result = json.loads(output.read_text())
+                    self.assertEqual(result['errors'], [])
+                    self.assertEqual(result['files'][0]['measurement'], 'manual-reviewed')
+                    self.assertEqual(result['files'][0]['functions'][0]['lines'], 3)
+                baseline_path.write_text(json.dumps({'schema': 1, 'coverage_pending': {path: {
+                    'sha256': raw['files'][0]['sha256'], 'owner': 'synthetic-owner',
+                    'reason': 'Unresolved fixture'}}}))
+                self.assertEqual(main(command), 1)
+                result = json.loads(output.read_text())
+                self.assertEqual(result['coverage_pending'], [path])
+                self.assertIn(path + ': unresolved function coverage', result['errors'])
+
+    def test_check_cli_requires_current_test_coverage_not_historical_test_records(self):
+        path, data = 'test/fixture.nix', b'function f()\n return 1;\nend\n'
+        raw = report(path, data)
+        raw.update(selection='tracked-working-tree', untracked_source_paths=[])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'test').mkdir()
+            (root / path).write_bytes(data)
+            baseline_path, output = root / 'baseline.json', root / 'check.json'
+            command = ['check', '--root', str(root), '--base-ref', 'historical',
+                       '--baseline', 'baseline.json', '--output', str(output)]
+            baseline_path.write_text(json.dumps({'schema': 1, 'units': {}}))
+            with patch('source_organization.inventory', side_effect=lambda *args: copy.deepcopy(raw)), \
+                    patch('source_organization.git', return_value=b'{"schema": 1, "units": {}}'):
+                self.assertEqual(main(command), 1)
+                self.assertIn(path + ': missing/stale reviewed manual function inventory',
+                              json.loads(output.read_text())['errors'])
+                baseline_path.write_text(json.dumps({'schema': 1, 'manual_functions': {path: {
+                    'sha256': raw['files'][0]['sha256'], 'review': 'synthetic-current',
+                    'rationale': 'Complete current coverage; historical test out of scope',
+                    'functions': [{'symbol': 'f', 'start': 1, 'end': 3}]}}}))
+                self.assertEqual(main(command), 0)
+                result = json.loads(output.read_text())
+                self.assertEqual(result['errors'], [])
+                self.assertEqual(result['changes'], [])
+                self.assertEqual(result['coverage_pending'], [])
 
     def test_cmake_nested_comments_brackets_quotes_and_escapes(self):
         data = b'''#[=[ function(fake) endfunction() ]=]

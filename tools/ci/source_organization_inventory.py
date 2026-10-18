@@ -359,7 +359,8 @@ def measure(path: str, data: bytes) -> dict:
               'lines': data.count(b'\n') + int(bool(data) and not data.endswith(b'\n')),
               'sha256': digest(data), 'functions': [],
               'diagnostics': [], 'measurement': 'parser' if lang in PARSED else 'manual-required'}
-    if result['classification'] != 'production':
+    # Measure all first-party code; growth-policy units remain production-only.
+    if result['classification'] not in {'production', 'test'}:
         result['measurement'] = 'excluded'
         return result
     if lang in PARSED:

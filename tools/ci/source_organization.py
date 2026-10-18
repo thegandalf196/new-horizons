@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Inventory physical sizes and reject growth outside independently reviewed scopes.
 
-`inventory` writes measurements, never approvals. `check` uses a reviewed baseline
+`inventory` requires reviewed coverage, never size approvals. `check` uses a reviewed baseline
 and a Git base. Review identifiers document human review; this tool cannot verify
 the identity or independence of a reviewer. It does not measure semantic complexity.
 """
@@ -47,7 +47,7 @@ def proposal(report: dict) -> dict:
                             'kind': 'legacy', 'review': '', 'rationale': ''}
     gaps = {}
     for file in report['files']:
-        if file['classification'] == 'production' and (
+        if file['classification'] in {'production', 'test'} and (
                 file['measurement'] == 'manual-required' or file['diagnostics']):
             gaps[file['path']] = {'sha256': file['sha256'], 'owner': '',
                                   'reason': 'Unsupported language' if file['measurement'] == 'manual-required'
@@ -59,6 +59,7 @@ def apply_manual(report: dict, baseline: dict, read_source, previous: dict | Non
                  old_baseline: dict | None = None, *, historical_baseline: bool = False) -> list[str]:
     """Apply span records, not size exceptions.
 
+    Current coverage includes tests; historical comparison stays production-only.
     Only the previous Git baseline may retain now-resolved frozen evidence.
     """
     errors = []
@@ -66,7 +67,8 @@ def apply_manual(report: dict, baseline: dict, read_source, previous: dict | Non
     pending = baseline.get('coverage_pending', {})
     old_files = {file['path']: file for file in (previous or report)['files']}
     for file in report['files']:
-        if file['classification'] != 'production':
+        if file['classification'] not in ({'production'} if historical_baseline
+                                          else {'production', 'test'}):
             continue
         needs_manual = file['measurement'] == 'manual-required' or bool(file['diagnostics'])
         entry = manual.get(file['path'])
@@ -182,8 +184,19 @@ def main(argv=None) -> int:
         if args.include_untracked and (args.command == 'check' or args.revision):
             parser.error('--include-untracked is only for working-tree inventory/proposal diagnostics')
         current = inventory(root, args.revision, args.include_untracked)
-        if args.command in {'inventory', 'proposal'}:
-            result = current if args.command == 'inventory' else proposal(current)
+        if args.command == 'proposal':
+            result = proposal(current)
+        elif args.command == 'inventory':
+            baseline_path = args.baseline if args.baseline.is_absolute() else root / args.baseline
+            baseline = load_json(baseline_path)
+            read_source = (lambda path: git(root, 'show', args.revision + ':' + path)) if args.revision else (
+                lambda path: (root / path).read_bytes())
+            errors = apply_manual(current, baseline, read_source)
+            pending = [file['path'] for file in current['files']
+                       if file['measurement'] == 'coverage-pending-frozen']
+            current['errors'] = sorted(set(errors + [path + ': unresolved function coverage' for path in pending]))
+            current['coverage_pending'] = pending
+            result = current
         else:
             if not args.base_ref or args.revision:
                 parser.error('check requires --base-ref and measures the current working tree')

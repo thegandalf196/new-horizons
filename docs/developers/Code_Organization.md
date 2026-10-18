@@ -151,6 +151,14 @@ gaps, not proof that no long function exists. A pending gap can freeze only
 unchanged pre-existing bytes; editing it requires resolving its function
 inventory before acceptance. Keep the remaining coverage visible until resolved.
 
+Function coverage includes first-party tests as well as production sources.
+Reviewed manual records replace the complete callable inventory of an exact
+file, not just its parser diagnostics. Inventory output applies those records
+and reports missing or stale coverage as errors. Test measurements do not impose
+the production size ceilings: the growth gate still compares production units.
+When comparing an older baseline without test coverage records, historical size
+comparison remains production-only; current test coverage must still be valid.
+
 The repository-contracts workflow also checks tracked JSONC, text line endings
 and relative includes. Explicit Git attributes preserve intentional Windows CRLF
 and pinned byte inventories; binary packs are not text inputs. Markdown uses the
