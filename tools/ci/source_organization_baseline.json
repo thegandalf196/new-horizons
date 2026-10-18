@@ -31,8 +31,8 @@
     ".github/workflows/instruction-portability.yml": {
       "functions": [],
       "rationale": "Complete exact159-line workflow inventory: twelve literal Bash run blocks28-32,39-47,52-60,71-79,85,91-93,100-102,107-110,121-122,139-146,151-152,157-159 and scalar command132 are commands/assignments, not callable definitions. Two if groups42-44/71-78 and five command substitutions43/72/73/92/100 invoke git,dirname or external Python; GitHub hashFiles/context expressions and external actions are invocations. No shell function, inline Python/JavaScript/lambda, code heredoc or function-like macro definition occurs. External Python/CMake/tests remain separately inventoried. Exact Python3.15 source-core bootstrap changes no callable inventory. Empty functions does not exclude159 physical lines, waive numeric growth, approve future edits or certify fresh bootstrap/CI/runtime behavior.",
-      "review": "IR-PY315-WORKFLOW-MANUAL-F3327134-20261017",
-      "sha256": "f33271343f9dde9dd140ffd1268efa7fdfbe51e006083e54c56554d25e7c1f30"
+      "review": "pure-state-nine-target-comment",
+      "sha256": "671bdb7fab299c57624f9685ea15058acafa00c8782fa321c094ad0273158e14"
     },
     ".github/workflows/new-horizons-windows-notices.yml": {
       "functions": [],
