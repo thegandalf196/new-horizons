@@ -22,6 +22,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
+#include <optional>
 
 namespace
 {
@@ -40,7 +41,8 @@ struct CureIntegrationDriver::State final : CureAfflictionPresenter
 	std::function<void(int)> confirm;
 	std::function<void()> cancel;
 	std::unique_ptr<CureCallbackRequestLease> lease;
-	std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::seconds(180);
+	const std::chrono::steady_clock::time_point startupDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(180);
+	std::optional<std::chrono::steady_clock::time_point> deadline;
 	bool captured = false;
 	bool awaitingReplacement = false;
 	bool passed = false;
@@ -84,6 +86,13 @@ struct CureIntegrationDriver::State final : CureAfflictionPresenter
 			"Real player/controller required");
 		observedOwner = battle;
 		battle->setCureAfflictionPresenter(self);
+		if(!deadline)
+		{
+			const auto attachedAt = std::chrono::steady_clock::now();
+			require(attachedAt < startupDeadline, "Cure integration startup deadline expired");
+			deadline = attachedAt + std::chrono::seconds(180);
+			std::cout << "Cure integration assertion window started at first actual battle attachment\n";
+		}
 	}
 
 	void complete()
@@ -152,7 +161,11 @@ struct CureIntegrationDriver::State final : CureAfflictionPresenter
 		require(ENGINE->amIGuiThread(), "Cure integration tick must run on GUI thread");
 		if(passed)
 			return;
-		require(std::chrono::steady_clock::now() < deadline, "Cure integration bounded deadline expired");
+		const auto now = std::chrono::steady_clock::now();
+		if(deadline)
+			require(now < *deadline, "Cure integration bounded deadline expired");
+		else
+			require(now < startupDeadline, "Cure integration startup deadline expired");
 		const auto current = CPlayerInterface::battleInt;
 		if(awaitingReplacement)
 		{
