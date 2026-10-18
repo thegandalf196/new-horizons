@@ -71,6 +71,7 @@
 #include "../rmg/CMapGenerator.h"
 #include "../serializer/CMemorySerializer.h"
 #include "../serializer/CLoadFile.h"
+#include "../serializer/GameSaveReader.h"
 #include "../serializer/CSaveFile.h"
 #include "../spells/CSpell.h"
 #include "UpgradeInfo.h"
@@ -2241,16 +2242,7 @@ void CGameState::loadFromMemory(std::vector<std::byte> data)
 
 void CGameState::loadGame(CLoadFile & file)
 {
-	logGlobal->info("Loading game state...");
-
-	CMapHeader dummyHeader;
-	ActiveModsInSaveList dummyActiveMods;
-
-	file.load(dummyHeader);
-	StartInfo dummyStartInfo;
-	file.load(dummyStartInfo);
-	file.load(dummyActiveMods);
-	file.load(*this);
+	gameSave::readGameData(file, *this);
 
 	// Runtime-only object, not serialized; rebuild from the loaded script source.
 	mapEventDispatcher = LIBRARY->scripts()->createMapScriptDispatcher(*this, false);

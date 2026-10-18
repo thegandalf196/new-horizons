@@ -168,7 +168,7 @@ struct DLL_LINKAGE SylvanLuckState
 	}
 	bool operator==(const SylvanLuckState &) const = default;
 
-	template <typename Handler> void serialize(Handler & h)
+	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_CHAIN_OF_FORTUNE)
 			&& (chainOfFortune || chainTriggeredThisRound || chainSourceUnitId))
@@ -181,6 +181,11 @@ struct DLL_LINKAGE SylvanLuckState
 			throw std::runtime_error("Cannot downgrade Perfect Moment state");
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS) && extendedActive())
 			throw std::runtime_error("Cannot downgrade extended Sylvan Luck state");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		validateSerializationPrefix(h);
 		h & serendipity;
 		h & naturesProvidence;
 		h & fortunateAim;

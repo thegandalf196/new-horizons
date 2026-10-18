@@ -429,6 +429,7 @@ set(lib_MAIN_SRCS
 	rmg/MapProxy.cpp
 
 	serializer/CLoadFile.cpp
+	serializer/GameSaveReader.cpp
 	serializer/CMemorySerializer.cpp
 	serializer/GameConnection.cpp
 	serializer/PreparedGameConnectionBatch.cpp
@@ -1083,6 +1084,7 @@ set(lib_MAIN_HEADERS
 	serializer/BinaryDeserializer.h
 	serializer/BinarySerializer.h
 	serializer/CLoadFile.h
+	serializer/GameSaveReader.h
 	serializer/CMemorySerializer.h
 	serializer/GameConnection.h
 	serializer/PreparedGameConnectionBatch.h

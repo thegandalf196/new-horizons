@@ -27,6 +27,7 @@ set(vcmiclientcommon_SRCS
 	battle/TemporalFieldWindow.cpp
 	battle/FocusFireTargetWindow.cpp
 	battle/BattleInterface.cpp
+	battle/BattleCureAfflictionUI.cpp
 	battle/BattleObstacleController.cpp
 	battle/BattleOverlayLogVisualizer.cpp
 	battle/BattleProjectileController.cpp
@@ -266,6 +267,8 @@ set(vcmiclientcommon_HEADERS
 	battle/StackInfoPanelHoverState.h
 	battle/StackInfoStatusPresentation.h
 	battle/BattleInterface.h
+	battle/CureAfflictionSession.h
+	battle/CureAfflictionPresenter.h
 	battle/BattleObstacleController.h
 	battle/BattleOverlayLogVisualizer.h
 	battle/BattleProjectileController.h

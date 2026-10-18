@@ -31,4 +31,7 @@ public:
 	{
 		return serializer.version >= v;
 	}
+
+	BinaryDeserializer::Version formatVersion() const { return serializer.version; }
+	bool atEnd() const { return sfile.rdbuf()->sgetc() == std::char_traits<char>::eof(); }
 };

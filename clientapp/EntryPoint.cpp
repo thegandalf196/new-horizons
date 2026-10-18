@@ -13,6 +13,9 @@
 #include "StdInc.h"
 #include "../Global.h"
 #include "PrivateWineStartupWitness.h"
+#ifdef NH_CURE_CLIENT_INTEGRATION
+#include "../client/tests/CureIntegrationDriver.h"
+#endif
 #include <vstd/DateUtils.h>
 
 #include "../client/ClientCommandManager.h"
@@ -172,6 +175,9 @@ int main(int argc, char * argv[])
 	std::cout << "Starting... " << std::endl;
 	po::options_description opts("Allowed options");
 	po::variables_map vm;
+#ifdef NH_CURE_CLIENT_INTEGRATION
+	std::unique_ptr<CureIntegrationDriver> cureIntegration;
+#endif
 
 	opts.add_options()
 		("help,h", "display help and exit")
@@ -342,6 +348,12 @@ int main(int argc, char * argv[])
 
 		if (ENGINE)
 			ENGINE->setEngineUser(GAME.get());
+#ifdef NH_CURE_CLIENT_INTEGRATION
+		if(!ENGINE)
+			throw std::runtime_error("Cure client integration requires the ordinary graphical bootstrap");
+		cureIntegration = std::make_unique<CureIntegrationDriver>(*GAME);
+		ENGINE->setEngineUser(cureIntegration.get());
+#endif
 	
 #ifndef VCMI_NO_THREADED_LOAD
 		//we can properly play intro only in the main thread, so we have to move loading to the separate thread
@@ -440,7 +452,11 @@ int main(int argc, char * argv[])
 			}
 		};
 
-		const auto & cleanupEngine = [&logConfigurator]()
+		const auto & cleanupEngine = [&logConfigurator
+#ifdef NH_CURE_CLIENT_INTEGRATION
+			, &cureIntegration
+#endif
+		]()
 		{
 			if(settings["session"]["headless"].Bool() && GAME->server().client)
 				GAME->server().endGameplay();
@@ -449,6 +465,9 @@ int main(int argc, char * argv[])
 			{
 				//aquire interfaceMutex to prevent undefined behavior on vstd::makeUnlockGuard(ENGINE->interfaceMutex)
 				std::scoped_lock interfaceLock(ENGINE->interfaceMutex);
+#ifdef NH_CURE_CLIENT_INTEGRATION
+				cureIntegration->detach();
+#endif
 				GAME->server().endNetwork();
 			}
 			else
@@ -496,7 +515,11 @@ int main(int argc, char * argv[])
 	{
 		logGlobal->info("Shutdown requested during initialization");
 	}
+#ifdef NH_CURE_CLIENT_INTEGRATION
+	return cureIntegration ? cureIntegration->result() : 1;
+#else
 	return 0;
+#endif
 }
 
 /// Notify user about encountered fatal error and terminate the game

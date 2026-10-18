@@ -1004,7 +1004,7 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
-	template <typename Handler> void serialize(Handler & h)
+	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
 		if(h.saving)
 		{
@@ -1054,6 +1054,18 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
 				{ return change.hasArmorerLastStandUnitTransientState(); }))
 			throw std::runtime_error("Cannot discard Last Stand unit transient state update");
+
+		if(h.saving)
+		{
+			battleUnitStateCompatibility::WriterVersion<Handler> version{h.version};
+			for(auto & change : changedStacks)
+				change.validateSerializationPrefix(version);
+		}
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		validateSerializationPrefix(h);
 		h & battleID;
 		h & changedStacks;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN))
@@ -1137,7 +1149,7 @@ struct BattleStackAttacked
 		return flags & REBIRTH;
 	}
 
-	template <typename Handler> void serialize(Handler & h)
+	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
 		if(h.saving)
 		{
@@ -1164,6 +1176,17 @@ struct BattleStackAttacked
 			&& (armorerLastStandSide != BattleSide::NONE || armorerLastStandEndsActivation
 				|| newState.hasArmorerLastStandUnitTransientState()))
 			throw std::runtime_error("Cannot discard Last Stand attack state update");
+
+		if(h.saving)
+		{
+			battleUnitStateCompatibility::WriterVersion<Handler> version{h.version};
+			newState.validateSerializationPrefix(version);
+		}
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		validateSerializationPrefix(h);
 		h & stackAttacked;
 		h & attackerID;
 		h & newState;
@@ -1289,7 +1312,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
-	template <typename Handler> void serialize(Handler & h)
+	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
 		if(h.saving)
 		{
@@ -1360,6 +1383,27 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			throw std::runtime_error("Cannot discard Last Stand attack state");
 		if(h.saving && chainGateTriggered && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
 			throw std::runtime_error("Cannot discard Chain Gate attack state");
+
+		if(h.saving)
+		{
+			battleUnitStateCompatibility::WriterVersion<Handler> version{h.version};
+			// Match the remaining wire traversal: targets, attacker, strike tails.
+			for(auto & hit : bsa)
+				hit.validateSerializationPrefix(version);
+			attackerChanges.validateSerializationPrefix(version);
+			if(fortuneState && !version.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
+				throw std::runtime_error("Cannot discard Sylvan Luck strike state");
+			if(fortuneState)
+				fortuneState->validateSerializationPrefix(version);
+			if((relentlessAssaultState || relentlessAssaultSide != BattleSide::NONE)
+				&& !version.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT))
+				throw std::runtime_error("Cannot discard Relentless Assault attack state");
+		}
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		validateSerializationPrefix(h);
 		h & battleID;
 		h & bsa;
 		h & stackAttacking;
@@ -1927,6 +1971,13 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 			&& std::ranges::any_of(stacks, [](const BattleStackAttacked & hit)
 				{ return hit.newState.hasBattlecraftPreemptiveStrikeRoundState(); }))
 			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike injury state in an older format");
+
+		if(h.saving)
+		{
+			battleUnitStateCompatibility::WriterVersion<Handler> version{h.version};
+			for(auto & hit : stacks)
+				hit.validateSerializationPrefix(version);
+		}
 		h & battleID;
 		h & stacks;
 		assert(battleID != BattleID::NONE);

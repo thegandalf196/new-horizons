@@ -179,7 +179,7 @@ public:
 			|| data["state"]["armorerLastStandDefending"].Bool();
 	}
 
-	template <typename Handler> void serialize(Handler & h)
+	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
 		if(h.saving) validateMoraleActivationSerialization(h);
 		if(h.saving)
@@ -223,6 +223,11 @@ public:
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE)
 			&& hasBattlecraftPreemptiveStrikeRoundState())
 			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike round state in an older unit update format");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		validateSerializationPrefix(h);
 		h & id;
 		h & healthDelta;
 		h & data;

@@ -69,6 +69,25 @@ if(ENABLE_SINGLE_APP_BUILD AND ENABLE_LAUNCHER)
 	target_link_libraries(vcmiclient PRIVATE vcmilauncher)
 endif()
 
+# Explicit integration executable only; never a default CTest/desktop launch.
+# Run solely under the separately reviewed exact-PID guarded graphical owner.
+option(ENABLE_NH_CURE_CLIENT_INTEGRATION "Build retained real Cure callback integration client" OFF)
+if(ENABLE_NH_CURE_CLIENT_INTEGRATION)
+	if(NOT ENABLE_SDL3 OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		message(FATAL_ERROR "Cure integration requires the isolated Linux SDL3/OpenGL candidate")
+	endif()
+	add_executable(nhCureClientIntegration EXCLUDE_FROM_ALL
+		StdInc.cpp EntryPoint.cpp
+		../client/tests/CureIntegrationDriver.cpp
+		../client/tests/CureIntegrationDriver.h
+		../client/tests/CureCallbackRequestLease.cpp
+		../client/tests/CureCallbackRequestLease.h)
+	target_compile_definitions(nhCureClientIntegration PRIVATE NH_CURE_CLIENT_INTEGRATION VCMI_SDL3)
+	target_include_directories(nhCureClientIntegration PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+	target_link_libraries(nhCureClientIntegration PRIVATE vcmiclientcommon ${SDL3_CORE_TARGET})
+	vcmi_set_output_dir(nhCureClientIntegration "")
+endif()
+
 if(ENABLE_SINGLE_APP_BUILD AND ENABLE_EDITOR)
 	target_link_libraries(vcmiclient PRIVATE vcmieditor)
 endif()

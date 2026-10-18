@@ -122,7 +122,7 @@ jobs:
           "$PYTHON" tools/nhart.py verify Mods/new-horizons/NewHorizons.nhart --manifest assets/new-horizons/runtime-art-manifest.json
 
   pure-state:
-    # These eight state-machine checks need no original game data or display.
+    # These nine state-machine checks need no original game data or display.
     # Native engine and rendered acceptance remain separate managed checks.
     runs-on: ubuntu-24.04
     timeout-minutes: 20

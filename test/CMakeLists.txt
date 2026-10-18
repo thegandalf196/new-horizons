@@ -9,6 +9,8 @@ add_executable(nhHeroDevelopmentNavigationTest ../client/tests/HeroDevelopmentNa
 add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigationTest)
 add_executable(nhHeroMasteryDialogStateTest ../client/tests/HeroMasteryDialogStateTest.cpp)
 add_test(NAME nhHeroMasteryDialogStateTest COMMAND nhHeroMasteryDialogStateTest)
+add_executable(nhCureAfflictionSessionTest ../client/tests/CureAfflictionSessionTest.cpp)
+add_test(NAME nhCureAfflictionSessionTest COMMAND nhCureAfflictionSessionTest)
 add_executable(nhExchangeSecondarySkillSlotsTest ../client/tests/ExchangeSecondarySkillSlotsTest.cpp)
 add_test(NAME nhExchangeSecondarySkillSlotsTest COMMAND nhExchangeSecondarySkillSlotsTest)
 
@@ -60,6 +62,10 @@ set(test_SRCS
  		main.cpp
  		CMemoryBufferTest.cpp
 		serializer/JsonUpdaterTest.cpp
+		serializer/SaveParityTest.cpp
+		../tools/native/SaveParityInput.cpp
+		../tools/native/SaveParityEvidence.cpp
+		../tools/native/SaveParityCoverage.cpp
 		serializer/BattleUnitStateCompatibilityTest.cpp
 		serializer/BattlePacketReceiptCompatibilityTest.cpp
  		CVcmiTestConfig.cpp
@@ -982,6 +988,7 @@ set_tests_properties(
 	nhExchangeSecondarySkillSlotsTest nhStackInfoPanelHoverStateTest
 	nhProjectileFlightLifecycleTest nhWindowSceneRedrawTest
 	nhHeroPositiveProcPresentationTest nhAnimationPhaseStartTest
+	nhCureAfflictionSessionTest
 	PROPERTIES LABELS "nh-pure;ui;state" TIMEOUT 10)
 add_executable(nhReleaseUpdatePolicyTest
 	../client/tests/ReleaseUpdatePolicyTest.cpp

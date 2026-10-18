@@ -20,6 +20,7 @@
 #include "../../lib/ConditionalWait.h"
 #include "NewHorizonsQueueActivationStatus.h"
 #include <optional>
+#include <utility>
 
 class CCreatureSet;
 class CGHeroInstance;
@@ -56,6 +57,7 @@ class BattleStacksController;
 class BattleActionsController;
 class BattleEffectsController;
 class BattleConsole;
+class CureAfflictionPresenter;
 
 /// Small struct which contains information about the id of the attacked stack, the damage dealt,...
 struct StackAttackedInfo
@@ -139,9 +141,16 @@ class BattleInterface
 	void installShadowGiftUI();
 	void installSelectiveDispelUI();
 	void installCureAfflictionUI();
+	std::shared_ptr<CureAfflictionPresenter> cureAfflictionPresenter;
 	void installPurifyUI();
 	void installTemporalFieldUI();
 public:
+	/// Set a per-battle presentation dependency before opening a Cure modal.
+	/// Caller retains the existing GUI-thread/interface-mutex discipline.
+	void setCureAfflictionPresenter(std::shared_ptr<CureAfflictionPresenter> presenter)
+	{
+		cureAfflictionPresenter = std::move(presenter);
+	}
 	/// Show an authoritative immediate Order continuation through the ordinary chooser.
 	void presentPendingHeroOrderChoice();
 	/// copy of initial armies (for result window)

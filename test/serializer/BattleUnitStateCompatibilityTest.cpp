@@ -403,26 +403,22 @@ struct Tail
 {
 	const char * name;
 	Version boundary;
-	unsigned preflightCarriers;
 	unsigned acceptedCarriers;
 };
 constexpr unsigned bit(Carrier carrier) { return 1u << static_cast<unsigned>(carrier); }
-constexpr unsigned ALL = 63;
 constexpr unsigned UNIT = bit(Carrier::UNIT);
-constexpr unsigned UNITS = bit(Carrier::UNITS);
 constexpr unsigned HIT = bit(Carrier::HIT);
-constexpr unsigned ATTACKS = bit(Carrier::ATTACKER) | bit(Carrier::TARGET);
 const std::array<Tail, 10> TAILS{{
-	{"reserve", Version::NEW_HORIZONS_RESERVE, UNIT, 0},
-	{"veteranDamage", Version::NEW_HORIZONS_ARMORER_VETERAN, UNIT, 0},
-	{"rebirthHP", Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP, UNIT | UNITS, 0},
-	{"mastery", Version::NEW_HORIZONS_BATTLEFIELD_MASTERY, UNIT | UNITS | ATTACKS, 0},
-	{"lastStand", Version::NEW_HORIZONS_ARMORER_LAST_STAND, UNIT | UNITS | HIT | ATTACKS, 0},
-	{"rage", Version::NEW_HORIZONS_RAGE_THROUGH_PAIN, ALL, 0},
-	{"preemptive", Version::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE, ALL, 0},
-	{"casualty", Version::BATTLE_CASUALTY_PROVENANCE, ALL, 0},
-	{"noQuarter", Version::NEW_HORIZONS_NO_QUARTER, UNITS | ATTACKS, UNIT | HIT | bit(Carrier::INJURY)},
-	{"rangedFollowUp", Version::NEW_HORIZONS_RANGED_FOLLOW_UP, UNITS | HIT, UNIT}
+	{"reserve", Version::NEW_HORIZONS_RESERVE, 0},
+	{"veteranDamage", Version::NEW_HORIZONS_ARMORER_VETERAN, 0},
+	{"rebirthHP", Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP, 0},
+	{"mastery", Version::NEW_HORIZONS_BATTLEFIELD_MASTERY, 0},
+	{"lastStand", Version::NEW_HORIZONS_ARMORER_LAST_STAND, 0},
+	{"rage", Version::NEW_HORIZONS_RAGE_THROUGH_PAIN, 0},
+	{"preemptive", Version::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE, 0},
+	{"casualty", Version::BATTLE_CASUALTY_PROVENANCE, 0},
+	{"noQuarter", Version::NEW_HORIZONS_NO_QUARTER, UNIT | HIT | bit(Carrier::INJURY)},
+	{"rangedFollowUp", Version::NEW_HORIZONS_RANGED_FOLLOW_UP, UNIT}
 }};
 
 JsonNode tailData(size_t index)
@@ -642,7 +638,7 @@ TEST(BattleUnitStateCompatibilityTest, MultipleRowsAndAttackContainersKeepFirstF
 	publish(rows);
 }
 
-TEST(BattleUnitStateCompatibilityTest, ExistingTailGuardsKeepExplicitPreflightLateAndUnguardedCategories)
+TEST(BattleUnitStateCompatibilityTest, UnsupportedTailsRejectBeforeEnvelopePrefixesAndLegacyUncheckedFieldsRemainAccepted)
 {
 	JsonNode rows;
 	const std::vector<std::byte> prefix{std::byte{0xa3}};
@@ -657,7 +653,7 @@ TEST(BattleUnitStateCompatibilityTest, ExistingTailGuardsKeepExplicitPreflightLa
 				const auto seeded = encode(packet, previous(tail.boundary), prefix);
 				const bool accepted = (tail.acceptedCarriers & bit(carrier)) != 0;
 				EXPECT_EQ(result.error.empty(), accepted); EXPECT_EQ(result.error, seeded.error);
-				if(tail.preflightCarriers & bit(carrier))
+				if(!accepted)
 				{
 					EXPECT_TRUE(result.bytes.empty()); EXPECT_EQ(seeded.bytes, prefix);
 				}
@@ -668,14 +664,14 @@ TEST(BattleUnitStateCompatibilityTest, ExistingTailGuardsKeepExplicitPreflightLa
 					EXPECT_EQ(seeded.bytes, expected);
 				}
 				auto value = row(name, result);
-				value["category"] = JsonNode(accepted ? "legacy-unchecked" : (tail.preflightCarriers & bit(carrier)) ? "preflight-rejection" : "late-rejection");
+				value["category"] = JsonNode(accepted ? "legacy-unchecked" : "preflight-rejection");
 				rows.Vector().push_back(value); rows.Vector().push_back(row(name + "/prefilled", seeded));
 				return 0;
 			});
 	publish(rows);
 }
 
-TEST(BattleUnitStateCompatibilityTest, UnchangedSylvanAndRelentlessChecksRetainNonzeroPrefixRejection)
+TEST(BattleUnitStateCompatibilityTest, UnsupportedSylvanAndRelentlessRejectBeforeAnyAttackPrefix)
 {
 	JsonNode rows;
 	BattleAttack attack;
@@ -691,11 +687,10 @@ TEST(BattleUnitStateCompatibilityTest, UnchangedSylvanAndRelentlessChecksRetainN
 		const auto result = encode(attack, version);
 		const auto seeded = encode(attack, version, prefix);
 		EXPECT_EQ(result.error, relentless ? "Cannot discard Relentless Assault attack state" : "Cannot discard Sylvan Luck strike state");
-		EXPECT_EQ(seeded.error, result.error); EXPECT_FALSE(result.bytes.empty());
-		auto expected = prefix; expected.insert(expected.end(), result.bytes.begin(), result.bytes.end());
-		EXPECT_EQ(seeded.bytes, expected);
-		rows.Vector().push_back(row(relentless ? "relentless-late" : "sylvan-late", result));
-		rows.Vector().push_back(row(relentless ? "relentless-late/prefilled" : "sylvan-late/prefilled", seeded));
+		EXPECT_EQ(seeded.error, result.error); EXPECT_TRUE(result.bytes.empty());
+		EXPECT_EQ(seeded.bytes, prefix);
+		rows.Vector().push_back(row(relentless ? "relentless-preflight" : "sylvan-preflight", result));
+		rows.Vector().push_back(row(relentless ? "relentless-preflight/prefilled" : "sylvan-preflight/prefilled", seeded));
 	}
 	publish(rows);
 }
@@ -812,5 +807,85 @@ TEST(BattleUnitStateCompatibilityTest, SupportedTailBoundariesAndCurrentRoundTri
 					return 0;
 				});
 	ASSERT_EQ(rows.Vector().size(), 120u);
+	publish(rows);
+}
+
+TEST(BattleUnitStateCompatibilityTest, UnsupportedLaterNestedRowsCannotAppendAnyEnvelopePrefix)
+{
+	JsonNode rows;
+	for(const auto carrier : CARRIERS)
+		for(size_t index = 0; index < TAILS.size(); ++index)
+		{
+			const auto & tail = TAILS[index];
+			if(tail.acceptedCarriers & bit(carrier))
+				continue; // Preserve the explicitly characterized legacy omission.
+			withCarrier(carrier, tailData(index), [&](auto & packet)
+			{
+				using Packet = std::remove_reference_t<decltype(packet)>;
+				if constexpr(std::is_same_v<Packet, BattleUnitsChanged>)
+					packet.changedStacks.insert(packet.changedStacks.begin(), change(JsonNode()));
+				else if constexpr(std::is_same_v<Packet, BattleAttack>)
+				{
+					if(carrier == Carrier::ATTACKER)
+						packet.attackerChanges.changedStacks.insert(packet.attackerChanges.changedStacks.begin(), change(JsonNode()));
+					else
+						packet.bsa.insert(packet.bsa.begin(), hit(JsonNode()));
+				}
+				else if constexpr(std::is_same_v<Packet, StacksInjured>)
+					packet.stacks.insert(packet.stacks.begin(), hit(JsonNode()));
+				const auto prefix = std::vector<std::byte>{std::byte{0xd1}, std::byte{0x09}, std::byte{0x7e}};
+				const auto empty = encode(packet, previous(tail.boundary));
+				const auto seeded = encode(packet, previous(tail.boundary), prefix);
+				SCOPED_TRACE(std::string(carrierName(carrier)) + "/later/" + tail.name);
+				EXPECT_FALSE(empty.error.empty());
+				EXPECT_EQ(seeded.error, empty.error);
+				EXPECT_TRUE(empty.bytes.empty());
+				EXPECT_EQ(seeded.bytes, prefix);
+				rows.Vector().push_back(row(std::string(carrierName(carrier)) + "/later/" + tail.name, empty));
+				return 0;
+			});
+		}
+	publish(rows);
+}
+
+TEST(BattleUnitStateCompatibilityTest, NestedSylvanFeatureDowngradesRejectBeforeAttackPrefix)
+{
+	struct Feature
+	{
+		Version boundary;
+		bool SylvanLuckState::* marker;
+		const char * message;
+	};
+	const std::array features{
+		Feature{Version::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS, &SylvanLuckState::forestsFavor, "Cannot downgrade extended Sylvan Luck state"},
+		Feature{Version::NEW_HORIZONS_PERFECT_MOMENT, &SylvanLuckState::perfectMoment, "Cannot downgrade Perfect Moment state"},
+		Feature{Version::NEW_HORIZONS_SECOND_CHANCE, &SylvanLuckState::secondChance, "Cannot downgrade Second Chance state"},
+		Feature{Version::NEW_HORIZONS_GAMBLER, &SylvanLuckState::gambler, "Cannot downgrade Gambler state"},
+		Feature{Version::NEW_HORIZONS_CHAIN_OF_FORTUNE, &SylvanLuckState::chainOfFortune, "Cannot downgrade Chain of Fortune state"},
+	};
+	JsonNode rows;
+	for(const auto & feature : features)
+	{
+		BattleAttack packet;
+		packet.battleID = packet.attackerChanges.battleID = BattleID(4);
+		packet.fortuneSide = BattleSide::ATTACKER;
+		packet.fortuneState.emplace();
+		(*packet.fortuneState).*feature.marker = true;
+		const auto label = std::string("nested-sylvan/") + std::to_string(static_cast<int>(feature.boundary));
+		expectPreflight(label.c_str(), packet, previous(feature.boundary), feature.message, rows);
+		for(const auto version : {feature.boundary, Version::CURRENT})
+		{
+			const auto wire = encode(packet, version);
+			ASSERT_TRUE(wire.error.empty());
+			BattleAttack restored;
+			CMemorySerializer memory(wire.bytes);
+			memory.iser.version = version;
+			ASSERT_NO_THROW(memory.iser & restored);
+			ASSERT_TRUE(restored.fortuneState);
+			EXPECT_EQ(*restored.fortuneState, *packet.fortuneState);
+			EXPECT_EQ(encode(restored, version).bytes, wire.bytes);
+			rows.Vector().push_back(row(label + "/supported/" + std::to_string(static_cast<int>(version)), wire));
+		}
+	}
 	publish(rows);
 }

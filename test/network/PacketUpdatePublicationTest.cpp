@@ -11,7 +11,13 @@
 #include "../../lib/battle/PreparedBattleWorldCommit.h"
 #include "../../lib/battle/ProjectedBattleWorldArena.h"
 #include "../../server/PreparedBattleWorldPublication.h"
+#include "../../server/BattleUnitsChangedInput.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/callback/GameRandomizer.h"
+#include "../../lib/CRandomGenerator.h"
+#include "../../lib/bonuses/Bonus.h"
+#include "../../lib/bonuses/BonusList.h"
+#include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/bonuses/PreparedBonusGraphStorage.h"
 #include <functional>
 #include "../../lib/network/NetworkInterface.h"
@@ -27,6 +33,27 @@
 
 namespace
 {
+template<typename Value>
+std::vector<std::byte> publicationValueBytes(Value & value)
+{
+	CMemorySerializer memory;
+	memory.oser & value;
+	return memory.extractBuffer();
+}
+
+using PublicationBonusRows = std::vector<std::pair<const Bonus *, std::vector<std::byte>>>;
+
+PublicationBonusRows publicationBonusRows(const BonusList & bonuses)
+{
+	PublicationBonusRows result;
+	for(const auto & bonus : bonuses)
+	{
+		auto value = *bonus;
+		result.emplace_back(bonus.get(), publicationValueBytes(value));
+	}
+	return result;
+}
+
 // Two ordinary maintained fixtures, not a serialized live-battle descriptor.
 class PublicationWorld final : public HeroCommandFixture
 {
@@ -35,6 +62,10 @@ public:
 	CStack * second = nullptr;
 	void TestBody() override {}
 	const std::shared_ptr<CGameState> & state() const { return gameState(); }
+	std::vector<std::byte> callbackRandomBytes()
+	{
+		return publicationValueBytes(*static_cast<CRandomGenerator *>(TinyMapGameTest::getRNG()));
+	}
 
 	void initialize()
 	{
@@ -103,7 +134,7 @@ struct PublicationReceipt
 };
 }
 
-// BEFORE characterization: real CVCMIServer -> GameConnection -> InternalConnection
+// Real CVCMIServer -> GameConnection -> InternalConnection
 // -> independent GameConnection receiver -> independent CGameState::apply.
 class PacketUpdatePublicationTest : public ::testing::Test, public INetworkClientListener
 {
@@ -254,7 +285,51 @@ protected:
 		authorityResult = result;
 		drain();
 		EXPECT_NE(authorityThread, std::this_thread::get_id());
+		if(!result.empty())
+		{
+			EXPECT_TRUE(sameBattleUnitsChangedInput(*pending, packet));
+		}
 		return result;
+	}
+	void expectOrdinaryRejection(BattleUnitsChanged & packet, const std::string & expected)
+	{
+		std::vector<std::byte> replay, random;
+		onAuthority([this, &replay, &random]
+		{
+			replay = publicationValueBytes(authorityWorld.state()->replayLog);
+			random = publicationValueBytes(*authority->gh->randomizer);
+		});
+		const auto authorityCallback = authorityWorld.callbackRandomBytes();
+		const auto receiverCallback = receiverWorld.callbackRandomBytes();
+		const auto receiverReplay = publicationValueBytes(receiverWorld.state()->replayLog);
+		const std::array<CStack *, 4> units{authorityWorld.first, authorityWorld.second,
+			receiverWorld.first, receiverWorld.second};
+		std::array<TConstBonusListPtr, 4> retained;
+		std::array<PublicationBonusRows, 4> local, query;
+		for(size_t i = 0; i < units.size(); ++i)
+		{
+			local[i] = publicationBonusRows(units[i]->getExportedBonusList());
+			retained[i] = units[i]->getBonuses(Selector::type()(BonusType::STACKS_SPEED));
+			query[i] = publicationBonusRows(*retained[i]);
+		}
+		EXPECT_EQ(publish(packet), expected);
+		EXPECT_TRUE(receipts.empty());
+		EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+		EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+		onAuthority([this, &replay, &random]
+		{
+			EXPECT_EQ(publicationValueBytes(authorityWorld.state()->replayLog), replay);
+			EXPECT_EQ(publicationValueBytes(*authority->gh->randomizer), random);
+		});
+		EXPECT_EQ(authorityWorld.callbackRandomBytes(), authorityCallback);
+		EXPECT_EQ(receiverWorld.callbackRandomBytes(), receiverCallback);
+		EXPECT_EQ(publicationValueBytes(receiverWorld.state()->replayLog), receiverReplay);
+		for(size_t i = 0; i < units.size(); ++i)
+		{
+			EXPECT_EQ(publicationBonusRows(units[i]->getExportedBonusList()), local[i]);
+			EXPECT_EQ(publicationBonusRows(*retained[i]), query[i]);
+			EXPECT_EQ(publicationBonusRows(*units[i]->getBonuses(Selector::type()(BonusType::STACKS_SPEED))), query[i]);
+		}
 	}
 	void record(const std::string & authorityError)
 	{
@@ -305,59 +380,221 @@ TEST_F(PacketUpdatePublicationTest, ValidPairsUseCompleteWireFramesInOrderAndInd
 	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
 }
 
-TEST_F(PacketUpdatePublicationTest, MissingLaterIdPublishesFrameAndBothWorldsRetainAppliedPrefix)
+TEST_F(PacketUpdatePublicationTest, OrdinaryRouteRejectsMissingLaterIdBeforeFramesWorldOrReplay)
 {
 	auto packet = pair();
 	packet.changedStacks[1].id = std::numeric_limits<uint32_t>::max();
-	const auto requestedFirst = packet.changedStacks[0].data;
-	const auto error = publish(packet);
-	record(error);
-	EXPECT_EQ(error, "Invalid unit id in BattleInfo update");
-	ASSERT_EQ(receipts.size(), 1u);
-	EXPECT_FALSE(receipts.front().bytes.empty());
-	EXPECT_EQ(receipts.front().error, error);
-	ASSERT_EQ(receipts.front().packetRows.Vector().size(), 2u);
-	EXPECT_EQ(receipts.front().packetRows.Vector()[1]["id"].Integer(), packet.changedStacks[1].id);
-	EXPECT_EQ(authorityWorld.first->save(), requestedFirst);
-	EXPECT_EQ(receiverWorld.first->save(), requestedFirst);
-	EXPECT_EQ(authorityWorld.snapshot(), receiverWorld.snapshot());
-	EXPECT_EQ(authorityWorld.second->save(), authorityBefore.Vector()[1]["saved"]);
+	expectOrdinaryRejection(packet, "Invalid unit id in BattleInfo update");
 }
 
-TEST_F(PacketUpdatePublicationTest, NegativeLaterGuardianPublishesFrameAndExposesReceiverPartialMutation)
+TEST_F(PacketUpdatePublicationTest, OrdinaryRouteRejectsNegativeLaterGuardianBeforeFramesWorldOrReplay)
 {
 	auto packet = pair();
 	packet.changedStacks[1].data["state"]["guardianSpiritHitPoints"].Integer() = -1;
-	const auto requestedFirst = packet.changedStacks[0].data;
-	const auto error = publish(packet);
-	record(error);
-	EXPECT_EQ(error, "Invalid Guardian Spirit state");
-	ASSERT_EQ(receipts.size(), 1u);
-	EXPECT_FALSE(receipts.front().bytes.empty());
-	EXPECT_EQ(receipts.front().error, error);
-	EXPECT_EQ(authorityWorld.first->save(), requestedFirst);
-	EXPECT_EQ(receiverWorld.first->save(), requestedFirst);
-	for(auto * unit : {authorityWorld.second, receiverWorld.second})
-	{
-		EXPECT_TRUE(unit->defended());
-		EXPECT_EQ(unit->guardianSpiritHitPoints, -1);
-		EXPECT_EQ(unit->getPosition(), BattleHex::INVALID);
-		EXPECT_THROW(unit->save(), std::runtime_error);
-	}
-	EXPECT_EQ(authorityWorld.snapshot(), receiverWorld.snapshot());
+	expectOrdinaryRejection(packet, "Invalid Guardian Spirit state");
 }
 
-TEST_F(PacketUpdatePublicationTest, KnownFrozenPreflightFailurePublishesNoFrameAndPreservesBothWorlds)
+TEST_F(PacketUpdatePublicationTest, OrdinaryRouteRejectsBeforeOpeningAnActiveReplayChapter)
+{
+	onAuthority([this]
+	{
+		// An empty active log requests a full snapshot when apply is entered.
+		// No ongoing-battle serialization workaround may mask this ordering.
+		authorityWorld.state()->replayLog = ReplayLog();
+		authorityWorld.state()->replayLog.configure(false, 2);
+	});
+	auto packet = pair();
+	packet.changedStacks[1].id = std::numeric_limits<uint32_t>::max();
+	expectOrdinaryRejection(packet, "Invalid unit id in BattleInfo update");
+}
+
+TEST_F(PacketUpdatePublicationTest, OrdinaryRouteRejectsUnknownLaterOperationBeforeFramesWorldOrReplay)
+{
+	auto packet = pair();
+	packet.changedStacks[1].operation = static_cast<UnitChanges::EOperation>(99);
+	expectOrdinaryRejection(packet, "Unknown unit operation");
+}
+
+TEST_F(PacketUpdatePublicationTest, OrdinaryRouteRejectsMissingBattleBeforeFramesWorldOrReplay)
+{
+	auto packet = pair();
+	packet.battleID = BattleID(999999);
+	expectOrdinaryRejection(packet, "BattleUnitsChanged references a missing battle");
+}
+
+TEST_F(PacketUpdatePublicationTest, OrdinaryRoutePreservesRepeatedIdEntryOrderAndPublishesOneFrame)
+{
+	auto packet = pair();
+	packet.changedStacks[1] = packet.changedStacks.front();
+	packet.changedStacks[1].data["state"]["defending"].Bool() = false;
+	std::vector<std::byte> random;
+	onAuthority([this, &random] { random = publicationValueBytes(*authority->gh->randomizer); });
+	const auto callbackRandom = authorityWorld.callbackRandomBytes();
+	ASSERT_EQ(publish(packet), "");
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+	ASSERT_EQ(receipts.front().packetRows.Vector().size(), 2u);
+	EXPECT_TRUE(receipts.front().packetRows.Vector()[0]["data"]["state"]["defending"].Bool());
+	EXPECT_FALSE(receipts.front().packetRows.Vector()[1]["data"]["state"]["defending"].Bool());
+	EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+	onAuthority([this, &random]
+	{
+		EXPECT_EQ(publicationValueBytes(*authority->gh->randomizer), random);
+	});
+	EXPECT_EQ(authorityWorld.callbackRandomBytes(), callbackRandom);
+}
+
+TEST_F(PacketUpdatePublicationTest, OrdinaryRouteStillIgnoresStoppedMalformedEntryBeforePayloadParsing)
+{
+	onAuthority([this]
+	{
+		authorityWorld.second->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
+	});
+	receiverWorld.second->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
+	auto packet = pair();
+	packet.changedStacks[1].data["state"]["guardianSpiritHitPoints"].Integer() = -1;
+	const auto stopped = authorityWorld.second->save();
+	ASSERT_EQ(publish(packet), "");
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+	EXPECT_TRUE(authorityWorld.first->defended());
+	EXPECT_TRUE(receiverWorld.first->defended());
+	EXPECT_EQ(authorityWorld.second->save(), stopped);
+	EXPECT_EQ(receiverWorld.second->save(), stopped);
+}
+
+TEST_F(PacketUpdatePublicationTest, OrdinaryRouteAddsThenRemovesThroughTheIndependentReceiver)
+{
+	auto * authorityBattle = authorityWorld.state()->getBattle(BattleID(0));
+	auto * receiverBattle = receiverWorld.state()->getBattle(BattleID(0));
+	const auto size = authorityBattle->stacks.size();
+	battle::UnitInfo info;
+	info.id = authorityBattle->battleNextUnitId();
+	info.type = authorityWorld.first->creatureId();
+	info.count = 2;
+	info.side = BattleSide::ATTACKER;
+	info.position = BattleHex(5, 5);
+	BattleUnitsChanged packet;
+	packet.battleID = BattleID(0);
+	packet.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+	info.save(packet.changedStacks.back().data);
+	ASSERT_EQ(publish(packet), "");
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+	ASSERT_EQ(authorityBattle->stacks.size(), size + 1);
+	ASSERT_EQ(receiverBattle->stacks.size(), size + 1);
+	auto * added = authorityBattle->stacks.back().get();
+	auto * received = receiverBattle->stacks.back().get();
+	EXPECT_NE(added, received);
+	EXPECT_TRUE(added->alive());
+	EXPECT_EQ(added->getCount(), 2);
+	EXPECT_EQ(added->getPosition(), info.position);
+	EXPECT_EQ(added->save(), received->save());
+	packet.changedStacks.clear();
+	packet.changedStacks.emplace_back(info.id, UnitChanges::EOperation::REMOVE);
+	ASSERT_EQ(publish(packet), "");
+	ASSERT_EQ(receipts.size(), 2u);
+	EXPECT_TRUE(receipts.back().error.empty());
+	EXPECT_EQ(authorityBattle->stacks.back().get(), added);
+	EXPECT_EQ(receiverBattle->stacks.back().get(), received);
+	EXPECT_TRUE(added->isGhost());
+	EXPECT_TRUE(received->isGhost());
+	EXPECT_EQ(added->save(), received->save());
+	EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+}
+
+TEST_F(PacketUpdatePublicationTest, OrdinaryRouteDeathAndRevivalKeepNativeRootsAndReceiverState)
+{
+	const auto living = authorityWorld.first->save();
+	const auto health = authorityWorld.first->getAvailableHealth();
+	auto dead = authorityWorld.first->acquireState();
+	auto damage = health;
+	dead->damage(damage);
+	const auto deadJson = dead->save();
+	BattleUnitsChanged packet;
+	packet.battleID = BattleID(0);
+	packet.changedStacks.emplace_back(authorityWorld.first->unitId(), UnitChanges::EOperation::UPDATE);
+	packet.changedStacks.back().healthDelta = -health;
+	packet.changedStacks.back().data = deadJson;
+	std::vector<std::byte> random;
+	onAuthority([this, &random] { random = publicationValueBytes(*authority->gh->randomizer); });
+	const auto callbackRandom = authorityWorld.callbackRandomBytes();
+	ASSERT_EQ(publish(packet), "");
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+	EXPECT_FALSE(authorityWorld.first->alive());
+	EXPECT_FALSE(receiverWorld.first->alive());
+	EXPECT_EQ(receipts.front().after.Vector()[0]["saved"], deadJson);
+	packet.changedStacks.back().healthDelta = health;
+	packet.changedStacks.back().data = living;
+	ASSERT_EQ(publish(packet), "");
+	ASSERT_EQ(receipts.size(), 2u);
+	EXPECT_TRUE(receipts.back().error.empty());
+	EXPECT_TRUE(authorityWorld.first->alive());
+	EXPECT_TRUE(receiverWorld.first->alive());
+	EXPECT_EQ(authorityWorld.state()->getBattle(BattleID(0))->getStack(authorityWorld.first->unitId(), false), authorityWorld.first);
+	EXPECT_EQ(receiverWorld.state()->getBattle(BattleID(0))->getStack(receiverWorld.first->unitId(), false), receiverWorld.first);
+	EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
+	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
+	onAuthority([this, &random]
+	{
+		EXPECT_EQ(publicationValueBytes(*authority->gh->randomizer), random);
+	});
+	EXPECT_EQ(authorityWorld.callbackRandomBytes(), callbackRandom);
+}
+
+TEST_F(PacketUpdatePublicationTest, OrdinaryRouteOccupiedRevivalIgnoresMalformedPayloadAfterOrderedAdd)
+{
+	const auto position = authorityWorld.first->getPosition();
+	const auto health = authorityWorld.first->getAvailableHealth();
+	auto dead = authorityWorld.first->acquireState();
+	auto damage = health;
+	dead->damage(damage);
+	BattleUnitsChanged packet;
+	packet.battleID = BattleID(0);
+	packet.changedStacks.emplace_back(authorityWorld.first->unitId(), UnitChanges::EOperation::UPDATE);
+	packet.changedStacks.back().healthDelta = -health;
+	packet.changedStacks.back().data = dead->save();
+	battle::UnitInfo info;
+	info.id = authorityWorld.state()->getBattle(BattleID(0))->battleNextUnitId();
+	info.type = authorityWorld.second->creatureId();
+	info.count = 1;
+	info.side = BattleSide::DEFENDER;
+	info.position = position;
+	packet.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+	info.save(packet.changedStacks.back().data);
+	packet.changedStacks.emplace_back(authorityWorld.first->unitId(), UnitChanges::EOperation::UPDATE);
+	packet.changedStacks.back().healthDelta = health;
+	packet.changedStacks.back().data["state"]["guardianSpiritHitPoints"].Integer() = -1;
+	ASSERT_EQ(publish(packet), "");
+	ASSERT_EQ(receipts.size(), 1u);
+	EXPECT_TRUE(receipts.front().error.empty());
+	EXPECT_FALSE(authorityWorld.first->alive());
+	EXPECT_FALSE(receiverWorld.first->alive());
+	EXPECT_EQ(authorityWorld.first->save(), dead->save());
+	EXPECT_EQ(receiverWorld.first->save(), dead->save());
+	auto * added = authorityWorld.state()->getBattle(BattleID(0))->stacks.back().get();
+	auto * received = receiverWorld.state()->getBattle(BattleID(0))->stacks.back().get();
+	EXPECT_EQ(added->unitId(), info.id);
+	EXPECT_EQ(added->getPosition(), position);
+	EXPECT_EQ(added->save(), received->save());
+}
+
+TEST_F(PacketUpdatePublicationTest, KnownFrozenStatePreflightFailurePublishesNoFrameAndPreservesBothWorlds)
 {
 	auto packet = pair();
 	packet.changedStacks[1].data["state"]["frozenAppliedRound"].Integer() = -2;
 	const auto error = publish(packet);
 	record(error);
-	EXPECT_EQ(error, "Invalid Frozen application receipt in unit update");
+	EXPECT_EQ(error, "Invalid Frozen application round");
 	EXPECT_TRUE(receipts.empty());
 	EXPECT_EQ(authorityWorld.snapshot(), authorityBefore);
 	EXPECT_EQ(receiverWorld.snapshot(), receiverBefore);
-	// No retry through the same writer: failure may leave private serializer staging state.
+	// The state decoder now rejects before any recipient writer is entered.
 }
 
 TEST_F(PacketUpdatePublicationTest, NativeGraphAdmissionCoversActualAuthoritativeStateMutation)

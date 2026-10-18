@@ -65,6 +65,7 @@ option(ENABLE_STRICT_COMPILATION "Treat all compiler warnings as errors" OFF)
 option(ENABLE_COLORIZED_COMPILER_OUTPUT "Colorize compilation output (Clang/GNU)." ON)
 option(ENABLE_CCACHE "Speed up recompilation by caching previous compilations" OFF)
 option(ENABLE_NH_PERF_EXPERIMENTS "Build opt-in New Horizons performance diagnostics and microbenchmarks" OFF)
+option(ENABLE_SAVE_PARITY_TOOL "Build the opt-in native ordinary-save comparison tool" OFF)
 
 # Keep the definition consistent across core, authority, client, media backends
 # and tests. This does not select an alternative gameplay execution mode.
@@ -754,8 +755,15 @@ endif()
 
 add_subdirectory(libFacade)
 
-if (ENABLE_CLIENT OR ENABLE_SERVER)
+if (ENABLE_CLIENT OR ENABLE_SERVER OR ENABLE_SAVE_PARITY_TOOL)
 	add_subdirectory(server)
+endif()
+
+if(ENABLE_SAVE_PARITY_TOOL)
+	if(ENABLE_MINIMAL_LIB)
+		message(FATAL_ERROR "Save parity inspection requires the full library")
+	endif()
+	add_subdirectory(tools/native)
 endif()
 
 if(ENABLE_LAUNCHER OR ENABLE_EDITOR)

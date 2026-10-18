@@ -10847,76 +10847,76 @@
       "sha256": "0ddd0469bc1426151d011e634bb9d549b241c56191f0d8703c1be31b0cdcf20e"
     },
     "clientapp/EntryPoint.cpp": {
-      "sha256": "4bdef9fd27c73fad569ca0ba3663feffee90a050db9be17c1f9b0e3ba135540a",
-      "review": "IR-MANUAL-ENTRYPOINT-fdbb4da6-20261015",
+      "sha256": "836b3fd18e3d266fc92f6de799cc0a419918bc4b0fac86ec056f0f4d1f8b0320",
+      "review": "IR-STAGE9-REALCALLBACK-e16092f0-20261018",
       "functions": [
         {
           "symbol": "static void init()#1",
-          "start": 87,
-          "end": 104
+          "start": 90,
+          "end": 107
         },
         {
           "symbol": "static void checkForModLoadingFailure()#1",
-          "start": 106,
-          "end": 121
+          "start": 109,
+          "end": 124
         },
         {
           "symbol": "static void prog_version()#1",
-          "start": 123,
-          "end": 127
+          "start": 126,
+          "end": 130
         },
         {
           "symbol": "static void prog_help(const po::options_description &opts)#1",
-          "start": 129,
-          "end": 139
+          "start": 132,
+          "end": 142
         },
         {
           "symbol": "conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1",
-          "start": 142,
-          "end": 500
+          "start": 145,
+          "end": 523
         },
         {
           "symbol": "[](std::string buffer, bool calledFromIngameConsole)#1",
-          "start": 243,
-          "end": 247
+          "start": 249,
+          "end": 253
         },
         {
           "symbol": "[&](const std::string & key, const std::string & arg)#1",
-          "start": 274,
-          "end": 280
+          "start": 280,
+          "end": 286
         },
         {
           "symbol": "[&](const std::string & key, const std::string & arg, si64 defaultValue)#1",
-          "start": 281,
-          "end": 287
+          "start": 287,
+          "end": 293
         },
         {
           "symbol": "[](const std::string & filename, const std::string & message)#1",
-          "start": 321,
-          "end": 325
+          "start": 327,
+          "end": 331
         },
         {
           "symbol": "[]()#1",
-          "start": 348,
-          "end": 352
+          "start": 360,
+          "end": 364
         },
         {
           "symbol": "[]()#2",
-          "start": 422,
-          "end": 441
+          "start": 434,
+          "end": 453
         },
         {
           "symbol": "[&logConfigurator]()#1",
-          "start": 443,
-          "end": 490
+          "start": 455,
+          "end": 509
         },
         {
           "symbol": "void handleFatalError(const std::string & message, bool terminate)#1",
-          "start": 504,
-          "end": 517
+          "start": 527,
+          "end": 540
         }
       ],
-      "rationale": "Complete current file read1–517 including every conditional OS/SDL/threading branch. Four static helpers87–104/106–121/123–127/129–139 and fatal handler504–517. One shared entry body148–500 with mutually exclusive signatures142(wmain),144(SDL_main),146(main), conservatively inventoried once142–500 including intervening alternatives/directives, not tripled or shortened to body-only. Seven genuine nested lambdas243–247/274–280/281–287/321–325/348–352/422–441/443–490 retained exactly with original parser symbols/spans. Recovery catch495–498 is an exception-handler statement, not a callable. SDL_MAIN_HANDLED55 and SDL_MAIN_NOIMPL60 are object-like macros; no function-like macro definitions. Included SDL-generated entrypoints are not handwritten bodies in this physical file. Full13-unit coverage does not approve newly exposed359-line function or startup/thread/shutdown behavior."
+      "rationale": "Complete afterimage read1to540, all conditional OS/SDL/thread branches and13 genuine callable bodies. Four static helpers and fatal handler, seven nested lambdas, one conservatively unified conditional entrypoint145to523. Eleven unchanged callable bodies independently mapped byte-exact to new spans; main and cleanup explicitly reviewed. Stable cleanup label [&logConfigurator]() identifies the shipping signature; physical455to509 includes its NH_CURE_CLIENT_INTEGRATION conditional &cureIntegration capture/detach, not a shortened preprocessed branch. Catch statements are not callables; object-like SDL macros/generated included entrypoints are not extra handwritten bodies. Source inventory only; new379-line function allowance is separately explicit above."
     },
     "mapeditor/templateeditor/templateeditor.cpp": {
       "sha256": "c434bc9a615a8b5edc517dff2b3ad33d438ce0614c824ac6b85fdfd441bd2bba",
@@ -13116,13 +13116,15 @@
       "sha256": "0ddd0469bc1426151d011e634bb9d549b241c56191f0d8703c1be31b0cdcf20e"
     },
     "CMakeLists.txt": {
-      "kind": "legacy",
-      "lines": 1118,
+      "kind": "exception",
+      "lines": 1126,
       "owner": "engine_engineer",
-      "rationale": "Exact comment-only DS_Store retirement correction: active DMG setup, background, icon commands and attribution unchanged. Legacy debt ratchets1119 to1118; no future growth allowance, extraction waiver or macOS runtime certification.",
-      "review": "IR-CURRENT-SEVEN-RESOURCE-RETIREMENT-20261017",
-      "review_scope": "exact-comment-only-retirement-1118-sha-b87e29df-no-runtime-or-history-clearance",
-      "sha256": "b87e29df5c5f9e2a72a7b2b082beac060b47bbaf6a3562785ed16bbfd6909862"
+      "rationale": "Exact default-OFF save-inspection option and seven lines of component routing/full-library refusal only. Cohesive tool target remains in tools/native/CMakeLists.txt; this mixed root is not a mechanical registry. Existing three CMake functions unchanged; no gameplay or unrelated target-policy expansion.",
+      "review": "IR-STAGE13-INTEGRATION-THREE-RATCHETS-20261017",
+      "review_scope": "exact-stage13-shared-decode-and-opt-in-tool-three-ratchets-only-no-runtime-or-future-growth",
+      "sha256": "52ed18d648bad6134d958fd9c1607b065fba788c41a609f3b93c948b9c9707a3",
+      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
+      "deferral": "Engine owner must extract cohesive component-selection/assembly before further routing growth, preserving explicit full/minimal-library, servercommon, facade, client, test and tool dependencies and ordering. Compare ordinary toolOFF and toolON/full-library graphs and reject toolON+minimal. No cosmetic forwarding include, install expansion or future growth credit; exact1126-line endpoint only."
     },
     "Global.h": {
       "kind": "legacy",
@@ -13153,14 +13155,13 @@
     },
     "client/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 581,
+      "lines": 584,
+      "sha256": "124c7c22eb865b0994e8f21b1131eb048682519227595f5385ba1756bfd44e12",
       "owner": "ui_developer",
-      "rationale": "Twenty exact new client CPP/header registry entries; no target/link/runtime policy change.",
-      "review": "IR-CONSUMED-CURRENT-INTEGRATION-20261017",
-      "review_scope": "exact-current-consumed-link-composition-only-no-native-or-future-growth",
-      "sha256": "f8630694370880c4f5f3c8032c89e3c2e8e3ddeabe22fbfd681daf5baa11e8b1",
-      "deferral": "Exact source/size/hash only; no future growth credit. Engine/UI owners must extract cohesive receive/visitor, replay/world and publication duties before substantive expansion. Preserve same-thread shutdown, actual interface/state/native/root ownership and nofail tails. Full route, alias closure and runtime acceptance remain separate.",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY"
+      "review": "IR-STAGE9-REALCALLBACK-e16092f0-20261018",
+      "review_scope": "exact-stage9-two-component-plus-presenter-registry-only",
+      "rationale": "Composes reviewed Stage9 source/session registrations581to583 with one narrow presenter-header registration583to584. No new target/link/runtime policy in this client registry. Exact endpoint only; not a blanket registry exemption or native result.",
+      "deferral": "UI/engine owner must keep this exact584-line registry bound and extract coherent client component registration before substantive routing/link-policy expansion. No future field/feature growth credit; preserve current source registrations and Stage9 dependency's BattleInterface2104 shrinking baseline."
     },
     "client/CPlayerInterface.cpp": {
       "kind": "legacy",
@@ -13492,12 +13493,12 @@
     },
     "client/battle/BattleInterface.cpp": {
       "kind": "legacy",
-      "lines": 2180,
+      "lines": 2104,
+      "sha256": "7dea0f120a57238b3fadae4a13ae44f6e9da4fd9a5a2eafac79f308122b53c92",
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 2180 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c4d4b317ecd97cb8d81da6eb01f39f09ff335f5b0b9c52effd7f45161d71f2ea"
+      "review": "cure-modal-current-session-extraction",
+      "review_scope": "source-extraction-and-lifetime-guards-only",
+      "rationale": "Extracts the Cure modal installer into BattleCureAfflictionUI and weak canonical session admission. The central file shrinks by 76 physical lines to 2104. Remaining independent modal factories and battle presentation duties require further bounded decomposition while preserving command validation and same-thread teardown. No future growth allowance or runtime acceptance is granted."
     },
     "client/battle/BattleInterface.cpp::BattleInterface::installMagicArrowOverchargeUI()::[this](const BattleAction & pending, const BattleHex & targetHex, const CStack * initialTarget) -> std::optional<MagicArrowOverchargeContext>#1": {
       "kind": "legacy",
@@ -15081,13 +15082,14 @@
       "sha256": "e8498dac63c78b2dc2e01c9030a36528bdce9c3378566b595043a680ae4776b6"
     },
     "clientapp/EntryPoint.cpp": {
-      "kind": "legacy",
-      "lines": 517,
+      "kind": "exception",
+      "lines": 540,
+      "sha256": "836b3fd18e3d266fc92f6de799cc0a419918bc4b0fac86ec056f0f4d1f8b0320",
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 517 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4bdef9fd27c73fad569ca0ba3663feffee90a050db9be17c1f9b0e3ba135540a"
+      "review": "IR-STAGE9-REALCALLBACK-e16092f0-20261018",
+      "review_scope": "compile-time-dedicated-client-test-hooks-only",
+      "rationale": "Exact517to540 bounded compile-time optional real-client callback test routing. Macro-absent shipping projection is whitespace-normalized exact; substantive scenario logic belongs to cohesive206-line dedicated driver and75-line asynchronous lease, not this bootstrap. This admits no shipping initialization/lifecycle policy growth and no graphical acceptance claim.",
+      "deferral": "Engine owner must extract characterized startup/configuration or cleanup lifecycle behind explicit ownership interfaces before any further entrypoint growth. Reduce this exact540-line baseline and379-line conditional entrypoint; preserve every OS/SDL/threaded-load alternative, GUI mutex, network waiters, joins, deferred repaint and normal shutdown order. No transferred allowance for another oversized helper; characterization and ordinary restart/menu-new-scenario rendered evidence required at extraction."
     },
     "clientapp/PrivateWineStartupWitness.h::privateWineStartup::inline int verifyBeforeSDL()#1": {
       "kind": "legacy",
@@ -15639,15 +15641,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact proposed 1269-line endpoint only. Further affected-area edits require renewed cohesive extraction or narrowly reviewed correctness scope; no regrowth, full native horizon, Strong pass or publication lease approval.",
+      "deferral": "Exact1271-line endpoint only, no future growth credit. Further affected-area growth requires renewed independent organization review or meaningful cohesive boundary work; preserve source/header registration and existing target behavior.",
       "kind": "exception",
-      "lines": 1269,
+      "lines": 1271,
       "owner": "engine_engineer",
-      "rationale": "Exact1265 to1269-line mechanical library source/header registry: additive visible-policy and canonical Order-effects entries in their existing target. Flat registration coherence justifies the existing file-size record; no handwritten gameplay function is hidden in it and no future growth credit is granted.",
-      "review": "IR-COMMON-LEGACY-CONTROLLER-FINAL-20261017",
-      "review_scope": "exact-visible-candidate-source-ownership-and-four-selector-metadata-only-no-runtime-or-future-growth",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "b79521f39bd3bcbbb6110e8cdb15fa758e3d4f7bd55b9e9be284fd86d32c4c3e"
+      "rationale": "Exact1269 to1271-line mechanical registry renewal: paired GameSaveReader.cpp/.h entries in the existing serializer/library target. No new policy or handwritten function. Flat paired registration is coherent; moving two names into a forwarding fragment would be cosmetic.",
+      "review": "IR-STAGE13-INTEGRATION-THREE-RATCHETS-20261017",
+      "review_scope": "exact-stage13-shared-decode-and-opt-in-tool-three-ratchets-only-no-runtime-or-future-growth",
+      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
+      "sha256": "6b7be1e06613bccd29121ca30855fc356c479cdeae6e407ff2359c6229232599"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -16129,15 +16131,6 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "0ecb32b76e28e7758d2375c633bc66bfae3c048d0383cb3cfa3d8d2d599a7edf"
     },
-    "lib/battle/SylvanLuckState.h::SylvanLuckState::void serialize(Handler & h)#1": {
-      "kind": "legacy",
-      "lines": 88,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 88 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "a2fe52f47e99eaa214cb3f226baa580bf1222f3bf0f41d6a3d22707ec3243702"
-    },
     "lib/bonuses/Bonus.h::Bonus::void serialize(Handler &h)#1": {
       "kind": "legacy",
       "lines": 150,
@@ -16494,14 +16487,14 @@
     },
     "lib/gameState/CGameState.cpp": {
       "kind": "exception",
-      "lines": 2262,
+      "lines": 2254,
       "owner": "engine_engineer",
-      "rationale": "Checked native mutation entry before replay/visitor dispatch, plus save and full-member retirement access; caller-held state ordering retained. Independently reviewed exact source scope; not actual route, alias closure, shutdown or performance acceptance.",
-      "review": "IR-NATIVE-GRAPH-ADMISSION-SOURCE-20261017",
-      "review_scope": "exact-native-graph-access-admission-registration-only",
-      "sha256": "2e844613f0996bb1c3ea20d6187fc6fcc1140c891506a789feec56efc17cabe5",
+      "rationale": "Shared ordinary envelope/world decoding extracted into cohesive36-line GameSaveReader.cpp and15-line interface; loadGame16 to7 retains its normal runtime script-dispatcher tail. Actual2262 to2254-line shrink, not a gameplay or save-format change; four unchanged long-function records remain pinned.",
+      "review": "IR-STAGE13-INTEGRATION-THREE-RATCHETS-20261017",
+      "review_scope": "exact-stage13-shared-decode-and-opt-in-tool-three-ratchets-only-no-runtime-or-future-growth",
+      "sha256": "408bee3d6e4bf7c889b782899c4ca8843b9373605148f3f08ad5c97c0167a396",
       "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "deferral": "No future growth credit. Engine/UI owners must extract cohesive native graph/query, visitor/replay or publication duties before substantive expansion; any later changed hotspot requires renewed independent exact review. Verify actual owner/thread/shutdown and prepared-tail ordering separately."
+      "deferral": "No regrowth above2254. Preserve existing native graph/query, visitor/replay, publication and lifecycle decomposition obligations; extract coherently before substantive expansion. Preserve saved-member/RNG/packet order, runtime finalization, owner/thread/shutdown and prepared-tail ordering; actual route/performance acceptance remains separate."
     },
     "lib/gameState/CGameState.cpp::bool CGameState::checkForVictory(const PlayerColor & player, const EventCondition & condition) const#1": {
       "kind": "legacy",
@@ -17450,22 +17443,23 @@
       "sha256": "5e0b71f8188c851a69e16b94025f2820c68798db9a648b26800469f7e5b5c3d9"
     },
     "lib/networkPacks/PacksForClientBattle.h": {
-      "kind": "legacy",
-      "lines": 2218,
+      "kind": "exception",
+      "lines": 2269,
+      "sha256": "6c2dc030ad0e55b331ea9d24d0ec6bea059cb8417f8dea87e525feb900ebf9bf",
       "owner": "engine_engineer",
-      "rationale": "Reviewed bounded extraction of five repeated envelope preflight sequences into a 39-line ordered unit-state compatibility composer. Inlining its three ordinary and two synchronous Frozen-feedback calls recovers the previous header byte-for-byte. Direct UnitChanges, envelope ownership, fields and historical rejection timing remain unchanged. Remaining packet responsibilities are frozen at this reduced size, not certified as fully decomposed.",
-      "review": "IR-STAGE5-COMPOSER-55d1f20b-20261015",
-      "review_scope": "bounded-five-envelope-preflight-extraction",
-      "sha256": "55d1f20be0624521fff223328bbae5134a8f1a7fae492cada9782b1206adbb11"
+      "review": "IR-STAGE5-PREFIX-0ecf498e-20261018",
+      "review_scope": "urgent-five-envelope-writer-prefix-correctness-only",
+      "rationale": "Exact bounded +51-line urgent correction of observed unsupported nested writes emitting enclosing prefixes. Separates existing packet preflight from emission and composes nested validators before the enclosing first field without changing supported field order, original handler feature-query expressions, read branches, versions or packet fields. Header remains structural debt; this is not a blanket serialization-table exemption or semantic/runtime certification.",
+      "deferral": "Engine engineer must extract cohesive battle-unit update/hit/attack/injury codec and ordered preflight ownership behind explicit typed interfaces before any further routing, field or mechanic growth in this header. Preserve packet declarations/registration identity, DLL boundaries, supported full bytes and original handler query order; retain direct and enclosing rejection ownership, empty/prefilled unsupported-prefix assertions and old-reader fences. Exact current ceiling 2269; require decreasing header baseline plus focused serializer differential and adjacent packet/save coverage at extraction. No allowance inherited by another oversized helper."
     },
-    "lib/networkPacks/PacksForClientBattle.h::BattleAttack::void serialize(Handler & h)#1": {
-      "kind": "legacy",
-      "lines": 142,
+    "lib/networkPacks/PacksForClientBattle.h::BattleAttack::void validateSerializationPrefix(Handler & h)#1": {
+      "kind": "review",
+      "lines": 88,
+      "sha256": "9f8c884eecafe2dc203ad7cf9f093a73848f31a1b716aed86849322ca772f7a0",
       "owner": "engine_engineer",
-      "rationale": "Reviewed reduction from 156 to 142 lines by composing the existing ordered unit-state preflights in both attack containers. The target-side Shatter check remains between Frozen and BattleForm validation; outer checks, nested validation, encoded fields and late historical guards are unchanged. Further edits require a reviewed reduction or separately bounded exception.",
-      "review": "IR-STAGE5-COMPOSER-55d1f20b-20261015",
-      "review_scope": "bounded-two-attack-container-preflight-extraction",
-      "sha256": "745d19c5bbeece6fb1b9a4d56c5ed71310e52c314f694967fab2f41cb5d35b7b"
+      "review": "IR-STAGE5-PREFIX-0ecf498e-20261018",
+      "review_scope": "ordered-attack-writer-prefix-validation",
+      "rationale": "Independently reviewed coherent88-line pre-emission compatibility boundary. Retains historical outer13-feature/Frozen feedback precedence, then validates remaining targets, attacker and strike-tail downgrade guards in wire traversal order using a non-emitting captured-version view. Owns no emission/read transaction or new gameplay policy. Under150 callable ceiling; further expansion requires focused boundary review and the enclosing header's deferred codec extraction."
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleHeroOrderStateChanged::void serialize(Handler & h)#1": {
       "kind": "legacy",
@@ -20076,13 +20070,13 @@
     },
     "clientapp/EntryPoint.cpp::conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1": {
       "kind": "exception",
-      "review": "IR-ENTRYPOINT-EXACT-DEBT-959aff23-20261015",
-      "lines": 359,
-      "sha256": "c250d31fe9cb871e4aa5b182126dbdac2efde6e3e550b29964293b8898f17b30",
+      "lines": 379,
+      "sha256": "c80b2577f1d018eab4f6e26517d7803229e29fb5f5f4321fa906813ada3fab11",
       "owner": "engine_engineer",
-      "review_scope": "exact-existing-content-newly-visible-numeric-debt-only",
-      "rationale": "Independently reviewed exact-content debt admission: pre-existing shared entrypoint142–500 is359 physical lines, current=HEAD=cf2e62f9. Parser recovery previously hid this unit. Not new source or semantic certification; not a permanent ceiling waiver. All existing numeric pins remain unchanged. The maintained gate requires explicit exception kind for a newly visible unit above150; Separate independent numeric review admits only these exact existing bytes, not startup/lifecycle behavior or future expansion.",
-      "deferral": "Before any affected entrypoint edit, engine owner must propose and characterize a bounded cohesive startup/configuration or lifecycle extraction preserving platform branches, initialization order, ownership, thread joins and shutdown cleanup, then reduce this exact359-line pin. No growth/rename/move inherits this record; urgent fixes need a fresh scoped independent review. No production extraction is authorized by this inventory."
+      "review": "IR-STAGE9-REALCALLBACK-e16092f0-20261018",
+      "review_scope": "conditional-shared-entrypoint-test-hooks-only",
+      "rationale": "Conservative full shared conditional signature/body145to523,359to379 physical lines, not only the last platform main alternative. Added conditional driver setup, GUI-locked detach before network cleanup and test result; shipping macro-absent source projection exact. No initialization/thread/restart redesign or substantive testing policy inside bootstrap.",
+      "deferral": "Engine owner must characterize and extract coherent startup/configuration or lifecycle assembly before further shared-entrypoint growth; shrink379 together with its540-line file. Keep all platform alternatives, initialization order, GUI/network wait/cleanup ownership and ordinary rendered restart evidence. This exact test-only exception does not supersede that debt or authorize gameplay changes."
     },
     "AI/BattleAI/HypotheticActivation.cpp::void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)#1": {
       "kind": "exception",
