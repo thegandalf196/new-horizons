@@ -22,6 +22,7 @@ class JsonNode;
 class CPlayerBattleCallback;
 class CGHeroInstance;
 struct DivineMandateStatus;
+namespace heroActionTiming { struct Summary; }
 
 struct CachedAttack
 {
@@ -39,6 +40,7 @@ class DLL_EXPORT BattleEvaluator
 	std::shared_ptr<CBattleCallback> cb;
 	std::shared_ptr<Environment> env;
 	bool activeActionMade = false;
+	bool submitHeroAction(const PossibleSpellcast & castToPerform, heroActionTiming::Summary * timing);
 	CachedAttack cachedAttack;
 	PlayerColor playerID;
 	BattleID battleID;

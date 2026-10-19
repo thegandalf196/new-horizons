@@ -21,6 +21,7 @@
 #include "HeroActionAdmission.h"
 #include "HeroActionUtility.h"
 #include "HeroActionContinuation.h"
+#include "HeroActionTiming.h"
 #include "BattleExchangeVariant.h"
 
 #include "StackWithBonuses.h"
@@ -4480,6 +4481,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	if(!hero)
 		return false;
 
+	heroActionTiming::Call timing;
+	if(timing.enabled())
+		timing.identify({battleID.getNum(), playerID.getNum(), static_cast<int>(side),
+			battleView->getBattle()->getRound(), heroActionTiming::captureStackId(activeStack)});
+
 	LOGL("Casting spells sounds like fun. Let's see...");
 	// Double Command and Battle Plan both require an Order before any ordinary
 	// spell or creature action. Battle Plan's typed grant is not a HERO action.
@@ -4991,6 +4997,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	CStopWatch timer;
 
+	timing.prepare(possibleCasts.size());
+	{
+		heroActionTiming::LoopScope loop(timing.candidateSlots(), timing.sink());
 #if BATTLE_TRACE_LEVEL >= 1
 	tbb::blocked_range<size_t> r(0, possibleCasts.size());
 #else
@@ -5478,7 +5487,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				const auto modelActive = state->getForUpdate(modelActor);
 				heroActionUtility::evaluateContinuation(continuation, modelActive, needFullEval,
 					cachedAttack, innerCache, state, env, strengthRatio, simulationTurnsCount,
-					scoreEvaluator, targets.get());
+					scoreEvaluator, targets.get(), timing.continuation(i));
 				for(const auto & unit : allUnits)
 				{
 					if(!unit->isValidTarget(true) && !vstd::contains(healthOfStack, unit->unitId()))
@@ -5683,6 +5692,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 #if BATTLE_TRACE_LEVEL == 0
 		});
 #endif
+	}
 
 	// No effective ordinary action still permits declining a harmful spell.
 	// Use this same baseline for casts and their projected continuations.
@@ -5713,72 +5723,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		|| (castToPerform.value > noCastBaseline && !vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);
-		if(castToPerform.command != HeroCommand::NONE)
-		{
-			if(!commandTargetIsLegal(*cb->getBattle(battleID), side, castToPerform.command,
-				castToPerform.commandTargets))
-				return false;
-
-			if(castToPerform.command == HeroCommand::FOCUS_FIRE)
-			{
-				const auto targetId = castToPerform.focusFire.value().targetUnitId;
-				if(!cb->getBattle(battleID)->battleCanConfirmHeroCommand(side, castToPerform.command, targetId))
-					return false;
-				cb->battleMakeSpellAction(battleID,
-					BattleAction::makeTargetedHeroCommand(side, castToPerform.command, targetId));
-			}
-			else
-			{
-				BattleAction action;
-				if(castToPerform.commandTargets.size() == 1)
-					action = BattleAction::makeTargetedHeroCommand(side, castToPerform.command,
-						castToPerform.commandTargets.front());
-				else if(castToPerform.commandTargets.size() == 2)
-					action = BattleAction::makePairedHeroCommand(side, castToPerform.command,
-						castToPerform.commandTargets.front(), castToPerform.commandTargets.back());
-				else
-					action = BattleAction::makeHeroCommand(side, castToPerform.command);
-				cb->battleMakeSpellAction(battleID, action);
-			}
-			activeActionMade = true;
-			return true;
-		}
-		BattleAction spellcast;
-		spellcast.actionType = EActionType::HERO_SPELL;
-		spellcast.spell = castToPerform.spell->id;
-		spellcast.spellOvercharge = castToPerform.spellOvercharge;
-		spellcast.spellSelectiveDispel = castToPerform.spellSelectiveDispel;
-		spellcast.spellCureAffliction = castToPerform.spellCureAffliction;
-		spellcast.spellCurePhysicalAffliction = castToPerform.spellCurePhysicalAffliction;
-		spellcast.spellPurifyChoices = castToPerform.spellPurifyChoices;
-		spellcast.spellMassSlow = castToPerform.spellMassSlow;
-		spellcast.spellShadowGiftSacrificePercent = castToPerform.spellShadowGiftSacrificePercent;
-		spellcast.metamagicFollowup = castToPerform.metamagicFollowup;
-		if(isCanonicalFireWall(*cb->getBattle(battleID), castToPerform.spell)
-			&& castToPerform.spellFireWallDirection != BattleHex::NONE
-			&& !castToPerform.dest.empty())
-		{
-			// Evaluation keeps the complete footprint so delayed damage and
-			// friendly exposure can be scored.  The wire action intentionally
-			// carries only the start hex plus the direction; the server expands
-			// and validates the line authoritatively.
-			spellcast.aimToHex(castToPerform.dest.front().hexValue);
-			spellcast.spellFireWallDirection = castToPerform.spellFireWallDirection;
-		}
-		else if(isCanonicalHeavenlyGale(castToPerform.spell)
-			|| isCanonicalCrusade(castToPerform.spell) || castToPerform.dest.empty())
-			// Mass spells use AimType::NOTHING in mechanics and are enumerated as
-			// an empty candidate. The action protocol still requires one destination
-			// entry; INVALID is the shared NO_LOCATION sentinel, not a unit target.
-			spellcast.aimToHex(BattleHex::INVALID);
-		else
-			spellcast.setTarget(castToPerform.dest);
-		spellcast.side = side;
-		spellcast.stackNumber = -1;
-		cb->battleMakeSpellAction(battleID, spellcast);
-		activeActionMade = true;
-
-		return true;
+		return submitHeroAction(castToPerform, timing.sink());
 	}
 
 	LOGFL("Best hero action is %s. But it is actually useless (value %d).", castToPerform.name() % castToPerform.value);

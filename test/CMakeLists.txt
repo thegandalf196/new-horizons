@@ -668,6 +668,7 @@ set(test_SRCS
 )
 
 set(test_HEADERS
+		battleAI/HeroActionTimingCapture.h
 		battleAI/HeroQueueSelectorFixture.h
 		battleAI/HeroExpectedSpellFixture.h
 		battleAI/PurifyRuleFixtures.h
@@ -754,6 +755,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/SpellAdmissionCharacterizationTest.cpp
 		battleAI/HeroActionAdmissionTest.cpp
 		battleAI/HeroActionUtilityTest.cpp
+		battleAI/HeroActionTimingTest.cpp
 		battleAI/ProtectAttackPreviewTest.cpp
 		battleAI/HeroOrderEffectsProjectionTest.cpp
 		battleAI/LegacyHeroOrderProjectionTest.cpp

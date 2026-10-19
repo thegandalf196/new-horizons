@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../battleAI/HeroActionTimingCapture.h"
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "../hero/NewHorizonsHeroRulesFixture.h"
@@ -3367,6 +3368,7 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 	// Separate from the historical commands=false Dwarf workload. Default AI
 	// preferences and shipping command rules are retained; no WAIT/Order is forced.
 	ScopedWaitDiagnostics capture;
+	heroTimingTest::Capture heroCapture;
 	// Reuse the established nonempty Normal exchange geometry. Two adjacent
 	// singleton melee sides never invoke estimateAttack's target comparisons.
 	ASSERT_NO_FATAL_FAILURE(prepare());
@@ -3481,6 +3483,7 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 	EXPECT_EQ(stateSnapshot(), beforeSnapshot) << "Snapshot reads must not consume state/RNG";
 	RecordProperty("shippingStateBefore", beforeSnapshot.toString());
 	unsigned consumedHeroActions = 0;
+	unsigned heroRowsObserved = 0;
 	for(unsigned attempt = 0; attempt < 16 && callback->actions.empty(); ++attempt)
 	{
 		const auto * activeUnit = battle()->battleActiveUnit();
@@ -3489,7 +3492,31 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 		ASSERT_NE(active, nullptr);
 		ASSERT_EQ(battle()->battleGetActionController(active), PlayerColor(0));
 		const auto heroesBefore = callback->heroActions.size();
+		const auto rowsBefore = heroCapture.records().size();
+		const auto roundBefore = battle()->getRound();
 		ai->activeStack(BattleID(0), active);
+		const auto heroRows = heroCapture.records();
+		if(heroTimingTest::optedIn())
+		{
+			ASSERT_GE(heroRows.size(), rowsBefore);
+			ASSERT_LE(heroRows.size(), rowsBefore + 1);
+			if(heroRows.size() != rowsBefore)
+			{
+				++heroRowsObserved;
+				const auto & row = heroRows.back();
+				EXPECT_EQ(row.at("battle"), 0);
+				EXPECT_EQ(row.at("player"), 0);
+				EXPECT_EQ(row.at("side"), static_cast<int>(BattleSide::ATTACKER));
+				EXPECT_EQ(row.at("stack"), active->unitId());
+				EXPECT_EQ(row.at("round"), roundBefore);
+				EXPECT_EQ(row.at("loop_threw"), 0);
+				EXPECT_EQ(row.at("submit_calls"), callback->heroActions.size() - heroesBefore);
+				EXPECT_EQ(row.at("submit_returned"), callback->heroActions.size() - heroesBefore);
+				EXPECT_EQ(row.at("submit_threw"), 0);
+			}
+		}
+		else
+			EXPECT_TRUE(heroRows.empty());
 		expectStageClosure(summary());
 		if(callback->heroActions.size() != heroesBefore)
 		{
@@ -3507,6 +3534,11 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 		}
 	}
 	ASSERT_EQ(callback->actions.size(), 1u) << "Natural current-command continuation exceeded bounded action budget";
+	if(heroTimingTest::optedIn())
+	{
+		EXPECT_GT(heroRowsObserved, 0u) << "Require actual Hero Call diagnostic discovery";
+	}
+	RecordProperty("heroTimingCallRows", std::to_string(heroRowsObserved));
 	RecordProperty("heroActionCount", std::to_string(consumedHeroActions));
 	RecordProperty("forecastRounds", "2");
 	RecordProperty("commandsEnabled", "true");

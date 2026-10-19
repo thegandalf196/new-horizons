@@ -19,6 +19,15 @@ Do not run concurrent builds/heavy tests during measurements. Graphical probes r
 - WAIT completion uses `NH_WAIT_END_TIMING` under global/animation DEBUG: initial/order waits, activation, facing completion and UI remainder. It is not CPU or GPU time.
 - Hero-cue records use the child `animation.heroProc` DEBUG domain with their independent bounded budget, avoiding global animation DEBUG traffic.
 - BattleAI aggregates distinguish callback totals, movement search, ordinary/waited exchanges and nested probe/lifecycle work. Preserve legacy per-call microsecond truncation and additive fine-work nanoseconds; child sums are subsets, not additional body time.
+- `NH_HERO_ACTION_TIMING` additionally requires global and AI DEBUG logging. It
+  uses the same opt-in environment and bounded limit, cached on first use. Its
+  ordinal identifies a Hero Action attempt, not a creature callback. `loop_us`
+  includes candidate-loop/join wall time and post-join diagnostic slot reduction;
+  full/cached continuation sums overlap across workers and are not extra loop
+  time. Submission wall excludes prior validation and ordinary wire construction,
+  except Focus Fire's existing inline action-factory argument. These are elapsed
+  intervals, not CPU, ACK or presentation measurements. Disabled paths sample no
+  clocks or allocate candidate slots; the existing no-Hero return remains first.
 - Target-probe preparation begins after the invalid-actor/ended-activation guard and ends immediately before primary damage on the ordinary path; early returns and exceptions finalize it by RAII. Applied attacks and null timing sinks do not sample it. Movement, waited and normal contexts report it separately.
 - Preparation, primary damage and DPS scoring are disjoint children of target-probe time, not extra terms in the seven-region exchange-body closure. Their remainder includes between-child work, post-work and measurement boundaries; it is not pure postprocessing. Focused native tests protect score/state/action/RNG parity and child bounds. Positive Overwatch early-return preparation-counter coverage remains unverified; adjacent reaction tests do not establish it.
 - Windows compiler-command evidence in `tools/ci/windows_ai_compile_flags.py` records a privacy-safe supported flag subset and resolved response arguments. Configured optimization intent alone does not establish final compiler argv.

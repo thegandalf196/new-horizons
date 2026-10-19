@@ -6,6 +6,7 @@ set(battleAI_SRCS
 		BracePrimaryState.cpp
 		BattleAI.cpp
 		BattleEvaluator.cpp
+		BattleEvaluatorHeroSubmit.cpp
 		BattleEvaluatorSpellCandidates.cpp
 		BattleEvaluatorHeroQueue.cpp
 		HeroSpellExpectedValueProjection.cpp
@@ -18,6 +19,7 @@ set(battleAI_SRCS
 		HeroActionAdmission.cpp
 		HeroActionUtility.cpp
 		HeroActionContinuation.cpp
+		HeroActionTiming.cpp
 		BracePreemptiveForecast.cpp
 		BraceStagePreparation.cpp
 		HypotheticExportSubject.cpp
@@ -86,6 +88,7 @@ set(battleAI_HEADERS
 		BraceStagePreparation.h
 		HeroActionUtility.h
 		HeroActionContinuation.h
+		HeroActionTiming.h
 		HypotheticBonusApplication.h
 		InitialExportBattleSubject.h
 		InitialExportWorld.h

@@ -8,11 +8,14 @@
  *
  */
 #include "StdInc.h"
+#include "HeroActionTimingCapture.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CBattleCallback.h"
+#include "../../lib/callback/GameRandomizer.h"
+#include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
@@ -22,6 +25,7 @@
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include <limits>
+#include <stdexcept>
 #include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
@@ -45,6 +49,7 @@ class RecordingCommandCallback final : public CBattleCallback
 {
 public:
 	std::vector<BattleAction> submitted;
+	bool throwOnSubmit = false;
 
 	RecordingCommandCallback()
 		: CBattleCallback(PlayerColor(0), nullptr)
@@ -54,6 +59,8 @@ public:
 	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override
 	{
 		submitted.push_back(action);
+		if(throwOnSubmit)
+			throw std::runtime_error("Hero Action submit diagnostic fixture");
 	}
 };
 }
@@ -107,6 +114,13 @@ protected:
 		ASSERT_EQ(callback->submitted.size(), 1u);
 		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 			callback->submitted.front()));
+	}
+
+	auto rngState() const
+	{
+		CMemorySerializer memory;
+		memory.oser & *gameHandler->randomizer;
+		return memory.extractBuffer();
 	}
 };
 
@@ -275,6 +289,7 @@ protected:
 
 TEST_F(HeroCommandAITest, BooklessHeroChoosesBeneficialCommandAndServerAccepts)
 {
+	heroTimingTest::Capture capture;
 	prepareEvaluation(false);
 	ASSERT_FALSE(attackerSideHero->hasSpellbook());
 	const auto mana = attackerSideHero->getManaAvailable();
@@ -282,6 +297,7 @@ TEST_F(HeroCommandAITest, BooklessHeroChoosesBeneficialCommandAndServerAccepts)
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().actionType, EActionType::HERO_COMMAND);
 	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, callback->submitted.front().command));
+	capture.expectSubmission(battle()->getRound(), active->unitId(), true);
 	executeChosen();
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_TRUE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
@@ -289,8 +305,66 @@ TEST_F(HeroCommandAITest, BooklessHeroChoosesBeneficialCommandAndServerAccepts)
 	EXPECT_EQ(callback->submitted.size(), 1u);
 }
 
+TEST_F(HeroCommandAITest, NoHeroEarlyReturnAcceptsMissingActiveStack)
+{
+	heroTimingTest::Capture capture;
+	prepareEvaluation(false);
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	const auto originalHero = side.heroID;
+	side.heroID = ObjectInstanceID();
+	ASSERT_EQ(callback->getBattle(BattleID(0))->battleGetMyHero(), nullptr);
+	const auto rng = rngState();
+	const auto allowance = side.heroCommandUsed;
+	const auto activeHealth = active->getAvailableHealth();
+	const auto enemyHealth = enemy->getAvailableHealth();
+	EXPECT_FALSE(evaluator.attemptCastingSpell(nullptr));
+	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_TRUE(capture.rows().empty());
+	EXPECT_EQ(rngState(), rng);
+	EXPECT_EQ(side.heroCommandUsed, allowance);
+	EXPECT_EQ(active->getAvailableHealth(), activeHealth);
+	EXPECT_EQ(enemy->getAvailableHealth(), enemyHealth);
+	EXPECT_EQ(side.heroID, ObjectInstanceID());
+	side.heroID = originalHero;
+	ASSERT_TRUE(choose());
+	capture.expectSubmission(battle()->getRound(), active->unitId(), true);
+	const auto restoredRows = capture.records();
+	if(!restoredRows.empty())
+	{
+		EXPECT_EQ(restoredRows.front().at("hero_attempt"), 1);
+	}
+}
+
+TEST_F(HeroCommandAITest, ThrowingHeroSubmissionRetainsCallRowAndLiveState)
+{
+	heroTimingTest::Capture capture;
+	prepareEvaluation(false);
+	callback->throwOnSubmit = true;
+	const auto rng = rngState();
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto activeHealth = active->getAvailableHealth();
+	EXPECT_THROW(choose(), std::runtime_error);
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(active->getAvailableHealth(), activeHealth);
+	EXPECT_EQ(rngState(), rng);
+	const auto rows = capture.records();
+	ASSERT_EQ(rows.size(), heroTimingTest::optedIn() ? 1u : 0u);
+	if(!rows.empty())
+	{
+		EXPECT_EQ(rows.front().at("loop_joined"), 1);
+		EXPECT_EQ(rows.front().at("submit_calls"), 1);
+		EXPECT_EQ(rows.front().at("submit_returned"), 0);
+		EXPECT_EQ(rows.front().at("submit_threw"), 1);
+	}
+}
+
 TEST_F(HeroCommandAITest, StrongOffensiveSpellCompetesWithOrdersAndServerAccepts)
 {
+	heroTimingTest::Capture capture;
 	prepareEvaluation(true);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 99, ChangeValueMode::ABSOLUTE);
@@ -322,6 +396,7 @@ TEST_F(HeroCommandAITest, StrongOffensiveSpellCompetesWithOrdersAndServerAccepts
 	ASSERT_TRUE(choose());
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().actionType, EActionType::HERO_SPELL);
+	capture.expectSubmission(battle()->getRound(), active->unitId());
 	const auto mana = attackerSideHero->getManaAvailable();
 	executeChosen();
 	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
@@ -589,13 +664,39 @@ TEST_F(CanonicalOrderAITest, CounterchargeMakesBraceBeatHigherValuedCharge)
 	assertChosenOrder(HeroCommand::BRACE);
 }
 
+TEST_F(CanonicalOrderAITest, FocusFireSubmitRouteKeepsNativeTargetAndReceipt)
+{
+	heroTimingTest::Capture capture;
+	prepareOrder(HeroCommand::FOCUS_FIRE);
+	const auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(104), 100);
+	ASSERT_TRUE(shooter->canShoot());
+	ASSERT_TRUE(choose());
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto action = callback->submitted.front();
+	ASSERT_EQ(action.actionType, EActionType::HERO_COMMAND);
+	ASSERT_EQ(action.command, HeroCommand::FOCUS_FIRE);
+	ASSERT_EQ(action.target.size(), 1u);
+	const auto targetId = action.target.front().unitValue;
+	ASSERT_GE(targetId, 0);
+	ASSERT_TRUE(callback->getBattle(BattleID(0))->battleCanConfirmHeroCommand(
+		BattleSide::ATTACKER, HeroCommand::FOCUS_FIRE, static_cast<uint32_t>(targetId)));
+	capture.expectSubmission(battle()->getRound(), active->unitId(), true);
+	executeChosen();
+	const auto mark = battle()->getFocusFireState(BattleSide::ATTACKER);
+	ASSERT_TRUE(mark);
+	EXPECT_EQ(mark->targetUnitId, targetId);
+	EXPECT_TRUE(vstd::contains(mark->recipientUnitIds, shooter->unitId()));
+}
+
 TEST_F(CanonicalOrderAITest, EvaluatorChoosesProtectWithAnAuthoritativePair)
 {
+	heroTimingTest::Capture capture;
 	prepareOrder(HeroCommand::PROTECT);
 	const auto * ward = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(69), 100);
 	ASSERT_EQ(BattleHex::getDistance(active->getPosition(), ward->getPosition()), 1);
 
 	assertChosenOrder(HeroCommand::PROTECT);
+	capture.expectSubmission(battle()->getRound(), active->unitId(), true);
 	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(state);
 	ASSERT_NE(state->primaryTargetUnitId, state->secondaryTargetUnitId);

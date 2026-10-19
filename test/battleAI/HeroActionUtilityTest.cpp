@@ -7,6 +7,7 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/HeroActionUtility.h"
 #include "../../AI/BattleAI/HeroActionContinuation.h"
+#include "../../AI/BattleAI/HeroActionTiming.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/GameRandomizer.h"
@@ -288,15 +289,19 @@ TEST_F(HeroActionUtilityTest, DeadContinuationKeepsPriorZeroWithoutTouchingCache
 	ASSERT_FALSE(active->alive());
 	CachedAttack empty;
 	heroActionUtility::AbsoluteContinuationUtility continuation{0};
+	heroActionTiming::Continuation timing;
 	heroActionUtility::evaluateContinuation(continuation, active, false, empty, cache, model,
-		environment, 1.0f, 2, *evaluator, nullptr);
+		environment, 1.0f, 2, *evaluator, nullptr, &timing);
 	EXPECT_EQ(continuation.value, 0.0f);
+	EXPECT_EQ(timing.full.calls, 0u);
+	EXPECT_EQ(timing.cached.calls, 0u);
 }
 
 TEST_F(HeroActionUtilityTest, FullAndCachedContinuationMatchFrozenLegacyBodyBitForBit)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto rng = serialized(*gameHandler->randomizer);
+	for(const bool timed : {false, true})
 	for(const bool cached : {false, true})
 	{
 		auto reference = std::make_shared<HypotheticBattle>(environment.get(), live);
@@ -320,11 +325,15 @@ TEST_F(HeroActionUtilityTest, FullAndCachedContinuationMatchFrozenLegacyBodyBitF
 		BattleExchangeEvaluator referenceEvaluator(reference, environment, 0.5f, 2);
 		BattleExchangeEvaluator extractedEvaluator(extracted, environment, 0.5f, 2);
 		float expected = 0;
+		heroActionTiming::Continuation timing;
 		legacyContinuation(expected, referenceActive, !cached, referenceAttack, referenceCache,
 			reference, environment, 0.5f, 2, referenceEvaluator, &referenceTargets);
 		heroActionUtility::AbsoluteContinuationUtility actual{0};
 		heroActionUtility::evaluateContinuation(actual, extractedActive, !cached, extractedAttack,
-			extractedCache, extracted, environment, 0.5f, 2, extractedEvaluator, &extractedTargets);
+			extractedCache, extracted, environment, 0.5f, 2, extractedEvaluator, &extractedTargets,
+			timed ? &timing : nullptr);
+		EXPECT_EQ(timing.full.calls, timed && !cached ? 1u : 0u);
+		EXPECT_EQ(timing.cached.calls, timed && cached ? 1u : 0u);
 		EXPECT_EQ(bits(actual.value), bits(expected));
 		EXPECT_EQ(reference->battleGetUnitByID(own->unitId())->acquireState()->save().toString(),
 			extracted->battleGetUnitByID(own->unitId())->acquireState()->save().toString());

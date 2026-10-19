@@ -169,6 +169,11 @@ TEST_F(HeroQueueSelectorTest, EarnedSwiftSpawnHasExistingStablePrioritySlotBefor
 		BonusSource::OTHER, -static_cast<int64_t>(active->getMovementRange()), BonusSourceID()));
 	ASSERT_EQ(active->getMovementRange(), 0u);
 	ASSERT_GT(BattleHex::getDistance(active->getPosition(), actor->getPosition()), 2);
+	// Give the known Cure a useful target without changing the earned Swift slot.
+	ASSERT_EQ(active->getCount(), 100);
+	ASSERT_NO_FATAL_FAILURE(injure(active, active->getAvailableHealth() - 100));
+	ASSERT_EQ(active->getCount(), 100);
+	ASSERT_EQ(active->getSurvivingMissingHealth(), 100);
 	ASSERT_NO_FATAL_FAILURE(expectBeforeEnemy(actor));
 	ASSERT_NO_FATAL_FAILURE(characterize(true));
 	EXPECT_TRUE(newHorizonsSwiftRebirth::priorityEligible(*actor, battle()->getRound()));

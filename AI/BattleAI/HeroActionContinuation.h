@@ -11,6 +11,7 @@ class Environment;
 class PotentialTargets;
 class StackWithBonuses;
 struct CachedAttack;
+namespace heroActionTiming { struct Continuation; }
 
 namespace heroActionUtility
 {
@@ -22,5 +23,6 @@ void evaluateContinuation(AbsoluteContinuationUtility & continuation,
 	const CachedAttack & cachedAttack, DamageCache & innerCache,
 	const std::shared_ptr<HypotheticBattle> & state, const std::shared_ptr<Environment> & env,
 	float strengthRatio, int simulationTurnsCount,
-	const BattleExchangeEvaluator & scoreEvaluator, PotentialTargets * targets);
+	const BattleExchangeEvaluator & scoreEvaluator, PotentialTargets * targets,
+	heroActionTiming::Continuation * timing = nullptr);
 }

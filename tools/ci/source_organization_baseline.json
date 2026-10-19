@@ -75,959 +75,959 @@
     "test/battle/NewHorizonsBattleAITimingTest.cpp": {
       "functions": [
         {
-          "end": 65,
-          "start": 54,
+          "end": 66,
+          "start": 55,
           "symbol": "void expectProbeCacheClosure(const DamageCacheProbeTiming & timing)#1"
         },
         {
-          "end": 96,
-          "start": 67,
+          "end": 97,
+          "start": 68,
           "symbol": "void recordProbeCacheDelta(const std::string & prefix, const DamageCacheProbeTiming & previous, const DamageCacheProbeTiming & current)#1"
         },
         {
-          "end": 104,
-          "start": 98,
+          "end": 105,
+          "start": 99,
           "symbol": "void expectProbeCacheParent(const DamageCacheProbeTiming & cache, uint64_t parentMicroseconds, uint64_t parentCalls)#1"
         },
         {
-          "end": 122,
-          "start": 115,
+          "end": 123,
+          "start": 116,
           "symbol": "ProbeHookCallback::LuckRollRules getLuckRollRules() const override#1"
         },
         {
-          "end": 132,
-          "start": 123,
+          "end": 133,
+          "start": 124,
           "symbol": "ProbeHookCallback::const JsonNode & getHeroCommandRules() const override#1"
-        },
-        {
-          "end": 137,
-          "start": 137,
-          "symbol": "ProbeHookCallback::BattleID getBattleID() const override#1"
         },
         {
           "end": 138,
           "start": 138,
-          "symbol": "ProbeHookCallback::const scripting::Pool & getScriptContextPool() const override#1"
+          "symbol": "ProbeHookCallback::BattleID getBattleID() const override#1"
         },
         {
           "end": 139,
           "start": 139,
-          "symbol": "ProbeHookCallback::std::vector<SpellID> getUsedSpells(BattleSide side) const override#1"
+          "symbol": "ProbeHookCallback::const scripting::Pool & getScriptContextPool() const override#1"
         },
         {
           "end": 140,
           "start": 140,
+          "symbol": "ProbeHookCallback::std::vector<SpellID> getUsedSpells(BattleSide side) const override#1"
+        },
+        {
+          "end": 141,
+          "start": 141,
           "symbol": "ProbeHookCallback::uint32_t nextUnitId() const override#1"
         },
         {
-          "end": 144,
-          "start": 141,
-          "symbol": "ProbeHookCallback::int64_t getActualDamage(const DamageRange & damage, int32_t count, vstd::RNG & rng) const override#1"
-        },
-        {
           "end": 145,
-          "start": 145,
-          "symbol": "ProbeHookCallback::int3 getLocation() const override#1"
+          "start": 142,
+          "symbol": "ProbeHookCallback::int64_t getActualDamage(const DamageRange & damage, int32_t count, vstd::RNG & rng) const override#1"
         },
         {
           "end": 146,
           "start": 146,
-          "symbol": "ProbeHookCallback::BattleLayout getLayout() const override#1"
+          "symbol": "ProbeHookCallback::int3 getLocation() const override#1"
         },
         {
           "end": 147,
           "start": 147,
-          "symbol": "ProbeHookCallback::void nextRound() override#1"
+          "symbol": "ProbeHookCallback::BattleLayout getLayout() const override#1"
         },
         {
           "end": 148,
           "start": 148,
-          "symbol": "ProbeHookCallback::void nextTurn(uint32_t, BattleUnitTurnReason) override#1"
+          "symbol": "ProbeHookCallback::void nextRound() override#1"
         },
         {
           "end": 149,
           "start": 149,
-          "symbol": "ProbeHookCallback::void addUnit(uint32_t, const JsonNode &) override#1"
+          "symbol": "ProbeHookCallback::void nextTurn(uint32_t, BattleUnitTurnReason) override#1"
         },
         {
           "end": 150,
           "start": 150,
-          "symbol": "ProbeHookCallback::void updateUnit(uint32_t, const JsonNode &, int64_t) override#1"
+          "symbol": "ProbeHookCallback::void addUnit(uint32_t, const JsonNode &) override#1"
         },
         {
           "end": 151,
           "start": 151,
-          "symbol": "ProbeHookCallback::void moveUnit(uint32_t, const BattleHex &) override#1"
+          "symbol": "ProbeHookCallback::void updateUnit(uint32_t, const JsonNode &, int64_t) override#1"
         },
         {
           "end": 152,
           "start": 152,
-          "symbol": "ProbeHookCallback::void removeUnit(uint32_t) override#1"
+          "symbol": "ProbeHookCallback::void moveUnit(uint32_t, const BattleHex &) override#1"
         },
         {
           "end": 153,
           "start": 153,
-          "symbol": "ProbeHookCallback::void addUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
+          "symbol": "ProbeHookCallback::void removeUnit(uint32_t) override#1"
         },
         {
           "end": 154,
           "start": 154,
-          "symbol": "ProbeHookCallback::void updateUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
+          "symbol": "ProbeHookCallback::void addUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
         },
         {
           "end": 155,
           "start": 155,
-          "symbol": "ProbeHookCallback::void removeUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
+          "symbol": "ProbeHookCallback::void updateUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
         },
         {
           "end": 156,
           "start": 156,
-          "symbol": "ProbeHookCallback::void setWallState(EWallPart, EWallState) override#1"
+          "symbol": "ProbeHookCallback::void removeUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
         },
         {
           "end": 157,
           "start": 157,
-          "symbol": "ProbeHookCallback::void addObstacle(const ObstacleChanges &) override#1"
+          "symbol": "ProbeHookCallback::void setWallState(EWallPart, EWallState) override#1"
         },
         {
           "end": 158,
           "start": 158,
-          "symbol": "ProbeHookCallback::void updateObstacle(const ObstacleChanges &) override#1"
+          "symbol": "ProbeHookCallback::void addObstacle(const ObstacleChanges &) override#1"
         },
         {
           "end": 159,
           "start": 159,
+          "symbol": "ProbeHookCallback::void updateObstacle(const ObstacleChanges &) override#1"
+        },
+        {
+          "end": 160,
+          "start": 160,
           "symbol": "ProbeHookCallback::void removeObstacle(uint32_t) override#1"
         },
         {
-          "end": 161,
-          "start": 161,
+          "end": 162,
+          "start": 162,
           "symbol": "ProbeHookCallback::[[noreturn]] static void refuseMutation()#1"
         },
         {
-          "end": 190,
-          "start": 164,
+          "end": 191,
+          "start": 165,
           "symbol": "void expectEffectWorkBounds(const HypotheticLifecycleTiming::EffectWorkTiming & work, uint64_t parentCalls, uint64_t parentMicroseconds, bool removal)#1"
-        },
-        {
-          "end": 196,
-          "start": 196,
-          "symbol": "TimingEnvironment::explicit TimingEnvironment(std::shared_ptr<CGameState> state) : state(std::move(state))#1"
         },
         {
           "end": 197,
           "start": 197,
-          "symbol": "TimingEnvironment::const Services * services() const override#1"
+          "symbol": "TimingEnvironment::explicit TimingEnvironment(std::shared_ptr<CGameState> state) : state(std::move(state))#1"
         },
         {
           "end": 198,
           "start": 198,
-          "symbol": "TimingEnvironment::const BattleCb * battle(const BattleID & id) const override#1"
+          "symbol": "TimingEnvironment::const Services * services() const override#1"
         },
         {
           "end": 199,
           "start": 199,
+          "symbol": "TimingEnvironment::const BattleCb * battle(const BattleID & id) const override#1"
+        },
+        {
+          "end": 200,
+          "start": 200,
           "symbol": "TimingEnvironment::const GameCb * game() const override#1"
         },
         {
-          "end": 210,
-          "start": 210,
+          "end": 211,
+          "start": 211,
           "symbol": "TimingCallback::explicit TimingCallback(PlayerColor player = PlayerColor(0)) : CBattleCallback(player, nullptr)#1"
         },
         {
-          "end": 216,
-          "start": 211,
+          "end": 217,
+          "start": 212,
           "symbol": "TimingCallback::std::optional<BattleAction> makeSurrenderRetreatDecision(const BattleID &, const BattleStateInfoForRetreat &) override#1"
         },
         {
-          "end": 222,
-          "start": 217,
+          "end": 223,
+          "start": 218,
           "symbol": "TimingCallback::void battleMakeUnitAction(const BattleID &, const BattleAction & action) override#1"
         },
         {
-          "end": 230,
-          "start": 223,
+          "end": 231,
+          "start": 224,
           "symbol": "TimingCallback::void battleMakeSpellAction(const BattleID &, const BattleAction & action) override#1"
         },
         {
-          "end": 274,
-          "start": 244,
+          "end": 275,
+          "start": 245,
           "symbol": "NewHorizonsBattleAITimingTest::void prepare(bool spellbook = false, bool adjacentEnemy = false)#1"
         },
         {
-          "end": 280,
-          "start": 276,
+          "end": 281,
+          "start": 277,
           "symbol": "NewHorizonsBattleAITimingTest::void startTiming()#1"
         },
         {
-          "end": 285,
-          "start": 282,
+          "end": 286,
+          "start": 283,
           "symbol": "NewHorizonsBattleAITimingTest::CBattleAI::TimingSummary summary() const#1"
         },
         {
-          "end": 383,
-          "start": 287,
+          "end": 384,
+          "start": 288,
           "symbol": "NewHorizonsBattleAITimingTest::void expectStageClosure(const CBattleAI::TimingSummary & timing) const#1"
         },
         {
-          "end": 303,
-          "start": 294,
+          "end": 304,
+          "start": 295,
           "symbol": "NewHorizonsBattleAITimingTest::expectStageClosure(const CBattleAI::TimingSummary & timing) const::[](const CBattleAI::StageTiming & preparation, const CBattleAI::StageTiming & mainDamage, const CBattleAI::StageTiming & dpsScore, const CBattleAI::StageTiming & parent)#1"
         },
         {
-          "end": 318,
-          "start": 310,
+          "end": 319,
+          "start": 311,
           "symbol": "NewHorizonsBattleAITimingTest::expectStageClosure(const CBattleAI::TimingSummary & timing) const::[](const CBattleAI::StageTiming & expiry, const CBattleAI::StageTiming & gambler, const CBattleAI::StageTiming & roundTimed, const CBattleAI::StageTiming & activation, const CBattleAI::StageTiming & round)#1"
         },
         {
-          "end": 446,
-          "start": 385,
+          "end": 447,
+          "start": 386,
           "symbol": "NewHorizonsBattleAITimingTest::void expectSameSelectionWithAndWithoutTiming(bool adjacentEnemy)#1"
         },
         {
-          "end": 454,
-          "start": 448,
+          "end": 455,
+          "start": 449,
           "symbol": "NewHorizonsBattleAITimingTest::void expectTargetPartition(const BattleEvaluator::SelectionTiming & timing) const#1"
         },
         {
-          "end": 467,
-          "start": 456,
+          "end": 468,
+          "start": 457,
           "symbol": "NewHorizonsBattleAITimingTest::void expectEmptyTargetPartition(const CBattleAI::TimingSummary & timing) const#1"
         },
         {
-          "end": 474,
-          "start": 470,
+          "end": 475,
+          "start": 471,
           "symbol": "TEST(NewHorizonsBattleAITimingCountersTest, UnstartedAIHasNoBattleSummary)#1"
         },
         {
-          "end": 511,
-          "start": 476,
+          "end": 512,
+          "start": 477,
           "symbol": "TEST(NewHorizonsBattleAITimingCountersTest, LifecycleNanosecondsPreserveSubmicrosecondSamplesAcrossAggregation)#1"
         },
         {
-          "end": 543,
-          "start": 513,
+          "end": 544,
+          "start": 514,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, HealingTentEarlyReturnCountsOnceAndPreservesActionAndWaitFlag)#1"
         },
         {
-          "end": 557,
-          "start": 545,
+          "end": 558,
+          "start": 546,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ThrowingSubmissionStillClosesExactlyOneCallbackScope)#1"
         },
         {
-          "end": 548,
-          "start": 548,
+          "end": 549,
+          "start": 549,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ThrowingSubmissionStillClosesExactlyOneCallbackScope)::[]#1"
         },
         {
-          "end": 583,
-          "start": 559,
+          "end": 584,
+          "start": 560,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, BattleEndDefersSummaryUntilInFlightCallbackReturnsAndDoesNotRepeat)#1"
         },
         {
-          "end": 569,
-          "start": 562,
+          "end": 570,
+          "start": 563,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, BattleEndDefersSummaryUntilInFlightCallbackReturnsAndDoesNotRepeat)::[&]#1"
         },
         {
-          "end": 621,
-          "start": 585,
+          "end": 622,
+          "start": 586,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ResetKeepsOldInFlightScopeOutOfNewBattleCounters)#1"
         },
         {
-          "end": 593,
-          "start": 588,
+          "end": 594,
+          "start": 589,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ResetKeepsOldInFlightScopeOutOfNewBattleCounters)::[&]#1"
         },
         {
-          "end": 638,
-          "start": 623,
+          "end": 639,
+          "start": 624,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, EndingCallbackCanDestroyOwnerWithoutInvalidatingTimingScope)#1"
         },
         {
-          "end": 633,
-          "start": 626,
+          "end": 634,
+          "start": 627,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, EndingCallbackCanDestroyOwnerWithoutInvalidatingTimingScope)::[&]#1"
         },
         {
-          "end": 652,
-          "start": 640,
+          "end": 653,
+          "start": 641,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ObservedRoundNotificationsAreDistinctAndResetWithBattleStart)#1"
         },
         {
-          "end": 673,
-          "start": 654,
+          "end": 674,
+          "start": 655,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryCallbackClassifiesConstructionSelectionAndDirectSubmission)#1"
         },
         {
-          "end": 694,
-          "start": 675,
+          "end": 695,
+          "start": 676,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, HeroActionStageIncludesInternalSubmissionWithoutDoubleCounting)#1"
         },
         {
-          "end": 699,
-          "start": 696,
+          "end": 700,
+          "start": 697,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, DistantSelectionTimingPreservesUntimedDecisionAndLiveState)#1"
         },
         {
-          "end": 704,
-          "start": 701,
+          "end": 705,
+          "start": 702,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, AdjacentSelectionTimingPreservesUntimedDecisionAndLiveState)#1"
         },
         {
-          "end": 730,
-          "start": 706,
+          "end": 731,
+          "start": 707,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryBattleEndRetainsClosedTargetPartitionAfterSubmission)#1"
         },
         {
-          "end": 716,
-          "start": 710,
+          "end": 717,
+          "start": 711,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryBattleEndRetainsClosedTargetPartitionAfterSubmission)::[&]#1"
         },
         {
-          "end": 770,
-          "start": 732,
+          "end": 771,
+          "start": 733,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryResetExcludesOldTargetPartitionFromNewSummary)#1"
         },
         {
-          "end": 740,
-          "start": 736,
+          "end": 741,
+          "start": 737,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryResetExcludesOldTargetPartitionFromNewSummary)::[&]#1"
         },
         {
-          "end": 782,
-          "start": 775,
+          "end": 783,
+          "start": 776,
           "symbol": "NewHorizonsTargetPartitionTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 829,
-          "start": 785,
+          "end": 830,
+          "start": 786,
           "symbol": "TEST_F(NewHorizonsTargetPartitionTest, DefensiveStancePartitionPreservesNullSinkDecisionAndLiveState)#1"
         },
         {
-          "end": 846,
-          "start": 831,
+          "end": 847,
+          "start": 832,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryThrowingSubmissionRetainsClosedSelectionPartition)#1"
         },
         {
-          "end": 835,
-          "start": 835,
+          "end": 836,
+          "start": 836,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryThrowingSubmissionRetainsClosedSelectionPartition)::[]()#1"
         },
         {
-          "end": 898,
-          "start": 848,
+          "end": 899,
+          "start": 849,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, LongGroundMovementTimingPreservesUntimedDestinationAndLiveState)#1"
         },
         {
-          "end": 919,
-          "start": 900,
+          "end": 920,
+          "start": 901,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, EmptyMovementDestinationClosesParentWithoutBlockingQueries)#1"
         },
         {
-          "end": 930,
-          "start": 924,
+          "end": 931,
+          "start": 925,
           "symbol": "NewHorizonsExchangeReadParityTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 1088,
-          "start": 932,
+          "end": 1089,
+          "start": 933,
           "symbol": "NewHorizonsExchangeReadParityTest::void expectUnusedReadParity(bool stateful)#1"
         },
         {
-          "end": 1012,
-          "start": 1009,
+          "end": 1013,
+          "start": 1010,
           "symbol": "NewHorizonsExchangeReadParityTest::expectUnusedReadParity(bool stateful)::[this](const AttackPossibility & candidate)#1"
         },
         {
-          "end": 1035,
-          "start": 1032,
+          "end": 1036,
+          "start": 1033,
           "symbol": "NewHorizonsExchangeReadParityTest::expectUnusedReadParity(bool stateful)::[this](const battle::Unit * unit)#1"
         },
         {
-          "end": 1094,
-          "start": 1091,
+          "end": 1095,
+          "start": 1092,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, MixedMeleeShootersNormalTwoRoundScoreAndActionMatchUnusedReads)#1"
         },
         {
-          "end": 1099,
-          "start": 1096,
+          "end": 1100,
+          "start": 1097,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, FrozenNoQuarterControllerAndFocusFireForecastMatchUnusedReads)#1"
         },
         {
-          "end": 1111,
-          "start": 1104,
+          "end": 1112,
+          "start": 1105,
           "symbol": "NewHorizonsExchangeTimingTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 1150,
-          "start": 1113,
+          "end": 1151,
+          "start": 1114,
           "symbol": "NewHorizonsExchangeTimingTest::void expectLifecycleSubsets(const BattleMovementTiming::ExchangeTiming & exchange) const#1"
         },
         {
-          "end": 1134,
-          "start": 1125,
+          "end": 1135,
+          "start": 1126,
           "symbol": "NewHorizonsExchangeTimingTest::expectLifecycleSubsets(const BattleMovementTiming::ExchangeTiming & exchange) const::[](const HypotheticLifecycleTiming::EffectWorkTiming & work, const HypotheticLifecycleTiming::StageTiming & parent)#1"
         },
         {
-          "end": 1167,
-          "start": 1152,
+          "end": 1168,
+          "start": 1153,
           "symbol": "NewHorizonsExchangeTimingTest::void expectBestTargetClosure(const BattleBestTargetTiming & timing) const#1"
         },
         {
-          "end": 1181,
-          "start": 1169,
+          "end": 1182,
+          "start": 1170,
           "symbol": "NewHorizonsExchangeTimingTest::void forecastBestTarget(const std::shared_ptr<HypotheticBattle> & model, BattleBestTargetTiming * timing, std::optional<EvaluationResult> & result, const battle::Unit * selectedActor = nullptr)#1"
         },
         {
-          "end": 1202,
-          "start": 1183,
+          "end": 1203,
+          "start": 1184,
           "symbol": "NewHorizonsExchangeTimingTest::void expectExchangeClosure(const BattleMovementTiming & timing) const#1"
         },
         {
-          "end": 1216,
-          "start": 1204,
+          "end": 1217,
+          "start": 1205,
           "symbol": "NewHorizonsExchangeTimingTest::void forecastMove(const std::shared_ptr<HypotheticBattle> & model, BattleMovementTiming * timing, MoveTarget & result)#1"
         },
         {
-          "end": 1270,
-          "start": 1219,
+          "end": 1271,
+          "start": 1220,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, BestTargetWaitAndNormalPartitionAndMatchNullSink)#1"
         },
         {
-          "end": 1311,
-          "start": 1272,
+          "end": 1312,
+          "start": 1273,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, BestTargetAlreadyWaitedSkipsWaitBuckets)#1"
         },
         {
-          "end": 1423,
-          "start": 1313,
+          "end": 1424,
+          "start": 1314,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAndMatchesNullSink)#1"
         },
         {
-          "end": 1465,
-          "start": 1425,
+          "end": 1466,
+          "start": 1426,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, AdjacentTargetsReturnBeforeExchangeAndKeepBucketsZero)#1"
         },
         {
-          "end": 1500,
-          "start": 1467,
+          "end": 1501,
+          "start": 1468,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCountsAndClosedNestedSummary)#1"
         },
         {
-          "end": 1471,
-          "start": 1471,
+          "end": 1472,
+          "start": 1472,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCountsAndClosedNestedSummary)::[]#1"
         },
         {
-          "end": 1583,
-          "start": 1502,
+          "end": 1584,
+          "start": 1503,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIgnoreAppliedOrNullActors)#1"
         },
         {
-          "end": 1510,
-          "start": 1505,
+          "end": 1511,
+          "start": 1506,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIgnoreAppliedOrNullActors)::[&]#1"
         },
         {
-          "end": 1594,
-          "start": 1588,
+          "end": 1595,
+          "start": 1589,
           "symbol": "NewHorizonsOriginalBearerBindingTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 1603,
-          "start": 1596,
+          "end": 1604,
+          "start": 1597,
           "symbol": "NewHorizonsOriginalBearerBindingTest::static Bonus sentinel(int value)#1"
         },
         {
-          "end": 1611,
-          "start": 1605,
+          "end": 1612,
+          "start": 1606,
           "symbol": "NewHorizonsOriginalBearerBindingTest::static CSelector sentinels()#1"
         },
         {
-          "end": 1610,
-          "start": 1607,
+          "end": 1611,
+          "start": 1608,
           "symbol": "NewHorizonsOriginalBearerBindingTest::sentinels()::[](const Bonus * bonus)#1"
         },
         {
-          "end": 1619,
-          "start": 1613,
+          "end": 1620,
+          "start": 1614,
           "symbol": "NewHorizonsOriginalBearerBindingTest::static std::vector<JsonNode> metadata(const TConstBonusListPtr & bonuses)#1"
         },
         {
-          "end": 1634,
-          "start": 1621,
+          "end": 1635,
+          "start": 1622,
           "symbol": "NewHorizonsOriginalBearerBindingTest::static void expectCurrentQueries(const StackWithBonuses & projected, const IBonusBearer & source)#1"
         },
         {
-          "end": 1631,
-          "start": 1628,
+          "end": 1632,
+          "start": 1629,
           "symbol": "NewHorizonsOriginalBearerBindingTest::expectCurrentQueries(const StackWithBonuses & projected, const IBonusBearer & source)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 1700,
-          "start": 1637,
+          "end": 1701,
+          "start": 1638,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, UnitAndStateConstructorsKeepLiveStackedAndRawQueries)#1"
         },
         {
-          "end": 1651,
-          "start": 1646,
+          "end": 1652,
+          "start": 1647,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, UnitAndStateConstructorsKeepLiveStackedAndRawQueries)::[&]#1"
         },
         {
-          "end": 1686,
-          "start": 1686,
+          "end": 1687,
+          "start": 1687,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, UnitAndStateConstructorsKeepLiveStackedAndRawQueries)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 1690,
-          "start": 1690,
+          "end": 1691,
+          "start": 1691,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, UnitAndStateConstructorsKeepLiveStackedAndRawQueries)::[](const Bonus * bonus)#2"
         },
         {
-          "end": 1749,
-          "start": 1702,
+          "end": 1750,
+          "start": 1703,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, SummonAndNestedConstructorsRetainOwnedBearerAfterSourceRelease)#1"
         },
         {
-          "end": 1795,
-          "start": 1751,
+          "end": 1796,
+          "start": 1752,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, NonUnitBearerFallbackKeepsLiveStackedAndRawQueries)#1"
         },
         {
-          "end": 1763,
-          "start": 1758,
+          "end": 1764,
+          "start": 1759,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, NonUnitBearerFallbackKeepsLiveStackedAndRawQueries)::NonUnitBearerStack::NonUnitBearerStack(const CStackBasicDescriptor & descriptor, const CStack & source, const IBonusBearer & bearer) : CStack(&descriptor, source.unitOwner(), source.unitId(), source.unitSide(), source.unitSlot()), bearer(bearer)#1"
         },
         {
-          "end": 1764,
-          "start": 1764,
+          "end": 1765,
+          "start": 1765,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, NonUnitBearerFallbackKeepsLiveStackedAndRawQueries)::NonUnitBearerStack::const IBonusBearer * getBonusBearer() const override#1"
         },
         {
-          "end": 1807,
-          "start": 1800,
+          "end": 1808,
+          "start": 1801,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 1813,
-          "start": 1809,
+          "end": 1814,
+          "start": 1810,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static Bonus genericRecord(int value = 103, SpellID sid = SpellID::HASTE)#1"
         },
         {
-          "end": 1822,
-          "start": 1815,
+          "end": 1823,
+          "start": 1816,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static TConstBonusListPtr records(const StackWithBonuses & unit)#1"
         },
         {
-          "end": 1821,
-          "start": 1817,
+          "end": 1822,
+          "start": 1818,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::records(const StackWithBonuses & unit)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 1830,
-          "start": 1824,
+          "end": 1831,
+          "start": 1825,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static std::vector<JsonNode> values(const TConstBonusListPtr & bonuses)#1"
         },
         {
-          "end": 1846,
-          "start": 1832,
+          "end": 1847,
+          "start": 1833,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static std::string firstOrderedMismatch(const std::vector<JsonNode> & actual, const std::vector<JsonNode> & expected)#1"
         },
         {
-          "end": 1861,
-          "start": 1848,
+          "end": 1862,
+          "start": 1849,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static void expectSameBonusMultiset(const std::vector<JsonNode> & actual, const std::vector<JsonNode> & expected)#1"
         },
         {
-          "end": 2048,
-          "start": 1863,
+          "end": 2049,
+          "start": 1864,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::void expectGamblerRemovalParity(bool withPenalty, bool timeStopped)#1"
         },
         {
-          "end": 1914,
-          "start": 1914,
+          "end": 1915,
+          "start": 1915,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::expectGamblerRemovalParity(bool withPenalty, bool timeStopped)::[](const Bonus *)#1"
         },
         {
-          "end": 1985,
-          "start": 1981,
+          "end": 1986,
+          "start": 1982,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::expectGamblerRemovalParity(bool withPenalty, bool timeStopped)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 2054,
-          "start": 2051,
+          "end": 2055,
+          "start": 2052,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DedicatedGamblerRemovalMatchesGenericWithControlStateAndRawAliases)#1"
         },
         {
-          "end": 2059,
-          "start": 2056,
+          "end": 2060,
+          "start": 2057,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DedicatedGamblerNoMatchMatchesGenericWhileTimeStopped)#1"
         },
         {
-          "end": 2133,
-          "start": 2061,
+          "end": 2134,
+          "start": 2062,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)#1"
         },
         {
-          "end": 2070,
-          "start": 2070,
+          "end": 2071,
+          "start": 2071,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[](const Bonus *)#1"
         },
         {
-          "end": 2074,
-          "start": 2071,
+          "end": 2075,
+          "start": 2072,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 2082,
-          "start": 2075,
+          "end": 2083,
+          "start": 2076,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[&all](const StackWithBonuses & unit)#1"
         },
         {
-          "end": 2110,
-          "start": 2105,
+          "end": 2111,
+          "start": 2106,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[](const std::function<void()> & action)#1"
         },
         {
-          "end": 2114,
-          "start": 2111,
+          "end": 2115,
+          "start": 2112,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[&]#1"
         },
         {
-          "end": 2113,
-          "start": 2113,
+          "end": 2114,
+          "start": 2114,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::<anonymous>::[](const Bonus *)#1"
         },
         {
-          "end": 2121,
-          "start": 2121,
+          "end": 2122,
+          "start": 2122,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[&]#2"
         },
         {
-          "end": 2171,
-          "start": 2135,
+          "end": 2172,
+          "start": 2136,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DistinctEqualAddsKeepIdentityAndRemovalPreservesSourceSidValueDifferences)#1"
         },
         {
-          "end": 2158,
-          "start": 2158,
+          "end": 2159,
+          "start": 2159,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DistinctEqualAddsKeepIdentityAndRemovalPreservesSourceSidValueDifferences)::[pointer](const Bonus * bonus)#1"
         },
         {
-          "end": 2207,
-          "start": 2173,
+          "end": 2208,
+          "start": 2174,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NestedRemovalAndLaterEqualChildAddDoNotBecomeValueTombstones)#1"
         },
         {
-          "end": 2185,
-          "start": 2185,
+          "end": 2186,
+          "start": 2186,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NestedRemovalAndLaterEqualChildAddDoNotBecomeValueTombstones)::[first](const Bonus * bonus)#1"
         },
         {
-          "end": 2200,
-          "start": 2200,
+          "end": 2201,
+          "start": 2201,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NestedRemovalAndLaterEqualChildAddDoNotBecomeValueTombstones)::[second](const Bonus * bonus)#1"
         },
         {
-          "end": 2243,
-          "start": 2209,
+          "end": 2244,
+          "start": 2210,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, GenericUpdateFallbackHasStableIdentityAcrossQueriesAndNestedRemoval)#1"
         },
         {
-          "end": 2224,
-          "start": 2224,
+          "end": 2225,
+          "start": 2225,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, GenericUpdateFallbackHasStableIdentityAcrossQueriesAndNestedRemoval)::[first](const Bonus * bonus)#1"
         },
         {
-          "end": 2236,
-          "start": 2236,
+          "end": 2237,
+          "start": 2237,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, GenericUpdateFallbackHasStableIdentityAcrossQueriesAndNestedRemoval)::[second](const Bonus * bonus)#1"
         },
         {
-          "end": 2312,
-          "start": 2245,
+          "end": 2313,
+          "start": 2246,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, RepeatedCaptureKeepsRetainedSpellAndMarkedGroupViewsIndependent)#1"
         },
         {
-          "end": 2266,
-          "start": 2262,
+          "end": 2267,
+          "start": 2263,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, RepeatedCaptureKeepsRetainedSpellAndMarkedGroupViewsIndependent)::[group](const Bonus * bonus)#1"
         },
         {
-          "end": 2288,
-          "start": 2288,
+          "end": 2289,
+          "start": 2289,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, RepeatedCaptureKeepsRetainedSpellAndMarkedGroupViewsIndependent)::[](const Bonus *)#1"
         },
         {
-          "end": 2327,
-          "start": 2320,
+          "end": 2328,
+          "start": 2321,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 2649,
-          "start": 2329,
+          "end": 2650,
+          "start": 2330,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::void measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)#1"
         },
         {
-          "end": 2384,
-          "start": 2380,
+          "end": 2385,
+          "start": 2381,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[this, onWait]#1"
         },
         {
-          "end": 2402,
-          "start": 2385,
+          "end": 2403,
+          "start": 2386,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[](const auto & value)#1"
         },
         {
-          "end": 2423,
-          "start": 2403,
+          "end": 2424,
+          "start": 2404,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[&](const auto & node)#1"
         },
         {
-          "end": 2480,
-          "start": 2424,
+          "end": 2481,
+          "start": 2425,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[&]#1"
         },
         {
-          "end": 2550,
-          "start": 2546,
+          "end": 2551,
+          "start": 2547,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[&](const char * name, const auto & previous, const auto & current)#1"
         },
         {
-          "end": 2611,
-          "start": 2593,
+          "end": 2612,
+          "start": 2594,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[&](const char * context, const HypotheticLifecycleTiming::EffectWorkTiming & previous, const HypotheticLifecycleTiming::EffectWorkTiming & current)#1"
         },
         {
-          "end": 2655,
-          "start": 2652,
+          "end": 2656,
+          "start": 2653,
           "symbol": "TEST_F(NewHorizonsBattleDwarfWaitTimingTest, OneStackNormalTwoRoundDecision)#1"
         },
         {
-          "end": 2660,
-          "start": 2657,
+          "end": 2661,
+          "start": 2658,
           "symbol": "TEST_F(NewHorizonsBattleDwarfWaitTimingTest, SevenStacksNormalTwoRoundDecisions)#1"
         },
         {
-          "end": 2668,
-          "start": 2662,
+          "end": 2669,
+          "start": 2663,
           "symbol": "TEST_F(NewHorizonsBattleDwarfWaitTimingTest, SevenStacksAgainstSevenOpposingStacksNormalTwoRoundDecisions)#1"
         },
         {
-          "end": 2685,
-          "start": 2684,
+          "end": 2686,
+          "start": 2685,
           "symbol": "WaitDiagnosticTarget::WaitDiagnosticTarget(std::weak_ptr<WaitDiagnosticMessages> value, std::string rowPrefix) : messages(std::move(value)), prefix(std::move(rowPrefix))#1"
         },
         {
-          "end": 2698,
-          "start": 2686,
+          "end": 2699,
+          "start": 2687,
           "symbol": "WaitDiagnosticTarget::void write(const LogRecord & record) override#1"
         },
         {
-          "end": 2715,
-          "start": 2709,
+          "end": 2716,
+          "start": 2710,
           "symbol": "ScopedWaitDiagnostics::explicit ScopedWaitDiagnostics(ELogLevel::ELogLevel requestedAiLevel = ELogLevel::DEBUG, std::string rowPrefix = \"NH_WAIT_CALLBACK_TIMING \")#1"
         },
         {
-          "end": 2723,
-          "start": 2716,
+          "end": 2724,
+          "start": 2717,
           "symbol": "ScopedWaitDiagnostics::~ScopedWaitDiagnostics()#1"
         },
         {
-          "end": 2731,
-          "start": 2726,
+          "end": 2732,
+          "start": 2727,
           "symbol": "ScopedWaitDiagnostics::std::vector<std::string> rows() const#1"
         },
         {
-          "end": 2738,
-          "start": 2734,
+          "end": 2739,
+          "start": 2735,
           "symbol": "bool requestedWaitDiagnostics()#1"
         },
         {
-          "end": 2756,
-          "start": 2740,
+          "end": 2757,
+          "start": 2741,
           "symbol": "unsigned int configuredWaitDiagnosticLimit()#1"
         },
         {
-          "end": 2771,
-          "start": 2758,
+          "end": 2772,
+          "start": 2759,
           "symbol": "std::map<std::string, int64_t> waitFields(const std::string & row)#1"
         },
         {
-          "end": 2810,
-          "start": 2777,
+          "end": 2811,
+          "start": 2778,
           "symbol": "NewHorizonsWaitDiagnosticTest::void expectRecord(const ScopedWaitDiagnostics & capture, bool returned, bool threw, bool unwinding)#1"
         },
         {
-          "end": 2818,
-          "start": 2813,
+          "end": 2819,
+          "start": 2814,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitRecordsMatchOptInAndCapturedIdentity)#1"
         },
         {
-          "end": 2896,
-          "start": 2820,
+          "end": 2897,
+          "start": 2821,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ProbeCacheAggregateRowsCarryCapturedBattleAndPlayerIdentity)#1"
         },
         {
-          "end": 2906,
-          "start": 2898,
+          "end": 2907,
+          "start": 2899,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, DisabledAiLoggerNaturalWaitEmitsNoDiagnostic)#1"
         },
         {
-          "end": 2913,
-          "start": 2908,
+          "end": 2914,
+          "start": 2909,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ThrowingNaturalWaitRetainsIdentityAndRethrows)#1"
         },
         {
-          "end": 2911,
-          "start": 2911,
+          "end": 2912,
+          "start": 2912,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ThrowingNaturalWaitRetainsIdentityAndRethrows)::[]#1"
         },
         {
-          "end": 2925,
-          "start": 2915,
+          "end": 2926,
+          "start": 2916,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitOwnerDestructionKeepsSharedRecordAlive)#1"
         },
         {
-          "end": 2922,
-          "start": 2918,
+          "end": 2923,
+          "start": 2919,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitOwnerDestructionKeepsSharedRecordAlive)::[this]#1"
         },
         {
-          "end": 2956,
-          "start": 2927,
+          "end": 2957,
+          "start": 2928,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ConfiguredCapMatchesObservedNaturalWaitCount)#1"
         },
         {
-          "end": 2932,
-          "start": 2932,
+          "end": 2933,
+          "start": 2933,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ConfiguredCapMatchesObservedNaturalWaitCount)::[](const auto & action)#1"
         },
         {
-          "end": 2980,
-          "start": 2958,
+          "end": 2981,
+          "start": 2959,
           "symbol": "TEST(DamageCacheProbeTimingTest, AggregationPreservesNanosecondsAndExcludesInFlightBookkeeping)#1"
         },
         {
-          "end": 3063,
-          "start": 2982,
+          "end": 3064,
+          "start": 2983,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CanonicalOrderlessCacheMatchesDirectDamageAcrossCountExpiryAndDefend)#1"
         },
         {
-          "end": 3009,
-          "start": 2996,
+          "end": 3010,
+          "start": 2997,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CanonicalOrderlessCacheMatchesDirectDamageAcrossCountExpiryAndDefend)::[&]()#1"
         },
         {
-          "end": 3038,
-          "start": 3033,
+          "end": 3039,
+          "start": 3034,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CanonicalOrderlessCacheMatchesDirectDamageAcrossCountExpiryAndDefend)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 3120,
-          "start": 3065,
+          "end": 3121,
+          "start": 3066,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheResolvesAcceptedProtectAdjacencyAndSpentBudget)#1"
         },
         {
-          "end": 3094,
-          "start": 3077,
+          "end": 3095,
+          "start": 3078,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheResolvesAcceptedProtectAdjacencyAndSpentBudget)::[&](const std::shared_ptr<HypotheticBattle> & state, uint32_t resolvedId)#1"
         },
         {
-          "end": 3156,
-          "start": 3122,
+          "end": 3157,
+          "start": 3123,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheMatchesAcceptedFocusFireControlAndRoundExpiry)#1"
         },
         {
-          "end": 3142,
-          "start": 3133,
+          "end": 3143,
+          "start": 3134,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheMatchesAcceptedFocusFireControlAndRoundExpiry)::[&]()#1"
         },
         {
-          "end": 3214,
-          "start": 3158,
+          "end": 3215,
+          "start": 3159,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ProbeCacheLegacyHitsAndImmediateParentFallbackPreserveNullSinkValues)#1"
         },
         {
-          "end": 3304,
-          "start": 3216,
+          "end": 3305,
+          "start": 3217,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheCurrentFocusFireStateAndScoresMatchNullSink)#1"
         },
         {
-          "end": 3339,
-          "start": 3306,
+          "end": 3340,
+          "start": 3307,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheExceptionsRestoreDepthBeforeSubsequentDynamicCalls)#1"
         },
         {
-          "end": 3323,
-          "start": 3323,
+          "end": 3324,
+          "start": 3324,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheExceptionsRestoreDepthBeforeSubsequentDynamicCalls)::[]#1"
         },
         {
-          "end": 3325,
-          "start": 3325,
+          "end": 3326,
+          "start": 3326,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheExceptionsRestoreDepthBeforeSubsequentDynamicCalls)::[]#2"
         },
         {
-          "end": 3363,
-          "start": 3341,
+          "end": 3364,
+          "start": 3342,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheDynamicReentryIsIncludedOnceAndSuppressedLocally)#1"
         },
         {
-          "end": 3352,
-          "start": 3352,
+          "end": 3353,
+          "start": 3353,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheDynamicReentryIsIncludedOnceAndSuppressedLocally)::[&]#1"
         },
         {
-          "end": 3625,
-          "start": 3365,
+          "end": 3657,
+          "start": 3366,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)#1"
         },
         {
-          "end": 3401,
-          "start": 3384,
+          "end": 3403,
+          "start": 3386,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)::[](const auto & value)#1"
         },
         {
-          "end": 3422,
-          "start": 3402,
+          "end": 3424,
+          "start": 3404,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)::[&](const auto & node)#1"
         },
         {
-          "end": 3479,
-          "start": 3423,
+          "end": 3481,
+          "start": 3425,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)::[&]#1"
         },
         {
-          "end": 3660,
-          "start": 3627,
+          "end": 3692,
+          "start": 3659,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCachePreflightReentryAndDeadReturnKeepClosedOuterWall)#1"
         },
         {
-          "end": 3638,
-          "start": 3638,
+          "end": 3670,
+          "start": 3670,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCachePreflightReentryAndDeadReturnKeepClosedOuterWall)::[&]#1"
         },
         {
-          "end": 3749,
-          "start": 3662,
+          "end": 3781,
+          "start": 3694,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheNormalForecastPreservesNaturalActionDestinationAndLiveState)#1"
         },
         {
-          "end": 3682,
-          "start": 3677,
+          "end": 3714,
+          "start": 3709,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheNormalForecastPreservesNaturalActionDestinationAndLiveState)::[](const auto & value)#1"
         },
         {
-          "end": 3807,
-          "start": 3751,
+          "end": 3839,
+          "start": 3783,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheAdjacentSingletonRetainsAdmissionWithoutTargetComparisons)#1"
         }
       ],
-      "rationale": "Complete 3807-line source review covers all 190 callable bodies: test bodies, fixture/environment/callback methods, inline and local-class methods, destructor, templated/generic and nested lambdas, including capture-only callbacks. Default empty std::function at line 2330 causes recovery inside the correctly bounded measureNaturalRound signature; no body omitted. Deleted operations, forward declarations, assertion macros and ordinary initializer braces are not implementations.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "d2825da025ac85ca65aa8d566e3975de38b161d5f0c2d73fe21716a6af45e758"
+      "rationale": "Complete 3839-line source inventory preserves all 190 reviewed callable symbols and maps every start/end through the insertion-only 3837-line reviewed beforeimage. The only new lines brace one existing GTest conditional inside the shipping natural-callback test (3366-3657, 290 to292 lines); no callable bodies or assertions added/removed. Earlier bounded Hero timing observation and unchanged runtime scenario remain scoped test debt. Parser callable set matches all mapped spans; default empty std::function at line 2331 remains recovery inside the correctly bounded measureNaturalRound signature. No production size waiver, runtime acceptance or future growth permission.",
+      "review": "hero-action-call-test-brace-inventory-refresh-v1",
+      "sha256": "3d1bf614ee51de765dc976590c2cd6a9560ae457637c5b55f2886f3a177c3f05"
     },
     "test/battle/NewHorizonsBattleFormHealthTest.cpp": {
       "functions": [
@@ -17340,6 +17340,38 @@
           "end": 105
         }
       ]
+    },
+    "AI/BattleAI/HeroActionTiming.h": {
+      "sha256": "fe2fa9323d133d78296a85c522963a45ba19ff9229eef07ea3a56a7d07fc50f1",
+      "review": "hero-action-timing-header-functions-v1",
+      "rationale": "Complete124-line header review identifies five inline bodies: Candidates::size and Call::enabled, identify, sink and candidateSlots. Other methods are declarations or deleted operations. Parser recovery at the exported unsigned-int declaration on line101 does not conceal a callable body.",
+      "functions": [
+        {
+          "symbol": "heroActionTiming::Candidates::size_t size() const#1",
+          "start": 68,
+          "end": 68
+        },
+        {
+          "symbol": "heroActionTiming::Call::bool enabled() const#1",
+          "start": 117,
+          "end": 117
+        },
+        {
+          "symbol": "heroActionTiming::Call::void identify(Identity captured)#1",
+          "start": 118,
+          "end": 118
+        },
+        {
+          "symbol": "heroActionTiming::Call::Summary * sink()#1",
+          "start": 121,
+          "end": 121
+        },
+        {
+          "symbol": "heroActionTiming::Call::Candidates & candidateSlots()#1",
+          "start": 122,
+          "end": 122
+        }
+      ]
     }
   },
   "schema": 1,
@@ -17488,14 +17520,14 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "exception",
-      "lines": 5885,
-      "sha256": "b1394c3b4205e179ab5532dc1c5407d0cf6f5d3993f44a06fd51fb6259c8919c",
+      "lines": 5830,
+      "sha256": "5af83a65b6db28338db4b519efa423a14560fe2e7679cf6d9ed49233009f4cb7",
       "owner": "ai_engineer",
-      "review": "IR-COMMON-LEGACY-CONTROLLER-FINAL-20261017",
-      "rationale": "Common utility/continuation extraction shrinks public evaluator5983 to final5885, attemptCastingSpell1417 to1316 and parallel candidate body789 to688. The focused legacy correction adds exactly11 compatibility-routing lines over common5874/1305/677; the prior raw Order score addition does not return. Legacy bonuses/mark use their saved-rule owner and canonical effects use their bound precleanup snapshot. Both reach the same existing one-action exchange utility. This bounded correctness repair is accepted before further extraction, with no perfect-future-model claim.",
-      "review_scope": "typed-packet-admission-and-prepared-state-commit",
+      "review": "hero-action-timing-submission-extraction-v1",
+      "rationale": "Selected Hero command/spell submission moves unchanged into a focused 95-line unit with a 75-line method. The evaluator shrinks5885 to5830 and attemptCastingSpell1316 to1260. Candidate projection remains688 lines: its only edit passes an optional observational per-candidate timing sink; no eligibility, scoring, branch order, FP grouping or RNG changes are authorized. Independent source review is distinct from native parity and runtime acceptance.",
+      "review_scope": "observational-timing-and-exact-submission-extraction",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must extract the remaining per-candidate Hero Action projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy in the selector; the owner receives the candidate, prepared admission, private branch/cache and explicit original identities, and returns the existing absolute score/continuation result. Preserve spell-specific ordering, early exits and FP grouping. Require current spell-formula/Strong controls plus real canonical and saved1/2/early3 Order selector/native acceptance, rejection isolation and RNG controls. Freeze exact5885/1316/688 limits; no blanket hotspot waiver."
+      "deferral": "AI engineer must extract the remaining per-candidate projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy and exact ordered conditions, early exits, FP grouping, private branch/cache and original identities. Require canonical and historical selector, rejection isolation, packet/state and RNG parity controls. Exact remaining caps are evaluator5830, attempt1260 and candidate688; this observational routing exception does not authorize broader growth."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -17516,26 +17548,26 @@
       "sha256": "c65dbb7341713c3e81f4ec9bf615271846947d96a0639b17d03934805fc88b97"
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)::[&](const tbb::blocked_range<size_t> & r)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 688,
-      "sha256": "ecea598dd337663713be13e3cf4dda6e250ff6d7ce955f561ae8950aee566ca3",
+      "sha256": "45d309eee0b9e3b9147fce28ed28559afa91d2fc600f9f692abc2c9295bc3bf6",
       "owner": "ai_engineer",
-      "review": "IR-COMMON-LEGACY-CONTROLLER-FINAL-20261017",
-      "rationale": "Common utility/continuation extraction shrinks public evaluator5983 to final5885, attemptCastingSpell1417 to1316 and parallel candidate body789 to688. The focused legacy correction adds exactly11 compatibility-routing lines over common5874/1305/677; the prior raw Order score addition does not return. Legacy bonuses/mark use their saved-rule owner and canonical effects use their bound precleanup snapshot. Both reach the same existing one-action exchange utility. This bounded correctness repair is accepted before further extraction, with no perfect-future-model claim.",
-      "review_scope": "typed-packet-admission-and-prepared-state-commit",
+      "review": "hero-action-timing-submission-extraction-v1",
+      "rationale": "Selected Hero command/spell submission moves unchanged into a focused 95-line unit with a 75-line method. The evaluator shrinks5885 to5830 and attemptCastingSpell1316 to1260. Candidate projection remains688 lines: its only edit passes an optional observational per-candidate timing sink; no eligibility, scoring, branch order, FP grouping or RNG changes are authorized. Independent source review is distinct from native parity and runtime acceptance.",
+      "review_scope": "observational-timing-and-exact-submission-extraction",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must extract the remaining per-candidate Hero Action projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy in the selector; the owner receives the candidate, prepared admission, private branch/cache and explicit original identities, and returns the existing absolute score/continuation result. Preserve spell-specific ordering, early exits and FP grouping. Require current spell-formula/Strong controls plus real canonical and saved1/2/early3 Order selector/native acceptance, rejection isolation and RNG controls. Freeze exact5885/1316/688 limits; no blanket hotspot waiver."
+      "deferral": "AI engineer must extract the remaining per-candidate projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy and exact ordered conditions, early exits, FP grouping, private branch/cache and original identities. Require canonical and historical selector, rejection isolation, packet/state and RNG parity controls. Exact remaining caps are evaluator5830, attempt1260 and candidate688; this observational routing exception does not authorize broader growth."
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)#1": {
-      "kind": "legacy",
-      "lines": 1316,
-      "sha256": "3d20308f37b52b8f2b3a39888379a69d305760b666d7e40f1e4a8f12d7fa1b1f",
+      "kind": "exception",
+      "lines": 1260,
+      "sha256": "3bfe8baa5b7db1fac6045eebaacf198b2df78f05ad03de44fc19c0294622a823",
       "owner": "ai_engineer",
-      "review": "IR-COMMON-LEGACY-CONTROLLER-FINAL-20261017",
-      "rationale": "Common utility/continuation extraction shrinks public evaluator5983 to final5885, attemptCastingSpell1417 to1316 and parallel candidate body789 to688. The focused legacy correction adds exactly11 compatibility-routing lines over common5874/1305/677; the prior raw Order score addition does not return. Legacy bonuses/mark use their saved-rule owner and canonical effects use their bound precleanup snapshot. Both reach the same existing one-action exchange utility. This bounded correctness repair is accepted before further extraction, with no perfect-future-model claim.",
-      "review_scope": "typed-packet-admission-and-prepared-state-commit",
+      "review": "hero-action-timing-submission-extraction-v1",
+      "rationale": "Selected Hero command/spell submission moves unchanged into a focused 95-line unit with a 75-line method. The evaluator shrinks5885 to5830 and attemptCastingSpell1316 to1260. Candidate projection remains688 lines: its only edit passes an optional observational per-candidate timing sink; no eligibility, scoring, branch order, FP grouping or RNG changes are authorized. Independent source review is distinct from native parity and runtime acceptance.",
+      "review_scope": "observational-timing-and-exact-submission-extraction",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must extract the remaining per-candidate Hero Action projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy in the selector; the owner receives the candidate, prepared admission, private branch/cache and explicit original identities, and returns the existing absolute score/continuation result. Preserve spell-specific ordering, early exits and FP grouping. Require current spell-formula/Strong controls plus real canonical and saved1/2/early3 Order selector/native acceptance, rejection isolation and RNG controls. Freeze exact5885/1316/688 limits; no blanket hotspot waiver."
+      "deferral": "AI engineer must extract the remaining per-candidate projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy and exact ordered conditions, early exits, FP grouping, private branch/cache and original identities. Require canonical and historical selector, rejection isolation, packet/state and RNG parity controls. Exact remaining caps are evaluator5830, attempt1260 and candidate688; this observational routing exception does not authorize broader growth."
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool defensiveStanceMakesDefendWorthwhile(const Environment * environment, const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack, DamageCache & damageCache)#1": {
       "kind": "legacy",

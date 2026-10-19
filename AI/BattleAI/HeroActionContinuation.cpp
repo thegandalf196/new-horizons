@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "HeroActionContinuation.h"
+#include "HeroActionTiming.h"
 #include "BattleEvaluator.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 
@@ -15,11 +16,13 @@ void evaluateContinuation(AbsoluteContinuationUtility & continuation,
 	const CachedAttack & cachedAttack, DamageCache & innerCache,
 	const std::shared_ptr<HypotheticBattle> & state, const std::shared_ptr<Environment> & env,
 	float strengthRatio, int simulationTurnsCount,
-	const BattleExchangeEvaluator & scoreEvaluator, PotentialTargets * targets)
+	const BattleExchangeEvaluator & scoreEvaluator, PotentialTargets * targets,
+	heroActionTiming::Continuation * timing)
 {
 	auto & stackActionScore = continuation.value;
 	if(modelActive->alive() && (needFullEval || !cachedAttack.ap))
 	{
+		heroActionTiming::Scope measurement(timing ? &timing->full : nullptr);
 #if BATTLE_TRACE_LEVEL >= 1
 		logAi->trace("Full evaluation: movement range/position changed or no cached attack.");
 #endif
@@ -44,6 +47,7 @@ void evaluateContinuation(AbsoluteContinuationUtility & continuation,
 	}
 	else if(modelActive->alive())
 	{
+		heroActionTiming::Scope measurement(timing ? &timing->cached : nullptr);
 		auto updatedAttacker = state->getForUpdate(cachedAttack.ap->attack.attacker->unitId());
 		auto updatedDefender = state->getForUpdate(cachedAttack.ap->attack.defender->unitId());
 		auto updatedBai = BattleAttackInfo(
