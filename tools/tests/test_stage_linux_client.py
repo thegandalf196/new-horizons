@@ -101,6 +101,52 @@ class RuntimeProviderStageTest(unittest.TestCase):
             self.assertEqual(record['origin_label'], fixture.origins[path.name])
             self.assertEqual(record['bytes'], len(inputs[path.name]))
 
+    def test_same_engine_packaging_archive_is_recorded_once(self):
+        fixture = self.fixture
+        fixture.arguments['packaging-source'] = fixture.arguments['engine-source']
+        raw = tree_bytes(fixture.candidate)
+        fixture.run(main)
+        staged = verify_candidate(fixture.arguments['output'] / 'New-Horizons-Linux-x64')
+        sources = staged['source_archives']
+        self.assertEqual(set(sources), {'engine-source.tar.gz', 'dependency-source.tar.gz'})
+        self.assertEqual(sources['engine-source.tar.gz']['sha256'], fixture.identity['source_archive_sha256'])
+        self.assertEqual(staged['source_commit'], fixture.identity['source_commit'])
+        self.assertEqual(staged['packaging_commit'], 'packaging-revision')
+        self.assertEqual(tree_bytes(fixture.candidate), raw)
+
+    def test_identical_distinct_paths_with_same_archive_name_are_deduplicated(self):
+        original = self.fixture.arguments['engine-source']
+        directory = self.fixture.root / 'separate-source'
+        directory.mkdir()
+        duplicate = directory / original.name
+        duplicate.write_bytes(original.read_bytes())
+        self.fixture.arguments['packaging-source'] = duplicate
+        self.fixture.run(main)
+        staged = verify_candidate(self.fixture.arguments['output'] / 'New-Horizons-Linux-x64')
+        self.assertEqual(len(staged['source_archives']), 2)
+        self.assertEqual(staged['source_archives'][original.name],
+                         {'bytes': original.stat().st_size, 'sha256': hashlib.sha256(original.read_bytes()).hexdigest()})
+
+    def test_conflicting_same_name_sources_refuse_before_output_creation(self):
+        original = self.fixture.arguments['engine-source']
+        directory = self.fixture.root / 'conflicting-source'
+        directory.mkdir()
+        collision = directory / original.name
+        self.fixture.arguments['packaging-source'] = collision
+        raw = original.read_bytes()
+        for payload in (bytes([raw[0] ^ 1]) + raw[1:], raw + b'longer'):
+            with self.subTest(bytes=len(payload)):
+                collision.write_bytes(payload)
+                self.reject()
+
+    def test_missing_source_archive_refuses_before_output_creation(self):
+        self.fixture.arguments['packaging-source'] = self.fixture.root / 'missing-source.tar.gz'
+        raw = tree_bytes(self.fixture.candidate)
+        with self.assertRaises(OSError):
+            self.fixture.run(main)
+        self.assertFalse(self.fixture.arguments['output'].exists())
+        self.assertEqual(tree_bytes(self.fixture.candidate), raw)
+
     def test_graph_relocation_preserves_origin_and_original_two_root_scope(self):
         fixture = self.fixture
         fixture.run(main)

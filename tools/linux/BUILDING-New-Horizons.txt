@@ -3,8 +3,11 @@ LINUX SOURCE AND RELINKING
 The engine source companion contains the exact Git revision recorded in
 BUILD-IDENTITY.json and all pinned submodule contents. It excludes private build data,
 purchaser assets and profiles. No original game assets are needed to compile.
-A separate packaging/tooling source companion covers the package entry point and
-notices. Consult BUILD-IDENTITY.json for the actual binaries and companion hashes.
+A packaging/tooling source companion covers the package entry point and notices.
+When engine and packaging use the same source revision, the same exact archive
+may serve both roles and is recorded once. Repeated archive names must have
+identical sizes and hashes; conflicting names are refused before staging.
+Consult BUILD-IDENTITY.json for the actual binaries and companion hashes.
 
 For maintainers assembling a release from an exact checkout, first create the
 matching engine source companion with tools/ci/git_source_snapshot.py. Then:

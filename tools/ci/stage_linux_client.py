@@ -60,6 +60,16 @@ def copy_plain_tree(source, destination):
     shutil.copytree(source, destination)
 
 
+def source_archives(paths):
+    sources = {}
+    for source in paths:
+        record = {'bytes': source.stat().st_size, 'sha256': sha256(source)}
+        if source.name in sources and sources[source.name] != record:
+            raise RuntimeError('Conflicting source archive name')
+        sources[source.name] = record
+    return sources
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('candidate', 'notices', 'header-supplement', 'elf-audit', 'inventory',
@@ -71,15 +81,16 @@ def main():
     args = parser.parse_args()
     if args.output.exists() or args.output.is_symlink():
         raise RuntimeError('Refusing to replace an existing stage')
+    sources = source_archives((args.engine_source, args.dependency_source, args.packaging_source))
     identity = verify_candidate(args.candidate)
-    if sha256(args.engine_source) != identity['source_archive_sha256']:
+    if sources[args.engine_source.name]['sha256'] != identity['source_archive_sha256']:
         raise RuntimeError('Engine source archive differs from candidate identity')
     reports = {name: public_evidence(json.loads(source.read_text()), args.candidate)
                for source, name in ((args.elf_audit, 'ELF-DEPENDENCIES.json'),
                                     (args.inventory, 'DEPENDENCY-INVENTORY.json'),
                                     (args.build_provenance, 'BUILD-PROVENANCE.json'))}
     libraries = admit_runtime_libraries(args.runtime_library, args.candidate, identity,
-                                       reports, sha256(args.dependency_source))
+                                       reports, sources[args.dependency_source.name]['sha256'])
     reports = relocate_runtime_evidence(reports, libraries)
     report_text = {name: json.dumps(data, indent=2) + '\n' for name, data in reports.items()}
     if any(inspect_bytes(text.encode()) for text in report_text.values()):
@@ -110,11 +121,6 @@ def main():
             shutil.copy2(source, terms / source.name)
     for name, text in report_text.items():
         (package / name).write_text(text)
-    sources = {}
-    for source in (args.engine_source, args.dependency_source, args.packaging_source):
-        if source.name in sources:
-            raise RuntimeError('Duplicate source archive name')
-        sources[source.name] = {'bytes': source.stat().st_size, 'sha256': sha256(source)}
     identity.update({'scope': 'Ubuntu26.04 system-dependent Linux preview; acceptance evidence is separate',
                      'packaging_commit': args.packaging_revision, 'source_archives': sources,
                      'bundled_runtime_libraries': runtime_records(libraries),
