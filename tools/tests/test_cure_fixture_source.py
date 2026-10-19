@@ -1,6 +1,6 @@
 """Asset/process-free deterministic fixture source boundaries; not compiled acceptance."""
 from pathlib import Path
-import subprocess
+import hashlib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -12,9 +12,9 @@ class FixtureSource(unittest.TestCase):
             '#ifdef NH_CURE_SIMULATION_FIXTURE\n\t\t\t\tnext = cureFixture::beforeHumanActivation(*gameHandler, battle, *next);\n#endif\n'):
             self.assertEqual(source.count(fragment), 1)
             source = source.replace(fragment, '')
-        before = subprocess.run(['/usr/bin/git','show','HEAD:server/battles/BattleFlowProcessor.cpp'],
-            cwd=ROOT, check=True, capture_output=True, text=True).stdout
-        self.assertEqual(source, before)
+        # Frozen macro-OFF baseline: independent of checkout history and HEAD.
+        self.assertEqual(hashlib.sha256(source.encode()).hexdigest(),
+            '6ea602e746323362dab6dd147ac64c30945891467b777ca8bac072052632ef84')
 
     def test_one_authoritative_publication_reacquires_before_activation(self):
         source = (ROOT/'server/tests/CureFixture.cpp').read_text()

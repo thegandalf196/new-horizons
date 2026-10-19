@@ -138,7 +138,7 @@ void CureIntegrationBootstrap::verifyFixtureTarget(const CStack & target, const 
 	if(!fixture->enabled())
 		return;
 	cureBootstrap::require(fixture->isReceipt(battle.getBattle()->getBattleID().getNum(), target.unitId(),
-		battle.battleGetRound()) && target.slot == SlotID(0) && target.unitSide() == BattleSide::ATTACKER
+		battle.battleGetRound()) && target.unitSlot() == SlotID(0) && target.unitSide() == BattleSide::ATTACKER
 		&& target.creatureId() == CreatureID(CreatureID::decode("core:crusader"))
 		&& target.alive() && target.getCount() == 300 && target.getFirstHPleft() == target.getMaxHealth()
 		&& target.getAvailableHealth() == static_cast<int64_t>(300) * target.getMaxHealth()
@@ -152,12 +152,12 @@ void CureIntegrationBootstrap::verifyReplicatedFixture(const CBattleInfoCallback
 	if(!fixture->enabled() || replicaChecked)
 		return;
 	const auto * active = battle.battleGetStackByID(battle.getBattle()->getActiveStackID());
-	cureBootstrap::require(active && active->slot == SlotID(1) && active->unitSide() == BattleSide::ATTACKER
+	cureBootstrap::require(active && active->unitSlot() == SlotID(1) && active->unitSide() == BattleSide::ATTACKER
 		&& active->creatureId() == CreatureID(CreatureID::decode("core:waterElemental"))
 		&& active->getCount() == 200 && battle.battleGetRound() == 1, "Fixture replica requires first Water control");
 	const CStack * target = nullptr;
 	for(const auto * stack : battle.battleGetAllStacks())
-		if(stack->unitSide() == BattleSide::ATTACKER && stack->slot == SlotID(0))
+		if(stack->unitSide() == BattleSide::ATTACKER && stack->unitSlot() == SlotID(0))
 			target = stack;
 	cureBootstrap::require(target != nullptr, "Missing fixture replica target");
 	verifyFixtureTarget(*target, battle);

@@ -84,7 +84,7 @@ uint32_t validateArmies(const CBattleInfoCallback & battle, const CStack & next)
 {
 	const auto stacks = battle.battleGetAllStacks();
 	require(stacks.size() == 4 && battle.battleGetRound() == 1
-		&& next.unitSide() == BattleSide::ATTACKER && next.slot == SlotID(1)
+		&& next.unitSide() == BattleSide::ATTACKER && next.unitSlot() == SlotID(1)
 		&& next.creatureId() == CreatureID(CreatureID::decode("core:waterElemental"))
 		&& next.getInitiative() == 9, "Fixture requires first normal slot1 Water activation in round1");
 	std::array<bool, 4> found{};
@@ -100,7 +100,7 @@ uint32_t validateArmies(const CBattleInfoCallback & battle, const CStack & next)
 			found[3] = true;
 			continue;
 		}
-		const int slot = stack->slot.getNum();
+		const int slot = stack->unitSlot().getNum();
 		require(slot >= 0 && slot < 3 && !found[slot] && !stack->waited()
 			&& untouched(*stack, slot == 0 ? 300 : 200), "Friendly fixture activation/health changed");
 		const auto expected = slot == 0 ? "core:crusader" : "core:waterElemental";
@@ -151,7 +151,7 @@ const CStack * beforeHumanActivation(CGameHandler & handler, const CBattleInfoCa
 		&& target->getAvailableHealth() == static_cast<int64_t>(300) * target->getMaxHealth()
 		&& newHorizonsFrozen::isFrozen(*target) && target->frozenLastAppliedRound() == 1
 		&& newHorizonsMagic::cureAfflictions(current->getMagicRules(), target).empty()
-		&& active->slot == SlotID(1) && active->unitSide() == BattleSide::ATTACKER && untouched(*active, 200),
+		&& active->unitSlot() == SlotID(1) && active->unitSide() == BattleSide::ATTACKER && untouched(*active, 200),
 		"Fixture authoritative Frozen/fullHP/receipt or selected Water changed");
 	owner->published(battleID.getNum(), targetID, 1);
 	std::cout << "NH_CURE_FROZEN_FIXTURE_TEST_ONLY_V1 authoritative PASS: battle=" << battleID.getNum()
