@@ -164,6 +164,47 @@ TEST(PreparedNetworkLagRetirementTest, MismatchRetainsOriginalReverseWrittenForw
 	EXPECT_EQ(source.inspectBattleReply(packet(2)).result, BattleReplyInspection::Result::CONSUMED);
 }
 
+TEST(PreparedNetworkLagRetirementTest, PartialMatchRetainsEachPayloadUntilItsOwnReceiptRetires)
+{
+	std::mutex mutex;
+	std::unique_lock access(mutex);
+	int destroyed = 0;
+	bool accepting = false, destroyedDuringAcceptance = false;
+	NetworkLagReplyState source(&mutex);
+	begin(source, 5);
+	std::vector<const CPackForClient *> expected;
+	for(int i = 0; i < 2; ++i)
+	{
+		auto written = predicted(packet(i));
+		auto payload = std::make_unique<ObservedRollback>(destroyed, accepting, destroyedDuringAcceptance);
+		expected.push_back(payload.get());
+		written.rollbackPacks.push_back(std::move(payload));
+		source.appendPrediction(std::move(written));
+	}
+	open(source, 5);
+	auto first = source.prepareReplyRetirement(source.inspectBattleReply(packet(0)), access);
+	accepting = true;
+	ASSERT_TRUE(first->commit());
+	accepting = false;
+	EXPECT_EQ(destroyed, 0);
+	EXPECT_FALSE(destroyedDuringAcceptance);
+	ASSERT_EQ(first->rollbackPackets().size(), 1);
+	EXPECT_EQ(first->rollbackPackets().front(), expected[0]);
+	auto second = source.prepareReplyRetirement(source.inspectBattleReply(packet(1)), access);
+	accepting = true;
+	ASSERT_TRUE(second->commit());
+	accepting = false;
+	EXPECT_EQ(destroyed, 0);
+	ASSERT_EQ(second->rollbackPackets().size(), 1);
+	EXPECT_EQ(second->rollbackPackets().front(), expected[1]);
+	EXPECT_EQ(source.inspectBattleReply(packet()).result, BattleReplyInspection::Result::APPLY);
+	first.reset();
+	EXPECT_EQ(destroyed, 1);
+	second.reset();
+	EXPECT_EQ(destroyed, 2);
+	EXPECT_FALSE(destroyedDuringAcceptance);
+}
+
 TEST(PreparedNetworkLagRetirementTest, NormalQueueMutationInvalidatesBeforeAnyUnlink)
 {
 	std::mutex mutex;

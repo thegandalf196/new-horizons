@@ -76,16 +76,19 @@ const std::vector<const CPackForClient *> & PreparedNetworkLagRetirement::rollba
 
 void PreparedNetworkLagRetirement::exchangePreparedStorage() noexcept
 {
+	// list::splice guarantees no exceptions with equal allocators, even when
+	// the STL does not declare it noexcept (notably MSVC v142). Both queues
+	// transfer prepared nodes without allocation, payload moves or destruction.
+	static_assert(std::allocator_traits<decltype(retiredWritten)::allocator_type>::is_always_equal::value);
+	static_assert(std::allocator_traits<decltype(retiredPredictions)::allocator_type>::is_always_equal::value);
 	auto & source = *control->owner;
 	if(action == BattleReplyInspection::Result::CONSUMED)
 	{
 		auto & written = prediction->writtenPacks;
-		static_assert(noexcept(retiredWritten.splice(retiredWritten.end(), written, written.begin())));
 		retiredWritten.splice(retiredWritten.end(), written, written.begin());
 	}
 	if(action == BattleReplyInspection::Result::ROLLBACK_THEN_APPLY || writtenCount == 1)
 	{
-		static_assert(noexcept(retiredPredictions.splice(retiredPredictions.end(), source.predictedReplies, source.predictedReplies.begin())));
 		retiredPredictions.splice(retiredPredictions.end(), source.predictedReplies, source.predictedReplies.begin());
 		source.currentPackageID = source.invalidPackageID;
 	}
