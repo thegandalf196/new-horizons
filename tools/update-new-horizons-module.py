@@ -62,7 +62,7 @@ def biography_patch(root):
     return result
 
 
-def main():
+def argument_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     previews = parser.add_mutually_exclusive_group()
@@ -74,27 +74,10 @@ def main():
                           help='Write a separate diagnostic with capabilities on and primary growth off; never mutate a live module')
     previews.add_argument('--mastery-preview-output', type=Path,
                           help='Write future Artillery mastery rules/texts only to a new candidate under build/; no live activation')
-    args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
-    def canonical(name):
-        return json.loads((root / 'config' / name).read_text(encoding='utf-8'))
+    return parser
 
-    product_version = load_product_version(root)
-    module_version = resolve_module_version(product_version, get_diagnostic_kind(args))
 
-    settings = canonical('newHorizonsCombat.json')
-    settings['creatures'] = {'newHorizonsCategories': canonical('newHorizonsCreatureCategories.json')}
-    settings['magic'] = {'newHorizons': canonical('newHorizonsMagic.json')}
-    settings['heroes'] = {'newHorizons': canonical('newHorizonsHeroes.json')}
-    schools = canonical('newHorizonsSchools.json')
-    skills = canonical('newHorizonsSkills.json')
-    hero_class_translations = canonical('newHorizonsHeroClassTexts.json')
-    category_translations = canonical('newHorizonsCreatureCategoryTexts.json')
-    fort_translations = canonical('newHorizonsFortTexts.json')
-    muster_translations = canonical('newHorizonsMusterTexts.json')
-    combat_translations = canonical('newHorizonsCombatTexts.json')
-    adventure_translations = canonical('newHorizonsAdventureSpellTexts.json')
-    economy_translations = canonical('newHorizonsEconomyTexts.json')
+def content_patch_files():
     # These patch files contain explicit hero overrides plus the
     # creation-only neutralization and faction-skill presentation replacement
     # for legacy secondary-skill specialties. Keep it in the generated
@@ -125,7 +108,12 @@ def main():
     hero_class_patch_files = [
         'config/heroClasses/names.json',
     ]
-    metadata = {
+    return hero_patch_files, faction_patch_files, creature_patch_files, hero_class_patch_files
+
+
+def base_metadata(settings, schools, skills, module_version):
+    hero_patch_files, faction_patch_files, creature_patch_files, hero_class_patch_files = content_patch_files()
+    return {
         'name': 'New Horizons',
         'description': 'Curated rules: three Orders (including targeted Focus Fire) and '
                        'six magic schools with six ranked school skills. Existing hero spells '
@@ -183,6 +171,83 @@ def main():
         # Bootstrap UI also mounts this pack in builtin scope (filesystem.json).
         'filesystem': {'': [{'type': 'nhart', 'path': '/NewHorizons.nhart'}]},
     }
+
+
+def write_outputs(root, parser, check, metadata, destination, preview_output, canonical):
+    expected = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
+    biographies = json.dumps(biography_patch(root), indent='\t', ensure_ascii=False) + '\n'
+    biography_destination = root / 'Mods/new-horizons/Content/config/heroes/biographies.json'
+    creature_values = json.dumps(canonical('newHorizonsCreatureExperimentalValues.json'),
+                                indent='\t', ensure_ascii=False) + '\n'
+    creature_values_destination = root / 'Mods/new-horizons/Content/config/creatures/experimentalValues.json'
+    if check:
+        if (not creature_values_destination.is_file()
+                or creature_values_destination.read_text(encoding='utf-8') != creature_values):
+            parser.exit(1, 'Curated creature experimental values are stale; run tools/update-new-horizons-module.py\n')
+        if not destination.is_file() or destination.read_text(encoding='utf-8') != expected:
+            parser.exit(1, 'Curated module metadata is stale; run tools/update-new-horizons-module.py\n')
+        if (not biography_destination.is_file()
+                or biography_destination.read_text(encoding='utf-8') != biographies):
+            parser.exit(1, 'Curated hero biographies are stale; run tools/update-new-horizons-module.py\n')
+        print('PASS: module settings, six schools, 31 Skill entities, perk registry, image mount and metadata match canonical data')
+    else:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(expected, encoding='utf-8')
+        if preview_output is None:
+            creature_values_destination.parent.mkdir(parents=True, exist_ok=True)
+            creature_values_destination.write_text(creature_values, encoding='utf-8')
+            biography_destination.parent.mkdir(parents=True, exist_ok=True)
+            biography_destination.write_text(biographies, encoding='utf-8')
+        print('Updated ' + str(destination.relative_to(root)))
+
+
+def apply_default_edition(settings, metadata, canonical):
+    """Attach the live edition's saved registries, convenience content and resources."""
+    settings['artifacts'] = canonical('newHorizonsArtifacts.json')
+    # Default edition matches the active Magic Arrow v2 composition and
+    # carries the canonical perk registry for saved runtime identity.
+    # Explicit historical preview/control branches retain their own identities.
+    settings['heroes']['newHorizonsPerks'] = canonical('newHorizonsPerks.json')
+    # Random artifact exclusions change new-game content; managed profiles
+    # must not silently retain the older module settings.
+    metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
+    metadata['filesystem'][''] = [
+        {'type': 'dir', 'path': '/Content'},
+        {'type': 'nhart', 'path': '/NewHorizons.nhart'},
+    ]
+    metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '
+                                'are backed by their corresponding runtime systems while remaining entries '
+                                'stay planned. '
+                                'Includes independently authored quick-save/load buttons and creature ability '
+                                'icons; landscape presentation only. '
+                                'Selectively reviewed hero biography rewrites replace only entries proven '
+                                'stronger than the installed originals.')
+
+
+def main():
+    parser = argument_parser()
+    args = parser.parse_args()
+    root = Path(__file__).resolve().parents[1]
+    def canonical(name):
+        return json.loads((root / 'config' / name).read_text(encoding='utf-8'))
+
+    product_version = load_product_version(root)
+    module_version = resolve_module_version(product_version, get_diagnostic_kind(args))
+
+    settings = canonical('newHorizonsCombat.json')
+    settings['creatures'] = {'newHorizonsCategories': canonical('newHorizonsCreatureCategories.json')}
+    settings['magic'] = {'newHorizons': canonical('newHorizonsMagic.json')}
+    settings['heroes'] = {'newHorizons': canonical('newHorizonsHeroes.json')}
+    schools = canonical('newHorizonsSchools.json')
+    skills = canonical('newHorizonsSkills.json')
+    hero_class_translations = canonical('newHorizonsHeroClassTexts.json')
+    category_translations = canonical('newHorizonsCreatureCategoryTexts.json')
+    fort_translations = canonical('newHorizonsFortTexts.json')
+    muster_translations = canonical('newHorizonsMusterTexts.json')
+    combat_translations = canonical('newHorizonsCombatTexts.json')
+    adventure_translations = canonical('newHorizonsAdventureSpellTexts.json')
+    economy_translations = canonical('newHorizonsEconomyTexts.json')
+    metadata = base_metadata(settings, schools, skills, module_version)
     metadata['description'] += (' Primary growth grants a fixed twenty-point class vector on every level, '
                                 'plus independent configured skill-based bonus rolls. Older saved profiles retain their original growth rules. '
                                 'Not the frozen commands/schools release or full mastery/tier implementation.')
@@ -206,7 +271,7 @@ def main():
     if args.hero_preview_output is None:
         settings['heroes']['newHorizonsCapabilities'] = canonical('newHorizonsCapabilities.json')
         metadata['description'] += (' Leadership uses the canonical independent per-slot creature limit; '
-                                    'upgraded creatures require 120% rounded to the nearest 10. Siege retains skill-trained ballista scaling.')
+                                    'ordinary creature upgrades retain the base form\'s Leadership requirement. Older saves retain their captured rules. Siege retains skill-trained ballista scaling.')
     if args.capability_only_control_output is not None:
         settings['heroes']['newHorizons'] = {}
         metadata['name'] = 'New Horizons (capability-only diagnostic)'
@@ -227,50 +292,8 @@ def main():
                                     'after a level gained with prior Expert Artillery. Not secondary rank four '
                                     'or completion of other mastery families, creature tiers or new spell effects.')
     if preview_output is None:
-        settings['artifacts'] = canonical('newHorizonsArtifacts.json')
-        # Default edition matches the active Magic Arrow v2 composition and
-        # carries the canonical perk registry for saved runtime identity.
-        # Explicit historical preview/control branches retain their own identities.
-        settings['heroes']['newHorizonsPerks'] = canonical('newHorizonsPerks.json')
-        # Random artifact exclusions change new-game content; managed profiles
-        # must not silently retain the older module settings.
-        metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
-        metadata['filesystem'][''] = [
-            {'type': 'dir', 'path': '/Content'},
-            {'type': 'nhart', 'path': '/NewHorizons.nhart'},
-        ]
-        metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '
-                                    'are backed by their corresponding runtime systems while remaining entries '
-                                    'stay planned. '
-                                    'Includes independently authored quick-save/load buttons and creature ability '
-                                    'icons; landscape presentation only. '
-                                    'Selectively reviewed hero biography rewrites replace only entries proven '
-                                    'stronger than the installed originals.')
-    expected = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
-    biographies = json.dumps(biography_patch(root), indent='\t', ensure_ascii=False) + '\n'
-    biography_destination = root / 'Mods/new-horizons/Content/config/heroes/biographies.json'
-    creature_values = json.dumps(canonical('newHorizonsCreatureExperimentalValues.json'),
-                                indent='\t', ensure_ascii=False) + '\n'
-    creature_values_destination = root / 'Mods/new-horizons/Content/config/creatures/experimentalValues.json'
-    if args.check:
-        if (not creature_values_destination.is_file()
-                or creature_values_destination.read_text(encoding='utf-8') != creature_values):
-            parser.exit(1, 'Curated creature experimental values are stale; run tools/update-new-horizons-module.py\n')
-        if not destination.is_file() or destination.read_text(encoding='utf-8') != expected:
-            parser.exit(1, 'Curated module metadata is stale; run tools/update-new-horizons-module.py\n')
-        if (not biography_destination.is_file()
-                or biography_destination.read_text(encoding='utf-8') != biographies):
-            parser.exit(1, 'Curated hero biographies are stale; run tools/update-new-horizons-module.py\n')
-        print('PASS: module settings, six schools, 31 Skill entities, perk registry, image mount and metadata match canonical data')
-    else:
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text(expected, encoding='utf-8')
-        if preview_output is None:
-            creature_values_destination.parent.mkdir(parents=True, exist_ok=True)
-            creature_values_destination.write_text(creature_values, encoding='utf-8')
-            biography_destination.parent.mkdir(parents=True, exist_ok=True)
-            biography_destination.write_text(biographies, encoding='utf-8')
-        print('Updated ' + str(destination.relative_to(root)))
+        apply_default_edition(settings, metadata, canonical)
+    write_outputs(root, parser, args.check, metadata, destination, preview_output, canonical)
 
 
 if __name__ == '__main__':

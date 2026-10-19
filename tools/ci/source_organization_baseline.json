@@ -25615,15 +25615,6 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "175a2374f0f8078db08f2e2a9a4c6444f2db5bb9d1f92fc7a9e96c09fc0ee423"
     },
-    "tools/update-new-horizons-module.py::main#1": {
-      "kind": "legacy",
-      "lines": 209,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 209 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "a784286ae9bc1f0b10823ae82cccd7369172b947b5c15796872173091d51926b"
-    },
     "CI/NSIS.template.in::Function AddToPath#1": {
       "kind": "review",
       "lines": 83,

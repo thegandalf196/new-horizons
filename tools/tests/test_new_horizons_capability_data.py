@@ -135,6 +135,12 @@ class CapabilityDataTest(unittest.TestCase):
             with self.subTest(base=base):
                 self.assertEqual(upgraded_requirement(base), base)
 
+    def test_module_description_matches_fresh_upgrade_leadership_policy(self):
+        module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
+        self.assertIn("ordinary creature upgrades retain the base form's Leadership requirement", module['description'])
+        self.assertIn('Older saves retain their captured rules.', module['description'])
+        self.assertNotIn('upgraded creatures require 120%', module['description'])
+
     def test_siege_rank_table_remains_canonical(self):
         self.assertEqual(self.rules['siege'], {
             'ballistaDamageMultiplier': [1, 2, 3, 4],
