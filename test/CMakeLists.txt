@@ -481,6 +481,7 @@ set(test_SRCS
 		server/battles/NewHorizonsBastionTest.cpp
 		server/battles/NewHorizonsPhantomArmyTest.cpp
 		server/battles/NewHorizonsCureTest.cpp
+		server/battles/NewHorizonsCureTargetTest.cpp
 		server/battles/NewHorizonsDruidConsumerTest.cpp
 		server/battles/NewHorizonsCanonicalSpellClausesSerializationTest.cpp
 		server/battles/NewHorizonsImplosionTest.cpp
@@ -1025,6 +1026,7 @@ if(ENABLE_NULLKILLER2_AI)
 		# Reuse embedded Lua, not a second facade/global instance.
 		target_sources(vcmitest PRIVATE
 			spells/OverwhelmingFormulaObstacleTest.cpp
+			scripting/CureAfflictionSourceTest.cpp
 			scripting/LuaStackFieldKeyTest.cpp)
 	endif()
 	set(vcmitest_LIBS gtest gmock vcmiMain vcmiservercommon TBB::tbb ${SYSTEM_LIBS})

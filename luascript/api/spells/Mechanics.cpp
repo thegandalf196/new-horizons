@@ -120,7 +120,10 @@ std::string MechanicsProxy::getPluralFormTextID(const spells::Mechanics & m, con
 
 std::string MechanicsProxy::getCureAfflictionSource(const spells::Mechanics & m)
 {
-	const auto * spell = m.getCureAffliction().toSpell();
+	const auto affliction = m.getCureAffliction();
+	if(affliction == SpellID::NONE)
+		return {};
+	const auto * spell = affliction.toSpell();
 	return spell ? spell->getJsonKey() : std::string();
 }
 

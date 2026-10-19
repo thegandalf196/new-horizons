@@ -23667,13 +23667,14 @@
       "sha256": "003cb077bbef527b0dd7304996267cf53c31fe82e63f105324e2a6df86fd491d"
     },
     "lib/spells/BattleSpellMechanics.cpp": {
-      "kind": "legacy",
-      "lines": 3298,
+      "kind": "exception",
+      "lines": 3301,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 3298 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "5340ca589f1b43d097baa78d5dd84a19ff392d27fcb727f3027ca2ddeeb5e9d9"
+      "rationale": "Exact three-line urgent Cure target-validation correction: resolve a canonical hex-only destination through the current battle callback without redirecting an explicit unit identity. Existing eligibility and pre-cost checks remain ordered. Extracting unrelated spell validation in this correctness fix would broaden risk; no further hotspot growth is approved.",
+      "review": "cure-target-correction-source-v1",
+      "review_scope": "exact-cure-target-correctness-technical-exception",
+      "sha256": "778f0b8866631eed33692b96df1729c459380967dd83336b80338341a4c02108",
+      "deferral": "Before further Cure-validator growth, the gameplay engineer must extract the existing Cure eligibility and selector block into a cohesive shared validator with a current battle and canonical destination. Preserve identity refusal, owner/receptivity/rules/selection and pre-cost ordering; retain hex/unit/refusal, no-mutation/RNG/cost, authoritative Cure/Dispel/Frozen and modal lifecycle coverage, and reduce this baseline."
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::bool BattleSpellMechanics::canBeCast(Problem & problem) const#1": {
       "kind": "legacy",
@@ -23685,13 +23686,14 @@
       "sha256": "b41615aa1704a71c6ceb0f66be2bd3a585e7ddcbeffa94e3c16b01c7fd4124be"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem) const#1": {
-      "kind": "legacy",
-      "lines": 271,
+      "kind": "exception",
+      "lines": 274,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 271 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "81c53b72fea547b62259220b041e1fd622924dc26a27fb0dd4f030a9038cc01d"
+      "rationale": "Exact three-line Cure-only canonical hex lookup after single-target validation and before unchanged living/friendly/receptive/selector checks. No explicit identity retargeting, mutation, cost or RNG change. A multi-spell extraction is deferred to avoid coupling unrelated behavior into this urgent targeting correction.",
+      "review": "cure-target-correction-source-v1",
+      "review_scope": "exact-cure-target-correctness-technical-exception",
+      "sha256": "404bebfa2174e1c9602c308603e6bc3fa3f62c6d4919574c72a77c9ed20f7852",
+      "deferral": "Before further growth, extract the existing Cure eligibility and selector block into a shared validator, preserving canonical hex lookup, explicit identity refusal, owner/receptivity/rules/selection and pre-cost ordering. Characterize refusal atomicity and existing authoritative Cure/Dispel/Frozen behavior, retain modal lifecycle checks, and ratchet this function baseline down."
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target)#1": {
       "kind": "legacy",

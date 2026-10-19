@@ -1546,6 +1546,9 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 			return false;
 
 		const auto * cureTarget = spellTarget.front().unitValue;
+		// Human targeting can be hex-only; never redirect an explicit unit identity.
+		if(!cureTarget && !target.front().unitValue && spellTarget.front().hexValue.isAvailable())
+			cureTarget = battle()->battleGetUnitByPos(spellTarget.front().hexValue, true);
 		if(!isLivingCureTarget(cureTarget)
 			|| !ownerMatches(cureTarget, true) || !isReceptive(cureTarget))
 			return false;
