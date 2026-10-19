@@ -101,7 +101,8 @@ TEST_F(NewHorizonsCureTargetTest, InjuredHealOnlyTargetAcceptsHumanHexAndExplici
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	auto state = target->acquireState();
-	state->damage(2);
+	int64_t damage = 2;
+	state->damage(damage);
 	BattleUnitsChanged change;
 	change.battleID = BattleID(0);
 	change.changedStacks.emplace_back(target->unitId(), UnitChanges::EOperation::UPDATE);
