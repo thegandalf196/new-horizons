@@ -37,6 +37,45 @@ namespace
 {
 constexpr auto cureKey = "core:cure";
 
+// Extend historicalDescriptionRules' positive projection with v2 guild context
+// required by the installed hero starting-book validation.
+// Installed v3 clauses must not leak into a purported v2 saved roster.
+JsonNode savedV2CureRules(const JsonNode & current)
+{
+	JsonNode result;
+	for(const auto * field : {"schemaVersion", "schools", "schoolSkills", "skillReplacements", "adventureSpells",
+		"mageGuildGeneration", "factions"})
+		result[field] = current[field];
+	result["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	result["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
+	for(const auto & [key, row] : current["spells"].Struct())
+	{
+		for(const auto * field : {"schools", "level", "costs", "ordinaryAcquisition", "directDamage", "active", "cureAfflictions"})
+			if(row.Struct().contains(field))
+				result["spells"][key][field] = row[field];
+		if(row.Struct().contains("variant"))
+			result["spells"][key]["active"].Bool() = false;
+	}
+	newHorizonsMagic::validateRules(result);
+	EXPECT_EQ(result["mageGuildGeneration"], current["mageGuildGeneration"]);
+	EXPECT_EQ(result["factions"], current["factions"]);
+	EXPECT_TRUE(newHorizonsMagic::mageGuildGenerationActive(result));
+	for(const auto * field : {"protectedAdventureBarriers", "heroLuck", "heroMorale", "creatureAbilities",
+		"morale", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent"})
+		EXPECT_FALSE(result.Struct().contains(field)) << field;
+	for(const auto & [key, row] : result["spells"].Struct())
+	{
+		for(const auto * field : {"selectedPlacement", "heroAccess", "variant", "earthquake", "structures",
+			"restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly",
+			"schoolRankDurations", "burnGroundedFlyers"})
+			EXPECT_FALSE(row.Struct().contains(field)) << key << ':' << field;
+		if(current["spells"][key].Struct().contains("variant"))
+			EXPECT_FALSE(row["active"].Bool()) << key;
+	}
+	EXPECT_EQ(result["spells"][cureKey]["cureAfflictions"], current["spells"][cureKey]["cureAfflictions"]);
+	return result;
+}
+
 SpellID naturePoisonSpell()
 {
 	static const SpellID poison(SpellID::decode(std::string(newHorizonsMagic::NATURE_POISON_SPELL)));
@@ -88,9 +127,8 @@ protected:
 			rules["creatureAbilities"]["freezingTouchChancePercent"].Integer() = freezingTouchChance;
 		if(magicVersion != newHorizonsMagic::CURRENT_RULESET_VERSION)
 		{
-			rules["rulesetVersion"].Integer() = magicVersion;
-			rules.Struct().erase("schoolRankPowerCoefficientPercent");
-			rules.Struct().erase("spellcraftEfficiencyPercent");
+			ASSERT_EQ(magicVersion, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+			rules = savedV2CureRules(rules);
 		}
 		if(!optIntoNewCure)
 			rules["spells"][cureKey].Struct().erase("cureAfflictions");
@@ -684,15 +722,27 @@ TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceRejectsAbsentSavedRulesWithoutSp
 
 TEST_F(NewHorizonsCureTest, FrozenSurvivesOrdinarySorceryDispel)
 {
+	deployOriginalCureActor = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto * actor = battle()->battleActiveUnit();
+	ASSERT_NE(actor, nullptr);
+	ASSERT_NE(actor->unitId(), target->unitId());
+	ASSERT_EQ(battle()->battleGetActionController(actor), attackerSideHero->tempOwner);
+	ASSERT_TRUE(actor->canMove());
+	ASSERT_FALSE(newHorizonsFrozen::isFrozen(*actor));
+	const auto actorId = actor->unitId();
 	attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
 	addMagicalConditions();
 	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	const auto stamp = target->frozenLastAppliedRound();
 	auto action = cureAction(target);
 	action.spell = SpellID::DISPEL;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
 	EXPECT_TRUE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_EQ(target->frozenLastAppliedRound(), stamp);
 	EXPECT_FALSE(hasSource(SpellID::SLOW));
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), actorId);
 }
 
 TEST_F(NewHorizonsCureTest, FrozenDirectMagicArrowBreaksWithoutShatterBonusAndPreservesStamp)
@@ -831,8 +881,10 @@ TEST_F(NewHorizonsCureTest, CanonicalPoisonIsAvailableAsLevelTwoNatureAtSevenMan
 	EXPECT_EQ(newHorizonsMagic::spellLevel(rules, poison), 2);
 	const auto schools = newHorizonsMagic::spellSchools(rules, poison);
 	ASSERT_EQ(schools.size(), 1u);
-	EXPECT_EQ(SpellSchool::encode(schools.front().getNum()), "new-horizons:nature");
-	EXPECT_GT(newHorizonsMagic::factionSpellWeight(rules, FactionID::RAMPART, poison), 0);
+	EXPECT_EQ(schools.front().serializationKey(), "new-horizons:nature");
+	EXPECT_TRUE(newHorizonsMagic::mageGuildGenerationActive(rules));
+	EXPECT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(rules, poison));
+	EXPECT_TRUE(vstd::contains(newHorizonsMagic::preferredSchools(rules, FactionID::RAMPART), schools.front()));
 	for(int rank = 0; rank < 4; ++rank)
 		EXPECT_EQ(newHorizonsMagic::spellCost(rules, poison, rank), 7);
 
@@ -848,10 +900,7 @@ TEST_F(NewHorizonsCureTest, CanonicalPoisonIsAvailableAsLevelTwoNatureAtSevenMan
 
 TEST_F(NewHorizonsCureTest, OldV2RosterWithoutTheNewPoisonSpellDoesNotAcquireIt)
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
+	auto rules = savedV2CureRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	rules["spells"].Struct().erase(std::string(newHorizonsMagic::NATURE_POISON_SPELL));
 	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
 	EXPECT_FALSE(newHorizonsMagic::spellAllowedBySavedRoster(rules, naturePoisonSpell()));
@@ -1027,6 +1076,10 @@ TEST_F(NewHorizonsCureTest, V2RosterCustomPoisonUsesTheFallbackTimedEffect)
 {
 	magicVersion = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1));
+	EXPECT_EQ(battle()->getBattle()->getMagicRules()["rulesetVersion"].Integer(), magicVersion);
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(battle()->getBattle()->getMagicRules()));
+	ASSERT_NO_THROW(newHorizonsHeroes::startingBookReplacement(attackerSideHero->getPrimaryGrowthRules(),
+		battle()->getBattle()->getMagicRules(), HeroTypeID::NONE, SpellID::NONE));
 	attackerSideHero->addSpellToSpellbook(naturePoisonSpell());
 	EXPECT_FALSE(newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(),
 		naturePoisonSpell()));
