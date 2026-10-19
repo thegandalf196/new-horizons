@@ -1892,10 +1892,10 @@
 					"id": "new-horizons:spellcraft.crossSchoolFormula",
 					"name": "Cross-School Formula",
 					"requires": "basic",
-					"description": "After an accepted combat spell cast by the hero, the next accepted cast in the same or next round receives +10% to its Spell Power-derived numerical component if the two spells' saved school-membership sets are nonempty and disjoint. Each accepted cast becomes the new previous spell.",
+					"description": "After your hero casts a combat spell, their next combat spell this round or next gains +10% to the part of its effect determined by Spell Power. Both spells must belong to at least one magic school and have no school in common. The comparison always uses your hero's last combat spell, even if it was countered or resisted.",
 					"effect": {
 						"status": "active",
-						"description": "After an accepted combat spell cast by the hero, the next accepted cast in the same or next round receives +10% to its Spell Power-derived numerical component if the two spells' saved school-membership sets are nonempty and disjoint. Each accepted cast becomes the new previous spell."
+						"description": "After your hero casts a combat spell, their next combat spell this round or next gains +10% to the part of its effect determined by Spell Power. Both spells must belong to at least one magic school and have no school in common. The comparison always uses your hero's last combat spell, even if it was countered or resisted."
 					}
 				},
 				{
