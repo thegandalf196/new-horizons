@@ -12,6 +12,9 @@
 
 namespace
 {
+static_assert(noexcept(std::declval<PreparedNetworkBatch &>().accept()),
+	"Prepared publication must retain its non-throwing acceptance boundary");
+
 class FailureRecorder final : public INetworkConnectionListener
 {
 public:

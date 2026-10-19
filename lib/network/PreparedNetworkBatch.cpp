@@ -115,8 +115,11 @@ bool PreparedNetworkBatch::ready() const noexcept
 
 void PreparedNetworkBatch::acceptPrepared() noexcept
 {
-	static_assert(noexcept(state->deliveries.front().tcp->dataToSend.splice(
-		state->deliveries.front().tcp->dataToSend.end(), state->deliveries.front().chunks)));
+	using Queue = decltype(state->deliveries.front().chunks);
+	// list::splice guarantees no exceptions with equal allocators, even when
+	// the STL does not declare it noexcept (notably MSVC v142). It transfers
+	// prepared nodes without allocating or copying the payloads.
+	static_assert(std::allocator_traits<Queue::allocator_type>::is_always_equal::value);
 	for(auto & delivery : state->deliveries)
 		if(delivery.tcp)
 			delivery.tcp->dataToSend.splice(delivery.tcp->dataToSend.end(), delivery.chunks);
