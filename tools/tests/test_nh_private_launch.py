@@ -63,6 +63,62 @@ class BootstrapClientArgumentsTest(unittest.TestCase):
             run.assert_not_called()
 
 
+class FrozenFixtureAdmissionTest(unittest.TestCase):
+    def test_exact_intent_requires_all_three_values(self):
+        valid = {"NH_CURE_FROZEN_FIXTURE": "ordinary44b24", "NH_CURE_BOOTSTRAP": "ordinary44b24",
+                 "NH_CURE_CALLBACK_CASE": "same-session"}
+        for key in valid:
+            for value in (None, "", "wrong"):
+                environment = dict(valid)
+                if value is None:
+                    environment.pop(key)
+                else:
+                    environment[key] = value
+                # Missing fixture key preserves the existing bootstrap behavior.
+                if key == "NH_CURE_FROZEN_FIXTURE" and value is None:
+                    continue
+                with self.subTest(key=key, value=value), mock.patch.dict(HELPER.os.environ, environment, clear=True):
+                    with self.assertRaises(HELPER.Refusal):
+                        HELPER.validate_client_args([])
+        for mode in ("same-session", "late-session", "replaced-owner"):
+            with mock.patch.dict(HELPER.os.environ, dict(valid, NH_CURE_CALLBACK_CASE=mode), clear=True):
+                HELPER.validate_client_args(["--disable-video", "--savefrequency", "0"])
+                for arguments in (["--testmap", "Maps/map.vmap"], ["--spectate"], ["--headless"], ["--onlyAI"]):
+                    with self.assertRaises(HELPER.Refusal):
+                        HELPER.validate_client_args(arguments)
+
+    def test_ordinary_image_denied_before_dispatch(self):
+        environment = {"NH_CURE_FROZEN_FIXTURE": "ordinary44b24", "NH_CURE_BOOTSTRAP": "ordinary44b24",
+                       "NH_CURE_CALLBACK_CASE": "same-session"}
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(HELPER.os.environ, environment, clear=True), \
+                mock.patch.object(HELPER.subprocess, "Popen") as popen:
+            client = Path(directory)/"new-horizons"
+            for payload in (b"\x7fELFordinary", b"NH_CURE_FROZEN_FIXTURE_TEST_ONLY_V1"):
+                client.write_bytes(payload)
+                with self.assertRaises(HELPER.Refusal):
+                    HELPER.validate_fixture_client(client)
+            client.write_bytes(b"\x7fELF NH_CURE_FROZEN_FIXTURE_TEST_ONLY_V1")
+            HELPER.validate_fixture_client(client)  # Capability only, not an authenticated producer.
+            popen.assert_not_called()
+        with mock.patch.dict(HELPER.os.environ, {}, clear=True):
+            HELPER.validate_fixture_client(Path("/not-read-without-optin"))
+
+    def test_atime_only_read_change_is_not_identity_mutation(self):
+        environment = {"NH_CURE_FROZEN_FIXTURE":"ordinary44b24", "NH_CURE_BOOTSTRAP":"ordinary44b24",
+                       "NH_CURE_CALLBACK_CASE":"same-session"}
+        fields = dict(st_dev=1, st_ino=2, st_mode=0o100555, st_uid=3, st_gid=3, st_nlink=1,
+                      st_size=64, st_mtime_ns=4, st_ctime_ns=5, st_atime_ns=6)
+        client = mock.Mock()
+        client.is_symlink.return_value = False
+        client.read_bytes.return_value = b"\x7fELF NH_CURE_FROZEN_FIXTURE_TEST_ONLY_V1"
+        with mock.patch.dict(HELPER.os.environ, environment, clear=True):
+            client.stat.side_effect = [SimpleNamespace(**fields), SimpleNamespace(**dict(fields, st_atime_ns=99))]
+            HELPER.validate_fixture_client(client)
+            client.stat.side_effect = [SimpleNamespace(**fields), SimpleNamespace(**dict(fields, st_mtime_ns=99))]
+            with self.assertRaises(HELPER.Refusal):
+                HELPER.validate_fixture_client(client)
+
+
 class PrivateLaunchTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

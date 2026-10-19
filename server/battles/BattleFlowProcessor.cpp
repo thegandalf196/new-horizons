@@ -9,6 +9,9 @@
  */
 #include "StdInc.h"
 #include "BattleFlowProcessor.h"
+#ifdef NH_CURE_SIMULATION_FIXTURE
+#include "../tests/CureFixture.h"
+#endif
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
@@ -1191,6 +1194,9 @@ void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)
 		if (!automaticAction)
 		{
 			if(next->alive()) {
+#ifdef NH_CURE_SIMULATION_FIXTURE
+				next = cureFixture::beforeHumanActivation(*gameHandler, battle, *next);
+#endif
 				setActiveStack(battle, next, BattleUnitTurnReason::TURN_QUEUE);
 				if(next->alive())
 					break;

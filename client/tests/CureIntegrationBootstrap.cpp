@@ -12,6 +12,11 @@
 #include "../GameInstance.h"
 #include "../mainmenu/CMainMenu.h"
 #include "../../lib/CConfigHandler.h"
+#include "../../lib/CStack.h"
+#include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/VCMIDirs.h"
 #include "../../lib/filesystem/Filesystem.h"
@@ -22,6 +27,7 @@
 #include "../../lib/mapping/CMapInfo.h"
 
 #include <iostream>
+#include <cstdlib>
 
 namespace
 {
@@ -120,6 +126,47 @@ void validateLoaded()
 }
 }
 
+CureIntegrationBootstrap::CureIntegrationBootstrap(const char * optIn)
+	: state(optIn), fixture(std::make_shared<cureFixture::Context>(
+		std::getenv("NH_CURE_FROZEN_FIXTURE"), optIn, std::getenv("NH_CURE_CALLBACK_CASE")))
+{
+	cureFixture::registerContext(fixture);
+}
+
+void CureIntegrationBootstrap::verifyFixtureTarget(const CStack & target, const CBattleInfoCallback & battle) const
+{
+	if(!fixture->enabled())
+		return;
+	cureBootstrap::require(fixture->isReceipt(battle.getBattle()->getBattleID().getNum(), target.unitId(),
+		battle.battleGetRound()) && target.slot == SlotID(0) && target.unitSide() == BattleSide::ATTACKER
+		&& target.creatureId() == CreatureID(CreatureID::decode("core:crusader"))
+		&& target.alive() && target.getCount() == 300 && target.getFirstHPleft() == target.getMaxHealth()
+		&& target.getAvailableHealth() == static_cast<int64_t>(300) * target.getMaxHealth()
+		&& newHorizonsFrozen::isFrozen(target) && target.frozenLastAppliedRound() == 1
+		&& newHorizonsMagic::cureAfflictions(battle.getBattle()->getMagicRules(), &target).empty(),
+		"Fixture replica requires exact authoritative receipt/fullHP Frozen-only Crusader300");
+}
+
+void CureIntegrationBootstrap::verifyReplicatedFixture(const CBattleInfoCallback & battle)
+{
+	if(!fixture->enabled() || replicaChecked)
+		return;
+	const auto * active = battle.battleGetStackByID(battle.getBattle()->getActiveStackID());
+	cureBootstrap::require(active && active->slot == SlotID(1) && active->unitSide() == BattleSide::ATTACKER
+		&& active->creatureId() == CreatureID(CreatureID::decode("core:waterElemental"))
+		&& active->getCount() == 200 && battle.battleGetRound() == 1, "Fixture replica requires first Water control");
+	const CStack * target = nullptr;
+	for(const auto * stack : battle.battleGetAllStacks())
+		if(stack->unitSide() == BattleSide::ATTACKER && stack->slot == SlotID(0))
+			target = stack;
+	cureBootstrap::require(target != nullptr, "Missing fixture replica target");
+	verifyFixtureTarget(*target, battle);
+	replicaChecked = true;
+	std::cout << "Cure deterministic fixture replica READY: battle=" << battle.getBattle()->getBattleID().getNum()
+		<< " round=1 target=" << target->unitId() << " active=" << active->unitId()
+		<< " Frozen-only Crusader300 fullHP" << std::endl;
+}
+
 void CureIntegrationBootstrap::update()
 {
 	cureBootstrap::require(ENGINE->amIGuiThread(), "Cure bootstrap must run on GUI thread");
@@ -130,6 +177,7 @@ void CureIntegrationBootstrap::update()
 			&& !session["spectate"].Bool() && session["testmap"].String().empty()
 			&& session["testsave"].String().empty(), "Conflicting Cure bootstrap session");
 		auto info = fixedMap();
+		fixture->authenticate(cureBootstrap::DIGEST); // fixedMap authenticated actual bytes/header first.
 		CMainMenu::openLobby(ESelectionScreen::newGame, true, {}, ELoadMode::NONE, false, false);
 		GAME->server().startMapAfterConnection(info);
 		std::cout << "Cure bootstrap ordinary44b24 requested once; initial menus omitted\n";

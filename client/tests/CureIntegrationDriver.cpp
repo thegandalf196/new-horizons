@@ -76,6 +76,7 @@ struct CureIntegrationDriver::State final : CureAfflictionPresenter
 			&& newHorizonsFrozen::chancePercent(rules) > 0
 			&& newHorizonsMagic::cureAfflictions(rules, &initialTarget).empty(),
 			"Requires exact Frozen row and actual live Frozen-only target");
+		bootstrap.verifyFixtureTarget(initialTarget, *callback);
 		confirm = selected;
 		cancel = exited;
 		modal = showCureAfflictionModal(names, std::move(selected), std::move(exited));
@@ -183,6 +184,8 @@ struct CureIntegrationDriver::State final : CureAfflictionPresenter
 			return;
 		if(observedOwner.expired() && !captured)
 			attach(current, self);
+		if(current->makingTurn())
+			bootstrap.verifyReplicatedFixture(*current->getBattle());
 		if(captured)
 		{
 			require(current == observedOwner.lock(), "Battle changed before first modal callback check");

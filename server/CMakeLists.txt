@@ -108,3 +108,20 @@ endif()
 
 vcmi_set_output_dir(vcmiservercommon "")
 enable_pch(vcmiservercommon)
+
+# Never define the test macro on the ordinary server archive or its PCH.
+# Direct OBJECT linkage supplies every flow symbol to the integration executable;
+# the ordinary archive's flow member is therefore not extracted there.
+option(ENABLE_NH_CURE_CLIENT_INTEGRATION "Build retained real Cure callback integration client" OFF)
+if(ENABLE_NH_CURE_CLIENT_INTEGRATION)
+	add_library(nhCureSimulationFixture OBJECT EXCLUDE_FROM_ALL
+		battles/BattleFlowProcessor.cpp tests/CureFixture.cpp
+		tests/CureFixture.h tests/CureFixtureState.h)
+	target_include_directories(nhCureSimulationFixture PRIVATE
+		$<TARGET_PROPERTY:vcmiservercommon,INCLUDE_DIRECTORIES>)
+	target_compile_definitions(nhCureSimulationFixture PRIVATE
+		$<TARGET_PROPERTY:vcmiservercommon,COMPILE_DEFINITIONS> NH_CURE_SIMULATION_FIXTURE)
+	target_compile_options(nhCureSimulationFixture PRIVATE
+		$<TARGET_PROPERTY:vcmiservercommon,COMPILE_OPTIONS>)
+	target_link_libraries(nhCureSimulationFixture PRIVATE vcmi minizip::minizip)
+endif()

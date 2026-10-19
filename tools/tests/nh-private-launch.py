@@ -461,6 +461,12 @@ def verify_owned_xvfb(guard_path, *, proc_root=None, boot_id_path=None,
 
 def validate_client_args(client_args):
     """Allow only a small set of known test/UI switches and safe values."""
+    if "NH_CURE_FROZEN_FIXTURE" in os.environ:
+        if (os.environ["NH_CURE_FROZEN_FIXTURE"] != "ordinary44b24"
+                or os.environ.get("NH_CURE_BOOTSTRAP") != "ordinary44b24"
+                or os.environ.get("NH_CURE_CALLBACK_CASE") not in (
+                    "same-session", "late-session", "replaced-owner")):
+            raise Refusal("Frozen fixture requires exact selected integration/bootstrap intent")
     if "NH_CURE_BOOTSTRAP" in os.environ:
         if os.environ["NH_CURE_BOOTSTRAP"] != "ordinary44b24":
             raise Refusal("Invalid fixed Cure bootstrap opt-in")
@@ -734,6 +740,22 @@ def _split_client_args(argv):
     return values[:boundary], values[boundary + 1:]
 
 
+def validate_fixture_client(client):
+    """Capability discrimination only; exact image SHA remains the owner's gate."""
+    if "NH_CURE_FROZEN_FIXTURE" not in os.environ:
+        return
+    validate_client_args([])
+    before = client.stat()
+    if client.is_symlink() or not stat.S_ISREG(before.st_mode) or before.st_size > 64*1024*1024:
+        raise Refusal("Frozen fixture requires a bounded regular integration ELF")
+    raw = client.read_bytes()
+    fields = ('st_dev','st_ino','st_mode','st_uid','st_gid','st_nlink','st_size','st_mtime_ns','st_ctime_ns')
+    after = client.stat()
+    if (any(getattr(before, key) != getattr(after, key) for key in fields) or not raw.startswith(b"\x7fELF")
+            or b"NH_CURE_FROZEN_FIXTURE_TEST_ONLY_V1" not in raw):
+        raise Refusal("Ordinary client cannot admit deterministic Frozen fixture")
+
+
 def main(argv=None):
     option_argv, client_args = _split_client_args(argv)
     parser = _parser()
@@ -797,6 +819,7 @@ def main(argv=None):
             raise Refusal("Frozen snapshot must contain an executable regular New Horizons client")
         if library.is_symlink() or not library.is_file():
             raise Refusal("Frozen snapshot must contain its matching regular libvcmi.so")
+        validate_fixture_client(client)  # Before dispatch/Popen; ordinary ELF must refuse.
         if not LAUNCHER.is_file() or not os.access(LAUNCHER, os.X_OK):
             raise Refusal(f"Managed New Horizons launcher is unavailable: {LAUNCHER}")
 

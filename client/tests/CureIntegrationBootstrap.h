@@ -11,13 +11,21 @@
 #endif
 
 #include "CureIntegrationBootstrapState.h"
+#include "../../server/tests/CureFixture.h"
+
+class CStack;
+class CBattleInfoCallback;
 
 /// GUI-thread, initial-only ordinary scenario setup; no battle or callback ownership.
 class CureIntegrationBootstrap
 {
 	cureBootstrap::State state;
+	std::shared_ptr<cureFixture::Context> fixture;
+	bool replicaChecked = false;
 
 public:
-	explicit CureIntegrationBootstrap(const char * optIn) : state(optIn) {}
+	explicit CureIntegrationBootstrap(const char * optIn);
 	void update();
+	void verifyReplicatedFixture(const CBattleInfoCallback & battle);
+	void verifyFixtureTarget(const CStack & target, const CBattleInfoCallback & battle) const;
 };

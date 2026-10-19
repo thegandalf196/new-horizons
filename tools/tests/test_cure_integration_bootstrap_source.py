@@ -11,7 +11,9 @@ class BootstrapSourceTests(unittest.TestCase):
         source = (ROOT/"client/tests/CureIntegrationDriver.cpp").read_text()
         additions = ("#include \"CureIntegrationBootstrap.h\"\n",
                      '\tCureIntegrationBootstrap bootstrap{std::getenv("NH_CURE_BOOTSTRAP")};\n',
-                     "\t\tstate->bootstrap.update();\n")
+                     "\t\tstate->bootstrap.update();\n",
+                     "\t\tbootstrap.verifyFixtureTarget(initialTarget, *callback);\n",
+                     "\t\tif(current->makingTurn())\n\t\t\tbootstrap.verifyReplicatedFixture(*current->getBattle());\n")
         self.assertLess(source.index("state->tick(state);"), source.index("state->bootstrap.update();"))
         for addition in additions:
             self.assertEqual(source.count(addition), 1)
@@ -36,7 +38,7 @@ class BootstrapSourceTests(unittest.TestCase):
                  "GAME->server().startMapAfterConnection(info);")
         self.assertEqual([source.index(step) for step in steps], sorted(source.index(step) for step in steps))
         for forbidden in ("debugStartTest(", "setPlayer(", "sendStartGame(", "std::thread",
-                          "sleep_for", "newHorizonsFrozen", "seconds(180)", "srand("):
+                          "sleep_for", "sendAndApply", "seconds(180)", "srand("):
             self.assertNotIn(forbidden, source)
         self.assertIn("state.awaitingLoaded()", source)
         self.assertIn("EClientState::GAMEPLAY", source)

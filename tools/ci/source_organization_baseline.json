@@ -24901,13 +24901,14 @@
       "sha256": "a2b58bc0fff331c7e5c4a9a5d8b3c594559e20701375aca2d6308821ae1dec3a"
     },
     "server/battles/BattleFlowProcessor.cpp": {
-      "kind": "legacy",
-      "lines": 3145,
+      "kind": "exception",
+      "lines": 3151,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 3145 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6ea602e746323362dab6dd147ac64c30945891467b777ca8bac072052632ef84"
+      "rationale": "Exact six-line test-only routing exception: one guarded include and one guarded call immediately before normal human control. Macro-OFF stripping restores the entire previous file byte-for-byte. Fixture validation, ownership and publication live in the dedicated integration component; extracting unrelated battle flow while changing this stimulus would increase lifecycle risk. No ordinary simulation behavior or additional hotspot growth is approved.",
+      "review": "cure-deterministic-fixture-source-v1",
+      "review_scope": "exact-test-only-routing-technical-exception",
+      "sha256": "ff508a3ddbaf44bae104b1b5f1d37133d750ca39880d20d00099e1b4d3565a90",
+      "deferral": "Engine owner must keep this exact3151-line ceiling and six-line macro-isolated route. Before any further flow growth, extract a cohesive activation/publication preflight with ordering and retirement characterization; retain restart/teardown regression and actual integration versus ordinary symbol exclusion proof. This exception does not waive existing oversized-flow debt."
     },
     "server/battles/BattleFlowProcessor.cpp::bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & battle, const CStack * next)#1": {
       "kind": "legacy",
@@ -24964,13 +24965,14 @@
       "sha256": "4c2b7f2dfafc3e1b90810f891197b776c0731e9d1ba9d7b2671ecbd98bf05152"
     },
     "server/battles/BattleFlowProcessor.cpp::void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)#1": {
-      "kind": "legacy",
-      "lines": 94,
+      "kind": "exception",
+      "lines": 97,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 94 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "81c0c29d7e8fc927e072ec5ed66cf09c0ad23d68c3a8143287b81fc7dc4e4504"
+      "rationale": "Exact three-line integration-only guarded route after unchanged battle-retirement validation and immediately before existing TURN_QUEUE activation. The helper returns a reacquired selected Water after authoritative fixture publication; all substantive setup logic is outside this function. Macro-OFF body is unchanged and97 remains below150. No other ordering or future growth is approved.",
+      "review": "cure-deterministic-fixture-source-v1",
+      "review_scope": "exact-test-only-routing-technical-exception",
+      "sha256": "3641367a145a0b944f3ca4c72556f8d818006262d0fd90c3a5554b4cba21d6e2",
+      "deferral": "Engine owner must retain the exact97-line limit. Before adding another activation branch, extract a typed queue-boundary preflight with packet/order and synchronous-retirement characterization. Do not alter the protected restart teardown or move the whole function to another oversized unit."
     },
     "server/battles/BattleFlowProcessor.cpp::void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const BattleAction &ba, bool masterGateActivationContinuation, bool pursuitActivationContinuation, bool rangedAttackContinuation)#1": {
       "kind": "legacy",

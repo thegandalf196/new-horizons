@@ -85,9 +85,9 @@ if(ENABLE_NH_CURE_CLIENT_INTEGRATION)
 		../client/tests/CureIntegrationBootstrapState.h
 		../client/tests/CureCallbackRequestLease.cpp
 		../client/tests/CureCallbackRequestLease.h)
-	target_compile_definitions(nhCureClientIntegration PRIVATE NH_CURE_CLIENT_INTEGRATION VCMI_SDL3)
+	target_compile_definitions(nhCureClientIntegration PRIVATE NH_CURE_CLIENT_INTEGRATION NH_CURE_SIMULATION_FIXTURE VCMI_SDL3)
 	target_include_directories(nhCureClientIntegration PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-	target_link_libraries(nhCureClientIntegration PRIVATE vcmiclientcommon ${SDL3_CORE_TARGET})
+	target_link_libraries(nhCureClientIntegration PRIVATE nhCureSimulationFixture vcmiclientcommon ${SDL3_CORE_TARGET})
 	vcmi_set_output_dir(nhCureClientIntegration "")
 endif()
 
