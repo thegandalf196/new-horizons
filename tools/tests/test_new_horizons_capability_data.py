@@ -87,17 +87,19 @@ CANONICAL_LEADERSHIP_REQUIREMENTS = {
     'core:wyvern': 430,
     'core:hydra': 650,
     'core:pixie': 45,
-    'core:sprite': 60,
+    'core:sprite': 45,
     'core:airElemental': 250,
     'core:waterElemental': 250,
     'core:fireElemental': 250,
     'core:earthElemental': 250,
+    'core:psychicElemental': 320,
     'core:magicElemental': 320,
+    'core:firebird': 650,
     'core:phoenix': 650,
     'core:enchanter': 380,
     'core:sharpshooter': 170,
     'new-horizons:wisp': 140,
-    'new-horizons:wispUpgrade': 170,
+    'new-horizons:wispUpgrade': 140,
 }
 
 
@@ -119,22 +121,19 @@ class CapabilityDataTest(unittest.TestCase):
         self.assertEqual(leadership['globalScalePercent'], 100)
         self.assertEqual(leadership['creatureRequirements'], CANONICAL_LEADERSHIP_REQUIREMENTS)
 
-    def test_leadership_upgrade_multiplier_rounds_to_nearest_ten(self):
+    def test_fresh_leadership_upgrade_multiplier_preserves_every_base_value(self):
         leadership = self.rules['leadership']
-        self.assertEqual(leadership['upgradeMultiplierPercent'], 120)
-        self.assertEqual(leadership['upgradeRounding'], 10)
+        self.assertEqual(leadership['upgradeMultiplierPercent'], 100)
+        self.assertEqual(leadership['upgradeRounding'], 1)
 
         def upgraded_requirement(base):
             multiplier = leadership['upgradeMultiplierPercent']
             rounding = leadership['upgradeRounding']
             return ((base * multiplier + 50 * rounding) // (100 * rounding)) * rounding
 
-        for base, expected in ((45, 50), (55, 70), (60, 70), (90, 110),
-                               (140, 170), (150, 180), (220, 260),
-                               (320, 380), (430, 520), (470, 560),
-                               (650, 780)):
+        for base in CANONICAL_LEADERSHIP_REQUIREMENTS.values():
             with self.subTest(base=base):
-                self.assertEqual(upgraded_requirement(base), expected)
+                self.assertEqual(upgraded_requirement(base), base)
 
     def test_siege_rank_table_remains_canonical(self):
         self.assertEqual(self.rules['siege'], {

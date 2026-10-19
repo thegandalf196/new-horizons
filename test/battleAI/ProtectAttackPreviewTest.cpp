@@ -29,7 +29,7 @@ protected:
 		gameHandler->sendAndApply(pack);
 	}
 
-	void prepare(bool splash)
+	void prepare(bool splash, bool academyPair = false)
 	{
 		ASSERT_NO_FATAL_FAILURE(prepareCommands());
 		BattleUnitsChanged remove;
@@ -38,8 +38,18 @@ protected:
 			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
 		actor = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(89), 100);
-		ward = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(93), 100);
-		protector = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(94), 100);
+		ward = addStack(BattleSide::ATTACKER,
+			creatureByName(academyPair ? "core:masterGremlin" : "core:pikeman"), BattleHex(93), 100);
+		// HOTRAITS retains the reversed internal Golem IDs: ironGolem is Stone Golem.
+		protector = addStack(BattleSide::ATTACKER,
+			creatureByName(academyPair ? "core:ironGolem" : "core:pikeman"), BattleHex(94), 100);
+		if(academyPair)
+		{
+			ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
+			ASSERT_EQ(ward->unitType()->getJsonKey(), "core:masterGremlin");
+			ASSERT_EQ(protector->unitType()->getJsonKey(), "core:ironGolem");
+			ASSERT_TRUE(ward->isShooter());
+		}
 		for(auto * unit : {actor, ward, protector})
 		{
 			ASSERT_FALSE(unit->doubleWide());
@@ -50,8 +60,9 @@ protected:
 				BonusType::ATTACKS_ALL_ADJACENT, BonusSource::OTHER, 1, BonusSourceID()));
 		// The remote counter still has a primary, but its adjacent Ward must
 		// not become counter collateral merely because the Protector has sweep.
-		protector->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-			BonusType::ATTACKS_ALL_ADJACENT, BonusSource::OTHER, 1, BonusSourceID()));
+		if(!academyPair)
+			protector->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+				BonusType::ATTACKS_ALL_ADJACENT, BonusSource::OTHER, 1, BonusSourceID()));
 		activate(protector);
 		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 			BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
@@ -99,9 +110,9 @@ protected:
 		return bytes;
 	}
 
-	void compareNative(bool splash)
+	void compareNative(bool splash, bool academyPair = false)
 	{
-		ASSERT_NO_FATAL_FAILURE(prepare(splash));
+		ASSERT_NO_FATAL_FAILURE(prepare(splash, academyPair));
 		const auto untouched = branchState(*battle());
 		const auto rngOrdersLedger = nativeState();
 		const auto traffic = packetCounts();
@@ -168,6 +179,30 @@ protected:
 			}
 		}
 	}
+
+	void compareContinuation()
+	{
+		auto player = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(1));
+		auto parent = std::make_shared<HypotheticBattle>(environment.get(), player);
+		auto candidate = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		const auto before = branchState(*battle());
+		const auto rngOrdersLedger = nativeState();
+		const auto traffic = packetCounts();
+		DamageCache cache;
+		cache.buildDamageCache(candidate, BattleSide::DEFENDER);
+		BattleExchangeEvaluator evaluator(candidate, environment, 1.0f, 2);
+		heroActionUtility::AbsoluteContinuationUtility utility{0};
+		ASSERT_NO_THROW(heroActionUtility::evaluateContinuation(utility,
+			candidate->getForUpdate(actor->unitId()), true, CachedAttack{}, cache,
+			candidate, environment, 1.0f, 2, evaluator, nullptr));
+		EXPECT_TRUE(std::isfinite(utility.value));
+		EXPECT_EQ(branchState(*parent), before);
+		EXPECT_EQ(branchState(*sibling), before);
+		EXPECT_EQ(branchState(*battle()), before);
+		EXPECT_EQ(nativeState(), rngOrdersLedger);
+		EXPECT_EQ(packetCounts(), traffic);
+	}
 };
 
 TEST_F(ProtectAttackPreviewTest, NativeRemoteCounterRetainsOnlyItsPrimaryVictim)
@@ -204,24 +239,16 @@ TEST_F(ProtectAttackPreviewTest, SweepUsesWardContactAndRemoteCounterHasNoCollat
 TEST_F(ProtectAttackPreviewTest, FullOrderContinuationSearchLeavesNativeParentAndSiblingUntouched)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false));
-	auto player = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(1));
-	auto parent = std::make_shared<HypotheticBattle>(environment.get(), player);
-	auto candidate = std::make_shared<HypotheticBattle>(environment.get(), parent);
-	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
-	const auto before = branchState(*battle());
-	const auto rngOrdersLedger = nativeState();
-	const auto traffic = packetCounts();
-	DamageCache cache;
-	cache.buildDamageCache(candidate, BattleSide::DEFENDER);
-	BattleExchangeEvaluator evaluator(candidate, environment, 1.0f, 2);
-	heroActionUtility::AbsoluteContinuationUtility utility{0};
-	ASSERT_NO_THROW(heroActionUtility::evaluateContinuation(utility,
-		candidate->getForUpdate(actor->unitId()), true, CachedAttack{}, cache,
-		candidate, environment, 1.0f, 2, evaluator, nullptr));
-	EXPECT_TRUE(std::isfinite(utility.value));
-	EXPECT_EQ(branchState(*parent), before);
-	EXPECT_EQ(branchState(*sibling), before);
-	EXPECT_EQ(branchState(*battle()), before);
-	EXPECT_EQ(nativeState(), rngOrdersLedger);
-	EXPECT_EQ(packetCounts(), traffic);
+	ASSERT_NO_FATAL_FAILURE(compareContinuation());
+}
+
+TEST_F(ProtectAttackPreviewTest, StoneGolemProtectingMasterCabirMatchesNativeAttackAndRemoteCounter)
+{
+	ASSERT_NO_FATAL_FAILURE(compareNative(false, true));
+}
+
+TEST_F(ProtectAttackPreviewTest, StoneGolemProtectingMasterCabirSupportsFullOrderContinuation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	ASSERT_NO_FATAL_FAILURE(compareContinuation());
 }

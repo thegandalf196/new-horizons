@@ -121,7 +121,7 @@ class ConfluxGrowthDataTest(unittest.TestCase):
             'wispUpgrade': {
                 'name': 'Greater Wisp', 'attack': 9, 'defense': 6, 'minDamage': 3,
                 'maxDamage': 4, 'hitPoints': 16, 'speed': 6, 'initiative': 7,
-                'growth': 8, 'gold': 240, 'leadership': 170,
+                'growth': 8, 'gold': 240, 'leadership': 140,
                 'fightValue': 360, 'aiValue': 400, 'animation': 'WispUpgrade',
                 'map': 'WispUpgradeMap', 'iconLarge': 'WispUpgrade/icons/icon-58x64.png',
                 'iconSmall': 'WispUpgrade/icons/icon-32x32.png',

@@ -12,6 +12,12 @@ Generated user Maps must remain refreshable after initialization and resolve thr
 
 - A range-for over a dereferenced temporary shared BonusList owner can dangle. Retain the owning list through iteration. Keep distinct equal bonus identities, ordered/raw aliases, child ADD/removal/UPDATE and branch aging isolation controls.
 - Use authoritative action/activation/controller APIs and legally earned perk/Metamagic allowances in fixtures. Do not forge state to bypass admission. Damage must be meaningful and survivable where later assertions require a living stack.
+- Protect redirects the primary victim, not the original melee contact geometry.
+  Derive collateral from the Ward's contacted hex. A nonadjacent Protector can
+  retaliate against the attacker without adjacent counter collateral; do not ask
+  adjacency-only helpers to invent a direction for that remote counter. Keep
+  `ProtectAttackPreviewTest` coverage for native/forecast damage, retaliation,
+  Order consumption, continuation search and live/parent/sibling isolation.
 - Exercise unselected, cancelled and valid Gating reserve choices; an unset creature
   identity must not be dereferenced. Check localization separately. Cover field
   and siege battles with heroes and war machines when validating fortification

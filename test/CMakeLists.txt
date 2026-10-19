@@ -642,6 +642,7 @@ set(test_SRCS
 		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsCastleGateTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp
+		server/NewHorizonsUpgradeLeadershipParityTest.cpp
 		server/NewHorizonsBattleFormResultTest.cpp
 		server/NewHorizonsRecruitmentMusterTest.cpp
 		server/NewHorizonsDiplomacyTest.cpp

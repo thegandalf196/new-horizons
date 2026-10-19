@@ -52,12 +52,12 @@ class ElementalRebalanceDataTest(unittest.TestCase):
 
     def test_independent_growth_and_centralized_leadership(self):
         rules = self.capabilities['leadership']
-        self.assertEqual((rules['upgradeMultiplierPercent'], rules['upgradeRounding']), (120, 10))
+        self.assertEqual((rules['upgradeMultiplierPercent'], rules['upgradeRounding']), (100, 1))
         for base, upgrade in zip(list(STATS)[::2], list(STATS)[1::2]):
             with self.subTest(creature=base):
                 self.assertEqual(rules['creatureRequirements']['core:' + base], 250)
                 self.assertNotIn('core:' + upgrade, rules['creatureRequirements'])
-                self.assertEqual(250 * rules['upgradeMultiplierPercent'] // 100, 300)
+                self.assertEqual(250 * rules['upgradeMultiplierPercent'] // 100, 250)
                 growth = self.categories['growthLines']['core:' + base]
                 self.assertEqual(growth['weeklyBaseGrowth'], 4)
                 self.assertEqual(growth['members'], ['core:' + base, 'core:' + upgrade])

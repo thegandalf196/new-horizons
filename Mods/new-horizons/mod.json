@@ -6008,8 +6008,8 @@
 				},
 				"leadership": {
 					"globalScalePercent": 100,
-					"upgradeMultiplierPercent": 120,
-					"upgradeRounding": 10,
+					"upgradeMultiplierPercent": 100,
+					"upgradeRounding": 1,
 					"creatureRequirements": {
 						"core:pikeman": 60,
 						"core:archer": 90,
@@ -6068,17 +6068,19 @@
 						"core:wyvern": 430,
 						"core:hydra": 650,
 						"core:pixie": 45,
-						"core:sprite": 60,
+						"core:sprite": 45,
 						"core:airElemental": 250,
 						"core:waterElemental": 250,
 						"core:fireElemental": 250,
 						"core:earthElemental": 250,
+						"core:psychicElemental": 320,
 						"core:magicElemental": 320,
+						"core:firebird": 650,
 						"core:phoenix": 650,
 						"core:enchanter": 380,
 						"core:sharpshooter": 170,
 						"new-horizons:wisp": 140,
-						"new-horizons:wispUpgrade": 170
+						"new-horizons:wispUpgrade": 140
 					}
 				},
 				"siege": {

@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/CCreatureHandler.h"
+#include "../../lib/GameLibrary.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/Propagators.h"
@@ -110,7 +112,7 @@ TEST(NewHorizonsCapabilityRules, CanonicalLeadershipUsesIndependentPerSlotLimits
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	const CreatureID halberdier(CreatureID::decode("core:halberdier"));
 	EXPECT_EQ(newHorizonsHeroes::capabilityCreatureLeadershipRequirement(knight, pikeman), 60);
-	EXPECT_EQ(newHorizonsHeroes::capabilityCreatureLeadershipRequirement(knight, halberdier), 70);
+	EXPECT_EQ(newHorizonsHeroes::capabilityCreatureLeadershipRequirement(knight, halberdier), 60);
 
 	const auto pikemanSlot = newHorizonsHeroes::capabilityLeadershipSlot(knight, 1, pikeman);
 	const auto halberdierSlot = newHorizonsHeroes::capabilityLeadershipSlot(knight, 1, halberdier);
@@ -120,9 +122,68 @@ TEST(NewHorizonsCapabilityRules, CanonicalLeadershipUsesIndependentPerSlotLimits
 	EXPECT_EQ(pikemanSlot->maximum, 17);
 	EXPECT_TRUE(pikemanSlot->accepts(17));
 	EXPECT_FALSE(pikemanSlot->accepts(18));
-	EXPECT_EQ(halberdierSlot->maximum, 14);
+	EXPECT_EQ(halberdierSlot->maximum, 17);
 	// A second slot is evaluated from the full hero rating again; there is no shared budget.
 	EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipSlot(knight, 1, pikeman)->maximum, 17);
+}
+
+TEST(NewHorizonsCapabilityRules, EveryLoadedUpgradePreservesRequirementUsageAndPerSlotCapacity)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(rules,
+		HeroClassID(HeroClassID::decode("core:knight")));
+	size_t edges = 0;
+	for(const auto & base : LIBRARY->creh->objects)
+	{
+		if(!base)
+			continue;
+		for(const auto upgrade : base->upgrades)
+		{
+			ASSERT_NE(upgrade.toCreature(), nullptr);
+			SCOPED_TRACE(base->getJsonKey() + " -> " + upgrade.toCreature()->getJsonKey());
+			const auto before = newHorizonsHeroes::capabilityLeadershipSlot(resolved, 20, base->getId());
+			const auto after = newHorizonsHeroes::capabilityLeadershipSlot(resolved, 20, upgrade);
+			ASSERT_TRUE(before);
+			ASSERT_TRUE(after);
+			EXPECT_GT(before->requirement, 0);
+			EXPECT_EQ(after->requirement, before->requirement);
+			EXPECT_EQ(after->maximum, before->maximum);
+			for(const int count : {1, 7, 100})
+				EXPECT_EQ(int64_t(count) * after->requirement, int64_t(count) * before->requirement);
+			++edges;
+		}
+	}
+	EXPECT_EQ(edges, 64u);
+}
+
+TEST(NewHorizonsCapabilityRules, HistoricalUpgradeMultiplierAndExplicitOverridesSurviveRoundTrip)
+{
+	JsonNode historical(JsonPath::builtin("config/newHorizonsCapabilities"));
+	historical["leadership"]["upgradeMultiplierPercent"].Integer() = 120;
+	historical["leadership"]["upgradeRounding"].Integer() = 10;
+	historical["leadership"]["creatureRequirements"]["core:sprite"].Integer() = 60;
+	historical["leadership"]["creatureRequirements"]["new-horizons:wispUpgrade"].Integer() = 170;
+	historical["leadership"]["creatureRequirements"].Struct().erase("core:firebird");
+	historical["leadership"]["creatureRequirements"].Struct().erase("core:psychicElemental");
+	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(historical,
+		HeroClassID(HeroClassID::decode("core:knight")));
+	CMemorySerializer serializer;
+	serializer.oser & resolved;
+	JsonNode restored;
+	serializer.iser & restored;
+	EXPECT_EQ(restored, resolved);
+	for(const auto & [identifier, expected] : {
+		std::pair{"core:halberdier", 70}, {"core:stormElemental", 300},
+		{"core:skeletonWarrior", 50}, {"core:gnollMarauder", 70},
+		{"core:marksman", 110}, {"core:crusader", 180},
+		{"core:royalGriffin", 260}, {"core:archangel", 780},
+		{"core:sprite", 60}, {"new-horizons:wispUpgrade", 170},
+		{"core:firebird", 0}, {"core:psychicElemental", 0}})
+	{
+		SCOPED_TRACE(identifier);
+		EXPECT_EQ(newHorizonsHeroes::capabilityCreatureLeadershipRequirement(restored,
+			CreatureID(CreatureID::decode(identifier))), expected);
+	}
 }
 
 TEST(NewHorizonsCapabilityRules, CanonicalSiegeOutputsUseExactRatingFormulas)
