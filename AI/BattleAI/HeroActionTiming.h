@@ -29,6 +29,11 @@ struct Continuation
 {
 	Stage full;
 	Stage cached;
+	// Sequential child scopes within one FULL body; different candidates overlap.
+	Stage fullSetup;
+	Stage fullReachability;
+	Stage fullMovement;
+	Stage fullBestTarget;
 };
 
 /// Worker slots overlap in wall time. Their sums are not disjoint loop time.

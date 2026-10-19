@@ -27,16 +27,31 @@ void evaluateContinuation(AbsoluteContinuationUtility & continuation,
 		logAi->trace("Full evaluation: movement range/position changed or no cached attack.");
 #endif
 
-		PotentialTargets innerTargets(modelActive.get(), innerCache, state);
+		auto innerTargets = [&]
+		{
+			heroActionTiming::Scope setup(timing ? &timing->fullSetup : nullptr);
+			return PotentialTargets(modelActive.get(), innerCache, state);
+		}();
 		BattleExchangeEvaluator innerEvaluator(state, env, strengthRatio, simulationTurnsCount);
 
-		innerEvaluator.updateReachabilityMap(state);
+		{
+			heroActionTiming::Scope reachability(timing ? &timing->fullReachability : nullptr);
+			innerEvaluator.updateReachabilityMap(state);
+		}
 
-		auto moveTarget = innerEvaluator.findMoveTowardsUnreachable(modelActive.get(), innerTargets, innerCache, state);
+		auto moveTarget = [&]
+		{
+			heroActionTiming::Scope movement(timing ? &timing->fullMovement : nullptr);
+			return innerEvaluator.findMoveTowardsUnreachable(modelActive.get(), innerTargets, innerCache, state);
+		}();
 
 		if(!innerTargets.possibleAttacks.empty())
 		{
-			auto newStackAction = innerEvaluator.findBestTarget(modelActive.get(), innerTargets, innerCache, state);
+			auto newStackAction = [&]
+			{
+				heroActionTiming::Scope bestTarget(timing ? &timing->fullBestTarget : nullptr);
+				return innerEvaluator.findBestTarget(modelActive.get(), innerTargets, innerCache, state);
+			}();
 
 			stackActionScore = std::max(moveTarget.score, newStackAction.score);
 		}

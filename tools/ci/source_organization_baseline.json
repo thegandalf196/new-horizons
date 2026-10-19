@@ -17342,34 +17342,34 @@
       ]
     },
     "AI/BattleAI/HeroActionTiming.h": {
-      "sha256": "fe2fa9323d133d78296a85c522963a45ba19ff9229eef07ea3a56a7d07fc50f1",
-      "review": "hero-action-timing-header-functions-v1",
-      "rationale": "Complete124-line header review identifies five inline bodies: Candidates::size and Call::enabled, identify, sink and candidateSlots. Other methods are declarations or deleted operations. Parser recovery at the exported unsigned-int declaration on line101 does not conceal a callable body.",
+      "sha256": "1ac514e3f25b3b02315ceedaeb920afcb7750d19fdc88a9cb50964a7f848cbb6",
+      "review": "hero-full-substage-header-functions-v2-independent-9a4a83",
+      "rationale": "Complete129-line header renewal retains five unchanged inline bodies: Candidates::size and Call::enabled, identify, sink and candidateSlots. Only four Stage members and their explanatory comment are added to Continuation; all callable spans shift by five lines. Other methods remain declarations or deleted operations. Parser recovery at exported unsigned-int parseLimit declaration106 is not a body. No growth exception or gameplay rule is introduced.",
       "functions": [
         {
           "symbol": "heroActionTiming::Candidates::size_t size() const#1",
-          "start": 68,
-          "end": 68
+          "start": 73,
+          "end": 73
         },
         {
           "symbol": "heroActionTiming::Call::bool enabled() const#1",
-          "start": 117,
-          "end": 117
+          "start": 122,
+          "end": 122
         },
         {
           "symbol": "heroActionTiming::Call::void identify(Identity captured)#1",
-          "start": 118,
-          "end": 118
+          "start": 123,
+          "end": 123
         },
         {
           "symbol": "heroActionTiming::Call::Summary * sink()#1",
-          "start": 121,
-          "end": 121
+          "start": 126,
+          "end": 126
         },
         {
           "symbol": "heroActionTiming::Call::Candidates & candidateSlots()#1",
-          "start": 122,
-          "end": 122
+          "start": 127,
+          "end": 127
         }
       ]
     }

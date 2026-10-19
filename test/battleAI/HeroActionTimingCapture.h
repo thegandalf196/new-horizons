@@ -63,6 +63,9 @@ inline std::map<std::string, int64_t> fields(const std::string & row)
 		if(split != std::string::npos)
 			result.emplace(token.substr(0, split), std::stoll(token.substr(split + 1)));
 	}
+	for(const std::string stage : {"setup", "reachability", "movement", "best_target"})
+		for(const std::string metric : {"calls", "sum_us", "max_us"})
+			EXPECT_GE(result.at("continuation_full_" + stage + "_" + metric), 0);
 	return result;
 }
 

@@ -295,6 +295,10 @@ TEST_F(HeroActionUtilityTest, DeadContinuationKeepsPriorZeroWithoutTouchingCache
 	EXPECT_EQ(continuation.value, 0.0f);
 	EXPECT_EQ(timing.full.calls, 0u);
 	EXPECT_EQ(timing.cached.calls, 0u);
+	EXPECT_EQ(timing.fullSetup.calls, 0u);
+	EXPECT_EQ(timing.fullReachability.calls, 0u);
+	EXPECT_EQ(timing.fullMovement.calls, 0u);
+	EXPECT_EQ(timing.fullBestTarget.calls, 0u);
 }
 
 TEST_F(HeroActionUtilityTest, FullAndCachedContinuationMatchFrozenLegacyBodyBitForBit)
@@ -334,6 +338,10 @@ TEST_F(HeroActionUtilityTest, FullAndCachedContinuationMatchFrozenLegacyBodyBitF
 			timed ? &timing : nullptr);
 		EXPECT_EQ(timing.full.calls, timed && !cached ? 1u : 0u);
 		EXPECT_EQ(timing.cached.calls, timed && cached ? 1u : 0u);
+		EXPECT_EQ(timing.fullSetup.calls, timed && !cached ? 1u : 0u);
+		EXPECT_EQ(timing.fullReachability.calls, timed && !cached ? 1u : 0u);
+		EXPECT_EQ(timing.fullMovement.calls, timed && !cached ? 1u : 0u);
+		EXPECT_EQ(timing.fullBestTarget.calls, timed && !cached ? 1u : 0u);
 		EXPECT_EQ(bits(actual.value), bits(expected));
 		EXPECT_EQ(reference->battleGetUnitByID(own->unitId())->acquireState()->save().toString(),
 			extracted->battleGetUnitByID(own->unitId())->acquireState()->save().toString());

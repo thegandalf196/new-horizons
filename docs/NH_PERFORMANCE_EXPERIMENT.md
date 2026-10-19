@@ -28,6 +28,11 @@ Do not run concurrent builds/heavy tests during measurements. Graphical probes r
   except Focus Fire's existing inline action-factory argument. These are elapsed
   intervals, not CPU, ACK or presentation measurements. Disabled paths sample no
   clocks or allocate candidate slots; the existing no-Hero return remains first.
+  FULL continuations additionally report sequential child scopes for target
+  construction (`setup`), explicit reachability update, movement search and
+  conditional best-target selection. These do not exhaust FULL work; movement
+  search may itself update reachability. Different candidates overlap, and each
+  child's maximum need not belong to the candidate with the largest FULL time.
 - Target-probe preparation begins after the invalid-actor/ended-activation guard and ends immediately before primary damage on the ordinary path; early returns and exceptions finalize it by RAII. Applied attacks and null timing sinks do not sample it. Movement, waited and normal contexts report it separately.
 - Preparation, primary damage and DPS scoring are disjoint children of target-probe time, not extra terms in the seven-region exchange-body closure. Their remainder includes between-child work, post-work and measurement boundaries; it is not pure postprocessing. Focused native tests protect score/state/action/RNG parity and child bounds. Positive Overwatch early-return preparation-counter coverage remains unverified; adjacent reaction tests do not establish it.
 - Windows compiler-command evidence in `tools/ci/windows_ai_compile_flags.py` records a privacy-safe supported flag subset and resolved response arguments. Configured optimization intent alone does not establish final compiler argv.

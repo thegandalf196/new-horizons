@@ -54,6 +54,10 @@ void Candidates::finish(Summary & summary, bool threw) const
 	{
 		summary.continuation.full.accumulate(slot.full);
 		summary.continuation.cached.accumulate(slot.cached);
+		summary.continuation.fullSetup.accumulate(slot.fullSetup);
+		summary.continuation.fullReachability.accumulate(slot.fullReachability);
+		summary.continuation.fullMovement.accumulate(slot.fullMovement);
+		summary.continuation.fullBestTarget.accumulate(slot.fullBestTarget);
 	}
 	summary.candidates += slots.size();
 	summary.loopJoined = true;
@@ -139,6 +143,10 @@ Call::~Call()
 			" candidates=%llu loop_joined=%d loop_threw=%d loop_calls=%llu loop_us=%llu loop_max_us=%llu"
 			" continuation_full_calls=%llu continuation_full_sum_us=%llu continuation_full_max_us=%llu"
 			" continuation_cached_calls=%llu continuation_cached_sum_us=%llu continuation_cached_max_us=%llu"
+			" continuation_full_setup_calls=%llu continuation_full_setup_sum_us=%llu continuation_full_setup_max_us=%llu"
+			" continuation_full_reachability_calls=%llu continuation_full_reachability_sum_us=%llu continuation_full_reachability_max_us=%llu"
+			" continuation_full_movement_calls=%llu continuation_full_movement_sum_us=%llu continuation_full_movement_max_us=%llu"
+			" continuation_full_best_target_calls=%llu continuation_full_best_target_sum_us=%llu continuation_full_best_target_max_us=%llu"
 			" submit_calls=%llu submit_us=%llu submit_max_us=%llu submit_returned=%llu submit_threw=%llu",
 			identity.battle, identity.player, identity.side, static_cast<long long>(identity.stack), identity.round,
 			static_cast<unsigned long long>(ordinal), static_cast<unsigned long long>(summary.candidates),
@@ -152,6 +160,18 @@ Call::~Call()
 			static_cast<unsigned long long>(summary.continuation.cached.calls),
 			static_cast<unsigned long long>(summary.continuation.cached.totalMicroseconds),
 			static_cast<unsigned long long>(summary.continuation.cached.maxMicroseconds),
+			static_cast<unsigned long long>(summary.continuation.fullSetup.calls),
+			static_cast<unsigned long long>(summary.continuation.fullSetup.totalMicroseconds),
+			static_cast<unsigned long long>(summary.continuation.fullSetup.maxMicroseconds),
+			static_cast<unsigned long long>(summary.continuation.fullReachability.calls),
+			static_cast<unsigned long long>(summary.continuation.fullReachability.totalMicroseconds),
+			static_cast<unsigned long long>(summary.continuation.fullReachability.maxMicroseconds),
+			static_cast<unsigned long long>(summary.continuation.fullMovement.calls),
+			static_cast<unsigned long long>(summary.continuation.fullMovement.totalMicroseconds),
+			static_cast<unsigned long long>(summary.continuation.fullMovement.maxMicroseconds),
+			static_cast<unsigned long long>(summary.continuation.fullBestTarget.calls),
+			static_cast<unsigned long long>(summary.continuation.fullBestTarget.totalMicroseconds),
+			static_cast<unsigned long long>(summary.continuation.fullBestTarget.maxMicroseconds),
 			static_cast<unsigned long long>(summary.submit.calls),
 			static_cast<unsigned long long>(summary.submit.totalMicroseconds),
 			static_cast<unsigned long long>(summary.submit.maxMicroseconds),

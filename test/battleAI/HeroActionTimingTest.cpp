@@ -30,6 +30,10 @@ TEST(HeroActionTimingTest, DisabledScopesReadNoClockAndPrepareNoCandidateStorage
 	candidates.prepare(false, 999999);
 	{
 		heroActionTiming::Scope continuation(nullptr, fakeNow);
+		heroActionTiming::Scope setup(nullptr, fakeNow);
+		heroActionTiming::Scope reachability(nullptr, fakeNow);
+		heroActionTiming::Scope movement(nullptr, fakeNow);
+		heroActionTiming::Scope bestTarget(nullptr, fakeNow);
 		heroActionTiming::LoopScope loop(candidates, nullptr, fakeNow);
 		heroActionTiming::SubmitScope submit(nullptr, fakeNow);
 	}
@@ -76,6 +80,13 @@ TEST(HeroActionTimingTest, CandidateReductionKeepsOverlappingSumsSeparateFromLoo
 		candidates.at(0)->full = {1, 60, 60};
 		candidates.at(1)->full = {1, 80, 80};
 		candidates.at(2)->cached = {1, 25, 25};
+		candidates.at(0)->fullSetup = {1, 5, 5};
+		candidates.at(1)->fullSetup = {1, 7, 7};
+		candidates.at(0)->fullReachability = {1, 10, 10};
+		candidates.at(1)->fullReachability = {1, 13, 13};
+		candidates.at(0)->fullMovement = {1, 20, 20};
+		candidates.at(1)->fullMovement = {1, 23, 23};
+		candidates.at(1)->fullBestTarget = {1, 29, 29};
 		// Workers' wall intervals may overlap: their sum can exceed loop wall.
 		clockMicroseconds = 200;
 		EXPECT_EQ(summary.continuation.full.calls, 0u);
@@ -91,6 +102,18 @@ TEST(HeroActionTimingTest, CandidateReductionKeepsOverlappingSumsSeparateFromLoo
 	EXPECT_EQ(summary.continuation.full.maxMicroseconds, 80u);
 	EXPECT_EQ(summary.continuation.cached.calls, 1u);
 	EXPECT_EQ(summary.continuation.cached.totalMicroseconds, 25u);
+	EXPECT_EQ(summary.continuation.fullSetup.calls, 2u);
+	EXPECT_EQ(summary.continuation.fullSetup.totalMicroseconds, 12u);
+	EXPECT_EQ(summary.continuation.fullSetup.maxMicroseconds, 7u);
+	EXPECT_EQ(summary.continuation.fullReachability.calls, 2u);
+	EXPECT_EQ(summary.continuation.fullReachability.totalMicroseconds, 23u);
+	EXPECT_EQ(summary.continuation.fullReachability.maxMicroseconds, 13u);
+	EXPECT_EQ(summary.continuation.fullMovement.calls, 2u);
+	EXPECT_EQ(summary.continuation.fullMovement.totalMicroseconds, 43u);
+	EXPECT_EQ(summary.continuation.fullMovement.maxMicroseconds, 23u);
+	EXPECT_EQ(summary.continuation.fullBestTarget.calls, 1u);
+	EXPECT_EQ(summary.continuation.fullBestTarget.totalMicroseconds, 29u);
+	EXPECT_EQ(summary.continuation.fullBestTarget.maxMicroseconds, 29u);
 }
 
 TEST(HeroActionTimingTest, ParallelWorkersOwnDistinctSlotsAndReduceOnlyAfterJoin)
@@ -105,6 +128,7 @@ TEST(HeroActionTimingTest, ParallelWorkersOwnDistinctSlotsAndReduceOnlyAfterJoin
 		{
 			clockMicroseconds = 10;
 			heroActionTiming::Scope scope(&candidates.at(index)->full, fakeNow);
+			heroActionTiming::Scope setup(&candidates.at(index)->fullSetup, fakeNow);
 			clockMicroseconds = 17;
 		});
 		EXPECT_EQ(summary.continuation.full.calls, 0u);
@@ -113,6 +137,9 @@ TEST(HeroActionTimingTest, ParallelWorkersOwnDistinctSlotsAndReduceOnlyAfterJoin
 	EXPECT_EQ(summary.continuation.full.calls, count);
 	EXPECT_EQ(summary.continuation.full.totalMicroseconds, count * 7);
 	EXPECT_EQ(summary.continuation.full.maxMicroseconds, 7u);
+	EXPECT_EQ(summary.continuation.fullSetup.calls, count);
+	EXPECT_EQ(summary.continuation.fullSetup.totalMicroseconds, count * 7);
+	EXPECT_EQ(summary.continuation.fullSetup.maxMicroseconds, 7u);
 	EXPECT_EQ(summary.continuation.cached.calls, 0u);
 }
 
@@ -125,6 +152,39 @@ TEST(HeroActionTimingTest, RejectedAndDeadCandidatesNeedNoContinuationSample)
 	EXPECT_EQ(summary.candidates, 2u);
 	EXPECT_EQ(summary.continuation.full.calls, 0u);
 	EXPECT_EQ(summary.continuation.cached.calls, 0u);
+}
+
+TEST(HeroActionTimingTest, SequentialFullChildrenKeepElapsedSeparateAndFinalizeOnThrow)
+{
+	heroActionTiming::Continuation timing;
+	clockMicroseconds = 0;
+	EXPECT_THROW({
+		heroActionTiming::Scope full(&timing.full, fakeNow);
+		{
+			heroActionTiming::Scope setup(&timing.fullSetup, fakeNow);
+			clockMicroseconds = 5;
+		}
+		{
+			heroActionTiming::Scope reachability(&timing.fullReachability, fakeNow);
+			clockMicroseconds = 12;
+		}
+		{
+			heroActionTiming::Scope movement(&timing.fullMovement, fakeNow);
+			clockMicroseconds = 23;
+		}
+		{
+			heroActionTiming::Scope bestTarget(&timing.fullBestTarget, fakeNow);
+			clockMicroseconds = 36;
+			throw std::runtime_error("best target");
+		}
+	}, std::runtime_error);
+	EXPECT_EQ(timing.full.totalMicroseconds, 36u);
+	EXPECT_EQ(timing.fullSetup.totalMicroseconds, 5u);
+	EXPECT_EQ(timing.fullReachability.totalMicroseconds, 7u);
+	EXPECT_EQ(timing.fullMovement.totalMicroseconds, 11u);
+	EXPECT_EQ(timing.fullBestTarget.totalMicroseconds, 13u);
+	EXPECT_EQ(timing.fullBestTarget.calls, 1u);
+	EXPECT_EQ(timing.cached.calls, 0u);
 }
 
 TEST(HeroActionTimingTest, ParallelExceptionJoinsBeforePartialSlotReduction)
@@ -214,6 +274,7 @@ bool exerciseCall()
 	{
 		heroActionTiming::LoopScope loop(call.candidateSlots(), call.sink());
 		heroActionTiming::Scope continuation(&call.continuation(0)->full);
+		heroActionTiming::Scope setup(&call.continuation(0)->fullSetup);
 	}
 	{
 		heroActionTiming::SubmitScope submit(call.sink());
@@ -252,6 +313,10 @@ TEST(HeroActionCallIntegrationTest, FreshProcessOptInAndCapOne)
 	EXPECT_EQ(row.at("loop_joined"), 1);
 	EXPECT_EQ(row.at("continuation_full_calls"), 1);
 	EXPECT_EQ(row.at("continuation_cached_calls"), 0);
+	EXPECT_EQ(row.at("continuation_full_setup_calls"), 1);
+	EXPECT_EQ(row.at("continuation_full_reachability_calls"), 0);
+	EXPECT_EQ(row.at("continuation_full_movement_calls"), 0);
+	EXPECT_EQ(row.at("continuation_full_best_target_calls"), 0);
 	EXPECT_EQ(row.at("submit_calls"), 1);
 	EXPECT_EQ(row.at("submit_returned"), 1);
 }
