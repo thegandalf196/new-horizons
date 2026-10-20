@@ -771,6 +771,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/ReachabilityMapProjectionTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
 		battleAI/BattleShroudStrikeTest.cpp
+		battleAI/StackWithBonusesQueryTest.cpp
 		battleAI/OrdinaryMeleeRetaliationTest.cpp
 		battleAI/OriginalMeleeSequenceTest.cpp
 		battleAI/OwnedExportBranchQueryTest.cpp

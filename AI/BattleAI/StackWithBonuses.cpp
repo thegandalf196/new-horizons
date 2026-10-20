@@ -25,6 +25,7 @@
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/CStack.h"
+#include <typeinfo>
 
 
 using hypotheticEffectSnapshotRules::hasElementalMemory;
@@ -263,12 +264,26 @@ TConstBonusListPtr StackWithBonuses::getBonusesBeforeCreatureAbilitySuppression(
 	return mergeBonuses(selector, cachingStr, unstacked);
 }
 
+bool StackWithBonuses::hasStableInheritedBonusList() const
+{
+	// Native request caches replace list owners, never a held query container.
+	// Foreign/derived implementations and typed export queries are not inferred.
+	if(!origBearer)
+		return false;
+	if(typeid(*origBearer) == typeid(CStack))
+		return true;
+	if(typeid(*origBearer) != typeid(StackWithBonuses))
+		return false;
+	const auto * projected = dynamic_cast<const StackWithBonuses *>(origBearer);
+	return !projected->owner->initialExportSubject();
+}
+
 TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 	const std::string & cachingStr, bool unstacked) const
 {
-	auto ret = std::make_shared<BonusList>();
 	if(damageScoringBonuses)
 	{
+		auto ret = std::make_shared<BonusList>();
 		if(unstacked)
 		{
 			if(damageScoringUnstackedBonuses)
@@ -299,6 +314,12 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 			? origBearer->getUnstackedBonuses(mergeSelector)
 			: origBearer->getAllBonuses(mergeSelector, originalCachingStr);
 	const auto overlay = recipientOverlayView();
+	if(!replaceNativeCreatureBonuses && overlay.added.empty() && overlay.updated.empty()
+		&& overlay.removed.empty() && !overlay.stackedSnapshot && !overlay.unstackedSnapshot
+		&& !overlay.veteranCohesionEarned && hasStableInheritedBonusList())
+		return newHorizonsDiscipline::veteranCohesionBonuses(originalList, selector, veteranCohesionEarned);
+
+	auto ret = std::make_shared<BonusList>();
 	recipientBonusOverlay::copyInherited(*ret, *originalList, overlay, unstacked);
 	if(replaceNativeCreatureBonuses)
 		ret->remove_if(CSelector([this](const Bonus * bonus)

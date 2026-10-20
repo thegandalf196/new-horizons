@@ -13742,14 +13742,6 @@
         }
       ]
     },
-    "AI/BattleAI/StackWithBonuses.h": {
-      "functions": [],
-      "rationale": "Exact final source hash-bound manual renewal only. All retained complete bodies map byte-exact from current reviewed spans; only the two named AttackCount bodies depart where applicable. Declaration/include movement adds no hidden callable. Existing default-argument/pointer-to-member parser recovery stays explicit; no new numeric or future growth approval.",
-      "review": "IR-HERO-RECIPIENT-CURRENT-UNION-20261017",
-      "sha256": "961b485d59d4aa0aa8310300479d5d9b2d9dcf8c7bddcff23577c19992419cbb",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "review_scope": "exact-recipient-hero-coefficient-current-union-source-only-no-runtime-or-future-growth"
-    },
     "AI/MMAI/BAI/v13/BAI.cpp": {
       "sha256": "f6bc9c723a76cbc4e71cfac234942d029d3396e29737f61e25e43625f58b1ca5",
       "review": "IR-MANUAL-BATCH8-60e55007-20261015",

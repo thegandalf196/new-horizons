@@ -67,7 +67,7 @@ public:
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
 	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 	TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(
-		const CSelector & selector, const std::string & cachingStr = {}, bool unstacked = false) const override;
+		const CSelector & selector, const std::string & cachingStr = "", bool unstacked = false) const override;
 
 	int32_t getTreeVersion() const override;
 	bool isBonusCacheable() const override;
@@ -108,6 +108,7 @@ public:
 	std::string getDescription() const override;
 
 private:
+	bool hasStableInheritedBonusList() const;
 	void removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState,
 		HypotheticLifecycleTiming::EffectWorkTiming * timing);
 	TConstBonusListPtr mergeBonuses(const CSelector & selector, const std::string & cachingStr,
