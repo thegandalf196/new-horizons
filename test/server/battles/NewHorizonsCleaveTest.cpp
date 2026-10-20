@@ -69,6 +69,9 @@ protected:
 		ASSERT_GE(decodedOffense, 0);
 		hero->setSecSkillLevel(SecondarySkill(decodedOffense), MasteryLevel::ADVANCED,
 			ChangeValueMode::ABSOLUTE);
+		// This Basic prerequisite is inert: none of these fixtures issues Charge.
+		hero->applyPerkSelection({newHorizonsOffense::SKILL, "new-horizons:offense.shockAssault"});
+		ASSERT_TRUE(hero->hasActivePerk(newHorizonsOffense::SKILL, "new-horizons:offense.shockAssault"));
 		hero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE});
 		ASSERT_TRUE(hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE));
 		startBattle();

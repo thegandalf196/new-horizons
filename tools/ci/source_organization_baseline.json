@@ -18577,12 +18577,12 @@
     "AI/BattleAI/BattleExchangeVariant.cpp": {
       "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2301/341 ratchet only. Separately, before further movement-cache expansion, ai_engineer must extract ReachabilityMapCache update/getOneTurnReachableUnits/computeOneTurnReachableUnits into one focused component after defining a single shared controller-predicate owner for cache, movement and blocking/bypass consumers. Preserve exact membership pointer/order/multiplicity, turn wrapping, branch/state/RNG and whole-exchange score/action parity; do not duplicate controller rules. This exact four-net-line local-lifetime exception does not permit any unrelated growth. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance.",
       "kind": "exception",
-      "lines": 2311,
+      "lines": 2275,
       "owner": "ai_engineer",
-      "rationale": "Extract actor-only admission queries into the focused 95-line component; getDamage shrinks128 to120 and AttackPossibility2578 to2571. Only immutable main-target batches reuse lazy facts; target/reverse/reaction checks stay live. Separately approved exact BattleExchangeVariant routing growth2305 to2311, trackAttack482 to484 and calculateExchange358 to361 does not authorize unrelated growth or claim runtime benefit.",
-      "review": "IR-DAMAGE-ADMISSION-EXACT-METADATA-20261020",
-      "review_scope": "exact-ad8e3d3f-actor-admission-and-approved-routing-only",
-      "sha256": "cdc5152162c8a9b2023060ebd19af86d30bc66a7eae8965d8f72a3bd57aa5586",
+      "rationale": "Source-reviewed strike-local Shroud qualification extraction into a focused 62-line component lowers this file2311 to2275 and generic trackAttack484 to481. Only one identical flanking query replaces three within each existing primary/Cleave/retaliation triplet; ordered side/perk/spent checks and evaluateOnly guards remain. Selected replay341 is unchanged. No damage memo, pruning, scorer/horizon/action/RNG change or measured benefit is approved; all existing extraction deferrals remain.",
+      "review": "IR-SHROUD-STRIKE-LOCAL-SOURCE-20261020",
+      "review_scope": "exact-strike-local-shroud-query-extraction-shrinking-source-ratchet-only",
+      "sha256": "a9594928f5dcc95720f8d6f5fa95c33a1a9bd230665973b7898c79bf5d172934",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::BattleScore BattleExchangeEvaluator::calculateExchange( const AttackPossibility & ap, uint8_t turn, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, const battle::Units & additionalUnits, BattleMovementTiming::ExchangeTiming * timing) const#1": {
@@ -18636,12 +18636,12 @@
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttack( std::shared_ptr<StackWithBonuses> attacker, std::shared_ptr<StackWithBonuses> defender, bool shooting, bool isOurAttack, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool evaluateOnly, bool allowRetaliation, std::optional<bool> * readyOverwatch, const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission)#1": {
       "kind": "exception",
-      "lines": 484,
+      "lines": 481,
       "owner": "ai_engineer",
-      "rationale": "Source-reviewed exact actor-admission extraction/forwarding seam: lazy first-use actor facts only, no damage memo, candidate/score/horizon/action/RNG change. getDamage shrinks128 to120; narrowly approved routing grows trackAttack482 to484 and calculateExchange358 to361. No unrelated or future allowance.",
-      "review": "IR-DAMAGE-ADMISSION-EXACT-METADATA-20261020",
-      "review_scope": "exact-main-only-immutable-actor-admission-source-boundary",
-      "sha256": "90cfb1f7049c4961d720b7f1af367e692aac151e7a67adefadd35bbe42104fbb",
+      "rationale": "Source-reviewed exact strike-local Shroud query reuse lowers generic trackAttack484 to481; three adjacent qualification checks share geometry once, retaining ordered side/perk/spent checks, evaluateOnly guards and fresh facts for primary/Cleave/retaliation. Downstream mutation/scoring and selected replay remain unchanged. No broader cache, runtime benefit or future growth allowance; prior actor-admission extraction deferral remains.",
+      "review": "IR-SHROUD-STRIKE-LOCAL-SOURCE-20261020",
+      "review_scope": "exact-generic-strike-local-shroud-query-shrinking-source-ratchet-only",
+      "sha256": "2729e23b58516f5b037b19827ece16b6da21b716915d1c8591a4bad0d64dadd2",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance."
     },

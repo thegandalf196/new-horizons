@@ -63,6 +63,7 @@ set(battleAI_SRCS
 		TacticsHandler.cpp
 		ThreatMap.cpp
 		BattleExchangeVariant.cpp
+		BattleShroudStrike.cpp
 )
 
 set(battleAI_HEADERS
@@ -115,6 +116,7 @@ set(battleAI_HEADERS
 		TacticsHandler.h
 		ThreatMap.h
 		BattleExchangeVariant.h
+		BattleShroudStrike.h
 )
 
 assign_source_group(${battleAI_SRCS} ${battleAI_HEADERS})

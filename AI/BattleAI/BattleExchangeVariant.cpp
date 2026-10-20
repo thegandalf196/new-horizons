@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BracePrimaryState.h"
 #include "BattleExchangeVariant.h"
+#include "BattleShroudStrike.h"
 #include "DamageCacheAdmission.h"
 #include "ProjectedTargetHit.h"
 #include "SelectedAttackReceipt.h"
@@ -281,40 +282,6 @@ bool controlledBySamePlayer(const CBattleInfoCallback & battle,
 	return firstOwner != PlayerColor::CANNOT_DETERMINE && firstOwner == secondOwner;
 }
 
-bool qualifiesForEvasiveShroud(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
-{
-	if(!battle.battleIsShroudFlankingAttack(attack))
-		return false;
-	const auto side = battle.playerToSide(battle.battleGetOwner(attack.attacker));
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return false;
-	return newHorizonsShroud::hasEvasiveShroud(battle.battleGetFightingHero(side));
-}
-
-bool qualifiesForAmbusher(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
-{
-	if(!battle.battleIsShroudFlankingAttack(attack))
-		return false;
-	const auto side = battle.playerToSide(battle.battleGetOwner(attack.attacker));
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return false;
-	return newHorizonsShroud::ambusherDamagePercent(
-		battle.battleGetFightingHero(side), attack.attacker) > 0;
-}
-
-std::optional<BattleSide> qualifyingShadowAssaultSide(
-	const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
-{
-	if(!battle.battleIsShroudFlankingAttack(attack))
-		return {};
-	const auto side = battle.playerToSide(battle.battleGetOwner(attack.attacker));
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return {};
-	if(newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
-		battle.battleGetFightingHero(side), attack.defender, side) <= 0)
-		return {};
-	return side;
-}
 
 void refreshEvasiveShroud(HypotheticBattle & battle, uint32_t attackerUnitId)
 {
@@ -884,12 +851,10 @@ float BattleExchangeVariant::trackAttack(
 	const bool serendipityOrdinaryAttack = !projectedAttack.secondaryAttack
 		&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(projectedAttack.attacker, projectedAttack.physicalDamage);
 	const auto resolvedLuck = hb->captureFortuneStrikeOutcome(projectedAttack);
-	const bool triggersEvasiveShroud = !evaluateOnly
-		&& qualifiesForEvasiveShroud(*hb, projectedAttack);
-	const bool triggersAmbusher = !evaluateOnly
-		&& qualifiesForAmbusher(*hb, projectedAttack);
-	const auto shadowAssaultSide = !evaluateOnly
-		? qualifyingShadowAssaultSide(*hb, projectedAttack) : std::optional<BattleSide>{};
+	const auto shroud = !evaluateOnly ? evaluateBattleShroudStrike(*hb, projectedAttack) : BattleShroudStrike{};
+	const bool triggersEvasiveShroud = shroud.evasiveShroud;
+	const bool triggersAmbusher = shroud.ambusher;
+	const auto shadowAssaultSide = shroud.shadowAssaultSide;
 	const bool nightProwlerPending = hasNightProwlerBonus(attacker.get());
 	const bool frozenBeforeHit = newHorizonsFrozen::isFrozen(*defender);
 	const auto resolveLastStand = [&hb](const BattleAttackInfo & attack,
@@ -1078,12 +1043,10 @@ float BattleExchangeVariant::trackAttack(
 			cleaveAttack.attackerPos = projectedAttacker->getPosition();
 			cleaveAttack.defenderPos = targetUnit->getPosition();
 			cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
-			const bool triggersCleaveEvasiveShroud = !evaluateOnly
-				&& qualifiesForEvasiveShroud(*hb, cleaveAttack);
-			const bool triggersCleaveAmbusher = !evaluateOnly
-				&& qualifiesForAmbusher(*hb, cleaveAttack);
-			const auto cleaveShadowAssaultSide = !evaluateOnly
-				? qualifyingShadowAssaultSide(*hb, cleaveAttack) : std::optional<BattleSide>{};
+			const auto cleaveShroud = !evaluateOnly ? evaluateBattleShroudStrike(*hb, cleaveAttack) : BattleShroudStrike{};
+			const bool triggersCleaveEvasiveShroud = cleaveShroud.evasiveShroud;
+			const bool triggersCleaveAmbusher = cleaveShroud.ambusher;
+			const auto cleaveShadowAssaultSide = cleaveShroud.shadowAssaultSide;
 			const auto cleaveProvenance = battleAIDamageProvenance(
 				projectedAttacker.get(), cleaveAttack.physicalDamage);
 			const bool consumesCleaveBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
@@ -1176,9 +1139,10 @@ float BattleExchangeVariant::trackAttack(
 		const bool retaliationSerendipityOrdinaryAttack = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(
 			retaliationAttack.attacker, retaliationAttack.physicalDamage);
 		const auto retaliationResolvedLuck = hb->captureFortuneStrikeOutcome(retaliationAttack);
-		const bool triggersRetaliationEvasiveShroud = qualifiesForEvasiveShroud(*hb, retaliationAttack);
-		const bool triggersRetaliationAmbusher = qualifiesForAmbusher(*hb, retaliationAttack);
-		const auto retaliationShadowAssaultSide = qualifyingShadowAssaultSide(*hb, retaliationAttack);
+		const auto retaliationShroud = evaluateBattleShroudStrike(*hb, retaliationAttack);
+		const bool triggersRetaliationEvasiveShroud = retaliationShroud.evasiveShroud;
+		const bool triggersRetaliationAmbusher = retaliationShroud.ambusher;
+		const auto retaliationShadowAssaultSide = retaliationShroud.shadowAssaultSide;
 		const bool retaliationNightProwlerPending = hasNightProwlerBonus(defender.get());
 		auto retaliationDamage = hb->battleExpectedLuckDamage(retaliationAttack);
 		const auto retaliationLastStand = resolveLastStand(
