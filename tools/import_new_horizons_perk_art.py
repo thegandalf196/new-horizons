@@ -19,6 +19,75 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def selected_perk_plan(selected, handoff, directory):
+    source_manifest = Path(selected['manifest'])
+    review = Path(selected['review'])
+    prompt = directory / 'PROMPT-AND-PROVENANCE.md'
+    manifest = json.loads(source_manifest.read_text(encoding='utf-8'))
+    exports = {row['file']: row for row in manifest['outputs']}
+    slug = manifest['name']
+    if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', slug):
+        raise ValueError('Nonportable perk slug')
+    stem = selected.get('resourceStem', 'NH_perk_' + slug.replace('-', '_'))
+    native = []
+    for size in (44, 32):
+        path = Path(selected['native' + str(size)])
+        if not path.resolve().is_relative_to(directory) or path.name not in exports or digest(path) != exports[path.name]['sha256']:
+            raise ValueError('Pinned perk native export changed')
+        with Image.open(path) as image:
+            if image.size != (size, size):
+                raise ValueError('Incorrect perk native dimensions')
+        native.append({'size': size, 'sha256': digest(path), 'frozen_copy': str(path)})
+    master = directory / 'master.png'
+    comparison = Path(selected['comparison'])
+    if any(not path.resolve().is_relative_to(directory) for path in (source_manifest, review, comparison)):
+        raise ValueError('Artist input escaped selected directory')
+    if digest(master) != exports['master.png']['sha256'] or digest(comparison) != exports[comparison.name]['sha256']:
+        raise ValueError('Pinned perk provenance changed')
+    return {'id': selected['id'], 'name': selected['name'], 'slug': slug, 'version': directory.name,
+        'icon44': stem, 'image32': stem + '_32', 'inputs': native, 'sourceManifest': str(source_manifest),
+        'review': str(review), 'native44Sha256': native[0]['sha256'], 'native32Sha256': native[1]['sha256'],
+        'masterSha256': digest(master), 'promptSha256': digest(prompt),
+        'comparisonSha256': digest(comparison), 'reviewManifestSha256': digest(source_manifest),
+        'reviewEvidenceSha256': digest(review), 'handoffSha256': digest(handoff),
+        'origin': 'independently-authored-built-in-generation-or-targeted-own-draft-edit',
+        'selection': selected.get('selection', 'user-authorized-provisional-perk-drafts-2026-10-14'), 'approval': 'Provisional; no Final approval',
+        'resources': ['SPRITES/' + stem + suffix for suffix in (
+            '.png', '_32.png', '.json', '_normal.png', '_pressed.png', '_disabled.png', '_highlighted.png')]}
+
+
+def bind_selected_perks(header, inventory_path, entries):
+    additions = ''.join('\t\t{"' + row['id'] + '", "' + row['icon44'] + '"},\n' for row in sorted(entries, key=lambda row: row['id']))
+    markers = (
+        'inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindings[] = {\n',
+        '\tstatic const std::map<std::string, std::string> icons = {\n')
+    visible = re.sub(r'/\*.*?\*/|//[^\n]*',
+                     lambda match: re.sub(r'[^\n]', ' ', match.group()), header, flags=re.DOTALL)
+    matches = list(re.finditer(r'(?m)^(?:' + '|'.join(map(re.escape, markers)) + ')', visible))
+    if len(matches) != 1:
+        raise ValueError('Expected exactly one supported perk binding declaration')
+    end = matches[0].end()
+    header = header[:end] + additions + header[end:]
+    inventory = list(csv.DictReader(io.StringIO(inventory_path.read_text(encoding='utf-8'))))
+    selection = {row['id']: row for row in entries}
+    updated = set()
+    for row in inventory:
+        identity = re.search(r'\((new-horizons:[^)]+)\)$', row['Item / ID'])
+        if identity and identity.group(1) in selection:
+            perk_id = identity.group(1)
+            row['Art'] = 'Provisional'
+            row['Live binding / source'] = 'client/windows/NewHorizonsPerkIcons.h; ' + selection[perk_id]['icon44'] + '; selected NHART package'
+            row['Remaining work / evidence'] = 'Selected original draft with verified native44/32, preserved master/prompt/review provenance; four-state44 export. User permits provisional runtime use, not Final approval. Package-only rendered acceptance pending.'
+            updated.add(perk_id)
+    if updated != set(selection):
+        raise ValueError('Missing semantic asset-inventory row')
+    csv_text = io.StringIO()
+    writer = csv.DictWriter(csv_text, fieldnames=list(inventory[0]), lineterminator='\n', quoting=csv.QUOTE_ALL)
+    csv_text.write(inventory_path.read_text(encoding='utf-8').splitlines()[0] + '\n')
+    writer.writerows(inventory)
+    return header, csv_text.getvalue()
+
+
 def import_art(repo, plan_path, staging, recovery, output):
     plan = json.loads(plan_path.read_text(encoding='utf-8'))
     entries = plan['entries']
@@ -122,27 +191,7 @@ def import_art(repo, plan_path, staging, recovery, output):
     resulting = {row['resource']: row for row in verified['manifest']['entries']}
     if any(resulting[row['resource']] != row for row in baseline['manifest']['entries']):
         raise ValueError('Unaffected baseline payload/provenance changed')
-    additions = ''.join('\t\t{"' + row['id'] + '", "' + row['icon44'] + '"},\n' for row in sorted(entries, key=lambda row: row['id']))
-    header = header.replace('\tstatic const std::map<std::string, std::string> icons = {\n',
-                            '\tstatic const std::map<std::string, std::string> icons = {\n' + additions, 1)
-    inventory_path = repo / 'docs/NH_UI_ASSET_INVENTORY.csv'
-    inventory = list(csv.DictReader(io.StringIO(inventory_path.read_text(encoding='utf-8'))))
-    selection = {row['id']: row for row in entries}
-    updated = set()
-    for row in inventory:
-        identity = re.search(r'\((new-horizons:[^)]+)\)$', row['Item / ID'])
-        if identity and identity.group(1) in selection:
-            perk_id = identity.group(1)
-            row['Art'] = 'Provisional'
-            row['Live binding / source'] = 'client/windows/NewHorizonsPerkIcons.h; ' + selection[perk_id]['icon44'] + '; selected NHART package'
-            row['Remaining work / evidence'] = 'Selected original draft with verified native44/32, preserved master/prompt/review provenance; four-state44 export. User permits provisional runtime use, not Final approval. Package-only rendered acceptance pending.'
-            updated.add(perk_id)
-    if updated != set(selection):
-        raise ValueError('Missing semantic asset-inventory row')
-    csv_text = io.StringIO()
-    writer = csv.DictWriter(csv_text, fieldnames=list(inventory[0]), lineterminator='\n', quoting=csv.QUOTE_ALL)
-    csv_text.write(inventory_path.read_text(encoding='utf-8').splitlines()[0] + '\n')
-    writer.writerows(inventory)
+    header, inventory_text = bind_selected_perks(header, repo / 'docs/NH_UI_ASSET_INVENTORY.csv', entries)
     provenance = {key: plan[key] for key in ('handoffSha256', 'additiveHandoffSha256', 'baselineArchiveSha256', 'baselineManifestSha256')}
     provenance['entries'] = [{key: value for key, value in row.items() if key not in ('inputs', 'sourceManifest', 'review', 'versionsPreserved')} for row in entries]
     provenance['newArchiveSha256'] = digest(candidate)
@@ -160,7 +209,7 @@ def import_art(repo, plan_path, staging, recovery, output):
     outputs = {'assets/new-horizons/runtime-art-manifest.json': json.dumps(ordered_manifest, indent=2) + '\n',
                'assets/new-horizons/perk-art-selections.json': json.dumps(provenance, indent=2) + '\n',
                'client/windows/NewHorizonsPerkIcons.h': header,
-               'docs/NH_UI_ASSET_INVENTORY.csv': csv_text.getvalue()}
+               'docs/NH_UI_ASSET_INVENTORY.csv': inventory_text}
     for name, content in outputs.items():
         path = output / name
         path.parent.mkdir(parents=True, exist_ok=True)

@@ -71,6 +71,59 @@ class ArtWaveImporterTest(unittest.TestCase):
         (self.repo / importer.LEDGER).write_text(json.dumps(ledger))
         return ledger
 
+    def test_declarative_virgin_table_refuses_non_neutral_or_ambiguous_data(self):
+        declaration = 'inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindings[] = {'
+        importer.require_virgin_perk_header(declaration + '};')
+        importer.require_virgin_perk_header(declaration + '{"new-horizons:test.perk", "NH_perk_neutral"}};')
+        for body in ('{"new-horizons:test.perk", "NH_perk_selected"}', 'MACRO_ENTRY'):
+            with self.subTest(body=body), self.assertRaises(ValueError):
+                importer.require_virgin_perk_header(declaration + body + '};')
+        with self.assertRaises(ValueError):
+            importer.require_virgin_perk_header((declaration + '};') * 2)
+
+    def test_explicit_resource_stem_and_selection_preserve_identity(self):
+        chosen = json.loads(self.handoff.read_text())
+        header = self.repo / importer.HEADER
+        header.write_text('inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindings[] = {\n};\n')
+        self.before = snapshot(self.repo)
+        chosen['entries'][0].update(resourceStem='NH_perk_namespaced_test',
+                                     selection='reviewed-provisional-test-selection')
+        self.handoff.write_text(json.dumps(chosen))
+        self.artist_before = snapshot(self.handoff.parent)
+        self.run_import()
+        output = self.root / 'wave-output'
+        ledger = json.loads((output / importer.LEDGER).read_text())
+        record = ledger['waves'][-1]['perks'][0]
+        self.assertEqual(record['id'], 'new-horizons:test.perk')
+        self.assertEqual(record['icon44'], 'NH_perk_namespaced_test')
+        self.assertEqual(record['selection'], 'reviewed-provisional-test-selection')
+        self.assertEqual(len(record['resources']), 7)
+        self.assertTrue(all(name.startswith('SPRITES/NH_perk_namespaced_test') for name in record['resources']))
+        self.assertIn('newHorizonsPerkIconBindings[] = {\n', (output / importer.HEADER).read_text())
+        self.assert_inputs_unchanged()
+
+    def test_nonportable_explicit_resource_stem_is_refused(self):
+        chosen = json.loads(self.handoff.read_text())
+        chosen['entries'][0]['resourceStem'] = '../unselected'
+        self.handoff.write_text(json.dumps(chosen))
+        with self.assertRaisesRegex(ValueError, 'Non-portable perk resource stem'):
+            self.run_import()
+
+    def test_comment_only_table_identifier_keeps_legacy_binding_insertion(self):
+        header = '// newHorizonsPerkIconBindings\n' + (self.repo / importer.HEADER).read_text()
+        entries = [{'id': 'new-horizons:test.perk', 'icon44': 'NH_perk_namespaced_test'}]
+        updated, unused_inventory = importer.perks.bind_selected_perks(header, self.repo / importer.INVENTORY, entries)
+        self.assertTrue(updated.startswith('// newHorizonsPerkIconBindings\n'))
+        self.assertIn('icons = {\n\t\t{"new-horizons:test.perk", "NH_perk_namespaced_test"},\n', updated)
+        self.assertEqual(updated.count('{"new-horizons:test.perk", "NH_perk_namespaced_test"}'), 1)
+
+    def test_binding_writer_refuses_absent_or_ambiguous_declarations(self):
+        marker = '\tstatic const std::map<std::string, std::string> icons = {\n'
+        entries = [{'id': 'new-horizons:test.perk', 'icon44': 'NH_perk_namespaced_test'}]
+        for header in ('', '// newHorizonsPerkIconBindings\n', '/*\n' + marker + '*/\n', marker * 2):
+            with self.subTest(header=header), self.assertRaisesRegex(ValueError, 'exactly one supported'):
+                importer.perks.bind_selected_perks(header, self.repo / importer.INVENTORY, entries)
+
     def test_explicit_mode_is_required_and_modes_are_exclusive(self):
         for arguments in ({}, {'expected_ledger_sha256': 'a' * 64, 'bootstrap_no_ledger': True}):
             with self.subTest(arguments=arguments), self.assertRaisesRegex(ValueError, 'Choose expected'):

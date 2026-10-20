@@ -63,8 +63,9 @@ def require_virgin_perk_header(header):
     # Recognize its complete initializer or refuse; zero regex hits must never
     # be mistaken for evidence of an empty/neutral selection map.
     header = re.sub(r'/\*.*?\*/|//[^\n]*', '', header, flags=re.DOTALL)
-    maps = re.findall(r'static\s+const\s+std::map\s*<\s*std::string\s*,\s*std::string\s*>'
-                      r'\s+icons\s*=\s*\{(.*?)\}\s*;', header, flags=re.DOTALL)
+    maps = re.findall(r'(?:static\s+const\s+std::map\s*<\s*std::string\s*,\s*std::string\s*>\s+icons'
+                      r'|inline\s+constexpr\s+std::pair\s*<\s*const\s+char\s*\*\s*,\s*const\s+char\s*\*\s*>'
+                      r'\s+newHorizonsPerkIconBindings\s*\[\s*\])\s*=\s*\{(.*?)\}\s*;', header, flags=re.DOTALL)
     entry = r'\{\s*"(new-horizons:[A-Za-z0-9_.-]+)"\s*,\s*"(NH_perk_[a-z0-9_]+)"\s*\}'
     if len(maps) != 1 or not re.fullmatch(r'\s*(?:' + entry + r'(?:\s*,\s*' + entry + r')*\s*,?)?\s*', maps[0]):
         raise ValueError('Cannot recognize complete baseline perk icons map for virgin bootstrap')
@@ -232,40 +233,7 @@ def prepare(repo, handoffs, status_handoff, work, output, mass_regeneration_scen
             seen.add(identity)
             directory = Path(selected['selected_review_directory']).resolve()
             reject_artist_overlap(roots, [directory])
-            source_manifest = Path(selected['manifest'])
-            review = Path(selected['review'])
-            prompt = directory / 'PROMPT-AND-PROVENANCE.md'
-            manifest = json.loads(source_manifest.read_text(encoding='utf-8'))
-            exports = {row['file']: row for row in manifest['outputs']}
-            slug = manifest['name']
-            if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', slug):
-                raise ValueError('Nonportable perk slug')
-            stem = 'NH_perk_' + slug.replace('-', '_')
-            native = []
-            for size in (44, 32):
-                path = Path(selected['native' + str(size)])
-                if not path.resolve().is_relative_to(directory) or path.name not in exports or perks.digest(path) != exports[path.name]['sha256']:
-                    raise ValueError('Pinned perk native export changed')
-                with Image.open(path) as image:
-                    if image.size != (size, size):
-                        raise ValueError('Incorrect perk native dimensions')
-                native.append({'size': size, 'sha256': perks.digest(path), 'frozen_copy': str(path)})
-            master = directory / 'master.png'
-            comparison = Path(selected['comparison'])
-            if any(not path.resolve().is_relative_to(directory) for path in (source_manifest, review, comparison)):
-                raise ValueError('Artist input escaped selected directory')
-            if perks.digest(master) != exports['master.png']['sha256'] or perks.digest(comparison) != exports[comparison.name]['sha256']:
-                raise ValueError('Pinned perk provenance changed')
-            plan_rows.append({'id': identity, 'name': selected['name'], 'slug': slug, 'version': directory.name,
-                'icon44': stem, 'image32': stem + '_32', 'inputs': native, 'sourceManifest': str(source_manifest),
-                'review': str(review), 'native44Sha256': native[0]['sha256'], 'native32Sha256': native[1]['sha256'],
-                'masterSha256': perks.digest(master), 'promptSha256': perks.digest(prompt),
-                'comparisonSha256': perks.digest(comparison), 'reviewManifestSha256': perks.digest(source_manifest),
-                'reviewEvidenceSha256': perks.digest(review), 'handoffSha256': perks.digest(handoff),
-                'origin': 'independently-authored-built-in-generation-or-targeted-own-draft-edit',
-                'selection': 'user-authorized-provisional-perk-drafts-2026-10-14', 'approval': 'Provisional; no Final approval',
-                'resources': ['SPRITES/' + stem + suffix for suffix in (
-                    '.png', '_32.png', '.json', '_normal.png', '_pressed.png', '_disabled.png', '_highlighted.png')]})
+            plan_rows.append(perks.selected_perk_plan(selected, handoff, directory))
     if not plan_rows and mass_spell_handoff is None:
         raise ValueError('No completed perk inputs')
     mass_records, mass_sources, mass_hashes = mass_spell_inputs(mass_spell_handoff, roots)

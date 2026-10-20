@@ -26500,15 +26500,6 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "4d634bd2671f98b8784e80ac1a0628136a62494cac7442a2b4b65d2a0fd90af9"
     },
-    "tools/import_new_horizons_art_wave.py": {
-      "kind": "legacy",
-      "lines": 521,
-      "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 521 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "eef67f152f006c1243fc1446fa225a4dba265a27fde8d22d99bead8df1101c51"
-    },
     "tools/import_new_horizons_art_wave.py::mass_spell_inputs#1": {
       "kind": "legacy",
       "lines": 81,
@@ -26520,12 +26511,12 @@
     },
     "tools/import_new_horizons_art_wave.py::prepare#1": {
       "kind": "legacy",
-      "lines": 289,
+      "lines": 256,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 289 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "917a3020671aa2bc827de12fb69f232705d03735cdb792d06409a9c9d5b57a2f"
+      "rationale": "Single-family selected-input normalization is extracted into the existing perk importer; this wrapper retains cross-family history validation and wave assembly. Independently reviewed reduction from 289 to 256 lines; remaining legacy transaction orchestration is frozen, not a new ceiling allowance.",
+      "review": "perk-wave-family-normalization-extraction-v1",
+      "review_scope": "bounded-extraction-and-fail-closed-binding",
+      "sha256": "5f1d9b28e7ea1a10a9f0bc02d971605ea99b5e0d64f96c6ac1737b30d6c1ec31"
     },
     "tools/import_new_horizons_cabir_complete_handoff.py": {
       "kind": "legacy",
@@ -26600,13 +26591,13 @@
       "sha256": "3cb6414675dccea0ceccb82141a9b09285a776830e4a43ecf1e39582c322c9a7"
     },
     "tools/import_new_horizons_perk_art.py::import_art#1": {
-      "kind": "legacy",
-      "lines": 153,
+      "kind": "review",
+      "lines": 133,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 153 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "be35ed68e3ed578a7fc32e3b1bdb8b1b2c8ba598a22f9715d876cd317ae21514"
+      "rationale": "Header and semantic inventory updates are isolated in a fail-closed binding helper. The importer retains package preservation and output assembly; reduced from 153 to 133 lines, below the default function ceiling.",
+      "review": "perk-binding-extraction-v1",
+      "review_scope": "bounded-extraction-and-fail-closed-binding",
+      "sha256": "fb5184c4a4c0b6576597e7d986b2a99e9cc3e946c9d98b7b557378865297814a"
     },
     "tools/import_new_horizons_spell_art.py::prepare#1": {
       "kind": "legacy",
