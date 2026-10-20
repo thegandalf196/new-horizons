@@ -3785,6 +3785,13 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	}
 	if(payload.targetedRangedCommand && payload.targetedRangedCommandPercent > 0)
 		attackerOrderCause = HeroCommand::FOCUS_FIRE;
+	std::optional<bool> defenderDefendState;
+	const auto defenderDefended = [&]()
+	{
+		if(!defenderDefendState)
+			defenderDefendState = info.defender->defended();
+		return *defenderDefendState;
+	};
 	if(info.physicalDamage && !info.shooting && info.attacker && info.defender
 		&& battleGetOwner(info.attacker) != battleGetOwner(info.defender))
 	{
@@ -3799,7 +3806,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				payload.executionerDamagePercent = EXECUTIONER_DAMAGE_PERCENT;
 			if(hasOffensePerk("new-horizons:offense.armorPiercer"))
 				payload.meleeDefenseIgnorePercent = ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT;
-			if(hasOffensePerk("new-horizons:offense.breakthrough") && info.defender->defended())
+			if(hasOffensePerk("new-horizons:offense.breakthrough") && defenderDefended())
 			{
 				payload.defensiveStanceDamageReductionIgnorePercent = BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT;
 				payload.defensiveStanceDefenseBonus = std::max(0, info.defender->getDefense(false)
@@ -3852,7 +3859,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		if(info.defender && battleHasFormationFightingProtection(info.defender, info.defenderPos))
 			payload.formationFightingReductionPercent = newHorizonsCombatSkills::formationFightingReductionPercent(
 				battleGetOwnerHero(info.defender));
-		if(ordinaryCreatureAttack && info.defender && info.defender->defended())
+		if(ordinaryCreatureAttack && info.defender && defenderDefended())
 		{
 			payload.battlecraftDefendReductionPercent = newHorizonsBattlecraft::defendReductionPercent(
 				battleGetOwnerHero(info.defender), dynamic_cast<const battle::CUnitState *>(info.defender));
@@ -3874,7 +3881,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			payload.meleeDefenseIgnorePercent += newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
 				attackerHero, info.defender, playerToSide(battleGetOwner(info.attacker)));
 		}
-		if(info.defender && info.defender->defended() && ordinaryCreatureAttack
+		if(info.defender && defenderDefended() && ordinaryCreatureAttack
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.defender)
 			&& (!info.shooting || !info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)))
 		{

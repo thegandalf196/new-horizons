@@ -9,13 +9,24 @@
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/battle/NewHorizonsBattlecraft.h"
+#include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
 
+#include <array>
+
 namespace
 {
+template<typename T> std::vector<std::byte> damageQuerySnapshot(const T & value)
+{
+	CMemorySerializer memory;
+	memory.oser & value;
+	return memory.extractBuffer();
+}
+
 class NewHorizonsBattlecraftTest : public BattleTestFixture
 {
 protected:
@@ -140,6 +151,63 @@ TEST_F(NewHorizonsBattlecraftTest, DefendReductionEndsAtTheStackNextActivation)
 	battle()->nextTurn(defender->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 	const auto afterActivation = battle()->calculateDmgRange(attack).damage.max;
 	EXPECT_EQ(afterActivation, before);
+}
+
+TEST_F(NewHorizonsBattlecraftTest, DamagePayloadRequeriesDefendFlagAndBonusAcrossInvocations)
+{
+	startGame();
+	setBattlecraftRank(defenderSideHero, MasteryLevel::EXPERT);
+	startBattle();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
+	forceMaximumDamage(attacker);
+	const auto serverRng = damageQuerySnapshot(*gameHandler->randomizer);
+	const auto gameRng = damageQuerySnapshot(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto traffic = std::array{server.startedActions.size(), server.attacks.size(), server.casts.size()};
+	const auto states = [&]
+	{
+		return std::array{attacker->acquireState()->save().toString(), defender->acquireState()->save().toString()};
+	};
+	for(const bool shooting : {false, true})
+	{
+		const BattleAttackInfo physical(attacker, defender, 0, shooting);
+		BattleAttackInfo nonPhysical = physical;
+		nonPhysical.physicalDamage = false;
+		const auto baseline = battle()->calculateDmgRange(physical);
+		const auto nonPhysicalBaseline = battle()->calculateDmgRange(nonPhysical);
+		ASSERT_GT(baseline.damage.max, 0);
+		std::shared_ptr<Bonus> defendingBonus;
+		// Revisit false after every source of Defend: no invocation may retain it.
+		for(const int mode : {0, 1, 0, 2, 0, 3, 0})
+		{
+			SCOPED_TRACE(testing::Message() << "shooting=" << shooting << " mode=" << mode);
+			if(defendingBonus)
+				defender->removeBonus(defendingBonus);
+			defendingBonus.reset();
+			defender->defending = (mode & 1) != 0;
+			if(mode & 2)
+			{
+				defendingBonus = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+					BonusType::UNIT_DEFENDING, BonusSource::OTHER, 0, BonusSourceID());
+				defender->addNewBonus(defendingBonus);
+			}
+			ASSERT_EQ(defender->defended(), mode != 0);
+			const auto before = states();
+			const auto actual = battle()->calculateDmgRange(physical);
+			const auto unchanged = battle()->calculateDmgRange(nonPhysical);
+			const int multiplier = mode ? 85 : 100;
+			EXPECT_EQ(actual.damage.min, baseline.damage.min * multiplier / 100);
+			EXPECT_EQ(actual.damage.max, baseline.damage.max * multiplier / 100);
+			EXPECT_EQ(actual.attackerOrderCause, baseline.attackerOrderCause);
+			EXPECT_EQ(actual.defenderOrderCause, baseline.defenderOrderCause);
+			EXPECT_EQ(unchanged.damage.min, nonPhysicalBaseline.damage.min);
+			EXPECT_EQ(unchanged.damage.max, nonPhysicalBaseline.damage.max);
+			EXPECT_EQ(states(), before);
+			EXPECT_EQ(damageQuerySnapshot(*gameHandler->randomizer), serverRng);
+			EXPECT_EQ(damageQuerySnapshot(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
+		}
+	}
+	EXPECT_EQ((std::array{server.startedActions.size(), server.attacks.size(), server.casts.size()}), traffic);
 }
 
 TEST_F(NewHorizonsBattlecraftTest, WaitAddsRankedDamageToOnePhysicalAttackOnly)

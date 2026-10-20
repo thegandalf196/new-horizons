@@ -22366,15 +22366,15 @@
       "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/battle/CBattleInfoCallback.cpp": {
-      "kind": "legacy",
-      "lines": 5932,
+      "kind": "exception",
+      "lines": 5939,
       "owner": "gameplay_engineer",
-      "rationale": "Exact13-line file/function reduction: canonical coefficient and Crown/potency composition extracted to focused query owner, no other damage formula changes.",
-      "review": "IR-HERO-RECIPIENT-CURRENT-UNION-20261017",
-      "review_scope": "exact-recipient-hero-coefficient-current-union-source-only-no-runtime-or-future-growth",
-      "sha256": "ba82625e746b270bfe5002fd976b52c4ade047452a730d2dc524eef9b162be0b",
+      "rationale": "Exact seven-line invocation-local lazy Defend query; only three target reads reuse it, preserving first reach and short circuits. Extracting interleaved payload stages concurrently would obscure this bounded equivalence review. No damage policy changes or cross-invocation cache.",
+      "review": "IR-DAMAGE-DEFEND-QUERY-20261020",
+      "review_scope": "exact-seven-line-invocation-local-defend-query-source-only-no-future-growth",
+      "sha256": "42be16f3d288163fab372629ef5124776dc4a02f5b6c4990bba33584bf197959",
       "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "deferral": "No further growth allowed by this proposal. Continue cohesive AI/callback decomposition and full typed-hero/common-horizon implementation; native/source/alias lifetime evidence remains separate."
+      "deferral": "Before further substantive stance-stage growth, extract a focused defender-stance payload builder owned by gameplay_engineer: const callback/attack info plus invocation query context into DamageAttackInfo. Preserve first-query order, explicit payload/state/RNG parity and shrink both callback and function baselines; no oversized moved-to helper. Native and performance acceptance remain separate."
     },
     "lib/battle/CBattleInfoCallback.cpp::AttackableTiles CBattleInfoCallback::getPotentiallyAttackableHexes( const battle::Unit* attacker, const battle::Unit * defender, BattleHex destinationTile, BattleHex attackerPos, BattleHex defenderPos) const#1": {
       "kind": "legacy",
@@ -22404,14 +22404,15 @@
       "sha256": "894e504a17fd8599c34b274f1966eb04d03e9da68fc621682d9d6ca48fdc1988"
     },
     "lib/battle/CBattleInfoCallback.cpp::DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) const#1": {
-      "kind": "legacy",
-      "lines": 498,
+      "kind": "exception",
+      "lines": 505,
       "owner": "gameplay_engineer",
-      "rationale": "Exact511-to498 extraction ratchet; remaining scalar/FP formula order unchanged outside named protected coefficient routing. No future growth allowance.",
-      "review": "IR-HERO-RECIPIENT-CURRENT-UNION-20261017",
-      "review_scope": "exact-recipient-hero-coefficient-current-union-source-only-no-runtime-or-future-growth",
-      "sha256": "637362fb82014b270fd5dd9f8c38f814bdc550d55c80e66e97d4e1bcc82d2d1f",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY"
+      "rationale": "Exact seven-line lazy optional and three equivalent target-read substitutions within one immutable pre-Lua payload invocation. All other formula stages and query ordering remain unchanged; no future growth allowance.",
+      "review": "IR-DAMAGE-DEFEND-QUERY-20261020",
+      "review_scope": "exact-seven-line-invocation-local-defend-query-source-only-no-future-growth",
+      "sha256": "1a656ac8aa1842bdbace7b07f326b3f99885946af7f7848556eac2eb5ae0dfe8",
+      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
+      "deferral": "Gameplay owner must extract the focused defender-stance payload stage before further substantive expansion, preserving first-query order, payload/state/RNG equivalence and actual file/function shrinkage. This exact exception permits no unrelated growth."
     },
     "lib/battle/CBattleInfoCallback.cpp::ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const#1": {
       "kind": "legacy",
