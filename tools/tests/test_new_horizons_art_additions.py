@@ -25,6 +25,98 @@ def config_at_wave(config, waves, index, config_path):
     return historical
 
 
+def perk_header_history_forms(header):
+    """Retain exact hashes across the approved inline-map/table extraction."""
+    if 'newHorizonsPerkIconBindings' not in header:
+        return (header,)
+    # Undo only the known syntactic extraction. Binding bytes/order and the
+    # fallback/lookup body remain untouched, so their edits still break history.
+    function = 'inline const std::string & newHorizonsPerkIcon(const std::string & perkId)\n{\n'
+    replacements = (
+        ('#include <iterator>\n', ''),
+        ('#include <utility>\n', ''),
+        ('// Constant binding data; the runtime map remains lazy below.\n'
+         'inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindings[] = {\n',
+         function + '\tstatic const std::map<std::string, std::string> icons = {\n'),
+        ('};\n\n' + function + '\tstatic const std::map<std::string, std::string> icons(\n'
+         '\t\tstd::begin(newHorizonsPerkIconBindings), std::end(newHorizonsPerkIconBindings));\n',
+         '\t};\n'),
+    )
+    historical = header
+    for current, previous in replacements:
+        if historical.count(current) != 1:
+            raise ValueError('Unrecognized perk icon table extraction')
+        historical = historical.replace(current, previous, 1)
+    return header, historical
+
+
+class PerkHeaderHistoryTest(unittest.TestCase):
+    inline = '''#pragma once
+
+#include <map>
+#include <string>
+
+inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
+{
+	static const std::map<std::string, std::string> icons = {
+		{"new-horizons:fixture.first", "NH_first"},
+		{"new-horizons:fixture.second", "NH_second"},
+	};
+	static const std::string fallback = "NH_perk_neutral";
+	const auto found = icons.find(perkId);
+	return found == icons.end() ? fallback : found->second;
+}
+'''
+    table = '''#pragma once
+
+#include <iterator>
+#include <map>
+#include <string>
+#include <utility>
+
+// Constant binding data; the runtime map remains lazy below.
+inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindings[] = {
+		{"new-horizons:fixture.first", "NH_first"},
+		{"new-horizons:fixture.second", "NH_second"},
+};
+
+inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
+{
+	static const std::map<std::string, std::string> icons(
+		std::begin(newHorizonsPerkIconBindings), std::end(newHorizonsPerkIconBindings));
+	static const std::string fallback = "NH_perk_neutral";
+	const auto found = icons.find(perkId);
+	return found == icons.end() ? fallback : found->second;
+}
+'''
+
+    def test_both_recorded_layouts_retain_their_exact_bytes(self):
+        self.assertEqual(perk_header_history_forms(self.inline), (self.inline,))
+        self.assertEqual(perk_header_history_forms(self.table), (self.table, self.inline))
+
+    def test_bindings_order_fallback_and_lookup_changes_still_break_history(self):
+        first = '\t\t{"new-horizons:fixture.first", "NH_first"},\n'
+        second = '\t\t{"new-horizons:fixture.second", "NH_second"},\n'
+        recorded = {hashlib.sha256(text.encode()).hexdigest() for text in (self.inline, self.table)}
+        mutations = (self.table.replace('NH_first', 'NH_changed'),
+                     self.table.replace(first + second, second + first),
+                     self.table.replace('NH_perk_neutral', 'NH_changed_fallback'),
+                     self.table.replace('found == icons.end()', 'found != icons.end()'),
+                     '// unrelated change\n' + self.table)
+        for changed in mutations:
+            with self.subTest(header=changed):
+                actual = {hashlib.sha256(text.encode()).hexdigest()
+                          for text in perk_header_history_forms(changed)}
+                self.assertTrue(recorded.isdisjoint(actual))
+
+    def test_unknown_or_duplicate_extraction_syntax_is_rejected(self):
+        for changed in (self.table.replace('std::begin(', 'std::cbegin('),
+                        '#include <iterator>\n' + self.table):
+            with self.subTest(header=changed):
+                with self.assertRaisesRegex(ValueError, 'Unrecognized perk icon table extraction'):
+                    perk_header_history_forms(changed)
+
+
 class ArtWaveHistoryTest(unittest.TestCase):
     def test_mass_regeneration_proof_survives_later_mass_wave_without_loosening_digest(self):
         original = {key: {'power': 7, 'graphics': {role: key + '-' + role
@@ -146,7 +238,8 @@ class ArtAdditionsTest(unittest.TestCase):
                 for row in later['perks']:
                     line = '\t\t{"' + row['id'] + '", "' + row['icon44'] + '"},\n'
                     self.assertEqual(header.count(line), 1); header = header.replace(line, '')
-            self.assertEqual(hashlib.sha256(header.encode()).hexdigest(), wave['baselineHeaderSha256'])
+            self.assertIn(wave['baselineHeaderSha256'], {
+                hashlib.sha256(form.encode()).hexdigest() for form in perk_header_history_forms(header)})
             historical = json.loads(json.dumps(self.config))
             for later in reversed(self.waves[index + 1:]):
                 for status in later['statuses']:

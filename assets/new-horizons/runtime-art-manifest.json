@@ -41400,6 +41400,2246 @@
       "origin": "original-generated-purpose-made-mass-spell-symbol",
       "selection": "user-authorized-provisional-runtime-2026-10-14",
       "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aggressive_commander.json",
+      "source": "Mods/new-horizons/Images/NH_perk_aggressive_commander.json",
+      "size": 449,
+      "sha256": "a51b7da14623fc3884abe34d50993e4c3a86aea89c61bfd57a54feba820fd0a9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aggressive_commander.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aggressive_commander.png",
+      "size": 4793,
+      "sha256": "9e792e9051ac8681d7d7231c9e7a717c5602ec14d5c54f10d03e05bce73f8eb5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aggressive_commander_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aggressive_commander_32.png",
+      "size": 2699,
+      "sha256": "98a4a3f2d22dbccf4a5de44cc2679658e21f40cc5ef81c998197fc58a83a6f23",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aggressive_commander_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aggressive_commander_disabled.png",
+      "size": 4853,
+      "sha256": "9adc7b82d28f2cdb8c891c89dfc1379dfe566537b6ed86be2bf81072c11eea95",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aggressive_commander_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aggressive_commander_highlighted.png",
+      "size": 5504,
+      "sha256": "532e686b8cdde69e4494b8d7d7265355f91d7ccd072c2706acbbc78f4342daf0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aggressive_commander_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aggressive_commander_normal.png",
+      "size": 5405,
+      "sha256": "f88e5f37d448ed3cc42cbc6ca2b8f4fde23e66cd8ee4d8bd77a2a1c5689b3b65",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aggressive_commander_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aggressive_commander_pressed.png",
+      "size": 5169,
+      "sha256": "f498f5f669d109b741a2cdd7a2dcd8c69903e77b14183de44ee51911c60b2dbe",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_memory.json",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_memory.json",
+      "size": 421,
+      "sha256": "cadb2b7a5d4481d46feddca46147d7f8e5875a8724d7164402652afe91c1a801",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_memory.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_memory.png",
+      "size": 4163,
+      "sha256": "68e51cd8334d1d0779375f1130e4076948c8a8995be06c62f6bbdb0e1c7fcf2c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_memory_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_memory_32.png",
+      "size": 2355,
+      "sha256": "a4dcc89f36baf1e44101a06641378b110c2637991d03909540d0fc3f3ee50ec8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_memory_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_memory_disabled.png",
+      "size": 4010,
+      "sha256": "f19640681bbfd08286d20cb77a69cce251d07171346ca5a0faca7f35aae5d6d5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_memory_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_memory_highlighted.png",
+      "size": 4826,
+      "sha256": "ca8f67f5f5128bf52e3e76a852d7ee16c95907dd965f0d1c11ffcdd5845ff824",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_memory_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_memory_normal.png",
+      "size": 4769,
+      "sha256": "cf48403f499b20cf7c4bd6b751506b0cf14eeb97257900a20e8650d2a061d438",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_memory_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_memory_pressed.png",
+      "size": 4536,
+      "sha256": "248b164f7b3cceb64d826110c97030afc8b5664dda89cabeff31804fe77bae47",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_archmage.json",
+      "source": "Mods/new-horizons/Images/NH_perk_archmage.json",
+      "size": 401,
+      "sha256": "68e09628225126c108bc174eff6bc53c5e0ed8eb3ae0eacd62f7994a15ef691b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_archmage.png",
+      "source": "Mods/new-horizons/Images/NH_perk_archmage.png",
+      "size": 4510,
+      "sha256": "909af8e7eb108e6a1be5a71de8cf457fcf451c9408e88b43b18602d266554aca",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_archmage_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_archmage_32.png",
+      "size": 2560,
+      "sha256": "8625d050a96616eba103831c0e105f9db91c3da98217b3a3f952eb82a8c64ca1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_archmage_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_archmage_disabled.png",
+      "size": 4433,
+      "sha256": "ef8ba7cec50e8f5dcdbf766fb83db3eb027b250afcca9d85bba7ac004771e376",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_archmage_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_archmage_highlighted.png",
+      "size": 5261,
+      "sha256": "30ba281871b99904e33988732bf6249faded1ba9ed05273eebd0e90fa1fc2004",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_archmage_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_archmage_normal.png",
+      "size": 5138,
+      "sha256": "a6505c12f4b2040fd676230014e8e52396c0fb64ce6b02651c6b84f2186af5e0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_archmage_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_archmage_pressed.png",
+      "size": 4914,
+      "sha256": "b3f209e9687cb0fe1b42b41e09005924ae86715f6ec79eecd66fc50e15d59dc1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_bastion.json",
+      "source": "Mods/new-horizons/Images/NH_perk_bastion.json",
+      "size": 397,
+      "sha256": "518380d76f9d5258344c090487a17521629d571a322eae9da0253add1a6712ba",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_bastion.png",
+      "source": "Mods/new-horizons/Images/NH_perk_bastion.png",
+      "size": 4319,
+      "sha256": "878e9e6a935afbd69741258483ecb365ee036759a3015f2546c44121be959b49",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_bastion_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_bastion_32.png",
+      "size": 2412,
+      "sha256": "9f97b80f6a79ba6c3b353c8ce3ed355873718d8cf3af81d0dc40219bb3323c95",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_bastion_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_bastion_disabled.png",
+      "size": 4159,
+      "sha256": "d04da28c02dc5e064a0d6769631bd282c600d3c149eb9e52622bb39f71d08ae8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_bastion_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_bastion_highlighted.png",
+      "size": 5047,
+      "sha256": "99343cfc9937b2d7b2ef33188c5ded60c24e1abfb076dee5f7647cbd36151e5b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_bastion_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_bastion_normal.png",
+      "size": 4914,
+      "sha256": "5ce65aa1edbbb813c696cf9ab2b7364996d387d638536c4cbeda44140c25f0d9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_bastion_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_bastion_pressed.png",
+      "size": 4674,
+      "sha256": "2be92001e809f49da2f9f138f492ecaae7a50592351ae1c794a3cda7cdce7ab0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_breachmaker.json",
+      "source": "Mods/new-horizons/Images/NH_perk_breachmaker.json",
+      "size": 413,
+      "sha256": "f4bd0b043adfca79d0bc85d47de1bb51c70aa8f28800010f126e9b558fac9549",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_breachmaker.png",
+      "source": "Mods/new-horizons/Images/NH_perk_breachmaker.png",
+      "size": 4618,
+      "sha256": "f8cbfcb3c64e5cc649d5098f50f3ffaeb8178ff0c2d1da06d8c44963e9217869",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_breachmaker_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_breachmaker_32.png",
+      "size": 2550,
+      "sha256": "093c682b02e6d6e72f8f7cf842fde0e9d45bf2cdcd14a4bcfdef15b44d58daf1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_breachmaker_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_breachmaker_disabled.png",
+      "size": 4547,
+      "sha256": "8a4fde0ce90a529b5d82f2685d251907be2a3e1e7ae1a852991f377cb2e6d3d3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_breachmaker_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_breachmaker_highlighted.png",
+      "size": 5353,
+      "sha256": "a96df830d8a7ce43433f65439e5c4443eb2be53016dcaafa5971b98a92488f37",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_breachmaker_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_breachmaker_normal.png",
+      "size": 5227,
+      "sha256": "d3fba23a15fc4991abe15c8d40ee2ff1b15b3117d73fcdfc1db06bb6c6f4f455",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_breachmaker_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_breachmaker_pressed.png",
+      "size": 4993,
+      "sha256": "d4bb54ebc6feaffd10775a1f0a911ec84fb85b29d278bc40c8a95e302709c4f2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_chain_of_fortune.json",
+      "source": "Mods/new-horizons/Images/NH_perk_chain_of_fortune.json",
+      "size": 433,
+      "sha256": "22d64a34cc1dc227938f3b4f17c78d04a11e5b2ff1ee211a74756df96d89871b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_chain_of_fortune.png",
+      "source": "Mods/new-horizons/Images/NH_perk_chain_of_fortune.png",
+      "size": 4687,
+      "sha256": "0d94f271878b7476b8478cdeed68206b61319b5467dca7334aeae8ba13cbf50a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_chain_of_fortune_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_chain_of_fortune_32.png",
+      "size": 2645,
+      "sha256": "da6f9c683096315bdd11675341257252398c759afa05d8b7ba4fef4d48abd6cc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_chain_of_fortune_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_chain_of_fortune_disabled.png",
+      "size": 4647,
+      "sha256": "a8dc9101f6eab61a1f1dde113f0cb7f25a7533426ae3f3b9702080fc0294147f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_chain_of_fortune_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_chain_of_fortune_highlighted.png",
+      "size": 5404,
+      "sha256": "084ca89b87b2451d7c9aa9eb431ea47f582648380492886b947159a98e4c5324",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_chain_of_fortune_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_chain_of_fortune_normal.png",
+      "size": 5309,
+      "sha256": "141f52b1d6a5e074f4a71535122744dd4e9527e17d650a9bf4dea64c39660122",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_chain_of_fortune_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_chain_of_fortune_pressed.png",
+      "size": 5062,
+      "sha256": "eaec7dab66297648933268e25854a5e1f720314a9f783fc51db6c3abfc125f37",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_commanding_presence.json",
+      "source": "Mods/new-horizons/Images/NH_perk_commanding_presence.json",
+      "size": 445,
+      "sha256": "4a2f5fa120f668446809714b1a79b36e9268741ca653c842214c3b046806d65b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified ceremonial-horn motif may read as trophy or drinking vessel; busy background/narrow margins; exact morale/Order rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_commanding_presence.png",
+      "source": "Mods/new-horizons/Images/NH_perk_commanding_presence.png",
+      "size": 4607,
+      "sha256": "61fc889e7aec1ca9d140cdb3aacc748d411e7dfe9a083b1db7ad74d7d573f561",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified ceremonial-horn motif may read as trophy or drinking vessel; busy background/narrow margins; exact morale/Order rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_commanding_presence_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_commanding_presence_32.png",
+      "size": 2570,
+      "sha256": "a253895d7f9e0e5529bf8947d3ae67301fde467e6ffa6f75b27234fca1045f95",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified ceremonial-horn motif may read as trophy or drinking vessel; busy background/narrow margins; exact morale/Order rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_commanding_presence_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_commanding_presence_disabled.png",
+      "size": 4535,
+      "sha256": "0527446f7f259974126d2b5b60168739b7d4764ff613dddb9671e0929c372caa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified ceremonial-horn motif may read as trophy or drinking vessel; busy background/narrow margins; exact morale/Order rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_commanding_presence_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_commanding_presence_highlighted.png",
+      "size": 5370,
+      "sha256": "90be8a5ce2f9a0fd35d64bd11732e5d23169db83133407d4ab522000a8105f1a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified ceremonial-horn motif may read as trophy or drinking vessel; busy background/narrow margins; exact morale/Order rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_commanding_presence_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_commanding_presence_normal.png",
+      "size": 5242,
+      "sha256": "92c2e54de19c9ee439d8adc0d6ef6b693b62ebb096280ef93eb0e5e2f874230f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified ceremonial-horn motif may read as trophy or drinking vessel; busy background/narrow margins; exact morale/Order rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_commanding_presence_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_commanding_presence_pressed.png",
+      "size": 5005,
+      "sha256": "3748b1649a521c29e545326c3d9bbba71a9fc28a832c535145ad09bc779e30b4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified ceremonial-horn motif may read as trophy or drinking vessel; busy background/narrow margins; exact morale/Order rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counterpressure.json",
+      "source": "Mods/new-horizons/Images/NH_perk_counterpressure.json",
+      "size": 429,
+      "sha256": "a958a37bc18f0ee8256f4f60890e4255217d98187ea97f97b5557ca4ab4174ea",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counterpressure.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counterpressure.png",
+      "size": 4417,
+      "sha256": "bf4df64fdea5b8579560be1ba9fa1768cda6b999474f0a565b1b2ffb67dd9b9f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counterpressure_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counterpressure_32.png",
+      "size": 2533,
+      "sha256": "db84c931cca8b753952bc8ac70139106382b84563a0072cf6dd7f94408bfdfd7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counterpressure_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counterpressure_disabled.png",
+      "size": 4391,
+      "sha256": "e178a7b53ba7ff753951c451ef5222f670c26a7182b2b2f3344a2d270064e717",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counterpressure_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counterpressure_highlighted.png",
+      "size": 5137,
+      "sha256": "4131e9be46c516ddd05e4b3ea948293be45150d05506c45291fe04d3147d621d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counterpressure_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counterpressure_normal.png",
+      "size": 5029,
+      "sha256": "8d61b9990697568fdf0e6fcfcfb7ab38488eac44589d9bc4d440e1594d780d75",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counterpressure_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counterpressure_pressed.png",
+      "size": 4802,
+      "sha256": "78b2f057a09f01d8584db773a574f249f62da644be6c76b669244920287b159f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crisis_command.json",
+      "source": "Mods/new-horizons/Images/NH_perk_crisis_command.json",
+      "size": 425,
+      "sha256": "57f704b1ca6cae079c196d56c34afc64841af550c9bf1cedf8d49ded69e610e8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified busy urgent-command scene with peripheral cloth cropped; central symbols remain complete",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crisis_command.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crisis_command.png",
+      "size": 4969,
+      "sha256": "3f2d6f6045be354c05750177856efb56d36e50ea03a5d274560a8432b4c22582",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified busy urgent-command scene with peripheral cloth cropped; central symbols remain complete",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crisis_command_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crisis_command_32.png",
+      "size": 2743,
+      "sha256": "2013fc5ff12c0b5d243e969331643a4af709c873bfb0f6a4c03ce842adf9db65",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified busy urgent-command scene with peripheral cloth cropped; central symbols remain complete",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crisis_command_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crisis_command_disabled.png",
+      "size": 5112,
+      "sha256": "1b984ce579f66232bb6e18eb5403ab5cb35398d105204d8bf652e6e87b4d86f9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified busy urgent-command scene with peripheral cloth cropped; central symbols remain complete",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crisis_command_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crisis_command_highlighted.png",
+      "size": 5746,
+      "sha256": "9e84cfb88ddad8c24b8a90a61efb884e968233f6750923258715f1600b4c7d8e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified busy urgent-command scene with peripheral cloth cropped; central symbols remain complete",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crisis_command_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crisis_command_normal.png",
+      "size": 5666,
+      "sha256": "0dd0e1ad7245e96af0794f1604385102bd6d4026566b98534455cadd0fa0de65",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified busy urgent-command scene with peripheral cloth cropped; central symbols remain complete",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crisis_command_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crisis_command_pressed.png",
+      "size": 5424,
+      "sha256": "dffcd63e0b189b066eead2bd2b07e3a836194e5c3dc51d3e17c81c764c015fc7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified busy urgent-command scene with peripheral cloth cropped; central symbols remain complete",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cross_school_formula.json",
+      "source": "Mods/new-horizons/Images/NH_perk_cross_school_formula.json",
+      "size": 449,
+      "sha256": "e8564bc73bf88b0c76b04ed19f08f1cabd8cb9719025f48e78c6d38970ab248d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cross_school_formula.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cross_school_formula.png",
+      "size": 4119,
+      "sha256": "aaab0e7d72195e9fe33e17c167529ee2b87848210de6e21bf0a5bb125013b556",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cross_school_formula_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cross_school_formula_32.png",
+      "size": 2316,
+      "sha256": "8cbb54d6f1f8806c93bf2b76d6761c58755ab70e5845c2f5795fbe0f5eb1188c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cross_school_formula_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cross_school_formula_disabled.png",
+      "size": 4002,
+      "sha256": "c8e4b0330ff2bbf81f2b0d3605b95ad96f4256e3ca52b61f155e2896ca3e76ac",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cross_school_formula_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cross_school_formula_highlighted.png",
+      "size": 4823,
+      "sha256": "7fad5cba7b127129cc9b2d51970ba254b8235b379a40dd985cef56de00eba7a7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cross_school_formula_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cross_school_formula_normal.png",
+      "size": 4674,
+      "sha256": "8ff9af0e2eb794dbd039c4a15b9a128d6c1f607c353e02149f1a2c6283725f3c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cross_school_formula_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cross_school_formula_pressed.png",
+      "size": 4424,
+      "sha256": "da6e1cea331961f670e8862effedea222c855d37d4b5ff3334c2ec7e469aac44",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_defensive_commander.json",
+      "source": "Mods/new-horizons/Images/NH_perk_defensive_commander.json",
+      "size": 445,
+      "sha256": "118916b7620e72eab86a9b7400d13562c3dd88def2030a24a2afefe8bf92a4d9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_defensive_commander.png",
+      "source": "Mods/new-horizons/Images/NH_perk_defensive_commander.png",
+      "size": 4676,
+      "sha256": "205a936814ba8058983bf176363179afef31f52eeeb7ada5a499571ceb920c1b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_defensive_commander_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_defensive_commander_32.png",
+      "size": 2598,
+      "sha256": "8069760c8bcd8e8668115366335eb91476a3d27db1556776cd55db4200894390",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_defensive_commander_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_defensive_commander_disabled.png",
+      "size": 4638,
+      "sha256": "001e35b8511434bf88d4f1e9ba235ea3f18e6476e89487df5ee5769cdaec4823",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_defensive_commander_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_defensive_commander_highlighted.png",
+      "size": 5408,
+      "sha256": "6d443d3bcbe85e045d3a2e499ed0bc13b549d5841f359d8eb7a3ad9f21a1279e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_defensive_commander_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_defensive_commander_normal.png",
+      "size": 5289,
+      "sha256": "56568e69191c5319a3eb343df4659303167ead112db4fd2563f4ea42e9cfb85d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_defensive_commander_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_defensive_commander_pressed.png",
+      "size": 5038,
+      "sha256": "d6b6b72a927de102ffd485f9b0f4692bee7432d8d91d8706a4edafb99b6dff3c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_double_command.json",
+      "source": "Mods/new-horizons/Images/NH_perk_double_command.json",
+      "size": 425,
+      "sha256": "14d270bf65e38f1a00c43927648db4c2c8bb86654fda0dc3f4777d42169f0935",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_double_command.png",
+      "source": "Mods/new-horizons/Images/NH_perk_double_command.png",
+      "size": 4753,
+      "sha256": "3fe44d3bbce4d8d3830d49f5780af7d9d5523650e8fb2490422b1c416943a88a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_double_command_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_double_command_32.png",
+      "size": 2660,
+      "sha256": "4823bcaa59bbc5a46132141676ec0aaac09e9183f0393ef73249bae7de377052",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_double_command_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_double_command_disabled.png",
+      "size": 4755,
+      "sha256": "513d4646b8635298b73356cf852d9aeca4ced1ab4a72c8bbfe7db7d028686046",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_double_command_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_double_command_highlighted.png",
+      "size": 5517,
+      "sha256": "0432edd2a1bca618d227ec955572b70078b19c07974b7587dcab1e0d9a3dd5bd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_double_command_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_double_command_normal.png",
+      "size": 5389,
+      "sha256": "ece4e3db3c2611393b28a984b09eb7819bdddacb04af6a5920aecdd13e0d9ae1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_double_command_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_double_command_pressed.png",
+      "size": 5156,
+      "sha256": "b3001bdeceb95f343f6ff10845971f54418d82e282b01bb47ed21493f53f228e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_esprit_de_corps.json",
+      "source": "Mods/new-horizons/Images/NH_perk_esprit_de_corps.json",
+      "size": 429,
+      "sha256": "697ad8bbf390ff7dd730213ba3b25a3c0e49b84384a91b85f0c11993af76c1cd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_esprit_de_corps.png",
+      "source": "Mods/new-horizons/Images/NH_perk_esprit_de_corps.png",
+      "size": 4612,
+      "sha256": "a87ad7feb3641d30aa1167b74015c426f17a22f7fc40dc34a6e368dc687f036a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_esprit_de_corps_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_esprit_de_corps_32.png",
+      "size": 2548,
+      "sha256": "e5091bdb569306a68a1f62db211b76caa080fd8b34ead2dac98c4a97f0175fef",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_esprit_de_corps_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_esprit_de_corps_disabled.png",
+      "size": 4623,
+      "sha256": "6a19265d3c02111e62ca42a476e682535fa056bba202f7de1a67261ff58b9fc0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_esprit_de_corps_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_esprit_de_corps_highlighted.png",
+      "size": 5410,
+      "sha256": "8df4068a0a811d3b71337f3d65119f327231542b5a7fb101357f70eeea7c7cf3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_esprit_de_corps_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_esprit_de_corps_normal.png",
+      "size": 5274,
+      "sha256": "827a346cc96949268ffa1270999ab987d3831942a0d8109a476ac1edc2ca514d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_esprit_de_corps_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_esprit_de_corps_pressed.png",
+      "size": 5026,
+      "sha256": "74104c76678b70c659851d62f54e69d416a2414f8323bb07628fd309ebf57d5c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fearless.json",
+      "source": "Mods/new-horizons/Images/NH_perk_fearless.json",
+      "size": 401,
+      "sha256": "3ed3345102d8c78dded03a1a3206443bfb1be2d195453a4c5ca8f787905594c4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fearless.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fearless.png",
+      "size": 4812,
+      "sha256": "12d9c70cbdcee57de1c499bfb76eff016c4ba87125e9adf889baa899b3b06dd6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fearless_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fearless_32.png",
+      "size": 2666,
+      "sha256": "c028a2b6f0fb78b8a2e48149377fd7c386d63b03edf392f92f3709d4db90b2b6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fearless_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fearless_disabled.png",
+      "size": 4846,
+      "sha256": "1256d4370824771115edd153c8f37f95fb828e15c71e599470d41629ad04442b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fearless_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fearless_highlighted.png",
+      "size": 5523,
+      "sha256": "c05b013b3eca7678f205b5a861e6605087cf024eb8da5c438e85cdf4a292f725",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fearless_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fearless_normal.png",
+      "size": 5425,
+      "sha256": "699db4e6a9c00487484ee7581a2dddb3f99db5d7e9fdd4d5097be08743da0379",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fearless_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fearless_pressed.png",
+      "size": 5207,
+      "sha256": "0fe8be0613aa4502239b32d1a897f37748dcdcbe4a7f965bf3a61f26d2807740",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_field_study.json",
+      "source": "Mods/new-horizons/Images/NH_perk_field_study.json",
+      "size": 413,
+      "sha256": "9c9d8781daad60fbfc9524aa2b64a04763110d6c3fadc52a7374b1614a5ab3bc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_field_study.png",
+      "source": "Mods/new-horizons/Images/NH_perk_field_study.png",
+      "size": 4288,
+      "sha256": "61d04fdd24ce1232dc519d3fa5c46f2b05b067997103c2f2bc1d13df7fd098df",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_field_study_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_field_study_32.png",
+      "size": 2409,
+      "sha256": "edd66d968207c6302a78bb0abd46f5be111d1db3e47c05c96e2ce7013cc513ef",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_field_study_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_field_study_disabled.png",
+      "size": 4206,
+      "sha256": "5863424dbcf2c22bdbc22a51bb2c89f59186f9cf5817d4f01baaf5d3c3e63c9d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_field_study_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_field_study_highlighted.png",
+      "size": 5017,
+      "sha256": "abb4ad4d25a52b60a01247ad790c721fbabfbb907341748dadd9d8de73f3348a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_field_study_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_field_study_normal.png",
+      "size": 4878,
+      "sha256": "0e4c0672b4655bae595ecf5926a205fa4979d75618c87ad493f7cd60c9f6cd73",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_field_study_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_field_study_pressed.png",
+      "size": 4637,
+      "sha256": "14de78b9ae1224659d63690847e415511fa5ac05302415e22707f373092b5427",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fortunes_favor.json",
+      "source": "Mods/new-horizons/Images/NH_perk_fortunes_favor.json",
+      "size": 425,
+      "sha256": "76ac7ce5c1fc0d5293f140ef5b3c1e0cc7dfbfef5614f621e936d2bae629ec9d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fortunes_favor.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fortunes_favor.png",
+      "size": 4348,
+      "sha256": "2a84e65bf3607a7bfb5c852f760094efd9f8d4852b706e3dc1cf0c8a4dfd3ea7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fortunes_favor_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fortunes_favor_32.png",
+      "size": 2488,
+      "sha256": "2bd154e27492e9d384f1dadc4537054bf2f0989395e0b6d63511292bdb9dfa44",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fortunes_favor_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fortunes_favor_disabled.png",
+      "size": 4144,
+      "sha256": "1cd5d7fd78467be1288c7d8bae628b80d0e8de1d59d5470e43fa6839c2c9adcf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fortunes_favor_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fortunes_favor_highlighted.png",
+      "size": 5019,
+      "sha256": "1dc32edf7bd58c24f693f04fa0cb05581d7cea600f8d9a7febaffc1927bb5d61",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fortunes_favor_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fortunes_favor_normal.png",
+      "size": 4894,
+      "sha256": "c102fd1f982c74e42ba98dd23bf1ea9bb10fbbbee6519b1747907435971ce549",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_fortunes_favor_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_fortunes_favor_pressed.png",
+      "size": 4678,
+      "sha256": "c602900ed618a3c508b6935ee6b4c05e390ee4b07e3dd508ac58afc1dc64c2c3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_heroic_spirit.json",
+      "source": "Mods/new-horizons/Images/NH_perk_heroic_spirit.json",
+      "size": 421,
+      "sha256": "616fdcc5be1766a03921c4746ab6a9f8d405c927a03c9166f6df48593aa7874e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_heroic_spirit.png",
+      "source": "Mods/new-horizons/Images/NH_perk_heroic_spirit.png",
+      "size": 4443,
+      "sha256": "fe8e38a246f416c5a559df5cc2b687fcfc19097b9d5ad16b79cae99679b8d9ff",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_heroic_spirit_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_heroic_spirit_32.png",
+      "size": 2493,
+      "sha256": "4373deec2c633ffab27863fc8a5a22d756fe6206233be06e4be63a5e309c1a52",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_heroic_spirit_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_heroic_spirit_disabled.png",
+      "size": 4339,
+      "sha256": "30a67a87d1cb8f1d25950ec5a73079d2c1c9eb467f1bea5b33ecb4500aff2b65",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_heroic_spirit_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_heroic_spirit_highlighted.png",
+      "size": 5166,
+      "sha256": "20a78890b8f8f7d68f4017fab78af9bb97b602aed9c4fa9e8edf608941d5aae8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_heroic_spirit_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_heroic_spirit_normal.png",
+      "size": 5047,
+      "sha256": "6e7fd61d46285af1dced66be5c3b5786a523eb4b676ef2653134ac2118877567",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_heroic_spirit_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_heroic_spirit_pressed.png",
+      "size": 4817,
+      "sha256": "fc2b895a431eaf7ac15241a152754b1a985f1b689713f04a5463f0ff902177f5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_hold_fast.json",
+      "source": "Mods/new-horizons/Images/NH_perk_hold_fast.json",
+      "size": 405,
+      "sha256": "03595bf5d23a012d854ff8f3094f033fbcba062521758f126676b261b6f8dfb5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_hold_fast.png",
+      "source": "Mods/new-horizons/Images/NH_perk_hold_fast.png",
+      "size": 4315,
+      "sha256": "3de169455b91647f69d5d64e989eafaff8fd32e6212174116a0dcd20cd11d365",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_hold_fast_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_hold_fast_32.png",
+      "size": 2398,
+      "sha256": "ede0f52d1394afe338261b14e895ab913adf3d46999948695710e0f86f76f352",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_hold_fast_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_hold_fast_disabled.png",
+      "size": 4156,
+      "sha256": "8a97eda5b4ed2672bed33d987312bfe15a2d0e6ff5751666a220f81f09dc894f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_hold_fast_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_hold_fast_highlighted.png",
+      "size": 5022,
+      "sha256": "18b356e4572b584ac08dbd622e82094ae7cd28ecfbfefc2ec9ca138f198cd4ce",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_hold_fast_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_hold_fast_normal.png",
+      "size": 4871,
+      "sha256": "50004205715b520d2aabf002a995ea81deeeb696edb80d6a559254a1702cd92c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_hold_fast_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_hold_fast_pressed.png",
+      "size": 4665,
+      "sha256": "4ac5468d6d67e52808000aac6424915132ad2055f8d9a1b931af1f5c12d7ab17",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_last_stand.json",
+      "source": "Mods/new-horizons/Images/NH_perk_last_stand.json",
+      "size": 409,
+      "sha256": "94b6841ab5b7b3c39d2a89e215bd1a783680ee82f8603405d7d965660e9fa3af",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_last_stand.png",
+      "source": "Mods/new-horizons/Images/NH_perk_last_stand.png",
+      "size": 4246,
+      "sha256": "ee92131d20d5bceff7b680a17d530089b2077615033c76bc71b5c0199b8b40e8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_last_stand_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_last_stand_32.png",
+      "size": 2357,
+      "sha256": "7c99284e868e3e5df4b063bf19a712c7f1d8bdc495d5519b59769bd48e0cda41",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_last_stand_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_last_stand_disabled.png",
+      "size": 4135,
+      "sha256": "d4d7ccd6d7b687130d8325ef87e8d064527e95e087335a2e5e4421cce1ebdc6b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_last_stand_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_last_stand_highlighted.png",
+      "size": 4978,
+      "sha256": "81c9d47ed1dc30edcf74af296ad3696b42324d2c09b4a8f8c79632fbeae655ef",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_last_stand_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_last_stand_normal.png",
+      "size": 4847,
+      "sha256": "0917f5832578ae19d1db7e4f63e26f2d32882e89c03cde496f605a1db46d4230",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_last_stand_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_last_stand_pressed.png",
+      "size": 4614,
+      "sha256": "0873016d6437158d0c5e8b51c713ec089581f45444e4824643800dc23d1db2bd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_learning_sage.json",
+      "source": "Mods/new-horizons/Images/NH_perk_learning_sage.json",
+      "size": 421,
+      "sha256": "5e592fdc517d195f8b9c7d9a357a47041b8f3a39a9c253a815144adab32d16b8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_learning_sage.png",
+      "source": "Mods/new-horizons/Images/NH_perk_learning_sage.png",
+      "size": 4562,
+      "sha256": "91a5b769865eaf01348f90c943b730f87de077f397cc9fd9996cc5623d58ed45",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_learning_sage_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_learning_sage_32.png",
+      "size": 2563,
+      "sha256": "89fa69899c9110ea9c78a979b02ad3b745da4a919d7ba39138ec069220a01d5d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_learning_sage_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_learning_sage_disabled.png",
+      "size": 4510,
+      "sha256": "b4fb06a4ce21de6d6476dbd400507e9824b590754b52b3dbbcb47eb994949785",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_learning_sage_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_learning_sage_highlighted.png",
+      "size": 5289,
+      "sha256": "2cce4f45bbc8be3758b8c75db598f757f2a2fbae4fa48c9e72cc65d8042833dd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_learning_sage_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_learning_sage_normal.png",
+      "size": 5188,
+      "sha256": "c0f2da4f4fc1ad47c65bcfb7cffcfe652e44d776988f9139aa70f70ad5fa1435",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_learning_sage_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_learning_sage_pressed.png",
+      "size": 4948,
+      "sha256": "385b010045f3a49b479b5f0dd1d2b3a502d80cbc06b39bed7b76d591a175f27b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_luck_serendipity.json",
+      "source": "Mods/new-horizons/Images/NH_perk_luck_serendipity.json",
+      "size": 433,
+      "sha256": "fa2bbb24f6648ae9ca5426d841d98111cc6e6b62a730e186317aa20ae3f82f6c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_luck_serendipity.png",
+      "source": "Mods/new-horizons/Images/NH_perk_luck_serendipity.png",
+      "size": 3981,
+      "sha256": "55f9a9ee9bf900ef9e6f19e27d7c789416882ae0599d5c1c0149baf88543e8ac",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_luck_serendipity_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_luck_serendipity_32.png",
+      "size": 2278,
+      "sha256": "7ea11d309855269c52a0c4b287eaeb6588995615eb28db5e4e236e09cee1f89b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_luck_serendipity_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_luck_serendipity_disabled.png",
+      "size": 3847,
+      "sha256": "a970711abc7209323230a3e1a0cf0123d06f7c7952172437b2370c3f9d1e5ebe",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_luck_serendipity_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_luck_serendipity_highlighted.png",
+      "size": 4570,
+      "sha256": "fc951d967963812f20ea9c91982a916a823b512b7cd233a413e7c80ff2de0516",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_luck_serendipity_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_luck_serendipity_normal.png",
+      "size": 4481,
+      "sha256": "518e6586dc37bc752bfbf6903209148ac05aea58da6e498f1f8fe218a673e79a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_luck_serendipity_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_luck_serendipity_pressed.png",
+      "size": 4188,
+      "sha256": "f34bdf2f7e6b3c83567f8a2ae7c5010c9bec23b9c709da0cf788a7068789683c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_mana_conservation.json",
+      "source": "Mods/new-horizons/Images/NH_perk_mana_conservation.json",
+      "size": 437,
+      "sha256": "6ffacfec78c617f0afc5f22093adbbc35365a96a53820ce7199776366acf8fda",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_mana_conservation.png",
+      "source": "Mods/new-horizons/Images/NH_perk_mana_conservation.png",
+      "size": 4428,
+      "sha256": "1bdc38bbb8f3837d99827ace842a84318bc78438c85684af7f7fb59ce32c86e7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_mana_conservation_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_mana_conservation_32.png",
+      "size": 2490,
+      "sha256": "dd4fe6dcf0c47eb2194bc7bbf56d2fdbab14aa4c2d05b25487faf462aaee3eb0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_mana_conservation_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_mana_conservation_disabled.png",
+      "size": 4324,
+      "sha256": "315c8c4f7d9eed8d55fb60e63498f55814841c22dafffacfcce5b90892e19e28",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_mana_conservation_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_mana_conservation_highlighted.png",
+      "size": 5157,
+      "sha256": "51733ddc563a7800297ae8e8712204b7faa8b6891aa6ab3a5815a901e41ca8ef",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_mana_conservation_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_mana_conservation_normal.png",
+      "size": 5027,
+      "sha256": "d42a0a05d17849b4635a405722b3a9af4d5986f00e84b2a40ebef4801b69c0f7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_mana_conservation_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_mana_conservation_pressed.png",
+      "size": 4803,
+      "sha256": "15b2dd0aeda94995f596703c2b751868a95ab461f3e67c0e20cbf780d6fca308",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_master_teacher.json",
+      "source": "Mods/new-horizons/Images/NH_perk_master_teacher.json",
+      "size": 425,
+      "sha256": "f8f4af5a3adc6fba6de97536cc44cbed1471787a90c14d514a40e792ba2382f6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_master_teacher.png",
+      "source": "Mods/new-horizons/Images/NH_perk_master_teacher.png",
+      "size": 4621,
+      "sha256": "241515792f190d4bc0aa8732f20e3d91d89feb4aeb6df1533bd39c395244ea8c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_master_teacher_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_master_teacher_32.png",
+      "size": 2584,
+      "sha256": "37101e05a3356e1ff4256a458940f527674448971799a8320ed9bed2e3be4b75",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_master_teacher_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_master_teacher_disabled.png",
+      "size": 4531,
+      "sha256": "a6b4297047062098e1d766ddb0a79d2df77bca860802bb981ae28cee3529d750",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_master_teacher_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_master_teacher_highlighted.png",
+      "size": 5338,
+      "sha256": "43a4b718fa3c796b1e4480467b476f90bb6eaea01e2e93af178ed86434c993a4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_master_teacher_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_master_teacher_normal.png",
+      "size": 5239,
+      "sha256": "84dc658e4f074098e5cacf5dde0444f38a71e9de89e1dffcfc5ed29452aa0fa5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_master_teacher_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_master_teacher_pressed.png",
+      "size": 5008,
+      "sha256": "c070ab11e96faafbbdfac2514009f124dbf4192ccab85e2330a7a39d689e420c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_opportunist.json",
+      "source": "Mods/new-horizons/Images/NH_perk_opportunist.json",
+      "size": 413,
+      "sha256": "65c4d30d5ee1337a20a64ebb9765b6b9af73162fa1f8a8ff6e54d05a6a97e79c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_opportunist.png",
+      "source": "Mods/new-horizons/Images/NH_perk_opportunist.png",
+      "size": 4189,
+      "sha256": "a8ccdd6e3fc18f9a5f191a511da67ab2e9efb61bb0101a68132384e670e90587",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_opportunist_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_opportunist_32.png",
+      "size": 2367,
+      "sha256": "d96340226280173729b3f0d0cc99572ea5af5c1c64da7d8bb1634706ea37d48a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_opportunist_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_opportunist_disabled.png",
+      "size": 4111,
+      "sha256": "25f70daa3ef394d8dc45c202eeb8604119e1de58fed758bb43a9e248dfdefb9c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_opportunist_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_opportunist_highlighted.png",
+      "size": 4874,
+      "sha256": "4a8b87ae7f0434669f9ff71647442efcc30cf4654ec7c726db778b4d5c40969b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_opportunist_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_opportunist_normal.png",
+      "size": 4739,
+      "sha256": "9a0e412d3d0c34272dd6a90e431b3a1a9f11d6a0238fd4f4244f5e5ab957d822",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_opportunist_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_opportunist_pressed.png",
+      "size": 4523,
+      "sha256": "f97a58e608bbcb3ff47c52e065be0e221a3db976dfe7c2554ce2948ce597dc8e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-luck-families-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwhelming_formula.json",
+      "source": "Mods/new-horizons/Images/NH_perk_overwhelming_formula.json",
+      "size": 449,
+      "sha256": "e8cf4a0ad7cc40a20bab16c2c857baf3354d55a386ef6c5cfe766fc9f91e50b3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20; qualified generic-formula/alchemy motif; resistance-penetration not visually explicit",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwhelming_formula.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwhelming_formula.png",
+      "size": 4516,
+      "sha256": "a00c7647cbecb2897447756f6d5b6ab5dca4e6908129441e3f3c92211931cfcf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20; qualified generic-formula/alchemy motif; resistance-penetration not visually explicit",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwhelming_formula_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwhelming_formula_32.png",
+      "size": 2551,
+      "sha256": "ef0b9acefd3ecea06f8c723050a71ea288939c93d149842256492adfe6271b1b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20; qualified generic-formula/alchemy motif; resistance-penetration not visually explicit",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwhelming_formula_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwhelming_formula_disabled.png",
+      "size": 4350,
+      "sha256": "317fd840215129cf1e6ac3aa81ed3802dc744b959584e8caf71cbff17abacffc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20; qualified generic-formula/alchemy motif; resistance-penetration not visually explicit",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwhelming_formula_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwhelming_formula_highlighted.png",
+      "size": 5228,
+      "sha256": "1fb4de2974c63373d48005d212627eb7f4c523c8de9c39127229d478bde66315",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20; qualified generic-formula/alchemy motif; resistance-penetration not visually explicit",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwhelming_formula_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwhelming_formula_normal.png",
+      "size": 5110,
+      "sha256": "ea56f6695db687604361db3c28bd6bc32446d8ef5c94b2e9e5cb3bc79a7ad34c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20; qualified generic-formula/alchemy motif; resistance-penetration not visually explicit",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwhelming_formula_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwhelming_formula_pressed.png",
+      "size": 4879,
+      "sha256": "03a3dd4d77be55324ac1897b7ac00ab1ce0bf1dfb2b0a05ef6eb6a1dbbdca70a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20; qualified generic-formula/alchemy motif; resistance-penetration not visually explicit",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precise_casting.json",
+      "source": "Mods/new-horizons/Images/NH_perk_precise_casting.json",
+      "size": 429,
+      "sha256": "821e86f33d2567c0e0821b20bffdca61a4884370092946ad481f07d7625b682d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precise_casting.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precise_casting.png",
+      "size": 4524,
+      "sha256": "6f173dc37db09786b319e77b4cb77538b70c5e4b3f64d7fef7ddd202d9f1e3cf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precise_casting_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precise_casting_32.png",
+      "size": 2540,
+      "sha256": "4ad9f8d94cebd8f5ff096650cc4d214818ad86a4a9d1543fb160cc66e2fdb42d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precise_casting_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precise_casting_disabled.png",
+      "size": 4400,
+      "sha256": "588b656ea11d9adfbf4b6ce2c09bf9856f4037dd7af8b55bae2da2e644838f82",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precise_casting_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precise_casting_highlighted.png",
+      "size": 5241,
+      "sha256": "07f5c7b2a0312928e99d8c8a96b4d956cf1eb08d585e0f8730a08fcefe546015",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precise_casting_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precise_casting_normal.png",
+      "size": 5135,
+      "sha256": "db451186b7d2b15ef6d0ab548de66b4bba7c24b934af680dd766b123bfd433e5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precise_casting_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precise_casting_pressed.png",
+      "size": 4906,
+      "sha256": "ba69f778d91fe642dbbbbc07a0deb4c7bd1458886c3439c96e26f21fd656dc78",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precision_bombardment.json",
+      "source": "Mods/new-horizons/Images/NH_perk_precision_bombardment.json",
+      "size": 453,
+      "sha256": "ebc8e06296e4d5807ce58faf2ab5010d4066ff3868071eff49335acfe40d6b20",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precision_bombardment.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precision_bombardment.png",
+      "size": 4502,
+      "sha256": "0ff96fa6f8d231671e7473b07498503d0627b24f4debee72fdcc04a600a314aa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precision_bombardment_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precision_bombardment_32.png",
+      "size": 2532,
+      "sha256": "3a029aea921563061873d309721fabcd33402c3f94948bc5fceb011371f140f8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precision_bombardment_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precision_bombardment_disabled.png",
+      "size": 4458,
+      "sha256": "a3ae4eed3e491840c024878b580ed10e7f9dc396bb7fb237edc0c817355ca58b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precision_bombardment_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precision_bombardment_highlighted.png",
+      "size": 5250,
+      "sha256": "ed774c6a097f19ddaca6002bb128c4de7e1499f9cc15c6d9586bddb7d919c99e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precision_bombardment_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precision_bombardment_normal.png",
+      "size": 5102,
+      "sha256": "29e149567867257abbd83e09e9bb85f18a6e92dd9f8b967ec16767548be1e741",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_precision_bombardment_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_precision_bombardment_pressed.png",
+      "size": 4863,
+      "sha256": "ad99b671dd2f27ccbc62b9c4081066f270376beea3a1d03d818439c02e8f074c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "user-authorized-provisional-perk-drafts-2026-10-14",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_quick_study.json",
+      "source": "Mods/new-horizons/Images/NH_perk_quick_study.json",
+      "size": 413,
+      "sha256": "7c6496d2a317cea6064aa583d1b302217c6ddf1008bccf05c622aa0ed0fa5245",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_quick_study.png",
+      "source": "Mods/new-horizons/Images/NH_perk_quick_study.png",
+      "size": 4809,
+      "sha256": "755d33493f43c7321e292d2b95faf2226b66ca58a9ccea93765126ccf67cd28e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_quick_study_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_quick_study_32.png",
+      "size": 2680,
+      "sha256": "3fca2269218b9d24bcfd224fcdb8ec1e6d86f17985ffb919c0d8a0f9e9137d36",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_quick_study_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_quick_study_disabled.png",
+      "size": 4844,
+      "sha256": "45de3924aca3ced9c86f2a4acf1e1ad6f2fbd7dc7ff6d306675e9b23b24ef7cb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_quick_study_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_quick_study_highlighted.png",
+      "size": 5554,
+      "sha256": "1f727a543b271b7673aa32b325d818e5f3c88072d90dacc2d5d2108437b77d0f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_quick_study_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_quick_study_normal.png",
+      "size": 5438,
+      "sha256": "42c5f64e9b5e15e15a49c6fefa09c2cead58e79eb1ce4b048a840a0003b8ace0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_quick_study_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_quick_study_pressed.png",
+      "size": 5206,
+      "sha256": "28131a4b65de3a2388469bc5cf95242ad9fc7abe24373b100db91b8433bf48e4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_seize_initiative.json",
+      "source": "Mods/new-horizons/Images/NH_perk_seize_initiative.json",
+      "size": 433,
+      "sha256": "a7ca199d5a19a8c94d587dbba5383e453e0de2f69b23f3d9f973633b1bb5b1a6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified dense timing motif may suggest deployment; exact Initiative action effect remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_seize_initiative.png",
+      "source": "Mods/new-horizons/Images/NH_perk_seize_initiative.png",
+      "size": 4832,
+      "sha256": "c8b535a839e8ea1f2ef9e4165a05035a20fa9f83276585d24a88494edaa7bac4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified dense timing motif may suggest deployment; exact Initiative action effect remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_seize_initiative_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_seize_initiative_32.png",
+      "size": 2687,
+      "sha256": "29290f3361f12aa648aceaed588f56f7bf9682e26c637312ba142c2f30b7f506",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified dense timing motif may suggest deployment; exact Initiative action effect remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_seize_initiative_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_seize_initiative_disabled.png",
+      "size": 4855,
+      "sha256": "8a17d3612c6e1dd047ba9dcceca55cdec269c525ba36dd264d42e5172396626c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified dense timing motif may suggest deployment; exact Initiative action effect remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_seize_initiative_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_seize_initiative_highlighted.png",
+      "size": 5587,
+      "sha256": "59941cf6da4d0afd9c71ea4136a3efc0b9446b247b84e34c0a424882391f94f0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified dense timing motif may suggest deployment; exact Initiative action effect remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_seize_initiative_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_seize_initiative_normal.png",
+      "size": 5478,
+      "sha256": "11d64e42021cf6ac76cc5a1cf5f4a1664f14c26b17605feb17c71fea945975ca",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified dense timing motif may suggest deployment; exact Initiative action effect remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_seize_initiative_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_seize_initiative_pressed.png",
+      "size": 5238,
+      "sha256": "455a76dd5a1c0b83b9465c54b26f4ffa710dd6042809d87d550f1a727c73b8bc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20; qualified dense timing motif may suggest deployment; exact Initiative action effect remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_cohesion.json",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_cohesion.json",
+      "size": 433,
+      "sha256": "e20a013d518a5672e770bbf875cfefdc19c584db85fddac05bf3102623787e56",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_cohesion.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_cohesion.png",
+      "size": 4545,
+      "sha256": "c13ee3f3a1c9805e58d72a410bcffe182542087f9d7d2b3bb6cab85ed725407e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_cohesion_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_cohesion_32.png",
+      "size": 2513,
+      "sha256": "3c377fa54e3e9f446e59965f045ecf5ce0f408bbe8f6b7fb195fcc2d6ece670e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_cohesion_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_cohesion_disabled.png",
+      "size": 4476,
+      "sha256": "1ae33564e66bce2227b7d125c9e9b70b9bc2d941c5e678e1e6ce1b0127d99028",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_cohesion_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_cohesion_highlighted.png",
+      "size": 5245,
+      "sha256": "e9dce5caf5739b747576f7ba31b2b723294cecbb24b74e61a0f476ca2a62bbbf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_cohesion_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_cohesion_normal.png",
+      "size": 5158,
+      "sha256": "83597d078f2716a6828608c7fb3c57e6813121f3f49d3487238b3435b78e833b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_cohesion_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_cohesion_pressed.png",
+      "size": 4912,
+      "sha256": "92603afa16bd67c251c9f12c9310fad119225685f6e7c24e44a2f9a9e77acf3c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_commander.json",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_commander.json",
+      "size": 437,
+      "sha256": "033d592d5197fdd307d9d0d14148ff46132a90bdf3a5d59aea59742c9c25f66b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_commander.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_commander.png",
+      "size": 4796,
+      "sha256": "b09acea8a338e635eaab9cc66fc5ab983e0aca2009e9b6be413117a22795c780",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_commander_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_commander_32.png",
+      "size": 2675,
+      "sha256": "ac5cce3c78b1424ae1fca25d21b8d36642946bed68422f7f8430a92f6d836ca7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_commander_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_commander_disabled.png",
+      "size": 4822,
+      "sha256": "9f710c46e57fe57421868c34ca5583a1a1aa78833b5ce44e5829cfa90ca85d6a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_commander_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_commander_highlighted.png",
+      "size": 5577,
+      "sha256": "6151ebb06cdeb5d9c4c8e157fa596aed1473b4471ed21d8b6f04296290f270a5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_commander_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_commander_normal.png",
+      "size": 5455,
+      "sha256": "3ca650553303aa16f54e45b9950b2557b067fd9341d9b167812efb73109f97dd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_veteran_commander_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_veteran_commander_pressed.png",
+      "size": 5210,
+      "sha256": "2ce06ff7139423a1fea18630b73fe9f8069d02d36a1a0f954afba881d2822642",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-command7-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_wisdom_sage.json",
+      "source": "Mods/new-horizons/Images/NH_perk_wisdom_sage.json",
+      "size": 413,
+      "sha256": "0177be058ed82d27cc4ba4828d2fe4601cf5685cc0307b72bfe209823e55a4cb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_wisdom_sage.png",
+      "source": "Mods/new-horizons/Images/NH_perk_wisdom_sage.png",
+      "size": 4212,
+      "sha256": "d8994fca3a52d1d16eda8733585b5ed0855e4d138a3d34d7f424f5d0a6d5908e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_wisdom_sage_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_wisdom_sage_32.png",
+      "size": 2373,
+      "sha256": "1973f295a45db21c7aae545d873fd119c5774c1a661165d6aa41610649666a27",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_wisdom_sage_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_wisdom_sage_disabled.png",
+      "size": 4031,
+      "sha256": "a4ee9d9e3900188a60ec4d5d9c7c222bd3caf88561bb4d710aeab08946dd4d5a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_wisdom_sage_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_wisdom_sage_highlighted.png",
+      "size": 4916,
+      "sha256": "2b4cb49060f30f2b0f7f5048d1a392e8b6321d6f213f128668c0702be9bafab7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_wisdom_sage_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_wisdom_sage_normal.png",
+      "size": 4804,
+      "sha256": "d73fc6d3b755410a2ade8c453190f63640ebacf375a8a2bb9fb99ffcd06fee62",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_wisdom_sage_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_wisdom_sage_pressed.png",
+      "size": 4563,
+      "sha256": "2f0bbe5f2566fcfe94e6ad9324fdaf4b4a4670b60e7866e40afd22719b4c1a89",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
+      "approval": "Provisional; no Final approval"
     }
   ],
   "requiredFamilies": [
@@ -41414,7 +43654,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2062,
+    "builtin-skills-perks-orders-and-ui": 2286,
     "cabir-and-master": 214,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,
