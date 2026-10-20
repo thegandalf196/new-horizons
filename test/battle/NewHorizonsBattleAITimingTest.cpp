@@ -14,6 +14,7 @@
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../lib/CStack.h"
+#include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/BattleAction.h"
@@ -39,11 +40,14 @@
 #include <cstdlib>
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <tuple>
+#include <tbb/global_control.h>
 #include "../../AI/BattleAI/HypotheticBattle.h"
 #include "../../AI/BattleAI/HypotheticBattleTypes.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
@@ -51,6 +55,25 @@
 namespace
 {
 bool requestedWaitDiagnostics();
+
+// Unset retains the maintained fixture; explicit default is the seeded
+// experiment baseline without a control. Never change production preferences.
+std::optional<size_t> shippingTbbExperimentLimit()
+{
+	const auto * requested = std::getenv("NH_TEST_SHIPPING_TBB_LIMIT");
+	if(!requested)
+		return std::nullopt;
+	const std::string_view value(requested);
+	if(value == "default")
+		return 0;
+	if(value == "1")
+		return 1;
+	if(value == "2")
+		return 2;
+	if(value == "4")
+		return 4;
+	throw std::runtime_error("NH_TEST_SHIPPING_TBB_LIMIT requires default, 1, 2 or 4");
+}
 
 void expectProbeCacheClosure(const DamageCacheProbeTiming & timing)
 {
@@ -3374,6 +3397,9 @@ TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheDynamicReentryIsIncludedOnce
 
 TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)
 {
+	const auto experimentLimit = shippingTbbExperimentLimit();
+	if(experimentLimit)
+		dynamic_cast<CRandomGenerator &>(*getRNG()).setSeed(1337);
 	// Separate from the historical commands=false Dwarf workload. Default AI
 	// preferences and shipping command rules are retained; no WAIT/Order is forced.
 	ScopedWaitDiagnostics capture;
@@ -3484,6 +3510,8 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 			result["sides"].Vector().push_back(std::move(entry));
 		}
 		result["randomizerHex"].String() = valueHex(*gameHandler->randomizer);
+		if(experimentLimit)
+			result["gameRandomizerHex"].String() = valueHex(dynamic_cast<CRandomGenerator &>(*getRNG()));
 		if(result.toString().size() > 1024 * 1024)
 			throw std::runtime_error("Shipping diagnostic combined snapshot exceeded bound");
 		return result;
@@ -3493,6 +3521,15 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 	RecordProperty("shippingStateBefore", beforeSnapshot.toString());
 	unsigned consumedHeroActions = 0;
 	unsigned heroRowsObserved = 0;
+	// Scope only the existing callback/apply loop, after setup and before
+	// post-loop snapshots/teardown. Fatal assertions and exceptions also release it.
+	std::unique_ptr<tbb::global_control> boundedWorkers;
+	if(experimentLimit && *experimentLimit != 0)
+	{
+		boundedWorkers = std::make_unique<tbb::global_control>(
+			tbb::global_control::max_allowed_parallelism, *experimentLimit);
+		ASSERT_EQ(tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism), *experimentLimit);
+	}
 	for(unsigned attempt = 0; attempt < 16 && callback->actions.empty(); ++attempt)
 	{
 		const auto * activeUnit = battle()->battleActiveUnit();
@@ -3542,6 +3579,7 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 		}
 	}
+	boundedWorkers.reset();
 	ASSERT_EQ(callback->actions.size(), 1u) << "Natural current-command continuation exceeded bounded action budget";
 	if(heroTimingTest::optedIn())
 	{

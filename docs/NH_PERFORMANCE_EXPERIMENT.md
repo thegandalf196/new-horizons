@@ -8,6 +8,16 @@ Pin source, client/facade, configuration, save/map, resource inventory, renderer
 
 Separate adventure planning, combat callback work, server dispatch/completion waits, rendering and pacing. Wall-time sums are not CPU time; nested children must not be added twice to disjoint totals. ACK, CPU draw return and available images are not physical presentation. Clock domains and missing joins remain explicit. OS cache is not cold merely because a process is fresh.
 
+The native `NewHorizonsExchangeReadParityTest.ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices`
+fixture supports the test-only `NH_TEST_SHIPPING_TBB_LIMIT` selector: `default`,
+`1`, `2` or `4`. Explicit selection seeds the fixture's game RNG identically and
+adds its serialized state to the existing before/after exports. Numeric choices
+bound TBB parallelism only during the existing callback/action loop; `default`
+adds no bound. An unset selector preserves the original fixture behavior.
+Use fresh isolated TEST profiles, diagnostics OFF and interleaved repetitions;
+compare actions, exported state, both RNGs and nonclock counters before comparing
+`callbackWallUs`. This is not a player setting or a production scheduling policy.
+
 Do not run concurrent builds/heavy tests during measurements. Graphical probes require the maintained silent guarded helper, isolated Xvfb, disposable saves and actual dummy-driver/process-identity checks before input. Owned absence is not parent reaping or exit-zero proof. Keep raw logs/captures/receipts private; do not change guard budgets to conceal an invalid run.
 
 ## Existing opt-in diagnostics
