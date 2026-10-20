@@ -23705,51 +23705,54 @@
       "sha256": "003cb077bbef527b0dd7304996267cf53c31fe82e63f105324e2a6df86fd491d"
     },
     "lib/spells/BattleSpellMechanics.cpp": {
+      "deferral": "Before further Cure-validator growth, the gameplay engineer must extract the existing Cure eligibility and selector block into a cohesive shared validator with a current battle and canonical destination. Preserve identity refusal, owner/receptivity/rules/selection and pre-cost ordering; retain hex/unit/refusal, no-mutation/RNG/cost, authoritative Cure/Dispel/Frozen and modal lifecycle coverage, and reduce this baseline. Before further growth, extract coherent accepted effect preparation/application transaction preserving parent/recipient provenance, typed action/payment/Luck/refund/RNG/packet order. Retain existing Cure validator extraction obligation.",
       "kind": "exception",
-      "lines": 3137,
+      "lines": 3159,
       "owner": "gameplay_engineer",
-      "rationale": "Behavior-preserving3301 to3187-line reduction: move the exact nullable Spell Lock predicate, eager resistance preparation and generic Mirror helpers into the focused150-line BattleSpellMirror.cpp. Preserve generic reflection recursion, eager RNG order, command/payment lifetime and the existing Cure identity/pre-cost correction. Compound behavior changes are excluded; no further hotspot growth is approved. Further exact3187 to3137-line ratchet moves the unchanged49-line wouldResist consumer beside its eager resistance producer in BattleSpellMirror.cpp150 to201 with one explicit owning include. Signature, cache writes, callback/RNG order and all other callable bodies are preserved. Independent review covers extraction01 only; blocked compound allegiance/planner changes and their cast/beforeCast growth are excluded.",
-      "review": "IR-MIRROR-CONSUMER-EXTRACTION-01-INDEPENDENT-20261019",
-      "review_scope": "exact-behavior-preserving-cached-resistance-consumer-extraction-01-only-no-compound-behavior-or-future-growth",
-      "sha256": "135f2f2492c87f1dd39bceb5be99b3cec9d8026dfa151569ce4cda05758241d9",
-      "deferral": "Before further Cure-validator growth, the gameplay engineer must extract the existing Cure eligibility and selector block into a cohesive shared validator with a current battle and canonical destination. Preserve identity refusal, owner/receptivity/rules/selection and pre-cost ordering; retain hex/unit/refusal, no-mutation/RNG/cost, authoritative Cure/Dispel/Frozen and modal lifecycle coverage, and reduce this baseline."
+      "rationale": "Applied01 checkpoint3137->3159(+22), compared to pre01 related extraction3187->3159(-28). Exact compound routing and canonical-allegiance substitution only; no blanket hotspot growth approval.",
+      "review": "IR-COMPOUND-MIRROR-CORRECTED-OWNER-20261019",
+      "review_scope": "exact-corrected-compound-mirror-effective-owner-source-only-no-runtime-or-future-growth",
+      "sha256": "068407d271f90bc2c68a1a73d5c7db3722d57e5c9e5d8a75e9e8faca5e9812eb"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::bool BattleSpellMechanics::canBeCast(Problem & problem) const#1": {
-      "kind": "legacy",
+      "deferral": "Before further growth, extract the affected compound targeting/accepted-effect transaction into cohesive validated helpers; preserve identity, owner, rejection/action/payment/RNG order and reduce this exact baseline. Existing Cure extraction obligation remains.",
+      "kind": "exception",
       "lines": 299,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 299 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "b41615aa1704a71c6ceb0f66be2bd3a585e7ddcbeffa94e3c16b01c7fd4124be"
+      "rationale": "Same-size logical validator: canonical effective-allegiance substitution only for Life/Storm, preserving ordinary admission and all other spells.",
+      "review": "IR-COMPOUND-MIRROR-CORRECTED-OWNER-20261019",
+      "review_scope": "exact-corrected-compound-mirror-effective-owner-source-only-no-runtime-or-future-growth",
+      "sha256": "a9708e4d6bfe40743f043b6c74e6fbd8ca9fa67ff527f9e117d52217b5686582"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem) const#1": {
+      "deferral": "Before further growth, extract the existing Cure eligibility and selector block into a shared validator, preserving canonical hex lookup, explicit identity refusal, owner/receptivity/rules/selection and pre-cost ordering. Characterize refusal atomicity and existing authoritative Cure/Dispel/Frozen behavior, retain modal lifecycle checks, and ratchet this function baseline down. Before further growth, extract the affected compound targeting/accepted-effect transaction into cohesive validated helpers; preserve identity, owner, rejection/action/payment/RNG order and reduce this exact baseline. Existing Cure extraction obligation remains.",
       "kind": "exception",
       "lines": 274,
       "owner": "gameplay_engineer",
-      "rationale": "Exact three-line Cure-only canonical hex lookup after single-target validation and before unchanged living/friendly/receptive/selector checks. No explicit identity retargeting, mutation, cost or RNG change. A multi-spell extraction is deferred to avoid coupling unrelated behavior into this urgent targeting correction.",
-      "review": "cure-target-correction-source-v1",
-      "review_scope": "exact-cure-target-correctness-technical-exception",
-      "sha256": "404bebfa2174e1c9602c308603e6bc3fa3f62c6d4919574c72a77c9ed20f7852",
-      "deferral": "Before further growth, extract the existing Cure eligibility and selector block into a shared validator, preserving canonical hex lookup, explicit identity refusal, owner/receptivity/rules/selection and pre-cost ordering. Characterize refusal atomicity and existing authoritative Cure/Dispel/Frozen behavior, retain modal lifecycle checks, and ratchet this function baseline down."
+      "rationale": "Same-size logical validator: canonical effective-allegiance substitution only for Life/Storm, preserving ordinary admission and all other spells.",
+      "review": "IR-COMPOUND-MIRROR-CORRECTED-OWNER-20261019",
+      "review_scope": "exact-corrected-compound-mirror-effective-owner-source-only-no-runtime-or-future-growth",
+      "sha256": "6604ba5c5f1e51aaa31b72560eeace082f54fbd73ac8d6ed7063223b8a66a668"
     },
-    "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target)#1": {
-      "kind": "review",
-      "lines": 111,
+    "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target, std::vector<CompoundMirrorEffect> * compoundMirrorEffects)#1": {
+      "deferral": "Before further growth, extract the affected compound targeting/accepted-effect transaction into cohesive validated helpers; preserve identity, owner, rejection/action/payment/RNG order and reduce this exact baseline. Existing Cure extraction obligation remains.",
+      "kind": "exception",
+      "lines": 117,
       "owner": "gameplay_engineer",
-      "rationale": "Exact151 to111-line shrinking review: replace the eager resistance block with a call to the cohesive46-line prepareResistanceRolls helper in BattleSpellMirror.cpp. All exclusions, battlefield traversal, eager draws, lazy cached consumers and existing target/effect preparation order remain unchanged. The remaining preparation responsibility is reviewed above80 lines and below150; no future growth allowance or compound-rule change.",
-      "review": "IR-MIRROR-EXTRACTION-01-a4845f",
-      "review_scope": "exact-eager-resistance-preparation-extraction-ratchet-only",
-      "sha256": "f88e2dabf246f46b48cba9dede9814a43df3bf31fe657ba15bc4d66421a9ed94"
+      "rationale": "Logical beforeCast111->117(+6) compound hook; signature change is not a growth waiver.",
+      "review": "IR-COMPOUND-MIRROR-CORRECTED-OWNER-20261019",
+      "review_scope": "exact-corrected-compound-mirror-effective-owner-source-only-no-runtime-or-future-growth",
+      "sha256": "5852933419b8ea614181faf51d94d04ee74a51f48a139c95bcf69142d0ac40ed"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)#1": {
-      "kind": "legacy",
-      "lines": 809,
+      "deferral": "Before further growth, extract the affected compound targeting/accepted-effect transaction into cohesive validated helpers; preserve identity, owner, rejection/action/payment/RNG order and reduce this exact baseline. Existing Cure extraction obligation remains.",
+      "kind": "exception",
+      "lines": 823,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 809 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e1476aeaa0a164881839fe15fc0eae18452e6039cf3e78f30b754c5f6e2180f0"
+      "rationale": "Exact809->823(+14) parent transient effect application within existing recorder lifetime; no general transaction growth permission.",
+      "review": "IR-COMPOUND-MIRROR-CORRECTED-OWNER-20261019",
+      "review_scope": "exact-corrected-compound-mirror-effective-owner-source-only-no-runtime-or-future-growth",
+      "sha256": "cfda77541ac4b6af3f948011028438c2104ca95df7803efba89a985f222de64d"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::castEval(ServerCallback * server, const Target & target)#1": {
       "kind": "legacy",
@@ -23759,6 +23762,15 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "fcb2defe34879ea6fc3cccbc9c53f1c868ad61583c1684b03c76c1d42bac26b7"
+    },
+    "lib/spells/BattleSpellMirror.cpp::spells::bool BattleSpellMechanics::prepareCompoundMirror(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target, std::vector<CompoundMirrorEffect> & result)#1": {
+      "kind": "review",
+      "lines": 83,
+      "owner": "gameplay_engineer",
+      "rationale": "83-line focused compound planner; one parent, stable recipient identities, normal defenses and bounded bounce.",
+      "review": "IR-COMPOUND-MIRROR-CORRECTED-OWNER-20261019",
+      "review_scope": "exact-corrected-compound-mirror-effective-owner-source-only-no-runtime-or-future-growth",
+      "sha256": "78e6d1fdf62a79d5b5a8a95890d802a6559f8983c397ed6dedbcae1b9bb19199"
     },
     "lib/spells/CSpell.cpp": {
       "kind": "legacy",

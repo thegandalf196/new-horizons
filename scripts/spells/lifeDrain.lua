@@ -21,13 +21,15 @@ local function livingTarget(unit)
 end
 
 local function isEnemyTarget(self, mechanics, unit)
+	-- This existing binding queries effective allegiance, not Puppet action control.
 	return livingTarget(unit)
-		and mechanics:ownerMatches(unit)
+		and (mechanics:currentControllerIsCaster(unit) == mechanics:isMagicMirror())
 		and self:isReceptive(mechanics, unit)
 end
 
 local function isFriendlyTarget(mechanics, unit)
-	return livingTarget(unit) and mechanics:ownerIsSameAs(unit)
+	return livingTarget(unit)
+		and (mechanics:currentControllerIsCaster(unit) ~= mechanics:isMagicMirror())
 end
 
 local function healPercent(mechanics)

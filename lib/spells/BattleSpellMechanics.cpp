@@ -243,6 +243,8 @@ public:
 					initialControllers.emplace(unit->unitId(), battle.playerToSide(battle.battleGetOwner(unit)));
 	}
 
+	void setCasterOwner(PlayerColor owner) { casterOwner = owner; }
+
 	void complain(const std::string & problem) override { delegate.complain(problem); }
 	bool describeChanges() const override { return delegate.describeChanges(); }
 	vstd::RNG * getRNG() override { return delegate.getRNG(); }
@@ -1273,9 +1275,9 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 			if(!unit || !unit->alive() || !unit->isValidTarget(false) || isSpellLocked(unit)
 				|| !isReceptive(unit))
 				continue;
-			if(unit->unitSide() == battle()->otherSide(casterSide) && !unit->isInvincible())
+			if(battle()->battleGetOwner(unit) == battle()->sideToPlayer(battle()->otherSide(casterSide)) && !unit->isInvincible())
 				availableEnemy = true;
-			else if(unit->unitSide() == casterSide)
+			else if(battle()->battleGetOwner(unit) == getCasterColor())
 				availableFriend = true;
 		}
 		return availableEnemy && availableFriend
@@ -1304,7 +1306,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		const auto availableTarget = std::ranges::any_of(battle()->battleGetAllUnits(false), [this](const battle::Unit * unit)
 		{
 			return unit && unit->alive() && unit->isValidTarget(false) && !unit->isInvincible()
-				&& unit->unitSide() == battle()->otherSide(casterSide) && !isSpellLocked(unit)
+				&& battle()->battleGetOwner(unit) == battle()->sideToPlayer(battle()->otherSide(casterSide)) && !isSpellLocked(unit)
 				&& isReceptive(unit);
 		});
 		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
@@ -1483,8 +1485,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		if(!enemy || !ally || enemy == ally
 			|| !enemy->alive() || !ally->alive()
 			|| !enemy->isValidTarget(false) || !ally->isValidTarget(false)
-			|| enemy->unitSide() != battle()->otherSide(casterSide)
-			|| ally->unitSide() != casterSide
+			|| battle()->battleGetOwner(enemy) != battle()->sideToPlayer(battle()->otherSide(casterSide))
+			|| battle()->battleGetOwner(ally) != getCasterColor()
 			|| enemy->isInvincible() || isSpellLocked(enemy) || isSpellLocked(ally)
 			|| !isReceptive(enemy) || !isReceptive(ally))
 			return false;
@@ -1501,7 +1503,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		{
 			const auto * unit = destination.unitValue;
 			if(!unit || !unit->alive() || !unit->isValidTarget(false) || unit->isInvincible()
-				|| unit->unitSide() != battle()->otherSide(casterSide) || isSpellLocked(unit)
+				|| battle()->battleGetOwner(unit) != battle()->sideToPlayer(battle()->otherSide(casterSide)) || isSpellLocked(unit)
 				|| !isReceptive(unit)
 				|| !selectedUnitIds.insert(unit->unitId()).second)
 				return false;
@@ -1948,9 +1950,10 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		&& newHorizonsWarcasting::battleMeditationEligible(battleInfo->getMagicRules(), casterHero,
 			battleInfo->getWarcastingState(casterSide), battleRound);
 
+	std::vector<CompoundMirrorEffect> compoundMirrorEffects;
 	registerOverwhelmingFormulaCast(server);
 	if(!isCounterspellNegated())
-		beforeCast(server, sc, *server->getRNG(), target);
+		beforeCast(server, sc, *server->getRNG(), target, &compoundMirrorEffects);
 
 	if(logMetamagicFollowup)
 	{
@@ -2066,6 +2069,19 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	{
 		for(auto & p : effectsToApply)
 			p.first->apply(&effectRecorder, this, p.second);
+		const auto previousMode = mode;
+		const auto restoreMode = vstd::makeScopeGuard([&]()
+		{
+			mode = previousMode;
+			effectRecorder.setCasterOwner(battle()->sideToPlayer(effectiveCasterSide()));
+		});
+		for(const auto & part : compoundMirrorEffects)
+		{
+			mode = part.sourceMode;
+			effectRecorder.setCasterOwner(battle()->sideToPlayer(effectiveCasterSide()));
+			for(const auto & effect : part.effects)
+				effect.first->apply(&effectRecorder, this, effect.second);
+		}
 	}
 	if(newHorizonsRegeneration && !isCounterspellNegated())
 		applyRegenerationRateSnapshot(&effectRecorder, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
@@ -2550,7 +2566,8 @@ BattleSide BattleSpellMechanics::effectiveCasterSide() const
 	return mode == Mode::MAGIC_MIRROR ? battle()->otherSide(casterSide) : casterSide;
 }
 
-void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target)
+void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target,
+	std::vector<CompoundMirrorEffect> * compoundMirrorEffects)
 {
 	const bool realityWarp = owner->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY
 		&& usesNewHorizonsMagicV3();
@@ -2581,6 +2598,11 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	// resolve this cached result lazily when they know the unit is an actual,
 	// eligible recipient (including chain routing and scripted collateral).
 	prepareResistanceRolls(rng, target, spellTarget, naturesWrath, realityWarp, wrathConductors);
+
+	if(compoundMirrorEffects
+		&& usesCompoundMirror()
+		&& prepareCompoundMirror(server, sc, rng, target, *compoundMirrorEffects))
+		return;
 
 	auto filterResisted = [this](const battle::Unit * unit) -> bool
 	{

@@ -62,6 +62,8 @@ public:
 
 	/// Returns true if unit would resist the spell due to magic resistance
 	bool wouldResist(const battle::Unit * unit) const override;
+	using BaseMechanics::ownerMatches;
+	bool ownerMatches(const battle::Unit * unit, bool sameOwner) const override;
 
 	/// Returns list of hexes that are affected by spell assuming cast at centralHex
 	BattleHexArray rangeInHexes(const BattleHex & centralHex) const override;
@@ -93,15 +95,27 @@ private:
 	vstd::RNG * activeResistanceRng = nullptr;
 	effects::Effects::EffectsToApply effectsToApply;
 
+	struct CompoundMirrorEffect
+	{
+		Mode sourceMode;
+		effects::Effects::EffectsToApply effects;
+	};
+
+	bool usesCompoundMirror() const;
+	bool prepareCompoundMirror(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng,
+		const Target & target, std::vector<CompoundMirrorEffect> & result);
 	BattleSide effectiveCasterSide() const;
 	void prepareResistanceRolls(vstd::RNG & rng, const Target & target, const Target & spellTarget,
 		bool naturesWrath, bool realityWarp, const battle::Units & wrathConductors);
 	static bool isSpellLocked(const battle::Unit * unit);
 	void beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target);
+	void beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target,
+		std::vector<CompoundMirrorEffect> * compoundMirrorEffects);
 	battle::Units filterSpellLockedEffects(const Target & aimPoint);
 	bool isReflected(ServerCallback * server, const battle::Unit * unit, vstd::RNG & rng);
 	void reflect(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const battle::Unit * unit);
 	const battle::Unit * getRandomUnit(vstd::RNG & rng, const BattleSide & side);
+	const battle::Unit * getRandomUnitForOwner(vstd::RNG & rng, PlayerColor owner);
 
 	battle::Units collectTargets() const;
 

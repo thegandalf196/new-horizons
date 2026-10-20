@@ -123,7 +123,7 @@ void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target 
 			// blocks either half of the paired spell.
 			if(owner->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL
 				&& newHorizonsMagic::spellAllowedBySavedRoster(battle()->getBattle()->getMagicRules(), owner->getId())
-				&& unit->unitSide() == casterSide)
+				&& battle()->battleGetOwner(unit) == getCasterColor())
 				continue;
 			// Friendly Blink is ordinary negative magic for target immunity, but
 			// an ally is not resisting a hostile magical effect.
@@ -136,6 +136,109 @@ void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target 
 				resistantUnitIds.insert(unit->unitId());
 		}
 	}
+}
+
+void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target)
+{
+	beforeCast(server, sc, rng, target, nullptr);
+}
+
+bool BattleSpellMechanics::usesCompoundMirror() const
+{
+	return isNewHorizonsStormOfDaggers()
+		|| (owner && owner->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL
+			&& newHorizonsMagic::spellAllowedBySavedRoster(battle()->getBattle()->getMagicRules(), owner->getId()));
+}
+
+bool BattleSpellMechanics::ownerMatches(const battle::Unit * unit, bool sameOwner) const
+{
+	if(usesCompoundMirror())
+		return unit && ((battle()->battleGetOwner(unit) == getCasterColor()) == sameOwner);
+	return BaseMechanics::ownerMatches(unit, sameOwner);
+}
+
+bool BattleSpellMechanics::prepareCompoundMirror(ServerCallback * server, BattleSpellCast & sc,
+	vstd::RNG & rng, const Target & target, std::vector<CompoundMirrorEffect> & result)
+{
+	const bool storm = isNewHorizonsStormOfDaggers();
+	const size_t shares = storm ? target.size() : 1;
+	if(mode != Mode::HERO || target.empty()
+		|| std::none_of(target.begin(), target.begin() + shares, [](const Destination & destination)
+		{
+			return destination.unitValue
+				&& destination.unitValue->hasBonusOfType(BonusType::MAGIC_MIRROR);
+		}))
+		return false;
+
+	// Original validation and the initial eager resistance draws already ran.
+	// This scratch plan is one paid cast, never a second cast or saved state.
+	const auto originalMode = mode;
+	const auto originalRolls = resistanceRolls;
+	const auto originalResistant = resistantUnitIds;
+	const auto restore = vstd::makeScopeGuard([&]()
+	{
+		mode = originalMode;
+		resistanceRolls = originalRolls;
+		resistantUnitIds = originalResistant;
+	});
+	effectsToApply.clear();
+	for(size_t index = 0; index < shares; ++index)
+	{
+		mode = originalMode;
+		resistanceRolls = originalRolls;
+		resistantUnitIds = originalResistant;
+		const auto * original = target[index].unitValue;
+		if(!original)
+			continue;
+		Target aim = storm ? Target{Destination(original)} : target;
+		if(!isSpellLocked(original) && isReflected(server, original, rng))
+		{
+			// Compound effects provisionally redirect once per original share.
+			// Generic spells retain their existing recursive Mirror path.
+			const auto * redirected = getRandomUnitForOwner(rng, getCasterColor());
+			sc.reflectedCres.insert(original->unitId());
+			if(!redirected)
+				continue;
+			if(sc.reflectedCres.size() == 1)
+				sc.tile = redirected->getPosition();
+			mode = Mode::MAGIC_MIRROR;
+			aim = storm ? Target{Destination(redirected)}
+				: Target{Destination(redirected), Destination(original)};
+
+			// Only the actual redirected damage leg rolls hostile resistance.
+			// Do not reuse its unrelated original-cast eager roll or roll healing.
+			resistanceRolls.clear();
+			resistantUnitIds.clear();
+			if(!isSpellLocked(redirected))
+			{
+				const int probability = std::min(redirected->magicResistance(), 100);
+				const bool resisted = rng.nextInt(0, 99) < probability;
+				resistanceRolls.push_back({redirected->unitId(), probability, resisted, false});
+				if(resisted)
+					resistantUnitIds.insert(redirected->unitId());
+			}
+		}
+
+		const auto * damageTarget = aim.front().unitValue;
+		if(!damageTarget || isSpellLocked(damageTarget) || !isReceptive(damageTarget)
+			|| wouldResist(damageTarget))
+		{
+			if(damageTarget)
+				sc.resistedCres.insert(damageTarget->unitId());
+			continue;
+		}
+		effectsToApply = effects->prepare(this, aim, transformSpellTarget(aim));
+		const auto locked = filterSpellLockedEffects(aim);
+		for(const auto * unit : locked)
+			sc.resistedCres.insert(unit->unitId());
+		const auto recipients = collectTargets();
+		for(const auto * unit : recipients)
+			if(!vstd::contains(affectedUnits, unit))
+				affectedUnits.push_back(unit);
+		result.push_back({mode, std::move(effectsToApply)});
+	}
+	effectsToApply.clear();
+	return true;
 }
 
 bool BattleSpellMechanics::isReflected(ServerCallback * server, const battle::Unit * unit, vstd::RNG & rng)
@@ -195,6 +298,17 @@ const battle::Unit * BattleSpellMechanics::getRandomUnit(vstd::RNG & rng, const 
 		return unit->unitSide() == side && unit->isValidTarget(false) &&
 			!unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
 	});
+	return !targets.empty() ? (*RandomGeneratorUtil::nextItem(targets, rng)) : nullptr;
+}
+
+const battle::Unit * BattleSpellMechanics::getRandomUnitForOwner(vstd::RNG & rng, PlayerColor owner)
+{
+	auto targets = battle()->getBattle()->getUnitsIf([this, owner](const battle::Unit * unit)
+	{
+		return battle()->battleGetOwner(unit) == owner && unit->isValidTarget(false) &&
+			!unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
+	});
+	std::ranges::sort(targets, {}, &battle::Unit::unitId);
 	return !targets.empty() ? (*RandomGeneratorUtil::nextItem(targets, rng)) : nullptr;
 }
 

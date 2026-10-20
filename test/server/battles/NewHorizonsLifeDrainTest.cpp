@@ -10,6 +10,9 @@
 #include "StdInc.h"
 #include "../../../AI/BattleAI/HypotheticBattle.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/battle/CUnitState.h"
+#include "../../../lib/battle/NewHorizonsPuppetMaster.h"
+#include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/gameState/CGameState.h"
@@ -123,7 +126,8 @@ protected:
 
 	void prepare(int spellPower = 100, const std::string & friendlyCreature = "core:angel",
 		int enemyCount = 1000, MasteryLevel::Type shadowMagicRank = MasteryLevel::NONE,
-		bool selectBloodDrinker = false)
+		bool selectBloodDrinker = false, const std::string & enemyCreature = "core:pikeman",
+		bool hypnotizedLegs = false)
 	{
 		startGame();
 		const auto spell = lifeDrainSpell();
@@ -146,17 +150,22 @@ protected:
 			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
 
-		friendly = addStack(BattleSide::ATTACKER, creatureByName(friendlyCreature), BattleHex(3, 5), 2);
-		enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), enemyCount);
+		friendly = addStack(hypnotizedLegs ? BattleSide::DEFENDER : BattleSide::ATTACKER,
+			creatureByName(friendlyCreature), BattleHex(3, 5), 2);
+		enemy = addStack(hypnotizedLegs ? BattleSide::ATTACKER : BattleSide::DEFENDER,
+			creatureByName(enemyCreature), BattleHex(12, 5), enemyCount);
 		otherEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(14, 5), 1000);
 		ASSERT_NE(friendly, nullptr);
 		ASSERT_NE(enemy, nullptr);
 		ASSERT_NE(otherEnemy, nullptr);
+		if(hypnotizedLegs)
+			for(auto * unit : {friendly, enemy})
+				unit->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+					BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
 		beginCombat();
 	}
 
-	// Source-only characterization support. No assertion here chooses the desired
-	// compound-Mirror policy; defect cases deliberately describe current 901f behavior.
+	// Desired provisional compound-Mirror behavior. Ordinary legality remains unchanged.
 	std::array<int64_t, 8> mirrorResources() const
 	{
 		const auto & attacker = battle()->getSide(BattleSide::ATTACKER);
@@ -182,7 +191,7 @@ protected:
 		for(const auto * unit : battle()->battleGetAllUnits(false))
 		{
 			EXPECT_FALSE(newHorizonsSorcery::isSpellLocked(*unit));
-			if(unit->unitSide() == BattleSide::ATTACKER)
+			if(battle()->battleGetOwner(unit) == PlayerColor(0))
 				continue;
 			result.emplace(unit->unitId(), randomizer.getDefault().nextInt(0, 99) < unit->magicResistance());
 		}
@@ -217,6 +226,8 @@ protected:
 
 	void mirrorSelectResistanceBranch(uint32_t recipientId, bool resisted)
 	{
+		// Life Drain uses the first hostile minstd_rand draw: adjacent small seeds all roll zero.
+		// Spread candidates, then verify the genuine branch with the cloned engine RNG.
 		for(int candidateSeed = 0; candidateSeed < 256; ++candidateSeed)
 		{
 			gameHandler->randomizer->setSeed(candidateSeed * 104729);
@@ -227,37 +238,161 @@ protected:
 		FAIL() << "Could not select the requested genuine 75% resistance branch";
 	}
 
-	void characterizeMirrorCase(bool mirror, std::optional<bool> forcedResistance = std::nullopt,
-		bool friendlyResistance = false)
+	struct MirrorScenario
 	{
-		ASSERT_NO_FATAL_FAILURE(prepare());
+		bool mirror = false;
+		std::optional<bool> originalResistance = std::nullopt;
+		bool friendlyResistance = false;
+		std::optional<bool> redirectedResistance = std::nullopt;
+		bool bloodDrinker = false;
+		bool hypnotizedLegs = false;
+		bool puppetDamageTarget = false;
+	};
+
+	struct MirrorExpected
+	{
+		MirrorRecipientSnapshot units;
+		std::vector<std::byte> random;
+		std::set<uint32_t> reflected;
+		std::set<uint32_t> resisted;
+		std::vector<uint32_t> affected;
+		std::vector<std::pair<uint32_t, int64_t>> injuries;
+		BattleHex tile;
+		int64_t damage = 0;
+		int64_t healing = 0;
+	};
+
+	void mirrorPrepareDesiredScenario(const MirrorScenario & scenario)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepare(100, "core:angel", 1000,
+			scenario.bloodDrinker ? MasteryLevel::BASIC : MasteryLevel::NONE,
+			scenario.bloodDrinker, scenario.mirror ? "core:angel" : "core:pikeman", scenario.hypnotizedLegs));
 		ASSERT_NO_FATAL_FAILURE(mirrorPrepareResources(friendly, lifeDrainSpell()));
-		ASSERT_GT(friendly->getMaxHealth(), 150);
+		ASSERT_GT(friendly->getMaxHealth(), 180);
 		injure(friendly, 150);
-		const spells::Target aim{spells::Destination(enemy), spells::Destination(friendly)};
-		if(mirror)
+		if(scenario.mirror)
+		{
+			ASSERT_GT(enemy->getMaxHealth(), 180);
+			injure(enemy, 180);
 			enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 				BonusType::MAGIC_MIRROR, BonusSource::OTHER, 100, BonusSourceID()));
-		if(forcedResistance)
+		}
+		if(scenario.originalResistance)
 		{
-			ASSERT_FALSE(mirror);
+			ASSERT_FALSE(scenario.mirror);
 			enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 				BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 75, BonusSourceID()));
-			ASSERT_EQ(enemy->magicResistance(), 75);
-			ASSERT_NO_FATAL_FAILURE(mirrorSelectResistanceBranch(enemy->unitId(), *forcedResistance));
+			ASSERT_NO_FATAL_FAILURE(mirrorSelectResistanceBranch(enemy->unitId(), *scenario.originalResistance));
 		}
-		if(friendlyResistance)
+		if(scenario.friendlyResistance || scenario.redirectedResistance)
 			friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 				BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 75, BonusSourceID()));
-		ASSERT_EQ(friendly->magicResistance(), friendlyResistance ? 75 : 0);
-		ASSERT_EQ(enemy->magicResistance(), forcedResistance ? 75 : 0);
+		ASSERT_EQ(friendly->magicResistance(), scenario.friendlyResistance || scenario.redirectedResistance ? 75 : 0);
+		ASSERT_EQ(enemy->magicResistance(), scenario.originalResistance ? 75 : 0);
 		ASSERT_EQ(otherEnemy->magicResistance(), 0);
-		for(const auto * unit : battle()->battleGetAllUnits(false))
-			ASSERT_EQ(battle()->battleGetOwner(unit), battle()->sideToPlayer(unit->unitSide()));
 		ASSERT_FALSE(friendly->hasBonusOfType(BonusType::MAGIC_MIRROR));
-		const auto recipients = battle()->getUnitsIf([](const battle::Unit * unit)
+		ASSERT_EQ(battle()->battleGetOwner(friendly), PlayerColor(0));
+		ASSERT_EQ(battle()->battleGetOwner(enemy), PlayerColor(1));
+		if(scenario.hypnotizedLegs)
 		{
-			return unit->unitSide() == BattleSide::ATTACKER && unit->isValidTarget(false)
+			ASSERT_EQ(friendly->unitSide(), BattleSide::DEFENDER);
+			ASSERT_EQ(enemy->unitSide(), BattleSide::ATTACKER);
+			ASSERT_EQ(battle()->battleGetActionController(friendly), PlayerColor(0));
+			ASSERT_EQ(battle()->battleGetActionController(enemy), PlayerColor(1));
+		}
+		if(scenario.puppetDamageTarget)
+		{
+			const SpellID puppet(SpellID::decode(std::string(newHorizonsPuppetMaster::SPELL_ID)));
+			SetStackEffect control;
+			control.battleID = BattleID(0);
+			control.toAdd.emplace_back(enemy->unitId(),
+				std::vector<Bonus>{newHorizonsPuppetMaster::controlMarker(puppet, PlayerColor(0))});
+			gameHandler->sendAndApply(control);
+			ASSERT_TRUE(newHorizonsPuppetMaster::hasValidControlMarker(*battle(), enemy));
+			ASSERT_EQ(battle()->battleGetOwner(enemy), PlayerColor(1));
+			ASSERT_EQ(battle()->battleGetActionController(enemy), PlayerColor(0));
+		}
+		if(scenario.redirectedResistance)
+		{
+			ASSERT_TRUE(scenario.mirror);
+			ASSERT_NO_FATAL_FAILURE(mirrorSelectRedirectedResistanceBranch(*scenario.redirectedResistance));
+		}
+	}
+
+	void mirrorSelectRedirectedResistanceBranch(bool resisted)
+	{
+		const std::vector<const battle::Unit *> recipients{friendly};
+		for(int candidate = 0; candidate < 256; ++candidate)
+		{
+			gameHandler->randomizer->setSeed(candidate * 104729);
+			auto expected = mirrorCloneRandomizer();
+			mirrorAdvanceResistance(*expected);
+			expected->getDefault().nextInt(0, 99);
+			RandomGeneratorUtil::nextItem(recipients, expected->getDefault());
+			if((expected->getDefault().nextInt(0, 99) < 75) == resisted)
+				return;
+		}
+		FAIL() << "Could not select redirected genuine 75% resistance branch";
+	}
+
+	void mirrorExpectedResolution(const MirrorScenario & scenario, MirrorExpected & expected)
+	{
+		expected.units = mirrorRecipientSnapshot(*battle());
+		expected.tile = enemy->getPosition();
+		auto random = mirrorCloneRandomizer();
+		const auto resistance = mirrorAdvanceResistance(*random);
+		bool resisted = resistance.at(enemy->unitId());
+		if(scenario.originalResistance)
+		{
+			ASSERT_EQ(resisted, *scenario.originalResistance);
+		}
+		const CStack * damageTarget = enemy;
+		const CStack * healTarget = friendly;
+		if(scenario.mirror)
+		{
+			ASSERT_LT(random->getDefault().nextInt(0, 99), 100);
+			const std::vector<const battle::Unit *> recipients{friendly};
+			ASSERT_EQ(*RandomGeneratorUtil::nextItem(recipients, random->getDefault()), friendly);
+			resisted = random->getDefault().nextInt(0, 99) < friendly->magicResistance();
+			if(scenario.redirectedResistance)
+			{
+				ASSERT_EQ(resisted, *scenario.redirectedResistance);
+			}
+			damageTarget = friendly;
+			healTarget = enemy;
+			expected.tile = friendly->getPosition();
+			expected.reflected.insert(enemy->unitId());
+		}
+		if(resisted)
+		{
+			expected.resisted.insert(damageTarget->unitId());
+			if(!scenario.mirror)
+				expected.affected.push_back(friendly->unitId());
+		}
+		else
+		{
+			expected.affected = {damageTarget->unitId(), healTarget->unitId()};
+			auto damaged = damageTarget->acquireState();
+			int64_t damage = scenario.bloodDrinker ? 232 : 205;
+			damaged->damage(damage);
+			expected.damage = damage;
+			expected.injuries.emplace_back(damageTarget->unitId(), damage);
+			expected.units.at(damageTarget->unitId()) = {damaged->getAvailableHealth(), damaged->getCount()};
+			auto healed = healTarget->acquireState();
+			int64_t healing = damage * (scenario.bloodDrinker ? 75 : 60) / 100;
+			expected.healing = healed->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT).healedHealthPoints;
+			expected.units.at(healTarget->unitId()) = {healed->getAvailableHealth(), healed->getCount()};
+		}
+		expected.random = mirrorRandomizerBytes(*random);
+	}
+
+	void verifyDesiredMirrorCase(const MirrorScenario & scenario)
+	{
+		ASSERT_NO_FATAL_FAILURE(mirrorPrepareDesiredScenario(scenario));
+		const spells::Target aim{spells::Destination(enemy), spells::Destination(friendly)};
+		const auto recipients = battle()->getUnitsIf([this](const battle::Unit * unit)
+		{
+			return battle()->battleGetOwner(unit) == PlayerColor(0) && unit->isValidTarget(false)
 				&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
 		});
 		ASSERT_EQ(recipients.size(), 1u);
@@ -284,6 +419,10 @@ protected:
 		spells::detail::ProblemImpl problem;
 		ASSERT_TRUE(liveMechanics->canBeCast(problem));
 		ASSERT_TRUE(liveMechanics->canBeCastAt(aim));
+		if(scenario.hypnotizedLegs)
+		{
+			EXPECT_FALSE(liveMechanics->canBeCastAt({spells::Destination(friendly), spells::Destination(enemy)}));
+		}
 
 		MirrorCharacterizationEnvironment environment(gameState());
 		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
@@ -295,8 +434,10 @@ protected:
 		ASSERT_TRUE(mechanics->canBeCastAt(projectedAim));
 		mechanics->castEval(projected.getServerCallback(), projectedAim);
 		const auto forecastUnits = mirrorRecipientSnapshot(projected);
-		EXPECT_EQ(beforeUnits.at(enemy->unitId()).first - forecastUnits.at(enemy->unitId()).first, 205);
-		EXPECT_EQ(forecastUnits.at(friendly->unitId()).first - beforeUnits.at(friendly->unitId()).first, 123);
+		EXPECT_EQ(beforeUnits.at(enemy->unitId()).first - forecastUnits.at(enemy->unitId()).first,
+			scenario.bloodDrinker ? 232 : 205);
+		EXPECT_EQ(forecastUnits.at(friendly->unitId()).first - beforeUnits.at(friendly->unitId()).first,
+			scenario.bloodDrinker ? 150 : 123);
 		EXPECT_EQ(forecastUnits.at(friendly->unitId()).second, beforeUnits.at(friendly->unitId()).second);
 		EXPECT_EQ(mirrorRecipientSnapshot(*battle()), beforeUnits);
 		EXPECT_EQ(mirrorResources(), beforeResources);
@@ -306,24 +447,11 @@ protected:
 		EXPECT_EQ(server.startedActions.size(), beforeActions);
 		EXPECT_EQ(server.castsOf(lifeDrainSpell()).size(), beforeCasts);
 
-		auto expectedRandom = mirrorCloneRandomizer();
-		const auto resistance = mirrorAdvanceResistance(*expectedRandom);
-		const bool resisted = resistance.at(enemy->unitId());
-		if(forcedResistance)
-		{
-			ASSERT_EQ(resisted, *forcedResistance);
-		}
-		if(mirror)
-		{
-			expectedRandom->getDefault().nextInt(0, 99); // Guaranteed Mirror still draws.
-			ASSERT_EQ(*RandomGeneratorUtil::nextItem(recipients, expectedRandom->getDefault()), friendly);
-			mirrorAdvanceResistance(*expectedRandom); // Both legs still skip original-side allies.
-		}
-		const auto expectedRandomBytes = mirrorRandomizerBytes(*expectedRandom);
-		const auto expectedUnits = mirror || resisted ? beforeUnits : forecastUnits;
+		MirrorExpected expected;
+		ASSERT_NO_FATAL_FAILURE(mirrorExpectedResolution(scenario, expected));
 		ASSERT_TRUE(cast(enemy, friendly));
-		EXPECT_EQ(mirrorRecipientSnapshot(*battle()), expectedUnits);
-		EXPECT_EQ(mirrorRandomizerBytes(*gameHandler->randomizer), expectedRandomBytes);
+		EXPECT_EQ(mirrorRecipientSnapshot(*battle()), expected.units);
+		EXPECT_EQ(mirrorRandomizerBytes(*gameHandler->randomizer), expected.random);
 		auto expectedResources = beforeResources;
 		expectedResources[0] -= 1; // Four permanent Buffer, then one Normal.
 		expectedResources[1] -= 4;
@@ -342,24 +470,28 @@ protected:
 		EXPECT_FALSE(receipt.heroLuck);
 		EXPECT_EQ(receipt.paidHeroManaCost, 5);
 		EXPECT_EQ(receipt.paidCounterspellManaCost, 0);
-		const std::set<uint32_t> reflected = mirror
-			? std::set<uint32_t>{enemy->unitId()} : std::set<uint32_t>{};
-		EXPECT_EQ(receipt.reflectedCres, reflected);
-		const std::vector<uint32_t> affected = mirror ? std::vector<uint32_t>{}
-			: resisted ? std::vector<uint32_t>{friendly->unitId()}
-			: std::vector<uint32_t>{enemy->unitId(), friendly->unitId()};
-		EXPECT_EQ(receipt.affectedCres, affected);
-		const std::set<uint32_t> rejected = resisted
-			? std::set<uint32_t>{enemy->unitId()} : std::set<uint32_t>{};
-		EXPECT_EQ(receipt.resistedCres, rejected);
-		EXPECT_EQ(receipt.tile, mirror ? friendly->getPosition() : enemy->getPosition());
-		EXPECT_EQ(casts.back().damage, mirror || resisted ? 0 : 205);
-		if(mirror)
+		EXPECT_EQ(receipt.reflectedCres, expected.reflected);
+		EXPECT_EQ(receipt.affectedCres, expected.affected);
+		EXPECT_EQ(receipt.resistedCres, expected.resisted);
+		EXPECT_EQ(receipt.tile, expected.tile);
+		EXPECT_EQ(casts.back().damage, expected.damage);
+		std::vector<std::pair<uint32_t, int64_t>> injuries;
+		for(size_t index = beforeInjuries; index < server.injuries.size(); ++index)
+			for(const auto & injury : server.injuries[index].stacks)
+				injuries.emplace_back(injury.stackAttacked, injury.damageAmount);
+		EXPECT_EQ(injuries, expected.injuries);
+		if(scenario.mirror)
 		{
-			EXPECT_NE(expectedUnits, forecastUnits); // Current defect, not desired Mirror policy.
-			for(size_t index = beforeInjuries; index < server.injuries.size(); ++index)
-				EXPECT_TRUE(server.injuries[index].stacks.empty());
+			EXPECT_NE(expected.units, forecastUnits);
+			EXPECT_EQ(enemy->getAvailableHealth() - beforeUnits.at(enemy->unitId()).first, expected.healing);
+			EXPECT_EQ(enemy->getCount(), beforeUnits.at(enemy->unitId()).second);
+			if(expected.damage > 0)
+			{
+				EXPECT_EQ(expected.healing, scenario.bloodDrinker ? 174 : 123);
+				EXPECT_LT(friendly->getCount(), beforeUnits.at(friendly->unitId()).second);
+			}
 		}
+
 	}
 
 	void acceptBloodDrinkerThroughOffer(CGHeroInstance * hero)
@@ -664,28 +796,63 @@ TEST_F(NewHorizonsLifeDrainTest, NonLivingFriendlyStacksCanReceiveHealing)
 	EXPECT_EQ(friendly->getAvailableHealth() - allyBefore, 1);
 }
 
-// Current-defect characterization, not acceptance of any compound-Mirror policy.
+// Provisional desired resolution; these tests do not themselves amend accepted canon.
 TEST_F(NewHorizonsLifeDrainTest, MirrorCharacterizationOrdinaryOrderedPairControl)
 {
-	ASSERT_NO_FATAL_FAILURE(characterizeMirrorCase(false));
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({}));
 }
 
-TEST_F(NewHorizonsLifeDrainTest, MirrorCharacterizationRedirectLosesOrderedPairAndDisagreesWithForecast)
+TEST_F(NewHorizonsLifeDrainTest, MirrorResolutionRedirectPreservesOrderedDamageHealingPair)
 {
-	ASSERT_NO_FATAL_FAILURE(characterizeMirrorCase(true));
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.mirror = true}));
 }
 
 TEST_F(NewHorizonsLifeDrainTest, MirrorCharacterizationSeventyFivePercentResistanceRejectsDamageAndDependentHeal)
 {
-	ASSERT_NO_FATAL_FAILURE(characterizeMirrorCase(false, true));
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.originalResistance = true}));
 }
 
 TEST_F(NewHorizonsLifeDrainTest, MirrorCharacterizationSeventyFivePercentResistanceCanFailAndHeal)
 {
-	ASSERT_NO_FATAL_FAILURE(characterizeMirrorCase(false, false));
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.originalResistance = false}));
 }
 
 TEST_F(NewHorizonsLifeDrainTest, MirrorCharacterizationFriendlySeventyFivePercentResistanceDoesNotRejectHealing)
 {
-	ASSERT_NO_FATAL_FAILURE(characterizeMirrorCase(false, std::nullopt, true));
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.friendlyResistance = true}));
+}
+
+TEST_F(NewHorizonsLifeDrainTest, MirrorResolutionRedirectedSeventyFivePercentResistanceRejectsBothLegs)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.mirror = true, .redirectedResistance = true}));
+}
+
+TEST_F(NewHorizonsLifeDrainTest, MirrorResolutionRedirectedSeventyFivePercentResistanceCanFailAndHeal)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.mirror = true, .redirectedResistance = false}));
+}
+
+TEST_F(NewHorizonsLifeDrainTest, MirrorResolutionUsesOriginBloodDrinkerAndNeverResurrects)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.mirror = true, .bloodDrinker = true}));
+}
+
+TEST_F(NewHorizonsLifeDrainTest, MirrorResolutionHypnotizeUsesEffectiveAllegianceForBothLegs)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.mirror = true, .hypnotizedLegs = true}));
+}
+
+TEST_F(NewHorizonsLifeDrainTest, MirrorResolutionPuppetControlsActionsWithoutChangingAllegiance)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.mirror = true, .puppetDamageTarget = true}));
+}
+
+TEST_F(NewHorizonsLifeDrainTest, CompoundNoMirrorHypnotizedTargetRetainsHostileResistance)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.originalResistance = true, .hypnotizedLegs = true}));
+}
+
+TEST_F(NewHorizonsLifeDrainTest, CompoundNoMirrorPuppetTargetRetainsHostileResistance)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.originalResistance = true, .puppetDamageTarget = true}));
 }
