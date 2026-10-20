@@ -984,6 +984,8 @@ endif()
 add_subdirectory_with_folder("3rdparty" "${googleTest_Dir}" "${CMAKE_CURRENT_BINARY_DIR}/googletest" EXCLUDE_FROM_ALL)
 
 add_executable(vcmitest ${test_SRCS} ${test_HEADERS} ${mock_HEADERS})
+add_executable(nhBattleEndDispatchTest ../client/tests/BattleEndDispatchTest.cpp)
+add_test(NAME nhBattleEndDispatchTest COMMAND nhBattleEndDispatchTest)
 add_executable(nhProjectileFlightLifecycleTest ../client/tests/ProjectileFlightLifecycleTest.cpp)
 add_test(NAME nhProjectileFlightLifecycleTest COMMAND nhProjectileFlightLifecycleTest)
 add_executable(nhWindowSceneRedrawTest ../client/tests/WindowSceneRedrawTest.cpp)
@@ -999,6 +1001,7 @@ set_tests_properties(
 	nhHeroDevelopmentNavigationTest nhHeroMasteryDialogStateTest
 	nhExchangeSecondarySkillSlotsTest nhStackInfoPanelHoverStateTest
 	nhProjectileFlightLifecycleTest nhWindowSceneRedrawTest
+	nhBattleEndDispatchTest
 	nhHeroPositiveProcPresentationTest nhAnimationPhaseStartTest
 	nhCureAfflictionSessionTest
 	PROPERTIES LABELS "nh-pure;ui;state" TIMEOUT 10)

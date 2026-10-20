@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "PerfTrace.h"
 #include "ClientNetPackVisitors.h"
+#include "BattleEndDispatch.h"
 
 #include "Client.h"
 #include "CPlayerInterface.h"
@@ -920,7 +921,27 @@ void ApplyFirstClientNetPackVisitor::visitBattleUpdateGateState(BattleUpdateGate
 
 void ApplyFirstClientNetPackVisitor::visitBattleResult(BattleResult & pack)
 {
-	callBattleInterfaceIfPresentForBothSides(cl, pack.battleID, &IBattleEventsReceiver::battleEnd, pack.battleID, &pack, pack.queryID);
+	const auto * battle = cl.gameState().getBattle(pack.battleID);
+	assert(battle);
+	if(!battle)
+	{
+		logGlobal->error("Attempt to call battle interface without ongoing battle!");
+	}
+	else
+	{
+		std::vector<PlayerColor> players = {
+			battle->getSide(BattleSide::ATTACKER).color,
+			battle->getSide(BattleSide::DEFENDER).color
+		};
+		if(settings["session"]["spectate"].Bool() && !settings["session"]["spectate-skip-battle"].Bool() && GAME->interface()->battleInt)
+			players.push_back(PlayerColor::SPECTATOR);
+
+		dispatchBattleEndToSnapshot(cl.battleints, cl.additionalBattleInts, players,
+			[&pack](IBattleEventsReceiver & receiver)
+			{
+				receiver.battleEnd(pack.battleID, &pack, pack.queryID);
+			});
+	}
 	cl.battleFinished(pack.battleID);
 }
 

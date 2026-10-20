@@ -6,6 +6,15 @@ Keep one maintained invariant and reproducer per recurring defect; retain raw fa
 
 See the [combat restart guardrail](NH_PERFORMANCE_EXPERIMENT.md#combat-restart-guardrail) for exact ownership/repaint ordering and Linux acceptance limits. Run `nhWindowSceneRedrawTest` and `client/tests/check-battle-restart-teardown.py`, then an ordinary human combat→Settings→Restart→new adventure and menu→new scenario witness. Source checks do not certify pixels.
 
+Before delivering a battle result, retain the admitted primary and additional
+receivers for both sides and any admitted spectator. A human interface may
+unregister its auto-resolve AI during its own callback; that must not destroy the
+AI or omit its terminal callback. Deliver each admitted identity once in stable
+order on the calling thread, before `battleFinished`; newly registered receivers
+must not receive the old result. `nhBattleEndDispatchTest` covers these ownership
+and ordering rules. Real auto-resolve result, timing-summary and restart behavior
+still require gameplay verification.
+
 Generated user Maps must remain refreshable after initialization and resolve through the core resource origin before map/header loading, without losing user-map override precedence. Retain `GeneratedMapCreatedAfterInitializationIsRefreshable` and `LateGeneratedUserMapHasCoreOriginAndLoadsHeader`; these filesystem fixtures do not establish rendered Battle Only Begin acceptance.
 
 ## Gameplay and forecast integrity

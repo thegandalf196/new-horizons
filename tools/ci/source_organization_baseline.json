@@ -18771,13 +18771,13 @@
     },
     "client/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 584,
-      "sha256": "124c7c22eb865b0994e8f21b1131eb048682519227595f5385ba1756bfd44e12",
+      "lines": 585,
+      "sha256": "bd0ed4a76a622d607388e4f65f1326dd2a3c148afa6c9c75ff0542138584ac7c",
       "owner": "ui_developer",
-      "review": "IR-STAGE9-REALCALLBACK-e16092f0-20261018",
-      "review_scope": "exact-stage9-two-component-plus-presenter-registry-only",
-      "rationale": "Composes reviewed Stage9 source/session registrations581to583 with one narrow presenter-header registration583to584. No new target/link/runtime policy in this client registry. Exact endpoint only; not a blanket registry exemption or native result.",
-      "deferral": "UI/engine owner must keep this exact584-line registry bound and extract coherent client component registration before substantive routing/link-policy expansion. No future field/feature growth credit; preserve current source registrations and Stage9 dependency's BattleInterface2104 shrinking baseline."
+      "review": "IR-TERMINAL-BATTLE-DISPATCH-HEADER-REGISTRY-V1",
+      "review_scope": "exact-one-terminal-snapshot-header-registration-only-no-target-policy-or-future-growth",
+      "rationale": "Renewed bounded exception for exact584 to585 lines: register BattleEndDispatch.h once beside StdInc.h in vcmiclientcommon_HEADERS for the independently source-reviewed terminal recipient lifetime fix. Remaining file byte-identical, with zero CMake function/macro definitions and unchanged source lists, conditions, target/link/options, backend and platform policy. The inherited584-line approval does not authorize this added row. Mechanical registration only, not native or rendered acceptance.",
+      "deferral": "UI/engine owner must retain exact585-line bound and extract coherent client component registration before substantive routing or link-policy expansion, reducing the mixed parent registry rather than moving it wholesale. No further field/feature growth allowance; preserve existing source/header registrations and current dependent component shrinking limits."
     },
     "client/CPlayerInterface.cpp": {
       "kind": "legacy",
@@ -18847,13 +18847,14 @@
       "sha256": "415394f347c9c86f3102f301d7985506fd2d3935fbd7dfbcbef7dd5989c2f8f6"
     },
     "client/NetPacksClient.cpp": {
-      "kind": "legacy",
-      "lines": 1255,
+      "kind": "exception",
+      "lines": 1276,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1255 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "9cbd57b58c078d767a3dd29ef35bba1e2773751a27739ef15407f314e4aafae1"
+      "rationale": "Independently source-reviewed urgent terminal lifetime correction only: exact1255 to1276 lines (+21), with visitBattleResult5 to25 and terminal recipient snapshot/delivery isolated in a35-line header (21-line full template function). Capture admitted primary/additional/spectator shared owners before any callback may unregister the AI; preserve synchronous before/state/after ordering and subsequent battleFinished. All other111 existing callable bodies are byte-identical. Coupling broad event-routing extraction to this bounded ownership fix would enlarge lifecycle risk. This is a new exact-hash technical exception, not reuse of the inherited legacy freeze or native/rendered acceptance.",
+      "review": "IR-TERMINAL-BATTLE-DISPATCH-LIFETIME-V1",
+      "review_scope": "exact-terminal-recipient-lifetime-correction-only-no-runtime-or-future-growth",
+      "sha256": "ae72342b7d24c6bd17fe7cc79aa07e5ecd76c323cdfbd8836fae7289de13eea8",
+      "deferral": "Engine engineer, coordinated with UI ownership, must extract cohesive battle-interface admission/routing behind explicit CClient, battle-ID and receiver contracts before further substantive routing growth. Characterize admitted receiver identity/lifetime, primary/additional/side ordering, spectator gate, before/state/after packet order, restart and shutdown. Retain snapshot terminal ownership and reduce this file baseline below1276; do not move the whole visitor collection into another oversized helper or reuse this one-time +21 allowance."
     },
     "client/UIHelper.cpp::std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNecromancy::NecromancyResult & result)#1": {
       "kind": "legacy",
