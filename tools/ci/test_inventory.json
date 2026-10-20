@@ -4,7 +4,7 @@
   "excludedDirectories": ["googletest", "__pycache__"],
   "cmakeFiles": ["CMakeLists.txt", "test/CMakeLists.txt", "clientapp/CMakeLists.txt", "clientsdl2/CMakeLists.txt", "clientsdl3/CMakeLists.txt"],
   "pureCTestLabel": "nh-pure",
-  "pureTargets": ["nhHeroDevelopmentNavigationTest", "nhHeroMasteryDialogStateTest", "nhExchangeSecondarySkillSlotsTest", "nhStackInfoPanelHoverStateTest", "nhProjectileFlightLifecycleTest", "nhWindowSceneRedrawTest", "nhHeroPositiveProcPresentationTest", "nhAnimationPhaseStartTest", "nhCureAfflictionSessionTest"],
+  "pureTargets": ["nhHeroDevelopmentNavigationTest", "nhHeroMasteryDialogStateTest", "nhExchangeSecondarySkillSlotsTest", "nhStackInfoPanelHoverStateTest", "nhProjectileFlightLifecycleTest", "nhWindowSceneRedrawTest", "nhBattleEndDispatchTest", "nhHeroPositiveProcPresentationTest", "nhAnimationPhaseStartTest", "nhCureAfflictionSessionTest"],
   "unregistered": {
     "test/standalone/NewHorizonsMagicNullAssert.cpp": {"classification": "manual", "reason": "Explicit assertion-enabled standalone probe; one negative mode intentionally aborts. Never ordinary Release vcmitest or default CTest."},
     "tools/tests/nh-wine-bootstrap.cpp": {"classification": "managed", "reason": "Private Wine environment prerequisite compiled by the guarded platform workflow, never a player package or independently accepted test."},
