@@ -17,6 +17,11 @@ adds no bound. An unset selector preserves the original fixture behavior.
 Use fresh isolated TEST profiles, diagnostics OFF and interleaved repetitions;
 compare actions, exported state, both RNGs and nonclock counters before comparing
 `callbackWallUs`. This is not a player setting or a production scheduling policy.
+The shipping Hero-candidate loop now evaluates candidates serially in their
+existing order, retaining candidate bodies, forecast depth and final selection.
+The limit comparison above characterizes the former parallel loop; changing a
+TBB limit does not make the current serial loop parallel. Preserve the test
+selector's deterministic seed and state exports for subsequent comparisons.
 
 Do not run concurrent builds/heavy tests during measurements. Graphical probes require the maintained silent guarded helper, isolated Xvfb, disposable saves and actual dummy-driver/process-identity checks before input. Owned absence is not parent reaping or exit-zero proof. Keep raw logs/captures/receipts private; do not change guard budgets to conceal an invalid run.
 

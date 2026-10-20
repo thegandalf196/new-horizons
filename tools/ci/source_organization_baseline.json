@@ -17530,14 +17530,14 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "exception",
-      "lines": 5830,
-      "sha256": "5af83a65b6db28338db4b519efa423a14560fe2e7679cf6d9ed49233009f4cb7",
+      "lines": 5820,
+      "sha256": "bed39678be6b4b8255bf1156747987ad499703b6b21950497b529e5ee41cfa4b",
       "owner": "ai_engineer",
-      "review": "hero-action-timing-submission-extraction-v1",
-      "rationale": "Selected Hero command/spell submission moves unchanged into a focused 95-line unit with a 75-line method. The evaluator shrinks5885 to5830 and attemptCastingSpell1316 to1260. Candidate projection remains688 lines: its only edit passes an optional observational per-candidate timing sink; no eligibility, scoring, branch order, FP grouping or RNG changes are authorized. Independent source review is distinct from native parity and runtime acceptance.",
-      "review_scope": "observational-timing-and-exact-submission-extraction",
+      "review": "IR-HERO-CANDIDATE-SERIAL-SCHEDULING-SOURCE-20261020",
+      "rationale": "Exact scheduling-only serial candidate experiment shrinks evaluator5830 to5820 and attemptCastingSpell1260 to1251. Remove only the unused TBB include and range/lambda wrappers; the candidate body stays byte-identical, including eligibility, conditions, FP grouping, scores, state/RNG isolation and final selection/submission. The former688-line range callback no longer exists as a callable. Exceptions propagate directly and partial diagnostic completion can differ. Independent source review is not native parity, performance approval or production adoption.",
+      "review_scope": "exact-serial-candidate-scheduling-only-shrinking-experiment",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must extract the remaining per-candidate projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy and exact ordered conditions, early exits, FP grouping, private branch/cache and original identities. Require canonical and historical selector, rejection isolation, packet/state and RNG parity controls. Exact remaining caps are evaluator5830, attempt1260 and candidate688; this observational routing exception does not authorize broader growth."
+      "deferral": "AI engineer must extract the remaining per-candidate projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy and exact ordered conditions, early exits, FP grouping, private branch/cache and original identities. Require canonical and historical selector, mandatory Order, rejection isolation, packet/state and both RNG parity controls plus actual Call/exception diagnostics. Exact shrinking caps are evaluator5820 and attempt1251; serial scheduling-only scope does not authorize broader growth or erase remaining projection debt. Runtime and representative matched acceptance remain separate."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -17557,27 +17557,16 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "c65dbb7341713c3e81f4ec9bf615271846947d96a0639b17d03934805fc88b97"
     },
-    "AI/BattleAI/BattleEvaluator.cpp::BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)::[&](const tbb::blocked_range<size_t> & r)#1": {
-      "kind": "exception",
-      "lines": 688,
-      "sha256": "45d309eee0b9e3b9147fce28ed28559afa91d2fc600f9f692abc2c9295bc3bf6",
-      "owner": "ai_engineer",
-      "review": "hero-action-timing-submission-extraction-v1",
-      "rationale": "Selected Hero command/spell submission moves unchanged into a focused 95-line unit with a 75-line method. The evaluator shrinks5885 to5830 and attemptCastingSpell1316 to1260. Candidate projection remains688 lines: its only edit passes an optional observational per-candidate timing sink; no eligibility, scoring, branch order, FP grouping or RNG changes are authorized. Independent source review is distinct from native parity and runtime acceptance.",
-      "review_scope": "observational-timing-and-exact-submission-extraction",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must extract the remaining per-candidate projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy and exact ordered conditions, early exits, FP grouping, private branch/cache and original identities. Require canonical and historical selector, rejection isolation, packet/state and RNG parity controls. Exact remaining caps are evaluator5830, attempt1260 and candidate688; this observational routing exception does not authorize broader growth."
-    },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)#1": {
       "kind": "exception",
-      "lines": 1260,
-      "sha256": "3bfe8baa5b7db1fac6045eebaacf198b2df78f05ad03de44fc19c0294622a823",
+      "lines": 1251,
+      "sha256": "f4097dc6f58ded153997630229dff2f9dc92db1c362c2c8bee07dffc857b3f52",
       "owner": "ai_engineer",
-      "review": "hero-action-timing-submission-extraction-v1",
-      "rationale": "Selected Hero command/spell submission moves unchanged into a focused 95-line unit with a 75-line method. The evaluator shrinks5885 to5830 and attemptCastingSpell1316 to1260. Candidate projection remains688 lines: its only edit passes an optional observational per-candidate timing sink; no eligibility, scoring, branch order, FP grouping or RNG changes are authorized. Independent source review is distinct from native parity and runtime acceptance.",
-      "review_scope": "observational-timing-and-exact-submission-extraction",
+      "review": "IR-HERO-CANDIDATE-SERIAL-SCHEDULING-SOURCE-20261020",
+      "rationale": "Exact scheduling-only serial candidate experiment shrinks evaluator5830 to5820 and attemptCastingSpell1260 to1251. Remove only the unused TBB include and range/lambda wrappers; the candidate body stays byte-identical, including eligibility, conditions, FP grouping, scores, state/RNG isolation and final selection/submission. The former688-line range callback no longer exists as a callable. Exceptions propagate directly and partial diagnostic completion can differ. Independent source review is not native parity, performance approval or production adoption.",
+      "review_scope": "exact-serial-candidate-scheduling-only-shrinking-experiment",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must extract the remaining per-candidate projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy and exact ordered conditions, early exits, FP grouping, private branch/cache and original identities. Require canonical and historical selector, rejection isolation, packet/state and RNG parity controls. Exact remaining caps are evaluator5830, attempt1260 and candidate688; this observational routing exception does not authorize broader growth."
+      "deferral": "AI engineer must extract the remaining per-candidate projection router behind existing admission/continuation boundaries before substantive expansion. Keep candidate policy and exact ordered conditions, early exits, FP grouping, private branch/cache and original identities. Require canonical and historical selector, mandatory Order, rejection isolation, packet/state and both RNG parity controls plus actual Call/exception diagnostics. Exact shrinking caps are evaluator5820 and attempt1251; serial scheduling-only scope does not authorize broader growth or erase remaining projection debt. Runtime and representative matched acceptance remain separate."
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool defensiveStanceMakesDefendWorthwhile(const Environment * environment, const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack, DamageCache & damageCache)#1": {
       "kind": "legacy",

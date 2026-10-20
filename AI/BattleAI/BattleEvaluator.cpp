@@ -26,7 +26,6 @@
 
 #include "StackWithBonuses.h"
 #include "NewHorizonsHexOfPain.h"
-#include "tbb/parallel_for.h"
 #include "SpellTargetsEvaluator.h"
 #include "../../lib/spells/NewHorizonsRealityWarp.h"
 #include "../../lib/CStopWatch.h"
@@ -5000,13 +4999,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	timing.prepare(possibleCasts.size());
 	{
 		heroActionTiming::LoopScope loop(timing.candidateSlots(), timing.sink());
-#if BATTLE_TRACE_LEVEL >= 1
-	tbb::blocked_range<size_t> r(0, possibleCasts.size());
-#else
-	tbb::parallel_for(tbb::blocked_range<size_t>(0, possibleCasts.size()), [&](const tbb::blocked_range<size_t> & r)
-		{
-#endif
-			for(auto i = r.begin(); i != r.end(); i++)
+			for(size_t i = 0; i != possibleCasts.size(); i++)
 			{
 				auto & ps = possibleCasts[i];
 				auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
@@ -5689,9 +5682,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				logAi->trace("Total score for %s: %2f (action: %2f, friedly damage: %2f, hostile damage: %2f)", ps.name(), ps.value, stackActionScore, damageToFriendliesScore, damageToHostilesScore);
 #endif
 			}
-#if BATTLE_TRACE_LEVEL == 0
-		});
-#endif
 	}
 
 	// No effective ordinary action still permits declining a harmful spell.
