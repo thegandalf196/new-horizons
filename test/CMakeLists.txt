@@ -767,6 +767,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/MeleeExpiryOwnershipTest.cpp
 		battleAI/MeleeResourceOrderTest.cpp
 		battleAI/MovementBonusProvenanceTest.cpp
+		battleAI/ReachabilityMapProjectionTest.cpp
 		battleAI/OrdinaryMeleeRetaliationTest.cpp
 		battleAI/OriginalMeleeSequenceTest.cpp
 		battleAI/OwnedExportBranchQueryTest.cpp

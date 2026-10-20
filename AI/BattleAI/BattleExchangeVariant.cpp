@@ -2157,11 +2157,15 @@ const battle::Units & ReachabilityMapCache::getOneTurnReachableUnits(std::shared
 battle::Units ReachabilityMapCache::computeOneTurnReachableUnits(std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, const std::vector<battle::Units> & turnOrder, uint8_t turn, const BattleHex & hex)
 {
 	battle::Units result;
+	if(turnOrder.empty())
+		return result;
+	// These queries never advance or mutate the projection. Reuse it only for
+	// this hex/turn-order evaluation; no state is retained across cache misses.
+	HypotheticBattle turnBattle(env.get(), cb);
 
 	for(int i = 0; i < turnOrder.size(); i++, turn++)
 	{
 		auto & turnQueue = turnOrder[i];
-		HypotheticBattle turnBattle(env.get(), cb);
 
 		for(const battle::Unit * unit : turnQueue)
 		{

@@ -242,6 +242,15 @@ protected:
 	std::shared_ptr<TimingCallback> callback;
 	std::unique_ptr<CBattleAI> ai;
 
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		// Pair this fixture's Commands-off legacy arithmetic with legacy offers,
+		// as the explicit sibling timing fixtures do; retain all perk definitions.
+		if(!useCommands)
+			captureLegacyPerkOfferPolicy(*loaded);
+	}
+
 	void prepare(bool spellbook = false, bool adjacentEnemy = false)
 	{
 		useCommands = false;

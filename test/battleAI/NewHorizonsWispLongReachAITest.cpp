@@ -8,7 +8,9 @@
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/PotentialTargets.h"
+#include "../../lib/CCreatureHandler.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/BattleUnitTurnReason.h"
 #include "../../lib/callback/CBattleCallback.h"
@@ -156,16 +158,30 @@ TEST_F(NewHorizonsWispLongReachAITest, MovementPlusDistantPhysicalAttackUsesNorm
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:wisp", true, BattleHex(3, 4), BattleHex(14, 4)));
 	ASSERT_FALSE(battle()->isMeleeAttackPossibleWithLongReach(wisp, target));
-	ASSERT_EQ(wisp->getMovementRange(0), 5u);
+	// The sand-shore backdrop retains the TinyMap's native grass ground.
+	ASSERT_EQ(wisp->unitType()->getBaseSpeed(), 5);
+	ASSERT_EQ(battle()->getTerrainType(), TerrainId(ETerrainId::GRASS));
+	const auto nativeSpeed = Selector::type()(BonusType::STACKS_SPEED)
+		.And(Selector::sourceTypeSel(BonusSource::TERRAIN_NATIVE));
+	ASSERT_EQ(wisp->valOfBonuses(nativeSpeed), 1);
+	const auto movementBudget = wisp->getMovementRange(0);
+	ASSERT_EQ(movementBudget, 6u);
+	const auto liveWisp = wisp->save();
+	const auto liveTarget = target->save();
+	const auto startedActions = server.startedActions.size();
 	std::shared_ptr<HypotheticBattle> state;
 	DamageCache cache;
 	const auto options = forecast(state, cache);
 	ASSERT_FALSE(options.possibleAttacks.empty());
 	EXPECT_GT(options.bestActionValue(), 0);
 	EXPECT_NE(options.bestAction().from, wisp->getPosition());
-	EXPECT_LE(BattleHex::getDistance(wisp->getPosition(), options.bestAction().from), 5);
+	EXPECT_LE(BattleHex::getDistance(wisp->getPosition(), options.bestAction().from), movementBudget);
 	EXPECT_FALSE(battle()->isMeleeAttackPossible(wisp, target, options.bestAction().from));
 	EXPECT_TRUE(battle()->isMeleeAttackPossibleWithLongReach(wisp, target, options.bestAction().from));
+	EXPECT_EQ(wisp->save(), liveWisp);
+	EXPECT_EQ(target->save(), liveTarget);
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_EQ(server.startedActions.size(), startedActions);
 	// Existing exchange policy prefers delaying this attack. Keep that policy
 	// and exercise the real deferred activation rather than tuning its score.
 	runAI();
