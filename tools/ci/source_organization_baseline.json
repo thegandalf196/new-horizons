@@ -20129,13 +20129,15 @@
       "sha256": "c242842ced9d75ef9d20367b907bdbe2b686c8b39aa0de2a61c75670d641179c"
     },
     "client/windows/CExchangeWindow.cpp::CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2, QueryID queryID) : CWindowObject(PLAYER_COLORED | BORDERED, ImagePath::builtin(isQuickExchangeLayoutAvailable() ? QUICK_EXCHANGE_BG : (ENGINE->isRoeData() ? \"TRADE\" : \"TRADE2\"))), controller(hero1, hero2)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 219,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 219 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ccf314ab25bd397a4ffc85fa07f4458dc8b3afd79b6e62703e06ce86bf8a7b57"
+      "rationale": "Independently reviewed two-line correctness repair uses each per-slot arrow's source-owner predicate, matching whole-army controls and authoritative transfer validation. File436 and constructor219 physical lines are unchanged; no layout, resource, callback route or responsibility is added. Coupling a general control-construction extraction to this permission repair would widen the correction.",
+      "review": "quick-exchange-source-owner-v1",
+      "review_scope": "exact-two-existing-arrow-predicates-no-growth",
+      "sha256": "06c391ff3536e951c2ee236e13bf9476b753b737451bdd2b417f73d84a9892f9",
+      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
+      "deferral": "Before expanding this constructor, extract optional quick-exchange control construction into a narrow initialization method, preserving resource gating, positions, callback lifetimes, registration and owner states. Keep219 as the ceiling until that reduction; source-wiring tests do not establish rendered optional-resource or server-execution acceptance."
     },
     "client/windows/CHeroOverview.cpp::void CHeroOverview::genControls()#1": {
       "kind": "legacy",

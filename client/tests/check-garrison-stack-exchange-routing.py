@@ -10,13 +10,54 @@ EXCHANGE = (ROOT / "client/widgets/CExchangeController.cpp").read_text()
 GARRISON = (ROOT / "client/widgets/CGarrisonInt.cpp").read_text()
 UIHELPER_H = (ROOT / "client/UIHelper.h").read_text()
 UIHELPER_CPP = (ROOT / "client/UIHelper.cpp").read_text()
+WINDOW = (ROOT / "client/windows/CExchangeWindow.cpp").read_text()
 
 
 def compact(source: str) -> str:
     return re.sub(r"\s+", "", re.sub(r"//[^\n]*|/\*.*?\*/", "", source, flags=re.S))
 
 
+def check_quick_exchange_ownership(window: str) -> None:
+    """Evaluate the actual per-slot wiring for both asymmetric owner cases.
+
+    This is a source contract, not a rendered button or server execution test.
+    Fail closed if the small supported wiring grammar changes.
+    """
+    window = compact(window)
+    owner_guards = dict(re.findall(
+        r"auto(\w+)=heroInst\[([01])\]->tempOwner!=GAME->interface\(\)->cb->getPlayerID\(\);",
+        window,
+    ))
+    arrows = re.findall(
+        r"(moveUnitFrom\w+Buttons)\.push_back\((.*?)"
+        r"\1\.back\(\)->block\((\w+)\);",
+        window,
+    )
+    assert len(arrows) == 2, "expected both per-slot arrow bindings"
+    assert {arrow[0] for arrow in arrows} == {
+        "moveUnitFromLeftToRightButtons", "moveUnitFromRightToLeftButtons",
+    }, "expected the two known arrow directions"
+    for name, binding, guard in arrows:
+        callback = re.search(r"creatureArrowButtonCallback\((true|false),SlotID\(i\)\)", binding)
+        assert callback, f"missing directional callback on {name}"
+        expected_direction = "true" if name == "moveUnitFromLeftToRightButtons" else "false"
+        assert callback[1] == expected_direction, f"reversed directional callback on {name}"
+        assert guard in owner_guards, f"unknown ownership predicate on {name}"
+        source_index = 0 if callback[1] == "true" else 1
+        blocked_index = int(owner_guards[guard])
+        for owners in (("local", "ally"), ("ally", "local"),
+                       ("local", "local"), ("ally", "ally")):
+            blocked = owners[blocked_index] != "local"
+            expected_blocked = owners[source_index] != "local"
+            assert blocked == expected_blocked, (
+                f"{name}: owners={owners}, source={source_index}, blocked={blocked}; "
+                "only the source owner's troops may be given away"
+            )
+
+
 def main() -> None:
+    check_quick_exchange_ownership(WINDOW)
+
     exchange = EXCHANGE.split("void CExchangeController::moveStack(", 1)[1]
     exchange = exchange.split("void CExchangeController::moveSingleStackCreature(", 1)[0]
     exchange = compact(exchange)
