@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include "BattleExchangeVariant.h"
+
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -34,6 +36,8 @@ struct Continuation
 	Stage fullReachability;
 	Stage fullMovement;
 	Stage fullBestTarget;
+	// Candidate-local sink: reduced only after the worker loop joins.
+	BattleBestTargetTiming fullBestTargetDetails;
 };
 
 /// Worker slots overlap in wall time. Their sums are not disjoint loop time.

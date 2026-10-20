@@ -12,8 +12,11 @@ unregister its auto-resolve AI during its own callback; that must not destroy th
 AI or omit its terminal callback. Deliver each admitted identity once in stable
 order on the calling thread, before `battleFinished`; newly registered receivers
 must not receive the old result. `nhBattleEndDispatchTest` covers these ownership
-and ordering rules. Real auto-resolve result, timing-summary and restart behavior
-still require gameplay verification.
+and ordering rules. A bounded Linux SDL3 ordinary-game witness also covered
+instant-finish confirmation, the result and captured-garrison dialogs, return to
+the adventure map and normal Quit; both sides emitted one terminal AI summary.
+That authored fixture had loader diagnostics and did not reproduce the reported
+slow fight. Windows, restart and broader interaction acceptance remain separate.
 
 Generated user Maps must remain refreshable after initialization and resolve through the core resource origin before map/header loading, without losing user-map override precedence. Retain `GeneratedMapCreatedAfterInitializationIsRefreshable` and `LateGeneratedUserMapHasCoreOriginAndLoadsHeader`; these filesystem fixtures do not establish rendered Battle Only Begin acceptance.
 

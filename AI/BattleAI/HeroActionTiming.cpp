@@ -11,10 +11,72 @@
 #include <atomic>
 #include <cstdlib>
 #include <exception>
+#include <string>
 #include <string_view>
+#include <tuple>
+#include <utility>
 
 namespace heroActionTiming
 {
+
+namespace
+{
+using ExchangeTiming = BattleMovementTiming::ExchangeTiming;
+using ExchangeStage = BattleMovementTiming::StageTiming;
+
+// Existing body/probe regions only. Extra damage-cache clocks stay disabled;
+// nested lifecycle subsets are not additional disjoint body time.
+constexpr auto exchangeStages = {
+	std::pair{"body", &ExchangeTiming::body}, std::pair{"membership", &ExchangeTiming::membership},
+	std::pair{"projection_setup", &ExchangeTiming::projectionSetup}, std::pair{"target_probes", &ExchangeTiming::targetProbes},
+	std::pair{"probe_preparation", &ExchangeTiming::targetProbePreparation},
+	std::pair{"probe_main_damage", &ExchangeTiming::targetProbeMainDamage},
+	std::pair{"probe_dps_score", &ExchangeTiming::targetProbeDpsScore},
+	std::pair{"applied_attacks", &ExchangeTiming::appliedAttacks},
+	std::pair{"activation_start", &ExchangeTiming::activationStart},
+	std::pair{"activation_end", &ExchangeTiming::activationEnd}, std::pair{"round_advance", &ExchangeTiming::roundAdvance}};
+
+void accumulateStage(ExchangeStage & total, const ExchangeStage & sample)
+{
+	total.calls += sample.calls;
+	total.totalMicroseconds += sample.totalMicroseconds;
+}
+
+void accumulateBestTarget(BattleBestTargetTiming & total, const BattleBestTargetTiming & sample)
+{
+	accumulateStage(total.waitedExchange, sample.waitedExchange);
+	accumulateStage(total.normalExchange, sample.normalExchange);
+	for(const auto member : {&BattleBestTargetTiming::waitedDetails, &BattleBestTargetTiming::normalDetails})
+	{
+		for(const auto & [name, stage] : exchangeStages)
+			accumulateStage((total.*member).*stage, (sample.*member).*stage);
+		(total.*member).remainderMicroseconds += (sample.*member).remainderMicroseconds;
+	}
+}
+
+void appendStage(std::string & fields, const std::string & prefix, const ExchangeStage & stage)
+{
+	fields += " " + prefix + "_calls=" + std::to_string(stage.calls);
+	fields += " " + prefix + "_sum_us=" + std::to_string(stage.totalMicroseconds);
+}
+
+std::string bestTargetFields(const BattleBestTargetTiming & details)
+{
+	std::string fields;
+	for(const auto & [name, member, wrapper] : {
+		std::tuple{"waited", &BattleBestTargetTiming::waitedDetails, &BattleBestTargetTiming::waitedExchange},
+		std::tuple{"normal", &BattleBestTargetTiming::normalDetails, &BattleBestTargetTiming::normalExchange}})
+	{
+		const std::string prefix = std::string("continuation_full_best_target_") + name;
+		appendStage(fields, prefix + "_exchange", details.*wrapper);
+		for(const auto & [stageName, stage] : exchangeStages)
+			appendStage(fields, prefix + "_" + stageName, (details.*member).*stage);
+		fields += " " + prefix + "_remainder_us=" + std::to_string((details.*member).remainderMicroseconds);
+	}
+	return fields;
+}
+}
+
 void Stage::accumulate(const Stage & other)
 {
 	calls += other.calls;
@@ -58,6 +120,7 @@ void Candidates::finish(Summary & summary, bool threw) const
 		summary.continuation.fullReachability.accumulate(slot.fullReachability);
 		summary.continuation.fullMovement.accumulate(slot.fullMovement);
 		summary.continuation.fullBestTarget.accumulate(slot.fullBestTarget);
+		accumulateBestTarget(summary.continuation.fullBestTargetDetails, slot.fullBestTargetDetails);
 	}
 	summary.candidates += slots.size();
 	summary.loopJoined = true;
@@ -147,7 +210,7 @@ Call::~Call()
 			" continuation_full_reachability_calls=%llu continuation_full_reachability_sum_us=%llu continuation_full_reachability_max_us=%llu"
 			" continuation_full_movement_calls=%llu continuation_full_movement_sum_us=%llu continuation_full_movement_max_us=%llu"
 			" continuation_full_best_target_calls=%llu continuation_full_best_target_sum_us=%llu continuation_full_best_target_max_us=%llu"
-			" submit_calls=%llu submit_us=%llu submit_max_us=%llu submit_returned=%llu submit_threw=%llu",
+			" submit_calls=%llu submit_us=%llu submit_max_us=%llu submit_returned=%llu submit_threw=%llu%s",
 			identity.battle, identity.player, identity.side, static_cast<long long>(identity.stack), identity.round,
 			static_cast<unsigned long long>(ordinal), static_cast<unsigned long long>(summary.candidates),
 			summary.loopJoined, summary.loopThrew,
@@ -176,7 +239,8 @@ Call::~Call()
 			static_cast<unsigned long long>(summary.submit.totalMicroseconds),
 			static_cast<unsigned long long>(summary.submit.maxMicroseconds),
 			static_cast<unsigned long long>(summary.submitReturned),
-			static_cast<unsigned long long>(summary.submitThrew));
+			static_cast<unsigned long long>(summary.submitThrew),
+			bestTargetFields(summary.continuation.fullBestTargetDetails).c_str());
 	}
 	catch(...)
 	{

@@ -305,6 +305,9 @@ TEST_F(HeroActionUtilityTest, FullAndCachedContinuationMatchFrozenLegacyBodyBitF
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto rng = serialized(*gameHandler->randomizer);
+	const auto traffic = server.startedActions.size();
+	const std::array liveStates{own->acquireState()->save().toString(),
+		low->acquireState()->save().toString(), high->acquireState()->save().toString()};
 	for(const bool timed : {false, true})
 	for(const bool cached : {false, true})
 	{
@@ -342,9 +345,33 @@ TEST_F(HeroActionUtilityTest, FullAndCachedContinuationMatchFrozenLegacyBodyBitF
 		EXPECT_EQ(timing.fullReachability.calls, timed && !cached ? 1u : 0u);
 		EXPECT_EQ(timing.fullMovement.calls, timed && !cached ? 1u : 0u);
 		EXPECT_EQ(timing.fullBestTarget.calls, timed && !cached ? 1u : 0u);
+		const auto & details = timing.fullBestTargetDetails;
+		for(const auto * exchange : {&details.waitedDetails, &details.normalDetails})
+		{
+			if(timed && !cached)
+			{
+				EXPECT_GT(exchange->body.calls, 0u);
+				EXPECT_EQ(exchange->body.totalMicroseconds, exchange->membership.totalMicroseconds
+					+ exchange->projectionSetup.totalMicroseconds + exchange->targetProbes.totalMicroseconds
+					+ exchange->appliedAttacks.totalMicroseconds + exchange->activationStart.totalMicroseconds
+					+ exchange->activationEnd.totalMicroseconds + exchange->roundAdvance.totalMicroseconds
+					+ exchange->remainderMicroseconds);
+				EXPECT_LE(exchange->targetProbePreparation.totalMicroseconds
+					+ exchange->targetProbeMainDamage.totalMicroseconds + exchange->targetProbeDpsScore.totalMicroseconds,
+					exchange->targetProbes.totalMicroseconds);
+			}
+			else
+				EXPECT_EQ(exchange->body.calls, 0u);
+			EXPECT_FALSE(exchange->collectProbeDamageCache);
+		}
+
 		EXPECT_EQ(bits(actual.value), bits(expected));
-		EXPECT_EQ(reference->battleGetUnitByID(own->unitId())->acquireState()->save().toString(),
-			extracted->battleGetUnitByID(own->unitId())->acquireState()->save().toString());
+		for(const auto * original : {own, low, high})
+			EXPECT_EQ(reference->battleGetUnitByID(original->unitId())->acquireState()->save().toString(),
+				extracted->battleGetUnitByID(original->unitId())->acquireState()->save().toString());
 	}
 	EXPECT_EQ(serialized(*gameHandler->randomizer), rng);
+	EXPECT_EQ(server.startedActions.size(), traffic);
+	EXPECT_EQ((std::array{own->acquireState()->save().toString(),
+		low->acquireState()->save().toString(), high->acquireState()->save().toString()}), liveStates);
 }

@@ -50,7 +50,8 @@ void evaluateContinuation(AbsoluteContinuationUtility & continuation,
 			auto newStackAction = [&]
 			{
 				heroActionTiming::Scope bestTarget(timing ? &timing->fullBestTarget : nullptr);
-				return innerEvaluator.findBestTarget(modelActive.get(), innerTargets, innerCache, state);
+				return innerEvaluator.findBestTarget(modelActive.get(), innerTargets, innerCache, state, false,
+					timing ? &timing->fullBestTargetDetails : nullptr);
 			}();
 
 			stackActionScore = std::max(moveTarget.score, newStackAction.score);
