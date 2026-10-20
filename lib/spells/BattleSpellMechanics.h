@@ -94,6 +94,9 @@ private:
 	effects::Effects::EffectsToApply effectsToApply;
 
 	BattleSide effectiveCasterSide() const;
+	void prepareResistanceRolls(vstd::RNG & rng, const Target & target, const Target & spellTarget,
+		bool naturesWrath, bool realityWarp, const battle::Units & wrathConductors);
+	static bool isSpellLocked(const battle::Unit * unit);
 	void beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target);
 	battle::Units filterSpellLockedEffects(const Target & aimPoint);
 	bool isReflected(ServerCallback * server, const battle::Unit * unit, vstd::RNG & rng);

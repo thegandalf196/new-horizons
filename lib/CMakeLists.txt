@@ -445,6 +445,7 @@ set(lib_MAIN_SRCS
 
 	spells/AbilityCaster.cpp
 	spells/BattleSpellMechanics.cpp
+	spells/BattleSpellMirror.cpp
 	spells/BonusCaster.cpp
 	spells/CSpell.cpp
 	spells/CSpellHandler.cpp

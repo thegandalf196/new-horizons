@@ -21263,15 +21263,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact1272-line health-only endpoint, no future growth credit. Further affected-area registry growth requires renewed independent organization review or coherent component registration extraction with a shrinking parent; preserve registration order and target behavior rather than introducing a cosmetic forwarding list.",
+      "deferral": "Exact1273-line endpoint only, no future growth credit. Further affected-area registry growth requires renewed independent organization review or coherent component registration extraction with a shrinking parent; retain source/header registration order and existing target behavior, not a cosmetic forwarding list.",
       "kind": "exception",
-      "lines": 1272,
+      "lines": 1273,
       "owner": "engine_engineer",
-      "rationale": "Exact1271 to1272-line mechanical registry renewal: register SummonedCreatureHealth.cpp once beside ISpellMechanics.cpp for the separately reviewed summon-health extraction and terrain-input repair. Mirror source extraction is not included in this endpoint. All other source/header lists, target/link/options/backend policy remain byte-identical; zero CMake function or macro definitions. Existing serializer registrations remain intact. This is a new exact source-registration review, not inheritance of the combined1273-line endpoint or runtime acceptance.",
-      "review": "IR-SUMMON-HEALTH-ONLY-SOURCE-REGISTRY-V1",
-      "review_scope": "exact-health-only-source-registration-no-mirror-policy-runtime-or-future-growth",
+      "rationale": "Exact1272 to1273-line mechanical registry renewal: register BattleSpellMirror.cpp once beside BattleSpellMechanics.cpp in the existing library target for the separately reviewed behavior-preserving Mirror and resistance extraction. Retain the previously accepted SummonedCreatureHealth.cpp registration. All other registry bytes, target/link/options/backend policy remain unchanged; zero CMake function or macro definitions. No compound behavior, runtime or broader registry acceptance, and no future growth allowance.",
+      "review": "IR-MIRROR-EXTRACTION-01-SOURCE-REGISTRY-V1",
+      "review_scope": "exact-one-mirror-source-registration-only-no-compound-behavior-runtime-or-future-growth",
       "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "sha256": "64a00ae0b6dbcb0cb0f095564117a6ce0608d4685ddb566639851757ab6d47ca"
+      "sha256": "6c0cd38f3f0bdf082e49da2bc545957b3a4648a14d95383e0a64e849551729df"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -23706,12 +23706,12 @@
     },
     "lib/spells/BattleSpellMechanics.cpp": {
       "kind": "exception",
-      "lines": 3301,
+      "lines": 3137,
       "owner": "gameplay_engineer",
-      "rationale": "Exact three-line urgent Cure target-validation correction: resolve a canonical hex-only destination through the current battle callback without redirecting an explicit unit identity. Existing eligibility and pre-cost checks remain ordered. Extracting unrelated spell validation in this correctness fix would broaden risk; no further hotspot growth is approved.",
-      "review": "cure-target-correction-source-v1",
-      "review_scope": "exact-cure-target-correctness-technical-exception",
-      "sha256": "778f0b8866631eed33692b96df1729c459380967dd83336b80338341a4c02108",
+      "rationale": "Behavior-preserving3301 to3187-line reduction: move the exact nullable Spell Lock predicate, eager resistance preparation and generic Mirror helpers into the focused150-line BattleSpellMirror.cpp. Preserve generic reflection recursion, eager RNG order, command/payment lifetime and the existing Cure identity/pre-cost correction. Compound behavior changes are excluded; no further hotspot growth is approved. Further exact3187 to3137-line ratchet moves the unchanged49-line wouldResist consumer beside its eager resistance producer in BattleSpellMirror.cpp150 to201 with one explicit owning include. Signature, cache writes, callback/RNG order and all other callable bodies are preserved. Independent review covers extraction01 only; blocked compound allegiance/planner changes and their cast/beforeCast growth are excluded.",
+      "review": "IR-MIRROR-CONSUMER-EXTRACTION-01-INDEPENDENT-20261019",
+      "review_scope": "exact-behavior-preserving-cached-resistance-consumer-extraction-01-only-no-compound-behavior-or-future-growth",
+      "sha256": "135f2f2492c87f1dd39bceb5be99b3cec9d8026dfa151569ce4cda05758241d9",
       "deferral": "Before further Cure-validator growth, the gameplay engineer must extract the existing Cure eligibility and selector block into a cohesive shared validator with a current battle and canonical destination. Preserve identity refusal, owner/receptivity/rules/selection and pre-cost ordering; retain hex/unit/refusal, no-mutation/RNG/cost, authoritative Cure/Dispel/Frozen and modal lifecycle coverage, and reduce this baseline."
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::bool BattleSpellMechanics::canBeCast(Problem & problem) const#1": {
@@ -23734,13 +23734,13 @@
       "deferral": "Before further growth, extract the existing Cure eligibility and selector block into a shared validator, preserving canonical hex lookup, explicit identity refusal, owner/receptivity/rules/selection and pre-cost ordering. Characterize refusal atomicity and existing authoritative Cure/Dispel/Frozen behavior, retain modal lifecycle checks, and ratchet this function baseline down."
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target)#1": {
-      "kind": "legacy",
-      "lines": 151,
+      "kind": "review",
+      "lines": 111,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 151 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6986fa62e0705018de5a2e265cf1cbed4bf77c9f00f6a98d84c94ea9eabbaace"
+      "rationale": "Exact151 to111-line shrinking review: replace the eager resistance block with a call to the cohesive46-line prepareResistanceRolls helper in BattleSpellMirror.cpp. All exclusions, battlefield traversal, eager draws, lazy cached consumers and existing target/effect preparation order remain unchanged. The remaining preparation responsibility is reviewed above80 lines and below150; no future growth allowance or compound-rule change.",
+      "review": "IR-MIRROR-EXTRACTION-01-a4845f",
+      "review_scope": "exact-eager-resistance-preparation-extraction-ratchet-only",
+      "sha256": "f88e2dabf246f46b48cba9dede9814a43df3bf31fe657ba15bc4d66421a9ed94"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)#1": {
       "kind": "legacy",
