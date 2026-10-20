@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../mock/GameHandlerTestServer.h"
+#include "../SpellPointTestUtils.h"
 #include "AI/Nullkiller2/AIGateway.h"
 #include "lib/GameSettings.h"
 #include "lib/bonuses/Bonus.h"
@@ -18,7 +19,10 @@
 #include "lib/pathfinder/NewHorizonsTravelSafety.h"
 #include "lib/pathfinder/CPathfinder.h"
 #include "lib/pathfinder/PathfinderOptions.h"
+#include "lib/pathfinder/TurnInfo.h"
+#include "lib/pathfinder/NewHorizonsProtectedMobility.h"
 #include "lib/serializer/CMemorySerializer.h"
+#include "lib/spells/CSpell.h"
 #include "server/CGameHandler.h"
 #include "server/processors/TurnOrderProcessor.h"
 
@@ -59,6 +63,7 @@ class LandingClient final : public IClient
 public:
 	explicit LandingClient(CGameHandler & handler) : handler(handler) {}
 	std::vector<MoveHero> moves;
+	std::vector<CastAdvSpell> casts;
 	int endTurns = 0;
 	std::function<void(const MoveHero &)> beforeMove;
 	std::function<void()> beforeEndTurn;
@@ -79,8 +84,10 @@ public:
 			if(beforeEndTurn)
 				beforeEndTurn();
 		}
+		else if(const auto * cast = dynamic_cast<const CastAdvSpell *>(&request))
+			casts.push_back(*cast);
 		else
-			throw std::runtime_error("Landing consumer submitted a non-movement/non-EndTurn request");
+			throw std::runtime_error("Landing fixture submitted an unsupported request");
 		auto incoming = CMemorySerializer::deepCopy(request);
 		incoming->player = player;
 		incoming->requestID = ++sequence;
@@ -94,6 +101,7 @@ class NewHorizonsTravelLandingAITest : public TinyMapGameTest
 protected:
 	bool flyPolicy = true;
 	bool waterPolicy = true;
+	bool protectedBarriers = false;
 	CGHeroInstance * hero = nullptr;
 	CGHeroInstance * other = nullptr;
 	std::unique_ptr<LandingServer> server;
@@ -117,7 +125,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
-		rules.Struct().erase("protectedAdventureBarriers");
+		if(!protectedBarriers)
+			rules.Struct().erase("protectedAdventureBarriers");
 		for(const auto & [name, active] : {std::pair{"core:fly", flyPolicy}, {"core:waterWalk", waterPolicy}})
 		{
 			auto & row = rules["adventureSpells"][name];
@@ -128,12 +137,15 @@ protected:
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 	}
-	void prepare()
+	void prepare(bool paidFly = false)
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PLAYER).playerActive(OPPONENT)
-			.hero({8, 8, 0}, HeroTypeID(0), PLAYER)
-			.hero({20, 20, 0}, HeroTypeID(1), PLAYER)
+			.hero({8, 8, 0}, HeroTypeID(0), PLAYER);
+		if(paidFly)
+			builder.heroPrimary(10, 10, 10, 20).heroSpells({SpellID::FLY})
+				.heroEquipped({{ArtifactPosition::SPELLBOOK, ArtifactID::SPELLBOOK}});
+		builder.hero({20, 20, 0}, HeroTypeID(1), PLAYER)
 			.hero({30, 30, 0}, HeroTypeID(2), OPPONENT);
 		startWithMap(std::move(builder));
 		hero = findHeroAt({8, 8, 0});
@@ -247,6 +259,113 @@ TEST_F(NewHorizonsTravelLandingAITest, InterruptedRoutesLandEveryOwnedTravelerBe
 	EXPECT_FALSE(handler->turnOrder->isPlayerMakingTurn(PLAYER));
 	ASSERT_EQ(server->acknowledgements.size(), client->moves.size() + 1);
 	EXPECT_TRUE(std::all_of(server->acknowledgements.begin(), server->acknowledgements.end(), [](bool accepted) { return accepted; }));
+}
+
+TEST_F(NewHorizonsTravelLandingAITest, PaidFlyRecoversAroundProtectedCornerThenRenewsOnlyOnNextDay)
+{
+	protectedBarriers = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	ASSERT_TRUE(newHorizonsProtectedMobility::enabled(hero->getMagicRules()));
+	const auto fly = SpellID(SpellID::FLY);
+	const auto cost = hero->getSpellCost(fly.toSpell());
+	ASSERT_EQ(cost, 60);
+	setTestSpellPointTotal(hero, 200);
+	ASSERT_FALSE(hero->getTurnInfo(0)->hasFlyingMovement());
+	ASSERT_FALSE(hero->hasNewHorizonsAdventureSpellCastToday());
+	const auto land = hero->visitablePos();
+	const auto sea = land + int3(1, 0, 0);
+	const auto blockedShore = sea + int3(1, 1, 0);
+	for(int x = -2; x <= 2; ++x)
+		for(int y = -2; y <= 2; ++y)
+			map()->getTile(sea + int3(x, y, 0)).terrainType = ETerrainId::WATER;
+	map()->getTile(land).terrainType = ETerrainId::GRASS;
+	map()->getTile(blockedShore).terrainType = ETerrainId::GRASS;
+	map()->setProtectedAdventureMobilityTiles({sea + int3(0, 1, 0)});
+	hero->setMovementPoints(45);
+	const auto submitCast = [&]()
+	{
+		std::shared_lock lock(CGameState::mutex);
+		callback->castSpell(hero, fly);
+	};
+	const auto submitMove = [&](const int3 & destination)
+	{
+		std::shared_lock lock(CGameState::mutex);
+		callback->moveHero(hero, hero->convertFromVisitablePos(destination), true, EPathfindingLayer::AIR);
+	};
+	const auto mana = hero->getManaAvailable();
+	submitCast();
+	ASSERT_EQ(client->casts.size(), 1u);
+	EXPECT_EQ(client->casts.front().hid, hero->id);
+	EXPECT_EQ(client->casts.front().sid, fly);
+	ASSERT_EQ(server->acknowledgements, std::vector<bool>({true}));
+	ASSERT_EQ(hero->getManaAvailable(), mana - cost);
+	ASSERT_TRUE(hero->hasNewHorizonsAdventureSpellCastToday());
+	ASSERT_TRUE(hero->getTurnInfo(0)->hasFlyingMovement());
+	submitMove(sea);
+	ASSERT_EQ(hero->visitablePos(), sea);
+	ASSERT_EQ(hero->movementPointsRemaining(), 30);
+	ASSERT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::AIR);
+	ASSERT_FALSE(newHorizonsProtectedMobility::segmentClear(*hero, *map(), sea, blockedShore));
+	const auto receipt = hero->getProtectedAdventureFlightLayer();
+	submitMove(blockedShore);
+	ASSERT_FALSE(server->acknowledgements.back());
+	EXPECT_EQ(hero->visitablePos(), sea);
+	EXPECT_EQ(hero->movementPointsRemaining(), 30);
+	EXPECT_EQ(hero->getProtectedAdventureFlightLayer(), receipt);
+	EXPECT_EQ(hero->getManaAvailable(), mana - cost);
+	const auto plan = newHorizonsTravel::planRequiredLanding(*callback, *hero);
+	ASSERT_TRUE(plan);
+	ASSERT_FALSE(plan->steps.empty());
+	auto previous = plan->source;
+	for(const auto & step : plan->steps)
+	{
+		EXPECT_TRUE(newHorizonsProtectedMobility::segmentClear(*hero, *map(), previous, step.destination));
+		previous = step.destination;
+	}
+	const auto offset = client->moves.size();
+	const auto acknowledgements = server->acknowledgements.size();
+	const auto day = gameState()->getCalendar().getCurrentDay();
+	endTurn();
+	ASSERT_NO_FATAL_FAILURE(expectSubmitted(*plan, *hero, offset));
+	EXPECT_EQ(client->moves.size(), offset + plan->steps.size());
+	EXPECT_EQ(client->endTurns, 1);
+	EXPECT_FALSE(gateway->status.haveTurn());
+	EXPECT_EQ(hero->visitablePos(), plan->steps.back().destination);
+	EXPECT_EQ(hero->movementPointsRemaining(), plan->steps.back().movementRemaining);
+	EXPECT_TRUE(map()->getTile(hero->visitablePos()).isLand());
+	ASSERT_EQ(server->acknowledgements.size(), acknowledgements + plan->steps.size() + 1);
+	EXPECT_TRUE(std::all_of(server->acknowledgements.begin() + acknowledgements,
+		server->acknowledgements.end(), [](bool accepted) { return accepted; }));
+	if(gameState()->getCalendar().getCurrentDay() == day)
+	{
+		ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(OPPONENT));
+		ASSERT_TRUE(handler->turnOrder->onPlayerEndsTurn(OPPONENT));
+	}
+	ASSERT_EQ(gameState()->getCalendar().getCurrentDay(), day + 1);
+	ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(PLAYER));
+	EXPECT_EQ(hero->visitablePos(), plan->steps.back().destination);
+	EXPECT_FALSE(hero->getTurnInfo(0)->hasFlyingMovement());
+	EXPECT_FALSE(hero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::LAND);
+	EXPECT_EQ(hero->movementPointsRemaining(), hero->movementPointsLimit());
+	const auto renewedMana = hero->getManaAvailable();
+	ASSERT_GE(renewedMana, cost);
+	submitCast();
+	ASSERT_EQ(client->casts.size(), 2u);
+	ASSERT_TRUE(server->acknowledgements.back());
+	EXPECT_EQ(hero->getManaAvailable(), renewedMana - cost);
+	EXPECT_TRUE(hero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_TRUE(hero->getTurnInfo(0)->hasFlyingMovement());
+	const auto renewedMovement = hero->movementPointsRemaining();
+	submitCast();
+	ASSERT_EQ(client->casts.size(), 3u);
+	ASSERT_FALSE(server->acknowledgements.back());
+	EXPECT_EQ(hero->getManaAvailable(), renewedMana - cost);
+	EXPECT_EQ(hero->movementPointsRemaining(), renewedMovement);
+	EXPECT_EQ(hero->visitablePos(), plan->steps.back().destination);
+	EXPECT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::LAND);
+	EXPECT_TRUE(hero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_TRUE(hero->getTurnInfo(0)->hasFlyingMovement());
 }
 
 TEST_F(NewHorizonsTravelLandingAITest, StrandedZeroMovementRetainsTurnButOtherTravelerStillLands)
