@@ -43640,6 +43640,2176 @@
       "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
       "selection": "orchestrator-selected-provisional-next17-perk-drafts-2026-10-20",
       "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aegis.json",
+      "source": "Mods/new-horizons/Images/NH_perk_aegis.json",
+      "size": 389,
+      "sha256": "6f6709127022b3fb52cf310fd4d9518b8faf5e8ca5c11a639fa296bde963f2fc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; engraving/plumedetail merges32; broad cuirass/curve survive; authored protection rules stay text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aegis.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aegis.png",
+      "size": 4786,
+      "sha256": "ca94d728c291fb8130a0a88ea31a0faa62a42ece62c17a25a2f51c6acc669157",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; engraving/plumedetail merges32; broad cuirass/curve survive; authored protection rules stay text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aegis_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aegis_32.png",
+      "size": 2675,
+      "sha256": "a3f0ddff670afb37fba62b436e3eeadcd09cc96dd359b6bbfa55a8bbb7895975",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; engraving/plumedetail merges32; broad cuirass/curve survive; authored protection rules stay text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aegis_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aegis_disabled.png",
+      "size": 4773,
+      "sha256": "8c7818230e0a87c6c205036b02c4818b20d422d0238285343c854b875f31dbac",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; engraving/plumedetail merges32; broad cuirass/curve survive; authored protection rules stay text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aegis_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aegis_highlighted.png",
+      "size": 5558,
+      "sha256": "f0d09f1140a7cd55c8b3abf909af763efbbdf1ed864d698e2cc5936a7dfe4eab",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; engraving/plumedetail merges32; broad cuirass/curve survive; authored protection rules stay text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aegis_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aegis_normal.png",
+      "size": 5444,
+      "sha256": "8c51f5cfc96cce1a490ebbc66675e9f79b626ff695e40245182f75931395641b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; engraving/plumedetail merges32; broad cuirass/curve survive; authored protection rules stay text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_aegis_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_aegis_pressed.png",
+      "size": 5209,
+      "sha256": "c899e233a7d55340453437dd0602943fd49fd38fa4d27d3068eb914e17989fd7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; engraving/plumedetail merges32; broad cuirass/curve survive; authored protection rules stay text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_armor_piercing_shot.json",
+      "source": "Mods/new-horizons/Images/NH_perk_armor_piercing_shot.json",
+      "size": 445,
+      "sha256": "0c74af3675ec7db3e7f69a17f72f515318497a3a6af60af49117919c0b0c22d7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hole/flaps soften32; exact Creature Defense interaction remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_armor_piercing_shot.png",
+      "source": "Mods/new-horizons/Images/NH_perk_armor_piercing_shot.png",
+      "size": 4659,
+      "sha256": "dcb5d3bfc846a381321b633a9f485bfdb01b76e6a2a189c5e7b0a37485c5b07c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hole/flaps soften32; exact Creature Defense interaction remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_armor_piercing_shot_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_armor_piercing_shot_32.png",
+      "size": 2621,
+      "sha256": "bf7845ee635b62089b4618aaa998d264118a39915ef9805e3e02f135cfe6efc2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hole/flaps soften32; exact Creature Defense interaction remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_armor_piercing_shot_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_armor_piercing_shot_disabled.png",
+      "size": 4628,
+      "sha256": "ab4f262fd808f24de48d61edc12337650f9f2d7a3dfd907b7cd98d4fe31801f1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hole/flaps soften32; exact Creature Defense interaction remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_armor_piercing_shot_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_armor_piercing_shot_highlighted.png",
+      "size": 5423,
+      "sha256": "86b1dc33e6658af08a01ab1677df968f78ba89b9a6fb322c6c438fea689f6e2a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hole/flaps soften32; exact Creature Defense interaction remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_armor_piercing_shot_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_armor_piercing_shot_normal.png",
+      "size": 5295,
+      "sha256": "7f9f87750f419e3ccdca70a34df295900eabe68f8be4f90a49075ea9b0276e58",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hole/flaps soften32; exact Creature Defense interaction remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_armor_piercing_shot_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_armor_piercing_shot_pressed.png",
+      "size": 5047,
+      "sha256": "fae75a7aef57e1ae5bd1782f9c551237d496df218f3b4501c4bb09f3d9eda3db",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hole/flaps soften32; exact Creature Defense interaction remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_battlefield_mastery.json",
+      "source": "Mods/new-horizons/Images/NH_perk_battlefield_mastery.json",
+      "size": 445,
+      "sha256": "e8eb2ae0b334ae6d6e3e9a0427ea37c2c3647efda1f316770fba1a3ac2f8a668",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hourglass/shield clear32; redsand/fittings merge; no time-altering rule implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_battlefield_mastery.png",
+      "source": "Mods/new-horizons/Images/NH_perk_battlefield_mastery.png",
+      "size": 4387,
+      "sha256": "8ed94cb55924174303b0a2189a7f9fa50f89385fc12e6ae8ddcba66512a1072e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hourglass/shield clear32; redsand/fittings merge; no time-altering rule implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_battlefield_mastery_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_battlefield_mastery_32.png",
+      "size": 2467,
+      "sha256": "5a690e9f796c5335104c1a3d53b780e30f532d769a03deeca40e4fbe37ebf92c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hourglass/shield clear32; redsand/fittings merge; no time-altering rule implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_battlefield_mastery_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_battlefield_mastery_disabled.png",
+      "size": 4290,
+      "sha256": "c685a456a853617f20aa3113b73b8d453eb5b24a376d0c684c78af8b2b1087be",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hourglass/shield clear32; redsand/fittings merge; no time-altering rule implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_battlefield_mastery_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_battlefield_mastery_highlighted.png",
+      "size": 5114,
+      "sha256": "bdb90f6089df295ce22ee4f662adaf464924e59da2a2317f20183317155ee84f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hourglass/shield clear32; redsand/fittings merge; no time-altering rule implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_battlefield_mastery_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_battlefield_mastery_normal.png",
+      "size": 4980,
+      "sha256": "1383f3e6748c41cc527f6b51979039d1fa7316a2a6a9670db40e1d07c5c21afa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hourglass/shield clear32; redsand/fittings merge; no time-altering rule implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_battlefield_mastery_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_battlefield_mastery_pressed.png",
+      "size": 4735,
+      "sha256": "5f21bf670805e9be44714d1af13a210785716c9ab9e3f98c087ba4f66ed193d1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; hourglass/shield clear32; redsand/fittings merge; no time-altering rule implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_blood_drinker.json",
+      "source": "Mods/new-horizons/Images/NH_perk_blood_drinker.json",
+      "size": 421,
+      "sha256": "27c3367a271580717062290552b5300b84c14819109ad89fb30225f4b73b6977",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled bowl/vial dark; stem/rim survive; closed vial is metaphor not literal transfer mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_blood_drinker.png",
+      "source": "Mods/new-horizons/Images/NH_perk_blood_drinker.png",
+      "size": 4448,
+      "sha256": "64a35777f834727eca08e2976b6b4c3c266c38759766805110bc0f2cb1189ad7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled bowl/vial dark; stem/rim survive; closed vial is metaphor not literal transfer mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_blood_drinker_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_blood_drinker_32.png",
+      "size": 2489,
+      "sha256": "5216dbe4982b5060d84d5c96e6449b137c29e3828776ed1f8cef6f8523bcf183",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled bowl/vial dark; stem/rim survive; closed vial is metaphor not literal transfer mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_blood_drinker_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_blood_drinker_disabled.png",
+      "size": 4321,
+      "sha256": "522676dd8073309f50de33d913ced63da76bfcd0e0649451982433f76bbcde3d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled bowl/vial dark; stem/rim survive; closed vial is metaphor not literal transfer mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_blood_drinker_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_blood_drinker_highlighted.png",
+      "size": 5168,
+      "sha256": "f8e9a631cb6704b4f8d2b1ffaaa2f43994547fd2aeae6aa0faf878b93a878759",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled bowl/vial dark; stem/rim survive; closed vial is metaphor not literal transfer mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_blood_drinker_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_blood_drinker_normal.png",
+      "size": 5041,
+      "sha256": "ea5f5e29d8a23c430e73a5e87d1ed09cf24f1c2c3b9fe4b39f2ead64b117e326",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled bowl/vial dark; stem/rim survive; closed vial is metaphor not literal transfer mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_blood_drinker_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_blood_drinker_pressed.png",
+      "size": 4798,
+      "sha256": "5ee62f7a7a5bc85de1c7b39a67799cf52cb4124e635716d2d2935fdccf251e91",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled bowl/vial dark; stem/rim survive; closed vial is metaphor not literal transfer mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cataclysm.json",
+      "source": "Mods/new-horizons/Images/NH_perk_cataclysm.json",
+      "size": 405,
+      "sha256": "728edfe9d8e2a7478c453a40ad057e3780f1c4d69ea1250b74401f5aaa10fe1c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; small wall/rubble becomes texture32; peak/zigzag survive; no invented map-removal rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cataclysm.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cataclysm.png",
+      "size": 4377,
+      "sha256": "0c760c0ff723760a4a838d61ddb9855ef654727b5cfc62d00d0fbe9a2592cd76",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; small wall/rubble becomes texture32; peak/zigzag survive; no invented map-removal rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cataclysm_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cataclysm_32.png",
+      "size": 2433,
+      "sha256": "6ed1f50e44fb649a6679f8687c68d8e94fc21d8f3adf1a6ecc82ff29f123a625",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; small wall/rubble becomes texture32; peak/zigzag survive; no invented map-removal rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cataclysm_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cataclysm_disabled.png",
+      "size": 4268,
+      "sha256": "74b6cc5a6dc1c6cb23c4a711206d5fcf7925f1082224887b5ae2a8db2e8484e3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; small wall/rubble becomes texture32; peak/zigzag survive; no invented map-removal rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cataclysm_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cataclysm_highlighted.png",
+      "size": 5067,
+      "sha256": "cea6cd95b7717fab88d042193136ac92c1e7f93adde8e8b0ac73db069f5c0354",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; small wall/rubble becomes texture32; peak/zigzag survive; no invented map-removal rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cataclysm_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cataclysm_normal.png",
+      "size": 4923,
+      "sha256": "1dfb1182e37eb95800f9373f2b49ff301a38a155ab0ff4686ffc326de6437b16",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; small wall/rubble becomes texture32; peak/zigzag survive; no invented map-removal rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_cataclysm_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_cataclysm_pressed.png",
+      "size": 4682,
+      "sha256": "bfeb59750e6f77fd4eb74a4f00703abc375e320b04ba3b6b2ef5f464305a23e9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; small wall/rubble becomes texture32; peak/zigzag survive; no invented map-removal rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_controlled_blast.json",
+      "source": "Mods/new-horizons/Images/NH_perk_controlled_blast.json",
+      "size": 433,
+      "sha256": "324f50f36440519d23363c3a7a3ad693868e5b74fe3011755d6329abc15ffa13",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bowllegs/flametips merge32; pawn/ring clear; namedspells safe center only, not Armageddon",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_controlled_blast.png",
+      "source": "Mods/new-horizons/Images/NH_perk_controlled_blast.png",
+      "size": 4253,
+      "sha256": "aeb07adea227fa2363f56d56cfdc03f0234bb72657ad08282eca22ef8bbdc29f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bowllegs/flametips merge32; pawn/ring clear; namedspells safe center only, not Armageddon",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_controlled_blast_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_controlled_blast_32.png",
+      "size": 2386,
+      "sha256": "0d6cbc8a75ebae98fd1a109dd4b8284cd3f09f97299a64f9ed6340efc21d14c0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bowllegs/flametips merge32; pawn/ring clear; namedspells safe center only, not Armageddon",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_controlled_blast_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_controlled_blast_disabled.png",
+      "size": 4188,
+      "sha256": "596fa33fdf2f267f64baa514cc23b00b3cc8797c80fe6bc443f3b9a5f96ed097",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bowllegs/flametips merge32; pawn/ring clear; namedspells safe center only, not Armageddon",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_controlled_blast_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_controlled_blast_highlighted.png",
+      "size": 4904,
+      "sha256": "81157e2cad28a5c31253b7339c7e7cf7a60d46db78eb83a756c7111e3503abcb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bowllegs/flametips merge32; pawn/ring clear; namedspells safe center only, not Armageddon",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_controlled_blast_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_controlled_blast_normal.png",
+      "size": 4803,
+      "sha256": "85addb691c4094666e2480cad40d10c1471727dfb3f9ea0fa07bfa6b6ac7e092",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bowllegs/flametips merge32; pawn/ring clear; namedspells safe center only, not Armageddon",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_controlled_blast_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_controlled_blast_pressed.png",
+      "size": 4581,
+      "sha256": "3a6192e89ddc2d795a40e276a3cd2f9b203fd607cf1d1e8513bb8fc8aa0ef1f5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bowllegs/flametips merge32; pawn/ring clear; namedspells safe center only, not Armageddon",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counter_battery.json",
+      "source": "Mods/new-horizons/Images/NH_perk_counter_battery.json",
+      "size": 429,
+      "sha256": "ec2821d43fead739706cb4fb32a37084c2e9e6af5be815a6d6a20f0e7b43ec24",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; splinters merge32; disabled spokes dark; bolt/rim survive; not universal obstacle destruction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counter_battery.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counter_battery.png",
+      "size": 4796,
+      "sha256": "a32272482e47835de6d31912e981ba2f9653cb54b88106731f34fb50f335021c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; splinters merge32; disabled spokes dark; bolt/rim survive; not universal obstacle destruction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counter_battery_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counter_battery_32.png",
+      "size": 2676,
+      "sha256": "02b4988e50455a75eb4ac69842243c8768ca7704943d34a6e5b491304d411e48",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; splinters merge32; disabled spokes dark; bolt/rim survive; not universal obstacle destruction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counter_battery_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counter_battery_disabled.png",
+      "size": 4821,
+      "sha256": "e3893038b19eb358e8e5d46105111723542b8f800b97e2ce1846d87380f4fec0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; splinters merge32; disabled spokes dark; bolt/rim survive; not universal obstacle destruction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counter_battery_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counter_battery_highlighted.png",
+      "size": 5576,
+      "sha256": "beb52e0ce850fbaa20a2f94a28cec8dde63dfec3ce489737da641a475799e5b7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; splinters merge32; disabled spokes dark; bolt/rim survive; not universal obstacle destruction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counter_battery_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counter_battery_normal.png",
+      "size": 5462,
+      "sha256": "06201368b7e3f37ebbc2996b50928922603cb7cf8484653e2ea35f41d2366912",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; splinters merge32; disabled spokes dark; bolt/rim survive; not universal obstacle destruction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_counter_battery_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_counter_battery_pressed.png",
+      "size": 5220,
+      "sha256": "709a8821e0206338daa68e840e0deb1c057ae2c334dc158c8a5c9a39a48b99f3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; splinters merge32; disabled spokes dark; bolt/rim survive; not universal obstacle destruction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crossfire.json",
+      "source": "Mods/new-horizons/Images/NH_perk_crossfire.json",
+      "size": 405,
+      "sha256": "683156db38347f0e26d13cfa2abf4c4021ed7016b5a4b7a5ffbb8fca7a998b49",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled removes color cue and shaft details merge32; opposed diagonal ends remain distinct",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crossfire.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crossfire.png",
+      "size": 4557,
+      "sha256": "0cb9408c4054b23ed6e2a7f25066bca96c9a57e83eed8bea7cb9f454eb282e21",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled removes color cue and shaft details merge32; opposed diagonal ends remain distinct",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crossfire_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crossfire_32.png",
+      "size": 2533,
+      "sha256": "96c644826d0c42f544d75c3f033433c7ce3d68a7ece1f5cb36d13eea32e32ae0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled removes color cue and shaft details merge32; opposed diagonal ends remain distinct",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crossfire_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crossfire_disabled.png",
+      "size": 4488,
+      "sha256": "480545c5cd661e3daa196886459cf107f894749f59c7db1261805fb19b2e8d3b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled removes color cue and shaft details merge32; opposed diagonal ends remain distinct",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crossfire_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crossfire_highlighted.png",
+      "size": 5311,
+      "sha256": "42010b4bb8c56baf5753ec630ab633dfb8fedd4ea176e447204076d21e6f8b59",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled removes color cue and shaft details merge32; opposed diagonal ends remain distinct",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crossfire_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crossfire_normal.png",
+      "size": 5183,
+      "sha256": "2d92b554239cc38feb72e98669a468ba3eeeae10a9dc986a01d30dc661018158",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled removes color cue and shaft details merge32; opposed diagonal ends remain distinct",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crossfire_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crossfire_pressed.png",
+      "size": 4930,
+      "sha256": "cce59d6a4626b194033ec59caf8e605dda1069e2d8bcca1f8143e022ae1fc381",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; disabled removes color cue and shaft details merge32; opposed diagonal ends remain distinct",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crusader.json",
+      "source": "Mods/new-horizons/Images/NH_perk_crusader.json",
+      "size": 401,
+      "sha256": "aaa43d50dcc82d1c1fcdc3a24b98350c3cf6fa6049095f6a4deeaf82ba089b47",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; clasp/embroidery merge32; blade/foldedcloth retain identity; Crusade/Morale motif not creature portrait",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crusader.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crusader.png",
+      "size": 4957,
+      "sha256": "e14a3b19e263de3bef5d137d9a759365ca64231fee33c854c1f250fb75f19134",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; clasp/embroidery merge32; blade/foldedcloth retain identity; Crusade/Morale motif not creature portrait",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crusader_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crusader_32.png",
+      "size": 2764,
+      "sha256": "686974e69bbe7a253ae9d9a024ac3e0e42d8d12b04ea915bb6d34565ea3aeb82",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; clasp/embroidery merge32; blade/foldedcloth retain identity; Crusade/Morale motif not creature portrait",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crusader_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crusader_disabled.png",
+      "size": 5018,
+      "sha256": "5adeec23ccdf7b799c7e590973f3e56cad980c6160ddc99db406f5550d446df0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; clasp/embroidery merge32; blade/foldedcloth retain identity; Crusade/Morale motif not creature portrait",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crusader_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crusader_highlighted.png",
+      "size": 5711,
+      "sha256": "56b4cfe8861465e5cbb20563af873db8baf4c29e6feed121131ea0e4896e8acb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; clasp/embroidery merge32; blade/foldedcloth retain identity; Crusade/Morale motif not creature portrait",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crusader_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crusader_normal.png",
+      "size": 5616,
+      "sha256": "a1c373becc9a99318507cc9da63895216bbe9488ffa830c77b83f288f5d1983f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; clasp/embroidery merge32; blade/foldedcloth retain identity; Crusade/Morale motif not creature portrait",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_crusader_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_crusader_pressed.png",
+      "size": 5372,
+      "sha256": "e3809aa2d24ff6af0d40a351ebe30cd2ebdc056ecda9e0a6fb1e528abf4a1e7c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; clasp/embroidery merge32; blade/foldedcloth retain identity; Crusade/Morale motif not creature portrait",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_dark_gift.json",
+      "source": "Mods/new-horizons/Images/NH_perk_dark_gift.json",
+      "size": 405,
+      "sha256": "62dc1b1731d636813c00d8e8c82c5cfeb9973a21e692e263d16a1d5b071e69da",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; ribbon and disabled heart details merge32; heart/bowl remain; sacrifice metaphor not permanentHP rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_dark_gift.png",
+      "source": "Mods/new-horizons/Images/NH_perk_dark_gift.png",
+      "size": 4126,
+      "sha256": "9c5a4b9c4a638f8a70c0706a3628cfd19bf7c8a5b0bb7471d75e4552f1dff963",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; ribbon and disabled heart details merge32; heart/bowl remain; sacrifice metaphor not permanentHP rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_dark_gift_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_dark_gift_32.png",
+      "size": 2300,
+      "sha256": "69ee68f9597e8c1fce9e4849c2241bbf3f14ebec6657be6637e2807e248d0f32",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; ribbon and disabled heart details merge32; heart/bowl remain; sacrifice metaphor not permanentHP rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_dark_gift_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_dark_gift_disabled.png",
+      "size": 3963,
+      "sha256": "0386da3c6c2911f08650fb39055474592cd908f3b16c1b9e2b39801cfd073bad",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; ribbon and disabled heart details merge32; heart/bowl remain; sacrifice metaphor not permanentHP rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_dark_gift_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_dark_gift_highlighted.png",
+      "size": 4814,
+      "sha256": "1cca679e7f3f03a7a0edd9a1e3a86b02fdba80d5c8c05b6ace59e98fd98e4407",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; ribbon and disabled heart details merge32; heart/bowl remain; sacrifice metaphor not permanentHP rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_dark_gift_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_dark_gift_normal.png",
+      "size": 4687,
+      "sha256": "7471c96abbf07aa4e8421e317dda14ddc219d026fc528c19bba06571dc1bd735",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; ribbon and disabled heart details merge32; heart/bowl remain; sacrifice metaphor not permanentHP rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_dark_gift_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_dark_gift_pressed.png",
+      "size": 4442,
+      "sha256": "13916e94f6fb6fcc7b189b0a42932b2a9837089f56db9eb6c0b99ac91de31366",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; ribbon and disabled heart details merge32; heart/bowl remain; sacrifice metaphor not permanentHP rule",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_deadeye.json",
+      "source": "Mods/new-horizons/Images/NH_perk_deadeye.json",
+      "size": 397,
+      "sha256": "a80cc1dce7568603da0e07762ed7169bcb8a85d3136b0bdd8e6b2fe3987140bf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; secondary shaft intentionally exits corner; iris/arrowhead complete; sight metaphor does not add equipment",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_deadeye.png",
+      "source": "Mods/new-horizons/Images/NH_perk_deadeye.png",
+      "size": 4589,
+      "sha256": "b1ae69165b06df835260da41ae28957163adcd8968b243027b8cfe5e607cbd50",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; secondary shaft intentionally exits corner; iris/arrowhead complete; sight metaphor does not add equipment",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_deadeye_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_deadeye_32.png",
+      "size": 2580,
+      "sha256": "8491e8c090b43b5e219caaed33e36e67a9938833a3d2874fb5c1b3d11118b757",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; secondary shaft intentionally exits corner; iris/arrowhead complete; sight metaphor does not add equipment",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_deadeye_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_deadeye_disabled.png",
+      "size": 4512,
+      "sha256": "1680f04209cbb1c342907628b478a7effc6b072938449e4969e8cb6ee76ebd92",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; secondary shaft intentionally exits corner; iris/arrowhead complete; sight metaphor does not add equipment",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_deadeye_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_deadeye_highlighted.png",
+      "size": 5277,
+      "sha256": "4e059e97e2118e92ad9e8b99fe00aad6ed47a00b13f3119c2ce56bc3bb388b19",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; secondary shaft intentionally exits corner; iris/arrowhead complete; sight metaphor does not add equipment",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_deadeye_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_deadeye_normal.png",
+      "size": 5169,
+      "sha256": "5794c9f132a3362f5a8bb3733cc498bd11bc436cd6dadfac60be2579628720e7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; secondary shaft intentionally exits corner; iris/arrowhead complete; sight metaphor does not add equipment",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_deadeye_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_deadeye_pressed.png",
+      "size": 4935,
+      "sha256": "4815b4c50fb60be995be357cf2cfd16d6ad6eed0abc9ad0b642057ad5e85cc17",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; secondary shaft intentionally exits corner; iris/arrowhead complete; sight metaphor does not add equipment",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_demolitionist.json",
+      "source": "Mods/new-horizons/Images/NH_perk_demolitionist.json",
+      "size": 421,
+      "sha256": "e30b6d68c1094c9b20e34a8bb03ad54af1fe2374dba307bf21976a63290b1f89",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finecracks/ember secondary32; disabled block dark; hammer/handle survive; metaphor not new action",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_demolitionist.png",
+      "source": "Mods/new-horizons/Images/NH_perk_demolitionist.png",
+      "size": 4463,
+      "sha256": "b1faf526fd23ca6d562375d130cc640721516bf7c2746530a7ada0224814e83a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finecracks/ember secondary32; disabled block dark; hammer/handle survive; metaphor not new action",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_demolitionist_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_demolitionist_32.png",
+      "size": 2502,
+      "sha256": "4b7804098d9f0b73fd9d435a5da76a0bb35e0065a580e95a6e68389c4e1cd400",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finecracks/ember secondary32; disabled block dark; hammer/handle survive; metaphor not new action",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_demolitionist_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_demolitionist_disabled.png",
+      "size": 4386,
+      "sha256": "7c18e83813715ca6cfc3ce133a0b2aebaa798d50c972b4cac7cfd93f9bdafed7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finecracks/ember secondary32; disabled block dark; hammer/handle survive; metaphor not new action",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_demolitionist_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_demolitionist_highlighted.png",
+      "size": 5187,
+      "sha256": "5bf8a36ff8e546809e451758c65b706222eae846b867d750e75ba2ee12ed06c2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finecracks/ember secondary32; disabled block dark; hammer/handle survive; metaphor not new action",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_demolitionist_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_demolitionist_normal.png",
+      "size": 5070,
+      "sha256": "73ebdded949805699db2674b0d3cc605f7979fd9d9d2fdf06c50d3b94f02f034",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finecracks/ember secondary32; disabled block dark; hammer/handle survive; metaphor not new action",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_demolitionist_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_demolitionist_pressed.png",
+      "size": 4835,
+      "sha256": "e0bfd599dfcfc79139a49d0a3776055c6fd376ee49c1b933e3712634bb8bcb29",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finecracks/ember secondary32; disabled block dark; hammer/handle survive; metaphor not new action",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_elemental_conjurer.json",
+      "source": "Mods/new-horizons/Images/NH_perk_elemental_conjurer.json",
+      "size": 441,
+      "sha256": "28c20348627deb52286622be20ab455f8a8b789d75730f33edcd85c30c1312af",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; facets merge32/disabled loses hue; four mineral masses survive by value; not four-stack summon promise",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_elemental_conjurer.png",
+      "source": "Mods/new-horizons/Images/NH_perk_elemental_conjurer.png",
+      "size": 4730,
+      "sha256": "2cd6783224e32a5ac64eda756c886a785f548021eb301ee5eb2da928f63f57aa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; facets merge32/disabled loses hue; four mineral masses survive by value; not four-stack summon promise",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_elemental_conjurer_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_elemental_conjurer_32.png",
+      "size": 2607,
+      "sha256": "70faf387c67abdf9e53128428aa8a05bb46ca07c3966fe1e8f1c010d77e4e2f4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; facets merge32/disabled loses hue; four mineral masses survive by value; not four-stack summon promise",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_elemental_conjurer_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_elemental_conjurer_disabled.png",
+      "size": 4799,
+      "sha256": "21e2f000c27d9731e274a699e50124551d9aacde3cd4ccb4809f77fcd84b79bb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; facets merge32/disabled loses hue; four mineral masses survive by value; not four-stack summon promise",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_elemental_conjurer_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_elemental_conjurer_highlighted.png",
+      "size": 5449,
+      "sha256": "fa9e0c0aac3d780e531fc84d92de7795c3e3a3d1a6d39ef9c382d911fe45cc2f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; facets merge32/disabled loses hue; four mineral masses survive by value; not four-stack summon promise",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_elemental_conjurer_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_elemental_conjurer_normal.png",
+      "size": 5343,
+      "sha256": "ada3b2c1c679ea65858bb08bbdf78e8b73465fe420891e3243e1a8bcfd0208bf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; facets merge32/disabled loses hue; four mineral masses survive by value; not four-stack summon promise",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_elemental_conjurer_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_elemental_conjurer_pressed.png",
+      "size": 5113,
+      "sha256": "088718e37b7c08a741882edba09b7d57e0d24aa000d5db656effe27c2889b5fe",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; facets merge32/disabled loses hue; four mineral masses survive by value; not four-stack summon promise",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_malediction.json",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_malediction.json",
+      "size": 437,
+      "sha256": "8bf1a7715312575ffccab3d95145b928f5cd9cb628538369c1fb317a455a1acc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; chains/disabledbell subtle32; book silhouette survives; bell not Silence mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_malediction.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_malediction.png",
+      "size": 4218,
+      "sha256": "a06c57aa1bc19eeab7c01bc56deb2425ee1040e20e6c603cce6618b186b69807",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; chains/disabledbell subtle32; book silhouette survives; bell not Silence mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_malediction_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_malediction_32.png",
+      "size": 2311,
+      "sha256": "97a1eda4533aeb23a7736bdd02552613e17c7abd3dcd669f76b4a8eeabb8a20c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; chains/disabledbell subtle32; book silhouette survives; bell not Silence mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_malediction_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_malediction_disabled.png",
+      "size": 4042,
+      "sha256": "bf044a1a49d369fe0da2484c017e20863a6f75de05532cf593785ce08fcc990a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; chains/disabledbell subtle32; book silhouette survives; bell not Silence mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_malediction_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_malediction_highlighted.png",
+      "size": 4949,
+      "sha256": "d4e0091700a48a5993eec84807c67c8da26b595f3957f356d40001ab1d7dd3df",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; chains/disabledbell subtle32; book silhouette survives; bell not Silence mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_malediction_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_malediction_normal.png",
+      "size": 4791,
+      "sha256": "5666a60f38b70f9efe7e232ee33920e9721c0ee955226d0eba9d9d0fa486fe2b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; chains/disabledbell subtle32; book silhouette survives; bell not Silence mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_malediction_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_malediction_pressed.png",
+      "size": 4562,
+      "sha256": "ae3c81a0e797c64b8f3de015d3302553eb77e942773e7e171c8ab1779f3fc972",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; chains/disabledbell subtle32; book silhouette survives; bell not Silence mechanic",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_tactics.json",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_tactics.json",
+      "size": 421,
+      "sha256": "0d4135f129da7d8f37cbd42b3fbd8de1ffccc62cccff098905fa34814d400106",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; opposing darkpawn faint32/disabled; observation/deployment metaphor not extra deployment area",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_tactics.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_tactics.png",
+      "size": 4693,
+      "sha256": "ea52e83ff86a0ff35828c404e969d020a5312df8a634715955e6a5a7e5b2f59b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; opposing darkpawn faint32/disabled; observation/deployment metaphor not extra deployment area",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_tactics_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_tactics_32.png",
+      "size": 2633,
+      "sha256": "da0cd0c62e7b64cb06ebc69e3613230e4c34767c356c840534334695b5e8986d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; opposing darkpawn faint32/disabled; observation/deployment metaphor not extra deployment area",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_tactics_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_tactics_disabled.png",
+      "size": 4638,
+      "sha256": "a46abefd41ee619187609e8a586873d48a27bedb641aff218b33eb3ca2485084",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; opposing darkpawn faint32/disabled; observation/deployment metaphor not extra deployment area",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_tactics_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_tactics_highlighted.png",
+      "size": 5411,
+      "sha256": "d969c7477612323063fbf68c241aadcb2ffd14b5f07035b53d18d3cf3632e900",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; opposing darkpawn faint32/disabled; observation/deployment metaphor not extra deployment area",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_tactics_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_tactics_normal.png",
+      "size": 5310,
+      "sha256": "f41713df0968c02bf4dfeb31b47704d75c2d885d4dc112063b4b264efafbba97",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; opposing darkpawn faint32/disabled; observation/deployment metaphor not extra deployment area",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_grand_tactics_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_grand_tactics_pressed.png",
+      "size": 5073,
+      "sha256": "df13e4ed939e2a104af6beac8956e40e9b8f094f0bf87f6555c4f9cc39675053",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; opposing darkpawn faint32/disabled; observation/deployment metaphor not extra deployment area",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_guardian.json",
+      "source": "Mods/new-horizons/Images/NH_perk_guardian.json",
+      "size": 401,
+      "sha256": "254cc46c0f61be42ab11be474485dced3c0ad7de59e9cfc6bb9a716689790909",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; feathergrooves merge32; disabled heart loses warmcontrast; temporaryHP protection metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_guardian.png",
+      "source": "Mods/new-horizons/Images/NH_perk_guardian.png",
+      "size": 4401,
+      "sha256": "98114f3230b296152a65c442a6be65e2ffb86485fbfe92823dac466282c9e122",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; feathergrooves merge32; disabled heart loses warmcontrast; temporaryHP protection metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_guardian_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_guardian_32.png",
+      "size": 2476,
+      "sha256": "d76b3d477fa2ab610ef6d6baec26ca355eac7db7e21ee655f1a236b856bc98d4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; feathergrooves merge32; disabled heart loses warmcontrast; temporaryHP protection metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_guardian_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_guardian_disabled.png",
+      "size": 4360,
+      "sha256": "578c50fe094cb4295b947da153a3a0b113aa7a7694bbe102170917e4c6ab4e11",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; feathergrooves merge32; disabled heart loses warmcontrast; temporaryHP protection metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_guardian_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_guardian_highlighted.png",
+      "size": 5093,
+      "sha256": "00535eaeae387ddbadd7ae885fe4fb7a101f8785afb92a67e9ac784396cddbbc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; feathergrooves merge32; disabled heart loses warmcontrast; temporaryHP protection metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_guardian_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_guardian_normal.png",
+      "size": 4947,
+      "sha256": "ba090d6c0c8fcb95422c0de510011e31c85aeb2c31024976e0e347435e3d3156",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; feathergrooves merge32; disabled heart loses warmcontrast; temporaryHP protection metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_guardian_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_guardian_pressed.png",
+      "size": 4719,
+      "sha256": "b29c8abbdcef15586e92be5509c3cffd087c24db1e7465aecfc86dca350a3009",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; feathergrooves merge32; disabled heart loses warmcontrast; temporaryHP protection metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_litany.json",
+      "source": "Mods/new-horizons/Images/NH_perk_litany.json",
+      "size": 393,
+      "sha256": "2c0c23e7b1c1d78a2b3d28872467bb74e29acfa9e1800cccbe53249680d49df6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bellhandle/bookmark less distinct32/disabled; book/bell retain masses; Mass Bless metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_litany.png",
+      "source": "Mods/new-horizons/Images/NH_perk_litany.png",
+      "size": 4572,
+      "sha256": "6fb5e95c399c0b4c717ca991c15f684aba7989ec44bc7e59cab0c41de9f43114",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bellhandle/bookmark less distinct32/disabled; book/bell retain masses; Mass Bless metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_litany_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_litany_32.png",
+      "size": 2595,
+      "sha256": "672b970b2c7896134d3273bcd747696dc42ed6782660a8cf04a38f21839e9c69",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bellhandle/bookmark less distinct32/disabled; book/bell retain masses; Mass Bless metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_litany_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_litany_disabled.png",
+      "size": 4527,
+      "sha256": "05043ae26a0cb2902d482291f3ff48691f90a2251e6cd07f7994546d697f2f16",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bellhandle/bookmark less distinct32/disabled; book/bell retain masses; Mass Bless metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_litany_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_litany_highlighted.png",
+      "size": 5280,
+      "sha256": "a4b4e31e70916c5b3abead8edf14c4d9707a62919defa0393916a6ea233d3f84",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bellhandle/bookmark less distinct32/disabled; book/bell retain masses; Mass Bless metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_litany_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_litany_normal.png",
+      "size": 5179,
+      "sha256": "952e1d1d39de1d3963a2efbe99ad21042a4b48619764bfe8a58a54165fdb8a9e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bellhandle/bookmark less distinct32/disabled; book/bell retain masses; Mass Bless metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_litany_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_litany_pressed.png",
+      "size": 4951,
+      "sha256": "037891cbb9620bbd65084cba112b2156bba3fdc0bb5389ef4008e1904a91d1a5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; bellhandle/bookmark less distinct32/disabled; book/bell retain masses; Mass Bless metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_miracle_worker.json",
+      "source": "Mods/new-horizons/Images/NH_perk_miracle_worker.json",
+      "size": 425,
+      "sha256": "16ba05f0f4c7b213b7e38479040bf38dd23a8b9f619385887e7b0f191c6931c4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny petals/jewels merge32; chalice/lily strong; restoration metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_miracle_worker.png",
+      "source": "Mods/new-horizons/Images/NH_perk_miracle_worker.png",
+      "size": 4392,
+      "sha256": "c23b31dcb47d9ecba97371641f3adb7507059cf393eb85fac2ac82d94421130c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny petals/jewels merge32; chalice/lily strong; restoration metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_miracle_worker_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_miracle_worker_32.png",
+      "size": 2459,
+      "sha256": "62f66f6b31a6fa0706470d2f9bb39a64b0e80a73e5e0024f28448758da796b7b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny petals/jewels merge32; chalice/lily strong; restoration metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_miracle_worker_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_miracle_worker_disabled.png",
+      "size": 4300,
+      "sha256": "6cb968be1cb370bcf9a7325a5a617d3f9fcbca363dcdd571e1375e3970a7c837",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny petals/jewels merge32; chalice/lily strong; restoration metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_miracle_worker_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_miracle_worker_highlighted.png",
+      "size": 5055,
+      "sha256": "0ab7f5d43e981e759e574a552d34395da9401eaf6daf6f512395a505c6022d9c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny petals/jewels merge32; chalice/lily strong; restoration metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_miracle_worker_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_miracle_worker_normal.png",
+      "size": 4970,
+      "sha256": "98aaa278cad164aa8ab6a4a21a0133109d3afc2eaccb3dc3e4c85579d8fa1afb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny petals/jewels merge32; chalice/lily strong; restoration metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_miracle_worker_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_miracle_worker_pressed.png",
+      "size": 4735,
+      "sha256": "58ac9da80bd763acd301af8941a3f8a1d480bc667cc05af3d21faa8a1fa621f5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny petals/jewels merge32; chalice/lily strong; restoration metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwatch.json",
+      "source": "Mods/new-horizons/Images/NH_perk_overwatch.json",
+      "size": 405,
+      "sha256": "2dd488a531cb938b78c81558dc7713c9a8155e5633cfdcfc2248ec21a53f088a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; timer/string/heraldry merge32; disabled dark; watchpost metaphor not a new building",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwatch.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwatch.png",
+      "size": 4428,
+      "sha256": "fd5e1bc8f8c6ba62ebf9fdc801c9ee9f2671091535a6e8898add3cbb70c7daed",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; timer/string/heraldry merge32; disabled dark; watchpost metaphor not a new building",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwatch_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwatch_32.png",
+      "size": 2465,
+      "sha256": "b518aa891ff25ccafa35bd65439bcdc0e01327a9838e9572b799327f11d4fb3a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; timer/string/heraldry merge32; disabled dark; watchpost metaphor not a new building",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwatch_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwatch_disabled.png",
+      "size": 4360,
+      "sha256": "75f69542a42b78af44747076cd041a9d040598a8d12c861277848fb4f4b865a8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; timer/string/heraldry merge32; disabled dark; watchpost metaphor not a new building",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwatch_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwatch_highlighted.png",
+      "size": 5143,
+      "sha256": "5b4603e216ec4e31c432cc580427685927d5afe929933745ca49d37bf70ec50a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; timer/string/heraldry merge32; disabled dark; watchpost metaphor not a new building",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwatch_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwatch_normal.png",
+      "size": 4986,
+      "sha256": "539c832e3519dd9e25e220479456b9b9898ba7e14c48fc1ea0a4e797bb637259",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; timer/string/heraldry merge32; disabled dark; watchpost metaphor not a new building",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_overwatch_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_overwatch_pressed.png",
+      "size": 4759,
+      "sha256": "79cbccc6d2379c85042f859bb734573def3185496b2dfcbb2658dddba29352ba",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; timer/string/heraldry merge32; disabled dark; watchpost metaphor not a new building",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_painweaver.json",
+      "source": "Mods/new-horizons/Images/NH_perk_painweaver.json",
+      "size": 409,
+      "sha256": "2f5593f871a73df246ad8aab1cc61e2ec600c8402d92198645ecf3f202026413",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; thorns/strands disappear32; disabled dark; redthread spindle metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_painweaver.png",
+      "source": "Mods/new-horizons/Images/NH_perk_painweaver.png",
+      "size": 4153,
+      "sha256": "993ebf9ef5d3872cd75b2070e73a4ca00ebc6dbdd02a1127afab41a6a8361210",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; thorns/strands disappear32; disabled dark; redthread spindle metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_painweaver_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_painweaver_32.png",
+      "size": 2339,
+      "sha256": "a3996db8de26e28402ab7e1114c594a3dd59f453bc448f1c28b0bba8b914042a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; thorns/strands disappear32; disabled dark; redthread spindle metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_painweaver_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_painweaver_disabled.png",
+      "size": 3976,
+      "sha256": "48a0384c88b68149b2e7bf848fbad2dcf773fbbb953039d7f88ee1ed52857633",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; thorns/strands disappear32; disabled dark; redthread spindle metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_painweaver_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_painweaver_highlighted.png",
+      "size": 4890,
+      "sha256": "432c4d4d2322479bc78efb78ef945686274fbf50dab2d442ddf85243f19e0333",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; thorns/strands disappear32; disabled dark; redthread spindle metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_painweaver_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_painweaver_normal.png",
+      "size": 4741,
+      "sha256": "f0f4336557ffa4df2dbbe0102e22b861a9f79c418de673b5a57636b56c2b980a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; thorns/strands disappear32; disabled dark; redthread spindle metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_painweaver_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_painweaver_pressed.png",
+      "size": 4493,
+      "sha256": "b5b138a67f88bbfc03e3d73e41ac96c3fc8a3dcfac563ccbfe2d39e6ac57d638",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; thorns/strands disappear32; disabled dark; redthread spindle metaphor",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_point_blank_shot.json",
+      "source": "Mods/new-horizons/Images/NH_perk_point_blank_shot.json",
+      "size": 433,
+      "sha256": "b383f03b0fb02dceeded49d25a3ff5cf9a3578a84176ce63d046b87620fd9e1c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; near-horizontal target distinct from diagonal Crossfire; tiny fletching merges32; adjacency legality remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_point_blank_shot.png",
+      "source": "Mods/new-horizons/Images/NH_perk_point_blank_shot.png",
+      "size": 4492,
+      "sha256": "08b50d26d337963f48fe6075472d49b9af4a968634815eb23cd7d3ef720c5aff",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; near-horizontal target distinct from diagonal Crossfire; tiny fletching merges32; adjacency legality remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_point_blank_shot_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_point_blank_shot_32.png",
+      "size": 2498,
+      "sha256": "fb2eca15647194b09702b0b9925f9be055d3ec050ae764d3ba133b6826e7a440",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; near-horizontal target distinct from diagonal Crossfire; tiny fletching merges32; adjacency legality remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_point_blank_shot_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_point_blank_shot_disabled.png",
+      "size": 4405,
+      "sha256": "ccebcaa9992b69e6707a909896aa19766e721bf09e612c6d236b10ced800cfed",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; near-horizontal target distinct from diagonal Crossfire; tiny fletching merges32; adjacency legality remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_point_blank_shot_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_point_blank_shot_highlighted.png",
+      "size": 5227,
+      "sha256": "9bcee949cca79a95b4faef933c14589344afff5c6f6ca838c4255d603cdb718b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; near-horizontal target distinct from diagonal Crossfire; tiny fletching merges32; adjacency legality remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_point_blank_shot_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_point_blank_shot_normal.png",
+      "size": 5097,
+      "sha256": "73b743818179504c7d27f3383f77f2fa130f8d275834fa9edd6664dc1a0c2fb0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; near-horizontal target distinct from diagonal Crossfire; tiny fletching merges32; adjacency legality remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_point_blank_shot_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_point_blank_shot_pressed.png",
+      "size": 4867,
+      "sha256": "ba146789ff4202653a8a610a889fbae311da84ab3ba1babdccaf016cfb1b45ac",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; near-horizontal target distinct from diagonal Crossfire; tiny fletching merges32; adjacency legality remains tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pre_emptive_strike.json",
+      "source": "Mods/new-horizons/Images/NH_perk_pre_emptive_strike.json",
+      "size": 441,
+      "sha256": "0cefceb805ca76a3a8ddfba50163c41c18bc91a3bbe65b7ec8bb96ff53875d4b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finger/rivet detail merges32; no extra normal retaliation implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pre_emptive_strike.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pre_emptive_strike.png",
+      "size": 4387,
+      "sha256": "22449783c63d4338800dd10574a603b2ea622fde0da09f507fa99643693c104c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finger/rivet detail merges32; no extra normal retaliation implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pre_emptive_strike_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pre_emptive_strike_32.png",
+      "size": 2433,
+      "sha256": "0ef7d6accdde604617ba2e7869d15056cc80a3c56bf5f4ffab0cdd2372c5c939",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finger/rivet detail merges32; no extra normal retaliation implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pre_emptive_strike_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pre_emptive_strike_disabled.png",
+      "size": 4244,
+      "sha256": "2ae47a69a72896df019c5ba13ab765ab5da15741ccba421c4e45a014192b1cb3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finger/rivet detail merges32; no extra normal retaliation implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pre_emptive_strike_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pre_emptive_strike_highlighted.png",
+      "size": 5073,
+      "sha256": "239c05969715e6b57b5fc3a2065b61d47fc7bd941190ed09b9e0e60015f7fa50",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finger/rivet detail merges32; no extra normal retaliation implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pre_emptive_strike_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pre_emptive_strike_normal.png",
+      "size": 4941,
+      "sha256": "93899875bb8ede2fc0e8a67f4bea1a5a8edb56cb8ec0e76113ffb2351a73627d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finger/rivet detail merges32; no extra normal retaliation implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pre_emptive_strike_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pre_emptive_strike_pressed.png",
+      "size": 4684,
+      "sha256": "8576a85adb8b5424b2761b43ee65e2b5901ac07574a5f5926bc3d531d0ea1ede",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; finger/rivet detail merges32; no extra normal retaliation implied",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pursuit_march.json",
+      "source": "Mods/new-horizons/Images/NH_perk_pursuit_march.json",
+      "size": 421,
+      "sha256": "b64a3eaaa301ddd6738977e08c7bba41d3e8e479394aaba45a71694694881f6f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; straps/leaves merge32; disabled weakcontrast but boot/laurel identifiable; exact recovery and once-day rule remain text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pursuit_march.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pursuit_march.png",
+      "size": 4361,
+      "sha256": "7d242d6f230071613b1e4de6d12427087de7f3fc034e54a66af091d23e08004c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; straps/leaves merge32; disabled weakcontrast but boot/laurel identifiable; exact recovery and once-day rule remain text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pursuit_march_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pursuit_march_32.png",
+      "size": 2444,
+      "sha256": "53b863d87cc34a7771a153584ec9d6e0f90f61406c0bf64f7e9c99d4106f07e0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; straps/leaves merge32; disabled weakcontrast but boot/laurel identifiable; exact recovery and once-day rule remain text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pursuit_march_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pursuit_march_disabled.png",
+      "size": 4337,
+      "sha256": "5b6dd9f1c56e9b1a1fd060283463fb857c57b1768fa6a8ccc3a1b325cc3fa6f3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; straps/leaves merge32; disabled weakcontrast but boot/laurel identifiable; exact recovery and once-day rule remain text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pursuit_march_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pursuit_march_highlighted.png",
+      "size": 5076,
+      "sha256": "851ceb32a2e17e50c570386593194cef48b72bf061250ef8cf1667f5c1882096",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; straps/leaves merge32; disabled weakcontrast but boot/laurel identifiable; exact recovery and once-day rule remain text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pursuit_march_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pursuit_march_normal.png",
+      "size": 4941,
+      "sha256": "ba7bcc059520a5b670f75fca50091558681263eee9af1b7263d63446bbb0963a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; straps/leaves merge32; disabled weakcontrast but boot/laurel identifiable; exact recovery and once-day rule remain text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_pursuit_march_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_pursuit_march_pressed.png",
+      "size": 4714,
+      "sha256": "7031961c9362f5c661e8717b29e85fa581238b8dbeab515e4eacd81d5c00ed6c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; straps/leaves merge32; disabled weakcontrast but boot/laurel identifiable; exact recovery and once-day rule remain text",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_redeployment.json",
+      "source": "Mods/new-horizons/Images/NH_perk_redeployment.json",
+      "size": 417,
+      "sha256": "d4f35a58157dabc5ce9127e78a51da72f7885bc352d38d3ccb77f6bca21fb53d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; knight/recess readable32; secondary map/candle clutter/crop; not new action/activation",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_redeployment.png",
+      "source": "Mods/new-horizons/Images/NH_perk_redeployment.png",
+      "size": 4573,
+      "sha256": "7fcea4ca0d4d98326aa204c6f4fa6fbeaa7d3b52a189139917d3abb5733fb0a9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; knight/recess readable32; secondary map/candle clutter/crop; not new action/activation",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_redeployment_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_redeployment_32.png",
+      "size": 2556,
+      "sha256": "5a436598fc456a84d58dff5370f0b186908836811886cfed04a67f9f85e7d7bd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; knight/recess readable32; secondary map/candle clutter/crop; not new action/activation",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_redeployment_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_redeployment_disabled.png",
+      "size": 4623,
+      "sha256": "b70aede01be02dc28dead572fdfe0fa2c7a614c911052c04dac688f2809b8e9e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; knight/recess readable32; secondary map/candle clutter/crop; not new action/activation",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_redeployment_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_redeployment_highlighted.png",
+      "size": 5300,
+      "sha256": "b693cd7d6cfcf08b50e1c4fac1af1e342edd93190dc0e4866e2904f8be11f8b9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; knight/recess readable32; secondary map/candle clutter/crop; not new action/activation",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_redeployment_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_redeployment_normal.png",
+      "size": 5201,
+      "sha256": "9e4689d1704b9092e75ed4ee94c2ad336a9a66848aa1dc3c93c9332b05e2a50e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; knight/recess readable32; secondary map/candle clutter/crop; not new action/activation",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_redeployment_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_redeployment_pressed.png",
+      "size": 4966,
+      "sha256": "8b8d6aa2a3f60814998707a54c4c3d3734a5753f17407c971981d73fe2d1fa1c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; knight/recess readable32; secondary map/candle clutter/crop; not new action/activation",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_reinforcement_drill.json",
+      "source": "Mods/new-horizons/Images/NH_perk_reinforcement_drill.json",
+      "size": 445,
+      "sha256": "4b58b8b2500c41d51f8dd41e59e0fa1924127486e164c7d6ea42e3902f10bb54",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; rear detail merges32; disabled weak; front silver marker remains; three figures metaphor not numerical recruits/tier restriction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_reinforcement_drill.png",
+      "source": "Mods/new-horizons/Images/NH_perk_reinforcement_drill.png",
+      "size": 4546,
+      "sha256": "2a7550dc06441942e082c783859e26f56f958ae8a639a5b01dba70ea22ebfe79",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; rear detail merges32; disabled weak; front silver marker remains; three figures metaphor not numerical recruits/tier restriction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_reinforcement_drill_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_reinforcement_drill_32.png",
+      "size": 2534,
+      "sha256": "c1e0b902f699b4d87dea7c54efc3e1f18d9db9a9e1dc9313638f015e575a9039",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; rear detail merges32; disabled weak; front silver marker remains; three figures metaphor not numerical recruits/tier restriction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_reinforcement_drill_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_reinforcement_drill_disabled.png",
+      "size": 4522,
+      "sha256": "f0f306756184249fef4eec66781c9737d34d9c0c5ec4b7bbef62d6ead05078f9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; rear detail merges32; disabled weak; front silver marker remains; three figures metaphor not numerical recruits/tier restriction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_reinforcement_drill_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_reinforcement_drill_highlighted.png",
+      "size": 5267,
+      "sha256": "ed8fe91b25ebc12951db7ab109cd9ed06df8ebabc8a35ac7f2ffc023bea53e9c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; rear detail merges32; disabled weak; front silver marker remains; three figures metaphor not numerical recruits/tier restriction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_reinforcement_drill_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_reinforcement_drill_normal.png",
+      "size": 5151,
+      "sha256": "00c6a94de8105431c3f93a4fe2b650332e95f98a819e69c612a8185562549c88",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; rear detail merges32; disabled weak; front silver marker remains; three figures metaphor not numerical recruits/tier restriction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_reinforcement_drill_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_reinforcement_drill_pressed.png",
+      "size": 4916,
+      "sha256": "1d0df291f75d743209a9cbeec68651747de14d41e166699ff994ad543a197bc1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; rear detail merges32; disabled weak; front silver marker remains; three figures metaphor not numerical recruits/tier restriction",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_retributionist.json",
+      "source": "Mods/new-horizons/Images/NH_perk_retributionist.json",
+      "size": 425,
+      "sha256": "a22707fd038eabd78bab708dd19ca4187cf5fbf60181770b0e70a0c1d1ee98b9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; weak fine-line subject; scales chains/pans faint32/disabled; centralpost/blade survive; qualified draft not Final",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_retributionist.png",
+      "source": "Mods/new-horizons/Images/NH_perk_retributionist.png",
+      "size": 4074,
+      "sha256": "24c4584fd9b95f967a24d71bd871d521b9ee7ec739493ca37999c9d41322b18a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; weak fine-line subject; scales chains/pans faint32/disabled; centralpost/blade survive; qualified draft not Final",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_retributionist_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_retributionist_32.png",
+      "size": 2288,
+      "sha256": "8f3faf9839b2ec3572b53b108ced980c3d2874eee202c5b375eb752d7e957a0e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; weak fine-line subject; scales chains/pans faint32/disabled; centralpost/blade survive; qualified draft not Final",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_retributionist_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_retributionist_disabled.png",
+      "size": 3975,
+      "sha256": "7788988c1eaf4a2bf8becbf73fafbe4c418d5bfcbf2d14fafa3f7dc1090b7b55",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; weak fine-line subject; scales chains/pans faint32/disabled; centralpost/blade survive; qualified draft not Final",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_retributionist_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_retributionist_highlighted.png",
+      "size": 4747,
+      "sha256": "8bad62bac65c5a0ddc577ca45e3305c1e4855b94c4ae2f11249889bc51b85b1c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; weak fine-line subject; scales chains/pans faint32/disabled; centralpost/blade survive; qualified draft not Final",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_retributionist_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_retributionist_normal.png",
+      "size": 4616,
+      "sha256": "c36137fc8c347c4974187ca125a74f07fb2ebe23411b419a78332f5fd8ef4628",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; weak fine-line subject; scales chains/pans faint32/disabled; centralpost/blade survive; qualified draft not Final",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_retributionist_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_retributionist_pressed.png",
+      "size": 4353,
+      "sha256": "a10c1115353926fde4e1cdf1ae37529459ee4002cbd81b0c3d48bfab74b71d97",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; weak fine-line subject; scales chains/pans faint32/disabled; centralpost/blade survive; qualified draft not Final",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_shadow_magic_plaguebearer.json",
+      "source": "Mods/new-horizons/Images/NH_perk_shadow_magic_plaguebearer.json",
+      "size": 469,
+      "sha256": "e0b4c643ee2804d2e7587633e6a97811c926d69ae7b4833035da2f24f4983cc6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; corrected v2 ONLY; hollow decay clearer; disabled dark; fine spores merge32; pod/nut ambiguity remains; not unmistakable plague32",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_shadow_magic_plaguebearer.png",
+      "source": "Mods/new-horizons/Images/NH_perk_shadow_magic_plaguebearer.png",
+      "size": 4803,
+      "sha256": "b6a82ef862a61eaf97a0974d1459c84c60d639c4216808fdcc278d1d4231f9b3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; corrected v2 ONLY; hollow decay clearer; disabled dark; fine spores merge32; pod/nut ambiguity remains; not unmistakable plague32",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_shadow_magic_plaguebearer_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_shadow_magic_plaguebearer_32.png",
+      "size": 2576,
+      "sha256": "6911d633119ecdb9f30e47c708a1cbe4e5b4fed89ba4ac64cbefb43aa6dd50ee",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; corrected v2 ONLY; hollow decay clearer; disabled dark; fine spores merge32; pod/nut ambiguity remains; not unmistakable plague32",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_shadow_magic_plaguebearer_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_shadow_magic_plaguebearer_disabled.png",
+      "size": 4789,
+      "sha256": "a568fd6e4cda8d18ad7c4b933202d7601ba19da8b956b7d3dd96ef121cf85631",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; corrected v2 ONLY; hollow decay clearer; disabled dark; fine spores merge32; pod/nut ambiguity remains; not unmistakable plague32",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_shadow_magic_plaguebearer_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_shadow_magic_plaguebearer_highlighted.png",
+      "size": 5550,
+      "sha256": "96e9ae66b3c851ea48aa261223e83aaa52f5192259cfa07c364c47b7bc609eb3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; corrected v2 ONLY; hollow decay clearer; disabled dark; fine spores merge32; pod/nut ambiguity remains; not unmistakable plague32",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_shadow_magic_plaguebearer_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_shadow_magic_plaguebearer_normal.png",
+      "size": 5412,
+      "sha256": "4f948dad4345b79a050897bc76bcce7250704cb551a98587fa8df358a1a78516",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; corrected v2 ONLY; hollow decay clearer; disabled dark; fine spores merge32; pod/nut ambiguity remains; not unmistakable plague32",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_shadow_magic_plaguebearer_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_shadow_magic_plaguebearer_pressed.png",
+      "size": 5193,
+      "sha256": "d689e06baa9e165d8abb6eba94eb5c74f7fbb88efae818ead3b4f714daffe336",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; corrected v2 ONLY; hollow decay clearer; disabled dark; fine spores merge32; pod/nut ambiguity remains; not unmistakable plague32",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_skirmisher.json",
+      "source": "Mods/new-horizons/Images/NH_perk_skirmisher.json",
+      "size": 409,
+      "sha256": "978bd5f70ba49decf077253d5a335f4efe45530b94f8f403eb81de2a89477ad8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny string/buckle merge32; disabled loses blue cloth; exact half-Speed and damage rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_skirmisher.png",
+      "source": "Mods/new-horizons/Images/NH_perk_skirmisher.png",
+      "size": 4453,
+      "sha256": "943ce6c082e49ac5cd488b745561277b6fef99710891e755b524f0e84996e837",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny string/buckle merge32; disabled loses blue cloth; exact half-Speed and damage rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_skirmisher_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_skirmisher_32.png",
+      "size": 2464,
+      "sha256": "77d42e5787499be39c1a1d3a0d3be2c60ecfe548bf014392a3c04346aeea4689",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny string/buckle merge32; disabled loses blue cloth; exact half-Speed and damage rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_skirmisher_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_skirmisher_disabled.png",
+      "size": 4357,
+      "sha256": "278980ab7cf977944dd96c7acf6cfd0961100e0579131ca94b10324f75a57f98",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny string/buckle merge32; disabled loses blue cloth; exact half-Speed and damage rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_skirmisher_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_skirmisher_highlighted.png",
+      "size": 5189,
+      "sha256": "30f9287b6a3ed24b1d330c4010bd69e9870deb3537515801701ef6b0896fc8cb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny string/buckle merge32; disabled loses blue cloth; exact half-Speed and damage rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_skirmisher_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_skirmisher_normal.png",
+      "size": 5072,
+      "sha256": "ca9b73e41c4d429535488e70cb7bd581a01d25cfb2d1150ecbe65dad23dc3f4e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny string/buckle merge32; disabled loses blue cloth; exact half-Speed and damage rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_skirmisher_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_skirmisher_pressed.png",
+      "size": 4823,
+      "sha256": "340a16a39fbb83d94922b8a18ed2c76d75b4aa43248559cd136bc02ff3edc2ba",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; tiny string/buckle merge32; disabled loses blue cloth; exact half-Speed and damage rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_suppression.json",
+      "source": "Mods/new-horizons/Images/NH_perk_suppression.json",
+      "size": 413,
+      "sha256": "fc068492725b780899a4ace2b8b84041b38634e1bbd8decf4dabbe3185b22ea3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; pinning metaphor does not promise immobilization; disabled low contrast but identifiable",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_suppression.png",
+      "source": "Mods/new-horizons/Images/NH_perk_suppression.png",
+      "size": 4267,
+      "sha256": "ece51b0c62270525a9748d9a7066ca1165f43c9a1b0eb95db69febc8973e9507",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; pinning metaphor does not promise immobilization; disabled low contrast but identifiable",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_suppression_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_suppression_32.png",
+      "size": 2331,
+      "sha256": "f37280eb0645f64040739c7775a6644d61228af7e4472a0381e34c676e0c54ba",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; pinning metaphor does not promise immobilization; disabled low contrast but identifiable",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_suppression_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_suppression_disabled.png",
+      "size": 4132,
+      "sha256": "a04c70c3346b91de06c40fcee84b2776b5e7c79d0d312ace8317a9c743299476",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; pinning metaphor does not promise immobilization; disabled low contrast but identifiable",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_suppression_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_suppression_highlighted.png",
+      "size": 5007,
+      "sha256": "391d04dc8e1dc43baf43ae2faf0856a35d1053f611cb98535e143051b7755416",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; pinning metaphor does not promise immobilization; disabled low contrast but identifiable",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_suppression_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_suppression_normal.png",
+      "size": 4842,
+      "sha256": "1858b804da902e8e3840ae138570d85602aef4ca53e72e088927e3f96fe7574e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; pinning metaphor does not promise immobilization; disabled low contrast but identifiable",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_suppression_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_suppression_pressed.png",
+      "size": 4622,
+      "sha256": "33739142d26a89e3eb809cc8b658629b1d5820306aaec2687f6e92b935bb81f1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; pinning metaphor does not promise immobilization; disabled low contrast but identifiable",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_target_caller.json",
+      "source": "Mods/new-horizons/Images/NH_perk_target_caller.json",
+      "size": 421,
+      "sha256": "2064ce6eed3d64c2293f322b86ea1c2342ffa1ddd1b08ebc175613d5b1c4da27",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; target center detail merges32; disabled loses material/color contrast; exact Focus Fire damage and obstacle rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_target_caller.png",
+      "source": "Mods/new-horizons/Images/NH_perk_target_caller.png",
+      "size": 4600,
+      "sha256": "ca3652f23ce38236018343edaa485d56844972198a3e1b9e7ab82e32c6ded435",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; target center detail merges32; disabled loses material/color contrast; exact Focus Fire damage and obstacle rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_target_caller_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_target_caller_32.png",
+      "size": 2574,
+      "sha256": "710f72d46edbc2c382adc4ec5895bfa2e8e6211a030670b3db29610a6f373b27",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; target center detail merges32; disabled loses material/color contrast; exact Focus Fire damage and obstacle rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_target_caller_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_target_caller_disabled.png",
+      "size": 4578,
+      "sha256": "7133f3948de41dd56c8d7c5d96a632962918ed2cf130cc04d5b2029d54153f7c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; target center detail merges32; disabled loses material/color contrast; exact Focus Fire damage and obstacle rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_target_caller_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_target_caller_highlighted.png",
+      "size": 5348,
+      "sha256": "2e7b4d3ef306fb675c42e42bc5e1c674e481a97dcb6cf7e0f9fd1fa28111a2b9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; target center detail merges32; disabled loses material/color contrast; exact Focus Fire damage and obstacle rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_target_caller_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_target_caller_normal.png",
+      "size": 5216,
+      "sha256": "690b1b43124bcbdf6ea61fc3d6520e9d08c205226caa2516a64fa9061ed32e00",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; target center detail merges32; disabled loses material/color contrast; exact Focus Fire damage and obstacle rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_target_caller_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_target_caller_pressed.png",
+      "size": 4969,
+      "sha256": "f2e4834b50823a68dbae8a43cabe717a5f0cef23355d2b120b25fec1e368e25b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; target center detail merges32; disabled loses material/color contrast; exact Focus Fire damage and obstacle rules remain tooltip-dependent",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_verdant_warden.json",
+      "source": "Mods/new-horizons/Images/NH_perk_verdant_warden.json",
+      "size": 425,
+      "sha256": "4a6051fef78aa22fe3384f747ab5f836273d1c471977a8bdd8657468d69afb3f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; foliage/bark merge32; roots/trunk/stone clear; figurine not creature sprite acceptance",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_verdant_warden.png",
+      "source": "Mods/new-horizons/Images/NH_perk_verdant_warden.png",
+      "size": 4460,
+      "sha256": "718e5b9919299e53116b989eeb219387748657ec6ff250c8ca4b250745244526",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; foliage/bark merge32; roots/trunk/stone clear; figurine not creature sprite acceptance",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_verdant_warden_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_verdant_warden_32.png",
+      "size": 2495,
+      "sha256": "0f1f7f04f2e5b7306639c7bd1c5a3bcc354e6c4f8021a4e4a8e4cd4801798a88",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; foliage/bark merge32; roots/trunk/stone clear; figurine not creature sprite acceptance",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_verdant_warden_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_verdant_warden_disabled.png",
+      "size": 4440,
+      "sha256": "cae2d92d4e89a14f357e6805fe361571f14bb335499541a13a43c2bc0accaa6a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; foliage/bark merge32; roots/trunk/stone clear; figurine not creature sprite acceptance",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_verdant_warden_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_verdant_warden_highlighted.png",
+      "size": 5194,
+      "sha256": "3af7ad89c853caabb6a37444a3110e4481fb16e47950e14b366e05885f68b7ec",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; foliage/bark merge32; roots/trunk/stone clear; figurine not creature sprite acceptance",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_verdant_warden_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_verdant_warden_normal.png",
+      "size": 5054,
+      "sha256": "31784ec104f248e6e7834395be798e921d7374ad0610d488738f1df9578974d2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; foliage/bark merge32; roots/trunk/stone clear; figurine not creature sprite acceptance",
+      "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/NH_perk_verdant_warden_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_verdant_warden_pressed.png",
+      "size": 4824,
+      "sha256": "32dc6cd47c4f07b8764909431d7284585808852ed70755466d0bf11ed0c7ae30",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
+      "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; foliage/bark merge32; roots/trunk/stone clear; figurine not creature sprite acceptance",
+      "approval": "Provisional; no Final approval"
     }
   ],
   "requiredFamilies": [
@@ -43654,7 +45824,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2286,
+    "builtin-skills-perks-orders-and-ui": 2503,
     "cabir-and-master": 214,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,
