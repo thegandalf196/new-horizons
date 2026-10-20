@@ -4,12 +4,13 @@
  */
 #pragma once
 
+#include <iterator>
 #include <map>
 #include <string>
+#include <utility>
 
-inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
-{
-	static const std::map<std::string, std::string> icons = {
+// Constant binding data; the runtime map remains lazy below.
+inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindings[] = {
 		{"new-horizons:bulwarkOfTheMire.bogAmbush", "NH_perk_bog_ambush"},
 		{"new-horizons:bulwarkOfTheMire.deepBulwark", "NH_perk_deep_bulwark"},
 		{"new-horizons:bulwarkOfTheMire.immovable", "NH_perk_immovable"},
@@ -234,7 +235,12 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:warcasting.tacticalWeaving", "NH_perk_tactical_weaving"},
 		{"new-horizons:warcasting.battleMeditation", "NH_perk_battle_meditation"},
 		{"new-horizons:shroudOfMalassa.backstab", "NH_perk_backstab"},
-	};
+};
+
+inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
+{
+	static const std::map<std::string, std::string> icons(
+		std::begin(newHorizonsPerkIconBindings), std::end(newHorizonsPerkIconBindings));
 	static const std::string fallback = "NH_perk_neutral";
 	const auto found = icons.find(perkId);
 	return found == icons.end() ? fallback : found->second;

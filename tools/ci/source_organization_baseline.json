@@ -21387,15 +21387,6 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "1c0d3beffbb3660d5dabbc1234d31036807445ce5190139802d4ca8982fd6eb7"
     },
-    "client/windows/NewHorizonsPerkIcons.h::inline const std::string & newHorizonsPerkIcon(const std::string & perkId)#1": {
-      "kind": "legacy",
-      "lines": 232,
-      "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 232 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f218538fe9682276c92af89e26d47749dd3984ab1f8cca0cbbbaa6b0a02c1487"
-    },
     "client/windows/QuickRecruitmentWindow.cpp::void QuickRecruitmentWindow::setCreaturePurchaseCards()#1": {
       "kind": "legacy",
       "lines": 93,
