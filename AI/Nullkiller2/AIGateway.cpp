@@ -579,6 +579,7 @@ void AIGateway::showInfoDialog(EInfoWindowMode type, const std::string & text, c
 void AIGateway::requestRealized(PackageApplied * pa)
 {
 	LOG_TRACE(logAi);
+	adventureSpellExecution.requestRealized(pa);
 	// Muster produces two ordered client packets (stock, then weekly markers).
 	// Only release the AI-side pending guard after those authoritative markers
 	// are visible, so a same-turn BuyArmy action cannot race the request.
@@ -2634,6 +2635,7 @@ void AIGateway::answerQuery(const QueryID queryID, const int selection) const
 
 void AIGateway::requestSent(const CPackForServer * pack, int requestID)
 {
+	adventureSpellExecution.requestSent(pack, requestID);
 	//BNLOG("I have sent request of type %s", typeid(*pack).name());
 	if(auto reply = dynamic_cast<const QueryReply *>(pack))
 	{

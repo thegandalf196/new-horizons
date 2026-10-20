@@ -167,6 +167,18 @@ prove that a node is unreferenced or safe to recycle; allocation-limit warnings
 alone justify neither increasing capacity nor discarding route alternatives.
 Pair pool tests with saturated route-reconstruction controls.
 
+Special actions on future-day chain nodes must wait for that day; earlier legal
+current-day approach nodes may still execute. Preserve the future route rather
+than spending its spell opportunity prematurely.
+
+Adventure spell goals check general casting admission even without a target tile.
+`AdventureSpellExecution` pairs the outgoing request with its authoritative
+`PackageApplied` result by player, type and request ID, including replies arriving
+before `requestSent`. Its scoped receipt is not saved, and no receipt lock spans
+submission or waiting. Request acceptance is not universal effect completion:
+legacy cancellation can return an accepted request. Keep effect-specific
+postconditions, including Summon Boat materialization and Town Portal movement.
+
 ### Same-day travel landing
 
 `newHorizonsTravel::planRequiredLanding` is the shared deterministic producer

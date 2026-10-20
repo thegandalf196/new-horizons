@@ -41,6 +41,8 @@
 #include "lib/spells/ISpellMechanics.h"
 #include "lib/spells/adventure/SummonBoatEffect.h"
 #include "lib/networkPacks/PacksForServer.h"
+#include "lib/networkPacks/PacksForClient.h"
+#include "lib/ScopeGuard.h"
 #include "lib/serializer/CMemorySerializer.h"
 #include "mock/GameHandlerTestServer.h"
 #include "server/CGameHandler.h"
@@ -49,11 +51,25 @@ namespace
 {
 const PlayerColor PLAYER(0);
 
+class SummonBoatLoopbackServer final : public GameHandlerTestServer
+{
+public:
+	using GameHandlerTestServer::GameHandlerTestServer;
+	NK2AI::AIGateway * gateway = nullptr;
+	void sendPack(CPackForClient & pack, GameConnectionID) override
+	{
+		if(gateway)
+			if(auto * reply = dynamic_cast<PackageApplied *>(&pack))
+				gateway->requestRealized(reply);
+	}
+};
+
 class SummonBoatLoopbackClient final : public IClient
 {
 	CGameHandler & handler;
 	int lastRequestId = 0;
 public:
+	NK2AI::AIGateway * gateway = nullptr;
 	int requests = 0;
 	int embarkRequests = 0;
 	int3 lastTarget = int3(-1, -1, -1);
@@ -83,6 +99,8 @@ public:
 		auto serverRequest = CMemorySerializer::deepCopy(request);
 		serverRequest->player = player;
 		serverRequest->requestID = ++lastRequestId;
+		if(gateway)
+			gateway->requestSent(serverRequest.get(), lastRequestId);
 		handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, *serverRequest);
 		return lastRequestId;
 	}
@@ -126,7 +144,7 @@ protected:
 	static constexpr int MOVEMENT_POINTS_BELOW_ONE_STEP = 1;
 
 	bool useNewHorizonsRules = true;
-	std::unique_ptr<GameHandlerTestServer> summonServer;
+	std::unique_ptr<SummonBoatLoopbackServer> summonServer;
 	std::unique_ptr<CGameHandler> summonHandler;
 
 	void TearDown() override
@@ -153,7 +171,16 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		}
 		else
-			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		{
+			// Capture the same coherent pre-feature world as the legacy cast fixture.
+			JsonNode plainRules;
+			plainRules.Struct();
+			plainRules.setOverrideFlag(true);
+			for(const auto setting : {EGameSettings::MAGIC_NEW_HORIZONS, EGameSettings::HEROES_NEW_HORIZONS,
+				EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, EGameSettings::HEROES_NEW_HORIZONS_MASTERIES,
+				EGameSettings::HEROES_NEW_HORIZONS_PERKS})
+				loaded->overrideGameSetting(setting, plainRules);
+		}
 	}
 
 	CGHeroInstance * startHeroWithSpells(bool newHorizons, std::vector<SpellID> heroSpells,
@@ -320,7 +347,7 @@ protected:
 	void prepareSummonBoatServer(int successChance, bool successfulRoll)
 	{
 		gameState()->actingPlayers.insert(PLAYER);
-		summonServer = std::make_unique<GameHandlerTestServer>(gameState(), PLAYER);
+		summonServer = std::make_unique<SummonBoatLoopbackServer>(gameState(), PLAYER);
 		summonHandler = std::make_unique<CGameHandler>(*summonServer, gameState());
 		// minstd's first outputs for small adjacent seeds are clustered. Spread
 		// candidates over its seed range, then seed the real server identically.
@@ -378,6 +405,11 @@ protected:
 		ASSERT_NO_FATAL_FAILURE(prepareSummonBoatServer(chance, successfulRoll));
 		SummonBoatLoopbackClient client(*summonHandler);
 		auto gateway = makeGateway(makeCallback(PLAYER, &client));
+		client.gateway = summonServer->gateway = gateway.get();
+		const auto clearGateway = vstd::makeScopeGuard([&]()
+		{
+			client.gateway = summonServer->gateway = nullptr;
+		});
 		const auto paths = pathsTo(*gateway, hero, target);
 		const auto action = summonActionTo(paths, target);
 		ASSERT_NE(action, nullptr) << "ordinary School-0 hero must receive an exact destination-bound route";

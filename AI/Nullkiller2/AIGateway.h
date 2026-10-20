@@ -19,6 +19,7 @@
 #include "../../lib/mapObjects/MiscObjects.h"
 #include "Pathfinding/AIPathfinder.h"
 #include "Engine/Nullkiller.h"
+#include "Helpers/AdventureSpellExecution.h"
 
 #include <map>
 #include <mutex>
@@ -75,6 +76,7 @@ public:
 	std::vector<ObjectInstanceID> teleportChannelProbingList; //list of teleport channel exits that not visible and need to be (re-)explored
 
 	AIStatus status;
+	AdventureSpellExecution adventureSpellExecution;
 	std::string battlename;
 	/// Same instance as in cbc. cbc is used to keep CAdventureAI simpler without unnecessary class requirements
 	std::shared_ptr<CCallback> cc;

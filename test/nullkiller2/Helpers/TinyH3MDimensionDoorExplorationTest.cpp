@@ -26,6 +26,8 @@
 #include "lib/logging/CLogger.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/spells/CSpell.h"
+#include "lib/spells/ISpellMechanics.h"
+#include "lib/spells/Problem.h"
 
 namespace
 {
@@ -127,10 +129,33 @@ TEST_F(TinyH3MDimensionDoorExplorationTest, GeneratedDimensionDoorHeroCastsForHi
 	NK2AI::ExplorationHelper helper(hero, gateway->nullkiller.get());
 
 	EXPECT_TRUE(helper.canUseDimensionDoor());
+	// Current Dimension Door explores from a known landing, never into an
+	// unseen destination. Keep its surrounding terrain hidden for exploration.
+	EXPECT_FALSE(helper.considerDimensionDoorExplorationTargets());
+	const int3 landing = hero->visitablePos() + int3(6, 0, 0);
+	setTileVisible(PLAYER, landing, true);
+	ASSERT_TRUE(gateway->cc->isVisible(landing));
+	NK2AI::HeroMap<NK2AI::HeroRole> heroes;
+	heroes.emplace(hero, NK2AI::MAIN);
+	NK2AI::PathfinderSettings settings;
+	settings.useHeroChain = false;
+	gateway->nullkiller->pathfinder->updatePaths(heroes, settings);
+	ASSERT_NE(gateway->nullkiller->pathfinder->getStorage(), nullptr);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(DIMENSION_DOOR.toSpell()->getAdventureMechanics().canBeCastAt(
+		problem, gateway->cc.get(), hero, landing));
 	ASSERT_TRUE(helper.considerDimensionDoorExplorationTargets());
 	const auto goals = helper.makeComposition()->decompose(gateway->nullkiller.get());
 
 	EXPECT_TRUE(containsDimensionDoorCast(goals));
+	for(const auto & goal : goals)
+	{
+		if(const auto * cast = dynamic_cast<const NK2AI::Goals::AdventureSpellCast *>(goal.get());
+			cast && cast->getSpell()->getId() == DIMENSION_DOOR)
+		{
+			EXPECT_EQ(cast->tile, landing);
+		}
+	}
 }
 
 TEST_F(TinyH3MDimensionDoorExplorationTest, GeneratedHeroWithoutDimensionDoorDoesNotCast)

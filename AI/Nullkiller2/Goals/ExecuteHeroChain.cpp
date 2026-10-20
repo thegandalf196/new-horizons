@@ -229,6 +229,14 @@ void ExecuteHeroChain::accept(AIGateway * aiGw)
 
 				if(node->specialAction)
 				{
+					// Earlier current-day approach nodes have already executed. The
+					// future action and its dependent nodes must wait for their day.
+					if(node->turns > 0)
+					{
+						aiGw->nullkiller->lockHero(hero, HeroLockedReason::HERO_CHAIN);
+						blockedIndexes.insert(node->parentIndex);
+						continue;
+					}
 					if(node->actionIsBlocked)
 					{
 						throw cannotFulfillGoalException("Path is nondeterministic.");

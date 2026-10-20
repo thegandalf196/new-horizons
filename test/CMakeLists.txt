@@ -899,6 +899,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Goals/ExploreNeighbourTileTest.cpp
 		nullkiller2/ArmyFormationLeadershipTest.cpp
 		nullkiller2/ArmyExchangeExecutionTest.cpp
+		nullkiller2/AdventureSpellExecutionTest.cpp
 		nullkiller2/EspritDeCorpsArmySelectionTest.cpp
 		nullkiller2/Helpers/ExplorationHelperTest.cpp
 		nullkiller2/Helpers/NewHorizonsMusterTest.cpp

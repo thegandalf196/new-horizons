@@ -65,26 +65,32 @@ void AdventureSpellCast::accept(AIGateway * aiGw)
 	if (hero->isGarrisoned())
 		aiGw->swapGarrisonHero(hero->getVisitedTown());
 
+	spells::detail::ProblemImpl problem;
+	if(!spell->getAdventureMechanics().canBeCast(problem, aiGw->cc.get(), hero))
+		throw cannotFulfillGoalException("Can not cast " + spell->getNameTranslated());
 	if(aiGw->cc->isInTheMap(tile))
 	{
-		spells::detail::ProblemImpl problem;
 		if(!spell->getAdventureMechanics().canBeCastAt(problem, aiGw->cc.get(), hero, tile))
 			throw cannotFulfillGoalException("Can not cast " + spell->getNameTranslated() + " at " + tile.toString());
 	}
 
+	const auto heroID = hero->id;
 	const auto wait = aiGw->cc->waitTillRealize;
-	auto restoreWait = vstd::makeScopeGuard([callback = aiGw->cc, wait]()
+	const auto restoreWait = vstd::makeScopeGuard([callback = aiGw->cc, wait]()
 	{
 		callback->waitTillRealize = wait;
 	});
-	aiGw->cc->waitTillRealize = true;
-	aiGw->cc->castSpell(hero, spellID, tile);
-	aiGw->waitTillFree(); // Adventure spells may trigger visits and level-up queries.
+	aiGw->cc->waitTillRealize = true; // Keep realization through Town Portal's follow-up visit.
+	if(!aiGw->adventureSpellExecution.castAndWait(*aiGw, hero, spellID, tile))
+		throw cannotFulfillGoalException("Adventure spell request was not accepted.");
 
 	if(town && townPortalEffect)
 	{
 		// visit town
-		aiGw->moveHeroToTile(town->visitablePos(), HeroPtr(hero, aiGw->cc.get()));
+		const auto * currentHero = aiGw->cc->getHero(heroID);
+		if(!currentHero)
+			throw cannotFulfillGoalException("Adventure spell caster is no longer available.");
+		aiGw->moveHeroToTile(town->visitablePos(), HeroPtr(currentHero, aiGw->cc.get()));
 	}
 
 	throw goalFulfilledException(sptr(*this));
