@@ -8,6 +8,7 @@
 #include "StdInc.h"
 
 #include "BattleTestFixture.h"
+#include "VerdantPrisonScriptErrorCapture.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/battle/CUnitState.h"
@@ -495,15 +496,40 @@ TEST_F(NewHorizonsVerdantPrisonTest, MagicMirrorRedirectsTheAnchorToTheCasterSid
 	const auto enemyRing = ringAt(enemy->getPosition());
 	std::vector<BattleHex> reflectedRing = ringAt(friendly->getPosition(), spells::Mode::MAGIC_MIRROR);
 	const auto secondReflectedRing = ringAt(ordinaryGuard->getPosition(), spells::Mode::MAGIC_MIRROR);
+	EXPECT_FALSE(reflectedRing.empty()) << "The Pikeman redirect must have a legal ring";
+	EXPECT_FALSE(secondReflectedRing.empty()) << "The ordinary Guard redirect must have a legal ring";
 	reflectedRing.insert(reflectedRing.end(), secondReflectedRing.begin(), secondReflectedRing.end());
 	std::ranges::sort(reflectedRing, {}, &BattleHex::toInt);
 	reflectedRing.erase(std::unique(reflectedRing.begin(), reflectedRing.end()), reflectedRing.end());
 	ASSERT_FALSE(reflectedRing.empty());
 	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_MIRROR, BonusSource::OTHER, 100, BonusSourceID()));
-	ASSERT_TRUE(castAtUnit(enemy));
+	{
+		VerdantPrisonScriptErrorCapture scriptErrors;
+		ASSERT_TRUE(castAtUnit(enemy)) << scriptErrors.errors();
+		EXPECT_TRUE(scriptErrors.errors().empty()) << scriptErrors.errors();
+	}
+	const auto casts = server.castsOf(verdantPrisonSpell());
+	ASSERT_EQ(casts.size(), 1) << "An accepted cast must emit its authoritative announcement";
+	const auto & announcement = casts.front().announcement;
+	SCOPED_TRACE(::testing::Message() << "tile=" << announcement.tile.toInt()
+		<< "; reflected=" << ::testing::PrintToString(announcement.reflectedCres)
+		<< "; resisted=" << ::testing::PrintToString(announcement.resistedCres)
+		<< "; affected=" << ::testing::PrintToString(announcement.affectedCres)
+		<< "; summon packet rounds=" << ::testing::PrintToString(server.unitAdditionRounds));
+	ASSERT_FALSE(announcement.counterspellNegated);
+	ASSERT_TRUE(announcement.reflectedCres.contains(enemy->unitId()));
+	const auto * redirected = battle()->battleGetUnitByPos(announcement.tile, true);
+	ASSERT_NE(redirected, nullptr);
+	ASSERT_TRUE(redirected == friendly || redirected == ordinaryGuard);
+	ASSERT_FALSE(announcement.resistedCres.contains(redirected->unitId()))
+		<< "The controlled redirect recipient unexpectedly resisted";
 	const auto summoned = temporaryGuards();
-	ASSERT_FALSE(summoned.empty());
+	ASSERT_FALSE(summoned.empty())
+		<< "Redirect recipient id=" << redirected->unitId()
+		<< ", hex=" << announcement.tile.toInt()
+		<< ", affected recipients=" << announcement.affectedCres.size()
+		<< ", added-unit announcements=" << server.unitAdditionRounds.size();
 	EXPECT_TRUE(std::ranges::all_of(summoned, [](const CStack * unit)
 	{
 		return unit->unitSide() == BattleSide::ATTACKER && unit->isSummoned() && unit->natureSummoned;

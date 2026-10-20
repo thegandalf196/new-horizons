@@ -512,6 +512,7 @@ set(test_SRCS
 		server/battles/NewHorizonsVengefulVinesTest.cpp
 		server/battles/NewHorizonsSummonTrollsTest.cpp
 		server/battles/NewHorizonsVerdantPrisonTest.cpp
+		server/battles/SummonedCreatureHealthTerrainTest.cpp
 		server/battles/NewHorizonsHydrasVitalityTest.cpp
 		server/battles/NewHorizonsChaosBlinkTest.cpp
 		server/battles/NewHorizonsCommandEfficiencyTest.cpp
@@ -693,6 +694,7 @@ set(test_HEADERS
 		spells/targetConditions/TargetConditionItemFixture.h
 
 		server/battles/BattleTestFixture.h
+		server/battles/VerdantPrisonScriptErrorCapture.h
 		server/battles/FrozenAttackStageFixture.h
 		server/battles/HeroCommandFixture.h
 		server/battles/NewHorizonsElementalTerrainFixture.h

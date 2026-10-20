@@ -21258,15 +21258,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact1271-line endpoint only, no future growth credit. Further affected-area growth requires renewed independent organization review or meaningful cohesive boundary work; preserve source/header registration and existing target behavior.",
+      "deferral": "Exact1272-line health-only endpoint, no future growth credit. Further affected-area registry growth requires renewed independent organization review or coherent component registration extraction with a shrinking parent; preserve registration order and target behavior rather than introducing a cosmetic forwarding list.",
       "kind": "exception",
-      "lines": 1271,
+      "lines": 1272,
       "owner": "engine_engineer",
-      "rationale": "Exact1269 to1271-line mechanical registry renewal: paired GameSaveReader.cpp/.h entries in the existing serializer/library target. No new policy or handwritten function. Flat paired registration is coherent; moving two names into a forwarding fragment would be cosmetic.",
-      "review": "IR-STAGE13-INTEGRATION-THREE-RATCHETS-20261017",
-      "review_scope": "exact-stage13-shared-decode-and-opt-in-tool-three-ratchets-only-no-runtime-or-future-growth",
+      "rationale": "Exact1271 to1272-line mechanical registry renewal: register SummonedCreatureHealth.cpp once beside ISpellMechanics.cpp for the separately reviewed summon-health extraction and terrain-input repair. Mirror source extraction is not included in this endpoint. All other source/header lists, target/link/options/backend policy remain byte-identical; zero CMake function or macro definitions. Existing serializer registrations remain intact. This is a new exact source-registration review, not inheritance of the combined1273-line endpoint or runtime acceptance.",
+      "review": "IR-SUMMON-HEALTH-ONLY-SOURCE-REGISTRY-V1",
+      "review_scope": "exact-health-only-source-registration-no-mirror-policy-runtime-or-future-growth",
       "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "sha256": "6b7be1e06613bccd29121ca30855fc356c479cdeae6e407ff2359c6229232599"
+      "sha256": "64a00ae0b6dbcb0cb0f095564117a6ce0608d4685ddb566639851757ab6d47ca"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -23802,12 +23802,13 @@
     },
     "lib/spells/ISpellMechanics.cpp": {
       "kind": "legacy",
-      "lines": 2349,
+      "lines": 2320,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 2349 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4f208cc5688ce0cb89df85b6f866e358440cbe549fb9b4588b7f7ee95104cfd8"
+      "rationale": "Exact2349 to2320-line shrinking legacy ratchet: move one byte-identical27-line summon max-health callable plus its descriptor include into focused SummonedCreatureHealth.cpp. All other192 callable bodies unchanged. The new48-line component owns selected-source terrain capture and hypothetical summon HP evaluation; its later29-line corrected method is separately source-reviewed. This remaining oversized file is not structurally or semantically certified; no numerical waiver or future growth allowance.",
+      "review": "IR-SUMMON-HEALTH-PRODUCER-EXTRACTION-RATCHET-V1",
+      "review_scope": "exact-cohesive-summon-health-extraction-shrinking-legacy-freeze-only-no-runtime-or-growth",
+      "sha256": "c45d2d49a918370e835c144acf5f8776c20e5d78cca477a55b0de7d67547c030",
+      "deferral": "Gameplay owner retains exact2320-line decreasing freeze. Further summon-health work stays in its focused component; before unrelated substantive growth here, extract a coherent affected mechanics responsibility with exact state/RNG and saved-rule characterization, then lower this baseline. Do not restore the previous2349-line allowance or relocate the entire constructor/method collection."
     },
     "lib/spells/ISpellMechanics.cpp::spells::BaseMechanics::BaseMechanics(const IBattleCast * event): owner(event->getSpell()), mode(event->getMode()), forceMassive(event->isForceMassive()), cb(event->getBattle())#1": {
       "kind": "legacy",

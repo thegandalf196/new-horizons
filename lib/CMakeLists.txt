@@ -471,6 +471,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsCrossSchoolFormula.cpp
 	spells/ExternalCaster.cpp
 	spells/ISpellMechanics.cpp
+	spells/SummonedCreatureHealth.cpp
 	spells/ObstacleCasterProxy.cpp
 	spells/Problem.cpp
 	spells/ProxyCaster.cpp

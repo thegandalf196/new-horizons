@@ -38,7 +38,6 @@
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../CStack.h"
 #include "../CCreatureHandler.h"
-#include "../mapObjects/army/CStackBasicDescriptor.h"
 #include "../mapObjects/CGTownInstance.h"
 #include "../bonuses/Bonus.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -1000,34 +999,6 @@ const Creature * Mechanics::getElementalConvergenceCreature() const
 		return nullptr;
 	const auto creature = newHorizonsElementalTerrain::primaryElemental(*battleInfo);
 	return creature ? creature->toCreature() : nullptr;
-}
-
-int32_t Mechanics::getSummonedCreatureMaxHealth(const Creature * creature, const bool natureSummoned) const
-{
-	if(!creature)
-		return 1;
-
-	const auto * engineCreature = dynamic_cast<const CCreature *>(creature);
-	if(!engineCreature)
-		return std::max(1, static_cast<int32_t>(creature->getMaxHealth()));
-
-	CStackBasicDescriptor descriptor(engineCreature, 1);
-	CStack hypothetical(&descriptor, getCasterColor(), -1, getCasterSide(), SlotID::SUMMONED_SLOT_PLACEHOLDER, true);
-	hypothetical.summoned = true;
-	hypothetical.natureSummoned = natureSummoned;
-
-	// A hypothetical node inherits the same source bonuses and applies the same
-	// limiter pipeline as a real CStack. Source-only links avoid registering a
-	// live child or invalidating caches on the hero/creature graph.
-	const auto * battleState = battle() ? battle()->getBattle() : nullptr;
-	const auto * army = battleState ? battleState->getSideArmy(getCasterSide()) : nullptr;
-	if(army)
-		hypothetical.attachToSource(*army);
-	else if(const auto * hero = getHeroCaster())
-		hypothetical.attachToSource(*hero);
-	hypothetical.attachToSource(*engineCreature);
-
-	return std::max(1, hypothetical.valOfBonuses(BonusType::STACK_HEALTH));
 }
 
 BaseMechanics::BaseMechanics(const IBattleCast * event):
