@@ -227,7 +227,7 @@ public:
 	void validateDefaultCreatureLineSerialization(bool supported) const;
 	void validateNewHorizonsStartingBookSerialization(bool supported) const;
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
-	void validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const;
+	void validateNewHorizonsTravelDayEndSerialization(bool waterWalkSupported, bool flySupported) const;
 	void validateCanonicalSpellClausesSerialization(bool supported) const;
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
@@ -401,7 +401,8 @@ public:
 		if(h.saving)
 			validateNewHorizonsRemainingStartSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 		if(h.saving)
-			validateNewHorizonsWaterWalkDayEndSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+			validateNewHorizonsTravelDayEndSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
 		if(h.saving)
 			validateNewHorizonsCoroniusHolyWrathSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
 		if(h.saving)

@@ -69,6 +69,7 @@ set(Nullkiller2_SRCS
 		Helpers/ArmyFormation.cpp
 		Helpers/ArmyExchangeExecution.cpp
 		Helpers/NewHorizonsMuster.cpp
+		Helpers/NewHorizonsTravelLanding.cpp
 		Helpers/ExplorationHelper.cpp
 		AIGateway.cpp
 )
@@ -153,6 +154,7 @@ set(Nullkiller2_HEADERS
 		Helpers/ArmyFormation.h
 		Helpers/ArmyExchangeExecution.h
 		Helpers/NewHorizonsMuster.h
+		Helpers/NewHorizonsTravelLanding.h
 		Helpers/ExplorationHelper.h
 		AIGateway.h
 )

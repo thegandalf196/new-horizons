@@ -50,6 +50,7 @@
 #include "Helpers/ArmyFormation.h"
 #include "Helpers/ArmyExchangeExecution.h"
 #include "Helpers/NewHorizonsMuster.h"
+#include "Helpers/NewHorizonsTravelLanding.h"
 
 #include <algorithm>
 #include <array>
@@ -2551,6 +2552,7 @@ void AIGateway::endTurn()
 	if(!status.haveTurn())
 	{
 		logAi->error("Not having turn at the end of turn???");
+		return;
 	}
 
 	logAi->debug("Resources at the end of turn: %s", cc->getResourceAmount().toString());
@@ -2561,11 +2563,8 @@ void AIGateway::endTurn()
 		return;
 	}
 
-	do
-	{
-		cc->endTurn();
-	}
-	while(status.haveTurn()); //for some reasons, our request may fail -> stop requesting end of turn only after we've received a confirmation that it's over
+	if(!tryEndTurnWithLegalLanding(*this))
+		return;
 
 	logGlobal->info("Player %d (%s) ended turn", playerID, playerID.toString());
 }

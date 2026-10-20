@@ -179,9 +179,9 @@ public:
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
-	void validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const
+	void validateNewHorizonsTravelDayEndSerialization(bool waterWalkSupported, bool flySupported) const
 	{
-		newHorizonsMagic::validateWaterWalkDayEndSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
+		newHorizonsMagic::validateTravelDayEndSerialization(getAllOverrides()["magic"]["newHorizons"], waterWalkSupported, flySupported);
 	}
 
 	void validateCanonicalSpellClausesSerialization(bool supported) const
@@ -229,7 +229,9 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 			newHorizonsProtectedMobility::validateRulesSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
-			newHorizonsMagic::validateWaterWalkDayEndSerialization(overrides["magic"]["newHorizons"], h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+			newHorizonsMagic::validateTravelDayEndSerialization(overrides["magic"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
 			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(overrides["heroes"]["newHorizonsCapabilities"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
 			newHorizonsHeroes::validateGlyphsOfFearSerialization(overrides["heroes"]["newHorizonsCapabilities"],
@@ -292,7 +294,9 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
 			newHorizonsProtectedMobility::validateRulesSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
-			newHorizonsMagic::validateWaterWalkDayEndSerialization(overrides["magic"]["newHorizons"], h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+			newHorizonsMagic::validateTravelDayEndSerialization(overrides["magic"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
 			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(overrides["heroes"]["newHorizonsCapabilities"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
 			newHorizonsHeroes::validateGlyphsOfFearSerialization(overrides["heroes"]["newHorizonsCapabilities"],

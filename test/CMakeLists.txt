@@ -207,6 +207,7 @@ set(test_SRCS
 		hero/NewHorizonsLogisticsMasteryStateTest.cpp
 		hero/NewHorizonsLogisticsLevelWireTest.cpp
 		hero/NewHorizonsHeroRulesTest.cpp
+		hero/NewHorizonsSkillSpecialtyQueryTest.cpp
 		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroBiographyTest.cpp
 		hero/NewHorizonsHeroRulesFixture.h
@@ -890,6 +891,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Engine/TaskFailureTest.cpp
 		nullkiller2/Engine/NewHorizonsLogisticsMovementAITest.cpp
 		nullkiller2/Engine/NewHorizonsLighthouseDepartureAITest.cpp
+		nullkiller2/NewHorizonsTravelLandingAITest.cpp
 		nullkiller2/Engine/NewHorizonsForcedMarchAITest.cpp
 		nullkiller2/Goals/BuyArmyTest.cpp
 		nullkiller2/NewHorizonsPortalRecruitmentTest.cpp

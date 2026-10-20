@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "NewHorizonsHeroRules.h"
 #include "HeroStartingProjection.h"
+#include "NewHorizonsRuleValidation.h"
+#include "NewHorizonsSkillSpecialtyRules.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../CCreatureHandler.h"
 #include "../../CSkillHandler.h"
@@ -39,33 +41,11 @@ namespace newHorizonsHeroes
 {
 namespace
 {
-void require(bool valid, const std::string & detail)
-{
-	if(!valid)
-		throw std::runtime_error("Invalid New Horizons hero rules: " + detail);
-}
-
-bool integer(const JsonNode & value, int minimum, int maximum)
-{
-	return value.isNumber() && std::isfinite(value.Float()) && value.Float() >= minimum
-		&& value.Float() <= maximum && std::floor(value.Float()) == value.Float();
-}
-
-int resolve(const std::string & type, const std::string & key)
-{
-	const auto separator = key.find(':');
-	require(separator != std::string::npos && separator > 0 && separator + 1 < key.size(), "scoped " + type);
-	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), type, key, true);
-	require(id.has_value() && *id >= 0, "unknown " + type + " " + key);
-	return *id;
-}
-
-void fields(const JsonNode & node, std::initializer_list<std::string_view> allowed)
-{
-	require(node.isStruct(), "object required");
-	for(const auto & [key, value] : node.Struct())
-		require(std::find(allowed.begin(), allowed.end(), key) != allowed.end(), "unknown field " + key);
-}
+using detail::fields;
+using detail::integer;
+using detail::require;
+using detail::resolve;
+using detail::validateOptionalSkillSpecialtyRules;
 
 void validateCommon(const JsonNode & rules)
 {
@@ -197,44 +177,6 @@ void validateOptionalNonDamageSpellSpecialtyRules(const JsonNode & rules)
 	const auto found = rules.Struct().find("nonDamageSpellSpecialties");
 	if(found != rules.Struct().end())
 		validateNonDamageSpellSpecialtyRules(found->second);
-}
-
-void validateSkillSpecialtyRules(const JsonNode & rules)
-{
-	fields(rules, {"version", "coreBonusPercent", "skills", "navigationStartReplacements"});
-	if(rules.Struct().contains("navigationStartReplacements"))
-		require(rules["navigationStartReplacements"].isBool(), "navigation starting replacement Boolean");
-	require(integer(rules["version"], 1, 1), "skill specialty version");
-	require(integer(rules["coreBonusPercent"], 20, 20), "skill specialty core bonus percentage");
-	const auto & skills = rules["skills"];
-	require(skills.isVector() && !skills.Vector().empty() && skills.Vector().size() <= 5,
-		"version 1 skill specialties must list one to five supported core skills");
-	std::set<int> seen;
-	for(const auto & skill : skills.Vector())
-	{
-		require(skill.isString()
-			&& (skill.String() == "core:logistics" || skill.String() == "core:armorer"
-				|| skill.String() == "core:offence" || skill.String() == "core:archery"
-				|| skill.String() == "core:estates"),
-			"version 1 skill specialties support only core:logistics, core:armorer, core:offence, core:archery and core:estates");
-		const int skillId = resolve(SecondarySkill::entityType(), skill.String());
-		require(skillId == SecondarySkill::LOGISTICS || skillId == SecondarySkill::ARMORER
-			|| skillId == SecondarySkill::OFFENCE || skillId == SecondarySkill::ARCHERY
-			|| skillId == SecondarySkill::ESTATES,
-			"unknown version 1 skill specialty");
-		require(seen.insert(skillId).second, "duplicate version 1 skill specialty");
-	}
-	if(rules.Struct().contains("navigationStartReplacements") && rules["navigationStartReplacements"].Bool())
-		require(seen.contains(SecondarySkill::LOGISTICS), "Navigation successor requires the Logistics core specialty");
-}
-
-void validateOptionalSkillSpecialtyRules(const JsonNode & rules)
-{
-	if(!rules.isStruct())
-		return;
-	const auto found = rules.Struct().find("skillSpecialties");
-	if(found != rules.Struct().end())
-		validateSkillSpecialtyRules(found->second);
 }
 
 void validateDruidSpecialtyRules(const JsonNode & rules)
@@ -1020,16 +962,6 @@ void validateCoroniusHolyWrathSerialization(const JsonNode & rules, bool support
 		throw std::runtime_error("Coronius Holy Wrath replacement rules require the new save format");
 }
 
-bool usesNavigationStartReplacement(const JsonNode & rules)
-{
-	if(!usesRules(rules) || !rules["skillSpecialties"].isStruct())
-		return false;
-	const auto & specialties = rules["skillSpecialties"];
-	validateSkillSpecialtyRules(specialties);
-	return specialties.Struct().contains("navigationStartReplacements")
-		&& specialties["navigationStartReplacements"].Bool();
-}
-
 void validateDefaultCreatureLineSerialization(const JsonNode & rules, bool supported)
 {
 	if(!rules.isStruct())
@@ -1158,22 +1090,6 @@ std::optional<NonDamageSpellSpecialtyRules> nonDamageSpellSpecialtyRules(const J
 	result.componentPercent = static_cast<int>(found->second["componentPercent"].Integer());
 	for(const auto & spell : found->second["spells"].Vector())
 		result.spells.emplace_back(resolve("spell", spell.String()));
-	return result;
-}
-
-std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules)
-{
-	if(!usesRules(resolvedRules) || !resolvedRules.isStruct())
-		return std::nullopt;
-	const auto found = resolvedRules.Struct().find("skillSpecialties");
-	if(found == resolvedRules.Struct().end())
-		return std::nullopt;
-	validateSkillSpecialtyRules(found->second);
-	SkillSpecialtyRules result;
-	result.version = static_cast<int>(found->second["version"].Integer());
-	result.coreBonusPercent = static_cast<int>(found->second["coreBonusPercent"].Integer());
-	for(const auto & skill : found->second["skills"].Vector())
-		result.skills.emplace_back(resolve(SecondarySkill::entityType(), skill.String()));
 	return result;
 }
 

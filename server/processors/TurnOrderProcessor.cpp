@@ -376,9 +376,9 @@ bool TurnOrderProcessor::onPlayerEndsTurn(PlayerColor which)
 
 	// Check every owned hero, not merely the last hero that updated the timer.
 	// Absent captured policy stays permissive for historical stranded saves.
-	if(!areOwnedWaterWalkHeroesDayEndLegal(gameHandler->gameInfo(), which))
+	if(!areOwnedTravelHeroesDayEndLegal(gameHandler->gameInfo(), which))
 	{
-		gameHandler->complain("Water Walk heroes must finish the day on land or in a boat!");
+		gameHandler->complain("Traveling heroes must finish the day at a legal landing or in a boat!");
 		return false;
 	}
 

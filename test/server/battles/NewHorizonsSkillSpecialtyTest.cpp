@@ -55,6 +55,16 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		auto heroRules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(syntheticNavigationStart)
+		{
+			// Synthetic specialty arithmetic scenario, not Kyrre's canonical
+			// Scouting start or a second Basic selection under strict progression.
+			auto & selections = heroRules["startingSkills"]["startingDevelopmentProfiles"]["core:kyrre"]["startingPerks"].Vector();
+			ASSERT_EQ(selections.size(), 1u);
+			ASSERT_EQ(selections.front()["skill"].String(), LOGISTICS_SKILL);
+			ASSERT_EQ(selections.front()["perk"].String(), "new-horizons:logistics.scouting");
+			selections.front()["perk"].String() = NAVIGATION_PERK;
+		}
 		if(!includeSpecialtyRules)
 		{
 			heroRules.Struct().erase("skillSpecialties");
@@ -133,27 +143,8 @@ protected:
 			}));
 	}
 
-	void grantNavigationBasic(CGHeroInstance * hero)
-	{
-		const auto rankLookup = [hero](const std::string & skillId)
-		{
-			return hero->getPerkSkillRank(skillId);
-		};
-		for(uint64_t seed = 0; seed < 4096; ++seed)
-		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
-			for(size_t index = 0; index < offer.size(); ++index)
-			{
-				if(offer[index].selection.perkId != NAVIGATION_PERK)
-					continue;
-				handler->levelUpHero(hero, offer, index, seed, false);
-				return;
-			}
-		}
-		throw std::runtime_error("Could not legally offer Basic Navigation in skill specialty fixture");
-	}
-
 	bool includeSpecialtyRules = true;
+	bool syntheticNavigationStart = false;
 	CGHeroInstance * kyrre = nullptr;
 	CGHeroInstance * gunnar = nullptr;
 	CGHeroInstance * dessa = nullptr;
@@ -250,10 +241,20 @@ TEST_F(NewHorizonsSkillSpecialtyTest, ScalesOnlyCoreLogisticsForTheThreeLegacySp
 
 TEST_F(NewHorizonsSkillSpecialtyTest, NavigationAddsItsFullSeaBonusBesideSpecializedCoreLogistics)
 {
+	syntheticNavigationStart = true;
 	startGame();
 	setRank(kyrre, MasteryLevel::BASIC);
-	grantNavigationBasic(kyrre);
-	EXPECT_TRUE(kyrre->hasActivePerk(LOGISTICS_SKILL, NAVIGATION_PERK));
+	const auto & selected = kyrre->getPerkState().selected;
+	ASSERT_EQ(kyrre->getPerkSkillRank(LOGISTICS_SKILL), MasteryLevel::BASIC);
+	ASSERT_EQ(std::count_if(selected.begin(), selected.end(), [](const auto & selection)
+	{
+		return selection.skillId == LOGISTICS_SKILL;
+	}), 1);
+	ASSERT_TRUE(std::any_of(selected.begin(), selected.end(), [](const auto & selection)
+	{
+		return selection.skillId == LOGISTICS_SKILL && selection.perkId == NAVIGATION_PERK;
+	}));
+	ASSERT_TRUE(kyrre->hasActivePerk(LOGISTICS_SKILL, NAVIGATION_PERK));
 	EXPECT_EQ(movementLimit(kyrre, false), 224);
 	EXPECT_EQ(movementLimit(kyrre, true), 274);
 }

@@ -10,6 +10,908 @@
   },
   "coverage_pending": {},
   "manual_functions": {
+    "AI/Nullkiller2/AIGateway.cpp": {
+      "functions": [
+        {
+          "symbol": "NK2AI::bool isOrdinaryWarMachine(ArtifactID artifact)#1",
+          "start": 75,
+          "end": 87
+        },
+        {
+          "symbol": "NK2AI::bool isUsefulWarMachineForHero(const CGHeroInstance & hero, ArtifactID artifact)#1",
+          "start": 89,
+          "end": 107
+        },
+        {
+          "symbol": "NK2AI::std::optional<ArtifactPosition> findFreeWarMachineSlot( const CGHeroInstance & hero, const CArtifact & artifact, const std::set<ArtifactPosition> & reservedSlots)#1",
+          "start": 109,
+          "end": 127
+        },
+        {
+          "symbol": "NK2AI::std::optional<std::vector<SlotID>> chooseSkeletonTransformerSelection( const CArmedInstance & army, const IArmyManager & armyManager, const JsonNode & savedRules)#1",
+          "start": 129,
+          "end": 225
+        },
+        {
+          "symbol": "NK2AI::chooseSkeletonTransformerSelection( const CArmedInstance & army, const IArmyManager & armyManager, const JsonNode & savedRules)::[&armyManager](const auto & stacks) -> std::optional<uint64_t>#1",
+          "start": 151,
+          "end": 172
+        },
+        {
+          "symbol": "NK2AI::AIGateway::AIGateway() :status(this)#1",
+          "start": 228,
+          "end": 236
+        },
+        {
+          "symbol": "NK2AI::AIGateway::~AIGateway()#1",
+          "start": 238,
+          "end": 243
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::availableCreaturesChanged(const CGDwelling * town)#1",
+          "start": 245,
+          "end": 250
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroMoved(const TryMoveHero & details, bool verbose)#1",
+          "start": 252,
+          "end": 293
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroInGarrisonChange(const CGTownInstance * town)#1",
+          "start": 295,
+          "end": 298
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::centerView(int3 pos, int focusTime)#1",
+          "start": 300,
+          "end": 303
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::artifactMoved(const ArtifactLocation & src, const ArtifactLocation & dst)#1",
+          "start": 305,
+          "end": 308
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::artifactAssembled(const ArtifactLocation & al)#1",
+          "start": 310,
+          "end": 313
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showTavernWindow(const CGObjectInstance * object, const CGHeroInstance * visitor, QueryID queryID)#1",
+          "start": 315,
+          "end": 320
+        },
+        {
+          "symbol": "NK2AI::AIGateway::showTavernWindow(const CGObjectInstance * object, const CGHeroInstance * visitor, QueryID queryID)::[this, queryID]()#1",
+          "start": 319,
+          "end": 319
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showThievesGuildWindow(const CGObjectInstance * obj)#1",
+          "start": 322,
+          "end": 325
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::playerBlocked(int reason, bool start)#1",
+          "start": 327,
+          "end": 335
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showPuzzleMap()#1",
+          "start": 337,
+          "end": 340
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showShipyardDialog(const IShipyard * obj)#1",
+          "start": 342,
+          "end": 345
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::gameOver(PlayerColor player, const EVictoryLossCheckResult & victoryLossCheckResult)#1",
+          "start": 347,
+          "end": 369
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::artifactPut(const ArtifactLocation & al)#1",
+          "start": 371,
+          "end": 374
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::artifactRemoved(const ArtifactLocation & al)#1",
+          "start": 376,
+          "end": 379
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::artifactDisassembled(const ArtifactLocation & al)#1",
+          "start": 381,
+          "end": 384
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroVisit(const CGHeroInstance * visitor, const CGObjectInstance * visitedObj, bool start)#1",
+          "start": 386,
+          "end": 397
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::availableArtifactsChanged(const CGBlackMarket * bm)#1",
+          "start": 399,
+          "end": 402
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroVisitsTown(const CGHeroInstance * hero, const CGTownInstance * town)#1",
+          "start": 404,
+          "end": 407
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::tileHidden(const FowTilesType & pos)#1",
+          "start": 409,
+          "end": 414
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::tileRevealed(const FowTilesType & pos)#1",
+          "start": 416,
+          "end": 428
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroExchangeStarted(ObjectInstanceID hero1, ObjectInstanceID hero2, QueryID query)#1",
+          "start": 430,
+          "end": 471
+        },
+        {
+          "symbol": "NK2AI::AIGateway::heroExchangeStarted(ObjectInstanceID hero1, ObjectInstanceID hero2, QueryID query)::[this, firstHero, secondHero, query]()#1",
+          "start": 446,
+          "end": 469
+        },
+        {
+          "symbol": "NK2AI::AIGateway::heroExchangeStarted(ObjectInstanceID hero1, ObjectInstanceID hero2, QueryID query)::()::[this](const CGHeroInstance * h1, const CGHeroInstance * h2) -> void#1",
+          "start": 448,
+          "end": 452
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroExperienceChanged(const CGHeroInstance * hero, si64 val)#1",
+          "start": 473,
+          "end": 476
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroPrimarySkillChanged(const CGHeroInstance * hero, PrimarySkill which, si64 val)#1",
+          "start": 478,
+          "end": 481
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showRecruitmentDialog(const CGDwelling * dwelling, const CArmedInstance * dst, int level, QueryID queryID)#1",
+          "start": 483,
+          "end": 494
+        },
+        {
+          "symbol": "NK2AI::AIGateway::showRecruitmentDialog(const CGDwelling * dwelling, const CArmedInstance * dst, int level, QueryID queryID)::[this, dwelling, dst, queryID]()#1",
+          "start": 488,
+          "end": 493
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroMovePointsChanged(const CGHeroInstance * hero)#1",
+          "start": 496,
+          "end": 503
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::garrisonsChanged(ObjectInstanceID id1, ObjectInstanceID id2)#1",
+          "start": 505,
+          "end": 515
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::newObject(const CGObjectInstance * obj)#1",
+          "start": 517,
+          "end": 523
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::objectRemoved(const CGObjectInstance * obj, const PlayerColor & initiator)#1",
+          "start": 527,
+          "end": 551
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showHillFortWindow(const CGObjectInstance * object, const CGHeroInstance * visitor)#1",
+          "start": 553,
+          "end": 556
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::playerBonusChanged(const Bonus & bonus, bool gain)#1",
+          "start": 558,
+          "end": 561
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroCreated(const CGHeroInstance * h)#1",
+          "start": 563,
+          "end": 567
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::advmapSpellCast(const CGHeroInstance * caster, SpellID spellID)#1",
+          "start": 569,
+          "end": 572
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showInfoDialog(EInfoWindowMode type, const std::string & text, const std::vector<Component> & components, int soundID)#1",
+          "start": 574,
+          "end": 577
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::requestRealized(PackageApplied * pa)#1",
+          "start": 579,
+          "end": 600
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::receivedResource()#1",
+          "start": 602,
+          "end": 605
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showUniversityWindow(const IMarket * market, const CGHeroInstance * visitor, QueryID queryID)#1",
+          "start": 607,
+          "end": 613
+        },
+        {
+          "symbol": "NK2AI::AIGateway::showUniversityWindow(const IMarket * market, const CGHeroInstance * visitor, QueryID queryID)::[this, queryID]()#1",
+          "start": 612,
+          "end": 612
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroManaPointsChanged(const CGHeroInstance * hero)#1",
+          "start": 615,
+          "end": 618
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroSecondarySkillChanged(const CGHeroInstance * hero, int which, int val)#1",
+          "start": 620,
+          "end": 623
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::battleResultsApplied()#1",
+          "start": 625,
+          "end": 629
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::battleEnded()#1",
+          "start": 631,
+          "end": 636
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::beforeObjectPropertyChanged(const SetObjectProperty * sop)#1",
+          "start": 638,
+          "end": 641
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::objectPropertyChanged(const SetObjectProperty * sop)#1",
+          "start": 644,
+          "end": 670
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::buildChanged(const CGTownInstance * town, BuildingID buildingID, int what)#1",
+          "start": 672,
+          "end": 675
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroBonusChanged(const CGHeroInstance * hero, const Bonus & bonus, bool gain)#1",
+          "start": 677,
+          "end": 680
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showMarketWindow(const IMarket * market, const CGHeroInstance * visitor, QueryID queryID)#1",
+          "start": 682,
+          "end": 687
+        },
+        {
+          "symbol": "NK2AI::AIGateway::showMarketWindow(const IMarket * market, const CGHeroInstance * visitor, QueryID queryID)::[this, queryID]()#1",
+          "start": 686,
+          "end": 686
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showWorldViewEx(const std::vector<ObjectPosInfo> & objectPositions, bool showTerrain)#1",
+          "start": 689,
+          "end": 693
+        },
+        {
+          "symbol": "NK2AI::std::optional<BattleAction> AIGateway::makeSurrenderRetreatDecision(const BattleID & battleID, const BattleStateInfoForRetreat & battleState)#1",
+          "start": 695,
+          "end": 714
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::initGameInterface(std::shared_ptr<Environment> env, std::shared_ptr<CCallback> callback)#1",
+          "start": 717,
+          "end": 728
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::yourTurn(QueryID queryID)#1",
+          "start": 730,
+          "end": 746
+        },
+        {
+          "symbol": "NK2AI::AIGateway::yourTurn(QueryID queryID)::[this, queryID]()#1",
+          "start": 735,
+          "end": 735
+        },
+        {
+          "symbol": "NK2AI::AIGateway::yourTurn(QueryID queryID)::[this]()#1",
+          "start": 740,
+          "end": 745
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID)#1",
+          "start": 748,
+          "end": 763
+        },
+        {
+          "symbol": "NK2AI::AIGateway::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID)::[this, offer, queryID]()#1",
+          "start": 751,
+          "end": 762
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)#1",
+          "start": 765,
+          "end": 911
+        },
+        {
+          "symbol": "NK2AI::AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)::[this, heroPtr, skills, perks, queryID]()#1",
+          "start": 772,
+          "end": 910
+        },
+        {
+          "symbol": "NK2AI::AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)::()::[observedHero, &ownFactionSkill, &perks](size_t index)#1",
+          "start": 821,
+          "end": 828
+        },
+        {
+          "symbol": "NK2AI::AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)::()::[observedHero, &perks](size_t index)#1",
+          "start": 829,
+          "end": 843
+        },
+        {
+          "symbol": "NK2AI::AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)::()::[observedHero, &perks](size_t index)#2",
+          "start": 851,
+          "end": 876
+        },
+        {
+          "symbol": "NK2AI::AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)::()::[&](size_t index)#1",
+          "start": 879,
+          "end": 879
+        },
+        {
+          "symbol": "NK2AI::AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)::()::[&](size_t leftIndex, size_t rightIndex)#1",
+          "start": 887,
+          "end": 897
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::commanderGotLevel(const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID)#1",
+          "start": 913,
+          "end": 918
+        },
+        {
+          "symbol": "NK2AI::AIGateway::commanderGotLevel(const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID)::[this, queryID]()#1",
+          "start": 917,
+          "end": 917
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showBlockingDialog(const std::string & text, const std::vector<Component> & components, QueryID askID, const int soundID, bool selection, bool cancel, bool safeToAutoaccept)#1",
+          "start": 920,
+          "end": 1110
+        },
+        {
+          "symbol": "NK2AI::AIGateway::showBlockingDialog(const std::string & text, const std::vector<Component> & components, QueryID askID, const int soundID, bool selection, bool cancel, bool safeToAutoaccept)::[this, heroPtr, target, components, askID]()#1",
+          "start": 931,
+          "end": 1083
+        },
+        {
+          "symbol": "NK2AI::AIGateway::showBlockingDialog(const std::string & text, const std::vector<Component> & components, QueryID askID, const int soundID, bool selection, bool cancel, bool safeToAutoaccept)::[this, selection, components, heroPtr, askID]()#1",
+          "start": 1088,
+          "end": 1109
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showTeleportDialog(const CGHeroInstance * hero, TeleportChannelID channel, TTeleportExitsList exits, bool impassable, QueryID askID)#1",
+          "start": 1112,
+          "end": 1152
+        },
+        {
+          "symbol": "NK2AI::AIGateway::showTeleportDialog(const CGHeroInstance * hero, TeleportChannelID channel, TTeleportExitsList exits, bool impassable, QueryID askID)::[this, askID, chosenExit]()#1",
+          "start": 1148,
+          "end": 1151
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showGarrisonDialog(const CArmedInstance * up, const CGHeroInstance * down, bool removableUnits, QueryID queryID, const MetaString & customTitle)#1",
+          "start": 1154,
+          "end": 1172
+        },
+        {
+          "symbol": "NK2AI::AIGateway::showGarrisonDialog(const CArmedInstance * up, const CGHeroInstance * down, bool removableUnits, QueryID queryID, const MetaString & customTitle)::[this, up, down, removableUnits, queryID]()#1",
+          "start": 1163,
+          "end": 1171
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::showMapObjectSelectDialog(QueryID askID, const Component & icon, const MetaString & title, const MetaString & description, const std::vector<ObjectInstanceID> & objects)#1",
+          "start": 1174,
+          "end": 1178
+        },
+        {
+          "symbol": "NK2AI::AIGateway::showMapObjectSelectDialog(QueryID askID, const Component & icon, const MetaString & title, const MetaString & description, const std::vector<ObjectInstanceID> & objects)::[this, askID]()#1",
+          "start": 1177,
+          "end": 1177
+        },
+        {
+          "symbol": "NK2AI::bool AIGateway::makePossibleUpgrades(const CArmedInstance * obj)#1",
+          "start": 1180,
+          "end": 1233
+        },
+        {
+          "symbol": "NK2AI::AIGateway::makePossibleUpgrades(const CArmedInstance * obj)::[](const CreatureID & id)#1",
+          "start": 1209,
+          "end": 1212
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::makeTurn()#1",
+          "start": 1235,
+          "end": 1277
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::purchaseUsefulWarMachines( const CGTownInstance * onlyTown, const CGHeroInstance * onlyHero, std::optional<si64> availableGold)#1",
+          "start": 1279,
+          "end": 1368
+        },
+        {
+          "symbol": "NK2AI::AIGateway::purchaseUsefulWarMachines( const CGTownInstance * onlyTown, const CGHeroInstance * onlyHero, std::optional<si64> availableGold)::[](const WarMachineShopCandidate & left, const WarMachineShopCandidate & right)#1",
+          "start": 1327,
+          "end": 1332
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::performObjectInteraction(const CGObjectInstance * obj, HeroPtr heroPtr)#1",
+          "start": 1370,
+          "end": 1523
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::moveCreaturesToHero(const CGTownInstance * t)#1",
+          "start": 1525,
+          "end": 1532
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::prepareDemonicReserve(const CGTownInstance * town)#1",
+          "start": 1534,
+          "end": 1716
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[](CreatureID creature)#1",
+          "start": 1543,
+          "end": 1546
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](CreatureID creature)#1",
+          "start": 1547,
+          "end": 1551
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](const auto & slot)#1",
+          "start": 1553,
+          "end": 1554
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](const auto & entry)#1",
+          "start": 1555,
+          "end": 1556
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[](const CArmedInstance * army)#1",
+          "start": 1560,
+          "end": 1566
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](CreatureID creature, TQuantity count) -> std::optional<uint64_t>#1",
+          "start": 1567,
+          "end": 1575
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](const auto & other)#1",
+          "start": 1650,
+          "end": 1651
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&]()#1",
+          "start": 1669,
+          "end": 1669
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&]()#2",
+          "start": 1673,
+          "end": 1681
+        },
+        {
+          "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&]()#3",
+          "start": 1682,
+          "end": 1696
+        },
+        {
+          "symbol": "NK2AI::bool AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling) const#1",
+          "start": 1718,
+          "end": 1744
+        },
+        {
+          "symbol": "NK2AI::AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling) const::[currentWeek](const PendingMuster & pending)#1",
+          "start": 1735,
+          "end": 1738
+        },
+        {
+          "symbol": "NK2AI::AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling) const::[&](const PendingMuster & pending)#1",
+          "start": 1740,
+          "end": 1743
+        },
+        {
+          "symbol": "NK2AI::bool AIGateway::hasPendingMuster(const CGDwelling * dwelling) const#1",
+          "start": 1746,
+          "end": 1759
+        },
+        {
+          "symbol": "NK2AI::AIGateway::hasPendingMuster(const CGDwelling * dwelling) const::[&](const PendingMuster & pending)#1",
+          "start": 1755,
+          "end": 1758
+        },
+        {
+          "symbol": "NK2AI::bool AIGateway::reserveMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week, const int usedThisWeek, const int maximumUses)#1",
+          "start": 1761,
+          "end": 1781
+        },
+        {
+          "symbol": "NK2AI::AIGateway::reserveMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week, const int usedThisWeek, const int maximumUses)::[&](const PendingMuster & pending)#1",
+          "start": 1768,
+          "end": 1771
+        },
+        {
+          "symbol": "NK2AI::AIGateway::reserveMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week, const int usedThisWeek, const int maximumUses)::[&](const PendingMuster & pending)#2",
+          "start": 1772,
+          "end": 1775
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::releasePendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week)#1",
+          "start": 1783,
+          "end": 1793
+        },
+        {
+          "symbol": "NK2AI::AIGateway::releasePendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week)::[&](const PendingMuster & pending)#1",
+          "start": 1789,
+          "end": 1792
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::clearReplicatedMusters()#1",
+          "start": 1795,
+          "end": 1810
+        },
+        {
+          "symbol": "NK2AI::AIGateway::clearReplicatedMusters()::[&](const PendingMuster & pending)#1",
+          "start": 1800,
+          "end": 1809
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::tryMusterCreatures(const CGHeroInstance * hero, const CGTownInstance * town)#1",
+          "start": 1812,
+          "end": 1874
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::tryExternalMusterCreatures(const CGHeroInstance * hero, const CGDwelling * dwelling)#1",
+          "start": 1876,
+          "end": 1921
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::swapGarrisonHero(const CGTownInstance * town)#1",
+          "start": 1923,
+          "end": 1928
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const CArmedInstance * source)#1",
+          "start": 1930,
+          "end": 2037
+        },
+        {
+          "symbol": "NK2AI::AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const CArmedInstance * source)::[this](const CArmedInstance * sourceArmy, const CArmedInstance * destinationArmy, SlotID sourceSlot, SlotID destinationSlot)#1",
+          "start": 1952,
+          "end": 1983
+        },
+        {
+          "symbol": "NK2AI::const CGDwelling * AIGateway::getBestPortalRecruitmentDwelling( const CGTownInstance * town, const CCreatureSet * destination) const#1",
+          "start": 2039,
+          "end": 2105
+        },
+        {
+          "symbol": "NK2AI::* AIGateway::getBestPortalRecruitmentDwelling( const CGTownInstance * town, const CCreatureSet * destination) const::[&](const CGDwelling * dwelling)#1",
+          "start": 2055,
+          "end": 2065
+        },
+        {
+          "symbol": "NK2AI::* AIGateway::getBestPortalRecruitmentDwelling( const CGTownInstance * town, const CCreatureSet * destination) const::(const CGDwelling * dwelling)::[](const auto & row)#1",
+          "start": 2061,
+          "end": 2064
+        },
+        {
+          "symbol": "NK2AI::* AIGateway::getBestPortalRecruitmentDwelling( const CGTownInstance * town, const CCreatureSet * destination) const::[&](const CGDwelling * dwelling) -> ui64#1",
+          "start": 2067,
+          "end": 2082
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::selectPortalRecruitmentDwelling(const CGTownInstance * town, const CGDwelling * source)#1",
+          "start": 2107,
+          "end": 2122
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::recruitPortalCreatures(const CGTownInstance * town, const CArmedInstance * recruiter)#1",
+          "start": 2124,
+          "end": 2135
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter, ObjectInstanceID portalTownId)#1",
+          "start": 2137,
+          "end": 2211
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::battleStart(const BattleID & battleID, const CCreatureSet * army1, const CCreatureSet * army2, int3 tile, const CGHeroInstance * hero1, const CGHeroInstance * hero2, BattleSide side, bool replayAllowed)#1",
+          "start": 2213,
+          "end": 2220
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::battleEnd(const BattleID & battleID, const BattleResult * br, QueryID queryID)#1",
+          "start": 2222,
+          "end": 2242
+        },
+        {
+          "symbol": "NK2AI::AIGateway::battleEnd(const BattleID & battleID, const BattleResult * br, QueryID queryID)::[this, queryID]()#1",
+          "start": 2237,
+          "end": 2240
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::waitTillFree()#1",
+          "start": 2244,
+          "end": 2248
+        },
+        {
+          "symbol": "NK2AI::std::vector<const CGObjectInstance *> AIGateway::getFlaggedObjects() const#1",
+          "start": 2250,
+          "end": 2260
+        },
+        {
+          "symbol": "NK2AI::bool AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)#1",
+          "start": 2262,
+          "end": 2482
+        },
+        {
+          "symbol": "NK2AI::AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)::[&]() -> void#1",
+          "start": 2278,
+          "end": 2289
+        },
+        {
+          "symbol": "NK2AI::AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)::[&](int3 coord, bool ignoreHero)#1",
+          "start": 2317,
+          "end": 2322
+        },
+        {
+          "symbol": "NK2AI::AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)::[&](EPathNodeAction action) -> bool#1",
+          "start": 2324,
+          "end": 2335
+        },
+        {
+          "symbol": "NK2AI::AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)::[&](const CGObjectInstance * currentObject, const CGObjectInstance * nextObjectTop, const CGObjectInstance * nextObject) -> const CGObjectInstance *#1",
+          "start": 2337,
+          "end": 2348
+        },
+        {
+          "symbol": "NK2AI::AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)::[&](int3 dst, bool transit, const EPathfindingLayer & layer)#1",
+          "start": 2350,
+          "end": 2353
+        },
+        {
+          "symbol": "NK2AI::AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)::[&](ObjectInstanceID exitId, int3 exitPos)#1",
+          "start": 2355,
+          "end": 2369
+        },
+        {
+          "symbol": "NK2AI::AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)::[&]() -> void#2",
+          "start": 2371,
+          "end": 2396
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::buildStructure(const CGTownInstance * t, BuildingID building)#1",
+          "start": 2484,
+          "end": 2489
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::tryRealize(Goals::DigAtTile & g)#1",
+          "start": 2491,
+          "end": 2502
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::tryRealize(Goals::Trade & g) //trade#1",
+          "start": 2504,
+          "end": 2547
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::endTurn()#1",
+          "start": 2549,
+          "end": 2570
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::buildArmyIn(const CGTownInstance * t)#1",
+          "start": 2572,
+          "end": 2582
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::finish()#1",
+          "start": 2584,
+          "end": 2593
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::executeActionAsync(const std::string & description, const std::function<void()> & whatToDo)#1",
+          "start": 2595,
+          "end": 2613
+        },
+        {
+          "symbol": "NK2AI::AIGateway::executeActionAsync(const std::string & description, const std::function<void()> & whatToDo)::[description, whatToDo]() noexcept#1",
+          "start": 2600,
+          "end": 2612
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::lostHero(const HeroPtr & heroPtr) const#1",
+          "start": 2615,
+          "end": 2619
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::answerQuery(const QueryID queryID, const int selection) const#1",
+          "start": 2621,
+          "end": 2633
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::requestSent(const CPackForServer * pack, int requestID)#1",
+          "start": 2635,
+          "end": 2644
+        },
+        {
+          "symbol": "NK2AI::std::string AIGateway::getBattleAIName() const#1",
+          "start": 2646,
+          "end": 2652
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::validateObject(const CGObjectInstance * obj)#1",
+          "start": 2654,
+          "end": 2657
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::validateObject(ObjectIdRef obj)#1",
+          "start": 2659,
+          "end": 2665
+        },
+        {
+          "symbol": "NK2AI::AIStatus::AIStatus(AIGateway * aiGw) : aiGw(aiGw)#1",
+          "start": 2667,
+          "end": 2674
+        },
+        {
+          "symbol": "NK2AI::AIStatus::~AIStatus()#1",
+          "start": 2676,
+          "end": 2679
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::setBattle(BattleState BS)#1",
+          "start": 2681,
+          "end": 2687
+        },
+        {
+          "symbol": "NK2AI::BattleState AIStatus::getBattle()#1",
+          "start": 2689,
+          "end": 2693
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::addQuery(QueryID ID, std::string description)#1",
+          "start": 2695,
+          "end": 2712
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::removeQuery(QueryID ID)#1",
+          "start": 2714,
+          "end": 2723
+        },
+        {
+          "symbol": "NK2AI::int AIStatus::getQueriesCount()#1",
+          "start": 2725,
+          "end": 2729
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::startedTurn()#1",
+          "start": 2731,
+          "end": 2736
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::madeTurn()#1",
+          "start": 2738,
+          "end": 2743
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::waitTillFree()#1",
+          "start": 2745,
+          "end": 2753
+        },
+        {
+          "symbol": "NK2AI::bool AIStatus::haveTurn()#1",
+          "start": 2755,
+          "end": 2759
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::attemptedAnsweringQuery(QueryID queryID, int answerRequestID)#1",
+          "start": 2761,
+          "end": 2768
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::receivedAnswerConfirmation(int answerRequestID, int result)#1",
+          "start": 2770,
+          "end": 2787
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::heroVisit(const CGObjectInstance * obj, bool started)#1",
+          "start": 2789,
+          "end": 2805
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::setMove(bool ongoing)#1",
+          "start": 2807,
+          "end": 2812
+        },
+        {
+          "symbol": "NK2AI::void AIStatus::setChannelProbing(bool ongoing)#1",
+          "start": 2814,
+          "end": 2819
+        },
+        {
+          "symbol": "NK2AI::bool AIStatus::channelProbing()#1",
+          "start": 2821,
+          "end": 2824
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::invalidatePaths()#1",
+          "start": 2826,
+          "end": 2832
+        },
+        {
+          "symbol": "NK2AI::std::string AIGateway::heroRoleDebugText(const CGHeroInstance * hero) const#1",
+          "start": 2834,
+          "end": 2873
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::cheatMapReveal(const std::unique_ptr<Nullkiller> & nullkiller)#1",
+          "start": 2881,
+          "end": 2890
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::memorizeVisitableObjs(const std::unique_ptr<AIMemory> & memory, const std::unique_ptr<DangerHitMapAnalyzer> & dangerHitMap, const PlayerColor & playerID, const std::shared_ptr<CCallback> & cc)#1",
+          "start": 2892,
+          "end": 2905
+        },
+        {
+          "symbol": "NK2AI::AIGateway::memorizeVisitableObjs(const std::unique_ptr<AIMemory> & memory, const std::unique_ptr<DangerHitMapAnalyzer> & dangerHitMap, const PlayerColor & playerID, const std::shared_ptr<CCallback> & cc)::[&](const int3 & pos)#1",
+          "start": 2897,
+          "end": 2904
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::memorizeVisitableObj(const CGObjectInstance * obj, const std::unique_ptr<AIMemory> & memory, const std::unique_ptr<DangerHitMapAnalyzer> & dangerHitMap, const PlayerColor & playerID, const std::shared_ptr<CCallback> & cc)#1",
+          "start": 2907,
+          "end": 2922
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::memorizeRevisitableObjs(const std::unique_ptr<AIMemory> & memory, const PlayerColor & playerID, const std::shared_ptr<CCallback> & cc)#1",
+          "start": 2924,
+          "end": 2935
+        },
+        {
+          "symbol": "NK2AI::void AIGateway::pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other)#1",
+          "start": 2937,
+          "end": 3072
+        },
+        {
+          "symbol": "NK2AI::AIGateway::pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other)::[cc](const CGHeroInstance * h, const CGHeroInstance * otherh, bool giveStuffToFirstHero) -> void#1",
+          "start": 2939,
+          "end": 3066
+        }
+      ],
+      "sha256": "31da12d95ca48ddf852b081f7285617d058e6b7ab6528e1f773e45633a23bd2d",
+      "review": "INDEPENDENT-CONSUMER-REVIEW.md SHA256 a249796e049607c86d3d1413ae6c09f2c8e3e490ec1d778064a34695c8efe1a6",
+      "rationale": "Exact179 independently audited callables:123 namespace/member bodies plus56 lambdas. Review independently balanced all lexical delimiters and matched every body/span/hash, not the inconsistent179/168 raw parse. Only endTurn body changed,24 to22 lines; include shifts remaining spans. No parser waiver or runtime approval."
+    },
     "test/battle/AutocombatPreferencesTest.cpp": {
       "functions": [
         {
@@ -11788,16 +12690,17 @@
       "sha256": "be7237545da45f7abbca02f8af83289c9add95f764bde3acd249c597bf6f6b2d"
     },
     "lib/spells/NewHorizonsMagic.h": {
-      "sha256": "3ea8cc0d001eb8c5d01cd20fb587c1dc17b98cdefe2191099ede8a0aa10666b3",
-      "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015",
-      "rationale": "Complete unchanged header read1–506, including saved-rule/version declarations. Sole callable body AdventureSpellState::serialize159–162. operator==397 is explicitly defaulted, not a handwritten body. Default-argument {} at405/409 explain recovery. No macro definitions/lambdas; public API untouched.",
+      "sha256": "edc4b7a079650e242814db95bdf1534d4895fede680194571ebf865b45fe75d4",
+      "review": "IR-FLY-V2-HEADER-INVENTORIES-20261020",
+      "rationale": "Complete proposed one-body inventory renews the independently reviewed506-line base for the exact508-line Fly header. Two bodyless declarations added at43-44 shift sole AdventureSpellState::serialize159-162 to161-164. Defaulted operator==399 and default arguments407/411 add no handwritten bodies; no new macros/lambdas. Independent exact-source renewal and separate508-line numeric exception remain pending.",
       "functions": [
         {
           "symbol": "newHorizonsMagic::AdventureSpellState::void serialize(Handler & h)#1",
-          "start": 159,
-          "end": 162
+          "start": 161,
+          "end": 164
         }
-      ]
+      ],
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/adventure/TownRelatedAdventureSpellEffect.h": {
       "functions": [
@@ -15237,12 +16140,13 @@
         {
           "symbol": "CGHeroInstance::void serialize(Handler &h)#1",
           "start": 698,
-          "end": 1150
+          "end": 1151
         }
       ],
-      "rationale": "Entire1151-line header read, including CGHeroPlaceholder, nested Patrol, all inline accessors/mutators/validators, private predicates and every branch of the453-line CGHeroInstance serialization698-1150. All64 genuine maintained parser bodies retained exactly; no lambdas, function-like macro definitions or conditional-compilation arms. CGHeroInstance constructor573 and destructor574 are declarations without bodies; inherited constructor using49 and other declarations do not add handwritten implementations. After established annotation normalization, sole missing:type_identifier488 is the empty braced default argument in bodyless levelUp(gains={}); its empty default initializer is not a callable body. Member initializer arrays/brace initialization and friend/using declarations are not functions. Existing453-line serialization and1151-line file are unchanged numeric debt, not a new exception or permission to expand.",
-      "review": "IR-MANUAL-ALLOWANCE-HERO-e2e2a79b-20261015",
-      "sha256": "b293d8fb0e967a15663f35fe85cd239a93cad7f7e9d29e749426e5dd76d12c58"
+      "rationale": "Complete proposed64-body inventory renews the independently reviewed1151-line base for the exact1152-line Fly header. One serialization argument line added inside CGHeroInstance::serialize changes698-1150 to698-1151; all other spans remain unchanged. Constructor573/destructor574 and bodyless levelUp default at488 remain declarations, not new bodies. No new lambdas or macro bodies. Independent exact-source renewal and separate454-line numeric exception remain pending.",
+      "review": "IR-FLY-V2-HEADER-INVENTORIES-20261020",
+      "sha256": "34971e942cef01304aca13828382c3105e7f1374e92880a47e0f8ca6f9288680",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/callback/CGameInfoCallback.cpp": {
       "functions": [
@@ -18057,13 +18961,13 @@
     },
     "AI/Nullkiller2/AIGateway.cpp": {
       "kind": "legacy",
-      "lines": 3075,
+      "lines": 3074,
       "owner": "ai_engineer",
-      "rationale": "Ordered physical-plan request execution extracted unchanged into ArmyExchangeExecution.cpp; valuation, four Leadership conditions and legacy fallback retain exact bytes. Exact shrinking freeze only; unrelated 221-line debt remains. No future growth allowance, native or F17 completion approval.",
-      "review": "IR-F17-CURRENT614-EXECUTION-V2-20261016",
-      "review_scope": "exact-physical-plan-executor-extraction-shrinking-file-and-method-freeze-only",
-      "sha256": "c005748535e78bee3942c6afde6b8990854d6cafacdecd2529a01fffea80d680",
-      "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
+      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 3075 to 3074 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "31da12d95ca48ddf852b081f7285617d058e6b7ab6528e1f773e45633a23bd2d",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/Nullkiller2/AIGateway.cpp::NK2AI::AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)::[this, heroPtr, skills, perks, queryID]()#1": {
       "kind": "legacy",
@@ -21261,15 +22165,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact1273-line endpoint only, no future growth credit. Further affected-area registry growth requires renewed independent organization review or coherent component registration extraction with a shrinking parent; retain source/header registration order and existing target behavior, not a cosmetic forwarding list.",
+      "deferral": "Exact1273-line endpoint only, no future growth credit. Further affected-area registry growth requires renewed independent organization review or coherent component registration extraction with a shrinking parent; retain source/header registration order and existing target behavior, not a cosmetic forwarding list. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance.",
       "kind": "exception",
-      "lines": 1273,
+      "lines": 1279,
       "owner": "engine_engineer",
-      "rationale": "Exact1272 to1273-line mechanical registry renewal: register BattleSpellMirror.cpp once beside BattleSpellMechanics.cpp in the existing library target for the separately reviewed behavior-preserving Mirror and resistance extraction. Retain the previously accepted SummonedCreatureHealth.cpp registration. All other registry bytes, target/link/options/backend policy remain unchanged; zero CMake function or macro definitions. No compound behavior, runtime or broader registry acceptance, and no future growth allowance.",
-      "review": "IR-MIRROR-EXTRACTION-01-SOURCE-REGISTRY-V1",
-      "review_scope": "exact-one-mirror-source-registration-only-no-compound-behavior-runtime-or-future-growth",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "sha256": "6c0cd38f3f0bdf082e49da2bc545957b3a4648a14d95383e0a64e849551729df"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 1273 to 1276 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval. Reviewed scalar specialty extraction adds exactly three ordered registry rows (one source/two headers),1276 to1279; no target or dependency policy change.",
+      "review": "IR-SKILL-SPECIALTY-SCALAR-SOURCE-20261020",
+      "review_scope": "exact-scalar-specialty-extraction-and-positive-query-only",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "sha256": "b87f2ca82222d1859394973e2b0b2396d547752a1d8d4a374c6756888c7fc229"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21319,13 +22223,15 @@
       "sha256": "f3a10440830654c8171dac494575bc4fbc82407130f7ee143d4c4366144e4b41"
     },
     "lib/GameSettings.h::GameSettings::void serialize(Handler & h)#1": {
-      "kind": "legacy",
-      "lines": 125,
+      "kind": "exception",
+      "lines": 129,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 125 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ec29a2bf50947c0f10efd43ce51f265835a006f5acc1e33bbed9c2f039c528c9"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 125 to 129 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "898674836a4ed9796203d02de755e03e976388f65e5ed981c966f3d46fe20b9a",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/LogicalExpression.h": {
       "kind": "legacy",
@@ -21424,23 +22330,25 @@
     },
     "lib/battle/BattleInfo.h": {
       "kind": "exception",
-      "lines": 1500,
-      "sha256": "9e4fb18ad9e8efa6edb9d2c9730bd228c9f7baa72c5ef9f263932c70f4196038",
+      "lines": 1504,
+      "sha256": "80b32f033079ad69abc5771716b7a38c3e1429373f5036825fb4829af7c4cee2",
       "owner": "gameplay_engineer",
-      "review": "prepared-state-composition-independent-source-review-20261017",
-      "rationale": "Exact1498-to1500 declaration-only change: namespaced BattleUnitSidecarFields forward declaration plus narrow friendship. All95 handwritten bodies/hash sequences and all data/serialization fields/defaults/member order unchanged; prepared implementation stays in145-line owner and62-line field inventory, not this header.",
-      "review_scope": "typed-packet-admission-and-prepared-state-commit",
-      "review_status": "independently-reviewed-source-scope",
-      "deferral": "Only this exact1500-line/hash declaration scope. Gameplay engineer retains existing BattleInfo header/serialization debt (largest unchanged body687); further executable/member growth requires cohesive extraction and renewed review. No new general header-growth allowance."
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 1500 to 1504 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Only this exact1500-line/hash declaration scope. Gameplay engineer retains existing BattleInfo header/serialization debt (largest unchanged body687); further executable/member growth requires cohesive extraction and renewed review. No new general header-growth allowance. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/battle/BattleInfo.h::BattleInfo::void serialize(Handler &h)#1": {
-      "kind": "legacy",
-      "lines": 687,
+      "kind": "exception",
+      "lines": 691,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 687 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ad07826d1cd263a9bff3d30618b5a373801237871969fefabfc76c1bc6cbf6d1"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 687 to 691 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "506221ef2a131a805d0e1b59913974d4f9b0871ea2986a8063ee5d209fc9f0d7",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/battle/CBattleInfoCallback.cpp": {
       "kind": "legacy",
@@ -21990,12 +22898,13 @@
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp": {
       "kind": "legacy",
-      "lines": 1766,
+      "lines": 1682,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1766 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "3d2c14ae188e69aa4964a2ef01f546ac7e1f6a9b5093a79dfa61580878fc0975"
+      "rationale": "Reviewed specialty validator/decoder extraction ratchets this existing legacy file from1766 to1682 lines. Shared validation primitives move unchanged; the cohesive119-line scalar component owns validated stack-result decoding. No remaining central callable grows. Exact reduction only, no future expansion credit or runtime/performance approval.",
+      "review": "IR-SKILL-SPECIALTY-SCALAR-SOURCE-20261020",
+      "review_scope": "exact-scalar-specialty-extraction-and-positive-query-only",
+      "sha256": "c52be654517fcfee0289a3ff4cb86a79c0de15c9d98447a58d6c5125c936bbd3",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp::newHorizonsHeroes::SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target, const CGHeroInstance * capturedHero)#1": {
       "kind": "legacy",
@@ -22109,12 +23018,12 @@
       "kind": "exception",
       "lines": 2254,
       "owner": "engine_engineer",
-      "rationale": "Shared ordinary envelope/world decoding extracted into cohesive36-line GameSaveReader.cpp and15-line interface; loadGame16 to7 retains its normal runtime script-dispatcher tail. Actual2262 to2254-line shrink, not a gameplay or save-format change; four unchanged long-function records remain pinned.",
-      "review": "IR-STAGE13-INTEGRATION-THREE-RATCHETS-20261017",
-      "review_scope": "exact-stage13-shared-decode-and-opt-in-tool-three-ratchets-only-no-runtime-or-future-growth",
-      "sha256": "408bee3d6e4bf7c889b782899c4ca8843b9373605148f3f08ad5c97c0167a396",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "deferral": "No regrowth above2254. Preserve existing native graph/query, visitor/replay, publication and lifecycle decomposition obligations; extract coherently before substantive expansion. Preserve saved-member/RNG/packet order, runtime finalization, owner/thread/shutdown and prepared-tail ordering; actual route/performance acceptance remains separate."
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 2254 to 2254 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "48dc5ecaf6de5c4bf1c8464252113b1bbd58726bc94f73a2294a2f8b1072c312",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "No regrowth above2254. Preserve existing native graph/query, visitor/replay, publication and lifecycle decomposition obligations; extract coherently before substantive expansion. Preserve saved-member/RNG/packet order, runtime finalization, owner/thread/shutdown and prepared-tail ordering; actual route/performance acceptance remains separate. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/gameState/CGameState.cpp::bool CGameState::checkForVictory(const PlayerColor & player, const EventCondition & condition) const#1": {
       "kind": "legacy",
@@ -22154,23 +23063,25 @@
     },
     "lib/gameState/CGameState.h": {
       "kind": "exception",
-      "lines": 622,
+      "lines": 625,
       "owner": "engine_engineer",
-      "rationale": "First-declared native access retirement member; reverse member destruction preserves native interval; serialized fields unchanged. Independently reviewed exact source scope; not actual route, alias closure, shutdown or performance acceptance.",
-      "review": "IR-NATIVE-GRAPH-ADMISSION-SOURCE-20261017",
-      "review_scope": "exact-native-graph-access-admission-registration-only",
-      "sha256": "4d12672b0b913e888465bdd2201bfeeee27ee8b3b877eacd9fd7d2f034c536be",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "deferral": "No future growth credit. Engine/UI owners must extract cohesive native graph/query, visitor/replay or publication duties before substantive expansion; any later changed hotspot requires renewed independent exact review. Verify actual owner/thread/shutdown and prepared-tail ordering separately."
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 622 to 625 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "4631cd660e282ca53fd053b06075575f77698101c9134ce585f517c3ac6909f5",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "No future growth credit. Engine/UI owners must extract cohesive native graph/query, visitor/replay or publication duties before substantive expansion; any later changed hotspot requires renewed independent exact review. Verify actual owner/thread/shutdown and prepared-tail ordering separately. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/gameState/CGameState.h::CGameState::void serialize(Handler &h)#1": {
-      "kind": "legacy",
-      "lines": 280,
+      "kind": "exception",
+      "lines": 283,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 280 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "7c4b0ebffad8670c3081725b7e61394d9935c116ee34dcf2b6c18127d6e0bd07"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 280 to 283 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "613a55b485abff0a2a6e4bff8be60d5eda51a2cc22bb4fda7cedbbd3951d396e",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/gameState/CGameStateCampaign.cpp": {
       "kind": "legacy",
@@ -22212,12 +23123,12 @@
       "kind": "exception",
       "lines": 4376,
       "owner": "engine_engineer",
-      "rationale": "Bounded native battle-root lifetime integration only: exact guard/declaration lines or two mechanical lifetime CPP/header registrations. Coordination resides in the focused native-root lifetime and commit-admission components; saved fields, original payload order and graph CAS tail remain exact.",
-      "review": "IR-F08-BATTLE-ROOT-LIFETIME-V2-20261017",
-      "review_scope": "Exact sealed v2 native-root lifetime seam; no payload lease, dispatcher, thread-owner or full-world acceptance.",
-      "sha256": "f75ffa7dd63f8cd85c935a2b834a1abc7adaa63528fc9d0dbce0938e0d835131",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "deferral": "No future growth credit. Any subsequent edit requires renewed independent review; engine/UI owners must retain focused state/visitor/replay debt extraction and separately validate origin-thread destruction, native root-writer/restart ordering and real owner integration before routing use."
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 4376 to 4376 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "ba8e618bb87fe9f90389ea3ac581c29feedfabca7cf5d4765032223db1c19d4f",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "No future growth credit. Any subsequent edit requires renewed independent review; engine/UI owners must retain focused state/visitor/replay debt extraction and separately validate origin-thread destruction, native root-writer/restart ordering and real owner integration before routing use. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)#1": {
       "kind": "legacy",
@@ -22314,13 +23225,15 @@
       "deferral": "Limited to this exact source hash and one added assignment. Deferred to focused validated Hero Order transition extraction alongside the pending packet/world and AI action-admission integration. That integration remains separately reviewed/unapplied; no generic oversized-file/function growth credit or future edit authority."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 115,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 115 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "34e3feba79b75cf822c2742e7befb553b9c54fbc0a24df881235aee973fef9a0"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 115 to 115 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "2819367828c3a13073569f731e282951a39f82aea4c0bc16b83b8aeef2bb501e",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMana & pack)#1": {
       "kind": "legacy",
@@ -22515,11 +23428,11 @@
       "kind": "exception",
       "lines": 3849,
       "owner": "engine_engineer",
-      "rationale": "Independently reviewed six-line growth reorders the existing 18-line specialty query into a 24-line local-marker-first query, with no new responsibility, cache, API or serialization state. Capture, initialization, campaign admission and binary readers retain independent validation. Already-malformed unmarked in-memory state can return zero before parsing; marked state retains validation. This source-scoped exception is not performance or runtime approval.",
-      "review": "skill-specialty-negative-query-v1",
-      "review_scope": "exact-six-line-local-marker-first-query-with-independent-admission-validation",
-      "sha256": "824851c3d6889fd3d0cdc581e7c037a5b602bba175a0889a5c00ac8e4a8c5056",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
+      "rationale": "Independently reviewed six-line growth reorders the existing 18-line specialty query into a 24-line local-marker-first query, with no new responsibility, cache, API or serialization state. Capture, initialization, campaign admission and binary readers retain independent validation. Already-malformed unmarked in-memory state can return zero before parsing; marked state retains validation. This source-scoped exception is not performance or runtime approval. Reviewed scalar follow-up renews exact3849-line bytes only: marked positive lookup uses validated scalar membership instead of a typed vector; negative local-marker admission and independent Navigation validation remain unchanged.",
+      "review": "IR-SKILL-SPECIALTY-SCALAR-SOURCE-20261020",
+      "review_scope": "exact-scalar-specialty-extraction-and-positive-query-only",
+      "sha256": "12e7a11e9a17fd169fe17aad55154a490c8eb36e572fdd3dfd9ddd03f7d1ef8d",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "No further growth beyond3849 lines. Extract the three specialty-conversion query families and shared marker-identity helpers coherently, separately from prototype installation, before further specialty expansion. Preserve current and historical capture, admission, save and alias-lifetime behavior. Native tests and matched performance remain separate acceptance gates; no improvement is claimed for already-marked heroes."
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
@@ -22559,22 +23472,26 @@
       "sha256": "c57bd001097a5f0ed22a0e4c05948829941050a1a7340f2ea3a796e147a9c85d"
     },
     "lib/mapObjects/CGHeroInstance.h": {
-      "kind": "legacy",
-      "lines": 1151,
+      "kind": "exception",
+      "lines": 1152,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1151 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "b293d8fb0e967a15663f35fe85cd239a93cad7f7e9d29e749426e5dd76d12c58"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 1151 to 1152 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "34971e942cef01304aca13828382c3105e7f1374e92880a47e0f8ca6f9288680",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/mapObjects/CGHeroInstance.h::CGHeroInstance::void serialize(Handler &h)#1": {
-      "kind": "legacy",
-      "lines": 453,
+      "kind": "exception",
+      "lines": 454,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 453 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "7fed5a9d6877831e029c7f80487f39f1fb378e92fb900c28d7cc365348ceb6f7"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 453 to 454 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "c5db8875033c849fa7dfec36283d44c296e3abb75ce3f750d5f62da4a99f1137",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/mapObjects/CGPandoraBox.cpp::void CGPandoraBox::grantRewardWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * h, int index, bool markAsVisit) const#1": {
       "kind": "legacy",
@@ -22730,13 +23647,15 @@
       "sha256": "f22ceccf2d3dfae24690d6be0235760368369885d9c5a77640349a28cf25aeb8"
     },
     "lib/mapping/CMap.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 1645,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1645 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "083b20a52bdc40c422061a83a1b4980a22ae58ae8d5c23e6377179d8be2ac2e9"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 1645 to 1645 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "4efd0404aceaa3a36123fd0f35b4b6deb26eb47104f847e5724b4fd50d45b7ab",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/mapping/CMap.cpp::CMap::checkForObjectives()::[&](EventCondition cond) -> EventExpression::Variant#1": {
       "kind": "legacy",
@@ -22757,22 +23676,26 @@
       "sha256": "be5173d1832be2a4c47a65f66a91f325a01508e4eb0382acc94c04140bacd2f7"
     },
     "lib/mapping/CMap.h": {
-      "kind": "legacy",
-      "lines": 503,
+      "kind": "exception",
+      "lines": 504,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 503 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "abe6ac561c1354e37fafab161546f54ee85a760ad106ab3b3beb505e93eaef0f"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 503 to 504 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "358c7c133460b7390dfa3230449e8afe34efc61edb0d226f42304faf7322a685",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/mapping/CMap.h::CMap::void serialize(Handler &h)#1": {
-      "kind": "legacy",
-      "lines": 126,
+      "kind": "exception",
+      "lines": 127,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 126 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "518889811579fa87eb06757ac0135ffa31b99ba8ffd6bc2a228cd4320598d50b"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 126 to 127 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "091e1803b1098df069920d30df992cd24ee03f2576e76ed6ecfe7e5b2e0fdba5",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/mapping/CMapOperation.cpp": {
       "kind": "legacy",
@@ -23045,13 +23968,15 @@
       "sha256": "f2f9e006b222333a51e208ea0006aac26974048868c1e3508f0c018c60c01c64"
     },
     "lib/networkPacks/NetPacksLib.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 1357,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1357 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "41b40f8319b72c7c1bda33967691317adc7636eb0a1e08e91103e2bf2f6c9efc"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 1357 to 1357 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "8f145371360badaba4c4fabd2b68f38d09809e3bd2f43caec8704820df18e704",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/networkPacks/PacksForClient.h": {
       "kind": "legacy",
@@ -23064,13 +23989,14 @@
     },
     "lib/networkPacks/PacksForClientBattle.h": {
       "kind": "exception",
-      "lines": 2269,
-      "sha256": "6c2dc030ad0e55b331ea9d24d0ec6bea059cb8417f8dea87e525feb900ebf9bf",
+      "lines": 2270,
+      "sha256": "c04f8bacc082adb77cf82903aa0ff97161edf1a81284ee44d53ac4ee5df41f84",
       "owner": "engine_engineer",
-      "review": "IR-STAGE5-PREFIX-0ecf498e-20261018",
-      "review_scope": "urgent-five-envelope-writer-prefix-correctness-only",
-      "rationale": "Exact bounded +51-line urgent correction of observed unsupported nested writes emitting enclosing prefixes. Separates existing packet preflight from emission and composes nested validators before the enclosing first field without changing supported field order, original handler feature-query expressions, read branches, versions or packet fields. Header remains structural debt; this is not a blanket serialization-table exemption or semantic/runtime certification.",
-      "deferral": "Engine engineer must extract cohesive battle-unit update/hit/attack/injury codec and ordered preflight ownership behind explicit typed interfaces before any further routing, field or mechanic growth in this header. Preserve packet declarations/registration identity, DLL boundaries, supported full bytes and original handler query order; retain direct and enclosing rejection ownership, empty/prefilled unsupported-prefix assertions and old-reader fences. Exact current ceiling 2269; require decreasing header baseline plus focused serializer differential and adjacent packet/save coverage at extraction. No allowance inherited by another oversized helper."
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 2269 to 2270 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "deferral": "Engine engineer must extract cohesive battle-unit update/hit/attack/injury codec and ordered preflight ownership behind explicit typed interfaces before any further routing, field or mechanic growth in this header. Preserve packet declarations/registration identity, DLL boundaries, supported full bytes and original handler query order; retain direct and enclosing rejection ownership, empty/prefilled unsupported-prefix assertions and old-reader fences. Exact current ceiling 2269; require decreasing header baseline plus focused serializer differential and adjacent packet/save coverage at extraction. No allowance inherited by another oversized helper. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleAttack::void validateSerializationPrefix(Handler & h)#1": {
       "kind": "review",
@@ -23100,31 +24026,37 @@
       "sha256": "1838fee301bcec72772d152855e71e279806f0a40e267a46a10726a2182fcd1a"
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleStart::void serialize(Handler & h)#1": {
-      "kind": "legacy",
-      "lines": 172,
+      "kind": "exception",
+      "lines": 173,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 172 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e4bd64fdf9a7edf05af2ca651e835d7a3cf1bfa26131f960b985a52e88844913"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 172 to 173 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "97e2917b4825d8ba1ba29c30b6df89e978fea4ed84a6a65864517f6e4c04fc83",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/networkPacks/PacksForLobby.h": {
-      "kind": "legacy",
-      "lines": 566,
+      "kind": "exception",
+      "lines": 567,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 566 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e167f7ace59f6cd962283a737776ef380d226529c0a5f4976dde5f541636d057"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 566 to 567 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "d9b2d797f336fcbd7114870dda9da9711a30c4c91958614fb41760bcae004ffb",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/networkPacks/PacksForLobby.h::LobbyStartGame::void serialize(Handler &h)#1": {
-      "kind": "legacy",
-      "lines": 86,
+      "kind": "exception",
+      "lines": 87,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 86 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e374b317d1d9068cf47706bd241d10fcf5b1101c6e085bfc73429442364f6c23"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 86 to 87 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "f2f32d605b8d96c30274b87fa6039f245ec569e0513557080962770c6c95b405",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/networkPacks/PacksForServer.h": {
       "kind": "legacy",
@@ -23146,21 +24078,24 @@
     },
     "lib/pathfinder/CPathfinder.cpp": {
       "kind": "legacy",
-      "lines": 976,
+      "lines": 893,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 976 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "3fa698ef07f0797d2eb710055978d68cdacbc725dadd43735d628b9ee608b7ed"
+      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 976 to 893 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "dd49aab5c9596cbd1bfac62685177c667bdf928208ae14c13d144c5810e3ac78",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/pathfinder/CPathfinder.cpp::int CPathfinderHelper::getMovementCost( const int3 & src, const int3 & dst, const EPathfindingLayer & dstLayer, const int remainingMovePoints, const bool checkLast, const TerrainTile * srcTile, const TerrainTile * dstTile, const EPathfindingLayer & srcLayer) const#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 168,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 168 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f73e1bf7e71c39cd1cbc4b774cc3dbd62107c7837c59cfe1c355e5a4930985cf"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 168 to 168 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "942d9856914fb285373a08d35f46281dfb3dba9b8204c10056d679e5105cc729",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/pathfinder/CPathfinder.cpp::void CPathfinder::calculatePaths()#1": {
       "kind": "legacy",
@@ -23173,12 +24108,13 @@
     },
     "lib/pathfinder/PathfindingRules.cpp": {
       "kind": "legacy",
-      "lines": 566,
+      "lines": 563,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 566 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "86d9acf703ee889db85fb2d00f2913a566b9f38a5009851517a5910851229dbc"
+      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 566 to 563 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "662c0f92a8c7d62594d7589eb641a4ffb8dc91942d446821941082a1491b5106",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/pathfinder/PathfindingRules.cpp::void DestinationActionRule::process( const PathNodeInfo & source, CDestinationNodeInfo & destination, const PathfinderConfig * pathfinderConfig, CPathfinderHelper * pathfinderHelper) const#1": {
       "kind": "legacy",
@@ -23200,12 +24136,13 @@
     },
     "lib/pathfinder/PathfindingRules.cpp::void MovementCostRule::process( const PathNodeInfo & source, CDestinationNodeInfo & destination, const PathfinderConfig * pathfinderConfig, CPathfinderHelper * pathfinderHelper) const#1": {
       "kind": "legacy",
-      "lines": 96,
+      "lines": 93,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 96 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e88cb3305d8f5626a570f8cb81d824900e2a1d293abd337f9414b00a948a49b9"
+      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 96 to 93 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "eb61171137fc6591023f0b3b7ec05561234c334f3862cdab5c97adc3e883d6fd",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/pathfinder/TurnInfo.cpp": {
       "kind": "legacy",
@@ -23676,13 +24613,15 @@
       "sha256": "cf553e17beb1f81fce90fee209b9fd0f3c9e6a508a4ad5b332d6709d6462fa74"
     },
     "lib/serializer/ESerializationVersion.h": {
-      "kind": "legacy",
-      "lines": 535,
+      "kind": "exception",
+      "lines": 539,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 535 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "a27e0f8bcc77a558c9694bb76caa824cde5608d5819115397aa8012c2e4aa0f2"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 535 to 539 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "c0295a2e56f1116f2b5a5a922481766371f3e4be130ee0130867ea1d10a59d7c",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -23854,30 +24793,35 @@
     },
     "lib/spells/NewHorizonsMagic.cpp": {
       "kind": "legacy",
-      "lines": 2194,
+      "lines": 2174,
       "owner": "gameplay_engineer",
-      "rationale": "Independently reviewed responsibility extraction: ordered spell-description branches and contextual readouts move to focused 370/345-line presentation units with private 25-line interfaces. Public description routing shrinks from 464 to 10 lines; predicates, lazy guards, text, formulas and execution order are preserved. Ratchet existing file debt from 2663 to 2194; remaining validation and mechanics require further bounded decomposition, not regrowth to the prior size.",
-      "review": "IR-MAGIC-PRESENTATION-ef0cda07-20261015",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ef0cda0783c054ab687bcb667e0f390f5b4b957c015b57118b19988ca08344a1"
+      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 2194 to 2174 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "3823ccc12e73eee704b3f23543fea16d32e585767c8f8239044988029be7d626",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/NewHorizonsMagic.cpp::newHorizonsMagic::void validateRules(const JsonNode & rules)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 347,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 347 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ed616a02903192c543607c2ca11a57aa96efe0be9b82390b9f66ef538bff57e2"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 347 to 347 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "d4a0adfebfe62defe787e918830558da4e4dde2c47fe8c46d032f9f049a79bb6",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/spells/NewHorizonsMagic.h": {
-      "kind": "legacy",
-      "lines": 506,
+      "kind": "exception",
+      "lines": 508,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 506 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "3ea8cc0d001eb8c5d01cd20fb587c1dc17b98cdefe2191099ede8a0aa10666b3"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 506 to 508 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "edc4b7a079650e242814db95bdf1534d4895fede680194571ebf865b45fe75d4",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/spells/NewHorizonsRealityWarp.cpp::newHorizonsRealityWarp::PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t first, uint32_t second)#1": {
       "kind": "legacy",
@@ -24565,13 +25509,13 @@
     },
     "server/CGameHandler.cpp": {
       "kind": "legacy",
-      "lines": 7039,
+      "lines": 7037,
       "owner": "engine_engineer",
-      "rationale": "Exact physical-affliction stamping extraction7082-to7039; outgoing stamp point and other244 callable bodies preserved. Remaining orchestration is legacy debt owned by engine_engineer for further cohesive extraction, not a new ceiling, future growth credit or native/reaction acceptance.",
-      "review": "IR-STAGE11-CURRENT-COMPOSITION-SOURCE-20261017",
-      "review_scope": "exact-current-stage11-stamping-frozen-extractions-only-no-runtime-or-future-growth",
-      "sha256": "50d3c49ccc52164b3982b56c42d0c6658275accb319b64498118d335501af9f3",
-      "review_status": "APPROVED_EXACT_SHRINKING_SOURCE_SCOPE"
+      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 7039 to 7037 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "52cac89248e84717a17eb37037ebffc03a3f8f07f1376798572ca7d1b8c22444",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/CGameHandler.cpp::bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8 what, SlotID p1, SlotID p2, si32 val, PlayerColor player)#1": {
       "kind": "legacy",
@@ -24629,12 +25573,13 @@
     },
     "server/CGameHandler.cpp::bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode movementMode, bool transit, PlayerColor asker, const EPathfindingLayer & layer)#1": {
       "kind": "legacy",
-      "lines": 414,
+      "lines": 412,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 414 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ee7d7178a8c6092185ed5d642ddabe841746d7ba3ee020528b34465e5b3113d7"
+      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 414 to 412 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
+      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "sha256": "8cc26dfd835ba63f9de03a6ed5d85d4fb1cff506b6c4b4a6be8dec807197c7e6",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/CGameHandler.cpp::bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID targetId, CreatureID creatureId, PlayerColor player, CreatureID secondCreatureId, int32_t firstAmount)#1": {
       "kind": "legacy",

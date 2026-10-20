@@ -262,6 +262,7 @@ set(lib_MAIN_SRCS
 	entities/creature/NewHorizonsCreatureCategories.cpp
 	entities/creature/NewHorizonsRecruitmentTraining.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
+	entities/hero/NewHorizonsSkillSpecialtyRules.cpp
 	entities/hero/HeroStartingProjection.cpp
 	entities/hero/NewHorizonsLeadership.cpp
 	entities/hero/NewHorizonsCapabilityRules.cpp
@@ -375,6 +376,7 @@ set(lib_MAIN_SRCS
 
 	pathfinder/CGPathNode.cpp
 	pathfinder/CPathfinder.cpp
+	pathfinder/NewHorizonsTravelSafety.cpp
 	pathfinder/NodeStorage.cpp
 	pathfinder/PathfinderCache.cpp
 	pathfinder/PathfinderOptions.cpp
@@ -458,6 +460,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsEagleEye.cpp
 	spells/NewHorizonsFriendlyFire.cpp
 	spells/NewHorizonsMagic.cpp
+	spells/NewHorizonsTravelDayEnd.cpp
 	spells/NewHorizonsMagicPresentation.cpp
 	spells/NewHorizonsMagicReadouts.cpp
 	spells/NewHorizonsImplosion.cpp
@@ -876,6 +879,8 @@ set(lib_MAIN_HEADERS
 	entities/creature/NewHorizonsMusterRules.h
 	entities/creature/NewHorizonsRecruitmentTraining.h
 	entities/hero/NewHorizonsHeroRules.h
+	entities/hero/NewHorizonsRuleValidation.h
+	entities/hero/NewHorizonsSkillSpecialtyRules.h
 	entities/hero/HeroStartingProjection.h
 	entities/hero/NewHorizonsLeadership.h
 	entities/hero/NewHorizonsCapabilityRules.h
@@ -1027,6 +1032,7 @@ set(lib_MAIN_HEADERS
 	pathfinder/INodeStorage.h
 	pathfinder/CGPathNode.h
 	pathfinder/CPathfinder.h
+	pathfinder/NewHorizonsTravelSafety.h
 	pathfinder/NodeStorage.h
 	pathfinder/PathfinderCache.h
 	pathfinder/PathfinderOptions.h

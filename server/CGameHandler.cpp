@@ -1223,7 +1223,7 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 
 	const bool usesMovementCost = movementMode == EMovementMode::STANDARD || embarking || disembarking;
 	const bool protectedFlightMove = requiresLayer && !h->inBoat()
-		&& newHorizonsProtectedMobility::enabled(h->getMagicRules())
+		&& newHorizonsProtectedMobility::tracksFlight(h->getMagicRules())
 		&& (layer == EPathfindingLayer::AIR || h->getProtectedAdventureFlightLayer() == EPathfindingLayer::AIR);
 	if(protectedFlightMove && !newHorizonsProtectedMobility::segmentClear(*h, gameState().getMap(), h->visitablePos(), hmpos))
 		return complainRet("Flight cannot cross a protected adventure barrier!");
@@ -1280,11 +1280,9 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 	if (transit && !canFly && !(canWalkOnSea && t.isWater()) && !CGTeleport::isTeleport(objectToVisit))
 		return complainRet("Hero cannot transit over this tile!");
 
-	if(movementMode == EMovementMode::STANDARD && movingOntoWater
-		&& layer == EPathfindingLayer::WATER && !h->inBoat() && !embarking
-		&& newHorizonsMagic::requiresWaterWalkLegalDayEnd(h->getMagicRules())
-		&& !pathfinderHelper->hasSameDayLandEscape(hmpos, h->movementPointsRemaining() - cost))
-		return complainRet("Water Walk requires enough Movement to return to legal land today!");
+	if(movementMode == EMovementMode::STANDARD && !embarking
+		&& !pathfinderHelper->canFinishTravelToday(hmpos, h->movementPointsRemaining() - cost, layer))
+		return complainRet("Travel requires enough Movement to reach a legal landing today!");
 
 	//several generic blocks of code
 

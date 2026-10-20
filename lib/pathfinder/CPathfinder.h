@@ -10,6 +10,7 @@
 #pragma once
 
 #include "CGPathNode.h"
+#include "NewHorizonsTravelSafety.h"
 
 class IGameInfoCallback;
 class PathfinderConfig;
@@ -71,6 +72,8 @@ class DLL_LINKAGE CPathfinderHelper : boost::noncopyable
 	ui32 getTileMovementCost(const TerrainTile & dest, const TerrainTile & from, const TurnInfo * ti) const;
 
 	const IGameInfoCallback & gameInfo;
+	std::optional<newHorizonsTravel::Plan> planWaterLanding(const int3 & source, int movement) const;
+	std::optional<newHorizonsTravel::Plan> planAirLanding(const int3 & source, int movement, bool ordinary) const;
 public:
 	enum EPatrolState
 	{
@@ -146,8 +149,13 @@ public:
 	/// Read-only reserve check: ordinary visible, unguarded land reachable today.
 	/// Uses this helper's captured day/cost context; never casts or advances a day.
 	bool hasSameDayLandEscape(const int3 & source, int remainingMovement) const;
+	bool hasSameDayFlightLanding(const int3 & source, int remainingMovement) const;
+	bool canFinishTravelToday(const int3 & destination, int remainingMovement, EPathfindingLayer layer) const;
+	std::optional<newHorizonsTravel::Plan> planSameDayLanding(
+		const int3 & source, int remainingMovement, EPathfindingLayer layer) const;
 };
 
 /// Historical worlds without the captured policy, and embarked heroes, are exempt.
 DLL_LINKAGE bool isWaterWalkDayEndLegal(const IGameInfoCallback & gameInfo, const CGHeroInstance & hero);
 DLL_LINKAGE bool areOwnedWaterWalkHeroesDayEndLegal(const IGameInfoCallback & gameInfo, PlayerColor owner);
+DLL_LINKAGE bool areOwnedTravelHeroesDayEndLegal(const IGameInfoCallback & gameInfo, PlayerColor owner);

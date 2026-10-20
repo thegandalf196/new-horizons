@@ -40,6 +40,8 @@ namespace newHorizonsMagic
 DLL_LINKAGE void validateImplosionSerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE bool requiresWaterWalkLegalDayEnd(const JsonNode & rules);
 DLL_LINKAGE void validateWaterWalkDayEndSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE bool requiresFlyLegalDayEnd(const JsonNode & rules);
+DLL_LINKAGE void validateTravelDayEndSerialization(const JsonNode & rules, bool waterWalkSupported, bool flySupported);
 constexpr int RULESET_VERSION = 1;
 constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
 constexpr int SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION = 3;

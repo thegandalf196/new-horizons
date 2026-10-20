@@ -2143,11 +2143,11 @@ void CGameState::validateNewHorizonsRemainingStartSerialization(bool supported) 
 		map->validateNewHorizonsRemainingStartSerialization(supported);
 }
 
-void CGameState::validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const
+void CGameState::validateNewHorizonsTravelDayEndSerialization(bool waterWalkSupported, bool flySupported) const
 {
-	newHorizonsMagic::validateWaterWalkDayEndSerialization(magicRules, supported);
+	newHorizonsMagic::validateTravelDayEndSerialization(magicRules, waterWalkSupported, flySupported);
 	if(map)
-		map->validateNewHorizonsWaterWalkDayEndSerialization(supported);
+		map->validateNewHorizonsTravelDayEndSerialization(waterWalkSupported, flySupported);
 }
 
 void CGameState::validateCanonicalSpellClausesSerialization(bool supported) const

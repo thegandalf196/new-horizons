@@ -706,8 +706,9 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
 		if(h.saving)
-			newHorizonsMagic::validateWaterWalkDayEndSerialization(getMagicRules(),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+			newHorizonsMagic::validateTravelDayEndSerialization(getMagicRules(),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
 		if(h.saving)
 			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
 		if(h.saving)

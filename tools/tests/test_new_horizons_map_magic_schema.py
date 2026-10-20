@@ -25,6 +25,18 @@ class MapMagicSchemaTest(unittest.TestCase):
         self.v2 = copy.deepcopy(self.v3)
         self.v2['rulesetVersion'] = 2
         self.v2.pop('schoolRankPowerCoefficientPercent')
+        self.v2.pop('spellcraftEfficiencyPercent', None)
+        for key in ('morale', 'creatureAbilities', 'protectedAdventureBarriers', 'heroLuck', 'heroMorale'):
+            self.v2.pop(key, None)
+        for spell in ('core:waterWalk', 'core:fly'):
+            self.v2['adventureSpells'][spell].pop('requireLegalDayEnd', None)
+        for row in self.v2['spells'].values():
+            for key in ('selectedPlacement', 'earthquake', 'structures', 'heroAccess', 'restoration',
+                        'propagationLimit', 'implosion', 'ignoreInterveningBarriers',
+                        'temporaryMagicalEffectsOnly', 'schoolRankDurations', 'burnGroundedFlyers'):
+                row.pop(key, None)
+        self.v2['spells'] = {key: row for key, row in self.v2['spells'].items()
+                             if 'variant' not in row}
         self.v1 = legacy_rules(self.v3)
 
     def test_schema_and_explicit_legacy_contexts(self):

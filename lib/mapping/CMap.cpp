@@ -1122,7 +1122,7 @@ void CMap::validateProtectedAdventureMobilitySerialization(bool supported, const
 		if(!hero)
 			return;
 		hero->validateProtectedAdventureMobilitySerialization(supported);
-		if(capturedRules && !newHorizonsProtectedMobility::enabled(*capturedRules)
+		if(capturedRules && !newHorizonsProtectedMobility::tracksFlight(*capturedRules)
 			&& hero->getProtectedAdventureFlightLayer() != EPathfindingLayer::LAND)
 			throw std::runtime_error("Flight receipt requires captured protected adventure rules");
 	};
@@ -1404,18 +1404,18 @@ void CMap::validateNewHorizonsRemainingStartSerialization(bool supported) const
 			newHorizonsHeroes::validateRemainingStartSerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
-void CMap::validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const
+void CMap::validateNewHorizonsTravelDayEndSerialization(bool waterWalkSupported, bool flySupported) const
 {
 	if(gameSettings)
-		gameSettings->validateNewHorizonsWaterWalkDayEndSerialization(supported);
+		gameSettings->validateNewHorizonsTravelDayEndSerialization(waterWalkSupported, flySupported);
 	// Hero writers delegate magic rules to their captured callback/world (or
 	// battle), which may differ from this map's raw override collection.
 	for(const auto & object : objects)
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			newHorizonsMagic::validateWaterWalkDayEndSerialization(hero->getMagicRules(), supported);
+			newHorizonsMagic::validateTravelDayEndSerialization(hero->getMagicRules(), waterWalkSupported, flySupported);
 	for(const auto & hero : heroesPool)
 		if(hero)
-			newHorizonsMagic::validateWaterWalkDayEndSerialization(hero->getMagicRules(), supported);
+			newHorizonsMagic::validateTravelDayEndSerialization(hero->getMagicRules(), waterWalkSupported, flySupported);
 }
 
 void CMap::validateCanonicalSpellClausesSerialization(bool supported) const

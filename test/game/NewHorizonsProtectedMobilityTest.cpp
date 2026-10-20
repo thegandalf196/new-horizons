@@ -21,6 +21,7 @@
 #include "../../lib/pathfinder/NewHorizonsProtectedMobility.h"
 #include "../../lib/pathfinder/PathfinderCache.h"
 #include "../../lib/pathfinder/CGPathNode.h"
+#include "../../lib/pathfinder/CPathfinder.h"
 #include "../../lib/pathfinder/PathfinderOptions.h"
 #include "../../lib/pathfinder/TurnInfo.h"
 #include "../../lib/spells/CSpell.h"
@@ -40,11 +41,27 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		if(plainHistoricalHero)
+		{
+			// A positive pre-feature read needs a genuinely plain captured hero,
+			// not today's independent spell/perk/specialty features down-saved.
+			JsonNode plainRules;
+			plainRules.Struct();
+			plainRules.setOverrideFlag(true);
+			for(const auto setting : {EGameSettings::MAGIC_NEW_HORIZONS, EGameSettings::HEROES_NEW_HORIZONS,
+				EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, EGameSettings::HEROES_NEW_HORIZONS_MASTERIES,
+				EGameSettings::HEROES_NEW_HORIZONS_PERKS})
+				loaded->overrideGameSetting(setting, plainRules);
+			return;
+		}
 		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		ASSERT_TRUE(rules["protectedAdventureBarriers"].isBool());
 		ASSERT_TRUE(rules["protectedAdventureBarriers"].Bool());
 		if(!feature)
+		{
 			rules.Struct().erase("protectedAdventureBarriers");
+			rules["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
+		}
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 		auto heroRules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
@@ -97,6 +114,7 @@ protected:
 		EXPECT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::LAND);
 	}
 	bool feature = true;
+	bool plainHistoricalHero = false;
 	CGHeroInstance * hero = nullptr;
 	int3 origin;
 	std::unique_ptr<GameHandlerTestServer> server;
@@ -219,6 +237,27 @@ TEST_F(NewHorizonsProtectedMobilityTest, SharedPathStartsFromAcceptedAirAndCanno
 	const auto * destination = paths->getNode(start + int3(1, 0, 0), EPathfindingLayer::LAND);
 	ASSERT_NE(destination, nullptr);
 	EXPECT_FALSE(destination->reachable());
+}
+
+TEST_F(NewHorizonsProtectedMobilityTest, FlightLandingReserveCannotUseLandBehindAProtectedClosedCorner)
+{
+	start();
+	fly();
+	const auto water = origin + int3(4, 4, 0);
+	for(int x = -1; x <= 1; ++x)
+		for(int y = -1; y <= 1; ++y)
+			map()->getTile(water + int3(x, y, 0)).terrainType = ETerrainId::WATER;
+	const auto shore = water + int3(1, 1, 0);
+	map()->getTile(shore).terrainType = ETerrainId::GRASS;
+	revealMap(PlayerColor(0));
+	map()->setProtectedAdventureMobilityTiles({water + int3(1, 0, 0)});
+	const PathfinderOptions options(*gameState());
+	CPathfinderHelper helper(*gameState(), hero, options);
+	EXPECT_FALSE(helper.hasSameDayFlightLanding(water, 21));
+	map()->setProtectedAdventureMobilityTiles({});
+	EXPECT_TRUE(helper.hasSameDayFlightLanding(water, 21));
+	EXPECT_TRUE(helper.hasSameDayFlightLanding(origin, 0));
+	EXPECT_EQ(hero->visitablePos(), origin);
 }
 
 TEST_F(NewHorizonsProtectedMobilityTest, PaidDimensionDoorBlockedSegmentDoesNotConsumeManaOrDay)
@@ -382,7 +421,14 @@ TEST_F(NewHorizonsProtectedMobilityTest, CapturedBattleRulesRejectOldPrefixesAnd
 
 TEST_F(NewHorizonsProtectedMobilityTest, OldPlainHeroReadResetsPreloadedFlightLayerWithoutInventingFeature)
 {
+	plainHistoricalHero = true;
 	start(false);
+	ASSERT_TRUE(hero->getPrimaryGrowthRules().isNull());
+	ASSERT_TRUE(hero->getCapabilityRules().isNull());
+	for(const auto * rules : {&hero->getMagicRules(), &hero->getMasteryState().rules, &hero->getPerkState().rules})
+	{
+		ASSERT_TRUE(rules->isStruct() && rules->Struct().empty());
+	}
 	CMemorySerializer old;
 	old.oser.version = static_cast<ESerializationVersion>(static_cast<int>(ESerializationVersion::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS) - 1);
 	ASSERT_NO_THROW(old.oser & *hero);

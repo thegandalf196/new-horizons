@@ -268,26 +268,6 @@ using detail::hasMaledictionPerk;
 using detail::registeredSpellcraftRank;
 using detail::NATURE_MIRE_SHAPER;
 
-void validateWaterWalkDayEndSerialization(const JsonNode & rules, bool supported)
-{
-	const auto & row = rules["adventureSpells"]["core:waterWalk"];
-	if(!row.isStruct() || !row.Struct().contains("requireLegalDayEnd"))
-		return;
-	if(!supported)
-		throw std::runtime_error("Water Walk day-end policy requires the new save format");
-	if(!row["requireLegalDayEnd"].isBool())
-		throw std::runtime_error("Water Walk requireLegalDayEnd must be boolean");
-}
-
-bool requiresWaterWalkLegalDayEnd(const JsonNode & rules)
-{
-	validateWaterWalkDayEndSerialization(rules, true);
-	return rulesActive(rules)
-		&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& rules["adventureSpells"]["core:waterWalk"]["requireLegalDayEnd"].isBool()
-		&& rules["adventureSpells"]["core:waterWalk"]["requireLegalDayEnd"].Bool();
-}
-
 bool rulesActive(const JsonNode & rules)
 {
 	return !legacy(rules) && rules.isStruct()
@@ -1043,10 +1023,10 @@ void validateRules(const JsonNode & rules)
 		{
 			const auto found = rules["adventureSpells"].Struct().find(std::string(expected.identity));
 			require(found != rules["adventureSpells"].Struct().end(), "missing adventure spell " + std::string(expected.identity));
-			if(expected.identity == "core:waterWalk")
+			if(expected.identity == "core:waterWalk" || expected.identity == "core:fly")
 			{
 				fields(found->second, {"guildLevel", "cost", "unlockCost", "requireLegalDayEnd"});
-				validateWaterWalkDayEndSerialization(rules, true);
+				validateTravelDayEndSerialization(rules, true, true);
 			}
 			else
 				fields(found->second, {"guildLevel", "cost", "unlockCost"});

@@ -224,6 +224,8 @@ DLL_LINKAGE void validateCoroniusHolyWrathSerialization(const JsonNode & rules, 
 /// Returns the converted skill specialties captured by this hero. Missing
 /// rules intentionally preserve legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules);
+/// Fully validates captured rules, without constructing the typed Skill vector.
+DLL_LINKAGE int skillSpecialtyCoreBonusPercent(const JsonNode & resolvedRules, SecondarySkill skill);
 /// Legacy compatibility accessor. New Horizons primary growth is deterministic
 /// for older profiles. Version 3 returns the configured owned-skill chances.
 DLL_LINKAGE std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,

@@ -682,13 +682,13 @@ int CGHeroInstance::getSkillSpecialtyCoreBonusPercent(SecondarySkill skill) cons
 	}))
 		return 0;
 
-	const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
-	if(!rules || std::ranges::find(rules->skills, skill) == rules->skills.end())
+	const int percent = newHorizonsHeroes::skillSpecialtyCoreBonusPercent(primaryGrowthRules, skill);
+	if(percent == 0)
 		return 0;
 	if(heroType->navigationSpecialtyProducer
 		&& !newHorizonsHeroes::usesNavigationStartReplacement(primaryGrowthRules))
 		return 0;
-	return rules->coreBonusPercent;
+	return percent;
 }
 
 HeroTypeID CGHeroInstance::getHeroTypeID() const

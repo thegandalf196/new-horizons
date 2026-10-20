@@ -167,6 +167,27 @@ prove that a node is unreferenced or safe to recycle; allocation-limit warnings
 alone justify neither increasing capacity nor discarding route alternatives.
 Pair pool tests with saturated route-reconstruction controls.
 
+### Same-day travel landing
+
+`newHorizonsTravel::planRequiredLanding` is the shared deterministic producer
+used by travel safety and AI execution. An empty plan means the hero is already
+eligible to end the day; it is not an instruction to move onto the same tile.
+No plan means required landing is unreachable with the current day's movement.
+Captured Water Walk and Fly policies remain distinct, including historical
+worlds. See [the serialization contract](Serialization.md#captured-fly-day-end-policy).
+
+Nullkiller2 replays the finite steps through ordinary validated movement
+requests and its existing wait/unlock path. Reacquire heroes after waits and
+verify ownership, day, position, movement and applicable flight-layer receipts.
+Recheck every owned hero before submitting EndTurn once. Rejected or changed
+steps retain the turn without an unbounded retry, teleport or movement grant;
+this does not recover an already stranded historical save.
+
+Reachability never spends a speculative Forced March allowance. Only a found
+route's terminal exhaustion may annotate the existing post-move grant for
+readback. An annotated step requires exact movement and both existing receipt
+days; it does not relax authoritative validation or the once-per-day rule.
+
 ### Parts
 
 Gateway - a callback for server used to invoke AI actions when server thinks it is time to do something. Through this callback AI is informed about various events like hero level up, tile revialed, blocking dialogs and so on. In order to do this Gaateway implements specific interface. The interface is exactly the same for human and AI

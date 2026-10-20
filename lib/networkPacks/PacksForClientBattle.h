@@ -63,8 +63,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(info->getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 		if(h.saving && info)
-			newHorizonsMagic::validateWaterWalkDayEndSerialization(info->getMagicRules(),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+			newHorizonsMagic::validateTravelDayEndSerialization(info->getMagicRules(),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
 		if(h.saving && info)
 			info->validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
 		if(h.saving && trainingReplay && (!info || info->trainingEntrySnapshot.empty()

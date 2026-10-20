@@ -1226,7 +1226,7 @@ void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)
 		const PathfinderOptions options(gs);
 		CPathfinderHelper helper(gs, h, options);
 		const auto cost = helper.getMovementCost(h->visitablePos(), destination, receipt.destination, h->movementPointsRemaining());
-		if(h->pos != pack.start || h->inBoat() || !newHorizonsProtectedMobility::enabled(h->getMagicRules())
+		if(h->pos != pack.start || h->inBoat() || !newHorizonsProtectedMobility::tracksFlight(h->getMagicRules())
 			|| h->getProtectedAdventureFlightLayer() != receipt.source
 			|| !legalSurface || !tile.getTerrain()->isPassable() || h->movementPointsRemaining() < cost
 			|| pack.movePoints != h->movementPointsRemaining() - cost
@@ -1235,7 +1235,7 @@ void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)
 			throw std::runtime_error("Stale or illegal protected adventure flight receipt");
 	}
 	else if(pack.result == TryMoveHero::SUCCESS && pack.start != pack.end
-		&& newHorizonsProtectedMobility::enabled(h->getMagicRules())
+		&& newHorizonsProtectedMobility::tracksFlight(h->getMagicRules())
 		&& h->getProtectedAdventureFlightLayer() == EPathfindingLayer::AIR)
 		throw std::runtime_error("Missing protected flight landing receipt");
 	const CGTownInstance * lighthouseTown = nullptr;

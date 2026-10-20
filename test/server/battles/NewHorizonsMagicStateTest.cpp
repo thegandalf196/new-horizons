@@ -78,6 +78,17 @@ JsonNode magicRulesForVersion(int version)
 		return rules;
 
 	rules["rulesetVersion"].Integer() = version;
+	if(version != newHorizonsMagic::RULESET_VERSION
+		&& version != newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION)
+	{
+		newHorizonsMagic::validateRules(rules);
+		return rules;
+	}
+	// Project only known historical profiles, never sanitize an unknown version.
+	for(const auto * key : {"protectedAdventureBarriers", "heroLuck", "heroMorale", "creatureAbilities", "morale"})
+		rules.Struct().erase(key);
+	for(const auto * spell : {"core:waterWalk", "core:fly"})
+		rules["adventureSpells"][spell].Struct().erase("requireLegalDayEnd");
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
 	for(auto & [name, spell] : rules["spells"].Struct())
@@ -88,6 +99,9 @@ JsonNode magicRulesForVersion(int version)
 		spell.Struct().erase("structures");
 		spell.Struct().erase("heroAccess");
 		spell.Struct().erase("restoration");
+		for(const auto * key : {"propagationLimit", "implosion", "ignoreInterveningBarriers",
+			"temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"})
+			spell.Struct().erase(key);
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");
@@ -192,6 +206,16 @@ protected:
 		if(historicalFlyWithoutUnlockPrice)
 			rules["adventureSpells"]["core:fly"].Struct().erase("unlockCost");
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+		if(useMagic && magicVersion == newHorizonsMagic::RULESET_VERSION)
+		{
+			// Current starting-book replacements include spells absent from the
+			// captured v1 roster. Isolate the older profile before initialization.
+			auto heroes = map->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+			ASSERT_TRUE(heroes["startingSkills"].Struct().contains("startingBookReplacements"));
+			heroes["startingSkills"].Struct().erase("startingBookReplacements");
+			heroes.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
+		}
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
@@ -936,10 +960,51 @@ TEST_F(NewHorizonsMagicStateTest, ActualGameAndBattlePacketRetainSavedRules)
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), 100);
 }
 
+TEST_F(NewHorizonsMagicStateTest, HistoricalFixtureProjectionKeepsVersionBoundariesStrict)
+{
+	const JsonNode current(JsonPath::builtin("config/newHorizonsMagic"));
+	EXPECT_EQ(magicRulesForVersion(newHorizonsMagic::CURRENT_RULESET_VERSION), current);
+	for(const int version : {newHorizonsMagic::RULESET_VERSION, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION})
+	{
+		SCOPED_TRACE(version);
+		const auto historical = magicRulesForVersion(version);
+		ASSERT_NO_THROW(newHorizonsMagic::validateRules(historical));
+		EXPECT_EQ(historical["rulesetVersion"].Integer(), version);
+		for(const auto * key : {"protectedAdventureBarriers", "heroLuck", "heroMorale", "creatureAbilities", "morale"})
+		{
+			EXPECT_FALSE(historical.Struct().contains(key));
+			auto contaminated = historical;
+			contaminated[key] = current[key];
+			EXPECT_THROW(newHorizonsMagic::validateRules(contaminated), std::runtime_error);
+		}
+		for(const auto * spell : {"core:waterWalk", "core:fly"})
+		{
+			EXPECT_FALSE(historical["adventureSpells"][spell].Struct().contains("requireLegalDayEnd"));
+			auto contaminated = historical;
+			contaminated["adventureSpells"][spell]["requireLegalDayEnd"].Bool() = true;
+			if(std::string_view(spell) == "core:waterWalk")
+			{
+				EXPECT_NO_THROW(newHorizonsMagic::validateRules(contaminated));
+				EXPECT_FALSE(newHorizonsMagic::requiresWaterWalkLegalDayEnd(contaminated));
+				EXPECT_THROW(newHorizonsMagic::validateWaterWalkDayEndSerialization(contaminated, false), std::runtime_error);
+			}
+			else
+			{
+				EXPECT_THROW(newHorizonsMagic::validateRules(contaminated), std::runtime_error);
+			}
+		}
+		EXPECT_EQ(historical["spells"]["core:haste"]["schools"], current["spells"]["core:haste"]["schools"]);
+		EXPECT_EQ(historical["spells"]["core:haste"]["costs"], current["spells"]["core:haste"]["costs"]);
+	}
+	EXPECT_THROW(magicRulesForVersion(newHorizonsMagic::CURRENT_RULESET_VERSION + 1), std::runtime_error);
+	EXPECT_THROW(magicRulesForVersion(0), std::runtime_error);
+}
+
 TEST_F(NewHorizonsMagicStateTest, Version1MagicSaveAndBattlePacketRetainLegacySpellBehavior)
 {
 	magicVersion = newHorizonsMagic::RULESET_VERSION;
-	roundTripMagicProfileBattle();
+	ASSERT_NO_FATAL_FAILURE(roundTripMagicProfileBattle());
+	ASSERT_FALSE(gameState()->getHeroDevelopmentRules()["startingSkills"].Struct().contains("startingBookReplacements"));
 }
 
 TEST_F(NewHorizonsMagicStateTest, Version2MagicSaveAndBattlePacketRetainLegacySpellBehavior)

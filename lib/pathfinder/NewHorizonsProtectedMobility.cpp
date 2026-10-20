@@ -38,9 +38,14 @@ bool enabled(const JsonNode & rules)
 		&& rules["protectedAdventureBarriers"].Bool();
 }
 
+bool tracksFlight(const JsonNode & rules)
+{
+	return enabled(rules) || newHorizonsMagic::requiresFlyLegalDayEnd(rules);
+}
+
 EPathfindingLayer displacementLayer(const CGHeroInstance & hero, EPathfindingLayer layer)
 {
-	return enabled(hero.getMagicRules()) && !hero.inBoat() && layer == EPathfindingLayer::AIR
+	return tracksFlight(hero.getMagicRules()) && !hero.inBoat() && layer == EPathfindingLayer::AIR
 		? EPathfindingLayer::LAND : layer;
 }
 

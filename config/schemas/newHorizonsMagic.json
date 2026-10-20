@@ -48,7 +48,7 @@
 					"required": ["core:summonBoat", "core:waterWalk", "core:townPortal", "core:fly", "core:dimensionDoor"],
 					"properties": {
 						"core:summonBoat": {"$ref": "#/definitions/adventureSpell"},
-						"core:waterWalk": {"$ref": "#/definitions/waterWalkAdventureSpell"},
+						"core:waterWalk": {"$ref": "#/definitions/travelAdventureSpell"},
 						"core:townPortal": {"$ref": "#/definitions/adventureSpell"},
 						"core:fly": {"$ref": "#/definitions/adventureSpell"},
 						"core:dimensionDoor": {"$ref": "#/definitions/adventureSpell"}
@@ -294,12 +294,12 @@
 				"unlockCost": {"$ref": "#/definitions/adventureSpellUnlockCost"}
 			}
 		},
-		"waterWalkAdventureSpell": {
+		"travelAdventureSpell": {
 			"type": "object",
 			"required": ["guildLevel", "cost"],
 			"additionalProperties": false,
 			"properties": {
-				"requireLegalDayEnd": {"type": "boolean", "description": "Captured optional same-day ordinary land escape reserve and manual day-ending guard. Absent preserves historical Water Walk."},
+				"requireLegalDayEnd": {"type": "boolean", "description": "Captured optional same-day ordinary land escape reserve and manual day-ending guard. Absent or false preserves historical behavior independently for Water Walk and Fly."},
 				"guildLevel": {"type": "integer", "minimum": 1, "maximum": 5},
 				"cost": {"type": "integer", "minimum": 0, "maximum": 1000000},
 				"unlockCost": {"$ref": "#/definitions/adventureSpellUnlockCost"}

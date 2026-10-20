@@ -10,6 +10,7 @@
 #include "../../SpellPointTestUtils.h"
 #include "../battles/FullGameSnapshotTypes.h"
 #include "../../../lib/GameSettings.h"
+#include "../../../lib/CSkillHandler.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/battle/BattleInfo.h"
 #include "../../../lib/battle/BattleLayout.h"
@@ -21,6 +22,8 @@
 #include "../../../lib/pathfinder/CPathfinder.h"
 #include "../../../lib/pathfinder/PathfinderOptions.h"
 #include "../../../lib/pathfinder/TurnInfo.h"
+#include "../../../lib/pathfinder/NewHorizonsProtectedMobility.h"
+#include "../../../lib/pathfinder/NewHorizonsTravelSafety.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
@@ -40,6 +43,9 @@ protected:
 		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		// This policy fixture isolates the older Water Walk serialization boundary.
 		rules.Struct().erase("protectedAdventureBarriers");
+		// Existing cases retain their older Water Walk-only captured context.
+		if(!flyDayEnd)
+			rules["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
 		auto & row = rules["adventureSpells"]["core:waterWalk"];
 		row.Struct().erase("requireLegalDayEnd");
 		if(policy)
@@ -103,9 +109,21 @@ protected:
 			for(int y = -3; y <= 3; ++y)
 				map()->getTile(center + int3(x, y, 0)).terrainType = ETerrainId::WATER;
 	}
+	void castFly()
+	{
+		const auto spell = SpellID(SpellID::FLY);
+		hero->addSpellToSpellbook(spell);
+		AdventureSpellCastParameters cast;
+		cast.caster = hero;
+		cast.pos = hero->visitablePos();
+		ASSERT_TRUE(spell.toSpell()->adventureCast(
+			dynamic_cast<SpellCastEnvironment *>(handler->spellcastEnvironment()), cast));
+		ASSERT_TRUE(hero->getTurnInfo(0)->hasFlyingMovement());
+	}
 	const PlayerColor PLAYER{0};
 	const PlayerColor OPPONENT{1};
 	bool policy = true;
+	bool flyDayEnd = false;
 	CGHeroInstance * hero = nullptr;
 	CGHeroInstance * other = nullptr;
 	CGHeroInstance * opponent = nullptr;
@@ -256,6 +274,272 @@ TEST_F(NewHorizonsWaterWalkDayEndTest, HistoricalAbsentPolicyDoesNotTrapAnExisti
 	EXPECT_EQ(hero->visitablePos(), sea);
 }
 
+TEST_F(NewHorizonsWaterWalkDayEndTest, PaidFlyCannotSpendItsLandingReserveAndBlockEndTurn)
+{
+	flyDayEnd = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(newHorizonsMagic::requiresFlyLegalDayEnd(hero->getMagicRules()));
+	ASSERT_FALSE(newHorizonsProtectedMobility::enabled(hero->getMagicRules()));
+	ASSERT_TRUE(newHorizonsProtectedMobility::tracksFlight(hero->getMagicRules()));
+	const auto spell = SpellID(SpellID::FLY);
+	hero->addSpellToSpellbook(spell);
+	AdventureSpellCastParameters cast;
+	cast.caster = hero;
+	cast.pos = hero->visitablePos();
+	const auto mana = hero->getManaAvailable();
+	ASSERT_TRUE(spell.toSpell()->adventureCast(
+		dynamic_cast<SpellCastEnvironment *>(handler->spellcastEnvironment()), cast));
+	EXPECT_EQ(hero->getManaAvailable(), mana - 60);
+	const auto land = hero->visitablePos();
+	const auto sea = land + int3(1, 0, 0);
+	map()->getTile(sea).terrainType = ETerrainId::WATER;
+	const PathfinderOptions options(*gameState());
+	CPathfinderHelper helper(*gameState(), hero, options);
+	ASSERT_EQ(helper.getMovementCost(land, sea, EPathfindingLayer::AIR, 15), 15);
+	for(const int budget : {15, 29, 30})
+	{
+		hero->setMovementPoints(budget);
+		CPathsInfo paths(gameState()->getMapSize(), hero);
+		auto configuration = std::make_shared<SingleHeroPathfinderConfig>(paths, *gameState(), hero);
+		configuration->options.turnLimit = 0;
+		CPathfinder(*gameState(), configuration).calculatePaths();
+		EXPECT_EQ(paths.getNode(sea, EPathfindingLayer::AIR)->reachable(), budget == 30);
+		if(budget < 30)
+		{
+			EXPECT_FALSE(move(hero, sea, EPathfindingLayer::AIR));
+			EXPECT_EQ(hero->visitablePos(), land);
+			EXPECT_EQ(hero->movementPointsRemaining(), budget);
+			EXPECT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::LAND);
+		}
+	}
+	ASSERT_TRUE(move(hero, sea, EPathfindingLayer::AIR));
+	ASSERT_EQ(hero->movementPointsRemaining(), 15);
+	ASSERT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::AIR);
+	auto copied = CMemorySerializer::deepCopy(*hero, gameState().get());
+	ASSERT_NE(copied, nullptr);
+	EXPECT_EQ(copied->getProtectedAdventureFlightLayer(), EPathfindingLayer::AIR);
+	EXPECT_EQ(copied->visitablePos(), sea);
+	EXPECT_FALSE(handler->turnOrder->onPlayerEndsTurn(PLAYER));
+	ASSERT_TRUE(move(hero, land, EPathfindingLayer::LAND));
+	EXPECT_EQ(hero->movementPointsRemaining(), 0);
+	EXPECT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::LAND);
+	const auto day = gameState()->getCalendar().getCurrentDay();
+	ASSERT_TRUE(handler->turnOrder->onPlayerEndsTurn(PLAYER));
+	if(gameState()->getCalendar().getCurrentDay() == day)
+	{
+		ASSERT_TRUE(handler->turnOrder->onPlayerEndsTurn(OPPONENT));
+	}
+	ASSERT_EQ(gameState()->getCalendar().getCurrentDay(), day + 1);
+	EXPECT_FALSE(hero->getTurnInfo(0)->hasFlyingMovement());
+	EXPECT_FALSE(hero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(NewHorizonsWaterWalkDayEndTest, AbsentFlyPolicyPreservesHistoricalExhaustedAirAdmission)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false));
+	ASSERT_FALSE(newHorizonsMagic::requiresFlyLegalDayEnd(hero->getMagicRules()));
+	const auto spell = SpellID(SpellID::FLY);
+	hero->addSpellToSpellbook(spell);
+	AdventureSpellCastParameters cast;
+	cast.caster = hero;
+	cast.pos = hero->visitablePos();
+	ASSERT_TRUE(spell.toSpell()->adventureCast(
+		dynamic_cast<SpellCastEnvironment *>(handler->spellcastEnvironment()), cast));
+	const auto sea = hero->visitablePos() + int3(1, 0, 0);
+	map()->getTile(sea).terrainType = ETerrainId::WATER;
+	hero->setMovementPoints(15);
+	ASSERT_TRUE(move(hero, sea, EPathfindingLayer::AIR));
+	EXPECT_EQ(hero->movementPointsRemaining(), 0);
+	EXPECT_EQ(hero->visitablePos(), sea);
+	EXPECT_TRUE(handler->turnOrder->onPlayerEndsTurn(PLAYER));
+}
+
+TEST_F(NewHorizonsWaterWalkDayEndTest, ClearGroundAirEligibilityEndsDayAndResetsReceiptOnNewTurn)
+{
+	flyDayEnd = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(castFly());
+	const auto land = hero->visitablePos() + int3(1, 0, 0);
+	hero->setMovementPoints(15);
+	ASSERT_TRUE(move(hero, land, EPathfindingLayer::AIR));
+	ASSERT_EQ(hero->movementPointsRemaining(), 0);
+	ASSERT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::AIR);
+	const auto plan = newHorizonsTravel::planRequiredLanding(*gameState(), *hero);
+	ASSERT_TRUE(plan);
+	EXPECT_TRUE(plan->steps.empty()) << "Eligibility is not a same-coordinate LAND command";
+	EXPECT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::AIR);
+	const auto day = gameState()->getCalendar().getCurrentDay();
+	ASSERT_TRUE(handler->turnOrder->onPlayerEndsTurn(PLAYER));
+	if(gameState()->getCalendar().getCurrentDay() == day)
+	{
+		ASSERT_TRUE(handler->turnOrder->onPlayerEndsTurn(OPPONENT));
+	}
+	ASSERT_EQ(gameState()->getCalendar().getCurrentDay(), day + 1);
+	EXPECT_EQ(hero->visitablePos(), land);
+	EXPECT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::LAND);
+	EXPECT_FALSE(hero->getTurnInfo(0)->hasFlyingMovement());
+	EXPECT_FALSE(hero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(NewHorizonsWaterWalkDayEndTest, ExistingWaterDayEndPolicyPreventsFlyWaterExhaustionWithoutAdoptingNewFlyRules)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(castFly());
+	ASSERT_FALSE(newHorizonsMagic::requiresFlyLegalDayEnd(hero->getMagicRules()));
+	const auto land = hero->visitablePos();
+	const auto sea = land + int3(1, 0, 0);
+	map()->getTile(sea).terrainType = ETerrainId::WATER;
+	hero->setMovementPoints(15);
+	EXPECT_FALSE(move(hero, sea, EPathfindingLayer::AIR));
+	EXPECT_EQ(hero->visitablePos(), land);
+	EXPECT_EQ(hero->movementPointsRemaining(), 15);
+	hero->setMovementPoints(30);
+	ASSERT_TRUE(move(hero, sea, EPathfindingLayer::AIR));
+	EXPECT_FALSE(handler->turnOrder->onPlayerEndsTurn(PLAYER));
+	const auto first = newHorizonsTravel::planRequiredLanding(*gameState(), *hero);
+	const auto second = newHorizonsTravel::planRequiredLanding(*gameState(), *hero);
+	ASSERT_TRUE(first);
+	EXPECT_EQ(first, second);
+	ASSERT_EQ(first->steps.size(), 1u);
+	const auto & step = first->steps.front();
+	EXPECT_EQ(step.layer, EPathfindingLayer::AIR) << "Legacy land eligibility does not require new ordinary landing";
+	EXPECT_EQ(hero->visitablePos(), sea);
+	EXPECT_EQ(hero->movementPointsRemaining(), first->initialMovement);
+	ASSERT_TRUE(move(hero, step.destination, step.layer));
+	EXPECT_EQ(hero->movementPointsRemaining(), step.movementRemaining);
+	EXPECT_TRUE(map()->getTile(hero->visitablePos()).isLand());
+	const auto eligible = newHorizonsTravel::planRequiredLanding(*gameState(), *hero);
+	ASSERT_TRUE(eligible);
+	EXPECT_TRUE(eligible->steps.empty());
+	EXPECT_TRUE(handler->turnOrder->onPlayerEndsTurn(PLAYER));
+}
+
+TEST_F(NewHorizonsWaterWalkDayEndTest, ExistingMixedPolicyZeroReserveIsNotGrantedAnInventedEscape)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(castFly());
+	const auto sea = hero->visitablePos() + int3(1, 0, 0);
+	map()->getTile(sea).terrainType = ETerrainId::WATER;
+	hero->setMovementPoints(30);
+	ASSERT_TRUE(move(hero, sea, EPathfindingLayer::AIR));
+	// Characterize an already exhausted historical state, not a newly admitted
+	// last step or a rescue. The revised admission above retains a reserve.
+	hero->setMovementPoints(0);
+	const auto day = gameState()->getCalendar().getCurrentDay();
+	EXPECT_FALSE(newHorizonsTravel::planRequiredLanding(*gameState(), *hero));
+	EXPECT_FALSE(handler->turnOrder->onPlayerEndsTurn(PLAYER));
+	EXPECT_EQ(gameState()->getCalendar().getCurrentDay(), day);
+	EXPECT_EQ(hero->visitablePos(), sea);
+	EXPECT_EQ(hero->movementPointsRemaining(), 0);
+}
+
+TEST_F(NewHorizonsWaterWalkDayEndTest, TerminalPlanProjectsEarnedForcedMarchButNeverUsesItAsReserve)
+{
+	flyDayEnd = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const std::string parent = "new-horizons:logistics";
+	const std::string perk = parent + ".forcedMarch";
+	const int skill = SecondarySkill::decode(parent);
+	ASSERT_GE(skill, 0);
+	ASSERT_EQ(hero->getPerkSkillRank(parent), 0);
+	hero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(hero->getPerkState().canAcquirePerk(parent, perk, hero->getPerkSkillRank(parent)));
+	hero->applyPerkSelection({parent, perk});
+	ASSERT_TRUE(hero->hasActivePerk(parent, perk));
+	ASSERT_NO_FATAL_FAILURE(castFly());
+	const auto day = gameState()->getCalendar().getCurrentDay();
+	for(const bool unused : {true, false})
+	{
+		const auto land = hero->visitablePos();
+		const auto sea = land + int3(1, 0, 0);
+		map()->getTile(sea).terrainType = ETerrainId::WATER;
+		// Budget setup is on safe ground, not an escape grant on water.
+		hero->setMovementPoints(15);
+		EXPECT_FALSE(move(hero, sea, EPathfindingLayer::AIR));
+		EXPECT_EQ(hero->visitablePos(), land);
+		EXPECT_EQ(hero->movementPointsRemaining(), 15);
+		hero->setMovementPoints(30);
+		ASSERT_TRUE(move(hero, sea, EPathfindingLayer::AIR));
+		ASSERT_EQ(hero->movementPointsRemaining(), 15);
+		const auto plan = newHorizonsTravel::planRequiredLanding(*gameState(), *hero);
+		ASSERT_TRUE(plan);
+		ASSERT_EQ(plan->steps.size(), 1u);
+		const auto & step = plan->steps.front();
+		EXPECT_EQ(step.forcedMarch, unused);
+		const auto grant = std::max(0, hero->movementPointsLimit()) / 10;
+		ASSERT_GT(grant, 0);
+		EXPECT_EQ(step.movementRemaining, unused ? grant : 0);
+		EXPECT_EQ(hero->getNewHorizonsForcedMarchLastUseDay(), unused ? -1 : day);
+		ASSERT_TRUE(move(hero, step.destination, step.layer));
+		EXPECT_EQ(hero->movementPointsRemaining(), step.movementRemaining);
+		EXPECT_EQ(hero->getNewHorizonsForcedMarchLastUseDay(), day);
+		EXPECT_EQ(hero->getNewHorizonsForcedMarchPenaltyDay(), day);
+	}
+}
+
+TEST_F(NewHorizonsWaterWalkDayEndTest, FlyPolicyPresenceGuardsTheNewRevisionBeforeWriterPrefixes)
+{
+	flyDayEnd = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto previous = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_FLY_DAY_END) - 1);
+	const auto rejectsBeforePrefix = [previous](const auto & value)
+	{
+		CMemorySerializer bytes;
+		bytes.oser.version = previous;
+		EXPECT_THROW(bytes.oser & value, std::runtime_error);
+		EXPECT_TRUE(bytes.extractBuffer().empty());
+	};
+	rejectsBeforePrefix(*gameState());
+	rejectsBeforePrefix(*map());
+	rejectsBeforePrefix(*hero);
+	auto battle = initializedBattle();
+	rejectsBeforePrefix(*battle);
+	BattleStart start;
+	start.info = initializedBattle();
+	rejectsBeforePrefix(start);
+	LobbyStartGame lobby;
+	lobby.initializedGameState = gameState();
+	rejectsBeforePrefix(lobby);
+	for(const bool enabled : {false, true})
+	{
+		auto rules = hero->getMagicRules();
+		rules["adventureSpells"]["core:fly"]["requireLegalDayEnd"].Bool() = enabled;
+		JsonNode overrides;
+		overrides["magic"]["newHorizons"] = rules;
+		GameSettings settings;
+		settings.loadOverrides(overrides);
+		rejectsBeforePrefix(settings);
+		CMemorySerializer raw;
+		raw.oser & overrides;
+		raw.iser.version = previous;
+		GameSettings restored;
+		EXPECT_THROW(raw.iser & restored, std::runtime_error);
+		CMemorySerializer current;
+		ASSERT_NO_THROW(current.oser & settings);
+		ASSERT_NO_THROW(current.iser & restored);
+		EXPECT_EQ(newHorizonsMagic::requiresFlyLegalDayEnd(
+			restored.getValue(EGameSettings::MAGIC_NEW_HORIZONS)), enabled);
+	}
+	auto absent = hero->getMagicRules();
+	absent["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
+	EXPECT_NO_THROW(newHorizonsMagic::validateTravelDayEndSerialization(absent, true, false));
+	JsonNode historicalOverrides;
+	historicalOverrides["magic"]["newHorizons"] = absent;
+	GameSettings historical;
+	historical.loadOverrides(historicalOverrides);
+	CMemorySerializer prior;
+	prior.oser.version = previous;
+	prior.iser.version = previous;
+	ASSERT_NO_THROW(prior.oser & historical);
+	GameSettings restoredHistorical;
+	ASSERT_NO_THROW(prior.iser & restoredHistorical);
+	EXPECT_FALSE(newHorizonsMagic::requiresFlyLegalDayEnd(
+		restoredHistorical.getValue(EGameSettings::MAGIC_NEW_HORIZONS)));
+	absent["adventureSpells"]["core:fly"]["requireLegalDayEnd"] = JsonNode();
+	EXPECT_THROW(newHorizonsMagic::validateTravelDayEndSerialization(absent, true, true), std::runtime_error);
+}
+
 TEST_F(NewHorizonsWaterWalkDayEndTest, KeyPresenceGuardsCurrentAndOlderRawFormatsBeforeWriterPrefix)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
@@ -350,6 +634,17 @@ TEST_F(NewHorizonsWaterWalkDayEndTest, KeyPresenceGuardsCurrentAndOlderRawFormat
 	}
 	auto absent = hero->getMagicRules();
 	absent["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
+	// This positive older-format context also predates the independent captured
+	// spell clauses; their rejection is not a Water Walk compatibility failure.
+	for(auto & [name, spell] : absent["spells"].Struct())
+	{
+		(void)name;
+		for(const auto * key : {"implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly",
+			"schoolRankDurations", "burnGroundedFlyers"})
+			spell.Struct().erase(key);
+	}
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(absent));
+	ASSERT_NO_THROW(newHorizonsMagic::validateCanonicalSpellClausesSerialization(absent, false));
 	EXPECT_NO_THROW(newHorizonsMagic::validateWaterWalkDayEndSerialization(absent, false));
 	EXPECT_FALSE(newHorizonsMagic::requiresWaterWalkLegalDayEnd(absent));
 	GameSettings historical;

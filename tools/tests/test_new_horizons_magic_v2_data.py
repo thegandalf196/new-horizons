@@ -66,13 +66,14 @@ class MagicV2DataTest(unittest.TestCase):
         for key in ('morale', 'creatureAbilities', 'protectedAdventureBarriers', 'heroLuck', 'heroMorale'):
             self.rules.pop(key, None)
         self.rules['adventureSpells']['core:waterWalk'].pop('requireLegalDayEnd', None)
+        self.rules['adventureSpells']['core:fly'].pop('requireLegalDayEnd', None)
         self.rules['spells']['core:quicksand'].pop('selectedPlacement')
         self.rules['spells']['core:earthquake'].pop('earthquake')
         for row in self.rules['spells'].values():
             row.pop('structures', None)
             row.pop('heroAccess', None)
             row.pop('restoration', None)
-            for key in ('implosion', 'ignoreInterveningBarriers',
+            for key in ('propagationLimit', 'implosion', 'ignoreInterveningBarriers',
                         'temporaryMagicalEffectsOnly', 'schoolRankDurations',
                         'burnGroundedFlyers'):
                 row.pop(key, None)
@@ -488,7 +489,7 @@ class MagicV2DataTest(unittest.TestCase):
         validator = Draft4Validator(self.v3, registry=self.registry)
         self.assertEqual(self.v3['properties']['adventureSpells']['properties']
                          ['core:waterWalk']['$ref'],
-                         'vcmi:newHorizonsMagic#/definitions/waterWalkAdventureSpell')
+                         'vcmi:newHorizonsMagic#/definitions/travelAdventureSpell')
         validator.validate(self.v3_rules)
         for value in (False, True):
             changed = copy.deepcopy(self.v3_rules)
@@ -503,6 +504,51 @@ class MagicV2DataTest(unittest.TestCase):
             self.assertFalse(validator.is_valid(changed))
         changed = copy.deepcopy(self.v3_rules)
         changed['adventureSpells']['core:waterWalk']['unexpected'] = True
+        self.assertFalse(validator.is_valid(changed))
+
+    def test_historical_projections_remove_later_clauses_without_mutating_source(self):
+        current = copy.deepcopy(self.v3_rules)
+        old = legacy_rules(current)
+        self.old_validator.validate(old)
+        self.validator.validate(self.rules)
+        self.assertEqual(current, self.v3_rules)
+        for historical, validator in ((old, self.old_validator), (self.rules, self.validator)):
+            for key in ('morale', 'creatureAbilities', 'protectedAdventureBarriers', 'heroLuck', 'heroMorale'):
+                with self.subTest(version=historical['rulesetVersion'], key=key):
+                    self.assertNotIn(key, historical)
+                    invalid = copy.deepcopy(historical)
+                    invalid[key] = current[key]
+                    self.assertFalse(validator.is_valid(invalid))
+            for spell, row in historical['spells'].items():
+                self.assertEqual(row['schools'], current['spells'][spell]['schools'])
+                self.assertEqual('costs' in row, 'costs' in current['spells'][spell])
+                if 'costs' in row:
+                    self.assertEqual(row['costs'], current['spells'][spell]['costs'])
+
+    def test_fly_day_end_policy_is_optional_boolean_and_v3_only(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        self.assertEqual(self.v3['properties']['adventureSpells']['properties']
+                         ['core:fly']['$ref'],
+                         'vcmi:newHorizonsMagic#/definitions/travelAdventureSpell')
+        self.assertTrue(self.v3_rules['adventureSpells']['core:fly']['requireLegalDayEnd'])
+        for value in (False, True):
+            changed = copy.deepcopy(self.v3_rules)
+            changed['adventureSpells']['core:fly']['requireLegalDayEnd'] = value
+            validator.validate(changed)
+            for historical, old_validator in ((self.old_rules, self.old_validator),
+                                              (self.rules, self.validator)):
+                invalid = copy.deepcopy(historical)
+                invalid['adventureSpells']['core:fly']['requireLegalDayEnd'] = value
+                self.assertFalse(old_validator.is_valid(invalid))
+        absent = copy.deepcopy(self.v3_rules)
+        absent['adventureSpells']['core:fly'].pop('requireLegalDayEnd')
+        validator.validate(absent)
+        for value in (None, 0, 1, {}, [], 'true'):
+            changed = copy.deepcopy(self.v3_rules)
+            changed['adventureSpells']['core:fly']['requireLegalDayEnd'] = value
+            self.assertFalse(validator.is_valid(changed))
+        changed = copy.deepcopy(self.v3_rules)
+        changed['adventureSpells']['core:fly']['unexpected'] = True
         self.assertFalse(validator.is_valid(changed))
 
     def test_v1_stays_strict_and_v2_is_not_an_empty_context(self):

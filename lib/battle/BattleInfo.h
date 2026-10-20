@@ -614,7 +614,9 @@ public:
 		if(h.saving)
 			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
 		if(h.saving)
-			newHorizonsMagic::validateWaterWalkDayEndSerialization(magicRules, h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+			newHorizonsMagic::validateTravelDayEndSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
 		if(h.saving)
 			validateMetamagicCapacitySerialization(h);
 		validateRoyalStandardSerialization(h);
@@ -987,7 +989,9 @@ public:
 				validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
 			if(!h.saving)
 			{
-				newHorizonsMagic::validateWaterWalkDayEndSerialization(magicRules, h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+				newHorizonsMagic::validateTravelDayEndSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
 				newHorizonsPlague::validateRuleSerialization(magicRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 				newHorizonsMagic::validateRules(magicRules);

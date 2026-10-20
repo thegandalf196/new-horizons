@@ -82,6 +82,7 @@
 			}
 		},
 		"core:fly": {
+			"requireLegalDayEnd": true,
 			"guildLevel": 4,
 			"cost": 60,
 			"unlockCost": {

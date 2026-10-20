@@ -135,9 +135,9 @@
 			"required": ["core:summonBoat", "core:waterWalk", "core:townPortal", "core:fly", "core:dimensionDoor"],
 			"properties": {
 				"core:summonBoat": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
-				"core:waterWalk": {"$ref": "vcmi:newHorizonsMagic#/definitions/waterWalkAdventureSpell"},
+				"core:waterWalk": {"$ref": "vcmi:newHorizonsMagic#/definitions/travelAdventureSpell"},
 				"core:townPortal": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
-				"core:fly": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
+				"core:fly": {"$ref": "vcmi:newHorizonsMagic#/definitions/travelAdventureSpell"},
 				"core:dimensionDoor": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"}
 			}
 		},

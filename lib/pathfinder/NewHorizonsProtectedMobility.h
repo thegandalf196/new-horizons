@@ -29,6 +29,8 @@ struct DLL_LINKAGE FlightReceipt
 	}
 };
 DLL_LINKAGE bool enabled(const JsonNode & rules);
+/// Either policy needs the existing accepted AIR/LAND surface receipt.
+DLL_LINKAGE bool tracksFlight(const JsonNode & rules);
 DLL_LINKAGE EPathfindingLayer displacementLayer(const CGHeroInstance & hero, EPathfindingLayer layer);
 DLL_LINKAGE void validateRulesSerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE void validateTiles(const std::vector<int3> & tiles, int width, int height, int levels);

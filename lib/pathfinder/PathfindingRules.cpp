@@ -125,10 +125,7 @@ void MovementCostRule::process(
 
 	// This is shared by ordinary pathing and Nullkiller's movement cost rule.
 	// The reserve search itself has no spell/battle/teleport/day-rollover edges.
-	if(destination.node->layer == EPathfindingLayer::WATER
-		&& !pathfinderHelper->hero->inBoat()
-		&& newHorizonsMagic::requiresWaterWalkLegalDayEnd(pathfinderHelper->hero->getMagicRules())
-		&& !pathfinderHelper->hasSameDayLandEscape(destination.coord, destMovePointsLeft))
+	if(!pathfinderHelper->canFinishTravelToday(destination.coord, destMovePointsLeft, destination.node->layer))
 	{
 		destination.blocked = true;
 		return;

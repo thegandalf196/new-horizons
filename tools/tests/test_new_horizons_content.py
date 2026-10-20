@@ -8,6 +8,7 @@ import copy
 import contextlib
 import importlib.util
 import io
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -67,6 +68,18 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:stormOfDaggers',
     'new-horizons:timeStop',
     'new-horizons:transfigureMatter',
+    'new-horizons:confusion',
+    'new-horizons:elementalConvergence',
+    'new-horizons:massBless',
+    'new-horizons:massCurse',
+    'new-horizons:massRegeneration',
+    'new-horizons:massSlow',
+    'new-horizons:massSorrow',
+    'new-horizons:naturesWrath',
+    'new-horizons:pandemonium',
+    'new-horizons:polymorph',
+    'new-horizons:puppetMaster',
+    'new-horizons:realityWarp',
 }
 INACTIVE_CORE_SPELLS = {'core:animateDead'}
 ADVENTURE_SPELLS = {
@@ -143,6 +156,10 @@ def legacy_rules(rules):
         result.pop('physicalDamageReductionCapPercent', None)
         result.pop('schoolRankPowerCoefficientPercent', None)
         result.pop('spellcraftEfficiencyPercent', None)
+        for key in ('morale', 'creatureAbilities', 'protectedAdventureBarriers', 'heroLuck', 'heroMorale'):
+            result.pop(key, None)
+        for name in ('core:waterWalk', 'core:fly'):
+            result.get('adventureSpells', {}).get(name, {}).pop('requireLegalDayEnd', None)
         for faction in result.get('factions', {}).values():
             faction['major'] = faction.pop('preferredA')
             faction['minor'] = faction.pop('preferredB')
@@ -155,6 +172,9 @@ def legacy_rules(rules):
             spell.pop('structures', None)
             spell.pop('heroAccess', None)
             spell.pop('restoration', None)
+            for key in ('variant', 'propagationLimit', 'implosion', 'ignoreInterveningBarriers',
+                        'temporaryMagicalEffectsOnly', 'schoolRankDurations', 'burnGroundedFlyers'):
+                spell.pop(key, None)
     return result
 
 
@@ -232,13 +252,32 @@ class NewHorizonsContentTest(unittest.TestCase):
             '': [expected_pack],
         })
 
-    def test_selected_cabir_and_turbaned_magi_bindings_resolve_in_pack(self):
+    def test_selected_cabir_and_turbaned_magi_bindings_resolve_in_pack_or_recipe(self):
         creatures = load('Mods/new-horizons/Content/config/creatures/tower.json')
         for name in ('core:gremlin', 'core:masterGremlin', 'core:mage', 'core:archMage'):
             with self.subTest(creature=name):
                 graphics = creatures[name]['graphics']
                 prefix = 'magi-vcmi-complete/' if name in ('core:mage', 'core:archMage') else 'cabir-handoff/'
                 for role, dimensions in (('iconLarge', (58, 64)), ('iconSmall', (32, 32))):
+                    if name == 'core:mage' and role == 'iconLarge':
+                        # The selected HOLDING frame is composed at runtime,
+                        # not a packed generated-output PNG or gray fallback.
+                        self.assertEqual(graphics[role], 'NH_academy_mageHolding_icon_large.png')
+                        source = 'magi-vcmi-complete/battle/magi/idle/000.png'
+                        backdrop = 'NH_academy_creature_portrait_backdrop.png'
+                        recipes = (ROOT / 'lib/filesystem/GeneratedImageRecipes.cpp').read_text()
+                        self.assertRegex(recipes, r'\{"' + re.escape(graphics[role])
+                                         + r'",\s*"' + re.escape(source) + r'",\s*EResType::IMAGE,\s*"'
+                                         + re.escape(backdrop) + r'"\}')
+                        self.assertTrue((ART / source).is_file())
+                        self.assertEqual((ART / source).read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
+                        with (ART / backdrop).open_image() as image:
+                            self.assertEqual(image.size, dimensions)
+                        generator = (ROOT / 'client/render/AssetGenerator.cpp').read_text()
+                        self.assertIn('generatedImageRecipes::creaturePortraits()', generator)
+                        self.assertIn('imageFiles[ImagePath::builtin(std::string(recipe.output))]', generator)
+                        self.assertIn('Rect(178, 174, 36, 49), backdrop, Point(58, 64), 2)', generator)
+                        continue
                     self.assertTrue(graphics[role].startswith(prefix))
                     payload = (ART / graphics[role]).read_bytes()
                     self.assertEqual(payload[:8], b'\x89PNG\r\n\x1a\n')
@@ -706,7 +745,8 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertTrue(base['targetModifier']['smart'])
         self.assertEqual(base['battleEffects']['directDamage'], {'type': 'damage'})
         self.assertEqual(base['battleEffects']['slowingVines']['bonus']['speed'],
-                         {'type': 'STACKS_MOVEMENT_RANGE', 'val': -2, 'duration': 'N_TURNS', 'turns': 2})
+                         {'type': 'STACKS_MOVEMENT_RANGE', 'val': -2, 'duration': 'N_TURNS', 'turns': 2,
+                          'statusTags': ['DEBUFF'], 'statusIdentity': 'new-horizons:vengefulVines'})
         for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
             filename = spell['graphics'][key]
             self.assertEqual(struct.unpack('>II',
@@ -1044,18 +1084,23 @@ class NewHorizonsContentTest(unittest.TestCase):
             self.assertEqual(level['battleEffects']['directDamage'],
                              {'type': 'damage', 'destroyRemains': True})
 
-    def test_transfigure_matter_reuses_remove_obstacle_icons(self):
+    def test_transfigure_matter_uses_selected_original_icons(self):
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
         spell = content['transfigureMatter']
-        # Remove Obstacle is index 64; SPELLINT reserves frame zero, as in
-        # CSpell::registerIcons. Book, scroll and scenario frames are unshifted.
-        self.assertEqual(spell['graphics'], {
-            'iconBook': 'SPELLS.def:0:64',
-            'iconScroll': 'SPELLSCR.def:0:64',
-            'iconEffect': 'SPELLINT.def:0:65',
-            'iconImmune': 'SPELLINT.def:0:65',
-            'iconScenarioBonus': 'SPELLBON.def:0:64',
-        })
+        selections = load('assets/new-horizons/spell-art-selections.json')['entries']
+        selected = [row for row in selections if row['id'] == 'new-horizons:transfigureMatter']
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(spell['graphics'], selected[0]['bindings'])
+        self.assertEqual(set(spell['graphics']),
+                         {'iconBook', 'iconScroll', 'iconEffect', 'iconImmune', 'iconScenarioBonus'})
+        for role, size in (('iconBook', 44), ('iconScroll', 32), ('iconEffect', 30),
+                           ('iconImmune', 30), ('iconScenarioBonus', 32)):
+            filename = spell['graphics'][role]
+            export = selected[0]['exports'][filename]
+            self.assertEqual(export['size'], size)
+            self.assertEqual(hashlib.sha256((ART / filename).read_bytes()).hexdigest(), export['sha256'])
+            with (ART / filename).open_image() as image:
+                self.assertEqual((image.mode, image.size), ('RGBA', (size, size)))
         module = load('Mods/new-horizons/mod.json')
         self.assertIn('config/spells/newHorizons.json', module['spells'])
         self.assertIn({'type': 'dir', 'path': '/Content'}, module['filesystem'][''])
@@ -1083,12 +1128,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             'description': 'Halon can use Metamagic one additional time per combat.',
         })
         module = load('Mods/new-horizons/mod.json')
-        self.assertEqual(module['heroes'], [
-            'config/heroes/biographies.json',
-            'config/heroes/fafner.json',
-            'config/heroes/halon.json',
-            'config/heroes/solmyr.json',
-        ])
+        self.assertEqual(module['heroes'].count('config/heroes/halon.json'), 1)
 
     def test_fafner_patch_keeps_a_valid_non_faction_skill_with_metamagic(self):
         patch = load('Mods/new-horizons/Content/config/heroes/fafner.json')['core:fafner']
@@ -1741,10 +1781,12 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(module['settings'], settings)
         self.assertEqual(module['version'], load('config/newHorizonsVersion.json')['version'])
         self.assertEqual(module['heroes'], [
+            'config/heroes/fixedCreatureSpecialties.json',
             'config/heroes/biographies.json',
             'config/heroes/fafner.json',
             'config/heroes/halon.json',
             'config/heroes/solmyr.json',
+            'config/heroes/classSwaps.json',
         ])
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])

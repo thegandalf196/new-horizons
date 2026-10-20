@@ -28,6 +28,26 @@ as independent. The [battle descriptor limits](#new-horizons-immediate-double-co
 below still apply; this does not add ongoing-battle world-save or general health
 restoration support.
 
+## Captured Fly day-end policy
+
+`NEW_HORIZONS_FLY_DAY_END` protects the presence of
+`fly.requireLegalDayEnd` in captured magic rules, including an explicit false.
+It does not change magic ruleset version3 or append another hero field. Direct
+and enclosing unsupported writers reject before their prefixes; older readers
+reject unsupported captures rather than discard the policy. Water Walk keeps
+its separate existing compatibility boundary.
+
+New games capture the installed Fly policy. Loaded worlds retain their own
+absence/false/true value; initialization must not fill absence from defaults.
+The existing flight-layer receipt is tracked when required by protected barriers
+or Fly landing policy. Barrier collision still follows only its own policy.
+An eligible AIR receipt on ordinary land may end the day without a fictitious
+same-coordinate LAND move; the existing NewTurn transition resets the receipt.
+
+Landing plans are transient values, not saved routes or additional receipts.
+They do not rescue an already stranded historical hero with no legal movement.
+See [AI travel execution](AI.md#same-day-travel-landing).
+
 ## Strict perk-tier progression
 
 `NEW_HORIZONS_STRICT_PERK_PROGRESSION` (1118) protects captured

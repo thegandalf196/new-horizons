@@ -24,6 +24,7 @@ inline void isolateHistoricalAdventurePolicies(CMap & map)
 	if(magic.isStruct() && magic["adventureSpells"]["core:waterWalk"].isStruct())
 	{
 		magic["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
+		magic["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
 		magic.Struct().erase("protectedAdventureBarriers");
 		magic.setOverrideFlag(true);
 		map.overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
