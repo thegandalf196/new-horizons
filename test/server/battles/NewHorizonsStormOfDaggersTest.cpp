@@ -11,6 +11,7 @@
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/battle/NewHorizonsPuppetMaster.h"
+#include "../../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/callback/GameRandomizer.h"
@@ -232,6 +233,42 @@ protected:
 		FAIL() << "Could not select the shipped Faerie Dragon's genuine 20% Mirror branch";
 	}
 
+	void mirrorPrepareTriggeredHeroLuck()
+	{
+		ASSERT_EQ(newHorizonsHeroLuck::damageMultiplierPercent(battle()->getMagicRules()), 200);
+		ASSERT_EQ(newHorizonsHeroLuck::manaRefundPercent(battle()->getMagicRules()), 50);
+		const SecondarySkill luck(SecondarySkill::decode("new-horizons:luck"));
+		ASSERT_TRUE(luck.hasValue());
+		for(auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			hero->setSecSkillLevel(luck, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			hero->applyPerkSelection({"new-horizons:luck", "new-horizons:luck.fortuneSFavor"});
+			hero->setSecSkillLevel(luck, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+			hero->applyPerkSelection({"new-horizons:luck", "new-horizons:luck.gambler"});
+			hero->setSecSkillLevel(luck, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+			hero->applyPerkSelection({"new-horizons:luck", "new-horizons:luck.twistOfFate"});
+			hero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+				BonusType::LUCK, BonusSource::OTHER, 1 - hero->luckVal(), BonusSourceID()));
+			ASSERT_EQ(hero->luckVal(), 1);
+			ASSERT_TRUE(newHorizonsHeroLuck::hasErraticMana(hero));
+			ASSERT_TRUE(newHorizonsHeroLuck::hasDruidicLuck(hero));
+		}
+		// Select a real triggered branch under the installed chance curve; no
+		// probability override, fabricated receipt or live-stream probe.
+		for(int candidate = 0; candidate < 256; ++candidate)
+		{
+			gameHandler->randomizer->setSeed(candidate * 104729);
+			auto random = mirrorCloneRandomizer();
+			const auto receipt = random->rollHeroLuck(attackerSideHero->id, attackerSideHero->luckVal());
+			if(receipt && receipt->triggered(newHorizonsHeroLuck::chanceScalePercent(
+				battle()->getMagicRules(), newHorizonsHeroLuck::Proc::ErraticMana))
+				&& receipt->triggered(newHorizonsHeroLuck::chanceScalePercent(
+					battle()->getMagicRules(), newHorizonsHeroLuck::Proc::DruidicLuck)))
+				return;
+		}
+		FAIL() << "No genuine jointly triggered parent Hero Luck branch in bounded seeds";
+	}
+
 	struct MirrorScenario
 	{
 		int mirrorIndex = -1; // 0 first, 1 later, 2 both original recipients.
@@ -241,6 +278,7 @@ protected:
 		bool lockedRedirect = false;
 		bool mirrorOnRedirect = false;
 		bool puppetReflector = false;
+		bool triggeredHeroLuck = false;
 		bool hypnotizedLegs = false;
 	};
 
@@ -248,6 +286,7 @@ protected:
 	{
 		MirrorRecipientSnapshot units;
 		std::vector<std::byte> random;
+		std::optional<newHorizonsHeroLuck::Receipt> heroLuck = std::nullopt;
 		std::set<uint32_t> reflected;
 		std::set<uint32_t> resisted;
 		std::vector<uint32_t> affected;
@@ -327,6 +366,10 @@ protected:
 			ASSERT_EQ(scenario.mirrorIndex, 0);
 			ASSERT_NO_FATAL_FAILURE(mirrorSelectRedirectedResistanceBranch(*scenario.redirectedResistance));
 		}
+		if(scenario.triggeredHeroLuck)
+		{
+			ASSERT_NO_FATAL_FAILURE(mirrorPrepareTriggeredHeroLuck());
+		}
 	}
 
 	void mirrorSelectRedirectedResistanceBranch(bool resisted)
@@ -351,6 +394,16 @@ protected:
 		expected.units = mirrorRecipientSnapshot(*battle());
 		expected.tile = selected[0]->getPosition();
 		auto random = mirrorCloneRandomizer();
+		if(scenario.triggeredHeroLuck)
+		{
+			expected.heroLuck = random->rollHeroLuck(attackerSideHero->id, attackerSideHero->luckVal());
+			ASSERT_TRUE(expected.heroLuck);
+			for(const auto proc : {newHorizonsHeroLuck::Proc::ErraticMana, newHorizonsHeroLuck::Proc::DruidicLuck})
+			{
+				ASSERT_TRUE(expected.heroLuck->triggered(newHorizonsHeroLuck::chanceScalePercent(battle()->getMagicRules(), proc)));
+				expected.heroLuck->mark(proc);
+			}
+		}
 		const auto resistance = mirrorAdvanceResistance(*random);
 		if(scenario.originalResistance)
 		{
@@ -386,7 +439,7 @@ protected:
 			if(!vstd::contains(expected.affected, id))
 				expected.affected.push_back(id);
 			states.try_emplace(id, recipient->acquireState());
-			int64_t damage = 112; // N remains the original two selected stacks.
+			int64_t damage = scenario.triggeredHeroLuck ? 224 : 112; // N remains the original two selected stacks.
 			states.at(id)->damage(damage);
 			expected.damage += damage;
 			expected.injuries.emplace_back(id, damage);
@@ -467,6 +520,8 @@ protected:
 		expectedResources[0] -= 4; // Four permanent Buffer, then four Normal.
 		expectedResources[1] -= 4;
 		expectedResources[3] += 8;
+		if(scenario.triggeredHeroLuck)
+			expectedResources[0] += 4; // One refund4 restores original Normal charge, not Buffer.
 		EXPECT_EQ(mirrorResources(), expectedResources);
 		EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), expectedLedger);
 		EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::DEFENDER), defenderLedger);
@@ -478,7 +533,7 @@ protected:
 		EXPECT_EQ(receipt.side, BattleSide::ATTACKER);
 		EXPECT_TRUE(receipt.castByHero);
 		EXPECT_TRUE(receipt.activeCast);
-		EXPECT_FALSE(receipt.heroLuck);
+		EXPECT_EQ(receipt.heroLuck, expected.heroLuck);
 		EXPECT_EQ(receipt.paidHeroManaCost, 8);
 		EXPECT_EQ(receipt.paidCounterspellManaCost, 0);
 		EXPECT_EQ(receipt.reflectedCres, expected.reflected);
@@ -693,4 +748,9 @@ TEST_F(NewHorizonsStormOfDaggersTest, CompoundNoMirrorHypnotizedTargetRetainsHos
 TEST_F(NewHorizonsStormOfDaggersTest, CompoundNoMirrorPuppetTargetRetainsHostileResistance)
 {
 	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.originalResistance = true, .puppetReflector = true}));
+}
+
+TEST_F(NewHorizonsStormOfDaggersTest, MixedReflectedSharesInheritOneTriggeredLuckReceiptAndOneRefund)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.mirrorIndex = 0, .triggeredHeroLuck = true}));
 }
