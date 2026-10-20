@@ -14,8 +14,11 @@
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/networkPacks/PacksForClient.h"
+#include "../../../lib/networkPacks/PacksForServer.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/serializer/CTypeList.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/queries/QueriesProcessor.h"
 #include "../../../server/queries/MapQueries.h"
@@ -35,6 +38,36 @@ constexpr auto inspirationalLeaderId = "new-horizons:discipline.inspirationalLea
 constexpr auto havocMagicId = "new-horizons:havocMagic";
 constexpr auto stormcallerId = "new-horizons:havocMagic.stormcaller";
 constexpr auto controlledBlastId = "new-horizons:havocMagic.controlledBlast";
+
+class PendingPerkCommandServer final : public GameHandlerTestServer
+{
+public:
+	using GameHandlerTestServer::GameHandlerTestServer;
+	std::vector<PackageReceived> received;
+	std::vector<PackageApplied> responses;
+	std::vector<std::string> events;
+
+	void sendPack(CPackForClient & pack, GameConnectionID connection) override
+	{
+		EXPECT_EQ(connection, GameConnectionID::FIRST_CONNECTION);
+		if(const auto * receipt = dynamic_cast<const PackageReceived *>(&pack))
+			received.push_back(*receipt);
+		if(const auto * response = dynamic_cast<const PackageApplied *>(&pack))
+		{
+			responses.push_back(*response);
+			events.push_back(response->result ? "accepted" : "rejected");
+		}
+	}
+
+	void applyPack(CPackForClient & pack) override
+	{
+		if(dynamic_cast<const HeroPerkChosen *>(&pack))
+			events.push_back("perk");
+		if(dynamic_cast<const QueryResolved *>(&pack))
+			events.push_back("resolved");
+		GameHandlerTestServer::applyPack(pack);
+	}
+};
 
 class NewHorizonsPerkVerticalSliceTest : public TinyMapGameTest
 {
@@ -103,6 +136,103 @@ protected:
 		});
 	}
 };
+}
+
+TEST_F(NewHorizonsPerkVerticalSliceTest, PendingStrictPerkRejectsSaveCommandUntilAuthoritativeReply)
+{
+	startGame(christianHeroId);
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto player = hero->getOwner();
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(hero->getPerkState().rules));
+	PendingPerkCommandServer server(gameState(), player);
+	CGameHandler handler(server, gameState());
+	handler.onAdvInterfaceReady(player);
+	hero->setExperience(LIBRARY->heroh->reqExp(hero->level + 1), ChangeValueMode::ABSOLUTE);
+	handler.levelUpHero(hero);
+	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(handler.queries->topQuery(player));
+	ASSERT_NE(query, nullptr);
+	ASSERT_TRUE(query->prompted);
+	ASSERT_FALSE(query->hlu.perks.empty());
+	const int choice = static_cast<int>(query->hlu.skills.size());
+	ASSERT_TRUE(query->isValidReply(choice));
+	const auto selection = query->hlu.perks.front().selection;
+	const auto tier = query->hlu.perks.front().requiredRank;
+	const auto selectedBefore = hero->getPerkState().selected;
+	const auto levelBefore = hero->level;
+	const auto experienceBefore = hero->exp;
+	const auto snapshot = [](auto & value)
+	{
+		CMemorySerializer memory;
+		memory.oser & value;
+		return memory.extractBuffer();
+	};
+	const auto worldBefore = gameState()->saveToMemory();
+	const auto rngBefore = snapshot(*handler.randomizer);
+	const auto offerBefore = snapshot(query->hlu);
+	const auto qidBefore = handler.QID;
+	server.events.clear();
+
+	// Exercise the actual command boundary. SaveGame's visitor reports success
+	// even when disk saving throws, so a false ACK proves it was not dispatched.
+	SaveGame save("Saves/PendingStrictPerkMustReject", false);
+	save.player = player;
+	save.requestID = 17;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, save);
+	ASSERT_EQ(server.received.size(), 1u);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_EQ(server.received.front().requestID, save.requestID);
+	EXPECT_EQ(server.received.front().player, player);
+	EXPECT_EQ(server.received.front().packType, CTypeList::getInstance().getTypeID(&save));
+	EXPECT_EQ(server.responses.front().requestID, save.requestID);
+	EXPECT_EQ(server.responses.front().player, player);
+	EXPECT_EQ(server.responses.front().packType, server.received.front().packType);
+	EXPECT_FALSE(server.responses.front().result);
+	EXPECT_EQ(server.events, (std::vector<std::string>{"rejected"}));
+	EXPECT_EQ(handler.queries->topQuery(player), query);
+	EXPECT_EQ(handler.queries->countQuery(query), 1);
+	EXPECT_TRUE(query->prompted);
+	EXPECT_EQ(snapshot(query->hlu), offerBefore);
+	EXPECT_EQ(handler.QID, qidBefore);
+	EXPECT_EQ(gameState()->saveToMemory(), worldBefore);
+	EXPECT_EQ(snapshot(*handler.randomizer), rngBefore);
+	ASSERT_TRUE(query->isValidReply(choice));
+
+	QueryReply reply(query->queryID, choice);
+	reply.player = player;
+	reply.requestID = 18;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, reply);
+	ASSERT_EQ(server.received.size(), 2u);
+	ASSERT_EQ(server.responses.size(), 2u);
+	EXPECT_EQ(server.received.back().requestID, reply.requestID);
+	EXPECT_EQ(server.received.back().packType, CTypeList::getInstance().getTypeID(&reply));
+	EXPECT_EQ(server.responses.back().requestID, reply.requestID);
+	EXPECT_EQ(server.responses.back().player, player);
+	EXPECT_EQ(server.responses.back().packType, server.received.back().packType);
+	ASSERT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.events, (std::vector<std::string>{"rejected", "perk", "resolved", "accepted"}));
+	EXPECT_FALSE(handler.queries->topQuery(player));
+	EXPECT_EQ(handler.queries->countQuery(query), 0);
+	const auto & state = hero->getPerkState();
+	ASSERT_EQ(state.selected.size(), selectedBefore.size() + 1);
+	EXPECT_TRUE(std::equal(selectedBefore.begin(), selectedBefore.end(), state.selected.begin()));
+	EXPECT_EQ(state.selected.back(), selection);
+	size_t selectedInTier = 0;
+	for(const auto & selected : state.selected)
+		if(selected.skillId == selection.skillId)
+		{
+			const auto definition = newHorizonsHeroes::perkDefinition(state.rules, selected.skillId, selected.perkId);
+			ASSERT_TRUE(definition.has_value());
+			selectedInTier += newHorizonsHeroes::perkRequiredRank(definition->requiredRank) == tier;
+		}
+	EXPECT_EQ(selectedInTier, 1u);
+	ASSERT_NO_THROW(state.validate());
+	EXPECT_EQ(hero->level, levelBefore);
+	EXPECT_EQ(hero->exp, experienceBefore);
+	EXPECT_EQ(snapshot(*handler.randomizer), rngBefore);
+	// This checks only removal of the query admission blocker. The ordinary disk
+	// save/Quit/reload route is separate; do not dispatch another save in this test.
+	EXPECT_FALSE(handler.isBlockedByQueries(&save, player));
 }
 
 
