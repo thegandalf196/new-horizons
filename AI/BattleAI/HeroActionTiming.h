@@ -37,6 +37,8 @@ struct Continuation
 	Stage fullMovement;
 	Stage fullBestTarget;
 	// Candidate-local sink: reduced only after the worker loop joins.
+	// Only findMoveExchange is used here; goTowards is a separate ordinary path.
+	BattleMovementTiming fullMovementDetails;
 	BattleBestTargetTiming fullBestTargetDetails;
 };
 

@@ -42,16 +42,19 @@ void accumulateStage(ExchangeStage & total, const ExchangeStage & sample)
 	total.totalMicroseconds += sample.totalMicroseconds;
 }
 
+void accumulateExchange(ExchangeTiming & total, const ExchangeTiming & sample)
+{
+	for(const auto & [name, stage] : exchangeStages)
+		accumulateStage(total.*stage, sample.*stage);
+	total.remainderMicroseconds += sample.remainderMicroseconds;
+}
+
 void accumulateBestTarget(BattleBestTargetTiming & total, const BattleBestTargetTiming & sample)
 {
 	accumulateStage(total.waitedExchange, sample.waitedExchange);
 	accumulateStage(total.normalExchange, sample.normalExchange);
 	for(const auto member : {&BattleBestTargetTiming::waitedDetails, &BattleBestTargetTiming::normalDetails})
-	{
-		for(const auto & [name, stage] : exchangeStages)
-			accumulateStage((total.*member).*stage, (sample.*member).*stage);
-		(total.*member).remainderMicroseconds += (sample.*member).remainderMicroseconds;
-	}
+		accumulateExchange(total.*member, sample.*member);
 }
 
 void appendStage(std::string & fields, const std::string & prefix, const ExchangeStage & stage)
@@ -73,6 +76,17 @@ std::string bestTargetFields(const BattleBestTargetTiming & details)
 			appendStage(fields, prefix + "_" + stageName, (details.*member).*stage);
 		fields += " " + prefix + "_remainder_us=" + std::to_string((details.*member).remainderMicroseconds);
 	}
+	return fields;
+}
+
+std::string movementFields(const BattleMovementTiming & details)
+{
+	std::string fields;
+	const std::string prefix = "continuation_full_movement";
+	appendStage(fields, prefix + "_exchange", details.findMoveExchange);
+	for(const auto & [name, stage] : exchangeStages)
+		appendStage(fields, prefix + "_" + name, details.findMoveExchangeDetails.*stage);
+	fields += " " + prefix + "_remainder_us=" + std::to_string(details.findMoveExchangeDetails.remainderMicroseconds);
 	return fields;
 }
 }
@@ -120,6 +134,9 @@ void Candidates::finish(Summary & summary, bool threw) const
 		summary.continuation.fullReachability.accumulate(slot.fullReachability);
 		summary.continuation.fullMovement.accumulate(slot.fullMovement);
 		summary.continuation.fullBestTarget.accumulate(slot.fullBestTarget);
+		accumulateStage(summary.continuation.fullMovementDetails.findMoveExchange, slot.fullMovementDetails.findMoveExchange);
+		accumulateExchange(summary.continuation.fullMovementDetails.findMoveExchangeDetails,
+			slot.fullMovementDetails.findMoveExchangeDetails);
 		accumulateBestTarget(summary.continuation.fullBestTargetDetails, slot.fullBestTargetDetails);
 	}
 	summary.candidates += slots.size();
@@ -240,7 +257,8 @@ Call::~Call()
 			static_cast<unsigned long long>(summary.submit.maxMicroseconds),
 			static_cast<unsigned long long>(summary.submitReturned),
 			static_cast<unsigned long long>(summary.submitThrew),
-			bestTargetFields(summary.continuation.fullBestTargetDetails).c_str());
+			(bestTargetFields(summary.continuation.fullBestTargetDetails)
+				+ movementFields(summary.continuation.fullMovementDetails)).c_str());
 	}
 	catch(...)
 	{

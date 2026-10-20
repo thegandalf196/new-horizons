@@ -42,7 +42,8 @@ void evaluateContinuation(AbsoluteContinuationUtility & continuation,
 		auto moveTarget = [&]
 		{
 			heroActionTiming::Scope movement(timing ? &timing->fullMovement : nullptr);
-			return innerEvaluator.findMoveTowardsUnreachable(modelActive.get(), innerTargets, innerCache, state);
+			return innerEvaluator.findMoveTowardsUnreachable(modelActive.get(), innerTargets, innerCache, state,
+				timing ? &timing->fullMovementDetails : nullptr);
 		}();
 
 		if(!innerTargets.possibleAttacks.empty())

@@ -299,6 +299,8 @@ TEST_F(HeroActionUtilityTest, DeadContinuationKeepsPriorZeroWithoutTouchingCache
 	EXPECT_EQ(timing.fullReachability.calls, 0u);
 	EXPECT_EQ(timing.fullMovement.calls, 0u);
 	EXPECT_EQ(timing.fullBestTarget.calls, 0u);
+	EXPECT_EQ(timing.fullMovementDetails.findMoveExchange.calls, 0u);
+	EXPECT_EQ(timing.fullMovementDetails.findMoveExchangeDetails.body.calls, 0u);
 }
 
 TEST_F(HeroActionUtilityTest, FullAndCachedContinuationMatchFrozenLegacyBodyBitForBit)
@@ -345,6 +347,8 @@ TEST_F(HeroActionUtilityTest, FullAndCachedContinuationMatchFrozenLegacyBodyBitF
 		EXPECT_EQ(timing.fullReachability.calls, timed && !cached ? 1u : 0u);
 		EXPECT_EQ(timing.fullMovement.calls, timed && !cached ? 1u : 0u);
 		EXPECT_EQ(timing.fullBestTarget.calls, timed && !cached ? 1u : 0u);
+		// This adjacent-target fixture must not invent movement exchange work.
+		EXPECT_EQ(timing.fullMovementDetails.findMoveExchange.calls, 0u);
 		const auto & details = timing.fullBestTargetDetails;
 		for(const auto * exchange : {&details.waitedDetails, &details.normalDetails})
 		{
@@ -374,4 +378,68 @@ TEST_F(HeroActionUtilityTest, FullAndCachedContinuationMatchFrozenLegacyBodyBitF
 	EXPECT_EQ(server.startedActions.size(), traffic);
 	EXPECT_EQ((std::array{own->acquireState()->save().toString(),
 		low->acquireState()->save().toString(), high->acquireState()->save().toString()}), liveStates);
+}
+
+TEST_F(HeroActionUtilityTest, NonemptyFullMovementSinkMatchesNullAndLegacyScoreStateAndBothRng)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	own->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::STACKS_SPEED, BonusSource::OTHER, 1 - static_cast<int>(own->getMovementRange()), BonusSourceID()));
+	ASSERT_EQ(own->getMovementRange(), 1u);
+	const auto serverRng = serialized(*gameHandler->randomizer);
+	const auto gameRng = serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto traffic = server.startedActions.size();
+	const std::array liveStates{own->acquireState()->save().toString(),
+		low->acquireState()->save().toString(), high->acquireState()->save().toString()};
+	for(const bool timed : {false, true})
+	{
+		auto reference = std::make_shared<HypotheticBattle>(environment.get(), live);
+		auto extracted = std::make_shared<HypotheticBattle>(environment.get(), live);
+		DamageCache referenceCache, extractedCache;
+		referenceCache.buildDamageCache(reference, BattleSide::ATTACKER);
+		extractedCache.buildDamageCache(extracted, BattleSide::ATTACKER);
+		const auto referenceActive = reference->getForUpdate(own->unitId());
+		const auto extractedActive = extracted->getForUpdate(own->unitId());
+		PotentialTargets referenceTargets(referenceActive.get(), referenceCache, reference);
+		PotentialTargets extractedTargets(extractedActive.get(), extractedCache, extracted);
+		ASSERT_FALSE(referenceTargets.unreachableEnemies.empty());
+		ASSERT_FALSE(extractedTargets.unreachableEnemies.empty());
+		BattleExchangeEvaluator referenceEvaluator(reference, environment, 0.5f, 2);
+		BattleExchangeEvaluator extractedEvaluator(extracted, environment, 0.5f, 2);
+		float expected = 0;
+		CachedAttack empty;
+		legacyContinuation(expected, referenceActive, true, empty, referenceCache,
+			reference, environment, 0.5f, 2, referenceEvaluator, &referenceTargets);
+		heroActionUtility::AbsoluteContinuationUtility actual{0};
+		heroActionTiming::Continuation timing;
+		heroActionUtility::evaluateContinuation(actual, extractedActive, true, empty, extractedCache,
+			extracted, environment, 0.5f, 2, extractedEvaluator, &extractedTargets, timed ? &timing : nullptr);
+		const auto & movement = timing.fullMovementDetails;
+		if(timed)
+		{
+			ASSERT_GT(movement.findMoveExchange.calls, 0u);
+			EXPECT_EQ(movement.findMoveExchange.calls, movement.findMoveExchangeDetails.body.calls);
+			EXPECT_GT(movement.findMoveExchangeDetails.appliedAttacks.calls, 0u);
+			const auto & detail = movement.findMoveExchangeDetails;
+			EXPECT_EQ(detail.body.totalMicroseconds, detail.membership.totalMicroseconds
+				+ detail.projectionSetup.totalMicroseconds + detail.targetProbes.totalMicroseconds
+				+ detail.appliedAttacks.totalMicroseconds + detail.activationStart.totalMicroseconds
+				+ detail.activationEnd.totalMicroseconds + detail.roundAdvance.totalMicroseconds
+				+ detail.remainderMicroseconds);
+		}
+		else
+			EXPECT_EQ(movement.findMoveExchange.calls, 0u);
+		EXPECT_FALSE(movement.findMoveExchangeDetails.collectProbeDamageCache);
+		EXPECT_EQ(movement.goTowards.calls, 0u);
+		EXPECT_EQ(movement.goTowardsBlocking.calls, 0u);
+		EXPECT_EQ(bits(actual.value), bits(expected));
+		for(const auto * original : {own, low, high})
+			EXPECT_EQ(reference->battleGetUnitByID(original->unitId())->acquireState()->save().toString(),
+				extracted->battleGetUnitByID(original->unitId())->acquireState()->save().toString());
+		EXPECT_EQ(serialized(*gameHandler->randomizer), serverRng);
+		EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
+	}
+	EXPECT_EQ(server.startedActions.size(), traffic);
+	EXPECT_EQ((std::array{own->acquireState()->save().toString(), low->acquireState()->save().toString(),
+		high->acquireState()->save().toString()}), liveStates);
 }

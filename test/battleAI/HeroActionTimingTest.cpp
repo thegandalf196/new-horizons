@@ -92,6 +92,12 @@ TEST(HeroActionTimingTest, CandidateReductionKeepsOverlappingSumsSeparateFromLoo
 		candidates.at(0)->fullBestTargetDetails.waitedDetails.appliedAttacks = {4, 11};
 		candidates.at(1)->fullBestTargetDetails.normalDetails.body = {5, 13};
 		candidates.at(1)->fullBestTargetDetails.normalDetails.remainderMicroseconds = 7;
+		candidates.at(0)->fullMovementDetails.findMoveExchange = {2, 31};
+		candidates.at(1)->fullMovementDetails.findMoveExchange = {3, 37};
+		candidates.at(0)->fullMovementDetails.findMoveExchangeDetails.body = {2, 29};
+		candidates.at(1)->fullMovementDetails.findMoveExchangeDetails.body = {3, 35};
+		candidates.at(1)->fullMovementDetails.findMoveExchangeDetails.appliedAttacks = {4, 17};
+		candidates.at(1)->fullMovementDetails.findMoveExchangeDetails.remainderMicroseconds = 5;
 		// Workers' wall intervals may overlap: their sum can exceed loop wall.
 		clockMicroseconds = 200;
 		EXPECT_EQ(summary.continuation.full.calls, 0u);
@@ -124,6 +130,14 @@ TEST(HeroActionTimingTest, CandidateReductionKeepsOverlappingSumsSeparateFromLoo
 	EXPECT_EQ(summary.continuation.fullBestTargetDetails.waitedDetails.appliedAttacks.calls, 4u);
 	EXPECT_EQ(summary.continuation.fullBestTargetDetails.normalDetails.body.totalMicroseconds, 13u);
 	EXPECT_EQ(summary.continuation.fullBestTargetDetails.normalDetails.remainderMicroseconds, 7u);
+	const auto & movement = summary.continuation.fullMovementDetails;
+	EXPECT_EQ(movement.findMoveExchange.calls, 5u);
+	EXPECT_EQ(movement.findMoveExchange.totalMicroseconds, 68u);
+	EXPECT_EQ(movement.findMoveExchangeDetails.body.calls, 5u);
+	EXPECT_EQ(movement.findMoveExchangeDetails.body.totalMicroseconds, 64u);
+	EXPECT_EQ(movement.findMoveExchangeDetails.appliedAttacks.calls, 4u);
+	EXPECT_EQ(movement.findMoveExchangeDetails.appliedAttacks.totalMicroseconds, 17u);
+	EXPECT_EQ(movement.findMoveExchangeDetails.remainderMicroseconds, 5u);
 }
 
 TEST(HeroActionTimingTest, ParallelWorkersOwnDistinctSlotsAndReduceOnlyAfterJoin)
@@ -140,6 +154,8 @@ TEST(HeroActionTimingTest, ParallelWorkersOwnDistinctSlotsAndReduceOnlyAfterJoin
 			heroActionTiming::Scope scope(&candidates.at(index)->full, fakeNow);
 			heroActionTiming::Scope setup(&candidates.at(index)->fullSetup, fakeNow);
 			candidates.at(index)->fullBestTargetDetails.normalDetails.body = {1, index};
+			candidates.at(index)->fullMovementDetails.findMoveExchange = {1, index + 1};
+			candidates.at(index)->fullMovementDetails.findMoveExchangeDetails.body = {1, index};
 			clockMicroseconds = 17;
 		});
 		EXPECT_EQ(summary.continuation.full.calls, 0u);
@@ -154,6 +170,10 @@ TEST(HeroActionTimingTest, ParallelWorkersOwnDistinctSlotsAndReduceOnlyAfterJoin
 	EXPECT_EQ(summary.continuation.cached.calls, 0u);
 	EXPECT_EQ(summary.continuation.fullBestTargetDetails.normalDetails.body.calls, count);
 	EXPECT_EQ(summary.continuation.fullBestTargetDetails.normalDetails.body.totalMicroseconds, count * (count - 1) / 2);
+	EXPECT_EQ(summary.continuation.fullMovementDetails.findMoveExchange.calls, count);
+	EXPECT_EQ(summary.continuation.fullMovementDetails.findMoveExchange.totalMicroseconds, count * (count + 1) / 2);
+	EXPECT_EQ(summary.continuation.fullMovementDetails.findMoveExchangeDetails.body.calls, count);
+	EXPECT_EQ(summary.continuation.fullMovementDetails.findMoveExchangeDetails.body.totalMicroseconds, count * (count - 1) / 2);
 }
 
 TEST(HeroActionTimingTest, RejectedAndDeadCandidatesNeedNoContinuationSample)
@@ -235,6 +255,7 @@ TEST(HeroActionTimingTest, LoopExceptionRetainsPartialSamplesAndMarksJoinedUnwin
 	EXPECT_THROW({
 		heroActionTiming::LoopScope loop(candidates, &summary, fakeNow);
 		candidates.at(0)->full = (heroActionTiming::Stage{1, 4, 4});
+		candidates.at(0)->fullMovementDetails.findMoveExchangeDetails.body = (BattleMovementTiming::StageTiming{1, 3});
 		clockMicroseconds = 61;
 		throw std::runtime_error("candidate evaluation");
 	}, std::runtime_error);
@@ -242,6 +263,8 @@ TEST(HeroActionTimingTest, LoopExceptionRetainsPartialSamplesAndMarksJoinedUnwin
 	EXPECT_TRUE(summary.loopThrew);
 	EXPECT_EQ(summary.candidateLoop.totalMicroseconds, 11u);
 	EXPECT_EQ(summary.continuation.full.calls, 1u);
+	EXPECT_EQ(summary.continuation.fullMovementDetails.findMoveExchangeDetails.body.calls, 1u);
+	EXPECT_EQ(summary.continuation.fullMovementDetails.findMoveExchangeDetails.body.totalMicroseconds, 3u);
 }
 
 TEST(HeroActionTimingTest, SubmitReturnAndThrowAreNotAuthoritativeCompletion)
@@ -291,6 +314,10 @@ bool exerciseCall()
 		call.continuation(0)->fullBestTargetDetails.normalDetails.body = {2, 11};
 		call.continuation(0)->fullBestTargetDetails.normalDetails.appliedAttacks = {3, 7};
 		call.continuation(0)->fullBestTargetDetails.normalDetails.remainderMicroseconds = 4;
+		call.continuation(0)->fullMovementDetails.findMoveExchange = {3, 19};
+		call.continuation(0)->fullMovementDetails.findMoveExchangeDetails.body = {3, 17};
+		call.continuation(0)->fullMovementDetails.findMoveExchangeDetails.appliedAttacks = {5, 13};
+		call.continuation(0)->fullMovementDetails.findMoveExchangeDetails.remainderMicroseconds = 4;
 	}
 	{
 		heroActionTiming::SubmitScope submit(call.sink());
@@ -338,6 +365,12 @@ TEST(HeroActionCallIntegrationTest, FreshProcessOptInAndCapOne)
 	EXPECT_EQ(row.at("continuation_full_best_target_normal_applied_attacks_calls"), 3);
 	EXPECT_EQ(row.at("continuation_full_best_target_normal_remainder_us"), 4);
 	EXPECT_EQ(row.at("continuation_full_best_target_waited_body_calls"), 0);
+	EXPECT_EQ(row.at("continuation_full_movement_exchange_calls"), 3);
+	EXPECT_EQ(row.at("continuation_full_movement_exchange_sum_us"), 19);
+	EXPECT_EQ(row.at("continuation_full_movement_body_calls"), 3);
+	EXPECT_EQ(row.at("continuation_full_movement_body_sum_us"), 17);
+	EXPECT_EQ(row.at("continuation_full_movement_applied_attacks_calls"), 5);
+	EXPECT_EQ(row.at("continuation_full_movement_remainder_us"), 4);
 	EXPECT_EQ(row.at("submit_calls"), 1);
 	EXPECT_EQ(row.at("submit_returned"), 1);
 }

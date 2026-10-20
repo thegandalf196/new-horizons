@@ -66,6 +66,12 @@ inline std::map<std::string, int64_t> fields(const std::string & row)
 	for(const std::string stage : {"setup", "reachability", "movement", "best_target"})
 		for(const std::string metric : {"calls", "sum_us", "max_us"})
 			EXPECT_GE(result.at("continuation_full_" + stage + "_" + metric), 0);
+	for(const std::string stage : {"exchange", "body", "membership", "projection_setup", "target_probes",
+		"probe_preparation", "probe_main_damage", "probe_dps_score", "applied_attacks",
+		"activation_start", "activation_end", "round_advance"})
+		for(const std::string metric : {"calls", "sum_us"})
+			EXPECT_GE(result.at("continuation_full_movement_" + stage + "_" + metric), 0);
+	EXPECT_GE(result.at("continuation_full_movement_remainder_us"), 0);
 	return result;
 }
 
