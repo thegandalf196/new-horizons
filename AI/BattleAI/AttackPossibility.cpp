@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "AttackPossibility.h"
+#include "DamageCacheAdmission.h"
 #include "AttackPreviewHitContext.h"
 #include "AttackPreviewTargets.h"
 #include "PreemptiveAttackRequest.h"
@@ -457,7 +458,8 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 }
 
 int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender,
-	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)
+	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver,
+	DamageCacheAdmission * mainProbeAdmission)
 {
 	DamageCacheOperationScope operation(receiver);
 	auto * timing = operation.receiver();
@@ -470,45 +472,36 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		rangedMarkTargets.insert(defender->unitId());
 	if(defender->hasBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection)))
 		evasiveShroudTargets.insert(defender->unitId());
-	const auto raSide = hb->playerToSide(hb->battleGetOwner(attacker));
-	const auto * raHero = raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER
-		? hb->battleGetFightingHero(raSide) : nullptr;
-	const bool hasAmbusher = newHorizonsShroud::hasAmbusher(raHero);
+	DamageCacheAdmission localAdmission(*attacker, *hb);
+	auto & admission = mainProbeAdmission && mainProbeAdmission->matches(*attacker, *hb)
+		? *mainProbeAdmission : localAdmission;
+	const auto raSide = admission.side();
+	const bool hasAmbusher = admission.hasAmbusher();
 	if(hasAmbusher)
 		ambusherAttackers.insert(attacker->unitId());
-	const bool hasShadowAssault = newHorizonsShroud::hasShadowAssault(raHero);
+	const bool hasShadowAssault = admission.hasShadowAssault();
 	if((raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER)
 		&& (hasShadowAssault || hasShadowAssaultSpentMarker(defender, raSide)))
 		shadowAssaultTargetSides.emplace(defender->unitId(), raSide);
-	const bool hasNightProwler = newHorizonsShroud::hasNightProwler(raHero);
-	const bool hasNightProwlerEffect = hasNightProwlerBonus(attacker);
+	const bool hasNightProwler = admission.hasNightProwler();
+	const bool hasNightProwlerEffect = admission.hasNightProwlerEffect();
 	if(hasNightProwler || hasNightProwlerEffect)
 		nightProwlerAttackers.insert(attacker->unitId());
 	const auto * defenderHero = hb->battleGetOwnerHero(defender);
 	const bool hasBastion = defenderHero && defenderHero->hasActivePerk(
 		std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID),
 		std::string(newHorizonsCombatSkills::BASTION_PERK_ID));
-	const bool hasRelentlessAssault = raHero
-		&& raHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT);
+	const bool hasRelentlessAssault = admission.hasRelentlessAssault();
 	const bool shooting = hb->battleCanShoot(attacker, defender->getPosition());
 	BattleAttackInfo attack(attacker, defender, 0, shooting);
 	const auto fortune = raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER
 		? hb->getBattle()->getSylvanLuckState(raSide) : SylvanLuckState{};
 	const bool hasSecondChance = fortune.secondChance
 		&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker, attack.physicalDamage);
-	static const CSelector gamblerPenaltySelector([](const Bonus * bonus)
-	{
-		return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
-	});
-	const bool hasGamblerPenalty = attacker->hasBonus(gamblerPenaltySelector);
+	const bool hasGamblerPenalty = admission.hasGamblerPenalty();
 	const bool hasRangedFollowUp = shooting && hasPendingRangedFollowUp(attacker);
-	const bool hasReducedExtraActivation = hb->battleGetActivationOutputPercent(attacker) < 100
-		|| hb->battleIsMoraleExtraActivation(attacker);
-	const auto * battleInfo = hb->getBattle();
-	const bool hasBloodragePain = attacker->getPersonalBloodrageIncrement() > 0
-		|| (battleInfo
-			&& (raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER)
-			&& battleInfo->getBloodragePainIncrement(raSide) > 0);
+	const bool hasReducedExtraActivation = admission.hasReducedExtraActivation();
+	const bool hasBloodragePain = admission.hasBloodragePain();
 	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
 	// original-damage snapshots for comparison, but recompute current v2 damage.
 	// Remember marked targets so expiry/Dispel cannot revive a cached premium.

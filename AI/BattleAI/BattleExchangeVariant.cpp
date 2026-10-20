@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BracePrimaryState.h"
 #include "BattleExchangeVariant.h"
+#include "DamageCacheAdmission.h"
 #include "ProjectedTargetHit.h"
 #include "SelectedAttackReceipt.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
@@ -792,7 +793,8 @@ float BattleExchangeVariant::trackAttack(
 	bool evaluateOnly,
 	bool allowRetaliation,
 	std::optional<bool> * readyOverwatch,
-	const BattleTargetProbeTiming * probeTiming)
+	const BattleTargetProbeTiming * probeTiming,
+	DamageCacheAdmission * mainProbeAdmission)
 {
 	if(!attacker || attacker->armorerLastStandEndedActivation)
 		return 0;
@@ -926,7 +928,8 @@ float BattleExchangeVariant::trackAttack(
 	{
 		MovementExchangeScope damageMeasurement(evaluateOnly && probeTiming ? probeTiming->mainDamage : nullptr);
 		attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb,
-			evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr);
+			evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr,
+			evaluateOnly ? mainProbeAdmission : nullptr);
 	}
 	const auto attackLastStand = resolveLastStand(projectedAttack, defender.get(), attackDamage);
 	attackDamage = attackLastStand.first.damageToApply;
@@ -1909,7 +1912,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 #if BATTLE_TRACE_LEVEL>=2
 				logAi->trace("Best target selector for %s", attacker->getDescription());
 #endif
-				auto estimateAttack = [&](const battle::Unit * u, std::optional<bool> & readyOverwatch) -> float
+				auto estimateAttack = [&](const battle::Unit * u, std::optional<bool> & readyOverwatch,
+					DamageCacheAdmission & admission) -> float
 				{
 					auto stackWithBonuses = exchangeBattle->getForUpdate(u->unitId());
 					const auto score = measurement.measure(&BattleMovementTiming::ExchangeTiming::targetProbes, [&]()
@@ -1920,7 +1924,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 							measurement.probeDamageCache(),
 							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbePreparation)};
 						return v.trackAttack(attacker, stackWithBonuses, shooting, isOur,
-							damageCache, exchangeBattle, true, true, &readyOverwatch, timing ? &probeTiming : nullptr);
+							damageCache, exchangeBattle, true, true, &readyOverwatch,
+							timing ? &probeTiming : nullptr, &admission);
 					});
 
 #if BATTLE_TRACE_LEVEL>=2
@@ -1942,11 +1947,12 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 					// evaluateOnly keeps this branch's readiness unchanged. End the
 					// hint's lifetime before any applied attack, turn or round boundary.
 					std::optional<bool> readyOverwatch;
-					float bestScore = estimateAttack(best, readyOverwatch);
+					DamageCacheAdmission admission(*attacker, *exchangeBattle);
+					float bestScore = estimateAttack(best, readyOverwatch, admission);
 					for(size_t index = 1; index < candidates.size(); ++index)
 					{
 						const auto * candidate = candidates[index];
-						const float candidateScore = estimateAttack(candidate, readyOverwatch);
+						const float candidateScore = estimateAttack(candidate, readyOverwatch, admission);
 						if(candidateScore > bestScore)
 						{
 							best = candidate;

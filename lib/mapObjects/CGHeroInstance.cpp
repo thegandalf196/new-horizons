@@ -668,21 +668,27 @@ int CGHeroInstance::getNonDamageSpellSpecialtyBonusPercent(SpellID spell) const
 
 int CGHeroInstance::getSkillSpecialtyCoreBonusPercent(SecondarySkill skill) const
 {
-	const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
 	const CHero * heroType = getHeroType();
-	if(!rules || !heroType || std::ranges::find(rules->skills, skill) == rules->skills.end())
+	if(!heroType)
+		return 0;
+
+	// Only a saved local conversion marker can make this query contribute.
+	// Capture/init/load validate policy independently of this negative fast path.
+	const std::string marker = skillSpecialtyMarker(heroType->getId(), skill);
+	const auto & localBonuses = getExportedBonusList();
+	if(std::ranges::none_of(localBonuses, [&marker](const auto & bonus)
+	{
+		return bonus && bonus->stacking == marker;
+	}))
+		return 0;
+
+	const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
+	if(!rules || std::ranges::find(rules->skills, skill) == rules->skills.end())
 		return 0;
 	if(heroType->navigationSpecialtyProducer
 		&& !newHorizonsHeroes::usesNavigationStartReplacement(primaryGrowthRules))
 		return 0;
-
-	const std::string marker = skillSpecialtyMarker(heroType->getId(), skill);
-	const auto & localBonuses = getExportedBonusList();
-	const bool converted = std::ranges::any_of(localBonuses, [&marker](const auto & bonus)
-	{
-		return bonus && bonus->stacking == marker;
-	});
-	return converted ? rules->coreBonusPercent : 0;
+	return rules->coreBonusPercent;
 }
 
 HeroTypeID CGHeroInstance::getHeroTypeID() const

@@ -7,6 +7,8 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
+#include "../../AI/BattleAI/DamageCacheAdmission.h"
+#include "../../lib/CRandomGenerator.h"
 #include "../../AI/BattleAI/NewHorizonsHexOfPain.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/modding/CModHandler.h"
@@ -17,6 +19,7 @@
 #include "../../lib/serializer/CMemorySerializer.h"
 #include <vcmi/Environment.h>
 #include <map>
+#include <bit>
 #include "../../AI/BattleAI/HypotheticBattle.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 
@@ -558,7 +561,17 @@ protected:
 		}
 	}
 
-	void checkMainAttack(bool withHex, bool evaluateOnly, bool shooting = false, bool withCleave = false)
+	std::vector<JsonNode> bonusSnapshot(const battle::Unit & unit)
+	{
+		std::vector<JsonNode> result;
+		const auto bonusOwner = unit.getUnstackedBonuses(Selector::all);
+		for(const auto & bonus : *bonusOwner)
+			result.push_back(bonus->toJsonNode());
+		return result;
+	}
+
+	void checkMainAttack(bool withHex, bool evaluateOnly, bool shooting = false, bool withCleave = false,
+		bool withAdmission = false)
 	{
 		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
 		startGame();
@@ -664,10 +677,32 @@ protected:
 			ASSERT_GT(ownValue, 0);
 		}
 		BattleExchangeVariant exchange;
+		CMemorySerializer gameRng;
+		gameRng.oser & dynamic_cast<CRandomGenerator &>(*getRNG());
+		const auto gameBefore = gameRng.extractBuffer();
+		const auto serverBefore = randomizerSnapshot();
+		const auto sourceBonuses = bonusSnapshot(*source);
+		const auto actorBonuses = bonusSnapshot(*actor);
+		DamageCacheAdmission admission(*source, *child);
 		countedSource->snapshotCalls = 0;
-		const auto score = exchange.trackAttack(source, victim, shooting, true, cache, child, evaluateOnly, false);
+		const auto score = exchange.trackAttack(source, victim, shooting, true, cache, child, evaluateOnly, false,
+			nullptr, nullptr, withAdmission ? &admission : nullptr);
 		EXPECT_FLOAT_EQ(score, enemyValue + cleaveValue - ownValue);
 		EXPECT_EQ(countedSource->snapshotCalls, evaluateOnly && (withHex || withCleave) ? 1u : 0u);
+		if(withAdmission)
+		{
+			ASSERT_TRUE(evaluateOnly);
+			BattleExchangeVariant repeated;
+			const auto again = repeated.trackAttack(source, victim, shooting, true, cache, child, true, false,
+				nullptr, nullptr, &admission);
+			EXPECT_EQ(std::bit_cast<uint32_t>(again), std::bit_cast<uint32_t>(score));
+			CMemorySerializer gameAfter;
+			gameAfter.oser & dynamic_cast<CRandomGenerator &>(*getRNG());
+			EXPECT_EQ(gameAfter.extractBuffer(), gameBefore);
+			EXPECT_EQ(randomizerSnapshot(), serverBefore);
+			EXPECT_EQ(bonusSnapshot(*source), sourceBonuses);
+			EXPECT_EQ(bonusSnapshot(*actor), actorBonuses);
+		}
 		EXPECT_FLOAT_EQ(exchange.getScore().ourDamageReduce, ownValue);
 		EXPECT_FLOAT_EQ(exchange.getScore().enemyDamageReduce, evaluateOnly ? 0 : enemyValue);
 		EXPECT_EQ(source->getAvailableHealth(), actorHP - (evaluateOnly ? 0 : hexDamage));
@@ -805,6 +840,16 @@ protected:
 TEST_F(NewHorizonsHexSnapshotAITest, NoHexProbePreservesScoreAndActionState)
 {
 	checkMainAttack(false, true);
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, MainAdmissionActiveHexRepeatedProbePreservesOriginalAndBorrowedBonuses)
+{
+	checkMainAttack(true, true, false, false, true);
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, MainAdmissionCleaveRepeatedProbePreservesOriginalAndBorrowedBonuses)
+{
+	checkMainAttack(false, true, false, true, true);
 }
 
 TEST_F(NewHorizonsHexSnapshotAITest, ReadyNativePhoenixSuppressesLethalCleaveScoreWithoutProbeMutation)

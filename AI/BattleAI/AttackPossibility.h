@@ -18,6 +18,8 @@
 
 #define BATTLE_TRACE_LEVEL 0
 
+class DamageCacheAdmission;
+
 /// Match BattleActionProcessor's physical-creature provenance rule for a
 /// projected attack. Physical hits from turrets and siege/war-machine stacks
 /// are not eligible for mechanics which track ordinary creature damage.
@@ -189,7 +191,8 @@ public:
 	void cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
 	int64_t getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
 	int64_t getDamage(const battle::Unit * attacker, const battle::Unit * defender,
-		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
+		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing,
+		DamageCacheAdmission * mainProbeAdmission = nullptr);
 	int64_t getObstacleDamage(const BattleHex & hex, const battle::Unit * defender);
 	int64_t getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
 	int64_t getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender,

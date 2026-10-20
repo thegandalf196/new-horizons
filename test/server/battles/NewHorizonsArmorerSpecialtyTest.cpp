@@ -16,6 +16,7 @@
 #include "../../../lib/callback/IGameInfoCallback.h"
 #include "../../../lib/callback/IGameRandomizer.h"
 #include "../../../lib/entities/hero/CHero.h"
+#include "../../../lib/entities/hero/CHeroClass.h"
 #include "../../../lib/entities/hero/CHeroHandler.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../../lib/gameState/CGameState.h"
@@ -120,6 +121,7 @@ class NewHorizonsArmorerSpecialtyTest : public HeroCommandFixture
 {
 protected:
 	bool omitSkillSpecialtyRules = false;
+	bool paviseStartingProfile = false;
 
 	void SetUp() override
 	{
@@ -133,6 +135,16 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(paviseStartingProfile)
+		{
+			// Only this synthetic rank comparison starts Neela with Pavise;
+			// author her sole Basic perk before init, never replace a live selection.
+			auto & starts = rules["startingSkills"]["startingDevelopmentProfiles"]["core:neela"]["startingPerks"].Vector();
+			ASSERT_EQ(starts.size(), 1u);
+			ASSERT_EQ(starts.front()["skill"].String(), "new-horizons:armorer");
+			ASSERT_EQ(starts.front()["perk"].String(), "new-horizons:armorer.ironDiscipline");
+			starts.front()["perk"] = JsonNode("new-horizons:armorer.pavise");
+		}
 		if(omitSkillSpecialtyRules)
 		{
 			rules.Struct().erase("skillSpecialties");
@@ -184,10 +196,17 @@ protected:
 
 	void runAliasRankChecks(const char * specialtyId, bool acceptedAttack)
 	{
+		paviseStartingProfile = std::string_view(specialtyId) == "core:neela";
 		startSpecialtyMap(specialtyId);
 		auto * specialist = defenderSideHero;
 		auto * control = attackerSideHero;
 		ASSERT_EQ(specialist->getHeroType()->getJsonKey(), specialtyId);
+		ASSERT_TRUE(specialist->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.pavise"));
+		const auto & startingSelections = specialist->getPerkState().selected;
+		ASSERT_EQ(std::count_if(startingSelections.begin(), startingSelections.end(), [](const auto & selection)
+		{
+			return selection.skillId == "new-horizons:armorer";
+		}), 1);
 		ASSERT_TRUE(specialist->getHeroType()->secondarySkillSpecialtyAlias);
 		ASSERT_EQ(specialist->getHeroType()->secondarySkillSpecialtyAlias->skill,
 			SecondarySkill(SecondarySkill::ARMORER));
@@ -283,12 +302,19 @@ protected:
 
 			if(ranks[index] == MasteryLevel::BASIC)
 			{
-				// The canonical perk registry requires one Basic-tier selection
-				// before an Advanced-tier Armorer perk can be accepted.
-				specialist->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.pavise"});
+				// All aliases already own their sole Basic Pavise (Neela only
+				// in this authored scenario); the control acquires its first.
 				control->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.pavise"});
 				ASSERT_TRUE(specialist->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.pavise"));
 				ASSERT_TRUE(control->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.pavise"));
+				for(const auto * hero : {specialist, control})
+				{
+					const auto & selected = hero->getPerkState().selected;
+					ASSERT_EQ(std::count_if(selected.begin(), selected.end(), [](const auto & selection)
+					{
+						return selection.skillId == "new-horizons:armorer";
+					}), 1);
+				}
 				EXPECT_EQ(newHorizonsCombatSkills::paviseReductionPercent(specialist),
 					newHorizonsCombatSkills::PAVISE_REDUCTION_PERCENT);
 				EXPECT_EQ(newHorizonsCombatSkills::paviseReductionPercent(control),
@@ -408,4 +434,92 @@ TEST_F(NewHorizonsArmorerSpecialtyTest, MissingSavedSkillSpecialtyRulePreservesT
 	hero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(newHorizonsCombatSkills::armorerReductionPercent(hero), 15);
 	EXPECT_EQ(growthChance(*hero, skill), 30);
+}
+
+TEST_F(NewHorizonsArmorerSpecialtyTest, QueryRequiresTheExactLocalHeroAndSkillConversionMarker)
+{
+	startSpecialtyMap("core:mephala");
+	const SecondarySkill armorer(SecondarySkill::ARMORER);
+	const auto & bonuses = defenderSideHero->getExportedBonusList();
+	const auto found = std::ranges::find_if(bonuses, [](const auto & bonus)
+	{
+		return bonus && bonus->stacking.starts_with(SPECIALTY_MARKER_PREFIX);
+	});
+	ASSERT_NE(found, bonuses.end());
+	const auto marker = *found;
+	ASSERT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 20);
+	EXPECT_EQ(attackerSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 0);
+	// A real converted marker from another hero cannot enable this hero.
+	auto foreignMarker = std::make_shared<Bonus>(*marker);
+	attackerSideHero->addNewBonus(foreignMarker);
+	EXPECT_EQ(attackerSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 0);
+	attackerSideHero->removeBonus(foreignMarker);
+	defenderSideHero->removeBonus(marker);
+	EXPECT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 0);
+	defenderSideHero->addNewBonus(marker);
+	EXPECT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 20);
+	EXPECT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARCHERY)), 0);
+	EXPECT_EQ(specialtyMarkerCount(*defenderSideHero), 1u);
+}
+
+TEST_F(NewHorizonsArmorerSpecialtyTest, QueryObservesChangedCapturedSupportAndMissingHistoricalRules)
+{
+	startSpecialtyMap("core:tazar");
+	const SecondarySkill armorer(SecondarySkill::ARMORER);
+	auto & captured = const_cast<JsonNode &>(defenderSideHero->getPrimaryGrowthRules());
+	const auto original = captured;
+	ASSERT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 20);
+	std::erase_if(captured["skillSpecialties"]["skills"].Vector(),
+		[](const auto & skill) { return skill.String() == "core:armorer"; });
+	EXPECT_NO_THROW(newHorizonsHeroes::validateResolvedHeroRules(captured));
+	EXPECT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 0);
+	EXPECT_EQ(specialtyMarkerCount(*defenderSideHero), 1u);
+	const auto saved = gameState()->saveToMemory();
+	captured = original;
+	EXPECT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 20);
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * loaded = restored.getHero(defenderSideHero->id);
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_EQ(loaded->getSkillSpecialtyCoreBonusPercent(armorer), 0);
+	EXPECT_EQ(specialtyMarkerCount(*loaded), 1u);
+	captured.Struct().erase("skillSpecialties");
+	EXPECT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 0);
+	captured = original;
+	EXPECT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 20);
+}
+
+TEST_F(NewHorizonsArmorerSpecialtyTest, NegativeQueryIsNotAnAdmissionEndpointForMalformedCapturedRules)
+{
+	startSpecialtyMap("core:mephala");
+	const SecondarySkill armorer(SecondarySkill::ARMORER);
+	auto global = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	global["skillSpecialties"]["version"].Integer() = 2;
+	EXPECT_THROW(newHorizonsHeroes::validateHeroRules(global, true), std::runtime_error);
+	EXPECT_THROW(newHorizonsHeroes::resolveHeroRules(global, attackerSideHero->getHeroClass()->getId()), std::runtime_error);
+	auto & marked = const_cast<JsonNode &>(defenderSideHero->getPrimaryGrowthRules());
+	const auto markedOriginal = marked;
+	marked["skillSpecialties"]["version"].Integer() = 2;
+	EXPECT_THROW(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), std::runtime_error);
+	marked = markedOriginal;
+
+	auto & unmarked = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules());
+	const auto unmarkedOriginal = unmarked;
+	ASSERT_EQ(attackerSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 0);
+	unmarked["skillSpecialties"]["version"].Integer() = 2;
+	// Deliberate test-only corruption: absent marker means zero contribution,
+	// not successful validation. Capture, re-init and binary read still reject.
+	EXPECT_EQ(attackerSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 0);
+	EXPECT_THROW(newHorizonsHeroes::validateResolvedHeroRules(unmarked), std::runtime_error);
+	GameRandomizer randomizer(*gameState());
+	EXPECT_THROW(attackerSideHero->initHero(randomizer, false), std::runtime_error);
+	const auto malformedWire = gameState()->saveToMemory();
+	unmarked = unmarkedOriginal;
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	EXPECT_THROW(restored.loadFromMemory(malformedWire), std::runtime_error);
+	EXPECT_EQ(attackerSideHero->getPrimaryGrowthRules(), unmarkedOriginal);
+	EXPECT_EQ(attackerSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 0);
+	EXPECT_EQ(defenderSideHero->getSkillSpecialtyCoreBonusPercent(armorer), 20);
 }

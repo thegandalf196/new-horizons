@@ -182,6 +182,12 @@ TEST_F(NewHorizonsArcherySpecialtyTest, OrrinScalesOnlyCoreArcheryAndAcceptedSho
 		SecondarySkill(SecondarySkill::ARCHERY));
 	ASSERT_FALSE(ordinaryHero->getHeroType()->secondarySkillSpecialtyAlias
 		&& ordinaryHero->getHeroType()->secondarySkillSpecialtyAlias->skill == SecondarySkill(SecondarySkill::ARCHERY));
+	ASSERT_TRUE(newHorizonsArchery::hasTargetCaller(orrin));
+	const auto & startingSelections = orrin->getPerkState().selected;
+	ASSERT_EQ(std::count_if(startingSelections.begin(), startingSelections.end(), [](const auto & selection)
+	{
+		return selection.skillId == newHorizonsArchery::SKILL;
+	}), 1) << "Orrin already owns his sole Basic Archery perk before ranks are neutralized";
 	neutralize(orrin, true);
 	neutralize(ordinaryHero, false);
 	ASSERT_EQ(orrin->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARCHERY)), 20);
@@ -216,8 +222,7 @@ TEST_F(NewHorizonsArcherySpecialtyTest, OrrinScalesOnlyCoreArcheryAndAcceptedSho
 	const auto archery = newHorizonsArcherySkill();
 	orrin->setSecSkillLevel(archery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	ordinaryHero->setSecSkillLevel(archery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	orrin->applyPerkSelection({std::string(newHorizonsArchery::SKILL),
-		std::string(newHorizonsArchery::TARGET_CALLER)});
+	// Restoring Basic reactivates the saved starting perk; selecting it again is illegal.
 	ASSERT_TRUE(newHorizonsArchery::hasTargetCaller(orrin));
 	activate(specialistShooter);
 	const auto * active = battle()->battleActiveUnit();
