@@ -28,6 +28,15 @@ as independent. The [battle descriptor limits](#new-horizons-immediate-double-co
 below still apply; this does not add ongoing-battle world-save or general health
 restoration support.
 
+## Legacy border guard and gate conversion
+
+The pre-`QUEST_REWORK` border-guard/gate layout is read-only compatibility input.
+Its helper rejects writers before its payload bytes or object mutation, and
+rejects a null decoded quest before reading the destination object base or
+appending a quest. Valid records retain the legacy quest and synthesize the
+colour's `requiredKeys` entry. Registered type10 guard conversion, type12 gate
+identity, supported versions and the current quest-source layout are unchanged.
+
 ## Captured Fly day-end policy
 
 `NEW_HORIZONS_FLY_DAY_END` protects the presence of

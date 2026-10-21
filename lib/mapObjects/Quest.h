@@ -14,6 +14,8 @@
 #include "../serializer/Serializeable.h"
 #include "../texts/MetaString.h"
 
+#include <stdexcept>
+
 class CGCreature;
 struct QuestInfo;
 
@@ -324,12 +326,19 @@ protected:
 template<typename Handler>
 void loadLegacyBorderGuard(Handler & h, QuestSource & object)
 {
-	std::shared_ptr<Quest> quest;
-	h & quest;
-	h & static_cast<CGObjectInstance&>(object);
-	Quest & dst = object.addQuest();
-	dst = *quest;
-	dst.mission.requiredKeys.push_back(object.subID);
+	if constexpr(Handler::saving)
+		throw std::runtime_error("Legacy border guard layout is load-only");
+	else
+	{
+		std::shared_ptr<Quest> quest;
+		h & quest;
+		if(!quest)
+			throw std::runtime_error("Legacy border guard quest is missing");
+		h & static_cast<CGObjectInstance&>(object);
+		Quest & dst = object.addQuest();
+		dst = *quest;
+		dst.mission.requiredKeys.push_back(object.subID);
+	}
 }
 
 /// Key/toll gate: stays in place, passable for a player once its limiter is met

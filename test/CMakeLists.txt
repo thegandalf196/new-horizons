@@ -77,6 +77,7 @@ set(test_SRCS
 		../tools/native/SaveParityCoverage.cpp
 		serializer/BattleUnitStateCompatibilityTest.cpp
 		serializer/BattlePacketReceiptCompatibilityTest.cpp
+		serializer/QuestLegacyBorderSerializationTest.cpp
  		CVcmiTestConfig.cpp
  		JsonComparer.cpp
 		json/GeneratedImageRecipesTest.cpp
