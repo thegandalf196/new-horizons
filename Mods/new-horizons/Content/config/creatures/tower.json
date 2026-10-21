@@ -31,8 +31,8 @@
 				"VV",
 				"VA"
 			],
-			"mapAttackFromLeft": "NH_CabirHandoffMap:0:0",
-			"mapAttackFromRight": "NH_CabirHandoffMap:0:0",
+			"mapAttackFromLeft": "NH_CabirHandoffNativeMap:0:0",
+			"mapAttackFromRight": "NH_CabirHandoffNativeMap:0:0",
 			"animationTime": {
 				"attack": 1,
 				"walk": 0.75,
@@ -111,8 +111,8 @@
 				"VV",
 				"VA"
 			],
-			"mapAttackFromLeft": "NH_CabirMasterHandoffMap:0:0",
-			"mapAttackFromRight": "NH_CabirMasterHandoffMap:0:0",
+			"mapAttackFromLeft": "NH_CabirMasterHandoffNativeMap:0:0",
+			"mapAttackFromRight": "NH_CabirMasterHandoffNativeMap:0:0",
 			"animationTime": {
 				"attack": 1,
 				"walk": 0.75,

@@ -191,25 +191,33 @@ class CabirMapV3ExportTest(unittest.TestCase):
             from test_new_horizons_content import load
         sprites = ArtPath()
         creatures = load("Mods/new-horizons/Content/config/creatures/tower.json")
-        for creature, native, encounter in (
-            ("core:gremlin", "NH_CabirHandoffNativeMap", "NH_CabirHandoffMap"),
-            ("core:masterGremlin", "NH_CabirMasterHandoffNativeMap", "NH_CabirMasterHandoffMap"),
+        for creature, native in (
+            ("core:gremlin", "NH_CabirHandoffNativeMap"),
+            ("core:masterGremlin", "NH_CabirMasterHandoffNativeMap"),
         ):
             graphics = creatures[creature]["graphics"]
             self.assertEqual(graphics["map"], native + ".def")
-            self.assertEqual(graphics["mapAttackFromLeft"], encounter + ":0:0")
-            self.assertEqual(graphics["mapAttackFromRight"], encounter + ":0:0")
-            for name, size in ((native, (64, 64)), (encounter, (128, 112))):
-                descriptor = json.loads((sprites / (name + ".json")).read_text())
-                self.assertEqual(len(descriptor["sequences"]), 1)
-                sequence = descriptor["sequences"][0]
-                self.assertEqual(sequence["group"], 0)
-                self.assertEqual(sequence["frames"], [f"walk/frame-{i:02d}.png" for i in range(7)])
-                for frame in sequence["frames"]:
-                    with (sprites / descriptor["basepath"] / frame).open_image() as image:
-                        self.assertEqual(image.size, size)
-                        self.assertEqual(image.mode, "RGBA")
-                        self.assertIsNotNone(image.getchannel("A").getbbox())
+            self.assertEqual(graphics["mapAttackFromLeft"], native + ":0:0")
+            self.assertEqual(graphics["mapAttackFromRight"], native + ":0:0")
+            mask = graphics["mapMask"]
+            self.assertEqual(mask, ["VV", "VA"])
+            footprint = (32 * max(map(len, mask)), 32 * len(mask))
+            self.assertEqual(footprint, (64, 64))
+            descriptor = json.loads((sprites / (native + ".json")).read_text())
+            self.assertEqual(len(descriptor["sequences"]), 1)
+            sequence = descriptor["sequences"][0]
+            self.assertEqual(sequence["group"], 0)
+            self.assertEqual(sequence["frames"], [f"walk/frame-{i:02d}.png" for i in range(7)])
+            for frame in sequence["frames"]:
+                with (sprites / descriptor["basepath"] / frame).open_image() as image:
+                    self.assertEqual(image.size, footprint)
+                    self.assertEqual(image.mode, "RGBA")
+                    alpha = image.getchannel("A")
+                    self.assertIsNotNone(alpha.getbbox())
+                    # The renderer samples only the bottom-right registered tiles.
+                    visible = alpha.crop((image.width - footprint[0], image.height - footprint[1],
+                                          image.width, image.height))
+                    self.assertEqual(sum(alpha.histogram()[1:]), sum(visible.histogram()[1:]))
 
     def test_explicit_external_workspace_required_and_existing_outputs_not_replaced(self):
         with self.assertRaisesRegex(ValueError, "explicit external"):
