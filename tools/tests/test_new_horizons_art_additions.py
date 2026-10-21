@@ -390,6 +390,27 @@ class ArtAdditionsTest(unittest.TestCase):
                 self.assertIn('no Final', manifest[name]['approval'])
 
 
+    def test_selected_monere_gerwulf_v1_cohort_keeps_exact_two_heroes(self):
+        token = 'selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21'
+        records = [row for wave in self.waves for row in wave.get('specialties', [])
+                   if row['selection'] == token]
+        expected = {
+            'core:monere': ('MonereWispLine',
+                '0d822c83a3fcf7045518e6a5dc209f5a34276713aed59f61a0098dabbc7115fe',
+                '1a4251a7908663db4112ed3a18e5a4a3625803fcbc5a6d0e447da92f404b07ba'),
+            'core:gerwulf': ('GerwulfBallistaLine',
+                '468a04d94e11cdac18642cb865b24c8eab282affb57a05c4a1d8e3cf04f77270',
+                '35ce0b7ca1442dc4fa29fdc5b8986afdc252a79d91d934845d5ccba1cf2ec275')}
+        self.assertEqual(len(records), 2)
+        self.assertEqual({row['id'] for row in records}, set(expected))
+        for row in records:
+            self.assertEqual(row['version'], 'transparent-foreground-v1-20261021')
+            self.assertEqual((row['identity'], row['native44Sha256'], row['native32Sha256']),
+                             expected[row['id']])
+            self.assertIn('not Final', row['approval'])
+            self.assertIn('provisional', row['selection'])
+
+
 
 if __name__ == '__main__':
     unittest.main()

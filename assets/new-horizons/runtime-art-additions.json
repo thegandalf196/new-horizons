@@ -5141,6 +5141,70 @@
         }
       ],
       "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "8dbb7ce5aefdd70af840033748116a8c4c5e609d01f4e4f627a2629b44254a1a",
+      "baselineManifestSha256": "18fa9408c812a862849ec8df5964e8adb0daf90073fd195f0a35def2c89dd198",
+      "baselineEntriesSha256": "e40ebf63c3498def351edeeeb8dcbbecd3f1a4ce78df41b3be40b1bdc7c70f4b",
+      "baselineHeaderSha256": "6cfea69a7513ffa4a185755f1ada67e2ed2aac17156d50e690fc45d4b93ad439",
+      "nonStatusConfigSha256": "6bcf78af32bc3739f491572a1705a1e9440dc76cc25b19947da8998d7fc5cba2",
+      "baselineCount": 4803,
+      "entryCount": 4811,
+      "newArchiveSha256": "6b836df24240f375f0e21869ebe59d7e8e762e58eb5705a71d8aaccf589a70a2",
+      "resources": [
+        "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/32.json",
+        "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/44.json",
+        "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/MonereWispLine/32.json",
+        "SPRITES/newHorizons/heroSpecialties/MonereWispLine/44.json",
+        "SPRITES/newHorizons/heroSpecialties/MonereWispLine/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/MonereWispLine/icon-44.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "specialties": [
+        {
+          "id": "core:monere",
+          "identity": "MonereWispLine",
+          "version": "transparent-foreground-v1-20261021",
+          "native44Sha256": "0d822c83a3fcf7045518e6a5dc209f5a34276713aed59f61a0098dabbc7115fe",
+          "native32Sha256": "1a4251a7908663db4112ed3a18e5a4a3625803fcbc5a6d0e447da92f404b07ba",
+          "normal44": "newHorizons/heroSpecialties/MonereWispLine/44",
+          "normal32": "newHorizons/heroSpecialties/MonereWispLine/32",
+          "selectionEvidenceSha256": "4c1daba965a60e7ea7821dc23551b349c640ce734c7bcb4b518c88b7dddd304e",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/MonereWispLine/32.json",
+            "SPRITES/newHorizons/heroSpecialties/MonereWispLine/44.json",
+            "SPRITES/newHorizons/heroSpecialties/MonereWispLine/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/MonereWispLine/icon-44.png"
+          ],
+          "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+          "approval": "Provisional; not Final; rendered acceptance pending"
+        },
+        {
+          "id": "core:gerwulf",
+          "identity": "GerwulfBallistaLine",
+          "version": "transparent-foreground-v1-20261021",
+          "native44Sha256": "468a04d94e11cdac18642cb865b24c8eab282affb57a05c4a1d8e3cf04f77270",
+          "native32Sha256": "35ce0b7ca1442dc4fa29fdc5b8986afdc252a79d91d934845d5ccba1cf2ec275",
+          "normal44": "newHorizons/heroSpecialties/GerwulfBallistaLine/44",
+          "normal32": "newHorizons/heroSpecialties/GerwulfBallistaLine/32",
+          "selectionEvidenceSha256": "4c1daba965a60e7ea7821dc23551b349c640ce734c7bcb4b518c88b7dddd304e",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/32.json",
+            "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/44.json",
+            "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/icon-44.png"
+          ],
+          "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+          "approval": "Provisional; not Final; rendered acceptance pending"
+        }
+      ],
+      "approval": "Provisional; not Final; rendered acceptance pending"
     }
   ]
 }

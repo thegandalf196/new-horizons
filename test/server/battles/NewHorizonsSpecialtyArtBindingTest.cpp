@@ -13,6 +13,7 @@
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/modding/CModHandler.h"
 #include <array>
+#include <tuple>
 
 namespace
 {
@@ -134,4 +135,42 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, HistoricalDaremythKeepsHasteSuccessor
 	EXPECT_EQ(view.animation().getOriginalName(), "SPELLSCR");
 	EXPECT_EQ(view.animation(true).getOriginalName(), "SPELLSCR");
 	EXPECT_EQ(view.frame(), SpellID(SpellID::HASTE).toSpell()->getIconIndex());
+}
+
+TEST_F(NewHorizonsSpecialtyArtBindingTest, CreatureArtRequiresMatchingConvertedTargetAndPolicy)
+{
+	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	const auto wisp = CreatureID(CreatureID::decode("new-horizons:wisp"));
+	const auto ballista = CreatureID(CreatureID::BALLISTA);
+	for(const auto & row : std::array<std::tuple<const char *, CreatureID, const char *>, 2>{{
+		{"core:monere", wisp, "newHorizons/heroSpecialties/MonereWispLine"},
+		{"core:gerwulf", ballista, "newHorizons/heroSpecialties/GerwulfBallistaLine"}}})
+	{
+		const auto & [id, target, artwork] = row;
+		SCOPED_TRACE(id);
+		const auto & hero = prototype(id);
+		const auto metadata = newHorizonsHeroes::resolveSpecialtyPresentation(
+			hero, development, magic, target);
+		ASSERT_TRUE(metadata.artwork);
+		EXPECT_EQ(*metadata.artwork, artwork);
+		EXPECT_EQ(metadata.creature, target);
+		const auto view = heroSpecialtyPresentation(hero, metadata);
+		EXPECT_EQ(view.animation().getOriginalName(), std::string(artwork) + "/44");
+		EXPECT_EQ(view.animation(true).getOriginalName(), std::string(artwork) + "/32");
+		EXPECT_EQ(view.frame(), 0u);
+		auto disabled = development;
+		disabled.Struct().erase("creatureLineSpecialties");
+		EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(
+			hero, disabled, magic, target).artwork);
+		EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(
+			hero, JsonNode(), magic, target).artwork);
+		EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(
+			hero, development, magic, CreatureID(CreatureID::PIKEMAN)).artwork);
+	}
+	// A legacy Psychic Elemental Monere never inherits the selected Wisp image.
+	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:monere"),
+		development, magic, std::nullopt).artwork);
+	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:pasis"),
+		development, magic, wisp).artwork);
 }

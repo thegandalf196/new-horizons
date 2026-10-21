@@ -186,6 +186,12 @@ bool resolveCreatureLinePresentation(const CHero & hero, const JsonNode & develo
 			description.appendNumber(rules->levelStep * rules->attributeMaximum);
 			description.appendRawString(".");
 			result.creature = creature;
+			if(heroType->getJsonKey() == "core:monere"
+				&& creature.toCreature()->getJsonKey() == "new-horizons:wisp")
+				result.artwork = "newHorizons/heroSpecialties/MonereWispLine";
+			else if(heroType->getJsonKey() == "core:gerwulf"
+				&& creature == CreatureID::BALLISTA)
+				result.artwork = "newHorizons/heroSpecialties/GerwulfBallistaLine";
 			if(creature != heroType->creatureLineSpecialtyAlias->creature)
 				result.name = creature.toCreature()->getNamePluralTranslated();
 			result.description = description.toString(LIBRARY->generaltexth.get());

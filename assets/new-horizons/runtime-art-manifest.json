@@ -48030,6 +48030,86 @@
       "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
       "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
       "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GerwulfBallistaLine/32.json",
+      "size": 104,
+      "sha256": "6d461535acb697d67cc8a0d281514f52315828c19b1b870b5a815b1cbf0eb0eb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GerwulfBallistaLine/44.json",
+      "size": 104,
+      "sha256": "8d658a82cab38a45505a055265b908dda2772d932584ee877ddab7cac82489eb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GerwulfBallistaLine/icon-32.png",
+      "size": 1845,
+      "sha256": "35ce0b7ca1442dc4fa29fdc5b8986afdc252a79d91d934845d5ccba1cf2ec275",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GerwulfBallistaLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GerwulfBallistaLine/icon-44.png",
+      "size": 3130,
+      "sha256": "468a04d94e11cdac18642cb865b24c8eab282affb57a05c4a1d8e3cf04f77270",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MonereWispLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MonereWispLine/32.json",
+      "size": 99,
+      "sha256": "a5d3db447f7d8de58394c7ce08646a2042df6cb3772d7fa77f586464d6264c7c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MonereWispLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MonereWispLine/44.json",
+      "size": 99,
+      "sha256": "bc38ce89141b9058dbb1ffcedac3a8c2e58d55301d3401f4ad3790ed7f8b75b8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MonereWispLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MonereWispLine/icon-32.png",
+      "size": 1575,
+      "sha256": "1a4251a7908663db4112ed3a18e5a4a3625803fcbc5a6d0e447da92f404b07ba",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MonereWispLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MonereWispLine/icon-44.png",
+      "size": 2608,
+      "sha256": "0d822c83a3fcf7045518e6a5dc209f5a34276713aed59f61a0098dabbc7115fe",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
     }
   ],
   "requiredFamilies": [
@@ -48044,7 +48124,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2725,
+    "builtin-skills-perks-orders-and-ui": 2733,
     "cabir-and-master": 214,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,
