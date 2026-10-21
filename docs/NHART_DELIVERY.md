@@ -144,6 +144,25 @@ visiting the hut exercises a real level-up. The catalogue renders normal frame0
 at24 pixels, not native44/32 or pressed/disabled states. Neither export nor
 header audit proves rendering, legal client interaction or playable delivery.
 
+For specialty presentation, the opt-in native test
+`NewHorizonsSpecialtyPresentationFixtureExportTest.ExportOrdinarySpecialtyPresentationMap`
+exports `NHSpecialtyPresentation.h3m` when
+`NH_EXPORT_SPECIALTY_PRESENTATION_FIXTURE=1` is set in an isolated test profile
+with the ordinary New Horizons preset active. It retains authored starts for
+adjacent Serena, Gem, Daremyth and control hero Orrin, checks their captured
+rules and specialty identities, and verifies the exported map bytes by reading
+and loading them again. The diagnostic contains no forced specialty proc or
+custom hero statistics.
+
+Use ordinary Hero Windows, hero exchanges, Kingdom, pregame hero information
+and encyclopedia pages to inspect the shared specialty artwork. Check identity
+changes, both exchange sides, and save/reload without stale icons. The older
+pregame tooltip branch requires interface enhancements disabled in the disposable
+profile; with enhancements enabled, the ordinary hero overview replaces it.
+The Kingdom list currently requests the small icon only, so it does not establish
+large-icon rendering there. Map export and native assertions do not establish
+rendered acceptance or playable promotion.
+
 Builtin bootstrap and module scope mount the same full-path pack. Explicit
 overlay ordering gives builtin custom art precedence over original archives;
 the module mounts its pack after readable Content configuration. No alternate
