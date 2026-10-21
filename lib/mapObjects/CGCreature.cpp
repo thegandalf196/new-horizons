@@ -180,19 +180,6 @@ MetaString CGCreature::getHoverText(const CGHeroInstance * hero) const
 	}
 }
 
-MetaString CGCreature::getMonsterLevelText() const
-{
-	bool isRanged = getCreature()->getBonusBearer()->hasBonusOfType(BonusType::SHOOTER);
-	std::string attackTypeKey = isRanged ? "vcmi.adventureMap.monsterRangedType" : "vcmi.adventureMap.monsterMeleeType";
-
-	MetaString monsterLevel;
-	monsterLevel.appendTextID("vcmi.adventureMap.monsterLevel");
-	monsterLevel.replaceTokenTextID("%TOWN", getCreature()->getFactionID().toEntity(LIBRARY)->getNameTextID());
-	monsterLevel.replaceTokenNumber("%LEVEL", getCreature()->getLevel());
-	monsterLevel.replaceTokenTextID("%ATTACK_TYPE", attackTypeKey);
-	return monsterLevel;
-}
-
 MetaString CGCreature::getPopupText(const CGHeroInstance * hero) const
 {
 	MetaString hoverName;

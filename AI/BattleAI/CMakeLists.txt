@@ -19,6 +19,7 @@ set(battleAI_SRCS
 		HeroOrderCandidates.cpp
 		HeroActionAdmission.cpp
 		HeroActionUtility.cpp
+		HeroActionSelection.cpp
 		HeroActionContinuation.cpp
 		HeroActionTiming.cpp
 		BracePreemptiveForecast.cpp
@@ -91,6 +92,7 @@ set(battleAI_HEADERS
 		BracePreemptiveForecast.h
 		BraceStagePreparation.h
 		HeroActionUtility.h
+		HeroActionSelection.h
 		HeroActionContinuation.h
 		HeroActionTiming.h
 		HypotheticBonusApplication.h

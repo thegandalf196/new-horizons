@@ -315,6 +315,7 @@ set(lib_MAIN_SRCS
 	mapObjectConstructors/ShipyardInstanceConstructor.cpp
 
 	mapObjects/CGCreature.cpp
+	mapObjects/CGCreaturePopupText.cpp
 	mapObjects/CGDwelling.cpp
 	mapObjects/CGHeroInstance.cpp
 	mapObjects/HeroPrimarySkillQueries.cpp

@@ -20,6 +20,7 @@
 #include "HeroOrderCandidateRules.h"
 #include "HeroActionAdmission.h"
 #include "HeroActionUtility.h"
+#include "HeroActionSelection.h"
 #include "HeroActionContinuation.h"
 #include "HeroActionTiming.h"
 #include "BattleExchangeVariant.h"
@@ -4469,7 +4470,8 @@ bool BattleEvaluator::canCastSpell()
 	return false;
 }
 
-bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)
+bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells,
+	heroActionSelection::Observer * observer)
 {
 	const auto battleView = cb->getBattle(battleID);
 	const bool mandatoryDoubleCommand = battleView->battleHasPendingDoubleCommand(side);
@@ -5686,31 +5688,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	// No effective ordinary action still permits declining a harmful spell.
 	// Use this same baseline for casts and their projected continuations.
-	const auto noCastBaseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
-		? cachedAttack.score : 0.0f;
+	const auto noCastBaseline = heroActionSelection::noCastBaseline(cachedAttack.score);
 	// Re-evaluate a granted continuation against the actual post-cast battlefield
 	// on the next decision. Do not add a second copy of a pre-cast damage score:
 	// the first spell may remove its target or spend the mana the second needs.
 
 	LOGFL("Evaluation took %d ms", timer.getDiff());
 
-	auto castToPerform = *vstd::maxElementByFun(possibleCasts, [](const PossibleSpellcast & ps) -> float
-		{
-			return ps.value;
-		});
-	if(!mandatoryOrder && (castToPerform.metamagicFollowup || castToPerform.divineMandateFollowup)
-		&& (castToPerform.value < noCastBaseline
-			|| vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
+	const auto selection = heroActionSelection::choose(possibleCasts, noCastBaseline, mandatoryOrder, observer);
+	if(!selection)
+		return false; // Existing nonempty guard above makes this defensive only.
+	auto castToPerform = possibleCasts[selection->ordinal];
+	if(selection->disposition == heroActionSelection::Disposition::RETAIN_FOLLOWUP)
 	{
-		// Keeping the allowance is the no-cast baseline, not literal score zero: hypothetical
-		// spell values include the active exchange's projected attack. A legal
-		// follow-up can therefore be positive in absolute terms while still
-		// being harmful relative to leaving the active exchange untouched.
 		LOGL("No beneficial hero action; retaining the Spell Action for this round.");
 		return false;
 	}
-	if(mandatoryOrder || castToPerform.metamagicFollowup || castToPerform.divineMandateFollowup
-		|| (castToPerform.value > noCastBaseline && !vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
+	if(selection->disposition == heroActionSelection::Disposition::PERFORM)
 	{
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);
 		return submitHeroAction(castToPerform, timing.sink());

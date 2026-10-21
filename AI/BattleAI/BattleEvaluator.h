@@ -23,6 +23,7 @@ class CPlayerBattleCallback;
 class CGHeroInstance;
 struct DivineMandateStatus;
 namespace heroActionTiming { struct Summary; }
+namespace heroActionSelection { class Observer; }
 
 struct CachedAttack
 {
@@ -96,7 +97,8 @@ public:
 	};
 
 	BattleAction selectStackAction(const CStack * stack, SelectionTiming * timing = nullptr);
-	bool attemptCastingSpell(const CStack * stack, bool allowSpells = true);
+	bool attemptCastingSpell(const CStack * stack, bool allowSpells = true,
+		heroActionSelection::Observer * observer = nullptr);
 	bool canCastSpell();
 	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack);
 	/// Deterministic full-pool forecast; does not choose the eventual random spell.

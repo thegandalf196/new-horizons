@@ -54,6 +54,26 @@ Compare actual health, actions, resources and RNG; AI scores are not physical hi
 counts. Retain the legal, meaningful AI/server controls and fixture boundaries
 described below rather than forcing a chosen action through invented setup.
 
+### Final Hero Action selection
+
+`HeroActionSelection` selects from the evaluator's finalized candidate roster;
+it does not generate legal actions or compute their utility. Preserve roster
+order and strict floating-point comparison: the first exact maximum wins.
+Approximate equality applies only to admission against the cached no-cast
+baseline, not to choosing the maximum. Preserve utility grouping and the existing
+ineffective-score fallback; do not add a raw Order prior or another baseline.
+
+Mandatory Orders retain their admission. A nonmandatory typed Metamagic or Divine
+Mandate follow-up below or approximately equal to baseline retains its allowance;
+ordinary optional actions must be strictly and meaningfully above baseline.
+Selection does not replace authoritative validation, payment or dispatch.
+
+The optional call-local observer receives copied candidate identities and values,
+then the selected ordinal, baseline and disposition. It must not mutate gameplay
+or retain a branch/provider, and is neither serialized nor a submission receipt.
+Keep full-roster ranking and state/RNG isolation tests separate from native Order
+effect tests; a legal tied spell must not prevent testing an Order's mechanics.
+
 ### Future-actor melee reactions
 
 `BattleExchangeFutureAttack.cpp` routes ready Overwatch, accepted Brace and

@@ -285,6 +285,7 @@
 	"vcmi.adventureMap.layer.help": "{Switch Layer}\n\nSwitches the adventure map between map layers\n\nSwitch %s (%d) to %s (%d)",
 	"vcmi.adventureMap.layer.hover": "Switch Layer  -  %s (%d) to %s (%d)",
 	"vcmi.adventureMap.monsterLevel": "\n\nLevel %LEVEL %TOWN %ATTACK_TYPE unit",
+	"vcmi.adventureMap.monsterCategory": "\n\n%CATEGORY %TOWN %ATTACK_TYPE unit",
 	"vcmi.adventureMap.monsterMeleeType": "melee",
 	"vcmi.adventureMap.monsterRangedType": "ranged",
 	"vcmi.adventureMap.monsterThreat.levels.0": "Effortless",

@@ -453,6 +453,7 @@ set(test_SRCS
 		server/battles/NewHorizonsHeroGrowthTest.cpp
 		server/battles/NewHorizonsStartingSkillMigrationTest.cpp
 		server/battles/NewHorizonsCreatureCategoryStateTest.cpp
+		server/battles/NewHorizonsCreaturePopupTextTest.cpp
 		server/battles/NewHorizonsCreatureCategoryWireTest.cpp
 		server/battles/NewHorizonsCreatureCategoryFixtureExportTest.cpp
 		server/battles/NewHorizonsMasteryTest.cpp
@@ -685,6 +686,10 @@ set(test_HEADERS
 		battleAI/OriginalMeleeSequenceFixture.h
 		battleAI/BattlecraftPreemptiveAIFixture.h
 		battleAI/OwnedExportLifecycleFixture.h
+		battleAI/LegacyOrderOracleChecks.h
+		battleAI/SelectedHeroUtilityCapture.h
+		battleAI/HeroActionSelectionObserver.h
+		battleAI/HeroActionSelectionState.h
 		battleAI/BattlecraftFutureBoundaryFixture.h
 		battleAI/OwnedExportMeleeFixture.h
 		battleAI/ProjectedTargetHitFixture.h
@@ -762,6 +767,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/SpellAdmissionCharacterizationTest.cpp
 		battleAI/HeroActionAdmissionTest.cpp
 		battleAI/HeroActionUtilityTest.cpp
+		battleAI/HeroActionSelectionTest.cpp
 		battleAI/HeroActionTimingTest.cpp
 		battleAI/ProtectAttackPreviewTest.cpp
 		battleAI/HeroOrderEffectsProjectionTest.cpp

@@ -39,6 +39,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -3701,6 +3702,13 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 	}
 	RecordProperty("probeCacheDynamicCalls", std::to_string(measured.movementExchangeProbeDamageCache.dynamicDamage.calls
 		+ measured.bestTargetWaitedProbeDamageCache.dynamicDamage.calls + measured.bestTargetNormalProbeDamageCache.dynamicDamage.calls));
+	if(heroTimingTest::optedIn())
+	{
+		const auto rows = heroCapture.rows();
+		ASSERT_LE(rows.size(), 32u);
+		for(const auto & row : rows)
+			std::cout << row << '\n';
+	}
 }
 
 TEST_F(NewHorizonsExchangeReadParityTest, ProbeCachePreflightReentryAndDeadReturnKeepClosedOuterWall)

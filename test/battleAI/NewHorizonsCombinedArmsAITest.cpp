@@ -3,6 +3,9 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "SelectedHeroUtilityCapture.h"
+#include "HeroActionSelectionObserver.h"
+#include "HeroActionSelectionState.h"
 
 #include "../SpellPointTestUtils.h"
 #include "../server/battles/HeroCommandFixture.h"
@@ -167,6 +170,77 @@ protected:
 		environment = std::make_shared<CombinedArmsAIEnvironment>(gameState());
 	}
 
+	int64_t rangedMinimum = 0;
+	int64_t rangedMaximum = 0;
+	void prepareRangedFlank()
+	{
+		isolateToFlank = true;
+		startGame();
+		configureHero(DEFENSIVE_COMMANDER, 100);
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(COMMAND_SKILL, DEFENSIVE_COMMANDER));
+		ASSERT_TRUE(heroCommands::hasCombinedArms(attackerSideHero));
+		startBattle();
+		removeInitialBattleStacks();
+		shooter = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(3, 5), 100);
+		enemy = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(12, 5), 1000);
+		ASSERT_NE(shooter, nullptr);
+		ASSERT_NE(enemy, nullptr);
+		enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::STACK_HEALTH,
+			BonusSource::OTHER, 100000, BonusSourceID()));
+		const Bonus noChargeMovement(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
+			BonusSource::OTHER, -10, BonusSourceID());
+		for(auto * unit : {static_cast<CStack *>(shooter), enemy})
+			unit->addNewBonus(std::make_shared<Bonus>(noChargeMovement));
+		beginCombat();
+		prepareAI(shooter);
+		// Materialize the ordinary retaliation-cap getter latch during setup.
+		// Later full-byte witnesses retain this latch; they do not claim cold-cache
+		// bitwise immutability or normalize any state after AI evaluation.
+		const auto nativeRng = projectedHitTest::serialized(*gameHandler->randomizer);
+		const auto fixtureRng = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+		const auto ownAllowance = projectedHitTest::serialized(battle()->getHeroActionAllowances(BattleSide::ATTACKER));
+		const auto enemyAllowance = projectedHitTest::serialized(battle()->getHeroActionAllowances(BattleSide::DEFENDER));
+		const auto ownMana = attackerSideHero->getManaAvailable();
+		const auto enemyMana = defenderSideHero->getManaAvailable();
+		for(auto * unit : {static_cast<CStack *>(shooter), enemy})
+			ASSERT_EQ(unit->counterAttacks.total(), 1);
+		EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), nativeRng);
+		EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
+		EXPECT_EQ(projectedHitTest::serialized(battle()->getHeroActionAllowances(BattleSide::ATTACKER)), ownAllowance);
+		EXPECT_EQ(projectedHitTest::serialized(battle()->getHeroActionAllowances(BattleSide::DEFENDER)), enemyAllowance);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), ownMana);
+		EXPECT_EQ(defenderSideHero->getManaAvailable(), enemyMana);
+		EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER));
+		EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::DEFENDER));
+		EXPECT_TRUE(callback->submitted.empty());
+		ASSERT_TRUE(battle()->battleCanShoot(shooter, enemy->getPosition()));
+		EXPECT_LT(shooter->getMovementRange(0), 3u)
+			<< "This keeps Charge from competing while leaving the ranged attack legal";
+		const auto & flankFormula = battle()->getHeroCommandRules()["commands"]["flank"]["effects"]["meleeDamagePercent"];
+		const auto preparedOrder = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER,
+			HeroCommand::FLANK, {enemy->unitId()});
+		ASSERT_TRUE(preparedOrder);
+		const auto combinedArmsPercent = heroCommands::combinedArmsFlankPercent(
+			flankFormula, *attackerSideHero, preparedOrder->warcastingBonusPercent);
+		EXPECT_NEAR(combinedArmsPercent, 7.2, 0.0001)
+			<< "Only the 12-point Attack-derived component gets Advanced Command efficiency and then is halved";
+
+		const BattleAttackInfo shot(shooter, enemy, 0, true);
+		const auto beforeProjection = battle()->battleEstimateDamage(shot);
+		const auto healthBeforeProjection = enemy->getAvailableHealth();
+		HypotheticBattle projected(environment.get(), callback->getBattle(BattleID(0)));
+		projected.setHeroOrderState(BattleSide::ATTACKER, preparedOrder);
+		const auto projectedDamage = projected.calculateDmgRange(shot);
+		EXPECT_GT(projectedDamage.damage.min, beforeProjection.damage.min);
+		const auto preparedTarget = preparedOrder->flankFor(enemy->unitId());
+		ASSERT_NE(preparedTarget, nullptr);
+		EXPECT_EQ(preparedTarget->sideMask, 0);
+		EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER));
+		EXPECT_EQ(enemy->getAvailableHealth(), healthBeforeProjection);
+		rangedMinimum = projectedDamage.damage.min;
+		rangedMaximum = projectedDamage.damage.max;
+	}
+
 	bool chooseOrder(HeroCommand expected, BattleAction & selected)
 	{
 		const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
@@ -180,7 +254,10 @@ protected:
 		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
 			BattleSide::ATTACKER, 1.0f, 2);
 		evaluator.selectStackAction(active);
-		if(!evaluator.canCastSpell() || !evaluator.attemptCastingSpell(active))
+		selectedHeroTest::Capture capture;
+		const bool submitted = evaluator.canCastSpell() && evaluator.attemptCastingSpell(active);
+		SCOPED_TRACE(capture.describe(callback->submitted));
+		if(!submitted)
 		{
 			ADD_FAILURE() << "The evaluator did not submit a hero action";
 			return false;
@@ -191,6 +268,11 @@ protected:
 			return false;
 		}
 		selected = callback->submitted.front();
+		if(!capture.hasSelectedUtility())
+		{
+			ADD_FAILURE() << "Missing/ambiguous existing selected signed-utility trace";
+			return false;
+		}
 		if(selected.actionType != EActionType::HERO_COMMAND || selected.command != expected)
 		{
 			ADD_FAILURE() << "Expected Order " << heroCommands::key(expected)
@@ -326,83 +408,94 @@ TEST_F(NewHorizonsCombinedArmsAITest, CombinedArmsAdmitsMeleeOnlyFocusFireAndMat
 	EXPECT_GT(server.attacks.size(), firstAttack);
 }
 
-TEST_F(NewHorizonsCombinedArmsAITest, FlankValuesRangedAttackOnlyAndShooterDoesNotRecordASide)
+TEST_F(NewHorizonsCombinedArmsAITest, RangedFlankCompetesOnFullFirstMaximumWithoutMutatingState)
 {
-	isolateToFlank = true;
-	startGame();
-	configureHero(DEFENSIVE_COMMANDER, 100);
-	ASSERT_TRUE(attackerSideHero->hasActivePerk(COMMAND_SKILL, DEFENSIVE_COMMANDER));
-	ASSERT_TRUE(heroCommands::hasCombinedArms(attackerSideHero));
-	startBattle();
-	removeInitialBattleStacks();
-	shooter = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(3, 5), 100);
-	enemy = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(12, 5), 1000);
-	ASSERT_NE(shooter, nullptr);
-	ASSERT_NE(enemy, nullptr);
-	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::STACK_HEALTH,
-		BonusSource::OTHER, 100000, BonusSourceID()));
-	const Bonus noChargeMovement(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
-		BonusSource::OTHER, -10, BonusSourceID());
-	for(auto * unit : {static_cast<CStack *>(shooter), enemy})
-		unit->addNewBonus(std::make_shared<Bonus>(noChargeMovement));
-	beginCombat();
-	prepareAI(shooter);
-	ASSERT_TRUE(battle()->battleCanShoot(shooter, enemy->getPosition()));
-	EXPECT_LT(shooter->getMovementRange(0), 3u)
-		<< "This keeps Charge from competing while leaving the ranged attack legal";
-	const auto & flankFormula = battle()->getHeroCommandRules()["commands"]["flank"]["effects"]["meleeDamagePercent"];
-	const auto preparedOrder = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER,
-		HeroCommand::FLANK, {enemy->unitId()});
-	ASSERT_TRUE(preparedOrder);
-	const auto combinedArmsPercent = heroCommands::combinedArmsFlankPercent(
-		flankFormula, *attackerSideHero, preparedOrder->warcastingBonusPercent);
-	EXPECT_NEAR(combinedArmsPercent, 7.2, 0.0001)
-		<< "Only the 12-point Attack-derived component gets Advanced Command efficiency and then is halved";
+	ASSERT_NO_FATAL_FAILURE(prepareRangedFlank());
+	const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_NE(spell, nullptr);
+	ASSERT_TRUE(spell->canBeCast(callback->getBattle(BattleID(0)).get(),
+		spells::Mode::HERO, attackerSideHero));
+	const auto live = callback->getBattle(BattleID(0));
+	const auto state = [&] (const CBattleInfoCallback & view)
+	{
+		return heroSelectionTest::snapshot(view, *gameHandler->randomizer,
+			dynamic_cast<CRandomGenerator &>(*getRNG()));
+	};
+	std::vector<heroSelectionTest::StatePart> beforeParts;
+	const auto before = heroSelectionTest::snapshot(*live, *gameHandler->randomizer,
+		dynamic_cast<CRandomGenerator &>(*getRNG()), &beforeParts);
+	const auto checkLive = [&](const char * stage)
+	{
+		std::vector<heroSelectionTest::StatePart> parts;
+		const auto actual = heroSelectionTest::snapshot(*live, *gameHandler->randomizer,
+			dynamic_cast<CRandomGenerator &>(*getRNG()), &parts);
+		if(actual != before)
+			ADD_FAILURE() << stage << ' ' << heroSelectionTest::firstDifference(beforeParts, parts);
+	};
+	checkLive("before parent construction (repeat snapshot)");
+	BattleAction selected;
+	{
+		auto parent = std::make_shared<HypotheticBattle>(environment.get(), live);
+		checkLive("after parent construction");
+		auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		checkLive("after sibling construction");
+		const auto parentBefore = state(*parent);
+		checkLive("after parent snapshot");
+		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+			BattleSide::ATTACKER, 1.0f, 2);
+		checkLive("after evaluator construction");
+		evaluator.selectStackAction(active);
+		checkLive("after selectStackAction");
+		ASSERT_TRUE(evaluator.canCastSpell());
+		checkLive("after canCastSpell");
+		heroSelectionTest::Observer observer;
+		ASSERT_TRUE(evaluator.attemptCastingSpell(active, true, &observer));
+		checkLive("after attemptCastingSpell");
+		ASSERT_EQ(callback->submitted.size(), 1u);
+		selected = callback->submitted.front();
+		ASSERT_NO_FATAL_FAILURE(observer.expectPerformedMatching(selected));
+		ASSERT_TRUE(observer.hasFlank);
+		ASSERT_TRUE(observer.hasMagicArrow);
+		ASSERT_TRUE(observer.selection);
+		EXPECT_GT(observer.bestFlank, observer.selection->baseline);
+		EXPECT_FALSE(vstd::isAlmostEqual(observer.bestFlank, observer.selection->baseline));
+		EXPECT_LE(observer.bestFlank, observer.best.value);
+		EXPECT_EQ(state(*parent), parentBefore);
+		EXPECT_EQ(state(*sibling), parentBefore);
+		EXPECT_EQ(state(*live), before);
+	}
+	checkLive("after projected providers destroyed");
+	EXPECT_EQ(state(*live), before);
+	// Execute the ACTUAL normal selector output, not a forced Flank action.
+	ASSERT_NO_FATAL_FAILURE(execute(selected));
+}
 
+TEST_F(NewHorizonsCombinedArmsAITest, NativeRangedFlankMatchesProjectionWithoutAddingSides)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRangedFlank());
 	const BattleAttackInfo shot(shooter, enemy, 0, true);
-	const auto beforeProjection = battle()->battleEstimateDamage(shot);
-	const auto healthBeforeProjection = enemy->getAvailableHealth();
-	HypotheticBattle projected(environment.get(), callback->getBattle(BattleID(0)));
-	projected.setHeroOrderState(BattleSide::ATTACKER, preparedOrder);
-	const auto projectedDamage = projected.calculateDmgRange(shot);
-	EXPECT_GT(projectedDamage.damage.min, beforeProjection.damage.min);
-	const auto preparedTarget = preparedOrder->flankFor(enemy->unitId());
-	ASSERT_NE(preparedTarget, nullptr);
-	EXPECT_EQ(preparedTarget->sideMask, 0);
-	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER));
-	EXPECT_EQ(enemy->getAvailableHealth(), healthBeforeProjection);
-	const auto manaBeforeAI = attackerSideHero->getManaAvailable();
-	const auto healthBeforeAI = enemy->getAvailableHealth();
-	const auto activeIdBeforeAI = battle()->getActiveStackID();
-
-	BattleAction action;
-	ASSERT_TRUE(chooseOrder(HeroCommand::FLANK, action));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeAI);
-	EXPECT_EQ(enemy->getAvailableHealth(), healthBeforeAI);
-	EXPECT_EQ(battle()->getActiveStackID(), activeIdBeforeAI);
-	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER));
-
-	execute(action);
+	const auto round = battle()->getRound();
+	ASSERT_NO_FATAL_FAILURE(execute(BattleAction::makeTargetedHeroCommand(
+		BattleSide::ATTACKER, HeroCommand::FLANK, enemy->unitId())));
 	const auto acceptedOrder = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(acceptedOrder);
 	EXPECT_EQ(acceptedOrder->command, HeroCommand::FLANK);
 	EXPECT_EQ(acceptedOrder->primaryTargetUnitId, enemy->unitId());
 	const auto liveDamage = battle()->battleEstimateDamage(shot);
-	EXPECT_EQ(liveDamage.damage.min, projectedDamage.damage.min);
-	EXPECT_EQ(liveDamage.damage.max, projectedDamage.damage.max);
-
+	EXPECT_EQ(liveDamage.damage.min, rangedMinimum);
+	EXPECT_EQ(liveDamage.damage.max, rangedMaximum);
 	const auto firstAttack = server.attacks.size();
-	execute(BattleAction::makeShotAttack(shooter, enemy));
+	ASSERT_NO_FATAL_FAILURE(execute(BattleAction::makeShotAttack(shooter, enemy)));
 	const auto actualDamage = recordedDirectDamage(shooter->unitId(), enemy->unitId(), true, firstAttack);
 	ASSERT_TRUE(actualDamage);
 	EXPECT_GE(*actualDamage, liveDamage.damage.min);
 	EXPECT_LE(*actualDamage, liveDamage.damage.max);
+	EXPECT_EQ(battle()->getRound(), round);
 	const auto resolvedOrder = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(resolvedOrder);
 	const auto resolvedTarget = resolvedOrder->flankFor(enemy->unitId());
 	ASSERT_NE(resolvedTarget, nullptr);
-	EXPECT_EQ(resolvedTarget->sideMask, 0)
-		<< "A shot receives the Combined Arms bonus but must not establish a Flank side";
+	EXPECT_EQ(resolvedTarget->sideMask, 0);
 }
 
 TEST_F(NewHorizonsCombinedArmsAITest, CandidateGenerationKeepsPreparedMeleeOnlyFocusFireSnapshot)

@@ -28,6 +28,7 @@
 #include <stdexcept>
 #include "../../AI/BattleAI/HypotheticBattle.h"
 #include "OriginalMeleeSequenceFixture.h"
+#include "LegacyOrderOracleChecks.h"
 #include "../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include <tuple>
 
@@ -501,12 +502,11 @@ TEST_F(CanonicalOrderAITest, VengeanceValuesSpentBeforeIssueRetaliationWithoutMu
 		<< "Projecting a summoned unit must not add it to the authoritative battle";
 }
 
-TEST_F(CanonicalOrderAITest, EvaluatorChoosesBraceAndAuthoritativeTriggerIsLegal)
+TEST_F(CanonicalOrderAITest, ThreeHexBraceHasCommonExchangeValueAndNativeEffect)
 {
 	prepareOrder(HeroCommand::BRACE);
-	assertChosenOrder(HeroCommand::BRACE);
-	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(enemy, active, 3, false, false));
-	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::BRACE);
+	keepOnlyCompetingStacks();
+	ASSERT_NO_FATAL_FAILURE(legacyOrderTest::brace({*this, environment, callback, active, enemy}));
 }
 
 TEST_F(CanonicalOrderAITest, OrdinaryHoldStillValuesPhysicalThreatWithoutIronDiscipline)
@@ -625,31 +625,24 @@ TEST_F(CanonicalOrderAITest, CounterchargeBraceHeuristicAndDamageForecastShareTh
 	configureCounterchargePerkData = true;
 	selectCountercharge = true;
 	prepareEvaluation(false);
+	keepOnlyCompetingStacks();
 	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
-	const auto normal = battle()->battleEstimateDamage(BattleAttackInfo(active, enemy, 0, false));
-
-	assertChosenOrder(HeroCommand::BRACE);
-	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(enemy, active, 3, false, false));
-	BattleAttackInfo preemptive(active, enemy, 0, false);
-	preemptive.bracePreemptive = true;
-	const auto resolved = battle()->battleEstimateDamage(preemptive);
-	EXPECT_EQ(resolved.damage.min, normal.damage.min * 75 / 100);
-	EXPECT_EQ(resolved.damage.max, normal.damage.max * 75 / 100)
-		<< "AI valuation and saved Brace order damage resolution both use the shared 75% result";
+	// Preserve this selector for existing focused rosters. Its obsolete adjacent
+	// winner premise is replaced by the real qualifying approach, common exchange
+	// utility and native two-packet effect; this does not assert an all-action winner.
+	ASSERT_NO_FATAL_FAILURE(legacyOrderTest::brace({*this, environment, callback, active, enemy}, 75));
 }
 
-TEST_F(CanonicalOrderAITest, ChargeBeatsUnmodifiedBraceInRealOrderCompetition)
+TEST_F(CanonicalOrderAITest, AdjacentFlyingChargeCannotInventRunupOrExchangeUtility)
 {
 	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 		GTEST_SKIP() << "Requires the New Horizons content module";
 	selectedCommand = HeroCommand::BRACE;
 	configureCounterchargePerkData = true;
-	competeBraceAndCharge = true;
+	competeBraceAndCharge = true; // Preserve the original 60/50 authored coefficients.
 	prepareEvaluation(false);
 	keepOnlyCompetingStacks();
-	ASSERT_FALSE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
-
-	assertChosenOrder(HeroCommand::CHARGE);
+	ASSERT_NO_FATAL_FAILURE(legacyOrderTest::adjacentCharge({*this, environment, callback, active, enemy}));
 }
 
 TEST_F(CanonicalOrderAITest, CounterchargeMakesBraceBeatHigherValuedCharge)
