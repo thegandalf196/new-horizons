@@ -56,11 +56,13 @@ def proposal(report: dict) -> dict:
 
 
 def apply_manual(report: dict, baseline: dict, read_source, previous: dict | None = None,
-                 old_baseline: dict | None = None, *, historical_baseline: bool = False) -> list[str]:
+                 old_baseline: dict | None = None, *, historical_baseline: bool = False,
+                 current_manual: dict | None = None) -> list[str]:
     """Apply span records, not size exceptions.
 
     Current coverage includes tests; historical comparison stays production-only.
     Only the previous Git baseline may retain now-resolved frozen evidence.
+    Current review may repair missing/stale historical metadata for identical bytes.
     """
     errors = []
     manual = baseline.get('manual_functions', {})
@@ -72,6 +74,10 @@ def apply_manual(report: dict, baseline: dict, read_source, previous: dict | Non
             continue
         needs_manual = file['measurement'] == 'manual-required' or bool(file['diagnostics'])
         entry = manual.get(file['path'])
+        if historical_baseline and (entry is None or entry.get('sha256') != file['sha256']):
+            candidate = (current_manual or {}).get(file['path'])
+            if candidate is not None and reviewed(candidate) and candidate.get('sha256') == file['sha256']:
+                entry = candidate
         gap = pending.get(file['path'], {})
         valid_gap = (gap.get('sha256') == file['sha256']
                      and all(isinstance(gap.get(key), str) and gap[key].strip() for key in ('owner', 'reason')))
@@ -95,7 +101,8 @@ def apply_manual(report: dict, baseline: dict, read_source, previous: dict | Non
         data = read_source(file['path'])
         measured = []
         for item in functions:
-            if (not isinstance(item.get('symbol'), str) or not item['symbol'].strip()
+            if (not isinstance(item, dict)
+                    or not isinstance(item.get('symbol'), str) or not item['symbol'].strip()
                     or not isinstance(item.get('start'), int) or not isinstance(item.get('end'), int)
                     or not 1 <= item['start'] <= item['end'] <= file['lines']):
                 errors.append(file['path'] + ': invalid manual function span')
@@ -211,7 +218,8 @@ def main(argv=None) -> int:
             errors = apply_manual(current, baseline, lambda path: (root / path).read_bytes(), previous, old_baseline)
             errors += apply_manual(previous, old_baseline,
                                    lambda path: git(root, 'show', args.base_ref + ':' + path),
-                                   historical_baseline=True)
+                                   historical_baseline=True,
+                                   current_manual=baseline.get('manual_functions', {}))
             result = check(current, previous, baseline, old_baseline)
             result['errors'] = sorted(set(result['errors'] + errors))
             result['coverage_pending'] = [file['path'] for file in current['files']

@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
 from source_organization import apply_manual, check, main, proposal, units
-from source_organization_inventory import classification, cpp_measurement_source, inventory, language, measure
+from source_organization_inventory import classification, cpp_measurement_source, inventory, language, measure, span
 
 
 def report(path, data):
@@ -520,6 +520,101 @@ endfunction(real)
             (root / 'broken.py').symlink_to('missing-target')
             with self.assertRaisesRegex(ValueError, 'Source symlink'):
                 inventory(root, include_untracked=True)
+
+    def test_historical_manual_repair_remeasures_complete_exact_byte_inventory(self):
+        path, data = 'fixture.nix', b'function f()\n return 1;\nend\n'
+        raw = report(path, data)
+        record = {'sha256': raw['files'][0]['sha256'], 'review': 'synthetic-repair',
+                  'rationale': 'Complete exact-byte callable review',
+                  'functions': [{'symbol': 'f', 'start': 1, 'end': 3}]}
+        current = {path: record}
+        for historical in ({}, {'manual_functions': {path: {**record, 'sha256': 'stale'}}}):
+            with self.subTest(historical=historical):
+                original = copy.deepcopy((historical, current))
+                measured = copy.deepcopy(raw)
+                reads = []
+                def read_source(name):
+                    reads.append(name)
+                    return data
+                self.assertEqual(apply_manual(measured, historical, read_source,
+                                              historical_baseline=True, current_manual=current), [])
+                self.assertEqual(reads, [path])
+                self.assertEqual(measured['files'][0]['measurement'], 'manual-reviewed')
+                self.assertEqual(measured['files'][0]['functions'], [span('f', 1, 3, data)])
+                self.assertEqual((historical, current), original)
+
+    def test_historical_manual_repair_rejects_invalid_candidates_and_different_bytes(self):
+        path, data = 'fixture.nix', b'function f()\n return 1;\nend\n'
+        raw = report(path, data)
+        record = {'sha256': raw['files'][0]['sha256'], 'review': 'synthetic-repair',
+                  'rationale': 'Complete fixture review',
+                  'functions': [{'symbol': 'f', 'start': 1, 'end': 3}]}
+        invalid_fields = [('sha256', 'stale'), ('review', ''), ('rationale', ''),
+                          ('functions', None), ('functions', [None]),
+                          ('functions', [{'symbol': '', 'start': 1, 'end': 3}]),
+                          ('functions', [{'symbol': 'f', 'start': 0, 'end': 3}]),
+                          ('functions', [{'symbol': 'f', 'start': 1, 'end': 4}])]
+        for key, value in invalid_fields:
+            with self.subTest(key=key, value=value):
+                candidate = {path: {**record, key: value}}
+                self.assertTrue(apply_manual(copy.deepcopy(raw), {}, lambda name: data,
+                                            historical_baseline=True, current_manual=candidate))
+        changed = report(path, data.replace(b'return 1', b'return 2'))
+        self.assertTrue(apply_manual(changed, {}, lambda name: data,
+                                    historical_baseline=True, current_manual={path: record}))
+
+    def test_historical_repair_does_not_replace_exact_hash_invalid_records_or_current_mode(self):
+        path, data = 'fixture.nix', b'function f()\n return 1;\nend\n'
+        raw = report(path, data)
+        record = {'sha256': raw['files'][0]['sha256'], 'review': 'synthetic-repair',
+                  'rationale': 'Complete fixture review',
+                  'functions': [{'symbol': 'f', 'start': 1, 'end': 3}]}
+        current = {path: record}
+        for key, value in [('review', ''), ('functions', None),
+                           ('functions', [{'symbol': 'f', 'start': 1, 'end': 9}])]:
+            historical = {'manual_functions': {path: {**record, key: value}}}
+            self.assertTrue(apply_manual(copy.deepcopy(raw), historical, lambda name: data,
+                                        historical_baseline=True, current_manual=current))
+        for baseline in ({}, {'manual_functions': {path: {**record, 'sha256': 'stale'}}}):
+            self.assertTrue(apply_manual(copy.deepcopy(raw), baseline, lambda name: data,
+                                        current_manual=current))
+        overlap = {'coverage_pending': {path: {'sha256': record['sha256'],
+                    'owner': 'synthetic-owner', 'reason': 'Historical unresolved coverage'}}}
+        self.assertIn(path + ': remove resolved/overlapping pending coverage entry',
+                      apply_manual(copy.deepcopy(raw), overlap, lambda name: data,
+                                   historical_baseline=True, current_manual=current))
+
+    def test_cli_repairs_historical_metadata_only_for_identical_reviewed_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(['git', 'init', '-q', str(root)], check=True)
+            path, data = 'fixture.nix', b'function f()\n return 1;\nend\n'
+            raw = report(path, data)
+            record = {'sha256': raw['files'][0]['sha256'], 'review': 'synthetic-repair',
+                      'rationale': 'Complete fixture review',
+                      'functions': [{'symbol': 'f', 'start': 1, 'end': 3}]}
+            baseline = {'schema': 1, 'units': {}, 'manual_functions': {path: record}}
+            (root / path).write_bytes(data)
+            old = copy.deepcopy(baseline)
+            old['manual_functions'][path]['sha256'] = 'stale'
+            (root / 'baseline.json').write_text(json.dumps(old))
+            subprocess.run(['git', '-C', str(root), 'add', '.'], check=True)
+            subprocess.run(['git', '-C', str(root), '-c', 'user.name=thegandalf196',
+                            '-c', 'user.email=thegandalf196@users.noreply.github.com',
+                            'commit', '-qm', 'Synthetic stale manual coverage'], check=True)
+            (root / 'baseline.json').write_text(json.dumps(baseline))
+            command = [sys.executable, '-B', str(Path(__file__).resolve().parents[1] / 'ci/source_organization.py'),
+                       'check', '--root', str(root), '--base-ref', 'HEAD', '--baseline', 'baseline.json']
+            repaired = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(repaired.returncode, 0, repaired.stderr + repaired.stdout)
+            self.assertEqual(json.loads(repaired.stdout)['errors'], [])
+            (root / path).write_bytes(data.replace(b'return 1', b'return 2'))
+            baseline['manual_functions'][path]['sha256'] = measure(path, (root / path).read_bytes())['sha256']
+            (root / 'baseline.json').write_text(json.dumps(baseline))
+            different = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(different.returncode, 1, different.stderr + different.stdout)
+            self.assertIn(path + ': missing/stale reviewed manual function inventory',
+                          json.loads(different.stdout)['errors'])
 
     def test_cli_comparison_and_no_implicit_bootstrap(self):
         with tempfile.TemporaryDirectory() as directory:
