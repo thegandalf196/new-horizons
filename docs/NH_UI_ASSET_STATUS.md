@@ -1,16 +1,18 @@
 # Selected UI and artwork status
 
-Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, family counts and separate origin/selection/approval. Current NHART has **4,581 selected payloads**. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
+Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, family counts and separate origin/selection/approval. Current NHART has **4,721 selected payloads**. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
 
 | Current selection record | Scope |
 | --- | --- |
 | perk-art-selections.json | Initial94 purpose-made perk drafts, semantic44 icon + four-state44 family +32 companion; selected versions/provenance explicit |
 | spell-art-selections.json | Seventeen purpose-made custom spell families: book44, scroll/scenario32, effect/immunity30 |
-| runtime-art-additions.json | Later additive waves;103 further perk drafts, four Mass-spell icon families and Arcane Breach/Lucidity30 status resources, exact unchanged-baseline proof |
+| runtime-art-additions.json | Later additive waves;123 further perk drafts, four Mass-spell icon families and Arcane Breach/Lucidity30 status resources, exact unchanged-baseline proof |
 | runtime-art-manifest.json | Complete selected creature/town/school/spell/perk/Order/interface bytes, origin and approval |
 | platform-icon-provenance.json | Explicit pre-NHART Windows/Linux application-icon exception |
 
 These batches remain **Provisional**, not Final. Earlier masters/alternatives/prompts/raw comparisons stay private; only selected bytes/portable records ship. Later private specialty/perk drafts are not implicitly selected. Arcane Breach and Lucidity remain internal non-castable statuses; only effect/immunity artwork changed. Mass Bless, Curse, Sorrow and Slow use selected44 book,32 scroll/scenario and30 effect/immunity icons; their gameplay, animation and sound are unchanged. Mass Regeneration's scenario role reuses selected32 Regeneration, no new spell or bytes. Original core spell bindings/gameplay are unchanged.
+
+The initial and additive records select **217 distinct purpose-made perk identities** within **302 unique literal perk-icon bindings**; binding count is not completed-art count. The latest twenty families retain legacy opaque RGB paintings and ordinary LANCZOS44/32 reductions, not separated alpha foregrounds or pinned-native-template composites. Their per-family readability and semantic limitations remain in the selection records; native-template compliance and rendered acceptance are not established.
 
 Inspect native parchment/dark-status contrast, alpha, clipping and compact details. Some exports retain faint or visible edge alpha; corners-transparent does not imply complete-edge transparency or an8% inset. Master Chain targets, Phantom helmets and Puppet strings can merge at30px. Source/container PASS is not actual presentation.
 
