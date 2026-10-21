@@ -46,6 +46,17 @@ class NewHorizonsUiPerkInventoryTest(unittest.TestCase):
                 if "effect.status=" in row["Live binding / source"]:
                     self.assertIn(f"effect.status={self.status[perk_id]}", row["Live binding / source"])
 
+    def test_development_pool_uses_descriptor_normal_frame(self):
+        source = (ROOT / "client/windows/HeroGrowthWindow.cpp").read_text(encoding="utf-8")
+        # Older selected families contain descriptors/state images, not a flat
+        # image at the icon stem. This guards the read-only Development pool;
+        # it is not a rendered assertion about the level-up offer dialog.
+        self.assertRegex(source, re.compile(
+            r"std::make_shared<CAnimImage>\(\s*AnimationPath::builtin\(newHorizonsPerkIcon\(perk.id\)\),"
+            r"\s*0\s*,"))
+        self.assertNotRegex(source, re.compile(
+            r"std::make_shared<CPicture>\(ImagePath::builtin\(newHorizonsPerkIcon\("))
+
     def test_active_neutral_fallbacks_are_not_mistaken_for_finished_art(self):
         for row in self.rows:
             if row["Area"] != "Active perk":

@@ -978,969 +978,989 @@
     "test/battle/NewHorizonsBattleAITimingTest.cpp": {
       "functions": [
         {
-          "end": 77,
-          "start": 62,
+          "end": 82,
+          "start": 67,
           "symbol": "std::optional<size_t> shippingTbbExperimentLimit()#1"
         },
         {
-          "end": 90,
-          "start": 79,
+          "end": 95,
+          "start": 84,
           "symbol": "void expectProbeCacheClosure(const DamageCacheProbeTiming & timing)#1"
         },
         {
-          "end": 121,
-          "start": 92,
+          "end": 126,
+          "start": 97,
           "symbol": "void recordProbeCacheDelta(const std::string & prefix, const DamageCacheProbeTiming & previous, const DamageCacheProbeTiming & current)#1"
         },
         {
-          "end": 129,
-          "start": 123,
+          "end": 134,
+          "start": 128,
           "symbol": "void expectProbeCacheParent(const DamageCacheProbeTiming & cache, uint64_t parentMicroseconds, uint64_t parentCalls)#1"
         },
         {
-          "end": 147,
-          "start": 140,
+          "end": 152,
+          "start": 145,
           "symbol": "ProbeHookCallback::LuckRollRules getLuckRollRules() const override#1"
         },
         {
-          "end": 157,
-          "start": 148,
+          "end": 162,
+          "start": 153,
           "symbol": "ProbeHookCallback::const JsonNode & getHeroCommandRules() const override#1"
         },
         {
-          "end": 162,
-          "start": 162,
+          "end": 167,
+          "start": 167,
           "symbol": "ProbeHookCallback::BattleID getBattleID() const override#1"
         },
         {
-          "end": 163,
-          "start": 163,
+          "end": 168,
+          "start": 168,
           "symbol": "ProbeHookCallback::const scripting::Pool & getScriptContextPool() const override#1"
         },
         {
-          "end": 164,
-          "start": 164,
-          "symbol": "ProbeHookCallback::std::vector<SpellID> getUsedSpells(BattleSide side) const override#1"
-        },
-        {
-          "end": 165,
-          "start": 165,
-          "symbol": "ProbeHookCallback::uint32_t nextUnitId() const override#1"
-        },
-        {
           "end": 169,
-          "start": 166,
-          "symbol": "ProbeHookCallback::int64_t getActualDamage(const DamageRange & damage, int32_t count, vstd::RNG & rng) const override#1"
+          "start": 169,
+          "symbol": "ProbeHookCallback::std::vector<SpellID> getUsedSpells(BattleSide side) const override#1"
         },
         {
           "end": 170,
           "start": 170,
-          "symbol": "ProbeHookCallback::int3 getLocation() const override#1"
-        },
-        {
-          "end": 171,
-          "start": 171,
-          "symbol": "ProbeHookCallback::BattleLayout getLayout() const override#1"
-        },
-        {
-          "end": 172,
-          "start": 172,
-          "symbol": "ProbeHookCallback::void nextRound() override#1"
-        },
-        {
-          "end": 173,
-          "start": 173,
-          "symbol": "ProbeHookCallback::void nextTurn(uint32_t, BattleUnitTurnReason) override#1"
+          "symbol": "ProbeHookCallback::uint32_t nextUnitId() const override#1"
         },
         {
           "end": 174,
-          "start": 174,
-          "symbol": "ProbeHookCallback::void addUnit(uint32_t, const JsonNode &) override#1"
+          "start": 171,
+          "symbol": "ProbeHookCallback::int64_t getActualDamage(const DamageRange & damage, int32_t count, vstd::RNG & rng) const override#1"
         },
         {
           "end": 175,
           "start": 175,
-          "symbol": "ProbeHookCallback::void updateUnit(uint32_t, const JsonNode &, int64_t) override#1"
+          "symbol": "ProbeHookCallback::int3 getLocation() const override#1"
         },
         {
           "end": 176,
           "start": 176,
-          "symbol": "ProbeHookCallback::void moveUnit(uint32_t, const BattleHex &) override#1"
+          "symbol": "ProbeHookCallback::BattleLayout getLayout() const override#1"
         },
         {
           "end": 177,
           "start": 177,
-          "symbol": "ProbeHookCallback::void removeUnit(uint32_t) override#1"
+          "symbol": "ProbeHookCallback::void nextRound() override#1"
         },
         {
           "end": 178,
           "start": 178,
-          "symbol": "ProbeHookCallback::void addUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
+          "symbol": "ProbeHookCallback::void nextTurn(uint32_t, BattleUnitTurnReason) override#1"
         },
         {
           "end": 179,
           "start": 179,
-          "symbol": "ProbeHookCallback::void updateUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
+          "symbol": "ProbeHookCallback::void addUnit(uint32_t, const JsonNode &) override#1"
         },
         {
           "end": 180,
           "start": 180,
-          "symbol": "ProbeHookCallback::void removeUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
+          "symbol": "ProbeHookCallback::void updateUnit(uint32_t, const JsonNode &, int64_t) override#1"
         },
         {
           "end": 181,
           "start": 181,
-          "symbol": "ProbeHookCallback::void setWallState(EWallPart, EWallState) override#1"
+          "symbol": "ProbeHookCallback::void moveUnit(uint32_t, const BattleHex &) override#1"
         },
         {
           "end": 182,
           "start": 182,
-          "symbol": "ProbeHookCallback::void addObstacle(const ObstacleChanges &) override#1"
+          "symbol": "ProbeHookCallback::void removeUnit(uint32_t) override#1"
         },
         {
           "end": 183,
           "start": 183,
-          "symbol": "ProbeHookCallback::void updateObstacle(const ObstacleChanges &) override#1"
+          "symbol": "ProbeHookCallback::void addUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
         },
         {
           "end": 184,
           "start": 184,
-          "symbol": "ProbeHookCallback::void removeObstacle(uint32_t) override#1"
+          "symbol": "ProbeHookCallback::void updateUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
+        },
+        {
+          "end": 185,
+          "start": 185,
+          "symbol": "ProbeHookCallback::void removeUnitBonus(uint32_t, const std::vector<Bonus> &) override#1"
         },
         {
           "end": 186,
           "start": 186,
+          "symbol": "ProbeHookCallback::void setWallState(EWallPart, EWallState) override#1"
+        },
+        {
+          "end": 187,
+          "start": 187,
+          "symbol": "ProbeHookCallback::void addObstacle(const ObstacleChanges &) override#1"
+        },
+        {
+          "end": 188,
+          "start": 188,
+          "symbol": "ProbeHookCallback::void updateObstacle(const ObstacleChanges &) override#1"
+        },
+        {
+          "end": 189,
+          "start": 189,
+          "symbol": "ProbeHookCallback::void removeObstacle(uint32_t) override#1"
+        },
+        {
+          "end": 191,
+          "start": 191,
           "symbol": "ProbeHookCallback::[[noreturn]] static void refuseMutation()#1"
         },
         {
-          "end": 215,
-          "start": 189,
+          "end": 220,
+          "start": 194,
           "symbol": "void expectEffectWorkBounds(const HypotheticLifecycleTiming::EffectWorkTiming & work, uint64_t parentCalls, uint64_t parentMicroseconds, bool removal)#1"
         },
         {
-          "end": 221,
-          "start": 221,
+          "end": 226,
+          "start": 226,
           "symbol": "TimingEnvironment::explicit TimingEnvironment(std::shared_ptr<CGameState> state) : state(std::move(state))#1"
         },
         {
-          "end": 222,
-          "start": 222,
+          "end": 227,
+          "start": 227,
           "symbol": "TimingEnvironment::const Services * services() const override#1"
         },
         {
-          "end": 223,
-          "start": 223,
+          "end": 228,
+          "start": 228,
           "symbol": "TimingEnvironment::const BattleCb * battle(const BattleID & id) const override#1"
         },
         {
-          "end": 224,
-          "start": 224,
+          "end": 229,
+          "start": 229,
           "symbol": "TimingEnvironment::const GameCb * game() const override#1"
         },
         {
-          "end": 235,
-          "start": 235,
+          "end": 240,
+          "start": 240,
           "symbol": "TimingCallback::explicit TimingCallback(PlayerColor player = PlayerColor(0)) : CBattleCallback(player, nullptr)#1"
         },
         {
-          "end": 241,
-          "start": 236,
+          "end": 246,
+          "start": 241,
           "symbol": "TimingCallback::std::optional<BattleAction> makeSurrenderRetreatDecision(const BattleID &, const BattleStateInfoForRetreat &) override#1"
         },
         {
-          "end": 247,
-          "start": 242,
+          "end": 252,
+          "start": 247,
           "symbol": "TimingCallback::void battleMakeUnitAction(const BattleID &, const BattleAction & action) override#1"
         },
         {
-          "end": 255,
-          "start": 248,
+          "end": 260,
+          "start": 253,
           "symbol": "TimingCallback::void battleMakeSpellAction(const BattleID &, const BattleAction & action) override#1"
         },
         {
-          "end": 276,
-          "start": 269,
+          "end": 281,
+          "start": 274,
           "symbol": "NewHorizonsBattleAITimingTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 308,
-          "start": 278,
+          "end": 313,
+          "start": 283,
           "symbol": "NewHorizonsBattleAITimingTest::void prepare(bool spellbook = false, bool adjacentEnemy = false)#1"
         },
         {
-          "end": 314,
-          "start": 310,
+          "end": 319,
+          "start": 315,
           "symbol": "NewHorizonsBattleAITimingTest::void startTiming()#1"
         },
         {
-          "end": 319,
-          "start": 316,
+          "end": 324,
+          "start": 321,
           "symbol": "NewHorizonsBattleAITimingTest::CBattleAI::TimingSummary summary() const#1"
         },
         {
-          "end": 417,
-          "start": 321,
+          "end": 422,
+          "start": 326,
           "symbol": "NewHorizonsBattleAITimingTest::void expectStageClosure(const CBattleAI::TimingSummary & timing) const#1"
         },
         {
-          "end": 337,
-          "start": 328,
+          "end": 342,
+          "start": 333,
           "symbol": "NewHorizonsBattleAITimingTest::expectStageClosure(const CBattleAI::TimingSummary & timing) const::[](const CBattleAI::StageTiming & preparation, const CBattleAI::StageTiming & mainDamage, const CBattleAI::StageTiming & dpsScore, const CBattleAI::StageTiming & parent)#1"
         },
         {
-          "end": 352,
-          "start": 344,
+          "end": 357,
+          "start": 349,
           "symbol": "NewHorizonsBattleAITimingTest::expectStageClosure(const CBattleAI::TimingSummary & timing) const::[](const CBattleAI::StageTiming & expiry, const CBattleAI::StageTiming & gambler, const CBattleAI::StageTiming & roundTimed, const CBattleAI::StageTiming & activation, const CBattleAI::StageTiming & round)#1"
         },
         {
-          "end": 480,
-          "start": 419,
+          "end": 485,
+          "start": 424,
           "symbol": "NewHorizonsBattleAITimingTest::void expectSameSelectionWithAndWithoutTiming(bool adjacentEnemy)#1"
         },
         {
-          "end": 488,
-          "start": 482,
+          "end": 493,
+          "start": 487,
           "symbol": "NewHorizonsBattleAITimingTest::void expectTargetPartition(const BattleEvaluator::SelectionTiming & timing) const#1"
         },
         {
-          "end": 501,
-          "start": 490,
+          "end": 506,
+          "start": 495,
           "symbol": "NewHorizonsBattleAITimingTest::void expectEmptyTargetPartition(const CBattleAI::TimingSummary & timing) const#1"
         },
         {
-          "end": 508,
-          "start": 504,
+          "end": 513,
+          "start": 509,
           "symbol": "TEST(NewHorizonsBattleAITimingCountersTest, UnstartedAIHasNoBattleSummary)#1"
         },
         {
-          "end": 545,
-          "start": 510,
+          "end": 550,
+          "start": 515,
           "symbol": "TEST(NewHorizonsBattleAITimingCountersTest, LifecycleNanosecondsPreserveSubmicrosecondSamplesAcrossAggregation)#1"
         },
         {
-          "end": 577,
-          "start": 547,
+          "end": 582,
+          "start": 552,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, HealingTentEarlyReturnCountsOnceAndPreservesActionAndWaitFlag)#1"
         },
         {
-          "end": 591,
-          "start": 579,
+          "end": 596,
+          "start": 584,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ThrowingSubmissionStillClosesExactlyOneCallbackScope)#1"
         },
         {
-          "end": 582,
-          "start": 582,
+          "end": 587,
+          "start": 587,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ThrowingSubmissionStillClosesExactlyOneCallbackScope)::[]#1"
         },
         {
-          "end": 617,
-          "start": 593,
+          "end": 622,
+          "start": 598,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, BattleEndDefersSummaryUntilInFlightCallbackReturnsAndDoesNotRepeat)#1"
         },
         {
-          "end": 603,
-          "start": 596,
+          "end": 608,
+          "start": 601,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, BattleEndDefersSummaryUntilInFlightCallbackReturnsAndDoesNotRepeat)::[&]#1"
         },
         {
-          "end": 655,
-          "start": 619,
+          "end": 660,
+          "start": 624,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ResetKeepsOldInFlightScopeOutOfNewBattleCounters)#1"
         },
         {
-          "end": 627,
-          "start": 622,
+          "end": 632,
+          "start": 627,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ResetKeepsOldInFlightScopeOutOfNewBattleCounters)::[&]#1"
         },
         {
-          "end": 672,
-          "start": 657,
+          "end": 677,
+          "start": 662,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, EndingCallbackCanDestroyOwnerWithoutInvalidatingTimingScope)#1"
         },
         {
-          "end": 667,
-          "start": 660,
+          "end": 672,
+          "start": 665,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, EndingCallbackCanDestroyOwnerWithoutInvalidatingTimingScope)::[&]#1"
         },
         {
-          "end": 686,
-          "start": 674,
+          "end": 691,
+          "start": 679,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ObservedRoundNotificationsAreDistinctAndResetWithBattleStart)#1"
         },
         {
-          "end": 707,
-          "start": 688,
+          "end": 712,
+          "start": 693,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryCallbackClassifiesConstructionSelectionAndDirectSubmission)#1"
         },
         {
-          "end": 728,
-          "start": 709,
-          "symbol": "TEST_F(NewHorizonsBattleAITimingTest, HeroActionStageIncludesInternalSubmissionWithoutDoubleCounting)#1"
-        },
-        {
           "end": 733,
-          "start": 730,
-          "symbol": "TEST_F(NewHorizonsBattleAITimingTest, DistantSelectionTimingPreservesUntimedDecisionAndLiveState)#1"
+          "start": 714,
+          "symbol": "TEST_F(NewHorizonsBattleAITimingTest, HeroActionStageIncludesInternalSubmissionWithoutDoubleCounting)#1"
         },
         {
           "end": 738,
           "start": 735,
+          "symbol": "TEST_F(NewHorizonsBattleAITimingTest, DistantSelectionTimingPreservesUntimedDecisionAndLiveState)#1"
+        },
+        {
+          "end": 743,
+          "start": 740,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, AdjacentSelectionTimingPreservesUntimedDecisionAndLiveState)#1"
         },
         {
-          "end": 764,
-          "start": 740,
+          "end": 769,
+          "start": 745,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryBattleEndRetainsClosedTargetPartitionAfterSubmission)#1"
         },
         {
-          "end": 750,
-          "start": 744,
+          "end": 755,
+          "start": 749,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryBattleEndRetainsClosedTargetPartitionAfterSubmission)::[&]#1"
         },
         {
-          "end": 804,
-          "start": 766,
+          "end": 809,
+          "start": 771,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryResetExcludesOldTargetPartitionFromNewSummary)#1"
         },
         {
-          "end": 774,
-          "start": 770,
+          "end": 779,
+          "start": 775,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryResetExcludesOldTargetPartitionFromNewSummary)::[&]#1"
         },
         {
-          "end": 816,
-          "start": 809,
+          "end": 821,
+          "start": 814,
           "symbol": "NewHorizonsTargetPartitionTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 863,
-          "start": 819,
+          "end": 868,
+          "start": 824,
           "symbol": "TEST_F(NewHorizonsTargetPartitionTest, DefensiveStancePartitionPreservesNullSinkDecisionAndLiveState)#1"
         },
         {
-          "end": 880,
-          "start": 865,
+          "end": 885,
+          "start": 870,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryThrowingSubmissionRetainsClosedSelectionPartition)#1"
         },
         {
-          "end": 869,
-          "start": 869,
+          "end": 874,
+          "start": 874,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, OrdinaryThrowingSubmissionRetainsClosedSelectionPartition)::[]()#1"
         },
         {
-          "end": 932,
-          "start": 882,
+          "end": 937,
+          "start": 887,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, LongGroundMovementTimingPreservesUntimedDestinationAndLiveState)#1"
         },
         {
-          "end": 953,
-          "start": 934,
+          "end": 958,
+          "start": 939,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, EmptyMovementDestinationClosesParentWithoutBlockingQueries)#1"
         },
         {
-          "end": 964,
-          "start": 958,
+          "end": 982,
+          "start": 969,
           "symbol": "NewHorizonsExchangeReadParityTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 1122,
-          "start": 966,
+          "end": 1140,
+          "start": 984,
           "symbol": "NewHorizonsExchangeReadParityTest::void expectUnusedReadParity(bool stateful)#1"
         },
         {
-          "end": 1046,
-          "start": 1043,
+          "end": 1064,
+          "start": 1061,
           "symbol": "NewHorizonsExchangeReadParityTest::expectUnusedReadParity(bool stateful)::[this](const AttackPossibility & candidate)#1"
         },
         {
-          "end": 1069,
-          "start": 1066,
+          "end": 1087,
+          "start": 1084,
           "symbol": "NewHorizonsExchangeReadParityTest::expectUnusedReadParity(bool stateful)::[this](const battle::Unit * unit)#1"
         },
         {
-          "end": 1128,
-          "start": 1125,
+          "end": 1146,
+          "start": 1143,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, MixedMeleeShootersNormalTwoRoundScoreAndActionMatchUnusedReads)#1"
         },
         {
-          "end": 1133,
-          "start": 1130,
+          "end": 1151,
+          "start": 1148,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, FrozenNoQuarterControllerAndFocusFireForecastMatchUnusedReads)#1"
         },
         {
-          "end": 1145,
-          "start": 1138,
+          "end": 1163,
+          "start": 1156,
           "symbol": "NewHorizonsExchangeTimingTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 1184,
-          "start": 1147,
+          "end": 1202,
+          "start": 1165,
           "symbol": "NewHorizonsExchangeTimingTest::void expectLifecycleSubsets(const BattleMovementTiming::ExchangeTiming & exchange) const#1"
         },
         {
-          "end": 1168,
-          "start": 1159,
+          "end": 1186,
+          "start": 1177,
           "symbol": "NewHorizonsExchangeTimingTest::expectLifecycleSubsets(const BattleMovementTiming::ExchangeTiming & exchange) const::[](const HypotheticLifecycleTiming::EffectWorkTiming & work, const HypotheticLifecycleTiming::StageTiming & parent)#1"
         },
         {
-          "end": 1201,
-          "start": 1186,
+          "end": 1219,
+          "start": 1204,
           "symbol": "NewHorizonsExchangeTimingTest::void expectBestTargetClosure(const BattleBestTargetTiming & timing) const#1"
         },
         {
-          "end": 1215,
-          "start": 1203,
+          "end": 1233,
+          "start": 1221,
           "symbol": "NewHorizonsExchangeTimingTest::void forecastBestTarget(const std::shared_ptr<HypotheticBattle> & model, BattleBestTargetTiming * timing, std::optional<EvaluationResult> & result, const battle::Unit * selectedActor = nullptr)#1"
         },
         {
-          "end": 1236,
-          "start": 1217,
+          "end": 1254,
+          "start": 1235,
           "symbol": "NewHorizonsExchangeTimingTest::void expectExchangeClosure(const BattleMovementTiming & timing) const#1"
         },
         {
-          "end": 1250,
-          "start": 1238,
+          "end": 1268,
+          "start": 1256,
           "symbol": "NewHorizonsExchangeTimingTest::void forecastMove(const std::shared_ptr<HypotheticBattle> & model, BattleMovementTiming * timing, MoveTarget & result)#1"
         },
         {
-          "end": 1304,
-          "start": 1253,
+          "end": 1322,
+          "start": 1271,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, BestTargetWaitAndNormalPartitionAndMatchNullSink)#1"
         },
         {
-          "end": 1345,
-          "start": 1306,
+          "end": 1363,
+          "start": 1324,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, BestTargetAlreadyWaitedSkipsWaitBuckets)#1"
         },
         {
-          "end": 1457,
-          "start": 1347,
+          "end": 1475,
+          "start": 1365,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAndMatchesNullSink)#1"
         },
         {
-          "end": 1499,
-          "start": 1459,
+          "end": 1517,
+          "start": 1477,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, AdjacentTargetsReturnBeforeExchangeAndKeepBucketsZero)#1"
         },
         {
-          "end": 1534,
-          "start": 1501,
+          "end": 1552,
+          "start": 1519,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCountsAndClosedNestedSummary)#1"
         },
         {
-          "end": 1505,
-          "start": 1505,
+          "end": 1523,
+          "start": 1523,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCountsAndClosedNestedSummary)::[]#1"
         },
         {
-          "end": 1617,
-          "start": 1536,
+          "end": 1635,
+          "start": 1554,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIgnoreAppliedOrNullActors)#1"
         },
         {
-          "end": 1544,
-          "start": 1539,
+          "end": 1562,
+          "start": 1557,
           "symbol": "TEST_F(NewHorizonsExchangeTimingTest, ProbeChildrenPreserveDirectScoreStateAndIgnoreAppliedOrNullActors)::[&]#1"
         },
         {
-          "end": 1628,
-          "start": 1622,
+          "end": 1646,
+          "start": 1640,
           "symbol": "NewHorizonsOriginalBearerBindingTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 1637,
-          "start": 1630,
+          "end": 1655,
+          "start": 1648,
           "symbol": "NewHorizonsOriginalBearerBindingTest::static Bonus sentinel(int value)#1"
         },
         {
-          "end": 1645,
-          "start": 1639,
+          "end": 1663,
+          "start": 1657,
           "symbol": "NewHorizonsOriginalBearerBindingTest::static CSelector sentinels()#1"
         },
         {
-          "end": 1644,
-          "start": 1641,
+          "end": 1662,
+          "start": 1659,
           "symbol": "NewHorizonsOriginalBearerBindingTest::sentinels()::[](const Bonus * bonus)#1"
         },
         {
-          "end": 1653,
-          "start": 1647,
+          "end": 1671,
+          "start": 1665,
           "symbol": "NewHorizonsOriginalBearerBindingTest::static std::vector<JsonNode> metadata(const TConstBonusListPtr & bonuses)#1"
         },
         {
-          "end": 1668,
-          "start": 1655,
+          "end": 1686,
+          "start": 1673,
           "symbol": "NewHorizonsOriginalBearerBindingTest::static void expectCurrentQueries(const StackWithBonuses & projected, const IBonusBearer & source)#1"
         },
         {
-          "end": 1665,
-          "start": 1662,
+          "end": 1683,
+          "start": 1680,
           "symbol": "NewHorizonsOriginalBearerBindingTest::expectCurrentQueries(const StackWithBonuses & projected, const IBonusBearer & source)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 1734,
-          "start": 1671,
+          "end": 1752,
+          "start": 1689,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, UnitAndStateConstructorsKeepLiveStackedAndRawQueries)#1"
         },
         {
-          "end": 1685,
-          "start": 1680,
+          "end": 1703,
+          "start": 1698,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, UnitAndStateConstructorsKeepLiveStackedAndRawQueries)::[&]#1"
         },
         {
-          "end": 1720,
-          "start": 1720,
+          "end": 1738,
+          "start": 1738,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, UnitAndStateConstructorsKeepLiveStackedAndRawQueries)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 1724,
-          "start": 1724,
+          "end": 1742,
+          "start": 1742,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, UnitAndStateConstructorsKeepLiveStackedAndRawQueries)::[](const Bonus * bonus)#2"
         },
         {
-          "end": 1783,
-          "start": 1736,
+          "end": 1801,
+          "start": 1754,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, SummonAndNestedConstructorsRetainOwnedBearerAfterSourceRelease)#1"
         },
         {
-          "end": 1829,
-          "start": 1785,
+          "end": 1847,
+          "start": 1803,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, NonUnitBearerFallbackKeepsLiveStackedAndRawQueries)#1"
         },
         {
-          "end": 1797,
-          "start": 1792,
+          "end": 1815,
+          "start": 1810,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, NonUnitBearerFallbackKeepsLiveStackedAndRawQueries)::NonUnitBearerStack::NonUnitBearerStack(const CStackBasicDescriptor & descriptor, const CStack & source, const IBonusBearer & bearer) : CStack(&descriptor, source.unitOwner(), source.unitId(), source.unitSide(), source.unitSlot()), bearer(bearer)#1"
         },
         {
-          "end": 1798,
-          "start": 1798,
+          "end": 1816,
+          "start": 1816,
           "symbol": "TEST_F(NewHorizonsOriginalBearerBindingTest, NonUnitBearerFallbackKeepsLiveStackedAndRawQueries)::NonUnitBearerStack::const IBonusBearer * getBonusBearer() const override#1"
         },
         {
-          "end": 1841,
-          "start": 1834,
+          "end": 1859,
+          "start": 1852,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 1847,
-          "start": 1843,
+          "end": 1865,
+          "start": 1861,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static Bonus genericRecord(int value = 103, SpellID sid = SpellID::HASTE)#1"
         },
         {
-          "end": 1856,
-          "start": 1849,
+          "end": 1874,
+          "start": 1867,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static TConstBonusListPtr records(const StackWithBonuses & unit)#1"
         },
         {
-          "end": 1855,
-          "start": 1851,
+          "end": 1873,
+          "start": 1869,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::records(const StackWithBonuses & unit)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 1864,
-          "start": 1858,
+          "end": 1882,
+          "start": 1876,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static std::vector<JsonNode> values(const TConstBonusListPtr & bonuses)#1"
         },
         {
-          "end": 1880,
-          "start": 1866,
+          "end": 1898,
+          "start": 1884,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static std::string firstOrderedMismatch(const std::vector<JsonNode> & actual, const std::vector<JsonNode> & expected)#1"
         },
         {
-          "end": 1895,
-          "start": 1882,
+          "end": 1913,
+          "start": 1900,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::static void expectSameBonusMultiset(const std::vector<JsonNode> & actual, const std::vector<JsonNode> & expected)#1"
         },
         {
-          "end": 2082,
-          "start": 1897,
+          "end": 2100,
+          "start": 1915,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::void expectGamblerRemovalParity(bool withPenalty, bool timeStopped)#1"
         },
         {
-          "end": 1948,
-          "start": 1948,
+          "end": 1966,
+          "start": 1966,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::expectGamblerRemovalParity(bool withPenalty, bool timeStopped)::[](const Bonus *)#1"
         },
         {
-          "end": 2019,
-          "start": 2015,
+          "end": 2037,
+          "start": 2033,
           "symbol": "NewHorizonsDetachedBonusRemovalTimingTest::expectGamblerRemovalParity(bool withPenalty, bool timeStopped)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 2088,
-          "start": 2085,
+          "end": 2106,
+          "start": 2103,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DedicatedGamblerRemovalMatchesGenericWithControlStateAndRawAliases)#1"
         },
         {
-          "end": 2093,
-          "start": 2090,
+          "end": 2111,
+          "start": 2108,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DedicatedGamblerNoMatchMatchesGenericWhileTimeStopped)#1"
         },
         {
-          "end": 2167,
-          "start": 2095,
+          "end": 2185,
+          "start": 2113,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)#1"
         },
         {
-          "end": 2104,
-          "start": 2104,
+          "end": 2122,
+          "start": 2122,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[](const Bonus *)#1"
         },
         {
-          "end": 2108,
-          "start": 2105,
+          "end": 2126,
+          "start": 2123,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 2116,
-          "start": 2109,
+          "end": 2134,
+          "start": 2127,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[&all](const StackWithBonuses & unit)#1"
         },
         {
-          "end": 2144,
-          "start": 2139,
+          "end": 2162,
+          "start": 2157,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[](const std::function<void()> & action)#1"
         },
         {
-          "end": 2148,
-          "start": 2145,
+          "end": 2166,
+          "start": 2163,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[&]#1"
         },
         {
-          "end": 2147,
-          "start": 2147,
+          "end": 2165,
+          "start": 2165,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::<anonymous>::[](const Bonus *)#1"
         },
         {
-          "end": 2155,
-          "start": 2155,
+          "end": 2173,
+          "start": 2173,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)::[&]#2"
         },
         {
-          "end": 2205,
-          "start": 2169,
+          "end": 2223,
+          "start": 2187,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DistinctEqualAddsKeepIdentityAndRemovalPreservesSourceSidValueDifferences)#1"
         },
         {
-          "end": 2192,
-          "start": 2192,
+          "end": 2210,
+          "start": 2210,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DistinctEqualAddsKeepIdentityAndRemovalPreservesSourceSidValueDifferences)::[pointer](const Bonus * bonus)#1"
         },
         {
-          "end": 2241,
-          "start": 2207,
+          "end": 2259,
+          "start": 2225,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NestedRemovalAndLaterEqualChildAddDoNotBecomeValueTombstones)#1"
         },
         {
-          "end": 2219,
-          "start": 2219,
+          "end": 2237,
+          "start": 2237,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NestedRemovalAndLaterEqualChildAddDoNotBecomeValueTombstones)::[first](const Bonus * bonus)#1"
         },
         {
-          "end": 2234,
-          "start": 2234,
+          "end": 2252,
+          "start": 2252,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NestedRemovalAndLaterEqualChildAddDoNotBecomeValueTombstones)::[second](const Bonus * bonus)#1"
         },
         {
-          "end": 2277,
-          "start": 2243,
+          "end": 2295,
+          "start": 2261,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, GenericUpdateFallbackHasStableIdentityAcrossQueriesAndNestedRemoval)#1"
         },
         {
-          "end": 2258,
-          "start": 2258,
+          "end": 2276,
+          "start": 2276,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, GenericUpdateFallbackHasStableIdentityAcrossQueriesAndNestedRemoval)::[first](const Bonus * bonus)#1"
         },
         {
-          "end": 2270,
-          "start": 2270,
+          "end": 2288,
+          "start": 2288,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, GenericUpdateFallbackHasStableIdentityAcrossQueriesAndNestedRemoval)::[second](const Bonus * bonus)#1"
         },
         {
-          "end": 2346,
-          "start": 2279,
+          "end": 2364,
+          "start": 2297,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, RepeatedCaptureKeepsRetainedSpellAndMarkedGroupViewsIndependent)#1"
         },
         {
-          "end": 2300,
-          "start": 2296,
+          "end": 2318,
+          "start": 2314,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, RepeatedCaptureKeepsRetainedSpellAndMarkedGroupViewsIndependent)::[group](const Bonus * bonus)#1"
         },
         {
-          "end": 2322,
-          "start": 2322,
+          "end": 2340,
+          "start": 2340,
           "symbol": "TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, RepeatedCaptureKeepsRetainedSpellAndMarkedGroupViewsIndependent)::[](const Bonus *)#1"
         },
         {
-          "end": 2361,
-          "start": 2354,
+          "end": 2379,
+          "start": 2372,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 2683,
-          "start": 2363,
+          "end": 2701,
+          "start": 2381,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::void measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)#1"
         },
         {
-          "end": 2418,
-          "start": 2414,
+          "end": 2436,
+          "start": 2432,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[this, onWait]#1"
         },
         {
-          "end": 2436,
-          "start": 2419,
+          "end": 2454,
+          "start": 2437,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[](const auto & value)#1"
         },
         {
-          "end": 2457,
-          "start": 2437,
+          "end": 2475,
+          "start": 2455,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[&](const auto & node)#1"
         },
         {
-          "end": 2514,
-          "start": 2458,
+          "end": 2532,
+          "start": 2476,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[&]#1"
         },
         {
-          "end": 2584,
-          "start": 2580,
+          "end": 2602,
+          "start": 2598,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[&](const char * name, const auto & previous, const auto & current)#1"
         },
         {
-          "end": 2645,
-          "start": 2627,
+          "end": 2663,
+          "start": 2645,
           "symbol": "NewHorizonsBattleDwarfWaitTimingTest::measureNaturalRound(unsigned stackCount, unsigned opposingStackCount = 1, bool stopAtFirstWait = false, const std::function<void()> & onWait = {}, bool exportParity = false)::[&](const char * context, const HypotheticLifecycleTiming::EffectWorkTiming & previous, const HypotheticLifecycleTiming::EffectWorkTiming & current)#1"
         },
         {
-          "end": 2689,
-          "start": 2686,
+          "end": 2707,
+          "start": 2704,
           "symbol": "TEST_F(NewHorizonsBattleDwarfWaitTimingTest, OneStackNormalTwoRoundDecision)#1"
         },
         {
-          "end": 2694,
-          "start": 2691,
+          "end": 2712,
+          "start": 2709,
           "symbol": "TEST_F(NewHorizonsBattleDwarfWaitTimingTest, SevenStacksNormalTwoRoundDecisions)#1"
         },
         {
-          "end": 2702,
-          "start": 2696,
+          "end": 2720,
+          "start": 2714,
           "symbol": "TEST_F(NewHorizonsBattleDwarfWaitTimingTest, SevenStacksAgainstSevenOpposingStacksNormalTwoRoundDecisions)#1"
         },
         {
-          "end": 2719,
-          "start": 2718,
+          "end": 2737,
+          "start": 2736,
           "symbol": "WaitDiagnosticTarget::WaitDiagnosticTarget(std::weak_ptr<WaitDiagnosticMessages> value, std::string rowPrefix) : messages(std::move(value)), prefix(std::move(rowPrefix))#1"
         },
         {
-          "end": 2732,
-          "start": 2720,
+          "end": 2750,
+          "start": 2738,
           "symbol": "WaitDiagnosticTarget::void write(const LogRecord & record) override#1"
         },
         {
-          "end": 2749,
-          "start": 2743,
+          "end": 2767,
+          "start": 2761,
           "symbol": "ScopedWaitDiagnostics::explicit ScopedWaitDiagnostics(ELogLevel::ELogLevel requestedAiLevel = ELogLevel::DEBUG, std::string rowPrefix = \"NH_WAIT_CALLBACK_TIMING \")#1"
         },
         {
-          "end": 2757,
-          "start": 2750,
+          "end": 2775,
+          "start": 2768,
           "symbol": "ScopedWaitDiagnostics::~ScopedWaitDiagnostics()#1"
         },
         {
-          "end": 2765,
-          "start": 2760,
+          "end": 2783,
+          "start": 2778,
           "symbol": "ScopedWaitDiagnostics::std::vector<std::string> rows() const#1"
         },
         {
-          "end": 2772,
-          "start": 2768,
+          "end": 2790,
+          "start": 2786,
           "symbol": "bool requestedWaitDiagnostics()#1"
         },
         {
-          "end": 2790,
-          "start": 2774,
+          "end": 2808,
+          "start": 2792,
           "symbol": "unsigned int configuredWaitDiagnosticLimit()#1"
         },
         {
-          "end": 2805,
-          "start": 2792,
+          "end": 2823,
+          "start": 2810,
           "symbol": "std::map<std::string, int64_t> waitFields(const std::string & row)#1"
         },
         {
-          "end": 2844,
-          "start": 2811,
+          "end": 2862,
+          "start": 2829,
           "symbol": "NewHorizonsWaitDiagnosticTest::void expectRecord(const ScopedWaitDiagnostics & capture, bool returned, bool threw, bool unwinding)#1"
         },
         {
-          "end": 2852,
-          "start": 2847,
+          "end": 2870,
+          "start": 2865,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitRecordsMatchOptInAndCapturedIdentity)#1"
         },
         {
-          "end": 2930,
-          "start": 2854,
+          "end": 2948,
+          "start": 2872,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ProbeCacheAggregateRowsCarryCapturedBattleAndPlayerIdentity)#1"
         },
         {
-          "end": 2940,
-          "start": 2932,
+          "end": 2958,
+          "start": 2950,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, DisabledAiLoggerNaturalWaitEmitsNoDiagnostic)#1"
         },
         {
-          "end": 2947,
-          "start": 2942,
+          "end": 2965,
+          "start": 2960,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ThrowingNaturalWaitRetainsIdentityAndRethrows)#1"
         },
         {
-          "end": 2945,
-          "start": 2945,
+          "end": 2963,
+          "start": 2963,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ThrowingNaturalWaitRetainsIdentityAndRethrows)::[]#1"
         },
         {
-          "end": 2959,
-          "start": 2949,
+          "end": 2977,
+          "start": 2967,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitOwnerDestructionKeepsSharedRecordAlive)#1"
         },
         {
-          "end": 2956,
-          "start": 2952,
+          "end": 2974,
+          "start": 2970,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, NaturalWaitOwnerDestructionKeepsSharedRecordAlive)::[this]#1"
         },
         {
-          "end": 2990,
-          "start": 2961,
+          "end": 3008,
+          "start": 2979,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ConfiguredCapMatchesObservedNaturalWaitCount)#1"
         },
         {
-          "end": 2966,
-          "start": 2966,
+          "end": 2984,
+          "start": 2984,
           "symbol": "TEST_F(NewHorizonsWaitDiagnosticTest, ConfiguredCapMatchesObservedNaturalWaitCount)::[](const auto & action)#1"
         },
         {
-          "end": 3014,
-          "start": 2992,
+          "end": 3032,
+          "start": 3010,
           "symbol": "TEST(DamageCacheProbeTimingTest, AggregationPreservesNanosecondsAndExcludesInFlightBookkeeping)#1"
         },
         {
-          "end": 3097,
-          "start": 3016,
+          "end": 3115,
+          "start": 3034,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CanonicalOrderlessCacheMatchesDirectDamageAcrossCountExpiryAndDefend)#1"
         },
         {
-          "end": 3043,
-          "start": 3030,
+          "end": 3061,
+          "start": 3048,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CanonicalOrderlessCacheMatchesDirectDamageAcrossCountExpiryAndDefend)::[&]()#1"
         },
         {
-          "end": 3072,
-          "start": 3067,
+          "end": 3090,
+          "start": 3085,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CanonicalOrderlessCacheMatchesDirectDamageAcrossCountExpiryAndDefend)::[](const Bonus * bonus)#1"
         },
         {
-          "end": 3154,
-          "start": 3099,
+          "end": 3172,
+          "start": 3117,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheResolvesAcceptedProtectAdjacencyAndSpentBudget)#1"
         },
         {
-          "end": 3128,
-          "start": 3111,
+          "end": 3146,
+          "start": 3129,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheResolvesAcceptedProtectAdjacencyAndSpentBudget)::[&](const std::shared_ptr<HypotheticBattle> & state, uint32_t resolvedId)#1"
         },
         {
-          "end": 3190,
-          "start": 3156,
+          "end": 3208,
+          "start": 3174,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheMatchesAcceptedFocusFireControlAndRoundExpiry)#1"
         },
         {
-          "end": 3176,
-          "start": 3167,
+          "end": 3194,
+          "start": 3185,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, CurrentCacheMatchesAcceptedFocusFireControlAndRoundExpiry)::[&]()#1"
         },
         {
-          "end": 3248,
-          "start": 3192,
+          "end": 3266,
+          "start": 3210,
           "symbol": "TEST_F(NewHorizonsBattleAITimingTest, ProbeCacheLegacyHitsAndImmediateParentFallbackPreserveNullSinkValues)#1"
         },
         {
-          "end": 3338,
-          "start": 3250,
+          "end": 3356,
+          "start": 3268,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheCurrentFocusFireStateAndScoresMatchNullSink)#1"
         },
         {
-          "end": 3373,
-          "start": 3340,
+          "end": 3391,
+          "start": 3358,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheExceptionsRestoreDepthBeforeSubsequentDynamicCalls)#1"
         },
         {
-          "end": 3357,
-          "start": 3357,
+          "end": 3375,
+          "start": 3375,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheExceptionsRestoreDepthBeforeSubsequentDynamicCalls)::[]#1"
         },
         {
-          "end": 3359,
-          "start": 3359,
+          "end": 3377,
+          "start": 3377,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheExceptionsRestoreDepthBeforeSubsequentDynamicCalls)::[]#2"
         },
         {
-          "end": 3397,
-          "start": 3375,
+          "end": 3415,
+          "start": 3393,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheDynamicReentryIsIncludedOnceAndSuppressedLocally)#1"
         },
         {
-          "end": 3386,
-          "start": 3386,
+          "end": 3404,
+          "start": 3404,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheDynamicReentryIsIncludedOnceAndSuppressedLocally)::[&]#1"
         },
         {
-          "end": 3712,
-          "start": 3399,
+          "end": 3476,
+          "start": 3417,
+          "symbol": "void NewHorizonsExchangeReadParityTest::prepareVisibleRoster()#1"
+        },
+        {
+          "end": 3502,
+          "start": 3478,
+          "symbol": "void NewHorizonsExchangeReadParityTest::checkVisibleRosterVines()#1"
+        },
+        {
+          "end": 3507,
+          "start": 3504,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)#1"
         },
         {
-          "end": 3439,
-          "start": 3422,
-          "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)::[](const auto & value)#1"
+          "end": 3512,
+          "start": 3509,
+          "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, SevenStackVisibleBookNormalCallbackCharacterizesVinesFullContinuation)#1"
         },
         {
-          "end": 3460,
-          "start": 3440,
-          "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)::[&](const auto & node)#1"
+          "end": 3843,
+          "start": 3514,
+          "symbol": "void NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRoster)#1"
         },
         {
-          "end": 3519,
-          "start": 3461,
-          "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)::[&]#1"
+          "end": 3565,
+          "start": 3548,
+          "symbol": "NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRoster)::[](const auto & value)#1"
         },
         {
-          "end": 3747,
-          "start": 3714,
+          "end": 3586,
+          "start": 3566,
+          "symbol": "NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRoster)::[&](const auto & node)#1"
+        },
+        {
+          "end": 3645,
+          "start": 3587,
+          "symbol": "NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRoster)::[&]#1"
+        },
+        {
+          "end": 3878,
+          "start": 3845,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCachePreflightReentryAndDeadReturnKeepClosedOuterWall)#1"
         },
         {
-          "end": 3725,
-          "start": 3725,
+          "end": 3856,
+          "start": 3856,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCachePreflightReentryAndDeadReturnKeepClosedOuterWall)::[&]#1"
         },
         {
-          "end": 3836,
-          "start": 3749,
+          "end": 3967,
+          "start": 3880,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheNormalForecastPreservesNaturalActionDestinationAndLiveState)#1"
         },
         {
-          "end": 3769,
-          "start": 3764,
+          "end": 3900,
+          "start": 3895,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheNormalForecastPreservesNaturalActionDestinationAndLiveState)::[](const auto & value)#1"
         },
         {
-          "end": 3894,
-          "start": 3838,
+          "end": 4025,
+          "start": 3969,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheAdjacentSingletonRetainsAdmissionWithoutTargetComparisons)#1"
         }
       ],
-      "rationale": "Complete 192-callable inventory for the exact timing-test source. All callable identities remain present; only the shipping callback fixture body changes, from 307 to 314 lines. Its existing opted-in capture emits at most 32 already captured HeroActionTiming rows after the measured loop and semantic/state/both-RNG assertions. OFF emits no rows. Existing typed shipping properties, actions, order and budgets remain unchanged; stdout cost is outside the measured loop. Inherited parser recovery requires this complete explicit inventory, not a partial exception.",
-      "review": "source-review-shipping-hero-timing-captured-stdout",
-      "sha256": "2bf48da5047b5f1216a83dc15fff6dec00d82812b19a140a7e327c96573f5134"
+      "rationale": "Complete 196-callable prospective inventory: all pre-existing helpers, fixture methods, TEST bodies and nested lambdas retained; prepareVisibleRoster/checkVisibleRosterVines and new selector added; existing shipping TEST body moved into runShippingNormalCallback and replaced with a wrapper. Existing runLayout empty default-function initializer recovery2364 moves to2382 unchanged, inside its completely inventoried signature. No parser gap waived, production size baseline changed, runtime result or timing acceptance implied. Brace-only warning repair adds explicit compound blocks around two assertion-macro conditional bodies; callable identities/count remain196, shared harness326\u2192330 and file4021\u21924025. No assertion or execution order changes.",
+      "review": "independent-source-review-visible-seven-stack-timing-characterization-v1",
+      "sha256": "88b691db3fc8c5e6d97b609088e1d87332bbf97a99815537575d642ca31839fc"
     },
     "test/battle/NewHorizonsBattleFormHealthTest.cpp": {
       "functions": [
@@ -21326,24 +21346,24 @@
       "sha256": "7321969ccf912ff5391648f483400bb40fcc27c63c8cdd1cd6abbe1bd780eaf0"
     },
     "client/windows/HeroGrowthWindow.cpp": {
-      "deferral": "Remaining 397-line refresh/515-line window remains UI-owned widget-construction debt; future affected expansion requires cohesive widget extraction, characterization and independent review, not restored old limits.",
-      "kind": "legacy",
+      "deferral": "Extract read-only perk-skill panel construction into a focused UI presentation owner returning card widgets; preserve event lifetime, selection/page state, positions and native rendered equivalence. Remaining 397-line refresh/515-line window remains debt; future affected expansion requires characterization and independent review, not restored old limits.",
+      "kind": "exception",
       "lines": 515,
       "owner": "ui_developer",
-      "rationale": "Bounded retained legacy consumer alignment delegates eligibility to canonical captured-state evaluatePerk; no gameplay policy or constructor route change. Exact shrinking freeze only, not semantic/rendered certification or future growth permission.",
-      "review": "IR-F16-CURRENT-MAIN-7022-V1",
-      "review_scope": "bounded-consumer-extraction-shrinking-baseline",
-      "sha256": "a1cadcbac1e56fba153adae8a1b81ff21a615da88bf51825684581c115df58c4"
+      "rationale": "Independently reviewed no-growth urgent icon-consumer correction replaces the bare bitmap request with the existing animation descriptor/frame-zero widget. Eligibility, input ownership and gameplay are unchanged. Exact size freeze only: no structural clearance, future growth permission or rendered acceptance.",
+      "review": "independent-source-review-perk-development-animation-consumer-v1",
+      "review_scope": "bounded-no-growth-urgent-consumer-fix-with-panel-extraction-deferral",
+      "sha256": "ee98b038d59fd2320d9723fb7fe17043af7ec010b9cdbe5b510dbfa18500c936"
     },
     "client/windows/HeroGrowthWindow.cpp::void HeroGrowthWindow::refresh(const CGHeroInstance & hero)#1": {
-      "deferral": "Remaining 397-line refresh/515-line window remains UI-owned widget-construction debt; future affected expansion requires cohesive widget extraction, characterization and independent review, not restored old limits.",
-      "kind": "legacy",
+      "deferral": "Extract read-only perk-skill panel construction into a focused UI presentation owner returning card widgets; preserve event lifetime, selection/page state, positions and native rendered equivalence. Remaining 397-line refresh/515-line window remains debt; future affected expansion requires characterization and independent review, not restored old limits.",
+      "kind": "exception",
       "lines": 397,
       "owner": "ui_developer",
-      "rationale": "Bounded retained legacy consumer alignment delegates eligibility to canonical captured-state evaluatePerk; no gameplay policy or constructor route change. Exact shrinking freeze only, not semantic/rendered certification or future growth permission.",
-      "review": "IR-F16-CURRENT-MAIN-7022-V1",
-      "review_scope": "bounded-consumer-extraction-shrinking-baseline",
-      "sha256": "ac48535515cd79fb7331a81e1430e8f8287f1ef9cb3bf30ad0c52b953c661754"
+      "rationale": "Independently reviewed no-growth urgent icon-consumer correction replaces the bare bitmap request with the existing animation descriptor/frame-zero widget. Eligibility, input ownership and gameplay are unchanged. Exact size freeze only: no structural clearance, future growth permission or rendered acceptance.",
+      "review": "independent-source-review-perk-development-animation-consumer-v1",
+      "review_scope": "bounded-no-growth-urgent-consumer-fix-with-panel-extraction-deferral",
+      "sha256": "42cacca6c57ee840149f556d0c42fa5055c6967df1b82c409c50015420387e40"
     },
     "client/windows/HeroSkillOddsWindow.cpp::HeroSkillOddsWindow::HeroSkillOddsWindow(const CGHeroInstance & hero) : CWindowObject(BORDERED)#1": {
       "kind": "legacy",

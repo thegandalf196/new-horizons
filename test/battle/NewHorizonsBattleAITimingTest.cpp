@@ -13,6 +13,11 @@
 #include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/SpellTargetsEvaluator.h"
+#include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsVengefulVines.h"
+#include "../../lib/spells/Problem.h"
 #include "../../lib/CStack.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
@@ -955,12 +960,25 @@ TEST_F(NewHorizonsBattleAITimingTest, EmptyMovementDestinationClosesParentWithou
 class NewHorizonsExchangeReadParityTest : public NewHorizonsBattleAITimingTest
 {
 protected:
+	bool visibleRosterScenario = false;
+	size_t visibleRosterVinesTargets = 0;
+	void prepareVisibleRoster();
+	void checkVisibleRosterVines();
+	void runShippingNormalCallback(bool visibleRoster);
+
 	void mapLoaded(CMap * loaded) override
 	{
 		// These two controls exercise current commands, including the dynamic
 		// Focus Fire damage guard, rather than the legacy timing-only profile.
 		useCommands = true;
 		HeroCommandFixture::mapLoaded(loaded);
+		if(visibleRosterScenario)
+		{
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		}
 	}
 
 	void expectUnusedReadParity(bool stateful)
@@ -3396,10 +3414,111 @@ TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheDynamicReentryIsIncludedOnce
 	EXPECT_EQ(target->save(), before);
 }
 
+void NewHorizonsExchangeReadParityTest::prepareVisibleRoster()
+{
+	visibleRosterScenario = true;
+	startGame();
+	attackerSideHero->removeAllSpells();
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	for(const auto & key : {"core:cure", "new-horizons:vengefulVines", "core:dispel",
+		"core:iceBolt", "core:sorrow", "new-horizons:guardianSpirit"})
+	{
+		const SpellID spell(SpellID::decode(key));
+		ASSERT_NE(spell.toSpell(), nullptr);
+		attackerSideHero->addSpellToSpellbook(spell);
+	}
+	ASSERT_EQ(attackerSideHero->getSpellsInSpellbook().size(), 6u);
+	attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 50, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 73, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 17, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 24, ChangeValueMode::ABSOLUTE);
+	const auto archery = SecondarySkill::decode("new-horizons:archery");
+	ASSERT_GE(archery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(archery), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 24);
+	startBattle();
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	const std::array<const char *, 7> creatures{"core:halberdier", "core:marksman", "core:gremlin",
+		"core:marksman", "core:halberdier", "core:marksman", "core:halberdier"};
+	const std::array<int, 7> amounts{14, 13, 16, 13, 9, 13, 7};
+	const std::array<int, 7> rows{0, 2, 4, 5, 6, 8, 10};
+	for(size_t index = 0; index < rows.size(); ++index)
+	{
+		addStack(BattleSide::ATTACKER, creatureByName(creatures[index]), BattleHex(2, rows[index]), amounts[index]);
+		addStack(BattleSide::DEFENDER, creatureByName("core:dreadKnight"), BattleHex(13, rows[index]), index == 6 ? 1 : 2);
+	}
+	ASSERT_EQ(battle()->battleGetAllUnits(false).size(), 14u);
+	beginCombat();
+	// Explicit legal opening, not a forced player choice: observed neutrals WAIT.
+	for(unsigned count = 0; count < 7 && battle()->battleActiveUnit()->unitSide() == BattleSide::DEFENDER; ++count)
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
+			BattleAction::makeWait(battle()->battleActiveUnit())));
+	ASSERT_EQ(battle()->battleActiveUnit()->unitSide(), BattleSide::ATTACKER);
+	ASSERT_FALSE(battle()->battleHasPendingPreCombatOrder(BattleSide::ATTACKER));
+	ASSERT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+	{
+		const auto * stack = dynamic_cast<const CStack *>(unit);
+		ASSERT_NE(stack, nullptr);
+		(void)stack->counterAttacks.total(); // Materialize the ordinary latch before full witnesses.
+	}
+	callback = std::make_shared<TimingCallback>();
+	callback->onBattleStarted(battle());
+	environment = std::make_shared<TimingEnvironment>(gameState());
+	ai = std::make_unique<CBattleAI>();
+	ai->initBattleInterface(environment, callback);
+	startTiming();
+	ASSERT_NO_FATAL_FAILURE(checkVisibleRosterVines());
+}
+
+void NewHorizonsExchangeReadParityTest::checkVisibleRosterVines()
+{
+	const SpellID vines(SpellID::decode(std::string(newHorizonsVengefulVines::SPELL_KEY)));
+	ASSERT_TRUE(newHorizonsVengefulVines::enabled(battle()->getMagicRules(), vines));
+	ASSERT_TRUE(attackerSideHero->canCastThisSpell(vines.toSpell()));
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, vines.toSpell());
+	const auto mechanics = vines.toSpell()->battleMechanics(&cast);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(mechanics->canBeCast(problem));
+	const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	visibleRosterVinesTargets = targets.size();
+	ASSERT_GT(visibleRosterVinesTargets, 0u);
+	std::set<std::vector<uint32_t>> recipientSets;
+	for(const auto & target : targets)
+	{
+		std::vector<uint32_t> ids;
+		for(const auto * unit : mechanics->getAffectedStacks(target))
+			ids.push_back(unit->unitId());
+		std::sort(ids.begin(), ids.end());
+		recipientSets.insert(std::move(ids));
+	}
+	EXPECT_LT(recipientSets.size(), targets.size());
+	RecordProperty("visibleRosterVinesTargets", std::to_string(targets.size()));
+	RecordProperty("visibleRosterVinesRecipientSets", std::to_string(recipientSets.size()));
+}
+
 TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices)
 {
+	ASSERT_NO_FATAL_FAILURE(runShippingNormalCallback(false));
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, SevenStackVisibleBookNormalCallbackCharacterizesVinesFullContinuation)
+{
+	ASSERT_NO_FATAL_FAILURE(runShippingNormalCallback(true));
+}
+
+void NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRoster)
+{
 	const auto experimentLimit = shippingTbbExperimentLimit();
-	if(experimentLimit)
+	if(visibleRoster)
+	{
+		ASSERT_TRUE(!experimentLimit || *experimentLimit == 0) << "Visible-roster diagnostic retains default production TBB";
+	}
+	if(experimentLimit || visibleRoster)
 		dynamic_cast<CRandomGenerator &>(*getRNG()).setSeed(1337);
 	// Separate from the historical commands=false Dwarf workload. Default AI
 	// preferences and shipping command rules are retained; no WAIT/Order is forced.
@@ -3407,11 +3526,18 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 	heroTimingTest::Capture heroCapture;
 	// Reuse the established nonempty Normal exchange geometry. Two adjacent
 	// singleton melee sides never invoke estimateAttack's target comparisons.
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 50);
-	addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 5), 50);
-	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 7), 50);
-	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 3), 50);
+	if(visibleRoster)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepareVisibleRoster());
+	}
+	else
+	{
+		ASSERT_NO_FATAL_FAILURE(prepare());
+		addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 50);
+		addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 5), 50);
+		addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 7), 50);
+		addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 3), 50);
+	}
 	gameState()->getStartInfo()->difficulty = static_cast<ui8>(EMapDifficulty::NORMAL);
 	ASSERT_TRUE(battle()->battleUsesHeroCommands());
 	ASSERT_TRUE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE));
@@ -3511,7 +3637,7 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 			result["sides"].Vector().push_back(std::move(entry));
 		}
 		result["randomizerHex"].String() = valueHex(*gameHandler->randomizer);
-		if(experimentLimit)
+		if(experimentLimit || visibleRoster)
 			result["gameRandomizerHex"].String() = valueHex(dynamic_cast<CRandomGenerator &>(*getRNG()));
 		if(result.toString().size() > 1024 * 1024)
 			throw std::runtime_error("Shipping diagnostic combined snapshot exceeded bound");
@@ -3560,6 +3686,11 @@ TEST_F(NewHorizonsExchangeReadParityTest, ShippingCommandNormalCallbackKeepsNatu
 				EXPECT_EQ(row.at("submit_calls"), callback->heroActions.size() - heroesBefore);
 				EXPECT_EQ(row.at("submit_returned"), callback->heroActions.size() - heroesBefore);
 				EXPECT_EQ(row.at("submit_threw"), 0);
+				if(visibleRoster && heroRowsObserved == 1)
+				{
+					EXPECT_GE(row.at("candidates"), static_cast<int64_t>(visibleRosterVinesTargets));
+					EXPECT_GE(row.at("continuation_full_calls"), static_cast<int64_t>(visibleRosterVinesTargets));
+				}
 			}
 		}
 		else
