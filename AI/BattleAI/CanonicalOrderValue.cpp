@@ -341,7 +341,8 @@ DamageEstimation CanonicalOrderValue::estimateExtraCounter(const battle::Unit * 
 DirectOrderValue CanonicalOrderValue::directValue(std::optional<int> focusFireSnapshotPercent,
 	const Environment * environment, const std::shared_ptr<CBattleInfoCallback> & projectionSource) const
 {
-	const auto ownMeleePotential = sumOwnMeleeDamage();
+	const auto ownMeleePotential = command == HeroCommand::CHARGE
+		? sumOwnMeleeDamage() : 0.0f;
 	if(command == HeroCommand::FOCUS_FIRE && targetIds.size() == 1)
 		return {focusFire(focusFireSnapshotPercent)};
 	const auto chargePercent = coefficient("charge", "meleeDamagePercent");
