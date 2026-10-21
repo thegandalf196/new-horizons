@@ -81,11 +81,11 @@ const PlayerColor BUYER(0);
 class CandidateArmyManager final : public NK2AI::ArmyManager
 {
 public:
-	std::vector<creInfo> candidates;
+	std::vector<NK2AI::creInfo> candidates;
 	mutable unsigned forecasts = 0;
 	CandidateArmyManager(CPlayerSpecificInfoCallback * callback, const NK2AI::Nullkiller * ai)
 		: ArmyManager(callback, ai) {}
-	std::vector<creInfo> getArmyAvailableToBuy(const CCreatureSet *, const CGDwelling *) const override
+	std::vector<NK2AI::creInfo> getArmyAvailableToBuy(const CCreatureSet *, const CGDwelling *) const override
 	{
 		++forecasts;
 		return candidates;
