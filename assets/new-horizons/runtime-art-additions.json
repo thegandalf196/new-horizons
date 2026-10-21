@@ -5054,6 +5054,93 @@
       "statuses": [],
       "reusedBindings": [],
       "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "38d89aa90627ba6ee2b72275d113e3b8f1c8218e89e9be67832ebc2fcc7b0780",
+      "baselineManifestSha256": "c15e030655d296831a3625b5e8711b46b404cf1afc11233b77e0f82257be497d",
+      "baselineEntriesSha256": "db3e408047dca90326193655c24bbc596df22d670510d066f7f4e89f2b6e06ac",
+      "baselineHeaderSha256": "6cfea69a7513ffa4a185755f1ada67e2ed2aac17156d50e690fc45d4b93ad439",
+      "nonStatusConfigSha256": "6bcf78af32bc3739f491572a1705a1e9440dc76cc25b19947da8998d7fc5cba2",
+      "baselineCount": 4791,
+      "entryCount": 4803,
+      "newArchiveSha256": "6cdaf41f7d2fd18055d6298cdf48789d0c78a5d78f4c2b76e725201a1d1baac4",
+      "resources": [
+        "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/32.json",
+        "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/44.json",
+        "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/32.json",
+        "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/44.json",
+        "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/32.json",
+        "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/44.json",
+        "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/icon-44.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "specialties": [
+        {
+          "id": "core:serena",
+          "identity": "SerenaArcanePreparation",
+          "version": "transparent-foreground-v2-20261021",
+          "native44Sha256": "39dd9bfb0f948987fe7a6854df7d05829a3484134155d3c3ec8afb672d2c1725",
+          "native32Sha256": "86df8efb9b5e8f591ec547cb816c6d32f0a5f14749c30a5d188090d13c5d39fb",
+          "normal44": "newHorizons/heroSpecialties/SerenaArcanePreparation/44",
+          "normal32": "newHorizons/heroSpecialties/SerenaArcanePreparation/32",
+          "selectionEvidenceSha256": "a3fedb211c1c0ea06c432c9d1503359e25fdc52d67a8eac64e8afb92ebda1f70",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/32.json",
+            "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/44.json",
+            "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/icon-44.png"
+          ],
+          "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+          "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+          "approval": "Provisional; not Final; rendered acceptance pending"
+        },
+        {
+          "id": "core:gem",
+          "identity": "GemRestorativeSorceress",
+          "version": "transparent-foreground-v2-20261021",
+          "native44Sha256": "ac0e369fd6cce534ee04cf5b7ffffcd2fd99df3f0ceaa369367dcb30b3f37b70",
+          "native32Sha256": "6f20a82f8b550c96a64e02a8cac0d952df74b3b6d2c41a710d13f7f826293c5d",
+          "normal44": "newHorizons/heroSpecialties/GemRestorativeSorceress/44",
+          "normal32": "newHorizons/heroSpecialties/GemRestorativeSorceress/32",
+          "selectionEvidenceSha256": "a3fedb211c1c0ea06c432c9d1503359e25fdc52d67a8eac64e8afb92ebda1f70",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/32.json",
+            "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/44.json",
+            "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/icon-44.png"
+          ],
+          "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+          "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+          "approval": "Provisional; not Final; rendered acceptance pending"
+        },
+        {
+          "id": "core:daremyth",
+          "identity": "DaremythFortunesChild",
+          "version": "transparent-foreground-v2-20261021",
+          "native44Sha256": "ad79d50817249c447f723228ca402a7c6e6031584023141cc1f1700b570c74ef",
+          "native32Sha256": "b203c85f331ad7adf62e3fd4cb3ce1efa10d116092f287fcdd848f79e9ef1648",
+          "normal44": "newHorizons/heroSpecialties/DaremythFortunesChild/44",
+          "normal32": "newHorizons/heroSpecialties/DaremythFortunesChild/32",
+          "selectionEvidenceSha256": "a3fedb211c1c0ea06c432c9d1503359e25fdc52d67a8eac64e8afb92ebda1f70",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/32.json",
+            "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/44.json",
+            "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/icon-44.png"
+          ],
+          "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+          "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+          "approval": "Provisional; not Final; rendered acceptance pending"
+        }
+      ],
+      "approval": "Provisional; not Final; rendered acceptance pending"
     }
   ]
 }

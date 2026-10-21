@@ -47910,6 +47910,126 @@
       "origin": "independently-authored-built-in-generation-or-targeted-own-draft-edit",
       "selection": "selected-provisional-runtime-2026-10-20; legacy opaque RGB painting and ordinary LANCZOS44/32 reductions; not alpha foreground or pinned-native-template composite; Bronze spur/heel strap/ivory tusk readable32; stitching and wheel teeth merge. Disabled leather very dark, bright heel rim/tusk retain identity. Mobility metaphor, not extra activation.",
       "approval": "Provisional; no Final approval"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/32.json",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/32.json",
+      "size": 106,
+      "sha256": "e33583cbd84b07564229d03a75a51ef4228622f6a6dafe73d47930e8cf63f5d5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/44.json",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/44.json",
+      "size": 106,
+      "sha256": "171aae498e0cbac3b18bb48eb5086c18e5571a36719d9dfedd022565cfd28618",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/icon-32.png",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/icon-32.png",
+      "size": 2295,
+      "sha256": "b203c85f331ad7adf62e3fd4cb3ce1efa10d116092f287fcdd848f79e9ef1648",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/icon-44.png",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/DaremythFortunesChild/icon-44.png",
+      "size": 4137,
+      "sha256": "ad79d50817249c447f723228ca402a7c6e6031584023141cc1f1700b570c74ef",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/32.json",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/32.json",
+      "size": 108,
+      "sha256": "b2be3cc256d5c188ab16f7e176e983e001276c471b7d237e2f583cf1c969eec8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/44.json",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/44.json",
+      "size": 108,
+      "sha256": "8a3498fe5dad21b21b5628e28eadc11fce43b6b4cc0b600a6ea84decee66b38d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/icon-32.png",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/icon-32.png",
+      "size": 2246,
+      "sha256": "6f20a82f8b550c96a64e02a8cac0d952df74b3b6d2c41a710d13f7f826293c5d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/icon-44.png",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/GemRestorativeSorceress/icon-44.png",
+      "size": 3944,
+      "sha256": "ac0e369fd6cce534ee04cf5b7ffffcd2fd99df3f0ceaa369367dcb30b3f37b70",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/32.json",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/32.json",
+      "size": 108,
+      "sha256": "e572a8ca1221f8c1e4c3c3a872772191d260a59c24b5a268da6b3bdca2b4dc93",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/44.json",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/44.json",
+      "size": 108,
+      "sha256": "feda80fc3b3bd14046be3ce3c5f7fae3744936586b2d742af9eb817dfd05dae4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/icon-32.png",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/icon-32.png",
+      "size": 2173,
+      "sha256": "86df8efb9b5e8f591ec547cb816c6d32f0a5f14749c30a5d188090d13c5d39fb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/icon-44.png",
+      "source": "specialty-selected-v2/SPRITES/newHorizons/heroSpecialties/SerenaArcanePreparation/icon-44.png",
+      "size": 3756,
+      "sha256": "39dd9bfb0f948987fe7a6854df7d05829a3484134155d3c3ec8afb672d2c1725",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-2026-10-21",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
     }
   ],
   "requiredFamilies": [
@@ -47924,7 +48044,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2713,
+    "builtin-skills-perks-orders-and-ui": 2725,
     "cabir-and-master": 214,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

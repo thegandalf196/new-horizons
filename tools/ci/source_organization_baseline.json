@@ -22242,15 +22242,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact1281-line registry endpoint only. Engine engineer owns coherent component registration extraction with shrinking parent before broader registry expansion; retain source/header ordering and existing target/linkage behavior. The one-row addition does not waive production decomposition or native verification.",
+      "deferral": "Exact1282-line registry endpoint only. Engine engineer owns coherent component registration extraction with shrinking parent before broader registry expansion; preserve target/linkage and source/header ordering. This exact one-row addition is independently source-reviewed; it does not waive decomposition or native verification.",
       "kind": "exception",
-      "lines": 1281,
+      "lines": 1282,
       "owner": "engine_engineer",
-      "rationale": "Exactly one ordered BattleSpellProjectionTargets.cpp registration row, registry1280-to-1281, accompanies mechanics3159-to-3123 extraction. Existing target/dependency/linkage and registration order retained. Mechanical registry-only exception; no executable body or general growth allowance.",
-      "review": "IR-VINES-REUSE-EXTRACTION-SOURCE-20261021",
-      "review_scope": "exact-phase2-vines-projection-extraction-source-only",
+      "rationale": "Exactly one ordered NewHorizonsSpecialtyPresentation.cpp source-registration row accompanies removal of the 272-line presentation resolver from HeroRules1682-to1410 and decomposition into functions118/53/122. Existing target, dependency, linkage and other registration ordering are unchanged. Mechanical registry-only endpoint, not an executable-logic growth allowance.",
+      "review": "IR-SPECIALTY-PRESENTATION-EXTRACTION-SOURCE-20261021",
+      "review_scope": "prospective-specialty-presentation-source-registration-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "fa45a10e518a9e3669c1457466f6a3f865410f8f712497ac0c03002e0b9d2027"
+      "sha256": "d62d4675324f461fd0ffdbee7f9fafb48f22ccac85354445bf708018f77869a3"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -22976,22 +22976,13 @@
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp": {
       "kind": "legacy",
-      "lines": 1682,
+      "lines": 1410,
       "owner": "gameplay_engineer",
-      "rationale": "Reviewed specialty validator/decoder extraction ratchets this existing legacy file from1766 to1682 lines. Shared validation primitives move unchanged; the cohesive119-line scalar component owns validated stack-result decoding. No remaining central callable grows. Exact reduction only, no future expansion credit or runtime/performance approval.",
-      "review": "IR-SKILL-SPECIALTY-SCALAR-SOURCE-20261020",
-      "review_scope": "exact-scalar-specialty-extraction-and-positive-query-only",
-      "sha256": "c52be654517fcfee0289a3ff4cb86a79c0de15c9d98447a58d6c5125c936bbd3",
+      "rationale": "Read-only specialty presentation responsibility is extracted from this legacy file, reducing1682 to1410 physical lines. The old272-line resolver is split into ordered individual/druid118, creature-line53 and remaining resolver122 functions in a cohesive323-line component. No other parent function changes; this is a shrinking baseline, with no future expansion credit.",
+      "review": "IR-SPECIALTY-PRESENTATION-EXTRACTION-SOURCE-20261021",
+      "review_scope": "prospective-specialty-presentation-extraction-ratchet",
+      "sha256": "7a4b680b317a3e3c85472c1f9c17f7e95b29c107b222a60bfab8a79cb399f6e9",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
-    },
-    "lib/entities/hero/NewHorizonsHeroRules.cpp::newHorizonsHeroes::SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target, const CGHeroInstance * capturedHero)#1": {
-      "kind": "legacy",
-      "lines": 272,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 272 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "2b46e2b3c9139c07bb09cd151418263da57343ffb221c0f6a42a745365ac72a1"
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp::newHorizonsHeroes::std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill( const JsonNode & resolvedRules, bool magicHero, FactionID faction, const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)#1": {
       "kind": "legacy",
@@ -23064,6 +23055,26 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "d77772a1ede34de3884cee9989bc9a66c05a23ec458bb92090e6bb5a78bf9ef8"
+    },
+    "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target, const CGHeroInstance * capturedHero)#1": {
+      "kind": "review",
+      "lines": 122,
+      "owner": "ui_developer",
+      "rationale": "Remaining spell/damage/nondamage/skill aliases and prototype fallback retain their original order after captured-context validation and two explicit family stages. This122-line exported function is below150; review staged responsibilities before expansion.",
+      "review": "IR-SPECIALTY-PRESENTATION-EXTRACTION-SOURCE-20261021",
+      "review_scope": "prospective-specialty-presentation-bounded-function",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "sha256": "2d68456bf766fd0b95afb54420d940d960a22376244971cf6a9d58dd58d742b8"
+    },
+    "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
+      "kind": "review",
+      "lines": 118,
+      "owner": "ui_developer",
+      "rationale": "Ordered individual/druid specialty applicability and description readback extracted from the old shared resolver. Existing guard order, captured policy and producer/marker checks preserved; only three transient artwork stems added at existing matches. This118-line helper is below150; review family boundaries before expansion.",
+      "review": "IR-SPECIALTY-PRESENTATION-EXTRACTION-SOURCE-20261021",
+      "review_scope": "prospective-specialty-presentation-bounded-function",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "sha256": "1ebbce8a25311148c22baa1b27a9b5789777d1fac26bae2b7a11e5be6cb113c7"
     },
     "lib/filesystem/CFilesystemLoader.cpp::std::unordered_map<ResourcePath, boost::filesystem::path> CFilesystemLoader::listFiles(const std::string &mountPoint, size_t depth, bool initial) const#1": {
       "kind": "legacy",

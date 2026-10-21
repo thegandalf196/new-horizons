@@ -444,6 +444,10 @@ TEST_F(NewHorizonsRemainingSpellSpecialtyTest, ModifiedNativeFortuneProducerIsNo
 	{
 		const auto parsed = loader.loadFromJson("core", alternative, "daremyth", daremyth.getNum());
 		EXPECT_TRUE(parsed->spellSpecialtySuccessorProducers.empty());
+		const auto presentation = newHorizonsHeroes::resolveSpecialtyPresentation(*parsed,
+			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")),
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")), std::nullopt);
+		EXPECT_FALSE(presentation.artwork);
 		ASSERT_EQ(parsed->specialty.size(), 1u);
 		EXPECT_EQ(parsed->specialty.front()->type, BonusType::SPECIAL_FIXED_VALUE_ENCHANT);
 	}

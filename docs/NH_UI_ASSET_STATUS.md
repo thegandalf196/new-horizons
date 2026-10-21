@@ -1,18 +1,22 @@
 # Selected UI and artwork status
 
-Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, family counts and separate origin/selection/approval. Current NHART has **4,791 selected payloads**. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
+Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, family counts and separate origin/selection/approval. Current NHART has **4,803 selected payloads**. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
 
 | Current selection record | Scope |
 | --- | --- |
 | perk-art-selections.json | Initial94 purpose-made perk drafts, semantic44 icon + four-state44 family +32 companion; selected versions/provenance explicit |
 | spell-art-selections.json | Seventeen purpose-made custom spell families: book44, scroll/scenario32, effect/immunity30 |
-| runtime-art-additions.json | Later additive waves;133 further perk drafts, four Mass-spell icon families and Arcane Breach/Lucidity30 status resources, exact unchanged-baseline proof |
+| runtime-art-additions.json | Later additive waves;133 further perk drafts, four Mass-spell icon families, Arcane Breach/Lucidity30 status resources and three specialty icon pairs, exact unchanged-baseline proof |
 | runtime-art-manifest.json | Complete selected creature/town/school/spell/perk/Order/interface bytes, origin and approval |
 | platform-icon-provenance.json | Explicit pre-NHART Windows/Linux application-icon exception |
 
-These batches remain **Provisional**, not Final. Earlier masters/alternatives/prompts/raw comparisons stay private; only selected bytes/portable records ship. Later private specialty/perk drafts are not implicitly selected. Arcane Breach and Lucidity remain internal non-castable statuses; only effect/immunity artwork changed. Mass Bless, Curse, Sorrow and Slow use selected44 book,32 scroll/scenario and30 effect/immunity icons; their gameplay, animation and sound are unchanged. Mass Regeneration's scenario role reuses selected32 Regeneration, no new spell or bytes. Original core spell bindings/gameplay are unchanged.
+These batches remain **Provisional**, not Final. Earlier masters/alternatives/prompts/raw comparisons stay private; only selected bytes/portable records ship. Other private specialty/perk drafts are not implicitly selected. Arcane Breach and Lucidity remain internal non-castable statuses; only effect/immunity artwork changed. Mass Bless, Curse, Sorrow and Slow use selected44 book,32 scroll/scenario and30 effect/immunity icons; their gameplay, animation and sound are unchanged. Mass Regeneration's scenario role reuses selected32 Regeneration, no new spell or bytes. Original core spell bindings/gameplay are unchanged.
+
+Serena's Arcane Preparation, Gem's Restorative Sorceress and Daremyth's Fortune's Child select standalone transparent 44×44 and 32×32 images, each with a normal frame 0 descriptor. They draw over existing interface panels without a newly imported backing. The shared specialty adapter selects artwork only inside the existing captured-identity rules; historical aliases and campaign fallbacks remain distinct. Native export checks do not establish rendered acceptance on all seven consuming screens or playable delivery.
 
 The initial and additive records select **227 distinct purpose-made perk identities** within **312 unique literal perk-icon bindings**; binding count is not completed-art count. The latest thirty families retain legacy opaque RGB paintings and ordinary LANCZOS44/32 reductions, not separated alpha foregrounds or pinned-native-template composites. Their per-family readability and semantic limitations remain in the selection records; native-template compliance and rendered acceptance are not established. Provisional selection does not establish distribution rights or supersede the existing provenance and applicable notices.
+
+All 310 active perk identities have packed four-state 44×44 animation families. The older 83 use their existing descriptors rather than the newer flat 44×44/32×32 companion convention. Their bare-image lookup in the read-only Hero Development pool remains a separate consumer gap; mandatory level-up offers already use animation descriptors. Painting coverage must not be confused with every screen resolving its icon correctly.
 
 Inspect native parchment/dark-status contrast, alpha, clipping and compact details. Some exports retain faint or visible edge alpha; corners-transparent does not imply complete-edge transparency or an8% inset. Master Chain targets, Phantom helmets and Puppet strings can merge at30px. Source/container PASS is not actual presentation.
 

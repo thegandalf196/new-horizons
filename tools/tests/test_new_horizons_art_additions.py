@@ -215,7 +215,7 @@ class ArtAdditionsTest(unittest.TestCase):
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         current_ids = {row['id'] for skill in roster['skills'].values() for row in skill['perks']}
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) for name in row['resources']}
             self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
                 self.assertIn(row['id'], current_ids); self.assertEqual(lookup[row['id']], row['icon44'])
@@ -306,6 +306,89 @@ class ArtAdditionsTest(unittest.TestCase):
                 for field in ('handoffSha256', 'selectionHandoffSha256', 'masterSha256', 'promptSha256',
                               'reviewSha256', 'comparisonSha256', 'exportManifestSha256'):
                     self.assertRegex(row[field], r'^[0-9a-f]{64}$')
+
+
+    def test_optional_specialty_records_have_exact_native_frame0_resources(self):
+        manifest = {row['resource']: row for row in self.manifest['entries']}
+        for wave in self.waves:
+            if 'specialties' not in wave:
+                continue  # Earlier waves retain their original format and checks.
+            records = wave['specialties']
+            self.assertIsInstance(records, list)
+            self.assertTrue(records)
+            self.assertEqual(len({row['id'] for row in records}), len(records))
+            resources = [name for row in records for name in row['resources']]
+            self.assertEqual(len(resources), len(records) * 4)
+            self.assertEqual(len(set(resources)), len(resources))
+            for row in records:
+                self.assertRegex(row['id'], r'^[A-Za-z0-9_.-]+:[A-Za-z0-9_.-]+$')
+                self.assertRegex(row['identity'], r'^[A-Za-z][A-Za-z0-9_]*$')
+                for field in ('version', 'origin', 'selection', 'approval'):
+                    self.assertIsInstance(row[field], str)
+                    self.assertTrue(row[field].strip())
+                self.assertRegex(row['selectionEvidenceSha256'], r'^[0-9a-f]{64}$')
+                stem = 'newHorizons/heroSpecialties/' + row['identity']
+                expected = {'SPRITES/' + stem + '/' + filename
+                            for size in (44, 32)
+                            for filename in (str(size) + '.json', 'icon-' + str(size) + '.png')}
+                self.assertEqual(set(row['resources']), expected)
+                self.assertEqual(len(row['resources']), 4)
+                for size in (44, 32):
+                    descriptor = 'SPRITES/' + stem + '/' + str(size) + '.json'
+                    image_name = stem + '/icon-' + str(size) + '.png'
+                    image_resource = 'SPRITES/' + image_name
+                    self.assertEqual(row['normal' + str(size)], stem + '/' + str(size))
+                    self.assertEqual(json.loads(read_resource(descriptor)),
+                                     {'images': [{'group': 0, 'frame': 0, 'file': image_name}]})
+                    selected_hash = row['native' + str(size) + 'Sha256']
+                    self.assertRegex(selected_hash, r'^[0-9a-f]{64}$')
+                    self.assertEqual(hashlib.sha256(read_resource(image_resource)).hexdigest(), selected_hash)
+                    self.assertEqual(manifest[image_resource]['sha256'], selected_hash)
+                    image = open_image(image_resource)
+                    self.assertEqual(image.mode, 'RGBA')
+                    self.assertEqual(image.size, (size, size))
+                    self.assertFalse(image.info)
+                    alpha = image.getchannel('A')
+                    self.assertEqual(alpha.getextrema(), (0, 255))
+                    edges = [(0, 0, size, 2), (0, size - 2, size, size),
+                             (0, 0, 2, size), (size - 2, 0, size, size)]
+                    for box in edges:
+                        self.assertEqual(alpha.crop(box).getextrema(), (0, 0))
+                for name in expected:
+                    metadata = manifest[name]
+                    self.assertEqual(metadata['family'], 'builtin-skills-perks-orders-and-ui')
+                    self.assertEqual(metadata['selection'], row['selection'])
+                    self.assertTrue(metadata['approval'].strip())
+                    self.assertTrue(metadata['origin'])
+                    self.assertFalse((ROOT / 'Mods/new-horizons/Images' / name.removeprefix('SPRITES/')).exists())
+
+    def test_selected_specialty_foreground_v2_cohort_keeps_exact_three_heroes(self):
+        token = 'selected-provisional-standalone-specialty-foreground-v2-2026-10-21'
+        records = [row for wave in self.waves for row in wave.get('specialties', [])
+                   if row['selection'] == token]
+        expected = {
+            'core:serena': ('SerenaArcanePreparation',
+                '39dd9bfb0f948987fe7a6854df7d05829a3484134155d3c3ec8afb672d2c1725',
+                '86df8efb9b5e8f591ec547cb816c6d32f0a5f14749c30a5d188090d13c5d39fb'),
+            'core:gem': ('GemRestorativeSorceress',
+                'ac0e369fd6cce534ee04cf5b7ffffcd2fd99df3f0ceaa369367dcb30b3f37b70',
+                '6f20a82f8b550c96a64e02a8cac0d952df74b3b6d2c41a710d13f7f826293c5d'),
+            'core:daremyth': ('DaremythFortunesChild',
+                'ad79d50817249c447f723228ca402a7c6e6031584023141cc1f1700b570c74ef',
+                'b203c85f331ad7adf62e3fd4cb3ce1efa10d116092f287fcdd848f79e9ef1648')}
+        self.assertEqual(len(records), 3)
+        self.assertEqual({row['id'] for row in records}, set(expected))
+        for row in records:
+            identity, hash44, hash32 = expected[row['id']]
+            self.assertEqual(row['version'], 'transparent-foreground-v2-20261021')
+            self.assertIn('not Final', row['approval'])
+            self.assertIn('provisional', row['selection'])
+            self.assertEqual((row['identity'], row['native44Sha256'], row['native32Sha256']),
+                             (identity, hash44, hash32))
+            manifest = {entry['resource']: entry for entry in self.manifest['entries']}
+            for name in row['resources']:
+                self.assertIn('no Final', manifest[name]['approval'])
+
 
 
 if __name__ == '__main__':

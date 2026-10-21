@@ -16,8 +16,11 @@ struct HeroSpecialtyPresentation
 	size_t prototypeFrame = 0;
 	std::optional<SpellID> spell;
 	std::optional<SecondarySkill> skill;
+	std::optional<std::string> artwork;
 	AnimationPath animation(bool small = false) const
 	{
+		if(artwork)
+			return AnimationPath::builtin(*artwork + (small ? "/32" : "/44"));
 		if(creature)
 			return AnimationPath::builtin("CPRSMALL");
 		// SPELLSCR uses the same registered index at both sizes. SPELLINT
@@ -30,6 +33,8 @@ struct HeroSpecialtyPresentation
 	}
 	size_t frame() const
 	{
+		if(artwork)
+			return 0;
 		if(creature)
 			return creature->toCreature()->getIconIndex();
 		if(spell)
@@ -49,6 +54,7 @@ inline HeroSpecialtyPresentation heroSpecialtyPresentation(const CHero & hero,
 	result.prototypeFrame = static_cast<size_t>(hero.imageIndex);
 	result.spell = metadata.spell;
 	result.skill = metadata.skill;
+	result.artwork = metadata.artwork;
 	// The unchanged creature alias already has its native specialty art.
 	// Only a changed target (Wisp) needs the replacement creature portrait.
 	if(metadata.creature && hero.creatureLineSpecialtyAlias

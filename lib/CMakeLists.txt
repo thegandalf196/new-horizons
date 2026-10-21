@@ -262,6 +262,7 @@ set(lib_MAIN_SRCS
 	entities/creature/NewHorizonsCreatureCategories.cpp
 	entities/creature/NewHorizonsRecruitmentTraining.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
+	entities/hero/NewHorizonsSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsSkillSpecialtyRules.cpp
 	entities/hero/HeroStartingProjection.cpp
 	entities/hero/NewHorizonsLeadership.cpp

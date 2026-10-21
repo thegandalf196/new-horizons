@@ -32,6 +32,8 @@ struct DLL_LINKAGE SpecialtyPresentation
 	std::optional<CreatureID> creature;
 	std::optional<SpellID> spell;
 	std::optional<SecondarySkill> skill;
+	// Resolved presentation only; never serialized or used for eligibility.
+	std::optional<std::string> artwork;
 };
 
 DLL_LINKAGE SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,

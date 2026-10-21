@@ -425,6 +425,8 @@ set(test_SRCS
 		spells/NewHorizonsIncomingElementDamageTest.cpp
 		server/battles/NewHorizonsMagicResistanceTest.cpp
 		server/battles/NewHorizonsCreatureSpecialtyTest.cpp
+		server/battles/NewHorizonsSpecialtyArtBindingTest.cpp
+		server/battles/NewHorizonsSpecialtyCapturedPresentationTest.cpp
 		server/battles/NewHorizonsCastleCreatureStatsTest.cpp
 		server/battles/NewHorizonsCanonicalCreatureGrowthTest.cpp
 		server/battles/NewHorizonsGlyphsSiegeDefenseTest.cpp
