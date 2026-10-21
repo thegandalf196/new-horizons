@@ -208,7 +208,7 @@ std::string OptionsTab::CPlayerSettingsHelper::getName()
 					return LIBRARY->generaltexth->allTexts[522];
 
 			if(!playerSettings.heroNameTextId.empty())
-				return LIBRARY->generaltexth->translate(playerSettings.heroNameTextId);
+				return GAME->translator().translate(playerSettings.heroNameTextId);
 			auto index = playerSettings.getHeroValidated();
 			return (*LIBRARY->heroh)[index]->getNameTranslated();
 		}

@@ -20448,13 +20448,14 @@
       "sha256": "b549722df3a9993c9a8bf11966fd67c03206ca7ff895dbd56adb35870a613aa7"
     },
     "client/lobby/OptionsTab.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 1212,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1212 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "85df16af1a0820d63f77c459b4720ce9392b88865c217538f23b896d689b8c9c"
+      "rationale": "Bounded urgent correctness fix: replace only the custom starting hero-name global text lookup with the existing client composite translator so map-local names resolve through installed map overlays. No file/function growth (1212 file lines, getName 38 lines); no localization data, simulation, network, save, ownership or severity changes. Coupling a presentation extraction to this one-line regression fix would increase review and delivery risk.",
+      "review": "phase2-lobby-map-custom-hero-name-no-growth-20261021",
+      "review_scope": "one-line-map-local-hero-name-consumer-correctness-no-growth-exception",
+      "sha256": "aa89c134448e116673e08b0759ef288ea6e6a6405f389b9d62cb3da20a37fca1",
+      "deferral": "UI developer owns a separate bounded extraction of CPlayerSettingsHelper presentation methods into a focused lobby presenter with explicit PlayerSettings/SelType and ITranslator inputs before future expansion in this area. Preserve name/portrait/title/description and NONE/RANDOM/static-override behavior; characterize these branches, lower the OptionsTab file baseline after extraction, and verify native-resolution lobby transitions. No extraction is included in this urgent correctness patch."
     },
     "client/lobby/OptionsTab.cpp::OptionsTab::HandicapWindow::HandicapWindow() : CWindowObject(BORDERED)#1": {
       "kind": "legacy",

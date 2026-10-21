@@ -97,5 +97,14 @@ class HeroSelectionClassOrderTest(unittest.TestCase):
         self.assertEqual(select(1, ['thane'], {'halon'}), 'thane')
 
 
+    def test_custom_starting_hero_name_uses_selected_map_translation_overlay(self):
+        text = (ROOT / 'client/lobby/OptionsTab.cpp').read_text()
+        block = text.split('std::string OptionsTab::CPlayerSettingsHelper::getName()', 1)[1]
+        block = block.split('std::string OptionsTab::CPlayerSettingsHelper::getTitle()', 1)[0]
+        compact = ''.join(block.split())
+        self.assertIn('if(!playerSettings.heroNameTextId.empty())'
+                      'returnGAME->translator().translate(playerSettings.heroNameTextId);', compact)
+        self.assertNotIn('generaltexth->translate(playerSettings.heroNameTextId)', compact)
+
 if __name__ == '__main__':
     unittest.main()
