@@ -602,7 +602,7 @@ void Nullkiller::makeTurn()
 			pathfinderTurnStorageMisses.store(0);
 		}
 
-		if (!updateStateAndExecutePriorityPass(tasks, pass))
+		if (!updateStateAndExecutePriorityPass(tasks, pass, replannedRouteHeroes))
 			return;
 
 		reserveRequiredTownDefenders();
@@ -648,6 +648,7 @@ void Nullkiller::makeTurn()
 		});
 
 		bool hasAnySuccess = false;
+		bool routeReplanRequested = false;
 		if(selectedTasks.empty())
 		{
 			if(hasUnlockedHeroWithMovement() && scanDepth != ScanDepth::ALL_FULL)
@@ -737,8 +738,14 @@ void Nullkiller::makeTurn()
 			}
 			else
 			{
-				if(!executeTask(selectedTask))
+				const auto execution = executeTask(*aiGw, selectedTask);
+				if(!execution.success)
 				{
+					if(tryReplanUnavailableRoute(execution, replannedRouteHeroes))
+					{
+						routeReplanRequested = true;
+						break;
+					}
 					lockTaskHeroes(selectedTask, HeroLockedReason::HERO_CHAIN);
 					const bool hasRemainingTasks = selectedTaskIndex + 1 < selectedTasks.size();
 					const auto failureAction = chooseTaskFailureAction(hasAnySuccess, hasRemainingTasks, hasUnlockedHeroWithMovement());
@@ -763,7 +770,7 @@ void Nullkiller::makeTurn()
 		}
 
 		hasAnySuccess |= ResourceTrader::trade(*buildAnalyzer, *cc, getFreeResources());
-		if(!hasAnySuccess)
+		if(!hasAnySuccess && !routeReplanRequested)
 		{
 			if(hasUnlockedHeroWithMovement())
 				logAi->debug("Pass %d: No worthwhile task was found at full scan depth. AI turn is complete.", pass);
@@ -783,6 +790,13 @@ void Nullkiller::makeTurn()
 }
 
 bool Nullkiller::updateStateAndExecutePriorityPass(Goals::TGoalVec & tempResults, const int passIndex)
+{
+	std::set<ObjectInstanceID> replannedRouteHeroes;
+	return updateStateAndExecutePriorityPass(tempResults, passIndex, replannedRouteHeroes);
+}
+
+bool Nullkiller::updateStateAndExecutePriorityPass(
+	Goals::TGoalVec & tempResults, const int passIndex, std::set<ObjectInstanceID> & replannedRouteHeroes)
 {
 	updateState();
 
@@ -809,10 +823,22 @@ bool Nullkiller::updateStateAndExecutePriorityPass(Goals::TGoalVec & tempResults
 			{
 				logAi->error("Nullkiller::updateStateAndExecutePriorityPass Skipping priorityPass due to unverified hero: %s", heroPtr.nameOrDefault());
 			}
-			else if(!executeTask(bestPrioPassTask))
+			else
 			{
-				logAi->warn("Task failed to execute during priority pass. Continuing with regular turn planning.");
-				break;
+				const auto execution = executeTask(*aiGw, bestPrioPassTask);
+				if(!execution.success)
+				{
+					if(execution.unavailableRouteHero)
+					{
+						if(!tryReplanUnavailableRoute(execution, replannedRouteHeroes))
+							lockTaskHeroes(bestPrioPassTask, HeroLockedReason::HERO_CHAIN);
+						// This route changed after a completed action. Rebuild before
+						// regular planning, not only at the next outer pass.
+						updateState();
+					}
+					logAi->warn("Task failed to execute during priority pass. Continuing with regular turn planning.");
+					break;
+				}
 			}
 
 			updateState();
@@ -891,34 +917,6 @@ bool Nullkiller::hasUnlockedHeroWithMovement() const
 				&& !isHeroLocked(hero)
 				&& hero->movementPointsRemaining() > 100;
 		});
-}
-
-bool Nullkiller::executeTask(const Goals::TTask & task)
-{
-	auto start = std::chrono::high_resolution_clock::now();
-	std::string taskDescr = task->toString();
-
-	makingTurnInterruption.interruptionPoint();
-	logAi->debug("Trying to realize %s (value %2.3f)", taskDescr, task->priority);
-
-	try
-	{
-		task->accept(aiGw);
-		logAi->trace("Task %s completed in %lld", taskDescr, timeElapsed(start));
-	}
-	catch(goalFulfilledException &)
-	{
-		logAi->trace("Task %s completed in %lld", taskDescr, timeElapsed(start));
-	}
-	catch(cannotFulfillGoalException & e)
-	{
-		invalidatePathfinderData();
-		logAi->error("Failed to realize subgoal of type %s.", taskDescr);
-		logAi->error("The error message was: %s", e.what());
-		return false;
-	}
-
-	return true;
 }
 
 TResources Nullkiller::getFreeResources() const

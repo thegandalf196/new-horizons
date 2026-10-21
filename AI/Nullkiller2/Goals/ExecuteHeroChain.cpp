@@ -25,6 +25,17 @@ bool isDimensionDoorAction(const SpecialAction & action)
 	return dynamic_cast<const AIPathfinding::DimensionDoorAction *>(&action) != nullptr;
 }
 
+void requireCurrentOrdinaryRoute(AIGateway * aiGw, const CGHeroInstance * hero, const AIPathNodeInfo & node)
+{
+	// Earlier actions have already executed. Never predict through a pending
+	// special action, or confuse a nonempty future-day route with no route.
+	if(node.specialAction || node.coord == hero->visitablePos())
+		return;
+	CGPath live;
+	if(!aiGw->nullkiller->getPathsInfo(hero)->getPath(live, node.coord))
+		throw unavailableRouteException(hero->id);
+}
+
 bool recoverStaleDimensionDoorAction(
 	AIGateway * aiGw,
 	const CGHeroInstance * hero,
@@ -280,6 +291,8 @@ void ExecuteHeroChain::accept(AIGateway * aiGw)
 							break;
 					}
 				}
+
+				requireCurrentOrdinaryRoute(aiGw, hero, *node);
 
 				if(node->turns == 0 && node->coord != hero->visitablePos())
 				{

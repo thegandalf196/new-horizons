@@ -12,6 +12,7 @@
 #include "PriorityEvaluator.h"
 #include "FuzzyHelper.h"
 #include "Settings.h"
+#include "TaskExecution.h"
 #include "AIMemory.h"
 #include "DeepDecomposer.h"
 #include "../Analyzers/DangerHitMapAnalyzer.h"
@@ -22,6 +23,8 @@
 #include "../Helpers/ArmyFormation.h"
 
 #include "../../../lib/ConditionalWait.h"
+
+#include <set>
 
 class PathfinderCache;
 
@@ -77,6 +80,9 @@ enum class TaskFailureAction
 };
 
 TaskFailureAction chooseTaskFailureAction(bool hasAnySuccess, bool hasRemainingTasks, bool canReplan);
+
+bool reserveUnavailableRouteReplan(
+	const TaskExecutionResult & execution, std::set<ObjectInstanceID> & replannedRouteHeroes);
 
 class Nullkiller
 {
@@ -149,6 +155,8 @@ public:
 
 private:
 	void resetState();
+	bool updateStateAndExecutePriorityPass(
+		Goals::TGoalVec & tempResults, int passIndex, std::set<ObjectInstanceID> & replannedRouteHeroes);
 	void updateState();
 	void reserveRequiredTownDefenders();
 	const CGHeroInstance * findRequiredTownDefender(const CGTownInstance * town) const;
@@ -160,7 +168,8 @@ private:
 		Goals::TGoalVec & tasks,
 		const EvaluationContextMap & evaluationContexts,
 		int priorityTier) const;
-	bool executeTask(const Goals::TTask & task);
+	bool tryReplanUnavailableRoute(
+		const TaskExecutionResult & execution, std::set<ObjectInstanceID> & replannedRouteHeroes);
 	bool areAffectedObjectsPresent(const Goals::TTask & task) const;
 	HeroRole getTaskRole(const Goals::TTask & task) const;
 	std::vector<const CGHeroInstance *> getTaskHeroes(const Goals::TTask & task) const;

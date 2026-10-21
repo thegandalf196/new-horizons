@@ -210,6 +210,17 @@ public:
 	}
 };
 
+class unavailableRouteException : public cannotFulfillGoalException
+{
+public:
+	const ObjectInstanceID heroID;
+
+	explicit unavailableRouteException(ObjectInstanceID heroID)
+		: cannotFulfillGoalException("Current ordinary chain leg has no live path."), heroID(heroID)
+	{
+	}
+};
+
 class goalFulfilledException : public std::exception
 {
 	std::string msg;

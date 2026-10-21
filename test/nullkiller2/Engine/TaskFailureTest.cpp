@@ -20,6 +20,103 @@
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/MiscObjects.h"
 #include "lib/CPlayerState.h"
+#include "AI/Nullkiller2/Pathfinding/Actions/DimensionDoorAction.h"
+#include "mock/GameHandlerTestServer.h"
+#include "SpellPointTestUtils.h"
+#include "lib/callback/IClient.h"
+#include "lib/networkPacks/PacksForClient.h"
+#include "lib/networkPacks/PacksForServer.h"
+#include "lib/serializer/CMemorySerializer.h"
+#include "lib/spells/CSpell.h"
+#include "lib/spells/ISpellMechanics.h"
+#include "lib/spells/Problem.h"
+#include "server/CGameHandler.h"
+
+#include <shared_mutex>
+#include <stdexcept>
+
+namespace
+{
+template<typename T> std::vector<std::byte> routeSerialized(const T & value)
+{
+	CMemorySerializer memory;
+	memory.oser & value;
+	return memory.extractBuffer();
+}
+
+class RouteServer final : public GameHandlerTestServer
+{
+public:
+	explicit RouteServer(std::shared_ptr<CGameState> state)
+		: GameHandlerTestServer(std::move(state), PlayerColor(0)) {}
+	NK2AI::AIGateway * gateway = nullptr;
+	std::vector<bool> accepted;
+	int transports = 0;
+	void applyPack(CPackForClient & pack) override
+	{
+		GameHandlerTestServer::applyPack(pack);
+		if(auto * movement = dynamic_cast<TryMoveHero *>(&pack); movement && gateway)
+		{
+			// Match the shipping client's ordering: invalidate before heroMoved.
+			gateway->invalidatePaths();
+			gateway->heroMoved(*movement, true);
+			if(movement->result == TryMoveHero::TELEPORTATION)
+				++transports;
+		}
+		else if(dynamic_cast<SetMovePoints *>(&pack) && gateway)
+			gateway->invalidatePaths();
+	}
+	void sendPack(CPackForClient & pack, GameConnectionID) override
+	{
+		if(auto * reply = dynamic_cast<PackageApplied *>(&pack))
+		{
+			accepted.push_back(reply->result);
+			gateway->requestRealized(reply);
+		}
+	}
+};
+
+class RouteClient final : public IClient
+{
+	CGameHandler & handler;
+	CRandomGenerator & rng;
+	int sequence = 0;
+public:
+	NK2AI::AIGateway * gateway = nullptr;
+	int casts = 0;
+	int moves = 0;
+	std::pair<std::vector<std::byte>, std::vector<std::byte>> completedRng;
+	RouteClient(CGameHandler & handler, CRandomGenerator & rng) : handler(handler), rng(rng) {}
+	std::optional<BattleAction> makeSurrenderRetreatDecision(PlayerColor,
+		const BattleID &, const BattleStateInfoForRetreat &) override { return std::nullopt; }
+	int sendRequest(const CPackForServer & request, PlayerColor player, bool) override
+	{
+		auto incoming = CMemorySerializer::deepCopy(request);
+		incoming->player = player;
+		incoming->requestID = ++sequence;
+		if(dynamic_cast<CastAdvSpell *>(incoming.get()))
+			++casts;
+		else if(dynamic_cast<MoveHero *>(incoming.get()))
+			++moves;
+		else
+			throw std::runtime_error("Route fixture refuses unrelated requests");
+		gateway->requestSent(incoming.get(), sequence);
+		handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, *incoming);
+		completedRng = {routeSerialized(*handler.randomizer), routeSerialized(rng)};
+		return sequence;
+	}
+};
+
+class ContinuationProbe final : public NK2AI::Goals::ElementarGoal<ContinuationProbe>
+{
+	int * calls;
+public:
+	explicit ContinuationProbe(int & calls) : calls(&calls) {}
+	bool operator==(const ContinuationProbe & other) const override { return calls == other.calls; }
+	std::string toString() const override { return "dependent exploration probe"; }
+	void accept(NK2AI::AIGateway *) override { ++*calls; }
+};
+}
 
 class Nullkiller2_MovementFailure : public NullkillerTest
 {
@@ -454,4 +551,208 @@ TEST(Nullkiller2_Engine_TaskFailure, stopsWhenNoProgressOrAlternativeExists)
 	EXPECT_EQ(
 		NK2AI::chooseTaskFailureAction(false, false, false),
 		NK2AI::TaskFailureAction::STOP_TURN);
+}
+
+class Nullkiller2_TransportContinuation : public Nullkiller2_MovementFailure
+{
+protected:
+	CGHeroInstance * hero = nullptr;
+	std::unique_ptr<RouteServer> server;
+	std::unique_ptr<CGameHandler> handler;
+	std::unique_ptr<RouteClient> client;
+	std::unique_ptr<NK2AI::AIGateway> gateway;
+	const int3 landing{8, 5, 0};
+	const int3 missingTarget{13, 5, 0};
+	void TearDown() override
+	{
+		if(server)
+			server->gateway = nullptr;
+		gateway.reset();
+		client.reset();
+		handler.reset();
+		server.reset();
+		Nullkiller2_MovementFailure::TearDown();
+	}
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		// New Horizons DD spends all MP. Historical saved rules give this
+		// authoritative transport a genuine positive-MP continuation boundary.
+		JsonNode plainRules;
+		plainRules.Struct();
+		plainRules.setOverrideFlag(true);
+		for(const auto setting : {EGameSettings::MAGIC_NEW_HORIZONS, EGameSettings::HEROES_NEW_HORIZONS,
+			EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, EGameSettings::HEROES_NEW_HORIZONS_MASTERIES,
+			EGameSettings::HEROES_NEW_HORIZONS_PERKS})
+			loaded->overrideGameSetting(setting, plainRules);
+	}
+	void prepareTransport()
+	{
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).name("UnavailablePostTransportRoute")
+			.playerActive(PlayerColor(0)).hero({5, 5, 0}, HeroTypeID(0), PlayerColor(0))
+			.heroGarrison({{CreatureID(0), 1}}).heroPrimary(10, 10, 10, 20)
+			.heroSpells({SpellID(8)})
+			.heroEquipped({{ArtifactPosition::SPELLBOOK, ArtifactID::SPELLBOOK}});
+		startWithMap(std::move(builder));
+		hero = findHeroByOwner(PlayerColor(0));
+		ASSERT_NE(hero, nullptr);
+		for(int x = 0; x < 36; ++x)
+			for(int y = 0; y < 36; ++y)
+				map()->getTile({x, y, 0}).terrainType = ETerrainId::GRASS;
+		map()->getTile(missingTarget).terrainType = ETerrainId::ROCK;
+		revealMap(PlayerColor(0));
+		setTestSpellPointTotal(hero, 200);
+		hero->setMovementPoints(1000);
+		gameState()->actingPlayers.insert(PlayerColor(0));
+		server = std::make_unique<RouteServer>(gameState());
+		handler = std::make_unique<CGameHandler>(*server, gameState());
+		client = std::make_unique<RouteClient>(*handler, dynamic_cast<CRandomGenerator &>(*getRNG()));
+		gateway = makeGateway(PlayerColor(0), client.get());
+		server->gateway = client->gateway = gateway.get();
+		spells::detail::ProblemImpl problem;
+		ASSERT_TRUE(SpellID(8).toSpell()->getAdventureMechanics().canBeCastAt(
+			problem, gateway->cc.get(), hero, landing));
+		ASSERT_FALSE(newHorizonsMagic::rulesActive(gameState()->getMagicRules()));
+	}
+	NK2AI::AIPath transportPath(const int3 & target) const
+	{
+		NK2AI::AIPath path;
+		path.targetHero = hero;
+		path.heroArmy = hero;
+		path.chainMask = 1;
+		path.exchangeCount = 0;
+		path.targetObjectDanger = path.armyLoss = path.targetObjectArmyLoss = 0;
+		NK2AI::AIPathNodeInfo future{};
+		future.targetHero = hero;
+		future.coord = target;
+		future.turns = 3;
+		future.cost = 3.f;
+		future.chainMask = 1;
+		future.parentIndex = -1;
+		future.layer = EPathfindingLayer::LAND;
+		auto transport = future;
+		transport.coord = landing;
+		transport.turns = 0;
+		transport.cost = 0.1f;
+		transport.parentIndex = 0;
+		NK2AI::AIPathfinding::DimensionDoorActionParameters parameters;
+		parameters.usedSpell = SpellID(8);
+		parameters.destination = landing;
+		transport.specialAction = std::make_shared<NK2AI::AIPathfinding::DimensionDoorAction>(parameters);
+		path.nodes = {future, transport};
+		return path;
+	}
+	auto rngState()
+	{
+		return std::pair(routeSerialized(*handler->randomizer),
+			routeSerialized(dynamic_cast<CRandomGenerator &>(*getRNG())));
+	}
+	NK2AI::TaskExecutionResult executeChain(const NK2AI::AIPath & path)
+	{
+		std::shared_lock lock(CGameState::mutex);
+		return NK2AI::executeTask(*gateway, NK2AI::Goals::taskptr(NK2AI::Goals::ExecuteHeroChain(path)));
+	}
+};
+
+TEST_F(Nullkiller2_TransportContinuation, realTransportThenMissingFutureLegAbortsDependentComposition)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTransport());
+	const auto mana = hero->getManaAvailable();
+	const auto cost = hero->getSpellCost(SpellID(8).toSpell());
+	auto path = transportPath(missingTarget);
+	NK2AI::Goals::ExecuteHeroChain chain(path);
+	EXPECT_EQ(chain.getBlockedInitialRoute(gateway->nullkiller.get()), nullptr);
+	int dependentCalls = 0;
+	NK2AI::Goals::Composition composition;
+	composition.addNextSequence({NK2AI::Goals::sptr(chain), NK2AI::Goals::sptr(ContinuationProbe(dependentCalls))});
+	NK2AI::TaskExecutionResult execution{true, std::nullopt};
+	{
+		std::shared_lock lock(CGameState::mutex);
+		execution = NK2AI::executeTask(*gateway, NK2AI::Goals::taskptr(composition));
+	}
+	EXPECT_FALSE(execution.success);
+	ASSERT_TRUE(execution.unavailableRouteHero.has_value());
+	EXPECT_EQ(*execution.unavailableRouteHero, hero->id);
+	EXPECT_EQ(hero->visitablePos(), landing);
+	EXPECT_GT(hero->movementPointsRemaining(), 0);
+	EXPECT_EQ(hero->getManaAvailable(), mana - cost);
+	EXPECT_FALSE(hero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_EQ(client->casts, 1);
+	EXPECT_EQ(client->moves, 0);
+	EXPECT_EQ(server->transports, 1);
+	EXPECT_EQ(server->accepted, std::vector<bool>({true}));
+	EXPECT_EQ(dependentCalls, 0);
+	EXPECT_FALSE(gateway->nullkiller->isHeroLocked(hero));
+	EXPECT_EQ(rngState(), client->completedRng);
+	std::set<ObjectInstanceID> budget;
+	EXPECT_TRUE(NK2AI::reserveUnavailableRouteReplan(execution, budget));
+	path.nodes.pop_back(); // A repeated bad candidate must not repeat transport.
+	const auto repeated = executeChain(path);
+	EXPECT_FALSE(repeated.success);
+	EXPECT_EQ(repeated.unavailableRouteHero, execution.unavailableRouteHero);
+	EXPECT_FALSE(NK2AI::reserveUnavailableRouteReplan(repeated, budget));
+	EXPECT_EQ(client->casts, 1);
+	EXPECT_EQ(client->moves, 0);
+	EXPECT_EQ(rngState(), client->completedRng);
+	// Recovery preserves a real useful alternative, rather than declaring success.
+	path.nodes.front().coord = landing + int3(1, 0, 0);
+	path.nodes.front().turns = 0;
+	gateway->nullkiller->invalidatePaths();
+	const auto alternative = executeChain(path);
+	EXPECT_TRUE(alternative.success);
+	EXPECT_FALSE(alternative.unavailableRouteHero.has_value());
+	EXPECT_EQ(hero->visitablePos(), path.targetTile());
+	EXPECT_GT(client->moves, 0);
+	EXPECT_EQ(dependentCalls, 0);
+}
+
+TEST_F(Nullkiller2_TransportContinuation, nonemptyFutureRouteAfterTransportStillApproachesAndDefers)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTransport());
+	const auto target = int3(30, 5, 0);
+	auto path = transportPath(target);
+	const auto execution = executeChain(path);
+	EXPECT_TRUE(execution.success);
+	EXPECT_FALSE(execution.unavailableRouteHero.has_value());
+	EXPECT_EQ(client->casts, 1);
+	EXPECT_GT(client->moves, 0);
+	EXPECT_EQ(server->transports, 1);
+	EXPECT_NE(hero->visitablePos(), landing);
+	EXPECT_NE(hero->visitablePos(), target);
+	EXPECT_TRUE(gateway->nullkiller->isHeroLocked(hero));
+	CGPath remaining;
+	ASSERT_TRUE(gateway->nullkiller->getPathsInfo(hero)->getPath(remaining, target));
+	ASSERT_FALSE(remaining.nodes.empty());
+	EXPECT_GT(remaining.nodes.front().turns, 0);
+	EXPECT_EQ(rngState(), client->completedRng);
+}
+
+TEST(Nullkiller2_Engine_TaskFailure, initialAndLaterRouteFailuresShareOneReplanBudget)
+{
+	const ObjectInstanceID hero(7);
+	std::set<ObjectInstanceID> budget;
+	EXPECT_TRUE(budget.insert(hero).second); // Existing queued-initial-route admission.
+	EXPECT_FALSE(NK2AI::reserveUnavailableRouteReplan({false, hero}, budget));
+	EXPECT_FALSE(NK2AI::reserveUnavailableRouteReplan({true, ObjectInstanceID(8)}, budget));
+	EXPECT_FALSE(NK2AI::reserveUnavailableRouteReplan({false, std::nullopt}, budget));
+	EXPECT_TRUE(NK2AI::reserveUnavailableRouteReplan({false, ObjectInstanceID(8)}, budget));
+}
+
+TEST_F(Nullkiller2_TransportContinuation, ordinaryFailureRetainsFailureOutcomeWithoutRouteRetry)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTransport());
+	const auto rng = rngState();
+	const auto position = hero->visitablePos();
+	const auto movement = hero->movementPointsRemaining();
+	const auto mana = hero->getManaAvailable();
+	const auto failed = NK2AI::executeTask(*gateway, NK2AI::Goals::taskptr(NK2AI::Goals::Invalid()));
+	EXPECT_FALSE(failed.success);
+	EXPECT_FALSE(failed.unavailableRouteHero.has_value());
+	EXPECT_EQ(hero->visitablePos(), position);
+	EXPECT_EQ(hero->movementPointsRemaining(), movement);
+	EXPECT_EQ(hero->getManaAvailable(), mana);
+	EXPECT_EQ(client->casts, 0);
+	EXPECT_EQ(client->moves, 0);
+	EXPECT_EQ(rngState(), rng);
 }

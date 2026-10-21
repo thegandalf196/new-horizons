@@ -19309,22 +19309,24 @@
       "sha256": "f649965b2bea631882d67b3ccab890864f05ada12ef300ea1bf724c597fb1c0f"
     },
     "AI/Nullkiller2/Engine/Nullkiller.cpp": {
-      "kind": "legacy",
-      "lines": 975,
+      "kind": "review",
+      "lines": 973,
       "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 975 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "07c8c69fbea7fb51204acc267b10b94350d5a7e8ee7221f39fb42c3efe7b0d9c"
+      "rationale": "Actual dispatch and typed failure handling extracted to focused TaskExecution units; exact file ratchet from 975 to973 physical lines. No file-growth permission or runtime certification.",
+      "review": "IR-DAY14-ROUTE-RECOVERY-V1-SOURCE-20261020",
+      "review_scope": "exact-dispatch-extraction-file-ratchet",
+      "sha256": "0acb373d1ba2b8878440e8c18ef8fbe75a73d125c00068a9de915e5d43ac32a2"
     },
     "AI/Nullkiller2/Engine/Nullkiller.cpp::NK2AI::void Nullkiller::makeTurn()#1": {
-      "kind": "legacy",
-      "lines": 196,
+      "kind": "exception",
+      "lines": 203,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 196 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "1cb2f36c01819924e291343444c0f1f0c4d210f0b7ae9d9d89f619b0202cb53c"
+      "rationale": "Urgent correctness exception for exactly seven lines,196 to203, sharing a bounded per-hero unavailable-route replan budget across initial and later execution failures. First failure requests rebuild without task fulfillment or hero lock; repeated failure retains bounded failure policy. No general growth permission or controller/runtime certification.",
+      "review": "IR-DAY14-ROUTE-RECOVERY-V1-SOURCE-20261020",
+      "review_scope": "urgent-unavailable-route-controller-recovery-only",
+      "sha256": "61bd2e4f114ac4131cd188196a9845a97453f411f5a14eebaf206343b5024a12",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "AI engineer must extract selected-plan execution into focused progress/replan/stop dispatch with explicit shared retry-budget input before further growth. Characterize accepted requests, packets, RNG and dependent-action ordering; preserve battle, exchange, transport, rebuild ordering, second-failure locking and pass termination, then lower the baseline. Dispatcher/helper tests alone do not certify controller recovery; focused consumer and same-save replay evidence remain required."
     },
     "AI/Nullkiller2/Engine/Nullkiller.cpp::NK2AI::void Nullkiller::updateState()#1": {
       "kind": "legacy",
@@ -19418,14 +19420,14 @@
     },
     "AI/Nullkiller2/Goals/ExecuteHeroChain.cpp::NK2AI::void ExecuteHeroChain::accept(AIGateway * aiGw)#1": {
       "kind": "exception",
-      "lines": 237,
+      "lines": 239,
       "owner": "ai_engineer",
-      "rationale": "Urgent correctness exception for exactly eight lines,229 to237, deferring future-day special-action nodes through existing dependent-node blocking while preserving earlier legal approaches. Avoid coupling observed premature cast repair to a broad chain rewrite. No other function-growth permission or native/runtime certification.",
-      "review": "IR-AI-ADVENTURE-EXECUTION-SOURCE-20261020",
-      "review_scope": "urgent-future-day-special-action-deferral-only",
-      "sha256": "b0a32c68dccf3a471ce0ca67e3ea9faa47ad096d6c58ba94ea6153585a738d24",
+      "rationale": "Urgent correctness exception for exactly two lines,237 to239, checking the selected current ordinary leg after preceding actions and reporting unavailable route as typed failure, never goal fulfillment. Previous future-day special-action deferral remains protected; this is not a general renewal of its growth allowance or runtime certification.",
+      "review": "IR-DAY14-ROUTE-RECOVERY-V1-SOURCE-20261020",
+      "review_scope": "urgent-live-ordinary-leg-absence-recovery-only",
+      "sha256": "1806affe2212d7a980ed5f7c7ba19181cfb1dbb8bfd993a1b33ae866dc579f1b",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must extract current-node special-action dispatch/current-day boundary into a focused executor before further growth of this237-line accept body. Preserve parent-index blocking/composites, ordinary future movement, DimensionDoor recovery, validated callback order, hero ownership and exception semantics; new ten-case and existing daily/movement/landing/muster native coverage required."
+      "deferral": "AI engineer must extract current-node execution stages with explicit parent-index and blocked-index context before further growth. Preserve composites, pending special actions, ordinary future movement, DimensionDoor recovery, validated callback order, hero ownership, battle/exchange/transport and exception semantics; characterize accepted request/packet/RNG/dependency order and lower the baseline. Prior ten-case adventure-execution and existing daily/movement/landing/muster native coverage remain required, alongside the new route recovery cohort, battle, exchange, authoritative-rejection regressions and ordinary replay."
     },
     "AI/Nullkiller2/Helpers/ArmyFormation.cpp": {
       "kind": "legacy",
