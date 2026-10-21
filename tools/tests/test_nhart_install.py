@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,25 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from verify_new_horizons_art_install import verify_install, nhart, RUNTIME_ART_PACK
 from package_private_preview import package as package_private_preview
+from package_new_horizons_windows import CURATED_RESOURCE_TREES
+
+
+class NHArtSelectedInstallTest(unittest.TestCase):
+    def test_selected_pack_passes_final_install_contract_without_authoring_inputs(self):
+        repository = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory() as temporary:
+            resources = Path(temporary)
+            for name in CURATED_RESOURCE_TREES:
+                (resources / name).mkdir(parents=True, exist_ok=True)
+            for name in (RUNTIME_ART_PACK, 'config/filesystem.json',
+                         'Mods/new-horizons/mod.json'):
+                shutil.copyfile(repository / name, resources / name)
+            manifest = repository / 'assets/new-horizons/runtime-art-manifest.json'
+            result = verify_install(resources, manifest)
+            expected = nhart.read_json(manifest.read_bytes())
+            self.assertEqual(result['selectedEntries'], len(expected['entries']))
+            self.assertEqual(result['mountsVerified'], 2)
+            self.assertEqual(result['looseDuplicates'], 0)
 
 
 class NHArtInstallTest(unittest.TestCase):
