@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "mock/TinyMapGameTest.h"
+#include "../../../client/windows/HeroSpecialtyPresentation.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/IGameSettings.h"
@@ -81,9 +82,17 @@ protected:
 		else
 		{
 			ASSERT_FALSE(metadata.artwork);
-			ASSERT_EQ(metadata.skill, SecondarySkill(SecondarySkill::decode("new-horizons:archery")));
+			// Specialty identity retains the core alias; starting Skills use the NH registry.
+			const auto & alias = hero->getHeroType()->secondarySkillSpecialtyAlias;
+			ASSERT_TRUE(alias);
+			ASSERT_EQ(alias->skill, SecondarySkill(SecondarySkill::ARCHERY));
+			ASSERT_EQ(metadata.skill, alias->skill);
 			ASSERT_FALSE(metadata.spell);
 			ASSERT_FALSE(metadata.creature);
+			const auto view = heroSpecialtyPresentation(*hero->getHeroType(), metadata);
+			ASSERT_EQ(view.animation().getOriginalName(), "SECSKILL");
+			ASSERT_EQ(view.animation(true).getOriginalName(), "SECSK32");
+			ASSERT_EQ(view.frame(), alias->skill.toEntity(LIBRARY)->getIconIndex());
 		}
 	}
 
