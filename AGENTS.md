@@ -191,7 +191,10 @@ in `tools/ci/LINUX_PLAYABLE_SNAPSHOT.md`. It must retain the original in-process
 ticket from before launch through actual acceptance and full postchecks; do not
 import a saved receipt or replace that transaction with manual promotion.
 
-Prefer incremental builds. Keep unique art, handoffs, saves, development
+Build and test locally by default. Use remote compilation for release preparation,
+not for every change; obtain user direction before a non-release exception.
+Lightweight non-compiling repository checks may remain automatic. Prefer
+incremental builds. Keep unique art, handoffs, saves, development
 worktrees, and selected playable deliveries outside disposable build trees.
 Before removing a build, verify preservation and live process, launcher, and
 worktree references. Never discard unrelated changes or safely running work.

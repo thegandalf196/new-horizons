@@ -67,6 +67,18 @@ class TestInventoryTest(unittest.TestCase):
         self.assertFalse(INVENTORY.inventory(ROOT, policy)[1])
         self.assertFalse(INVENTORY.pure_contract(ROOT, policy))
 
+    def test_remote_native_checks_require_explicit_manual_opt_in(self):
+        workflow = (ROOT / '.github/workflows/instruction-portability.yml').read_text()
+        self.assertIn('  push:\n    branches: [main]\n  pull_request:\n', workflow)
+        self.assertIn('  workflow_dispatch:\n    inputs:\n      run_native_checks:\n', workflow)
+        option = workflow.split('      run_native_checks:\n', 1)[1].split('\npermissions:', 1)[0]
+        self.assertIn('        type: boolean\n        default: false\n', option)
+        source_job, native_job = workflow.split('  check:\n', 1)[1].split('  pure-state:\n', 1)
+        self.assertNotIn('\n    if:', source_job)
+        self.assertTrue(native_job.startswith(
+            "    if: github.event_name == 'workflow_dispatch' && inputs.run_native_checks\n"))
+        self.assertIn('cmake --build --preset new-horizons-linux-test', native_job)
+
 
 if __name__ == '__main__':
     unittest.main()

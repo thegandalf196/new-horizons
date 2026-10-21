@@ -130,7 +130,11 @@ ctest --preset new-horizons-linux-test
 Set `NH_PYTHON` to the environment's verified absolute Python interpreter.
 The build preset limits compilation to ten jobs. The test preset selects
 `nh-pure`, runs serially and rejects empty discovery. The repository-contracts
-workflow also compares actual CTest discovery with `tools/ci/test_inventory.json`.
+workflow keeps source checks automatic. Its native compilation runs only on an
+explicit manual dispatch with `run_native_checks` enabled for release preparation;
+that job also compares actual CTest discovery with `tools/ci/test_inventory.json`.
+Build and test locally between releases; a non-release remote compilation needs
+the project owner's direction.
 The inventory distinguishes lexical declarations and CMake references from
 configured discovery and executed results; neither source presence nor a managed
 test's skip establishes acceptance.
