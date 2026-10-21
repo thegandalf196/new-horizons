@@ -166,7 +166,7 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, CreatureArtRequiresMatchingConvertedT
 		EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(
 			hero, JsonNode(), magic, target).artwork);
 		EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(
-			hero, development, magic, CreatureID(CreatureID::PIKEMAN)).artwork);
+			hero, development, magic, CreatureID(CreatureID::ARCHER)).artwork);
 	}
 	// A legacy Psychic Elemental Monere never inherits the selected Wisp image.
 	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:monere"),
