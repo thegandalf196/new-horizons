@@ -5,20 +5,47 @@ Requires pefile (tested with 2024.8.26). Never renames or modifies cached packag
 This proves imports/exports and identity, not Windows execution or license coverage.
 """
 import shutil
+import struct
 import subprocess
 from pathlib import Path
 
 from package_new_horizons_windows import SYSTEM_DLLS, sha256
 
 GNU_RUNTIME_DLLS = ('libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll', 'libssp-0.dll')
+# pefile's default 8,192-name limit truncates valid large C++ facade DLLs.
+# Keep parsing bounded, and verify completeness rather than accepting a prefix.
+MAX_PE_EXPORTS = 65_536
+
+
+def validate_export_directory(image):
+    directory = getattr(image, 'DIRECTORY_ENTRY_EXPORT', None)
+    if directory is None:
+        if image.OPTIONAL_HEADER.DATA_DIRECTORY[0].VirtualAddress:
+            raise RuntimeError('PE export directory could not be parsed')
+        return
+    header = directory.struct
+    if max(header.NumberOfFunctions, header.NumberOfNames) > MAX_PE_EXPORTS:
+        raise RuntimeError('PE export directory exceeds inspection limit')
+    table = image.get_data(header.AddressOfFunctions, header.NumberOfFunctions * 4)
+    if len(table) != header.NumberOfFunctions * 4:
+        raise RuntimeError('Truncated PE export address table')
+    # NumberOfFunctions includes empty ordinal slots; aliases may share an
+    # ordinal. Compare live address-table slots and named records separately.
+    expected = {header.Base + index for index, (address,) in
+                enumerate(struct.iter_unpack('<I', table)) if address}
+    parsed = {symbol.ordinal for symbol in directory.symbols}
+    named_count = sum(symbol.name is not None for symbol in directory.symbols)
+    if parsed != expected or named_count != header.NumberOfNames:
+        raise RuntimeError('Incomplete PE export directory inspection')
 
 
 def inspect_pe(path):
     import pefile
-    with pefile.PE(str(path), fast_load=True) as image:
+    with pefile.PE(str(path), fast_load=True, max_symbol_exports=MAX_PE_EXPORTS) as image:
         if image.FILE_HEADER.Machine != 0x8664 or image.OPTIONAL_HEADER.Magic != 0x20b:
             raise RuntimeError('Not an AMD64 PE32+ image: ' + path.name)
         image.parse_data_directories(directories=[0, 1, 13])
+        validate_export_directory(image)
         imports = []
         for directory in ('DIRECTORY_ENTRY_IMPORT', 'DIRECTORY_ENTRY_DELAY_IMPORT'):
             for module in getattr(image, directory, []):
