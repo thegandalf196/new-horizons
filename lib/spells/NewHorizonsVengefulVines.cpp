@@ -14,6 +14,8 @@
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "CSpell.h"
+#include "ISpellMechanics.h"
+#include "../battle/Unit.h"
 
 #include <algorithm>
 #include <array>
@@ -21,6 +23,50 @@
 
 namespace newHorizonsVengefulVines
 {
+bool supportsProjection(const spells::Mechanics & mechanics,
+	const spells::effects::Effects::EffectsToApply & prepared)
+{
+	using Implementation = spells::effects::ForecastImplementation;
+	if(prepared.size() != 2)
+		return false;
+	const std::array expected{Implementation::CANONICAL_DAMAGE, Implementation::CANONICAL_TIMED};
+	for(size_t index = 0; index < prepared.size(); ++index)
+	{
+		const auto * effect = prepared[index].first;
+		if(!effect || effect->indirect || effect->forecastImplementation(&mechanics) != expected[index])
+			return false;
+	}
+	return true;
+}
+
+std::optional<ProjectionReceipt> captureProjection(const spells::Mechanics & mechanics,
+	const spells::effects::Effects::EffectsToApply & prepared, int32_t concentrationBonusPercent)
+{
+	if(!supportsProjection(mechanics, prepared))
+		return std::nullopt;
+	ProjectionReceipt receipt;
+	receipt.concentrationBonusPercent = concentrationBonusPercent;
+	receipt.effectLevel = mechanics.getEffectLevel();
+	receipt.effectPower = mechanics.getEffectPower();
+	receipt.effectValue = mechanics.getEffectValue();
+	receipt.effectDuration = mechanics.getEffectDuration();
+	receipt.spellPowerCoefficientBasisPoints = mechanics.getSpellPowerCoefficientBasisPoints();
+	receipt.castSpellPowerComponentBonusPercent = mechanics.getCastSpellPowerComponentBonusPercent();
+	for(const auto & [effect, targets] : prepared)
+	{
+		auto & captured = receipt.effects.emplace_back(ProjectionEffect{
+			effect->name, effect->forecastImplementation(&mechanics), {}});
+		for(const auto & destination : targets)
+		{
+			const auto * unit = destination.unitValue;
+			if(!unit || destination.hexValue != unit->getPosition())
+				return std::nullopt;
+			captured.destinations.push_back({unit->unitId(), destination.hexValue});
+		}
+	}
+	return receipt;
+}
+
 bool enabled(const JsonNode & savedRules, const SpellID spell)
 {
 	const auto * definition = spell.toSpell();

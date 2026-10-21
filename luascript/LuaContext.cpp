@@ -18,10 +18,6 @@
 
 #include "../lib/callback/IGameInfoCallback.h"
 #include "../lib/json/JsonNode.h"
-#include "../lib/filesystem/Filesystem.h"
-#include "../lib/modding/ModScope.h"
-
-#include <vstd/StringUtils.h>
 #include <vcmi/ServerCallback.h>
 #include <vcmi/Services.h>
 
@@ -228,6 +224,15 @@ bool LuaContext::hasFunction(const std::string & name)
 
 void LuaContext::initialize()
 {
+	// Hash the actual layer about to execute, rather than an earlier view of the
+	// publicly held sources. Reinitializing an existing Lua state cannot reattest it.
+	if(initializationStarted)
+		implementationIdentity.executionFailed();
+	else
+	{
+		initializationStarted = true;
+		implementationIdentity = LuaImplementationIdentity::fromScript(*script);
+	}
 	std::shared_ptr<LuaReference> head;
 
 	for(const auto & layer : script->layers)
@@ -236,6 +241,7 @@ void LuaContext::initialize()
 
 		if(!loadLayerChunk(layer.sourceText, layer.identifier))
 		{
+			implementationIdentity.executionFailed();
 			logMod->error("Script layer '%s' failed to compile: %s", layer.identifier, toStringRaw(-1));
 			lua_settop(L, 0);
 			if(isBase) break; else continue;
@@ -248,6 +254,7 @@ void LuaContext::initialize()
 
 		if(lua_pcall(L, 0, 1, 0))
 		{
+			implementationIdentity.executionFailed();
 			logMod->error("Script layer '%s' failed to run: %s", layer.identifier, toStringRaw(-1));
 			lua_settop(L, 0);
 			if(isBase) break; else continue;
@@ -255,6 +262,7 @@ void LuaContext::initialize()
 
 		if(!lua_istable(L, -1))
 		{
+			implementationIdentity.executionFailed();
 			logMod->error("Script layer '%s' did not return a table", layer.identifier);
 			lua_settop(L, 0);
 			if(isBase) break; else continue;
@@ -266,6 +274,22 @@ void LuaContext::initialize()
 
 	if(head)
 		scriptTable = head;
+	implementationIdentity.finish(scriptTable != nullptr);
+}
+
+spells::effects::ForecastImplementation LuaContext::forecastImplementation() const
+{
+	return implementationIdentity.get();
+}
+
+bool LuaContext::hasCanonicalDamageCalculator() const
+{
+	return implementationIdentity.hasCanonicalDamageCalculator();
+}
+
+CombatEventForecastImplementation LuaContext::combatEventForecastImplementation() const
+{
+	return implementationIdentity.getCombatEventImplementation();
 }
 
 bool LuaContext::loadLayerChunk(const std::string & sourceText, const std::string & identifier)
@@ -323,92 +347,6 @@ void LuaContext::registerPublicTypes()
 
 		lua_settop(L, 0);
 	}
-}
-
-int LuaContext::require(lua_State * L)
-{
-	auto * self = static_cast<LuaContext *>(lua_touserdata(L, lua_upvalueindex(1)));
-
-	if(!self)
-	{
-		lua_pushstring(L, "internal error");
-		return lua_error(L);
-	}
-
-	int result = self->loadModule();
-	if(result < 0)
-		return lua_error(L); // error string was pushed by loadModule; its locals are already destroyed
-	return result;
-}
-
-int LuaContext::loadModule()
-{
-	int argc = lua_gettop(L);
-
-	if(argc != 1)
-	{
-		lua_pushstring(L, "require: module name expected");
-		return -1;
-	}
-
-	if(!lua_isstring(L, 1))
-	{
-		lua_pushstring(L, "require: module name must be a string");
-		return -1;
-	}
-
-	std::string resourceName = toStringRaw(1);
-
-	if(resourceName.empty())
-	{
-		lua_pushstring(L, "require: module name is empty");
-		return -1;
-	}
-
-	auto temp = vstd::split(resourceName, ":");
-
-	std::string scope;
-	std::string modulePath;
-
-	if(temp.size() <= 1)
-	{
-		modulePath = temp.at(0);
-	}
-	else
-	{
-		scope = temp.at(0);
-		modulePath = temp.at(1);
-	}
-
-	auto * loader = scope.empty() ? CResourceHandler::get() : CResourceHandler::get(scope);
-
-	ScriptPath id = ScriptPath::builtinTODO(modulePath).addPrefix("SCRIPTS/");
-
-	if(!loader->existsResource(id))
-	{
-		lua_pushfstring(L, "require: module not found: %s", modulePath.c_str());
-		return -1;
-	}
-
-	auto rawData = loader->load(id)->readAll();
-	auto sourceText = std::string(reinterpret_cast<char *>(rawData.first.get()), rawData.second);
-	int ret = luaL_loadbuffer(L, sourceText.c_str(), sourceText.size(), modulePath.c_str());
-
-	if(ret)
-		return -1; // error string already on stack from luaL_loadbuffer
-
-	ret = lua_pcall(L, 0, 1, 0);
-
-	if(ret)
-		return -1; // error string already on stack from lua_pcall
-
-	if(!lua_istable(L, -1))
-	{
-		lua_pushfstring(L, "require: module '%s' did not return a table", modulePath.c_str());
-		return -1;
-	}
-
-	return 1;
 }
 
 }

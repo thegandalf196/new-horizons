@@ -37,6 +37,15 @@ class Effect;
 
 using TargetType = spells::AimType;
 
+/// Attested loaded implementation, not an effect's configured name or type.
+/// Unknown implementations cannot certify Vines projection equivalence.
+enum class ForecastImplementation
+{
+	UNKNOWN,
+	CANONICAL_DAMAGE,
+	CANONICAL_TIMED
+};
+
 struct SpellEffectValue : public scripting::ApiSerializable<SpellEffectValue>
 {
 	int64_t hpDelta = 0; // positive -> healed health points, negative -> damage
@@ -73,6 +82,11 @@ public:
 	std::string spellIdentifier;
 
 	virtual ~Effect() = default; //Required for child classes
+
+	virtual ForecastImplementation forecastImplementation(const Mechanics *) const
+	{
+		return ForecastImplementation::UNKNOWN;
+	}
 
 	// TODO: document me
 	virtual void adjustTargetTypes(std::vector<TargetType> & types, const Mechanics * m) const {};

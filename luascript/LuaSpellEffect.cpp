@@ -100,6 +100,11 @@ void LuaSpellEffect::initImpl(JsonNode data)
 	parameters = std::move(data);
 }
 
+ForecastImplementation LuaSpellEffect::forecastImplementation(const Mechanics * m) const
+{
+	return resolveScript(m)->forecastImplementation();
+}
+
 std::shared_ptr<scripting::LuaContext> LuaSpellEffect::resolveScript(const Mechanics * m) const
 {
 	return scripting::LuaContext::of(m->battle()->getScriptContextPool(), script);

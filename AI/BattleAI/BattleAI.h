@@ -17,9 +17,12 @@
 #include "TacticsHandler.h"
 #include "StackWithBonuses.h"
 #include "HypotheticBattleTypes.h"
+#include "VinesCandidateValueReuse.h"
 
 class CSpell;
 class CBattleInfoCallback;
+class BattleEvaluator;
+namespace heroActionSelection { class Observer; }
 
 /*
 struct CurrentOffensivePotential
@@ -57,6 +60,10 @@ class CBattleAI : public CBattleGameInterface
 	struct TimingState;
 	class TimingScope;
 	std::atomic<std::shared_ptr<TimingState>> timingState;
+	// Optional test-driver-owned value observers; never preferences or game state.
+	heroActionSelection::Observer * heroValueObserver;
+	VinesCandidateValueReuse::TestControl * vinesReuseControl;
+	BattleEvaluator makeEvaluator(const BattleID & battleID, const CStack * stack);
 
 	BattleSide side;
 	std::shared_ptr<CBattleCallback> cb;
@@ -178,7 +185,8 @@ public:
 
 	std::optional<TimingSummary> getTimingSummary() const;
 
-	CBattleAI();
+	explicit CBattleAI(heroActionSelection::Observer * observer = nullptr,
+		VinesCandidateValueReuse::TestControl * vinesReuse = nullptr);
 	~CBattleAI();
 
 	void initBattleInterface(std::shared_ptr<Environment> ENV, std::shared_ptr<CBattleCallback> CB) override;

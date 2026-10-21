@@ -57,10 +57,13 @@ public:
 	std::shared_ptr<LuaContext> createContext(const Environment * ENV) const;
 
 	std::string getIdentifier() const override { return baseModScope + baseSourcePath; }
+	bool hasPatchDeclarations() const { return !declaredPatches.empty(); }
+	const std::vector<std::pair<std::string, std::string>> & getPatchDeclarations() const { return declaredPatches; }
 
 private:
 	std::string baseModScope;
 	std::string baseSourcePath;
+	std::vector<std::pair<std::string, std::string>> declaredPatches;
 	void loadLayer(const std::string & modScope, const ScriptPath & sourcePath);
 	void loadLayer(const std::string & modScope, const std::string & sourcePath);
 };

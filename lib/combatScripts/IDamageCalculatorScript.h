@@ -310,6 +310,12 @@ struct DLL_LINKAGE DamageEstimationPayload final : public scripting::ApiSerializ
 	}
 };
 
+enum class DamageForecastImplementation
+{
+	UNKNOWN,
+	CANONICAL
+};
+
 /// Answers what one attack is worth. Exactly one of these is active at a time - it is the damage
 /// calculator of the game, not an ability some unit carries.
 class DLL_LINKAGE IDamageCalculatorScript
@@ -320,4 +326,11 @@ public:
 	/// `info` arrives with everything the engine knows and is completed by the implementation, which
 	/// is what lets a script be told only about the bonuses it asked for.
 	virtual DamageEstimation calculate(const CBattleInfoCallback & battle, DamageAttackInfo & info) const = 0;
+
+	/// Attests the reviewed, stateless loaded implementation used by forecast
+	/// equivalence. Unknown native or scripted implementations retain full evaluation.
+	virtual DamageForecastImplementation forecastImplementation(const CBattleInfoCallback & battle) const
+	{
+		return DamageForecastImplementation::UNKNOWN;
+	}
 };

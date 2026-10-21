@@ -255,6 +255,7 @@ set(test_SRCS
 		spells/NewHorizonsDirectDamageTest.cpp
 		spells/NewHorizonsAdventureMagicTest.cpp
 		spells/NewHorizonsMagicTest.cpp
+		spells/NewHorizonsVinesProjectionReceiptTest.cpp
 		spells/OrientedSpellPatternTest.cpp
 		spells/MagicalDamageReductionTest.cpp
 		spells/NewHorizonsMagicArrowTest.cpp
@@ -768,6 +769,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroActionAdmissionTest.cpp
 		battleAI/HeroActionUtilityTest.cpp
 		battleAI/HeroActionSelectionTest.cpp
+		battleAI/VinesCandidateValueReuseTest.cpp
 		battleAI/HeroActionTimingTest.cpp
 		battleAI/ProtectAttackPreviewTest.cpp
 		battleAI/HeroOrderEffectsProjectionTest.cpp
@@ -1058,6 +1060,9 @@ if(ENABLE_NULLKILLER2_AI)
 		target_sources(vcmitest PRIVATE
 			spells/OverwhelmingFormulaObstacleTest.cpp
 			scripting/CureAfflictionSourceTest.cpp
+			scripting/LuaImplementationIdentityTest.cpp
+			scripting/LuaDamageCalculatorIdentityTest.cpp
+			scripting/LuaCombatEventIdentityTest.cpp
 			scripting/LuaStackFieldKeyTest.cpp)
 	endif()
 	set(vcmitest_LIBS gtest gmock vcmiMain vcmiservercommon TBB::tbb ${SYSTEM_LIBS})

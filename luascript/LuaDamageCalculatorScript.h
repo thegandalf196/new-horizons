@@ -26,6 +26,7 @@ public:
 	~LuaDamageCalculatorScript() override;
 
 	DamageEstimation calculate(const CBattleInfoCallback & battle, DamageAttackInfo & info) const override;
+	DamageForecastImplementation forecastImplementation(const CBattleInfoCallback & battle) const override;
 
 private:
 	const LuaScriptInstance * script;

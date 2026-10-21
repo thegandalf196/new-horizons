@@ -8,9 +8,11 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/ScopeGuard.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "BattleEvaluator.h"
 #include "BattleEvaluatorProjection.h"
+#include "BattleEvaluatorSpellProjection.h"
 #include "HeroSpellExpectedValueProjection.h"
 #include "HeroPurifyProjection.h"
 #include "HeroTargetHeuristicProjection.h"
@@ -90,6 +92,9 @@
 #define LOGL(text) print(text)
 #define LOGFL(text, formattingEl) print(boost::str(boost::format(text) % formattingEl))
 
+using battleEvaluatorProjection::isCanonicalVerdantPrison;
+using battleEvaluatorProjection::isCanonicalRegeneration;
+
 enum class SpellTypes
 {
 	ADVENTURE, BATTLE, OTHER
@@ -128,11 +133,6 @@ bool isCanonicalSummonTrolls(const CSpell * spell)
 bool isCanonicalElementalConvergence(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == "new-horizons:elementalConvergence";
-}
-
-bool isCanonicalVerdantPrison(const CSpell * spell)
-{
-	return spell && spell->getJsonKey() == "new-horizons:verdantPrison";
 }
 
 bool isCanonicalHandOfFate(const CBattleInfoCallback & battle, const CSpell * spell)
@@ -253,12 +253,6 @@ bool isCanonicalShadowGift(const CBattleInfoCallback & battle, const CSpell * sp
 bool isPhantomArmy(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsSorcery::PHANTOM_ARMY_SPELL;
-}
-
-bool isCanonicalRegeneration(const CSpell * spell, const JsonNode & rules)
-{
-	return spell && newHorizonsMagic::spellVariantBase(rules, spell->getId()).toSpell()->getJsonKey()
-		== newHorizonsMagic::NATURE_REGENERATION_SPELL;
 }
 
 bool isCanonicalHydrasVitality(const CSpell * spell)
@@ -1066,36 +1060,6 @@ HolyArmorProtection holyArmorProtection(const battle::Unit * unit, SpellID spell
 			result = current;
 	}
 	return result;
-}
-
-void projectRegenerationRateSnapshot(HypotheticBattle & projectedBattle,
-	const spells::Mechanics & mechanics, const CSpell * spell,
-	const spells::Target & acceptedTarget)
-{
-	const auto & savedRules = projectedBattle.getBattle()->getMagicRules();
-	if(!isCanonicalRegeneration(spell, savedRules) || !newHorizonsMagic::rulesActive(savedRules))
-		return;
-
-	const auto regenerationMarker = Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(newHorizonsMagic::spellVariantBase(savedRules, spell->getId())))
-		.And(Selector::type()(BonusType::HP_REGENERATION));
-
-	const auto * hero = mechanics.getHeroCaster();
-	const bool herbalist = hero && hero->hasActivePerk(
-		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
-		std::string(newHorizonsMagic::NATURE_HERBALIST));
-	const auto rate = newHorizonsMagic::regenerationRateMillionthsBasisPoints(
-		std::max<int32_t>(0, mechanics.getEffectPower()),
-		mechanics.getSpellPowerCoefficientBasisPoints(), herbalist,
-		mechanics.getWarcastingBonusPercent(), mechanics.getEmpowerSpellBonusPercent());
-	for(const auto * unit : mechanics.getAffectedStacks(acceptedTarget))
-	{
-		if(!unit)
-			continue;
-		auto targetState = projectedBattle.getForUpdate(unit->unitId());
-		if(targetState->alive() && targetState->hasBonus(regenerationMarker))
-			targetState->regenerationRateMillionths = rate;
-	}
 }
 
 int regenerationEffectRounds(const battle::Unit * unit, SpellID spell)
@@ -4471,7 +4435,7 @@ bool BattleEvaluator::canCastSpell()
 }
 
 bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells,
-	heroActionSelection::Observer * observer)
+	heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse)
 {
 	const auto battleView = cb->getBattle(battleID);
 	const bool mandatoryDoubleCommand = battleView->battleHasPendingDoubleCommand(side);
@@ -4998,12 +4962,22 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	CStopWatch timer;
 
+	// This frame owns fixed parent/caster/scoring inputs; no entry survives it.
+	VinesCandidateValueReuse vinesValues(vinesReuse);
 	timing.prepare(possibleCasts.size());
 	{
 		heroActionTiming::LoopScope loop(timing.candidateSlots(), timing.sink());
 			for(size_t i = 0; i != possibleCasts.size(); i++)
 			{
 				auto & ps = possibleCasts[i];
+				vinesValues.beginCandidate(ps);
+				bool completedVinesValue = false;
+				const auto discardIncompleteValue = vstd::makeScopeGuard([&]
+				{
+					if(!completedVinesValue)
+						vinesValues.clear();
+				});
+				std::optional<newHorizonsVengefulVines::ProjectionReceipt> vinesReceipt;
 				auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
 				const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
 					? cachedAttack.score : 0.0f;
@@ -5197,77 +5171,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 				if(ps.command == HeroCommand::NONE)
 				{
-					auto candidateTarget = ps.dest;
-					bool missingProjectedTarget = false;
-					if(!candidateTarget.empty() && candidateTarget.front().unitValue)
-						targetId = candidateTarget.front().unitValue->unitId();
-					for(auto & destination : candidateTarget)
-					{
-						if(!destination.unitValue)
-							continue;
-						const auto destinationId = destination.unitValue->unitId();
-						destination.unitValue = state->battleGetUnitByID(destinationId);
-						missingProjectedTarget |= destination.unitValue == nullptr;
-					}
-					if(missingProjectedTarget)
+					auto projection = battleEvaluatorProjection::projectSpell(*state, *battleCallback,
+						hero, side, ps, admission, targetId, sharedPurposeSpellRecipients);
+					if(!projection.accepted)
 					{
 						ps.value = std::numeric_limits<float>::lowest();
 						continue;
 					}
-					spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, ps.spell);
-					cast.setMetamagicFollowup(ps.metamagicFollowup);
-					cast.setMetamagicGrand(ps.metamagicGrand);
-					if(targetId != std::numeric_limits<uint32_t>::max())
-						cast.setMetamagicTargetUnitId(targetId);
-					cast.setOvercharge(ps.spellOvercharge);
-					cast.setSelectiveDispel(ps.spellSelectiveDispel);
-					cast.setCureAffliction(ps.spellCureAffliction);
-					cast.setCurePhysicalAffliction(ps.spellCurePhysicalAffliction);
-					cast.setMassSlow(ps.spellMassSlow);
-					if(counterspell.wardActive)
-						cast.setCounterspell(counterspell.wardSide, counterspellNegated);
-					if(!counterspellNegated)
-					{
-						auto mechanics = ps.spell->battleMechanics(&cast);
-						if(isCanonicalVerdantPrison(ps.spell))
-						{
-							const auto * liveTarget = battleCallback->battleGetUnitByID(targetId);
-							if(!liveTarget || !liveTarget->alive() || !liveTarget->unitType())
-							{
-								ps.value = std::numeric_limits<float>::lowest();
-								continue;
-							}
-						}
-						if(mechanics->isNewHorizonsStormOfDaggers())
-						{
-							// The selected subset size is part of this cast's shared damage
-							// context. Use the ordinary mechanics forecast after setting it so
-							// school scaling and target resistance follow the authoritative path.
-							if(!mechanics->setStormOfDaggersTargetCount(
-								static_cast<int32_t>(candidateTarget.size())))
-							{
-								ps.value = std::numeric_limits<float>::lowest();
-								continue;
-							}
-							mechanics->castEval(state->getServerCallback(), candidateTarget);
-						}
-						else
-						{
-							mechanics->castEval(state->getServerCallback(), candidateTarget);
-							// Authoritative BattleSpellMechanics::cast captures this fixed-point
-							// snapshot after applying the timed marker. castEval deliberately
-							// projects effect packets only, so mirror that snapshot onto the
-							// cloned accepted target for future-wound valuation.
-							projectRegenerationRateSnapshot(*state, *mechanics, ps.spell, candidateTarget);
-						}
-					}
-					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
-					{
-						ps.value = std::numeric_limits<float>::lowest();
-						continue;
-					}
+					vinesReceipt = std::move(projection.vines);
 					if(isCanonicalVampirism(*cb->getBattle(battleID), ps.spell))
 					{
 						ps.value = baseline + projectedVampirismValue(env.get(), cb->getBattle(battleID),
@@ -5314,6 +5225,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					ps.value = value > 0.0f
 						? baseline + value * scoreEvaluator.getPositiveEffectMultiplier()
 						: std::numeric_limits<float>::lowest();
+					continue;
+				}
+				// Every candidate already projected its own geometry and accepted ledger.
+				if(vinesReceipt && !VinesCandidateValueReuse::scoringScriptsSupported(*state))
+					vinesReceipt.reset();
+				if(const auto reused = vinesValues.find(ps, admission, sharedPurposeSpellRecipients, vinesReceipt))
+				{
+					ps.value = *reused;
+					completedVinesValue = true;
 					continue;
 				}
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
@@ -5680,6 +5600,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				ps.value = heroActionUtility::composeAbsoluteUtility(continuation, immediate).value;
 				if(!counterspellNegated && ps.command == HeroCommand::NONE && isHavocStructuralSpell(ps.spell))
 					ps.value += ps.spellPlacementHeuristicValue;
+				// A failed scripted damage call can revoke its capability during scoring.
+				if(vinesReceipt && !VinesCandidateValueReuse::scoringScriptsSupported(*state))
+					vinesReceipt.reset();
+				vinesValues.remember(ps, admission, sharedPurposeSpellRecipients, vinesReceipt);
+				completedVinesValue = true;
 #if BATTLE_TRACE_LEVEL >= 1
 				logAi->trace("Total score for %s: %2f (action: %2f, friedly damage: %2f, hostile damage: %2f)", ps.name(), ps.value, stackActionScore, damageToFriendliesScore, damageToHostilesScore);
 #endif

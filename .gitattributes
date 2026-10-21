@@ -16,6 +16,27 @@
 # Keep the exact local decoder patch stable across Windows checkouts.
 /tools/ci/patches/sdl3-image-3.4.4-interlace.patch text eol=lf
 
+# Forecast capabilities attest these reviewed Lua bytes, including imports.
+# Keep Windows checkouts identical rather than normalizing unknown scripts.
+/scripts/spells/damage.lua text eol=lf
+/scripts/spells/timed.lua text eol=lf
+/scripts/spells/patches/timedShield.lua text eol=lf
+/scripts/spells/patches/timedBind.lua text eol=lf
+/scripts/spells/unitEffect.lua text eol=lf
+/scripts/battleLog.lua text eol=lf
+/scripts/damage/damageCalculator.lua text eol=lf
+/scripts/damage/siegeWeapon.lua text eol=lf
+/scripts/damage/magicElemental.lua text eol=lf
+/scripts/damage/psychicElemental.lua text eol=lf
+/scripts/damage/vulnerableFromBack.lua text eol=lf
+/scripts/damage/hatesTrait.lua text eol=lf
+/scripts/damage/revenge.lua text eol=lf
+/scripts/damage/enemyAttackReduction.lua text eol=lf
+/scripts/damage/damageReceivedCap.lua text eol=lf
+/scripts/combat/focusMagic.lua text eol=lf
+/scripts/combat/hexOfPain.lua text eol=lf
+/scripts/combat/combatScript.lua text eol=lf
+
 # Match the reviewed corresponding-source snapshot's privacy exclusions.
 /CI/deploy_rsa.enc export-ignore
 /docs/NH_* export-ignore

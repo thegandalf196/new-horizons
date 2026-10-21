@@ -62,6 +62,11 @@ std::shared_ptr<LuaContext> LuaCombatEventScript::contextOf(const CBattleInfoCal
 	return LuaContext::of(battle.getScriptContextPool(), script);
 }
 
+CombatEventForecastImplementation LuaCombatEventScript::forecastImplementation(const CBattleInfoCallback & battle) const
+{
+	return contextOf(battle)->combatEventForecastImplementation();
+}
+
 bool LuaCombatEventScript::handlesEvent(const CBattleInfoCallback & battle, CombatEventType event) const
 {
 	return contextOf(battle)->hasFunction(methodName(event));

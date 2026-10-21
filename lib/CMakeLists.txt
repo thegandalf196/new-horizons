@@ -468,6 +468,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsPurify.cpp
 	spells/NewHorizonsRealityWarp.cpp
 	spells/NewHorizonsVengefulVines.cpp
+	spells/BattleSpellProjectionTargets.cpp
 	spells/OrientedSpellPattern.cpp
 	spells/MagicalDamageReduction.cpp
 	spells/NewHorizonsSorcery.cpp

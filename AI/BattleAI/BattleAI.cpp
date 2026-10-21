@@ -635,8 +635,8 @@ std::optional<CBattleAI::TimingSummary> CBattleAI::getTimingSummary() const
 	return current->snapshotLocked();
 }
 
-CBattleAI::CBattleAI()
-	: side(BattleSide::NONE),
+CBattleAI::CBattleAI(heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse)
+	: heroValueObserver(observer), vinesReuseControl(vinesReuse), side(BattleSide::NONE),
 	wasWaitingForRealize(false)
 {
 }
@@ -971,6 +971,12 @@ BattleAction CBattleAI::choosePursuitMovement(const std::shared_ptr<CBattleInfoC
 	return best.isAvailable() ? BattleAction::makeMove(source, best) : BattleAction::makeDefend(source);
 }
 
+BattleEvaluator CBattleAI::makeEvaluator(const BattleID & battleID, const CStack * stack)
+{
+	return BattleEvaluator(env, cb, stack, playerID, battleID, side,
+		getStrengthRatio(cb->getBattle(battleID), side), getSimulationTurnsCount(env->game()->getStartInfo()));
+}
+
 void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 {
 	TimingScope timing(timingState.load(), battleID, stack);
@@ -989,13 +995,11 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		// evaluator keeps legal choices even when their ordinary heuristic is nonpositive.
 		auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
 		{
-			return BattleEvaluator(env, cb, stack, playerID, battleID, side,
-				getStrengthRatio(battleCallback, side),
-				getSimulationTurnsCount(env->game()->getStartInfo()));
+			return makeEvaluator(battleID, stack);
 		});
 		if(timing.measure(&TimingSummary::heroAction, [&]
 		{
-			return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
+			return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage, heroValueObserver, vinesReuseControl);
 		}))
 			return;
 		if(hasMandatoryOrder())
@@ -1039,13 +1043,11 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		{
 			auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
 			{
-				return BattleEvaluator(env, cb, stack, playerID, battleID, side,
-					getStrengthRatio(battleCallback, side),
-					getSimulationTurnsCount(env->game()->getStartInfo()));
+				return makeEvaluator(battleID, stack);
 			});
 			if(evaluator.canCastSpell() && timing.measure(&TimingSummary::heroAction, [&]
 			{
-				return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
+				return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage, heroValueObserver, vinesReuseControl);
 			}))
 				return;
 		}
@@ -1066,14 +1068,12 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		{
 			auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
 			{
-				return BattleEvaluator(env, cb, stack, playerID, battleID, side,
-					getStrengthRatio(battleCallback, side),
-					getSimulationTurnsCount(env->game()->getStartInfo()));
+				return makeEvaluator(battleID, stack);
 			});
 			if(evaluator.canCastSpell()
 				&& timing.measure(&TimingSummary::heroAction, [&]
 				{
-					return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
+					return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage, heroValueObserver, vinesReuseControl);
 				}))
 				return;
 		}
@@ -1103,9 +1103,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 
 	auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
 	{
-		return BattleEvaluator(env, cb, stack, playerID, battleID, side,
-			getStrengthRatio(cb->getBattle(battleID), side),
-			getSimulationTurnsCount(env->game()->getStartInfo()));
+		return makeEvaluator(battleID, stack);
 	});
 
 	result = timing.measure(&TimingSummary::stackActionSelection, [&]
@@ -1117,7 +1115,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 	{
 		auto spelCasted = timing.measure(&TimingSummary::heroAction, [&]
 		{
-			return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
+			return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage, heroValueObserver, vinesReuseControl);
 		});
 
 		if(spelCasted)

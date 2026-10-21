@@ -74,6 +74,37 @@ or retain a branch/provider, and is neither serialized nor a submission receipt.
 Keep full-roster ranking and state/RNG isolation tests separate from native Order
 effect tests; a legal tied spell must not prevent testing an Order's mechanics.
 
+### Equivalent Vengeful Vines forecasts
+
+Final-value reuse is local to one Hero Action evaluation. It must retain every
+legal candidate, its original geometry and roster order, ordinary spell projection
+and accepted-action bookkeeping. Reuse the exact completed floating-point value,
+not a reconstructed score or only its continuation component. The authoritative
+cast still receives the selected candidate's own geometry; reflection can depend
+on its first hex even when detached forecasts are equivalent.
+
+An affected-unit set is not an equivalence proof. The mechanics receipt preserves
+ordered normalized recipients separately for each prepared effect, including
+empty lists, and effective target-derived mechanics such as Concentration. Death,
+rebirth allocation and once-per-side reactions can depend on recipient order.
+The AI additionally binds effective cast options and allowances to its unchanged
+parent, caster and scoring context. Unsupported casts break the reuse sequence.
+
+Lua effect capabilities attest the actual reviewed root and imported source
+bytes loaded by that context, not effect names or a script-supplied flag. The
+standard timed-effect capability includes its exact ordered Shield and Bind
+patches; those patches preserve Vines behavior. Unknown patch chains or dependencies,
+changed bytes or execution failures must fail closed to ordinary evaluation.
+Reviewed digest constants are implementation contracts:
+changing them requires renewed equivalence review, not automatic regeneration.
+The reviewed damage-calculator layer chain and reachable scripted Focus Magic or
+Hex of Pain reactions must also be certified before skipping continuation work.
+Attested Lua source paths use LF checkout attributes on every platform.
+
+Validate all candidate values, chosen actions, complete state and both RNG streams
+with reuse enabled and disabled. Work counters may legitimately differ; timing
+observations are separate from semantic equality and from Windows acceptance.
+
 ### Future-actor melee reactions
 
 `BattleExchangeFutureAttack.cpp` routes ready Overwatch, accepted Brace and

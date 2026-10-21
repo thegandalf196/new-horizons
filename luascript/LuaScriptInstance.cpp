@@ -24,6 +24,7 @@ LuaScriptInstance::LuaScriptInstance(const LuaModule & host,
 	: host(host)
 	, baseModScope(baseScope)
 	, baseSourcePath(basePath.getName())
+	, declaredPatches(patches)
 {
 	loadLayer(baseScope, basePath);
 	for (const auto & [scope, path] : patches)
@@ -42,7 +43,10 @@ LuaScriptInstance::LuaScriptInstance(const LuaModule & host, const std::string &
 	layers.push_back(std::move(layer));
 
 	for(const auto & name : builtinLayers)
+	{
+		declaredPatches.emplace_back(ModScope::scopeBuiltin(), name);
 		loadLayer(ModScope::scopeBuiltin(), name);
+	}
 }
 
 LuaScriptInstance::~LuaScriptInstance() = default;

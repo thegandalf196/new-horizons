@@ -86,6 +86,12 @@ std::unordered_map<std::string, bool> LuaDamageCalculatorScript::carriedBonuses(
 	return result;
 }
 
+DamageForecastImplementation LuaDamageCalculatorScript::forecastImplementation(const CBattleInfoCallback & battle) const
+{
+	return contextOf(battle)->hasCanonicalDamageCalculator()
+		? DamageForecastImplementation::CANONICAL : DamageForecastImplementation::UNKNOWN;
+}
+
 DamageEstimation LuaDamageCalculatorScript::calculate(const CBattleInfoCallback & battle, DamageAttackInfo & info) const
 {
 	static const JsonNode noParameters;

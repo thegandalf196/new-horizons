@@ -49,6 +49,8 @@ public:
 
 	SpellEffectValue getHealthChange(const Mechanics * m, const Target & spellTarget) const override;
 
+	ForecastImplementation forecastImplementation(const Mechanics * m) const override;
+
 protected:
 	void initImpl(JsonNode data) override;
 

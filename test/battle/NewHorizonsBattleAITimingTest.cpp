@@ -13,6 +13,7 @@
 #include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/HeroActionSelection.h"
 #include "../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
@@ -957,6 +958,59 @@ TEST_F(NewHorizonsBattleAITimingTest, EmptyMovementDestinationClosesParentWithou
 	EXPECT_TRUE(callback->actions.empty());
 }
 
+// Bounded value-only trace across the unchanged callback/apply loop. Capture
+// callbacks are noexcept and never allocate; formatting happens after gameplay.
+class ShippingHeroSelectionTrace final : public heroActionSelection::Observer
+{
+	struct Row
+	{
+		bool selection;
+		size_t ordinal;
+		int commandOrDisposition;
+		int spell;
+		int32_t overcharge;
+		uint32_t bits;
+	};
+	std::array<Row, 8192> rows{};
+	size_t used = 0;
+public:
+	bool overflow = false;
+	size_t candidates = 0;
+	size_t selections = 0;
+	void candidate(heroActionSelection::CandidateValue value) noexcept override
+	{
+		++candidates;
+		append({false, value.ordinal, static_cast<int>(value.command), value.spell.getNum(),
+			value.overcharge, std::bit_cast<uint32_t>(value.value)});
+	}
+	void selected(heroActionSelection::SelectionValue value) noexcept override
+	{
+		++selections;
+		append({true, value.ordinal, static_cast<int>(value.disposition), 0, 0,
+			std::bit_cast<uint32_t>(value.baseline)});
+	}
+	std::string canonical() const
+	{
+		std::ostringstream result;
+		for(size_t index = 0; index < used; ++index)
+		{
+			const auto & row = rows[index];
+			result << (row.selection ? 'S' : 'C') << ',' << row.ordinal << ','
+				<< row.commandOrDisposition << ',' << row.spell << ',' << row.overcharge
+				<< ',' << row.bits << ';';
+		}
+		return result.str();
+	}
+private:
+	void append(Row row) noexcept
+	{
+		if(used == rows.size())
+			overflow = true;
+		else
+			rows[used++] = row;
+	}
+};
+
 class NewHorizonsExchangeReadParityTest : public NewHorizonsBattleAITimingTest
 {
 protected:
@@ -964,7 +1018,9 @@ protected:
 	size_t visibleRosterVinesTargets = 0;
 	void prepareVisibleRoster();
 	void checkVisibleRosterVines();
-	void runShippingNormalCallback(bool visibleRoster);
+	void runShippingNormalCallback(bool visibleRoster, std::optional<bool> vinesReuse = std::nullopt);
+	heroActionSelection::Observer * shippingObserver = nullptr;
+	VinesCandidateValueReuse::TestControl * shippingVinesReuse = nullptr;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -3469,7 +3525,7 @@ void NewHorizonsExchangeReadParityTest::prepareVisibleRoster()
 	callback = std::make_shared<TimingCallback>();
 	callback->onBattleStarted(battle());
 	environment = std::make_shared<TimingEnvironment>(gameState());
-	ai = std::make_unique<CBattleAI>();
+	ai = std::make_unique<CBattleAI>(shippingObserver, shippingVinesReuse);
 	ai->initBattleInterface(environment, callback);
 	startTiming();
 	ASSERT_NO_FATAL_FAILURE(checkVisibleRosterVines());
@@ -3511,8 +3567,35 @@ TEST_F(NewHorizonsExchangeReadParityTest, SevenStackVisibleBookNormalCallbackCha
 	ASSERT_NO_FATAL_FAILURE(runShippingNormalCallback(true));
 }
 
-void NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRoster)
+TEST_F(NewHorizonsExchangeReadParityTest, SevenStackVisibleBookNormalCallbackVinesReuseDisabled)
 {
+	ASSERT_NO_FATAL_FAILURE(runShippingNormalCallback(true, false));
+}
+
+TEST_F(NewHorizonsExchangeReadParityTest, SevenStackVisibleBookNormalCallbackVinesReuseEnabled)
+{
+	ASSERT_NO_FATAL_FAILURE(runShippingNormalCallback(true, true));
+}
+
+void NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRoster, std::optional<bool> vinesReuse)
+{
+	ShippingHeroSelectionTrace selectionTrace;
+	VinesCandidateValueReuse::TestControl reuseControl{vinesReuse.value_or(true)};
+	// The constructor injection is nonowning. Destroy the paired AI before its
+	// local observer/control on every return, including fatal assertions.
+	struct PairedAILifetime
+	{
+		std::unique_ptr<CBattleAI> & ai;
+		bool paired;
+		~PairedAILifetime()
+		{
+			if(paired)
+				ai.reset();
+		}
+	} lifetime{ai, vinesReuse.has_value()};
+	ASSERT_TRUE(visibleRoster || !vinesReuse);
+	shippingObserver = vinesReuse ? &selectionTrace : nullptr;
+	shippingVinesReuse = vinesReuse ? &reuseControl : nullptr;
 	const auto experimentLimit = shippingTbbExperimentLimit();
 	if(visibleRoster)
 	{
@@ -3666,6 +3749,7 @@ void NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRo
 		ASSERT_EQ(battle()->battleGetActionController(active), PlayerColor(0));
 		const auto heroesBefore = callback->heroActions.size();
 		const auto rowsBefore = heroCapture.records().size();
+		const auto candidatesBefore = selectionTrace.candidates;
 		const auto roundBefore = battle()->getRound();
 		ai->activeStack(BattleID(0), active);
 		const auto heroRows = heroCapture.records();
@@ -3686,10 +3770,17 @@ void NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRo
 				EXPECT_EQ(row.at("submit_calls"), callback->heroActions.size() - heroesBefore);
 				EXPECT_EQ(row.at("submit_returned"), callback->heroActions.size() - heroesBefore);
 				EXPECT_EQ(row.at("submit_threw"), 0);
+				if(vinesReuse)
+				{
+					EXPECT_EQ(selectionTrace.candidates - candidatesBefore, row.at("candidates"));
+				}
 				if(visibleRoster && heroRowsObserved == 1)
 				{
 					EXPECT_GE(row.at("candidates"), static_cast<int64_t>(visibleRosterVinesTargets));
-					EXPECT_GE(row.at("continuation_full_calls"), static_cast<int64_t>(visibleRosterVinesTargets));
+					if(vinesReuse && !*vinesReuse)
+					{
+						EXPECT_GE(row.at("continuation_full_calls"), static_cast<int64_t>(visibleRosterVinesTargets));
+					}
 				}
 			}
 		}
@@ -3803,6 +3894,21 @@ void NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRo
 	RecordProperty("shippingStateAfter", afterSnapshot.toString());
 	RecordProperty("shippingHeroActionsHex", valueHex(callback->heroActions));
 	RecordProperty("shippingUnitActionsHex", valueHex(callback->actions));
+	if(vinesReuse)
+	{
+		ASSERT_FALSE(selectionTrace.overflow) << "Full candidate/selection trace exceeded bound";
+		ASSERT_GE(selectionTrace.candidates, visibleRosterVinesTargets);
+		ASSERT_GT(selectionTrace.selections, 0u);
+		RecordProperty("shippingHeroSelectionTrace", selectionTrace.canonical());
+		RecordProperty("shippingHeroCandidateCount", std::to_string(selectionTrace.candidates));
+		RecordProperty("shippingHeroSelectionCount", std::to_string(selectionTrace.selections));
+		RecordProperty("vinesReuseEnabled", *vinesReuse ? "true" : "false");
+		RecordProperty("vinesReuseHits", std::to_string(reuseControl.hits));
+		if(*vinesReuse)
+			EXPECT_GT(reuseControl.hits, 0u);
+		else
+			EXPECT_EQ(reuseControl.hits, 0u);
+	}
 	recordProbeCacheDelta("shipping_movement_cache_", {}, measured.movementExchangeProbeDamageCache);
 	recordProbeCacheDelta("shipping_waited_cache_", {}, measured.bestTargetWaitedProbeDamageCache);
 	recordProbeCacheDelta("shipping_normal_cache_", {}, measured.bestTargetNormalProbeDamageCache);

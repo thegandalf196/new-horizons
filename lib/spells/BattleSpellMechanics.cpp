@@ -1715,28 +1715,6 @@ int64_t BattleSpellMechanics::getTargetAwareEffectValue(const battle::Unit * tar
 	return eventSnapshot->mechanicsForTarget({Destination(target)})->getEffectValue();
 }
 
-size_t BattleSpellMechanics::getTargetedStackCount(const Target & target) const
-{
-	const bool previous = countingSpellTargets;
-	countingSpellTargets = true;
-	const auto restore = vstd::makeScopeGuard([this, previous]() { countingSpellTargets = previous; });
-	const auto spellTarget = transformSpellTarget(target);
-	std::set<uint32_t> ids;
-	effects->forEachEffect(getEffectLevel(), [this, &target, &spellTarget, &ids](const effects::Effect * effect, bool &)
-	{
-		for(const auto & destination : effect->transformTarget(this, target, spellTarget))
-			if(destination.unitValue)
-				ids.insert(destination.unitValue->unitId());
-	});
-	// Hand of Fate targets a random additional living stack even when that
-	// stack's defenses later negate its spill. Count that before any draw.
-	if(owner->getJsonKey() == "new-horizons:handOfFate" && ids.size() == 1)
-		for(const auto * unit : battle()->battleGetAllUnits(false))
-			if(unit->alive() && unit->getPosition().isValid() && !unit->isTurret() && !ids.contains(unit->unitId()))
-				return 2;
-	return ids.size();
-}
-
 void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
 	if(eventSnapshot && !eventSnapshot->hasSpellcraftTargetSnapshot()
@@ -2761,12 +2739,15 @@ battle::Units BattleSpellMechanics::filterSpellLockedEffects(const Target & aimP
 
 void BattleSpellMechanics::castEval(ServerCallback * server, const Target & target)
 {
+	vinesProjectionReceipt.reset();
 	if(eventSnapshot && !eventSnapshot->hasSpellcraftTargetSnapshot()
 		&& mode == Mode::HERO && getHeroCaster()
 		&& getHeroCaster()->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
 			std::string(newHorizonsSpellcraft::CONCENTRATION)))
 	{
-		eventSnapshot->mechanicsForTarget(target)->castEval(server, target);
+		auto concentrated = eventSnapshot->mechanicsForTarget(target);
+		concentrated->castEval(server, target);
+		vinesProjectionReceipt = concentrated->vengefulVinesProjectionReceipt();
 		return;
 	}
 	clearPandemoniumDebuffs();
@@ -2822,12 +2803,7 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 			if(const auto receipt = newHorizonsCrossSchoolFormula::acceptedReceipt(*projectedBattleInfo, projectedCasterSide, getSpellId()))
 				server->recordCrossSchoolFormulaCast(projectedCasterSide, *receipt);
 	}
-	if(newHorizonsPandemonium::enabled(*this))
-		capturePandemoniumDebuffs();
-	Target spellTarget = transformSpellTarget(target);
-
-	effectsToApply = effects->prepare(this, target, spellTarget);
-	filterSpellLockedEffects(target);
+	auto preparedReceipt = prepareProjectedEffects(target, completedHeroProjection);
 	if(newHorizonsMassRegeneration)
 		filterMassRegenerationTargets(effectsToApply);
 
@@ -2901,22 +2877,10 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 			}
 		}
 	}
-}
-
-battle::Units BattleSpellMechanics::collectTargets() const
-{
-	// preserve effect (e.g. chain-lightning hop) order while removing duplicates, so the client can
-	// reconstruct the target sequence from BattleSpellCast::affectedCres
-	battle::Units result;
-
-	for(const auto & p : effectsToApply)
-	{
-		for(const Destination & d : p.second)
-			if(d.unitValue && !vstd::contains(result, d.unitValue))
-				result.push_back(d.unitValue);
-	}
-
-	return result;
+	// Application can load additional Lua dependencies: certify again only once
+	// every effect and completed-cast reaction has returned successfully.
+	if(preparedReceipt && newHorizonsVengefulVines::supportsProjection(*this, effectsToApply))
+		vinesProjectionReceipt = std::move(preparedReceipt);
 }
 
 void BattleSpellMechanics::doRemoveEffects(ServerCallback * server, const battle::Units & targets, const CSelector & selector)

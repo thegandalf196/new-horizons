@@ -9,6 +9,8 @@ set(battleAI_SRCS
 		BattleEvaluator.cpp
 		BattleEvaluatorHeroSubmit.cpp
 		BattleEvaluatorSpellCandidates.cpp
+		BattleEvaluatorSpellProjection.cpp
+		VinesCandidateValueReuse.cpp
 		BattleEvaluatorHeroQueue.cpp
 		HeroSpellExpectedValueProjection.cpp
 		HeroPurifyProjection.cpp
@@ -80,6 +82,8 @@ set(battleAI_HEADERS
 		BattleAI.h
 		BattleEvaluator.h
 		BattleEvaluatorProjection.h
+		BattleEvaluatorSpellProjection.h
+		VinesCandidateValueReuse.h
 		HeroSpellExpectedValueProjection.h
 		HeroPurifyProjection.h
 		HeroTargetHeuristicProjection.h

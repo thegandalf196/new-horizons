@@ -22,6 +22,7 @@
 #include "../int3.h"
 #include "../GameConstants.h"
 #include "../bonuses/Bonus.h"
+#include "NewHorizonsVengefulVines.h"
 
 struct Query;
 class IBattleState;
@@ -350,6 +351,12 @@ public:
 
 	virtual void castEval(ServerCallback * server, const Target & target) = 0;
 
+	/// No receipt is supplied by unsupported mechanics or incomplete forecasts.
+	virtual std::optional<newHorizonsVengefulVines::ProjectionReceipt> vengefulVinesProjectionReceipt() const
+	{
+		return std::nullopt;
+	}
+
 	virtual bool isReceptive(const battle::Unit * target) const = 0;
 	virtual bool wouldResist(const battle::Unit * target) const = 0;
 
@@ -651,6 +658,7 @@ protected:
 	bool forceNonSmartTargeting = false;
 	bool usesNewHorizonsBerserkTargeting() const;
 	bool usesNewHorizonsDispelRules() const;
+	int32_t resolvedConcentrationBonusPercent() const { return concentrationBonusPercent; }
 
 	BaseMechanics(const IBattleCast * event);
 

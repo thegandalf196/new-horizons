@@ -46,6 +46,10 @@ public:
 	void cast(ServerCallback * server, const Target & target) override final;
 	// TODO: ??? (what's the difference compared to cast?)
 	void castEval(ServerCallback * server, const Target & target) override final;
+	std::optional<newHorizonsVengefulVines::ProjectionReceipt> vengefulVinesProjectionReceipt() const override
+	{
+		return vinesProjectionReceipt;
+	}
 
 	/// Returns list of affected stack using currently configured target
 	std::vector<const CStack *> getAffectedStacks(const Target & target) const override final;
@@ -94,6 +98,9 @@ private:
 	ServerCallback * activeResistanceServer = nullptr;
 	vstd::RNG * activeResistanceRng = nullptr;
 	effects::Effects::EffectsToApply effectsToApply;
+	std::optional<newHorizonsVengefulVines::ProjectionReceipt> vinesProjectionReceipt;
+	std::optional<newHorizonsVengefulVines::ProjectionReceipt> prepareProjectedEffects(
+		const Target & target, bool completedHeroProjection);
 
 	struct CompoundMirrorEffect
 	{

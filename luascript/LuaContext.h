@@ -13,6 +13,7 @@
 #include "LuaScriptInstance.h"
 #include "LuaStack.h"
 #include "LuaReference.h"
+#include "LuaImplementationIdentity.h"
 #include "../lib/json/JsonNode.h"
 #include <vcmi/scripting/Service.h>
 
@@ -36,6 +37,10 @@ public:
 	/// Runs script once to perform its initialization
 	void initialize();
 
+	spells::effects::ForecastImplementation forecastImplementation() const;
+	bool hasCanonicalDamageCalculator() const;
+	CombatEventForecastImplementation combatEventForecastImplementation() const;
+
 	/// Returns true if the script table defines a function with the given name
 	bool hasFunction(const std::string & name);
 
@@ -54,6 +59,8 @@ private:
 	lua_State * L;
 
 	const LuaScriptInstance * script;
+	LuaImplementationIdentity implementationIdentity;
+	bool initializationStarted = false;
 
 	const Environment * env;
 
@@ -113,6 +120,7 @@ ReturnType LuaContext::callImpl(const std::shared_ptr<LuaReference> & ref, const
 {
 	if(!ref)
 	{
+		implementationIdentity.executionFailed();
 		if constexpr (!std::is_void_v<ReturnType>)
 			return ReturnType{};
 		else
@@ -127,6 +135,7 @@ ReturnType LuaContext::callImpl(const std::shared_ptr<LuaReference> & ref, const
 
 	if(!S.isFunction(-1))
 	{
+		implementationIdentity.executionFailed();
 		S.restoreInitialTop();
 		logScript->error("Script '%s': function '%s' not found", script->getIdentifier(), name);
 		if constexpr (!std::is_void_v<ReturnType>)
@@ -152,6 +161,7 @@ ReturnType LuaContext::callImpl(const std::shared_ptr<LuaReference> & ref, const
 
 	if(lua_pcall(L, argc, 1, 0))
 	{
+		implementationIdentity.executionFailed();
 		std::string error = lua_tostring(L, -1);
 		S.restoreInitialTop();
 		logScript->error("Script '%s', function '%s': %s", script->getIdentifier(), name, error);
@@ -170,6 +180,7 @@ ReturnType LuaContext::callImpl(const std::shared_ptr<LuaReference> & ref, const
 		}
 		catch(const LuaApiException & e)
 		{
+			implementationIdentity.executionFailed();
 			S.restoreInitialTop();
 			logScript->error("Script '%s', function '%s' returned unexpected value: %s", script->getIdentifier(), name, e.what());
 			return ReturnType{};

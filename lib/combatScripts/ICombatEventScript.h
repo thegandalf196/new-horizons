@@ -23,6 +23,13 @@ namespace battle
 class Unit;
 }
 
+enum class CombatEventForecastImplementation
+{
+	UNKNOWN,
+	CANONICAL_FOCUS_MAGIC,
+	CANONICAL_HEX_OF_PAIN
+};
+
 /// Reacts to combat events on behalf of a unit carrying a COMBAT_EVENT_TRIGGER bonus.
 /// Implementations are stateless and shared - all per-instance data arrives in parameters.
 class DLL_LINKAGE ICombatEventScript
@@ -33,6 +40,12 @@ public:
 	/// Whether this script reacts to the event at all. A script implements only the events it cares
 	/// about, and every event is offered to every script, so most of them are answered with false.
 	virtual bool handlesEvent(const CBattleInfoCallback & battle, CombatEventType event) const = 0;
+
+	/// Only reviewed loaded implementations can certify an equivalent forecast.
+	virtual CombatEventForecastImplementation forecastImplementation(const CBattleInfoCallback & battle) const
+	{
+		return CombatEventForecastImplementation::UNKNOWN;
+	}
 
 	/// self is the unit the event happened to, other is the unit on the opposite side of it (may be null).
 	/// `parameters` configure the script and come from the bonus; `payload` describes this specific
