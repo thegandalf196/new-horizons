@@ -1,6 +1,6 @@
 # New Horizons integration limits
 
-Current phase: Phase 2 — stabilization and integration. The product version is not a completion percentage or a release-candidate declaration. The former 0.85 release/tag was withdrawn; do not describe it as a current download. Follow [release scope](NH_VERSION_1_0_SCOPE.md), the private [canonical design](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md) and accepted amendments; the [amendment boundary](NEW_HORIZONS_PENDING_CHANGES.md) retains public compatibility contracts and links the private legacy decisions.
+Current phase: Phase 2 — stabilization and integration. The product version is not a completion percentage or a release-candidate declaration. [New Horizons 0.85 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.85) is now available, distinct from the earlier withdrawn experimental preview; the remaining requirements below still apply. Follow [release scope](NH_VERSION_1_0_SCOPE.md), the private [canonical design](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md) and accepted amendments; the [amendment boundary](NEW_HORIZONS_PENDING_CHANGES.md) retains public compatibility contracts and links the private legacy decisions.
 
 This is a bounded contributor-facing requirements list, not a worker queue. Raw attempts, receipts, profiles, saved inputs and task ownership remain in configured private storage.
 

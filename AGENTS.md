@@ -35,7 +35,9 @@ user directs; do not silently return to its backlog after a task handoff.
 Current phase: **Phase 2 - stabilization and integration**.
 See `docs/NH_PHASE1_EXIT_AUDIT.md` for the Phase 1 exit evidence and
 `docs/NH_DEVELOPMENT_PHASES.md` for detailed phase criteria.
-The withdrawn 0.85 experimental preview is not a current release or a Version 1.0 release candidate.
+New Horizons 0.85 Early Access is [publicly available](https://github.com/thegandalf196/new-horizons/releases/tag/v0.85).
+It is distinct from the earlier withdrawn experimental preview; Phase 2 remains
+active, and this release is not a Version 1.0 release candidate.
 
 Prioritize crashes/corruption, save/load, incorrect mechanics, action and
 activation integrity, initiative, targeting, effect lifecycles, interactions,
