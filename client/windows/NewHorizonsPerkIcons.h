@@ -11,6 +11,16 @@
 
 // Constant binding data; the runtime map remains lazy below.
 inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindings[] = {
+		{"new-horizons:bloodrage.avatarOfRage", "NH_perk_avatar_of_rage"},
+		{"new-horizons:bloodrage.endlessBloodshed", "NH_perk_endless_bloodshed"},
+		{"new-horizons:bloodrage.firstBlood", "NH_perk_first_blood"},
+		{"new-horizons:bloodrage.furyUnbound", "NH_perk_fury_unbound"},
+		{"new-horizons:bloodrage.rageThroughPain", "NH_perk_rage_through_pain"},
+		{"new-horizons:bloodrage.unrelenting", "NH_perk_unrelenting"},
+		{"new-horizons:elementalRebirth.perfectConvergence", "NH_perk_perfect_convergence"},
+		{"new-horizons:necromancy.deathLord", "NH_perk_death_lord"},
+		{"new-horizons:necromancy.lordOfTheDead", "NH_perk_lord_of_the_dead"},
+		{"new-horizons:necromancy.masterOfBones", "NH_perk_master_of_bones"},
 		{"new-horizons:chaosMagic.frenziedCurse", "NH_perk_frenzied_curse"},
 		{"new-horizons:chaosMagic.mindbreaker", "NH_perk_mindbreaker"},
 		{"new-horizons:chaosMagic.misfortuneWeaver", "NH_perk_misfortune_weaver"},
