@@ -56,12 +56,18 @@ described below rather than forcing a chosen action through invented setup.
 
 ### Future-actor melee reactions
 
-`BattleExchangeFutureAttack.cpp` routes ready Overwatch and accepted Brace through
-the shared attack preview and receipt replay. Use the nearest currently reachable
-legal approach to the requested target and its physical travel distance; Protect's
-resolved recipient determines Brace readiness. Never manufacture distance from
-movement allowance or choose a longer route to trigger a reaction. Target probes
-own detached children and reacquire their units there.
+`BattleExchangeFutureAttack.cpp` routes ready Overwatch, accepted Brace and
+standalone Battlecraft pre-emption through the shared attack preview and receipt
+replay. Use the nearest currently reachable legal approach to the requested target
+and its physical travel distance; Protect's resolved recipient determines Brace
+readiness. Battlecraft checks both that recipient and the requested Ward, since
+a later primary blow may reach the Ward. Its canonical readiness can admit the
+current hex, without inventing movement. An affected unit's marker changing to
+the current round confirms accepted Battlecraft use even when its hit is fully
+absorbed; readiness or generic retaliation metadata alone is not a receipt.
+Never manufacture distance from movement allowance or choose a longer route to
+trigger a reaction. Target probes own detached children and reacquire their units
+there.
 
 Full attack replay already includes every ordinary strike. Its explicit completion
 result stops the exchange caller's extra-hit loop; ordinary fallback retains

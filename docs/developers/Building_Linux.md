@@ -150,6 +150,12 @@ preset's mod list. A normal-player bootstrap witness must use the ordinary
 library preset and verify the actual active/registered scopes; TEST startup is
 not a substitute. Fixture exports and original-data use remain separate gates.
 
+A detached native-test resource view must preserve `test/testdata/` beneath its
+runtime working directory. TEST initialization mounts that physical directory
+as `MODS/`; placing `vcmi-test` directly at the resource root is not equivalent,
+even when its payload hashes match. GoogleTest discovery alone does not exercise
+global test-environment initialization or prove that this mount works.
+
 ### Configuring Makefiles
 
 ```sh

@@ -6,6 +6,8 @@
 #include "StdInc.h"
 #include "BattleExchangeVariant.h"
 #include "SpellTargetsEvaluator.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 
 namespace
 {
@@ -20,6 +22,27 @@ bool hasReadyOverwatch(const std::shared_ptr<HypotheticBattle> & battle,
 	if(evaluateOnly && cached)
 		*cached = ready;
 	return ready;
+}
+
+bool hasReadyBattlecraft(const HypotheticBattle & battle,
+	const battle::Unit * attacker, const battle::Unit * defender)
+{
+	const BattleAttackInfo incoming(attacker, defender, 0, false);
+	return defender && newHorizonsCombatSkills::isPhysicalCreatureAttack(attacker, incoming.physicalDamage)
+		&& battle.battleMatchOwner(attacker, defender, false)
+		&& newHorizonsBattlecraft::preemptiveStrikeDamagePercent(
+			battle.battleGetOwnerHero(defender), defender, battle.battleGetRound()) > 0;
+}
+
+bool hasBattlecraftReceipt(const AttackPossibility & projected, const HypotheticBattle & battle)
+{
+	const auto round = battle.battleGetRound();
+	return std::ranges::any_of(projected.affectedUnits, [&](const auto & unit)
+	{
+		const auto * before = battle.battleGetUnitByID(unit->unitId());
+		return unit->battlecraftPreemptiveStrikeRound == round && before
+			&& before->acquireState()->battlecraftPreemptiveStrikeRound != round;
+	});
 }
 
 BattleHex currentApproach(const std::shared_ptr<HypotheticBattle> & battle,
@@ -57,22 +80,24 @@ std::optional<float> BattleExchangeVariant::trackFutureReaction(
 	// ordinary hit, not BattleAttackInfo::retaliation. Its historical direct-call
 	// contract has no move prefix/counter; do not replace it with a full AP action.
 	const auto * resolvedDefender = hb->battleResolveHeroOrderTarget(attacker.get(), defender.get(), false);
-	// Eligibility here only admits a path query. The ACTUAL chosen path distance
-	// and AP's shared ordered stages decide whether a Brace primary can occur.
+	// Eligibility admits the existing path query; AP owns ordered reactions.
+	// Protect can expose the requested target again on a later primary blow.
+	const bool readyBattlecraft = hasReadyBattlecraft(*hb, attacker.get(), resolvedDefender)
+		|| hasReadyBattlecraft(*hb, attacker.get(), defender.get());
 	const bool eligibleBrace = hb->battleCanTriggerHeroOrderBrace(
 		attacker.get(), resolvedDefender, 3, false, false);
-	if(!eligibleBrace && !hasReadyOverwatch(hb, evaluateOnly, readyOverwatch))
+	if(!readyBattlecraft && !eligibleBrace && !hasReadyOverwatch(hb, evaluateOnly, readyOverwatch))
 		return std::nullopt;
 	const auto reachable = hb->getReachability(attacker.get());
 	const auto approach = currentApproach(hb, attacker.get(), defender.get(), reachable);
-	if(!approach.isAvailable() || approach == attacker->getPosition())
+	if(!approach.isAvailable() || (approach == attacker->getPosition() && !readyBattlecraft))
 		return std::nullopt;
 	const int distance = SpellTargetEvaluator::physicalTravelDistance(reachable, approach);
 	if(distance < 0)
 		return std::nullopt;
 	const bool readyBrace = hb->battleCanTriggerHeroOrderBrace(
 		attacker.get(), resolvedDefender, distance, false, false);
-	if(!readyBrace && !hasReadyOverwatch(hb, evaluateOnly, readyOverwatch))
+	if(!readyBattlecraft && !readyBrace && !hasReadyOverwatch(hb, evaluateOnly, readyOverwatch))
 		return std::nullopt;
 
 	// Every target probe owns a child, including its units/Orders/reaction state.
@@ -84,7 +109,9 @@ std::optional<float> BattleExchangeVariant::trackFutureReaction(
 		BattleAttackInfo(actor.get(), target.get(), distance, false), approach, damageCache, branch);
 	const bool hasBraceReceipt = std::ranges::any_of(projected.fortuneStrikes,
 		[](const auto & strike) { return strike.bracePreemptive; });
-	if(projected.overwatchHits.empty() && !hasBraceReceipt)
+	// A changed round marker is the accepted Battlecraft receipt, even when
+	// the hit deals zero damage. Ordinary retaliation metadata is insufficient.
+	if(projected.overwatchHits.empty() && !hasBraceReceipt && !hasBattlecraftReceipt(projected, *hb))
 		return std::nullopt;
 	BattleExchangeVariant reactionExchange;
 	const auto value = reactionExchange.trackAttack(projected, branch, damageCache);

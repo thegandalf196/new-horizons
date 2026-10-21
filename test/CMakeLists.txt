@@ -683,7 +683,9 @@ set(test_HEADERS
 		SpellPointTestUtils.h
 		battleAI/InitialExportWorldFixture.h
 		battleAI/OriginalMeleeSequenceFixture.h
+		battleAI/BattlecraftPreemptiveAIFixture.h
 		battleAI/OwnedExportLifecycleFixture.h
+		battleAI/BattlecraftFutureBoundaryFixture.h
 		battleAI/OwnedExportMeleeFixture.h
 		battleAI/ProjectedTargetHitFixture.h
 
@@ -865,7 +867,10 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsRelentlessAssaultAITest.cpp
 		battleAI/NewHorizonsBulwarkAITest.cpp
 		battleAI/NewHorizonsBattlecraftPreemptiveStrikeAITest.cpp
+		battleAI/BattlecraftFutureExchangeTest.cpp
 		battleAI/NewHorizonsBattlefieldMasteryAITest.cpp
+		battleAI/BattlecraftFutureBoundaryTest.cpp
+		battleAI/BattlecraftFutureMultiattackExchangeTest.cpp
 		battleAI/NewHorizonsLastStandAITest.cpp
 		battleAI/NewHorizonsArmorerVeteranAITest.cpp
 		battleAI/NewHorizonsPaviseAITest.cpp
