@@ -6599,9 +6599,9 @@
     },
     ".github/workflows/instruction-portability.yml": {
       "functions": [],
-      "rationale": "Complete exact159-line workflow inventory: twelve literal Bash run blocks28-32,39-47,52-60,71-79,85,91-93,100-102,107-110,121-122,139-146,151-152,157-159 and scalar command132 are commands/assignments, not callable definitions. Two if groups42-44/71-78 and five command substitutions43/72/73/92/100 invoke git,dirname or external Python; GitHub hashFiles/context expressions and external actions are invocations. No shell function, inline Python/JavaScript/lambda, code heredoc or function-like macro definition occurs. External Python/CMake/tests remain separately inventoried. Exact Python3.15 source-core bootstrap changes no callable inventory. Empty functions does not exclude159 physical lines, waive numeric growth, approve future edits or certify fresh bootstrap/CI/runtime behavior.",
-      "review": "pure-state-nine-target-comment",
-      "sha256": "671bdb7fab299c57624f9685ea15058acafa00c8782fa321c094ad0273158e14"
+      "rationale": "Complete exact165-line workflow inventory: twelve literal Bash run blocks33-37,44-52,57-65,76-84,90,96-98,105-107,112-115,126-127,145-152,157-158,163-165 and scalar command138 are commands/assignments, not callable definitions. Two if groups47-49/76-83 and five command substitutions48/77/78/97/105 invoke git,dirname or external Python; GitHub hashFiles/context expressions and external actions are invocations. No shell function, inline Python/JavaScript/lambda, code heredoc or function-like macro definition occurs. External Python/CMake/tests remain separately inventoried. Boolean dispatch input and job-level manual native opt-in change no callable inventory. Empty functions does not exclude165 physical lines, waive numeric growth, approve future edits or certify bootstrap/CI/runtime behavior.",
+      "review": "IR-LOCAL-FIRST-REPOSITORY-CONTRACTS-20261021",
+      "sha256": "7ffd7d68e5d008fdc8c53f220d0076ca68c12fb318f4dff49a67a72d870ce3fe"
     },
     ".github/workflows/new-horizons-windows-notices.yml": {
       "functions": [],
