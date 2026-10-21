@@ -6,6 +6,17 @@ Keep one maintained invariant and reproducer per recurring defect; retain raw fa
 
 See the [combat restart guardrail](NH_PERFORMANCE_EXPERIMENT.md#combat-restart-guardrail) for exact ownership/repaint ordering and Linux acceptance limits. Run `nhWindowSceneRedrawTest` and `client/tests/check-battle-restart-teardown.py`, then an ordinary human combat→Settings→Restart→new adventure and menu→new scenario witness. Source checks do not certify pixels.
 
+Pre-teleport transition snapshots must render on the GUI thread before the
+received teleport changes game state. The receiver releases the interface mutex
+while waiting, then checks cancellation again after reacquiring it. Scene
+teardown cancels pending captures before network join; late callbacks must not
+retain or paint a retired scene. Failed dispatch or capture requests orderly
+application shutdown, not silent termination of only the receive thread.
+`nhMapTransitionSnapshotTest` and `client/tests/check-teleport-snapshot-thread.py`
+cover the rendezvous, queue publication/rollback and shutdown wiring. Retain
+visible surface/underground traversal and restart witnesses separately; pure
+checks do not establish GPU or platform acceptance.
+
 Before delivering a battle result, retain the admitted primary and additional
 receivers for both sides and any admitted spectator. A human interface may
 unregister its auto-resolve AI during its own callback; that must not destroy the

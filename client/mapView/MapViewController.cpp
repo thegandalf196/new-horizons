@@ -15,6 +15,7 @@
 #include "MapRendererContext.h"
 #include "MapRendererContextState.h"
 #include "MapViewCache.h"
+#include "MapTransitionSnapshotTask.h"
 #include "MapViewModel.h"
 
 #include "../CPlayerInterface.h"
@@ -520,7 +521,7 @@ void MapViewController::onBeforeHeroTeleported(const CGHeroInstance * obj, const
 	if(isEventVisible(obj, from, dest))
 	{
 		setViewCenter(obj->getSightCenter());
-		view->createTransitionSnapshot(context);
+		captureTransitionSnapshotOnGui();
 	}
 }
 
@@ -610,6 +611,8 @@ void MapViewController::waitForOngoingAnimations()
 
 void MapViewController::endNetwork()
 {
+	if(transitionSnapshotTask)
+		transitionSnapshotTask->cancel();
 	animationWait.requestTermination();
 }
 

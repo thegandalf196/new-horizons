@@ -493,32 +493,32 @@ int InputHandler::getNumTouchFingers() const
 
 void InputHandler::dispatchMainThread(const std::function<void()> & functor)
 {
-	auto heapFunctor = std::make_unique<std::function<void()>>(functor);
+	if(!tryDispatchMainThread(functor))
+		logGlobal->error("Unable to post main-thread callback: %s", SDL_GetError());
+}
 
-	SDL_Event event;
+bool InputHandler::tryDispatchMainThread(const std::function<void()> & functor)
+{
+	SDL_Event event{};
 	event.user.type = SDL_USEREVENT;
-	event.user.code = 0;
-	event.user.data1 = nullptr;
-	event.user.data2 = nullptr;
-	SDL_PushEvent(&event);
-
-	// NOTE: approach with dispatchedTasks container is a bit excessive
-	// used mostly to prevent false-positives leaks in analyzers
-	dispatchedTasks.push(std::move(heapFunctor));
+	return dispatchedTasks.tryPush(functor, [&event]
+	{
+		return SDL_PushEvent(&event) == 1;
+	});
 }
 
 void InputHandler::handleUserEvent(const SDL_UserEvent & current)
 {
 	PerfTrace::Activity trace("main_callback_enter", "main_callback_exit");
-	std::unique_ptr<std::function<void()>> task;
+	std::function<void()> task;
 
-	if (!dispatchedTasks.try_pop(task))
+	if (!dispatchedTasks.tryPop(task))
 	{
 		logGlobal->error("InputHandler::handleUserEvent received without active task!");
 		return;
 	}
 
-	(*task)();
+	task();
 }
 
 const Point & InputHandler::getCursorPosition() const

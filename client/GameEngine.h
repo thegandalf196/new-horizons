@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include <atomic>
 
 class Point;
 class AsyncRunner;
@@ -57,6 +58,7 @@ private:
 	std::unique_ptr<Discord> discordInstance;
 
 	IGameEngineUser *engineUser = nullptr;
+	std::atomic<bool> guiTaskFailureShutdown = false;
 
 	int maxPerformanceOverlayTextWidth = 0;
 
@@ -142,6 +144,9 @@ public:
 
 	/// Calls provided functor in main thread on next execution frame
 	void dispatchMainThread(const std::function<void()> & functor);
+	bool tryDispatchMainThread(const std::function<void()> & functor);
+	/// Does not use the SDL queue: the next GUI frame enters normal shutdown.
+	void requestGuiTaskFailureShutdown();
 
 	/// Opens an explicitly selected external page using the platform browser.
 	bool openExternalURL(const std::string & url);

@@ -12,7 +12,7 @@
 
 #include "lib/Rect.h"
 
-#include <tbb/concurrent_queue.h>
+#include "../../client/gui/MainThreadTaskQueue.h"
 
 enum class EUserEvent;
 enum class MouseButton;
@@ -54,7 +54,7 @@ struct PowerState {
 class InputHandler
 {
 	std::vector<SDL_Event> eventsQueue;
-	tbb::concurrent_queue<std::unique_ptr<std::function<void()>>> dispatchedTasks;
+	MainThreadTaskQueue dispatchedTasks;
 	std::mutex eventsMutex;
 
 	Point cursorPosition;
@@ -124,6 +124,8 @@ public:
 
 	/// Calls provided functor in main thread on next execution frame
 	void dispatchMainThread(const std::function<void()> & functor);
+	/// False means this callback was removed, without disturbing earlier work.
+	bool tryDispatchMainThread(const std::function<void()> & functor);
 	bool openExternalURL(const std::string & url);
 
 	/// Returns current position of cursor, in VCMI logical screen coordinates

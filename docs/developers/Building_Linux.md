@@ -116,7 +116,7 @@ You can get the latest source code with:
 ### New Horizons focused state checks
 
 The `new-horizons-linux-test` configure preset enables test development. Its
-matching build and test presets select only ten reviewed standalone state
+matching build and test presets select the reviewed standalone state
 checks, without original game data, a display, a user profile or private design
 files. Install the public development dependencies above and initialize the
 pinned test framework with `git submodule update --init test/googletest`, then:

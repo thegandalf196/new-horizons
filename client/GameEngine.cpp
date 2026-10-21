@@ -124,7 +124,8 @@ void GameEngine::fakeMouseMove()
 		// network thread needs to produce the next one. The time bound is only a safety net.
 		const auto now = std::chrono::steady_clock::now();
 
-		if(!engineUser->wantsFrameRendered() && now - lastFrameRendered < maxFrameSkipDuration)
+		if(!guiTaskFailureShutdown.load() && !engineUser->wantsFrameRendered()
+			&& now - lastFrameRendered < maxFrameSkipDuration)
 		{
 			// Nothing to show yet - sleep 1ms, just enough to stop the SDL_PollEvent busy-spin.
 			// Not framerateDelay(): it pads to a full frame every call, delaying the netpack
@@ -144,6 +145,11 @@ void GameEngine::updateFrame()
 {
 	PerfTrace::emit("frame_lock_wait");
 	std::scoped_lock interfaceLock(ENGINE->interfaceMutex);
+	if(guiTaskFailureShutdown.exchange(false))
+	{
+		logGlobal->error("Stopping application after failed GUI task; no pending packet is accepted");
+		engineUser->onShutdownRequested(false);
+	}
 	PerfTrace::frameBegin();
 
 	engineUser->onUpdate();
@@ -276,6 +282,16 @@ bool GameEngine::amIGuiThread()
 void GameEngine::dispatchMainThread(const std::function<void()> & functor)
 {
 	inputHandlerInstance->dispatchMainThread(functor);
+}
+
+bool GameEngine::tryDispatchMainThread(const std::function<void()> & functor)
+{
+	return inputHandlerInstance->tryDispatchMainThread(functor);
+}
+
+void GameEngine::requestGuiTaskFailureShutdown()
+{
+	guiTaskFailureShutdown.store(true);
 }
 
 bool GameEngine::openExternalURL(const std::string & url)

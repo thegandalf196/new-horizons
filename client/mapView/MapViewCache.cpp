@@ -423,6 +423,7 @@ void MapViewCache::render(const std::shared_ptr<IMapRendererContext> & context, 
 
 void MapViewCache::createTransitionSnapshot(const std::shared_ptr<IMapRendererContext> & context)
 {
+	assert(ENGINE->amIGuiThread());
 	update(context);
 	render(context, *terrainTransition, true);
 }

@@ -83,6 +83,7 @@ set(vcmiclientcommon_SRCS
 	mapView/MapViewActions.cpp
 	mapView/MapViewCache.cpp
 	mapView/MapViewController.cpp
+	mapView/MapViewTransitionSnapshot.cpp
 	mapView/MapViewModel.cpp
 	mapView/mapHandler.cpp
 	mapView/MapOverlayLogVisualizer.cpp
@@ -301,6 +302,7 @@ set(vcmiclientcommon_HEADERS
 	gui/ShortcutHandler.h
 	gui/TextAlignment.h
 	gui/WindowHandler.h
+	gui/MainThreadTaskQueue.h
 
 	lobby/BattleOnlyModeTab.h
 	lobby/CBonusSelection.h
@@ -335,6 +337,7 @@ set(vcmiclientcommon_HEADERS
 	mapView/MapViewActions.h
 	mapView/MapViewCache.h
 	mapView/MapViewController.h
+	mapView/MapTransitionSnapshotTask.h
 	mapView/MapViewModel.h
 	mapView/mapHandler.h
 	mapView/MapOverlayLogVisualizer.h

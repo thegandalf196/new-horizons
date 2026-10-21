@@ -1,5 +1,6 @@
 include(GoogleTest)
 include(CheckCXXCompilerFlag)
+find_package(Threads REQUIRED)
 
 option(ENABLE_NEW_HORIZONS_MANAGED_TESTS
 	"Compile opt-in tests requiring an isolated registered70 profile and NH_REQUIRE_MANAGED_MISSILE_PROFILE=1" OFF)
@@ -1000,6 +1001,9 @@ add_executable(nhProjectileFlightLifecycleTest ../client/tests/ProjectileFlightL
 add_test(NAME nhProjectileFlightLifecycleTest COMMAND nhProjectileFlightLifecycleTest)
 add_executable(nhWindowSceneRedrawTest ../client/tests/WindowSceneRedrawTest.cpp)
 add_test(NAME nhWindowSceneRedrawTest COMMAND nhWindowSceneRedrawTest)
+add_executable(nhMapTransitionSnapshotTest ../client/tests/MapTransitionSnapshotTest.cpp)
+target_link_libraries(nhMapTransitionSnapshotTest PRIVATE Threads::Threads)
+add_test(NAME nhMapTransitionSnapshotTest COMMAND nhMapTransitionSnapshotTest)
 
 add_executable(nhHeroPositiveProcPresentationTest ../client/tests/HeroPositiveProcPresentationTest.cpp)
 add_test(NAME nhHeroPositiveProcPresentationTest COMMAND nhHeroPositiveProcPresentationTest)
@@ -1010,7 +1014,7 @@ add_test(NAME nhAnimationPhaseStartTest COMMAND nhAnimationPhaseStartTest)
 set_tests_properties(
 	nhHeroDevelopmentNavigationTest nhHeroMasteryDialogStateTest
 	nhExchangeSecondarySkillSlotsTest nhStackInfoPanelHoverStateTest
-	nhProjectileFlightLifecycleTest nhWindowSceneRedrawTest
+	nhProjectileFlightLifecycleTest nhWindowSceneRedrawTest nhMapTransitionSnapshotTest
 	nhBattleEndDispatchTest
 	nhHeroPositiveProcPresentationTest nhAnimationPhaseStartTest
 	nhCureAfflictionSessionTest

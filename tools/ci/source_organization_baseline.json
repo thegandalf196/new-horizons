@@ -19685,13 +19685,13 @@
     },
     "client/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 585,
-      "sha256": "bd0ed4a76a622d607388e4f65f1326dd2a3c148afa6c9c75ff0542138584ac7c",
+      "lines": 588,
+      "sha256": "96af503ca4882176194f5d6dbdad0b70a7133df5f82908ac18de2b1d85eeec3b",
       "owner": "ui_developer",
-      "review": "IR-TERMINAL-BATTLE-DISPATCH-HEADER-REGISTRY-V1",
-      "review_scope": "exact-one-terminal-snapshot-header-registration-only-no-target-policy-or-future-growth",
-      "rationale": "Renewed bounded exception for exact584 to585 lines: register BattleEndDispatch.h once beside StdInc.h in vcmiclientcommon_HEADERS for the independently source-reviewed terminal recipient lifetime fix. Remaining file byte-identical, with zero CMake function/macro definitions and unchanged source lists, conditions, target/link/options, backend and platform policy. The inherited584-line approval does not authorize this added row. Mechanical registration only, not native or rendered acceptance.",
-      "deferral": "UI/engine owner must retain exact585-line bound and extract coherent client component registration before substantive routing or link-policy expansion, reducing the mixed parent registry rather than moving it wholesale. No further field/feature growth allowance; preserve existing source/header registrations and current dependent component shrinking limits."
+      "review": "IR-TELEPORT-GUI-SNAPSHOT-OWNERSHIP-V1",
+      "review_scope": "exact-four-records-and-cohesive-ownership-helpers-only-no-future-growth",
+      "rationale": "Mechanical585 to588 registry rows only: register one focused transition implementation and two helper headers. Preserve prior BattleEndDispatch header registration, all existing source/header registrations and target/link/options/backend/platform policy, with zero CMake callable definitions. No native/rendered acceptance.",
+      "deferral": "UI/ENGINE exact588 bound only. Preserve previous terminal-recipient lifetime coverage; extract coherent component registration before substantive routing/link-policy expansion or further feature growth."
     },
     "client/CPlayerInterface.cpp": {
       "kind": "legacy",
@@ -20581,13 +20581,14 @@
       "sha256": "e3c8777a2fbca405db13be5874c19e893e8c38a0b687e9ae72bc84e122bf4781"
     },
     "client/mapView/MapViewController.cpp": {
-      "kind": "legacy",
-      "lines": 694,
+      "kind": "exception",
+      "lines": 697,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 694 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "862eb4352fa58db8ce99e20e386b109a8c62195fdba192b0dbdc0cc56fc606cd"
+      "rationale": "Urgent correctness694 to697 only: route pre-teleport snapshot through focused GUI rendezvous and wire cancellation before existing animation termination. Substantive behavior isolated in74-line transition implementation; no unrelated controller methods, packet/state/restart semantics changed.",
+      "review": "IR-TELEPORT-GUI-SNAPSHOT-OWNERSHIP-V1",
+      "review_scope": "exact-four-records-and-cohesive-ownership-helpers-only-no-future-growth",
+      "sha256": "d9fe14e0914985d93fe706994b5edf37190255168d7e52c241608371cb5f5472",
+      "deferral": "ENGINE/UI exact697 bound only. Extract remaining teleport/map-presentation lifecycle before further controller growth. Preserve GUI GPU ownership, pre-apply capture, unlocked wait/post-relock cancellation, actual endNetwork-before-destruction and existing battle-restart coverage; pure helpers do not establish rendered acceptance."
     },
     "client/render/AssetGenerator.cpp": {
       "kind": "legacy",
@@ -21625,13 +21626,14 @@
       "sha256": "a22502d5ea9dcc3d1d351df375d07e42d4008b43299662b156628b8b61516910"
     },
     "clientsdl2/events/InputHandler.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 527,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 527 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "1120fa6bcb952754363b7c37702bcb178fd900037505df8403eee13981613e32"
+      "rationale": "Urgent correctness exact527-line no-growth renewal: extract atomic publish/wake/exact-own rollback into common54-line task FIFO helper and add try-dispatch outcome. Legacy void SDL-rejection callers log without new throws. Existing long ordinary-event/preprocess methods byte-exact; no input/backend/timer policy expansion.",
+      "review": "IR-TELEPORT-GUI-SNAPSHOT-OWNERSHIP-V1",
+      "review_scope": "exact-four-records-and-cohesive-ownership-helpers-only-no-future-growth",
+      "sha256": "8a0a1a42179d664e8618ddfd33318c933463fa6255a5a9f2f85a161479744233",
+      "deferral": "ENGINE exact527 bound only. Extract coherent dispatch responsibilities before further growth; preserve FIFO/prior-next ownership, exact-own rollback, recursive dispatch, legacy callers and both SDL backends. No waiver for unchanged long event methods. Focused source/native tests plus rendered transition/restart evidence remain required."
     },
     "clientsdl2/events/InputHandler.cpp::void InputHandler::handleCurrentEvent(const SDL_Event & current)#1": {
       "kind": "legacy",
@@ -21769,13 +21771,14 @@
       "sha256": "cb43b6a7c4eb5a3de79b81833e53d75f3a0cbe63d7eebad88a709466afb0b4c5"
     },
     "clientsdl3/events/InputHandler.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 560,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 560 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "d4f06ee5d05affc2e47c77dfd183392848057626e66016093e6f98a147c97419"
+      "rationale": "Urgent correctness exact560-line no-growth renewal: extract atomic publish/wake/exact-own rollback into common54-line task FIFO helper and add try-dispatch outcome. Legacy void SDL-rejection callers log without new throws. Existing long ordinary-event/preprocess methods byte-exact; no input/backend/timer policy expansion.",
+      "review": "IR-TELEPORT-GUI-SNAPSHOT-OWNERSHIP-V1",
+      "review_scope": "exact-four-records-and-cohesive-ownership-helpers-only-no-future-growth",
+      "sha256": "9521a9741231c624d1caefe16b0382f6d4a6b82ec19afe1aa1fa58780209839a",
+      "deferral": "ENGINE exact560 bound only. Extract coherent dispatch responsibilities before further growth; preserve FIFO/prior-next ownership, exact-own rollback, recursive dispatch, legacy callers and both SDL backends. No waiver for unchanged long event methods. Focused source/native tests plus rendered transition/restart evidence remain required."
     },
     "clientsdl3/events/InputHandler.cpp::void InputHandler::handleCurrentEvent(const SDL_Event & current)#1": {
       "kind": "legacy",

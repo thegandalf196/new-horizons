@@ -19,6 +19,7 @@ class PlayerColor;
 struct MapRendererContextState;
 
 class MapViewCache;
+class MapTransitionSnapshotTask;
 class MapViewModel;
 class IMapRendererContext;
 class MapRendererAdventureContext;
@@ -34,6 +35,7 @@ class MapRendererPuzzleMapContext;
 class MapViewController : public IMapObjectObserver
 {
 	ConditionalWait animationWait;
+	std::shared_ptr<MapTransitionSnapshotTask> transitionSnapshotTask;
 
 	std::shared_ptr<IMapRendererContext> context;
 	std::shared_ptr<MapRendererContextState> state;
@@ -84,11 +86,13 @@ private:
 	void onBeforeHeroDisembark(const CGHeroInstance * obj, const int3 & from, const int3 & dest) override;
 	void onAfterHeroDisembark(const CGHeroInstance * obj, const int3 & from, const int3 & dest) override;
 
+	void captureTransitionSnapshotOnGui();
 	void resetContext();
 	void updateState();
 
 public:
 	MapViewController(std::shared_ptr<MapViewModel> model, std::shared_ptr<MapViewCache> view);
+	~MapViewController() override;
 
 	std::shared_ptr<IMapRendererContext> getContext() const;
 
