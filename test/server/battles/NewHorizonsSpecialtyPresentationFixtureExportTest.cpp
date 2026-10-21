@@ -98,7 +98,9 @@ protected:
 			expectedGrowth["creatureLineSpecialtyTarget"].String() = CreatureID::encode(target->getNum());
 		ASSERT_EQ(hero->getPrimaryGrowthRules(), expectedGrowth);
 		if(row.creatureTarget)
+		{
 			ASSERT_NO_FATAL_FAILURE(expectConvertedCreatureLine(*hero, CreatureID(CreatureID::decode(row.creatureTarget))));
+		}
 		const auto metadata = hero->getSpecialtyPresentation();
 		if(row.artwork)
 		{
