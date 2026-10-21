@@ -14,9 +14,11 @@
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/VCMIDirs.h"
+#include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/filesystem/Filesystem.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <zlib.h>
@@ -28,13 +30,16 @@ struct SpecialtyCase
 	const char * identity;
 	const char * artwork;
 	int3 position;
+	const char * creatureTarget = nullptr;
 };
 
-const std::array<SpecialtyCase, 4> heroes = {{
+const std::array<SpecialtyCase, 6> heroes = {{
 	{"core:serena", "newHorizons/heroSpecialties/SerenaArcanePreparation", {17, 10, 0}},
 	{"core:gem", "newHorizons/heroSpecialties/GemRestorativeSorceress", {18, 10, 0}},
 	{"core:daremyth", "newHorizons/heroSpecialties/DaremythFortunesChild", {17, 11, 0}},
-	{"core:orrin", nullptr, {18, 11, 0}}
+	{"core:orrin", nullptr, {18, 11, 0}},
+	{"core:monere", "newHorizons/heroSpecialties/MonereWispLine", {19, 10, 0}, "new-horizons:wisp"},
+	{"core:gerwulf", "newHorizons/heroSpecialties/GerwulfBallistaLine", {19, 11, 0}, "core:ballista"}
 }};
 }
 
@@ -49,6 +54,23 @@ protected:
 		player.bonus = PlayerStartingBonus::GOLD;
 		if(player.color == PlayerColor(1))
 			player.connectedPlayerIDs.clear();
+	}
+
+	void expectConvertedCreatureLine(const CGHeroInstance & hero, CreatureID target)
+	{
+		ASSERT_EQ(hero.getCreatureLineSpecialtyTarget(), target);
+		ASSERT_EQ(hero.getSpecialtyPresentation().creature, target);
+		const auto prefix = "new-horizons:creature-line-specialty:"
+			+ std::to_string(hero.getHeroTypeID().getNum()) + ":" + std::to_string(target.getNum()) + ":";
+		const auto & bonuses = hero.getExportedBonusList();
+		for(const char * stat : {"speed", "initiative", "attack", "defense"})
+		{
+			const auto marker = prefix + stat;
+			ASSERT_EQ(std::count_if(bonuses.begin(), bonuses.end(), [&marker](const auto & bonus)
+			{
+				return bonus && bonus->stacking == marker;
+			}), 1);
+		}
 	}
 
 	void expectOrdinaryStart(const SpecialtyCase & row, const JsonNode & development,
@@ -71,8 +93,12 @@ protected:
 		ASSERT_EQ(hero->getPerkState().selected, selected);
 		ASSERT_EQ(hero->getPerkState().rules, perks);
 		ASSERT_EQ(hero->getMagicRules(), magic);
-		ASSERT_EQ(hero->getPrimaryGrowthRules(),
-			newHorizonsHeroes::resolveHeroRules(development, hero->getHeroClassID()));
+		auto expectedGrowth = newHorizonsHeroes::resolveHeroRules(development, hero->getHeroClassID());
+		if(const auto target = newHorizonsHeroes::defaultCreatureLineTarget(expectedGrowth, hero->getHeroTypeID()))
+			expectedGrowth["creatureLineSpecialtyTarget"].String() = CreatureID::encode(target->getNum());
+		ASSERT_EQ(hero->getPrimaryGrowthRules(), expectedGrowth);
+		if(row.creatureTarget)
+			ASSERT_NO_FATAL_FAILURE(expectConvertedCreatureLine(*hero, CreatureID(CreatureID::decode(row.creatureTarget))));
 		const auto metadata = hero->getSpecialtyPresentation();
 		if(row.artwork)
 		{
@@ -130,7 +156,7 @@ TEST_F(NewHorizonsSpecialtyPresentationFixtureExportTest, ExportOrdinarySpecialt
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).name(name)
 		.description("Specialty presentation diagnostic, not a balanced scenario or gameplay certification. "
-			"Red owns adjacent Serena, Gem, Daremyth and ordinary control Orrin with authored starts; "
+			"Red owns adjacent Serena, Gem, Daremyth, ordinary control Orrin, Monere and Gerwulf with authored starts; "
 			"no map Skill, perk, experience, primary, army or spellbook overrides. "
 			"Open each normal Hero Window and meet adjacent heroes through normal exchange. "
 			"Inspect specialty icons and tooltips, then save/reload and inspect again. "

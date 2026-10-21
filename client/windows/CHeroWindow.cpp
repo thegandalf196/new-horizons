@@ -39,6 +39,7 @@
 #include "../widgets/TextControls.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/Slider.h"
+#include "render/IFont.h"
 #include "render/IRenderHandler.h"
 
 #include "../../lib/CConfigHandler.h"
@@ -275,7 +276,7 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 
 	specImage = std::make_shared<CAnimImage>(AnimationPath::builtin("UN44"), 0, 0, 18, 180);
 	specArea = std::make_shared<LRClickableAreaWText>(Rect(18, 180, 136, 42), LIBRARY->generaltexth->translate("core.heroscrn.27"));
-	specName = std::make_shared<CLabel>(69, 205);
+	specName = std::make_shared<CLabel>(69, 205, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 104);
 
 	expArea = std::make_shared<LRClickableAreaWText>(Rect(18, 228, 136, 42), LIBRARY->generaltexth->translate("core.heroscrn.9"));
 	morale = std::make_shared<MoraleLuckBox>(true, Rect(175, 179, 53, 45));
@@ -552,7 +553,7 @@ void CHeroWindow::restoreLegacyLayout()
 	move(labels[4], Point(69, 183));
 	move(labels[5], Point(69, 232));
 	move(labels[6], Point(213, 232));
-	specName = std::make_shared<CLabel>(69, 205);
+	specName = std::make_shared<CLabel>(69, 205, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 104);
 	expValue = std::make_shared<CLabel>(68, 252);
 	manaValue = std::make_shared<CLabel>(211, 252);
 	for(size_t i = 0; i < 7; ++i)
@@ -724,6 +725,10 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	const auto specialty = heroSpecialtyPresentation(*curHero);
 	specImage->setAnimationPath(specialty.animation(), specialty.frame());
 	specImage->setScale(Point(44, 44));
+	const auto specialtyFont = ENGINE->renderHandler().loadFont(FONT_SMALL);
+	const bool narrowLegacyName = !newHorizonsLayout && specialtyFont->getStringWidth(specialty.name) > 104;
+	specName->font = narrowLegacyName ? FONT_TINY : FONT_SMALL;
+	specArea->hoverText = specialty.name;
 	specName->setText(specialty.name);
 
 	tacticsButton = std::make_shared<CToggleButton>(newHorizonsLayout ? Point(544, 544) : Point(539, 483), AnimationPath::builtin("hsbtns8.def"), std::make_pair(LIBRARY->generaltexth->translate("core.heroscrn.26"), LIBRARY->generaltexth->translate("core.heroscrn.31")), 0, EShortcut::HERO_TOGGLE_TACTICS);

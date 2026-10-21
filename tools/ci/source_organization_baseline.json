@@ -21140,22 +21140,24 @@
       "sha256": "f5505be87d1facaf06a4f22fbf8fc212995d115352366b65fb22984bba85cc3b"
     },
     "client/windows/CHeroWindow.cpp": {
-      "kind": "legacy",
-      "lines": 1138,
+      "kind": "exception",
+      "lines": 1143,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1138 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4ef600616d8d1ad6737f3e23b8ccb2d796489f0a0ee4130ff5e5d5f30252c4aa"
+      "rationale": "Independently reviewed legacy specialty-label collision correction only: bound both legacy labels, use the existing TINY font for overflowing legacy names and expose full-name hover. File1138-to-1143; no gameplay, ownership or rendering-lifecycle change. Source acceptance does not establish rendered readability.",
+      "review": "IR-HERO-SPECIALTY-LEGACY-LABEL-READABILITY-20261021",
+      "review_scope": "exact-specialty-label-collision-correction",
+      "deferral": "Before further substantive specialty refresh expansion, ui_developer must extract cohesive specialty image/name/hover refresh with explicit widget handles and read-only presentation input; characterize hero switching, legacy/NH restoration and resize, covered/reopened windows and save/load while preserving ownership and repaint order.",
+      "sha256": "3405f92a1765951ac84d73719fb5ccc0f8ee2aa4eb6b3ddaaac8aa325faa425b"
     },
     "client/windows/CHeroWindow.cpp::CHeroWindow::CHeroWindow(const CGHeroInstance * hero) : CWindowObject(useNewHorizonsHeroLayout(hero) ? BORDERED : PLAYER_COLORED, ImagePath::builtin(useNewHorizonsHeroLayout(hero) ? \"newHorizonsHeroBackground\" : ENGINE->isRoeData() ? \"HeroScr3\" : \"HeroScr4\"))#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 202,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 202 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "61bb2b0b9e2caa0c54fcf75950929b23a1ba865be237a290e758b1615568d84f"
+      "rationale": "Independently reviewed replacement of the legacy specialty label constructor with an explicit104px bound; constructor remains202 physical lines. Exact collision correction only; no general size allowance or rendered acceptance.",
+      "review": "IR-HERO-SPECIALTY-LEGACY-LABEL-READABILITY-20261021",
+      "review_scope": "exact-specialty-label-collision-correction",
+      "deferral": "Before further substantive specialty refresh expansion, ui_developer must extract specialty image/name/hover presentation with explicit widgets and read-only input, characterizing switching and layout restoration while preserving ownership and repaint order.",
+      "sha256": "66b7b470767d916c7eb90e853536aaf5401bbf7ffa0cfb41ad57e710b21f5bbe"
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::configureNewHorizonsLayout()#1": {
       "kind": "legacy",
@@ -21167,22 +21169,24 @@
       "sha256": "81288b2d6718b68d84f3e4974f9ffdfff8c4146ae19822dcb4279eda44737629"
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::refreshHero(bool refreshArtifactInteraction)#1": {
-      "kind": "legacy",
-      "lines": 393,
+      "kind": "exception",
+      "lines": 397,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 393 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ca5de6cd177a4d527296c25892844a156cb7111516e6de72d160a1b62592e74c"
+      "rationale": "Independently reviewed four-line specialty presentation correction: measure active SMALL width, select TINY only for overflowing legacy names and retain full-name hover before label trimming. Refresh393-to-397; no gameplay or ownership change and no rendered acceptance.",
+      "review": "IR-HERO-SPECIALTY-LEGACY-LABEL-READABILITY-20261021",
+      "review_scope": "exact-specialty-label-collision-correction",
+      "deferral": "Before further substantive specialty refresh expansion, ui_developer must extract cohesive specialty image/name/hover refresh with explicit widget handles and read-only presentation input; characterize hero switching, legacy/NH restoration and resize, covered/reopened windows and save/load while preserving ownership and repaint order.",
+      "sha256": "ffefb00a627fe32e114c997bdea9d565da04b9de86dc28dcfac7d0076e178d62"
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::restoreLegacyLayout()#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 128,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 128 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4321e2185a668e9c8bf2704cb48c746ce116ba86fdddd8c91da9a1e32f51f295"
+      "rationale": "Independently reviewed matching104px legacy specialty label bound on layout restoration; restoreLegacyLayout remains128 physical lines. Exact collision correction only, preserving widget ownership and repaint order; no rendered acceptance.",
+      "review": "IR-HERO-SPECIALTY-LEGACY-LABEL-READABILITY-20261021",
+      "review_scope": "exact-specialty-label-collision-correction",
+      "deferral": "Before further substantive specialty refresh expansion, ui_developer must extract specialty image/name/hover presentation with explicit widgets and read-only input, characterizing switching and layout restoration while preserving ownership and repaint order.",
+      "sha256": "fabb3a9200b4c07d681921495453ead91007c13b5c9aa69b8653dc2e67732987"
     },
     "client/windows/CKingdomInterface.cpp": {
       "kind": "legacy",
