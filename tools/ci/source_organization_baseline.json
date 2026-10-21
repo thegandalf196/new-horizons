@@ -19484,13 +19484,14 @@
       "sha256": "51ed7b32dadb93d5aac9215d1beef6eb8c966401439f82dae7f8f00e1be43ac1"
     },
     "AI/Nullkiller2/Goals/BuyArmy.cpp::NK2AI::void BuyArmy::accept(AIGateway * aiGw)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 157,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 157 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "d843bada106a53eca3519bcf77d2e2455f4b5f54c0657bcc43441630a080788b"
+      "rationale": "Exact 157-line no-growth correction: credit candidate value only after the existing recruitment callback is invoked. Cost, Leadership, destination, Portal selection and dismissal policies are unchanged; coupling structural extraction to the urgent false-success repair would enlarge risk.",
+      "review": "IR-BUYARMY-NO-REQUEST-CREDIT-20261021",
+      "review_scope": "urgent-no-growth-recruitment-credit-correctness-only",
+      "sha256": "0ae54648641ae0d6a81fc7276f3d6c3a7291bccf88e07deed72cf87a586485ab",
+      "deferral": "AI engineer: extract final recruitment admission, submission and credited value into a cohesive helper before the next substantive expansion of accept; preserve candidate order, authoritative rejection, matching-stack merges and upgrade-only behavior."
     },
     "AI/Nullkiller2/Goals/ExecuteHeroChain.cpp::NK2AI::void ExecuteHeroChain::accept(AIGateway * aiGw)#1": {
       "kind": "exception",

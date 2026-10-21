@@ -174,8 +174,8 @@ void BuyArmy::accept(AIGateway * aiGw)
 				}
 				aiGw->cc->recruitCreatures(candidate.source, town->getUpperArmy(), ci.creID, ci.count, ci.level,
 					candidate.portalTownId);
+				valueBought += ci.count * ci.creID.toCreature()->getAIValue();
 			}
-			valueBought += ci.count * ci.creID.toCreature()->getAIValue();
 		}
 	}
 
