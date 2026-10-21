@@ -63,6 +63,7 @@ set(battleAI_SRCS
 		TacticsHandler.cpp
 		ThreatMap.cpp
 		BattleExchangeVariant.cpp
+		BattleExchangeFutureAttack.cpp
 		BattleShroudStrike.cpp
 )
 

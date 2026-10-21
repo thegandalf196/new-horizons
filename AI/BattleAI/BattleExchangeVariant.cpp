@@ -761,8 +761,11 @@ float BattleExchangeVariant::trackAttack(
 	bool allowRetaliation,
 	std::optional<bool> * readyOverwatch,
 	const BattleTargetProbeTiming * probeTiming,
-	DamageCacheAdmission * mainProbeAdmission)
+	DamageCacheAdmission * mainProbeAdmission,
+	BattleExchangeAttackResult * actionResult)
 {
+	if(actionResult)
+		*actionResult = {};
 	if(!attacker || attacker->armorerLastStandEndedActivation)
 		return 0;
 
@@ -771,54 +774,12 @@ float BattleExchangeVariant::trackAttack(
 	MovementExchangeScope preparationMeasurement(
 		evaluateOnly && probeTiming ? probeTiming->preparation : nullptr);
 
-	// Future exchange actors need the same move-before-hit reaction forecast
-	// as the selected action. Leave the historical shortcut unchanged when no
-	// ready reactor is involved, and never mutate evaluateOnly's parent branch.
-	const auto hasReadyOverwatch = [&]()
+	if(const auto reaction = trackFutureReaction(attacker, defender, shooting,
+		isOurAttack, damageCache, hb, evaluateOnly, allowRetaliation, readyOverwatch))
 	{
-		// Applied attacks always inspect their current branch. A probe may share
-		// this existence query, but never reactor/path/target legality results.
-		if(evaluateOnly && readyOverwatch && readyOverwatch->has_value())
-			return readyOverwatch->value();
-		const bool ready = std::ranges::any_of(hb->battleAliveUnits(), [&](const battle::Unit * unit)
-			{ return hb->battleOverwatchReady(unit); });
-		if(evaluateOnly && readyOverwatch)
-			*readyOverwatch = ready;
-		return ready;
-	};
-	if(!shooting && allowRetaliation
-		&& !attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
-		&& !attacker->hasBonusOfType(BonusType::CONFUSION_PENDING)
-		&& hasReadyOverwatch())
-	{
-		const auto reachable = hb->getReachability(attacker.get());
-		const auto available = hb->battleGetAvailableHexes(reachable, attacker.get(), true);
-		BattleHex approach;
-		int distance = GameConstants::BFIELD_SIZE;
-		for(const auto hex : defender->getAttackableHexes(attacker.get()))
-			if(available.contains(hex) && reachable.distances[hex.toInt()] < distance)
-			{
-				approach = hex;
-				distance = reachable.distances[hex.toInt()];
-			}
-		if(approach.isAvailable() && approach != attacker->getPosition())
-		{
-			auto branch = evaluateOnly ? std::make_shared<HypotheticBattle>(hb->env, hb) : hb;
-			BattleAttackInfo attack(attacker.get(), defender.get(), distance, false);
-			auto projected = AttackPossibility::evaluate(attack, approach, damageCache, branch);
-			if(!projected.overwatchHits.empty())
-			{
-				BattleExchangeVariant reactionExchange;
-				const auto value = reactionExchange.trackAttack(projected, branch, damageCache);
-				if(!evaluateOnly)
-				{
-					const auto & score = reactionExchange.getScore();
-					dpsScore.ourDamageReduce += isOurAttack ? score.ourDamageReduce : score.enemyDamageReduce;
-					dpsScore.enemyDamageReduce += isOurAttack ? score.enemyDamageReduce : score.ourDamageReduce;
-				}
-				return value;
-			}
-		}
+		if(actionResult)
+			actionResult->completedAction = !evaluateOnly;
+		return *reaction;
 	}
 
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
@@ -1999,12 +1960,14 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			{
 				for(int i = 0; i < totalAttacks; i++)
 				{
+					BattleExchangeAttackResult actionResult;
 					measurement.measure(&BattleMovementTiming::ExchangeTiming::appliedAttacks, [&]()
 					{
-						return v.trackAttack(attacker, defender, shooting, isOur, damageCache, exchangeBattle, false, i == 0);
+						return v.trackAttack(attacker, defender, shooting, isOur, damageCache, exchangeBattle,
+							false, i == 0, nullptr, nullptr, nullptr, &actionResult);
 					});
 
-					if(!attacker->alive() || !defender->alive())
+					if(actionResult.completedAction || !attacker->alive() || !defender->alive())
 						break;
 				}
 			}

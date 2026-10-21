@@ -54,6 +54,23 @@ Compare actual health, actions, resources and RNG; AI scores are not physical hi
 counts. Retain the legal, meaningful AI/server controls and fixture boundaries
 described below rather than forcing a chosen action through invented setup.
 
+### Future-actor melee reactions
+
+`BattleExchangeFutureAttack.cpp` routes ready Overwatch and accepted Brace through
+the shared attack preview and receipt replay. Use the nearest currently reachable
+legal approach to the requested target and its physical travel distance; Protect's
+resolved recipient determines Brace readiness. Never manufacture distance from
+movement allowance or choose a longer route to trigger a reaction. Target probes
+own detached children and reacquire their units there.
+
+Full attack replay already includes every ordinary strike. Its explicit completion
+result stops the exchange caller's extra-hit loop; ordinary fallback retains
+single-hit ownership. `allowRetaliation=false` is not a counterattack identity:
+later-hit and direct single-hit calls retain their no-movement-prefix contract.
+Pure-Charge future distance and unreachable-target damage remain historical
+approximations outside this reaction path. These contracts do not establish
+turn-time improvement.
+
 ### Current-rule spell fixtures
 
 Current weighted-perk capture requires active hero development rules and their

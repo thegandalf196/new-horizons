@@ -17,6 +17,13 @@
 
 struct DLL_LINKAGE BattleTargetProbeTiming;
 
+/// A full reaction preview may already have replayed every hit in this action.
+/// The future-actor caller must not then repeat its ordinary extra-hit loop.
+struct BattleExchangeAttackResult
+{
+	bool completedAction = false;
+};
+
 struct BattleScore
 {
 	float ourDamageReduce;
@@ -109,7 +116,8 @@ public:
 		// Probe-only hint: share solely within one immutable target-selection batch.
 		std::optional<bool> * readyOverwatch = nullptr,
 		const BattleTargetProbeTiming * probeTiming = nullptr,
-		DamageCacheAdmission * mainProbeAdmission = nullptr);
+		DamageCacheAdmission * mainProbeAdmission = nullptr,
+		BattleExchangeAttackResult * actionResult = nullptr);
 
 	const BattleScore & getScore() const { return dpsScore; }
 	/// Complete an already applied action and score only its newly finalized Plague injury.
@@ -117,6 +125,14 @@ public:
 		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb);
 
 private:
+	/// Resolve only an existing future actor's move-before-hit reactions. A probe
+	/// owns a sibling branch; an applied call replays solely into its given branch.
+	std::optional<float> trackFutureReaction(
+		const std::shared_ptr<StackWithBonuses> & attacker,
+		const std::shared_ptr<StackWithBonuses> & defender,
+		bool shooting, bool isOurAttack, DamageCache & damageCache,
+		const std::shared_ptr<HypotheticBattle> & hb, bool evaluateOnly,
+		bool allowRetaliation, std::optional<bool> * readyOverwatch);
 	void accountForNewElementalRebirthSpawns(const std::set<uint32_t> & idsBefore,
 		const battle::Unit * referenceActor, bool referenceActorIsOurs,
 		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb);

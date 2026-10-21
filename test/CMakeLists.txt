@@ -752,6 +752,7 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsReactiveWeaveTest.cpp
 		server/battles/NewHorizonsHalonMetamagicTest.cpp
 		battleAI/HeroCommandAITest.cpp
+		battleAI/FutureAttackReactionTest.cpp
 		battleAI/CanonicalOrderValueTest.cpp
 		battleAI/SecondWindOpportunityTest.cpp
 		battleAI/HeroOrderCandidatesTest.cpp

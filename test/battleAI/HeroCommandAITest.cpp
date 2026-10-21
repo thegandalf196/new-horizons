@@ -27,6 +27,9 @@
 #include <limits>
 #include <stdexcept>
 #include "../../AI/BattleAI/HypotheticBattle.h"
+#include "OriginalMeleeSequenceFixture.h"
+#include "../../AI/BattleAI/SpellTargetsEvaluator.h"
+#include <tuple>
 
 namespace
 {
@@ -831,4 +834,154 @@ TEST_F(CanonicalOrderAITest, EvaluatorChoosesSecondWindForMovedStackAndActivates
 	EXPECT_NE(state->primaryTargetUnitId, issuerId);
 	EXPECT_TRUE(state->secondWindActive);
 	EXPECT_EQ(battle()->getActiveStackID(), completed->unitId());
+}
+
+class CanonicalOrderFutureActorTest : public OriginalMeleeSequenceTest
+{
+protected:
+	struct Forecast
+	{
+		int64_t incomingHealth = 0;
+		int64_t bracedHealth = 0;
+		float utilityForBracedSide = 0;
+		int braceReceipts = 0;
+	};
+	void mapLoaded(CMap * loaded) override
+	{
+		OriginalMeleeSequenceTest::mapLoaded(loaded);
+		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsCombat"))["combat"]["heroCommands"];
+		for(const auto & [key, effect, percent] : {
+			std::tuple{"charge", "meleeDamagePercent", 60},
+			std::tuple{"brace", "preemptiveDamagePercent", 50}})
+		{
+			auto & formula = rules["commands"][key]["effects"][effect];
+			formula["base"].Integer() = percent;
+			formula["attack"].Float() = formula["defense"].Float() = 0;
+		}
+		heroCommands::validateRules(rules);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
+	}
+	auto liveHeroState() const
+	{
+		return std::tuple{
+			projectedHitTest::serialized(battle()->getHeroOrderStates(BattleSide::ATTACKER)),
+			projectedHitTest::serialized(battle()->getHeroOrderStates(BattleSide::DEFENDER)),
+			projectedHitTest::serialized(battle()->getHeroActionAllowances(BattleSide::ATTACKER)),
+			projectedHitTest::serialized(battle()->getHeroActionAllowances(BattleSide::DEFENDER))};
+	}
+	void forecast(bool selectedPreview, bool brace, Forecast & result)
+	{
+		auto player = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		auto branch = std::make_shared<HypotheticBattle>(environment.get(), player);
+		// This is the same genuine future-actor activation used by calculateExchange,
+		// not the already-active first chosen AP's activation-skipping path.
+		branch->nextTurn(incoming->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+		auto actor = branch->getForUpdate(incoming->unitId());
+		auto victim = branch->getForUpdate(braced->unitId());
+		ASSERT_EQ(branch->getActiveStackID(), static_cast<int32_t>(incoming->unitId()));
+		const auto order = branch->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::BRACE);
+		ASSERT_EQ(order.has_value(), brace);
+		if(brace)
+		{
+			ASSERT_TRUE(order->scheduledFor(victim->unitId(), branch->battleGetRound()));
+		}
+		ASSERT_EQ(branch->battleCanTriggerHeroOrderBrace(actor.get(), victim.get(), 3, false, false), brace);
+		ASSERT_EQ(actor->getPosition(), BattleHex(89));
+		ASSERT_EQ(victim->getPosition(), BattleHex(93));
+		const auto reachability = branch->getReachability(actor.get());
+		ASSERT_EQ(SpellTargetEvaluator::physicalTravelDistance(reachability, BattleHex(92)), 3);
+		ASSERT_TRUE(branch->battleGetAvailableHexes(reachability, actor.get(), false).contains(BattleHex(92)));
+		ASSERT_FALSE(std::ranges::any_of(branch->battleAliveUnits(), [&](const auto * unit)
+		{
+			return branch->battleOverwatchReady(unit);
+		}));
+		DamageCache cache;
+		cache.buildDamageCache(branch, BattleSide::ATTACKER);
+		BattleExchangeVariant exchange;
+		if(selectedPreview)
+		{
+			const auto preview = AttackPossibility::evaluate(
+				BattleAttackInfo(actor.get(), victim.get(), 3, false), BattleHex(92), cache, branch);
+			result.braceReceipts = static_cast<int>(std::ranges::count(preview.fortuneStrikes, true,
+				&FortuneStrikeProjection::bracePreemptive));
+			if(brace)
+			{
+				ASSERT_FALSE(preview.fortuneStrikes.empty());
+				const auto & first = preview.fortuneStrikes.front();
+				EXPECT_TRUE(first.bracePreemptive);
+				EXPECT_FALSE(first.retaliation);
+				EXPECT_EQ(first.attackerId, braced->unitId());
+				EXPECT_EQ(first.defenderId, incoming->unitId());
+			}
+			exchange.trackAttack(preview, branch, cache);
+		}
+		else
+			exchange.trackAttack(actor, victim, false, false, cache, branch, false, true);
+		result.incomingHealth = branch->battleGetUnitByID(incoming->unitId())->getAvailableHealth();
+		result.bracedHealth = branch->battleGetUnitByID(braced->unitId())->getAvailableHealth();
+		auto score = exchange.getScore();
+		// The AP overload scores from its actor's perspective; the future overload
+		// received isOurAttack=false. Report the SAME braced-side sign in both.
+		result.utilityForBracedSide = selectedPreview ? -score.value() : score.value();
+	}
+	void assertNativeSequence(bool brace)
+	{
+		ASSERT_EQ(server.attacks.size(), brace ? 2u : 1u);
+		const auto & first = server.attacks.front();
+		EXPECT_EQ(first.stackAttacking, brace ? braced->unitId() : incoming->unitId());
+		EXPECT_FALSE(first.counter());
+		ASSERT_EQ(first.bsa.size(), 1u);
+		EXPECT_EQ(first.bsa.front().stackAttacked, brace ? incoming->unitId() : braced->unitId());
+		if(brace)
+		{
+			const auto & second = server.attacks.at(1);
+			EXPECT_EQ(second.stackAttacking, incoming->unitId());
+			EXPECT_FALSE(second.counter());
+			ASSERT_EQ(second.bsa.size(), 1u);
+			EXPECT_EQ(second.bsa.front().stackAttacked, braced->unitId());
+		}
+	}
+	void compareFutureWithSelectedAndNative(bool brace)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepareSequence(brace, false));
+		releaseKnown();
+		const auto incomingBefore = incoming->acquireState()->save();
+		const auto bracedBefore = braced->acquireState()->save();
+		const auto gameRng = projectedHitTest::serialized(*gameHandler->randomizer);
+		const auto fixtureRng = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+		const auto heroesBefore = liveHeroState();
+		Forecast selected, future;
+		ASSERT_NO_FATAL_FAILURE(forecast(true, brace, selected));
+		EXPECT_EQ(liveHeroState(), heroesBefore);
+		ASSERT_NO_FATAL_FAILURE(forecast(false, brace, future));
+		EXPECT_EQ(liveHeroState(), heroesBefore);
+		EXPECT_EQ(selected.braceReceipts, brace ? 1 : 0);
+		EXPECT_EQ(incoming->acquireState()->save(), incomingBefore);
+		EXPECT_EQ(braced->acquireState()->save(), bracedBefore);
+		EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), gameRng);
+		EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
+		EXPECT_EQ(future.incomingHealth, selected.incomingHealth)
+			<< "real three-hex future approach must not discard the implemented Brace stage; utility future="
+			<< future.utilityForBracedSide << " selected=" << selected.utilityForBracedSide;
+		EXPECT_EQ(future.bracedHealth, selected.bracedHealth);
+		ASSERT_GT(selected.incomingHealth, 0);
+		ASSERT_GT(selected.bracedHealth, 0);
+		// forecast() retired every projected provider/actor before native execution.
+		server.attacks.clear();
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
+			BattleAction::makeMeleeAttack(incoming, braced, BattleHex(92), false)));
+		EXPECT_EQ(incoming->getAvailableHealth(), selected.incomingHealth);
+		EXPECT_EQ(braced->getAvailableHealth(), selected.bracedHealth);
+		ASSERT_NO_FATAL_FAILURE(assertNativeSequence(brace));
+	}
+};
+
+TEST_F(CanonicalOrderFutureActorTest, ActualThreeHexFutureApproachPreservesBracePrimary)
+{
+	ASSERT_NO_FATAL_FAILURE(compareFutureWithSelectedAndNative(true));
+}
+
+TEST_F(CanonicalOrderFutureActorTest, SameFutureApproachWithoutBraceRetainsOrdinaryHealthParity)
+{
+	ASSERT_NO_FATAL_FAILURE(compareFutureWithSelectedAndNative(false));
 }
