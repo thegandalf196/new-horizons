@@ -1108,8 +1108,32 @@
 						"width": 68,
 						"height": 257
 					},
+					"scrollUp": {
+						"type": "adventureMapButton",
+						"name": "heroListScrollUp",
+						"image": "IAM012.DEF",
+						"help": "core.help.303",
+						"area": {
+							"top": 0,
+							"left": 2,
+							"width": 64,
+							"height": 16
+						}
+					},
+					"scrollDown": {
+						"type": "adventureMapButton",
+						"name": "heroListScrollDown",
+						"image": "IAM013.DEF",
+						"help": "core.help.304",
+						"area": {
+							"bottom": 0,
+							"left": 2,
+							"width": 64,
+							"height": 16
+						}
+					},
 					"item": {
-						"top": 1,
+						"top": 16,
 						"left": 3,
 						"width": 62,
 						"height": 32
@@ -1118,7 +1142,7 @@
 						"x": 0,
 						"y": 32
 					},
-					"itemsCount": 8
+					"itemsCount": 7
 				},
 				{
 					"type": "adventureMapTownList",
@@ -1274,8 +1298,32 @@
 						"width": 68,
 						"height": 257
 					},
+					"scrollUp": {
+						"type": "adventureMapButton",
+						"name": "heroListScrollUp",
+						"image": "IAM012.DEF",
+						"help": "core.help.303",
+						"area": {
+							"top": 0,
+							"left": 2,
+							"width": 64,
+							"height": 16
+						}
+					},
+					"scrollDown": {
+						"type": "adventureMapButton",
+						"name": "heroListScrollDown",
+						"image": "IAM013.DEF",
+						"help": "core.help.304",
+						"area": {
+							"bottom": 0,
+							"left": 2,
+							"width": 64,
+							"height": 16
+						}
+					},
 					"item": {
-						"top": 1,
+						"top": 16,
 						"left": 3,
 						"width": 62,
 						"height": 32
@@ -1284,7 +1332,7 @@
 						"x": 0,
 						"y": 32
 					},
-					"itemsCount": 8
+					"itemsCount": 7
 				},
 				{
 					"type": "adventureMapTownList",

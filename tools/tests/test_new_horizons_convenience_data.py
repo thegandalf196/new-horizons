@@ -12,6 +12,60 @@ from test_new_horizons_content import ROOT, load
 
 
 class ConvenienceDataTest(unittest.TestCase):
+    def test_adaptive_hero_lists_reserve_native_overflow_controls(self):
+        layout = load('Mods/new-horizons/Content/config/widgets/adventureMap.json')
+        containers = [container for container in layout['items']
+                      if any(item.get('type') == 'adventureMapHeroList'
+                             for item in container.get('items', []))]
+        branches = (
+            ('listContainerSmall', {'heightMax': 664}, 196, 193, 5),
+            ('nhListContainer665', {'heightMin': 664, 'heightMax': 665}, 259, 257, 7),
+            ('listContainerLarge', {'heightMin': 665}, 260, 257, 7),
+        )
+        self.assertEqual([container['name'] for container in containers],
+                         [branch[0] for branch in branches])
+        for container, (name, gates, panel_height, height, count) in zip(containers, branches):
+            with self.subTest(branch=name):
+                self.assertEqual(container['exists'], gates)
+                self.assertEqual(container['hideWhen'], 'worldViewMode')
+                self.assertEqual(container['area'], {
+                    'top': 196, 'right': 0, 'width': 193, 'height': panel_height,
+                })
+                heroes = [item for item in container['items']
+                          if item.get('type') == 'adventureMapHeroList']
+                self.assertEqual(len(heroes), 1)
+                hero = heroes[0]
+                self.assertEqual(set(hero), {
+                    'type', 'name', 'area', 'scrollUp', 'scrollDown',
+                    'item', 'itemsOffset', 'itemsCount',
+                })
+                self.assertEqual(hero['name'], 'heroList')
+                self.assertEqual(hero['area'], {
+                    'top': 0, 'right': 125, 'width': 68, 'height': height,
+                })
+                self.assertEqual(hero['item'], {
+                    'top': 16, 'left': 3, 'width': 62, 'height': 32,
+                })
+                self.assertEqual(hero['itemsOffset'], {'x': 0, 'y': 32})
+                self.assertEqual(hero['itemsCount'], count)
+                for direction, edge, image, help_id in (
+                    ('Up', 'top', 'IAM012.DEF', 'core.help.303'),
+                    ('Down', 'bottom', 'IAM013.DEF', 'core.help.304'),
+                ):
+                    self.assertEqual(hero['scroll' + direction], {
+                        'type': 'adventureMapButton', 'name': 'heroListScroll' + direction,
+                        'image': image, 'help': help_id,
+                        'area': {edge: 0, 'left': 2, 'width': 64, 'height': 16},
+                    })
+                # Protect space for actual native controls, not scaled portraits
+                # or arrows laid over the first/last hero. This is data coverage;
+                # real disabled states and scrolling still require the renderer.
+                self.assertGreaterEqual(hero['item']['top'], hero['scrollUp']['area']['height'])
+                last_bottom = (hero['item']['top'] + (count - 1) * hero['itemsOffset']['y']
+                               + hero['item']['height'])
+                self.assertLessEqual(last_bottom, height - hero['scrollDown']['area']['height'])
+                self.assertEqual(height - hero['scrollDown']['area']['height'] - last_bottom, 1)
+
     def test_adaptive_layout_owns_two_namespaced_existing_actions_per_visible_branch(self):
         fragment = load('Mods/new-horizons/Content/config/widgets/nhConvenience.json')
         self.assertEqual(set(fragment), {'items'})
@@ -90,12 +144,11 @@ class ConvenienceDataTest(unittest.TestCase):
             metadata = json.loads(output.read_text())
             self.assertEqual(metadata['version'], '0.5.1')
             # The presentation preview keeps its historical identity while
-            # inheriting the active canonical settings (currently module 0.14.0).
+            # inheriting the live edition's settings and packaged art mounts.
             self.assertEqual(metadata['settings'], json.loads(before)['settings'])
             self.assertNotEqual(output.read_bytes(), before)
             self.assertEqual(metadata['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))
-            self.assertEqual(metadata['filesystem'][''], [{'type': 'dir', 'path': '/Content'}])
-            self.assertEqual(metadata['filesystem']['SPRITES/'], [{'type': 'dir', 'path': '/Images'}])
+            self.assertEqual(metadata['filesystem'], json.loads(before)['filesystem'])
             self.assertEqual(metadata['settings']['heroes']['newHorizonsMasteries'],
                              load('config/newHorizonsMasteries.json'))
             subprocess.run(command + ['--check'], check=True, capture_output=True)

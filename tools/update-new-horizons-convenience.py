@@ -22,11 +22,10 @@ def main():
         parser.error('refusing existing output or symlink')
     live = ROOT / 'Mods/new-horizons/mod.json'
     metadata = json.loads(live.read_text(encoding='utf-8'))
-    if metadata['version'] != '0.14.0':
+    if metadata['version'] != '0.85.0':
         parser.error('unexpected live module; review presentation composition first')
     metadata['version'] = '0.5.1'
     metadata['bonuses'] = json.loads((ROOT / 'config/newHorizonsConvenienceBonuses.json').read_text())
-    metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
     text = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
     if args.check:
         if not output.is_file() or output.read_text() != text:
