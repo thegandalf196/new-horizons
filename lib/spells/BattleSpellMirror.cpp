@@ -79,16 +79,7 @@ bool BattleSpellMechanics::wouldResist(const battle::Unit * unit) const
 
 bool BattleSpellMechanics::isSpellLocked(const battle::Unit * unit)
 {
-	if(!unit)
-		return false;
-
-	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	const auto lockBonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock)));
-	return lockBonuses && vstd::contains_if(*lockBonuses, [](const std::shared_ptr<Bonus> & bonus)
-	{
-		return bonus && bonus->type == BonusType::MAGIC_RESISTANCE
-			&& Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0;
-	});
+	return unit && newHorizonsSorcery::isSpellLocked(*unit);
 }
 
 void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target & target,

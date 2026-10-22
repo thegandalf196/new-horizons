@@ -267,6 +267,7 @@ set(test_SRCS
 		spells/NewHorizonsSpellAvailabilityTest.cpp
 		spells/NewHorizonsModCompatibilityTest.cpp
 		spells/NewHorizonsSorceryTest.cpp
+		spells/NewHorizonsSpellLockIdentityTest.cpp
 		spells/NewHorizonsRegenerationTest.cpp
 		spells/NewHorizonsRealityWarpPlannerTest.cpp
 		spells/NewHorizonsRealityWarpCollectionTest.cpp
@@ -319,6 +320,7 @@ set(test_SRCS
 		network/PreparedWriteFailureTest.cpp
 		server/battles/CombatEventTriggerTest.cpp
 		server/battles/DamageCalculatorTest.cpp
+		server/battles/OptionalRegenerationIdentityTest.cpp
 		server/battles/NewHorizonsMoraleActivationTest.cpp
 		server/battles/NewHorizonsMoraleActivationProtocolTest.cpp
 		server/battles/NewHorizonsMoraleCreatureSpellTest.cpp
@@ -497,6 +499,7 @@ set(test_SRCS
 		server/battles/NewHorizonsMassShadowTest.cpp
 		server/battles/NewHorizonsMassBlessTest.cpp
 		server/battles/NewHorizonsMassRegenerationTest.cpp
+		battleAI/PurifyRuleFixtures.cpp
 		server/battles/NewHorizonsMassSlowTest.cpp
 		server/battles/NewHorizonsLifeDrainTest.cpp
 		server/battles/NewHorizonsVampirismTest.cpp
@@ -841,7 +844,6 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsHeavenlyGaleAITest.cpp
 		battleAI/NewHorizonsDivineRetributionAITest.cpp
 		battleAI/NewHorizonsPurifyAITest.cpp
-		battleAI/PurifyRuleFixtures.cpp
 		battleAI/PurifyRuleFixturesTest.cpp
 		battleAI/NewHorizonsCrusadeAITest.cpp
 		battleAI/NewHorizonsEntangleAITest.cpp

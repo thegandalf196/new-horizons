@@ -75,16 +75,13 @@ bool isLivingPhysicalPoisonTarget(const battle::Unit * unit)
 	return isLivingCureTarget(unit);
 }
 
-SpellID newHorizonsRegenerationSpellId()
-{
-	static const SpellID regenerationSpell(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
-	return regenerationSpell;
-}
-
 bool isNewHorizonsRegenerationSpell(const CSpell * spell, const JsonNode & savedRules)
 {
-	return spell && newHorizonsMagic::spellVariantBase(savedRules, spell->getId()) == newHorizonsRegenerationSpellId()
-		&& newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell->getId());
+	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell->getId()))
+		return false;
+	const auto base = newHorizonsMagic::spellVariantBase(savedRules, spell->getId());
+	const auto * definition = base.toSpell();
+	return definition && definition->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL;
 }
 
 bool isNewHorizonsMassRegenerationSpell(const CSpell * spell, const JsonNode & savedRules)
@@ -120,11 +117,11 @@ bool isRegenerationTarget(const battle::Unit * unit)
 	return isLivingCureTarget(unit) && !unit->isClone() && unit->getPhantomInitialIntegrity() <= 0;
 }
 
-bool hasRegenerationMarker(const battle::Unit * unit)
+bool hasRegenerationMarker(const battle::Unit * unit, SpellID regenerationSpell)
 {
 	if(!unit)
 		return false;
-	return unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(newHorizonsRegenerationSpellId()))
+	return unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(regenerationSpell))
 		.And(Selector::type()(BonusType::HP_REGENERATION)));
 }
 
@@ -140,7 +137,7 @@ int32_t newHorizonsRegenerationRate(const BattleSpellMechanics & mechanics)
 }
 
 void applyRegenerationRateSnapshot(ServerCallback * server, const CBattleInfoCallback * battle,
-	const battle::Units & affectedUnits, const int32_t regenerationRate)
+	const battle::Units & affectedUnits, const int32_t regenerationRate, SpellID regenerationSpell)
 {
 	if(!server || !battle)
 		return;
@@ -153,7 +150,7 @@ void applyRegenerationRateSnapshot(ServerCallback * server, const CBattleInfoCal
 	for(const auto unitId : affectedUnitIds)
 	{
 		const auto * unit = battle->battleGetUnitByID(unitId);
-		if(!unit || !hasRegenerationMarker(unit))
+		if(!unit || !hasRegenerationMarker(unit, regenerationSpell))
 			continue;
 
 		auto state = unit->acquireState();
@@ -2062,7 +2059,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		}
 	}
 	if(newHorizonsRegeneration && !isCounterspellNegated())
-		applyRegenerationRateSnapshot(&effectRecorder, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
+		applyRegenerationRateSnapshot(&effectRecorder, battle(), affectedUnits, newHorizonsRegenerationRate(*this),
+			newHorizonsMagic::spellVariantBase(battle()->getBattle()->getMagicRules(), owner->getId()));
 	// BattleSpellCast spends the typed grant before effects resolve. Publish the
 	// benefit after restoration/cleansing so a valid restored corpse can receive it.
 	if(!sharedPurposeFirstRecipients.empty() && !sc.counterspellNegated)
@@ -2839,7 +2837,8 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		p.first->apply(effectServer, this, p.second);
 
 	if(newHorizonsRegeneration && mode == Mode::HERO && getHeroCaster())
-		applyRegenerationRateSnapshot(effectServer, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
+		applyRegenerationRateSnapshot(effectServer, battle(), affectedUnits, newHorizonsRegenerationRate(*this),
+			newHorizonsMagic::spellVariantBase(battle()->getBattle()->getMagicRules(), owner->getId()));
 
 	if(completedHeroProjection)
 	{

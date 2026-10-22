@@ -34,6 +34,8 @@ TEST_F(PurifyRuleFixturesTest, SavedV2RecipeValidatesAndPreservesCanonicalPurify
 	for(const auto * key : {"heroLuck", "heroMorale", "morale", "creatureAbilities",
 		"protectedAdventureBarriers", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent"})
 		EXPECT_FALSE(historical.Struct().contains(key));
+	for(const auto * identity : {"core:waterWalk", "core:fly"})
+		EXPECT_FALSE(historical["adventureSpells"][identity].Struct().contains("requireLegalDayEnd"));
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(historical));
 	EXPECT_FALSE(newHorizonsPurify::enabled(historical, newHorizonsPurify::spellID()));
 	const JsonNode current(JsonPath::builtin("config/newHorizonsMagic"));

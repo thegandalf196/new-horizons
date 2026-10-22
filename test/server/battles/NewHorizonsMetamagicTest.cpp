@@ -7,6 +7,7 @@
 
 #include "BattleStartSnapshotFixture.h"
 #include "HeroCommandFixture.h"
+#include "../../battleAI/PurifyRuleFixtures.h"
 
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/bonuses/Bonus.h"
@@ -67,10 +68,9 @@ protected:
 			magicRules["spells"]["new-horizons:counterspell"].Struct().erase("active");
 		if(legacySchoolRankRules)
 		{
-			magicRules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-			magicRules.Struct().erase("schoolRankPowerCoefficientPercent");
-			magicRules.Struct().erase("spellcraftEfficiencyPercent");
-			newHorizonsMagic::validateRules(magicRules);
+			const auto currentLock = magicRules["spells"][newHorizonsSorcery::SPELL_LOCK_SPELL];
+			magicRules = purifyTest::savedV2MagicRules();
+			ASSERT_EQ(magicRules["spells"][newHorizonsSorcery::SPELL_LOCK_SPELL], currentLock);
 		}
 		// Old saved rulesets treated a spell with no `active` marker as enabled.
 		// Keep that compatibility path narrowly scoped to the legacy Clone test.
@@ -272,8 +272,16 @@ protected:
 		ASSERT_GE(decoded, 0);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::EXPERT,
 			ChangeValueMode::ABSOLUTE);
-		attackerSideHero->applyPerkSelection({sorceryMagicSkill, spellbinderPerk});
-		ASSERT_TRUE(attackerSideHero->hasActivePerk(sorceryMagicSkill, spellbinderPerk));
+		// Exceptional Expert rank still requires a legal Basic/Advanced perk prefix.
+		// These two riders affect other spells, not Spell Lock.
+		for(const auto * perk : {"new-horizons:sorceryMagic.matterShaper",
+			"new-horizons:sorceryMagic.illusionist", spellbinderPerk})
+		{
+			ASSERT_TRUE(attackerSideHero->getPerkState().canAcquirePerk(sorceryMagicSkill,
+				perk, MasteryLevel::EXPERT));
+			attackerSideHero->applyPerkSelection({sorceryMagicSkill, perk});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk(sorceryMagicSkill, perk));
+		}
 	}
 
 	void applySpellLockScript(const CStack * target, bool followup = false)
@@ -1442,6 +1450,12 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockScalesItsSpellPowerTermBySavedSchoolRa
 	applySpellLockScript(attacker);
 	expectAppliedSpellLockDuration(attacker, 1);
 
+	// Compare two ordinary casts, not an unmarked Metamagic follow-up.
+	advanceRound();
+	activate(attacker);
+	const auto allowance = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, spellLockSpell());
+	ASSERT_TRUE(allowance.has_value());
+	ASSERT_EQ(allowance->source, HeroActionAllowanceState::GrantSource::ROUND);
 	const auto sorcery = SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL);
 	ASSERT_GE(sorcery, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC,
@@ -1475,7 +1489,9 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockDynamicHelpShowsRankAndCurrentOrdinary
 	const auto description = newHorizonsMagic::spellDescriptionForHero(
 		attackerSideHero, spellLockSpell().toSpell(), 0);
 
-	EXPECT_NE(description.find("Current Spell Power term: 115%"), std::string::npos);
+	ASSERT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(attackerSideHero->getMagicRules(),
+		attackerSideHero, spellLockSpell()), 11500);
+	EXPECT_NE(description.find("Current combined Spell Power coefficient: 115%"), std::string::npos);
 	EXPECT_NE(description.find("ordinary duration at current Spell Power: 2 rounds."), std::string::npos);
 }
 

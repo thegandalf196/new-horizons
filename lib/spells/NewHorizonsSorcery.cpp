@@ -15,6 +15,8 @@
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusSelector.h"
 #include "CSpell.h"
+#include "CSpellHandler.h"
+#include "../GameLibrary.h"
 
 #include <algorithm>
 #include <array>
@@ -22,11 +24,28 @@
 
 namespace newHorizonsSorcery
 {
+namespace
+{
+const CSpell * effectSourceSpell(const Bonus * bonus)
+{
+	if(!bonus || bonus->source != BonusSource::SPELL_EFFECT || !LIBRARY || !LIBRARY->spellh)
+		return nullptr;
+	const auto id = bonus->sid.as<SpellID>().getNum();
+	if(id < 0 || static_cast<size_t>(id) >= LIBRARY->spellh->objects.size())
+		return nullptr;
+	return LIBRARY->spellh->objects.at(id).get();
+}
+
+bool isSpellLockSource(const Bonus * bonus)
+{
+	const auto * source = effectSourceSpell(bonus);
+	return source && source->getJsonKey() == SPELL_LOCK_SPELL;
+}
+}
 bool isSpellLocked(const IBonusBearer & stack)
 {
-	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	const auto bonuses = stack.getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock))
-		.And(Selector::type()(BonusType::MAGIC_RESISTANCE)));
+	const auto bonuses = stack.getBonuses(Selector::type()(BonusType::MAGIC_RESISTANCE)
+		.And(CSelector(isSpellLockSource)));
 	return bonuses && vstd::contains_if(*bonuses, [](const std::shared_ptr<Bonus> & bonus)
 	{
 		return bonus && Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0;
@@ -35,9 +54,8 @@ bool isSpellLocked(const IBonusBearer & stack)
 
 std::optional<bool> spellLockPreservesBeneficial(const IBonusBearer & stack)
 {
-	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	const auto bonuses = stack.getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock))
-		.And(Selector::type()(BonusType::NONE)));
+	const auto bonuses = stack.getBonuses(Selector::type()(BonusType::NONE)
+		.And(CSelector(isSpellLockSource)));
 	if(!bonuses)
 		return std::nullopt;
 
@@ -52,13 +70,9 @@ bool isPreservedSpellLockEffect(const Bonus * bonus, bool preserveBeneficial)
 	if(!bonus || bonus->source != BonusSource::SPELL_EFFECT || !Bonus::NTurns(bonus))
 		return false;
 
-	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	const auto sourceSpellID = bonus->sid.as<SpellID>();
-	if(!sourceSpellID.hasValue() || sourceSpellID == spellLock)
-		return false;
-
-	const auto * sourceSpell = sourceSpellID.toSpell();
-	if(!sourceSpell || sourceSpell->isAdventure() || !sourceSpell->isMagical())
+	const auto * sourceSpell = effectSourceSpell(bonus);
+	if(!sourceSpell || sourceSpell->getJsonKey() == SPELL_LOCK_SPELL
+		|| sourceSpell->isAdventure() || !sourceSpell->isMagical())
 		return false;
 
 	// Spell Lock removes only the opposing polarity. Neutral magical effects

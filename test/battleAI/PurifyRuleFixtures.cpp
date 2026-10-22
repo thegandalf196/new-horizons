@@ -20,7 +20,8 @@ JsonNode savedV2MagicRules()
 	// A historical v2 capture must not contain later v3-only policies.
 	for(const auto * key : {"protectedAdventureBarriers", "creatureAbilities", "morale", "heroLuck", "heroMorale"})
 		rules.Struct().erase(key);
-	rules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
+	for(const auto * identity : {"core:waterWalk", "core:fly"})
+		rules["adventureSpells"][identity].Struct().erase("requireLegalDayEnd");
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
 		(void)name;

@@ -7,6 +7,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../battleAI/PurifyRuleFixtures.h"
 
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/GameConstants.h"
@@ -61,26 +62,8 @@ SpellID spellLockSpell()
 
 JsonNode olderMagicSnapshotWithoutMassVariants()
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
-	for(auto & [identity, row] : rules["spells"].Struct())
-	{
-		(void)identity;
-		if(row.isStruct())
-			row.Struct().erase("selectedPlacement");
-			row.Struct().erase("earthquake");
-			row.Struct().erase("structures");
-	}
-	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
-	{
-		if(it->second.isStruct() && it->second.Struct().contains("variant"))
-			it = rules["spells"].Struct().erase(it);
-		else
-			++it;
-	}
-	return rules;
+	// The maintained v2 fixture disables later variants and validates the whole capture.
+	return purifyTest::savedV2MagicRules();
 }
 
 class MassRegenerationPredictionEnvironment final : public Environment
