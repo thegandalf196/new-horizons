@@ -4242,39 +4242,41 @@
     "test/server/battles/BattleTestFixture.h": {
       "functions": [
         {
-          "end": 60,
-          "start": 60,
-          "symbol": "RecordingGameServer::void setState(EServerState value) override#1"
-        },
-        {
-          "end": 61,
-          "start": 61,
-          "symbol": "RecordingGameServer::EServerState getState() const override#1"
-        },
-        {
           "end": 62,
           "start": 62,
-          "symbol": "RecordingGameServer::bool isPlayerHost(const PlayerColor &) const override#1"
+          "symbol": "RecordingGameServer::void setState(EServerState value) override#1"
         },
         {
           "end": 63,
           "start": 63,
-          "symbol": "RecordingGameServer::bool hasPlayerAt(PlayerColor, GameConnectionID) const override#1"
+          "symbol": "RecordingGameServer::EServerState getState() const override#1"
         },
         {
           "end": 64,
           "start": 64,
-          "symbol": "RecordingGameServer::bool hasBothPlayersAtSameConnection(PlayerColor, PlayerColor) const override#1"
+          "symbol": "RecordingGameServer::bool isPlayerHost(const PlayerColor &) const override#1"
         },
         {
           "end": 65,
           "start": 65,
+          "symbol": "RecordingGameServer::bool hasPlayerAt(PlayerColor, GameConnectionID) const override#1"
+        },
+        {
+          "end": 66,
+          "start": 66,
+          "symbol": "RecordingGameServer::bool hasBothPlayersAtSameConnection(PlayerColor, PlayerColor) const override#1"
+        },
+        {
+          "end": 67,
+          "start": 67,
           "symbol": "RecordingGameServer::void sendPack(CPackForClient &, GameConnectionID) override#1"
         }
       ],
-      "rationale": "All141 lines read; six inline RecordingGameServer override bodies60-65. Namespace-macro boundary diagnostic28 does not hide a callable. Remaining fixture methods are declarations, not definitions.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "089dd926e855864a05e9fa24c9317b3b0a8033581dcad4cb9630c20829d8bf09"
+      "rationale": "Complete143-line fixture header read. Six existing inline RecordingGameServer override bodies now62-67 retain exact names and bytes; only an obstacle packet receipt vector and accurate pre-apply copying comment shift offsets. Existing namespace-macro diagnostic28 does not hide a callable; all remaining fixture methods are declarations. No function-like macro or lambda bodies omitted; no runtime acceptance or gameplay change implied.",
+      "review": "IR-PASSING-LINES-FIREWALL-OBSERVATION-20261022",
+      "sha256": "7ffc71bb226fa1b05e38e52542b86d11df336332727439082001bde6fb42b14d",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "whole-exact-six-callable-fixture-header-inventory-packet-observation-only"
     },
     "test/server/battles/NewHorizonsCorpsePreservationTest.cpp": {
       "functions": [
@@ -6700,9 +6702,9 @@
       "review_scope": "whole-exact-callable-inventory-no-parser-waiver-no-runtime-claim"
     },
     "AI/BattleAI/BattleExchangeVariant.h": {
-      "sha256": "8a775eb31786e17603ba3c66055c90f3902a9f08f8ea2f8055d6f791c4cc81d1",
-      "review": "IR-FUTURE-BRACE-REPAIR-SOURCE-20261020-D54E6B98",
-      "rationale": "Complete exact header callable inventory renewed for the independently source-reviewed future-Brace repair. All ten existing inline/constructor bodies and names remain unchanged; explicit completion-result data and reaction declarations shift their offsets. The two existing empty-default-argument parser recoveries remain covered by the complete named inventory, not a new parser or size waiver. No omitted callable, runtime or build acceptance is implied.",
+      "sha256": "ad55601f5a67be17c67c7afe432e5d3b5a0248a4581ff1a57f6a2b9b1fa9886b",
+      "review": "IR-ENEMY-BYPASS-HEADER-CALLABLES-20261022",
+      "rationale": "Complete exact header callable inventory independently renewed for the focused enemy-bypass reachability interface. Only the ReachabilityInfo include is replaced by the owning focused header; all ten existing inline/constructor names, bodies and offsets remain exact. Two existing empty-default-argument parser recoveries remain covered by this complete inventory, not waived. No runtime or build acceptance is implied.",
       "functions": [
         {
           "symbol": "BattleScore::BattleScore(float enemyDamageReduce, float ourDamageReduce) :enemyDamageReduce(enemyDamageReduce), ourDamageReduce(ourDamageReduce)#1",
@@ -10499,9 +10501,11 @@
     },
     "lib/battle/AccessibilityInfo.h": {
       "functions": [],
-      "rationale": "Enum, aliases, struct data and method prototypes only. Braced data initializers41/42 and default allowedOccupiedHexes={}54 are not bodies. Neither overload declarations nor optional return types imply function implementations. No function-like macro definitions or lambdas.",
-      "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
-      "sha256": "ad9cfc4e4cff0b1a156fc91aa461f997b95bad44513239eb138dc6fa8eb418dd"
+      "rationale": "Complete exact header inventory independently renewed for the owned reachability-cost snapshot comment. Enum, aliases, struct data and method prototypes only; zero callable bodies. Existing braced data initializers at41/42 and allowedOccupiedHexes={} default at54 are not bodies. One existing parser recovery remains covered by complete zero-body review, not waived. No function-like macro definitions, lambdas, API layout or inline implementation changes.",
+      "review": "IR-ACCESSIBILITY-DECLARATIONS-CALLABLES-20261022",
+      "sha256": "e593f85f64ecd066586404eec011c98799f7de31800b8b97c0913161a4ee0976",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "whole-exact-zero-body-declaration-inventory-comment-only-renewal"
     },
     "lib/battle/BattleEffectExchange.cpp": {
       "sha256": "2058c3b164047d01de147b56b7a5750f0c48a7d80739a96b358417f8212b9f77",
@@ -18035,13 +18039,13 @@
     },
     "AI/BattleAI/AttackPossibility.cpp": {
       "kind": "exception",
-      "lines": 2481,
+      "lines": 2485,
       "owner": "ai_engineer",
-      "rationale": "Exact diagnostic-only extraction of the two existing cache timing RAII classes into a focused 106-line header, with one optional library-owned calculation sink binder. All gameplay methods remain byte-identical. Parent shrinks 2567 to 2481; no gameplay, scoring, cache or search policy changes.",
-      "review": "IR-DYNAMIC-DAMAGE-TIMING-SPLIT-20261022",
-      "review_scope": "exact-cache-diagnostic-RAII-extraction-shrinking-ratchet-only",
-      "sha256": "814480fcedd01ea399681470f4a56f01db00898e81ed9453c4f1667270995b87",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2481/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance.",
+      "rationale": "Exact four-line urgent observer-knowledge correction in the existing obstacle damage forecast: choose the player observer for obstacle discovery while retaining requested valued side under ALL_KNOWING. Preserve per-victim applicability, visibility-aware caster proxy and every other calculation/callable. File2481-to2485 exception only; no global authority, hidden-obstacle disclosure, warning suppression or cache-lifetime expansion.",
+      "review": "IR-OBSTACLE-OBSERVER-PERSPECTIVE-20261022",
+      "review_scope": "exact-four-line-obstacle-cache-observer-visibility-correctness-only",
+      "sha256": "b43f944273b61518cef4ebd0db3b76f35c0ab9496580404a80a33a53c90d0fbb",
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2485/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/AttackPossibility.cpp::AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1": {
@@ -18274,14 +18278,14 @@
       "sha256": "cfef4a8b887c5bfc9111edcac72cca0042a817cb76f26ffd557f2f2491d5118d"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp": {
-      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2237/340 ratchet only. Separately, before further movement-cache expansion, ai_engineer must extract ReachabilityMapCache update/getOneTurnReachableUnits/computeOneTurnReachableUnits into one focused component after defining a single shared controller-predicate owner for cache, movement and blocking/bypass consumers. Preserve exact membership pointer/order/multiplicity, turn wrapping, branch/state/RNG and whole-exchange score/action parity; do not duplicate controller rules. This exact four-net-line local-lifetime exception does not permit any unrelated growth. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance.",
+      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2188/340 ratchet only. Separately, before further movement-cache expansion, ai_engineer must extract ReachabilityMapCache update/getOneTurnReachableUnits/computeOneTurnReachableUnits into one focused component after defining a single shared controller-predicate owner for cache, movement and blocking/bypass consumers. Preserve exact membership pointer/order/multiplicity, turn wrapping, branch/state/RNG and whole-exchange score/action parity; do not duplicate controller rules. This exact four-net-line local-lifetime exception does not permit any unrelated growth. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance.",
       "kind": "exception",
-      "lines": 2237,
+      "lines": 2188,
       "owner": "ai_engineer",
-      "rationale": "Source-reviewed selected-preview position restoration moves from inline melee-only assignment to the focused SelectedAttackReceipt owner, preserving the established melee endpoint and admitting only a currently legal bound Skirmisher shooting endpoint. File2238-to2237 and selected trackAttack341-to340 ratchet. Existing recipient/resource/reaction order and all prior extraction obligations remain; no broader ranged movement or runtime/performance acceptance is claimed.",
-      "review": "IR-SKIRMISHER-SELECTED-POSITION-20261022",
-      "review_scope": "exact-selected-skirmisher-position-restoration-shrinking-ratchet-only",
-      "sha256": "3c3e85a2f611cb775edee40338197e0dc0a71dab7728c5d781269773d8578dee",
+      "rationale": "Extract the shared ownership predicate and complete enemy-bypass reachability stage into one focused 63-line component; preserve all 68 remaining callable bodies exactly. Clamp obstacle knowledge to the player observer while retaining ALL_KNOWING per-unit perspective, nominal movement side, visibility-aware current-owner Ghost Walk, Passing Lines and original destruction-turn weights. File2237-to2188 shrinking ratchet; no warning suppression, search/scoring policy or broader campaign acceptance.",
+      "review": "IR-OBSTACLE-OBSERVER-PERSPECTIVE-20261022",
+      "review_scope": "exact-enemy-bypass-observer-policy-extraction-shrinking-ratchet-only",
+      "sha256": "6f318a911f4b22c5cdf1270f9ff676e064bdbfe1afdc39e72e960d99315f942a",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::BattleScore BattleExchangeEvaluator::calculateExchange( const AttackPossibility & ap, uint8_t turn, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, const battle::Units & additionalUnits, BattleMovementTiming::ExchangeTiming * timing) const#1": {
@@ -22071,12 +22075,12 @@
     },
     "lib/battle/CBattleInfoCallback.cpp": {
       "kind": "exception",
-      "lines": 5945,
+      "lines": 5943,
       "owner": "gameplay_engineer",
-      "rationale": "Exact six-line diagnostic routing growth: one owning include, reached-calculation notes at the three existing initial/second call sites, and native payload scope start/finish. No gameplay query order or calculation changes; detailed timing ownership lives in the small diagnostic component.",
-      "review": "IR-DYNAMIC-DAMAGE-TIMING-SPLIT-20261022",
-      "review_scope": "exact-six-line-opt-in-calculation-diagnostic-routing-only",
-      "sha256": "523957de538a4a8230b2780fb3ff71f9880efd409d998ef5f2a60a691f13c27c",
+      "rationale": "Replace only the walking reachability no-op-deleter alias into caller Parameters with an owning immutable bypass-cost array snapshot. Returned AccessibilityInfo now remains valid across caller mutation/destruction and ReachabilityInfo copy/move; synchronous BFS contents, flying behavior and other calculations remain unchanged. File5945-to5943 shrinking ratchet; no save layout, visibility/search/scoring policy or performance acceptance claim. Prior focused stance-stage extraction obligation remains mandatory.",
+      "review": "IR-REACHABILITY-COST-SNAPSHOT-LIFETIME-20261022",
+      "review_scope": "exact-owned-immutable-bypass-cost-snapshot-return-lifetime-correction",
+      "sha256": "49197060a807da1f33f06e6ab3b3d9e59b38a8866407bef47577d019ec8f1b5a",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Before further substantive stance-stage growth, extract a focused defender-stance payload builder owned by gameplay_engineer: const callback/attack info plus invocation query context into DamageAttackInfo. Preserve first-query order, explicit payload/state/RNG parity and shrink both callback and function baselines; no oversized moved-to helper. Native and performance acceptance remain separate."
     },

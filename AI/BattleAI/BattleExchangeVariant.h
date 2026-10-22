@@ -9,7 +9,7 @@
  */
 #pragma once
 
-#include "../../lib/battle/ReachabilityInfo.h"
+#include "EnemyBypassReachability.h"
 #include "PotentialTargets.h"
 #include "StackWithBonuses.h"
 #include "HypotheticBattle.h"

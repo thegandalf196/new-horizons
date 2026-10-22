@@ -54,6 +54,9 @@ void RecordingGameServer::record(CPackForClient & pack)
 	if(const auto * action = dynamic_cast<const StartAction *>(&pack))
 		startedActions.push_back(*action);
 
+	if(const auto * obstacle = dynamic_cast<const BattleObstaclesChanged *>(&pack))
+		obstacleChanges.push_back(*obstacle);
+
 	if(const auto * orderState = dynamic_cast<const BattleHeroOrderStateChanged *>(&pack))
 		orderStateUpdates.push_back(*orderState);
 	if(const auto * units = dynamic_cast<const BattleUnitsChanged *>(&pack))

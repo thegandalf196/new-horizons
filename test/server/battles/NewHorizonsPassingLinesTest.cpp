@@ -335,6 +335,9 @@ TEST_F(NewHorizonsPassingLinesTest, OrdinaryMovementThroughTheFormationStillTrig
 	activateMover();
 	const auto movementActivation = battle()->getActivationSerial();
 	const auto healthBefore = mover->getAvailableHealth();
+	const auto blockerHealthBefore = blocker->getAvailableHealth();
+	const auto obstaclesBefore = server.obstacleChanges.size();
+	const auto activationsBefore = server.stackActivations.size();
 	ASSERT_TRUE(moveTo(mover, corridorDestination));
 	EXPECT_EQ(mover->getPosition(), corridorDestination);
 	EXPECT_EQ(healthBefore - mover->getAvailableHealth(), 5)
@@ -347,8 +350,28 @@ TEST_F(NewHorizonsPassingLinesTest, OrdinaryMovementThroughTheFormationStillTrig
 	ASSERT_NE(fireWall, obstacles.end());
 	const auto * triggered = dynamic_cast<const SpellCreatedObstacle *>(fireWall->get());
 	ASSERT_NE(triggered, nullptr);
-	EXPECT_EQ(triggered->lastTriggerUnit, static_cast<si32>(mover->unitId()));
-	EXPECT_EQ(triggered->lastTriggerActivation, movementActivation);
+	std::vector<const BattleObstaclesChanged *> wallUpdates;
+	for(size_t index = obstaclesBefore; index < server.obstacleChanges.size(); ++index)
+	{
+		const auto & update = server.obstacleChanges[index];
+		if(update.change.id == 302 && update.change.operation == BattleChanges::EOperation::UPDATE)
+			wallUpdates.push_back(&update);
+	}
+	ASSERT_EQ(wallUpdates.size(), 2u);
+	const auto & movementTrigger = wallUpdates.front()->change.data["obstacle"];
+	EXPECT_EQ(movementTrigger["lastTriggerUnit"].Integer(), mover->unitId());
+	EXPECT_EQ(movementTrigger["lastTriggerActivation"].Integer(), movementActivation);
+	// moveTo also advances the normal queue: the blocker starts inside the wall.
+	ASSERT_EQ(server.stackActivations.size(), activationsBefore + 1);
+	EXPECT_EQ(server.stackActivations.back().stack, blocker->unitId());
+	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_EQ(battle()->getActivationSerial(), movementActivation + 1);
+	EXPECT_EQ(blockerHealthBefore - blocker->getAvailableHealth(), 5);
+	const auto & activationTrigger = wallUpdates.back()->change.data["obstacle"];
+	EXPECT_EQ(activationTrigger["lastTriggerUnit"].Integer(), blocker->unitId());
+	EXPECT_EQ(activationTrigger["lastTriggerActivation"].Integer(), movementActivation + 1);
+	EXPECT_EQ(triggered->lastTriggerUnit, static_cast<si32>(blocker->unitId()));
+	EXPECT_EQ(triggered->lastTriggerActivation, movementActivation + 1);
 	EXPECT_EQ(projectedMover->getPosition(), corridorStart)
 		<< "Movement preview does not mutate the authoritative or detached stack position";
 }

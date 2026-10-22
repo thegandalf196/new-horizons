@@ -35,6 +35,14 @@ Keep live/parent/sibling branches isolated and capture branch-owned effect value
 before an ancestor expires. Age only effects owned by the modeled clock; the
 source-specific timed-arrival limits below still apply.
 
+Obstacle knowledge belongs to the observing callback, not the army currently
+being valued or moved in a forecast. Enemy-bypass reachability and obstacle-damage
+caches must retain that observer perspective. An all-knowing callback may use the
+requested side's knowledge; a player forecast must neither discard its own known
+hazards nor discover hidden enemy obstacles by switching sides.
+Returned reachability must own its destruction-cost snapshot: retaining, copying
+or moving a result must not borrow a caller's temporary query parameters.
+
 Merge pending effect updates before selector filtering. Preserve distinct equal
 bonuses, source/identity/value-type distinctions and ordered add/refresh/remove
 behavior. Copy actual affected shot/retaliation consumption while retaining each

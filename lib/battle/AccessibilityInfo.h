@@ -37,7 +37,7 @@ using TBattlefieldTurnsArray = std::array<int8_t, GameConstants::BFIELD_SIZE>;
 
 struct DLL_LINKAGE AccessibilityInfo : TAccessibilityArray
 {
-	std::shared_ptr<const TBattlefieldTurnsArray> destructibleEnemyTurns; //used only as a view for destructibleEnemyTurns from ReachabilityInfo::Parameters
+	std::shared_ptr<const TBattlefieldTurnsArray> destructibleEnemyTurns; // Immutable owned snapshot of reachability bypass costs.
 	std::array<uint32_t, GameConstants::BFIELD_SIZE> demonicGateReservationCounts{};
 	TAccessibilityArray demonicGateReservationBase{};
 

@@ -67,6 +67,7 @@ set(battleAI_SRCS
 		TacticsHandler.cpp
 		ThreatMap.cpp
 		BattleExchangeVariant.cpp
+		EnemyBypassReachability.cpp
 		BattleExchangeFutureAttack.cpp
 		BattleShroudStrike.cpp
 )
@@ -126,6 +127,7 @@ set(battleAI_HEADERS
 		TacticsHandler.h
 		ThreatMap.h
 		BattleExchangeVariant.h
+		EnemyBypassReachability.h
 		BattleShroudStrike.h
 )
 

@@ -97,6 +97,7 @@ set(test_SRCS
 		battle/BattleHexTest.cpp
 		battle/BattleResultReplyTest.cpp
 		battle/BattleFieldReachabilityTest.cpp
+		battle/ReachabilityLifetimeTest.cpp
 		battle/BattleFormAccessibilityTest.cpp
 		battle/BattleEffectExchangeTest.cpp
 		battle/NewHorizonsPassThroughRangeTest.cpp
@@ -791,6 +792,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/MeleeResourceOrderTest.cpp
 		battleAI/MovementBonusProvenanceTest.cpp
 		battleAI/ReachabilityMapProjectionTest.cpp
+		battleAI/EnemyBypassReachabilityTest.cpp
+		battleAI/DamageCacheObstacleVisibilityTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
 		battleAI/BattleShroudStrikeTest.cpp
 		battleAI/StackWithBonusesQueryTest.cpp

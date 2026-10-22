@@ -47,6 +47,8 @@ public:
 	std::vector<BattleSetActiveStack> stackActivations;
 	std::vector<StartAction> startedActions;
 	std::vector<BattleHeroOrderStateChanged> orderStateUpdates;
+	/// Obstacle update receipts in packet order, copied before applying each packet.
+	std::vector<BattleObstaclesChanged> obstacleChanges;
 	std::vector<BattleAttack> attacks;
 	std::vector<BattleAnimationPlayed> battleAnimations;
 	/// Round observed immediately before each authoritative unit-addition packet.

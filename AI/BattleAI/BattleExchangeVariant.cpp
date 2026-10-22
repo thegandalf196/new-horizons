@@ -264,16 +264,6 @@ uint32_t distToNearestReachableNeighbour(const ReachabilityInfo & reachability,
 	return result;
 }
 
-bool controlledByDifferentPlayer(const CBattleInfoCallback & battle,
-	const battle::Unit * first, const battle::Unit * second)
-{
-	const auto firstOwner = battle.battleGetOwner(first);
-	const auto secondOwner = battle.battleGetOwner(second);
-	return firstOwner != PlayerColor::CANNOT_DETERMINE
-		&& secondOwner != PlayerColor::CANNOT_DETERMINE
-		&& firstOwner != secondOwner;
-}
-
 bool controlledBySamePlayer(const CBattleInfoCallback & battle,
 	const battle::Unit * first, const battle::Unit * second)
 {
@@ -1285,45 +1275,6 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 	}
 
 	return result;
-}
-
-ReachabilityInfo getReachabilityWithEnemyBypass(
-	const battle::Unit * activeStack,
-	DamageCache & damageCache,
-	std::shared_ptr<HypotheticBattle> state)
-{
-	ReachabilityInfo::Parameters params(activeStack, activeStack->getPosition());
-	// This path constructs Parameters directly (to account for destructible
-	// enemy stacks), so preserve the same Shroud rank gate as the normal
-	// callback-created reachability cache. Resolve the current controller through
-	// the visibility-aware fighting-hero query rather than reconstructing a hidden
-	// opponent hero from its battle side.
-	const auto controllerSide = state->playerToSide(state->battleGetOwner(activeStack));
-	if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
-		params.ghostWalk = newHorizonsShroud::rank(state->battleGetFightingHero(controllerSide)) > 0;
-	state->configurePassingLines(activeStack, params);
-
-	if(!params.flying && !params.ghostWalk)
-	{
-		for(const auto * unit : state->battleAliveUnits())
-		{
-			if(!controlledByDifferentPlayer(*state, activeStack, unit))
-				continue;
-
-			auto dmg = damageCache.getOriginalDamage(activeStack, unit, state);
-			auto turnsToKill = unit->getAvailableHealth() / std::max(dmg, (int64_t)1);
-
-			vstd::amin(turnsToKill, 100);
-
-			for(auto & hex : unit->getHexes())
-				if(hex.isAvailable()) //towers can have <0 pos; we don't also want to overwrite side columns
-					params.destructibleEnemyTurns[hex.toInt()] = turnsToKill * unit->getMovementRange();
-		}
-
-		params.bypassEnemyStacks = true;
-	}
-
-	return state->getReachability(params);
 }
 
 MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(

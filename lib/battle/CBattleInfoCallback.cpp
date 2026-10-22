@@ -5015,10 +5015,8 @@ ReachabilityInfo CBattleInfoCallback::getReachability(const ReachabilityInfo::Pa
 	{
 		auto accessibility = getAccessibility(* params.knownAccessible);
 
-		accessibility.destructibleEnemyTurns = std::shared_ptr<const TBattlefieldTurnsArray>(
-			& params.destructibleEnemyTurns,
-			[](const TBattlefieldTurnsArray *) { }
-		);
+		accessibility.destructibleEnemyTurns = std::make_shared<const TBattlefieldTurnsArray>(
+			params.destructibleEnemyTurns);
 
 		return makeBFS(accessibility, params);
 	}

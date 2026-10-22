@@ -228,7 +228,11 @@ void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battl
 
 void DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)
 {
-	for(const auto & obst : hb->battleGetAllObstacles(side))
+	// The valued army side does not grant its obstacle knowledge to this observer.
+	const auto observerSide = hb->battleGetMySide();
+	const auto obstaclePerspective = observerSide == BattleSide::ALL_KNOWING ? side : observerSide;
+
+	for(const auto & obst : hb->battleGetAllObstacles(obstaclePerspective))
 	{
 		auto spellObstacle = dynamic_cast<const SpellCreatedObstacle *>(obst.get());
 
