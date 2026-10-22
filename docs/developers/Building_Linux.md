@@ -177,6 +177,25 @@ Without the opt-in bindings this case skips, which is not acceptance. Run
 `NewHorizonsTravelLandingAITest.*` separately for the adjacent landing controls.
 Neither suite establishes rendered travel or native Windows acceptance.
 
+For ordinary hero Luck/Morale presentation inputs, select
+`NewHorizonsHeroPositiveCueFixtureExportTest.ExportOrdinaryProgressionAdventureSave`
+alone, with `NH_EXPORT_HERO_POSITIVE_CUE_ORDINARY_BOOTSTRAP=1` and the corresponding
+`NH_EXPORT_HERO_POSITIVE_CUE_SOURCE_ROOT`, `NH_EXPORT_HERO_POSITIVE_CUE_PRIVATE_ROOT`
+and `NH_EXPORT_HERO_POSITIVE_CUE_SAVE_ROOT` bindings. The same isolated path,
+cache and save-output requirements apply. This explicit exporter uses the
+ordinary shipping mod preset, not `vcmi-test`. Mixed exporter bindings are rejected.
+It creates `hero-positive-cue-progression.vsgm1` only after a production save/load
+check. Keep the output private and outside disposable build trees.
+
+The fixture gives human Red canonical Daremyth and Vey starts, each with an
+unvisited Experience quest and a nearby Archer encounter; Blue is AI-controlled.
+Neither target perk is preselected. Ordinary level-up choices and natural combat
+triggers must still be observed; a successful export does not verify those cues.
+Savage neutrals may flee, in which case the ordinary pursuit choice is required.
+The Python source checks live in `tools/tests/test_new_horizons_hero_positive_cue_export.py`.
+Its optional `HeroPositiveCueBootstrapDenialTest` additionally requires an explicit
+absolute `NH_NATIVE_TEST_BINARY`; it tests malformed invocations, not gameplay.
+
 ### Configuring Makefiles
 
 ```sh

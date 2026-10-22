@@ -36,7 +36,7 @@ class SkirmisherPreviewExportSourceTest(unittest.TestCase):
         self.assertIn('std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT")', self.bootstrap[:allocate])
 
     def test_shipping_bootstrap_and_exact_registration(self):
-        self.assertIn("const bool useOrdinaryBootstrap = useOrdinaryExport || useSkirmisherExport;", self.bootstrap)
+        self.assertIn("const bool useOrdinaryBootstrap = useOrdinaryExport || useSkirmisherExport || usePositiveCueExport;", self.bootstrap)
         self.assertIn("initializeFilesystem(false, /*useTestPreset*/ !useOrdinaryBootstrap)", self.bootstrap)
         self.assertIn('return mod != "core" && mod != "vcmi" && mod != "new-horizons";', self.bootstrap)
         self.assertLess(self.bootstrap.index("requires only the shipping mods"), self.bootstrap.index("initializeLibrary()"))
