@@ -52,6 +52,16 @@ Do not run concurrent builds/heavy tests during measurements. Graphical probes r
   wrapper, body, probe and lifecycle fields nest inside movement time; they do
   not cover all path-search or attack-preview work. Simulated attack-call counts
   are not a count of every physical strike.
+  `NH_HERO_ACTION_TYPE_TIMING` rows share the aggregate's attempt identity,
+  opt-in/logger gates and bounded attempt budget. They group candidate elapsed
+  time by numeric Order/spell identity after the loop joins, with counts, sums,
+  maxima and nested continuation/movement/best-target subsets. The current
+  candidate loop is serial. Compare both total cost and cost per evaluation;
+  a frequently evaluated Order need not be the slowest individual evaluation.
+  At most 64 named types are retained; the explicit overflow row preserves
+  totals but prevents a complete type ranking. These rows exclude shared setup,
+  final selection/submission and diagnostic formatting, and do not measure CPU
+  usage or establish a player-visible speedup.
 - Target-probe preparation begins after the invalid-actor/ended-activation guard and ends immediately before primary damage on the ordinary path; early returns and exceptions finalize it by RAII. Applied attacks and null timing sinks do not sample it. Movement, waited and normal contexts report it separately.
 - Preparation, primary damage and DPS scoring are disjoint children of target-probe time, not extra terms in the seven-region exchange-body closure. Their remainder includes between-child work, post-work and measurement boundaries; it is not pure postprocessing. Focused native tests protect score/state/action/RNG parity and child bounds. Positive Overwatch early-return preparation-counter coverage remains unverified; adjacent reaction tests do not establish it.
 - Windows compiler-command evidence in `tools/ci/windows_ai_compile_flags.py` records a privacy-safe supported flag subset and resolved response arguments. Configured optimization intent alone does not establish final compiler argv.

@@ -18328,34 +18328,34 @@
       ]
     },
     "AI/BattleAI/HeroActionTiming.h": {
-      "sha256": "9e87da61b28ba2d0e6d3985a42db9e67c43b3ac4fa74d7eed0ff8baa2e0b9b5b",
-      "review": "hero-full-movement-header-fivebody-independent-v1",
-      "rationale": "Complete135-line header inventory renews exactly five unchanged inline bodies at79/128/129/132/133 after one existing candidate-local BattleMovementTiming value sink and comment (+2lines). All other constructors/destructors/methods remain declarations or deleted operations; no new body, lambda or conditional is hidden. Raw exported DLL_LINKAGE parseLimit declaration recovery moves110 to112; in-memory annotation removal yields exactly these five callable spans and no diagnostics. No source-size waiver, gameplay or runtime acceptance, or future growth permission.",
+      "sha256": "372d23206fc13fe89a7a2d090fe9b553e74e3fee39d557176e5296fcbba15ac3",
+      "review": "IR-HERO-TYPE-ATTRIBUTION-SOURCE-20261021",
+      "rationale": "Complete155-line header inventory renews exactly five unchanged inline bodies at99/148/149/152/153 after value-only candidate/type diagnostic fields and declarations. All other methods remain declarations or deleted operations; no new inline body, lambda or conditional is hidden. Known raw exported DLL_LINKAGE declaration recovery moves112 to132; in-memory annotation normalization yields exactly these five unchanged callable bodies and no diagnostics. Exact source inventory only, not a size waiver, gameplay/runtime acceptance or future growth permission.",
       "functions": [
         {
           "symbol": "heroActionTiming::Candidates::size_t size() const#1",
-          "start": 79,
-          "end": 79
+          "start": 99,
+          "end": 99
         },
         {
           "symbol": "heroActionTiming::Call::bool enabled() const#1",
-          "start": 128,
-          "end": 128
+          "start": 148,
+          "end": 148
         },
         {
           "symbol": "heroActionTiming::Call::void identify(Identity captured)#1",
-          "start": 129,
-          "end": 129
+          "start": 149,
+          "end": 149
         },
         {
           "symbol": "heroActionTiming::Call::Summary * sink()#1",
-          "start": 132,
-          "end": 132
+          "start": 152,
+          "end": 152
         },
         {
           "symbol": "heroActionTiming::Call::Candidates & candidateSlots()#1",
-          "start": 133,
-          "end": 133
+          "start": 153,
+          "end": 153
         }
       ]
     }
@@ -18510,14 +18510,14 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "exception",
-      "lines": 5739,
-      "sha256": "004e413d4ddca300a2ef01e0fbf9b2e4045ae8d28ee116a06ae3974e1c53b129",
+      "lines": 5747,
+      "sha256": "8631335532956a7cb878aeca847017d164c6e89c32f15f736fe24fddb2c4c0a6",
       "owner": "ai_engineer",
-      "review": "IR-VINES-REUSE-OWNING-INCLUDES-SOURCE-20261021",
-      "rationale": "Extract generic accepted spell projection and regeneration snapshot into BattleEvaluatorSpellProjection125 (projectSpell63), and exact per-candidate Vines value reuse into VinesCandidateValueReuse143. Evaluator5814-to-5739 and existing attempt1244-to-1205; optional TestControl changes signature only, so replace its former record rather than add a new oversized allowance. The parent still owns ordered candidate evaluation and utility; new units remain below review thresholds. No source-size approval proves value parity or performance. Terminal compiler diagnostics required four direct owning includes: one in the evaluator, two in the focused projection unit and one in the focused reuse unit. All callable bodies and the attempt1205 body hash remain unchanged from the reviewed extraction.",
-      "review_scope": "exact-phase2-vines-projection-extraction-source-only",
+      "review": "IR-HERO-TYPE-ATTRIBUTION-SOURCE-20261021",
+      "rationale": "Retain the prior cohesive spell-projection and Vines-value extractions. This exact eight-line diagnostic seam records numeric candidate identity and an elapsed scope, reusing the admitted candidate slot; no score, legality, RNG, selection or gameplay ordering changes. Evaluator5739-to-5747 and attempt1205-to-1213 are a narrowly reviewed attribution exception, not renewed permission for substantive hotspot growth. Optional reduction/formatting remains in the focused timing owner after loop join. Source bounds alone do not establish native parity or performance.",
+      "review_scope": "exact-eight-line-candidate-type-diagnostic-seam",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5739/attempt1205; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate."
+      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5747/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -18539,14 +18539,14 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse)#1": {
       "kind": "exception",
-      "lines": 1205,
-      "sha256": "4a0a982a9d214c468a45d303828088669af156f1bde01f800ad278b2932e88c7",
+      "lines": 1213,
+      "sha256": "6d92c4efd173c548a07dcf33539fc7f035a088b85e30543da6c9c3bd02336965",
       "owner": "ai_engineer",
-      "review": "IR-VINES-REUSE-OWNING-INCLUDES-SOURCE-20261021",
-      "rationale": "Extract generic accepted spell projection and regeneration snapshot into BattleEvaluatorSpellProjection125 (projectSpell63), and exact per-candidate Vines value reuse into VinesCandidateValueReuse143. Evaluator5814-to-5739 and existing attempt1244-to-1205; optional TestControl changes signature only, so replace its former record rather than add a new oversized allowance. The parent still owns ordered candidate evaluation and utility; new units remain below review thresholds. No source-size approval proves value parity or performance. Terminal compiler diagnostics required four direct owning includes: one in the evaluator, two in the focused projection unit and one in the focused reuse unit. All callable bodies and the attempt1205 body hash remain unchanged from the reviewed extraction.",
-      "review_scope": "exact-phase2-vines-projection-extraction-source-only",
+      "review": "IR-HERO-TYPE-ATTRIBUTION-SOURCE-20261021",
+      "rationale": "Retain the prior cohesive spell-projection and Vines-value extractions. This exact eight-line diagnostic seam records numeric candidate identity and an elapsed scope, reusing the admitted candidate slot; no score, legality, RNG, selection or gameplay ordering changes. Evaluator5739-to-5747 and attempt1205-to-1213 are a narrowly reviewed attribution exception, not renewed permission for substantive hotspot growth. Optional reduction/formatting remains in the focused timing owner after loop join. Source bounds alone do not establish native parity or performance.",
+      "review_scope": "exact-eight-line-candidate-type-diagnostic-seam",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5739/attempt1205; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate."
+      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5747/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate."
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool defensiveStanceMakesDefendWorthwhile(const Environment * environment, const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack, DamageCache & damageCache)#1": {
       "kind": "legacy",
@@ -21316,13 +21316,14 @@
       "sha256": "83d9c9bc1a20ae1842bda442defcb045bd28c165a6c13ea735e537d658356cf7"
     },
     "client/windows/GUIClasses.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 3066,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 3066 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ac26320ad6017280d23ca4dfcc4fd69d68e286565b973fad0d0d5232f4180e6f"
+      "rationale": "Exact no-growth freeze at 3066 physical lines retained. Bounded urgent correctness exception changes only the University confirmation heading translation index from Advanced to Basic, matching the existing authoritative Basic purchase and other dialog labels. No gameplay, layout, ownership or size change. This amendment does not approve unrelated structural debt.",
+      "review": "IR-UNIVERSITY-BASIC-RANK-LABEL-20261021",
+      "review_scope": "urgent-one-token-ui-correctness-zero-growth-deferral",
+      "sha256": "b9ce653291245908e6ab85e99bd37854b95eb08e6a6e794cc9d2b54ac8c0500d",
+      "deferral": "UI developer owns extraction of CUniversityWindow/CUnivConfirmWindow and cohesive helpers into a focused UniversityWindow component before expansion. Preserve interfaces, original art/layout and command submission. Acceptance requires local compile, existing regression coverage and rendered offer/acquired rank, tuition/help, affordability/payment, cancellation and close checks; decrease this exact3066-line baseline. No unrelated GUI extraction is approved."
     },
     "client/windows/GUIClasses.cpp::CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_, int leftAmount_, int rightAmount_, CSplitWindowOwner leftOwnerInfo, CSplitWindowOwner rightOwnerInfo) : CWindowObject(0, splitDialogBackgroundImage()), callback(callback_), leftAmount(leftAmount_), rightAmount(rightAmount_), initialLeftAmount(leftAmount_), initialRightAmount(rightAmount_), splitCreature(creature), leftArmy(leftOwnerInfo.army), rightArmy(rightOwnerInfo.army), leftMin(leftMin_), rightMin(rightMin_)#1": {
       "kind": "legacy",

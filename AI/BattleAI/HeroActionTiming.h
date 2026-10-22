@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace battle { class Unit; }
@@ -29,6 +30,10 @@ struct DLL_LINKAGE Stage
 
 struct Continuation
 {
+	// Diagnostic identity only; no gameplay pointers or candidate payloads retained.
+	int command = -1;
+	int spell = -1;
+	Stage candidate;
 	Stage full;
 	Stage cached;
 	// Sequential child scopes within one FULL body; different candidates overlap.
@@ -41,6 +46,20 @@ struct Continuation
 	BattleMovementTiming fullMovementDetails;
 	BattleBestTargetTiming fullBestTargetDetails;
 };
+
+struct TypeSummary
+{
+	// -1/-1 is the explicit overflow group, never a ranked action type.
+	int command = -1;
+	int spell = -1;
+	Stage candidate;
+	Stage full;
+	Stage cached;
+	Stage movement;
+	Stage bestTarget;
+};
+
+DLL_LINKAGE std::string typeFields(const TypeSummary & type);
 
 /// Worker slots overlap in wall time. Their sums are not disjoint loop time.
 struct Summary
@@ -76,6 +95,7 @@ public:
 	void prepare(bool enabled, size_t count);
 	Continuation * at(size_t index);
 	void finish(Summary & summary, bool threw) const;
+	std::vector<TypeSummary> types() const;
 	size_t size() const { return slots.size(); }
 };
 

@@ -98,6 +98,21 @@ void Stage::accumulate(const Stage & other)
 	maxMicroseconds = std::max(maxMicroseconds, other.maxMicroseconds);
 }
 
+std::string typeFields(const TypeSummary & type)
+{
+	return " command=" + std::to_string(type.command) + " spell=" + std::to_string(type.spell)
+		+ " overflow=" + std::to_string(type.command == -1 && type.spell == -1)
+		+ " evaluations=" + std::to_string(type.candidate.calls)
+		+ " sum_us=" + std::to_string(type.candidate.totalMicroseconds)
+		+ " max_us=" + std::to_string(type.candidate.maxMicroseconds)
+		+ " full_calls=" + std::to_string(type.full.calls)
+		+ " full_sum_us=" + std::to_string(type.full.totalMicroseconds)
+		+ " cached_calls=" + std::to_string(type.cached.calls)
+		+ " cached_sum_us=" + std::to_string(type.cached.totalMicroseconds)
+		+ " movement_sum_us=" + std::to_string(type.movement.totalMicroseconds)
+		+ " best_target_sum_us=" + std::to_string(type.bestTarget.totalMicroseconds);
+}
+
 Scope::Scope(Stage * stage, Now now)
 	: stage(stage), now(now), started(stage ? now() : Clock::time_point{})
 {}
@@ -122,6 +137,43 @@ void Candidates::prepare(bool enabled, size_t count)
 Continuation * Candidates::at(size_t index)
 {
 	return slots.empty() ? nullptr : &slots.at(index);
+}
+
+std::vector<TypeSummary> Candidates::types() const
+{
+	constexpr size_t maxTypes = 64;
+	std::vector<TypeSummary> result;
+	for(const auto & slot : slots)
+	{
+		if(!slot.candidate.calls)
+			continue;
+		auto found = std::find_if(result.begin(), result.end(), [&](const auto & type)
+		{
+			return type.command == slot.command && type.spell == slot.spell;
+		});
+		if(found == result.end())
+		{
+			if(result.size() < maxTypes)
+			{
+				result.emplace_back();
+				result.back().command = slot.command;
+				result.back().spell = slot.spell;
+				found = result.end() - 1;
+			}
+			else
+			{
+				if(result.size() == maxTypes)
+					result.emplace_back();
+				found = result.begin() + maxTypes;
+			}
+		}
+		found->candidate.accumulate(slot.candidate);
+		found->full.accumulate(slot.full);
+		found->cached.accumulate(slot.cached);
+		found->movement.accumulate(slot.fullMovement);
+		found->bestTarget.accumulate(slot.fullBestTarget);
+	}
+	return result;
 }
 
 void Candidates::finish(Summary & summary, bool threw) const
@@ -259,6 +311,14 @@ Call::~Call()
 			static_cast<unsigned long long>(summary.submitThrew),
 			(bestTargetFields(summary.continuation.fullBestTargetDetails)
 				+ movementFields(summary.continuation.fullMovementDetails)).c_str());
+		// Same admitted attempt/budget as the aggregate; at most64 types + overflow.
+		// Candidate sums may overlap with workers; never add children to totals.
+		for(const auto & type : candidates.types())
+			logAi->debug("NH_HERO_ACTION_TYPE_TIMING battle=%d player=%d side=%d stack=%lld round=%d hero_attempt=%llu"
+				" loop_joined=%d loop_threw=%d%s",
+				identity.battle, identity.player, identity.side, static_cast<long long>(identity.stack), identity.round,
+				static_cast<unsigned long long>(ordinal), summary.loopJoined, summary.loopThrew,
+				typeFields(type).c_str());
 	}
 	catch(...)
 	{

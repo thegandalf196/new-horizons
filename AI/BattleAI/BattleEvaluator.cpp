@@ -4970,6 +4970,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			for(size_t i = 0; i != possibleCasts.size(); i++)
 			{
 				auto & ps = possibleCasts[i];
+				auto * candidateTiming = timing.continuation(i);
+				if(candidateTiming)
+				{
+					candidateTiming->command = static_cast<int>(ps.command);
+					candidateTiming->spell = ps.command == HeroCommand::NONE && ps.spell
+						? ps.spell->getId().getNum() : -1;
+				}
+				heroActionTiming::Scope candidateScope(candidateTiming ? &candidateTiming->candidate : nullptr);
 				vinesValues.beginCandidate(ps);
 				bool completedVinesValue = false;
 				const auto discardIncompleteValue = vstd::makeScopeGuard([&]
@@ -5402,7 +5410,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				const auto modelActive = state->getForUpdate(modelActor);
 				heroActionUtility::evaluateContinuation(continuation, modelActive, needFullEval,
 					cachedAttack, innerCache, state, env, strengthRatio, simulationTurnsCount,
-					scoreEvaluator, targets.get(), timing.continuation(i));
+					scoreEvaluator, targets.get(), candidateTiming);
 				for(const auto & unit : allUnits)
 				{
 					if(!unit->isValidTarget(true) && !vstd::contains(healthOfStack, unit->unitId()))

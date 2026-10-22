@@ -105,6 +105,22 @@ class LevelSnapshotTest(unittest.TestCase):
                     self.assertLessEqual(abs(left - right), 1)
                     self.assertLessEqual(left + group_width, width)
 
+    def test_university_confirmation_rank_matches_basic_purchase(self):
+        source = (ROOT / 'client/windows/GUIClasses.cpp').read_text()
+        confirmation = source.split('CUnivConfirmWindow::CUnivConfirmWindow(', 1)[1].split(
+            'void CUnivConfirmWindow::makeDeal(', 1)[0]
+        # The existing server grants rank 1 (Basic); the text table is zero-based.
+        server = (ROOT / 'server/CGameHandler.cpp').read_text()
+        purchase = server.split('bool CGameHandler::buySecSkill(', 1)[1].split(
+            'bool CGameHandler::buyHouseOfWisdomScroll(', 1)[0]
+        self.assertIn('changeSecSkill(h, skill, 1, ChangeValueMode::ABSOLUTE)', purchase)
+        self.assertIn('speechText.replaceTextID("core.skilllev.0")', confirmation)
+        self.assertIn('generaltexth->translate("core.skilllev.0")', confirmation)
+        self.assertIn('skillName.appendTextID("core.skilllev.0")', confirmation)
+        self.assertIn('helpText.replaceTextID("core.skilllev.0")', confirmation)
+        self.assertNotIn('core.skilllev.1', confirmation)
+        # This is source-contract coverage, not rendered text verification.
+
     def test_actual_snapshot_preserves_hero_level_type(self):
         snapshot = (ROOT / 'client/windows/GUIClasses.h').read_text()
         hero = (ROOT / 'lib/mapObjects/CGHeroInstance.h').read_text()

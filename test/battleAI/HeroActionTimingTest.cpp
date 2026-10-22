@@ -34,12 +34,119 @@ TEST(HeroActionTimingTest, DisabledScopesReadNoClockAndPrepareNoCandidateStorage
 		heroActionTiming::Scope reachability(nullptr, fakeNow);
 		heroActionTiming::Scope movement(nullptr, fakeNow);
 		heroActionTiming::Scope bestTarget(nullptr, fakeNow);
+		heroActionTiming::Scope candidate(nullptr, fakeNow);
 		heroActionTiming::LoopScope loop(candidates, nullptr, fakeNow);
 		heroActionTiming::SubmitScope submit(nullptr, fakeNow);
 	}
 	EXPECT_EQ(clockReads, 0u);
 	EXPECT_EQ(candidates.size(), 0u);
 	EXPECT_EQ(candidates.at(0), nullptr);
+	EXPECT_TRUE(candidates.types().empty());
+}
+
+TEST(HeroActionTimingTest, CandidateTypesKeepOrderAndSpellKeysSeparateAndReduceExactTimes)
+{
+	heroActionTiming::Candidates candidates;
+	candidates.prepare(true, 4);
+	for(size_t index = 0; index < 3; ++index)
+	{
+		auto * slot = candidates.at(index);
+		slot->command = index == 1 ? 0 : 7;
+		slot->spell = index == 1 ? 7 : -1;
+		clockMicroseconds = 100;
+		{
+			heroActionTiming::Scope elapsed(&slot->candidate, fakeNow);
+			clockMicroseconds += static_cast<int64_t>(index + 1) * 10;
+		}
+		slot->full = {1, index + 1, index + 1};
+		slot->cached = {1, index + 2, index + 2};
+		slot->fullMovement = {1, index + 3, index + 3};
+		slot->fullBestTarget = {1, index + 4, index + 4};
+	}
+	const auto types = candidates.types();
+	ASSERT_EQ(types.size(), 2u);
+	EXPECT_EQ(types[0].command, 7);
+	EXPECT_EQ(types[0].spell, -1);
+	EXPECT_EQ(types[0].candidate.calls, 2u);
+	EXPECT_EQ(types[0].candidate.totalMicroseconds, 40u);
+	EXPECT_EQ(types[0].candidate.maxMicroseconds, 30u);
+	EXPECT_EQ(types[0].full.totalMicroseconds, 4u);
+	EXPECT_EQ(types[0].cached.totalMicroseconds, 6u);
+	EXPECT_EQ(types[0].movement.totalMicroseconds, 8u);
+	EXPECT_EQ(types[0].bestTarget.totalMicroseconds, 10u);
+	EXPECT_EQ(types[1].command, 0);
+	EXPECT_EQ(types[1].spell, 7);
+	EXPECT_EQ(types[1].candidate.calls, 1u);
+	EXPECT_EQ(types[1].candidate.totalMicroseconds, 20u);
+	// Slot3 was never entered; it must not fabricate a measured candidate.
+	EXPECT_EQ(types[0].candidate.calls + types[1].candidate.calls, 3u);
+}
+
+TEST(HeroActionTimingTest, CandidateTypeBudgetKeepsExactOverflowAndExistingGroups)
+{
+	heroActionTiming::Candidates candidates;
+	candidates.prepare(true, 68);
+	for(size_t index = 0; index < 68; ++index)
+	{
+		auto * slot = candidates.at(index);
+		slot->command = 0;
+		slot->spell = index == 67 ? 0 : static_cast<int>(index);
+		slot->candidate = {1, 10, 10};
+		slot->fullMovement = {1, 3, 3};
+	}
+	const auto types = candidates.types();
+	ASSERT_EQ(types.size(), 65u);
+	EXPECT_EQ(types[0].spell, 0);
+	EXPECT_EQ(types[0].candidate.calls, 2u);
+	EXPECT_EQ(types.back().command, -1);
+	EXPECT_EQ(types.back().spell, -1);
+	EXPECT_EQ(types.back().candidate.calls, 3u);
+	EXPECT_EQ(types.back().candidate.totalMicroseconds, 30u);
+	EXPECT_EQ(types.back().movement.totalMicroseconds, 9u);
+	uint64_t calls = 0;
+	for(const auto & type : types)
+		calls += type.candidate.calls;
+	EXPECT_EQ(calls, 68u);
+}
+
+TEST(HeroActionTimingTest, CandidateTypeSchemaHasExplicitIdentityCountsAndNestedSums)
+{
+	heroActionTiming::TypeSummary type;
+	type.command = 10;
+	type.candidate = {3, 210, 90};
+	type.full = {2, 100, 60};
+	type.cached = {1, 20, 20};
+	type.movement = {2, 70, 40};
+	type.bestTarget = {2, 10, 7};
+	EXPECT_EQ(heroActionTiming::typeFields(type),
+		" command=10 spell=-1 overflow=0 evaluations=3 sum_us=210 max_us=90"
+		" full_calls=2 full_sum_us=100 cached_calls=1 cached_sum_us=20"
+		" movement_sum_us=70 best_target_sum_us=10");
+	const heroActionTiming::TypeSummary overflow;
+	EXPECT_TRUE(heroActionTiming::typeFields(overflow).starts_with(" command=-1 spell=-1 overflow=1 "));
+}
+
+TEST(HeroActionTimingTest, CandidateExceptionScopeStillRecordsElapsedAndJoinedFailure)
+{
+	heroActionTiming::Candidates candidates;
+	candidates.prepare(true, 1);
+	heroActionTiming::Summary summary;
+	clockMicroseconds = 100;
+	try
+	{
+		heroActionTiming::LoopScope loop(candidates, &summary, fakeNow);
+		heroActionTiming::Scope candidate(&candidates.at(0)->candidate, fakeNow);
+		candidates.at(0)->command = 2;
+		clockMicroseconds = 123;
+		throw std::runtime_error("candidate fixture");
+	}
+	catch(const std::runtime_error &) {}
+	ASSERT_TRUE(summary.loopJoined);
+	ASSERT_TRUE(summary.loopThrew);
+	const auto types = candidates.types();
+	ASSERT_EQ(types.size(), 1u);
+	EXPECT_EQ(types.front().candidate.calls, 1u);
+	EXPECT_EQ(types.front().candidate.totalMicroseconds, 23u);
 }
 
 TEST(HeroActionTimingTest, MissingStackIdentityIsExplicitAndDoesNotDereferenceNull)
@@ -403,4 +510,175 @@ TEST(HeroActionCallIntegrationTest, AiLoggerGateDoesNotSpendBudget)
 	{
 		EXPECT_EQ(rows.front().at("hero_attempt"), 1);
 	}
+}
+
+namespace
+{
+// Separate prefix target: the existing 110-field aggregate capture is unchanged.
+class TypeTimingTarget final : public ILogTarget
+{
+	std::weak_ptr<heroTimingTest::Messages> messages;
+public:
+	explicit TypeTimingTarget(std::weak_ptr<heroTimingTest::Messages> messages) : messages(std::move(messages)) {}
+	void write(const LogRecord & record) override
+	{
+		if(!record.message.starts_with("NH_HERO_ACTION_TYPE_TIMING "))
+			return;
+		if(const auto target = messages.lock())
+		{
+			std::lock_guard lock(target->mutex);
+			if(target->rows.size() < 4)
+				target->rows.push_back(record.message);
+			else
+				target->truncated = true;
+		}
+	}
+};
+
+struct TypeTimingCapture
+{
+	heroTimingTest::Capture aggregate;
+	std::shared_ptr<heroTimingTest::Messages> messages = std::make_shared<heroTimingTest::Messages>();
+	explicit TypeTimingCapture(ELogLevel::ELogLevel global = ELogLevel::DEBUG,
+		ELogLevel::ELogLevel ai = ELogLevel::DEBUG) : aggregate(global, ai)
+	{
+		CLogger::getGlobalLogger()->addTarget(std::make_unique<TypeTimingTarget>(messages));
+	}
+	std::vector<std::string> rows() const
+	{
+		std::lock_guard lock(messages->mutex);
+		EXPECT_FALSE(messages->truncated);
+		return messages->rows;
+	}
+};
+
+bool exerciseTypedCall()
+{
+	heroActionTiming::Call call;
+	if(!call.enabled())
+		return false;
+	call.identify({17, 1, 1, 3, 7});
+	call.prepare(3);
+	heroActionTiming::LoopScope loop(call.candidateSlots(), call.sink(), fakeNow);
+	for(size_t index = 0; index < 3; ++index)
+	{
+		auto * slot = call.continuation(index);
+		slot->command = index == 1 ? 0 : 10;
+		slot->spell = index == 1 ? 7 : -1;
+		heroActionTiming::Scope candidate(&slot->candidate, fakeNow);
+		heroActionTiming::Scope continuation(index == 1 ? &slot->cached : &slot->full, fakeNow);
+		clockMicroseconds += static_cast<int64_t>(index + 1) * 10;
+		if(index != 1)
+		{
+			slot->fullMovement = {1, 3 * (index + 1), 3 * (index + 1)};
+			slot->fullBestTarget = {1, index + 1, index + 1};
+		}
+	}
+	return true;
+}
+
+void expectTypedRows(const TypeTimingCapture & capture)
+{
+	const auto rows = capture.rows();
+	if(!heroTimingTest::optedIn())
+	{
+		EXPECT_TRUE(rows.empty());
+		EXPECT_TRUE(capture.aggregate.rows().empty());
+		return;
+	}
+	ASSERT_EQ(rows.size(), 2u);
+	const auto parents = capture.aggregate.records();
+	ASSERT_EQ(parents.size(), 1u);
+	EXPECT_EQ(parents.front().size(), 110u);
+	EXPECT_EQ(parents.front().at("hero_attempt"), 1);
+	EXPECT_EQ(parents.front().at("candidates"), 3);
+	uint64_t evaluations = 0, fullCalls = 0, cachedCalls = 0, fullSum = 0, cachedSum = 0;
+	for(size_t index = 0; index < rows.size(); ++index)
+	{
+		std::map<std::string, int64_t> fields;
+		std::istringstream stream(rows[index]);
+		std::string token;
+		stream >> token;
+		EXPECT_EQ(token, "NH_HERO_ACTION_TYPE_TIMING");
+		while(stream >> token)
+		{
+			const auto split = token.find('=');
+			ASSERT_NE(split, std::string::npos);
+			EXPECT_TRUE(fields.emplace(token.substr(0, split), std::stoll(token.substr(split + 1))).second);
+		}
+		ASSERT_EQ(fields.size(), 20u);
+		for(const auto * key : {"battle", "player", "side", "stack", "round", "hero_attempt", "loop_joined", "loop_threw"})
+			EXPECT_EQ(fields.at(key), parents.front().at(key));
+		EXPECT_EQ(fields.at("loop_joined"), 1);
+		EXPECT_EQ(fields.at("loop_threw"), 0);
+		EXPECT_EQ(fields.at("command"), index == 0 ? 10 : 0);
+		EXPECT_EQ(fields.at("spell"), index == 0 ? -1 : 7);
+		EXPECT_EQ(fields.at("overflow"), 0);
+		EXPECT_EQ(fields.at("evaluations"), index == 0 ? 2 : 1);
+		EXPECT_EQ(fields.at("sum_us"), index == 0 ? 40 : 20);
+		EXPECT_EQ(fields.at("max_us"), index == 0 ? 30 : 20);
+		EXPECT_EQ(fields.at("full_calls"), index == 0 ? 2 : 0);
+		EXPECT_EQ(fields.at("full_sum_us"), index == 0 ? 40 : 0);
+		EXPECT_EQ(fields.at("cached_calls"), index == 0 ? 0 : 1);
+		EXPECT_EQ(fields.at("cached_sum_us"), index == 0 ? 0 : 20);
+		EXPECT_EQ(fields.at("movement_sum_us"), index == 0 ? 12 : 0);
+		EXPECT_EQ(fields.at("best_target_sum_us"), index == 0 ? 4 : 0);
+		evaluations += fields.at("evaluations");
+		fullCalls += fields.at("full_calls");
+		cachedCalls += fields.at("cached_calls");
+		fullSum += fields.at("full_sum_us");
+		cachedSum += fields.at("cached_sum_us");
+	}
+	EXPECT_EQ(evaluations, parents.front().at("candidates"));
+	EXPECT_EQ(fullCalls, parents.front().at("continuation_full_calls"));
+	EXPECT_EQ(cachedCalls, parents.front().at("continuation_cached_calls"));
+	EXPECT_EQ(fullSum, parents.front().at("continuation_full_sum_us"));
+	EXPECT_EQ(cachedSum, parents.front().at("continuation_cached_sum_us"));
+}
+}
+
+TEST(HeroActionTypeCallIntegrationTest, FreshProcessScopedTypesAndCapOne)
+{
+	TypeTimingCapture capture;
+	ASSERT_EQ(heroActionTiming::parseLimit(std::getenv("NH_RENDER_LOAD_TIMING_LIMIT")), 1u)
+		<< "Run this exact filter alone in a fresh process with limit=1, including OFF";
+	clockReads = 0;
+	clockMicroseconds = 100;
+	EXPECT_EQ(exerciseTypedCall(), heroTimingTest::optedIn());
+	EXPECT_FALSE(exerciseTypedCall());
+	EXPECT_FALSE(exerciseTypedCall());
+	expectTypedRows(capture);
+	EXPECT_EQ(clockReads, heroTimingTest::optedIn() ? 14u : 0u);
+	if(heroTimingTest::optedIn())
+	{
+		const auto rows = capture.aggregate.rows();
+		ASSERT_EQ(rows.size(), 2u);
+		EXPECT_TRUE(rows.back().starts_with("NH_HERO_ACTION_TIMING cap=1 reached;"));
+	}
+}
+
+TEST(HeroActionTypeCallIntegrationTest, GlobalLoggerGateDoesNotSpendTypeBudget)
+{
+	TypeTimingCapture capture(ELogLevel::ERROR, ELogLevel::DEBUG);
+	clockReads = 0;
+	EXPECT_FALSE(exerciseTypedCall());
+	EXPECT_TRUE(capture.rows().empty());
+	EXPECT_TRUE(capture.aggregate.rows().empty());
+	EXPECT_EQ(clockReads, 0u);
+	CLogger::getGlobalLogger()->setLevel(ELogLevel::DEBUG);
+	EXPECT_EQ(exerciseTypedCall(), heroTimingTest::optedIn());
+	expectTypedRows(capture);
+}
+
+TEST(HeroActionTypeCallIntegrationTest, AiLoggerGateDoesNotSpendTypeBudget)
+{
+	TypeTimingCapture capture(ELogLevel::DEBUG, ELogLevel::ERROR);
+	clockReads = 0;
+	EXPECT_FALSE(exerciseTypedCall());
+	EXPECT_TRUE(capture.rows().empty());
+	EXPECT_TRUE(capture.aggregate.rows().empty());
+	EXPECT_EQ(clockReads, 0u);
+	CLogger::getLogger(CLoggerDomain("ai"))->setLevel(ELogLevel::DEBUG);
+	EXPECT_EQ(exerciseTypedCall(), heroTimingTest::optedIn());
+	expectTypedRows(capture);
 }

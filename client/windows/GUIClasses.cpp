@@ -2185,7 +2185,7 @@ CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkil
 	name = std::make_shared<CLabel>(centerX, 37,  FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, SKILL.toEntity(LIBRARY)->getNameTranslated());
 	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("SECSKILL"), SKILL.getNum()*3+3);
 	icon->center(Point(pos.x + centerX, pos.y + 71));
-	level = std::make_shared<CLabel>(centerX, 105, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->translate("core.skilllev.1"));
+	level = std::make_shared<CLabel>(centerX, 105, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->translate("core.skilllev.0"));
 
 	std::vector<std::shared_ptr<CComponent>> tuitionComponents;
 	for(TResources::nziterator i(tuition); i.valid(); i++)
