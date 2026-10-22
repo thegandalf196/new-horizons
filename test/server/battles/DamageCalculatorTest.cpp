@@ -143,12 +143,12 @@ public:
 class DamageCalculatorTest : public DamageCalculatorTestBase
 {
 protected:
-	void isolateIntrinsicCreatureStats()
+	void isolateIntrinsicCreatureStats(TerrainId terrain = TerrainId(ETerrainId::SAND))
 	{
-		// Sand is non-native to these subjects; retain the real terrain limiters.
-		battle()->terrainType = TerrainId(ETerrainId::SAND);
+		// Each case chooses non-native terrain; retain the real terrain limiters.
+		battle()->terrainType = terrain;
 		battle()->nodeHasChanged();
-		ASSERT_EQ(battle()->getTerrainType(), TerrainId(ETerrainId::SAND));
+		ASSERT_EQ(battle()->getTerrainType(), terrain);
 	}
 };
 
@@ -453,9 +453,14 @@ TEST_F(DamageCalculatorTest, DamageRangeFollowsCreatureDamageRange)
 
 TEST_F(DamageCalculatorTest, AttackAdvantageAddsFivePercentPerPoint)
 {
-	attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 10, ChangeValueMode::ABSOLUTE); // 30 against 20
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	auto * source = attacker(angel);
+	const auto * target = defender(angel);
+	grant(source, BonusType::PRIMARY_SKILL, 10, BonusSubtypeID(PrimarySkill::ATTACK));
+	ASSERT_EQ(source->getAttack(false), 30);
+	ASSERT_EQ(target->getDefense(false), 20);
 
-	auto result = estimate(attacker(angel), defender(angel));
+	auto result = estimate(source, target);
 
 	EXPECT_EQ(result.damage.min, 7500);
 	EXPECT_EQ(result.kills.min, 37);
@@ -463,16 +468,26 @@ TEST_F(DamageCalculatorTest, AttackAdvantageAddsFivePercentPerPoint)
 
 TEST_F(DamageCalculatorTest, AttackAdvantageIsCappedAtThreeHundredPercent)
 {
-	attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 200, ChangeValueMode::ABSOLUTE); // +1000%, capped
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	auto * source = attacker(angel);
+	const auto * target = defender(angel);
+	grant(source, BonusType::PRIMARY_SKILL, 200, BonusSubtypeID(PrimarySkill::ATTACK));
+	ASSERT_EQ(source->getAttack(false), 220);
+	ASSERT_EQ(target->getDefense(false), 20);
 
-	EXPECT_EQ(estimate(attacker(angel), defender(angel)).damage.min, 20000);
+	EXPECT_EQ(estimate(source, target).damage.min, 20000);
 }
 
 TEST_F(DamageCalculatorTest, DefenseAdvantageRemovesTwoAndAHalfPercentPerPoint)
 {
-	defenderSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 10, ChangeValueMode::ABSOLUTE); // 30 against 20
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	const auto * source = attacker(angel);
+	auto * target = defender(angel);
+	grant(target, BonusType::PRIMARY_SKILL, 10, BonusSubtypeID(PrimarySkill::DEFENSE));
+	ASSERT_EQ(source->getAttack(false), 20);
+	ASSERT_EQ(target->getDefense(false), 30);
 
-	auto result = estimate(attacker(angel), defender(angel));
+	auto result = estimate(source, target);
 
 	EXPECT_EQ(result.damage.min, 3750);
 	EXPECT_EQ(result.kills.min, 18);
@@ -480,9 +495,14 @@ TEST_F(DamageCalculatorTest, DefenseAdvantageRemovesTwoAndAHalfPercentPerPoint)
 
 TEST_F(DamageCalculatorTest, DefenseAdvantageIsCappedAtSeventyPercent)
 {
-	defenderSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 100, ChangeValueMode::ABSOLUTE); // -250%, capped
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	const auto * source = attacker(angel);
+	auto * target = defender(angel);
+	grant(target, BonusType::PRIMARY_SKILL, 100, BonusSubtypeID(PrimarySkill::DEFENSE));
+	ASSERT_EQ(source->getAttack(false), 20);
+	ASSERT_EQ(target->getDefense(false), 120);
 
-	EXPECT_EQ(estimate(attacker(angel), defender(angel)).damage.min, 1500);
+	EXPECT_EQ(estimate(source, target).damage.min, 1500);
 }
 
 /// Behemoths strip part of the defense of whatever they hit, and the ancient ones strip more.
@@ -1003,7 +1023,13 @@ INSTANTIATE_TEST_SUITE_P(Scenarios, RangePenaltyDamageTest, ::testing::Values(
 /// dragons are and angels are not.
 TEST_F(DamageCalculatorTest, MagicElementalHalvesDamageAgainstHighLevelSpellImmunity)
 {
-	auto result = estimate(attacker(magicElemental), defender(blackDragon));
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	const auto * source = attacker(magicElemental);
+	const auto * target = defender(blackDragon);
+	ASSERT_EQ(source->getAttack(false), 15);
+	ASSERT_EQ(target->getDefense(false), 25);
+	ASSERT_TRUE(target->hasBonusOfType(BonusType::LEVEL_SPELL_IMMUNITY));
+	auto result = estimate(source, target);
 
 	EXPECT_EQ(result.damage.min, 562);
 	EXPECT_EQ(result.damage.max, 937);
@@ -1020,7 +1046,16 @@ TEST_F(DamageCalculatorTest, MagicElementalDealsFullDamageToEverythingElse)
 /// Psychic elementals do the same against anything immune to mind spells, such as giants.
 TEST_F(DamageCalculatorTest, PsychicElementalHalvesDamageAgainstMindImmunity)
 {
-	auto result = estimate(attacker(psychicElemental), defender(giant));
+	// Academy is sand-native in NH; Dirt is non-native to both subjects in either profile.
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats(TerrainId(ETerrainId::DIRT)));
+	const auto * source = attacker(psychicElemental);
+	const auto * target = defender(giant);
+	ASSERT_FALSE(source->isOnNativeTerrain());
+	ASSERT_FALSE(target->isOnNativeTerrain());
+	ASSERT_EQ(source->getAttack(false), 15);
+	ASSERT_EQ(target->getDefense(false), 16);
+	ASSERT_TRUE(target->hasBonusOfType(BonusType::MIND_IMMUNITY));
+	auto result = estimate(source, target);
 
 	EXPECT_EQ(result.damage.min, 487);
 	EXPECT_EQ(result.damage.max, 975);
