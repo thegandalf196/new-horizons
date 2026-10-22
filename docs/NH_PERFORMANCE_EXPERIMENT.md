@@ -25,6 +25,24 @@ selector's deterministic seed and state exports for subsequent comparisons.
 
 Do not run concurrent builds/heavy tests during measurements. Graphical probes require the maintained silent guarded helper, isolated Xvfb, disposable saves and actual dummy-driver/process-identity checks before input. Owned absence is not parent reaping or exit-zero proof. Keep raw logs/captures/receipts private; do not change guard budgets to conceal an invalid run.
 
+### Creature-wish forecast workload
+
+`NewHorizonsGenieSupportAITest.SyntheticSevenVsThreeForecastMatchesCompleteOrderedPoolOracle`
+checks the complete ordered wish pools, uniform means, selected recipient/action,
+live state and both RNG domains in a synthetic seven-versus-three battle. Its
+enumeration oracle shares the production spell-effect and pressure evaluators;
+it is not an independent implementation of those mechanics or a saved-game replay.
+
+For an isolated profiler workload, explicitly select
+`NewHorizonsGenieSupportAITest.DISABLED_SyntheticSevenVsThreeForecastProfile`
+with `--gtest_also_run_disabled_tests`. It executes one standalone wish search
+and a second search within complete stack selection. The two reported intervals
+exclude their evaluator construction; whole-process samples also include setup,
+construction and assertions. Keep ordinary native-test resource/profile isolation.
+An exit-zero target does not prove profiling succeeded: inspect the collector's
+errors and actual sample stream before attributing CPU cost. Neither selector
+establishes Windows performance or a speedup.
+
 ## Existing opt-in diagnostics
 
 `NH_RENDER_LOAD_TIMINGS=1` enables existing diagnostics only under their logger gates. `NH_RENDER_LOAD_TIMING_LIMIT` accepts ASCII decimal 1–16384; malformed/missing values fall back to 1024. Counters are bounded, and a cap notice means later events are omitted. Disabled paths do not read clocks or allocate diagnostic logs.

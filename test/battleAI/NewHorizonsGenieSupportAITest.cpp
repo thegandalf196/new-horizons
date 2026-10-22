@@ -13,6 +13,7 @@
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/StartInfo.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/BattleUnitTurnReason.h"
 #include "../../lib/bonuses/BonusSelector.h"
@@ -21,6 +22,13 @@
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/spells/CSpellHandler.h"
+#include "../../lib/serializer/CMemorySerializer.h"
+
+#include <bit>
+#include <chrono>
+#include <cmath>
+#include <sstream>
+#include <tuple>
 
 namespace
 {
@@ -55,7 +63,7 @@ protected:
 	std::shared_ptr<GenieEnvironment> environment;
 	std::shared_ptr<GenieCallback> callback;
 
-	void prepare(bool upgraded = false, const char * enemyCreature = "core:boneDragon")
+	void prepare(bool upgraded = false, const char * enemyCreature = "core:boneDragon", int allyCount = 100)
 	{
 		startGame();
 		startBattle();
@@ -65,7 +73,7 @@ protected:
 			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
 		genie = addStack(BattleSide::ATTACKER, creatureByName(upgraded ? "core:masterGenie" : "core:genie"), BattleHex(2, 2), 1);
-		ally = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(9, 5), 100);
+		ally = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(9, 5), allyCount);
 		enemy = addStack(BattleSide::DEFENDER, creatureByName(enemyCreature), BattleHex(11, 5), 100);
 		beginCombat();
 		BattleSetActiveStack activate;
@@ -122,6 +130,84 @@ protected:
 		activate.stack = genie->unitId();
 		activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 		gameHandler->sendAndApply(activate);
+	}
+
+	void prepareSyntheticSevenVsThree()
+	{
+		startGame();
+		startBattle();
+		BattleUnitsChanged remove;
+		remove.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(remove);
+		// Source roster counts; synthetic geometry, stripped fixture heroes and seed.
+		// No war machines: this is a reproducible workload, not a saved-battle replay.
+		for(int row = 0; row < 4; ++row)
+			addStack(BattleSide::ATTACKER, creatureByName("core:naga"),
+				BattleHex(4, 1 + row * 2), row == 3 ? 1 : 2);
+		genie = addStack(BattleSide::ATTACKER, creatureByName("core:genie"), BattleHex(2, 2), 4);
+		ally = addStack(BattleSide::ATTACKER, creatureByName("core:genie"), BattleHex(2, 8), 4);
+		addStack(BattleSide::ATTACKER, creatureByName("core:masterGremlin"), BattleHex(2, 5), 19);
+		enemy = addStack(BattleSide::DEFENDER, creatureByName("core:lizardman"), BattleHex(12, 2), 14);
+		addStack(BattleSide::DEFENDER, creatureByName("core:lizardWarrior"), BattleHex(12, 5), 14);
+		addStack(BattleSide::DEFENDER, creatureByName("core:lizardman"), BattleHex(12, 8), 13);
+		beginCombat();
+		BattleSetActiveStack activate;
+		activate.battleID = BattleID(0);
+		activate.stack = genie->unitId();
+		activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+		gameHandler->sendAndApply(activate);
+		ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+		ASSERT_EQ(battle()->battleActiveUnit(), genie);
+		ASSERT_EQ(battle()->battleAliveUnits().size(), 10u);
+		ASSERT_EQ(genie->getCount(), 4);
+		ASSERT_EQ(ally->getCount(), 4);
+		std::set<int> occupied;
+		for(const auto * unit : battle()->battleAliveUnits())
+			for(const auto hex : unit->getHexes())
+			{
+				ASSERT_TRUE(hex.isAvailable());
+				ASSERT_TRUE(occupied.insert(hex.toInt()).second);
+			}
+		callback = std::make_shared<GenieCallback>();
+		callback->onBattleStarted(battle());
+		environment = std::make_shared<GenieEnvironment>(gameState());
+		gameHandler->randomizer->setSeed(seed);
+		CRandomGenerator::getDefault().setSeed(seed);
+	}
+
+	BattleEvaluator syntheticEvaluator()
+	{
+		// Match CBattleAI::makeEvaluator, including its difficulty-dependent horizon.
+		int our = 0;
+		int opposing = 0;
+		for(const auto * unit : battle()->battleGetAllStacks())
+		{
+			const auto * creature = unit->creatureId().toCreature();
+			if(!creature)
+				continue;
+			(unit->unitSide() == BattleSide::ATTACKER ? our : opposing)
+				+= unit->getCount() * creature->getAIValue();
+		}
+		const float ratio = opposing == 0 ? 1.0f : static_cast<float>(our) / opposing;
+		const int horizon = gameState()->getStartInfo()->difficulty < 4 ? 2 : 10;
+		return BattleEvaluator(environment, callback, genie, PlayerColor(0), BattleID(0),
+			BattleSide::ATTACKER, ratio, horizon);
+	}
+
+	std::vector<std::byte> serverRandomizerBytes()
+	{
+		CMemorySerializer wire;
+		wire.oser & *gameHandler->randomizer;
+		return wire.extractBuffer();
+	}
+
+	std::vector<std::byte> aiRandomBytes()
+	{
+		CMemorySerializer wire;
+		wire.oser & CRandomGenerator::getDefault();
+		return wire.extractBuffer();
 	}
 };
 
@@ -285,11 +371,13 @@ TEST_F(NewHorizonsGenieSupportAITest, ZeroBenefitBoneDragonHostileForecastKeepsO
 
 TEST_F(NewHorizonsGenieSupportAITest, PositiveHydraHostileForecastUsesUniformPoolAndActualAIRequestsEnemy)
 {
-	// A living variable-damage Hydra can reach the large allied army, while
+	// Keep the nearby army meaningfully threatened by the variable-damage Hydra;
 	// the distant one-creature caster lies outside its ordinary movement range.
-	// Curse therefore has a marginal physical benefit rather than an overkill
-	// or undead-immunity fixture that demands an otherwise worthless wish.
-	ASSERT_NO_FATAL_FAILURE(prepare(true, "core:hydra"));
+	// The common scorer prices kills using the victim's offensive output, so an
+	// overwhelming allied army can lose more Hydra-kill bounty than threat value
+	// when Curse reduces Hydra damage. This fixture must witness a useful curse,
+	// not require every legal hostile wish to improve every army matchup.
+	ASSERT_NO_FATAL_FAILURE(prepare(true, "core:hydra", 25));
 	exhaustPool(genie);
 	exhaustPool(ally);
 	const auto pool = battle()->getAvailableRandomCreatureSpells(genie, enemy);
@@ -461,4 +549,115 @@ TEST_F(NewHorizonsGenieSupportAITest, RepeatedForecastDoesNotMutateUnitsHeroAllo
 	EXPECT_TRUE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
 	EXPECT_EQ(gameHandler->getRandomGenerator().nextInt(), expectedServerRandom);
 	EXPECT_EQ(CRandomGenerator::getDefault().nextInt(), expectedAIRandom);
+}
+
+TEST_F(NewHorizonsGenieSupportAITest, SyntheticSevenVsThreeForecastMatchesCompleteOrderedPoolOracle)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSyntheticSevenVsThree());
+	const auto before = gameState()->saveToMemory();
+	const auto serverRandomBefore = serverRandomizerBytes();
+	const auto aiRandomBefore = aiRandomBytes();
+	const auto packetsBefore = std::tuple(server.casts.size(), server.startedActions.size(),
+		server.stackActivations.size(), server.orderStateUpdates.size(), server.injuries.size());
+	const auto ability = genie->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
+	ASSERT_TRUE(ability);
+	auto forecast = syntheticEvaluator();
+	std::optional<PossibleSpellcast> oracle;
+	std::ostringstream outcomes;
+	size_t outcomeCount = 0;
+	size_t recipientCount = 0;
+	for(const auto * recipient : battle()->battleAliveUnits())
+	{
+		const auto pool = battle()->getAvailableRandomCreatureSpells(genie, recipient);
+		outcomes << "recipient=" << recipient->unitId() << ",pool=" << pool.size() << ':';
+		double total = 0;
+		for(const auto spell : pool)
+		{
+			const auto * definition = spell.toSpell();
+			const auto value = forecast.beneficialCreatureSpellOutcomeValue(genie, recipient, definition);
+			ASSERT_TRUE(std::isfinite(value));
+			total += value;
+			++outcomeCount;
+			outcomes << spell.getNum() << '@'
+				<< BattleEvaluator::creatureAbilitySpellLevel(genie, definition, ability->val)
+				<< '=' << std::bit_cast<uint32_t>(value) << ',';
+		}
+		if(pool.empty())
+		{
+			EXPECT_EQ(forecast.expectedBeneficialCreatureSpellValue(genie, recipient), 0.0f);
+			outcomes << ';';
+			continue;
+		}
+		++recipientCount;
+		const float mean = static_cast<float>(total / pool.size());
+		EXPECT_EQ(std::bit_cast<uint32_t>(mean), std::bit_cast<uint32_t>(
+			forecast.expectedBeneficialCreatureSpellValue(genie, recipient)));
+		outcomes << "mean=" << std::bit_cast<uint32_t>(mean) << ';';
+		if(mean > 0 && (!oracle || mean > oracle->value))
+		{
+			PossibleSpellcast candidate;
+			candidate.spell = pool.front().toSpell();
+			candidate.dest = {spells::Destination(recipient)};
+			candidate.value = mean;
+			oracle = std::move(candidate);
+		}
+	}
+	EXPECT_EQ(recipientCount, 7u);
+	EXPECT_GT(outcomeCount, recipientCount);
+	const auto selected = forecast.findBestCreatureSpell(genie);
+	ASSERT_EQ(selected.has_value(), oracle.has_value());
+	ASSERT_TRUE(selected);
+	EXPECT_EQ(selected->spell, oracle->spell);
+	ASSERT_EQ(selected->dest.size(), 1u);
+	EXPECT_EQ(selected->dest.front().unitValue->unitId(), oracle->dest.front().unitValue->unitId());
+	EXPECT_EQ(std::bit_cast<uint32_t>(selected->value), std::bit_cast<uint32_t>(oracle->value));
+	auto fresh = syntheticEvaluator();
+	BattleEvaluator::SelectionTiming timing;
+	const auto action = fresh.selectStackAction(genie, &timing);
+	const auto repeated = syntheticEvaluator().selectStackAction(genie);
+	EXPECT_EQ(action, repeated);
+	EXPECT_EQ(timing.creatureSpell.calls, 1u);
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(serverRandomizerBytes(), serverRandomBefore);
+	EXPECT_EQ(aiRandomBytes(), aiRandomBefore);
+	EXPECT_EQ(std::tuple(server.casts.size(), server.startedActions.size(),
+		server.stackActivations.size(), server.orderStateUpdates.size(), server.injuries.size()), packetsBefore);
+	EXPECT_TRUE(callback->actions.empty());
+	RecordProperty("Scenario", "synthetic seven-v-three; roster counts only; no war machines; seed 1337");
+	RecordProperty("OutcomeBitsInPoolOrder", outcomes.str());
+	RecordProperty("OutcomeCount", std::to_string(outcomeCount));
+	RecordProperty("SelectedValueBits", std::to_string(std::bit_cast<uint32_t>(selected->value)));
+	RecordProperty("SelectedRecipient", std::to_string(selected->dest.front().unitValue->unitId()));
+	RecordProperty("SelectedRepresentativeSpell", std::to_string(selected->spell->getId().getNum()));
+	RecordProperty("SelectedStackAction", action.toString());
+}
+
+// Opt-in profiling selector deliberately excludes the oracle above. One ordinary
+// creature-spell search and one complete stack selection, with no pool truncation.
+TEST_F(NewHorizonsGenieSupportAITest, DISABLED_SyntheticSevenVsThreeForecastProfile)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSyntheticSevenVsThree());
+	const auto before = gameState()->saveToMemory();
+	const auto serverRandomBefore = serverRandomizerBytes();
+	const auto aiRandomBefore = aiRandomBytes();
+	auto forecast = syntheticEvaluator();
+	const auto started = std::chrono::steady_clock::now();
+	const auto selected = forecast.findBestCreatureSpell(genie);
+	const auto forecastMicros = std::chrono::duration_cast<std::chrono::microseconds>(
+		std::chrono::steady_clock::now() - started).count();
+	auto fresh = syntheticEvaluator();
+	BattleEvaluator::SelectionTiming timing;
+	const auto action = fresh.selectStackAction(genie, &timing);
+	ASSERT_TRUE(selected);
+	EXPECT_EQ(timing.creatureSpell.calls, 1u);
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(serverRandomizerBytes(), serverRandomBefore);
+	EXPECT_EQ(aiRandomBytes(), aiRandomBefore);
+	RecordProperty("Scenario", "synthetic seven-v-three; roster counts only; no war machines; seed 1337");
+	RecordProperty("StandaloneForecastMicros", std::to_string(forecastMicros));
+	RecordProperty("SelectionCreatureSpellMicros", std::to_string(timing.creatureSpell.totalMicroseconds));
+	RecordProperty("SelectedValueBits", std::to_string(std::bit_cast<uint32_t>(selected->value)));
+	RecordProperty("SelectedRecipient", std::to_string(selected->dest.front().unitValue->unitId()));
+	RecordProperty("SelectedRepresentativeSpell", std::to_string(selected->spell->getId().getNum()));
+	RecordProperty("SelectedStackAction", action.toString());
 }
