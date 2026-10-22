@@ -19761,13 +19761,13 @@
     },
     "client/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 588,
-      "sha256": "96af503ca4882176194f5d6dbdad0b70a7133df5f82908ac18de2b1d85eeec3b",
+      "lines": 590,
+      "sha256": "193f6c5a36ee2ada4c07aec7c082b779cf6250bc82a0795562636a1fd5664c3a",
       "owner": "ui_developer",
-      "review": "IR-TELEPORT-GUI-SNAPSHOT-OWNERSHIP-V1",
-      "review_scope": "exact-four-records-and-cohesive-ownership-helpers-only-no-future-growth",
-      "rationale": "Mechanical585 to588 registry rows only: register one focused transition implementation and two helper headers. Preserve prior BattleEndDispatch header registration, all existing source/header registrations and target/link/options/backend/platform policy, with zero CMake callable definitions. No native/rendered acceptance.",
-      "deferral": "UI/ENGINE exact588 bound only. Preserve previous terminal-recipient lifetime coverage; extract coherent component registration before substantive routing/link-policy expansion or further feature growth."
+      "review": "IR-BATTLE-MOVEMENT-PREVIEW-EXTRACTION-20261022",
+      "review_scope": "exact-movement-preview-extraction-and-two-registration-rows-only-no-future-growth",
+      "rationale": "Mechanical588 to590 registry rows only: register BattleMovementPreview.cpp and its header for the focused movement-warning and Skirmisher-status extraction. Preserve all existing source/header registrations, terminal-recipient ownership helpers and target/link/options/backend/platform policy, with zero CMake callable definitions. No native/rendered acceptance.",
+      "deferral": "UI/ENGINE exact590 bound only. Preserve previous terminal-recipient lifetime coverage; extract coherent component registration before substantive routing/link-policy expansion or further feature growth."
     },
     "client/CPlayerInterface.cpp": {
       "kind": "legacy",
@@ -19938,12 +19938,12 @@
     },
     "client/battle/BattleActionsController.cpp": {
       "kind": "legacy",
-      "lines": 5477,
+      "lines": 5433,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 5477 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "d227ddb699563c73b017fbfe04f36ed6446524f16477bf5fcdbb34bd10f5f0ba"
+      "rationale": "Retain decreasing5433 controller bound after compact movement presentation. Existing ranged formatter returns to its original file-local static identity and exact body; complete parser inventory preserves210 same-name callable hashes against the pre-extraction source, with only the367-line status method changed. Presentation/counting remains in focused92-line BattleMovementPreview.cpp. No new gameplay, state or ownership responsibility; oversized legacy debt still requires affected-area extraction before expansion. No native/rendered acceptance.",
+      "review": "IR-BATTLE-MOVEMENT-PREVIEW-COMPACT-20261022",
+      "review_scope": "exact-compact-movement-presentation-and-restored-file-local-formatter-only",
+      "sha256": "50aa560093e3bd1b07b9e1f21373483100fc3be1840ef7c8686635802674a3cf"
     },
     "client/battle/BattleActionsController.cpp::StormOfDaggersSelectionPreview BattleActionsController::getStormOfDaggersSelectionPreview() const#1": {
       "kind": "legacy",
@@ -19974,12 +19974,12 @@
     },
     "client/battle/BattleActionsController.cpp::std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattleAction action, const BattleHex & targetHex)#1": {
       "kind": "legacy",
-      "lines": 391,
+      "lines": 367,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 391 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "9b440aeda58c18142bc4a325517375238265fdd5b14a560bd4898bf7eadc84c1"
+      "rationale": "Ratchet391 to367 by replacing the complete Skirmisher status branch with a call to the focused27-line member in BattleMovementPreview.cpp. Ordinary Move and melee retain the same extracted warning helper; the intentional Skirmisher warning append belongs to the extracted member. Remaining status-switch responsibilities are legacy debt and must shrink before future expansion; no ceiling exception or native/rendered acceptance.",
+      "review": "IR-BATTLE-MOVEMENT-PREVIEW-EXTRACTION-20261022",
+      "review_scope": "exact-skirmisher-status-extraction-and-decreasing-function-baseline-only",
+      "sha256": "95c66ac63a406908476154ffc7f57b8371f135fd5327e94d372a5d25d376f57b"
     },
     "client/battle/BattleActionsController.cpp::void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, const BattleHex & targetHex)#1": {
       "kind": "legacy",
@@ -20045,13 +20045,14 @@
       "sha256": "6511fb3458451c53d65bc4ee28c078d6432078895698d2e6a61adec9be918dbb"
     },
     "client/battle/BattleActionsController.h": {
-      "kind": "legacy",
-      "lines": 543,
+      "kind": "exception",
+      "lines": 544,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 543 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "a3e495b8cdb299898dddc8868b69c728615766911e128c91d93e6577269ed36a"
+      "rationale": "Lower545 to544 after removing the unnecessary private static ranged-formatter declaration. Only the extracted private Skirmisher-status member remains beyond the original543-line header. No public UI API, class state/layout, callback or ownership change; the sole inline callable remains byte-identical. Exact reviewed bound, not permission for future feature growth or native/rendered acceptance.",
+      "review": "IR-BATTLE-MOVEMENT-PREVIEW-COMPACT-20261022",
+      "review_scope": "exact-one-private-skirmisher-declaration-after-formatter-restoration-only",
+      "sha256": "d1cefa877b15c97318b1c5597d66af59c9180abc94919739b1d22cf76e5d6010",
+      "deferral": "UI exact544 bound only; extract coherent controller responsibilities and reduce their header interface before substantive declaration or state growth."
     },
     "client/battle/BattleAnimationClasses.cpp": {
       "kind": "legacy",

@@ -33,11 +33,28 @@ void CVcmiTestConfig::SetUp()
 			|| !saveRoot || std::string_view(saveRoot).empty())
 			throw std::runtime_error("Ordinary hero export bootstrap requires its exact isolated export invocation");
 	}
+	const char * skirmisherExport = std::getenv("NH_EXPORT_SKIRMISHER_PREVIEW_ORDINARY_BOOTSTRAP");
+	const char * skirmisherRoot = std::getenv("NH_EXPORT_SKIRMISHER_PREVIEW_SAVE_ROOT");
+	const char * privateRoot = std::getenv("NH_EXPORT_SKIRMISHER_PREVIEW_PRIVATE_ROOT");
+	const char * sourceRoot = std::getenv("NH_EXPORT_SKIRMISHER_PREVIEW_SOURCE_ROOT");
+	const bool useSkirmisherExport = skirmisherExport || skirmisherRoot || privateRoot || sourceRoot;
+	if(useSkirmisherExport)
+	{
+		if(!skirmisherExport || std::string_view(skirmisherExport) != "1"
+			|| ::testing::GTEST_FLAG(filter) != "NewHorizonsSkirmisherPreviewFixtureExportTest.ExportAuthoredPreinitAdventureSave"
+			|| !skirmisherRoot || std::string_view(skirmisherRoot).empty()
+			|| !privateRoot || std::string_view(privateRoot).empty()
+			|| !sourceRoot || std::string_view(sourceRoot).empty()
+			|| useOrdinaryExport || std::getenv("NH_EXPORT_HERO_PROC_FAMILY")
+			|| std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT"))
+			throw std::runtime_error("Ordinary Skirmisher export bootstrap requires its exact isolated export invocation");
+	}
+	const bool useOrdinaryBootstrap = useOrdinaryExport || useSkirmisherExport;
 	LIBRARY = new GameLibrary;
 	// Default tests retain their independent TEST preset and fixture mod. Only
 	// the explicitly selected player-save exporter uses the ordinary preset.
-	LIBRARY->initializeFilesystem(false, /*useTestPreset*/ !useOrdinaryExport);
-	if(useOrdinaryExport)
+	LIBRARY->initializeFilesystem(false, /*useTestPreset*/ !useOrdinaryBootstrap);
+	if(useOrdinaryBootstrap)
 	{
 		const auto & mods = LIBRARY->modh->getActiveMods();
 		if(std::find(mods.begin(), mods.end(), "vcmi") == mods.end()
@@ -45,6 +62,8 @@ void CVcmiTestConfig::SetUp()
 			|| std::any_of(mods.begin(), mods.end(), [](const auto & mod)
 			{ return mod != "core" && mod != "vcmi" && mod != "new-horizons"; }))
 			throw std::runtime_error("Ordinary hero export bootstrap requires only the shipping mods");
+		if(useSkirmisherExport && std::find(mods.begin(), mods.end(), "core") == mods.end())
+			throw std::runtime_error("Ordinary Skirmisher export bootstrap requires the shipping core mod");
 	}
 	LIBRARY->initializeLibrary();
 }

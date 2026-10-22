@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleActionsController.h"
+#include "BattleMovementPreview.h"
 
 #include "BattleFieldController.h"
 #include "BattleHero.h"
@@ -83,27 +84,6 @@ constexpr std::string_view masterChainLightningJsonKey = "new-horizons:masterCha
 constexpr int32_t stormOfDaggersMaximumTargets = 5;
 constexpr int32_t vengefulVinesFootprintHexCount = 3;
 
-static std::string overwatchMovementWarning(const CBattleInfoCallback & battle,
-	const battle::Unit * mover, const BattleHex & destination)
-{
-	if(!mover || !destination.isAvailable() || destination == mover->getPosition())
-		return {};
-	const auto path = mover->hasBonusOfType(BonusType::FLYING)
-		? BattleHexArray{destination} : battle.getPath(mover->getPosition(), destination, mover).first;
-	std::set<uint32_t> reactors;
-	auto from = mover->getPosition();
-	for(size_t index = path.size(); index > 0; --index)
-	{
-		const auto to = path[index - 1];
-		for(const auto id : battle.battleGetOverwatchReactors(mover, from, to))
-			reactors.insert(id);
-		from = to;
-	}
-	if(reactors.empty())
-		return {};
-	return "\nOverwatch hazard: " + std::to_string(reactors.size())
-		+ " ready shooter(s) may react at 50% damage before arrival.";
-}
 
 struct FriendlyFirePreview
 {
@@ -3853,31 +3833,7 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 {
 	const CStack * targetStack = getStackForHex(targetHex);
 	if(action.get() == PossiblePlayerBattleAction::SKIRMISHER_ATTACK)
-	{
-		const auto * attacker = owner.stacksController->getActiveStack();
-		if(!skirmisherTargetHex.isValid())
-			return "Skirmisher: choose an enemy stack. It will move up to half Speed and shoot at 75% damage.";
-		const auto * selectedTarget = owner.getBattle()->battleGetStackByPos(skirmisherTargetHex);
-		if(!attacker || !selectedTarget)
-			return "Skirmisher: choose a highlighted firing destination.";
-		const auto & legalFiringHexes = getSkirmisherLegalFiringHexes();
-		if(!vstd::contains(legalFiringHexes, targetHex))
-			return "Skirmisher: choose a highlighted firing destination.";
-		const auto distance = skirmisherFiringDistancesCache[targetHex.toInt()];
-		BattleAttackInfo estimate(attacker, selectedTarget, static_cast<int>(distance), true);
-		estimate.attackerPos = targetHex;
-		estimate.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
-		int rangedAttacks = attacker->getTotalAttacks(true);
-		if(const auto * hero = owner.getBattle()->battleGetFightingHero(attacker->unitSide()))
-			rangedAttacks += hero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS, BonusSubtypeID(attacker->creatureId()));
-		if(attacker->shots.isLimited())
-			rangedAttacks = std::min(rangedAttacks, attacker->shots.available());
-		const int shotsAfterAction = std::max(0, attacker->shots.available() - rangedAttacks);
-		const std::string attackCount = rangedAttacks == 1 ? "one ranged attack" : std::to_string(rangedAttacks) + " ranged attacks";
-		return "Skirmisher: move " + std::to_string(distance) + " hexes, then make " + attackCount
-			+ " at 75% damage. Estimate per attack: "
-			+ formatRangedAttack(owner.getBattle()->battleEstimateDamage(estimate), selectedTarget->getName(), shotsAfterAction);
-	}
+		return skirmisherStatusMessage(targetHex);
 
 	switch (action.get()) //display console message, realize selected action
 	{
@@ -3891,7 +3847,7 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			const auto text = formatWithStackName(activeStack->hasBonusOfType(BonusType::FLYING)
 				? "core.genrltxt.295" : "core.genrltxt.294", activeStack);
 			return text + (action.get() == PossiblePlayerBattleAction::MOVE_STACK
-				? overwatchMovementWarning(*owner.getBattle(), activeStack, targetHex) : std::string());
+				? battleMovementPreview::overwatchWarning(*owner.getBattle(), activeStack, targetHex) : std::string());
 		}
 
 		case PossiblePlayerBattleAction::ATTACK:
@@ -3943,7 +3899,7 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 				}
 				return flankPrefix + formatMeleeAttack(estimation, targetStack->getName())
 					+ "\n" + formatRetaliation(retaliation, enemyMayBeKilled)
-					+ overwatchMovementWarning(*owner.getBattle(), attacker, attackFromHex);
+					+ battleMovementPreview::overwatchWarning(*owner.getBattle(), attacker, attackFromHex);
 			}
 
 		case PossiblePlayerBattleAction::SHOOT:

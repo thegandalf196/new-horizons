@@ -14,6 +14,7 @@ set(vcmiclientcommon_SRCS
 	adventureMap/TurnTimerWidget.cpp
 
 	battle/BattleActionsController.cpp
+	battle/BattleMovementPreview.cpp
 	battle/BattleAnimationClasses.cpp
 	battle/BattleConsole.cpp
 	battle/BattleEffectsController.cpp
@@ -249,6 +250,7 @@ set(vcmiclientcommon_HEADERS
 	adventureMap/TurnTimerWidget.h
 
 	battle/BattleActionsController.h
+	battle/BattleMovementPreview.h
 	battle/BattleAnimationClasses.h
 	battle/BattleConsole.h
 	battle/BattleEffectsController.h

@@ -283,6 +283,7 @@ class BattleActionsController
 	void actionSetCursor(PossiblePlayerBattleAction action, const BattleHex & hoveredHex);
 	void actionSetCursorBlocked(PossiblePlayerBattleAction action, const BattleHex & hoveredHex);
 
+	std::string skirmisherStatusMessage(const BattleHex & targetHex);
 	std::string actionGetStatusMessage(PossiblePlayerBattleAction action, const BattleHex & hoveredHex);
 	std::string actionGetStatusMessageBlocked(PossiblePlayerBattleAction action, const BattleHex & hoveredHex);
 
