@@ -5205,6 +5205,70 @@
         }
       ],
       "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "6b836df24240f375f0e21869ebe59d7e8e762e58eb5705a71d8aaccf589a70a2",
+      "baselineManifestSha256": "a307102273a2f40d6f2be71ce8a03f5ea3db28f29a357e727db6e3f3c3b400d8",
+      "baselineEntriesSha256": "f1f31f9bc438af132ea67b81583875d6f4be0ae0935bde186c5642fceb0683f4",
+      "baselineHeaderSha256": "6cfea69a7513ffa4a185755f1ada67e2ed2aac17156d50e690fc45d4b93ad439",
+      "nonStatusConfigSha256": "6bcf78af32bc3739f491572a1705a1e9440dc76cc25b19947da8998d7fc5cba2",
+      "baselineCount": 4811,
+      "entryCount": 4819,
+      "newArchiveSha256": "342e150554e2874a9375c550dc210c892ea167859c197372298379f504178cdd",
+      "resources": [
+        "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/32.json",
+        "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/44.json",
+        "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/32.json",
+        "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/44.json",
+        "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/icon-44.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "specialties": [
+        {
+          "id": "core:elleshar",
+          "identity": "EllesharHighLore",
+          "version": "transparent-foreground-v1-20261022",
+          "native44Sha256": "a329ce9bb141f41f1306466a22487bf9f67ffbe17b5eeec4bbce752999c65f88",
+          "native32Sha256": "e9218d9ccbdd5bb3820224220641a0f846b0787ad2da1b92913f1ac05ce91e64",
+          "normal44": "newHorizons/heroSpecialties/EllesharHighLore/44",
+          "normal32": "newHorizons/heroSpecialties/EllesharHighLore/32",
+          "selectionEvidenceSha256": "ac1742c64a03495d3781dc5692d1162e75adaaacdfe9e2e062b5a4c92d7e0086",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/32.json",
+            "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/44.json",
+            "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/icon-44.png"
+          ],
+          "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+          "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "id": "core:malcom",
+          "identity": "MalcomNaturalPhilosopher",
+          "version": "transparent-foreground-v1-20261022",
+          "native44Sha256": "f498b619a64810ec5d3febe22ba559b47496491ae1c396f0e85747bf40f96a3b",
+          "native32Sha256": "89c91c9c0e7b82e904065b3c43d2d4be60afb00d3f36bc7f04f417bb96b3db14",
+          "normal44": "newHorizons/heroSpecialties/MalcomNaturalPhilosopher/44",
+          "normal32": "newHorizons/heroSpecialties/MalcomNaturalPhilosopher/32",
+          "selectionEvidenceSha256": "ac1742c64a03495d3781dc5692d1162e75adaaacdfe9e2e062b5a4c92d7e0086",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/32.json",
+            "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/44.json",
+            "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/icon-44.png"
+          ],
+          "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+          "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+        }
+      ],
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
     }
   ]
 }

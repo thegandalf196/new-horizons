@@ -149,7 +149,8 @@ For specialty presentation, the opt-in native test
 exports `NHSpecialtyPresentation.h3m` when
 `NH_EXPORT_SPECIALTY_PRESENTATION_FIXTURE=1` is set in an isolated test profile
 with the ordinary New Horizons preset active. It retains authored starts for
-adjacent Serena, Gem, Daremyth and control hero Orrin, checks their captured
+adjacent Serena, Gem, Daremyth, Monere, Gerwulf, Elleshar, Malcom and control
+hero Orrin, checks their captured
 rules and specialty identities, and verifies the exported map bytes by reading
 and loading them again. The diagnostic contains no forced specialty proc or
 custom hero statistics.

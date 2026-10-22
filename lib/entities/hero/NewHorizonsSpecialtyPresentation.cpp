@@ -103,6 +103,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 		if(identity == "core:elleshar")
 		{
 			result.name = "High Lore";
+			result.artwork = "newHorizons/heroSpecialties/EllesharHighLore";
 			result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
 			scaling = &druids->highLore;
 			description.appendRawString("The extra maximum Spell Points granted by Intelligence increase by ");
@@ -118,6 +119,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 		else if(identity == "core:malcom")
 		{
 			result.name = "Natural Philosopher";
+			result.artwork = "newHorizons/heroSpecialties/MalcomNaturalPhilosopher";
 			result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
 			scaling = &druids->naturalPhilosopher;
 			description.appendRawString("The core experience bonus from Learning increases by ");

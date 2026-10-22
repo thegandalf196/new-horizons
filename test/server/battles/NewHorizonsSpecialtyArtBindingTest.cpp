@@ -24,9 +24,11 @@ struct BindingCase
 	const char * artwork;
 };
 
-constexpr std::array<BindingCase, 3> bindings = {{
+constexpr std::array<BindingCase, 5> bindings = {{
 	{"core:serena", "arcanePreparationSpecialty", "newHorizons/heroSpecialties/SerenaArcanePreparation"},
 	{"core:gem", "druidSpecialties", "newHorizons/heroSpecialties/GemRestorativeSorceress"},
+	{"core:elleshar", "druidSpecialties", "newHorizons/heroSpecialties/EllesharHighLore"},
+	{"core:malcom", "druidSpecialties", "newHorizons/heroSpecialties/MalcomNaturalPhilosopher"},
 	{"core:daremyth", "fortuneChildSpecialty", "newHorizons/heroSpecialties/DaremythFortunesChild"}
 }};
 
@@ -47,7 +49,7 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsSpecialtyArtBindingTest, ExplicitPoliciesBindThreeDistinctNativeResourcePairs)
+TEST_F(NewHorizonsSpecialtyArtBindingTest, ExplicitPoliciesBindFiveDistinctNativeResourcePairs)
 {
 	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));

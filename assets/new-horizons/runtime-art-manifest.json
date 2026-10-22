@@ -48110,6 +48110,86 @@
       "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
       "selection": "selected-provisional-standalone-specialty-foreground-v1-monere-gerwulf-2026-10-21",
       "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/EllesharHighLore/32.json",
+      "size": 101,
+      "sha256": "a89544104ea74f71391c1d04d32afc31cf9176b55e552db687183dc2b34b5d35",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/EllesharHighLore/44.json",
+      "size": 101,
+      "sha256": "4ce13796421f36de5d1b742962cef1581da2290fd4f19dd593083d330943d8d9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/EllesharHighLore/icon-32.png",
+      "size": 2199,
+      "sha256": "e9218d9ccbdd5bb3820224220641a0f846b0787ad2da1b92913f1ac05ce91e64",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/EllesharHighLore/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/EllesharHighLore/icon-44.png",
+      "size": 3952,
+      "sha256": "a329ce9bb141f41f1306466a22487bf9f67ffbe17b5eeec4bbce752999c65f88",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/32.json",
+      "size": 109,
+      "sha256": "bcfca6ed13cb1d4ddaae43f583a128502794ad47b99a3987d4d15166037b5e8d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/44.json",
+      "size": 109,
+      "sha256": "f46598de4ff509f534163cf8af94ad4133931c290a5b3016b261ba47aa568e41",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/icon-32.png",
+      "size": 2086,
+      "sha256": "89c91c9c0e7b82e904065b3c43d2d4be60afb00d3f36bc7f04f417bb96b3db14",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MalcomNaturalPhilosopher/icon-44.png",
+      "size": 3663,
+      "sha256": "f498b619a64810ec5d3febe22ba559b47496491ae1c396f0e85747bf40f96a3b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
     }
   ],
   "requiredFamilies": [
@@ -48124,7 +48204,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2733,
+    "builtin-skills-perks-orders-and-ui": 2741,
     "cabir-and-master": 214,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

@@ -33,13 +33,15 @@ struct SpecialtyCase
 	const char * creatureTarget = nullptr;
 };
 
-const std::array<SpecialtyCase, 6> heroes = {{
+const std::array<SpecialtyCase, 8> heroes = {{
 	{"core:serena", "newHorizons/heroSpecialties/SerenaArcanePreparation", {17, 10, 0}},
 	{"core:gem", "newHorizons/heroSpecialties/GemRestorativeSorceress", {18, 10, 0}},
 	{"core:daremyth", "newHorizons/heroSpecialties/DaremythFortunesChild", {17, 11, 0}},
 	{"core:orrin", nullptr, {18, 11, 0}},
 	{"core:monere", "newHorizons/heroSpecialties/MonereWispLine", {19, 10, 0}, "new-horizons:wisp"},
-	{"core:gerwulf", "newHorizons/heroSpecialties/GerwulfBallistaLine", {19, 11, 0}, "core:ballista"}
+	{"core:gerwulf", "newHorizons/heroSpecialties/GerwulfBallistaLine", {19, 11, 0}, "core:ballista"},
+	{"core:elleshar", "newHorizons/heroSpecialties/EllesharHighLore", {20, 10, 0}},
+	{"core:malcom", "newHorizons/heroSpecialties/MalcomNaturalPhilosopher", {20, 11, 0}}
 }};
 }
 
@@ -158,7 +160,7 @@ TEST_F(NewHorizonsSpecialtyPresentationFixtureExportTest, ExportOrdinarySpecialt
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).name(name)
 		.description("Specialty presentation diagnostic, not a balanced scenario or gameplay certification. "
-			"Red owns adjacent Serena, Gem, Daremyth, ordinary control Orrin, Monere and Gerwulf with authored starts; "
+			"Red owns adjacent Serena, Gem, Daremyth, ordinary control Orrin, Monere, Gerwulf, Elleshar and Malcom with authored starts; "
 			"no map Skill, perk, experience, primary, army or spellbook overrides. "
 			"Open each normal Hero Window and meet adjacent heroes through normal exchange. "
 			"Inspect specialty icons and tooltips, then save/reload and inspect again. "

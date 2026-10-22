@@ -22713,14 +22713,15 @@
       "sha256": "2d68456bf766fd0b95afb54420d940d960a22376244971cf6a9d58dd58d742b8"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
-      "kind": "review",
-      "lines": 118,
+      "kind": "exception",
+      "deferral": "UI developer must extract the existing druid-presentation branch into a focused helper before the next substantive logic expansion, preserving applicability, evaluation order, descriptions and captured-policy fallbacks. This exception admits only the two Elleshar/Malcom artwork constants at120 lines and no further growth.",
+      "lines": 120,
       "owner": "ui_developer",
-      "rationale": "Ordered individual/druid specialty applicability and description readback extracted from the old shared resolver. Existing guard order, captured policy and producer/marker checks preserved; only three transient artwork stems added at existing matches. This118-line helper is below150; review family boundaries before expansion.",
-      "review": "IR-SPECIALTY-PRESENTATION-EXTRACTION-SOURCE-20261021",
+      "rationale": "Ordered individual/druid specialty applicability and description readback retain existing guards, captured policy and producer/marker checks. Two constant artwork stems at existing Elleshar/Malcom matches grow the helper from118 to120 lines without new branching or rule ownership. Bounded read-only art binding remains below150; review family boundaries before substantive expansion.",
+      "review": "IR-ELLESHAR-MALCOM-SPECIALTY-ART-20261022",
       "review_scope": "prospective-specialty-presentation-bounded-function",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "1ebbce8a25311148c22baa1b27a9b5789777d1fac26bae2b7a11e5be6cb113c7"
+      "sha256": "5f3ec4f984badf6c7e1601e6f39f3cef857df937a969b22efa73e97a1bbc40b7"
     },
     "lib/filesystem/CFilesystemLoader.cpp::std::unordered_map<ResourcePath, boost::filesystem::path> CFilesystemLoader::listFiles(const std::string &mountPoint, size_t depth, bool initial) const#1": {
       "kind": "legacy",
