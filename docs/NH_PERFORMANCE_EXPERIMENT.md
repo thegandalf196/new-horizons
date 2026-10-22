@@ -39,6 +39,11 @@ with `--gtest_also_run_disabled_tests`. It executes one standalone wish search
 and a second search within complete stack selection. The two reported intervals
 exclude their evaluator construction; whole-process samples also include setup,
 construction and assertions. Keep ordinary native-test resource/profile isolation.
+The first search reports `FirstSearchDamage*` aggregate call counts and nanoseconds
+for native payload preparation, bonus discovery and the inclusive Lua bridge.
+The four native subregions partition payload time; do not add them to that parent.
+This diagnostic binding ends before the second, complete stack selection. Its
+clock overhead means the first interval is not an uninstrumented timing baseline.
 An exit-zero target does not prove profiling succeeded: inspect the collector's
 errors and actual sample stream before attributing CPU cost. Neither selector
 establishes Windows performance or a speedup.

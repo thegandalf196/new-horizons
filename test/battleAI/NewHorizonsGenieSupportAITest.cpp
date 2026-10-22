@@ -15,6 +15,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/DamageCalculationTiming.h"
 #include "../../lib/battle/BattleUnitTurnReason.h"
 #include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -641,8 +642,13 @@ TEST_F(NewHorizonsGenieSupportAITest, DISABLED_SyntheticSevenVsThreeForecastProf
 	const auto serverRandomBefore = serverRandomizerBytes();
 	const auto aiRandomBefore = aiRandomBytes();
 	auto forecast = syntheticEvaluator();
+	damageCalculationTiming::Sample damage;
 	const auto started = std::chrono::steady_clock::now();
-	const auto selected = forecast.findBestCreatureSpell(genie);
+	const auto selected = [&]()
+	{
+		damageCalculationTiming::Binding measured(&damage);
+		return forecast.findBestCreatureSpell(genie);
+	}();
 	const auto forecastMicros = std::chrono::duration_cast<std::chrono::microseconds>(
 		std::chrono::steady_clock::now() - started).count();
 	auto fresh = syntheticEvaluator();
@@ -660,4 +666,37 @@ TEST_F(NewHorizonsGenieSupportAITest, DISABLED_SyntheticSevenVsThreeForecastProf
 	RecordProperty("SelectedRecipient", std::to_string(selected->dest.front().unitValue->unitId()));
 	RecordProperty("SelectedRepresentativeSpell", std::to_string(selected->spell->getId().getNum()));
 	RecordProperty("SelectedStackAction", action.toString());
+
+	EXPECT_GT(damage.nativePayload.calls, 0u);
+	for(const auto * stage : {&damage.nativeAttackContext, &damage.nativePhysicalModifiers,
+		&damage.nativeHeroOrders, &damage.nativeFinalization, &damage.bonusPreparation, &damage.luaCall})
+	{
+		EXPECT_EQ(stage->calls, damage.nativePayload.calls);
+	}
+	EXPECT_EQ(damage.nativePayload.nanoseconds, damage.nativeAttackContext.nanoseconds
+		+ damage.nativePhysicalModifiers.nanoseconds + damage.nativeHeroOrders.nanoseconds
+		+ damage.nativeFinalization.nanoseconds);
+	// Direct calculateDmgRange calls need no expected-Luck note; do not invent equality.
+	EXPECT_LE(damage.initialCalls + damage.luckySecondCalls + damage.unluckySecondCalls,
+		damage.nativePayload.calls);
+	EXPECT_LE(damage.nativePayload.nanoseconds + damage.bonusPreparation.nanoseconds
+		+ damage.luaCall.nanoseconds, static_cast<uint64_t>(forecastMicros) * 1000 + 999);
+	// One aggregate for the first search only, including its cache builds and target previews.
+	const auto recordStage = [&](const char * name, const damageCalculationTiming::Stage & stage)
+	{
+		const auto key = std::string("FirstSearchDamage") + name;
+		RecordProperty(key + "Calls", std::to_string(stage.calls));
+		RecordProperty(key + "Nanoseconds", std::to_string(stage.nanoseconds));
+	};
+	recordStage("NativePayload", damage.nativePayload);
+	recordStage("NativeAttackContext", damage.nativeAttackContext);
+	recordStage("NativePhysicalModifiers", damage.nativePhysicalModifiers);
+	recordStage("NativeHeroOrders", damage.nativeHeroOrders);
+	recordStage("NativeFinalization", damage.nativeFinalization);
+	recordStage("BonusPreparation", damage.bonusPreparation);
+	recordStage("LuaCall", damage.luaCall);
+	RecordProperty("FirstSearchDamageInitialCalls", std::to_string(damage.initialCalls));
+	RecordProperty("FirstSearchDamageLuckySecondCalls", std::to_string(damage.luckySecondCalls));
+	RecordProperty("FirstSearchDamageUnluckySecondCalls", std::to_string(damage.unluckySecondCalls));
+	RecordProperty("FirstSearchDamageSuppressedStages", std::to_string(damage.suppressedStages));
 }
