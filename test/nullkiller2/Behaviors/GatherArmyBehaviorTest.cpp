@@ -500,7 +500,28 @@ TEST_F(Nullkiller2_Behaviors_GatherArmyBehavior, TownPurchaseForecastUsesFirstMa
 	EXPECT_EQ(purchases.front().count, 1);
 }
 
-TEST_F(Nullkiller2_Behaviors_GatherArmyBehavior, UpgradeForecastRespectsCarrierLeadershipCapacity)
+namespace
+{
+class Nullkiller2_UpgradeLeadership : public Nullkiller2_Behaviors_GatherArmyBehavior,
+	public ::testing::WithParamInterface<bool>
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		Nullkiller2_Behaviors_GatherArmyBehavior::mapLoaded(loaded);
+		if(!GetParam())
+			return;
+		JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+		rules["leadership"]["upgradeMultiplierPercent"].Integer() = 120;
+		rules["leadership"]["upgradeRounding"].Integer() = 10;
+		// Capture the historical policy, not a live mutation or current-data rebalance.
+		rules.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, rules);
+	}
+};
+}
+
+TEST_P(Nullkiller2_UpgradeLeadership, UpgradeForecastRespectsCarrierLeadershipCapacity)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	const CreatureID halberdier(CreatureID::decode("core:halberdier"));
@@ -511,50 +532,84 @@ TEST_F(Nullkiller2_Behaviors_GatherArmyBehavior, UpgradeForecastRespectsCarrierL
 	ASSERT_NE(hero, nullptr);
 	ASSERT_NE(town, nullptr);
 	hero->clearSlots();
-
 	const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
 	const auto halberdierCapacity = hero->getLeadershipSlotCapacity(halberdier);
 	ASSERT_TRUE(pikemanCapacity);
 	ASSERT_TRUE(halberdierCapacity);
+	ASSERT_EQ(pikemanCapacity->requirement, 60);
+	ASSERT_EQ(halberdierCapacity->requirement, GetParam() ? 70 : 60);
 	ASSERT_GT(halberdierCapacity->maximum, 0);
-	ASSERT_LT(halberdierCapacity->maximum, pikemanCapacity->maximum);
+	if(GetParam())
+	{
+		ASSERT_LT(halberdierCapacity->maximum, pikemanCapacity->maximum);
+	}
+	else
+	{
+		ASSERT_EQ(halberdierCapacity->maximum, pikemanCapacity->maximum);
+	}
+	const auto & captured = hero->getCapabilityRules()["leadership"];
+	ASSERT_EQ(captured["upgradeMultiplierPercent"].Integer(), GetParam() ? 120 : 100);
+	ASSERT_EQ(captured["upgradeRounding"].Integer(), GetParam() ? 10 : 1);
 
 	town->creatures.clear();
 	town->creatures.emplace_back(1, std::vector<CreatureID>{halberdier});
 	TResources ampleResources;
 	for(auto & resource : ampleResources)
 		resource = 1000000;
-
-	// A synthetic projection must use its actual hero carrier: this Pike stack
-	// is valid as Pikemen but cannot become Halberdiers at the same count.
-	CCreatureSet projectedArmy;
-	const int overUpgradeCapacity = halberdierCapacity->maximum + 1;
-	ASSERT_LE(overUpgradeCapacity, pikemanCapacity->maximum);
-	ASSERT_TRUE(projectedArmy.setCreature(SlotID(0), pikeman, overUpgradeCapacity));
+	const auto perCreatureCost = halberdier.toCreature()->getFullRecruitCost()
+		- pikeman.toCreature()->getFullRecruitCost();
 	const auto gateway = makeGateway(PLAYER);
-	auto upgrade = gateway->nullkiller->armyManager->calculateCreaturesUpgrade(
-		&projectedArmy, town, ampleResources, hero);
-	EXPECT_EQ(upgrade.upgradeValue, 0);
-	EXPECT_TRUE(upgrade.resultingArmy.empty());
+	const auto checkForecast = [&](const CCreatureSet * army, bool explicitCarrier, int count, bool accepted)
+	{
+		SCOPED_TRACE(::testing::Message() << "historical=" << GetParam()
+			<< " explicitCarrier=" << explicitCarrier << " count=" << count);
+		const auto before = gameState()->saveToMemory();
+		const auto capabilitiesBefore = hero->getCapabilityRules();
+		const auto budgetBefore = ampleResources;
+		const auto upgrade = gateway->nullkiller->armyManager->calculateCreaturesUpgrade(
+			army, town, ampleResources, explicitCarrier ? hero : nullptr);
+		EXPECT_EQ(gameState()->saveToMemory(), before);
+		EXPECT_EQ(hero->getCapabilityRules(), capabilitiesBefore);
+		EXPECT_EQ(ampleResources, budgetBefore);
+		ASSERT_EQ(army->stacksCount(), 1);
+		EXPECT_EQ(army->getCreature(SlotID(0))->getId(), pikeman);
+		EXPECT_EQ(army->getStackCount(SlotID(0)), count);
+		if(!accepted)
+		{
+			EXPECT_EQ(upgrade.upgradeValue, 0);
+			EXPECT_TRUE(upgrade.resultingArmy.empty());
+			EXPECT_EQ(upgrade.upgradeCost, TResources());
+			return;
+		}
+		EXPECT_GT(upgrade.upgradeValue, 0);
+		EXPECT_EQ(upgrade.upgradeCost, perCreatureCost * count);
+		ASSERT_EQ(upgrade.resultingArmy.size(), 1);
+		EXPECT_EQ(upgrade.resultingArmy.front().creature->getId(), halberdier);
+		EXPECT_EQ(upgrade.resultingArmy.front().count, count);
+	};
 
+	const int overUpgradeCapacity = halberdierCapacity->maximum + 1;
+	if(GetParam())
+	{
+		// Historical capture: legal base stack, but its upgrade would exceed capacity.
+		ASSERT_LE(overUpgradeCapacity, pikemanCapacity->maximum);
+	}
+	else
+	{
+		// Current parity: an already oversized source cannot evade target admission.
+		ASSERT_GT(overUpgradeCapacity, pikemanCapacity->maximum);
+	}
+	CCreatureSet projectedArmy;
+	ASSERT_TRUE(projectedArmy.setCreature(SlotID(0), pikeman, overUpgradeCapacity));
+	ASSERT_NO_FATAL_FAILURE(checkForecast(&projectedArmy, true, overUpgradeCapacity, false));
 	ASSERT_TRUE(projectedArmy.setCreature(SlotID(0), pikeman, halberdierCapacity->maximum));
-	upgrade = gateway->nullkiller->armyManager->calculateCreaturesUpgrade(
-		&projectedArmy, town, ampleResources, hero);
-	EXPECT_GT(upgrade.upgradeValue, 0);
-	ASSERT_EQ(upgrade.resultingArmy.size(), 1);
-	EXPECT_EQ(upgrade.resultingArmy.front().creature->getId(), halberdier);
-	EXPECT_EQ(upgrade.resultingArmy.front().count, halberdierCapacity->maximum);
+	ASSERT_NO_FATAL_FAILURE(checkForecast(&projectedArmy, true, halberdierCapacity->maximum, true));
 
-	// Real hero callers infer their carrier when the optional argument is omitted.
+	// Real-hero callers infer the same carrier when the optional argument is omitted.
 	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, overUpgradeCapacity));
-	upgrade = gateway->nullkiller->armyManager->calculateCreaturesUpgrade(hero, town, ampleResources);
-	EXPECT_EQ(upgrade.upgradeValue, 0);
-	EXPECT_TRUE(upgrade.resultingArmy.empty());
-
+	ASSERT_NO_FATAL_FAILURE(checkForecast(hero, false, overUpgradeCapacity, false));
 	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, halberdierCapacity->maximum));
-	upgrade = gateway->nullkiller->armyManager->calculateCreaturesUpgrade(hero, town, ampleResources);
-	EXPECT_GT(upgrade.upgradeValue, 0);
-	ASSERT_EQ(upgrade.resultingArmy.size(), 1);
-	EXPECT_EQ(upgrade.resultingArmy.front().creature->getId(), halberdier);
-	EXPECT_EQ(upgrade.resultingArmy.front().count, halberdierCapacity->maximum);
+	ASSERT_NO_FATAL_FAILURE(checkForecast(hero, false, halberdierCapacity->maximum, true));
 }
+
+INSTANTIATE_TEST_SUITE_P(CurrentAndHistorical, Nullkiller2_UpgradeLeadership, ::testing::Bool());
