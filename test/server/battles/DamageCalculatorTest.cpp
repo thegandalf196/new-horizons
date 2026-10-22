@@ -142,6 +142,14 @@ public:
 
 class DamageCalculatorTest : public DamageCalculatorTestBase
 {
+protected:
+	void isolateIntrinsicCreatureStats()
+	{
+		// Sand is non-native to these subjects; retain the real terrain limiters.
+		battle()->terrainType = TerrainId(ETerrainId::SAND);
+		battle()->nodeHasChanged();
+		ASSERT_EQ(battle()->getTerrainType(), TerrainId(ETerrainId::SAND));
+	}
 };
 
 class NewHorizonsFinalLuckDamageTest : public DamageCalculatorTestBase
@@ -480,23 +488,37 @@ TEST_F(DamageCalculatorTest, DefenseAdvantageIsCappedAtSeventyPercent)
 /// Behemoths strip part of the defense of whatever they hit, and the ancient ones strip more.
 TEST_F(DamageCalculatorTest, BehemothIgnoresPartOfTheTargetDefense)
 {
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	const auto * source = attacker(behemoth);
+	const auto * target = defender(angel);
+	ASSERT_EQ(source->getAttack(false), 17);
+	ASSERT_EQ(target->getDefense(false), 20);
 	// 40% of 20 defense, rounded up to 9, leaves 11 against 17 attack
-	EXPECT_EQ(estimate(attacker(behemoth), defender(angel)).damage.min, 3900);
+	EXPECT_EQ(estimate(source, target).damage.min, 3900);
 }
 
 TEST_F(DamageCalculatorTest, AncientBehemothIgnoresMoreOfTheTargetDefense)
 {
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	const auto * source = attacker(ancientBehemoth);
+	const auto * target = defender(angel);
+	ASSERT_EQ(source->getAttack(false), 19);
+	ASSERT_EQ(target->getDefense(false), 20);
 	// 80% of 20 defense, rounded up to 17, leaves 3 against 19 attack
-	EXPECT_EQ(estimate(attacker(ancientBehemoth), defender(angel)).damage.min, 5400);
+	EXPECT_EQ(estimate(source, target).damage.min, 5400);
 }
 
 /// No Heroes 3 creature lowers the attack of whoever strikes it, so the bonus is granted directly.
 TEST_F(DamageCalculatorTest, EnemyAttackReductionLowersEffectiveAttack)
 {
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	const auto * source = attacker(angel);
 	auto * target = defender(angel);
+	ASSERT_EQ(source->getAttack(false), 20);
+	ASSERT_EQ(target->getDefense(false), 20);
 	grant(target, BonusType::ENEMY_ATTACK_REDUCTION, 50); // 20 attack halved to 10 against 20 defense
 
-	EXPECT_EQ(estimate(attacker(angel), target).damage.min, 3750);
+	EXPECT_EQ(estimate(source, target).damage.min, 3750);
 }
 
 /// What survives the reduction is rounded down, so a share that does not divide evenly costs the
@@ -697,7 +719,12 @@ TEST_F(SylvanLuckPerkDamageTest, ElvenPrecisionDoesNotAffectOrdinaryRangedOrLuck
 /// has attack, so nothing else moves the number.
 TEST_F(DamageCalculatorTest, JoustingScalesWithChargeDistance)
 {
-	auto result = estimate(attacker(champion), defender(blackKnight), 4);
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	const auto * source = attacker(champion);
+	const auto * target = defender(blackKnight);
+	ASSERT_EQ(source->getAttack(false), 16);
+	ASSERT_EQ(target->getDefense(false), 16);
+	const auto result = estimate(source, target, 4);
 
 	EXPECT_EQ(result.damage.min, 2400);
 	EXPECT_EQ(result.damage.max, 3000);
@@ -705,7 +732,12 @@ TEST_F(DamageCalculatorTest, JoustingScalesWithChargeDistance)
 
 TEST_F(DamageCalculatorTest, JoustingNeedsAChargeToApply)
 {
-	auto result = estimate(attacker(champion), defender(blackKnight), 0);
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	const auto * source = attacker(champion);
+	const auto * target = defender(blackKnight);
+	ASSERT_EQ(source->getAttack(false), 16);
+	ASSERT_EQ(target->getDefense(false), 16);
+	const auto result = estimate(source, target, 0);
 
 	EXPECT_EQ(result.damage.min, 2000);
 	EXPECT_EQ(result.damage.max, 2500);
@@ -728,7 +760,12 @@ TEST_F(DamageCalculatorTest, ChargeImmunityBlocksJousting)
 /// advantage over them.
 TEST_F(DamageCalculatorTest, HateAddsDamageAgainstTheHatedCreature)
 {
-	EXPECT_EQ(estimate(attacker(archangel), defender(archDevil)).damage.min, 8000);
+	ASSERT_NO_FATAL_FAILURE(isolateIntrinsicCreatureStats());
+	const auto * source = attacker(archangel);
+	const auto * target = defender(archDevil);
+	ASSERT_EQ(source->getAttack(false), 30);
+	ASSERT_EQ(target->getDefense(false), 28);
+	EXPECT_EQ(estimate(source, target).damage.min, 8000);
 }
 
 TEST_F(DamageCalculatorTest, HateIsIgnoredAgainstEveryOtherCreature)
