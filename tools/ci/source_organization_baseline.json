@@ -18840,12 +18840,12 @@
     },
     "AI/Nullkiller2/Analyzers/ArmyManager.cpp": {
       "kind": "legacy",
-      "lines": 788,
+      "lines": 787,
       "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 788 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "File owned for structural review by ai_engineer. Recruitment forecast correctness correction reuses the shared canonical resolver and tracks projected physical slots; exact shrinking freeze at 787 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
+      "review": "IR-LEADERSHIP-RECRUITMENT-FORECAST-20261022",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "2b4ebad7f0997ab1f1ddbeea6dd1965cf9bad543ac98b277f9a6f453a80273e8"
+      "sha256": "f75ad8b9ac2bb9d5f4f2f241373d2fa0c434d57de4d490c241aa8cd9bb216907"
     },
     "AI/Nullkiller2/Analyzers/ArmyManager.cpp::NK2AI::std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier, const CCreatureSet * target, const CCreatureSet * source, const TerrainId & armyTerrain, const CGHeroInstance * sourceCarrier, armyFormation::ArmyExchangeProjection * exchangePlan) const#1": {
       "kind": "legacy",
@@ -18858,12 +18858,12 @@
     },
     "AI/Nullkiller2/Analyzers/ArmyManager.cpp::NK2AI::std::vector<creInfo> ArmyManager::getArmyAvailableToBuy( const CCreatureSet * hero, const CGDwelling * dwelling, TResources availableRes, uint8_t turn, const CGHeroInstance * carrier) const#1": {
       "kind": "legacy",
-      "lines": 128,
+      "lines": 126,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 128 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Function owned for structural review by ai_engineer. Recruitment forecast correctness correction reuses the shared canonical resolver and tracks projected physical slots; exact shrinking freeze at 126 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
+      "review": "IR-LEADERSHIP-RECRUITMENT-FORECAST-20261022",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "9c236fdbe370564e0e0181b5ae4742d5839be4a3c23469410ece91f10e98bf2d"
+      "sha256": "885ea83065023d2df7b3e8458458ef77c9bf54337e2c477173f6fe6a590122bb"
     },
     "AI/Nullkiller2/Analyzers/BuildAnalyzer.cpp": {
       "kind": "legacy",

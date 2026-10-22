@@ -19,6 +19,7 @@
 #include "../../../lib/TerrainHandler.h"
 #include "../../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
+#include "../../../lib/entities/hero/NewHorizonsLeadership.h"
 
 namespace NK2AI
 {
@@ -430,10 +431,12 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 	const CGHeroInstance * carrier) const
 {
 	std::vector<creInfo> creaturesInDwellings;
-	int freeHeroSlots = GameConstants::ARMY_SIZE - hero->stacksCount();
 	if(!carrier)
 		carrier = dynamic_cast<const CGHeroInstance *>(hero);
-	std::map<CreatureID, int64_t> projectedCreatureCounts;
+	std::vector<newHorizonsHeroes::RecruitmentSlot> projectedSlots;
+	projectedSlots.reserve(GameConstants::ARMY_SIZE);
+	for(const auto & [slot, stack] : hero->Slots())
+		projectedSlots.push_back({slot, stack->getCreatureID(), stack->getCount()});
 	auto calendar = cpsic->getCalendar();
 	bool countGrowth = (calendar.getDayOfWeek() + turn) > calendar.getDaysInWeek();
 
@@ -456,25 +459,21 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 
 		if(!ci.count) continue;
 
-		SlotID dst = hero->getSlotFor(ci.creID);
-		const bool hasExistingStack = dst.validSlot() && hero->hasStackAtSlot(dst);
-		const auto projectedCount = projectedCreatureCounts.find(ci.creID);
-		const bool hasProjectedStack = projectedCount != projectedCreatureCounts.end();
-		const int64_t alreadyPresent = (hasExistingStack ? hero->getStackCount(dst) : 0)
-			+ (hasProjectedStack ? projectedCount->second : 0);
-
-		// Recruitment uses getSlotFor on both the AI callback and the server. It
-		// therefore targets the first physical same-creature slot, not spare room
-		// in a later duplicate slot. Keep the forecast on that same slot.
 		const auto recruitCost = dwelling->getRecruitmentCost(ci.creID);
 		if(!recruitCost.empty())
 			vstd::amin(ci.count, availableRes / recruitCost);
-		if(carrier)
-		{
-			if(const auto capacity = carrier->getLeadershipSlotCapacity(ci.creID))
-				ci.count = static_cast<int>(std::min<int64_t>(ci.count,
-					std::max<int64_t>(0, static_cast<int64_t>(capacity->maximum) - alreadyPresent)));
-		}
+		if(ci.count <= 0)
+			continue;
+
+		const auto capacity = carrier ? carrier->getLeadershipSlotCapacity(ci.creID) : std::nullopt;
+		const std::optional<int64_t> maximum = capacity
+			? std::optional<int64_t>(capacity->maximum) : std::nullopt;
+		SlotID dst = newHorizonsHeroes::recruitmentSlot(projectedSlots, ci.creID, ci.count, maximum);
+		const auto projected = std::ranges::find(projectedSlots, dst, &newHorizonsHeroes::RecruitmentSlot::slot);
+		const int64_t alreadyPresent = projected != projectedSlots.end() ? projected->count : 0;
+		if(maximum)
+			ci.count = static_cast<int>(std::min<int64_t>(ci.count,
+				std::max<int64_t>(0, *maximum - alreadyPresent)));
 
 		if(ci.count <= 0)
 			continue;
@@ -488,44 +487,38 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 		TResources leastValuableStackValue;
 		leastValuableStackValue[6] = std::numeric_limits<int>::max();
 		bool shouldDisband = false;
-		if(!hasExistingStack && !hasProjectedStack) //need another new slot for this stack
+		if(!dst.validSlot()) // No free or matching slot; consider replacing
 		{
-			if(!freeHeroSlots) // No free slots; consider replacing
+			// Check for the least valuable existing stack
+			for (auto& slot : hero->Slots())
 			{
-				// Check for the least valuable existing stack
-				for (auto& slot : hero->Slots())
+				if (alreadyDisbanded.find(slot.first) != alreadyDisbanded.end())
+					continue;
+
+				if(slot.second->getCreatureID() != CreatureID::NONE)
 				{
-					if (alreadyDisbanded.find(slot.first) != alreadyDisbanded.end())
+					TResources currentStackValue = slot.second->getCreatureID().toCreature()->getFullRecruitCost() * slot.second->getCount();
+
+					if (town && slot.second->getCreatureID().toCreature()->getFactionID() == town->getFactionID())
 						continue;
 
-					if(slot.second->getCreatureID() != CreatureID::NONE)
+					if(currentStackValue.marketValue() < leastValuableStackValue.marketValue())
 					{
-						TResources currentStackValue = slot.second->getCreatureID().toCreature()->getFullRecruitCost() * slot.second->getCount();
-
-						if (town && slot.second->getCreatureID().toCreature()->getFactionID() == town->getFactionID())
-							continue;
-
-						if(currentStackValue.marketValue() < leastValuableStackValue.marketValue())
-						{
-							leastValuableStackValue = currentStackValue;
-							leastValuableSlot = slot.first;
-						}
+						leastValuableStackValue = currentStackValue;
+						leastValuableSlot = slot.first;
 					}
 				}
+			}
 
-				// Decide whether to replace the least valuable stack
-				if(newStackValue.marketValue() <= leastValuableStackValue.marketValue())
-				{
-					continue; // Skip if the new stack isn't worth replacing
-				}
-				else
-				{
-					shouldDisband = true;
-				}
+			// Decide whether to replace the least valuable stack
+			if(!leastValuableSlot.validSlot() || newStackValue.marketValue() <= leastValuableStackValue.marketValue())
+			{
+				continue; // Skip if the new stack isn't worth replacing
 			}
 			else
 			{
-				freeHeroSlots--; //new slot will be occupied
+				shouldDisband = true;
+				dst = leastValuableSlot;
 			}
 		}
 
@@ -544,7 +537,13 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 
 		ci.level = i; //this is important for Dungeon Summoning Portal
 		creaturesInDwellings.push_back(ci);
-		projectedCreatureCounts[ci.creID] += ci.count;
+		const auto destination = std::ranges::find(projectedSlots, dst, &newHorizonsHeroes::RecruitmentSlot::slot);
+		if(destination == projectedSlots.end())
+			projectedSlots.push_back({dst, ci.creID, ci.count});
+		else if(shouldDisband)
+			*destination = {dst, ci.creID, ci.count};
+		else
+			destination->count += ci.count;
 		availableRes -= recruitCost * ci.count;
 	}
 

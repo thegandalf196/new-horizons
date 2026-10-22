@@ -12,6 +12,8 @@
 #include "../../GameConstants.h"
 #include "../../constants/EntityIdentifiers.h"
 #include <cstdint>
+#include <optional>
+#include <span>
 
 class CArmedInstance;
 
@@ -45,6 +47,20 @@ DLL_LINKAGE LeadershipCapacity leadershipCapacity(int classBase, int classPerLev
 /// this helper: Leadership is per-stack capacity, never a shared movement
 /// budget. Changing armies must not award fresh movement points.
 DLL_LINKAGE int leadershipMovement(int unscaledMovement, int movementPercent);
+
+/// Read-only occupied slot for recruitment forecasting; counts stay wide across
+/// repeated purchases. This is transient input, not saved army state.
+struct DLL_LINKAGE RecruitmentSlot
+{
+	SlotID slot;
+	CreatureID creature;
+	int64_t count;
+};
+
+/// Shared matching/empty/best-headroom resolver. Slots must be valid and unique;
+/// row order is immaterial. An absent maximum preserves getSlotFor ordering.
+DLL_LINKAGE SlotID recruitmentSlot(std::span<const RecruitmentSlot> slots,
+	CreatureID creature, int64_t requestedAmount, std::optional<int64_t> maximum);
 
 /// Select the single recruitment destination for one request without splitting
 /// that request across stacks. Uncapped/legacy armies preserve getSlotFor.

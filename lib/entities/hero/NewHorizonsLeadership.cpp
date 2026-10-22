@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <array>
 #include <stdexcept>
+#include <vector>
 
 namespace newHorizonsHeroes
 {
@@ -151,55 +152,78 @@ bool canMergeArmies(const CArmedInstance * source, const CArmedInstance * destin
 
 SlotID recruitmentSlot(const CArmedInstance * army, CreatureID creature, int64_t requestedAmount)
 {
-	if(!army)
+	if(!army || !creature.toCreature())
 		return SlotID();
 
-	const auto * creatureType = creature.toCreature();
-	if(!creatureType)
-		return SlotID();
-
-	const SlotID legacySlot = army->getSlotFor(creatureType);
 	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
-	if(!hero || requestedAmount <= 0)
+	const auto capacity = hero && requestedAmount > 0
+		? hero->getLeadershipSlotCapacity(creature) : std::nullopt;
+	const std::optional<int64_t> maximum = capacity
+		? std::optional<int64_t>(capacity->maximum) : std::nullopt;
+	std::vector<RecruitmentSlot> slots;
+	slots.reserve(GameConstants::ARMY_SIZE);
+	for(const auto & [slot, stack] : army->Slots())
+		slots.push_back({slot, stack->getCreatureID(), stack->getCount()});
+	return recruitmentSlot(slots, creature, requestedAmount, maximum);
+}
+
+SlotID recruitmentSlot(std::span<const RecruitmentSlot> slots, CreatureID creature,
+	int64_t requestedAmount, std::optional<int64_t> maximum)
+{
+	if(!creature.toCreature())
+		return SlotID();
+
+	std::array<const RecruitmentSlot *, GameConstants::ARMY_SIZE> occupied{};
+	SlotID legacySlot;
+	for(const auto & entry : slots)
+	{
+		if(!entry.slot.validSlot() || occupied[entry.slot.getNum()])
+			throw std::invalid_argument("Recruitment slots must be valid and unique");
+		occupied[entry.slot.getNum()] = &entry;
+		if(entry.creature == creature && (!legacySlot.validSlot() || entry.slot < legacySlot))
+			legacySlot = entry.slot;
+	}
+	for(int i = 0; i < GameConstants::ARMY_SIZE && !legacySlot.validSlot(); ++i)
+		if(!occupied[i])
+			legacySlot = SlotID(i);
+	if(!maximum || requestedAmount <= 0)
 		return legacySlot;
 
-	const auto capacity = hero->getLeadershipSlotCapacity(creature);
-	if(!capacity)
-		return legacySlot;
-
-	const int64_t maximumStackCount = std::max<int64_t>(0, capacity->maximum);
+	const int64_t maximumStackCount = std::max<int64_t>(0, *maximum);
 	SlotID bestSlot;
 	int64_t bestHeadroom = -1;
 
-	// Matching stacks take priority when they can accept the whole request;
-	// iteration order preserves the first suitable stack. Otherwise remember
-	// the greatest headroom, with matching stacks winning ties over empty slots.
-	for(const auto slot : army->getCreatureSlots(creatureType, SlotID()))
+	// Matching stacks take priority for a whole request. Match getCreatureSlots'
+	// exclusion of unresolved/nonpositive counts, retaining physical slot order.
+	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
 	{
-		const int64_t currentCount = army->getStackCount(slot);
-		const int64_t headroom = std::max<int64_t>(0, maximumStackCount - currentCount);
+		const auto * entry = occupied[i];
+		if(!entry || entry->creature != creature || entry->count < 1)
+			continue;
+		const int64_t headroom = std::max<int64_t>(0, maximumStackCount - entry->count);
 		if(headroom >= requestedAmount)
-			return slot;
+			return SlotID(i);
 		if(headroom > bestHeadroom)
 		{
-			bestSlot = slot;
+			bestSlot = SlotID(i);
 			bestHeadroom = headroom;
 		}
 	}
 
-	for(const auto slot : army->getFreeSlots())
+	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
 	{
+		if(occupied[i])
+			continue;
 		if(maximumStackCount >= requestedAmount)
-			return slot;
+			return SlotID(i);
 		if(maximumStackCount > bestHeadroom)
 		{
-			bestSlot = slot;
+			bestSlot = SlotID(i);
 			bestHeadroom = maximumStackCount;
 		}
 	}
 
-	// A full matching slot is deliberately retained as a fallback so the
-	// authoritative validation still rejects an oversized direct request.
+	// Retain a full matching fallback so authoritative validation rejects it.
 	return bestHeadroom >= 0 ? bestSlot : legacySlot;
 }
 }

@@ -455,49 +455,172 @@ TEST_F(Nullkiller2_Behaviors_GatherArmyBehavior, TownPurchasePathPreservesDuplic
 		archangelOffer->count);
 }
 
-TEST_F(Nullkiller2_Behaviors_GatherArmyBehavior, TownPurchaseForecastUsesFirstMatchingLeadershipSlot)
+namespace
 {
-	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+class Nullkiller2_RecruitmentLeadership : public Nullkiller2_Behaviors_GatherArmyBehavior
+{
+protected:
+	CreatureID pikeman;
+	CGHeroInstance * hero = nullptr;
+	CGTownInstance * town = nullptr;
+	int maximum = 0;
+
+	void SetUp() override
+	{
+		Nullkiller2_Behaviors_GatherArmyBehavior::SetUp();
+		pikeman = CreatureID(CreatureID::decode("core:pikeman"));
+		startNewHorizonsMap(makeLeadershipTownPurchaseMap());
+		hero = findHeroAt(EXCHANGE_RECEIVER_POS);
+		town = findFirst<CGTownInstance>();
+		ASSERT_NE(hero, nullptr);
+		ASSERT_NE(town, nullptr);
+		hero->clearSlots();
+		town->creatures.clear();
+		const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+		ASSERT_TRUE(capacity);
+		ASSERT_GT(capacity->maximum, 3);
+		maximum = capacity->maximum;
+	}
+
+	void stockPikemen(int count, int rows = 1)
+	{
+		town->creatures.clear();
+		for(int row = 0; row < rows; ++row)
+			town->creatures.emplace_back(count, std::vector<CreatureID>{pikeman});
+	}
+
+	void fillPikemen(CCreatureSet & army)
+	{
+		army.clearSlots();
+		for(int slot = 0; slot < GameConstants::ARMY_SIZE; ++slot)
+			ASSERT_TRUE(army.setCreature(SlotID(slot), pikeman, maximum));
+	}
+
+	void expectOffers(const CCreatureSet & army, const TResources & resources,
+		const std::vector<std::pair<CreatureID, int>> & expected, bool explicitCarrier = false)
+	{
+		std::vector<std::tuple<SlotID, CreatureID, TQuantity>> sourceBefore;
+		for(const auto & [slot, stack] : army.Slots())
+			sourceBefore.emplace_back(slot, stack->getCreatureID(), stack->getCount());
+		const auto gateway = makeGateway(PLAYER);
+		const auto stateBefore = gameState()->saveToMemory();
+		const auto rulesBefore = hero->getCapabilityRules();
+		const auto budgetBefore = resources;
+		const auto offers = gateway->nullkiller->armyManager->getArmyAvailableToBuy(
+			&army, town, resources, 0, explicitCarrier ? hero : nullptr);
+		EXPECT_EQ(gameState()->saveToMemory(), stateBefore);
+		EXPECT_EQ(hero->getCapabilityRules(), rulesBefore);
+		EXPECT_EQ(resources, budgetBefore);
+		std::vector<std::tuple<SlotID, CreatureID, TQuantity>> sourceAfter;
+		for(const auto & [slot, stack] : army.Slots())
+			sourceAfter.emplace_back(slot, stack->getCreatureID(), stack->getCount());
+		EXPECT_EQ(sourceAfter, sourceBefore);
+		ASSERT_EQ(offers.size(), expected.size());
+		TResources totalCost;
+		for(size_t index = 0; index < expected.size(); ++index)
+		{
+			EXPECT_EQ(offers[index].creID, expected[index].first);
+			EXPECT_EQ(offers[index].count, expected[index].second);
+			EXPECT_GT(offers[index].count, 0);
+			totalCost += town->getRecruitmentCost(offers[index].creID) * offers[index].count;
+		}
+		EXPECT_TRUE(resources.canAfford(totalCost));
+	}
+};
+}
+
+TEST_F(Nullkiller2_RecruitmentLeadership, LaterMatchingSlotUsesAffordableRequestBeforeLowerPriorityRow)
+{
 	const CreatureID archer(CreatureID::decode("core:archer"));
-	startNewHorizonsMap(makeLeadershipTownPurchaseMap());
-
-	auto * hero = findHeroAt(EXCHANGE_RECEIVER_POS);
-	auto * town = findFirst<CGTownInstance>();
-	ASSERT_NE(hero, nullptr);
-	ASSERT_NE(town, nullptr);
-	hero->clearSlots();
-
-	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
-	ASSERT_TRUE(capacity);
-	ASSERT_GT(capacity->maximum, 1);
-	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum));
-	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, capacity->maximum - 1));
-
-	// The later duplicate has spare room, but the server recruits into the first
-	// matching slot. A capped Pike offer must not spend resources or block the
-	// cheaper Archer offer processed afterwards.
-	town->creatures.clear();
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, maximum));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, maximum - 1));
+	const auto pikeCost = town->getRecruitmentCost(pikeman);
+	const auto archerCost = town->getRecruitmentCost(archer);
+	ASSERT_TRUE(archerCost.canAfford(pikeCost));
+	ASSERT_FALSE(archerCost.canAfford(pikeCost * 2));
+	ASSERT_FALSE((archerCost - pikeCost).canAfford(archerCost));
 	town->creatures.emplace_back(3, std::vector<CreatureID>{archer});
 	town->creatures.emplace_back(3, std::vector<CreatureID>{pikeman});
-	TResources archerResources = archer.toCreature()->getFullRecruitCost();
-	const auto gateway = makeGateway(PLAYER);
-	auto purchases = gateway->nullkiller->armyManager->getArmyAvailableToBuy(
-		hero, town, archerResources);
-	ASSERT_EQ(purchases.size(), 1);
-	EXPECT_EQ(purchases.front().creID, archer);
-	EXPECT_EQ(purchases.front().count, 1);
+	expectOffers(*hero, archerCost, {{pikeman, 1}});
+	auto insufficientBudget = pikeCost;
+	ASSERT_GT(insufficientBudget[EGameResID::GOLD], 0);
+	--insufficientBudget[EGameResID::GOLD];
+	expectOffers(*hero, insufficientBudget, {});
+}
 
-	// With one unit of room in the first slot, the purchase forecast remains
-	// bounded there instead of aggregating capacity from both duplicates.
-	hero->setCreature(SlotID(0), pikeman, capacity->maximum - 1);
-	town->creatures.clear();
-	town->creatures.emplace_back(3, std::vector<CreatureID>{pikeman});
-	TResources pikemanResources = pikeman.toCreature()->getFullRecruitCost() * 3;
-	purchases = gateway->nullkiller->armyManager->getArmyAvailableToBuy(
-		hero, town, pikemanResources);
-	ASSERT_EQ(purchases.size(), 1);
-	EXPECT_EQ(purchases.front().creID, pikeman);
-	EXPECT_EQ(purchases.front().count, 1);
+TEST_F(Nullkiller2_RecruitmentLeadership, EmptySlotAcceptsWholeRequestInsteadOfPartialDuplicate)
+{
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, maximum - 1));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, maximum - 1));
+	stockPikemen(3);
+	const auto budget = town->getRecruitmentCost(pikeman) * 3;
+	expectOffers(*hero, budget, {{pikeman, 3}});
+	hero->setStackCount(SlotID(0), maximum);
+	hero->setStackCount(SlotID(1), maximum);
+	expectOffers(*hero, budget, {{pikeman, 3}});
+}
+
+TEST_F(Nullkiller2_RecruitmentLeadership, FullArmyUsesBestSingleSlotHeadroomAndRejectsNoFit)
+{
+	fillPikemen(*hero);
+	hero->setStackCount(SlotID(1), maximum - 2);
+	stockPikemen(3);
+	const auto budget = town->getRecruitmentCost(pikeman) * 3;
+	expectOffers(*hero, budget, {{pikeman, 2}});
+	hero->setStackCount(SlotID(1), maximum);
+	expectOffers(*hero, budget, {});
+}
+
+TEST_F(Nullkiller2_RecruitmentLeadership, RepeatedRowsConsumeProjectedSingleSlotHeadroom)
+{
+	fillPikemen(*hero);
+	hero->setStackCount(SlotID(1), maximum - 2);
+	hero->setStackCount(SlotID(2), maximum - 1);
+	stockPikemen(3, 3);
+	const auto budget = town->getRecruitmentCost(pikeman) * 9;
+	expectOffers(*hero, budget, {{pikeman, 2}, {pikeman, 1}});
+}
+
+TEST_F(Nullkiller2_RecruitmentLeadership, SyntheticArmyUsesExplicitCarrierWithoutChangingLegacyFallback)
+{
+	CCreatureSet projected;
+	fillPikemen(projected);
+	projected.setStackCount(SlotID(1), maximum - 1);
+	stockPikemen(3);
+	const auto budget = town->getRecruitmentCost(pikeman) * 3;
+	expectOffers(projected, budget, {{pikeman, 1}}, true);
+	// No hero context means no captured Leadership policy, as before.
+	expectOffers(projected, budget, {{pikeman, 3}});
+}
+
+TEST_F(Nullkiller2_RecruitmentLeadership, ForeignReplacementDoesNotLeaveRemovedSpeciesInProjectedSlot)
+{
+	const CreatureID imp(CreatureID::decode("core:imp"));
+	const CreatureID archer(CreatureID::decode("core:archer"));
+	fillPikemen(*hero);
+	ASSERT_EQ(hero->stacksCount(), GameConstants::ARMY_SIZE);
+	ASSERT_NE(imp.toCreature()->getFactionID(), town->getFactionID());
+	ASSERT_EQ(pikeman.toCreature()->getFactionID(), town->getFactionID());
+	const auto impCapacity = hero->getLeadershipSlotCapacity(imp);
+	const auto archerCapacity = hero->getLeadershipSlotCapacity(archer);
+	ASSERT_TRUE(impCapacity);
+	ASSERT_TRUE(archerCapacity);
+	ASSERT_GE(impCapacity->maximum, 3);
+	ASSERT_GE(archerCapacity->maximum, 3);
+	hero->setStackType(SlotID(0), imp);
+	hero->setStackCount(SlotID(0), 3);
+	const auto impCost = town->getRecruitmentCost(imp);
+	const auto archerCost = town->getRecruitmentCost(archer);
+	auto replacedValue = impCost * 3;
+	ASSERT_EQ(replacedValue / archerCost, 1);
+	ASSERT_GT((archerCost * 3).marketValue(), replacedValue.marketValue());
+	const auto budget = archerCost * 3;
+	ASSERT_TRUE((budget - archerCost * 2).canAfford(impCost * 2));
+	town->creatures.emplace_back(3, std::vector<CreatureID>{imp});
+	town->creatures.emplace_back(3, std::vector<CreatureID>{archer});
+	// Existing valuation subtracts one Archer for the discarded Imp stack.
+	// Its projected slot is then Archer2, not an Imp slot for the later row.
+	expectOffers(*hero, budget, {{archer, 2}});
 }
 
 namespace
