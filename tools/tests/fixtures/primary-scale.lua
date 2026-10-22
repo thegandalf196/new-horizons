@@ -13,6 +13,16 @@ local battle = {hasMoat=function() return true end}
 local mechanics = {
     getEffectPower=function() return power end,
     getEffectPowerDivisor=function() return divisor end,
+    -- This legacy boundary fixture has no rank, Spellcraft, Warcasting or Empower bonus.
+    getSpellPowerCoefficientBasisPoints=function() return 10000 end,
+    scaleSpellPowerComponentWithCoefficientBasisPoints=function(_, numerator, denominator, coefficient)
+        assert(numerator >= 0 and denominator > 0 and coefficient == 10000)
+        return math.floor(numerator / denominator)
+    end,
+    usesNewHorizonsMagic=function() return false end,
+    usesNewHorizonsMagicV3=function() return false end,
+    usesNewHorizonsQuicksandSelectedPlacement=function() return false end,
+    getCapturedMdrPenetration=function() return {} end,
     calculateRawEffectValue=function(_, base, level) return base * 100 + level * 3 end,
     applySpecificSpellBonus=function(_, value) return value + 10 end,
     getBattle=function() return battle end,
