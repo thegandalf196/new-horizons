@@ -34,6 +34,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 		&& magic["spells"].Struct().contains("new-horizons:holyArmor"))
 	{
 		result.name = "Master Spellward";
+		result.artwork = "newHorizons/heroSpecialties/ThorgrimMasterSpellward";
 		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:warcasting"));
 		result.description = "While Spellward is active, its magical-damage reduction contribution increases by "
 			+ std::to_string(ward->percentPerLevel) + "% per hero level, up to +"
@@ -47,6 +48,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 		&& newHorizonsMagic::spellPointRulesActive(magic))
 	{
 		result.name = "Bottomless Mind";
+		result.artwork = "newHorizons/heroSpecialties/AndraBottomlessMind";
 		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
 		result.description = "While Intelligence is active, Andra gains +"
 			+ std::to_string(bottomless->pointsPerLevel)

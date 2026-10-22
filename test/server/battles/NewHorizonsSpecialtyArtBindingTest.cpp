@@ -24,7 +24,9 @@ struct BindingCase
 	const char * artwork;
 };
 
-constexpr std::array<BindingCase, 5> bindings = {{
+constexpr std::array<BindingCase, 7> bindings = {{
+	{"core:andra", "bottomlessMindSpecialty", "newHorizons/heroSpecialties/AndraBottomlessMind"},
+	{"core:thorgrim", "masterSpellwardSpecialty", "newHorizons/heroSpecialties/ThorgrimMasterSpellward"},
 	{"core:serena", "arcanePreparationSpecialty", "newHorizons/heroSpecialties/SerenaArcanePreparation"},
 	{"core:gem", "druidSpecialties", "newHorizons/heroSpecialties/GemRestorativeSorceress"},
 	{"core:elleshar", "druidSpecialties", "newHorizons/heroSpecialties/EllesharHighLore"},
@@ -49,7 +51,7 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsSpecialtyArtBindingTest, ExplicitPoliciesBindFiveDistinctNativeResourcePairs)
+TEST_F(NewHorizonsSpecialtyArtBindingTest, ExplicitPoliciesBindSevenDistinctNativeResourcePairs)
 {
 	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
@@ -175,4 +177,17 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, CreatureArtRequiresMatchingConvertedT
 		development, magic, std::nullopt).artwork);
 	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:pasis"),
 		development, magic, wisp).artwork);
+}
+
+TEST_F(NewHorizonsSpecialtyArtBindingTest, AndraAndThorgrimNeedCapturedMagicRules)
+{
+	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode configured(JsonPath::builtin("config/newHorizonsMagic"));
+	for(const char * id : {"core:andra", "core:thorgrim"})
+		EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(
+			prototype(id), development, JsonNode(), std::nullopt).artwork);
+	auto noWardSpell = configured;
+	noWardSpell["spells"].Struct().erase("new-horizons:holyArmor");
+	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(
+		prototype("core:thorgrim"), development, noWardSpell, std::nullopt).artwork);
 }

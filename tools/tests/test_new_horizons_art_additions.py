@@ -412,5 +412,27 @@ class ArtAdditionsTest(unittest.TestCase):
 
 
 
+    def test_selected_andra_thorgrim_v2_cohort_keeps_exact_two_heroes(self):
+        token = 'selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22'
+        records = [row for wave in self.waves for row in wave.get('specialties', [])
+                   if row['selection'] == token]
+        expected = {
+            'core:andra': ('AndraBottomlessMind',
+                'fd69a288f8580f780a2cd868e57ee15ff6faafcfceb9adcfd26cddb21b755dd0',
+                '3fae452c251c3ac3ddd274f4d6b7a6ebf57d4ea1e2775f481c1a864ebe8cafcf'),
+            'core:thorgrim': ('ThorgrimMasterSpellward',
+                '5a00b23154994b4c2ab45ff25ad9ac6df52767091b8f7c9915f304f67351bdbf',
+                '416307bdfac22bcdb4f4457150ef743ac02b93f18d2eac1fcc4ca993f06df36a')}
+        self.assertEqual(len(records), 2)
+        self.assertEqual({row['id'] for row in records}, set(expected))
+        for row in records:
+            self.assertEqual(row['version'], 'transparent-foreground-v2-20261021')
+            self.assertEqual((row['identity'], row['native44Sha256'], row['native32Sha256']),
+                             expected[row['id']])
+            self.assertIn('not Final', row['approval'])
+            self.assertIn('provisional', row['selection'])
+
+
+
 if __name__ == '__main__':
     unittest.main()

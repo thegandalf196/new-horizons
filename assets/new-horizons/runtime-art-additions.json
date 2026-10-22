@@ -5269,6 +5269,76 @@
         }
       ],
       "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "baselineArchiveSha256": "342e150554e2874a9375c550dc210c892ea167859c197372298379f504178cdd",
+      "baselineManifestSha256": "f94ef6175d75ca761bf28d2d46ae574bbc5667f093433f55fe808e270b122267",
+      "baselineEntriesSha256": "1d7f30f5dbe7502f7d257579830b90f9f4672ed4a7326b21fd1d73c34f816564",
+      "baselineHeaderSha256": "6cfea69a7513ffa4a185755f1ada67e2ed2aac17156d50e690fc45d4b93ad439",
+      "nonStatusConfigSha256": "6bcf78af32bc3739f491572a1705a1e9440dc76cc25b19947da8998d7fc5cba2",
+      "baselineCount": 4819,
+      "entryCount": 4827,
+      "newArchiveSha256": "a71a8f381fb417bbbedac36c681b8806b27c27116917ecae29065e141e3cbddc",
+      "resources": [
+        "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/32.json",
+        "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/44.json",
+        "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/32.json",
+        "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/44.json",
+        "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/icon-44.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "specialties": [
+        {
+          "id": "core:andra",
+          "identity": "AndraBottomlessMind",
+          "version": "transparent-foreground-v2-20261021",
+          "native44Sha256": "fd69a288f8580f780a2cd868e57ee15ff6faafcfceb9adcfd26cddb21b755dd0",
+          "native32Sha256": "3fae452c251c3ac3ddd274f4d6b7a6ebf57d4ea1e2775f481c1a864ebe8cafcf",
+          "normal44": "newHorizons/heroSpecialties/AndraBottomlessMind/44",
+          "normal32": "newHorizons/heroSpecialties/AndraBottomlessMind/32",
+          "selectionEvidenceSha256": "7b0071ad2c6c8b5fa0f3c61269736e951fa0985be7726347271bbc91d6a4a38c",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/32.json",
+            "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/44.json",
+            "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/icon-44.png"
+          ],
+          "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+          "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+          "approval": "Provisional; not Final; rendered acceptance pending",
+          "originalMasterSha256": "4689c59afbbc28ac04de96d7b8d79c0fee5ed862cb1fefefb4f82b98ec6dec01",
+          "originalHandoffSha256": "c752595ae8ca64c48cd0b28efe31a8e447e5ba7c6776131be60d230cebdbdb3f",
+          "processing": "alpha-bbox contain in size minus4; centered; premultiplied RGBa LANCZOS; original alpha retained; no threshold/chromakey"
+        },
+        {
+          "id": "core:thorgrim",
+          "identity": "ThorgrimMasterSpellward",
+          "version": "transparent-foreground-v2-20261021",
+          "native44Sha256": "5a00b23154994b4c2ab45ff25ad9ac6df52767091b8f7c9915f304f67351bdbf",
+          "native32Sha256": "416307bdfac22bcdb4f4457150ef743ac02b93f18d2eac1fcc4ca993f06df36a",
+          "normal44": "newHorizons/heroSpecialties/ThorgrimMasterSpellward/44",
+          "normal32": "newHorizons/heroSpecialties/ThorgrimMasterSpellward/32",
+          "selectionEvidenceSha256": "7b0071ad2c6c8b5fa0f3c61269736e951fa0985be7726347271bbc91d6a4a38c",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/32.json",
+            "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/44.json",
+            "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/icon-44.png"
+          ],
+          "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+          "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+          "approval": "Provisional; not Final; rendered acceptance pending",
+          "originalMasterSha256": "345ab79bf95e7b3b4c4917779eaa1a91b0b7dc54d670b40427068cd7b1962748",
+          "originalHandoffSha256": "b346faf9689e64aacad7761ac8884e1d758bc61987a45e5a09dc659710230ef9",
+          "processing": "alpha-bbox contain in size minus4; centered; premultiplied RGBa LANCZOS; original alpha retained; no threshold/chromakey"
+        }
+      ],
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
     }
   ]
 }

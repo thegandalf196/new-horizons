@@ -48190,6 +48190,86 @@
       "origin": "built-in-generated-own-specialty-painting-targeted-transparent-edit-native-export",
       "selection": "selected-provisional-standalone-specialty-foreground-v1-elleshar-malcom-2026-10-22",
       "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AndraBottomlessMind/32.json",
+      "size": 104,
+      "sha256": "aa0cb0598fda4fc517e330da9370c776774ffaa9ed31dd28346fa3bb1bbdbdfe",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AndraBottomlessMind/44.json",
+      "size": 104,
+      "sha256": "33558bf71123340c4331e6f73edd5a3826333e96fd9cb4d396bed2553ada232e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AndraBottomlessMind/icon-32.png",
+      "size": 2211,
+      "sha256": "3fae452c251c3ac3ddd274f4d6b7a6ebf57d4ea1e2775f481c1a864ebe8cafcf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AndraBottomlessMind/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AndraBottomlessMind/icon-44.png",
+      "size": 3843,
+      "sha256": "fd69a288f8580f780a2cd868e57ee15ff6faafcfceb9adcfd26cddb21b755dd0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ThorgrimMasterSpellward/32.json",
+      "size": 108,
+      "sha256": "4e3b7873f210266d661053445cc9cda8b814c71307eeb7211097fb1535bae068",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ThorgrimMasterSpellward/44.json",
+      "size": 108,
+      "sha256": "b22117a940e652ea92cbf6a14d45599d4b0a7dc039510074b6dd7b74230c7f3c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ThorgrimMasterSpellward/icon-32.png",
+      "size": 2253,
+      "sha256": "416307bdfac22bcdb4f4457150ef743ac02b93f18d2eac1fcc4ca993f06df36a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ThorgrimMasterSpellward/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ThorgrimMasterSpellward/icon-44.png",
+      "size": 4064,
+      "sha256": "5a00b23154994b4c2ab45ff25ad9ac6df52767091b8f7c9915f304f67351bdbf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
     }
   ],
   "requiredFamilies": [
@@ -48204,7 +48284,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2741,
+    "builtin-skills-perks-orders-and-ui": 2749,
     "cabir-and-master": 214,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

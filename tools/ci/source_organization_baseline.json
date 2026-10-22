@@ -22722,14 +22722,14 @@
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "kind": "exception",
-      "deferral": "UI developer must extract the existing druid-presentation branch into a focused helper before the next substantive logic expansion, preserving applicability, evaluation order, descriptions and captured-policy fallbacks. This exception admits only the two Elleshar/Malcom artwork constants at120 lines and no further growth.",
-      "lines": 120,
+      "deferral": "UI developer must extract the existing druid-presentation branch into a focused helper before the next substantive logic expansion, preserving applicability, evaluation order, descriptions and captured-policy fallbacks. This exception admits only the two Andra/Thorgrim artwork constants at122 lines and no further growth.",
+      "lines": 122,
       "owner": "ui_developer",
-      "rationale": "Ordered individual/druid specialty applicability and description readback retain existing guards, captured policy and producer/marker checks. Two constant artwork stems at existing Elleshar/Malcom matches grow the helper from118 to120 lines without new branching or rule ownership. Bounded read-only art binding remains below150; review family boundaries before substantive expansion.",
-      "review": "IR-ELLESHAR-MALCOM-SPECIALTY-ART-20261022",
+      "rationale": "Ordered individual/druid specialty applicability and description readback retain existing guards, captured policy and producer/marker checks. Two constant artwork stems at existing Andra/Thorgrim matches grow the helper from120 to122 lines without new branching or rule ownership. Independently reviewed exact two-constant exception only; below150, no future growth, druid extraction required before substantive expansion.",
+      "review": "IR-ANDRA-THORGRIM-SPECIALTY-ART-20261022",
       "review_scope": "prospective-specialty-presentation-bounded-function",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "5f3ec4f984badf6c7e1601e6f39f3cef857df937a969b22efa73e97a1bbc40b7"
+      "sha256": "0e2df02635185e0a97b64e8c4866d254a24ae92d02709b8ace9f00aa39641b62"
     },
     "lib/filesystem/CFilesystemLoader.cpp::std::unordered_map<ResourcePath, boost::filesystem::path> CFilesystemLoader::listFiles(const std::string &mountPoint, size_t depth, bool initial) const#1": {
       "kind": "legacy",

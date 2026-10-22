@@ -25,10 +25,12 @@ struct CapturedCase
 	const char * artwork;
 	int3 position;
 };
-const std::array<CapturedCase, 3> cases = {{
+const std::array<CapturedCase, 5> cases = {{
 	{"core:serena", "newHorizons/heroSpecialties/SerenaArcanePreparation", {5, 5, 0}},
 	{"core:gem", "newHorizons/heroSpecialties/GemRestorativeSorceress", {7, 5, 0}},
-	{"core:daremyth", "newHorizons/heroSpecialties/DaremythFortunesChild", {7, 7, 0}}
+	{"core:daremyth", "newHorizons/heroSpecialties/DaremythFortunesChild", {7, 7, 0}},
+	{"core:andra", "newHorizons/heroSpecialties/AndraBottomlessMind", {9, 5, 0}},
+	{"core:thorgrim", "newHorizons/heroSpecialties/ThorgrimMasterSpellward", {9, 7, 0}}
 }};
 
 void expectSamePresentation(const newHorizonsHeroes::SpecialtyPresentation & actual,
@@ -60,7 +62,8 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(historical)
-			for(const char * key : {"arcanePreparationSpecialty", "fortuneChildSpecialty", "druidSpecialties"})
+			for(const char * key : {"arcanePreparationSpecialty", "fortuneChildSpecialty", "druidSpecialties",
+				"bottomlessMindSpecialty", "masterSpellwardSpecialty"})
 				development.Struct().erase(key);
 		development.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
@@ -203,7 +206,7 @@ TEST_F(NewHorizonsSpecialtyCapturedPresentationTest, DaremythNeedsActualLiveLuck
 		daremyth->getPrimaryGrowthRules(), daremyth->getMagicRules(), std::nullopt).artwork);
 }
 
-TEST_F(NewHorizonsSpecialtyCapturedPresentationTest, WholeWorldCloneRetainsAllThreeCapturedIdentities)
+TEST_F(NewHorizonsSpecialtyCapturedPresentationTest, WholeWorldCloneRetainsAllFiveCapturedIdentities)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CMemorySerializer memory;
@@ -216,7 +219,7 @@ TEST_F(NewHorizonsSpecialtyCapturedPresentationTest, WholeWorldCloneRetainsAllTh
 	ASSERT_NO_FATAL_FAILURE(expectRestored(restored));
 }
 
-TEST_F(NewHorizonsSpecialtyCapturedPresentationTest, CurrentMemorySaveRetainsAllThreeCapturedIdentities)
+TEST_F(NewHorizonsSpecialtyCapturedPresentationTest, CurrentMemorySaveRetainsAllFiveCapturedIdentities)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CGameState restored;
@@ -230,7 +233,8 @@ TEST_F(NewHorizonsSpecialtyCapturedPresentationTest, SavedPolicyAbsenceDoesNotRe
 	historical = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const JsonNode installed(JsonPath::builtin("config/newHorizonsHeroes"));
-	for(const char * key : {"arcanePreparationSpecialty", "fortuneChildSpecialty", "druidSpecialties"})
+	for(const char * key : {"arcanePreparationSpecialty", "fortuneChildSpecialty", "druidSpecialties",
+		"bottomlessMindSpecialty", "masterSpellwardSpecialty"})
 	{
 		ASSERT_TRUE(installed[key].isStruct());
 		EXPECT_FALSE(gameState()->getHeroDevelopmentRules().Struct().contains(key));
