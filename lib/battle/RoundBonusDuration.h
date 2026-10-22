@@ -5,11 +5,13 @@
  */
 #pragma once
 #include "../bonuses/BonusSelector.h"
+class JsonNode;
+
 namespace battle
 {
 class Unit;
 /// Construct base once per round, capture seal/polarity once per timed unit,
 /// before its own exported duration records are changed.
-DLL_LINKAGE CSelector roundTimedBonuses();
+DLL_LINKAGE CSelector roundTimedBonuses(const JsonNode & savedRules);
 DLL_LINKAGE CSelector roundTimedBonusesFor(const Unit & unit, const CSelector & base);
 }

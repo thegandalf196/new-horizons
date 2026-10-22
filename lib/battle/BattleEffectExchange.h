@@ -109,5 +109,5 @@ struct DLL_LINKAGE PreparedBattleEffectHealth
 	std::shared_ptr<CUnitState> unit;
 };
 DLL_LINKAGE PreparedBattleEffectHealth prepareBattleEffectHealth(const CUnitState & unit,
-	const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement);
+	const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement, const JsonNode & magicRules);
 }

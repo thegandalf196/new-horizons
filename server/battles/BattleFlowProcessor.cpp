@@ -37,6 +37,7 @@
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
+#include "../../lib/spells/HydrasVitalityIdentity.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/callback/GameRandomizer.h"
@@ -642,9 +643,8 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 	// Timed bonuses are decremented inside BattleNextRound rather than through a
 	// SetStackEffect pack. Record only Hydra capacity effects that are about to
 	// expire so their compact survivor HP can be clamped immediately afterward.
-	static const SpellID hydrasVitalitySpell(SpellID::decode("new-horizons:hydrasVitality"));
-	const auto hydrasCapacitySelector = Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::STACK_HEALTH));
+	const auto hydrasSource = newHorizonsMagic::hydrasVitalitySource(battle.getBattle()->getMagicRules());
+	const auto hydrasCapacitySelector = hydrasSource.And(Selector::type()(BonusType::STACK_HEALTH));
 	std::vector<uint32_t> expiringHydrasVitalityStacks;
 	for(const auto * unit : battle.battleGetAllUnits(false))
 	{
@@ -661,8 +661,7 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 	bnr.battleID = battle.getBattle()->getBattleID();
 	logGlobal->debug("Next round starts");
 	gameHandler->sendAndApply(bnr);
-	const auto hydrasRegenerationSelector = Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::HP_REGENERATION));
+	const auto hydrasRegenerationSelector = hydrasSource.And(Selector::type()(BonusType::HP_REGENERATION));
 	for(const auto stackId : expiringHydrasVitalityStacks)
 	{
 		const auto * stack = battle.battleGetStackByID(stackId, false);
@@ -2992,9 +2991,8 @@ void applyStartOfActivationEffects(CGameHandler * gameHandler,
 			gameHandler->sendAndApply(message);
 		}
 	}
-	static const SpellID hydrasVitalitySpell(SpellID::decode("new-horizons:hydrasVitality"));
-	const auto hydrasVitalityMarker = Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::HP_REGENERATION));
+	const auto hydrasVitalityMarker = newHorizonsMagic::hydrasVitalitySource(battle.getBattle()->getMagicRules())
+		.And(Selector::type()(BonusType::HP_REGENERATION));
 	if(creatureStack->alive() && !creatureStack->isTimeStopped() && state
 		&& state->health.isCapacityHealthTracking()
 		&& creatureStack->hasBonus(hydrasVitalityMarker))

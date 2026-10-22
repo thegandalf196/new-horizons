@@ -11,6 +11,7 @@
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
 #include "../../lib/battle/RoundBonusDuration.h"
+#include "../../lib/spells/HydrasVitalityIdentity.h"
 #include "HypotheticLifecycleTimingScope.h"
 #include "../../lib/battle/BattleForm.h"
 #include "../../lib/battle/CObstacleInstance.h"
@@ -78,7 +79,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	std::vector<uint32_t> pendingRemoval;
 	std::vector<uint32_t> pendingFormRestoration;
 	const auto owned = initialExportSubject();
-	const auto ownedRoundSelector = owned ? battle::roundTimedBonuses() : CSelector();
+	const auto ownedRoundSelector = owned ? battle::roundTimedBonuses(getMagicRules()) : CSelector();
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{
 		auto forUpdate = getForUpdate(unit->unitId());
@@ -205,9 +206,8 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 		if(healing > 0)
 			unit->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
 	}
-	static const SpellID hydrasVitalitySpell(SpellID::decode("new-horizons:hydrasVitality"));
-	const auto hydrasVitalityMarker = Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::HP_REGENERATION));
+	const auto hydrasVitalityMarker = newHorizonsMagic::hydrasVitalitySource(getMagicRules())
+		.And(Selector::type()(BonusType::HP_REGENERATION));
 	if(unit->alive() && !unit->isTimeStopped()
 		&& unit->getCapacityHealthReferenceMax() > 0
 		&& unit->health.isCapacityHealthTracking()

@@ -2313,9 +2313,16 @@ float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMech
 	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
 		return 0.0f;
 
+	const auto * battleCallback = spellMechanics->battle();
+	if(!battleCallback)
+		return 0.0f;
+	const auto * queryBattle = battleState ? battleState->getBattle() : battleCallback->getBattle();
+	if(!queryBattle)
+		return 0.0f;
+
 	const auto * liveTarget = target.front().unitValue;
 	if(!liveTarget->alive() || !liveTarget->isValidTarget(false) || liveTarget->isInvincible()
-		|| newHorizonsPlague::hasPlague(liveTarget) || !spellMechanics->isReceptive(liveTarget))
+		|| newHorizonsPlague::hasPlague(liveTarget, queryBattle->getMagicRules()) || !spellMechanics->isReceptive(liveTarget))
 		return 0.0f;
 
 	detail::ProblemImpl problem;
@@ -2333,9 +2340,6 @@ float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMech
 	if(rawDamage <= 0)
 		return 0.0f;
 
-	const auto * battleCallback = spellMechanics->battle();
-	if(!battleCallback)
-		return 0.0f;
 	if(!battleState)
 	{
 		battleState = std::shared_ptr<CBattleInfoCallback>(

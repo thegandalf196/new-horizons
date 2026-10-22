@@ -30,6 +30,7 @@
 #include "../../lib/bonuses/CBonusSystemNode.h"
 #include "../../lib/bonuses/ProjectedBonusView.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
+#include "../../lib/spells/HydrasVitalityIdentity.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 
 #include <unordered_map>
@@ -41,13 +42,6 @@ using hypotheticBonusApplication::isGuardianSpiritBonus;
 
 namespace
 {
-bool isActivationClockPlague(const Bonus * bonus)
-{
-	static const SpellID plague(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)));
-	return bonus && bonus->source == BonusSource::SPELL_EFFECT
-		&& bonus->sid == BonusSourceID(plague) && bonus->type == BonusType::COMBAT_EVENT_TRIGGER;
-}
-
 
 const CSelector & guardianSpiritSelector()
 {
@@ -424,10 +418,11 @@ void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTi
 	// immutable values apply equally to stacked, source-local and raw aliases.
 	const auto preservedPolarity = newHorizonsSorcery::spellLockPreservesBeneficial(*this);
 	const bool sealed = preservedPolarity.has_value() && newHorizonsSorcery::isSpellLocked(*this);
-	const auto roundTimed = [this, sealed, preservedPolarity](const Bonus * bonus)
+	const auto plagueMarker = newHorizonsPlague::markerSelector(owner->getMagicRules());
+	const auto roundTimed = [this, sealed, preservedPolarity, &plagueMarker](const Bonus * bonus)
 	{
 		return timedProjectionEffect(bonus, capturedPhysicalAfflictionGroups)
-			&& !isActivationClockPlague(bonus)
+			&& !(bonus && plagueMarker(bonus))
 			&& !(sealed && newHorizonsSorcery::isPreservedSpellLockEffect(bonus, *preservedPolarity));
 	};
 	const auto age = [&roundTimed](std::vector<Bonus> & bonuses)
@@ -490,11 +485,9 @@ void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTi
 		// Match the authoritative round-expiry hook for Hydra's Vitality. Timed
 		// capacity effects disappear inside round aging rather than via a bonus
 		// pack, so clamp each survivor before exposing the projected state.
-		static const SpellID hydrasVitalitySpell(SpellID::decode("new-horizons:hydrasVitality"));
-		const auto capacitySelector = Selector::source(BonusSource::SPELL_EFFECT,
-			BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::STACK_HEALTH));
-		const auto regenerationSelector = Selector::source(BonusSource::SPELL_EFFECT,
-			BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::HP_REGENERATION));
+		const auto hydrasSource = newHorizonsMagic::hydrasVitalitySource(owner->getMagicRules());
+		const auto capacitySelector = hydrasSource.And(Selector::type()(BonusType::STACK_HEALTH));
+		const auto regenerationSelector = hydrasSource.And(Selector::type()(BonusType::HP_REGENERATION));
 		normalizeCapacityHealth();
 		if(!hasBonus(capacitySelector) && !hasBonus(regenerationSelector))
 			clearCapacityHealthReference();

@@ -474,6 +474,7 @@ set(lib_MAIN_SRCS
 	spells/OrientedSpellPattern.cpp
 	spells/MagicalDamageReduction.cpp
 	spells/NewHorizonsSorcery.cpp
+	spells/HydrasVitalityIdentity.cpp
 	spells/NewHorizonsSpellAvailability.cpp
 	spells/NewHorizonsSpellcraft.cpp
 	spells/NewHorizonsCrossSchoolFormula.cpp
@@ -1141,6 +1142,7 @@ set(lib_MAIN_HEADERS
 	spells/OrientedSpellPattern.h
 	spells/MagicalDamageReduction.h
 	spells/NewHorizonsSorcery.h
+	spells/HydrasVitalityIdentity.h
 	spells/NewHorizonsSpellAvailability.h
 	spells/NewHorizonsSpellcraft.h
 	spells/NewHorizonsCrossSchoolFormula.h

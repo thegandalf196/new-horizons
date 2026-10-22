@@ -3961,7 +3961,7 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 	// Resolve one explicit movement action before comparing its future-DPS value.
 	// This cache is local to this decision; reuse the same action if selected.
 	std::optional<BattleAction> completedMovement;
-	if(newHorizonsPlague::hasPlague(stack) && !targets->berserk && !moveTarget.positions.empty())
+	if(newHorizonsPlague::hasPlague(stack, hb->getMagicRules()) && !targets->berserk && !moveTarget.positions.empty())
 	{
 		std::pair<float, float> completionValue{};
 		const bool actionMadeBeforePreview = activeActionMade;
@@ -4205,7 +4205,7 @@ BattleEvaluator::MovementCompletionProjection BattleEvaluator::projectOrdinaryMo
 	result.battle->projectVoluntaryMovement(actor->unitId(), destination.front().hexValue);
 	const auto * moved = result.battle->battleGetUnitByID(actor->unitId());
 	result.arrivedAlive = moved && moved->alive() && moved->getPosition() == destination.front().hexValue;
-	if(result.arrivedAlive && newHorizonsPlague::hasPlague(moved))
+	if(result.arrivedAlive && newHorizonsPlague::hasPlague(moved, result.battle->getMagicRules()))
 		result.value = completeProjectedPlagueValue(*result.battle, actor->unitId(), perspective, result.battle);
 	return result;
 }

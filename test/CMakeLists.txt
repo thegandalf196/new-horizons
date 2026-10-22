@@ -323,6 +323,7 @@ set(test_SRCS
 		server/battles/CombatEventTriggerTest.cpp
 		server/battles/DamageCalculatorTest.cpp
 		server/battles/OptionalRegenerationIdentityTest.cpp
+		server/battles/OptionalHydraIdentityTest.cpp
 		server/battles/NewHorizonsMoraleActivationTest.cpp
 		server/battles/NewHorizonsMoraleActivationProtocolTest.cpp
 		server/battles/NewHorizonsMoraleCreatureSpellTest.cpp
@@ -856,6 +857,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsSummonTrollsAITest.cpp
 		battleAI/NewHorizonsVerdantPrisonAITest.cpp
 		battleAI/NewHorizonsHydrasVitalityAITest.cpp
+		battleAI/OptionalHydraForecastTest.cpp
 		battleAI/NewHorizonsChaosBlinkAITest.cpp
 		battleAI/NewHorizonsCommandEfficiencyAITest.cpp
 		battleAI/NewHorizonsCombinedArmsAITest.cpp

@@ -12,6 +12,11 @@
 #include "Unit.h"
 #include "BattleHex.h"
 #include "../CStack.h"
+#include "../GameLibrary.h"
+#include "../constants/StringConstants.h"
+#include "../modding/CModHandler.h"
+#include "../modding/IdentifierStorage.h"
+#include "../modding/ModScope.h"
 #include "../spells/BattleSpellMechanics.h"
 #include "../spells/CSpell.h"
 #include "../spells/ISpellMechanics.h"
@@ -111,6 +116,26 @@ bool containsExtendedPropagation(const JsonNode & node)
 	return false;
 }
 
+CSelector markerSelector(const JsonNode & savedRules)
+{
+	if(!LIBRARY || !LIBRARY->modh)
+		throw std::runtime_error("Plague effect identity requires an initialized library");
+	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell", std::string(SPELL_ID), true);
+	if(id)
+		return Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(*id)))
+			.And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER));
+	const bool legacy = savedRules.isNull() || (savedRules.isStruct() && savedRules.Struct().empty());
+	const bool moduleLoaded = vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	if(!legacy || moduleLoaded)
+		throw std::runtime_error("Plague effect identity is missing required New Horizons content");
+	return Selector::none;
+}
+
+bool hasPlague(const battle::Unit * unit, const JsonNode & savedRules)
+{
+	return unit && unit->hasBonus(markerSelector(savedRules));
+}
+
 bool hasPlague(const battle::Unit * unit)
 {
 	if(!unit)
@@ -142,7 +167,7 @@ std::optional<uint32_t> selectNextSpreadTarget(const CBattleInfoCallback & battl
 		if(!hex.isValid())
 			continue;
 		const auto * candidate = battle.battleGetUnitByPos(hex, true);
-		if(!candidate || !candidate->alive() || candidate == afflicted || hasPlague(candidate) || excluded.count(candidate->unitId()))
+		if(!candidate || !candidate->alive() || candidate == afflicted || hasPlague(candidate, battle.getBattle()->getMagicRules()) || excluded.count(candidate->unitId()))
 			continue;
 		if(recipientAllowed && !recipientAllowed(candidate))
 			continue;
@@ -196,8 +221,7 @@ void completeActivation(const CBattleInfoCallback & battle, ServerCallback & ser
 	const auto * stack = battle.battleGetUnitByID(unitId);
 	if(!stack || stack->isTimeStopped())
 		return;
-	const auto bonuses = stack->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(plagueSpellId())).And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER)));
+	const auto bonuses = stack->getBonuses(markerSelector(battle.getBattle()->getMagicRules()));
 	const auto marker = bonuses->empty() ? std::shared_ptr<const Bonus>{} : bonuses->front();
 	if(!marker)
 		return; // Dispel or natural completion has removed the authoritative status.
@@ -320,7 +344,7 @@ void completeActivation(const CBattleInfoCallback & battle, ServerCallback & ser
 				addInfection.battleID = battle.getBattle()->getBattleID();
 				addInfection.toAdd.emplace_back(spreadTarget->unitId(), std::vector<Bonus>{infection});
 				server.apply(addInfection);
-				if(!newHorizonsPlague::hasPlague(battle.battleGetUnitByID(*spreadTargetId)))
+				if(!newHorizonsPlague::hasPlague(battle.battleGetUnitByID(*spreadTargetId), battle.getBattle()->getMagicRules()))
 					break; // Advance only after the authoritative infection is present.
 
 				BattleLogMessage spreadLog;

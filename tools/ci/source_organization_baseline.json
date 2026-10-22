@@ -10508,91 +10508,92 @@
       "review_scope": "whole-exact-zero-body-declaration-inventory-comment-only-renewal"
     },
     "lib/battle/BattleEffectExchange.cpp": {
-      "sha256": "2058c3b164047d01de147b56b7a5750f0c48a7d80739a96b358417f8212b9f77",
-      "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Thirteen ordinary bodies: three ReplacementBonusView methods28–34/35–40/41, helpers44–52/54–76, sidecar/shape79–92/94–131, exact comparisons133–136/138–146/148–154, capture156–168, commit170–180, prepare182–257; three lambdas110/221–224/249–252. All validation/projection branches read. Empty default string argument28 and calls with {}186 are initializers, not definitions. Longest prepare76lines below80. No macros.",
+      "sha256": "1736bf290e49244747167431e108bef1e6950eb3861ab06a5a3f048023678497",
+      "review": "IR-OPTIONAL-HYDRA-IDENTITY-20261022",
+      "rationale": "Complete thirteen ordinary bodies and three lambdas: ReplacementBonusView methods29-35/36-41/42; helpers45-53/55-77; sidecar80-93/shape95-132 (lambda111); comparisons134-137/139-147/149-155; capture157-169/commit171-181/prepare183-258 (lambdas222-225/250-253). The preexisting missing:type_identifier diagnostic moves28 to29 at unnamed default string argument; all bodies explicitly inventoried, not parser-clean. New rules parameter and optional identity only; SID-only matching remains. Initializers and declarations are not callable bodies.",
       "functions": [
         {
           "symbol": "battle::ReplacementBonusView::TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & = {}) const override#1",
-          "start": 28,
-          "end": 34
+          "start": 29,
+          "end": 35
         },
         {
           "symbol": "battle::ReplacementBonusView::TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override#1",
-          "start": 35,
-          "end": 40
-        },
-        {
-          "symbol": "battle::ReplacementBonusView::int32_t getTreeVersion() const override#1",
-          "start": 41,
+          "start": 36,
           "end": 41
         },
         {
+          "symbol": "battle::ReplacementBonusView::int32_t getTreeVersion() const override#1",
+          "start": 42,
+          "end": 42
+        },
+        {
           "symbol": "battle::std::vector<std::byte> exactBonusBytes(const Bonus & bonus)#1",
-          "start": 44,
-          "end": 52
+          "start": 45,
+          "end": 53
         },
         {
           "symbol": "battle::void validateSnapshot(const BattleEffectSnapshot & snapshot, bool preserveLegacyPending = false)#1",
-          "start": 54,
-          "end": 76
+          "start": 55,
+          "end": 77
         },
         {
           "symbol": "battle::void BattleEffectSidecars::validate() const#1",
-          "start": 79,
-          "end": 92
+          "start": 80,
+          "end": 93
         },
         {
           "symbol": "battle::void BattleEffectExchange::validateShape() const#1",
-          "start": 94,
-          "end": 131
+          "start": 95,
+          "end": 132
         },
         {
           "symbol": "battle::BattleEffectExchange::validateShape() const::[](const Bonus & effect)#1",
-          "start": 110,
-          "end": 110
+          "start": 111,
+          "end": 111
         },
         {
           "symbol": "battle::bool exactBattleEffectEqual(const Bonus & first, const Bonus & second)#1",
-          "start": 133,
-          "end": 136
+          "start": 134,
+          "end": 137
         },
         {
           "symbol": "battle::bool exactBattleEffectsEqual(const std::vector<Bonus> & first, const std::vector<Bonus> & second)#1",
-          "start": 138,
-          "end": 146
+          "start": 139,
+          "end": 147
         },
         {
           "symbol": "battle::bool exactBattleEffectSnapshotEqual(const BattleEffectSnapshot & first, const BattleEffectSnapshot & second)#1",
-          "start": 148,
-          "end": 154
+          "start": 149,
+          "end": 155
         },
         {
           "symbol": "battle::BattleEffectSidecars captureBattleEffectSidecars(const CUnitState & unit)#1",
-          "start": 156,
-          "end": 168
+          "start": 157,
+          "end": 169
         },
         {
           "symbol": "battle::void commitBattleEffectSidecars(CUnitState & unit, const BattleEffectSidecars & sidecars) noexcept#1",
-          "start": 170,
-          "end": 180
+          "start": 171,
+          "end": 181
         },
         {
-          "symbol": "battle::PreparedBattleEffectHealth prepareBattleEffectHealth(const CUnitState & unit, const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement)#1",
-          "start": 182,
-          "end": 257
+          "symbol": "battle::PreparedBattleEffectHealth prepareBattleEffectHealth(const CUnitState & unit, const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement, const JsonNode & magicRules)#1",
+          "start": 183,
+          "end": 258
         },
         {
-          "symbol": "battle::prepareBattleEffectHealth(const CUnitState & unit, const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement)::[&](const auto & bonus)#1",
-          "start": 221,
-          "end": 224
+          "symbol": "battle::prepareBattleEffectHealth(const CUnitState & unit, const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement, const JsonNode & magicRules)::[&](const auto & bonus)#1",
+          "start": 222,
+          "end": 225
         },
         {
-          "symbol": "battle::prepareBattleEffectHealth(const CUnitState & unit, const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement)::[&hydra](const Bonus & bonus)#1",
-          "start": 249,
-          "end": 252
+          "symbol": "battle::prepareBattleEffectHealth(const CUnitState & unit, const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement, const JsonNode & magicRules)::[&hydra](const Bonus & bonus)#1",
+          "start": 250,
+          "end": 253
         }
-      ]
+      ],
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/CBattleInfoCallback.h": {
       "sha256": "8b5ac946f2de41ee4a57998454e9f7bbc9d7f336ee124b0aca8c2e745398b1ff",
@@ -10712,9 +10713,10 @@
     },
     "lib/battle/NewHorizonsPlague.h": {
       "functions": [],
-      "rationale": "Namespace constants and function prototypes only. std::function recipientAllowed={}55 and set excluded={}56 are default arguments, not implementations/lambdas. No inline body, function-like macro definition or conditional hidden callable.",
-      "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
-      "sha256": "23adaed127bfe73956094ca55be68125008e604370e01a44d562429031427e95"
+      "rationale": "Complete87-line header: namespace constants and function prototypes only. New selector and rules-aware overload are declarations. std::function recipientAllowed={}60 and set excluded={}61 remain default arguments, not bodies/lambdas. No macros or hidden inline callable.",
+      "review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022",
+      "sha256": "1ce32da6652ba987cdf6e2b25a88567ba629931b82f1e8a29f070358b0a4ee83",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/Unit.h": {
       "sha256": "356bc3377816ae6ca619f5140ff1cf6fa967926eabcf4cbc4db09871caea4df6",
@@ -18148,13 +18150,13 @@
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "exception",
       "lines": 5747,
-      "sha256": "8631335532956a7cb878aeca847017d164c6e89c32f15f736fe24fddb2c4c0a6",
+      "sha256": "26594f163f51656404c0771a72dec19d7862b82faed1dab448068409029ffaf1",
       "owner": "ai_engineer",
-      "review": "IR-HERO-TYPE-ATTRIBUTION-SOURCE-20261021",
-      "rationale": "Retain the prior cohesive spell-projection and Vines-value extractions. This exact eight-line diagnostic seam records numeric candidate identity and an elapsed scope, reusing the admitted candidate slot; no score, legality, RNG, selection or gameplay ordering changes. Evaluator5739-to-5747 and attempt1205-to-1213 are a narrowly reviewed attribution exception, not renewed permission for substantive hotspot growth. Optional reduction/formatting remains in the focused timing owner after loop join. Source bounds alone do not establish native parity or performance.",
-      "review_scope": "exact-eight-line-candidate-type-diagnostic-seam",
+      "review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022",
+      "rationale": "Bounded optional Plague QUERY identity routing only. Existing strict actual cast/tick and direct query API remain; installed historical matching is unchanged, core absence optional, required NH absence fail-closed. No timer or lifecycle redesign.",
+      "review_scope": "optional-plague-query-identity-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5747/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate."
+      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5747/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate. No future growth credit; this exact rules-aware query argument only requires independent review. Extract cohesive decision work before broader expansion."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -18166,13 +18168,15 @@
       "sha256": "b20604d9ca809f563c7a3ca92d617f157d100860399d7ec539dc2afdea42d6a6"
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionTiming * timing)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 232,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 232 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c65dbb7341713c3e81f4ec9bf615271846947d96a0639b17d03934805fc88b97"
+      "rationale": "Bounded optional Plague QUERY identity routing only. Existing strict actual cast/tick and direct query API remain; installed historical matching is unchanged, core absence optional, required NH absence fail-closed. No timer or lifecycle redesign.",
+      "review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022",
+      "review_scope": "optional-plague-query-identity-only",
+      "sha256": "987775ef07bd9e7ed00647095a7f77ea812eadf037447fd8c3867dd7b6d98cc0",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " No future growth credit; this exact rules-aware query argument only requires independent review. Extract cohesive decision work before broader expansion."
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse)#1": {
       "kind": "exception",
@@ -18361,13 +18365,14 @@
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp": {
       "kind": "exception",
-      "lines": 3186,
+      "lines": 3190,
       "owner": "ai_engineer",
-      "rationale": "One-time exact +1 direct owning-include lines required by the cohesive Stage7 split; every existing include and noninclude byte/body remains unchanged. Reviewed dependency integration, not quality approval of existing evaluator debt. Exact maximum/hash only; no body growth, extra include or future growth permission.",
-      "review": "IR-STAGE7-OWNING-INCLUDES-9LINES-20261015",
-      "review_scope": "one-time-exact-owning-includes-only-no-body-or-future-growth",
-      "sha256": "69bf508d7a2af4a664eb5886441a11a682a1a765e5dd18388afb6d0d6cd681ad",
-      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum."
+      "rationale": "Exact four-line null-safe callback/queryBattle preparation preserves the existing nullable two-argument Plague forecast API before the rules-aware marker query; no target/scoring/timing change or future growth.",
+      "review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022",
+      "review_scope": "optional-plague-query-identity-only",
+      "sha256": "3b9a69393db981343bb03912a00ca835691a9941bc98b2de20be55e91149726d",
+      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum. This exception admits only the reviewed four-line nullable-context preparation, exact3190-line file and113-line Plague query; no further growth. AI engineer must extract cohesive Plague forecast admission/context handling before substantive expansion, preserving nullable two-argument and supplied-model APIs, marker selection, target/scoring order, native/branch state and both RNG domains.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp::SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection( const Mechanics * spellMechanics, const Target & target)#1": {
       "kind": "legacy",
@@ -18379,13 +18384,15 @@
       "sha256": "d25c5913d75d98852d53bc01f47c0a5599a1384047c17ef7759cdcb469842123"
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp::float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMechanics, const Target & target, std::shared_ptr<CBattleInfoCallback> battleState)#1": {
-      "kind": "legacy",
-      "lines": 109,
+      "kind": "exception",
+      "lines": 113,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 109 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "60bfbbd57f67f60d212943173ca0512494a3dd1d92406cc999bb28ca31c6c8ae"
+      "rationale": "Exact four-line null-safe callback/queryBattle preparation preserves the existing nullable two-argument Plague forecast API before the rules-aware marker query; no target/scoring/timing change or future growth.",
+      "review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022",
+      "review_scope": "optional-plague-query-identity-only",
+      "sha256": "25fe2e25fb5cad9fd8ea5e1b9715327b411882464eaa271c1478e2c70ea49ae1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "AI engineer must extract cohesive Plague forecast admission/context handling before substantive expansion, preserving nullable two-argument and supplied-model APIs, exact marker selection, target/scoring order, native/branch state and both RNG domains. This exception admits only the reviewed113-line endpoint; no further growth."
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp::float SpellTargetEvaluator::shadowGiftTradeValue(const Mechanics * spellMechanics, const Target & target, int32_t sacrificePercent, std::shared_ptr<CBattleInfoCallback> battleState)#1": {
       "kind": "legacy",
@@ -21888,15 +21895,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact1284-line registry endpoint only. Engine engineer owns coherent component registration extraction with shrinking parent before broader registry expansion; preserve target/linkage and source/header ordering. This exact two-row addition is independently reviewed for source scope only; it does not waive decomposition or native verification.",
+      "deferral": "Exact1286-line registry endpoint only. Engine engineer owns coherent component registration extraction with shrinking parent before broader registry expansion; preserve target/linkage and source/header ordering. This exact two-row helper registration is independently reviewed for source scope only; it does not waive decomposition or native verification.",
       "kind": "exception",
-      "lines": 1284,
+      "lines": 1286,
       "owner": "engine_engineer",
-      "rationale": "Exactly one source and one header registration row for the focused optional damage-calculation diagnostic component; target, dependencies and registration order otherwise unchanged.",
-      "review": "IR-DYNAMIC-DAMAGE-TIMING-SPLIT-20261022",
-      "review_scope": "exact-damage-calculation-diagnostic-source-header-registration-only",
+      "rationale": "Exact optional Hydra identity routing only; installed identity matching is unchanged, true core absence is optional and required New Horizons absence fails closed. Shared lookup extracted into HydrasVitalityIdentity; no timer, health or save-policy redesign.",
+      "review": "IR-OPTIONAL-HYDRA-IDENTITY-20261022",
+      "review_scope": "optional-hydra-identity-only-no-runtime-or-future-growth",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "cb5d305a3a4c9af1ff76a8f01f3fdcef82da5d38b8821e95e2e94cb770904241"
+      "sha256": "bd92c701b6f336098705dae05373c90cff9ef6904d1b47e0d507d551063d96b4"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21993,15 +22000,15 @@
       "sha256": "073826fa014c7297f24e13221bd266a340709307fcbea0b49db3be9de946c500"
     },
     "lib/battle/BattleInfo.cpp": {
-      "deferral": "No future growth credit. Engine/UI owners must extract cohesive native graph/query, visitor/replay or publication duties before substantive expansion; any later changed hotspot requires renewed independent exact review. Verify actual owner/thread/shutdown and prepared-tail ordering separately.",
+      "deferral": "No future growth credit. Engine/UI owners must extract cohesive native graph/query, visitor/replay or publication duties before substantive expansion; any later changed hotspot requires renewed independent exact review. Verify actual owner/thread/shutdown and prepared-tail ordering separately. Exact one-argument routing only; no future growth credit. Retain existing lifecycle/round extraction obligations before substantive expansion.",
       "kind": "exception",
       "lines": 2825,
       "owner": "gameplay_engineer",
-      "rationale": "Bounded extraction of the complete89-line scalar UPDATE method to a focused translation unit; all other native members byte-exact, shrinking2915 to2825. No new ceiling credit.",
-      "review": "IR-SCALAR-UPDATE-PLACEMENT-ROOT-20261017",
-      "review_scope": "exact-scalar-update-placement-root-source-only-no-runtime-or-future-growth",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "sha256": "958297510aa6cc9a479db545492ac0cb4f7f0d45b437db6591ba98a179d70a1f"
+      "rationale": "Exact rules-aware round-selector call only. Canonical optional Plague identity preserves installed marker exclusion; null/empty core absence remains optional and required NH absence fails closed. Round order and timed-effect predicates unchanged.",
+      "review": "IR-OPTIONAL-PLAGUE-ROUND-QUERY-IDENTITY-20261022",
+      "review_scope": "optional-plague-round-query-identity-only",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "sha256": "df04342c9c76baaa57f4d60761cda9fa1c8bb72100a8da099034afff9fa9b8c3"
     },
     "lib/battle/BattleInfo.cpp::std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const int3 & tile, TerrainId terrain, const BattleField & battlefieldType, BattleSideArray<const CArmedInstance *> armies, BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance * town)#1": {
       "kind": "legacy",
@@ -22340,12 +22347,13 @@
     },
     "lib/battle/NewHorizonsPlague.cpp::newHorizonsPlague::void completeActivation(const CBattleInfoCallback & battle, ServerCallback & server, uint32_t unitId)#1": {
       "kind": "legacy",
-      "lines": 179,
+      "lines": 178,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 179 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "05bb05d8cda2fa15530f4b54f0976c053d8dcc7d3169f108fdcc20d594885c1b"
+      "rationale": "Bounded optional Plague QUERY identity routing only. Existing strict actual cast/tick and direct query API remain; installed historical matching is unchanged, core absence optional, required NH absence fail-closed. No timer or lifecycle redesign.",
+      "review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022",
+      "review_scope": "optional-plague-query-identity-only",
+      "sha256": "0602b5f729511d5ef59c6a81a61cdbf2abf20c40d144cdea097c2373b68c6abd",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/PhysicalAffliction.cpp": {
       "kind": "legacy",
@@ -22857,12 +22865,12 @@
     },
     "lib/gameState/GameStatePackVisitor.cpp": {
       "kind": "exception",
-      "lines": 4376,
+      "lines": 4374,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 4376 to 4376 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "ba8e618bb87fe9f90389ea3ac581c29feedfabca7cf5d4765032223db1c19d4f",
+      "rationale": "Exact optional Hydra identity routing only; installed identity matching is unchanged, true core absence is optional and required New Horizons absence fails closed. Shared lookup extracted into HydrasVitalityIdentity; no timer, health or save-policy redesign.",
+      "review": "IR-OPTIONAL-HYDRA-IDENTITY-20261022",
+      "review_scope": "optional-hydra-identity-only-no-runtime-or-future-growth",
+      "sha256": "1fadf00e838f0d53ef778c5903a424ce3844068a35b0ff20185eaa20b07881a0",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "No future growth credit. Any subsequent edit requires renewed independent review; engine/UI owners must retain focused state/visitor/replay debt extraction and separately validate origin-thread destruction, native root-writer/restart ordering and real owner integration before routing use. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
@@ -25639,13 +25647,14 @@
     },
     "server/battles/BattleFlowProcessor.cpp": {
       "kind": "exception",
-      "lines": 3151,
+      "lines": 3149,
       "owner": "engine_engineer",
-      "rationale": "Exact six-line test-only routing exception: one guarded include and one guarded call immediately before normal human control. Macro-OFF stripping restores the entire previous file byte-for-byte. Fixture validation, ownership and publication live in the dedicated integration component; extracting unrelated battle flow while changing this stimulus would increase lifecycle risk. No ordinary simulation behavior or additional hotspot growth is approved.",
-      "review": "cure-deterministic-fixture-source-v1",
-      "review_scope": "exact-test-only-routing-technical-exception",
-      "sha256": "ff508a3ddbaf44bae104b1b5f1d37133d750ca39880d20d00099e1b4d3565a90",
-      "deferral": "Engine owner must keep this exact3151-line ceiling and six-line macro-isolated route. Before any further flow growth, extract a cohesive activation/publication preflight with ordering and retirement characterization; retain restart/teardown regression and actual integration versus ordinary symbol exclusion proof. This exception does not waive existing oversized-flow debt."
+      "rationale": "Exact optional Hydra identity routing only; installed identity matching is unchanged, true core absence is optional and required New Horizons absence fails closed. Shared lookup extracted into HydrasVitalityIdentity; no timer, health or save-policy redesign.",
+      "review": "IR-OPTIONAL-HYDRA-IDENTITY-20261022",
+      "review_scope": "optional-hydra-identity-only-no-runtime-or-future-growth",
+      "sha256": "85d90616fa63d951b3762c4381a9d6bf9aae6809ade72cc48323e838e9cd3b64",
+      "deferral": "Engine owner must keep this exact3149-line ceiling and six-line macro-isolated route. Before any further flow growth, extract a cohesive activation/publication preflight with ordering and retirement characterization; retain restart/teardown regression and actual integration versus ordinary symbol exclusion proof. This exception does not waive existing oversized-flow debt.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/battles/BattleFlowProcessor.cpp::bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & battle, const CStack * next)#1": {
       "kind": "legacy",
@@ -25749,21 +25758,23 @@
     },
     "server/battles/BattleFlowProcessor.cpp::void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, bool isFirstRound)#1": {
       "kind": "legacy",
-      "lines": 106,
+      "lines": 104,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 106 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "3713c26281695bb9591c0d2dccc0ced0425d887fda3e70fa4a6bd20482d7289a"
+      "rationale": "Exact optional Hydra identity routing only; installed identity matching is unchanged, true core absence is optional and required New Horizons absence fails closed. Shared lookup extracted into HydrasVitalityIdentity; no timer, health or save-policy redesign.",
+      "review": "IR-OPTIONAL-HYDRA-IDENTITY-20261022",
+      "review_scope": "optional-hydra-identity-only-no-runtime-or-future-growth",
+      "sha256": "08b486de58c1b10740919ce4516c8c90cd3015dba66247bc2d30f5efbb3a7332",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/battles/BattleFlowProcessor.cpp::void applyStartOfActivationEffects(CGameHandler * gameHandler, const CBattleInfoCallback & battle, const battle::Unit * stack)#1": {
       "kind": "legacy",
-      "lines": 204,
+      "lines": 203,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 204 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "bf8d67885866544dde0d42b04616a7055f23808f72f745c780f795d769d35055"
+      "rationale": "Exact optional Hydra identity routing only; installed identity matching is unchanged, true core absence is optional and required New Horizons absence fails closed. Shared lookup extracted into HydrasVitalityIdentity; no timer, health or save-policy redesign.",
+      "review": "IR-OPTIONAL-HYDRA-IDENTITY-20261022",
+      "review_scope": "optional-hydra-identity-only-no-runtime-or-future-growth",
+      "sha256": "47daa0ae974d9f70b2516bdd908b92b63e8d0d27b9a251ecd01e3faf09653e0f",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/battles/BattleProcessor.cpp": {
       "kind": "legacy",
@@ -26387,11 +26398,12 @@
       "kind": "exception",
       "lines": 104,
       "owner": "ai_engineer",
-      "rationale": "Exact bounded owned-subject routing or successful lifecycle frame hooks; substantive history/query/timer logic remains in focused owned-export components. Exact measured hash/span only, no future growth or full-horizon credit.",
-      "review": "IR-OWNED-EXPORT-LIFECYCLE-CURRENT-UNION-20261017",
-      "review_scope": "exact-owned-export-lifecycle-source-union-only-no-runtime-or-future-growth",
-      "sha256": "a3778c09b536faad729828478ec9ce748a3086ca26a8bca2b37b98f7e28e0214",
-      "deferral": "No further lifecycle orchestration growth approved. AI owner must place substantive activation/round semantics in shared native lifecycle and InitialExportLifecycle owners before expansion; require actual ordered packet, fork/RNG and frozen-oracle parity for that later change."
+      "rationale": "Exact rules-aware round-selector call only. Canonical optional Plague identity preserves installed marker exclusion; null/empty core absence remains optional and required NH absence fails closed. Round order and timed-effect predicates unchanged.",
+      "review": "IR-OPTIONAL-PLAGUE-ROUND-QUERY-IDENTITY-20261022",
+      "review_scope": "optional-plague-round-query-identity-only",
+      "sha256": "109bec64accec0441031a7edff4e8dd4514975dc466ba373ac1c33fdf35fc3ff",
+      "deferral": "No further lifecycle orchestration growth approved. AI owner must place substantive activation/round semantics in shared native lifecycle and InitialExportLifecycle owners before expansion; require actual ordered packet, fork/RNG and frozen-oracle parity for that later change. Exact one-argument routing only; no future growth credit. Retain existing lifecycle/round extraction obligations before substantive expansion.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/HypotheticActivation.cpp::void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw, HypotheticLifecycleTiming * timing)#1": {
       "kind": "exception",
@@ -26469,24 +26481,16 @@
       "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
       "sha256": "ec12fee2f78a27d27d72ffb75e346e5f517a781020e11ec38f792d74f75bb5b3"
     },
-    "AI/BattleAI/StackWithBonusesEffects.cpp": {
-      "kind": "review",
-      "lines": 502,
-      "owner": "ai_engineer",
-      "rationale": "Exact urgent source-local spell-provenance dispatch adds one include and two routing lines to the existing effect owner (499 to502); localSpellEffects15 to17, all43 other parsed callable bodies exact. Actual exported records are owned by the graph; no effective/inherited/native fallback. Below default file ceiling, no substantive rule duplication or future growth approval.",
-      "review": "IR-FULL171-OWNED-PROVENANCE-AND-CREATURE-AURA-20261017",
-      "review_scope": "exact-graph-source-local-spell-provenance-routing-only-source-unrun",
-      "sha256": "4ab43f4aa6881e26de7405e9c77407545661e49dfc7562613e7d64b7ec4be76a",
-      "deferral": "AI owner: before further effect-owner expansion, extract exact local-effect snapshot capture/replacement and source-provider dispatch into a cohesive HypotheticLocalSpellEffects owner; preserve source order, inherited/local multiset separation, metadata lease, round/activation expiry, removal-fork isolation and complete serialized/native packet comparisons. This502-line crossing approves only the three present lines; existing93-line function remains byte-exact debt."
-    },
     "AI/BattleAI/StackWithBonusesEffects.cpp::void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTiming * timing)#1": {
-      "kind": "review",
-      "lines": 93,
+      "kind": "exception",
+      "lines": 92,
       "owner": "ai_engineer",
-      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
-      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
-      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
-      "sha256": "bef39555b89be6af407e7cc003d3319367393b43af17151ba629b7fe16fea6cd"
+      "rationale": "Bounded optional Plague QUERY identity routing only. Existing strict actual cast/tick and direct query API remain; installed historical matching is unchanged, core absence optional, required NH absence fail-closed. No timer or lifecycle redesign.",
+      "review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022",
+      "review_scope": "optional-plague-query-identity-only",
+      "sha256": "29e8f4182aa28713c0b98e27109c3ec5f8edaf627d771635609cc9f539e7bcb9",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "AI owner: before further effect-owner expansion, extract exact local-effect snapshot capture/replacement and source-provider dispatch into a cohesive HypotheticLocalSpellEffects owner; preserve source order, inherited/local multiset separation, metadata lease, round/activation expiry, removal-fork isolation and complete serialized/native packet comparisons.  File shrinks501 to495; retained92-line round owner receives only one canonical Plague selector. No broader lifecycle or future growth approval."
     },
     "AI/BattleAI/BattleEvaluatorHeroQueue.cpp::void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueMap & values, const std::shared_ptr<HypotheticBattle> & state, const battle::Unit * unit, battle::Units & remainingQueue, size_t queueIndex)#1": {
       "kind": "review",

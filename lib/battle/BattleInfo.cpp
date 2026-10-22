@@ -1509,7 +1509,7 @@ void BattleInfo::nextRound()
 		sides.at(side).warcastingState = sides.at(side).warcastingState.clearedIfExpired(round);
 	}
 
-	const auto roundTimedEffects = battle::roundTimedBonuses();
+	const auto roundTimedEffects = battle::roundTimedBonuses(magicRules);
 	std::vector<uint32_t> expiringBattleForms;
 	for(auto & s : stacks)
 	{
@@ -2022,7 +2022,7 @@ void BattleInfo::exchangeBattleEffects(const battle::BattleEffectExchange & exch
 			replacement.push_back(std::move(copy));
 		}
 		prepared[index].stack = stack;
-		prepared[index].health = battle::prepareBattleEffectHealth(*stack, endpoint.expected, endpoint.replacement);
+		prepared[index].health = battle::prepareBattleEffectHealth(*stack, endpoint.expected, endpoint.replacement, magicRules);
 		prepared[index].bonuses = stack->prepareLocalBonusReplacement(replacement);
 	}
 	// Everything below is allocation-free. No refresh path can reset duration,

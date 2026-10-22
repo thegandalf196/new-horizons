@@ -14,6 +14,7 @@
 #include "../bonuses/Updaters.h"
 #include "../serializer/CMemorySerializer.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/HydrasVitalityIdentity.h"
 #include <limits>
 
 namespace battle
@@ -180,7 +181,7 @@ void commitBattleEffectSidecars(CUnitState & unit, const BattleEffectSidecars & 
 }
 
 PreparedBattleEffectHealth prepareBattleEffectHealth(const CUnitState & unit,
-	const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement)
+	const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement, const JsonNode & magicRules)
 {
 	auto view = std::make_shared<ReplacementBonusView>();
 	const auto original = unit.getBonusesBeforeCreatureAbilitySuppression(Selector::all, {}, true);
@@ -238,17 +239,17 @@ PreparedBattleEffectHealth prepareBattleEffectHealth(const CUnitState & unit,
 	++view->version;
 	if(projected->health.isCapacityHealthTracking())
 		projected->normalizeCapacityHealth();
-	const auto hydra = BonusSourceID(SpellID(SpellID::decode("new-horizons:hydrasVitality")));
+	const auto hydra = newHorizonsMagic::hydrasVitalitySourceId(magicRules);
 	std::vector<Bonus> originalHydraRegeneration, replacementHydraRegeneration;
 	for(const auto & bonus : expected.effects)
-		if(bonus.sid == hydra && bonus.type == BonusType::HP_REGENERATION)
+		if(hydra && bonus.sid == *hydra && bonus.type == BonusType::HP_REGENERATION)
 			originalHydraRegeneration.push_back(bonus);
 	for(const auto & bonus : replacement.effects)
-		if(bonus.sid == hydra && bonus.type == BonusType::HP_REGENERATION)
+		if(hydra && bonus.sid == *hydra && bonus.type == BonusType::HP_REGENERATION)
 			replacementHydraRegeneration.push_back(bonus);
 	const auto retainsHydra = std::ranges::any_of(replacement.effects, [&hydra](const Bonus & bonus)
 	{
-		return bonus.sid == hydra && (bonus.type == BonusType::STACK_HEALTH || bonus.type == BonusType::HP_REGENERATION);
+		return hydra && bonus.sid == *hydra && (bonus.type == BonusType::STACK_HEALTH || bonus.type == BonusType::HP_REGENERATION);
 	});
 	if(!retainsHydra && (capacityChanged
 		|| !exactBattleEffectsEqual(originalHydraRegeneration, replacementHydraRegeneration)))

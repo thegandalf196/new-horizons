@@ -9,11 +9,9 @@
 #include "../spells/NewHorizonsSorcery.h"
 #include "Unit.h"
 
-CSelector battle::roundTimedBonuses()
+CSelector battle::roundTimedBonuses(const JsonNode & savedRules)
 {
-	const auto plagueMarker = Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(SpellID(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)))))
-		.And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER));
+	const auto plagueMarker = newHorizonsPlague::markerSelector(savedRules);
 	// Plague advances after its end-of-stack-turn tick, not at the round clock.
 	return CSelector(Bonus::NTurns).And(plagueMarker.Not());
 }

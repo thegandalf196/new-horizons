@@ -12,6 +12,7 @@
 #include <string_view>
 
 #include "BattleSide.h"
+#include "../bonuses/BonusSelector.h"
 
 class CBattleInfoCallback;
 class JsonNode;
@@ -42,6 +43,10 @@ constexpr int SPELL_POWER_COEFFICIENT_BASIS_POINTS = 10'000;
 
 /// True when this stack currently carries the dispellable magical Plague marker.
 DLL_LINKAGE bool hasPlague(const battle::Unit * unit);
+/// Rules-aware optional-content queries preserve installed historical markers.
+/// Missing identity is optional only for unloaded NH and empty legacy rules.
+DLL_LINKAGE CSelector markerSelector(const JsonNode & savedRules);
+DLL_LINKAGE bool hasPlague(const battle::Unit * unit, const JsonNode & savedRules);
 
 /// Returns the deterministic next adjacent, alive, uninfected stack ID. Creature
 /// biology is intentionally irrelevant: Constructs, Elementals, Undead, and Demons

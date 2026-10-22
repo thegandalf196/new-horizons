@@ -8,6 +8,7 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "../../battleAI/PurifyRuleFixtures.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/battle/BattleAction.h"
@@ -45,25 +46,8 @@ protected:
 	{
 		BattleTestFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-		if(savedMagicVersion != newHorizonsMagic::CURRENT_RULESET_VERSION)
-		{
-			rules["rulesetVersion"].Integer() = savedMagicVersion;
-			rules.Struct().erase("schoolRankPowerCoefficientPercent");
-			rules.Struct().erase("spellcraftEfficiencyPercent");
-			if(savedMagicVersion < newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-				rules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
-				rules["spells"]["core:earthquake"].Struct().erase("earthquake");
-			for(auto & [identity, row] : rules["spells"].Struct())
-			{
-				(void)identity;
-				row.Struct().erase("structures");
-				if(row.Struct().contains("variant"))
-				{
-					row.Struct().erase("variant");
-					row["active"].Bool() = false;
-				}
-			}
-		}
+		if(savedMagicVersion == newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION)
+			rules = purifyTest::savedV2MagicRules();
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));

@@ -62,6 +62,7 @@
 #include "../mapping/CMap.h"
 #include "../networkPacks/StackLocation.h"
 #include "../spells/CSpell.h"
+#include "../spells/HydrasVitalityIdentity.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/NewHorizonsMagic.h"
 
@@ -4265,8 +4266,7 @@ void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 		return;
 	}
 	pack.validateConfusionMarkers();
-	const SpellID hydrasVitality(SpellID::decode("new-horizons:hydrasVitality"));
-	const auto hydrasVitalitySource = BonusSourceID(hydrasVitality);
+	const auto hydrasVitalitySource = newHorizonsMagic::hydrasVitalitySource(battleState.getMagicRules());
 	std::set<uint32_t> capacityAffectedStacks;
 	auto collectCapacityChanges = [&capacityAffectedStacks, &hydrasVitalitySource](const auto & changes)
 	{
@@ -4275,7 +4275,7 @@ void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 			{
 				return bonus.type == BonusType::STACK_HEALTH
 					|| (bonus.type == BonusType::HP_REGENERATION
-						&& bonus.source == BonusSource::SPELL_EFFECT && bonus.sid == hydrasVitalitySource);
+						&& hydrasVitalitySource(&bonus));
 			}))
 				capacityAffectedStacks.insert(stackEffects.first);
 	};
@@ -4294,10 +4294,8 @@ void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 
 	if(capacityAffectedStacks.empty())
 		return;
-	const auto hydrasCapacity = Selector::source(BonusSource::SPELL_EFFECT, hydrasVitalitySource)
-		.And(Selector::type()(BonusType::STACK_HEALTH));
-	const auto hydrasRegeneration = Selector::source(BonusSource::SPELL_EFFECT, hydrasVitalitySource)
-		.And(Selector::type()(BonusType::HP_REGENERATION));
+	const auto hydrasCapacity = hydrasVitalitySource.And(Selector::type()(BonusType::STACK_HEALTH));
+	const auto hydrasRegeneration = hydrasVitalitySource.And(Selector::type()(BonusType::HP_REGENERATION));
 	for(const auto * unit : battleState.getUnitsIf([&capacityAffectedStacks](const battle::Unit * candidate)
 		{
 			return candidate && capacityAffectedStacks.contains(candidate->unitId());

@@ -278,7 +278,7 @@ void HypotheticBattle::exchangeBattleEffects(const battle::BattleEffectExchange 
 		auto replacement = std::make_shared<StackWithBonuses>(this, original);
 		// All mutations affect an unpublished clone. Its source bearer remains
 		// alive through the existing projectedBearer ownership mechanism.
-		auto health = battle::prepareBattleEffectHealth(*replacement, endpoint.expected, endpoint.replacement);
+		auto health = battle::prepareBattleEffectHealth(*replacement, endpoint.expected, endpoint.replacement, getMagicRules());
 		replacement->replaceLocalSpellEffectsExact(endpoint.replacement.effects);
 		replacement->commitPreparedCapacityHealth(*health.unit);
 		battle::commitBattleEffectSidecars(*replacement, endpoint.replacement.sidecars);
