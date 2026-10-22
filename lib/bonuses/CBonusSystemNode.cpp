@@ -388,7 +388,7 @@ void CBonusSystemNode::exportBonus(const std::shared_ptr<Bonus> & b)
 	{
 		propagateBonus(b, *this);
 	}
-	else
+	else if(!vstd::contains(bonuses, b))
 	{
 		bonuses.push_back(b);
 		nodeHasChanged();

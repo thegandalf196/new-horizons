@@ -76,6 +76,13 @@ Propagation is used when bonuses need to be shared in a different direction than
 - Inheritance is done on-the-fly when needed, by traversing the black DAG. Results are cached to improve performance.
 - Whenever a node changes (e.g. bonus added), a global counter gets increased which is used to check whether cached results are still current.
 
+Re-exporting a nonpropagated bonus already accepted by the same node is
+idempotent by pointer identity. This matters when an in-process battle is
+initialized after setup has already exported its bonuses. Decoded nodes still
+need their first export. Distinct bonus objects with equal values remain
+independent; one ordinary removal must clear the removed object's local effect
+and invalidate descendant queries. This rule does not change propagation.
+
 ## Operations on the graph
 
 There are two basic types of operations that can be performed on the graph:
