@@ -19,6 +19,10 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../AI/BattleAI/HypotheticBattle.h"
+#include "../../lib/CRandomGenerator.h"
+#include "../../lib/callback/GameRandomizer.h"
+#include "../../lib/serializer/CMemorySerializer.h"
+#include <set>
 
 namespace
 {
@@ -31,6 +35,102 @@ public:
 	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
 	const GameCb * game() const override { return state.get(); }
 };
+
+// Deliberately repeated packet IDs exercise the ordinary provider contract,
+// not the separate InitialExport subject's mandatory unique-ID validation.
+class ObservedRoster final : public CPlayerBattleCallback
+{
+	battle::Units roster;
+public:
+	mutable size_t calls = 0;
+	mutable battle::Units visits;
+	ObservedRoster(const IBattleInfo * source, PlayerColor player, battle::Units roster)
+		: CPlayerBattleCallback(source, player), roster(std::move(roster)) {}
+	battle::Units battleGetUnitsIf(const battle::UnitFilter & predicate) const override
+	{
+		++calls;
+		battle::Units result;
+		for(const auto * unit : roster)
+		{
+			visits.push_back(unit);
+			if(predicate(unit))
+				result.push_back(unit);
+		}
+		return result;
+	}
+	void resetObservations() const { calls = 0; visits.clear(); }
+};
+
+// Retain the original set-based membership algorithm as an ordered oracle.
+battle::Units legacyEnumeration(const CBattleInfoCallback & source,
+	const HypotheticBattle & branch, const battle::UnitFilter & predicate)
+{
+	const auto original = source.battleGetUnitsIf([](const battle::Unit *) { return true; });
+	battle::Units result;
+	std::set<uint32_t> originalIds;
+	for(const auto * unit : original)
+	{
+		originalIds.insert(unit->unitId());
+		const auto replacement = branch.stackStates.find(unit->unitId());
+		const auto * current = replacement == branch.stackStates.end() ? unit : replacement->second.get();
+		if(predicate(current))
+			result.push_back(current);
+	}
+	for(const auto & [id, unit] : branch.stackStates)
+		if(!originalIds.contains(id) && predicate(unit.get()))
+			result.push_back(unit.get());
+	return result;
+}
+
+void expectOrderedEnumeration(const CBattleInfoCallback & source,
+	const HypotheticBattle & branch, const ObservedRoster & provider,
+	const battle::UnitFilter & filter)
+{
+	provider.resetObservations();
+	battle::Units expectedVisits;
+	const auto expected = legacyEnumeration(source, branch, [&](const battle::Unit * unit)
+	{
+		expectedVisits.push_back(unit);
+		return filter(unit);
+	});
+	const auto expectedProviderVisits = provider.visits;
+	const auto expectedCalls = provider.calls;
+	provider.resetObservations();
+	battle::Units actualVisits;
+	const auto actual = branch.getUnitsIf([&](const battle::Unit * unit)
+	{
+		actualVisits.push_back(unit);
+		return filter(unit);
+	});
+	EXPECT_EQ(actual, expected);
+	EXPECT_EQ(actualVisits, expectedVisits);
+	EXPECT_EQ(provider.visits, expectedProviderVisits);
+	EXPECT_EQ(provider.calls, expectedCalls);
+}
+
+auto branchUnitSnapshots(const HypotheticBattle & branch)
+{
+	std::map<uint32_t, std::pair<const StackWithBonuses *, JsonNode>> snapshots;
+	for(const auto & [id, unit] : branch.stackStates)
+		snapshots.emplace(id, std::pair(unit.get(), unit->save()));
+	return snapshots;
+}
+
+auto liveUnitSnapshots(const CBattleInfoCallback & callback)
+{
+	std::vector<std::pair<const battle::Unit *, JsonNode>> snapshots;
+	for(const auto * unit : callback.battleGetUnitsIf([](const battle::Unit *) { return true; }))
+		snapshots.emplace_back(unit, unit->acquireState()->save());
+	return snapshots;
+}
+
+template<typename Randomizer>
+std::vector<std::byte> enumerationRandomizerBytes(Randomizer & randomizer)
+{
+	CMemorySerializer wire;
+	wire.oser & randomizer;
+	return wire.extractBuffer();
+}
 }
 
 class HypotheticCloneTest : public HeroCommandFixture
@@ -200,4 +300,94 @@ TEST_F(HypotheticCloneTest, RemovingOriginalStillRemovesCloneAndRepeatedRemovalI
 	EXPECT_TRUE(model.battleGetUnitByID(cloneId)->isGhost());
 	EXPECT_TRUE(battle()->battleGetUnitByID(originalId)->alive());
 	EXPECT_TRUE(battle()->battleGetUnitByID(cloneId)->alive());
+}
+
+TEST_F(HypotheticCloneTest, OrdinaryEnumerationPreservesDuplicateProviderOverlayAndPredicateOrder)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareClone());
+	const auto liveBefore = gameState()->saveToMemory();
+	const auto liveUnitsBefore = liveUnitSnapshots(*battle());
+	const auto serverRandomBefore = enumerationRandomizerBytes(*gameHandler->randomizer);
+	const auto aiRandomBefore = enumerationRandomizerBytes(CRandomGenerator::getDefault());
+	auto roster = callback->battleGetUnitsIf([](const battle::Unit *) { return true; });
+	const auto * repeated = battle()->battleGetUnitByID(originalId);
+	ASSERT_NE(repeated, nullptr);
+	roster.push_back(repeated);
+	roster.insert(roster.begin(), repeated);
+	auto provider = std::make_shared<ObservedRoster>(battle(), PlayerColor(0), std::move(roster));
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), provider);
+	ASSERT_FALSE(parent->initialExportSubject());
+	expectOrderedEnumeration(*provider, *parent, *provider, [](const battle::Unit *) { return true; });
+	expectOrderedEnumeration(*provider, *parent, *provider, [](const battle::Unit *) { return false; });
+	parent->getForUpdate(originalId)->defending = true;
+	parent->removeUnit(cloneId);
+	ASSERT_TRUE(parent->battleGetUnitByID(cloneId)->isGhost());
+	bool retainedCorpse = false;
+	for(const auto * unit : battle()->battleAliveUnits())
+		if(unit->unitId() != originalId && !unit->isClone() && !unit->isTurret()
+			&& !unit->acquireState()->summoned)
+		{
+			auto corpse = parent->getForUpdate(unit->unitId());
+			int64_t damage = corpse->getAvailableHealth();
+			corpse->damage(damage);
+			ASSERT_FALSE(corpse->alive());
+			ASSERT_FALSE(corpse->isGhost());
+			retainedCorpse = true;
+			break;
+		}
+	ASSERT_TRUE(retainedCorpse);
+
+	battle::UnitInfo addition;
+	addition.id = parent->nextUnitId();
+	addition.type = creatureByName("core:angel");
+	addition.count = 3;
+	addition.side = BattleSide::ATTACKER;
+	addition.summoned = true;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex candidate(index);
+		if(candidate.isAvailable() && !parent->battleGetUnitByPos(candidate, true))
+		{
+			addition.position = candidate;
+			break;
+		}
+	}
+	ASSERT_TRUE(addition.position.isAvailable());
+	JsonNode data;
+	addition.save(data);
+	parent->addUnit(addition.id, data);
+	ASSERT_NE(parent->battleGetUnitByID(addition.id), nullptr);
+	EXPECT_TRUE(parent->battleGetUnitByID(addition.id)->acquireState()->summoned);
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	ASSERT_FALSE(child->initialExportSubject());
+	child->getForUpdate(originalId)->defending = false;
+	child->removeUnit(addition.id);
+	ASSERT_TRUE(child->battleGetUnitByID(addition.id)->isGhost());
+	const auto parentBefore = branchUnitSnapshots(*parent);
+	const auto childBefore = branchUnitSnapshots(*child);
+
+	const std::array<battle::UnitFilter, 4> filters{
+		[](const battle::Unit *) { return true; },
+		[](const battle::Unit *) { return false; },
+		[](const battle::Unit * unit) { return unit->alive(); },
+		[&](const battle::Unit * unit) { return unit->unitId() != originalId; }
+	};
+	for(int repetition = 0; repetition < 2; ++repetition)
+		for(const auto & filter : filters)
+		{
+			expectOrderedEnumeration(*provider, *parent, *provider, filter);
+			expectOrderedEnumeration(*parent, *child, *provider, filter);
+		}
+	const auto all = parent->getUnitsIf(filters.front());
+	EXPECT_EQ(std::count(all.begin(), all.end(), parent->battleGetUnitByID(originalId)), 3);
+	EXPECT_EQ(std::count(all.begin(), all.end(), parent->battleGetUnitByID(addition.id)), 1);
+	EXPECT_TRUE(parent->battleGetUnitByID(originalId)->defended());
+	EXPECT_FALSE(child->battleGetUnitByID(originalId)->defended());
+	EXPECT_TRUE(parent->battleGetUnitByID(addition.id)->alive());
+	EXPECT_EQ(branchUnitSnapshots(*parent), parentBefore);
+	EXPECT_EQ(branchUnitSnapshots(*child), childBefore);
+	EXPECT_EQ(enumerationRandomizerBytes(*gameHandler->randomizer), serverRandomBefore);
+	EXPECT_EQ(enumerationRandomizerBytes(CRandomGenerator::getDefault()), aiRandomBefore);
+	EXPECT_EQ(liveUnitSnapshots(*battle()), liveUnitsBefore);
+	EXPECT_EQ(gameState()->saveToMemory(), liveBefore);
 }
