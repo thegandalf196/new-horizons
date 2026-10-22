@@ -79,6 +79,11 @@ establishes Windows performance or a speedup.
   includes both primary-damage and DPS-score requests; do not equate its sum to
   the primary-damage scope alone or add it to enclosing probe/exchange time.
   Within dynamic damage, native_payload times native input construction;
+  its sequential native_attack_context, native_physical_modifiers,
+  native_hero_orders and native_finalization intervals share boundary readings
+  and sum exactly to native_payload nanoseconds. Completed calls reach all four;
+  exceptions record only reached intervals. These are nested wall-time regions,
+  not additional elapsed time or CPU samples.
   bonus_preparation includes declaration initialization (and its first-use Lua
   bonusTypes call), effective bonus lookup and presence maps. lua_call includes
   input/output conversion, Lua execution and native callbacks, not pure Lua CPU.

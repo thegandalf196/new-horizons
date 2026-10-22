@@ -15,6 +15,7 @@ using Clock = std::chrono::steady_clock;
 using Now = Clock::time_point (*)();
 enum class Phase : uint8_t { NATIVE_PAYLOAD, BONUS_PREPARATION, LUA_CALL };
 enum class Calculation : uint8_t { INITIAL, LUCKY_SECOND, UNLUCKY_SECOND };
+enum class NativeRegion : uint8_t { ATTACK_CONTEXT, PHYSICAL_MODIFIERS, HERO_ORDERS, FINALIZATION };
 
 struct DLL_LINKAGE Stage
 {
@@ -26,6 +27,11 @@ struct DLL_LINKAGE Stage
 struct DLL_LINKAGE Sample
 {
 	Stage nativePayload;
+	/// Sequential nested wall-time breakdown, sharing parent boundary readings.
+	Stage nativeAttackContext;
+	Stage nativePhysicalModifiers;
+	Stage nativeHeroOrders;
+	Stage nativeFinalization;
 	Stage bonusPreparation;
 	/// Inclusive bridge input/output conversion, Lua, and native callbacks.
 	Stage luaCall;
@@ -58,10 +64,18 @@ class DLL_LINKAGE Scope
 	Stage * stage = nullptr;
 	Now now = nullptr;
 	Clock::time_point started;
+	Sample * nativeSample = nullptr;
+	Stage * nativeStage = nullptr;
+	NativeRegion activeNativeRegion = NativeRegion::ATTACK_CONTEXT;
+	int64_t nativeElapsedNanoseconds = 0;
+	void finishNativeRegion(Clock::time_point boundary);
 public:
 	explicit Scope(Phase phase);
 	~Scope();
 	void finish();
+	/// Only the next sequential region of an admitted native scope can advance.
+	/// Disabled, suppressed, other-phase, finished or out-of-order calls do nothing.
+	void nextNativeRegion(NativeRegion region);
 	Scope(const Scope &) = delete;
 	Scope & operator=(const Scope &) = delete;
 };

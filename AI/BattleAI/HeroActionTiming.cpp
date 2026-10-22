@@ -131,6 +131,10 @@ std::string damageCacheFields(const Continuation & continuation)
 		const auto & calculation = cache.calculation;
 		for(const auto & [stageName, stage] : {
 			std::pair{"native_payload", &damageCalculationTiming::Sample::nativePayload},
+			std::pair{"native_attack_context", &damageCalculationTiming::Sample::nativeAttackContext},
+			std::pair{"native_physical_modifiers", &damageCalculationTiming::Sample::nativePhysicalModifiers},
+			std::pair{"native_hero_orders", &damageCalculationTiming::Sample::nativeHeroOrders},
+			std::pair{"native_finalization", &damageCalculationTiming::Sample::nativeFinalization},
 			std::pair{"bonus_preparation", &damageCalculationTiming::Sample::bonusPreparation},
 			std::pair{"lua_call", &damageCalculationTiming::Sample::luaCall}})
 		{

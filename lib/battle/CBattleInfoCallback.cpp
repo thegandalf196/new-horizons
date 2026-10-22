@@ -3797,6 +3797,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			defenderDefendState = info.defender->defended();
 		return *defenderDefendState;
 	};
+	payloadTiming.nextNativeRegion(damageCalculationTiming::NativeRegion::PHYSICAL_MODIFIERS);
 	if(info.physicalDamage && !info.shooting && info.attacker && info.defender
 		&& battleGetOwner(info.attacker) != battleGetOwner(info.defender))
 	{
@@ -3925,6 +3926,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		payload.preemptiveDamageMultiplier = info.preemptiveDamagePercent;
 	if(info.cleaveDamagePercent > 0)
 		payload.cleaveFinalDamageMultiplier = info.cleaveDamagePercent;
+	payloadTiming.nextNativeRegion(damageCalculationTiming::NativeRegion::HERO_ORDERS);
 	if(heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		&& info.attacker && info.defender && !info.attacker->isGhost() && !info.defender->isGhost())
 	{
@@ -4104,6 +4106,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			}
 		}
 	}
+	payloadTiming.nextNativeRegion(damageCalculationTiming::NativeRegion::FINALIZATION);
 	const bool finalLuckPolicy = getBattle()->getLuckRollRules().finalDirectPhysicalMultiplier;
 	const bool luckEligible = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(info.attacker, info.physicalDamage);
 	payload.luckyStrike = info.luckyStrike && (!finalLuckPolicy || luckEligible);
