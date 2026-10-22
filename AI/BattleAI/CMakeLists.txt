@@ -2,12 +2,14 @@ set(battleAI_SRCS
 		AttackPossibility.cpp
 		AttackPreviewArcheryAdmission.cpp
 		DamageCacheAdmission.cpp
+		DamageCachePreparation.cpp
 		AttackPreviewHitContext.cpp
 		AttackPreviewTargets.cpp
 		PreemptiveAttackRequest.cpp
 		BracePrimaryState.cpp
 		BattleAI.cpp
 		BattleEvaluator.cpp
+		BattleEvaluatorCreaturePressure.cpp
 		BattleEvaluatorHeroSubmit.cpp
 		BattleEvaluatorSpellCandidates.cpp
 		BattleEvaluatorSpellProjection.cpp

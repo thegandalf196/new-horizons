@@ -180,6 +180,7 @@ private:
 	void cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender,
 		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
+	void buildUnitDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side, bool terminalPressure);
 	bool tracksRangedMarks(uint32_t defenderId) const;
 	bool tracksEvasiveShroud(uint32_t defenderId) const;
 	bool tracksAmbusher(uint32_t attackerId) const;
@@ -201,6 +202,10 @@ public:
 	int64_t getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender,
 		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
 	void buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
+	/// Terminal creature-pressure root only: retain obstacles, omit pair priming
+	/// only for attested pure damage and saved rules that force dynamic queries.
+	/// Do not use this root as the parent of another DamageCache.
+	void buildCreaturePressureCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 };
 
 /// <summary>

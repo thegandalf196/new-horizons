@@ -6668,9 +6668,9 @@
       "sha256": "4e16898f372a3f2cc153db43b5326a4327a9156ee29722a3d3ce0e31b1b2dd09"
     },
     "AI/BattleAI/AttackPossibility.h": {
-      "sha256": "a8c083a258bbed7c9ea6e8fa71a0ec02c5f6ac96d93cc10720f476bf1b5da1e4",
-      "review": "IR-DYNAMIC-DAMAGE-TIMING-CALLABLES-20261022",
-      "rationale": "Complete five-callable exact header inventory renewed after adding the calculation diagnostic sample and its accumulator. Existing initializer-list annotation parser recovery remains explicitly covered; no callable is omitted.",
+      "sha256": "ca822b6afb517ad889d63a242219305c755deb6227ae3e71559f86112bd07a3a",
+      "review": "IR-CREATURE-PRESSURE-PREPARATION-20261022",
+      "rationale": "Complete five-callable exact header inventory renewed for two preparation declarations and the terminal-root lifetime contract. All five callable bodies are unchanged; the two constructors shift by one line. Existing initializer-list annotation parser recovery remains explicitly covered; no callable is omitted.",
       "functions": [
         {
           "symbol": "inline battle::DamageProvenance battleAIDamageProvenance(const battle::Unit * attacker, bool physicalDamage)#1",
@@ -6689,13 +6689,13 @@
         },
         {
           "symbol": "DamageCache::DamageCache() : parent(nullptr)#1",
-          "start": 191,
-          "end": 191
+          "start": 192,
+          "end": 192
         },
         {
           "symbol": "DamageCache::DamageCache(DamageCache * parent) : parent(parent)#1",
-          "start": 192,
-          "end": 192
+          "start": 193,
+          "end": 193
         }
       ],
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
@@ -18041,13 +18041,13 @@
     },
     "AI/BattleAI/AttackPossibility.cpp": {
       "kind": "exception",
-      "lines": 2485,
+      "lines": 2446,
       "owner": "ai_engineer",
-      "rationale": "Exact four-line urgent observer-knowledge correction in the existing obstacle damage forecast: choose the player observer for obstacle discovery while retaining requested valued side under ALL_KNOWING. Preserve per-victim applicability, visibility-aware caster proxy and every other calculation/callable. File2481-to2485 exception only; no global authority, hidden-obstacle disclosure, warning suppression or cache-lifetime expansion.",
-      "review": "IR-OBSTACLE-OBSERVER-PERSPECTIVE-20261022",
-      "review_scope": "exact-four-line-obstacle-cache-observer-visibility-correctness-only",
-      "sha256": "b43f944273b61518cef4ebd0db3b76f35c0ab9496580404a80a33a53c90d0fbb",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2485/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth.",
+      "rationale": "Extract root/unit cache preparation into the focused 89-line DamageCachePreparation.cpp and route only terminal creature-pressure roots through its canonical-attested warmup boundary. All remaining callable bodies, including the obstacle observer-knowledge correction, are unchanged. Exact shrinking file ratchet 2485 to 2446; no regrowth allowance, general cache bypass or cache-lifetime expansion.",
+      "review": "IR-CREATURE-PRESSURE-PREPARATION-20261022",
+      "review_scope": "terminal-creature-pressure-preparation-extraction-and-shrinking-ratchet-only",
+      "sha256": "294cf7080459c27e28f7dda76491ad721c637115ad739023e28a01ed891ca56a",
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2446/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/AttackPossibility.cpp::AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1": {
@@ -18149,14 +18149,14 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "exception",
-      "lines": 5747,
-      "sha256": "26594f163f51656404c0771a72dec19d7862b82faed1dab448068409029ffaf1",
+      "lines": 5726,
+      "sha256": "ef97b0a71f14e23b526ba4e7765b9ef32c3fd056036580abe8c8a16137896888",
       "owner": "ai_engineer",
-      "review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022",
-      "rationale": "Bounded optional Plague QUERY identity routing only. Existing strict actual cast/tick and direct query API remain; installed historical matching is unchanged, core absence optional, required NH absence fail-closed. No timer or lifecycle redesign.",
-      "review_scope": "optional-plague-query-identity-only",
+      "review": "IR-CREATURE-PRESSURE-PREPARATION-20261022",
+      "rationale": "Extract the 20-line terminal beneficial creature-pressure consumer into focused BattleEvaluatorCreaturePressure.cpp, changing only its preparation call. All remaining callable bodies are unchanged, including the optional Plague QUERY identity correction. Exact shrinking file ratchet 5747 to 5726; no valuation, candidate, order or depth changes and no future growth credit.",
+      "review_scope": "terminal-creature-pressure-consumer-extraction-and-shrinking-ratchet-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5747/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate. No future growth credit; this exact rules-aware query argument only requires independent review. Extract cohesive decision work before broader expansion."
+      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5726/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate. No future growth credit; this exact rules-aware query argument only requires independent review. Extract cohesive decision work before broader expansion."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",

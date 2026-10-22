@@ -3805,27 +3805,6 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 	return std::nullopt;
 }
 
-float BattleEvaluator::beneficialCreaturePressure(const std::shared_ptr<HypotheticBattle> & state,
-	uint32_t spentCasterId, DamageCache & cache) const
-{
-	float value = 0;
-	cache.buildDamageCache(state, side);
-	for(const auto * unit : state->getUnitsIf([&](const battle::Unit * unit)
-	{
-		return unit->alive() && unit->unitId() != spentCasterId && !unit->isTimeStopped();
-	}))
-	{
-		// Reuse ordinary spell evaluation's physical-attack valuation, without
-		// advancing turns or running a battle queue for each random outcome.
-		PotentialTargets targets(unit, cache, state);
-		if(targets.possibleAttacks.empty())
-			continue;
-		const float pressure = static_cast<float>(targets.bestActionValue());
-		value += state->battleGetActionController(unit) == playerID ? pressure : -pressure;
-	}
-	return value;
-}
-
 int BattleEvaluator::creatureAbilitySpellLevel(const CStack * caster, const CSpell * spell, int abilityLevel)
 {
 	int spellLevel = std::max(0, abilityLevel);

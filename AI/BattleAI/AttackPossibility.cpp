@@ -283,45 +283,6 @@ void DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb,
 	}
 }
 
-void DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)
-{
-	if(parent == nullptr)
-	{
-		buildObstacleDamageCache(hb, side);
-	}
-
-	auto stacks = hb->battleGetUnitsIf([=](const battle::Unit * u) -> bool
-		{
-			return u->isValidTarget();
-		});
-
-	battle::Units ourUnits;
-	battle::Units enemyUnits;
-
-	for(auto stack : stacks)
-	{
-		if(stack->unitSide() == side)
-			ourUnits.push_back(stack);
-		else
-			enemyUnits.push_back(stack);
-	}
-
-	for(auto ourUnit : ourUnits)
-	{
-		if(!ourUnit->alive())
-			continue;
-
-		for(auto enemyUnit : enemyUnits)
-		{
-			if(enemyUnit->alive())
-			{
-				cacheDamage(ourUnit, enemyUnit, hb);
-				cacheDamage(enemyUnit, ourUnit, hb);
-			}
-		}
-	}
-}
-
 bool DamageCache::tracksRangedMarks(uint32_t defenderId) const
 {
 	for(const auto * cache = this; cache; cache = cache->parent)

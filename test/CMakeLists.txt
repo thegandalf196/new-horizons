@@ -795,6 +795,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/ReachabilityMapProjectionTest.cpp
 		battleAI/EnemyBypassReachabilityTest.cpp
 		battleAI/DamageCacheObstacleVisibilityTest.cpp
+		battleAI/CreaturePressureCachePreparationTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
 		battleAI/BattleShroudStrikeTest.cpp
 		battleAI/StackWithBonusesQueryTest.cpp

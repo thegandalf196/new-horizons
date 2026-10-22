@@ -33,6 +33,17 @@ live state and both RNG domains in a synthetic seven-versus-three battle. Its
 enumeration oracle shares the production spell-effect and pressure evaluators;
 it is not an independent implementation of those mechanics or a saved-game replay.
 
+Terminal creature-pressure forecasts use a fresh, parentless `DamageCache`.
+When captured rules force dynamic damage queries, preparation retains obstacles
+and the first pair's warmup, then omits unused remaining pair fills only if the
+loaded calculator attests its canonical implementation. Parented or populated
+caches, historical rules without Focus Fire, and unknown or failed capability
+queries retain ordinary preparation. Calculation failures still propagate.
+Never use this terminal cache as another cache's parent: child original-damage
+queries could observe its partial pair snapshots. Regression coverage lives in
+`CreaturePressureCachePreparationTest` and `DamageCacheObstacleVisibilityTest`;
+the ordered-pool oracle above protects the consuming wish-search decisions.
+
 For an isolated profiler workload, explicitly select
 `NewHorizonsGenieSupportAITest.DISABLED_SyntheticSevenVsThreeForecastProfile`
 with `--gtest_also_run_disabled_tests`. It executes one standalone wish search

@@ -178,6 +178,8 @@ protected:
 			ASSERT_FALSE(expected.empty());
 			DamageCache cache;
 			cache.buildDamageCache(model, valuedSide);
+			DamageCache terminal;
+			terminal.buildCreaturePressureCache(model, valuedSide);
 			bool positiveKnownMine = false;
 			for(const auto & mine : descriptors)
 			{
@@ -187,6 +189,7 @@ protected:
 					const int64_t damage = hex == expected.end() ? 0 : hex->second.at(id);
 					const auto actual = cache.getObstacleDamage(mine.pos, model->battleGetUnitByID(id));
 					EXPECT_EQ(actual, damage) << "obstacle=" << mine.uniqueID << " victim=" << id;
+					EXPECT_EQ(terminal.getObstacleDamage(mine.pos, model->battleGetUnitByID(id)), damage);
 					if(mine.uniqueID == 701 && damage > 0)
 						positiveKnownMine = true;
 					if(id == immuneId)
@@ -196,6 +199,7 @@ protected:
 			if(!authority || valuedSide == ownSide)
 				EXPECT_TRUE(positiveKnownMine);
 			EXPECT_EQ(cache.getObstacleDamage(BattleHex(10, 3), model->battleGetUnitByID(victimIds.front())), 0);
+			EXPECT_EQ(terminal.getObstacleDamage(BattleHex(10, 3), model->battleGetUnitByID(victimIds.front())), 0);
 			DamageCache childCache(&cache);
 			childCache.buildDamageCache(model, CBattleInfoEssentials::otherSide(valuedSide));
 			for(const auto & mine : descriptors)
