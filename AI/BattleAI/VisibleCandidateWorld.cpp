@@ -33,7 +33,11 @@ AttackPossibility VisibleCandidateWorld::evaluate(const std::shared_ptr<const Vi
 	auto attack = BattleAttackInfo(attacker, defender, distance, shooting);
 	if(shooting && from.isValid() && from != attacker->getPosition()
 		&& newHorizonsArchery::canUseSkirmisher(owner->heroPolicy(attacker->unitSide()).legacyHero(), attacker))
+	{
 		attack.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
+		// Admit movement reactions before the ordinary ranged preview resolves.
+		attack.attackerPos = from;
+	}
 	// Run the same ordinary preview, with the SAME concrete callback object:
 	// RTTI/lazy reaction paths, partial/unknown handling and scalar math stay put.
 	auto result = AttackPossibility::evaluate(attack, from, damageCache, owner->source);

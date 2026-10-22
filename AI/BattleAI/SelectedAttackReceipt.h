@@ -50,6 +50,10 @@ public:
 
 namespace selectedAttackReceipt
 {
+/// Restore an ordinary melee endpoint or a currently legal Skirmisher
+/// endpoint before replayed damage; other shooting from-fields grant no movement.
+void restorePosition(const AttackPossibility & preview, battle::CUnitState & actor,
+	const HypotheticBattle & branch);
 /// Copy only the existing selected-preview resource/control fields. Physical
 /// damage, Fortune, expiry and continuation remain in their ordered owners.
 void restoreResources(const AttackPossibility & preview, const battle::CUnitState & captured,

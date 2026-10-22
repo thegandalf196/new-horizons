@@ -444,8 +444,7 @@ float BattleExchangeVariant::trackAttack(
 		attacker->addUnitBonus(newHorizonsShroud::nightProwlerDamageBonuses());
 	if(!ap.overwatchHits.empty())
 		hb->projectVoluntaryMovement(attacker->unitId(), ap.from);
-	if(!ap.attack.shooting && ap.from.isValid() && attacker->alive())
-		attacker->setPosition(ap.from);
+	selectedAttackReceipt::restorePosition(ap, *attacker, *hb);
 
 	float attackValue = ap.attackValue();
 	SelectedAttackReceipt selected(ap);

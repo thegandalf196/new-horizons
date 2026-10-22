@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "AttackPossibility.h"
+#include "AttackPreviewArcheryAdmission.h"
 #include "DamageCacheAdmission.h"
 #include "AttackPreviewHitContext.h"
 #include "AttackPreviewTargets.h"
@@ -978,17 +979,12 @@ AttackPossibility AttackPossibility::evaluate(
 					return newHorizonsFrozen::isFrozen(*unit);
 				}));
 		const auto currentActivationSerial = static_cast<int32_t>(state->getBattle()->getActivationSerial());
-		const auto initialAttackerState = attacker->acquireState();
-		const bool projectsDeadeye = attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
-			&& ordinaryArcheryShooter && raHero && newHorizonsArchery::hasDeadeye(raHero)
-			&& initialAttackerState->archeryDeadeyeRound != currentRound;
-		const bool projectsCrossfire = ordinaryArcheryShooter && raHero && newHorizonsArchery::hasCrossfire(raHero);
-		const bool projectsSuppression = attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
-			&& ordinaryArcheryShooter && raHero && newHorizonsArchery::hasSuppression(raHero)
-			&& initialAttackerState->archerySuppressionActivationSerial != currentActivationSerial;
-		const bool projectsRainOfArrows = attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
-			&& ordinaryArcheryShooter && raHero && newHorizonsArchery::hasRainOfArrows(raHero)
-			&& initialAttackerState->archeryRainOfArrowsActivationSerial != currentActivationSerial;
+		const auto archery = attackPreview::archeryReceiptAdmission(attackInfo,
+			ordinaryArcheryShooter, raHero, currentRound, currentActivationSerial);
+		const bool projectsDeadeye = archery.deadeye;
+		const bool projectsCrossfire = archery.crossfire;
+		const bool projectsSuppression = archery.suppression;
+		const bool projectsRainOfArrows = archery.rainOfArrows;
 		const auto rainPrimaryFootprint = requestedDefender->getHexes();
 		const bool projectsArcheryState = projectsDeadeye || projectsCrossfire || projectsSuppression || projectsRainOfArrows;
 		const bool projectsSkirmisher = attackInfo.shooting && hex.isValid()
@@ -1146,10 +1142,10 @@ AttackPossibility AttackPossibility::evaluate(
 			&& (bulwarkReflectionBasisPoints(defender, *state, attackInfo.shooting) > 0
 				|| bulwarkReflectionBasisPoints(requestedDefender, *state, attackInfo.shooting) > 0);
 		const auto * defendedHero = state->battleGetOwnerHero(defender);
-		const auto defenderInitialState = defender->acquireState();
-		const bool projectsImmovable = attackInfo.physicalDamage && ordinaryAttacker
+		const auto defenderInitialState = attackInfo.physicalDamage && ordinaryAttacker
 			&& defender->defended() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
-			&& newHorizonsBulwark::hasImmovable(defendedHero) && defenderInitialState
+			&& newHorizonsBulwark::hasImmovable(defendedHero) ? defender->acquireState() : nullptr;
+		const bool projectsImmovable = defenderInitialState
 			&& defenderInitialState->bulwarkImmovableRound != currentRound;
 		const bool projectsSwampRenewal = attackInfo.physicalDamage && ordinaryAttacker
 			&& defender->defended() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
@@ -1175,9 +1171,9 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool mireGripTargetCanBeHit = !attackInfo.shooting
 			&& (canBeHitByMireGripAttack(defender)
 				|| (projectsProtect && canBeHitByMireGripAttack(requestedDefender)));
-		const auto attackerInitialState = attacker->acquireState();
-		const bool projectsMireGrip = attackInfo.physicalDamage && !attackInfo.shooting
-			&& ordinaryAttacker && mireGripTargetCanBeHit && attackerInitialState
+		const auto attackerInitialState = attackInfo.physicalDamage && !attackInfo.shooting
+			&& ordinaryAttacker && mireGripTargetCanBeHit ? attacker->acquireState() : nullptr;
+		const bool projectsMireGrip = attackerInitialState
 			&& !attackerInitialState->bulwarkMireGripApplied;
 		const bool projectsBastion = projectsBastionOnAttack || projectsBastionOnRetaliation
 			|| projectsBastionOnCounterfire;

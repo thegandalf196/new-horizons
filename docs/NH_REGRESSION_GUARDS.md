@@ -41,6 +41,23 @@ Generated user Maps must remain refreshable after initialization and resolve thr
   adjacency-only helpers to invent a direction for that remote counter. Keep
   `ProtectAttackPreviewTest` coverage for native/forecast damage, retaliation,
   Order consumption, continuation search and live/parent/sibling isolation.
+- A Skirmisher's firing destination must survive selected-attack replay for both
+  owned and direct legal previews; ordinary shots and stray shooting `from`
+  fields must not move the actor. Retain
+  `SelectedSkirmisherReplayKeepsTheFiringHexForOwnedAndDirectPreviews` and
+  `ShootingPositionRestoreRejectsStrayFieldsAndForeignQueryOwners`, including
+  source/parent/sibling, preview and both-RNG checks. Endpoint restoration alone
+  does not establish movement-reaction or Counterfire correctness. A legal shot
+  need not outrank Wait: retain the complete normal/waited exchange comparison
+  and actual validated Wait-to-moved-shot sequence in `NewHorizonsArcheryAITest`.
+- Owned Skirmisher candidates must supply the firing position before movement
+  reactions are projected. Keep the nonlethal and lethal
+  `OwnedSkirmisherOverwatchMatchesDirectPreviewAndNativeMoveThenShot` and
+  `LethalOwnedSkirmisherOverwatchPreventsOutgoingShotInPreviewAndNative` cases:
+  a real Wait arms Overwatch, a stationary shot does not trigger it, and a lethal
+  entry reaction prevents the outgoing shot. Compare owned/direct forecasts
+  with authoritative execution, including health, ammunition and round receipts;
+  preserve source/sibling state and both RNG streams while forecasting.
 - Exercise unselected, cancelled and valid Gating reserve choices; an unset creature
   identity must not be dereferenced. Check localization separately. Cover field
   and siege battles with heroes and war machines when validating fortification

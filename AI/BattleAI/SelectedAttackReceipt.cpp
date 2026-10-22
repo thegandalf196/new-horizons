@@ -8,6 +8,8 @@
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
 #include "StackWithBonuses.h"
+#include "VisibleCandidateWorld.h"
+#include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 
 SelectedAttackReceipt::SelectedAttackReceipt(const AttackPossibility & preview)
@@ -29,6 +31,35 @@ void SelectedAttackReceipt::captureDamage(HypotheticBattle & branch)
 			(before = unitToUpdate->getAvailableHealth()) - (projected = affectedUnit->getAvailableHealth()));
 		observations.push_back({id, before, projected});
 	}
+}
+
+void selectedAttackReceipt::restorePosition(const AttackPossibility & ap, battle::CUnitState & actor,
+	const HypotheticBattle & branch)
+{
+	if(!ap.from.isValid() || !actor.alive())
+		return;
+	if(ap.attack.shooting)
+	{
+		if(actor.getPosition() == ap.from)
+			return;
+		if(!ap.attackerState || !ap.attack.attacker || !ap.attack.defender
+			|| ap.attack.archeryRangedDamageMultiplierPercent != newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT
+			|| ap.attackerState->unitId() != actor.unitId() || ap.attackerState->getPosition() != ap.from
+			|| ap.attack.attacker->unitId() != actor.unitId()
+			|| branch.battleGetUnitByID(actor.unitId()) != &actor)
+			return;
+		if(ap.queryWorld)
+		{
+			const auto & source = ap.queryWorld->callback();
+			if(source->battleGetUnitByID(actor.unitId()) != ap.attack.attacker
+				|| source->battleGetUnitByID(ap.attack.defender->unitId()) != ap.attack.defender)
+				return;
+		}
+		const auto * target = branch.battleGetUnitByID(ap.attack.defender->unitId());
+		if(!target || !branch.battleCanSkirmisherAttackFromHex(&actor, target->getPosition(), ap.from))
+			return;
+	}
+	actor.setPosition(ap.from);
 }
 
 void selectedAttackReceipt::restoreResources(const AttackPossibility & ap, const battle::CUnitState & captured,

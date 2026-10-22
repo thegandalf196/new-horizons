@@ -6628,404 +6628,404 @@
       "sha256": "4e16898f372a3f2cc153db43b5326a4327a9156ee29722a3d3ce0e31b1b2dd09"
     },
     "AI/BattleAI/AttackPossibility.cpp": {
-      "sha256": "a9b0b1e5a59a94eab36fc4f00ea1f4765ee1d8f658b249682b63a72fffe2923f",
-      "review": "IR-ATTACK-CANDIDATE-DEAD-LOCAL-MOVES-20261022",
-      "rationale": "Complete exact inventory renewed for the source-reviewed lazy actor-admission boundary. Existing CPP Gambler selector lambda is extracted to DamageCacheAdmission; no callable is omitted because its body contains a pre-existing annotation diagnostic. Headers retain all complete inline/constructor bodies; only offsets/type declarations change. Exact complete names and spans were independently verified for these bytes; no runtime acceptance is implied. Complete callable names and spans remain unchanged for the exact dead-local bestAp = std::move(ap) assignment; 2571 physical lines, no inventory omission or runtime/performance claim.",
+      "sha256": "cd6a7d8f19c26705a16de3d20ce16890aeeb1aa4366489e3c2eddce7d21df532",
+      "review": "IR-ATTACK-PREVIEW-ARCHERY-ADMISSION-20261022",
+      "rationale": "Complete79-callable exact inventory for source-reviewed archery receipt admission extraction; all prior symbols retained. One owning include shifts early spans by+1, five removed evaluate lines shift later spans by-4; evaluate is841-2567. Pre-existing parser ERROR117 moves to118; all78 non-evaluate callable bodies remain byte-identical. Full named spans are retained rather than suppressing the diagnostic; no runtime/performance acceptance is implied.",
       "functions": [
         {
           "symbol": "DamageCacheOperationScope::explicit DamageCacheOperationScope(DamageCacheProbeTiming * receiver) : timing(receiver)#1",
-          "start": 65,
-          "end": 83
+          "start": 66,
+          "end": 84
         },
         {
           "symbol": "DamageCacheOperationScope::DamageCacheProbeTiming * receiver() const#1",
-          "start": 86,
-          "end": 86
+          "start": 87,
+          "end": 87
         },
         {
           "symbol": "DamageCacheOperationScope::~DamageCacheOperationScope()#1",
-          "start": 87,
-          "end": 104
+          "start": 88,
+          "end": 105
         },
         {
           "symbol": "DamageCachePhaseScope::DamageCachePhaseScope(DamageCacheProbeTiming * timing, DamageCacheProbeTiming::StageTiming DamageCacheProbeTiming::* member) : timing(timing), stage(timing ? &(timing->*member) : nullptr), dynamic(member == &DamageCacheProbeTiming::dynamicDamage), started(stage ? Clock::now() : Clock::time_point{})#1",
-          "start": 115,
-          "end": 127
+          "start": 116,
+          "end": 128
         },
         {
           "symbol": "DamageCachePhaseScope::~DamageCachePhaseScope()#1",
-          "start": 130,
-          "end": 130
+          "start": 131,
+          "end": 131
         },
         {
           "symbol": "DamageCachePhaseScope::void finish()#1",
-          "start": 131,
-          "end": 143
+          "start": 132,
+          "end": 144
         },
         {
           "symbol": "bool projectDefiant(HypotheticBattle & battle, const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause, FortuneStrikeProjection & strike)#1",
-          "start": 146,
-          "end": 160
+          "start": 147,
+          "end": 161
         },
         {
           "symbol": "bool hasRangedMarkEffect(const battle::Unit * unit, const char * source)#1",
-          "start": 162,
-          "end": 171
+          "start": 163,
+          "end": 172
         },
         {
           "symbol": "bool hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attackingSide)#1",
-          "start": 173,
-          "end": 178
+          "start": 174,
+          "end": 179
         },
         {
           "symbol": "hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attackingSide)::[attackingSide](const Bonus * bonus)#1",
-          "start": 176,
-          "end": 177
+          "start": 177,
+          "end": 178
         },
         {
           "symbol": "bool hasNightProwlerBonus(const battle::Unit * unit)#1",
-          "start": 180,
-          "end": 183
+          "start": 181,
+          "end": 184
         },
         {
           "symbol": "int bulwarkPreemptivePercent(const battle::Unit * defender, const CBattleInfoCallback & state)#1",
-          "start": 185,
-          "end": 196
+          "start": 186,
+          "end": 197
         },
         {
           "symbol": "int bulwarkReflectionBasisPoints(const battle::Unit * defender, const CBattleInfoCallback & state, bool ranged)#1",
-          "start": 198,
-          "end": 207
+          "start": 199,
+          "end": 208
         },
         {
           "symbol": "int32_t noQuarterMoraleActivations(const CBattleInfoCallback & battle, uint32_t targetUnitId)#1",
-          "start": 209,
-          "end": 212
+          "start": 210,
+          "end": 213
         },
         {
           "symbol": "int64_t projectedPhysicalPoisonDamage(const battle::CUnitState * state)#1",
-          "start": 214,
-          "end": 225
+          "start": 215,
+          "end": 226
         },
         {
           "symbol": "int32_t vampirismHealBasisPoints(const battle::Unit * unit)#1",
-          "start": 227,
-          "end": 246
+          "start": 228,
+          "end": 247
         },
         {
           "symbol": "void projectVampirismHealing(battle::CUnitState * attacker, int64_t actualDamage, std::vector<std::pair<uint32_t, int64_t>> & healingByUnit)#1",
-          "start": 248,
-          "end": 269
+          "start": 249,
+          "end": 270
         },
         {
           "symbol": "void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)#1",
-          "start": 272,
-          "end": 275
+          "start": 273,
+          "end": 276
         },
         {
           "symbol": "void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing)#1",
-          "start": 277,
-          "end": 312
+          "start": 278,
+          "end": 313
         },
         {
           "symbol": "DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing)::[&]()#1",
-          "start": 305,
-          "end": 309
+          "start": 306,
+          "end": 310
         },
         {
           "symbol": "void DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)#1",
-          "start": 314,
-          "end": 365
+          "start": 315,
+          "end": 366
         },
         {
           "symbol": "DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)::[](const battle::Unit * u) -> bool#1",
-          "start": 341,
-          "end": 343
+          "start": 342,
+          "end": 344
         },
         {
           "symbol": "void DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)#1",
-          "start": 367,
-          "end": 404
+          "start": 368,
+          "end": 405
         },
         {
           "symbol": "DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)::[=](const battle::Unit * u) -> bool#1",
-          "start": 374,
-          "end": 377
+          "start": 375,
+          "end": 378
         },
         {
           "symbol": "bool DamageCache::tracksRangedMarks(uint32_t defenderId) const#1",
-          "start": 406,
-          "end": 412
+          "start": 407,
+          "end": 413
         },
         {
           "symbol": "bool DamageCache::tracksEvasiveShroud(uint32_t defenderId) const#1",
-          "start": 414,
-          "end": 420
+          "start": 415,
+          "end": 421
         },
         {
           "symbol": "bool DamageCache::tracksAmbusher(uint32_t attackerId) const#1",
-          "start": 422,
-          "end": 428
+          "start": 423,
+          "end": 429
         },
         {
           "symbol": "bool DamageCache::tracksShadowAssault(uint32_t defenderId) const#1",
-          "start": 430,
-          "end": 437
+          "start": 431,
+          "end": 438
         },
         {
           "symbol": "bool DamageCache::tracksNightProwler(uint32_t attackerId) const#1",
-          "start": 439,
-          "end": 445
+          "start": 440,
+          "end": 446
         },
         {
           "symbol": "bool DamageCache::tracksFrozen(uint32_t defenderId) const#1",
-          "start": 447,
-          "end": 453
+          "start": 448,
+          "end": 454
         },
         {
           "symbol": "int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)#1",
-          "start": 455,
-          "end": 458
+          "start": 456,
+          "end": 459
         },
         {
           "symbol": "int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver, DamageCacheAdmission * mainProbeAdmission)#1",
-          "start": 460,
-          "end": 579
+          "start": 461,
+          "end": 580
         },
         {
           "symbol": "int64_t DamageCache::getObstacleDamage(const BattleHex & hex, const battle::Unit * defender)#1",
-          "start": 581,
-          "end": 596
+          "start": 582,
+          "end": 597
         },
         {
           "symbol": "int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)#1",
-          "start": 598,
-          "end": 601
+          "start": 599,
+          "end": 602
         },
         {
           "symbol": "int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)#1",
-          "start": 603,
-          "end": 637
+          "start": 604,
+          "end": 638
         },
         {
           "symbol": "AttackPossibility::AttackPossibility(const BattleHex & from, const BattleHex & dest, const BattleAttackInfo & attack) : from(from), dest(dest), attack(attack)#1",
-          "start": 639,
-          "end": 644
+          "start": 640,
+          "end": 645
         },
         {
           "symbol": "float AttackPossibility::damageDiff() const#1",
-          "start": 646,
-          "end": 649
+          "start": 647,
+          "end": 650
         },
         {
           "symbol": "float AttackPossibility::damageDiff(float positiveEffectMultiplier, float negativeEffectMultiplier) const#1",
-          "start": 651,
-          "end": 655
+          "start": 652,
+          "end": 656
         },
         {
           "symbol": "float AttackPossibility::attackValue() const#1",
-          "start": 657,
-          "end": 660
+          "start": 658,
+          "end": 661
         },
         {
           "symbol": "float hpFunction(uint64_t unitHealthStart, uint64_t unitHealthEnd, uint64_t maxHealth)#1",
-          "start": 662,
-          "end": 677
+          "start": 663,
+          "end": 678
         },
         {
           "symbol": "float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state)#1",
-          "start": 684,
-          "end": 692
+          "start": 685,
+          "end": 693
         },
         {
           "symbol": "float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1",
-          "start": 694,
-          "end": 793
+          "start": 695,
+          "end": 794
         },
         {
           "symbol": "AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)::[&](const battle::Unit * u) -> bool#1",
-          "start": 710,
-          "end": 718
+          "start": 711,
+          "end": 719
         },
         {
           "symbol": "int64_t AttackPossibility::evaluateBlockedShootersDmg( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state)#1",
-          "start": 795,
-          "end": 838
+          "start": 796,
+          "end": 839
         },
         {
           "symbol": "AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1",
-          "start": 840,
-          "end": 2571
+          "start": 841,
+          "end": 2567
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](const battle::Unit * unit)#1",
-          "start": 856,
-          "end": 857
+          "start": 857,
+          "end": 858
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const auto * unit)#1",
-          "start": 976,
-          "end": 979
+          "start": 977,
+          "end": 980
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Unit * unit, bool physicalDamage)#1",
-          "start": 1039,
-          "end": 1047
+          "start": 1035,
+          "end": 1043
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](BattleSide side)#1",
-          "start": 1054,
-          "end": 1059
+          "start": 1050,
+          "end": 1055
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](BattleSide side)#2",
-          "start": 1061,
-          "end": 1064
+          "start": 1057,
+          "end": 1060
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Units & units)#1",
-          "start": 1080,
-          "end": 1084
+          "start": 1076,
+          "end": 1080
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::(const battle::Units & units)::[](const battle::Unit * unit)#1",
-          "start": 1082,
-          "end": 1083
+          "start": 1078,
+          "end": 1079
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Units & targets)#1",
-          "start": 1090,
-          "end": 1094
+          "start": 1086,
+          "end": 1090
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::(const battle::Units & targets)::[&state](const battle::Unit * target)#1",
-          "start": 1092,
-          "end": 1093
+          "start": 1088,
+          "end": 1089
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state, attacker, defender, currentRound, elementalPrimaryCounterfire](const battle::Unit * counterShooter)#1",
-          "start": 1113,
-          "end": 1126
+          "start": 1109,
+          "end": 1122
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[state, currentRound](const battle::Unit * target)#1",
-          "start": 1128,
-          "end": 1132
+          "start": 1124,
+          "end": 1128
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Unit * target)#1",
-          "start": 1157,
-          "end": 1162
+          "start": 1153,
+          "end": 1158
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](const battle::Unit * primaryTarget)#1",
-          "start": 1163,
-          "end": 1174
+          "start": 1159,
+          "end": 1170
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&state](const battle::Unit * target)#2",
-          "start": 1186,
-          "end": 1195
+          "start": 1182,
+          "end": 1191
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack)#1",
-          "start": 1221,
-          "end": 1230
+          "start": 1217,
+          "end": 1226
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t targetUnitId)#1",
-          "start": 1231,
-          "end": 1236
+          "start": 1227,
+          "end": 1232
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack)#2",
-          "start": 1237,
-          "end": 1246
+          "start": 1233,
+          "end": 1242
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t attackerUnitId)#1",
-          "start": 1247,
-          "end": 1252
+          "start": 1243,
+          "end": 1248
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack)#3",
-          "start": 1253,
-          "end": 1263
+          "start": 1249,
+          "end": 1259
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t attackerUnitId)#2",
-          "start": 1264,
-          "end": 1268
+          "start": 1260,
+          "end": 1264
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](const BattleAttackInfo & projectedAttack) -> std::optional<BattleSide>#1",
-          "start": 1269,
-          "end": 1282
+          "start": 1265,
+          "end": 1278
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&fortunePreview](uint32_t targetUnitId, BattleSide attackingSide)#1",
-          "start": 1283,
-          "end": 1289
+          "start": 1279,
+          "end": 1285
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](battle::CUnitState * recipient, int64_t damage)#1",
-          "start": 1290,
-          "end": 1301
+          "start": 1286,
+          "end": 1297
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[unit](const battle::Unit * value)#1",
-          "start": 1329,
-          "end": 1330
+          "start": 1325,
+          "end": 1326
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&strike](const auto & hit)#1",
-          "start": 1890,
-          "end": 1893
+          "start": 1886,
+          "end": 1889
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&strike](const auto & hit)#2",
-          "start": 1896,
-          "end": 1899
+          "start": 1892,
+          "end": 1895
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * unit)#1",
-          "start": 2065,
-          "end": 2071
+          "start": 2061,
+          "end": 2067
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&](const battle::Unit * left, const battle::Unit * right)#1",
-          "start": 2072,
-          "end": 2078
+          "start": 2068,
+          "end": 2074
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * left, const battle::Unit * right)#1",
-          "start": 2080,
-          "end": 2083
+          "start": 2076,
+          "end": 2079
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[attacker](const auto & strike)#1",
-          "start": 2453,
-          "end": 2457
+          "start": 2449,
+          "end": 2453
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[&rainPrimaryFootprint](const battle::Unit * candidate)#1",
-          "start": 2492,
-          "end": 2503
+          "start": 2488,
+          "end": 2499
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * unit)#2",
-          "start": 2504,
-          "end": 2511
+          "start": 2500,
+          "end": 2507
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[](const battle::Unit * unit)#3",
-          "start": 2514,
-          "end": 2514
+          "start": 2510,
+          "end": 2510
         },
         {
           "symbol": "AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)::[secondaryState](const auto & affected)#1",
-          "start": 2540,
-          "end": 2541
+          "start": 2536,
+          "end": 2537
         }
       ],
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
@@ -18402,25 +18402,25 @@
     },
     "AI/BattleAI/AttackPossibility.cpp": {
       "kind": "exception",
-      "lines": 2571,
+      "lines": 2567,
       "owner": "ai_engineer",
-      "rationale": "Extract actor-only admission queries into the focused 95-line component; getDamage shrinks128 to120 and AttackPossibility2578 to2571. Only immutable main-target batches reuse lazy facts; target/reverse/reaction checks stay live. Separately approved exact BattleExchangeVariant routing growth2305 to2311, trackAttack482 to484 and calculateExchange358 to361 does not authorize unrelated growth or claim runtime benefit. Separate exact mechanical exception: move the dead local ap into bestAp after its final source read; unchanged2571 file/1732 evaluate ceilings, target order, comparison and all prior extraction obligations remain. No performance benefit established.",
-      "review": "IR-ATTACK-CANDIDATE-DEAD-LOCAL-MOVES-20261022",
-      "review_scope": "exact-two-dead-local-moves-only-no-growth-or-future-allowance",
-      "sha256": "a9b0b1e5a59a94eab36fc4f00ea1f4765ee1d8f658b249682b63a72fffe2923f",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2571/1732 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance.",
+      "rationale": "Source-reviewed focused39-line ArcheryReceiptAdmission owner extracts only four Archery admission decisions and one call-local lazy detached snapshot. Existing Immovable and Mire Grip snapshots are gated by their original eligibility predicates. AttackPossibility shrinks2571 to2567 and evaluate1732 to1727; no prior extraction obligation is waived, no future growth allowance or runtime/performance acceptance is claimed.",
+      "review": "IR-ATTACK-PREVIEW-ARCHERY-ADMISSION-20261022",
+      "review_scope": "exact-lazy-archery-receipt-extraction-and-gated-immovable-mire-snapshots-ratchet-only",
+      "sha256": "cd6a7d8f19c26705a16de3d20ce16890aeeb1aa4366489e3c2eddce7d21df532",
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2567/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/AttackPossibility.cpp::AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1": {
       "kind": "exception",
-      "lines": 1732,
+      "lines": 1727,
       "owner": "ai_engineer",
-      "rationale": "Melee contact-target construction is extracted into AttackPreviewTargets. Remaining strike and retaliation orchestration requires further bounded decomposition while preserving ordered recipients, counter resources, reactions and RNG isolation. Exact reviewed mechanical exception changes only dead-local copy assignment to move after the final ap read; unchanged840-2571 span/1732 lines. No candidate, branch, tie, depth, score or RNG policy change is authorized.",
-      "review": "IR-ATTACK-CANDIDATE-DEAD-LOCAL-MOVES-20261022",
-      "review_scope": "exact-dead-local-best-candidate-move-only-no-growth",
-      "sha256": "e72f4207d86c0113f705b8c78f74e10b9dfc86579418d93746de12cff9326bd7",
+      "rationale": "Source-reviewed exact841-2567/1727-line ratchet after extracting Archery receipt admission into its own small owner and gating Immovable/Mire Grip detached snapshots behind existing eligibility. Preserve candidate membership/order, ties, state/branch ownership, score and both RNGs; runtime acceptance remains separate.",
+      "review": "IR-ATTACK-PREVIEW-ARCHERY-ADMISSION-20261022",
+      "review_scope": "exact-archery-receipt-extraction-and-gated-snapshots-shrinking-ratchet-only",
+      "sha256": "0e883b98f890a0c27ca70e0ed45a78595c802d6a64e3990673e1081d4ee7f9c4",
       "review_status": "independently-reviewed-source-boundary",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2571/1732 ceilings only; no regrowth allowance."
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2567/1727 ceilings only; no regrowth allowance."
     },
     "AI/BattleAI/AttackPossibility.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1": {
       "kind": "legacy",
@@ -18641,14 +18641,14 @@
       "sha256": "cfef4a8b887c5bfc9111edcac72cca0042a817cb76f26ffd557f2f2491d5118d"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp": {
-      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2301/341 ratchet only. Separately, before further movement-cache expansion, ai_engineer must extract ReachabilityMapCache update/getOneTurnReachableUnits/computeOneTurnReachableUnits into one focused component after defining a single shared controller-predicate owner for cache, movement and blocking/bypass consumers. Preserve exact membership pointer/order/multiplicity, turn wrapping, branch/state/RNG and whole-exchange score/action parity; do not duplicate controller rules. This exact four-net-line local-lifetime exception does not permit any unrelated growth. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance.",
+      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2237/340 ratchet only. Separately, before further movement-cache expansion, ai_engineer must extract ReachabilityMapCache update/getOneTurnReachableUnits/computeOneTurnReachableUnits into one focused component after defining a single shared controller-predicate owner for cache, movement and blocking/bypass consumers. Preserve exact membership pointer/order/multiplicity, turn wrapping, branch/state/RNG and whole-exchange score/action parity; do not duplicate controller rules. This exact four-net-line local-lifetime exception does not permit any unrelated growth. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance.",
       "kind": "exception",
-      "lines": 2238,
+      "lines": 2237,
       "owner": "ai_engineer",
-      "rationale": "Independently source-reviewed future-reaction extraction lowers this file2275 to2238 and generic trackAttack481 to442. Focused98-line component owns current legal approach, physical distance, accepted Brace/Overwatch AP replay and detached probes. Only explicit full-action completion routing grows calculateExchange361 to363, preventing duplicate extra hits. No new scorer, horizon, weights, formula, Hero-choice policy or performance claim; all prior extraction deferrals remain.",
-      "review": "IR-FUTURE-BRACE-REPAIR-SOURCE-20261020-D54E6B98",
-      "review_scope": "exact-future-reaction-extraction-shrinking-source-ratchet-with-bounded-completion-routing-only",
-      "sha256": "f911ef0107d635a187ad60c5e7ed3a82a19110217156ab972b0ba6a6232cf029",
+      "rationale": "Source-reviewed selected-preview position restoration moves from inline melee-only assignment to the focused SelectedAttackReceipt owner, preserving the established melee endpoint and admitting only a currently legal bound Skirmisher shooting endpoint. File2238-to2237 and selected trackAttack341-to340 ratchet. Existing recipient/resource/reaction order and all prior extraction obligations remain; no broader ranged movement or runtime/performance acceptance is claimed.",
+      "review": "IR-SKIRMISHER-SELECTED-POSITION-20261022",
+      "review_scope": "exact-selected-skirmisher-position-restoration-shrinking-ratchet-only",
+      "sha256": "3c3e85a2f611cb775edee40338197e0dc0a71dab7728c5d781269773d8578dee",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::BattleScore BattleExchangeEvaluator::calculateExchange( const AttackPossibility & ap, uint8_t turn, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, const battle::Units & additionalUnits, BattleMovementTiming::ExchangeTiming * timing) const#1": {
@@ -18691,14 +18691,14 @@
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttack( const AttackPossibility & ap, std::shared_ptr<HypotheticBattle> hb, DamageCache & damageCache)#1": {
       "kind": "legacy",
-      "lines": 341,
+      "lines": 340,
       "owner": "ai_engineer",
-      "rationale": "Exact public2349 to2301 and trackAttack391 to341 shrinking receipt/replay boundary. SelectedAttackReceipt remains the independently reviewed value/resource transfer owner; new Brace routing consumes recorded classification, then preserves actor-resource capture before recipient expiry and reactive LastStand. No replacement forecast graph or second damage/payment pass is introduced.",
-      "review": "IR-COMMON-LEGACY-CONTROLLER-FINAL-20261017",
-      "review_scope": "exact-selected-receipt-and-resource-transfer-shrinking-source-ratchet-only-no-runtime-or-future-growth",
-      "sha256": "ccdbe7045f0dd7207c6431f7352e913bc58505298e2c6c977096a799770e3336",
+      "rationale": "Source-reviewed exact411-750/340-line selected-receipt trackAttack ratchet replaces only the prior melee endpoint assignment with the focused restorePosition call before attackValue/resource replay. The helper owns current branch/unit/source identity and legal Skirmisher endpoint admission; no other shooting from-field grants movement. Preserve all existing resource/counter/damage/RNG ordering and further extraction obligations.",
+      "review": "IR-SKIRMISHER-SELECTED-POSITION-20261022",
+      "review_scope": "exact-selected-attack-position-restoration-routing-shrinking-ratchet-only",
+      "sha256": "b2db645eb6ba2e8290a2ffedb13ec05c1b9c04a02bd39ba82a977796e6cf8908",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2301/341 ratchet only."
+      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2237/340 ratchet only."
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttack( std::shared_ptr<StackWithBonuses> attacker, std::shared_ptr<StackWithBonuses> defender, bool shooting, bool isOurAttack, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool evaluateOnly, bool allowRetaliation, std::optional<bool> * readyOverwatch, const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission, BattleExchangeAttackResult * actionResult)#1": {
       "kind": "exception",
