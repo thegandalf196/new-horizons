@@ -18328,34 +18328,34 @@
       ]
     },
     "AI/BattleAI/HeroActionTiming.h": {
-      "sha256": "372d23206fc13fe89a7a2d090fe9b553e74e3fee39d557176e5296fcbba15ac3",
-      "review": "IR-HERO-TYPE-ATTRIBUTION-SOURCE-20261021",
-      "rationale": "Complete155-line header inventory renews exactly five unchanged inline bodies at99/148/149/152/153 after value-only candidate/type diagnostic fields and declarations. All other methods remain declarations or deleted operations; no new inline body, lambda or conditional is hidden. Known raw exported DLL_LINKAGE declaration recovery moves112 to132; in-memory annotation normalization yields exactly these five unchanged callable bodies and no diagnostics. Exact source inventory only, not a size waiver, gameplay/runtime acceptance or future growth permission.",
+      "sha256": "247cdfe27811667c1d5d4e5987d7e1fcf02f8057b6807f8d7636587248d29123",
+      "review": "IR-HERO-PROBE-DAMAGE-CACHE-TIMING-20261022",
+      "rationale": "Complete160-line header inventory independently reviewed after three exported diagnostic helper declarations and one Call-local opt-in boolean. Exactly five byte-identical inline bodies remain at103/153/154/157/158; all other callable declarations or deleted operations have no body, and no new lambda or hidden conditional is introduced. Renew the existing exact-content exported-declaration parser-recovery record only; no size waiver, runtime acceptance or future growth permission.",
       "functions": [
         {
           "symbol": "heroActionTiming::Candidates::size_t size() const#1",
-          "start": 99,
-          "end": 99
+          "start": 103,
+          "end": 103
         },
         {
           "symbol": "heroActionTiming::Call::bool enabled() const#1",
-          "start": 148,
-          "end": 148
+          "start": 153,
+          "end": 153
         },
         {
           "symbol": "heroActionTiming::Call::void identify(Identity captured)#1",
-          "start": 149,
-          "end": 149
+          "start": 154,
+          "end": 154
         },
         {
           "symbol": "heroActionTiming::Call::Summary * sink()#1",
-          "start": 152,
-          "end": 152
+          "start": 157,
+          "end": 157
         },
         {
           "symbol": "heroActionTiming::Call::Candidates & candidateSlots()#1",
-          "start": 153,
-          "end": 153
+          "start": 158,
+          "end": 158
         }
       ]
     }

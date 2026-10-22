@@ -60,6 +60,10 @@ struct TypeSummary
 };
 
 DLL_LINKAGE std::string typeFields(const TypeSummary & type);
+/// Extra nested cache clocks require an already admitted Hero timing call.
+DLL_LINKAGE bool damageCacheTimingRequested(bool admitted, const char * value);
+DLL_LINKAGE void configureDamageCacheTiming(Continuation & continuation, bool enabled);
+DLL_LINKAGE std::string damageCacheFields(const Continuation & continuation);
 
 /// Worker slots overlap in wall time. Their sums are not disjoint loop time.
 struct Summary
@@ -136,6 +140,7 @@ DLL_LINKAGE int64_t captureStackId(const battle::Unit * stack);
 class DLL_LINKAGE Call
 {
 	bool requested = false;
+	bool collectDamageCache = false;
 	uint64_t ordinal = 0;
 	Identity identity;
 	Summary summary;

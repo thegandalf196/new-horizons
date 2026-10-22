@@ -61,6 +61,25 @@ establishes Windows performance or a speedup.
   except Focus Fire's existing inline action-factory argument. These are elapsed
   intervals, not CPU, ACK or presentation measurements. Disabled paths sample no
   clocks or allocate candidate slots; the existing no-Hero return remains first.
+  The additional exact opt-in `NH_HERO_DAMAGE_CACHE_TIMING=1` enables existing
+  target-probe damage-cache clocks only for already admitted Hero attempts;
+  it cannot bypass the base opt-in, either logger gate or the attempt limit.
+  It is cached on first admitted use. With this extra opt-in OFF, the aggregate
+  schema and nested cache-clock behavior are unchanged. When enabled, every
+  admitted aggregate appends `continuation_full_{movement,best_target_waited,
+  best_target_normal}_probe_cache_*` fields, including zero-valued fields when
+  no candidate slots or continuation measurements exist.
+  The fields report body/preflight/dynamic calls and additive nanoseconds,
+  remainder nanoseconds, current/original operation traffic, cache hits,
+  fallbacks, dynamic bypasses, fills, dead returns, failures and suppressed
+  reentries. They reuse the ordinary probe-cache counter meanings: original
+  fallback operations can nest current operations, and reentry during a measured
+  phase is included in its wall interval rather than separately timed.
+  Preflight, dynamic and remainder partition outer cache-body time. Cache work
+  includes both primary-damage and DPS-score requests; do not equate its sum to
+  the primary-damage scope alone or add it to enclosing probe/exchange time.
+  Operation-local in-flight bookkeeping is not aggregated. These extra clocks
+  have observer cost; compare semantic results and OFF/ON timing separately.
   FULL continuations additionally report sequential child scopes for target
   construction (`setup`), explicit reachability update, movement search and
   conditional best-target selection. These do not exhaust FULL work; movement

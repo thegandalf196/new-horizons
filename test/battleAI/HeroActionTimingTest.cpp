@@ -407,6 +407,133 @@ TEST(HeroActionTimingTest, IndependentBudgetUsesExistingAsciiLimitContract)
 
 namespace
 {
+void fillCacheTiming(DamageCacheProbeTiming & cache, uint64_t scale)
+{
+	cache.body = {4 * scale, 0, 100 * scale};
+	cache.preflight = {4 * scale, 0, 20 * scale};
+	cache.dynamicDamage = {scale, 0, 70 * scale};
+	cache.remainderNanoseconds = 10 * scale;
+	cache.getDamageCalls = 3 * scale;
+	cache.getOriginalDamageCalls = 2 * scale;
+	cache.rootCacheHits = scale;
+	cache.localChildCacheHits = scale;
+	cache.parentOriginalHits = scale;
+	cache.rootOriginalFallbacks = scale;
+	cache.dynamicBypasses = scale;
+	cache.suppressedReentrantCalls = 2 * scale;
+	// Deliberately nonzero: operation-local bookkeeping must not be reduced.
+	cache.operationsInFlight = 1;
+	cache.dynamicCallbacksInFlight = 1;
+	cache.phasesInFlight = 1;
+}
+
+void fillContinuationCacheTiming(heroActionTiming::Continuation & slot, uint64_t scale)
+{
+	fillCacheTiming(slot.fullMovementDetails.findMoveExchangeDetails.targetProbeDamageCache, scale);
+	fillCacheTiming(slot.fullBestTargetDetails.waitedDetails.targetProbeDamageCache, 2 * scale);
+	fillCacheTiming(slot.fullBestTargetDetails.normalDetails.targetProbeDamageCache, 3 * scale);
+}
+
+void expectCacheTiming(const heroActionTiming::Continuation & total, uint64_t scale)
+{
+	std::map<std::string, int64_t> fields;
+	std::istringstream stream(heroActionTiming::damageCacheFields(total));
+	std::string token;
+	while(stream >> token)
+	{
+		const auto split = token.find('=');
+		ASSERT_NE(split, std::string::npos);
+		EXPECT_TRUE(fields.emplace(token.substr(0, split), std::stoll(token.substr(split + 1))).second);
+	}
+	ASSERT_EQ(fields.size(), 57u);
+	for(const auto & [context, multiplier] : {
+		std::pair{"movement", 1u}, std::pair{"best_target_waited", 2u}, std::pair{"best_target_normal", 3u}})
+	{
+		const std::string prefix = std::string("continuation_full_") + context + "_probe_cache_";
+		const auto factor = scale * multiplier;
+		EXPECT_EQ(fields.at(prefix + "body_calls"), 4 * factor);
+		EXPECT_EQ(fields.at(prefix + "body_ns"), 100 * factor);
+		EXPECT_EQ(fields.at(prefix + "preflight_calls"), 4 * factor);
+		EXPECT_EQ(fields.at(prefix + "preflight_ns"), 20 * factor);
+		EXPECT_EQ(fields.at(prefix + "dynamic_calls"), factor);
+		EXPECT_EQ(fields.at(prefix + "dynamic_ns"), 70 * factor);
+		EXPECT_EQ(fields.at(prefix + "remainder_ns"), 10 * factor);
+		EXPECT_EQ(fields.at(prefix + "body_ns"), fields.at(prefix + "preflight_ns")
+			+ fields.at(prefix + "dynamic_ns") + fields.at(prefix + "remainder_ns"));
+		for(const auto & [name, count] : {
+			std::pair{"current_calls", 3u}, std::pair{"original_calls", 2u},
+			std::pair{"root_hits", 1u}, std::pair{"child_hits", 1u},
+			std::pair{"parent_original_hits", 1u}, std::pair{"root_original_fallbacks", 1u},
+			std::pair{"parent_original_fallbacks", 0u}, std::pair{"dynamic_bypasses", 1u},
+			std::pair{"fills", 0u}, std::pair{"dead_returns", 0u},
+			std::pair{"failed_operations", 0u}, std::pair{"suppressed_reentries", 2u}})
+			EXPECT_EQ(fields.at(prefix + name), count * factor);
+		EXPECT_EQ(fields.at(prefix + "body_calls"), fields.at(prefix + "current_calls")
+			+ fields.at(prefix + "original_calls") - fields.at(prefix + "root_original_fallbacks")
+			- fields.at(prefix + "parent_original_fallbacks"));
+		EXPECT_EQ(fields.at(prefix + "body_calls"), fields.at(prefix + "root_hits")
+			+ fields.at(prefix + "child_hits") + fields.at(prefix + "parent_original_hits")
+			+ fields.at(prefix + "dynamic_bypasses") + fields.at(prefix + "dead_returns")
+			+ fields.at(prefix + "failed_operations"));
+	}
+}
+}
+
+TEST(HeroActionTimingTest, DamageCacheExtraOptInCannotAdmitDisabledCall)
+{
+	const char * disabledValues[]{nullptr, "", "0", "true", "01", "1 ", "1"};
+	for(const char * value : disabledValues)
+		EXPECT_FALSE(heroActionTiming::damageCacheTimingRequested(false, value));
+	const char * invalidValues[]{nullptr, "", "0", "true", "01", "1 "};
+	for(const char * value : invalidValues)
+		EXPECT_FALSE(heroActionTiming::damageCacheTimingRequested(true, value));
+	EXPECT_TRUE(heroActionTiming::damageCacheTimingRequested(true, "1"));
+	heroActionTiming::Continuation slot;
+	fillContinuationCacheTiming(slot, 1);
+	EXPECT_TRUE(heroActionTiming::damageCacheFields(slot).empty());
+	heroActionTiming::configureDamageCacheTiming(slot, true);
+	EXPECT_TRUE(slot.fullMovementDetails.findMoveExchangeDetails.collectProbeDamageCache);
+	EXPECT_TRUE(slot.fullBestTargetDetails.waitedDetails.collectProbeDamageCache);
+	EXPECT_TRUE(slot.fullBestTargetDetails.normalDetails.collectProbeDamageCache);
+	heroActionTiming::configureDamageCacheTiming(slot, false);
+	EXPECT_TRUE(heroActionTiming::damageCacheFields(slot).empty());
+}
+
+TEST(HeroActionTimingTest, DamageCacheReductionJoinsContextsAndPreservesNestedClosure)
+{
+	heroActionTiming::Candidates candidates;
+	candidates.prepare(true, 3);
+	heroActionTiming::Summary summary;
+	clockReads = 0;
+	{
+		heroActionTiming::LoopScope loop(candidates, &summary, fakeNow);
+		for(size_t index = 0; index < 2; ++index)
+		{
+			auto & slot = *candidates.at(index);
+			heroActionTiming::configureDamageCacheTiming(slot, true);
+			fillContinuationCacheTiming(slot, index + 1);
+		}
+		// Unrequested slot data is not a measured sample and must be ignored.
+		fillContinuationCacheTiming(*candidates.at(2), 100);
+		EXPECT_TRUE(heroActionTiming::damageCacheFields(summary.continuation).empty());
+	}
+	EXPECT_EQ(clockReads, 2u); // Only existing loop wall reads, not reduction/formatting.
+	ASSERT_TRUE(summary.loopJoined);
+	EXPECT_FALSE(summary.loopThrew);
+	expectCacheTiming(summary.continuation, 3);
+	for(const auto * exchange : {&summary.continuation.fullMovementDetails.findMoveExchangeDetails,
+		&summary.continuation.fullBestTargetDetails.waitedDetails,
+		&summary.continuation.fullBestTargetDetails.normalDetails})
+	{
+		EXPECT_TRUE(exchange->collectProbeDamageCache);
+		EXPECT_EQ(exchange->targetProbeDamageCache.operationsInFlight, 0u);
+		EXPECT_EQ(exchange->targetProbeDamageCache.dynamicCallbacksInFlight, 0u);
+		EXPECT_EQ(exchange->targetProbeDamageCache.phasesInFlight, 0u);
+	}
+}
+
+namespace
+{
 bool exerciseCall()
 {
 	heroActionTiming::Call call;
@@ -480,6 +607,120 @@ TEST(HeroActionCallIntegrationTest, FreshProcessOptInAndCapOne)
 	EXPECT_EQ(row.at("continuation_full_movement_remainder_us"), 4);
 	EXPECT_EQ(row.at("submit_calls"), 1);
 	EXPECT_EQ(row.at("submit_returned"), 1);
+}
+
+TEST(HeroActionDamageCacheCallIntegrationTest, FreshProcessOptInAndCapOne)
+{
+	heroTimingTest::Capture capture;
+	ASSERT_EQ(heroActionTiming::parseLimit(std::getenv("NH_RENDER_LOAD_TIMING_LIMIT")), 1u)
+		<< "Run this exact filter alone in a fresh process with limit=1, including OFF";
+	const bool extra = heroActionTiming::damageCacheTimingRequested(heroTimingTest::optedIn(),
+		std::getenv("NH_HERO_DAMAGE_CACHE_TIMING"));
+	clockReads = 0;
+	{
+		heroActionTiming::Call call;
+		EXPECT_EQ(call.enabled(), heroTimingTest::optedIn());
+		call.identify({17, 1, 1, 3, 7});
+		call.prepare(2);
+		heroActionTiming::LoopScope loop(call.candidateSlots(), call.sink(), fakeNow);
+		for(size_t index = 0; index < 2; ++index)
+		{
+			auto * slot = call.continuation(index);
+			if(!heroTimingTest::optedIn())
+			{
+				EXPECT_EQ(slot, nullptr);
+				continue;
+			}
+			ASSERT_NE(slot, nullptr);
+			EXPECT_EQ(slot->fullMovementDetails.findMoveExchangeDetails.collectProbeDamageCache, extra);
+			EXPECT_EQ(slot->fullBestTargetDetails.waitedDetails.collectProbeDamageCache, extra);
+			EXPECT_EQ(slot->fullBestTargetDetails.normalDetails.collectProbeDamageCache, extra);
+			if(extra)
+				fillContinuationCacheTiming(*slot, index + 1);
+		}
+	}
+	EXPECT_EQ(clockReads, heroTimingTest::optedIn() ? 2u : 0u);
+	EXPECT_FALSE(exerciseCall());
+	EXPECT_FALSE(exerciseCall());
+	const auto rows = capture.rows();
+	ASSERT_EQ(rows.size(), heroTimingTest::optedIn() ? 2u : 0u);
+	if(!heroTimingTest::optedIn())
+		return;
+	EXPECT_TRUE(rows.back().starts_with("NH_HERO_ACTION_TIMING cap=1 reached;"));
+	const auto actual = heroTimingTest::fields(rows.front());
+	EXPECT_EQ(actual.at("hero_attempt"), 1);
+	EXPECT_EQ(actual.at("loop_joined"), 1);
+	EXPECT_EQ(actual.at("loop_threw"), 0);
+	EXPECT_EQ(actual.at("candidates"), 2);
+	EXPECT_EQ(actual.size(), extra ? 167u : 110u);
+	if(extra)
+	{
+		heroActionTiming::Continuation expected;
+		heroActionTiming::configureDamageCacheTiming(expected, true);
+		fillContinuationCacheTiming(expected, 3);
+		expectCacheTiming(expected, 3);
+		std::istringstream stream(heroActionTiming::damageCacheFields(expected));
+		std::string token;
+		while(stream >> token)
+		{
+			const auto split = token.find('=');
+			ASSERT_NE(split, std::string::npos);
+			EXPECT_EQ(actual.at(token.substr(0, split)), std::stoll(token.substr(split + 1)));
+		}
+	}
+}
+
+namespace
+{
+void expectEmptyCacheContinuationCall(size_t count)
+{
+	heroTimingTest::Capture capture;
+	ASSERT_EQ(heroActionTiming::parseLimit(std::getenv("NH_RENDER_LOAD_TIMING_LIMIT")), 1u)
+		<< "Run this exact filter alone in a fresh process with limit=1, including OFF";
+	const bool extra = heroActionTiming::damageCacheTimingRequested(heroTimingTest::optedIn(),
+		std::getenv("NH_HERO_DAMAGE_CACHE_TIMING"));
+	clockReads = 0;
+	{
+		heroActionTiming::Call call;
+		EXPECT_EQ(call.enabled(), heroTimingTest::optedIn());
+		call.prepare(count);
+		heroActionTiming::LoopScope loop(call.candidateSlots(), call.sink(), fakeNow);
+		// No continuation lookup or measured cache operation, including count=0.
+	}
+	EXPECT_EQ(clockReads, heroTimingTest::optedIn() ? 2u : 0u);
+	EXPECT_FALSE(exerciseCall());
+	const auto rows = capture.rows();
+	ASSERT_EQ(rows.size(), heroTimingTest::optedIn() ? 2u : 0u);
+	if(!heroTimingTest::optedIn())
+		return;
+	EXPECT_TRUE(rows.back().starts_with("NH_HERO_ACTION_TIMING cap=1 reached;"));
+	const auto actual = heroTimingTest::fields(rows.front());
+	EXPECT_EQ(actual.at("hero_attempt"), 1);
+	EXPECT_EQ(actual.at("loop_joined"), 1);
+	EXPECT_EQ(actual.at("loop_threw"), 0);
+	EXPECT_EQ(actual.at("candidates"), count);
+	EXPECT_EQ(actual.size(), extra ? 167u : 110u);
+	size_t cacheFields = 0;
+	for(const auto & [name, value] : actual)
+	{
+		if(name.find("_probe_cache_") != std::string::npos)
+		{
+			++cacheFields;
+			EXPECT_EQ(value, 0);
+		}
+	}
+	EXPECT_EQ(cacheFields, extra ? 57u : 0u);
+}
+}
+
+TEST(HeroActionDamageCacheCallIntegrationTest, FreshProcessZeroSlotsRetainsSchema)
+{
+	expectEmptyCacheContinuationCall(0);
+}
+
+TEST(HeroActionDamageCacheCallIntegrationTest, FreshProcessNoContinuationRetainsSchema)
+{
+	expectEmptyCacheContinuationCall(2);
 }
 
 TEST(HeroActionCallIntegrationTest, GlobalLoggerGateDoesNotSpendBudget)

@@ -24,8 +24,8 @@ namespace
 using ExchangeTiming = BattleMovementTiming::ExchangeTiming;
 using ExchangeStage = BattleMovementTiming::StageTiming;
 
-// Existing body/probe regions only. Extra damage-cache clocks stay disabled;
-// nested lifecycle subsets are not additional disjoint body time.
+// Existing body/probe regions. Optional cache phases nest inside these regions;
+// neither cache nor lifecycle subsets are additional disjoint body time.
 constexpr auto exchangeStages = {
 	std::pair{"body", &ExchangeTiming::body}, std::pair{"membership", &ExchangeTiming::membership},
 	std::pair{"projection_setup", &ExchangeTiming::projectionSetup}, std::pair{"target_probes", &ExchangeTiming::targetProbes},
@@ -47,6 +47,11 @@ void accumulateExchange(ExchangeTiming & total, const ExchangeTiming & sample)
 	for(const auto & [name, stage] : exchangeStages)
 		accumulateStage(total.*stage, sample.*stage);
 	total.remainderMicroseconds += sample.remainderMicroseconds;
+	if(sample.collectProbeDamageCache)
+	{
+		total.collectProbeDamageCache = true;
+		total.targetProbeDamageCache.accumulate(sample.targetProbeDamageCache);
+	}
 }
 
 void accumulateBestTarget(BattleBestTargetTiming & total, const BattleBestTargetTiming & sample)
@@ -89,6 +94,57 @@ std::string movementFields(const BattleMovementTiming & details)
 	fields += " " + prefix + "_remainder_us=" + std::to_string(details.findMoveExchangeDetails.remainderMicroseconds);
 	return fields;
 }
+}
+
+bool damageCacheTimingRequested(bool admitted, const char * value)
+{
+	return admitted && value && std::string_view(value) == "1";
+}
+
+void configureDamageCacheTiming(Continuation & continuation, bool enabled)
+{
+	continuation.fullMovementDetails.findMoveExchangeDetails.collectProbeDamageCache = enabled;
+	continuation.fullBestTargetDetails.waitedDetails.collectProbeDamageCache = enabled;
+	continuation.fullBestTargetDetails.normalDetails.collectProbeDamageCache = enabled;
+}
+
+std::string damageCacheFields(const Continuation & continuation)
+{
+	std::string fields;
+	for(const auto & [name, exchange] : {
+		std::pair{"movement", &continuation.fullMovementDetails.findMoveExchangeDetails},
+		std::pair{"best_target_waited", &continuation.fullBestTargetDetails.waitedDetails},
+		std::pair{"best_target_normal", &continuation.fullBestTargetDetails.normalDetails}})
+	{
+		if(!exchange->collectProbeDamageCache)
+			continue;
+		const std::string prefix = std::string("continuation_full_") + name + "_probe_cache_";
+		const auto & cache = exchange->targetProbeDamageCache;
+		for(const auto & [stageName, stage] : {
+			std::pair{"body", &DamageCacheProbeTiming::body},
+			std::pair{"preflight", &DamageCacheProbeTiming::preflight},
+			std::pair{"dynamic", &DamageCacheProbeTiming::dynamicDamage}})
+		{
+			fields += " " + prefix + stageName + "_calls=" + std::to_string((cache.*stage).calls);
+			fields += " " + prefix + stageName + "_ns=" + std::to_string((cache.*stage).totalNanoseconds);
+		}
+		for(const auto & [counterName, counter] : {
+			std::pair{"remainder_ns", &DamageCacheProbeTiming::remainderNanoseconds},
+			std::pair{"current_calls", &DamageCacheProbeTiming::getDamageCalls},
+			std::pair{"original_calls", &DamageCacheProbeTiming::getOriginalDamageCalls},
+			std::pair{"root_hits", &DamageCacheProbeTiming::rootCacheHits},
+			std::pair{"child_hits", &DamageCacheProbeTiming::localChildCacheHits},
+			std::pair{"parent_original_hits", &DamageCacheProbeTiming::parentOriginalHits},
+			std::pair{"root_original_fallbacks", &DamageCacheProbeTiming::rootOriginalFallbacks},
+			std::pair{"parent_original_fallbacks", &DamageCacheProbeTiming::parentOriginalFallbacks},
+			std::pair{"dynamic_bypasses", &DamageCacheProbeTiming::dynamicBypasses},
+			std::pair{"fills", &DamageCacheProbeTiming::cacheFillCalls},
+			std::pair{"dead_returns", &DamageCacheProbeTiming::deadReturns},
+			std::pair{"failed_operations", &DamageCacheProbeTiming::failedOperations},
+			std::pair{"suppressed_reentries", &DamageCacheProbeTiming::suppressedReentrantCalls}})
+			fields += " " + prefix + counterName + "=" + std::to_string(cache.*counter);
+	}
+	return fields;
 }
 
 void Stage::accumulate(const Stage & other)
@@ -263,6 +319,13 @@ Call::Call()
 		logAi->debug("NH_HERO_ACTION_TIMING cap=%u reached; subsequent Hero attempt records omitted", limit);
 	requested = attempt < limit;
 	ordinal = attempt + 1;
+	if(requested)
+	{
+		static const bool cacheOptedIn = damageCacheTimingRequested(true, std::getenv("NH_HERO_DAMAGE_CACHE_TIMING"));
+		collectDamageCache = cacheOptedIn;
+		if(collectDamageCache)
+			configureDamageCacheTiming(summary.continuation, true);
+	}
 }
 
 Call::~Call()
@@ -310,7 +373,8 @@ Call::~Call()
 			static_cast<unsigned long long>(summary.submitReturned),
 			static_cast<unsigned long long>(summary.submitThrew),
 			(bestTargetFields(summary.continuation.fullBestTargetDetails)
-				+ movementFields(summary.continuation.fullMovementDetails)).c_str());
+				+ movementFields(summary.continuation.fullMovementDetails)
+				+ (collectDamageCache ? damageCacheFields(summary.continuation) : std::string{})).c_str());
 		// Same admitted attempt/budget as the aggregate; at most64 types + overflow.
 		// Candidate sums may overlap with workers; never add children to totals.
 		for(const auto & type : candidates.types())
@@ -333,6 +397,9 @@ void Call::prepare(size_t count)
 
 Continuation * Call::continuation(size_t index)
 {
-	return requested ? candidates.at(index) : nullptr;
+	auto * slot = requested ? candidates.at(index) : nullptr;
+	if(slot && collectDamageCache)
+		configureDamageCacheTiming(*slot, true);
+	return slot;
 }
 }
