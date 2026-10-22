@@ -875,6 +875,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsPandemoniumAITest.cpp
 		battleAI/NewHorizonsRealityWarpAITest.cpp
 		battleAI/NewHorizonsFrozenAITest.cpp
+		battleAI/FrozenPredicateCharacterizationTest.cpp
 		battle/NewHorizonsBattleAITimingTest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
