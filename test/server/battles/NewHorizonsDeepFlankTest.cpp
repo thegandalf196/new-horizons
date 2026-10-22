@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "../../battleAI/PurifyRuleFixtures.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/CSkillHandler.h"
 #include "../../../lib/GameConstants.h"
@@ -144,44 +145,6 @@ protected:
 	BattleAttackInfo shot() const { return BattleAttackInfo(shooter, target, 0, true); }
 };
 
-JsonNode deepFlankSavedV2Rules()
-{
-	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
-	// Derive an actual historical v2 snapshot, not v3 data with a relabelled version.
-	for(const auto * key : {"morale", "creatureAbilities", "protectedAdventureBarriers", "heroLuck", "heroMorale"})
-		rules.Struct().erase(key);
-	for(auto & [name, spell] : rules["spells"].Struct())
-	{
-		(void)name;
-		spell.Struct().erase("selectedPlacement");
-		spell.Struct().erase("earthquake");
-		spell.Struct().erase("structures");
-		for(const auto * key : {"heroAccess", "restoration", "propagationLimit", "implosion",
-			"ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations",
-			"burnGroundedFlyers"})
-			spell.Struct().erase(key);
-		if(spell.Struct().contains("variant"))
-		{
-			spell.Struct().erase("variant");
-			spell["active"].Bool() = false;
-		}
-	}
-	if(newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION
-		< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-	{
-		auto & sorrow = rules["spells"]["core:sorrow"];
-		sorrow.Struct().erase("level");
-		sorrow.Struct().erase("costs");
-		sorrow["schools"].Vector().clear();
-		sorrow["schools"].Vector().emplace_back(std::string("new-horizons:chaos"));
-	}
-	newHorizonsMagic::validateRules(rules);
-	return rules;
-}
-
 class NewHorizonsDeepFlankElementalTest : public NewHorizonsDeepFlankTest
 {
 protected:
@@ -194,7 +157,7 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		JsonNode rules = context == 2 ? deepFlankSavedV2Rules()
+		JsonNode rules = context == 2 ? purifyTest::savedV2MagicRules()
 			: context == 0 ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
