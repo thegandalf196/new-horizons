@@ -147,9 +147,11 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, CreatureArtRequiresMatchingConvertedT
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 	const auto wisp = CreatureID(CreatureID::decode("new-horizons:wisp"));
 	const auto ballista = CreatureID(CreatureID::BALLISTA);
-	for(const auto & row : std::array<std::tuple<const char *, CreatureID, const char *>, 2>{{
+	for(const auto & row : std::array<std::tuple<const char *, CreatureID, const char *>, 4>{{
 		{"core:monere", wisp, "newHorizons/heroSpecialties/MonereWispLine"},
-		{"core:gerwulf", ballista, "newHorizons/heroSpecialties/GerwulfBallistaLine"}}})
+		{"core:pasis", wisp, "newHorizons/heroSpecialties/PasisWispLine"},
+		{"core:gerwulf", ballista, "newHorizons/heroSpecialties/GerwulfBallistaLine"},
+		{"core:christian", ballista, "newHorizons/heroSpecialties/ChristianBallistaLine"}}})
 	{
 		const auto & [id, target, artwork] = row;
 		SCOPED_TRACE(id);
@@ -172,11 +174,44 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, CreatureArtRequiresMatchingConvertedT
 		EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(
 			hero, development, magic, CreatureID(CreatureID::ARCHER)).artwork);
 	}
-	// A legacy Psychic Elemental Monere never inherits the selected Wisp image.
-	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:monere"),
-		development, magic, std::nullopt).artwork);
-	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:pasis"),
-		development, magic, wisp).artwork);
+	// An absent target never consults installed Wisp defaults for either legacy hero.
+	for(const char * id : {"core:monere", "core:pasis"})
+		EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype(id),
+			development, magic, std::nullopt).artwork);
+	// Unselected heroes do not inherit another hero's artwork for the same target.
+	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:valeska"),
+		development, magic, ballista).artwork);
+}
+
+TEST_F(NewHorizonsSpecialtyArtBindingTest, PasisAndChristianCapturedStartsUseTheirNativePairsWithoutMutation)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:pasis")), PlayerColor(0))
+		.hero({6, 5, 0}, HeroTypeID(HeroTypeID::decode("core:christian")), PlayerColor(0))
+		.hero({24, 24, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(1));
+	startWithMap(std::move(builder));
+	for(const auto & [position, target, artwork] : std::array{
+		std::tuple{int3(5, 5, 0), CreatureID(CreatureID::decode("new-horizons:wisp")),
+			"newHorizons/heroSpecialties/PasisWispLine"},
+		std::tuple{int3(6, 5, 0), CreatureID(CreatureID::BALLISTA),
+			"newHorizons/heroSpecialties/ChristianBallistaLine"}})
+	{
+		const auto * hero = findHeroAt(position);
+		ASSERT_NE(hero, nullptr);
+		const auto beforeRules = hero->getPrimaryGrowthRules();
+		const auto beforeBonuses = hero->getExportedBonusList().toJsonNode();
+		const auto metadata = hero->getSpecialtyPresentation();
+		ASSERT_TRUE(metadata.artwork);
+		EXPECT_EQ(*metadata.artwork, artwork);
+		EXPECT_EQ(metadata.creature, target);
+		const auto view = heroSpecialtyPresentation(*hero);
+		EXPECT_EQ(view.animation().getOriginalName(), std::string(artwork) + "/44");
+		EXPECT_EQ(view.animation(true).getOriginalName(), std::string(artwork) + "/32");
+		EXPECT_EQ(view.frame(), 0u);
+		EXPECT_EQ(hero->getPrimaryGrowthRules(), beforeRules);
+		EXPECT_EQ(hero->getExportedBonusList().toJsonNode(), beforeBonuses);
+	}
 }
 
 TEST_F(NewHorizonsSpecialtyArtBindingTest, AndraAndThorgrimNeedCapturedMagicRules)

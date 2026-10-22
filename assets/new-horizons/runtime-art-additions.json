@@ -5339,6 +5339,73 @@
         }
       ],
       "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "baselineArchiveSha256": "a71a8f381fb417bbbedac36c681b8806b27c27116917ecae29065e141e3cbddc",
+      "baselineManifestSha256": "3be744e43b5dc8cf3d1d2c74e045b7dae6d4af41c39a9c1c6ab499fb21eae4e9",
+      "baselineEntriesSha256": "c739d34b37bc547d579f40856ff4ea3ca8a8412ecfa8e6209f9c8a9b4bf9b2d2",
+      "baselineHeaderSha256": "6cfea69a7513ffa4a185755f1ada67e2ed2aac17156d50e690fc45d4b93ad439",
+      "nonStatusConfigSha256": "6bcf78af32bc3739f491572a1705a1e9440dc76cc25b19947da8998d7fc5cba2",
+      "baselineCount": 4827,
+      "entryCount": 4835,
+      "newArchiveSha256": "ecfde8aaeaa4d2c006189a72843d506e74622969711ce02205d1116c794fe8a1",
+      "resources": [
+        "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/32.json",
+        "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/44.json",
+        "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/PasisWispLine/32.json",
+        "SPRITES/newHorizons/heroSpecialties/PasisWispLine/44.json",
+        "SPRITES/newHorizons/heroSpecialties/PasisWispLine/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/PasisWispLine/icon-44.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "specialties": [
+        {
+          "id": "core:pasis",
+          "identity": "PasisWispLine",
+          "version": "transparent-foreground-v1-20261021",
+          "native44Sha256": "0162eedc1f388defb5a7226e1a54f46cacff65c4051c0c2fa764e04ad2fd0d2c",
+          "native32Sha256": "a1b06870343baefff1ea13b27cab052d99029b387c48f1137a7fafce0f4b3027",
+          "normal44": "newHorizons/heroSpecialties/PasisWispLine/44",
+          "normal32": "newHorizons/heroSpecialties/PasisWispLine/32",
+          "selectionEvidenceSha256": "b7775e27d9832f7d4f3e70a79187c04d65f15ddfe36ecec06c79269f2fc9c7bd",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/PasisWispLine/32.json",
+            "SPRITES/newHorizons/heroSpecialties/PasisWispLine/44.json",
+            "SPRITES/newHorizons/heroSpecialties/PasisWispLine/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/PasisWispLine/icon-44.png"
+          ],
+          "origin": "built-in-generated-specialty-symbol-using-project-wisp-subject-reference",
+          "originalMasterSha256": "9d29cc28d10bcf84b57c08bbf83ea2a9d8435ac670baebd109666128aac14e9a",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+          "approval": "Provisional; not Final; rendered acceptance pending; no new rights grant",
+          "projectReferenceSha256": "52f21093935c3b0a3a08cbbf9e3874c5a2038542aa8329f8cb50b0e38a746c21"
+        },
+        {
+          "id": "core:christian",
+          "identity": "ChristianBallistaLine",
+          "version": "transparent-foreground-v1-20261021",
+          "native44Sha256": "8d05ccdacc28e031696bf220f9adb2665469584944f206cfb26ca8011983f40a",
+          "native32Sha256": "b35265b5ac8abdf622aecee9d8037bf08f408c13a8340fa241ce93b82bdb48e8",
+          "normal44": "newHorizons/heroSpecialties/ChristianBallistaLine/44",
+          "normal32": "newHorizons/heroSpecialties/ChristianBallistaLine/32",
+          "selectionEvidenceSha256": "b7775e27d9832f7d4f3e70a79187c04d65f15ddfe36ecec06c79269f2fc9c7bd",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/32.json",
+            "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/44.json",
+            "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/icon-44.png"
+          ],
+          "origin": "built-in-text-only-generated-specialty-symbol-own-image-haze-removal-correction",
+          "originalMasterSha256": "2b42fcd89d7091f4f4f11d371eeabc0cfecc812f41bddc6fcd182eff50482c90",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+          "approval": "Provisional; not Final; rendered acceptance pending; no new rights grant"
+        }
+      ],
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
     }
   ]
 }

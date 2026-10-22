@@ -434,5 +434,32 @@ class ArtAdditionsTest(unittest.TestCase):
 
 
 
+    def test_selected_pasis_christian_v1_cohort_keeps_exact_two_heroes(self):
+        token = 'selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22'
+        records = [row for wave in self.waves for row in wave.get('specialties', [])
+                   if row['selection'] == token]
+        expected = {
+            'core:pasis': ('PasisWispLine',
+                '0162eedc1f388defb5a7226e1a54f46cacff65c4051c0c2fa764e04ad2fd0d2c',
+                'a1b06870343baefff1ea13b27cab052d99029b387c48f1137a7fafce0f4b3027'),
+            'core:christian': ('ChristianBallistaLine',
+                '8d05ccdacc28e031696bf220f9adb2665469584944f206cfb26ca8011983f40a',
+                'b35265b5ac8abdf622aecee9d8037bf08f408c13a8340fa241ce93b82bdb48e8')}
+        self.assertEqual(len(records), 2)
+        self.assertEqual({row['id'] for row in records}, set(expected))
+        for row in records:
+            self.assertEqual(row['version'], 'transparent-foreground-v1-20261021')
+            self.assertEqual((row['identity'], row['native44Sha256'], row['native32Sha256']),
+                             expected[row['id']])
+            self.assertIn('not Final', row['approval'])
+            self.assertIn('provisional', row['selection'])
+        by_id = {row['id']: row for row in records}
+        self.assertIn('project-wisp-subject-reference', by_id['core:pasis']['origin'])
+        self.assertEqual(by_id['core:pasis']['projectReferenceSha256'],
+                         '52f21093935c3b0a3a08cbbf9e3874c5a2038542aa8329f8cb50b0e38a746c21')
+        self.assertIn('text-only', by_id['core:christian']['origin'])
+        self.assertIn('own-image-haze-removal-correction', by_id['core:christian']['origin'])
+
+
 if __name__ == '__main__':
     unittest.main()

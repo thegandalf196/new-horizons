@@ -33,7 +33,7 @@ struct SpecialtyCase
 	const char * creatureTarget = nullptr;
 };
 
-const std::array<SpecialtyCase, 10> heroes = {{
+const std::array<SpecialtyCase, 12> heroes = {{
 	{"core:serena", "newHorizons/heroSpecialties/SerenaArcanePreparation", {17, 10, 0}},
 	{"core:gem", "newHorizons/heroSpecialties/GemRestorativeSorceress", {18, 10, 0}},
 	{"core:daremyth", "newHorizons/heroSpecialties/DaremythFortunesChild", {17, 11, 0}},
@@ -43,7 +43,9 @@ const std::array<SpecialtyCase, 10> heroes = {{
 	{"core:elleshar", "newHorizons/heroSpecialties/EllesharHighLore", {20, 10, 0}},
 	{"core:malcom", "newHorizons/heroSpecialties/MalcomNaturalPhilosopher", {20, 11, 0}},
 	{"core:andra", "newHorizons/heroSpecialties/AndraBottomlessMind", {21, 10, 0}},
-	{"core:thorgrim", "newHorizons/heroSpecialties/ThorgrimMasterSpellward", {21, 11, 0}}
+	{"core:thorgrim", "newHorizons/heroSpecialties/ThorgrimMasterSpellward", {21, 11, 0}},
+	{"core:pasis", "newHorizons/heroSpecialties/PasisWispLine", {22, 10, 0}, "new-horizons:wisp"},
+	{"core:christian", "newHorizons/heroSpecialties/ChristianBallistaLine", {22, 11, 0}, "core:ballista"}
 }};
 }
 
@@ -162,7 +164,7 @@ TEST_F(NewHorizonsSpecialtyPresentationFixtureExportTest, ExportOrdinarySpecialt
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).name(name)
 		.description("Specialty presentation diagnostic, not a balanced scenario or gameplay certification. "
-			"Red owns adjacent Serena, Gem, Daremyth, ordinary control Orrin, Monere, Gerwulf, Elleshar, Malcom, Andra and Thorgrim with authored starts; "
+			"Red owns adjacent Serena, Gem, Daremyth, ordinary control Orrin, Monere, Gerwulf, Elleshar, Malcom, Andra, Thorgrim, Pasis and Christian with authored starts; "
 			"no map Skill, perk, experience, primary, army or spellbook overrides. "
 			"Open each normal Hero Window and meet adjacent heroes through normal exchange. "
 			"Inspect specialty icons and tooltips, then save/reload and inspect again. "

@@ -193,9 +193,15 @@ bool resolveCreatureLinePresentation(const CHero & hero, const JsonNode & develo
 			if(heroType->getJsonKey() == "core:monere"
 				&& creature.toCreature()->getJsonKey() == "new-horizons:wisp")
 				result.artwork = "newHorizons/heroSpecialties/MonereWispLine";
+			else if(heroType->getJsonKey() == "core:pasis"
+				&& creature.toCreature()->getJsonKey() == "new-horizons:wisp")
+				result.artwork = "newHorizons/heroSpecialties/PasisWispLine";
 			else if(heroType->getJsonKey() == "core:gerwulf"
 				&& creature == CreatureID::BALLISTA)
 				result.artwork = "newHorizons/heroSpecialties/GerwulfBallistaLine";
+			else if(heroType->getJsonKey() == "core:christian"
+				&& creature == CreatureID::BALLISTA)
+				result.artwork = "newHorizons/heroSpecialties/ChristianBallistaLine";
 			if(creature != heroType->creatureLineSpecialtyAlias->creature)
 				result.name = creature.toCreature()->getNamePluralTranslated();
 			result.description = description.toString(LIBRARY->generaltexth.get());

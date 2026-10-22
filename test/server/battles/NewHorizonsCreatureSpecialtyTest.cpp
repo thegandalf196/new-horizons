@@ -845,20 +845,30 @@ protected:
 		ASSERT_EQ(rules["defaultCreatureLineReplacements"]["core:monere"].String(), "new-horizons:wisp");
 		if(absent) rules.Struct().erase("defaultCreatureLineReplacements");
 		if(legacy) rules = JsonNode();
+		if(previousSerializationContext)
+			for(const char * key : {"druidSpecialties", "fortuneChildSpecialty", "arcanePreparationSpecialty",
+				"bottomlessMindSpecialty", "masterSpellwardSpecialty"})
+				rules.Struct().erase(key);
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		if(previousSerializationContext)
 		{
-			// This positive writer control predates the later canonical-spell
-			// clauses. Keep the v3 policy, but do not capture those future keys.
+			// Capture a 1105 context before hero initialization: later spell,
+			// specialty and perk policies must be absent, not removed from a save.
 			JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 			magic["spells"]["core:implosion"].Struct().erase("implosion");
 			magic["spells"]["core:teleport"].Struct().erase("ignoreInterveningBarriers");
 			magic["spells"]["core:dispel"].Struct().erase("temporaryMagicalEffectsOnly");
 			magic["spells"]["core:curse"].Struct().erase("schoolRankDurations");
 			magic["spells"]["core:fireWall"].Struct().erase("burnGroundedFlyers");
+			magic["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
 			magic.setOverrideFlag(true);
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+			JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+			for(const char * key : {"offerWeightPolicyVersion", "perkOfferNormalization", "perkProgressionPolicyVersion"})
+				perks.Struct().erase(key);
+			perks.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		}
 		if(legacy)
 		{
@@ -1058,9 +1068,12 @@ TEST_F(NewHorizonsWispSpecialtyTest, CurrentDefaultSpecialtyPresentationUsesSele
 		const auto presentation = heroSpecialtyPresentation(*hero);
 		ASSERT_TRUE(presentation.creature.has_value());
 		EXPECT_EQ(*presentation.creature, wisp);
-		EXPECT_EQ(presentation.frame(), wisp.toCreature()->getIconIndex());
-		EXPECT_EQ(presentation.animation().getOriginalName(), "CPRSMALL");
-		EXPECT_EQ(presentation.animation(true).getOriginalName(), "CPRSMALL");
+		const std::string artwork = hero == pasis()
+			? "newHorizons/heroSpecialties/PasisWispLine" : "newHorizons/heroSpecialties/MonereWispLine";
+		EXPECT_EQ(presentation.artwork, artwork);
+		EXPECT_EQ(presentation.frame(), 0u);
+		EXPECT_EQ(presentation.animation().getOriginalName(), artwork + "/44");
+		EXPECT_EQ(presentation.animation(true).getOriginalName(), artwork + "/32");
 		EXPECT_EQ(presentation.name, wisp.toCreature()->getNamePluralTranslated());
 		EXPECT_EQ(presentation.description, hero->getSpecialtyDescriptionTranslated());
 		const auto prototype = heroSpecialtyPresentation(*hero->getHeroType(), hero->getPrimaryGrowthRules(),
@@ -1177,6 +1190,17 @@ TEST_F(NewHorizonsWispSpecialtyTest, RawOldReaderRejectsPresenceAndAbsentPreviou
 	previousSerializationContext = true;
 	prepare();
 	EXPECT_FALSE(pasis()->getMagicRules()["spells"]["core:implosion"].Struct().contains("implosion"));
+	EXPECT_FALSE(pasis()->getMagicRules()["adventureSpells"]["core:fly"].Struct().contains("requireLegalDayEnd"));
+	for(const char * key : {"defaultCreatureLineReplacements", "creatureLineSpecialtyTarget",
+		"druidSpecialties", "fortuneChildSpecialty", "arcanePreparationSpecialty",
+		"bottomlessMindSpecialty", "masterSpellwardSpecialty"})
+		EXPECT_FALSE(pasis()->getPrimaryGrowthRules().Struct().contains(key));
+	JsonNode expectedPerks(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(expectedPerks));
+	for(const char * key : {"offerWeightPolicyVersion", "perkOfferNormalization", "perkProgressionPolicyVersion"})
+		expectedPerks.Struct().erase(key);
+	EXPECT_EQ(pasis()->getPerkState().rules, expectedPerks);
+	EXPECT_EQ(pasis()->getCreatureLineSpecialtyTarget(), creature("core:psychicElemental"));
 	CMemorySerializer old;
 	old.oser.version = previous;
 	ASSERT_NO_THROW(old.oser & *pasis());

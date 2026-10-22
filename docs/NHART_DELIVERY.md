@@ -150,7 +150,7 @@ exports `NHSpecialtyPresentation.h3m` when
 `NH_EXPORT_SPECIALTY_PRESENTATION_FIXTURE=1` is set in an isolated test profile
 with the ordinary New Horizons preset active. It retains authored starts for
 adjacent Serena, Gem, Daremyth, Monere, Gerwulf, Elleshar, Malcom, Andra,
-Thorgrim and control hero Orrin, checks their captured
+Thorgrim, Pasis, Christian and control hero Orrin, checks their captured
 rules and specialty identities, and verifies the exported map bytes by reading
 and loading them again. The diagnostic contains no forced specialty proc or
 custom hero statistics.

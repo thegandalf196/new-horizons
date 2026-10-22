@@ -48270,6 +48270,86 @@
       "origin": "built-in-generated-own-specialty-transparent-foreground-native-export",
       "selection": "selected-provisional-standalone-specialty-foreground-v2-andra-thorgrim-2026-10-22",
       "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ChristianBallistaLine/32.json",
+      "size": 106,
+      "sha256": "11674d1a35570c35748d9240136b776253ee40bbf98984ac0c516a48b4abfc80",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ChristianBallistaLine/44.json",
+      "size": 106,
+      "sha256": "09f7d50850559591439b7d37099f33ce7c86ed353b50648f2a2a1d7b40a99407",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ChristianBallistaLine/icon-32.png",
+      "size": 2068,
+      "sha256": "b35265b5ac8abdf622aecee9d8037bf08f408c13a8340fa241ce93b82bdb48e8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-symbol-own-image-haze-removal-correction",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ChristianBallistaLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ChristianBallistaLine/icon-44.png",
+      "size": 3531,
+      "sha256": "8d05ccdacc28e031696bf220f9adb2665469584944f206cfb26ca8011983f40a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-symbol-own-image-haze-removal-correction",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/PasisWispLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/PasisWispLine/32.json",
+      "size": 98,
+      "sha256": "6ca1b88b31f518f4b01b69048b3e4867c47a39a32ac0c24ffd4e6d1f3c829daa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/PasisWispLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/PasisWispLine/44.json",
+      "size": 98,
+      "sha256": "56d23498df238a8903c06a3cacd89fceb1e069b23fff3383f2967e45594063cf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/PasisWispLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/PasisWispLine/icon-32.png",
+      "size": 1536,
+      "sha256": "a1b06870343baefff1ea13b27cab052d99029b387c48f1137a7fafce0f4b3027",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-specialty-symbol-using-project-wisp-subject-reference",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/PasisWispLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/PasisWispLine/icon-44.png",
+      "size": 2640,
+      "sha256": "0162eedc1f388defb5a7226e1a54f46cacff65c4051c0c2fa764e04ad2fd0d2c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-generated-specialty-symbol-using-project-wisp-subject-reference",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
     }
   ],
   "requiredFamilies": [
@@ -48284,7 +48364,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2749,
+    "builtin-skills-perks-orders-and-ui": 2757,
     "cabir-and-master": 214,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,
