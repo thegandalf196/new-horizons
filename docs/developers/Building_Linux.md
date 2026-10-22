@@ -160,6 +160,23 @@ as `MODS/`; placing `vcmi-test` directly at the resource root is not equivalent,
 even when its payload hashes match. GoogleTest discovery alone does not exercise
 global test-environment initialization or prove that this mount works.
 
+The opt-in `NewHorizonsTravelRoundTripAITest` exercises a production save/load
+midway through a paid Water Walk crossing, followed by AI landing and next-day
+renewal. Run its exact filter
+`NewHorizonsTravelRoundTripAITest.PaidWaterWalkRestoredMidCrossingLandsThenRenewsOnlyNextDay`
+alone in the isolated TEST environment described above. Set
+`NH_TEST_WATER_WALK_ROUNDTRIP=1`,
+`NH_TEST_WATER_WALK_ROUNDTRIP_SOURCE_ROOT` to the checkout,
+`NH_TEST_WATER_WALK_ROUNDTRIP_PRIVATE_ROOT` to a fresh private case directory,
+and `NH_TEST_WATER_WALK_ROUNDTRIP_SAVE_ROOT` to its actual save mount
+(`$XDG_DATA_HOME/new-horizons/Saves` on Linux). Use absolute, normalized,
+non-symlink paths. The case directory must contain the disposable cache and
+saves, but must not overlap the checkout, executable or resource working
+directory. Allow a bounded save below 64 MiB; existing outputs are rejected.
+Without the opt-in bindings this case skips, which is not acceptance. Run
+`NewHorizonsTravelLandingAITest.*` separately for the adjacent landing controls.
+Neither suite establishes rendered travel or native Windows acceptance.
+
 ### Configuring Makefiles
 
 ```sh
