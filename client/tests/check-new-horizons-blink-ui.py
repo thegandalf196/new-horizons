@@ -93,7 +93,24 @@ def main() -> None:
     assert "auto action = selectAction(clickedHex)" in click
     assert "case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:" in realization
     assert "heroSpellToCast->aimToHex(targetHex)" in realization
-    assert "battleMakeSpellAction(owner.getBattleID(), *heroSpellToCast)" in realization
+    assert "if(submitHeroSpellAction(*heroSpellToCast))" in realization
+    assert realization.index("heroSpellToCast->aimToHex(targetHex)") < realization.index(
+        "if(submitHeroSpellAction(*heroSpellToCast))"
+    )
+    assert "battleMakeSpellAction(" not in realization
+    submit = between(
+        CONTROLLER,
+        "bool BattleActionsController::submitHeroSpellAction(",
+        "namespace\n{\nconst char * heroOrderTargetName",
+    )
+    immediate = between(submit, "const auto preview = buildFriendlyFirePreview", "const auto snapshot = preview->snapshot")
+    assert "if(!preview || (preview->recipients.empty() && preview->pandemoniumText.empty()))" in immediate
+    assert "battleMakeSpellAction(owner.getBattleID(), action)" in immediate
+    assert "return true;" in immediate
+    assert "isBlinkSpell" not in submit  # Shared ordinary routing, no Blink-specific selector.
+    assert "ConfirmationGate" in submit and "weakLifetime.lock()" in submit
+    assert "gate->confirm(current->snapshot)" in submit
+    assert submit.count("battleMakeSpellAction(owner.getBattleID(), action)") == 2
     assert "createAndPushWindow" not in preview
     assert "updateBattleTargetSelectionControls" not in preview
 

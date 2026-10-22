@@ -24,14 +24,39 @@ class BattlePlanClientTest(unittest.TestCase):
     def test_pending_opening_order_cannot_be_declined_and_has_no_extra_declaration_control(self):
         source = (BATTLE / "BattleHeroActionWindow.cpp").read_text()
         cancel = function(source, "void BattleHeroActionWindow::cancelSelection()")
-        self.assertLess(cancel.index("battleHasPendingPreCombatOrder"), cancel.index("close();"))
+        crisis = function(cancel, "if(crisis.choice())")
+        ordinary = cancel[cancel.index(crisis) + len(crisis) + 1:]
+        mandatory_guard = (
+            "if(callback->battleHasPendingDoubleCommand(callback->battleGetMySide())\n"
+            "\t\t\t|| callback->battleHasPendingPreCombatOrder(callback->battleGetMySide()))\n"
+            "\t\t\treturn;"
+        )
+        self.assertIn(mandatory_guard, ordinary)
+        self.assertEqual(ordinary.count("close();"), 1)
+        self.assertLess(ordinary.index(mandatory_guard), ordinary.index("close();"))
+        self.assertNotIn("sendCommand", ordinary)
+        self.assertNotIn("battleMake", ordinary)
         refresh = function(source, "void BattleHeroActionWindow::refresh()")
-        for token in ("pendingDoubleCommand || pendingPreCombatOrder",
-                      "cancel->block(pendingOrder)",
+        for token in ("pendingDoubleCommand || pendingPreCombatOrder || pendingCrisis",
+                      "cancel->block(pendingOrder && !pendingCrisis)",
                       "Battle Plan: choose a free opening Order now"):
             self.assertIn(token, refresh)
         self.assertNotIn("Perfect Moment", source)
         self.assertNotIn("perfectMoment", refresh)
+
+    def test_optional_crisis_decline_keeps_validated_anchor_dispatch(self):
+        source = (BATTLE / "BattleHeroActionWindow.cpp").read_text()
+        cancel = function(source, "void BattleHeroActionWindow::cancelSelection()")
+        crisis = function(cancel, "if(crisis.choice())")
+        for token in ("battleGetStackByID(crisis.returns.back().anchor)",
+                      "if(!anchor) return;", "BattleAction::makeNoAction(anchor)",
+                      "decline.side = crisis.chooser();", "owner->sendCommand(decline, anchor);"):
+            self.assertIn(token, crisis)
+        self.assertLess(crisis.index("if(!anchor) return;"), crisis.index("close();"))
+        self.assertLess(crisis.index("decline.side = crisis.chooser();"), crisis.index("close();"))
+        self.assertLess(crisis.index("close();"), crisis.index("owner->sendCommand(decline, anchor);"))
+        self.assertTrue(crisis.rstrip().endswith("return;"))
+        self.assertNotIn("battleMake", crisis)
 
     def test_right_click_target_cancel_returns_to_the_opening_chooser(self):
         source = (BATTLE / "BattleActionsController.cpp").read_text()

@@ -51,7 +51,9 @@ class PerfectMomentClientTest(unittest.TestCase):
         self.assertIn('"Cancel", "Return to battle without spending an action."', self.panel)
         self.assertIn("Targeted Orders select stacks directly on the battlefield", self.panel)
         self.assertIn("Protect uses two clicks: Protector, then adjacent Ward.", self.panel)
-        self.assertIn("cancel->block(pendingOrder)", function(self.panel, "void BattleHeroActionWindow::refresh()"))
+        refresh = function(self.panel, "void BattleHeroActionWindow::refresh()")
+        self.assertIn("pendingDoubleCommand || pendingPreCombatOrder || pendingCrisis", refresh)
+        self.assertIn("cancel->block(pendingOrder && !pendingCrisis)", refresh)
 
 
 if __name__ == "__main__":
