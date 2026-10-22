@@ -123,7 +123,7 @@ PotentialTargets::PotentialTargets(
 
 					auto bai = GenerateAttackInfo(false, hex);
 					if(!bai.affectedUnits.empty())
-						possibleAttacks.push_back(bai);
+						possibleAttacks.push_back(std::move(bai));
 				}
 			}
 

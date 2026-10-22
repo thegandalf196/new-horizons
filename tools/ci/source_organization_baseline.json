@@ -6628,9 +6628,9 @@
       "sha256": "4e16898f372a3f2cc153db43b5326a4327a9156ee29722a3d3ce0e31b1b2dd09"
     },
     "AI/BattleAI/AttackPossibility.cpp": {
-      "sha256": "d3dcdde2bd381f7d283d2e4aae8655bcda9a277e34974f61040ba9e8c68e5e59",
-      "review": "IR-DAMAGE-ADMISSION-EXACT-METADATA-20261020",
-      "rationale": "Complete exact inventory renewed for the source-reviewed lazy actor-admission boundary. Existing CPP Gambler selector lambda is extracted to DamageCacheAdmission; no callable is omitted because its body contains a pre-existing annotation diagnostic. Headers retain all complete inline/constructor bodies; only offsets/type declarations change. Exact complete names and spans were independently verified for these bytes; no runtime acceptance is implied.",
+      "sha256": "a9b0b1e5a59a94eab36fc4f00ea1f4765ee1d8f658b249682b63a72fffe2923f",
+      "review": "IR-ATTACK-CANDIDATE-DEAD-LOCAL-MOVES-20261022",
+      "rationale": "Complete exact inventory renewed for the source-reviewed lazy actor-admission boundary. Existing CPP Gambler selector lambda is extracted to DamageCacheAdmission; no callable is omitted because its body contains a pre-existing annotation diagnostic. Headers retain all complete inline/constructor bodies; only offsets/type declarations change. Exact complete names and spans were independently verified for these bytes; no runtime acceptance is implied. Complete callable names and spans remain unchanged for the exact dead-local bestAp = std::move(ap) assignment; 2571 physical lines, no inventory omission or runtime/performance claim.",
       "functions": [
         {
           "symbol": "DamageCacheOperationScope::explicit DamageCacheOperationScope(DamageCacheProbeTiming * receiver) : timing(receiver)#1",
@@ -18404,23 +18404,23 @@
       "kind": "exception",
       "lines": 2571,
       "owner": "ai_engineer",
-      "rationale": "Extract actor-only admission queries into the focused 95-line component; getDamage shrinks128 to120 and AttackPossibility2578 to2571. Only immutable main-target batches reuse lazy facts; target/reverse/reaction checks stay live. Separately approved exact BattleExchangeVariant routing growth2305 to2311, trackAttack482 to484 and calculateExchange358 to361 does not authorize unrelated growth or claim runtime benefit.",
-      "review": "IR-DAMAGE-ADMISSION-EXACT-METADATA-20261020",
-      "review_scope": "exact-ad8e3d3f-actor-admission-and-approved-routing-only",
-      "sha256": "d3dcdde2bd381f7d283d2e4aae8655bcda9a277e34974f61040ba9e8c68e5e59",
+      "rationale": "Extract actor-only admission queries into the focused 95-line component; getDamage shrinks128 to120 and AttackPossibility2578 to2571. Only immutable main-target batches reuse lazy facts; target/reverse/reaction checks stay live. Separately approved exact BattleExchangeVariant routing growth2305 to2311, trackAttack482 to484 and calculateExchange358 to361 does not authorize unrelated growth or claim runtime benefit. Separate exact mechanical exception: move the dead local ap into bestAp after its final source read; unchanged2571 file/1732 evaluate ceilings, target order, comparison and all prior extraction obligations remain. No performance benefit established.",
+      "review": "IR-ATTACK-CANDIDATE-DEAD-LOCAL-MOVES-20261022",
+      "review_scope": "exact-two-dead-local-moves-only-no-growth-or-future-allowance",
+      "sha256": "a9b0b1e5a59a94eab36fc4f00ea1f4765ee1d8f658b249682b63a72fffe2923f",
       "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2571/1732 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/AttackPossibility.cpp::AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 1732,
       "owner": "ai_engineer",
-      "rationale": "Melee contact-target construction is extracted into AttackPreviewTargets. Remaining strike and retaliation orchestration requires further bounded decomposition while preserving ordered recipients, counter resources, reactions and RNG isolation.",
-      "review": "protect-contact-target-extraction",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "13d39a8f93645586de63670bb22e60d62ce6e3773023c298d3fb07286b919d83",
+      "rationale": "Melee contact-target construction is extracted into AttackPreviewTargets. Remaining strike and retaliation orchestration requires further bounded decomposition while preserving ordered recipients, counter resources, reactions and RNG isolation. Exact reviewed mechanical exception changes only dead-local copy assignment to move after the final ap read; unchanged840-2571 span/1732 lines. No candidate, branch, tie, depth, score or RNG policy change is authorized.",
+      "review": "IR-ATTACK-CANDIDATE-DEAD-LOCAL-MOVES-20261022",
+      "review_scope": "exact-dead-local-best-candidate-move-only-no-growth",
+      "sha256": "e72f4207d86c0113f705b8c78f74e10b9dfc86579418d93746de12cff9326bd7",
       "review_status": "independently-reviewed-source-boundary",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2578/1732 ceilings only; no regrowth allowance."
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2571/1732 ceilings only; no regrowth allowance."
     },
     "AI/BattleAI/AttackPossibility.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1": {
       "kind": "legacy",
@@ -18712,14 +18712,15 @@
       "deferral": "Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance."
     },
     "AI/BattleAI/PotentialTargets.cpp::PotentialTargets::PotentialTargets( const battle::Unit * attacker, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> state)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 129,
       "owner": "ai_engineer",
-      "rationale": "Exact132-to129 candidate constructor ratchet: candidate-world source ownership and Skirmisher/attack input construction move to focused owner; all legal generation branches retained.",
-      "review": "IR-VISIBLE-CANDIDATE-FOUNDATION-ENGINE-20261017",
-      "review_scope": "exact-visible-candidate-source-ownership-and-four-selector-metadata-only-no-runtime-or-future-growth",
-      "sha256": "9c96b1e4ab18a790ba74586d0f5baf8367a5fc283cfc8326dc13ec1296028926",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY"
+      "rationale": "Exact132-to129 candidate constructor ratchet: candidate-world source ownership and Skirmisher/attack input construction move to focused owner; all legal generation branches retained. Exact reviewed mechanical exception moves dead-local bai into possibleAttacks after its final source read; unchanged22-150 span/129 lines and206-line file. No membership/order/score/branch policy or runtime improvement is certified.",
+      "review": "IR-ATTACK-CANDIDATE-DEAD-LOCAL-MOVES-20261022",
+      "review_scope": "exact-dead-local-candidate-insertion-move-only-no-growth",
+      "sha256": "3538e882b7ea609878d52dde02a753c2f76056be832da844162a9124ab3bbec5",
+      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
+      "deferral": "AI engineer must extract a cohesive candidate-generation responsibility before substantive affected-area expansion, retaining source-world ownership, detached branch lifetime, exact candidate order/ties, target-sensitive legality, state and both RNGs. Exact129-line constructor cap remains; this mechanical move permits no future or unrelated growth."
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp": {
       "kind": "exception",

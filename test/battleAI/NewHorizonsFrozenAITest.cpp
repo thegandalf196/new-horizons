@@ -6,6 +6,7 @@
  */
 #include "StdInc.h"
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
@@ -51,6 +52,8 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		if(!useCommands)
+			captureLegacyPerkOfferPolicy(*map);
 	}
 
 	void prepare()
@@ -157,7 +160,8 @@ TEST_F(NewHorizonsFrozenAITest, ExtrasDoNotThawButNormalSlotForfeitsAndRetainsRo
 TEST_F(NewHorizonsFrozenAITest, CureChoosesAndSubmitsPhysicalFrozenSelectorWithoutMutatingLiveState)
 {
 	// Isolate this paid-spell consumer from competing legal Orders, as in the
-	// existing Cure AI fixture. Current v3 magic/Frozen rules remain captured.
+	// existing Cure AI fixture. Legacy Hero/offer rules accompany disabled Orders;
+	// current v3 magic/Frozen rules and all perk definitions remain captured.
 	useCommands = false;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);

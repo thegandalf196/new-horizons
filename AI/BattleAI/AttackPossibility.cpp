@@ -2552,7 +2552,7 @@ AttackPossibility AttackPossibility::evaluate(
 #endif
 
 		if(!bestAp.dest.isValid() || ap.attackValue() > bestAp.attackValue())
-			bestAp = ap;
+			bestAp = std::move(ap);
 	}
 
 	// check how much damage we gain from blocking enemy shooters on this hex
