@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CBattleInfoCallback.h"
+#include "DamageCalculationTiming.h"
 #include "UnitAdjacency.h"
 #include "../mapObjects/NewHorizonsGlyphsOfFear.h"
 #include "NewHorizonsFrozen.h"
@@ -950,6 +951,7 @@ int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, cons
 int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & attack) const
 {
 	const auto average = [](const DamageRange & range) { return range.min + (range.max - range.min) / 2; };
+	damageCalculationTiming::noteCalculation(damageCalculationTiming::Calculation::INITIAL);
 	const auto normal = average(calculateDmgRange(attack).damage);
 	const auto side = playerToSide(battleGetOwner(attack.attacker));
 	if(attack.luckyStrike || attack.unluckyStrike)
@@ -959,6 +961,7 @@ int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & a
 		auto guaranteed = attack;
 		guaranteed.luckyStrike = true;
 		guaranteed.unluckyStrike = false;
+		damageCalculationTiming::noteCalculation(damageCalculationTiming::Calculation::LUCKY_SECOND);
 		return average(calculateDmgRange(guaranteed).damage);
 	}
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -986,6 +989,8 @@ int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & a
 	auto rolled = attack;
 	rolled.luckyStrike = luck > 0;
 	rolled.unluckyStrike = luck < 0;
+	damageCalculationTiming::noteCalculation(luck > 0 ? damageCalculationTiming::Calculation::LUCKY_SECOND
+		: damageCalculationTiming::Calculation::UNLUCKY_SECOND);
 	return static_cast<int64_t>(normal * (1.0 - chance) + average(calculateDmgRange(rolled).damage) * chance);
 }
 
@@ -3672,7 +3677,7 @@ RangedAttackPenetration CBattleInfoCallback::battleGetRangedAttackPenetration(
 
 DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) const
 {
-
+	damageCalculationTiming::Scope payloadTiming(damageCalculationTiming::Phase::NATIVE_PAYLOAD);
 	const auto * script = LIBRARY->scriptTypes()->getDamageCalculator();
 
 	// core declares one, and there is no rule for what an attack is worth without it
@@ -4164,6 +4169,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	if(currentBattle && newHorizonsFrozen::qualifiesForShatter(info, currentBattle->getMagicRules()))
 		payload.frozenShatterFinalDamageMultiplier = 100
 			+ newHorizonsFrozen::shatterBonusPercent(currentBattle->getMagicRules());
+	payloadTiming.finish();
 	auto result = script->calculate(*this, payload);
 	result.attackerOrderCause = attackerOrderCause;
 	result.defenderOrderCause = defenderOrderCause;

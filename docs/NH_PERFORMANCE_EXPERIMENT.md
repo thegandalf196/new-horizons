@@ -78,6 +78,16 @@ establishes Windows performance or a speedup.
   Preflight, dynamic and remainder partition outer cache-body time. Cache work
   includes both primary-damage and DPS-score requests; do not equate its sum to
   the primary-damage scope alone or add it to enclosing probe/exchange time.
+  Within dynamic damage, native_payload times native input construction;
+  bonus_preparation includes declaration initialization (and its first-use Lua
+  bonusTypes call), effective bonus lookup and presence maps. lua_call includes
+  input/output conversion, Lua execution and native callbacks, not pure Lua CPU.
+  These sequential regions are subsets of dynamic wall time, not additional
+  elapsed time; its remaining work includes Luck weighting and result cleanup.
+  Calculation counters record reached initial, Lucky-second and unlucky-second
+  outer attempts, including unwind, not successful results. Nested callback
+  calculations remain inside their outer region; their child clocks and counters
+  are suppressed, with suppressed region attempts counted separately.
   Operation-local in-flight bookkeeping is not aggregated. These extra clocks
   have observer cost; compare semantic results and OFF/ON timing separately.
   FULL continuations additionally report sequential child scopes for target

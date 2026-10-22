@@ -12,6 +12,7 @@
 #include <set>
 #include <utility>
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/DamageCalculationTiming.h"
 #include "StackWithBonuses.h"
 #include "HypotheticBattle.h"
 #include "HypotheticBattleTypes.h"
@@ -124,6 +125,7 @@ struct DLL_LINKAGE DamageCacheProbeTiming
 	StageTiming body;
 	StageTiming preflight;
 	StageTiming dynamicDamage;
+	damageCalculationTiming::Sample calculation;
 	uint64_t remainderNanoseconds = 0;
 	uint64_t getDamageCalls = 0;
 	uint64_t getOriginalDamageCalls = 0;
@@ -149,6 +151,7 @@ struct DLL_LINKAGE DamageCacheProbeTiming
 		body.accumulate(sample.body);
 		preflight.accumulate(sample.preflight);
 		dynamicDamage.accumulate(sample.dynamicDamage);
+		calculation.accumulate(sample.calculation);
 		remainderNanoseconds += sample.remainderNanoseconds;
 		for(auto member : {&DamageCacheProbeTiming::getDamageCalls,
 			&DamageCacheProbeTiming::getOriginalDamageCalls, &DamageCacheProbeTiming::rootCacheHits,

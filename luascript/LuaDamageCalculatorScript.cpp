@@ -16,6 +16,7 @@
 #include "LuaScriptPool.h"
 
 #include "../lib/battle/CBattleInfoCallback.h"
+#include "../lib/battle/DamageCalculationTiming.h"
 #include "../lib/battle/Unit.h"
 #include "../lib/bonuses/BonusFilter.h"
 #include "../lib/bonuses/BonusList.h"
@@ -96,11 +97,14 @@ DamageEstimation LuaDamageCalculatorScript::calculate(const CBattleInfoCallback 
 {
 	static const JsonNode noParameters;
 
+	damageCalculationTiming::Scope preparation(damageCalculationTiming::Phase::BONUS_PREPARATION);
 	ensureDeclared(battle);
 
 	info.attackerBonuses = carriedBonuses(info.attacker);
 	info.defenderBonuses = carriedBonuses(info.defender);
 
+	preparation.finish();
+	damageCalculationTiming::Scope lua(damageCalculationTiming::Phase::LUA_CALL);
 	auto answer = contextOf(battle)->callMethod<DamageEstimationPayload>("calculate", noParameters, &battle, info);
 
 	return DamageEstimation{

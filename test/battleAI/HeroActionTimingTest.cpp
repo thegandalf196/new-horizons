@@ -412,6 +412,13 @@ void fillCacheTiming(DamageCacheProbeTiming & cache, uint64_t scale)
 	cache.body = {4 * scale, 0, 100 * scale};
 	cache.preflight = {4 * scale, 0, 20 * scale};
 	cache.dynamicDamage = {scale, 0, 70 * scale};
+	cache.calculation.nativePayload = {2 * scale, 10 * scale};
+	cache.calculation.bonusPreparation = {2 * scale, 20 * scale};
+	cache.calculation.luaCall = {2 * scale, 30 * scale};
+	cache.calculation.initialCalls = scale;
+	cache.calculation.luckySecondCalls = scale;
+	cache.calculation.unluckySecondCalls = 0;
+	cache.calculation.suppressedStages = 3 * scale;
 	cache.remainderNanoseconds = 10 * scale;
 	cache.getDamageCalls = 3 * scale;
 	cache.getOriginalDamageCalls = 2 * scale;
@@ -445,7 +452,7 @@ void expectCacheTiming(const heroActionTiming::Continuation & total, uint64_t sc
 		ASSERT_NE(split, std::string::npos);
 		EXPECT_TRUE(fields.emplace(token.substr(0, split), std::stoll(token.substr(split + 1))).second);
 	}
-	ASSERT_EQ(fields.size(), 57u);
+	ASSERT_EQ(fields.size(), 87u);
 	for(const auto & [context, multiplier] : {
 		std::pair{"movement", 1u}, std::pair{"best_target_waited", 2u}, std::pair{"best_target_normal", 3u}})
 	{
@@ -457,6 +464,16 @@ void expectCacheTiming(const heroActionTiming::Continuation & total, uint64_t sc
 		EXPECT_EQ(fields.at(prefix + "preflight_ns"), 20 * factor);
 		EXPECT_EQ(fields.at(prefix + "dynamic_calls"), factor);
 		EXPECT_EQ(fields.at(prefix + "dynamic_ns"), 70 * factor);
+		EXPECT_EQ(fields.at(prefix + "native_payload_calls"), 2 * factor);
+		EXPECT_EQ(fields.at(prefix + "native_payload_ns"), 10 * factor);
+		EXPECT_EQ(fields.at(prefix + "bonus_preparation_calls"), 2 * factor);
+		EXPECT_EQ(fields.at(prefix + "bonus_preparation_ns"), 20 * factor);
+		EXPECT_EQ(fields.at(prefix + "lua_call_calls"), 2 * factor);
+		EXPECT_EQ(fields.at(prefix + "lua_call_ns"), 30 * factor);
+		EXPECT_EQ(fields.at(prefix + "initial_calculations"), factor);
+		EXPECT_EQ(fields.at(prefix + "lucky_second_calculations"), factor);
+		EXPECT_EQ(fields.at(prefix + "unlucky_second_calculations"), 0u);
+		EXPECT_EQ(fields.at(prefix + "suppressed_calculation_stages"), 3 * factor);
 		EXPECT_EQ(fields.at(prefix + "remainder_ns"), 10 * factor);
 		EXPECT_EQ(fields.at(prefix + "body_ns"), fields.at(prefix + "preflight_ns")
 			+ fields.at(prefix + "dynamic_ns") + fields.at(prefix + "remainder_ns"));
@@ -652,7 +669,7 @@ TEST(HeroActionDamageCacheCallIntegrationTest, FreshProcessOptInAndCapOne)
 	EXPECT_EQ(actual.at("loop_joined"), 1);
 	EXPECT_EQ(actual.at("loop_threw"), 0);
 	EXPECT_EQ(actual.at("candidates"), 2);
-	EXPECT_EQ(actual.size(), extra ? 167u : 110u);
+	EXPECT_EQ(actual.size(), extra ? 197u : 110u);
 	if(extra)
 	{
 		heroActionTiming::Continuation expected;
@@ -699,7 +716,7 @@ void expectEmptyCacheContinuationCall(size_t count)
 	EXPECT_EQ(actual.at("loop_joined"), 1);
 	EXPECT_EQ(actual.at("loop_threw"), 0);
 	EXPECT_EQ(actual.at("candidates"), count);
-	EXPECT_EQ(actual.size(), extra ? 167u : 110u);
+	EXPECT_EQ(actual.size(), extra ? 197u : 110u);
 	size_t cacheFields = 0;
 	for(const auto & [name, value] : actual)
 	{
@@ -709,7 +726,7 @@ void expectEmptyCacheContinuationCall(size_t count)
 			EXPECT_EQ(value, 0);
 		}
 	}
-	EXPECT_EQ(cacheFields, extra ? 57u : 0u);
+	EXPECT_EQ(cacheFields, extra ? 87u : 0u);
 }
 }
 

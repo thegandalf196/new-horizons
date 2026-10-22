@@ -128,6 +128,21 @@ std::string damageCacheFields(const Continuation & continuation)
 			fields += " " + prefix + stageName + "_calls=" + std::to_string((cache.*stage).calls);
 			fields += " " + prefix + stageName + "_ns=" + std::to_string((cache.*stage).totalNanoseconds);
 		}
+		const auto & calculation = cache.calculation;
+		for(const auto & [stageName, stage] : {
+			std::pair{"native_payload", &damageCalculationTiming::Sample::nativePayload},
+			std::pair{"bonus_preparation", &damageCalculationTiming::Sample::bonusPreparation},
+			std::pair{"lua_call", &damageCalculationTiming::Sample::luaCall}})
+		{
+			fields += " " + prefix + stageName + "_calls=" + std::to_string((calculation.*stage).calls);
+			fields += " " + prefix + stageName + "_ns=" + std::to_string((calculation.*stage).nanoseconds);
+		}
+		for(const auto & [counterName, counter] : {
+			std::pair{"initial_calculations", &damageCalculationTiming::Sample::initialCalls},
+			std::pair{"lucky_second_calculations", &damageCalculationTiming::Sample::luckySecondCalls},
+			std::pair{"unlucky_second_calculations", &damageCalculationTiming::Sample::unluckySecondCalls},
+			std::pair{"suppressed_calculation_stages", &damageCalculationTiming::Sample::suppressedStages}})
+			fields += " " + prefix + counterName + "=" + std::to_string(calculation.*counter);
 		for(const auto & [counterName, counter] : {
 			std::pair{"remainder_ns", &DamageCacheProbeTiming::remainderNanoseconds},
 			std::pair{"current_calls", &DamageCacheProbeTiming::getDamageCalls},

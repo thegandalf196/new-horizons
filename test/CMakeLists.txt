@@ -153,6 +153,7 @@ set(test_SRCS
 		bonus/PreparedBonusGraphFinalizationTest.cpp
 		bonus/PreparedBonusGraphStorageTest.cpp
 		bonus/NativeBonusGraphAccessTest.cpp
+		battle/DamageCalculationTimingTest.cpp
 		bonus/NativeBonusGraphAdmissionTest.cpp
 		bonus/BonusStatusTagsTest.cpp
 		bonus/NewHorizonsUnstackedBonusTest.cpp
@@ -779,6 +780,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroActionSelectionTest.cpp
 		battleAI/VinesCandidateValueReuseTest.cpp
 		battleAI/HeroActionTimingTest.cpp
+		battleAI/DamageCalculationTimingRoutingTest.cpp
 		battleAI/ProtectAttackPreviewTest.cpp
 		battleAI/HeroOrderEffectsProjectionTest.cpp
 		battleAI/LegacyHeroOrderProjectionTest.cpp

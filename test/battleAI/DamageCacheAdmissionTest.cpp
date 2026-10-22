@@ -108,6 +108,14 @@ protected:
 				EXPECT_EQ(dpsTiming.calls, 1u);
 				EXPECT_GE(cacheTiming.getDamageCalls, 1u);
 				EXPECT_EQ(cacheTiming.failedOperations, 0u);
+				if(cacheTiming.dynamicDamage.calls)
+				{
+					EXPECT_GT(cacheTiming.calculation.initialCalls, 0u);
+					EXPECT_EQ(cacheTiming.calculation.nativePayload.calls,
+						cacheTiming.calculation.bonusPreparation.calls);
+					EXPECT_EQ(cacheTiming.calculation.nativePayload.calls,
+						cacheTiming.calculation.luaCall.calls);
+				}
 			}
 		}
 		EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);

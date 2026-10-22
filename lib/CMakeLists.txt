@@ -62,6 +62,7 @@ set(lib_MAIN_SRCS
 	battle/BattleEffectExchange.cpp
 	battle/BattleAction.cpp
 	battle/BattleAttackInfo.cpp
+	battle/DamageCalculationTiming.cpp
 	battle/BattleHex.cpp
 	battle/BattleHexArray.cpp
 	battle/HeroCommand.cpp
@@ -729,6 +730,7 @@ set(lib_MAIN_HEADERS
 	battle/BattleProxy.h
 	battle/BattleUnitTurnReason.h
 	battle/CBattleInfoCallback.h
+	battle/DamageCalculationTiming.h
 	battle/CBattleInfoEssentials.h
 	battle/VisibleHeroPolicy.h
 	battle/CObstacleInstance.h

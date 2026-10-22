@@ -75,6 +75,7 @@ set(battleAI_HEADERS
 		StdInc.h
 
 		AttackPossibility.h
+		DamageCacheTimingScope.h
 		AttackPreviewArcheryAdmission.h
 		DamageCacheAdmission.h
 		AttackPreviewHitContext.h
