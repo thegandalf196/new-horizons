@@ -163,7 +163,7 @@ The following example shows an artifact providing a bonus based on the level of 
    }
 ```
 
-# Fractional magical damage reduction
+## Fractional magical damage reduction
 
 Non-spell magical abilities use `newHorizonsMagicalAbilityDamage::adjustDamage`.
 For saved New Horizons multiplicative-MDR battles it combines independent
