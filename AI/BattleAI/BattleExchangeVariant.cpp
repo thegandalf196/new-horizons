@@ -779,10 +779,10 @@ float BattleExchangeVariant::trackAttack(
 	static const auto selectorBlocksRetaliation = Selector::type()(BonusType::BLOCKS_RETALIATION);
 	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
 		.Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
-	const bool counterAttacksBlocked = attacker->hasBonus(selectorBlocksRetaliation, cachingStringBlocksRetaliation);
+	const bool counterAttacksBlocked = !evaluateOnly && attacker->hasBonus(selectorBlocksRetaliation, cachingStringBlocksRetaliation);
 	const auto requestedDefender = defender;
 	BattleAttackInfo requestedAttack(attacker.get(), requestedDefender.get(), 0, shooting);
-	const auto relentlessAssaultTargetUnitId = relentlessAssaultPrimaryTargetId(*hb, requestedAttack);
+	const auto relentlessAssaultTargetUnitId = !evaluateOnly ? relentlessAssaultPrimaryTargetId(*hb, requestedAttack) : std::nullopt;
 	const auto * redirectedDefender = hb->battleResolveHeroOrderTarget(attacker.get(), requestedDefender.get(), shooting);
 	const bool protectIntercepted = !shooting && redirectedDefender
 		&& redirectedDefender->unitId() != requestedDefender->unitId();
@@ -802,8 +802,8 @@ float BattleExchangeVariant::trackAttack(
 	const bool triggersEvasiveShroud = shroud.evasiveShroud;
 	const bool triggersAmbusher = shroud.ambusher;
 	const auto shadowAssaultSide = shroud.shadowAssaultSide;
-	const bool nightProwlerPending = hasNightProwlerBonus(attacker.get());
-	const bool frozenBeforeHit = newHorizonsFrozen::isFrozen(*defender);
+	const bool nightProwlerPending = !evaluateOnly && hasNightProwlerBonus(attacker.get());
+	const bool frozenBeforeHit = !evaluateOnly && newHorizonsFrozen::isFrozen(*defender);
 	const auto resolveLastStand = [&hb](const BattleAttackInfo & attack,
 		const battle::Unit * target, int64_t incomingDamage)
 	{
@@ -847,7 +847,7 @@ float BattleExchangeVariant::trackAttack(
 	attackDamage = attackLastStand.first.damageToApply;
 	const auto attackDamageProvenance = battleAIDamageProvenance(
 		attacker.get(), projectedAttack.physicalDamage);
-	const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+	const bool consumesBastion = !evaluateOnly && newHorizonsCombatSkills::isPhysicalCreatureAttack(
 		projectedAttack.attacker, projectedAttack.physicalDamage)
 		&& hb->battleHasBastionProtection(defender.get());
 	const auto projectedAttackDamage = battleAIProjectDamage(
