@@ -14,6 +14,7 @@
 #include "../../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/CCreatureHandler.h"
 #include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
@@ -22,6 +23,7 @@
 #include <vstd/RNG.h>
 
 #include <array>
+#include <algorithm>
 #include <map>
 #include <optional>
 #include <set>
@@ -647,6 +649,57 @@ TEST_F(NewHorizonsStormOfDaggersTest, AuthoritativeCastDamagesEveryChosenEnemyWi
 	ASSERT_EQ(server.castsOf(stormOfDaggersSpell()).size(), 1u);
 	EXPECT_EQ(server.castsOf(stormOfDaggersSpell()).front().damage,
 		85 + resistedForecast + 85);
+}
+
+TEST_F(NewHorizonsStormOfDaggersTest, CombatLogNamesEveryResolvedTargetWithMitigatedDamage)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const std::vector<CStack *> selected{enemies[0], enemies[1]};
+	selected[1]->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(),
+		BonusSubtypeID(SpellSchool::ANY)));
+	const std::array<int64_t, 2> health{
+		selected[0]->getAvailableHealth(), selected[1]->getAvailableHealth()};
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action(selected)));
+	const auto casts = server.castsOf(stormOfDaggersSpell());
+	ASSERT_EQ(casts.size(), 1u);
+	const auto & lines = casts.front().logLines;
+	for(size_t index = 0; index < selected.size(); ++index)
+	{
+		const auto damage = health[index] - selected[index]->getAvailableHealth();
+		const auto expected = "Storm of Daggers deals " + std::to_string(damage) + " damage to "
+			+ selected[index]->unitType()->getNamePluralTranslated() + ".";
+		EXPECT_EQ(std::count(lines.begin(), lines.end(), expected), 1);
+	}
+	EXPECT_EQ(std::count_if(lines.begin(), lines.end(), [](const auto & line)
+	{
+		return line.starts_with("Storm of Daggers deals ");
+	}), 2);
+	EXPECT_TRUE(std::none_of(lines.begin(), lines.end(), [](const auto & line)
+	{
+		return line.starts_with("Storm of Daggers does ");
+	}));
+}
+
+TEST_F(NewHorizonsStormOfDaggersTest, CombatLogNamesNoCasualtyRecipientWithoutInventingKills)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(1));
+	const auto * selected = enemies.front();
+	enemies.front()->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 95, BonusSourceID(),
+		BonusSubtypeID(SpellSchool::ANY)));
+	const auto health = selected->getAvailableHealth();
+	const auto count = selected->getCount();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action({enemies.front()})));
+	const auto damage = health - selected->getAvailableHealth();
+	ASSERT_GT(damage, 0);
+	ASSERT_EQ(selected->getCount(), count);
+	const auto casts = server.castsOf(stormOfDaggersSpell());
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_EQ(casts.front().killed, 0u);
+	const auto expected = "Storm of Daggers deals " + std::to_string(damage) + " damage to "
+		+ selected->unitType()->getNamePluralTranslated() + ".";
+	EXPECT_EQ(std::count(casts.front().logLines.begin(), casts.front().logLines.end(), expected), 1);
 }
 
 TEST_F(NewHorizonsStormOfDaggersTest, InvalidFullTargetVectorRejectsAtomicallyBeforeActionOrMana)

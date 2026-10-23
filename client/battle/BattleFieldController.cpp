@@ -315,33 +315,6 @@ void BattleFieldController::renderBattlefield(Canvas & canvas)
 	BattleRenderer renderer(owner);
 
 	renderer.execute(clippedCanvas);
-	// The panel/status refresh owns forecasts. Rendering reads its completed
-	// snapshot only, without recalculating damage or changing selected targets.
-	const auto * stormPreview = owner.actionsController
-		? owner.actionsController->getStormOfDaggersRenderPreview() : nullptr;
-	if(stormPreview)
-	{
-		const auto battle = owner.getBattle();
-		const auto font = ENGINE->renderHandler().loadFont(EFonts::FONT_TINY);
-		for(const auto & target : stormPreview->targets)
-		{
-			const auto * unit = battle->battleGetUnitByID(target.unitId);
-			if(!unit || !target.projectedDamage || !unit->getPosition().isValid())
-				continue;
-			// Keep the existing upper-left ordinal. One compact estimate sits
-			// below it on the head hex, including for a double-wide creature.
-			// Metric notation matches stack counts; the panel retains exact HP.
-			const auto text = "~" + TextOperations::formatMetric(*target.projectedDamage, 3);
-			const auto hexRect = hexPositionLocal(unit->getPosition());
-			const int width = static_cast<int>(font->getStringWidth(text)) + 6;
-			const Rect badge(std::clamp(hexRect.center().x - width / 2, 0, pos.w - width),
-				std::clamp(hexRect.y + 24, 0, pos.h - 13), width, 13);
-			clippedCanvas.drawColor(badge, ColorRGBA(32, 20, 12, 245));
-			clippedCanvas.drawBorder(badge, ColorRGBA(220, 184, 105, 255));
-			clippedCanvas.drawText(badge.center(), EFonts::FONT_TINY, Colors::YELLOW,
-				ETextAlignment::CENTER, text);
-		}
-	}
 	showChainLightningPreviewNumbers(clippedCanvas);
 	showDemonicGateReservations(clippedCanvas);
 

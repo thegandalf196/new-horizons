@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "StackInfoBasicPanel.h"
+#include "FrozenStatusPresentation.h"
 
 #include "../widgets/Images.h"
 #include "../widgets/MiscWidgets.h"
@@ -41,34 +42,6 @@
 
 namespace
 {
-// A distinct native-sized physical ice crystal, drawn into the existing status
-// slot. No spell icon or Blind/Petrification identity is borrowed.
-class FrozenStatusIcon : public CIntObject
-{
-public:
-	explicit FrozenStatusIcon(Point position) : CIntObject(0, position)
-	{
-		pos.w = 48;
-		pos.h = 36;
-	}
-	void showAll(Canvas & canvas) override { show(canvas); }
-	void show(Canvas & canvas) override
-	{
-		const auto center = pos.topLeft() + Point(24, 17);
-		const ColorRGBA shadow(24, 54, 86, 255);
-		const ColorRGBA ice(122, 193, 222, 255);
-		const ColorRGBA light(224, 247, 255, 255);
-		const std::array<Point, 6> tips{{Point(0, -13), Point(11, -7), Point(11, 7), Point(0, 13), Point(-11, 7), Point(-11, -7)}};
-		for(std::size_t index = 0; index < tips.size(); ++index)
-		{
-			const auto tip = center + tips[index];
-			canvas.drawLine(center + Point(1, 1), tip + Point(1, 1), shadow, shadow);
-			canvas.drawLine(center, tip, ice, light);
-			canvas.drawLine(tip, center + tips[(index + 1) % tips.size()], light, ice);
-		}
-	}
-};
-
 constexpr std::string_view FRAILTY_SPELL_KEY = "new-horizons:frailty";
 constexpr std::string_view PLAGUE_SPELL_KEY = "new-horizons:plague";
 constexpr std::string_view SYLVAN_LUCK_SKILL_KEY = "new-horizons:sylvanLuck";
@@ -934,12 +907,10 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const auto slotY = firstPos.y + offset.y * printed;
 		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::FROZEN)
 		{
-			physicalStatusIcons.push_back(std::make_shared<FrozenStatusIcon>(Point(slotX, slotY)));
+			physicalStatusIcons.push_back(std::make_shared<newHorizonsFrozenPresentation::FrozenStatusIcon>(Point(slotX, slotY)));
 			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
 				ETextAlignment::BOTTOMRIGHT, ColorRGBA(178, 224, 244, 255), "F"));
-			auto tooltip = LIBRARY->generaltexth->translate("new-horizons.combat.frozen.tooltip");
-			tooltip = replaceStatusPlaceholder(tooltip, "%label%", LIBRARY->generaltexth->translate("new-horizons.combat.frozen.label"));
-			tooltip = replaceStatusPlaceholder(tooltip, "%bonus%", std::to_string(displayedStatus.frozenShatterBonusPercent));
+			const auto tooltip = newHorizonsFrozenPresentation::tooltip(displayedStatus.frozenShatterBonusPercent);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 			++printed;
 			continue;

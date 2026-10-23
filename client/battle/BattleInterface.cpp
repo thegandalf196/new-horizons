@@ -1440,6 +1440,7 @@ void BattleInterface::battleStacksEffectsSet(const SetStackEffect & sse)
 	// Reuse the staged refresh so spell animations retain their current body
 	// until AFTER_HIT, then load the authoritative form at its new landing.
 	stacksController->refreshAllStackCreatureForms();
+	stacksController->stackEffectsSet(sse);
 	if(stacksController->getActiveStack() != nullptr)
 		fieldController->redrawBackgroundWithHexes();
 }

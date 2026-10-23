@@ -1815,38 +1815,6 @@ void CGHeroInstance::spendMana(ServerCallback * server, const int spellCost) con
 	}
 }
 
-bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
-{
-	if(!spell || !newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spell->getId()))
-		return false;
-	if(isNewHorizonsSpellExcluded(spell->getId()))
-		return false;
-	const bool inSpellBook = isSpellInscribedForCasting(spell->getId()) && hasSpellbook();
-	// An eligible temporary inscription is treated like a known spell for school
-	// proficiency. This does not grant the physical Spellbook or other casting permissions.
-	if(!inSpellBook && !newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
-		return false;
-
-	if(spell->isSpecial())
-	{
-		if(inSpellBook)
-		{//hero has this spell in spellbook
-			logGlobal->error("Special spell %s in spellbook.", spell->getNameTextID());
-		}
-		return hasBonusOfType(BonusType::SPELL, BonusSubtypeID(spell->getId()));
-	}
-	else if(!cb->isAllowed(spell->getId()))
-	{
-		if(inSpellBook)
-		{
-			//hero has this spell in spellbook
-			//it is normal if set in map editor, but trace it to possible debug of magic guild
-			logGlobal->trace("Banned spell %s in spellbook.", spell->getNameTextID());
-		}
-	}
-	return !getSourcesForSpell(spell->getId()).empty();
-}
-
 bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned) const
 {
 	return canLearnSpellImpl(spell, allowBanned, false, true, false);

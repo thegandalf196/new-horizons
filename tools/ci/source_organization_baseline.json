@@ -19405,13 +19405,14 @@
     },
     "client/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 590,
-      "sha256": "193f6c5a36ee2ada4c07aec7c082b779cf6250bc82a0795562636a1fd5664c3a",
+      "lines": 595,
+      "sha256": "4c2098e23f93f2835442a349daef4b52840d56bb7ddf5c01356b349897303269",
       "owner": "ui_developer",
-      "review": "IR-BATTLE-MOVEMENT-PREVIEW-EXTRACTION-20261022",
-      "review_scope": "exact-movement-preview-extraction-and-two-registration-rows-only-no-future-growth",
-      "rationale": "Mechanical588 to590 registry rows only: register BattleMovementPreview.cpp and its header for the focused movement-warning and Skirmisher-status extraction. Preserve all existing source/header registrations, terminal-recipient ownership helpers and target/link/options/backend/platform policy, with zero CMake callable definitions. No native/rendered acceptance.",
-      "deferral": "UI/ENGINE exact590 bound only. Preserve previous terminal-recipient lifetime coverage; extract coherent component registration before substantive routing/link-policy expansion or further feature growth."
+      "review": "IR-SCROLL-STORM-FROZEN-FOCUSED-REGISTRATIONS-20261022",
+      "review_scope": "exact-mechanical-focused-component-registrations-only",
+      "rationale": "Mechanical588 to590 registry rows only: register BattleMovementPreview.cpp and its header for the focused movement-warning and Skirmisher-status extraction. Preserve all existing source/header registrations, terminal-recipient ownership helpers and target/link/options/backend/platform policy, with zero CMake callable definitions. No native/rendered acceptance. Exact follow-up adds only reviewed focused scroll/Storm/Frozen implementation/header registrations to existing lists; no linkage, backend, options or callable changes. Prior obligations remain; no future growth approved.",
+      "deferral": "UI/ENGINE exact595 bound only. Preserve previous terminal-recipient lifetime coverage; extract coherent component registration before substantive routing/link-policy expansion or further feature growth.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/CPlayerInterface.cpp": {
       "kind": "legacy",
@@ -19709,12 +19710,13 @@
     },
     "client/battle/BattleFieldController.cpp": {
       "kind": "legacy",
-      "lines": 1355,
+      "lines": 1328,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1355 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ebcb0eb58a744777ed3bd63eb950f12d7ec0f5bad6171adb8446d3803fe161bc"
+      "rationale": "Independently reviewed bounded target-selection presentation extraction and removal of Storm damage badges lowers this file's frozen baseline. Other oversized responsibilities remain debt requiring affected-area extraction before expansion; native and rendered behavior require separate verification.",
+      "review": "IR-STORM-TARGET-PRESENTATION-EXTRACTION-20261022",
+      "review_scope": "exact-target-panel-extraction-source-only",
+      "sha256": "37a7b4018004ddef92ebf209694376ec2345b83dec83750811e34249bfd2a90b",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/battle/BattleFieldController.cpp::void BattleFieldController::showHighlightedHexes(Canvas & canvas)#1": {
       "kind": "legacy",
@@ -19744,13 +19746,15 @@
       "sha256": "437086504b8030cad8abd566bcf615ab0378bc800706ed5b815fda1a557b05ef"
     },
     "client/battle/BattleInterface.cpp": {
-      "kind": "legacy",
-      "lines": 2104,
-      "sha256": "7dea0f120a57238b3fadae4a13ae44f6e9da4fd9a5a2eafac79f308122b53c92",
+      "kind": "exception",
+      "lines": 2105,
+      "sha256": "7feebbb76cb517dedfae18e7588bdcf9bf7b4cfaf866e21c0af4031411d58973",
       "owner": "ui_developer",
-      "review": "cure-modal-current-session-extraction",
-      "review_scope": "source-extraction-and-lifetime-guards-only",
-      "rationale": "Extracts the Cure modal installer into BattleCureAfflictionUI and weak canonical session admission. The central file shrinks by 76 physical lines to 2104. Remaining independent modal factories and battle presentation duties require further bounded decomposition while preserving command validation and same-thread teardown. No future growth allowance or runtime acceptance is granted."
+      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
+      "review_scope": "exact-physical-frozen-presentation-source-only",
+      "rationale": "Urgent bounded Frozen presentation correction: BattleInterface only routes accepted packets to focused feedback; full stack window adds one physical-first status row using the extracted shared icon/tooltip. No gameplay, save, RNG or teardown state changes. Exact source-only approval, no future growth.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI owner must extract complete full-stack active-effect row construction, priority and slot admission before further expansion, preserving captured battle context, physical-first eight-slot limit, ordinary spell order, help and current status; lower file/function baselines and verify right-click, reopen, Cure and expiry. BattleInterface owner must retain focused presentation routing before substantive expansion; no teardown/restart/state mutation enlargement. Retain the Cure weak canonical-session admission and command-validation/same-thread teardown contract; remaining independent modal factories still require bounded decomposition before expansion."
     },
     "client/battle/BattleInterface.cpp::BattleInterface::installMagicArrowOverchargeUI()::[this](const BattleAction & pending, const BattleHex & targetHex, const CStack * initialTarget) -> std::optional<MagicArrowOverchargeContext>#1": {
       "kind": "legacy",
@@ -19853,12 +19857,13 @@
     },
     "client/battle/BattleStacksController.cpp": {
       "kind": "legacy",
-      "lines": 1236,
+      "lines": 1225,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1236 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "142fc63d7987265bfbac322f390008d2bac430522e5898aaf8e9c4c9fa5fdaa6"
+      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1236 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Independently reviewed Frozen presentation extraction and prism removal lowers this exact baseline; prior structural obligations remain. New cue ledger and shared icon/tooltip live in focused components; rendered and audio acceptance remain separate.",
+      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
+      "review_scope": "exact-physical-frozen-presentation-source-only",
+      "sha256": "0cd5133f34038e28d5b4dba558f3cef90c7a05d7b7919658e3ce1aa0579ccc0c",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/battle/BattleStacksController.cpp::void BattleStacksController::stackAttacking( const StackAttackInfo & info )#1": {
       "kind": "legacy",
@@ -19880,30 +19885,24 @@
     },
     "client/battle/BattleWindow.cpp": {
       "kind": "legacy",
-      "lines": 1809,
+      "lines": 1583,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1809 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "1af7c230643fe92e6484efba832916b0fdf212bd6369d782c79ff2317f3fc080"
-    },
-    "client/battle/BattleWindow.cpp::BattleTargetSelectionPanel::void refresh()#1": {
-      "kind": "legacy",
-      "lines": 141,
-      "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 141 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "8b66ded0e164ddaa57e43b0243d38d7f496ea163a348fa364e69d4838cc7deb1"
+      "rationale": "Independently reviewed bounded target-selection presentation extraction and removal of Storm damage badges lowers this file's frozen baseline. Other oversized responsibilities remain debt requiring affected-area extraction before expansion; native and rendered behavior require separate verification.",
+      "review": "IR-STORM-TARGET-PRESENTATION-EXTRACTION-20261022",
+      "review_scope": "exact-target-panel-extraction-source-only",
+      "sha256": "d1a5a0c2244ed9faa8e859cef28735ffa45c754fc4b41d261cb6ec04a5efa527",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/battle/BattleWindow.cpp::BattleWindow::BattleWindow(BattleInterface & Owner) : owner(Owner)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 166,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 166 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "9590a2871638845d1393c351061e3d3882ccadc70e494ceac06e95605825b5f8"
+      "rationale": "Exact no-growth constructor routing change replaces center with the extracted panel's reposition API. Widget lifetime, input and existing layout responsibilities remain unchanged.",
+      "review": "IR-STORM-TARGET-PRESENTATION-EXTRACTION-20261022",
+      "review_scope": "exact-target-panel-extraction-source-only",
+      "sha256": "475e6c6f2fb51e312f32b21e296036f193e16f8d3d075317f5a48c50ca8f8728",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI owner must extract cohesive widget/layout construction before substantive constructor expansion, preserving foreground/input/layout/lifetime behavior; no growth approved."
     },
     "client/battle/BattleWindow.cpp::void BattleWindow::refreshHeroBattleStatus(BattleSide side)#1": {
       "kind": "legacy",
@@ -19943,12 +19942,13 @@
     },
     "client/battle/StackInfoBasicPanel.cpp": {
       "kind": "legacy",
-      "lines": 1269,
+      "lines": 1240,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1269 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "5b4938a1ab2ad9dfa3250d9a990b71f18c2ece718063d623c86bfb6272a66a8f"
+      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1269 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Independently reviewed Frozen presentation extraction and prism removal lowers this exact baseline; prior structural obligations remain. New cue ledger and shared icon/tooltip live in focused components; rendered and audio acceptance remain separate.",
+      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
+      "review_scope": "exact-physical-frozen-presentation-source-only",
+      "sha256": "1e6e553a326003bbdea55a0c8405a91154fbb250e17444548667dd2518ad9263",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/battle/StackInfoBasicPanel.cpp::newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus( const CStack * stack, const CPlayerBattleCallback * battleCallback, const newHorizonsBattleStatus::BattleLuckReadback & luckReadback)#1": {
       "kind": "legacy",
@@ -19961,12 +19961,13 @@
     },
     "client/battle/StackInfoBasicPanel.cpp::void StackInfoBasicPanel::initializeData(const CStack * stack)#1": {
       "kind": "legacy",
-      "lines": 510,
+      "lines": 508,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 510 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c4e108431c96fa1005404ab0137e9f68c548fe94abf69972827137b96c6dd91c"
+      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 510 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Independently reviewed Frozen presentation extraction and prism removal lowers this exact baseline; prior structural obligations remain. New cue ledger and shared icon/tooltip live in focused components; rendered and audio acceptance remain separate.",
+      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
+      "review_scope": "exact-physical-frozen-presentation-source-only",
+      "sha256": "547153c91847805fc6261bd7a85860d0ae9dc23101ed04a0bf03cf67b69f6756",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/globalLobby/GlobalLobbyClient.cpp": {
       "kind": "legacy",
@@ -20695,22 +20696,26 @@
       "sha256": "079a1ca7c587fa5bda678bc8aeb36fb518e8a0cd0653728a6dd9c4d8cb44e695"
     },
     "client/windows/CCreatureWindow.cpp": {
-      "kind": "legacy",
-      "lines": 1821,
+      "kind": "exception",
+      "lines": 1830,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1821 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "b252bd1ba1ad6b0757ae7b44a2fa2ce10a70b72e156bc48b34c069c63d5203ce"
+      "rationale": "Urgent bounded Frozen presentation correction: BattleInterface only routes accepted packets to focused feedback; full stack window adds one physical-first status row using the extracted shared icon/tooltip. No gameplay, save, RNG or teardown state changes. Exact source-only approval, no future growth.",
+      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
+      "review_scope": "exact-physical-frozen-presentation-source-only",
+      "sha256": "9a79c7542a046238e522c2c5bc5ff10203f3263d3c6b4c188f3bb0eb594ba01d",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI owner must extract complete full-stack active-effect row construction, priority and slot admission before further expansion, preserving captured battle context, physical-first eight-slot limit, ordinary spell order, help and current status; lower file/function baselines and verify right-click, reopen, Cure and expiry. BattleInterface owner must retain focused presentation routing before substantive expansion; no teardown/restart/state mutation enlargement."
     },
     "client/windows/CCreatureWindow.cpp::CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset) : CWindowSection(owner, ImagePath::builtin(\"stackWindow/spell-effects\"), yOffset)#1": {
-      "kind": "legacy",
-      "lines": 108,
+      "kind": "exception",
+      "lines": 116,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 108 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6b8b7d173ce1f26fff7bd6b1750372484d98bdc9bc161dd5795e6f6d434f7f7a"
+      "rationale": "Urgent bounded Frozen presentation correction: BattleInterface only routes accepted packets to focused feedback; full stack window adds one physical-first status row using the extracted shared icon/tooltip. No gameplay, save, RNG or teardown state changes. Exact source-only approval, no future growth.",
+      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
+      "review_scope": "exact-physical-frozen-presentation-source-only",
+      "sha256": "cb71aa07dd8bfddf70e166b0b1e37e23811c3ee9a5c654b30a00d91b66998982",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI owner must extract complete full-stack active-effect row construction, priority and slot admission before further expansion, preserving captured battle context, physical-first eight-slot limit, ordinary spell order, help and current status; lower file/function baselines and verify right-click, reopen, Cure and expiry. BattleInterface owner must retain focused presentation routing before substantive expansion; no teardown/restart/state mutation enlargement."
     },
     "client/windows/CCreatureWindow.cpp::CStackWindow::ButtonsSection::ButtonsSection(CStackWindow * owner, int yOffset) : CWindowSection(owner, ImagePath::builtin(\"stackWindow/button-panel\"), yOffset)#1": {
       "kind": "legacy",
@@ -20881,13 +20886,15 @@
       "sha256": "38015e023477e7f68a885cbc062717a177c1cbb8c10fb23b02b1035269ec8b82"
     },
     "client/windows/CSpellWindow.cpp": {
-      "kind": "legacy",
-      "lines": 1419,
+      "kind": "exception",
+      "lines": 1420,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1419 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f1032cda92b09995967d79f9ad4ceca4b9e50e9a46467dd74fe1fcab4a43814c"
+      "rationale": "Urgent UI/result agreement fix only: insufficient-School lock consults existing canonical canCastThisSpell so eligible equipped combat scrolls are not incorrectly disabled. One added condition; no artifact policy duplication, mutation or layout change.",
+      "review": "IR-SCROLL-CASTING-SCHOOL-ACCESS-20261022",
+      "review_scope": "exact-scroll-school-lock-source-only",
+      "sha256": "3fff576217eff09bef7602c85d535367a8d988d9b93721efe763cffcadf345d5",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI owner must extract cohesive School-lock/requirement presentation from setSpell before its next substantive expansion, preserving slot reset, requirement text, authoritative cast admission and icon placement; lower the oversized file/function baseline. This exact one-line exception grants no future growth."
     },
     "client/windows/CSpellWindow.cpp::CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _myInt, bool openOnBattleSpells, const std::function<void(SpellID)> & onSpellSelect): CWindowObject(PLAYER_COLORED | (settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool() ? BORDERED : 0)), battleSpellsOnly(openOnBattleSpells), selectedTab(SpellSchool::ANY), currentPage(0), myHero(_myHero), myInt(_myInt), openOnBattleSpells(openOnBattleSpells), onSpellSelect(onSpellSelect), isBigSpellbook(settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool()), spellsPerPage(24), offL(-11), offR(195), offRM(110), offT(-37), offB(56)#1": {
       "kind": "legacy",
@@ -20908,13 +20915,15 @@
       "sha256": "4f512c82a1fd406f0a45736743130f5ac6a9e72dcb6e51183c1ae2f4f31141ed"
     },
     "client/windows/CSpellWindow.cpp::void CSpellWindow::SpellArea::setSpell(const CSpell * spell)#1": {
-      "kind": "legacy",
-      "lines": 132,
+      "kind": "exception",
+      "lines": 133,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 132 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e91760f2b45091ebe3bad47f0cc49646956f57178770de6bf392c6f1fe8c3925"
+      "rationale": "Urgent UI/result agreement fix only: insufficient-School lock consults existing canonical canCastThisSpell so eligible equipped combat scrolls are not incorrectly disabled. One added condition; no artifact policy duplication, mutation or layout change.",
+      "review": "IR-SCROLL-CASTING-SCHOOL-ACCESS-20261022",
+      "review_scope": "exact-scroll-school-lock-source-only",
+      "sha256": "bec32fec850691f171ac388e1d0a0bfd4f51c9b67f80bcd36c4c83cc3611628d",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI owner must extract cohesive School-lock/requirement presentation from setSpell before its next substantive expansion, preserving slot reset, requirement text, authoritative cast admission and icon placement; lower the oversized file/function baseline. This exact one-line exception grants no future growth."
     },
     "client/windows/CSpellWindow.cpp::void CSpellWindow::processSpells()#1": {
       "kind": "legacy",
@@ -21895,15 +21904,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact1286-line registry endpoint only. Engine engineer owns coherent component registration extraction with shrinking parent before broader registry expansion; preserve target/linkage and source/header ordering. This exact two-row helper registration is independently reviewed for source scope only; it does not waive decomposition or native verification.",
+      "deferral": "Exact1287-line registry endpoint only. Engine engineer owns coherent component registration extraction with shrinking parent before broader registry expansion; preserve target/linkage and source/header ordering. This exact two-row helper registration is independently reviewed for source scope only; it does not waive decomposition or native verification.",
       "kind": "exception",
-      "lines": 1286,
+      "lines": 1287,
       "owner": "engine_engineer",
-      "rationale": "Exact optional Hydra identity routing only; installed identity matching is unchanged, true core absence is optional and required New Horizons absence fails closed. Shared lookup extracted into HydrasVitalityIdentity; no timer, health or save-policy redesign.",
-      "review": "IR-OPTIONAL-HYDRA-IDENTITY-20261022",
-      "review_scope": "optional-hydra-identity-only-no-runtime-or-future-growth",
+      "rationale": "Exact optional Hydra identity routing only; installed identity matching is unchanged, true core absence is optional and required New Horizons absence fails closed. Shared lookup extracted into HydrasVitalityIdentity; no timer, health or save-policy redesign. Exact follow-up adds only reviewed focused scroll/Storm/Frozen implementation/header registrations to existing lists; no linkage, backend, options or callable changes. Prior obligations remain; no future growth approved.",
+      "review": "IR-SCROLL-STORM-FROZEN-FOCUSED-REGISTRATIONS-20261022",
+      "review_scope": "exact-mechanical-focused-component-registrations-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "bd92c701b6f336098705dae05373c90cff9ef6904d1b47e0d507d551063d96b4"
+      "sha256": "c184117d46b82bd35846b4a6b9c8eced192bd67c7bf47439105040ca5ce98d65"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -23172,14 +23181,14 @@
     },
     "lib/mapObjects/CGHeroInstance.cpp": {
       "kind": "exception",
-      "lines": 3849,
+      "lines": 3817,
       "owner": "engine_engineer",
-      "rationale": "Independently reviewed six-line growth reorders the existing 18-line specialty query into a 24-line local-marker-first query, with no new responsibility, cache, API or serialization state. Capture, initialization, campaign admission and binary readers retain independent validation. Already-malformed unmarked in-memory state can return zero before parsing; marked state retains validation. This source-scoped exception is not performance or runtime approval. Reviewed scalar follow-up renews exact3849-line bytes only: marked positive lookup uses validated scalar membership instead of a typed vector; negative local-marker admission and independent Navigation validation remain unchanged.",
-      "review": "IR-SKILL-SPECIALTY-SCALAR-SOURCE-20261020",
-      "review_scope": "exact-scalar-specialty-extraction-and-positive-query-only",
-      "sha256": "12e7a11e9a17fd169fe17aad55154a490c8eb36e572fdd3dfd9ddd03f7d1ef8d",
+      "rationale": "Independently reviewed six-line growth reorders the existing 18-line specialty query into a 24-line local-marker-first query, with no new responsibility, cache, API or serialization state. Capture, initialization, campaign admission and binary readers retain independent validation. Already-malformed unmarked in-memory state can return zero before parsing; marked state retains validation. This source-scoped exception is not performance or runtime approval. Reviewed scalar follow-up renews exact3849-line bytes only: marked positive lookup uses validated scalar membership instead of a typed vector; negative local-marker admission and independent Navigation validation remain unchanged. Independently reviewed scroll-casting extraction moves the 32-line admission method into a focused component and lowers this file to3817 lines; prior specialty obligations remain.",
+      "review": "IR-SCROLL-CASTING-SCHOOL-ACCESS-20261022",
+      "review_scope": "exact-scroll-extraction-and-preserved-specialty-source-only",
+      "sha256": "0f0551b77892c7413bd4bba9cf530f1ee71798ebafd52ee993d1e9ea7924cd60",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "No further growth beyond3849 lines. Extract the three specialty-conversion query families and shared marker-identity helpers coherently, separately from prototype installation, before further specialty expansion. Preserve current and historical capture, admission, save and alias-lifetime behavior. Native tests and matched performance remain separate acceptance gates; no improvement is claimed for already-marked heroes."
+      "deferral": "No further growth beyond3817 lines. Extract the three specialty-conversion query families and shared marker-identity helpers coherently, separately from prototype installation, before further specialty expansion. Preserve current and historical capture, admission, save and alias-lifetime behavior. Native tests and matched performance remain separate acceptance gates; no improvement is claimed for already-marked heroes."
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",

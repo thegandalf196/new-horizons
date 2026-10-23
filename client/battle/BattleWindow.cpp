@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleWindow.h"
+#include "BattleTargetSelectionPanel.h"
 
 #include "BattleActionsController.h"
 #include "BattleConsole.h"
@@ -137,233 +138,6 @@ void BattleWindow::showRealityWarpPreview(const std::string & text, std::functio
 {
 	ENGINE->windows().pushWindow(std::make_shared<RealityWarpPreviewWindow>(text, std::move(confirm), std::move(cancel)));
 }
-
-class BattleTargetSelectionPanel final : public CIntObject
-{
-	BattleInterface & owner;
-	bool active = false;
-	std::vector<std::shared_ptr<CIntObject>> decoration;
-	std::shared_ptr<CLabel> heading;
-	std::shared_ptr<CMultiLineLabel> targetReadback;
-	std::shared_ptr<CButton> undoButton;
-	std::shared_ptr<CButton> cancelButton;
-	std::shared_ptr<CButton> confirmButton;
-
-	void refresh()
-	{
-		const auto * controller = owner.actionsController.get();
-		const bool repeatedPlacement = controller && controller->repeatedPlacementModeActive();
-		const bool stormOfDaggers = controller && controller->stormOfDaggersTargetSelectionModeActive();
-		const bool soulChain = controller && controller->soulChainTargetSelectionModeActive();
-		const bool shouldShow = repeatedPlacement || stormOfDaggers || soulChain;
-		active = shouldShow;
-		if(!controller || !shouldShow)
-		{
-			undoButton->setEnabled(false);
-			cancelButton->setEnabled(false);
-			confirmButton->setEnabled(false);
-			return;
-		}
-
-		if(repeatedPlacement)
-		{
-			const auto & selectedHexes = controller->getRepeatedPlacementSelectedHexes();
-			const int required = controller->repeatedPlacementRequiredHexes();
-			const int remaining = std::max(0, required - static_cast<int>(selectedHexes.size()));
-			const std::string placementName = controller->quicksandPlacementModeActive()
-				? "Quicksand patches" : "Land Mine mines";
-			const std::string title = placementName + "  |  " + std::to_string(selectedHexes.size())
-				+ "/" + std::to_string(required) + " selected, " + std::to_string(remaining) + " remaining";
-			if(heading->getText() != title)
-				heading->setText(title);
-
-			std::string readback;
-			for(size_t index = 0; index < selectedHexes.size(); ++index)
-			{
-				if(!readback.empty())
-					readback += ";  ";
-				readback += "#" + std::to_string(index + 1) + " hex "
-					+ std::to_string(selectedHexes[index].toInt());
-			}
-
-			if(!controller->repeatedPlacementReady())
-			{
-				if(!readback.empty())
-					readback += ".  ";
-				readback += "Click legal empty hexes in order; Backspace removes the last; Esc cancels.";
-			}
-			else
-			{
-				if(!readback.empty())
-					readback += ".  ";
-				readback += "All placements selected. Confirm to cast, or Undo to revise.";
-			}
-
-			if(targetReadback->getText() != readback)
-				targetReadback->setText(readback);
-			undoButton->setEnabled(!selectedHexes.empty());
-			undoButton->block(selectedHexes.empty());
-			cancelButton->setEnabled(true);
-			confirmButton->setEnabled(true);
-			confirmButton->block(!controller->repeatedPlacementReady());
-			return;
-		}
-
-		if(soulChain)
-		{
-			const auto preview = controller->getSoulChainSelectionPreview();
-			std::string title = "Soul Chain  |  ";
-			if(preview.selectedTargetCount == 0)
-				title += "select primary enemy (0/3)";
-			else
-				title += "primary + " + std::to_string(preview.selectedTargetCount - 1) + "/2 secondary";
-			if(heading->getText() != title)
-				heading->setText(title);
-
-			std::string readback;
-			if(preview.targets.empty())
-				readback = "Select a primary enemy, then up to two linked enemies.";
-			else
-			{
-				readback = "Primary: " + preview.targets.front().name;
-				if(preview.targets.size() > 1)
-				{
-					readback += " | Linked: ";
-					for(size_t index = 1; index < preview.targets.size(); ++index)
-					{
-						if(index > 1)
-							readback += ", ";
-						readback += preview.targets[index].name;
-					}
-				}
-			}
-			readback += "\nConfirm to cast / Undo last / Esc cancels";
-
-			if(targetReadback->getText() != readback)
-				targetReadback->setText(readback);
-			undoButton->setEnabled(preview.selectedTargetCount > 0);
-			undoButton->block(preview.selectedTargetCount == 0);
-			cancelButton->setEnabled(true);
-			confirmButton->setEnabled(true);
-			confirmButton->block(!preview.canConfirm);
-			return;
-		}
-
-		const auto preview = controller->getStormOfDaggersSelectionPreview();
-		std::string title = "Storm of Daggers  |  " + std::to_string(preview.selectedTargetCount)
-			+ "/" + std::to_string(preview.maximumTargetCount) + " targets";
-		if(preview.poolAvailable)
-			title += "  |  Pool " + std::to_string(preview.totalDamagePool)
-				+ " (" + std::to_string(preview.rawDamagePerTarget) + " each before resistance)";
-		if(heading->getText() != title)
-			heading->setText(title);
-
-		std::string readback;
-		for(size_t index = 0; index < preview.targets.size(); ++index)
-		{
-			const auto & target = preview.targets[index];
-			if(!readback.empty())
-				readback += ";  ";
-			readback += "#" + std::to_string(index + 1) + " " + target.name + ": ";
-			if(target.projectedDamage)
-				readback += "about " + std::to_string(*target.projectedDamage) + " damage";
-			else if(preview.poolAvailable)
-				readback += std::to_string(preview.rawDamagePerTarget) + " raw damage; estimate unavailable";
-			else
-				readback += "damage estimate unavailable";
-		}
-
-		if(readback.empty())
-			readback = preview.status;
-		else if(!preview.canConfirm)
-			readback += "; " + preview.status;
-		else if(preview.selectedTargetCount >= preview.maximumTargetCount)
-			readback += ". Target limit reached; Confirm, or use Undo to revise.";
-		else
-			readback += ". Click another enemy, or Confirm. Backspace undoes; Esc cancels.";
-
-		if(targetReadback->getText() != readback)
-			targetReadback->setText(readback);
-		undoButton->setEnabled(true);
-		undoButton->block(preview.selectedTargetCount == 0);
-		cancelButton->setEnabled(true);
-		confirmButton->setEnabled(true);
-		confirmButton->block(!preview.canConfirm);
-	}
-
-public:
-	explicit BattleTargetSelectionPanel(BattleInterface & owner_)
-		: CIntObject(0), owner(owner_)
-	{
-		pos = Rect(0, 0, 720, 62);
-		center();
-		OBJECT_CONSTRUCTION;
-		// Match the battle hero/status compartments: one continuous DiBoxBck
-		// leather surface, a warm outer rim, and the red-and-brass inset frame.
-		decoration.push_back(std::make_shared<CFilledTexture>(ImagePath::builtin("DiBoxBck"), Rect(0, 0, 720, 62)));
-		const ColorRGBA transparent(0, 0, 0, 0);
-		decoration.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, 0, 720, 62),
-			transparent, ColorRGBA(213, 185, 117)));
-		decoration.push_back(std::make_shared<TransparentFilledRectangle>(Rect(1, 1, 718, 60),
-			transparent, ColorRGBA(145, 18, 12), 2));
-		decoration.push_back(std::make_shared<TransparentFilledRectangle>(Rect(3, 3, 714, 56),
-			transparent, ColorRGBA(120, 98, 56)));
-		// Recess the compact target forecast separately while leaving the
-		// surrounding leather uninterrupted behind the title and tactile buttons.
-		decoration.push_back(std::make_shared<TransparentFilledRectangle>(Rect(8, 24, 456, 32),
-			ColorRGBA(0, 0, 0, 75), ColorRGBA(82, 65, 40, 255)));
-		heading = std::make_shared<CLabel>(12, 7, FONT_SMALL, ETextAlignment::TOPLEFT,
-			Colors::YELLOW, "Storm of Daggers");
-		targetReadback = std::make_shared<CMultiLineLabel>(Rect(12, 25, 450, 32), FONT_TINY,
-			ETextAlignment::TOPLEFT, Colors::WHITE, "");
-
-		undoButton = std::make_shared<CButton>(Point(474, 15), AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Undo", "Remove the last selected target."), [this]
-			{
-				if(owner.actionsController)
-				{
-					if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
-						owner.actionsController->undoStormOfDaggersTarget();
-					else if(owner.actionsController->soulChainTargetSelectionModeActive())
-						owner.actionsController->undoSoulChainTarget();
-					else
-						owner.actionsController->undoRepeatedPlacement();
-				}
-			});
-		undoButton->setTextOverlay("Undo", FONT_SMALL, Colors::WHITE);
-		undoButton->setHoverable(true);
-
-		cancelButton = std::make_shared<CButton>(Point(554, 15), AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Cancel", "Cancel this selection without spending Mana or the Hero Action."), [this]
-			{
-				if(owner.actionsController)
-					owner.actionsController->endCastingSpell();
-			}, EShortcut::GLOBAL_CANCEL);
-		cancelButton->setTextOverlay("Cancel", FONT_SMALL, Colors::WHITE);
-		cancelButton->setHoverable(true);
-
-		confirmButton = std::make_shared<CButton>(Point(634, 15), AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Confirm", "Revalidate the complete selection, then cast the spell."), [this]
-			{
-				if(owner.actionsController)
-				{
-					if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
-						owner.actionsController->confirmStormOfDaggersTargets();
-					else if(owner.actionsController->soulChainTargetSelectionModeActive())
-						owner.actionsController->confirmSoulChainTargets();
-					else
-						owner.actionsController->confirmRepeatedPlacement();
-				}
-			});
-		confirmButton->setTextOverlay("Confirm", FONT_SMALL, Colors::WHITE);
-		confirmButton->setHoverable(true);
-		refresh();
-	}
-
-	void update() { refresh(); }
-	void show(Canvas & to) override { if(active) CIntObject::showAll(to); }
-	void showAll(Canvas & to) override { if(active) CIntObject::showAll(to); }
-};
 
 BattleWindow::BattleWindow(BattleInterface & Owner)
 	: owner(Owner)
@@ -528,7 +302,7 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 
 	addUsedEvents(LCLICK | KEYBOARD);
 	// Later battlefield/queue children must not paint over the targeting controls.
-	battleTargetSelectionPanel->center();
+	battleTargetSelectionPanel->reposition();
 	moveChildForeground(battleTargetSelectionPanel.get());
 }
 
@@ -1748,7 +1522,7 @@ void BattleWindow::onScreenResize()
 		hideStickyHeroWindows();
 		showStickyHeroWindows();
 	}
-	battleTargetSelectionPanel->center();
+	battleTargetSelectionPanel->reposition();
 	moveChildForeground(battleTargetSelectionPanel.get());
 }
 

@@ -249,6 +249,7 @@ end
 function Script:apply(mechanics, server, target)
 	local battle   = mechanics:getBattle()
 	local describe = server:describeChanges()
+	local stormOfDaggers = mechanics:getSpell():getJsonKey() == "new-horizons:stormOfDaggers"
 	local firstUnit, totalDamage, totalKilled, multiple = nil, 0, 0, false
 	local ordinaryDamage, ordinaryKilled, executedKilled = 0, 0, 0
 
@@ -274,6 +275,16 @@ function Script:apply(mechanics, server, target)
 					self, mechanics, server, battle, unit, dmg)
 			end
 			if describe then
+				if stormOfDaggers then
+					-- Use resolved HP loss and casualties, not the raw split or a preview.
+					-- Name the recipient even when no creature was killed.
+					server:appendLog(battle, {
+						appendRaw = { "Storm of Daggers deals %d damage to %s." },
+						replaceNumbers = { dmg },
+						replaceStrings = { unit:getCreature():getNameTextID(unit:getCount()) }
+					})
+					BattleLog.creaturesPerish(server, battle, unit, killed)
+				end
 				if firstUnit then multiple = true else firstUnit = unit end
 				totalDamage = totalDamage + dmg + collateralDamage
 				totalKilled = totalKilled + killed + collateralKilled
@@ -290,7 +301,7 @@ function Script:apply(mechanics, server, target)
 		end
 	end
 
-	if describe and firstUnit and totalDamage > 0 then
+	if describe and not stormOfDaggers and firstUnit and totalDamage > 0 then
 		self:describeEffect(server, battle, mechanics, firstUnit, totalKilled, totalDamage, multiple,
 			ordinaryKilled, ordinaryDamage, executedKilled)
 	end

@@ -12,6 +12,7 @@
 
 #include "../../lib/Color.h"
 #include "StackInfoPanelHoverState.h"
+#include "FrozenApplicationFeedback.h"
 
 #include "../../lib/constants/EntityIdentifiers.h"
 
@@ -25,6 +26,7 @@ class BattleAction;
 class CStack;
 class CSpell;
 class SpellID;
+struct SetStackEffect;
 class Point;
 
 struct StackAttackedInfo;
@@ -97,6 +99,7 @@ class BattleStacksController
 		uint32_t elapsedMilliseconds = 0;
 	};
 	std::map<uint32_t, FrozenShatterFeedback> frozenShatterFeedback;
+	newHorizonsFrozenPresentation::ApplicationFeedback frozenApplicationFeedback;
 
 	/// currently active stack; nullptr - no one
 	const CStack *activeStack;
@@ -147,6 +150,7 @@ public:
 	void stackReset(const CStack * stack);
 	void refreshStackCreatureForm(const CStack * stack);
 	void refreshAllStackCreatureForms();
+	void stackEffectsSet(const SetStackEffect & packet);
 	void stackAdded(const CStack * stack, bool instant); //new stack appeared on battlefield
 	void stackRemoved(uint32_t stackID); //stack disappeared from batlefiled
 	void stackActivated(const CStack *stack); //active stack has been changed

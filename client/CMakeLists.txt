@@ -36,10 +36,12 @@ set(vcmiclientcommon_SRCS
 	battle/BattleResultWindow.cpp
 	battle/BattleSiegeController.cpp
 	battle/BattleStacksController.cpp
+	battle/BattleTargetSelectionPanel.cpp
 	battle/BattleWindow.cpp
 	battle/CreatureAnimation.cpp
 	battle/HeroInfoWindow.cpp
 	battle/QuickSpellPanel.cpp
+	battle/FrozenStatusPresentation.cpp
 	battle/StackInfoBasicPanel.cpp
 	battle/StackQueue.cpp
 	battle/UnitActionPanel.cpp
@@ -269,6 +271,8 @@ set(vcmiclientcommon_HEADERS
 	battle/NewHorizonsProtectLink.h
 	battle/NewHorizonsHoldAnchor.h
 	battle/StackInfoPanelHoverState.h
+	battle/FrozenStatusPresentation.h
+	battle/FrozenApplicationFeedback.h
 	battle/StackInfoStatusPresentation.h
 	battle/BattleInterface.h
 	battle/CureAfflictionSession.h
@@ -284,6 +288,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleSidePanel.h
 	battle/BattleSiegeController.h
 	battle/BattleStacksController.h
+	battle/BattleTargetSelectionPanel.h
 	battle/BattleWindow.h
 	battle/NewHorizonsRealityWarpPreview.h
 	battle/CreatureAnimation.h

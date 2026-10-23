@@ -38,6 +38,7 @@
 #include "../gui/Shortcut.h"
 #include "../battle/BattleInterface.h"
 #include "../battle/NewHorizonsBattleStatus.h"
+#include "../battle/FrozenStatusPresentation.h"
 
 #include "../../lib/CBonusTypeHandler.h"
 #include "../../lib/CStack.h"
@@ -244,6 +245,14 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 
 	//spell effects
 	int printed=0; //how many effect pics have been printed
+	if(const auto frozen = newHorizonsFrozenPresentation::currentTooltip(*battleStack))
+	{
+		physicalStatusIcons.push_back(std::make_shared<newHorizonsFrozenPresentation::FrozenStatusIcon>(firstPos));
+		labels.push_back(std::make_shared<CLabel>(firstPos.x + 46, firstPos.y + 36, EFonts::FONT_TINY,
+			ETextAlignment::BOTTOMRIGHT, ColorRGBA(178, 224, 244, 255), "F"));
+		clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(firstPos, Point(50, 38)), *frozen, *frozen));
+		++printed;
+	}
 	std::vector<SpellID> spells = battleStack->activeSpells();
 	// Keep the New Horizons combat statuses visible when the full stack window
 	// reaches its eight-icon display limit. stable_partition preserves their

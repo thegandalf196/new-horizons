@@ -1306,10 +1306,11 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		const int requiredRank = newHorizonsMagic::requiredSchoolRank(owner->myHero->getMagicRules(), mySpell->getId());
 		const bool inscribedInSpellbook = owner->myHero->hasSpellbook()
 			&& owner->myHero->isSpellInscribedForCasting(mySpell->getId());
-		// Durable and eligible temporary inscriptions are usable regardless of
-		// School rank; learning and other non-inscribed sources remain gated.
+		// Inscriptions and qualified scrolls use the authoritative casting rule;
+		// learning still requires the appropriate School proficiency.
 		schoolLocked = requiredRank > 0 && !inscribedInSpellbook
-			&& !newHorizonsMagic::hasSchoolProficiency(owner->myHero, mySpell->getId());
+			&& !newHorizonsMagic::hasSchoolProficiency(owner->myHero, mySpell->getId())
+			&& !owner->myHero->canCastThisSpell(mySpell);
 		divineMandateLocked = !owner->canUseSpellForCurrentDivineMandateFollowup(mySpell->getId());
 		if(divineMandateLocked)
 			divineMandateRequirementText = "This spell is not eligible for the pending Divine Mandate Light Spell follow-up.";

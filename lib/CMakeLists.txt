@@ -320,6 +320,7 @@ set(lib_MAIN_SRCS
 	mapObjects/CGCreaturePopupText.cpp
 	mapObjects/CGDwelling.cpp
 	mapObjects/CGHeroInstance.cpp
+	mapObjects/HeroSpellCasting.cpp
 	mapObjects/HeroPrimarySkillQueries.cpp
 	mapObjects/NewHorizonsGlyphsOfFear.cpp
 	mapObjects/CGMarket.cpp

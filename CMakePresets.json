@@ -478,7 +478,7 @@
         {
             "name": "new-horizons-linux-test",
             "configurePreset": "new-horizons-linux-test",
-            "targets": ["nhHeroDevelopmentNavigationTest", "nhHeroMasteryDialogStateTest", "nhExchangeSecondarySkillSlotsTest", "nhStackInfoPanelHoverStateTest", "nhProjectileFlightLifecycleTest", "nhWindowSceneRedrawTest", "nhMapTransitionSnapshotTest", "nhBattleEndDispatchTest", "nhHeroPositiveProcPresentationTest", "nhAnimationPhaseStartTest", "nhCureAfflictionSessionTest"],
+            "targets": ["nhHeroDevelopmentNavigationTest", "nhHeroMasteryDialogStateTest", "nhExchangeSecondarySkillSlotsTest", "nhStackInfoPanelHoverStateTest", "nhFrozenApplicationFeedbackTest", "nhProjectileFlightLifecycleTest", "nhWindowSceneRedrawTest", "nhMapTransitionSnapshotTest", "nhBattleEndDispatchTest", "nhHeroPositiveProcPresentationTest", "nhAnimationPhaseStartTest", "nhCureAfflictionSessionTest"],
             "jobs": 10
         },
         {

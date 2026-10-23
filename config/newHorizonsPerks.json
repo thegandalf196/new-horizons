@@ -5,7 +5,7 @@
 	"perkProgressionPolicyVersion": 1,
 	"perkOfferNormalization": {"maximumPreferenceRatio": 2.0, "mathVersion": 1},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
-	"sourceSha256": "a98ae0bd438b67c5c5a0484f3419a4a144655abd04a4b00517f46709d498b015",
+	"sourceSha256": "05a5c09cdd4549af9749b73ba8144a182cdb6317171b6d1829c576c6325b6866",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,

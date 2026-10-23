@@ -26,6 +26,8 @@ add_test(NAME nhExchangeSecondarySkillSlotsTest COMMAND nhExchangeSecondarySkill
 # Pure UI-state test for the stack hover-to-panel travel grace period.
 add_executable(nhStackInfoPanelHoverStateTest ../client/tests/StackInfoPanelHoverStateTest.cpp)
 add_test(NAME nhStackInfoPanelHoverStateTest COMMAND nhStackInfoPanelHoverStateTest)
+add_executable(nhFrozenApplicationFeedbackTest ../client/tests/FrozenApplicationFeedbackTest.cpp)
+add_test(NAME nhFrozenApplicationFeedbackTest COMMAND nhFrozenApplicationFeedbackTest)
 
 # Reproduce the Academy built-town-icon load path with every scaling factor. The
 # SDL dummy backend keeps the renderer bootstrap isolated from the host display.
@@ -344,6 +346,7 @@ set(test_SRCS
 		server/battles/NewHorizonsForcedMarchTest.cpp
 		server/battles/NewHorizonsForgetfulnessTest.cpp
 		server/battles/NewHorizonsSoulChainTest.cpp
+		server/battles/NewHorizonsScrollCastingTest.cpp
 		server/battles/NewHorizonsNaturesWrathTest.cpp
 		server/battles/NewHorizonsPandemoniumTest.cpp
 		server/battles/NewHorizonsPolymorphLifecycleTest.cpp
@@ -1044,7 +1047,7 @@ add_test(NAME nhAnimationPhaseStartTest COMMAND nhAnimationPhaseStartTest)
 # Asset-free state checks only; native authority tests retain their TEST profile.
 set_tests_properties(
 	nhHeroDevelopmentNavigationTest nhHeroMasteryDialogStateTest
-	nhExchangeSecondarySkillSlotsTest nhStackInfoPanelHoverStateTest
+	nhExchangeSecondarySkillSlotsTest nhStackInfoPanelHoverStateTest nhFrozenApplicationFeedbackTest
 	nhProjectileFlightLifecycleTest nhWindowSceneRedrawTest nhMapTransitionSnapshotTest
 	nhBattleEndDispatchTest
 	nhHeroPositiveProcPresentationTest nhAnimationPhaseStartTest

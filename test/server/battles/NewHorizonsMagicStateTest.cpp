@@ -1418,7 +1418,7 @@ TEST_F(NewHorizonsMagicStateTest, EquippedTomeSourceTakesPriorityOverMatchingScr
 	EXPECT_EQ(attackerSideHero->getArt(ArtifactPosition::MISC3)->getId(), scrollSlot->getId());
 }
 
-TEST_F(NewHorizonsMagicStateTest, CombatScrollDoesNotBypassSchoolRequirement)
+TEST_F(NewHorizonsMagicStateTest, CombatScrollCastsWithoutSchoolButDoesNotBypassLearningRequirement)
 {
 	prepareWizardWithArcaneMemory();
 	const SpellID handOfFate(SpellID::decode("new-horizons:handOfFate"));
@@ -1433,16 +1433,21 @@ TEST_F(NewHorizonsMagicStateTest, CombatScrollDoesNotBypassSchoolRequirement)
 	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, handOfFate, ArtifactPosition::MISC1));
 
 	startBattle();
-	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(rightHex), 1);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(rightHex), 1000);
 	ASSERT_NE(target, nullptr);
 	beginCombat();
-	EXPECT_FALSE(attackerSideHero->canCastThisSpell(handOfFate.toSpell()));
+	ASSERT_TRUE(attackerSideHero->canCastThisSpell(handOfFate.toSpell()));
 	const auto manaBefore = attackerSideHero->getManaAvailable();
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+	const auto manaCost = battle()->battleGetSpellCost(handOfFate.toSpell(), attackerSideHero);
+	const auto healthBefore = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		heroSpellAction(handOfFate, target)));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - manaCost);
+	EXPECT_LT(target->getAvailableHealth(), healthBefore);
+	ASSERT_TRUE(target->alive());
 	EXPECT_TRUE(attackerSideHero->hasScroll(handOfFate, false));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(handOfFate));
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(handOfFate.toSpell()));
 
 	// Hand of Fate is current ordinary level3 Chaos, requiring Basic (levels1/2 permit NONE).
 	// With the required School rank supplied, preserve the positive/map-ban acquisition controls.
@@ -1453,7 +1458,7 @@ TEST_F(NewHorizonsMagicStateTest, CombatScrollDoesNotBypassSchoolRequirement)
 	EXPECT_FALSE(attackerSideHero->canLearnSpell(handOfFate.toSpell()));
 }
 
-TEST_F(NewHorizonsMagicStateTest, ImplosionScrollNeedsActualSorceryRankBeforeAcceptedLearning)
+TEST_F(NewHorizonsMagicStateTest, ImplosionScrollCastsWithoutSorceryButLearningStillRequiresActualRank)
 {
 	prepareWizardWithArcaneMemory();
 	const SpellID implosion(SpellID::IMPLOSION);
@@ -1467,13 +1472,13 @@ TEST_F(NewHorizonsMagicStateTest, ImplosionScrollNeedsActualSorceryRankBeforeAcc
 	ASSERT_NE(target, nullptr);
 	beginCombat();
 	const auto manaBefore = attackerSideHero->getManaAvailable();
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroSpellAction(implosion, target)));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	ASSERT_TRUE(attackerSideHero->canCastThisSpell(implosion.toSpell()));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroSpellAction(implosion, target)));
+	EXPECT_LT(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(implosion));
 	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	ASSERT_TRUE(attackerSideHero->canLearnSpell(implosion.toSpell()));
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroSpellAction(implosion, target)));
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(implosion));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(implosion));
 	EXPECT_TRUE(attackerSideHero->hasScroll(implosion, false));
 }
 

@@ -77,6 +77,7 @@ class CStackWindow : public CWindowObject
 	class ActiveSpellsSection : public CWindowSection
 	{
 		std::vector<std::shared_ptr<CAnimImage>> spellIcons;
+		std::vector<std::shared_ptr<CIntObject>> physicalStatusIcons;
 		std::vector<std::shared_ptr<LRClickableAreaWText>> clickableAreas;
 		std::vector<std::shared_ptr<CLabel>> labels;
 	public:

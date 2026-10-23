@@ -20,6 +20,7 @@
 #include "BattleSiegeController.h"
 #include "BattleWindow.h"
 #include "CreatureAnimation.h"
+#include "FrozenStatusPresentation.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -92,6 +93,8 @@ BattleStacksController::BattleStacksController(BattleInterface & owner):
 	for(const CStack * s : stacks)
 	{
 		stackAdded(s, true);
+		if(newHorizonsFrozen::isFrozen(*s))
+			frozenApplicationFeedback.seed(s->unitId(), s->frozenLastAppliedRound());
 	}
 }
 
@@ -248,6 +251,19 @@ void BattleStacksController::refreshAllStackCreatureForms()
 		if(stack)
 			refreshStackCreatureForm(stack);
 	}
+}
+
+void BattleStacksController::stackEffectsSet(const SetStackEffect & packet)
+{
+	const auto battle = owner.getBattle();
+	if(!battle)
+		return;
+	const auto count = newHorizonsFrozenPresentation::newApplicationCount(packet, *battle, frozenApplicationFeedback);
+	for(std::size_t index = 0; index < count; ++index)
+		owner.addToAnimationStage(EAnimationEvents::AFTER_HIT, []()
+		{
+			ENGINE->sound().playSound(AudioPath::builtin("ICERAY"));
+		});
 }
 
 void BattleStacksController::applyStackCreatureFormRefresh(const CStack * stack)
@@ -501,33 +517,6 @@ void BattleStacksController::showStack(Canvas & canvas, const CStack * stack)
 		effectColor = ColorRGBA(114, 186, 218, 140);
 
 	stackAnimation[stack->unitId()]->nextFrame(canvas, effectColor, transparency, facingRight(stack)); // do actual blit
-	const auto bounds = stackAnimation[stack->unitId()]->currentFrameContentRect(facingRight(stack));
-	if(physicallyFrozen && bounds.w > 0 && bounds.h > 0)
-	{
-		// A translucent faceted prism follows actual frame content, including
-		// nonstandard custom canvases. No rectangular canvas tint or spell sprite.
-		const int middleX = bounds.x + bounds.w / 2;
-		const int top = bounds.y - 3;
-		const int height = bounds.h + 6;
-		const int radius = bounds.w / 2 + 4;
-		const ColorRGBA ice(120, 193, 225, 40);
-		const ColorRGBA shade(65, 126, 169, 150);
-		const ColorRGBA light(211, 241, 255, 210);
-		for(int row = 0; row < height; ++row)
-		{
-			const int edge = std::min(row, height - row - 1);
-			const int halfWidth = radius * std::min(edge * 4, height) / height;
-			canvas.drawLine(Point(middleX - halfWidth, top + row), Point(middleX + halfWidth, top + row), ice, ice);
-		}
-		const std::array<Point, 6> vertices{{Point(middleX, top), Point(middleX + radius, top + height / 4),
-			Point(middleX + radius, top + height * 3 / 4), Point(middleX, top + height),
-			Point(middleX - radius, top + height * 3 / 4), Point(middleX - radius, top + height / 4)}};
-		for(std::size_t index = 0; index < vertices.size(); ++index)
-			canvas.drawLine(vertices[index], vertices[(index + 1) % vertices.size()], index < 3 ? light : shade, light);
-		canvas.drawLine(vertices[0], vertices[2], light, shade);
-		canvas.drawLine(vertices[2], vertices[4], shade, light);
-		canvas.drawLine(vertices[4], vertices[0], light, shade);
-	}
 	const auto feedback = frozenShatterFeedback.find(stack->unitId());
 	if(feedback != frozenShatterFeedback.end())
 	{
