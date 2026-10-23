@@ -18,6 +18,34 @@
 #include "../../../lib/spells/MagicalDamageReduction.h"
 #include "../../../lib/spells/Problem.h"
 
+#include <stdexcept>
+
+TEST(NewHorizonsSoulChainAdmissionTest, DisabledAndHistoricalRulesNeedNoInstalledSoulChain)
+{
+	EXPECT_FALSE(newHorizonsSoulChain::isEnabled(JsonNode()));
+	JsonNode empty;
+	empty.Struct();
+	EXPECT_FALSE(newHorizonsSoulChain::isEnabled(empty));
+	for(int version : {1, 2})
+	{
+		SCOPED_TRACE(version);
+		JsonNode historical;
+		historical["rulesetVersion"].Integer() = version;
+		EXPECT_FALSE(newHorizonsSoulChain::isEnabled(historical));
+	}
+}
+
+TEST(NewHorizonsSoulChainAdmissionTest, CurrentRulesRetainStrictRequiredIdentityAdmission)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_TRUE(newHorizonsMagic::rulesActive(rules));
+	ASSERT_GE(rules["rulesetVersion"].Integer(), newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION);
+	if(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		EXPECT_TRUE(newHorizonsSoulChain::isEnabled(rules));
+	else
+		EXPECT_THROW(newHorizonsSoulChain::isEnabled(rules), std::runtime_error);
+}
+
 namespace
 {
 constexpr std::string_view SOUL_CHAIN_KEY = "new-horizons:soulChain";

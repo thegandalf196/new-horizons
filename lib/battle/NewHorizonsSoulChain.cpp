@@ -46,10 +46,13 @@ namespace newHorizonsSoulChain
 {
 bool isEnabled(const JsonNode & savedMagicRules)
 {
+	if(!newHorizonsMagic::rulesActive(savedMagicRules)
+		|| savedMagicRules["rulesetVersion"].Integer()
+			< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		return false;
+
 	const auto spell = soulChainSpellId();
-	return spell != SpellID::NONE && newHorizonsMagic::rulesActive(savedMagicRules)
-		&& savedMagicRules["rulesetVersion"].Integer()
-			>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+	return spell != SpellID::NONE
 		&& newHorizonsMagic::spellAllowedBySavedRoster(savedMagicRules, spell);
 }
 

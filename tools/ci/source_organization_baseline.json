@@ -22867,10 +22867,10 @@
       "kind": "exception",
       "lines": 4374,
       "owner": "engine_engineer",
-      "rationale": "Exact optional Hydra identity routing only; installed identity matching is unchanged, true core absence is optional and required New Horizons absence fails closed. Shared lookup extracted into HydrasVitalityIdentity; no timer, health or save-policy redesign.",
-      "review": "IR-OPTIONAL-HYDRA-IDENTITY-20261022",
-      "review_scope": "optional-hydra-identity-only-no-runtime-or-future-growth",
-      "sha256": "1fadf00e838f0d53ef778c5903a424ce3844068a35b0ff20185eaa20b07881a0",
+      "rationale": "Retains reviewed optional Hydra identity routing and its extracted HydrasVitalityIdentity lookup. The only new change gates the strict Light-school lookup on the existing captured shared-action policy; legacy hero casts no longer require an unrelated optional school. Enabled-policy validation, mutation and lookup order are unchanged. No timer, health, serialization or save-policy redesign; no size growth.",
+      "review": "IR-LEGACY-HERO-CAST-LIGHT-ADMISSION-20261022",
+      "review_scope": "one-expression-legacy-cast-admission-retaining-optional-hydra-review-no-future-growth",
+      "sha256": "16d25112a4225b5c6752bf921136fa17c76efc668787051eaf8cdedd9fdbd54b",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "No future growth credit. Any subsequent edit requires renewed independent review; engine/UI owners must retain focused state/visitor/replay debt extraction and separately validate origin-thread destruction, native root-writer/restart ordering and real owner integration before routing use. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
@@ -22920,13 +22920,15 @@
       "sha256": "8d61313b39625569a1a56d141a3ddd2e37ed9467793869f6ee27b026f6dd552d"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 272,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 272 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e0d0cdb75e2801d4740aa8bb70e47f48898959fb4fa764a168a15a833ea525f0"
+      "rationale": "Urgent one-expression legacy-cast compatibility correction only: resolve the optional Light school only for the captured shared Hero Action budget. Preserve strict lookup and all receipt validation, mutation and RNG ordering for enabled rules. Exact 272-line no-growth boundary; this does not approve the method's existing concentration.",
+      "review": "IR-LEGACY-HERO-CAST-LIGHT-ADMISSION-20261022",
+      "review_scope": "one-expression-legacy-cast-admission-only-no-future-growth",
+      "sha256": "91801145a1931a14c553d078bb9a39b3853fe7d55a345e928913f6200ab976d9",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Before substantive expansion, the engine owner must extract cohesive accepted-cast allowance/context validation from this visitor, retaining packet rejection, mutation order, captured-policy absence and current Divine Mandate/Metamagic state and RNG parity. Do not combine that larger restructuring with the narrow compatibility repair or grant future size growth."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitBattleStart(BattleStart & pack)#1": {
       "kind": "exception",

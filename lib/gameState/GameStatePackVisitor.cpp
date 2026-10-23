@@ -3443,7 +3443,7 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 			throw std::runtime_error("Metamagic consumption/reservation exceeds actual fighting hero capacity");
 		const bool sharedActionBudget = heroCommands::supportedByRules(
 			battle->getHeroCommandRules(), HeroCommand::CHARGE);
-		const auto lightSchoolNumber = SpellSchool::decode("new-horizons:light");
+		const auto lightSchoolNumber = sharedActionBudget ? SpellSchool::decode("new-horizons:light") : -1;
 		const auto & savedMagicRules = battle->getMagicRules();
 		const auto spellSchools = newHorizonsMagic::spellSchools(savedMagicRules, pack.spellID);
 		const bool isLightSpell = newHorizonsMagic::spellAllowedByHeroRoster(savedMagicRules, pack.spellID)

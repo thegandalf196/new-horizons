@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../../SpellPointTestUtils.h"
+#include "../../hero/NewHorizonsHeroRulesFixture.h"
 
 #include "BattleTestFixture.h"
 
@@ -310,6 +311,7 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 };
 

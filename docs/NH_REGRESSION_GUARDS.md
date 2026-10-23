@@ -68,6 +68,11 @@ Generated user Maps must remain refreshable after initialization and resolve thr
 - Deep Flank uses pre-hit contact geometry for the primary shot, but friendly Magog splash casualties must disappear from the next live and freshly detached contact/damage query. `AcceptedMagogSplashDeathRemovesCurrentContactPremium` requires a real accepted shot and both recorded collateral deaths; do not replace these with injected casualty packets or retroactively strip the first shot's premium.
 - Persist source-owned control, caster provenance and casualty cohorts. A packet reconstruction is not ordinary world mid-battle save support.
 - Read saved policies from the captured context. Missing historical blocks retain documented compatibility; malformed present data is not absence. Reject contradictory current retired Gambler flags before reader installation, visitor mutation and server broadcast.
+- Hero spell receipts must not require the optional Light-school identifier when
+  the captured shared Hero Action budget is disabled. Keep strict school lookup
+  and allowance validation when it is enabled. Run `LegacyForgetfulnessDamageTest`
+  with and without New Horizons loaded; retain current Divine Mandate and
+  Metamagic cast controls rather than substituting test-only spell bonuses.
 
 ## Build and test evidence
 
