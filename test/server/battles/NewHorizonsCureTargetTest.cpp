@@ -89,6 +89,59 @@ TEST_F(NewHorizonsCureTargetTest, SelectedFrozenAcceptsHumanHexAndExplicitUnitAt
 	EXPECT_TRUE(canTarget({spells::Destination(target->getPosition())}, "frozen"));
 }
 
+TEST_F(NewHorizonsCureTargetTest, SelectedFrozenRejectsNonLivingWaterWithoutSpendingOrRemovingState)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto * water = addStack(BattleSide::ATTACKER, creatureByName("core:waterElemental"), BattleHex(4, 5), 100);
+	ASSERT_NE(water, nullptr);
+	ASSERT_TRUE(water->hasBonusOfType(BonusType::NON_LIVING));
+	ASSERT_FALSE(water->hasBonusOfType(BonusType::UNDEAD));
+	ASSERT_NO_FATAL_FAILURE(freeze(water));
+	// A valid living Frozen ally keeps Cure available: rejection must be about
+	// the Water Elemental's taxonomy, not the absence of any appropriate target.
+	ASSERT_NO_FATAL_FAILURE(freeze(target));
+	ASSERT_TRUE(canTarget({spells::Destination(target)}, "frozen"));
+	EXPECT_FALSE(canTarget({spells::Destination(water)}, "frozen"));
+	EXPECT_FALSE(canTarget({spells::Destination(water->getPosition())}, "frozen"));
+	ASSERT_EQ(battle()->battleCanCastSpell(attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto casts = battle()->battleCastSpells(BattleSide::ATTACKER);
+	const auto health = water->getAvailableHealth();
+	const auto count = water->getCount();
+	const auto stamp = water->frozenLastAppliedRound();
+	const auto round = battle()->getBattle()->getRound();
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	const auto active = battle()->battleActiveUnit()->unitId();
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::CURE;
+	action.spellCurePhysicalAffliction = "frozen";
+	action.aimToUnit(water);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->getOwner(), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), casts);
+	EXPECT_EQ(battle()->battleCanCastSpell(attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
+	EXPECT_EQ(water->getAvailableHealth(), health);
+	EXPECT_EQ(water->getCount(), count);
+	EXPECT_TRUE(newHorizonsFrozen::isFrozen(*water));
+	EXPECT_EQ(water->frozenLastAppliedRound(), stamp);
+	EXPECT_FALSE(newHorizonsFrozen::canApply(*water, round));
+	EXPECT_EQ(battle()->getBattle()->getRound(), round);
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), active);
+	EXPECT_TRUE(newHorizonsFrozen::isFrozen(*target));
+	// The same unspent Hero Action can perform the valid paid living-target cast.
+	action.target.clear();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->getOwner(), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 4);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), casts + 1);
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_TRUE(newHorizonsFrozen::isFrozen(*water));
+	EXPECT_EQ(water->frozenLastAppliedRound(), stamp);
+}
+
 TEST_F(NewHorizonsCureTargetTest, UnselectedFrozenStillRequiresPickerChoice)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());

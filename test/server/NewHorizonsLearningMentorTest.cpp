@@ -11,12 +11,15 @@
 
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/CPlayerState.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/army/CStackInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForClient.h"
+#include "../../lib/networkPacks/PacksForServer.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../server/CGameHandler.h"
 #include "../../server/queries/QueriesProcessor.h"
@@ -29,6 +32,28 @@ namespace
 {
 constexpr auto LEARNING_SKILL = "new-horizons:learning";
 constexpr auto MENTOR_PERK = "new-horizons:learning.mentor";
+
+class MentorTransferServer : public GameHandlerTestServer
+{
+public:
+	explicit MentorTransferServer(std::shared_ptr<CGameState> state)
+		: GameHandlerTestServer(std::move(state), PlayerColor(0))
+	{}
+	void applyPack(CPackForClient & pack) override
+	{
+		if(dynamic_cast<RebalanceStacks *>(&pack))
+			++rebalances;
+		GameHandlerTestServer::applyPack(pack);
+	}
+	void sendPack(CPackForClient & pack, GameConnectionID connection) override
+	{
+		if(const auto * applied = dynamic_cast<PackageApplied *>(&pack))
+			responses.push_back(*applied);
+		GameHandlerTestServer::sendPack(pack, connection);
+	}
+	std::vector<PackageApplied> responses;
+	int rebalances = 0;
+};
 
 class NewHorizonsLearningMentorTest : public TinyMapGameTest
 {
@@ -95,6 +120,61 @@ protected:
 		hero->applyPerkSelection({LEARNING_SKILL, MENTOR_PERK});
 	}
 
+	void answerEarnedLevels(CGameHandler & handler, MentorTransferServer & server)
+	{
+		for(int answered = 0; answered < 8; ++answered)
+		{
+			const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(
+				handler.queries->topQuery(PlayerColor(0)));
+			if(!query)
+				return;
+			ASSERT_TRUE(query->prompted);
+			ASSERT_TRUE(query->isValidReply(0));
+			QueryReply reply(query->queryID, 0);
+			reply.player = PlayerColor(0);
+			reply.requestID = 200 + answered;
+			handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, reply);
+			ASSERT_FALSE(server.responses.empty());
+			ASSERT_TRUE(server.responses.back().result);
+		}
+		FAIL() << "Mentor award exceeded the bounded earned-level query count";
+	}
+
+	void expectClosedExchangeRoundTrip(const CGHeroInstance & mentor, const CGHeroInstance & recipient,
+		CreatureID creature)
+	{
+		CGameState restored;
+		restored.preInit(LIBRARY);
+		restored.loadFromMemory(gameState()->saveToMemory());
+		EXPECT_EQ(restored.getHeroCapabilityRules(), gameState()->getHeroCapabilityRules());
+		EXPECT_EQ(restored.getPlayerState(PlayerColor(0))->resources,
+			gameState()->getPlayerState(PlayerColor(0))->resources);
+		for(const auto * original : {&mentor, &recipient})
+		{
+			const auto * loaded = restored.getHero(original->id);
+			ASSERT_NE(loaded, nullptr);
+			EXPECT_NE(loaded, original);
+			EXPECT_EQ(loaded->level, original->level);
+			EXPECT_EQ(loaded->exp, original->exp);
+			EXPECT_EQ(loaded->getOwner(), original->getOwner());
+			EXPECT_EQ(loaded->getCapabilityRules(), original->getCapabilityRules());
+			EXPECT_EQ(loaded->getNewHorizonsLearningMentorLastWeek(), original->getNewHorizonsLearningMentorLastWeek());
+			EXPECT_EQ(loaded->getNewHorizonsLearningMentorRecipients(), original->getNewHorizonsLearningMentorRecipients());
+			EXPECT_EQ(loaded->stacksCount(), 1);
+			EXPECT_EQ(loaded->getStackCount(SlotID(0)), original->getStackCount(SlotID(0)));
+			EXPECT_EQ(loaded->getCreature(SlotID(0))->getId(), creature);
+			ASSERT_NE(loaded->getStackPtr(SlotID(0)), nullptr);
+			EXPECT_EQ(loaded->getStackPtr(SlotID(0))->getArmy(), loaded);
+			const auto before = original->getLeadershipSlotCapacity(creature);
+			const auto after = loaded->getLeadershipSlotCapacity(creature);
+			ASSERT_TRUE(before);
+			ASSERT_TRUE(after);
+			EXPECT_EQ(after->maximum, before->maximum);
+			EXPECT_EQ(after->requirement, before->requirement);
+			EXPECT_EQ(after->leadership, before->leadership);
+		}
+	}
+
 	CGTownInstance * town = nullptr;
 	std::vector<CGHeroInstance *> alliedHeroes;
 	CGHeroInstance * enemyHero = nullptr;
@@ -154,6 +234,82 @@ TEST_F(NewHorizonsLearningMentorTest, FieldMeetingAwardsOncePerWeekAndLevelUpSit
 	const auto * restoredMentor = restored.getHero(mentor->id);
 	ASSERT_NE(restoredMentor, nullptr);
 	EXPECT_EQ(restoredMentor->getNewHorizonsLearningMentorLastWeek(), 1);
+}
+
+TEST_F(NewHorizonsLearningMentorTest, EarnedLevelUpThenSameExchangeUsesCurrentPerSlotCapacity)
+{
+	startGame();
+	const PlayerColor player(0);
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	auto * mentor = alliedHeroes[0];
+	auto * recipient = alliedHeroes[1];
+	mentor->level = 8; // Fixture donor; recipient levels only through earned XP.
+	enableMentor(mentor);
+	setLearningRank(recipient, MasteryLevel::BASIC);
+	const auto oldCapacity = recipient->getLeadershipSlotCapacity(pikeman);
+	const auto donorCapacity = mentor->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(oldCapacity);
+	ASSERT_TRUE(donorCapacity);
+	mentor->clearSlots();
+	recipient->clearSlots();
+	ASSERT_TRUE(mentor->setCreature(SlotID(0), pikeman, donorCapacity->maximum));
+	ASSERT_TRUE(recipient->setCreature(SlotID(0), pikeman, oldCapacity->maximum));
+	MentorTransferServer server(gameState());
+	CGameHandler handler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+	AdvInterfaceReady ready;
+	ready.player = player;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, ready);
+	handler.heroExchange(mentor->id, recipient->id);
+	const auto levelUp = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(handler.queries->topQuery(player));
+	ASSERT_NE(levelUp, nullptr);
+	std::shared_ptr<CGarrisonDialogQuery> exchange;
+	for(const auto & query : handler.queries->allQueries())
+		if(const auto candidate = std::dynamic_pointer_cast<CGarrisonDialogQuery>(query))
+			exchange = candidate;
+	ASSERT_NE(exchange, nullptr);
+	ASSERT_EQ(exchange->exchangingArmies[0], mentor);
+	ASSERT_EQ(exchange->exchangingArmies[1], recipient);
+	ArrangeStacks transfer(3, SlotID(0), SlotID(0), mentor->id, recipient->id, oldCapacity->maximum + 1);
+	transfer.player = player;
+	transfer.requestID = 100;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, transfer);
+	ASSERT_FALSE(server.responses.back().result);
+	EXPECT_EQ(server.rebalances, 0);
+	EXPECT_EQ(recipient->getStackCount(SlotID(0)), oldCapacity->maximum);
+	EXPECT_EQ(mentor->getStackCount(SlotID(0)), donorCapacity->maximum);
+	ASSERT_NO_FATAL_FAILURE(answerEarnedLevels(handler, server));
+	ASSERT_EQ(handler.queries->topQuery(player), exchange);
+	const auto current = recipient->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(current);
+	ASSERT_GT(current->maximum, oldCapacity->maximum);
+	ASSERT_LT(current->maximum + 1 - oldCapacity->maximum, donorCapacity->maximum);
+	const auto resources = gameState()->getPlayerState(player)->resources;
+	const auto receipt = mentor->getNewHorizonsLearningMentorLastWeek();
+	transfer.val = current->maximum + 1;
+	transfer.requestID = 101;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, transfer);
+	ASSERT_FALSE(server.responses.back().result);
+	EXPECT_EQ(server.rebalances, 0);
+	EXPECT_EQ(recipient->getStackCount(SlotID(0)), oldCapacity->maximum);
+	EXPECT_EQ(mentor->getStackCount(SlotID(0)), donorCapacity->maximum);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resources);
+	EXPECT_EQ(mentor->getNewHorizonsLearningMentorLastWeek(), receipt);
+	EXPECT_EQ(handler.queries->topQuery(player), exchange);
+	transfer.val = current->maximum;
+	transfer.requestID = 102;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, transfer);
+	ASSERT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.rebalances, 1);
+	EXPECT_EQ(recipient->getStackCount(SlotID(0)), current->maximum);
+	EXPECT_EQ(mentor->getStackCount(SlotID(0)), donorCapacity->maximum - (current->maximum - oldCapacity->maximum));
+	EXPECT_EQ(handler.queries->topQuery(player), exchange);
+	QueryReply close(exchange->queryID, 0);
+	close.player = player;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, close);
+	ASSERT_TRUE(server.responses.back().result);
+	ASSERT_EQ(handler.queries->topQuery(player), nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectClosedExchangeRoundTrip(*mentor, *recipient, pikeman));
 }
 
 TEST_F(NewHorizonsLearningMentorTest, OnlyActiveBasicMentorAndStrictlyHigherAlliedHeroesQualify)
