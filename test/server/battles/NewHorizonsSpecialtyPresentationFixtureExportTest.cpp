@@ -33,11 +33,11 @@ struct SpecialtyCase
 	const char * creatureTarget = nullptr;
 };
 
-const std::array<SpecialtyCase, 12> heroes = {{
+const std::array<SpecialtyCase, 13> heroes = {{
 	{"core:serena", "newHorizons/heroSpecialties/SerenaArcanePreparation", {17, 10, 0}},
 	{"core:gem", "newHorizons/heroSpecialties/GemRestorativeSorceress", {18, 10, 0}},
 	{"core:daremyth", "newHorizons/heroSpecialties/DaremythFortunesChild", {17, 11, 0}},
-	{"core:orrin", nullptr, {18, 11, 0}},
+	{"core:orrin", "newHorizons/heroSpecialties/OrrinArchery", {18, 11, 0}},
 	{"core:monere", "newHorizons/heroSpecialties/MonereWispLine", {19, 10, 0}, "new-horizons:wisp"},
 	{"core:gerwulf", "newHorizons/heroSpecialties/GerwulfBallistaLine", {19, 11, 0}, "core:ballista"},
 	{"core:elleshar", "newHorizons/heroSpecialties/EllesharHighLore", {20, 10, 0}},
@@ -45,7 +45,8 @@ const std::array<SpecialtyCase, 12> heroes = {{
 	{"core:andra", "newHorizons/heroSpecialties/AndraBottomlessMind", {21, 10, 0}},
 	{"core:thorgrim", "newHorizons/heroSpecialties/ThorgrimMasterSpellward", {21, 11, 0}},
 	{"core:pasis", "newHorizons/heroSpecialties/PasisWispLine", {22, 10, 0}, "new-horizons:wisp"},
-	{"core:christian", "newHorizons/heroSpecialties/ChristianBallistaLine", {22, 11, 0}, "core:ballista"}
+	{"core:christian", "newHorizons/heroSpecialties/ChristianBallistaLine", {22, 11, 0}, "core:ballista"},
+	{"core:gundula", nullptr, {23, 10, 0}}
 }};
 }
 
@@ -119,7 +120,7 @@ protected:
 			// Specialty identity retains the core alias; starting Skills use the NH registry.
 			const auto & alias = hero->getHeroType()->secondarySkillSpecialtyAlias;
 			ASSERT_TRUE(alias);
-			ASSERT_EQ(alias->skill, SecondarySkill(SecondarySkill::ARCHERY));
+			ASSERT_EQ(alias->skill, SecondarySkill(SecondarySkill::OFFENCE));
 			ASSERT_EQ(metadata.skill, alias->skill);
 			ASSERT_FALSE(metadata.spell);
 			ASSERT_FALSE(metadata.creature);
@@ -164,7 +165,7 @@ TEST_F(NewHorizonsSpecialtyPresentationFixtureExportTest, ExportOrdinarySpecialt
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).name(name)
 		.description("Specialty presentation diagnostic, not a balanced scenario or gameplay certification. "
-			"Red owns adjacent Serena, Gem, Daremyth, ordinary control Orrin, Monere, Gerwulf, Elleshar, Malcom, Andra, Thorgrim, Pasis and Christian with authored starts; "
+			"Red owns adjacent Serena, Gem, Daremyth, Orrin, Monere, Gerwulf, Elleshar, Malcom, Andra, Thorgrim, Pasis, Christian and ordinary control Gundula with authored starts; "
 			"no map Skill, perk, experience, primary, army or spellbook overrides. "
 			"Open each normal Hero Window and meet adjacent heroes through normal exchange. "
 			"Inspect specialty icons and tooltips, then save/reload and inspect again. "

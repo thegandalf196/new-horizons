@@ -904,6 +904,7 @@ set(lib_MAIN_HEADERS
 	entities/creature/NewHorizonsMusterRules.h
 	entities/creature/NewHorizonsRecruitmentTraining.h
 	entities/hero/NewHorizonsHeroRules.h
+	entities/hero/NewHorizonsSpecialtyArtwork.h
 	entities/hero/NewHorizonsIndividualSpecialties.h
 	entities/hero/NewHorizonsAdditionalSpecialties.h
 	entities/hero/NewHorizonsLearningSpecialties.h

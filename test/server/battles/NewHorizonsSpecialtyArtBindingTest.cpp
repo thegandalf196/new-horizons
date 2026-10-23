@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../../lib/GameSettings.h"
+#include "../../../lib/entities/hero/NewHorizonsSpecialtyArtwork.h"
 #include "../../../client/windows/HeroSpecialtyPresentation.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -225,4 +227,195 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, AndraAndThorgrimNeedCapturedMagicRule
 	noWardSpell["spells"].Struct().erase("new-horizons:holyArmor");
 	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(
 		prototype("core:thorgrim"), development, noWardSpell, std::nullopt).artwork);
+}
+
+namespace
+{
+struct ResolvedArtCase
+{
+	const char * hero;
+	const char * policy;
+	const char * target;
+	newHorizonsHeroes::detail::SpecialtyArtworkFamily family;
+	const char * stem;
+};
+constexpr std::array<ResolvedArtCase, 32> resolvedArtCases = {{
+	{"core:melodia", "remainingSpellSpecialtyReplacements", "core:bless", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MelodiaBless"},
+	{"core:pyre", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "PyreBallistaLine"},
+	{"core:ash", "remainingSpellSpecialtyReplacements", "core:fireball", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AshFireball"},
+	{"core:aislinn", "damageSpellSpecialties", "core:meteorShower", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AislinnMeteorShower"},
+	{"core:jeddite", "nonDamageSpellSpecialties", "core:resurrection", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "JedditeResurrection"},
+	{"core:gurnisson", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "GurnissonBallistaLine"},
+	{"core:terek", "nonDamageSpellSpecialties", "core:haste", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "TerekHaste"},
+	{"core:mirlanda", "nonDamageSpellSpecialties", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MirlandaFrailty"},
+	{"core:voy", "skillSpecialties", "core:logistics", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "VoyLogistics"},
+	{"core:inteus", "nonDamageSpellSpecialties", "new-horizons:crusade", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "InteusCrusade"},
+	{"core:kalt", "creatureLineSpecialties", "core:waterElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "KaltWaterElementalLine"},
+	{"core:fiur", "creatureLineSpecialties", "core:fireElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "FiurFireElementalLine"},
+	{"core:orrin", "skillSpecialties", "core:archery", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "OrrinArchery"},
+	{"core:valeska", "creatureLineSpecialties", "core:archer", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ValeskaArcherLine"},
+	{"core:edric", "creatureLineSpecialties", "core:griffin", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "EdricGriffinLine"},
+	{"core:sorsha", "creatureLineSpecialties", "core:swordsman", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "SorshaSwordsmanLine"},
+	{"core:tyris", "creatureLineSpecialties", "core:cavalier", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TyrisCavalierLine"},
+	{"core:ivor", "creatureLineSpecialties", "core:woodElf", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "IvorElfLine"},
+	{"core:ufretin", "creatureLineSpecialties", "core:dwarf", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "UfretinDwarfLine"},
+	{"core:ryland", "creatureLineSpecialties", "core:dendroidGuard", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "RylandDendroidLine"},
+	{"core:clancy", "creatureLineSpecialties", "core:unicorn", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ClancyUnicornLine"},
+	{"core:aeris", "creatureLineSpecialties", "core:pegasus", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "AerisPegasusLine"},
+	{"core:ingham", "creatureLineSpecialties", "core:monk", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "InghamMonkLine"},
+	{"core:fiona", "creatureLineSpecialties", "core:hellHound", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "FionaHellHoundLine"},
+	{"core:ignatius", "creatureLineSpecialties", "core:imp", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "IgnatiusImpLine"},
+	{"core:calh", "creatureLineSpecialties", "core:gog", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "CalhGogLine"},
+	{"core:nymus", "creatureLineSpecialties", "core:pitFiend", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "NymusPitFiendLine"},
+	{"core:straker", "creatureLineSpecialties", "core:walkingDead", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "StrakerWalkingDeadLine"},
+	{"core:zubin", "nonDamageSpellSpecialties", "new-horizons:focusMagic", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "ZubinFocusMagic"},
+	{"core:gretchin", "creatureLineSpecialties", "core:goblin", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "GretchinGoblinLine"},
+	{"core:shiva", "creatureLineSpecialties", "core:roc", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ShivaRocLine"},
+	{"core:tyraxor", "creatureLineSpecialties", "core:goblinWolfRider", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TyraxorGoblinWolfRiderLine"},
+}};
+
+void expectResolvedArt(const CHero & hero, const newHorizonsHeroes::SpecialtyPresentation & metadata,
+	const ResolvedArtCase & row)
+{
+	const std::string artwork = "newHorizons/heroSpecialties/" + std::string(row.stem);
+	ASSERT_TRUE(metadata.artwork);
+	EXPECT_EQ(*metadata.artwork, artwork);
+	using Family = newHorizonsHeroes::detail::SpecialtyArtworkFamily;
+	if(row.family == Family::Creature)
+	{
+		ASSERT_TRUE(metadata.creature);
+		EXPECT_EQ(metadata.creature->toCreature()->getJsonKey(), row.target);
+	}
+	else if(row.family == Family::Spell)
+	{
+		ASSERT_TRUE(metadata.spell);
+		EXPECT_EQ(metadata.spell->toSpell()->getJsonKey(), row.target);
+	}
+	else
+	{
+		ASSERT_TRUE(metadata.skill);
+		EXPECT_EQ(metadata.skill->toEntity(LIBRARY)->getJsonKey(), row.target);
+	}
+	const auto view = heroSpecialtyPresentation(hero, metadata);
+	EXPECT_EQ(view.animation().getOriginalName(), artwork + "/44");
+	EXPECT_EQ(view.animation(true).getOriginalName(), artwork + "/32");
+	EXPECT_EQ(view.frame(), 0u);
+}
+}
+
+TEST_F(NewHorizonsSpecialtyArtBindingTest, ResolvedArtworkLookupRequiresExactHeroFamilyAndTarget)
+{
+	using namespace newHorizonsHeroes::detail;
+	for(const auto & row : resolvedArtCases)
+	{
+		SCOPED_TRACE(row.hero);
+		EXPECT_EQ(resolvedSpecialtyArtwork(row.hero, row.family, row.target),
+			"newHorizons/heroSpecialties/" + std::string(row.stem));
+		EXPECT_FALSE(resolvedSpecialtyArtwork("core:caitlin", row.family, row.target));
+		EXPECT_FALSE(resolvedSpecialtyArtwork(row.hero, row.family, "core:pikeman"));
+		const auto wrongFamily = row.family == SpecialtyArtworkFamily::Spell
+			? SpecialtyArtworkFamily::Skill : SpecialtyArtworkFamily::Spell;
+		EXPECT_FALSE(resolvedSpecialtyArtwork(row.hero, wrongFamily, row.target));
+	}
+}
+
+class ResolvedSpecialtyArtTest : public NewHorizonsSpecialtyArtBindingTest,
+	public testing::WithParamInterface<size_t>
+{
+protected:
+	bool historical = false;
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(historical)
+		{
+			const std::string_view policy = resolvedArtCases.at(GetParam()).policy;
+			development.Struct().erase(std::string(policy));
+			// Remove dependent opt-ins too, retaining a valid historical context.
+			if(policy == "creatureLineSpecialties")
+				development.Struct().erase("defaultCreatureLineReplacements");
+			if(policy == "damageSpellSpecialties" || policy == "nonDamageSpellSpecialties")
+				development.Struct().erase("remainingSpellSpecialtyReplacements");
+		}
+		development.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+	}
+
+	void prepare()
+	{
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(resolvedArtCases.at(GetParam()).hero)), PlayerColor(0))
+			.hero({24, 24, 0}, HeroTypeID(HeroTypeID::decode("core:christian")), PlayerColor(1));
+		startWithMap(std::move(builder));
+	}
+};
+
+TEST_P(ResolvedSpecialtyArtTest, CapturedMechanicAndStartingProjectionUseSameArtWithoutMutation)
+{
+	prepare();
+	const auto & row = resolvedArtCases.at(GetParam());
+	SCOPED_TRACE(row.hero);
+	const auto * hero = findHeroAt({5, 5, 0});
+	ASSERT_NE(hero, nullptr);
+	const auto beforeRules = hero->getPrimaryGrowthRules();
+	const auto beforeBonuses = hero->getExportedBonusList().toJsonNode();
+	const auto metadata = hero->getSpecialtyPresentation();
+	expectResolvedArt(*hero->getHeroType(), metadata, row);
+	const auto preview = newHorizonsHeroes::resolveSpecialtyPresentation(*hero->getHeroType(),
+		hero->getPrimaryGrowthRules(), hero->getMagicRules(), metadata.creature);
+	expectResolvedArt(*hero->getHeroType(), preview, row);
+	EXPECT_EQ(metadata.name, preview.name);
+	EXPECT_EQ(metadata.description, preview.description);
+	EXPECT_EQ(hero->getPrimaryGrowthRules(), beforeRules);
+	EXPECT_EQ(hero->getExportedBonusList().toJsonNode(), beforeBonuses);
+}
+
+TEST_P(ResolvedSpecialtyArtTest, AbsentCapturedFamilyPolicyKeepsHistoricalFallback)
+{
+	historical = true;
+	prepare();
+	const auto & row = resolvedArtCases.at(GetParam());
+	SCOPED_TRACE(row.hero);
+	const auto * hero = findHeroAt({5, 5, 0});
+	ASSERT_NE(hero, nullptr);
+	EXPECT_FALSE(hero->getSpecialtyPresentation().artwork);
+	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(*hero->getHeroType(),
+		JsonNode(), hero->getMagicRules(), std::nullopt).artwork);
+}
+
+INSTANTIATE_TEST_SUITE_P(SelectedCurrentMechanics, ResolvedSpecialtyArtTest,
+	testing::Range(size_t{0}, resolvedArtCases.size()));
+
+TEST_F(NewHorizonsSpecialtyArtBindingTest, SelectedCreatureArtworkRejectsResolvedWrongLine)
+{
+	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	const CreatureID other(CreatureID::decode("core:pikeman"));
+	for(const auto & row : resolvedArtCases)
+	{
+		if(row.family != newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature)
+			continue;
+		SCOPED_TRACE(row.hero);
+		const auto metadata = newHorizonsHeroes::resolveSpecialtyPresentation(
+			prototype(row.hero), development, magic, other);
+		EXPECT_EQ(metadata.creature, other);
+		EXPECT_FALSE(metadata.artwork);
+	}
+}
+
+TEST_F(NewHorizonsSpecialtyArtBindingTest, ZubinArtworkRequiresCurrentFocusMagicSuccessor)
+{
+	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	auto noSuccessor = configured;
+	noSuccessor["nonDamageSpellSpecialties"]["offensiveStartReplacements"].Bool() = false;
+	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:zubin"),
+		noSuccessor, magic, std::nullopt).artwork);
+	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:zubin"),
+		configured, JsonNode(), std::nullopt).artwork);
 }

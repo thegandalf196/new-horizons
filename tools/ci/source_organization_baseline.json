@@ -21904,13 +21904,13 @@
     "lib/CMakeLists.txt": {
       "deferral": "Exact single registration growth only. Keep behavior in focused compiled owners; further declarative registry growth requires renewed exact review and does not authorize executable helpers.",
       "kind": "exception",
-      "lines": 1312,
+      "lines": 1313,
       "owner": "engine_engineer",
-      "rationale": "Exact1310-to1312 CMake manifest extension registers the focused LifeDrain projection receipt source/header pair only. No target, dependency, platform, build policy or compiler option changes; the two-line central registration is a bounded exception, not future growth credit.",
-      "review": "life-drain-completed-suffix-independent-source-review",
-      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
+      "rationale": "Exact1312-to1313 mechanical CMake registry addition lists the focused NewHorizonsSpecialtyArtwork header only. Removing that single entry reproduces the reviewed current1312-line registry, including the existing LifeDrain projection receipt source/header pair. No target, dependency, platform, compiler or build-policy change.",
+      "review": "selected-thirty-two-specialty-art-independent-source-review",
+      "review_scope": "exact-single-specialty-art-header-registration-preserving-LifeDrain",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "41fbe46ce3aa60b3c86ece7354c51c42ed878b27a37b08bc2929835e3cfe2cee"
+      "sha256": "a342902ca9132d32bfb6b3af63e09637cea75cc4211d5a306c0c2e395f4ce37e"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -22725,14 +22725,15 @@
       "sha256": "d77772a1ede34de3884cee9989bc9a66c05a23ec458bb92090e6bb5a78bf9ef8"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target, const CGHeroInstance * capturedHero)#1": {
-      "kind": "review",
-      "lines": 122,
+      "deferral": "UI developer: extract the remaining spell and Skill presentation stages into focused typed helpers, preserving resolver order, captured-policy gates and historical fallbacks. Keep this exact artwork-routing change bounded at 132 lines; validate the extraction with current, historical and wrong-target specialty presentation tests.",
+      "kind": "exception",
+      "lines": 132,
       "owner": "ui_developer",
-      "rationale": "Remaining spell/damage/nondamage/skill aliases and prototype fallback retain their original order after captured-context validation and two explicit family stages. This122-line exported function is below150; review staged responsibilities before expansion.",
-      "review": "IR-SPECIALTY-PRESENTATION-EXTRACTION-SOURCE-20261021",
-      "review_scope": "prospective-specialty-presentation-bounded-function",
+      "rationale": "Existing remaining-spell/damage/non-damage/skill resolution order and captured bonus gates are unchanged. Six successful family branches only route to a focused exact hero/family/resolved-entity artwork lookup. No new gameplay, save fields, translated-name matching or legacy-fallback artwork. Exact 132-line function remains below150; source-only review, native/rendered acceptance is separate.",
+      "review": "selected-thirty-two-specialty-art-independent-source-review",
+      "review_scope": "resolved-specialty-artwork-success-gates-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "2d68456bf766fd0b95afb54420d940d960a22376244971cf6a9d58dd58d742b8"
+      "sha256": "37a59d26d21634fcc09e942cf9494caf333305838dda7e72c57fba298e1a663b"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "kind": "exception",

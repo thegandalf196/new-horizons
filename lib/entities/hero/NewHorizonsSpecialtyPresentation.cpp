@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsSpecialtyArtwork.h"
 #include "HeroStartingProjection.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
@@ -194,18 +195,8 @@ bool resolveCreatureLinePresentation(const CHero & hero, const JsonNode & develo
 			description.appendNumber(rules->levelStep * rules->attributeMaximum);
 			description.appendRawString(".");
 			result.creature = creature;
-			if(heroType->getJsonKey() == "core:monere"
-				&& creature.toCreature()->getJsonKey() == "new-horizons:wisp")
-				result.artwork = "newHorizons/heroSpecialties/MonereWispLine";
-			else if(heroType->getJsonKey() == "core:pasis"
-				&& creature.toCreature()->getJsonKey() == "new-horizons:wisp")
-				result.artwork = "newHorizons/heroSpecialties/PasisWispLine";
-			else if(heroType->getJsonKey() == "core:gerwulf"
-				&& creature == CreatureID::BALLISTA)
-				result.artwork = "newHorizons/heroSpecialties/GerwulfBallistaLine";
-			else if(heroType->getJsonKey() == "core:christian"
-				&& creature == CreatureID::BALLISTA)
-				result.artwork = "newHorizons/heroSpecialties/ChristianBallistaLine";
+			result.artwork = detail::resolvedSpecialtyArtwork(heroType->getJsonKey(),
+				detail::SpecialtyArtworkFamily::Creature, creature.toCreature()->getJsonKey());
 			if(creature != heroType->creatureLineSpecialtyAlias->creature)
 				result.name = creature.toCreature()->getNamePluralTranslated();
 			result.description = description.toString(LIBRARY->generaltexth.get());
@@ -253,6 +244,8 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 					? "% to its initial Spell Power-derived damage component. Fixed terms and later triggers are unchanged."
 					: "% to its Spell Power-derived duration or Integrity component. Fixed terms and caps are unchanged.");
 				result.spell = *target;
+				result.artwork = detail::resolvedSpecialtyArtwork(heroType->getJsonKey(),
+					detail::SpecialtyArtworkFamily::Spell, target->toSpell()->getJsonKey());
 				result.name = target->toSpell()->getNameTranslated();
 				result.description = description.toString(LIBRARY->generaltexth.get());
 				return result;
@@ -271,6 +264,8 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 				description.appendNumber(damageRules->componentPercent);
 				description.appendRawString("% to its Spell Power-derived damage component.");
 				result.spell = target;
+				result.artwork = detail::resolvedSpecialtyArtwork(heroType->getJsonKey(),
+					detail::SpecialtyArtworkFamily::Spell, target.toSpell()->getJsonKey());
 				result.name = target.toSpell()->getNameTranslated();
 				result.description = description.toString(LIBRARY->generaltexth.get());
 				return result;
@@ -302,6 +297,8 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 				else
 					description.appendRawString("% to its Spell Power-derived healing component.");
 				result.spell = target;
+				result.artwork = detail::resolvedSpecialtyArtwork(heroType->getJsonKey(),
+					detail::SpecialtyArtworkFamily::Spell, target.toSpell()->getJsonKey());
 				result.name = target.toSpell()->getNameTranslated();
 				result.description = description.toString(LIBRARY->generaltexth.get());
 				return result;
@@ -315,6 +312,8 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 				: std::ranges::find(rules->skills, SecondarySkill(SecondarySkill::LOGISTICS)) != rules->skills.end()))
 		{
 			result.skill = SecondarySkill(SecondarySkill::LOGISTICS);
+			result.artwork = detail::resolvedSpecialtyArtwork(heroType->getJsonKey(),
+				detail::SpecialtyArtworkFamily::Skill, result.skill->toEntity(LIBRARY)->getJsonKey());
 			result.name = result.skill->toEntity(LIBRARY)->getNameTranslated();
 			result.description = "Logistics's core Movement effect is increased by +" + std::to_string(rules->coreBonusPercent)
 				+ "%. Navigation's sea bonus and embark cost, and other perks, are unchanged.";
@@ -332,6 +331,8 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 			description.appendNumber(rules->coreBonusPercent);
 			description.appendRawString("%. Skill perks are not increased.");
 			result.skill = heroType->secondarySkillSpecialtyAlias->skill;
+			result.artwork = detail::resolvedSpecialtyArtwork(heroType->getJsonKey(),
+				detail::SpecialtyArtworkFamily::Skill, result.skill->toEntity(LIBRARY)->getJsonKey());
 			result.name = result.skill->toEntity(LIBRARY)->getNameTranslated();
 			result.description = description.toString(LIBRARY->generaltexth.get());
 			return result;
