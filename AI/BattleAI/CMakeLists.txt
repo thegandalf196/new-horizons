@@ -1,6 +1,7 @@
 set(battleAI_SRCS
 		AttackPossibility.cpp
 		AttackPreviewArcheryAdmission.cpp
+		DamageCache.cpp
 		DamageCacheAdmission.cpp
 		DamageCachePreparation.cpp
 		AttackPreviewHitContext.cpp
@@ -80,6 +81,7 @@ set(battleAI_HEADERS
 		AttackPossibility.h
 		DamageCacheTimingScope.h
 		AttackPreviewArcheryAdmission.h
+		DamageCacheMarks.h
 		DamageCacheAdmission.h
 		AttackPreviewHitContext.h
 		AttackPreviewTargets.h

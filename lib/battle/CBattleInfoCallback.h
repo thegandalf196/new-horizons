@@ -35,6 +35,7 @@ class CSpell;
 struct CObstacleInstance;
 class IBonusBearer;
 class PossiblePlayerBattleAction;
+struct DamageAttackInfo;
 
 namespace vstd
 {
@@ -486,6 +487,7 @@ public:
 	/// find free hex suitable to place new unit. If no initial position was provided, hex located on left size (attacker) or right side (defender) will be selected
 	BattleHex getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos = {}) const override;
 protected:
+	void finalizeDamagePayload(const BattleAttackInfo & info, DamageAttackInfo & payload, const IBattleInfo * currentBattle) const;
 	/// Internal damage-calculation authority, preserving the caller's EXISTING
 	/// supplied-owner decision. Does not expose concealed hero lists/policy.
 	virtual int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,

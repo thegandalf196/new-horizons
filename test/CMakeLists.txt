@@ -801,6 +801,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/DamageCacheObstacleVisibilityTest.cpp
 		battleAI/CreaturePressureCachePreparationTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
+		battleAI/DamageFinalizationParityTest.cpp
 		battleAI/BattleShroudStrikeTest.cpp
 		battleAI/StackWithBonusesQueryTest.cpp
 		battleAI/OrdinaryMeleeRetaliationTest.cpp

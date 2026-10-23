@@ -10596,18 +10596,18 @@
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/CBattleInfoCallback.h": {
-      "sha256": "8b5ac946f2de41ee4a57998454e9f7bbc9d7f336ee124b0aca8c2e745398b1ff",
-      "review": "IR-HERO-RECIPIENT-CURRENT-UNION-20261017",
-      "rationale": "Exact final source hash-bound manual renewal only. All retained complete bodies map byte-exact from current reviewed spans; only the two named AttackCount bodies depart where applicable. Declaration/include movement adds no hidden callable. Existing default-argument/pointer-to-member parser recovery stays explicit; no new numeric or future growth approval.",
+      "sha256": "5373fef75d49942f2ce91f88827a31bd910dadd16d76e87366fcc5f86d9c751d",
+      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
+      "rationale": "Complete header reviewed: sole existing FirstAidHealingPreview::totalHealedHP body byte-identical; added forward declarations/overload/protected-helper declarations introduce no callable bodies. Exact coverage renewal only; no numeric or runtime approval.",
       "functions": [
         {
           "symbol": "FirstAidHealingPreview::int64_t totalHealedHP() const#1",
-          "start": 92,
-          "end": 95
+          "start": 93,
+          "end": 96
         }
       ],
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "review_scope": "exact-recipient-hero-coefficient-current-union-source-only-no-runtime-or-future-growth"
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "complete-exact-header-callable-renewal-declarations-only"
     },
     "lib/battle/CPlayerBattleCallback.cpp": {
       "functions": [
@@ -18041,13 +18041,13 @@
     },
     "AI/BattleAI/AttackPossibility.cpp": {
       "kind": "exception",
-      "lines": 2446,
+      "lines": 2091,
       "owner": "ai_engineer",
-      "rationale": "Extract root/unit cache preparation into the focused 89-line DamageCachePreparation.cpp and route only terminal creature-pressure roots through its canonical-attested warmup boundary. All remaining callable bodies, including the obstacle observer-knowledge correction, are unchanged. Exact shrinking file ratchet 2485 to 2446; no regrowth allowance, general cache bypass or cache-lifetime expansion.",
-      "review": "IR-CREATURE-PRESSURE-PREPARATION-20261022",
-      "review_scope": "terminal-creature-pressure-preparation-extraction-and-shrinking-ratchet-only",
-      "sha256": "294cf7080459c27e28f7dda76491ad721c637115ad739023e28a01ed891ca56a",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2446/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth.",
+      "rationale": "Extract complete existing DamageCache methods and shared mark selectors into focused395-line cache owner, preserving bodies exactly; file2446-to2091 shrinking ratchet. No future regrowth or relaxed cache lifetime.",
+      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
+      "review_scope": "exact-finalization-extraction-only",
+      "sha256": "4eb5ace24b452d8987602048671894af124233d554cbb42fedf102c7214837be",
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/AttackPossibility.cpp::AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1": {
@@ -18069,16 +18069,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "9fee335f471ac487e5a244001c24dd4e67783b3a330704af2350b5dd66bd7d6c"
-    },
-    "AI/BattleAI/AttackPossibility.cpp::int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver, DamageCacheAdmission * mainProbeAdmission)#1": {
-      "kind": "review",
-      "lines": 120,
-      "owner": "ai_engineer",
-      "rationale": "Source-reviewed exact actor-admission extraction/forwarding seam: lazy first-use actor facts only, no damage memo, candidate/score/horizon/action/RNG change. getDamage shrinks128 to120; narrowly approved routing grows trackAttack482 to484 and calculateExchange358 to361. No unrelated or future allowance.",
-      "review": "IR-DAMAGE-ADMISSION-EXACT-METADATA-20261020",
-      "review_scope": "exact-main-only-immutable-actor-admission-source-boundary",
-      "sha256": "55e3059e54424ae2712d99ef5b704c8130b44d45c66b94144dbf0fbd28f1ec18",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/BattleAI.cpp": {
       "kind": "exception",
@@ -21906,15 +21896,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact1287-line registry endpoint only. Engine engineer owns coherent component registration extraction with shrinking parent before broader registry expansion; preserve target/linkage and source/header ordering. This exact two-row helper registration is independently reviewed for source scope only; it does not waive decomposition or native verification.",
+      "deferral": "Exact1288-line registry endpoint only. Engine engineer owns coherent component registration extraction with shrinking parent before broader registry expansion; preserve target/linkage and source/header ordering. These exact focused registrations are independently reviewed for source scope only; this does not waive decomposition or native verification.",
       "kind": "exception",
-      "lines": 1287,
+      "lines": 1288,
       "owner": "engine_engineer",
-      "rationale": "Exact optional Hydra identity routing only; installed identity matching is unchanged, true core absence is optional and required New Horizons absence fails closed. Shared lookup extracted into HydrasVitalityIdentity; no timer, health or save-policy redesign. Exact follow-up adds only reviewed focused scroll/Storm/Frozen implementation/header registrations to existing lists; no linkage, backend, options or callable changes. Prior obligations remain; no future growth approved.",
-      "review": "IR-SCROLL-STORM-FROZEN-FOCUSED-REGISTRATIONS-20261022",
-      "review_scope": "exact-mechanical-focused-component-registrations-only",
+      "rationale": "Exact mechanical registry1287-to1288: focused finalization source only; target, linkage, options, source ordering and all callable behavior unchanged. No future allowance.",
+      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
+      "review_scope": "exact-finalization-extraction-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "c184117d46b82bd35846b4a6b9c8eced192bd67c7bf47439105040ca5ce98d65"
+      "sha256": "5160330dcd4474e0cd5774c455b75b27192d5190532eea6f74e96cf13912688b"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -22093,14 +22083,14 @@
     },
     "lib/battle/CBattleInfoCallback.cpp": {
       "kind": "exception",
-      "lines": 5946,
+      "lines": 5879,
       "owner": "gameplay_engineer",
-      "rationale": "Independently source-reviewed diagnostic-only addition of three unconditional boundaries inside the existing native payload Scope. Library-owned timing state performs the four sequential regions with shared readings; callback adds only routing lines,5943 to5946. All262 other callable bodies remain byte-identical. No gameplay query, payload formula, order, cache, search or RNG change. This exact diagnostic exception grants no unrelated growth or runtime/performance acceptance; all existing stance-stage extraction obligations remain mandatory.",
-      "review": "IR-NATIVE-PAYLOAD-REGION-DIAGNOSTICS-20261022",
-      "review_scope": "exact-three-unconditional-native-region-diagnostic-transitions-only",
-      "sha256": "18a4bf51c8434920f5b8303711b0d7c278f2dd74cb8b40ec41b39a95e6535fc2",
+      "rationale": "Exact inherited509-to445 finalization extraction; unchanged moved rules, smaller callback5946-to5879. No future growth or runtime/performance acceptance.",
+      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
+      "review_scope": "exact-finalization-extraction-only",
+      "sha256": "9a2e2e0c9c77ece727b582385cb19dfb7e729bd66ec0f591940e930fb313cd64",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Before further substantive stance-stage growth, extract a focused defender-stance payload builder owned by gameplay_engineer: const callback/attack info plus invocation query context into DamageAttackInfo. Preserve first-query order, explicit payload/state/RNG parity and shrink both callback and function baselines; no oversized moved-to helper. Native and performance acceptance remain separate."
+      "deferral": "Before further substantive stance-stage growth, extract a focused defender-stance payload builder owned by gameplay_engineer: const callback/attack info plus invocation query context into DamageAttackInfo. Preserve first-query order, explicit payload/state/RNG parity and shrink both callback and function baselines; no oversized moved-to helper. Native and performance acceptance remain separate. Gameplay engineer owns focused defender-stance/native physical-modifier extraction before further substantive growth: const callback and attack info plus the existing captured IBattleInfo pointer into DamageAttackInfo, retaining protected coefficient and visibility authority. Follow with a separate Hero Orders payload stage using explicit attacker/defender cause outputs. Preserve query/exception order, all payload and DamageEstimation fields, reaction/redirect/Luck/Frozen/siege behavior, state/packets/both RNGs, unknown-script fallback, and exact577 ordered145 decisions/action/allowance bytes. Each helper stays cohesive below150 lines, no oversized relocation; callback and remaining function shrink and baseline ratchets. Engine engineer reviews shared-library/build boundaries. No unrelated growth or runtime acceptance."
     },
     "lib/battle/CBattleInfoCallback.cpp::AttackableTiles CBattleInfoCallback::getPotentiallyAttackableHexes( const battle::Unit* attacker, const battle::Unit * defender, BattleHex destinationTile, BattleHex attackerPos, BattleHex defenderPos) const#1": {
       "kind": "legacy",
@@ -22131,14 +22121,14 @@
     },
     "lib/battle/CBattleInfoCallback.cpp::DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) const#1": {
       "kind": "exception",
-      "lines": 509,
+      "lines": 445,
       "owner": "gameplay_engineer",
-      "rationale": "Independently source-reviewed exact506-to509 diagnostic routing: transition immediately before physical Offense admission, canonical Hero Orders and finalLuckPolicy. The existing native Scope retains its start/finish; all original gameplay statements and their order are unchanged. Library-owned shared boundary readings partition native wall time with exact integer closure. This permits only the three diagnostic lines, not substantive stance growth, and retains the complete focused stance-stage extraction deferral. No native, rendered or speedup acceptance is implied.",
-      "review": "IR-NATIVE-PAYLOAD-REGION-DIAGNOSTICS-20261022",
-      "review_scope": "exact-three-sequential-native-payload-region-boundaries-no-query-reorder",
-      "sha256": "b92031f3980e83eb35af600e79a37508c0bf5418337df4ad916cf192ccb76cba",
+      "rationale": "Exact inherited calculation509->445 after cohesive finalization extraction; remaining algorithm unchanged. Exact no-future-growth ratchet; source-only scope.",
+      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
+      "review_scope": "exact-inherited-calculation-no-new-algorithm",
+      "sha256": "263b98b5bd0483d75d07a56bfa3e05a5f429b93347ee2ba7df9b13559ec052d1",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Gameplay owner must extract the focused defender-stance payload stage before further substantive expansion, preserving first-query order, payload/state/RNG equivalence and actual file/function shrinkage. This exact exception permits no unrelated growth."
+      "deferral": "Gameplay engineer owns focused defender-stance/native physical-modifier extraction before further substantive growth: const callback and attack info plus the existing captured IBattleInfo pointer into DamageAttackInfo, retaining protected coefficient and visibility authority. Follow with a separate Hero Orders payload stage using explicit attacker/defender cause outputs. Preserve query/exception order, all payload and DamageEstimation fields, reaction/redirect/Luck/Frozen/siege behavior, state/packets/both RNGs, unknown-script fallback, and exact577 ordered145 decisions/action/allowance bytes. Each helper stays cohesive below150 lines, no oversized relocation; callback and remaining function shrink and baseline ratchets. Engine engineer reviews shared-library/build boundaries. No unrelated growth or runtime acceptance."
     },
     "lib/battle/CBattleInfoCallback.cpp::ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const#1": {
       "kind": "legacy",
@@ -22214,14 +22204,14 @@
     },
     "lib/battle/CBattleInfoCallback.h": {
       "kind": "exception",
-      "lines": 515,
+      "lines": 517,
       "owner": "gameplay_engineer",
-      "rationale": "Thirteen include/declaration/comment routing lines for visible query and protected coefficient authority; sole inline body unchanged. Substantive policy extracted to focused owners.",
-      "review": "IR-HERO-RECIPIENT-CURRENT-UNION-20261017",
-      "review_scope": "exact-recipient-hero-coefficient-current-union-source-only-no-runtime-or-future-growth",
-      "sha256": "8b5ac946f2de41ee4a57998454e9f7bbc9d7f336ee124b0aca8c2e745398b1ff",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "deferral": "No further growth allowed by this proposal. Continue cohesive AI/callback decomposition and full typed-hero/common-horizon implementation; native/source/alias lifetime evidence remains separate."
+      "rationale": "Exact declaration-only routing515-to517: forward types, protected finalization helper; sole inline body unchanged, no state, virtual or inline algorithm growth. No future allowance.",
+      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
+      "review_scope": "exact-finalization-extraction-only",
+      "sha256": "5373fef75d49942f2ce91f88827a31bd910dadd16d76e87366fcc5f86d9c751d",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "No further growth allowed by this proposal. Continue cohesive AI/callback decomposition and full typed-hero/common-horizon implementation; native/source/alias lifetime evidence remains separate. Freeze exact517; substantive query authority remains in cohesive owners."
     },
     "lib/battle/CBattleInfoEssentials.cpp": {
       "kind": "legacy",
@@ -26514,6 +26504,17 @@
       "review": "IR-STAGE8-HERO-QUEUE-V2-SOURCE-0bf53e22-20261016",
       "review_scope": "coherent-hero-queue-activation-review-trigger",
       "sha256": "b99d954d98e4e15dae2f3f403ac807aa6739f349c2df6b43854f6fd189d8fdf2"
+    },
+    "AI/BattleAI/DamageCache.cpp::int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver, DamageCacheAdmission * mainProbeAdmission)#1": {
+      "kind": "review",
+      "lines": 120,
+      "owner": "ai_engineer",
+      "rationale": "Exact moved120-line cache operation; existing bypasses and authoritative per-target calculation retained, no damage/result memoization.",
+      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
+      "review_scope": "exact-cohesive-cache-move",
+      "sha256": "55e3059e54424ae2712d99ef5b704c8130b44d45c66b94144dbf0fbd28f1ec18",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth."
     }
   }
 }

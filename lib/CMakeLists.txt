@@ -62,6 +62,7 @@ set(lib_MAIN_SRCS
 	battle/BattleEffectExchange.cpp
 	battle/BattleAction.cpp
 	battle/BattleAttackInfo.cpp
+	battle/DamageFinalization.cpp
 	battle/DamageCalculationTiming.cpp
 	battle/BattleHex.cpp
 	battle/BattleHexArray.cpp
