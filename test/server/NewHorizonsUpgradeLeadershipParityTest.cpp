@@ -15,6 +15,7 @@
 #include "../../lib/gameState/UpgradeInfo.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/army/CStackInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/networkPacks/PacksForServer.h"
@@ -251,6 +252,79 @@ TEST_P(NewHorizonsUpgradeLeadershipParityTest, UnofferedUpgradeRequestsRejectAto
 	EXPECT_EQ(town->creatures, stock);
 	EXPECT_EQ(server.stackTypePacks, 1);
 	EXPECT_EQ(server.resourcePacks, 1);
+}
+
+TEST_P(NewHorizonsUpgradeLeadershipParityTest, RestoredWorldUpgradeRequestUsesCapturedCapacityAndPreservesStock)
+{
+	ASSERT_NO_FATAL_FAILURE(startScenario());
+	const PlayerColor player(0);
+	auto * originalHero = findHeroByOwner(player);
+	auto * originalTown = findFirst<CGTownInstance>();
+	ASSERT_NE(originalHero, nullptr);
+	ASSERT_NE(originalTown, nullptr);
+	const CreatureID base(CreatureID::decode("core:pikeman"));
+	const CreatureID upgrade(CreatureID::decode("core:halberdier"));
+	const auto originalCapacity = originalHero->getLeadershipSlotCapacity(base);
+	ASSERT_TRUE(originalCapacity);
+	const int count = originalCapacity->maximum;
+	originalHero->clearSlots();
+	ASSERT_TRUE(originalHero->setCreature(SlotID(0), base, count));
+	originalTown->addBuilding(BuildingID::getDwellingFromLevel(0, 0));
+	originalTown->addBuilding(BuildingID::getDwellingFromLevel(0, 1));
+	originalTown->creatures = {{9, {base, upgrade}}};
+	originalTown->setVisitingHero(originalHero);
+	for(size_t resource = 0; resource < GameConstants::RESOURCE_QUANTITY; ++resource)
+		gameState()->getPlayerState(player)->resources[resource] = 100000;
+	gameState()->actingPlayers.insert(player);
+	auto restored = std::make_shared<CGameState>();
+	restored->preInit(LIBRARY);
+	restored->loadFromMemory(gameState()->saveToMemory());
+	const auto * hero = restored->getHero(originalHero->id);
+	const auto * town = restored->getTown(originalTown->id);
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(town, nullptr);
+	ASSERT_NE(hero, originalHero);
+	ASSERT_EQ(town->getVisitingHero(), hero);
+	ASSERT_EQ(hero->getVisitedTown(), town);
+	ASSERT_EQ(hero->getCapabilityRules(), originalHero->getCapabilityRules());
+	const auto targetCapacity = hero->getLeadershipSlotCapacity(upgrade);
+	ASSERT_TRUE(targetCapacity);
+	ASSERT_EQ(targetCapacity->requirement, GetParam() ? 70 : 60);
+	ASSERT_EQ(targetCapacity->maximum < count, GetParam());
+	const auto stock = town->creatures;
+	const auto resources = restored->getPlayerState(player)->resources;
+	UpgradeInfo info(base);
+	restored->fillUpgradeInfo(hero, SlotID(0), info);
+	ASSERT_TRUE(vstd::contains(info.getAvailableUpgrades(), upgrade));
+	UpgradeAdmissionServer server(restored);
+	CGameHandler handler(server, restored);
+	const auto spending = handler.statistics->getPlayerAccumulator(player).spentResourcesForArmy;
+	UpgradeCreature request(SlotID(0), hero->id, upgrade);
+	request.player = player;
+	request.requestID = 743;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_EQ(server.responses.back().requestID, request.requestID);
+	EXPECT_EQ(server.responses.back().result, !GetParam());
+	EXPECT_EQ(server.stackTypePacks, GetParam() ? 0 : 1);
+	EXPECT_EQ(server.resourcePacks, GetParam() ? 0 : 1);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), GetParam() ? base : upgrade);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), count);
+	ASSERT_NE(hero->getStackPtr(SlotID(0)), nullptr);
+	EXPECT_EQ(hero->getStackPtr(SlotID(0))->getArmy(), hero);
+	EXPECT_EQ(town->creatures, stock);
+	EXPECT_EQ(town->getVisitingHero(), hero);
+	EXPECT_EQ(hero->getVisitedTown(), town);
+	EXPECT_EQ(hero->getCapabilityRules(), originalHero->getCapabilityRules());
+	EXPECT_EQ(restored->getHeroCapabilityRules(), gameState()->getHeroCapabilityRules());
+	EXPECT_EQ(restored->getPlayerState(player)->resources,
+		GetParam() ? resources : resources - info.getUpgradeCostsFor(upgrade) * count);
+	EXPECT_EQ(handler.statistics->getPlayerAccumulator(player).spentResourcesForArmy,
+		GetParam() ? spending : spending + info.getUpgradeCostsFor(upgrade) * count);
+	EXPECT_EQ(originalHero->getCreature(SlotID(0))->getId(), base);
+	EXPECT_EQ(originalHero->getStackCount(SlotID(0)), count);
+	EXPECT_EQ(originalTown->creatures, stock);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resources);
 }
 
 INSTANTIATE_TEST_SUITE_P(CurrentAndHistorical, NewHorizonsUpgradeLeadershipParityTest, ::testing::Bool());
