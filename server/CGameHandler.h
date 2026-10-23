@@ -353,6 +353,7 @@ private:
 		int32_t recipientLevelAtMeeting = 0;
 		int32_t week = -1;
 		TExpType experiencePerMentorLevel = 0;
+		TExpType rawExperience = 0;
 		TExpType experience = 0;
 	};
 

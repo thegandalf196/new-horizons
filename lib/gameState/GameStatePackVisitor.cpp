@@ -30,6 +30,7 @@
 #include "../battle/NewHorizonsCombatSkills.h"
 
 #include "CGameState.h"
+#include "NewHorizonsBattleSpellPoints.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/NewHorizonsArmorer.h"
 #include "../battle/NewHorizonsOffense.h"
@@ -249,20 +250,6 @@ void validateHeroOrderStateMutation(const IBattleInfo & battle, BattleSide side,
 		throw std::runtime_error("Canonical Hero Order state update references a missing battle unit");
 }
 
-void validateBattleSpellPointSnapshots(const BattleInfo & battle)
-{
-	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		const auto & side = battle.getSide(sideID);
-		if(side.initialNormalSpellPoints < 0 || side.initialBufferSpellPoints < 0 || side.temporaryBufferRemaining < 0)
-			throw std::runtime_error("Invalid negative battle Spell Point snapshot");
-
-		const int64_t initialAndTemporaryBuffer = static_cast<int64_t>(side.initialBufferSpellPoints)
-			+ side.temporaryBufferRemaining;
-		if(initialAndTemporaryBuffer > std::numeric_limits<int32_t>::max())
-			throw std::runtime_error("Battle temporary Spell Point Buffer overflows its persistent snapshot");
-	}
-}
 
 void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMana & pack)
 {
@@ -2249,7 +2236,7 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	// Internal connections can deliver packets without binary deserialization,
 	// so validate both sides before localInit attaches armies or either hero is
 	// mutated from its saved pool snapshot.
-	validateBattleSpellPointSnapshots(*pack.info);
+	const auto spellPointEntry = newHorizonsHeroes::validateBattleSpellPointEntry(gs, *pack.info);
 	// Validate before localInit attaches armies or changes the canonical battle.
 	heroCommands::validateRules(pack.info->getHeroCommandRules());
 	pack.info->normalizeLegacyHeroCommandState();
@@ -2267,7 +2254,8 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	// so reject malformed continuation references before unit initialization too.
 	pack.info->validateDoubleCommandStructure();
 	pack.info->validatePreCombatOrderStructure();
-	assert(pack.battleID == gs.nextBattleID);
+	if(pack.battleID != gs.nextBattleID)
+		throw std::runtime_error("BattleStart does not match the next battle identity");
 
 	newHorizonsTraining::applyValidatedBatch(gs, pack.trainingEntry);
 	pack.info->battleID = gs.nextBattleID;
@@ -2290,34 +2278,7 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 		}
 	}
 
-	for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		if (pack.info->getSide(i).heroID.hasValue())
-		{
-			CGHeroInstance * hero = gs.getHero(pack.info->getSideHero(i)->id);
-			auto & side = pack.info->getSide(i);
-			if(newHorizonsMagic::spellPointRulesActive(hero->getMagicRules()))
-			{
-				hero->restoreSpellPointSnapshot(side.initialNormalSpellPoints, side.initialBufferSpellPoints);
-				if(side.temporaryBufferRemaining > 0 && !hero->grantBufferSpellPoints(side.temporaryBufferRemaining))
-					throw std::runtime_error("Failed to grant temporary combat Spell Points");
-				if(side.additionalMana < 0)
-				{
-					// Preserve signed combat-mana penalties, consuming available
-					// energy Buffer-first just like any other Mana drain.
-					const int64_t drain = std::min(hero->getManaAvailable(), -static_cast<int64_t>(side.additionalMana));
-					if(!hero->spendSpellPoints(drain))
-						throw std::runtime_error("Failed to apply combat Spell Point penalty");
-				}
-			}
-			else
-			{
-				const auto initial = std::clamp<int64_t>(static_cast<int64_t>(side.initialMana) + side.additionalMana,
-					0, std::numeric_limits<int32_t>::max());
-				hero->setNormalSpellPoints(static_cast<int32_t>(initial));
-			}
-		}
-	}
+	newHorizonsHeroes::applyAcceptedBattleSpellPointEntry(gs, *pack.info, spellPointEntry);
 
 	gs.currentBattles.push_back(std::move(pack.info));
 	gs.nextBattleID = BattleID(gs.nextBattleID.getNum() + 1);
@@ -3820,7 +3781,7 @@ void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack
 			}
 			else
 			{
-				hero->setNormalSpellPoints(std::min(hero->getNormalSpellPoints(), side.initialMana));
+				hero->setNormalSpellPoints(std::min(hero->getNormalSpellPoints(), side.legacySpellPointCompletionCeiling()));
 				// Preserve the legacy scalar cleanup path for old rule snapshots.
 				if(pack.necromancy.active && pack.necromancy.applied
 					&& pack.necromancy.manaRecovered > 0

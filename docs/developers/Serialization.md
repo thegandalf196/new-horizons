@@ -66,6 +66,52 @@ derived from saved school membership, including an explicitly empty context. Ref
 recapture the reflecting side's specialty. Cast-specific component bonuses
 compose afterward; stored effects retain their evaluated numerical snapshot.
 
+## Captured additional hero specialties
+
+`NEW_HORIZONS_ADDITIONAL_SPECIALTIES` protects the optional versioned
+`additionalSpecialties` table. Version 1 admits independently optional
+`fieldPhysician`, `manaFurnace`, `graveArchivist` and `spiritTeacher` rows. Their numerical fields are defined in
+the hero-rule schema; no missing row is filled into historical captures.
+Present rows validate strictly; historical absence stays absent. Unknown keys or
+semantic versions are rejected rather than silently ignored. The existing
+individual and school-specialty tables retain their own versions and guards.
+
+Field Physician scales Cure's fixed and Spell Power components separately before
+Healer's existing Spell Power-only stage. Its Tent creature-healing budget also
+feeds Battlefield Medic; repair output and cleansing count retain their ordinary
+rules. Starting equipment remains governed by existing hero creation rules.
+Direct and enclosing unsupported writers reject before their prefixes; readers
+validate captured data before installing it.
+
+Mana Furnace applies only at accepted `BattleStart`, after existing temporary
+Buffer and signed drains. Both sides' policies and snapshots validate before
+attachment or pool mutation. Each side records only the actual Normal recovery
+in `manaFurnaceRecoveredNormal`, bounded by the configured maximum of 1,000,000.
+The same additional-specialties capability explicitly protects this
+appended runtime field as well as the optional policy table. Historical readers
+default the receipt to zero; direct Side, BattleInfo and BattleStart writers
+reject lossy output before their prefixes. Readers reject malformed receipts.
+A fresh entry must carry zero, preventing replay of an already-applied grant.
+
+Original initial Normal/Buffer snapshots remain the cancellation baseline;
+restart rolls back before a fresh entry. Canonical Buffer cleanup is unchanged.
+Legacy scalar completion limits retained Normal to the original Normal plus only
+the actual persistent recovery, using saturated wide arithmetic, so unrelated
+temporary combat bonuses do not become persistent. Active Intelligence and the
+final accepted maximum bound the grant; neither Buffer nor capacity is increased.
+World saves preserve the resulting pools without dispatching another entry.
+They do not preserve or resume ongoing battles; descriptor codec coverage does
+not establish midcombat save/resume support.
+
+Grave Archivist and Spirit Teacher reuse the captured table capability without
+adding runtime save fields. Their Learning enhancement scales only the core
+Learning contribution. Eagle Eye selects distinct eligible enemy-hero casts using
+stable descending spell level and original cast order; winner and retained-result
+paths use the same selector. Spirit Teacher scales a separate raw Mentor award,
+revalidated before granting XP. The existing 250/500 authorization coefficient and
+weekly recipient receipts are unchanged; recipient XP modifiers apply once.
+Historical row absence retains the former mechanics and specialty presentation.
+
 ## Captured Fly day-end policy
 
 `NEW_HORIZONS_FLY_DAY_END` protects the presence of
@@ -917,3 +963,12 @@ world saves. Week rollover requires no scan or state-reset polling.
 Master Teacher uses the existing meeting/town authority and recipient Experience
 modifier, not a new action. Source integration and focused native acceptance are
 tracked separately in UP164.
+
+### Default hero equipment creation intent
+
+Fresh New Horizons Rion and Verdish receive their default First Aid Tent independently
+of starting-stack chance. Explicit map equipment, including an empty artifact object,
+remains authored. This loader-only intent is consumed by fresh initialization; it is
+not new binary state. Binary and crossover reads retain their existing captured-hero
+boundary and never request new default equipment. JSON writers preserve an explicit
+empty artifact object so a map authoring roundtrip cannot turn it into DEFAULT.

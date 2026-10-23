@@ -51,6 +51,17 @@ inline bool setTitle(CLabel & label, const std::string & text, bool compact)
 	return false;
 }
 
+inline void setSkillName(CLabel & label, const std::string & text, bool compact)
+{
+	if(compact)
+		setFittingText(label, text, 74, {FONT_SMALL, FONT_TINY});
+	else
+	{
+		label.font = FONT_SMALL;
+		label.setText(text);
+	}
+}
+
 inline void setSpecialtyName(CLabel & label, const std::string & text, bool compact)
 {
 	setFittingText(label, text, compact ? 88 : 104, {FONT_SMALL, FONT_TINY});

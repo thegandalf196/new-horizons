@@ -950,6 +950,7 @@ void CMapLoaderH3M::loadArtifactsOfHero(CGHeroInstance * hero)
 	// True if artifact set is not default (hero has some artifacts)
 	if(!hasArtSet)
 		return;
+	hero->defaultStartingEquipmentRequested = false;
 
 	// Workaround - if hero has customized artifacts game should not attempt to add spellbook based on hero type
 	hero->spells.insert(SpellID::SPELLBOOK_PRESET);

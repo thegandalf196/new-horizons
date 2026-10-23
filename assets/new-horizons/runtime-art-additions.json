@@ -5655,6 +5655,120 @@
         }
       ],
       "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "baselineArchiveSha256": "5a789497e6cc43c0a172bc1431f562653429480013be919d43bf0a70d6d11099",
+      "baselineManifestSha256": "27eba99d6c5e5127ac75dc5e514fd5ec8a46cd7e175a3166d23f5adf9abf038c",
+      "baselineEntriesSha256": "1ceb2740877ed01c435833e55a72e2534befc5ebdd706ed0c36cfd9e9ec5f3c3",
+      "baselineHeaderSha256": "6cfea69a7513ffa4a185755f1ada67e2ed2aac17156d50e690fc45d4b93ad439",
+      "nonStatusConfigSha256": "6bcf78af32bc3739f491572a1705a1e9440dc76cc25b19947da8998d7fc5cba2",
+      "baselineCount": 4863,
+      "entryCount": 4879,
+      "newArchiveSha256": "4fd950dcb0b1b5c8240ee771107124b5a13fa732698b98ba5d281b8d190477b7",
+      "resources": [
+        "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/32.json",
+        "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/44.json",
+        "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/32.json",
+        "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/44.json",
+        "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/32.json",
+        "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/44.json",
+        "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/32.json",
+        "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/44.json",
+        "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/icon-44.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "specialties": [
+        {
+          "id": "core:rion",
+          "identity": "RionFieldPhysician",
+          "version": "transparent-foreground-v1-20261023",
+          "native44Sha256": "fe6adec2a60cc598e40ef8e9a125683c4be9d11eccf325b8d7bafb2dd8ff2ab0",
+          "native32Sha256": "842f28c579c77b398f873ad03e089d77163f5d9cef842fa80c14820d78f2e38d",
+          "normal44": "newHorizons/heroSpecialties/RionFieldPhysician/44",
+          "normal32": "newHorizons/heroSpecialties/RionFieldPhysician/32",
+          "selectionEvidenceSha256": "a98b3ab5f6fcb2b599e64e0f105f9072a02e12856aadacce8b0e5f03781af3e0",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/32.json",
+            "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/44.json",
+            "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/icon-44.png"
+          ],
+          "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+          "originalMasterSha256": "03a8ff3134a014452975ba0c6db49120d57587da7647d5e88de2f308d5287b25",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+          "approval": "Provisional; not Final; rendered acceptance pending; no new rights grant"
+        },
+        {
+          "id": "core:ayden",
+          "identity": "AydenManaFurnace",
+          "version": "transparent-foreground-v1-20261023",
+          "native44Sha256": "e4a5b3b577ca90dbc34512a243320fa26cf9477b3fd0d33f3fec7d646bedb143",
+          "native32Sha256": "9c78b6d5cc52339d626815581c83b03837e84066f931c4946848b5ae04ca22c2",
+          "normal44": "newHorizons/heroSpecialties/AydenManaFurnace/44",
+          "normal32": "newHorizons/heroSpecialties/AydenManaFurnace/32",
+          "selectionEvidenceSha256": "a98b3ab5f6fcb2b599e64e0f105f9072a02e12856aadacce8b0e5f03781af3e0",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/32.json",
+            "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/44.json",
+            "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/icon-44.png"
+          ],
+          "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+          "originalMasterSha256": "2fc5e6f52c86b9b7691c39b41d3f514363b6c617c8edc58cbfe996d3a1e58cb0",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+          "approval": "Provisional; not Final; rendered acceptance pending; no new rights grant"
+        },
+        {
+          "id": "core:nimbus",
+          "identity": "NimbusGraveArchivist",
+          "version": "transparent-foreground-v1-20261023",
+          "native44Sha256": "7d267a70ecf53c06d9d367d36024cac60b364a02c329b5d365d79916412b7f0a",
+          "native32Sha256": "1411a36670ac4f119bc7226c8a9ddd9a3f915a754f9c0cbc372a0f72ab941768",
+          "normal44": "newHorizons/heroSpecialties/NimbusGraveArchivist/44",
+          "normal32": "newHorizons/heroSpecialties/NimbusGraveArchivist/32",
+          "selectionEvidenceSha256": "a98b3ab5f6fcb2b599e64e0f105f9072a02e12856aadacce8b0e5f03781af3e0",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/32.json",
+            "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/44.json",
+            "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/icon-44.png"
+          ],
+          "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+          "originalMasterSha256": "499d1be3eb6647a2d1eee96f731e726da8f376241b7b4b6d9da1847ea9df2538",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+          "approval": "Provisional; not Final; rendered acceptance pending; no new rights grant"
+        },
+        {
+          "id": "core:oris",
+          "identity": "OrisSpiritTeacher",
+          "version": "transparent-foreground-v1-20261023",
+          "native44Sha256": "32787a1fb18f7eecd8ccaf6a64f02b9b64794fb8c76a526ff9f283e792d9598f",
+          "native32Sha256": "41f3081a29091c60c9e0a54ca1bba4e7db621c1a6f1ed97e5a8873bcb69236ba",
+          "normal44": "newHorizons/heroSpecialties/OrisSpiritTeacher/44",
+          "normal32": "newHorizons/heroSpecialties/OrisSpiritTeacher/32",
+          "selectionEvidenceSha256": "a98b3ab5f6fcb2b599e64e0f105f9072a02e12856aadacce8b0e5f03781af3e0",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/32.json",
+            "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/44.json",
+            "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/icon-44.png"
+          ],
+          "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+          "originalMasterSha256": "eb8749d9c766cd1499ede91748f5d00f840ff8630de4188840e896c3a00d4921",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+          "approval": "Provisional; not Final; rendered acceptance pending; no new rights grant"
+        }
+      ],
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
     }
   ]
 }

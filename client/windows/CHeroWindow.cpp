@@ -882,10 +882,9 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		}
 		SecondarySkill skill = curHero->secSkills[g + offset].first;
 		int	level = curHero->getSecSkillLevel(skill);
-		std::string skillName = skill.toEntity(LIBRARY)->getNameTranslated();
 		std::string skillValue = GAME->translator().translate("core.skilllev", level-1);
 
-		secSkillNames[g]->setText(skillName);
+		heroWindowLabelText::setSkillName(*secSkillNames[g], skill.toEntity(LIBRARY)->getNameTranslated(), newHorizonsLayout);
 		secSkillValues[g]->setText(skillValue);
 		secSkills[g]->setSkill(skill, level);
 	}

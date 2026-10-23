@@ -82,9 +82,10 @@ std::optional<ArcanePreparationSpecialtyRules> arcanePreparationSpecialtyRules(c
 }
 
 
-void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported, bool ridersSupported, bool schoolSupported)
+void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported, bool ridersSupported, bool schoolSupported, bool additionalSupported)
 {
 	validateSchoolSpellcraftSerialization(development, schoolSupported);
+	validateAdditionalSpecialtiesSerialization(development, additionalSupported);
 	if(!development.isStruct())
 		return;
 	if(development.Struct().contains("individualSpecialties"))

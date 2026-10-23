@@ -908,12 +908,12 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		// Eagle Eye handling
 		if(newHorizonsEagleEye::enabled(winnerHero))
 		{
-			if(const auto spell = newHorizonsEagleEye::selectSpell(winnerHero,
-				(*battle)->getUsedSpells(CBattleInfoEssentials::otherSide(result.winner))))
+			if(const auto spells = newHorizonsEagleEye::selectSpells(winnerHero,
+				(*battle)->getUsedSpells(CBattleInfoEssentials::otherSide(result.winner))); !spells.empty())
 			{
 				resultsApplied.learnedSpells.eagleEyeBonus = true;
 				resultsApplied.learnedSpells.hid = finishingBattle->winnerId;
-				resultsApplied.learnedSpells.spells.insert(*spell);
+				resultsApplied.learnedSpells.spells.insert(spells.begin(), spells.end());
 			}
 		}
 		else if(auto eagleEyeLevel = winnerHero->valOfBonuses(BonusType::LEARN_BATTLE_SPELL_LEVEL_LIMIT))
@@ -1064,13 +1064,13 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 			&& !winnerHasUnitsLeft;
 		if(!hero || !(retainedDraw || escapingLoser || escapingWinner))
 			continue;
-		if(const auto spell = newHorizonsEagleEye::selectSpell(hero,
-			(*battle)->getUsedSpells(CBattleInfoEssentials::otherSide(side))))
+		if(const auto spells = newHorizonsEagleEye::selectSpells(hero,
+			(*battle)->getUsedSpells(CBattleInfoEssentials::otherSide(side))); !spells.empty())
 		{
 			auto & learning = retainedHeroLearning.emplace_back();
 			learning.hid = hero->id;
 			learning.eagleEyeBonus = true;
-			learning.spells.insert(*spell);
+			learning.spells.insert(spells.begin(), spells.end());
 		}
 	}
 	resultsApplied.victor = finishingBattle->victor;

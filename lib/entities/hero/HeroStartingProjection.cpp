@@ -5,10 +5,13 @@
 #include "StdInc.h"
 #include "HeroStartingProjection.h"
 #include "CHeroClass.h"
+#include "CHeroHandler.h"
 #include "../../IGameSettings.h"
 #include "../../GameLibrary.h"
 #include "../../CSkillHandler.h"
 #include "../../CCreatureHandler.h"
+#include "../artifact/CArtifact.h"
+#include "../../mapping/CMap.h"
 #include "../../spells/CSpellHandler.h"
 #include "../../spells/NewHorizonsMagic.h"
 #include "../../spells/NewHorizonsSpellAvailability.h"
@@ -17,6 +20,54 @@
 
 namespace newHorizonsHeroes
 {
+bool guaranteesDefaultFirstAidTent(HeroTypeID hero, const JsonNode & development)
+{
+	if(!usesRules(development))
+		return false;
+	const auto raw = hero.getNum();
+	if(raw < 0 || !LIBRARY || !LIBRARY->heroh || static_cast<size_t>(raw) >= LIBRARY->heroh->objects.size()
+		|| !LIBRARY->heroh->objects[raw])
+		return false;
+	const auto & identity = LIBRARY->heroh->objects[raw]->getJsonKey();
+	return identity == "core:rion" || identity == "core:verdish";
+}
+
+namespace
+{
+void projectStartingEquipment(const CHero & hero, const JsonNode & development,
+	const StartingHeroContext & context, const StartingHeroOverrides & overrides, StartingHeroProjection & result)
+{
+	if(context.resolved || !context.freshEquipmentDefaults
+		|| !guaranteesDefaultFirstAidTent(hero.getId(), development))
+		return;
+	const bool defaults = overrides.defaultEquipment.value_or(true);
+	if(!defaults && !overrides.authoredFirstAidTent.has_value())
+		return; // No authored inventory was resolved: never invent a 100% claim.
+	result.firstAidTentChance = defaults || overrides.authoredFirstAidTent.value_or(false) ? 100 : 0;
+	if(*result.firstAidTentChance == 0 || std::ranges::any_of(result.army, [](const auto & row)
+		{ return row.creature.hasValue() && row.creature.toCreature()->warMachine == ArtifactID::FIRST_AID_TENT; }))
+		return;
+	result.army.push_back({1, 1, ArtifactID(ArtifactID::FIRST_AID_TENT).toArtifact()->getWarMachine()});
+}
+}
+
+std::vector<int> startingArmyChances(const StartingHeroProjection & projection,
+	const StartingHeroOverrides & overrides, std::vector<int> ordinary)
+{
+	if(overrides.army)
+		ordinary.assign(projection.army.size(), 100);
+	if(projection.firstAidTentChance)
+		for(size_t index = 0; index < projection.army.size(); ++index)
+			if(projection.army[index].creature.hasValue()
+				&& projection.army[index].creature.toCreature()->warMachine == ArtifactID::FIRST_AID_TENT)
+			{
+				if(ordinary.size() <= index)
+					ordinary.resize(index + 1, 0);
+				ordinary[index] = *projection.firstAidTentChance;
+			}
+	return ordinary;
+}
+
 std::optional<SpellID> authoredRemainingSpellReplacement(const CHero & hero, const JsonNode & development, const JsonNode & magic, SpellID source)
 {
 	if(!newHorizonsHeroes::usesRemainingSpellSpecialties(development)
@@ -135,9 +186,17 @@ StartingHeroContext startingHeroContext(const IGameSettings & settings)
 		settings.getVector(EGameSettings::HEROES_MAXIMAL_PRIMARY_SKILLS)};
 }
 
-StartingHeroOverrides authoredStartingHeroOverrides(const CGHeroInstance & hero)
+StartingHeroOverrides authoredStartingHeroOverrides(const CGHeroInstance & hero, const CMap * map)
 {
 	StartingHeroOverrides result;
+	result.defaultEquipment = hero.requestsDefaultStartingEquipment();
+	if(!*result.defaultEquipment && map)
+	{
+		const auto * slot = hero.getSlot(ArtifactPosition::MACH3);
+		const auto * artifact = slot && !slot->locked && slot->getID().hasValue()
+			? map->getArtifactInstance(slot->getID()) : nullptr;
+		result.authoredFirstAidTent = artifact && artifact->getTypeId() == ArtifactID::FIRST_AID_TENT;
+	}
 	result.leadershipBonus = hero.valOfBonuses(BonusType::LEADERSHIP);
 	if(hero.hasBonusFrom(BonusSource::HERO_BASE_SKILL))
 	{
@@ -322,6 +381,7 @@ StartingHeroProjection projectStartingHero(const CHero & hero,
 				row.minAmount = clampStartingArmyCount(row.minAmount, maximum);
 				row.maxAmount = clampStartingArmyCount(row.maxAmount, maximum);
 			}
+	projectStartingEquipment(hero, development, context, overrides, result);
 	return result;
 }
 }

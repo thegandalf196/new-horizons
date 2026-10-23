@@ -112,6 +112,7 @@ set(lib_MAIN_SRCS
 	battle/BattleProxy.cpp
 	battle/BattleStateInfoForRetreat.cpp
 	battle/CBattleInfoCallback.cpp
+	battle/NewHorizonsFirstAid.cpp
 	battle/VisibleHeroBonusQueries.cpp
 	battle/FocusFireQueries.cpp
 	battle/CBattleInfoEssentials.cpp
@@ -265,6 +266,11 @@ set(lib_MAIN_SRCS
 	entities/creature/NewHorizonsRecruitmentTraining.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
 	entities/hero/NewHorizonsIndividualSpecialties.cpp
+	entities/hero/NewHorizonsAdditionalSpecialties.cpp
+	entities/hero/NewHorizonsLearningSpecialtyRules.cpp
+	entities/hero/NewHorizonsLearningExperience.cpp
+	entities/hero/NewHorizonsLearningSpecialtyPresentation.cpp
+	entities/hero/NewHorizonsManaFurnace.cpp
 	entities/hero/NewHorizonsSchoolSpellcraft.cpp
 	entities/hero/NewHorizonsSchoolSpellcraftPresentation.cpp
 	entities/hero/NewHorizonsIndividualSpecialtyPresentation.cpp
@@ -297,6 +303,7 @@ set(lib_MAIN_SRCS
 	gameState/CGameState.cpp
 	gameState/CGameStateCampaign.cpp
 	gameState/GameStatePackVisitor.cpp
+	gameState/NewHorizonsBattleSpellPoints.cpp
 	gameState/HighScore.cpp
 	gameState/InfoAboutArmy.cpp
 	gameState/QuestInfo.cpp
@@ -325,6 +332,7 @@ set(lib_MAIN_SRCS
 	mapObjects/CGCreaturePopupText.cpp
 	mapObjects/CGDwelling.cpp
 	mapObjects/CGHeroInstance.cpp
+	mapObjects/HeroStartingEquipment.cpp
 	mapObjects/HeroSpellCasting.cpp
 	mapObjects/HeroPrimarySkillQueries.cpp
 	mapObjects/NewHorizonsGlyphsOfFear.cpp
@@ -467,6 +475,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsPandemonium.cpp
 	spells/NewHorizonsDirectDamage.cpp
 	spells/NewHorizonsDamagePower.cpp
+	spells/NewHorizonsCureHealing.cpp
 	spells/NewHorizonsSpellcraftPower.cpp
 	spells/NewHorizonsSpellcraftCast.cpp
 	spells/NewHorizonsEagleEye.cpp
@@ -895,6 +904,8 @@ set(lib_MAIN_HEADERS
 	entities/creature/NewHorizonsRecruitmentTraining.h
 	entities/hero/NewHorizonsHeroRules.h
 	entities/hero/NewHorizonsIndividualSpecialties.h
+	entities/hero/NewHorizonsAdditionalSpecialties.h
+	entities/hero/NewHorizonsLearningSpecialties.h
 	entities/hero/NewHorizonsSchoolSpellcraft.h
 	entities/hero/NewHorizonsRuleValidation.h
 	entities/hero/NewHorizonsSkillSpecialtyRules.h
@@ -926,6 +937,7 @@ set(lib_MAIN_HEADERS
 	gameState/CGameStateCampaign.h
 	gameState/EVictoryLossCheckResult.h
 	gameState/GameStatePackVisitor.h
+	gameState/NewHorizonsBattleSpellPoints.h
 	gameState/NewHorizonsAstrology.h
 	gameState/HighScore.h
 	gameState/InfoAboutArmy.h
@@ -1142,6 +1154,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsPandemonium.h
 	spells/NewHorizonsDirectDamage.h
 	spells/NewHorizonsMagic.h
+	spells/NewHorizonsCureHealing.h
 	spells/NewHorizonsMagicInternal.h
 	spells/NewHorizonsMagicPresentation.h
 	spells/NewHorizonsImplosion.h

@@ -48630,6 +48630,166 @@
       "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
       "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
       "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AydenManaFurnace/32.json",
+      "size": 101,
+      "sha256": "cdbb7d86ec7b62064dd8a02861e9d28a2e5964e21c5f5156cf02c406405f86ee",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AydenManaFurnace/44.json",
+      "size": 101,
+      "sha256": "c410b431f4c96250cd7c85926dad7529a51fca2b17934eca2df02274774a4bae",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AydenManaFurnace/icon-32.png",
+      "size": 1723,
+      "sha256": "9c78b6d5cc52339d626815581c83b03837e84066f931c4946848b5ae04ca22c2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AydenManaFurnace/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AydenManaFurnace/icon-44.png",
+      "size": 3036,
+      "sha256": "e4a5b3b577ca90dbc34512a243320fa26cf9477b3fd0d33f3fec7d646bedb143",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NimbusGraveArchivist/32.json",
+      "size": 105,
+      "sha256": "a52c7e787c342aa995ee7bab0bea99fe618d12440e4c90c80fd1a0ce976dea3c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NimbusGraveArchivist/44.json",
+      "size": 105,
+      "sha256": "be7905f33e9a2fbfeefea718ff2ea85ce08ebecc8c46ed029ff024d5d283c454",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NimbusGraveArchivist/icon-32.png",
+      "size": 2245,
+      "sha256": "1411a36670ac4f119bc7226c8a9ddd9a3f915a754f9c0cbc372a0f72ab941768",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NimbusGraveArchivist/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NimbusGraveArchivist/icon-44.png",
+      "size": 4073,
+      "sha256": "7d267a70ecf53c06d9d367d36024cac60b364a02c329b5d365d79916412b7f0a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OrisSpiritTeacher/32.json",
+      "size": 102,
+      "sha256": "28c6ca648b118c39fb1123f1c1d409ff2ac988ad64edcbeb2faafb90fda70118",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OrisSpiritTeacher/44.json",
+      "size": 102,
+      "sha256": "d49d063cfcb72e069b486c12cd9261ab7ae8931b22b0b84b46a7177f903fba4d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OrisSpiritTeacher/icon-32.png",
+      "size": 1697,
+      "sha256": "41f3081a29091c60c9e0a54ca1bba4e7db621c1a6f1ed97e5a8873bcb69236ba",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OrisSpiritTeacher/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OrisSpiritTeacher/icon-44.png",
+      "size": 3014,
+      "sha256": "32787a1fb18f7eecd8ccaf6a64f02b9b64794fb8c76a526ff9f283e792d9598f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RionFieldPhysician/32.json",
+      "size": 103,
+      "sha256": "673d5f06587bf78bb185c5439147f7400c242e3dfc8f5556ca7e078104db29be",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RionFieldPhysician/44.json",
+      "size": 103,
+      "sha256": "a7be442a2dd418fe73e92ec4052537015a61dc8a980e684ffe5667c48668a17d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RionFieldPhysician/icon-32.png",
+      "size": 1989,
+      "sha256": "842f28c579c77b398f873ad03e089d77163f5d9cef842fa80c14820d78f2e38d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RionFieldPhysician/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RionFieldPhysician/icon-44.png",
+      "size": 3458,
+      "sha256": "fe6adec2a60cc598e40ef8e9a125683c4be9d11eccf325b8d7bafb2dd8ff2ab0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-field-mana-and-learning-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
     }
   ],
   "requiredFamilies": [
@@ -48644,7 +48804,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2781,
+    "builtin-skills-perks-orders-and-ui": 2797,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

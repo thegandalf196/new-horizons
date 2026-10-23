@@ -10,6 +10,7 @@
 
 class IGameSettings;
 class CGHeroInstance;
+class CMap;
 
 namespace newHorizonsHeroes
 {
@@ -25,6 +26,7 @@ struct DLL_LINKAGE StartingHeroContext
 	/// Explicit legacy display bounds; NH bounds come from captured development.
 	std::vector<int> minimumPrimary;
 	std::vector<int> maximumPrimary;
+	bool freshEquipmentDefaults = true;
 };
 
 /// Map-authored PRESET values are independent: absence requests the default.
@@ -37,6 +39,8 @@ struct DLL_LINKAGE StartingHeroOverrides
 	std::optional<bool> spellBook;
 	/// Only bonuses already present before initArmy, not eventual Skills/perks.
 	int leadershipBonus = 0;
+	std::optional<bool> defaultEquipment;
+	std::optional<bool> authoredFirstAidTent;
 };
 
 struct DLL_LINKAGE StartingHeroProjection
@@ -47,11 +51,15 @@ struct DLL_LINKAGE StartingHeroProjection
 	std::set<SpellID> spells;
 	std::vector<CHero::InitialArmyStack> army;
 	bool spellBook = false;
+	std::optional<int> firstAidTentChance;
 };
 
 DLL_LINKAGE StartingHeroContext startingHeroContext(const IGameSettings & settings);
+DLL_LINKAGE bool guaranteesDefaultFirstAidTent(HeroTypeID hero, const JsonNode & development);
+DLL_LINKAGE std::vector<int> startingArmyChances(const StartingHeroProjection & projection,
+	const StartingHeroOverrides & overrides, std::vector<int> ordinary);
 /// Only for an uninitialized loader hero, not a saved/current hero's inventory.
-DLL_LINKAGE StartingHeroOverrides authoredStartingHeroOverrides(const CGHeroInstance & hero);
+DLL_LINKAGE StartingHeroOverrides authoredStartingHeroOverrides(const CGHeroInstance & hero, const CMap * map = nullptr);
 DLL_LINKAGE StartingHeroProjection projectStartingHero(const CHero & hero,
 	const StartingHeroContext & context, const StartingHeroOverrides & overrides = {});
 /// Exact runtime inscription precedence; no cast, artifact allocation or RNG.

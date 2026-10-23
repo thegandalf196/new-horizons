@@ -103,6 +103,13 @@
 		"primalFormula": {"percentPerLevel": 5, "maximumPercent": 100},
 		"mireHexer": {"percentPerLevel": 5, "maximumPercent": 100}
 	},
+	"additionalSpecialties": {
+		"version": 1,
+		"fieldPhysician": {"healingPercentPerLevel": 5, "healingMaximumPercent": 100},
+		"manaFurnace": {"restorePointsPerLevel": 2, "maximumRestorePoints": 40},
+		"graveArchivist": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalEagleEyeSpells": 1},
+		"spiritTeacher": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "mentorExperiencePercent": 25}
+	},
 	"individualSpecialties": {
 		"version": 1,
 		"graveReaper": {"percentagePointsPerLevel": 1, "maximumPercentagePoints": 20},

@@ -13,6 +13,7 @@
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/entities/hero/NewHorizonsLearningSpecialties.h"
 #include "../../server/CGameHandler.h"
 #include "../../server/queries/MapQueries.h"
 #include "../../server/queries/QueriesProcessor.h"
@@ -29,10 +30,25 @@ constexpr auto historianId = "new-horizons:learning.historian";
 constexpr auto fieldStudyId = "new-horizons:learning.fieldStudy";
 using Recipients = CGHeroInstance::LearningMentorRecipients;
 
+class OrisExchangeMutationServer : public GameHandlerTestServer
+{
+public:
+	using GameHandlerTestServer::GameHandlerTestServer;
+	std::function<void()> onExchange;
+	void applyPack(CPackForClient & pack) override
+	{
+		GameHandlerTestServer::applyPack(pack);
+		if(dynamic_cast<ExchangeDialog *>(&pack) && onExchange)
+			onExchange();
+	}
+};
+
 class NewHorizonsLearningMasterTeacherTest : public TinyMapGameTest
 {
 protected:
 	CGHeroInstance * teacher = nullptr;
+	bool oris = false;
+	bool specialtyCaptured = true;
 	std::array<CGHeroInstance *, 3> recipients{};
 	CGHeroInstance * enemy = nullptr;
 	CGTownInstance * town = nullptr;
@@ -47,8 +63,15 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		rules.setOverrideFlag(true);
+		if(!specialtyCaptured)
+			rules["additionalSpecialties"].Struct().erase("spiritTeacher");
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		if(oris)
+			for(const auto & object : loaded->objects)
+				if(auto * hero = dynamic_cast<CGHeroInstance *>(object.get()); hero && hero->pos == int3(5, 5, 0))
+					hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:oris")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
@@ -110,7 +133,7 @@ protected:
 
 	void prepareExpert(CGameHandler & handler, bool withMentor = false)
 	{
-		if(!withMentor)
+		if(!withMentor && !oris)
 		{
 			// Production currently has no active non-Mentor Basic Learning choice.
 			// This captured test catalog enables Historian only to prove independent
@@ -125,7 +148,10 @@ protected:
 		const SecondarySkill learning(SecondarySkill::decode(learningId));
 		ASSERT_GE(learning.getNum(), 0);
 		handler.changeSecSkill(teacher, learning, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		ASSERT_NO_FATAL_FAILURE(select(handler, withMentor ? mentorId : historianId));
+		if(!oris)
+		{
+			ASSERT_NO_FATAL_FAILURE(select(handler, withMentor ? mentorId : historianId));
+		}
 		handler.changeSecSkill(teacher, learning, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		ASSERT_NO_FATAL_FAILURE(select(handler, fieldStudyId));
 		handler.changeSecSkill(teacher, learning, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
@@ -321,4 +347,82 @@ TEST(NewHorizonsLearningMasterTeacherWire, TypedHistoryValidatesRoundTripsClears
 	invalidRead.oser & invalid.lastUseWeek;
 	invalidRead.oser & invalid.recipientIds;
 	EXPECT_THROW(invalidRead.iser & incoming, std::runtime_error);
+}
+
+TEST_F(NewHorizonsLearningMasterTeacherTest, OrisHasUsefulLearningButNoFreeMentorAndKeepsTwoRecipientSentinel)
+{
+	oris = true;
+	startGame();
+	ASSERT_TRUE(teacher->getPerkState().hasSelection(learningId, "new-horizons:learning.eagleEye"));
+	EXPECT_EQ(teacher->getNewHorizonsLearningMentorExperiencePerLevel(), 0);
+	EXPECT_EQ(teacher->calculateXp(1000), 1150);
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler handler(server, gameState());
+	const auto withoutMentor = recipients[0]->exp;
+	handler.heroExchange(teacher->id, recipients[0]->id);
+	EXPECT_EQ(recipients[0]->exp, withoutMentor);
+	ASSERT_NO_FATAL_FAILURE(prepareExpert(handler));
+	EXPECT_EQ(teacher->getNewHorizonsLearningMentorExperiencePerLevel(), 500);
+	EXPECT_FALSE(teacher->hasActivePerk(learningId, mentorId));
+	const auto firstBefore = recipients[0]->exp;
+	const auto secondBefore = recipients[1]->exp;
+	const auto thirdBefore = recipients[2]->exp;
+	const auto raw = 500 * 10 + (500 * 10 / 4);
+	const auto firstExpected = recipients[0]->calculateXp(raw);
+	const auto secondExpected = recipients[1]->calculateXp(raw);
+	handler.heroExchange(teacher->id, recipients[0]->id);
+	EXPECT_EQ(recipients[0]->exp - firstBefore, firstExpected);
+	handler.heroExchange(teacher->id, recipients[0]->id);
+	EXPECT_EQ(recipients[0]->exp - firstBefore, firstExpected);
+	handler.heroExchange(teacher->id, recipients[1]->id);
+	EXPECT_EQ(recipients[1]->exp - secondBefore, secondExpected);
+	handler.heroExchange(teacher->id, recipients[2]->id);
+	EXPECT_EQ(recipients[2]->exp, thirdBefore);
+	EXPECT_EQ(teacher->getNewHorizonsLearningMentorRecipients(), (Recipients{recipients[0]->id, recipients[1]->id}));
+	gameState()->day = 8;
+	const auto thirdExpected = recipients[2]->calculateXp(raw);
+	handler.heroExchange(teacher->id, recipients[2]->id);
+	EXPECT_EQ(recipients[2]->exp - thirdBefore, thirdExpected);
+	CGameState loaded;
+	loaded.preInit(LIBRARY);
+	loaded.loadFromMemory(gameState()->saveToMemory());
+	EXPECT_EQ(loaded.getHero(teacher->id)->getNewHorizonsLearningMentorRecipients(), teacher->getNewHorizonsLearningMentorRecipients());
+	EXPECT_EQ(loaded.getHero(recipients[2]->id)->exp, recipients[2]->exp);
+}
+TEST_F(NewHorizonsLearningMasterTeacherTest, OrisHistoricalAbsencePreservesOrdinaryAwardAndLearning)
+{
+	oris = true;
+	specialtyCaptured = false;
+	startGame();
+	EXPECT_EQ(teacher->calculateXp(1000), 1100);
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler handler(server, gameState());
+	ASSERT_NO_FATAL_FAILURE(prepareExpert(handler));
+	const auto before = recipients[0]->exp;
+	const auto expected = recipients[0]->calculateXp(500 * teacher->level);
+	handler.heroExchange(teacher->id, recipients[0]->id);
+	EXPECT_EQ(recipients[0]->exp - before, expected);
+}
+
+TEST_F(NewHorizonsLearningMasterTeacherTest, OrisRevalidatesSeparateRawAwardBeforeSpendingWeeklyReceipt)
+{
+	oris = true;
+	startGame();
+	OrisExchangeMutationServer server(gameState(), PlayerColor(0));
+	CGameHandler handler(server, gameState());
+	ASSERT_NO_FATAL_FAILURE(prepareExpert(handler));
+	const auto before = recipients[0]->exp;
+	auto & captured = const_cast<JsonNode &>(teacher->getPrimaryGrowthRules());
+	const auto original = captured;
+	// Adversarial in-process policy change between preparation and grant.
+	server.onExchange = [&captured]()
+	{
+		captured["additionalSpecialties"]["spiritTeacher"]["mentorExperiencePercent"].Integer() = 26;
+	};
+	handler.heroExchange(teacher->id, recipients[0]->id);
+	captured = original;
+	server.onExchange = {};
+	EXPECT_EQ(recipients[0]->exp, before);
+	EXPECT_EQ(teacher->getNewHorizonsLearningMentorRecipients(),
+		(Recipients{ObjectInstanceID::NONE, ObjectInstanceID::NONE}));
 }

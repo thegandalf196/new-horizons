@@ -13,6 +13,7 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/NewHorizonsEagleEye.h"
+#include "../../../lib/entities/hero/NewHorizonsLearningSpecialties.h"
 #include "../../../lib/networkPacks/PacksForClient.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../server/CGameHandler.h"
@@ -43,6 +44,10 @@ protected:
 	EagleEyeRecordingServer learningServer;
 	bool legacyMagic = false;
 	bool disableFrostRing = false;
+	std::string specialtyHero;
+	bool specialtyCaptured = true;
+	bool secondEnemySpell = false;
+	bool retainDraw = false;
 	void SetUp() override
 	{
 		BattleTestFixture::SetUp();
@@ -52,16 +57,39 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		if(retainDraw)
+		{
+			JsonNode enabled;
+			enabled.Bool() = true;
+			loaded->overrideGameSetting(EGameSettings::HEROES_RETREAT_ON_WIN_WITHOUT_TROOPS, enabled);
+		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		auto magic = legacyMagic ? JsonNode() : LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
 		if(disableFrostRing)
 			magic["spells"]["core:frostRing"]["active"].Bool() = false;
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+		if(!specialtyHero.empty() || legacyMagic)
+		{
+			auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+			rules.setOverrideFlag(true);
+			if(legacyMagic)
+				rules["startingSkills"].Struct().erase("startingBookReplacements");
+			if(!specialtyCaptured)
+				rules["additionalSpecialties"].Struct().erase("graveArchivist");
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+			if(!specialtyHero.empty())
+				for(const auto & object : loaded->objects)
+					if(auto * hero = dynamic_cast<CGHeroInstance *>(object.get()); hero && hero->getOwner() == PlayerColor(0))
+						hero->setHeroType(HeroTypeID(HeroTypeID::decode(specialtyHero)));
+		}
 	}
 	void prepare(bool selected = true)
 	{
 		startGame();
+		if(secondEnemySpell)
+			for(auto * hero : {attackerSideHero, defenderSideHero})
+				hero->setStackCount(SlotID(0), 4); // Controlled survivors for the second cast.
 		learningServer.gameState = gameState();
 		gameHandler = std::make_shared<CGameHandler>(learningServer, gameState());
 		gameHandler->randomizer->setSeed(seed);
@@ -77,7 +105,8 @@ protected:
 		}
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(std::string(newHorizonsEagleEye::SKILL_ID))),
 			MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		if(selected)
+		if(selected && !attackerSideHero->getPerkState().hasSelection(std::string(newHorizonsEagleEye::SKILL_ID),
+			std::string(newHorizonsEagleEye::PERK_ID)))
 			attackerSideHero->applyPerkSelection({std::string(newHorizonsEagleEye::SKILL_ID),
 				std::string(newHorizonsEagleEye::PERK_ID)});
 	}
@@ -120,6 +149,31 @@ protected:
 		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), action));
 		ASSERT_EQ(battle()->getUsedSpells(BattleSide::DEFENDER), std::vector<SpellID>{SpellID(SpellID::HASTE)});
 		ASSERT_TRUE(attackerSideHero->canLearnSpell(SpellID(SpellID::HASTE).toEntity(LIBRARY->spells())));
+		if(secondEnemySpell)
+		{
+			defenderSideHero->addSpellToSpellbook(SpellID(SpellID::MAGIC_ARROW));
+			const auto firstRound = battle()->battleGetRound();
+			for(int steps = 0; steps < 40 && (battle()->battleGetRound() <= firstRound
+				|| battle()->battleActiveUnit()->unitSide() != BattleSide::DEFENDER); ++steps)
+			{
+				const auto * active = battle()->battleActiveUnit();
+				ASSERT_NE(active, nullptr);
+				ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+					battle()->battleGetActionController(active), BattleAction::makeDefend(active)));
+			}
+			ASSERT_GT(battle()->battleGetRound(), firstRound);
+			const auto enemies = battle()->battleGetStacksIf([](const CStack * stack)
+				{ return stack->unitSide() == BattleSide::ATTACKER && stack->alive(); });
+			ASSERT_FALSE(enemies.empty());
+			BattleAction arrow;
+			arrow.actionType = EActionType::HERO_SPELL;
+			arrow.side = BattleSide::DEFENDER;
+			arrow.spell = SpellID(SpellID::MAGIC_ARROW);
+			arrow.aimToUnit(enemies.front());
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), arrow));
+			ASSERT_EQ(battle()->getUsedSpells(BattleSide::DEFENDER),
+				(std::vector<SpellID>{SpellID(SpellID::HASTE), SpellID(SpellID::MAGIC_ARROW)}));
+		}
 	}
 	void finishWinner(BattleSide winner)
 	{
@@ -293,4 +347,144 @@ TEST_F(NewHorizonsEagleEyeTest, NormallyDefeatedLoserReceivesNoLearningBeforeRem
 	EXPECT_EQ(gameState()->getHero(learnerId), nullptr);
 	EXPECT_FALSE(std::ranges::any_of(learningServer.learningReceipts, [learnerId](const ChangeSpells & learning)
 		{ return learning.hid == learnerId && !learning.spells.empty(); }));
+}
+
+TEST_F(NewHorizonsEagleEyeTest, NimbusChoosesDistinctEligibleSpellsInStableLevelAndCastOrder)
+{
+	specialtyHero = "core:nimbus";
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto before = attackerSideHero->getSpellsInSpellbook();
+	EXPECT_EQ(newHorizonsEagleEye::selectSpells(attackerSideHero,
+		{SpellID::HASTE, SpellID::HASTE, SpellID::FROST_RING, SpellID::MAGIC_ARROW, SpellID::CHAIN_LIGHTNING}),
+		(std::vector<SpellID>{SpellID::FROST_RING, SpellID::HASTE}));
+	EXPECT_EQ(attackerSideHero->getSpellsInSpellbook(), before);
+	EXPECT_TRUE(newHorizonsEagleEye::selectSpells(attackerSideHero, {}).empty());
+	attackerSideHero->addSpellToSpellbook(SpellID::FROST_RING);
+	EXPECT_EQ(newHorizonsEagleEye::selectSpells(attackerSideHero,
+		{SpellID::FROST_RING, SpellID::MAGIC_ARROW, SpellID::HASTE}),
+		(std::vector<SpellID>{SpellID::MAGIC_ARROW, SpellID::HASTE}));
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:learning")),
+		MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	EXPECT_TRUE(newHorizonsEagleEye::selectSpells(attackerSideHero, {SpellID::HASTE, SpellID::MAGIC_ARROW}).empty());
+}
+TEST_F(NewHorizonsEagleEyeTest, NimbusAbsentCaptureRetainsSingleSpellSelection)
+{
+	specialtyHero = "core:nimbus";
+	specialtyCaptured = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	EXPECT_EQ(newHorizonsEagleEye::selectSpells(attackerSideHero, {SpellID::HASTE, SpellID::MAGIC_ARROW}),
+		(std::vector<SpellID>{SpellID::HASTE}));
+}
+TEST_F(NewHorizonsEagleEyeTest, NimbusActualTwoEnemyCastsPublishBothWinnerSpells)
+{
+	specialtyHero = "core:nimbus";
+	secondEnemySpell = true;
+	ASSERT_NO_FATAL_FAILURE(prepareEnemyHasteCast());
+	ASSERT_NO_FATAL_FAILURE(finishWinner(BattleSide::ATTACKER));
+	EXPECT_TRUE(attackerSideHero->getSpellsInSpellbook().contains(SpellID::HASTE));
+	EXPECT_TRUE(attackerSideHero->getSpellsInSpellbook().contains(SpellID::MAGIC_ARROW));
+}
+TEST_F(NewHorizonsEagleEyeTest, NimbusActualRetreatPublishesBothDistinctSpells)
+{
+	specialtyHero = "core:nimbus";
+	secondEnemySpell = true;
+	ASSERT_NO_FATAL_FAILURE(verifyRetainedLoser(EBattleResult::ESCAPE));
+	EXPECT_TRUE(attackerSideHero->getSpellsInSpellbook().contains(SpellID::MAGIC_ARROW));
+}
+TEST_F(NewHorizonsEagleEyeTest, NimbusActualSurrenderPublishesBothDistinctSpells)
+{
+	specialtyHero = "core:nimbus";
+	secondEnemySpell = true;
+	ASSERT_NO_FATAL_FAILURE(verifyRetainedLoser(EBattleResult::SURRENDER));
+	EXPECT_TRUE(attackerSideHero->getSpellsInSpellbook().contains(SpellID::MAGIC_ARROW));
+}
+TEST_F(NewHorizonsEagleEyeTest, NimbusLearningEnhancesOnlyTheCoreContributionWithSeparateFloors)
+{
+	specialtyHero = "core:nimbus";
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	attackerSideHero->level = 1;
+	EXPECT_EQ(attackerSideHero->calculateXp(101), 111);
+	attackerSideHero->level = 10;
+	EXPECT_EQ(attackerSideHero->calculateXp(1000), 1150);
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::HERO_EXPERIENCE_GAIN_PERCENT, BonusSource::OTHER, 20, BonusSourceID(),
+		BonusSubtypeID(), BonusValueType::PERCENT_TO_BASE));
+	EXPECT_EQ(attackerSideHero->calculateXp(1000), 1350);
+	EXPECT_EQ(attackerSideHero->calculateXp(1000, 25), 1600);
+	EXPECT_EQ(attackerSideHero->calculateXp(0), 0);
+	EXPECT_EQ(attackerSideHero->calculateXp(-1000), -1300);
+	attackerSideHero->level = std::numeric_limits<uint32_t>::max();
+	EXPECT_EQ(attackerSideHero->calculateXp(1000), 1400);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:learning")),
+		MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(attackerSideHero->calculateXp(1000), 1200);
+}
+
+TEST_F(NewHorizonsEagleEyeTest, NimbusRetainedDrawLearnsBothPriorEnemySpells)
+{
+	specialtyHero = "core:nimbus";
+	secondEnemySpell = true;
+	retainDraw = true;
+	ASSERT_NO_FATAL_FAILURE(prepareEnemyHasteCast());
+	const auto learnerId = attackerSideHero->id;
+	auto query = std::make_shared<CBattleQuery>(gameHandler.get(), battle());
+	gameHandler->queries->addQuery(query);
+	const auto previousRound = battle()->battleGetRound();
+	for(int steps = 0; steps < 40 && (battle()->battleGetRound() <= previousRound
+		|| battle()->battleActiveUnit()->unitSide() != BattleSide::DEFENDER); ++steps)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+			battle()->battleGetActionController(active), BattleAction::makeDefend(active)));
+	}
+	ASSERT_GT(battle()->battleGetRound(), previousRound);
+	defenderSideHero->addSpellToSpellbook(SpellID::ARMAGEDDON);
+	setTestSpellPointTotal(defenderSideHero, 100);
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::DEFENDER;
+	action.spell = SpellID::ARMAGEDDON;
+	action.aimToHex(BattleHex::INVALID);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), action));
+	ASSERT_TRUE(query->result);
+	ASSERT_EQ(query->result->winner, BattleSide::NONE);
+	ASSERT_NO_FATAL_FAILURE(acceptResult());
+	const auto receipt = std::find_if(learningServer.learningReceipts.begin(), learningServer.learningReceipts.end(),
+		[learnerId](const ChangeSpells & entry) { return entry.hid == learnerId && entry.eagleEyeBonus; });
+	ASSERT_NE(receipt, learningServer.learningReceipts.end());
+	EXPECT_EQ(receipt->spells, (std::set<SpellID>{SpellID::HASTE, SpellID::MAGIC_ARROW}));
+}
+
+TEST_F(NewHorizonsEagleEyeTest, NimbusPresentationUsesCapturedNumbersAndLegacyMagicEligibility)
+{
+	specialtyHero = "core:nimbus";
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto & hero = *attackerSideHero->getHeroType();
+	const auto & rules = attackerSideHero->getPrimaryGrowthRules();
+	const auto current = newHorizonsHeroes::resolveSpecialtyPresentation(hero, rules,
+		attackerSideHero->getMagicRules(), std::nullopt, attackerSideHero);
+	EXPECT_EQ(current.name, "Grave Archivist");
+	EXPECT_NE(current.description.find("5% per hero level"), std::string::npos);
+	EXPECT_NE(current.description.find("1 additional distinct"), std::string::npos);
+	EXPECT_THROW(newHorizonsHeroes::resolveSpecialtyPresentation(hero, rules, JsonNode(),
+		std::nullopt, attackerSideHero), std::invalid_argument);
+	auto absent = rules;
+	absent["additionalSpecialties"].Struct().erase("graveArchivist");
+	const auto historical = newHorizonsHeroes::resolveSpecialtyPresentation(hero, absent,
+		attackerSideHero->getMagicRules(), std::nullopt);
+	EXPECT_NE(historical.name, "Grave Archivist");
+}
+
+TEST_F(NewHorizonsEagleEyeTest, NimbusCapturedLegacyMagicPresentationKeepsAdditionalLearningInactive)
+{
+	specialtyHero = "core:nimbus";
+	legacyMagic = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(attackerSideHero->getMagicRules().isNull());
+	const auto legacy = newHorizonsHeroes::resolveSpecialtyPresentation(*attackerSideHero->getHeroType(),
+		attackerSideHero->getPrimaryGrowthRules(), attackerSideHero->getMagicRules(),
+		std::nullopt, attackerSideHero);
+	EXPECT_EQ(legacy.name, "Grave Archivist");
+	EXPECT_NE(legacy.description.find("inactive under this game's legacy magic rules"), std::string::npos);
 }

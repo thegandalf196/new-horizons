@@ -301,6 +301,8 @@ private:
 		std::optional<std::array<uint8_t, 4>>                  heroPrimarySkills;
 		std::vector<std::pair<SecondarySkill, uint8_t>>        heroSecondarySkills;
 		std::optional<std::vector<SpellID>>                    heroSpells;
+		// Presence is distinct from an empty authored artifact set.
+		bool heroArtifactSetRequested = false;
 		std::vector<std::pair<ArtifactPosition, ArtifactID>>   heroEquippedArts;
 		std::vector<ArtifactID>                                heroBackpackArts;
 

@@ -558,6 +558,9 @@ public:
 	void removeArtifact(const ArtifactPosition & pos) override;
 	void initExp(vstd::RNG & rand);
 	void initArmy(vstd::RNG & rand, IArmyDescriptor *dst = nullptr);
+	bool requestsDefaultStartingEquipment() const { return defaultStartingEquipmentRequested; }
+	/// Preserve explicit empty map equipment independently from default creation.
+	void serializeJsonArtifacts(JsonSerializeFormat & handler, const std::string & fieldName, CMap * map);
 	void pushPrimSkill(PrimarySkill which, int val);
 	ui8 maxlevelsToMagicSchool() const;
 	ui8 maxlevelsToWisdom() const;
@@ -646,6 +649,11 @@ private:
 	newHorizonsHeroes::PerkState perkState;
 	/// Investor's fixed per-day bonus captured from the owner's treasury at week start.
 	int32_t newHorizonsInvestorDailyGold = 0;
+	// Loader-only creation intent; binary/crossover snapshots are never fresh default requests.
+	bool defaultStartingEquipmentRequested = true;
+	bool usesGuaranteedDefaultTent() const;
+	void initializeDefaultStartingEquipment(bool creationInitialization);
+	void initializeBasicStartingEquipment(bool isFake);
 	bool primaryGrowthCaptured = false;
 	JsonNode primaryGrowthRules;
 	newHorizonsMagic::AdventureSpellState newHorizonsAdventureSpellState;
@@ -752,7 +760,8 @@ public:
 			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
 		if(h.saving)
 			newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
@@ -915,7 +924,8 @@ public:
 				newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION),
 					h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS),
-					h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES));
+					h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES),
+					h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
 				newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 				newHorizonsHeroes::validateMasterSpellwardSerialization(primaryGrowthRules,
@@ -1142,6 +1152,7 @@ public:
 			masteryRulesCaptured = true;
 			perkRulesCaptured = true;
 			primaryGrowthCaptured = true; // Includes old saves: absence is legacy, not a new-game request.
+			defaultStartingEquipmentRequested = false;
 			capabilityRulesCaptured = true;
 		}
 		if(!h.saving && h.loadingGamestate)

@@ -187,6 +187,7 @@ set(test_SRCS
 		creatures/NewHorizonsCreatureCategoryRulesTest.cpp
 		creatures/NewHorizonsCreatureCategorySchemaTest.cpp
 		hero/NewHorizonsPrimaryProfileTest.cpp
+		hero/NewHorizonsStartingEquipmentProjectionTest.cpp
 		hero/NewHorizonsPrimaryGrowthTest.cpp
 		hero/NewHorizonsPrimaryScaleTest.cpp
 		hero/SpellPointStateTest.cpp
@@ -215,6 +216,10 @@ set(test_SRCS
 		hero/NewHorizonsHeroRulesTest.cpp
 		hero/NewHorizonsIndividualSpecialtiesTest.cpp
 	hero/NewHorizonsSchoolSpellcraftRulesTest.cpp
+	hero/NewHorizonsAdditionalSpecialtiesTest.cpp
+	battle/NewHorizonsManaFurnacePersistenceTest.cpp
+	hero/NewHorizonsManaFurnaceRulesTest.cpp
+	hero/NewHorizonsLearningSpecialtyRulesTest.cpp
 		hero/NewHorizonsSkillSpecialtyQueryTest.cpp
 		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroBiographyTest.cpp
@@ -235,6 +240,7 @@ set(test_SRCS
 		map/NewHorizonsStartingDevelopmentTest.cpp
 		map/NewHorizonsNavigationSuccessorTest.cpp
 		server/NewHorizonsStartingBookReplacementTest.cpp
+		server/NewHorizonsStartingEquipmentTest.cpp
 		server/battles/NewHorizonsRemainingSpellSpecialtyTest.cpp
 		NewHorizonsHistoricalAdventurePolicyTestUtils.h
 		game/NewHorizonsLighthouseDepartureFixture.h
@@ -503,6 +509,8 @@ set(test_SRCS
 		server/battles/NewHorizonsDruidConsumerTest.cpp
 		server/battles/NewHorizonsIndividualSpecialtyConsumerTest.cpp
 	server/battles/NewHorizonsSchoolSpellcraftConsumerTest.cpp
+	server/battles/NewHorizonsFieldPhysicianTest.cpp
+	server/battles/NewHorizonsManaFurnaceTest.cpp
 		server/battles/NewHorizonsCanonicalSpellClausesSerializationTest.cpp
 		server/battles/NewHorizonsImplosionTest.cpp
 		server/battles/NewHorizonsTemporaryMagicDispelTest.cpp

@@ -55,6 +55,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && info)
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				info->getSide(side).validateManaFurnaceSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
+		if(h.saving && info)
 			info->validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving && info && info->getLuckRollRules().finalDirectPhysicalMultiplier
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))

@@ -11,6 +11,8 @@
 #include "NewHorizonsMagicPresentation.h"
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsCureHealing.h"
+#include "../entities/hero/NewHorizonsAdditionalSpecialties.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsSorcery.h"
 #include "CSpell.h"
@@ -134,6 +136,16 @@ void describeCure(std::string & result, const CGHeroInstance * hero, const spell
 			+ " \u00d7 Spell Power HP and cannot resurrect casualties. "
 			"If the target has Poison or Disease, choose one physical affliction to remove. "
 			"Cure does not remove magical effects.";
+		if(newHorizonsHeroes::fieldPhysicianHealingPercent(hero) > 0)
+		{
+			const auto healing = cureHealingBudget(hero, std::max<int32_t>(0, hero->getEffectPower(spell)),
+				coefficientBasisPoints, 0, empowerBonusPercent);
+			result = "Targets one friendly living stack. Current healing: " + std::to_string(healing)
+				+ " HP, including Field Physician on the fixed and Spell Power components. "
+				"Healer, when present, strengthens only the Spell Power component. "
+				"This excludes battle-only Warcasting and cannot resurrect casualties. "
+				"You may remove one physical affliction; magical effects remain.";
+		}
 	}
 }
 

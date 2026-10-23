@@ -72,8 +72,13 @@ balance, artwork and some interactions are still being refined.
 
 - **Hero identities are being revised.** Starting development, biographies and
   specialties are being reworked. For example, Isra strengthens Necromancy, while
-  Malekith strengthens Spellcraft’s contribution to direct spell damage. Further
-  individual hero redesigns remain in development.
+  Malekith strengthens Spellcraft’s contribution to direct spell damage. Rion
+  improves Cure and First Aid Tent creature healing; Ayden can recover Normal
+  Mana when entering combat with Intelligence active. Nimbus strengthens Learning
+  and learns an additional eligible spell with Eagle Eye, while Oris strengthens
+  Learning and authorized Mentor teaching. Rion and Verdish start with a First
+  Aid Tent when using default equipment; explicitly authored equipment is respected.
+  Further individual hero redesigns remain in development.
 
 ### Artwork and presentation
 

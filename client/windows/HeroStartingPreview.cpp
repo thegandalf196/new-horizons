@@ -21,9 +21,9 @@
 
 namespace
 {
-newHorizonsHeroes::StartingHeroOverrides authoredOverrides(const CGHeroInstance & hero)
+newHorizonsHeroes::StartingHeroOverrides authoredOverrides(const CGHeroInstance & hero, const CMap & map)
 {
-	return newHorizonsHeroes::authoredStartingHeroOverrides(hero);
+	return newHorizonsHeroes::authoredStartingHeroOverrides(hero, &map);
 }
 }
 
@@ -32,6 +32,8 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 {
 	const auto & prototype = *id.toHeroType();
 	auto context = newHorizonsHeroes::startingHeroContext(*LIBRARY->engineSettings());
+	context.freshEquipmentDefaults = !capturedHero
+		&& (!selectedMap || (!selectedMap->campaign && !selectedMap->scenarioOptionsOfSave));
 	newHorizonsHeroes::StartingHeroOverrides overrides;
 	const IGameSettings * effectiveSettings = LIBRARY->engineSettings();
 	std::unique_ptr<CMap> map;
@@ -49,21 +51,26 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 			effectiveSettings = &map->getSettings();
 			context = newHorizonsHeroes::startingHeroContext(*effectiveSettings);
 			result.defaultProfile = false;
+			const CGHeroInstance * authored = nullptr;
 			for(const auto & object : map->objects)
 				if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get());
 					hero && hero->getHeroTypeID() == id && hero->getOwner() == owner)
 				{
-					overrides = authoredOverrides(*hero);
-					if(!capturedHero)
-					{
-						// A parsed preview map never installs its text globally.
-						// Composite lookup retains static translation override priority.
-						CompositeTranslator mapTranslator;
-						mapTranslator.install(map->texts);
-						result.biography = heroStartingBiography(prototype, mapTranslator, hero);
-					}
+					authored = hero;
 					break;
 				}
+			if(!authored && newHorizonsHeroes::guaranteesDefaultFirstAidTent(id, context.development))
+				authored = map->tryGetFromHeroPool(id);
+			if(authored)
+			{
+				overrides = authoredOverrides(*authored, *map);
+				if(!capturedHero)
+				{
+					CompositeTranslator mapTranslator;
+					mapTranslator.install(map->texts);
+					result.biography = heroStartingBiography(prototype, mapTranslator, authored);
+				}
+			}
 		}
 		catch(const std::exception & error)
 		{
@@ -84,6 +91,7 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 		context = {callback.getHeroDevelopmentRules(), callback.getHeroCapabilityRules(),
 			callback.getHeroPerkRules(), callback.getMagicRules(), false,
 			bounds.minimumPrimary, bounds.maximumPrimary};
+		context.freshEquipmentDefaults = false; // An ongoing world is not fresh creation intent.
 		effectiveSettings = &callback.getSettings();
 	}
 	if(capturedHero)
@@ -109,9 +117,8 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 		for(const auto & row : context.perks["skills"][selection.skillId]["perks"].Vector())
 			if(row["id"].String() == selection.perkId)
 				result.perkNames[selection.perkId] = row["name"].String();
-	result.stackChances = effectiveSettings->getVector(EGameSettings::HEROES_STARTING_STACKS_CHANCES);
-	if(overrides.army)
-		result.stackChances.assign(overrides.army->size(), 100);
+	result.stackChances = newHorizonsHeroes::startingArmyChances(result.values, overrides,
+		effectiveSettings->getVector(EGameSettings::HEROES_STARTING_STACKS_CHANCES));
 	return result;
 }
 

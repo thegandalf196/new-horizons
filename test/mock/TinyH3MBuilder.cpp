@@ -304,6 +304,7 @@ TinyH3MBuilder & TinyH3MBuilder::heroEquipped(std::vector<std::pair<ArtifactPosi
 {
 	auto & spec = lastObject();
 	assert(spec.id == Obj::HERO || spec.id == Obj::RANDOM_HERO);
+	spec.heroArtifactSetRequested = true;
 	spec.heroEquippedArts = std::move(equipped);
 	return *this;
 }
@@ -312,6 +313,7 @@ TinyH3MBuilder & TinyH3MBuilder::heroBackpack(std::vector<ArtifactID> backpack)
 {
 	auto & spec = lastObject();
 	assert(spec.id == Obj::HERO || spec.id == Obj::RANDOM_HERO);
+	spec.heroArtifactSetRequested = true;
 	spec.heroBackpackArts = std::move(backpack);
 	return *this;
 }
@@ -1182,7 +1184,8 @@ void TinyH3MBuilder::writeHeroBody(TinyH3MWriter & w, const ObjectSpec & obj) co
 
 	w.writeInt8(0);                        // formation = LOOSE
 
-	const bool hasArtSet = !obj.heroEquippedArts.empty() || !obj.heroBackpackArts.empty();
+	const bool hasArtSet = obj.heroArtifactSetRequested
+		|| !obj.heroEquippedArts.empty() || !obj.heroBackpackArts.empty();
 	w.writeBool(hasArtSet);
 	if(hasArtSet)
 		writeArtifactSet(w, obj.heroEquippedArts, obj.heroBackpackArts);

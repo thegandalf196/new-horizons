@@ -76,6 +76,15 @@ const std::array<KnowledgeArtifact, 4> & knowledgeArtifacts()
 	return artifacts;
 }
 
+// Both historical world codecs predate only Fly's newer day-end clause.
+void capturePreFlyDayEndMagic(CMap & map)
+{
+	auto magic = map.getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+	magic["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
+	magic.setOverrideFlag(true);
+	map.overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+}
+
 class SpellPointCapacityTest : public BattleTestFixture
 {
 protected:
@@ -358,6 +367,10 @@ protected:
 		{
 			development.Struct().erase("bottomlessMindSpecialty");
 			development.Struct().erase("masterSpellwardSpecialty"); // Explicit pre-Bottomless capture.
+			capturePreFlyDayEndMagic(*loaded);
+			// These optional tables were introduced after the declared historical codec.
+			for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties"})
+				development.Struct().erase(key);
 			// This historical world predates R2 but retains captured policy1.
 			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
 			perks["offerWeightPolicyVersion"].Integer() = 1;
@@ -436,6 +449,9 @@ protected:
 		development.Struct().erase("arcanePreparationSpecialty");
 		development.Struct().erase("bottomlessMindSpecialty");
 		development.Struct().erase("masterSpellwardSpecialty");
+		// These optional tables were introduced after the declared historical codec.
+		for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties"})
+			development.Struct().erase(key);
 		// Isolate Druid admission/codec guards from the same-epoch weighted
 		// offer feature; the existing fixture uses its historical offer helper.
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
@@ -445,7 +461,10 @@ protected:
 		perks.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		if(!captureHighLore())
+		{
 			development.Struct().erase("druidSpecialties");
+			capturePreFlyDayEndMagic(*loaded);
+		}
 		development.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
 		for(const auto & object : loaded->objects)

@@ -1332,16 +1332,16 @@ void CMap::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2S
 }
 
 
-void CMap::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported, bool schoolSupported) const
+void CMap::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported, bool schoolSupported, bool additionalSupported) const
 {
 	if(gameSettings)
-		gameSettings->validateNewHorizonsIndividualSpecialtiesSerialization(supported, ridersSupported, schoolSupported);
+		gameSettings->validateNewHorizonsIndividualSpecialtiesSerialization(supported, ridersSupported, schoolSupported, additionalSupported);
 	for(const auto & object : objects)
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(hero->getPrimaryGrowthRules(), supported, ridersSupported, schoolSupported);
+			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(hero->getPrimaryGrowthRules(), supported, ridersSupported, schoolSupported, additionalSupported);
 	for(const auto & hero : heroesPool)
 		if(hero)
-			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(hero->getPrimaryGrowthRules(), supported, ridersSupported, schoolSupported);
+			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(hero->getPrimaryGrowthRules(), supported, ridersSupported, schoolSupported, additionalSupported);
 }
 
 void CMap::validateNewHorizonsBottomlessMindSerialization(bool supported) const

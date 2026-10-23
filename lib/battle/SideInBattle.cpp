@@ -16,6 +16,7 @@
 
 void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town)
 {
+	manaFurnaceRecoveredNormal = 0;
 	armyObjectID = Army->id;
 	if (Hero)
 	{
@@ -64,4 +65,19 @@ const CGHeroInstance * SideInBattle::getHero() const
 	if (heroID.hasValue())
 		return cb->getHero(heroID);
 	return nullptr;
+}
+
+void SideInBattle::validateManaFurnaceSerialization(bool supported) const
+{
+	if(manaFurnaceRecoveredNormal < 0 || manaFurnaceRecoveredNormal > 1000000)
+		throw std::runtime_error("Invalid Mana Furnace entry recovery");
+	if(!supported && manaFurnaceRecoveredNormal != 0)
+		throw std::runtime_error("Cannot discard Mana Furnace entry recovery");
+}
+
+int32_t SideInBattle::legacySpellPointCompletionCeiling() const
+{
+	validateManaFurnaceSerialization(true);
+	return static_cast<int32_t>(std::clamp<int64_t>(static_cast<int64_t>(initialMana) + manaFurnaceRecoveredNormal,
+		0, std::numeric_limits<int32_t>::max()));
 }

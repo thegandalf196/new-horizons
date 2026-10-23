@@ -215,6 +215,11 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	bool phoenixSparkUsed = false;
 	newHorizonsCrossSchoolFormula::State crossSchoolFormula;
 	RapidResponseState rapidResponse;
+	// Actual persistent Normal recovery, separate from rollback snapshots.
+	int32_t manaFurnaceRecoveredNormal = 0;
+
+	void validateManaFurnaceSerialization(bool supported) const;
+	int32_t legacySpellPointCompletionCeiling() const;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -399,6 +404,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateManaFurnaceSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
 		heroActionAllowances.validateHeroicSpiritSerialization(h);
 		for(const auto & order : orderStates)
 			order.validateHeroLuckSerialization(h);
@@ -800,6 +807,12 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			validatePreCombatOrderState();
 		}
 		h & crossSchoolFormula;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES))
+			h & manaFurnaceRecoveredNormal;
+		else if(!h.saving)
+			manaFurnaceRecoveredNormal = 0;
+		if(!h.saving)
+			validateManaFurnaceSerialization(true);
 	}
 
 	void clearMetamagicSequence()

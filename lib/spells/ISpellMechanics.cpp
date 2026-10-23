@@ -12,6 +12,7 @@
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsImplosion.h"
+#include "NewHorizonsCureHealing.h"
 #include "NewHorizonsSorcery.h"
 #include "NewHorizonsCrossSchoolFormula.h"
 #include "NewHorizonsElementalTerrain.h"
@@ -1278,23 +1279,8 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			}
 			else if(battle && newHorizonsMagic::cureEnabled(battle->getMagicRules(), owner->getId()))
 			{
-				// The specialty scales only Cure's Spell-Power component. Its fixed
-				// component and downstream target/effect modifiers retain their
-				// existing stages in the usual heal.lua application path.
-				const auto * hero = caster->getHeroCaster();
-				const int specialtyPercent = hero
-					? hero->getNonDamageSpellSpecialtyBonusPercent(owner->getId()) : 0;
-				auto powerHealing = scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
-					3LL * effectPower, 2, spellPowerCoefficientBasisPoints, specialtyPercent);
-				if(const auto specialty = hero
-					? hero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::RESTORATIVE_SORCERESS)
-					: std::nullopt)
-					powerHealing += newHorizonsHeroes::druidSpecialtyExtra(powerHealing,
-						newHorizonsHeroes::druidSpecialtyPercent(hero->level, specialty->restorativeSorceress));
-				if(hero && hero->hasActivePerk(
-					"new-horizons:lightMagic", "new-horizons:lightMagic.healer"))
-					powerHealing = powerHealing * 120 / 100;
-				effectValue = 25 + powerHealing;
+				effectValue = newHorizonsMagic::cureHealingBudget(caster->getHeroCaster(), effectPower,
+					spellPowerCoefficientBasisPoints, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
 			}
 			else if(battle && newHorizonsMagic::resurrectionRestorationEnabled(
 				battle->getMagicRules(), owner->getId()))

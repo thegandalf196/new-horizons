@@ -2751,9 +2751,9 @@
           "symbol": "TinyH3M::TinyH3MBuilder::const std::string & script() const#1"
         }
       ],
-      "rationale": "Complete 374-line header review finds exactly six authored inline bodies: four Quest fluent setters and TinyH3MBuilder withScript/script. Remaining constructor, methods and mission/reward factories are declarations only. Empty defaults in quest-related declarations cause recovery but do not represent bodies. No lambdas or function-like macro definitions.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "8f571b18db522792ecc57f2206e193191a48805200b334c89082ffb31d968642"
+      "rationale": "Complete 376-line header review finds exactly six authored inline bodies: four Quest fluent setters and TinyH3MBuilder withScript/script. Their spans and bytes remain unchanged after adding an explicit artifact-set intent member and comment. Remaining constructor, methods and mission/reward factories are declarations only. Empty defaults in quest-related declarations cause the same five parser recoveries but do not represent bodies. No lambdas or function-like macro definitions.",
+      "review": "explicit-empty-artifact-fixture-manual-coverage-v1",
+      "sha256": "81c2f0ff87a48cb2bc277b830a5bf241dd9772329ebd9526565175bb25d12780"
     },
     "test/nullkiller2/Engine/ResourceTraderTest.cpp": {
       "functions": [
@@ -11339,9 +11339,9 @@
     },
     "lib/entities/hero/HeroStartingProjection.h": {
       "functions": [],
-      "rationale": "Three data-only structs with member aggregate initializers44 and function prototypes52–71. Default overrides={}56 and std::function argument type71 are not callable implementations. No constructors or inline methods with bodies, function-like macro definitions, or lambdas.",
-      "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
-      "sha256": "50b5d659bdf6f09ed931d22990a2494a4e5594b3968a571eeed8ad6a88b417f7"
+      "rationale": "Three data-only structs and function declarations; new default-equipment intent flags and optional chance fields have no callable bodies. All functions remain declarations, including the default override and std::function arguments. No constructors, inline methods, lambdas or function-like macro definitions.",
+      "review": "default-tent-starting-preview-data-header-v1",
+      "sha256": "dd510ad651f876d7dc71534cb7aed2e9128dcd6bc9bc4651301e625e206f8da6"
     },
     "lib/entities/hero/NewHorizonsNecromancy.h": {
       "sha256": "7ec527bbb5cc99f5a8e64be63782ffeaa071d330be0748efea9feceecc7d440b",
@@ -13355,9 +13355,9 @@
       "sha256": "8a66820e4a8fd8b0dd8f1de65cee50338b1c44c76444b8a731dcae2502ee1abb"
     },
     "server/CGameHandler.h": {
-      "sha256": "691dcba92d719128b82df30848e9a640072bfe9ea0a59c337ca0dfbe87a20757",
-      "review": "IR-STAGE11-CURRENT-COMPOSITION-SOURCE-20261017",
-      "rationale": "Complete exact two-body inline inventory: gameState104 and serialize296-307 remain byte-identical. Added SetStackEffect forward/private helper declarations add no implementation. Existing default-argument recovery234 remains explicitly covered; no new coverage waiver.",
+      "sha256": "12a835c9d37149240346a06d6d784d709f8e23fa7031dd4b4e73e654b9a39848",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "rationale": "Complete exact two-body inventory retained: gameState104 and serialize296-307 remain byte-identical. Added unsaved rawExperience award data member adds no implementation or new callable. Existing default-argument recovery remains explicitly covered; no coverage waiver.",
       "functions": [
         {
           "symbol": "CGameHandler::const CGameState & gameState() const#1",
@@ -15843,24 +15843,29 @@
           "end": 479
         },
         {
+          "symbol": "CGHeroInstance::bool requestsDefaultStartingEquipment() const#1",
+          "start": 561,
+          "end": 561
+        },
+        {
           "symbol": "CGHeroInstance::static bool isValidNewHorizonsDiplomacyState(int32_t peacemakerLastWeek, ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek, int32_t pactExpiryDay = -1)#1",
-          "start": 679,
-          "end": 685
+          "start": 687,
+          "end": 693
         },
         {
           "symbol": "CGHeroInstance::static bool isValidNewHorizonsForcedMarchState(int32_t lastUseDay, int32_t penaltyDay)#1",
-          "start": 686,
-          "end": 690
+          "start": 694,
+          "end": 698
         },
         {
           "symbol": "CGHeroInstance::void serialize(Handler &h)#1",
-          "start": 698,
-          "end": 1155
+          "start": 706,
+          "end": 1166
         }
       ],
-      "rationale": "Complete64-body inventory retained. Existing serializer698-1153 becomes698-1155 solely from two independent school-capability argument lines; other bodies unchanged. Recovery at488 is a bodyless defaulted declaration, not an omitted callable. Exact manual coverage only; direct/enclosing compatibility acceptance is separate.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "sha256": "22159d36edd4e085744fb300f895dc6de47243b03e402dfecda55588de12aff5",
+      "rationale": "Complete65-body inventory retains all64 existing inline bodies byte-for-byte and adds only the one-line loader-equipment intent getter. Subsequent spans shift by one; serializer payload remains unchanged. Existing bodyless parser recovery remains unchanged. Declarations and default member initializers are not callable bodies.",
+      "review": "default-tent-starting-preview-complete-header-v1",
+      "sha256": "cfc49ea2ff97ac99189c28f4113ee7b2609f6829c50cc0d9de396aac871ec9f7",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/callback/CGameInfoCallback.cpp": {
@@ -20788,13 +20793,13 @@
     },
     "client/windows/CHeroWindow.cpp": {
       "kind": "exception",
-      "lines": 1142,
+      "lines": 1141,
       "owner": "ui_developer",
-      "rationale": "Shrinking1143-to1142-line label-presentation extraction. Font measurement/fallback/UTF8 ellipsis moves to focused58-line helper; Hero Window keeps two label calls and full elided-title hover. Existing layout geometry, icons, descriptions and input/state handling unchanged; no regrowth credit.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "deferral": "UI owner retains decreasing1142-line bound and existing window/lifecycle obligations. Before substantive expansion, extract a cohesive presentation refresh stage with covered/inactive resize, hover, biography, artifact interaction and legacy-layout parity. No rendered acceptance or unrelated growth is implied.",
-      "sha256": "ceed42be67a489283ef08097b0ca761b7b8adb7cde952a7fe242b1f0cad9025c",
+      "rationale": "Shrinking compact Skill-name routing through the existing measured label helper; SMALL then TINY fitting restores the preferred font on each refresh. Existing geometry, full help, click areas, ranks and gameplay remain unchanged. Independently reviewed exact source; rendering pending.",
+      "review": "compact-skill-label-independent-source-review",
+      "review_scope": "measured-compact-skill-name-font-fit-only",
+      "deferral": "UI owner retains decreasing1141-line bound and existing window/lifecycle obligations. Before substantive expansion, extract a cohesive presentation refresh stage with covered/inactive resize, hover, biography, artifact interaction and legacy-layout parity. No rendered acceptance or unrelated growth is implied.",
+      "sha256": "3c7d5345c14786c958173ea8b782c73703b9cd3c16f34eaaf9e422507fdd8e33",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/CHeroWindow.cpp::CHeroWindow::CHeroWindow(const CGHeroInstance * hero) : CWindowObject(useNewHorizonsHeroLayout(hero) ? BORDERED : PLAYER_COLORED, ImagePath::builtin(useNewHorizonsHeroLayout(hero) ? \"newHorizonsHeroBackground\" : ENGINE->isRoeData() ? \"HeroScr3\" : \"HeroScr4\"))#1": {
@@ -20818,13 +20823,13 @@
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::refreshHero(bool refreshArtifactInteraction)#1": {
       "kind": "exception",
-      "lines": 397,
+      "lines": 396,
       "owner": "ui_developer",
-      "rationale": "Exact397-line no-growth refresh routing: replace inline specialty fit with focused58-line helper, fit compact title through the same font metrics, and retain full elided title in portrait hover. No new interaction, command or callback; window file separately shrinks.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "deferral": "UI owner must separate cohesive presentation-label refresh from artifact/tactics interaction before further substantive growth. Preserve active-window cursor ownership, covered redraw behavior, full hover/biography, preferred-font restoration and legacy-layout transitions. Exact397-line no-growth exception only.",
-      "sha256": "d1733c7c04c55bd54214affe05a1f4fdcb72a090fed046b0ff6403a4c31a534b",
+      "rationale": "Shrinking compact Skill-name routing through the existing measured label helper; SMALL then TINY fitting restores the preferred font on each refresh. Existing geometry, full help, click areas, ranks and gameplay remain unchanged. Independently reviewed exact source; rendering pending.",
+      "review": "compact-skill-label-independent-source-review",
+      "review_scope": "measured-compact-skill-name-font-fit-only",
+      "deferral": "UI owner must separate cohesive presentation-label refresh from artifact/tactics interaction before further substantive growth. Preserve active-window cursor ownership, covered redraw behavior, full hover/biography, preferred-font restoration and legacy-layout transitions. Exact396-line no-growth exception only.",
+      "sha256": "0bcb44ccc11f8bb986d84d8688b1c2d1cba7f32cda978beed5799e9dca21b4d9",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::restoreLegacyLayout()#1": {
@@ -21088,13 +21093,15 @@
       "sha256": "7133061a21ccac4ecaddd2d1ada981482b9f1b2dfc74f1e528c253273c08b95b"
     },
     "client/windows/HeroStartingPreview.cpp::HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selectedMap, PlayerColor owner, const CGHeroInstance * capturedHero)#1": {
-      "kind": "legacy",
-      "lines": 87,
+      "kind": "exception",
+      "lines": 94,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 87 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "abe47c9adada2df6547cd3b7a946bfd7016a32d1f765e217bbd0aa6460c07113"
+      "rationale": "Seven-line correctness routing growth resolves authored equipment through the parsed map and shares pure Tent chance projection while preserving biography isolation and widget geometry.",
+      "review": "default-tent-starting-preview-source-v1",
+      "review_scope": "shared-pure-equipment-eligibility-and-loader-aware-starting-preview-only",
+      "sha256": "429025360c67503616bd5b2953a6b6de658eef06872bebfdc0d122aad997ef9e",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI developer: extract selected-map context and authored-hero lookup before further expansion; preserve loader-only ownership, translator priority, default/failure labeling and saved-world refusal to claim fresh defaults. Exact94-line method only; no general growth allowance."
     },
     "client/windows/InfoWindows.cpp": {
       "kind": "legacy",
@@ -21901,15 +21908,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Keep one canonical mechanically ordered registry entry per component. Actual implementation remains in focused units; this exact registration exception grants no unrelated growth.",
+      "deferral": "Exact single registration growth only. Keep behavior in focused compiled owners; further declarative registry growth requires renewed exact review and does not authorize executable helpers.",
       "kind": "exception",
-      "lines": 1297,
+      "lines": 1310,
       "owner": "engine_engineer",
-      "rationale": "Mechanical1292-to-1297-line source/header registry extension for the focused school-policy, cast-context/coefficient and label-fit components. No implementation bodies or textual source fragments in this registry.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
+      "rationale": "Register the cohesive HeroStartingEquipment compilation unit only; no executable mechanics in this declarative registry.",
+      "review": "default-hero-equipment-creation-source-v1",
+      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "26c5079d87ddf6c7718a48db1871156615373040740c312a3aa3a5ae05df31c4"
+      "sha256": "d88841baff26e727089002141ac6eac9544f5a0e0391066e93f331b61b0288e1"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21960,14 +21967,14 @@
     },
     "lib/GameSettings.h::GameSettings::void serialize(Handler & h)#1": {
       "kind": "exception",
-      "lines": 133,
+      "lines": 135,
       "owner": "engine_engineer",
-      "rationale": "Exact131-to-133-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "1a09c2475b3c0c5c940de1e8ce53b3a4f55fca5545901d5f2cc645729c643a38",
+      "rationale": "One additional optional specialty capability forwarded through existing direct writer/reader guards; prefix order and historical absence retained.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "6afde305c0e2856af6d14bb74def7997cb3fe017e8bd4d0c51b68372e75a62a1",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact133-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/LogicalExpression.h": {
       "kind": "legacy",
@@ -22066,36 +22073,36 @@
     },
     "lib/battle/BattleInfo.h": {
       "kind": "exception",
-      "lines": 1504,
-      "sha256": "80b32f033079ad69abc5771716b7a38c3e1429373f5036825fb4829af7c4cee2",
+      "lines": 1507,
+      "sha256": "a43d96cf68428bd2168ab88ae42aaab55defc29af01b59f3c562af6e30751170",
       "owner": "gameplay_engineer",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 1500 to 1504 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "rationale": "Three mechanical pre-prefix Side recovery-validation lines; actual provenance validation lives in focused Side helper. No new battle lifecycle implementation.",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Only this exact1500-line/hash declaration scope. Gameplay engineer retains existing BattleInfo header/serialization debt (largest unchanged body687); further executable/member growth requires cohesive extraction and renewed review. No new general header-growth allowance. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/battle/BattleInfo.h::BattleInfo::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 691,
+      "lines": 694,
       "owner": "gameplay_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 687 to 691 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "506221ef2a131a805d0e1b59913974d4f9b0871ea2986a8063ee5d209fc9f0d7",
+      "rationale": "Three mechanical pre-prefix Side recovery-validation lines; actual provenance validation lives in focused Side helper. No new battle lifecycle implementation.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "4a3896d71c3510b3b07362f06ecf95b67e77ca83b896f11310cf9855f8c6831e",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/battle/CBattleInfoCallback.cpp": {
       "kind": "exception",
-      "lines": 5879,
+      "lines": 5768,
       "owner": "gameplay_engineer",
-      "rationale": "Exact inherited509-to445 finalization extraction; unchanged moved rules, smaller callback5946-to5879. No future growth or runtime/performance acceptance.",
-      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
-      "review_scope": "exact-finalization-extraction-only",
-      "sha256": "9a2e2e0c9c77ece727b582385cb19dfb7e729bd66ec0f591940e930fb313cd64",
+      "rationale": "Cohesive First Aid healing/Medic/preview query extraction to a 136-line owner shrinks callback. Other targeting/scoring/activation methods unchanged.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "7d0d85309516b2f8c0d2ccd7b6207d89b5f83cb9c19e4842775bced0757d319f",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Before further substantive stance-stage growth, extract a focused defender-stance payload builder owned by gameplay_engineer: const callback/attack info plus invocation query context into DamageAttackInfo. Preserve first-query order, explicit payload/state/RNG parity and shrink both callback and function baselines; no oversized moved-to helper. Native and performance acceptance remain separate. Gameplay engineer owns focused defender-stance/native physical-modifier extraction before further substantive growth: const callback and attack info plus the existing captured IBattleInfo pointer into DamageAttackInfo, retaining protected coefficient and visibility authority. Follow with a separate Hero Orders payload stage using explicit attacker/defender cause outputs. Preserve query/exception order, all payload and DamageEstimation fields, reaction/redirect/Luck/Frozen/siege behavior, state/packets/both RNGs, unknown-script fallback, and exact577 ordered145 decisions/action/allowance bytes. Each helper stays cohesive below150 lines, no oversized relocation; callback and remaining function shrink and baseline ratchets. Engine engineer reviews shared-library/build boundaries. No unrelated growth or runtime acceptance."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
     },
     "lib/battle/CBattleInfoCallback.cpp::AttackableTiles CBattleInfoCallback::getPotentiallyAttackableHexes( const battle::Unit* attacker, const battle::Unit * defender, BattleHex destinationTile, BattleHex attackerPos, BattleHex defenderPos) const#1": {
       "kind": "legacy",
@@ -22380,22 +22387,24 @@
       "sha256": "e9164e63174037458ea52aed69e25a1a7d6ca6f90518095b86736446233cd4de"
     },
     "lib/battle/SideInBattle.h": {
-      "kind": "legacy",
-      "lines": 818,
+      "kind": "exception",
+      "lines": 831,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 818 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6fc63cd594bc523b1c9c007cd683310c8fbc3d07d8f3ce86e2c6fc7b2945e7e1"
+      "rationale": "Append-only bounded actual Mana Furnace recovery field and mechanical codec guards/default-zero. Actual entry and legacy ceiling arithmetic remain in focused implementation owners.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "e215cedd060428de6682654a0a8e3f1fc36d42fdda9cd4ea7ff5cbd062f3567c",
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/battle/SideInBattle.h::SideInBattle::void serialize(Handler &h)#1": {
-      "kind": "legacy",
-      "lines": 404,
+      "kind": "exception",
+      "lines": 412,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 404 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "0ecb32b76e28e7758d2375c633bc66bfae3c048d0383cb3cfa3d8d2d599a7edf"
+      "rationale": "Append-only bounded actual Mana Furnace recovery field and mechanical codec guards/default-zero. Actual entry and legacy ceiling arithmetic remain in focused implementation owners.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "379b3b47b2f866223f5d10cabed6e2eefcf393534ac4c5f0e862de883b0978af",
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/bonuses/Bonus.h::Bonus::void serialize(Handler &h)#1": {
       "kind": "legacy",
@@ -22626,23 +22635,26 @@
       "sha256": "3964bbb82fcf5ceccfef1f8368eac1f535730ede18a96cf4b09e38bdafa31ff8"
     },
     "lib/entities/hero/HeroStartingProjection.cpp::newHorizonsHeroes::StartingHeroProjection projectStartingHero(const CHero & hero, const StartingHeroContext & context, const StartingHeroOverrides & overrides)#1": {
-      "kind": "legacy",
-      "lines": 106,
+      "kind": "exception",
+      "lines": 107,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 106 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "d6b16df76822683677d86fc964d70844ba6227caf26c079d6cb7050a98d1455a"
+      "rationale": "One-line dispatch to extracted pure equipment projector after existing creature clamping; skill, perk, spell, leadership and authored-army calculations unchanged.",
+      "review": "default-tent-starting-preview-source-v1",
+      "review_scope": "shared-pure-equipment-eligibility-and-loader-aware-starting-preview-only",
+      "sha256": "0a223f3462346502d59d9630b8505119567c65c383a94a1a5dfa15e3e09ed05e",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Gameplay engineer: split attribute, capability and equipment projection stages before further growth, preserving profile precedence, authored overrides and captured policy. Exact107-line method only; no general growth allowance."
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 1359,
       "owner": "gameplay_engineer",
-      "rationale": "Shrinking1360-to1359-line captured-policy routing ratchet. Optional school-specialty validation lives in the129-line policy owner; a focused copy helper preserves presence/absence of individual and school policy blocks. No installed-default fill or new inline hero mechanics; no regrowth credit.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "3e5bdd94e98e2686a820fb162939ffbcc7e2a4ec4b04f511502e6c7c868d9ce9",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "rationale": "Allow/capture optional additional-specialty block and forward strict validation to focused policy owners; existing registry and progression behavior unchanged.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "57319b6905a2c696eca1eebabfe94f83169aaa96ecdddb38b33dbb2305f9b78a",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should extract the next touched installed/resolved allowed-field and optional-policy forwarding family into a focused registry validator, preserving captured absence and migration checks before further growth."
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp::newHorizonsHeroes::std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill( const JsonNode & resolvedRules, bool magicHero, FactionID faction, const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)#1": {
       "kind": "legacy",
@@ -22730,14 +22742,14 @@
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "kind": "exception",
-      "deferral": "UI developer retains the existing Druid-branch extraction obligation before its next substantive logic expansion, preserving applicability, order, descriptions and captured fallbacks. This one-line family delegation does not waive that obligation or allow unrelated growth.",
-      "lines": 125,
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay/UI owner should route later individual identities to focused captured-policy presentation resolvers rather than adding hero branches to this dispatcher; preserve historical fallback and exact runtime math.",
+      "lines": 126,
       "owner": "ui_developer",
-      "rationale": "Exact124-to125-line routing-only exception: call the47-line school-specialty presentation owner beside the existing individual-family resolver before prior fallbacks. No school formulas or Druid branch added inline. Conditional names/icons remain policy-scoped.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
+      "rationale": "One narrow dispatch to focused captured additional-specialty presentation; existing hero routing and fallbacks preserved.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "6c131727b97406ec20aa97c2b0e81d508fc466d541e9fb4bf36e84a60529871d"
+      "sha256": "de03e691d55041c8591b3f7dc6df061157dffb4ce37d5dce5cab29092ece7439"
     },
     "lib/filesystem/CFilesystemLoader.cpp::std::unordered_map<ResourcePath, boost::filesystem::path> CFilesystemLoader::listFiles(const std::string &mountPoint, size_t depth, bool initial) const#1": {
       "kind": "legacy",
@@ -22770,12 +22782,12 @@
       "kind": "exception",
       "lines": 2254,
       "owner": "engine_engineer",
-      "rationale": "Exact2254-to-2254-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "d8689d925930c1d13b2f20efb247ad8ea989927b683d5e7fff803cf9fb5896bf",
+      "rationale": "One optional specialty capability argument forwarded through existing world/map preflight wrappers only.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "359d1c07b286f5392512f1eb92e5f315bf51ab4b58bb5d918f87024ad794a4e7",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact2254-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
     },
     "lib/gameState/CGameState.cpp::bool CGameState::checkForVictory(const PlayerColor & player, const EventCondition & condition) const#1": {
       "kind": "legacy",
@@ -22815,25 +22827,25 @@
     },
     "lib/gameState/CGameState.h": {
       "kind": "exception",
-      "lines": 629,
+      "lines": 631,
       "owner": "engine_engineer",
-      "rationale": "Exact627-to-629-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "0faf0e1f4a3178ffb243fb855c41715a4c1893bb7e5e9ce58d1de4e139f5eebd",
+      "rationale": "Mechanical additional-specialty capability forwarding through existing writer/read validation; no new world runtime state or battle-resume claim.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "36f6b8ea9e396bb73cdb0a00bfca133e7ee14a2e4efab76658067e083e5dc32b",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact629-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/gameState/CGameState.h::CGameState::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 287,
+      "lines": 289,
       "owner": "engine_engineer",
-      "rationale": "Exact285-to-287-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "213ecf90b3afde110422756eb0ced95255801466b82fba672e906500fc9b9b77",
+      "rationale": "Mechanical additional-specialty capability forwarding through existing writer/read validation; no new world runtime state or battle-resume claim.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "6d688a0dfdb5b31a6155092c3dcf6ec51395316aa916f73e29419b041f1dc4f8",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact287-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/gameState/CGameStateCampaign.cpp": {
       "kind": "legacy",
@@ -22873,14 +22885,14 @@
     },
     "lib/gameState/GameStatePackVisitor.cpp": {
       "kind": "exception",
-      "lines": 4374,
+      "lines": 4335,
       "owner": "engine_engineer",
-      "rationale": "Retains reviewed optional Hydra identity routing and its extracted HydrasVitalityIdentity lookup. The only new change gates the strict Light-school lookup on the existing captured shared-action policy; legacy hero casts no longer require an unrelated optional school. Enabled-policy validation, mutation and lookup order are unchanged. No timer, health, serialization or save-policy redesign; no size growth.",
-      "review": "IR-LEGACY-HERO-CAST-LIGHT-ADMISSION-20261022",
-      "review_scope": "one-expression-legacy-cast-admission-retaining-optional-hydra-review-no-future-growth",
-      "sha256": "16d25112a4225b5c6752bf921136fa17c76efc668787051eaf8cdedd9fdbd54b",
+      "rationale": "Extract accepted both-side Spell Point entry into focused owner and route bounded legacy completion ceiling through Side provenance helper; cancellation and lifecycle order retained.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "601dc663e0f48fa27f5ac5c38f431ec63a70deb979e49f5278d725638001dff8",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "No future growth credit. Any subsequent edit requires renewed independent review; engine/UI owners must retain focused state/visitor/replay debt extraction and separately validate origin-thread destruction, native root-writer/restart ordering and real owner integration before routing use. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract remaining battle-completion Spell Point restoration into a focused ordered helper, retaining temporary Buffer, legacy ceiling, recovery and original cancellation snapshots with packet/state/rejection characterization before further visitor growth."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)#1": {
       "kind": "legacy",
@@ -22919,13 +22931,14 @@
       "sha256": "71ab99ea61f188ca4098a5e66bb82f3370103176c960f87e05e366a85ec2ccf4"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 86,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 86 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "8d61313b39625569a1a56d141a3ddd2e37ed9467793869f6ee27b026f6dd552d"
+      "rationale": "Extract accepted both-side Spell Point entry into focused owner and route bounded legacy completion ceiling through Side provenance helper; cancellation and lifecycle order retained.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "911f89f0bcbc4f997f614b68a3db12a36bf16aa76b6d01df1cfaf06c350efdc3",
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract remaining battle-completion Spell Point restoration into a focused ordered helper, retaining temporary Buffer, legacy ceiling, recovery and original cancellation snapshots with packet/state/rejection characterization before further visitor growth."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)#1": {
       "kind": "exception",
@@ -22937,17 +22950,6 @@
       "sha256": "91801145a1931a14c553d078bb9a39b3853fe7d55a345e928913f6200ab976d9",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Before substantive expansion, the engine owner must extract cohesive accepted-cast allowance/context validation from this visitor, retaining packet rejection, mutation order, captured-policy absence and current Divine Mandate/Metamagic state and RNG parity. Do not combine that larger restructuring with the narrow compatibility repair or grant future size growth."
-    },
-    "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitBattleStart(BattleStart & pack)#1": {
-      "kind": "exception",
-      "lines": 106,
-      "owner": "engine_engineer",
-      "rationale": "Bounded native battle-root lifetime integration only: exact guard/declaration lines or two mechanical lifetime CPP/header registrations. Coordination resides in the focused native-root lifetime and commit-admission components; saved fields, original payload order and graph CAS tail remain exact.",
-      "review": "IR-F08-BATTLE-ROOT-LIFETIME-V2-20261017",
-      "review_scope": "Exact sealed v2 native-root lifetime seam; no payload lease, dispatcher, thread-owner or full-world acceptance.",
-      "sha256": "d846df57c8f30268f919624cfd66da298378f77444cc7427ee20f79039ab8972",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "deferral": "No future growth credit. Any subsequent edit requires renewed independent review; engine/UI owners must retain focused state/visitor/replay debt extraction and separately validate origin-thread destruction, native root-writer/restart ordering and real owner integration before routing use."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitNewTurn(NewTurn & pack)#1": {
       "kind": "legacy",
@@ -23180,14 +23182,14 @@
     },
     "lib/mapObjects/CGHeroInstance.cpp": {
       "kind": "exception",
-      "lines": 3817,
+      "lines": 3686,
       "owner": "engine_engineer",
-      "rationale": "Independently reviewed six-line growth reorders the existing 18-line specialty query into a 24-line local-marker-first query, with no new responsibility, cache, API or serialization state. Capture, initialization, campaign admission and binary readers retain independent validation. Already-malformed unmarked in-memory state can return zero before parsing; marked state retains validation. This source-scoped exception is not performance or runtime approval. Reviewed scalar follow-up renews exact3849-line bytes only: marked positive lookup uses validated scalar membership instead of a typed vector; negative local-marker admission and independent Navigation validation remain unchanged. Independently reviewed scroll-casting extraction moves the 32-line admission method into a focused component and lowers this file to3817 lines; prior specialty obligations remain.",
-      "review": "IR-SCROLL-CASTING-SCHOOL-ACCESS-20261022",
-      "review_scope": "exact-scroll-extraction-and-preserved-specialty-source-only",
-      "sha256": "0f0551b77892c7413bd4bba9cf530f1ee71798ebafd52ee993d1e9ea7924cd60",
+      "rationale": "Cohesive starting army/book/catapult equipment initialization extracted to152-line HeroStartingEquipment owner. Fresh default Tent intent stays in that owner; Nimbus Learning extraction retained and unrelated hero responsibilities unchanged.",
+      "review": "default-hero-equipment-creation-source-v1",
+      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
+      "sha256": "1703fd799b7658c10b02b0609957f3606daaff6f123d6d15d6ff664195cb54d0",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "No further growth beyond3817 lines. Extract the three specialty-conversion query families and shared marker-identity helpers coherently, separately from prototype installation, before further specialty expansion. Preserve current and historical capture, admission, save and alias-lifetime behavior. Native tests and matched performance remain separate acceptance gates; no improvement is claimed for already-marked heroes."
+      "deferral": "Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth."
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",
@@ -23208,44 +23210,46 @@
       "sha256": "708894003cfd0904955f9276d3f509eb89c1ea2fb5141cc43bf61b487b2ea937"
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)#1": {
-      "kind": "legacy",
-      "lines": 382,
+      "kind": "exception",
+      "lines": 367,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 382 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "2044f66e394add7d897d4ceb8e8ce5a233107b918ab619f2d015c90364bbd066"
+      "rationale": "Cohesive starting army/book/catapult equipment initialization extracted to152-line HeroStartingEquipment owner. Fresh default Tent intent stays in that owner; Nimbus Learning extraction retained and unrelated hero responsibilities unchanged.",
+      "review": "default-hero-equipment-creation-source-v1",
+      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
+      "sha256": "7aed8f355a791f045ff468482f6db911fadb3556e7e128ca9e8526109204b756",
+      "deferral": "Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth."
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 154,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 154 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c57bd001097a5f0ed22a0e4c05948829941050a1a7340f2ea3a796e147a9c85d"
+      "rationale": "Two existing artifact-writer calls delegate to the focused hero wrapper instead of explicitly bypassing it. No new body lines or responsibility; JSON authored-empty intent is handled in14-line extracted owner.",
+      "review": "default-hero-equipment-creation-source-v1",
+      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
+      "sha256": "99fb4d17eac6c1a2114fee56250a1915ee0bce96fc07b2ee0fb03acdc7ffcf20",
+      "deferral": "Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth."
     },
     "lib/mapObjects/CGHeroInstance.h": {
       "kind": "exception",
-      "lines": 1156,
+      "lines": 1167,
       "owner": "engine_engineer",
-      "rationale": "Exact1154-to-1156-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "22159d36edd4e085744fb300f895dc6de47243b03e402dfecda55588de12aff5",
+      "rationale": "One-line read-only intent getter; all64 existing inline body bytes, serializer payload and field order unchanged. Complete65-body manual inventory.",
+      "review": "default-tent-starting-preview-source-v1",
+      "review_scope": "shared-pure-equipment-eligibility-and-loader-aware-starting-preview-only",
+      "sha256": "cfc49ea2ff97ac99189c28f4113ee7b2609f6829c50cc0d9de396aac871ec9f7",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact1156-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact getter only. Further executable header growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity; no general growth allowance."
     },
     "lib/mapObjects/CGHeroInstance.h::CGHeroInstance::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 458,
+      "lines": 461,
       "owner": "engine_engineer",
-      "rationale": "Exact456-to-458-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "b25cac3cd853513b52b4fd02d0c0d292e06b8374cd37b3d8e238b6479e4c152d",
+      "rationale": "Seven loader-only equipment-intent/declaration lines and one read-reset line; no new binary payload or inline implementation. Full64-body manual inventory renewed. Equipment allocation and artifact JSON behavior remain in focused implementation.",
+      "review": "default-hero-equipment-creation-source-v1",
+      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
+      "sha256": "cf7c58aa5bc648947a186caf8bd2c5156765a4f8be79178f62849d1d0908ff18",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact458-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact header/serializer scope only. Preserve original field order and historical captured boundary; further executable growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity. No general header growth allowance."
     },
     "lib/mapObjects/CGPandoraBox.cpp::void CGPandoraBox::grantRewardWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * h, int index, bool markAsVisit) const#1": {
       "kind": "legacy",
@@ -23404,12 +23408,12 @@
       "kind": "exception",
       "lines": 1645,
       "owner": "engine_engineer",
-      "rationale": "Exact1645-to-1645-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "900771c354076034b34d44b64b3df31dd28be3ce73f682c269d8e69273e91e18",
+      "rationale": "Mechanical additional-specialty preflight forwarding for map settings, heroes and pool; no map lifecycle behavior added.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "1bd6d0683074ecc7601ccd6c6ad479c246a7ff2d00713b4b0f7a54d2c36998c6",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact1645-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
     },
     "lib/mapping/CMap.cpp::CMap::checkForObjectives()::[&](EventCondition cond) -> EventExpression::Variant#1": {
       "kind": "legacy",
@@ -23431,25 +23435,25 @@
     },
     "lib/mapping/CMap.h": {
       "kind": "exception",
-      "lines": 506,
+      "lines": 507,
       "owner": "engine_engineer",
-      "rationale": "Exact505-to-506-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "f8a46ee861713621d32e573429f45b9edb6435b47ea6e394d4cccefe2aee20cd",
+      "rationale": "One additional-specialty preflight argument and serializer capability line; existing prefix order retained.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "369510336748be4fb26f20abac5edaede132ec9818eb07ded4b2f75911bfc38f",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact506-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/mapping/CMap.h::CMap::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 129,
+      "lines": 130,
       "owner": "engine_engineer",
-      "rationale": "Exact128-to-129-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "324f28f73dbd6156cc15b118859e4bb67a239d8e814c59ce518dda53220311ac",
+      "rationale": "One additional-specialty preflight argument and serializer capability line; existing prefix order retained.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "dd348fdb8ba49afc996f4d39321c564466b34e290a931410f5e89fca2ade1b6a",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact129-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/mapping/CMapOperation.cpp": {
       "kind": "legacy",
@@ -23524,13 +23528,14 @@
       "sha256": "4a1b9e3742055907cf6d50861f8094cdd1cf058680a0b5cb3ac815cd74edf428"
     },
     "lib/mapping/MapFormatH3M.cpp": {
-      "kind": "legacy",
-      "lines": 3093,
+      "kind": "exception",
+      "lines": 3094,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 3093 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "8dd1466803a73e1cb0e4e198703d1c464d49e341b1965472efdeac972e3d8487"
+      "rationale": "One explicit equipment-intent assignment in the existing hasArtSet branch, before unchanged artifact loading. No parsing layout, book sentinel, hero defaults or other object behavior changes.",
+      "review": "default-hero-equipment-creation-source-v1",
+      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
+      "sha256": "6ad698e9ca9c26a1df22498aa12147e658bffc36c59a3cd4fe1d09c3e2da6182",
+      "deferral": "Exact one-line intent capture only. Engine owner should extract the next touched hero-equipment decoding family into a focused H3M reader stage preserving version gates, byte order, explicit empty/default intent and failure behavior before further executable growth."
     },
     "lib/mapping/MapFormatH3M.cpp::EQuestMission CMapLoaderH3M::readQuest(Quest & quest, const int3 & position)#1": {
       "kind": "legacy",
@@ -23725,12 +23730,12 @@
       "kind": "exception",
       "lines": 1357,
       "owner": "engine_engineer",
-      "rationale": "Exact1357-to-1357-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "1a40a72a3d8ce12737f0f36dd81ede8c4c5b76a6452417f40c837639f92e767e",
+      "rationale": "Mechanical additional-specialty argument forwarding in initialized-world lobby preflight only.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "bd3019945e5988c78e0a899f9090beb28b83895b4dca6f3b53d2c7e25fed9891",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact1357-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
     },
     "lib/networkPacks/PacksForClient.h": {
       "kind": "legacy",
@@ -23743,13 +23748,13 @@
     },
     "lib/networkPacks/PacksForClientBattle.h": {
       "kind": "exception",
-      "lines": 2270,
-      "sha256": "c04f8bacc082adb77cf82903aa0ff97161edf1a81284ee44d53ac4ee5df41f84",
+      "lines": 2273,
+      "sha256": "bc25a3713fd6fd13ac66cfe49a03a9c59771aee36c67a7d707c1ebb346ef4b71",
       "owner": "engine_engineer",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 2269 to 2270 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "deferral": "Engine engineer must extract cohesive battle-unit update/hit/attack/injury codec and ordered preflight ownership behind explicit typed interfaces before any further routing, field or mechanic growth in this header. Preserve packet declarations/registration identity, DLL boundaries, supported full bytes and original handler query order; retain direct and enclosing rejection ownership, empty/prefilled unsupported-prefix assertions and old-reader fences. Exact current ceiling 2269; require decreasing header baseline plus focused serializer differential and adjacent packet/save coverage at extraction. No allowance inherited by another oversized helper. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "rationale": "Three mechanical pre-prefix Side recovery-validation lines; no command or battle lifecycle responsibility added.",
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleAttack::void validateSerializationPrefix(Handler & h)#1": {
@@ -23781,36 +23786,36 @@
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleStart::void serialize(Handler & h)#1": {
       "kind": "exception",
-      "lines": 173,
+      "lines": 176,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 172 to 173 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "97e2917b4825d8ba1ba29c30b6df89e978fea4ed84a6a65864517f6e4c04fc83",
+      "rationale": "Three mechanical pre-prefix Side recovery-validation lines; no command or battle lifecycle responsibility added.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "dd05aaa114c17fdb26219793a2af68eb6964f29487029d4739dcaa2e57b01e32",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/networkPacks/PacksForLobby.h": {
       "kind": "exception",
-      "lines": 569,
+      "lines": 570,
       "owner": "engine_engineer",
-      "rationale": "Exact568-to-569-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "a10e9bd18c34ceaf2ff563101a6d776d40088161c965bcad648c2c9e3b91e99d",
+      "rationale": "Mechanical additional-specialty capability forwarding before enclosing lobby prefix.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "f7f1844d6cf4ed8c813c1931ca36f8cb8303faeafc71c9fedbb1bbf547dd283f",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact569-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/networkPacks/PacksForLobby.h::LobbyStartGame::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 89,
+      "lines": 90,
       "owner": "engine_engineer",
-      "rationale": "Exact88-to-89-line captured-policy capability routing only. Thread independent optional school-specialty support through existing direct/enclosing prefix guards; no new saved member, default injection or altered field order. Validation and factor rules remain in focused owners; no unrelated growth or runtime approval.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "fe36c1585ed8ff76c22e28176d8b004bd1314be279fe1e5be9f3bce137ab3d62",
+      "rationale": "Mechanical additional-specialty capability forwarding before enclosing lobby prefix.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "153bb9c10393a412287bc5b066d3f64367513722a2d8d2ba8189d327b8d70e23",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps exact89-line bound. Before substantive codec expansion, extract cohesive captured-policy admission while preserving every direct/enclosing prefix rejection, historical absence, failed-read behavior and member order. Existing lifecycle decomposition obligations remain; this flag routing does not suspend them."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/networkPacks/PacksForServer.h": {
       "kind": "legacy",
@@ -24368,14 +24373,14 @@
     },
     "lib/serializer/ESerializationVersion.h": {
       "kind": "exception",
-      "lines": 549,
+      "lines": 554,
       "owner": "engine_engineer",
-      "rationale": "Mechanical append-only544-to549-line registry extension: append school-specialty capability after individual riders, advanceCURRENT and assert ordering. No earlier numeric ID, wire-field or runtime-body change.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "2fe0e4227bf61c02c33a9122efbf1dc4db51c429b209d73e22cd7dcf4c5b0b14",
+      "rationale": "Append one deliberately unpublished additional-specialty capability and monotonic assertion; protects optional captured policies and explicit Side recovery suffix.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "f15a68d988a2e2933420c1472e890c434356a162e14d11189c4d574aba0b24ba",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine owner keeps capability IDs append-only and every affected direct/enclosing writer guarded before its prefix. Exact549-line mechanical registry scope; no gameplay bodies or reassigned historical IDs."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Keep append-only feature registry declarative. New state-specific validation remains in its focused owner; future enum growth requires renewed exact review and cannot authorize unrelated executable helpers."
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -24514,26 +24519,26 @@
       "sha256": "e2f52740a14ad48379998d619a45a1173e355193ed713ba6925c311268789582"
     },
     "lib/spells/ISpellMechanics.cpp": {
-      "kind": "legacy",
-      "lines": 2225,
+      "kind": "exception",
+      "lines": 2211,
       "owner": "gameplay_engineer",
-      "rationale": "Shrinking2233-to2225-line ratchet: move cast construction/original-event context into focused39-line owner; replace raw coefficient bypasses with existing instance component getters. New school factor/role arithmetic lives in129/76-line owners. Preserve fixed bases, generic durations and constructor stage order; no regrowth allowance.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "a84183b5a428a436dd8615d7775a8c95270a6a1199cdfe2c0d090dafd4af1d33",
-      "deferral": "Gameplay owner retains exact2225 decreasing freeze. Before further substantive mechanics growth, extract a coherent initialization or recipient-damage responsibility with fixed/power, original-source, historical-mode and native/AI characterization. Do not restore2233/2320/2349 allowances.",
+      "rationale": "Extract complete canonical Cure budget into a 29-line helper, retaining fixed/SP floors, Gem and Healer order and legacy fallback; dispatcher shrinks.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "19dd648e28d36eeedeb38f2702e16dc9ba74566893874178faaacb98d6c0dfcc",
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should continue extracting per-spell numerical budget calculations through typed pure helpers, preserving constructor stage order, original-cast coefficient context, fixed/SP floors and target scaling before further dispatcher growth.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/ISpellMechanics.cpp::spells::BaseMechanics::BaseMechanics(const IBattleCast * event): owner(event->getSpell()), mode(event->getMode()), forceMassive(event->isForceMassive()), cb(event->getBattle())#1": {
       "kind": "exception",
-      "lines": 448,
+      "lines": 433,
       "owner": "gameplay_engineer",
-      "rationale": "Exact450-to448-line shrinking constructor ratchet: retain copied original-event factors before numerical construction, and use instance coefficients for special pool/general effect calculations. Extra cast modifiers remain composed later; no new saved receipt or reordered effect stages.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "5bfba0be6a706eceb74f50dff3d10345de854779c3f4bc9bf4e9b7b3c6acfe90",
+      "rationale": "Extract complete canonical Cure budget into a 29-line helper, retaining fixed/SP floors, Gem and Healer order and legacy fallback; dispatcher shrinks.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "ed305ab6a6e88463fbc38ba0963e6629367282c66169c298f22835df86e4b886",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Gameplay owner must extract a cohesive effect-value initialization stage before further substantive growth. Preserve explicit override precedence, component roles, copied original provenance, non-HERO defaults, fixed/power separation and projection/native parity. Exact448-line decreasing exception only."
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should continue extracting per-spell numerical budget calculations through typed pure helpers, preserving constructor stage order, original-cast coefficient context, fixed/SP floors and target scaling before further dispatcher growth."
     },
     "lib/spells/ISpellMechanics.cpp::spells::int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const bool applyExecution) const#1": {
       "kind": "exception",
@@ -25277,13 +25282,13 @@
     },
     "server/CGameHandler.cpp": {
       "kind": "exception",
-      "lines": 7037,
+      "lines": 6971,
       "owner": "engine_engineer",
-      "rationale": "Retains the Fly landing safety extraction/routing shrink, 7039 to 7037 lines, reviewed as IR-FLY-V2-SCOPED-GROWTH-20261020 (fly-v2-producer-and-validated-ai-consumer-only). Urgent upgrade-request admission correction replaces the broad has-upgrades guard with actual available-target membership before Leadership and cost lookup, avoiding assertion/out-of-bounds access without file or function growth. No unrelated or future growth permission; retained mechanics/serialization/callback order require native acceptance.",
-      "review": "IR-UPGRADE-OFFER-MEMBERSHIP-ADMISSION-20261023",
-      "review_scope": "upgrade-offer-membership-admission-only",
-      "sha256": "5d116755f08a6dd08be01ba0a44dffdfe0c9b7dc8c0910000f808553c5098fb9",
-      "deferral": "Engine owner: extract cohesive authoritative upgrade admission, payment/statistics and stack-type mutation before substantive expansion, preserving availability, ownership/active-player gates, captured Leadership, packet order and rejection atomicity under focused native regression coverage.",
+      "rationale": "Extract Mentor preparation/grant into a 79-line focused owner;250/500 authorization/weekly receipts unchanged, separate Oris raw award revalidated before grant.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "1350e7c5f2e39100c03de039a6cbd708fa82649c9f9084d9f069aa5d1b6b0e16",
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner retains the extracted Mentor award owner. Next touched Scholar meeting planning should move into a focused pre-meeting immutable exchange plan, preserving award, learning and weekly receipt order before further central-file growth.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/CGameHandler.cpp::bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8 what, SlotID p1, SlotID p2, si32 val, PlayerColor player)#1": {
@@ -25824,14 +25829,15 @@
       "sha256": "49f549ef7863e013bdd63fa261194b6fb75576c240b4abd3dd57b5a92bf91073"
     },
     "server/battles/BattleResultProcessor.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 1344,
       "owner": "engine_engineer",
-      "rationale": "Shrinking1390-to-1344-line ratchet: move existing Skeleton-upgrade eligibility and Normal-only postbattle Mana queries into the347-line Necromancy owner. Authoritative raising adds only the captured hero contribution at its existing resolver call. Capacity/choice/application and casualty ordering remain; no future regrowth credit.",
-      "review": "individual-specialty-riders-source-v1",
-      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
-      "sha256": "b08967353c1b9636da6bd03188a40671f98ca58230a9dc49170ac9f1c912ae94",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "rationale": "Two no-growth Eagle Eye dispatch changes use shared distinct ordered selector for winner and retained heroes; packet ordering and ordinary learning gates unchanged.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "6acdb2b07e4a377450040618f76fc04810c20103a69c88e83aac5d8e7b7129ee",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should separately extract postbattle spell-learning collection into a focused plan returning ChangeSpells data, preserving winner/retained-hero eligibility and packet order before further growth."
     },
     "server/battles/BattleResultProcessor.cpp::CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle, BattleSide sideInBattle): army(battle.battleGetArmyObject(sideInBattle))#1": {
       "kind": "legacy",
@@ -25853,13 +25859,14 @@
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/battles/BattleResultProcessor.cpp::void BattleResultProcessor::battleFinalize(const BattleID & battleID, const BattleResult & result)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 413,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 413 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e055cac8bbe491b6bdb40c82f9d1c26146818485a6fe9547e40980674c0854f0"
+      "rationale": "Two no-growth Eagle Eye dispatch changes use shared distinct ordered selector for winner and retained heroes; packet ordering and ordinary learning gates unchanged.",
+      "review": "additional-hero-specialty-integration-source-v1",
+      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
+      "sha256": "a7730fe8097cdbcaafb556fd37b3dc30bce1119e484e1bd45c53431431d71b64",
+      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should separately extract postbattle spell-learning collection into a focused plan returning ChangeSpells data, preserving winner/retained-hero eligibility and packet order before further growth."
     },
     "server/battles/BattleResultProcessor.cpp::void BattleResultProcessor::endBattle(const CBattleInfoCallback & battle)#1": {
       "kind": "legacy",

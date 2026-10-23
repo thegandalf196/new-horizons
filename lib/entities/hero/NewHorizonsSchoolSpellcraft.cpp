@@ -127,7 +127,7 @@ int composeSpellcraftCoefficient(const SpellcraftSpecialtyFactors & captured, Sp
 
 void copyCapturedIndividualSpecialties(JsonNode & target, const JsonNode & source)
 {
-	for(const auto key : {"individualSpecialties", "schoolSpellcraftSpecialties"})
+	for(const auto key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties"})
 		if(source.Struct().contains(key))
 			target[key] = source[key];
 }

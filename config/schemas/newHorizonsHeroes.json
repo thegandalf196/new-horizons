@@ -52,6 +52,7 @@
 				"nonDamageSpellSpecialties": {"$ref": "#/definitions/nonDamageSpellSpecialties"},
 				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"},
 				"schoolSpellcraftSpecialties": {"$ref": "#/definitions/schoolSpellcraftSpecialties"},
+				"additionalSpecialties": {"$ref": "#/definitions/additionalSpecialties"},
 				"individualSpecialties": {"$ref": "#/definitions/individualSpecialties"},
 				"druidSpecialties": {"$ref": "#/definitions/druidSpecialties"},
 				"fortuneChildSpecialty": {
@@ -119,6 +120,113 @@
 			"properties": {
 				"percentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
 				"maximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}}
+			}
+		},
+		"additionalSpecialties": {
+			"description": "Optional captured additional individual specialties. Absent rows preserve prior behavior; coefficients are provisional balance values.",
+			"type": "object", "additionalProperties": false, "not": {"type": "null"},
+			"minProperties": 1, "maxProperties": 5,
+			"required": ["version"],
+			"properties": {
+				"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
+				"fieldPhysician": {
+					"type": "object", "additionalProperties": false, "not": {"type": "null"},
+					"minProperties": 2, "maxProperties": 2,
+					"required": ["healingPercentPerLevel", "healingMaximumPercent"],
+					"properties": {
+						"healingPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+						"healingMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}}
+					}
+				},
+				"manaFurnace": {
+					"type": "object", "additionalProperties": false, "not": {"type": "null"},
+					"minProperties": 2, "maxProperties": 2,
+					"required": ["restorePointsPerLevel", "maximumRestorePoints"],
+					"properties": {
+						"restorePointsPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+						"maximumRestorePoints": {"type": "integer", "minimum": 0, "maximum": 1000000, "not": {"type": "null"}}
+					}
+				},
+				"graveArchivist": {
+					"type": "object",
+					"additionalProperties": false,
+					"not": {
+						"type": "null"
+					},
+					"minProperties": 3,
+					"maxProperties": 3,
+					"required": [
+						"learningPercentPerLevel",
+						"learningMaximumPercent",
+						"additionalEagleEyeSpells"
+					],
+					"properties": {
+						"learningPercentPerLevel": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1000,
+							"not": {
+								"type": "null"
+							}
+						},
+						"learningMaximumPercent": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 200,
+							"not": {
+								"type": "null"
+							}
+						},
+						"additionalEagleEyeSpells": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 10,
+							"not": {
+								"type": "null"
+							}
+						}
+					}
+				},
+				"spiritTeacher": {
+					"type": "object",
+					"additionalProperties": false,
+					"not": {
+						"type": "null"
+					},
+					"minProperties": 3,
+					"maxProperties": 3,
+					"required": [
+						"learningPercentPerLevel",
+						"learningMaximumPercent",
+						"mentorExperiencePercent"
+					],
+					"properties": {
+						"learningPercentPerLevel": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1000,
+							"not": {
+								"type": "null"
+							}
+						},
+						"learningMaximumPercent": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 200,
+							"not": {
+								"type": "null"
+							}
+						},
+						"mentorExperiencePercent": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1000,
+							"not": {
+								"type": "null"
+							}
+						}
+					}
+				}
 			}
 		},
 		"individualSpecialties": {

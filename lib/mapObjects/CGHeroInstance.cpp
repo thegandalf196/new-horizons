@@ -13,6 +13,7 @@
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
 #include "CGHeroInstance.h"
+#include "../entities/hero/NewHorizonsLearningSpecialties.h"
 #include "../entities/hero/HeroStartingProjection.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsDiplomacy.h"
@@ -836,23 +837,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	else //remove placeholder
 		spells -= SpellID::PRESET;
 
-	if(!vstd::contains(spells, SpellID::SPELLBOOK_PRESET))
-	{
-		// hero starts with default spellbook presence status
-		if(!getArt(ArtifactPosition::SPELLBOOK) && getHeroType()->haveSpellBook	&& !isFake)
-		{
-			auto artifact = cb->gameState().createArtifact(ArtifactID::SPELLBOOK);
-			putArtifact(ArtifactPosition::SPELLBOOK, artifact);
-		}
-	}
-	else
-		spells -= SpellID::SPELLBOOK_PRESET;
-
-	if(!getArt(ArtifactPosition::MACH4) && !isFake)
-	{
-		auto artifact = cb->gameState().createArtifact(ArtifactID::CATAPULT);
-		putArtifact(ArtifactPosition::MACH4, artifact); //everyone has a catapult
-	}
+	initializeBasicStartingEquipment(isFake);
 
 	if(!hasBonusFrom(BonusSource::HERO_BASE_SKILL))
 	{
@@ -949,6 +934,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	{
 		initArmy(gameRandomizer.getDefault());
 	}
+	initializeDefaultStartingEquipment(creationInitialization);
 	assert(validTypes());
 
 	if (patrol.patrolling)
@@ -1154,78 +1140,6 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 
 	movement = movementPointsLimit();
 	initializeSpellPoints(manaLimit()); //after all bonuses are taken into account, make sure this line is the last one
-}
-
-void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
-{
-	if(!dst)
-		dst = this;
-
-	int warMachinesGiven = 0;
-
-	auto stacksCountChances = cb->getSettings().getVector(EGameSettings::HEROES_STARTING_STACKS_CHANCES);
-	int stacksCountInitRandomNumber = rand.nextInt(1, 100);
-
-	size_t maxStacksCount = std::min(stacksCountChances.size(), getHeroType()->initialArmy.size());
-
-	for(int stackNo=0; stackNo < maxStacksCount; stackNo++)
-	{
-		if (stacksCountInitRandomNumber > stacksCountChances[stackNo])
-			continue;
-
-		auto & stack = getHeroType()->initialArmy[stackNo];
-
-		int count = rand.nextInt(stack.minAmount, stack.maxAmount);
-
-		if(stack.creature == CreatureID::NONE)
-		{
-			logGlobal->error("Hero %s has invalid creature in initial army", getNameTextID());
-			continue;
-		}
-
-		const CCreature * creature = stack.creature.toCreature();
-
-		if(creature->warMachine != ArtifactID::NONE) //war machine
-		{
-			warMachinesGiven++;
-			if(dst != this)
-				continue;
-
-			ArtifactID aid = creature->warMachine;
-			const CArtifact * art = aid.toArtifact();
-
-			if(art != nullptr && !art->getPossibleSlots().at(ArtBearer::HERO).empty())
-			{
-				//TODO: should we try another possible slots?
-				ArtifactPosition slot = art->getPossibleSlots().at(ArtBearer::HERO).front();
-
-				if(!getArt(slot))
-				{
-					auto artifact = cb->gameState().createArtifact(aid);
-					putArtifact(slot, artifact);
-				}
-				else
-					logGlobal->warn("Hero %s already has artifact at %d, omitting giving artifact %d", getNameTextID(), slot.toEnum(), aid.toEnum());
-			}
-			else
-			{
-				logGlobal->error("Hero %s has invalid war machine in initial army", getNameTextID());
-			}
-		}
-		else
-		{
-			if(const auto capacity = getLeadershipSlotCapacity(stack.creature))
-			{
-				if(count > capacity->maximum)
-				{
-					logGlobal->debug("Clamping starting army of hero %s from %d to %d %s for Leadership %d",
-						getNameTextID(), count, capacity->maximum, creature->getJsonKey(), capacity->leadership);
-					count = newHorizonsHeroes::clampStartingArmyCount(count, capacity->maximum);
-				}
-			}
-			dst->setCreature(SlotID(stackNo-warMachinesGiven), stack.creature, count);
-		}
-	}
 }
 
 CGHeroInstance::~CGHeroInstance() = default;
@@ -1608,52 +1522,7 @@ TExpType CGHeroInstance::calculateXp(TExpType exp) const
 
 TExpType CGHeroInstance::calculateXp(TExpType exp, int32_t additionalPercent) const
 {
-	const auto specialty = getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::NATURAL_PHILOSOPHER);
-	if(!specialty || exp <= 0)
-		return static_cast<TExpType>(
-			exp * (valOfBonuses(BonusType::HERO_EXPERIENCE_GAIN_PERCENT) + additionalPercent) / 100.0);
-	const auto scaledExperience = [](TExpType base, int64_t percent) -> TExpType
-	{
-		const bool negative = percent < 0;
-		const auto magnitude = static_cast<uint64_t>(negative ? -percent : percent);
-		if(magnitude == 0)
-			return 0;
-		const auto maximum = std::numeric_limits<TExpType>::max();
-		const uint64_t limit = static_cast<uint64_t>(maximum) + (negative ? 1 : 0);
-		const auto whole = static_cast<uint64_t>(base) / 100;
-		const auto remainder = (static_cast<uint64_t>(base) % 100) * magnitude / 100;
-		const auto saturated = negative ? std::numeric_limits<TExpType>::min() : maximum;
-		if(whole > limit / magnitude)
-			return saturated;
-		const auto product = whole * magnitude;
-		if(remainder > limit - product)
-			return saturated;
-		const auto value = product + remainder;
-		if(negative && value == limit)
-			return saturated;
-		return negative ? -static_cast<TExpType>(value) : static_cast<TExpType>(value);
-	};
-	// Only the captured specialty path uses checked integer scaling. The old
-	// policy-absent calculation retains its established floating-point behavior.
-	const auto ordinary = scaledExperience(exp,
-		static_cast<int64_t>(valOfBonuses(BonusType::HERO_EXPERIENCE_GAIN_PERCENT)) + additionalPercent);
-	const auto learning = LIBRARY->identifiers()->getIdentifier(
-		ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:learning", true);
-	if(!learning)
-		return ordinary;
-	const auto coreBonuses = getAllBonuses(Selector::type()(BonusType::HERO_EXPERIENCE_GAIN_PERCENT)
-		.And(Selector::source(BonusSource::SECONDARY_SKILL, BonusSourceID(SecondarySkill(*learning)))));
-	int64_t corePercent = 0;
-	for(const auto & bonus : *coreBonuses)
-		if(bonus->valType == BonusValueType::PERCENT_TO_BASE)
-			corePercent += bonus->val;
-	const auto coreExperience = scaledExperience(exp,
-		static_cast<int>(std::clamp<int64_t>(corePercent, 0, std::numeric_limits<int>::max())));
-	const auto extra = newHorizonsHeroes::druidSpecialtyExtra(coreExperience,
-		newHorizonsHeroes::druidSpecialtyPercent(level, specialty->naturalPhilosopher));
-	if(ordinary > 0 && extra > std::numeric_limits<TExpType>::max() - ordinary)
-		return std::numeric_limits<TExpType>::max();
-	return ordinary + extra;
+	return newHorizonsHeroes::calculateLearningSpecialtyExperience(*this, exp, additionalPercent);
 }
 
 int32_t CGHeroInstance::getCasterUnitId() const
@@ -3614,9 +3483,9 @@ void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)
 		// serializeJsonArtifacts expects non-const CMap *
 		// Find some cleaner solution
 		if(auto * ecb = dynamic_cast<EditorCallback *>(cb))
-			CArtifactSet::serializeJsonArtifacts(handler, "artifacts", const_cast<CMap *>(ecb->getMapConstPtr()));
+			serializeJsonArtifacts(handler, "artifacts", const_cast<CMap *>(ecb->getMapConstPtr()));
 		else
-			CArtifactSet::serializeJsonArtifacts(handler, "artifacts", &cb->gameState().getMap());
+			serializeJsonArtifacts(handler, "artifacts", &cb->gameState().getMap());
 	}
 }
 
