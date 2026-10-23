@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "BattleEvaluatorSpellProjection.h"
 #include "PossibleSpellcast.h"
+#include "../../lib/ScopeGuard.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/bonuses/BonusSelector.h"
@@ -90,7 +91,17 @@ SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback
 	cast.setMassSlow(candidate.spellMassSlow);
 	if(admission.counterspell.wardActive)
 		cast.setCounterspell(admission.counterspell.wardSide, admission.counterspellNegated);
+	const bool observing = !admission.counterspellNegated && candidate.spell->getJsonKey() == newHorizonsLifeDrain::SPELL_KEY
+		&& candidateTarget.size() == 2 && candidateTarget[1].unitValue
+		&& state.beginLifeDrainFriendlyObservation(candidateTarget[1].unitValue->unitId());
+	bool observationFinished = false;
+	const auto cancelObservation = vstd::makeScopeGuard([&]()
+	{
+		if(observing && !observationFinished)
+			state.cancelLifeDrainFriendlyObservation();
+	});
 	SpellProjection result;
+	std::optional<newHorizonsLifeDrain::ProjectionReceipt> preparedLifeDrain;
 	if(!admission.counterspellNegated)
 	{
 		auto mechanics = candidate.spell->battleMechanics(&cast);
@@ -114,10 +125,18 @@ SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback
 			projectRegenerationRateSnapshot(state, *mechanics, candidate.spell, candidateTarget);
 		}
 		result.vines = mechanics->vengefulVinesProjectionReceipt();
+		preparedLifeDrain = mechanics->lifeDrainProjectionReceipt();
 	}
 	result.accepted = state.projectAcceptedHeroSpell(side, candidate.spell->getId(), targetId,
 		candidate.metamagicFollowup, candidate.metamagicGrand, admission.counterspell.wardActive,
 		admission.counterspellNegated, *admission.spellAllowance, sharedPurposeRecipients);
+	if(observing)
+	{
+		const bool noOp = state.finishLifeDrainFriendlyObservation();
+		observationFinished = true;
+		if(result.accepted && noOp)
+			result.lifeDrain = std::move(preparedLifeDrain);
+	}
 	if(!result.accepted)
 		result.vines.reset();
 	return result;

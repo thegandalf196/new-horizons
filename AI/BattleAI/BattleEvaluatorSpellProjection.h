@@ -5,6 +5,7 @@
 #pragma once
 #include "HeroActionAdmission.h"
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
+#include "../../lib/spells/NewHorizonsLifeDrainProjection.h"
 
 class CSpell;
 class CGHeroInstance;
@@ -19,6 +20,8 @@ struct SpellProjection
 {
 	bool accepted = false;
 	std::optional<newHorizonsVengefulVines::ProjectionReceipt> vines;
+	/// Supplied only after the selected friendly passed native no-op observation.
+	std::optional<newHorizonsLifeDrain::ProjectionReceipt> lifeDrain;
 };
 /// Runs the ordinary generic spell projection and accepted-action bookkeeping.
 /// Failure leaves only the disposable branch mutated; callers discard it.

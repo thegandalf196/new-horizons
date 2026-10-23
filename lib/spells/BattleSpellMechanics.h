@@ -51,6 +51,11 @@ public:
 		return vinesProjectionReceipt;
 	}
 
+	std::optional<newHorizonsLifeDrain::ProjectionReceipt> lifeDrainProjectionReceipt() const override
+	{
+		return lifeDrainReceipt;
+	}
+
 	/// Returns list of affected stack using currently configured target
 	std::vector<const CStack *> getAffectedStacks(const Target & target) const override final;
 	size_t getTargetedStackCount(const Target & target) const override final;
@@ -99,8 +104,14 @@ private:
 	vstd::RNG * activeResistanceRng = nullptr;
 	effects::Effects::EffectsToApply effectsToApply;
 	std::optional<newHorizonsVengefulVines::ProjectionReceipt> vinesProjectionReceipt;
-	std::optional<newHorizonsVengefulVines::ProjectionReceipt> prepareProjectedEffects(
-		const Target & target, bool completedHeroProjection);
+	std::optional<newHorizonsLifeDrain::ProjectionReceipt> lifeDrainReceipt;
+	struct PreparedProjectionReceipts
+	{
+		std::optional<newHorizonsVengefulVines::ProjectionReceipt> vines;
+		std::optional<newHorizonsLifeDrain::ProjectionReceipt> lifeDrain;
+	};
+	PreparedProjectionReceipts prepareProjectedEffects(const Target & target, bool completedHeroProjection);
+	bool delegateConcentratedProjection(ServerCallback * server, const Target & target);
 
 	struct CompoundMirrorEffect
 	{

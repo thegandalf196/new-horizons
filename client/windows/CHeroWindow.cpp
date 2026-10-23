@@ -427,7 +427,7 @@ void CHeroWindow::configureNewHorizonsLayout()
 		const int y = 192 + static_cast<int>(i) * 44;
 		move(secSkills[i], Point(12, y));
 		move(secSkillValues[i], Point(60, y + 4));
-		secSkillNames[i] = heroWindowLabelText::makeSkillName(*this, Point(60, y + 22), 74, true);
+		secSkillNames[i] = heroWindowLabelText::makeSkillName(*this, Point(60, y + 22), 78, true);
 		secSkillValues[i]->setMaxWidth(74);
 		for(int ability = 0; ability < 3; ++ability)
 		{

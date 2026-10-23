@@ -69,12 +69,13 @@ inline void setSkillName(CLabel & label, const std::string & text, bool compact)
 {
 	if(compact)
 	{
-		// The learned-name box has room for two Tiny lines, not a wider row.
+		// Measure the actual box and complete font chain, including fallback height.
 		assert(dynamic_cast<CMultiLineLabel *>(&label));
+		const int width = label.pos.w;
 		for(const auto font : {FONT_SMALL, FONT_TINY})
 		{
 			label.font = font;
-			const auto lines = CMessage::breakText(text, 74, font);
+			const auto lines = CMessage::breakText(text, width, font);
 			const auto height = ENGINE->renderHandler().loadFont(font)->getLineHeight();
 			if(lines.size() * height <= 22)
 			{
@@ -82,7 +83,7 @@ inline void setSkillName(CLabel & label, const std::string & text, bool compact)
 				return;
 			}
 		}
-		setFittingText(label, text, 74, {FONT_TINY});
+		setFittingText(label, text, width, {FONT_TINY});
 	}
 	else
 	{

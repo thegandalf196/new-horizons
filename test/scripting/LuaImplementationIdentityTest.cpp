@@ -11,6 +11,7 @@
 #include "../../luascript/LuaModule.h"
 #include "../../luascript/LuaScriptInstance.h"
 #include "../../lib/filesystem/Filesystem.h"
+#include <array>
 
 namespace
 {
@@ -380,6 +381,94 @@ TEST(LuaImplementationIdentity, ShippedTimedChainRejectsUnexpectedLaterImportsAn
 	scripting::LuaContext context(script.get(), &environment);
 	context.initialize();
 	ASSERT_EQ(context.forecastImplementation(), Implementation::CANONICAL_TIMED);
+	context.callFunction<void>("forecastIdentityDeliberatelyMissingMethod");
+	EXPECT_EQ(context.forecastImplementation(), Implementation::UNKNOWN);
+}
+
+namespace
+{
+constexpr std::array<const char *, 5> lifeDrainModules = {
+	"spells/unitEffect", "spells/damage", "spells/unitEffect", "battleLog", "battleLog"};
+void completeLifeDrain(Identity & identity)
+{
+	for(const auto * name : lifeDrainModules)
+		load(identity, name, source(name));
+}
+}
+TEST(LuaImplementationIdentity, LifeDrainRequiresItsExactTransitiveClosure)
+{
+	Identity identity(source("spells/lifeDrain"), false);
+	completeLifeDrain(identity);
+	EXPECT_EQ(identity.get(), Implementation::UNKNOWN);
+	identity.finish(true);
+	EXPECT_EQ(identity.get(), Implementation::CANONICAL_LIFE_DRAIN);
+}
+TEST(LuaImplementationIdentity, LifeDrainEveryModifiedDependencyAndRootFailClosed)
+{
+	for(size_t changed = 0; changed < lifeDrainModules.size(); ++changed)
+	{
+		Identity identity(source("spells/lifeDrain"), false);
+		for(size_t index = 0; index < lifeDrainModules.size(); ++index)
+		{
+			const auto * name = lifeDrainModules[index];
+			load(identity, name, source(name) + (index == changed ? "\n-- changed" : ""));
+		}
+		identity.finish(true);
+		EXPECT_EQ(identity.get(), Implementation::UNKNOWN);
+	}
+	Identity root(source("spells/lifeDrain") + "\n-- changed", false);
+	completeLifeDrain(root);
+	root.finish(true);
+	EXPECT_EQ(root.get(), Implementation::UNKNOWN);
+}
+TEST(LuaImplementationIdentity, LifeDrainMissingDuplicateUnknownPatchOrFailedExecutionRejects)
+{
+	for(size_t missing = 0; missing < lifeDrainModules.size(); ++missing)
+	{
+		Identity identity(source("spells/lifeDrain"), false);
+		for(size_t index = 0; index < lifeDrainModules.size(); ++index)
+			if(index != missing)
+				load(identity, lifeDrainModules[index], source(lifeDrainModules[index]));
+		identity.finish(true);
+		EXPECT_EQ(identity.get(), Implementation::UNKNOWN);
+	}
+	Identity patched(source("spells/lifeDrain"), true);
+	completeLifeDrain(patched);
+	patched.finish(true);
+	EXPECT_EQ(patched.get(), Implementation::UNKNOWN);
+	Identity unknown(source("spells/lifeDrain"), false);
+	completeLifeDrain(unknown);
+	load(unknown, "unknown", "return {}");
+	unknown.finish(true);
+	EXPECT_EQ(unknown.get(), Implementation::UNKNOWN);
+	Identity failed(source("spells/lifeDrain"), false);
+	completeLifeDrain(failed);
+	failed.executionFailed();
+	failed.finish(true);
+	EXPECT_EQ(failed.get(), Implementation::UNKNOWN);
+}
+TEST(LuaImplementationIdentity, LifeDrainReorderedOrPostInitializationImportRejects)
+{
+	Identity reordered(source("spells/lifeDrain"), false);
+	load(reordered, "spells/damage", source("spells/damage"));
+	completeLifeDrain(reordered);
+	reordered.finish(true);
+	EXPECT_EQ(reordered.get(), Implementation::UNKNOWN);
+	Identity later(source("spells/lifeDrain"), false);
+	completeLifeDrain(later);
+	later.finish(true);
+	ASSERT_EQ(later.get(), Implementation::CANONICAL_LIFE_DRAIN);
+	later.moduleRequested("battleLog");
+	EXPECT_EQ(later.get(), Implementation::UNKNOWN);
+}
+TEST(LuaImplementationIdentity, LifeDrainActualContextAttestsAndLaterRuntimeErrorInvalidates)
+{
+	scripting::LuaModule host;
+	EmptyEnvironment environment;
+	scripting::LuaScriptInstance script(host, "core", source("spells/lifeDrain"));
+	scripting::LuaContext context(&script, &environment);
+	context.initialize();
+	ASSERT_EQ(context.forecastImplementation(), Implementation::CANONICAL_LIFE_DRAIN);
 	context.callFunction<void>("forecastIdentityDeliberatelyMissingMethod");
 	EXPECT_EQ(context.forecastImplementation(), Implementation::UNKNOWN);
 }

@@ -253,6 +253,12 @@ its Curse counts even though beneficial, while rejected empty Dispel and a
 semantically identical effect refresh do not. Focused live/detached regression
 coverage does not establish complete interaction or platform acceptance.
 
+Detached response updates validate the modeled side's actual hero capability,
+as live updates do. A player-filtered hero query may hide an opposing hero;
+that must not invalidate a legitimate internal effect receipt. Public hero
+queries remain filtered. Missing Counterpressure, invalid sides and expired
+round windows still reject before changing detached state.
+
 ## Ordinary Hero Action sequence (UP244; source/native accepted)
 
 `NEW_HORIZONS_HERO_ACTION_SEQUENCE` appends three right-aligned Action entries

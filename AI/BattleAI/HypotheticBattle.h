@@ -71,6 +71,10 @@ public:
 	}
 
 	std::shared_ptr<StackWithBonuses> getForUpdate(uint32_t id);
+	/// Invocation-local certificate only; does not skip or alter any cast mutation.
+	bool beginLifeDrainFriendlyObservation(uint32_t id) noexcept;
+	bool finishLifeDrainFriendlyObservation() noexcept;
+	void cancelLifeDrainFriendlyObservation() noexcept;
 
 	BattleID getBattleID() const override;
 	ui8 getTacticDist() const override;
@@ -434,6 +438,18 @@ private:
 		const std::shared_ptr<StackWithBonuses> & unit, BattleUnitTurnReason reason,
 		HypotheticLifecycleTiming * timing);
 	void projectPrimalBurst(const std::shared_ptr<StackWithBonuses> & projected);
+	struct LifeDrainFriendlyObservation
+	{
+		uint32_t id;
+		JsonNode state;
+		int32_t formViewRevision;
+		bool destroyedMembership;
+		bool valid = true;
+		bool updateInProgress = false;
+	};
+	std::optional<LifeDrainFriendlyObservation> lifeDrainFriendlyObservation;
+	std::shared_ptr<StackWithBonuses> getForUpdateImpl(uint32_t id);
+	void invalidateLifeDrainFriendlyObservation(uint32_t id) noexcept;
 	newHorizonsCrisisCommand::State crisisCommand;
 	std::set<uint32_t> elementalRebirthSpawnUnitIds;
 	/// Actual magical HP losses from the accepted projected Primal Burst batches.

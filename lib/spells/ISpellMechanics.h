@@ -23,6 +23,7 @@
 #include "../GameConstants.h"
 #include "../bonuses/Bonus.h"
 #include "NewHorizonsVengefulVines.h"
+#include "NewHorizonsLifeDrainProjection.h"
 #include "../entities/hero/NewHorizonsSchoolSpellcraft.h"
 
 struct Query;
@@ -357,6 +358,11 @@ public:
 
 	/// No receipt is supplied by unsupported mechanics or incomplete forecasts.
 	virtual std::optional<newHorizonsVengefulVines::ProjectionReceipt> vengefulVinesProjectionReceipt() const
+	{
+		return std::nullopt;
+	}
+
+	virtual std::optional<newHorizonsLifeDrain::ProjectionReceipt> lifeDrainProjectionReceipt() const
 	{
 		return std::nullopt;
 	}

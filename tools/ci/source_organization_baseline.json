@@ -50,9 +50,11 @@
     },
     "luascript/LuaImplementationIdentity.h": {
       "functions": [],
-      "rationale": "Complete 48-line header inspected: zero callable bodies. All methods including the constructor are declarations only; missing:type_identifier at line24 is the empty std::string_view default argument. No lambda or function-like macro body is present. This record resolves exact-content parser coverage only.",
-      "review": "phase2-vines-complete-callable-source-review-20261021",
-      "sha256": "f2a4952fe857d362a503ba3890c88ff808c5ec045d3cbee6bbdc51ab60333c15"
+      "rationale": "Complete50-line header has zero callable bodies. Two LifeDrain-only counters are private data; every method and constructor remains a declaration. Existing empty string_view default-argument parser recovery is unchanged. This renews exact callable coverage, not runtime acceptance.",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "sha256": "ce7eafe2381f3d79f0089f1bc5907dbdfdc6547eee3b9d40dd4a7821bb653f25",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance"
     },
     "AI/Nullkiller2/AIGateway.cpp": {
       "functions": [
@@ -17714,210 +17716,210 @@
         },
         {
           "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
-          "start": 78,
-          "end": 78
+          "start": 82,
+          "end": 82
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
-          "start": 86,
-          "end": 90
+          "start": 90,
+          "end": 94
         },
         {
           "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
-          "start": 93,
-          "end": 93
+          "start": 97,
+          "end": 97
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-          "start": 114,
-          "end": 114
+          "start": 118,
+          "end": 118
         },
         {
           "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
-          "start": 115,
-          "end": 124
-        },
-        {
-          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
-          "start": 125,
+          "start": 119,
           "end": 128
         },
         {
-          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
           "start": 129,
           "end": 132
         },
         {
-          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 134,
-          "end": 134
-        },
-        {
-          "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
-          "start": 136,
+          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
+          "start": 133,
           "end": 136
         },
         {
-          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
-          "start": 137,
-          "end": 137
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
           "start": 138,
           "end": 138
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
-          "start": 139,
-          "end": 139
-        },
-        {
-          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
           "start": 140,
           "end": 140
         },
         {
-          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
           "start": 141,
           "end": 141
         },
         {
-          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
           "start": 142,
+          "end": 142
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
+          "start": 143,
+          "end": 143
+        },
+        {
+          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
+          "start": 144,
+          "end": 144
+        },
+        {
+          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "start": 145,
           "end": 145
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
           "start": 146,
           "end": 149
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
           "start": 150,
           "end": 153
         },
         {
+          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
+          "start": 154,
+          "end": 157
+        },
+        {
           "symbol": "HypotheticBattle::ProjectedActionReceipt::bool isHeroAction() const#1",
-          "start": 163,
-          "end": 166
+          "start": 167,
+          "end": 170
         },
         {
           "symbol": "HypotheticBattle::ui8 getProjectedPendingTimeStopHeroActionSides() const#1",
-          "start": 251,
-          "end": 251
+          "start": 255,
+          "end": 255
         },
         {
           "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 257,
-          "end": 257
+          "start": 261,
+          "end": 261
         },
         {
           "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
-          "start": 258,
-          "end": 258
+          "start": 262,
+          "end": 262
         },
         {
           "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 265,
-          "end": 265
+          "start": 269,
+          "end": 269
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 285,
-          "end": 285
+          "start": 289,
+          "end": 289
         },
         {
           "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
-          "start": 286,
-          "end": 286
+          "start": 290,
+          "end": 290
         },
         {
           "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
-          "start": 287,
-          "end": 287
+          "start": 291,
+          "end": 291
         },
         {
           "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
-          "start": 288,
-          "end": 292
+          "start": 292,
+          "end": 296
         },
         {
           "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-          "start": 293,
-          "end": 297
+          "start": 297,
+          "end": 301
         },
         {
           "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 298,
-          "end": 298
-        },
-        {
-          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
-          "start": 299,
+          "start": 302,
           "end": 302
         },
         {
-          "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
+          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
           "start": 303,
-          "end": 308
+          "end": 306
+        },
+        {
+          "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
+          "start": 307,
+          "end": 312
         },
         {
           "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 309,
-          "end": 319
+          "start": 313,
+          "end": 323
         },
         {
           "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 322,
-          "end": 325
+          "start": 326,
+          "end": 329
         },
         {
           "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 326,
-          "end": 330
+          "start": 330,
+          "end": 334
         },
         {
           "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 335,
-          "end": 335
+          "start": 339,
+          "end": 339
         },
         {
           "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
-          "start": 399,
-          "end": 399
+          "start": 403,
+          "end": 403
         },
         {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-          "start": 400,
-          "end": 400
+          "start": 404,
+          "end": 404
         },
         {
           "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
-          "start": 401,
-          "end": 401
-        },
-        {
-          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
-          "start": 402,
+          "start": 405,
           "end": 405
         },
         {
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
+          "start": 406,
+          "end": 409
+        },
+        {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 416,
-          "end": 419
+          "start": 420,
+          "end": 423
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 526,
-          "end": 526
+          "start": 542,
+          "end": 542
         }
       ],
-      "rationale": "Exact HypotheticBattle header536 to578 across common and successor. Added canonical/legacy caches are transient owned command/effects/target snapshots with an owner identity; branch constructors do not copy begun action bindings, and finish resets them. New entries are declarations/data only; existing46 complete inline callable spans remain. The inherited parser recovery at225 is the existing default-argument declaration, not an omitted new body. No serialization or native lease was added.",
-      "review": "IR-COMMON-LEGACY-CONTROLLER-FINAL-20261017",
-      "sha256": "ece6d893d58c7b7706729a1a7afa699f5e03095b80a18cbc0f4123a3d16d8ddf",
+      "rationale": "Complete46 unchanged inline callable bodies retain exact source bytes; their spans are remapped after four observer API declaration lines and the private invocation-local record. Existing default-argument parser recovery remains; no new callable body is hidden. Runtime mutation/certification stays in the focused implementation owner; no save fields or semantic approval beyond this exact source.",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "sha256": "e49f2e69d23b93f41426924ccfb30115c6a736361b9f7ce7fc7d31d08d9192fb",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "review_scope": "exact-recipient-hero-coefficient-current-union-source-only-no-runtime-or-future-growth",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
       "deferral": "AI engineer retains the existing model-interface concentration. Further additions should move projection-admission implementation to the cohesive owners rather than add inline rules. Preserve exact complete manual inventory and branch/finish/replay guards; no growth credit from the header's current size."
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
@@ -18145,12 +18147,12 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "exception",
-      "lines": 5726,
-      "sha256": "ef97b0a71f14e23b526ba4e7765b9ef32c3fd056036580abe8c8a16137896888",
+      "lines": 5711,
+      "sha256": "267fec14214f88456413f14e4b917c45eeefd891204cbb1145e256cac682a501",
       "owner": "ai_engineer",
-      "review": "IR-CREATURE-PRESSURE-PREPARATION-20261022",
-      "rationale": "Extract the 20-line terminal beneficial creature-pressure consumer into focused BattleEvaluatorCreaturePressure.cpp, changing only its preparation call. All remaining callable bodies are unchanged, including the optional Plague QUERY identity correction. Exact shrinking file ratchet 5747 to 5726; no valuation, candidate, order or depth changes and no future growth credit.",
-      "review_scope": "terminal-creature-pressure-consumer-extraction-and-shrinking-ratchet-only",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "rationale": "Exact5726-to5711 shrinking evaluator ratchet extracts completed-suffix routing/comparators into focused owners, preserves original candidate iteration, actual cast and original aim, and adds only the invocation-local LifeDrain reuse boundary. Exact source review is distinct from required candidate/value/state/RNG parity and performance measurement.",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5726/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate. No future growth credit; this exact rules-aware query argument only requires independent review. Extract cohesive decision work before broader expansion."
     },
@@ -18173,17 +18175,6 @@
       "sha256": "987775ef07bd9e7ed00647095a7f77ea812eadf037447fd8c3867dd7b6d98cc0",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": " No future growth credit; this exact rules-aware query argument only requires independent review. Extract cohesive decision work before broader expansion."
-    },
-    "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse)#1": {
-      "kind": "exception",
-      "lines": 1213,
-      "sha256": "6d92c4efd173c548a07dcf33539fc7f035a088b85e30543da6c9c3bd02336965",
-      "owner": "ai_engineer",
-      "review": "IR-HERO-TYPE-ATTRIBUTION-SOURCE-20261021",
-      "rationale": "Retain the prior cohesive spell-projection and Vines-value extractions. This exact eight-line diagnostic seam records numeric candidate identity and an elapsed scope, reusing the admitted candidate slot; no score, legality, RNG, selection or gameplay ordering changes. Evaluator5739-to-5747 and attempt1205-to-1213 are a narrowly reviewed attribution exception, not renewed permission for substantive hotspot growth. Optional reduction/formatting remains in the focused timing owner after loop join. Source bounds alone do not establish native parity or performance.",
-      "review_scope": "exact-eight-line-candidate-type-diagnostic-seam",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5747/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate."
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool defensiveStanceMakesDefendWorthwhile(const Environment * environment, const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack, DamageCache & damageCache)#1": {
       "kind": "legacy",
@@ -20795,11 +20786,11 @@
       "kind": "exception",
       "lines": 1140,
       "owner": "ui_developer",
-      "rationale": "Shrinking compact learned-Skill label routing through an exact-window-owned native multiline label factory. Font selection and wrapping are confined to the focused label helper; existing row width, input owners, hover and gameplay remain unchanged. Independent source review only; rendered acceptance remains required.",
-      "review": "compact-skill-wrap-independent-source-review",
-      "review_scope": "exact-owned-compact-skill-multiline-correction",
-      "deferral": "UI owner retains the decreasing1140-line bound. Before substantive expansion, extract a cohesive presentation refresh stage with covered/inactive resize, hover, biography, artifact interaction and legacy-layout parity; preserve active-child ownership and deferred-repaint cancellation.",
-      "sha256": "631f91c6757e645e4d7ad9a33dfa1ba1f0f768edf402d51b6afd244405143e80",
+      "rationale": "Exact no-growth compact learned-Skill label width74 to78px, ending at the existing perk-area boundary before its icon. Focused helper measures actual box width and full native font-chain line height; ownership, rank width, input, preferred-font restoration and legacy layout stay unchanged. Independently reviewed source/geometry; rendered acceptance remains pending.",
+      "review": "compact-skill-width-font-chain-independent-source-review",
+      "review_scope": "four-pixel-compact-learned-name-width-correction",
+      "deferral": "UI owner retains exact1140-line no-growth bound. Before substantive expansion, extract cohesive presentation refresh with covered/inactive resize, hover, biography, artifact interaction and legacy-layout parity; preserve active-child ownership and deferred-repaint cancellation.",
+      "sha256": "011205cb0c0dff5ccdec6e268dc67632a95a99e4217c0040bf2b5e2556abdb7c",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/CHeroWindow.cpp::CHeroWindow::CHeroWindow(const CGHeroInstance * hero) : CWindowObject(useNewHorizonsHeroLayout(hero) ? BORDERED : PLAYER_COLORED, ImagePath::builtin(useNewHorizonsHeroLayout(hero) ? \"newHorizonsHeroBackground\" : ENGINE->isRoeData() ? \"HeroScr3\" : \"HeroScr4\"))#1": {
@@ -20816,12 +20807,12 @@
       "kind": "exception",
       "lines": 111,
       "owner": "ui_developer",
-      "rationale": "Shrinking layout routing replaces separate label positioning and width mutation with the focused owned-label factory; configureNewHorizonsLayout decreases112 to111 physical lines. No added layout responsibility, geometry or input change. Source-only review does not establish rendered fit.",
-      "review": "compact-skill-wrap-independent-source-review",
-      "review_scope": "exact-owned-compact-skill-multiline-correction",
-      "sha256": "b3fc7e892ba6df3e4453d2ee796d05c15896312b695f99a089775a419f423fb0",
+      "rationale": "Exact no-growth compact learned-Skill label width74 to78px, ending at the existing perk-area boundary before its icon. Focused helper measures actual box width and full native font-chain line height; ownership, rank width, input, preferred-font restoration and legacy layout stay unchanged. Independently reviewed source/geometry; rendered acceptance remains pending.",
+      "review": "compact-skill-width-font-chain-independent-source-review",
+      "review_scope": "four-pixel-compact-learned-name-width-correction",
+      "sha256": "68501b61535db4d53fc5574ca5802c42f3c85b86540f4b9a52075760678cb2e6",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Before further substantive layout expansion, ui_developer must extract a cohesive skill-row presentation/layout owner with explicit label/icon/help ownership and compact-to-legacy transition coverage; preserve parent capture, active state and repaint order."
+      "deferral": "Exact111-line no-growth layout exception for one scalar width correction. Before substantive layout expansion, extract cohesive skill-row presentation/layout ownership with compact-to-legacy parity, parent capture, active state, input/help regions and repaint order."
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::refreshHero(bool refreshArtifactInteraction)#1": {
       "kind": "exception",
@@ -21913,13 +21904,13 @@
     "lib/CMakeLists.txt": {
       "deferral": "Exact single registration growth only. Keep behavior in focused compiled owners; further declarative registry growth requires renewed exact review and does not authorize executable helpers.",
       "kind": "exception",
-      "lines": 1310,
+      "lines": 1312,
       "owner": "engine_engineer",
-      "rationale": "Register the cohesive HeroStartingEquipment compilation unit only; no executable mechanics in this declarative registry.",
-      "review": "default-hero-equipment-creation-source-v1",
-      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
+      "rationale": "Exact1310-to1312 CMake manifest extension registers the focused LifeDrain projection receipt source/header pair only. No target, dependency, platform, build policy or compiler option changes; the two-line central registration is a bounded exception, not future growth credit.",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "d88841baff26e727089002141ac6eac9544f5a0e0391066e93f331b61b0288e1"
+      "sha256": "41fbe46ce3aa60b3c86ece7354c51c42ed878b27a37b08bc2929835e3cfe2cee"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -24406,12 +24397,12 @@
     "lib/spells/BattleSpellMechanics.cpp": {
       "deferral": "Before further Cure-validator growth, the gameplay engineer must extract the existing Cure eligibility and selector block into a cohesive shared validator with a current battle and canonical destination. Preserve identity refusal, owner/receptivity/rules/selection and pre-cost ordering; retain hex/unit/refusal, no-mutation/RNG/cost, authoritative Cure/Dispel/Frozen and modal lifecycle coverage, and reduce this baseline. Before further growth, extract coherent accepted effect preparation/application transaction preserving parent/recipient provenance, typed action/payment/Luck/refund/RNG/packet order. Retain existing Cure validator extraction obligation. Exact shrinking file3122 and castEval146 caps only; the gameplay engineer owns extraction of the remaining accepted projection transaction before substantive castEval expansion. Preserve authoritative effect order, target preparation, Concentration delegation, post-application certification, failure revocation and no saved-state change. Require canonical/unknown script, geometry/recipient and state/packet/both-RNG characterization; runtime acceptance remains separate.",
       "kind": "exception",
-      "lines": 3122,
+      "lines": 3117,
       "owner": "gameplay_engineer",
-      "rationale": "Exact3123-to3122 shrinking owner: remove the cached optional Regeneration identifier decoder, classify via the admitted current-library saved-family identity, and thread that identity to the existing marker snapshot. cast823-to824 and castEval145-to146 add one routing line each only; the removed helper offsets these lines. This urgent absent-module correctness exception does not waive existing Cure/accepted-effect extraction obligations or establish runtime acceptance.",
-      "review": "IR-OPTIONAL-REGENERATION-IDENTITY-20261022",
-      "review_scope": "exact-optional-identity-compatibility-fix-and-shrinking-file-ratchet",
-      "sha256": "6339861315f2cd7abc47820dcf56bc2107715300ab27f1b62891856b1fd2d162",
+      "rationale": "Exact3122-to3117 shrinking mechanics owner: LifeDrain receipt capture is delegated to a focused validated helper and existing Concentration target projection is extracted to its focused owner. Actual cast/payment/effect ordering remains and postcast identity is checked. Retain existing Cure/accepted-transaction extraction obligations and required runtime parity.",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
+      "sha256": "90ba57cb00ea63d9f792b00650cf5f02eb4b9b3dedc1ddaadc4f48c6916bb8d1",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::bool BattleSpellMechanics::canBeCast(Problem & problem) const#1": {
@@ -24456,12 +24447,12 @@
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::castEval(ServerCallback * server, const Target & target)#1": {
       "kind": "exception",
-      "lines": 146,
+      "lines": 141,
       "owner": "gameplay_engineer",
-      "rationale": "Bounded urgent optional-module compatibility correction: castEval145-to-146 adds only the resolved saved-family ID argument to the existing regeneration snapshot call. No effect, payment, marker, packet or RNG order change; no generic future growth permission.",
-      "review": "IR-OPTIONAL-REGENERATION-IDENTITY-20261022",
-      "review_scope": "exact-optional-identity-routing-compatibility-fix-source-only",
-      "sha256": "2e8936eee88f6c3c0b4c814db7820bde90fa1129b3a1a364a47d854ed535a309",
+      "rationale": "Exact146-to141 shrinking castEval transaction delegates existing Concentration projection and captures completed LifeDrain receipt through focused helpers. Preserves original cast/effect/ledger ordering and ordinary fallback. Existing accepted-effect/Cure extraction deferral remains; no runtime verification inferred.",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
+      "sha256": "336fd6c8a534d9be2cf63c7c9dffe704136839aa71eeb595c732344758968c21",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Before further Cure-validator growth, the gameplay engineer must extract the existing Cure eligibility and selector block into a cohesive shared validator with a current battle and canonical destination. Preserve identity refusal, owner/receptivity/rules/selection and pre-cost ordering; retain hex/unit/refusal, no-mutation/RNG/cost, authoritative Cure/Dispel/Frozen and modal lifecycle coverage, and reduce this baseline. Before further growth, extract coherent accepted effect preparation/application transaction preserving parent/recipient provenance, typed action/payment/Luck/refund/RNG/packet order. Retain existing Cure validator extraction obligation. Exact shrinking file3122 and castEval146 caps only; the gameplay engineer owns extraction of the remaining accepted projection transaction before substantive castEval expansion. Preserve authoritative effect order, target preparation, Concentration delegation, post-application certification, failure revocation and no saved-state change. Require canonical/unknown script, geometry/recipient and state/packet/both-RNG characterization; runtime acceptance remains separate."
     },
@@ -24556,12 +24547,12 @@
     },
     "lib/spells/ISpellMechanics.h": {
       "kind": "exception",
-      "lines": 772,
+      "lines": 778,
       "owner": "gameplay_engineer",
-      "rationale": "Interface/context-only763-to772 extension: typed transient original-cast factor context, conservative optional event getter and component virtual routing. Defaults stay ordinary; implementation remains focused. No persistent hero/battle field or serialized layout change.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "9904706c57c5e859882b230b928ae8567a2d84d08c26d3b695eb04c1ca3e380d",
+      "rationale": "Exact772-to778 interface extension adds a default-null optional LifeDrain receipt query while preserving ordinary and historical mechanics defaults. Prepared receipt validation remains in a focused owner; no mutation, persistence or generic export interface is added.",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
+      "sha256": "a727ed3663c5970275d26955b84a85c3a7ec7a96bf8490070b0705a0d83406ff",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Gameplay owner must split a cohesive mechanics capability interface before further substantive header growth. Preserve default behavior, DLL linkage, copied event-context lifetime and existing read-only Vines receipt contracts. Exact772-line interface bound; no regrowth credit."
     },
@@ -26449,22 +26440,23 @@
     },
     "AI/BattleAI/HypotheticBattle.cpp": {
       "kind": "exception",
-      "lines": 859,
+      "lines": 849,
       "owner": "ai_engineer",
-      "rationale": "Urgent exact ten-line Last Stand consumption owner correction only: resolve the same mechanical side hero used by damage preparation instead of the visibility-filtered fighting-hero query. File859 and all85 other parsed callable bodies remain exact; no new public hero visibility, future growth, full horizon or runtime approval.",
-      "review": "IR-FULL171-OWNED-PROVENANCE-AND-CREATURE-AURA-20261017",
-      "review_scope": "exact-mechanical-last-stand-owner-correction-only-source-unrun",
-      "sha256": "5115f45125cfb2f0c25efef9393cb1ade48f31124c8de3531f6d580791911dfd",
-      "deferral": "AI owner: retain new query/history/lifecycle rules in focused owned-export components; before further HypotheticBattle growth extract coherent side-token validation behind the existing mechanical-state interface, preserving invalid-side, missing-perk and double-spend rejection plus native/private branch lifetime and token parity tests. No future growth approved."
+      "rationale": "Exact847-to849 bounded correction validates an internal Counterpressure receipt against the actual side owner via existing getSideHero, matching existing Reactive Weave authority. Public hero visibility remains filtered; invalid side, shape, round-window and missing actual perk checks stay intact. Prior materialization extraction remains859-to849 overall shrinking debt. Source-only review; native and performance acceptance pending.",
+      "review": "life-drain-counterpressure-internal-owner-independent-source-review",
+      "review_scope": "internal-receipt-capability-owner-correction",
+      "sha256": "6901daf07427ada8ab135842c82ec598034938201c5014ba5647c043db9cabb1",
+      "deferral": "AI owner: retain new query/history/lifecycle rules in focused owned-export components; before further HypotheticBattle growth extract coherent side-token validation behind the existing mechanical-state interface, preserving invalid-side, missing-perk and double-spend rejection plus native/private branch lifetime and token parity tests. No future growth approved.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/HypotheticBattle.h": {
       "kind": "exception",
-      "lines": 578,
+      "lines": 594,
       "owner": "ai_engineer",
-      "rationale": "Exact HypotheticBattle header536 to578 across common and successor. Added canonical/legacy caches are transient owned command/effects/target snapshots with an owner identity; branch constructors do not copy begun action bindings, and finish resets them. New entries are declarations/data only; existing46 complete inline callable spans remain. The inherited parser recovery at225 is the existing default-argument declaration, not an omitted new body. No serialization or native lease was added.",
-      "review": "IR-COMMON-LEGACY-CONTROLLER-FINAL-20261017",
-      "review_scope": "exact-recipient-hero-coefficient-current-union-source-only-no-runtime-or-future-growth",
-      "sha256": "ece6d893d58c7b7706729a1a7afa699f5e03095b80a18cbc0f4123a3d16d8ddf",
+      "rationale": "Exact578-to594 header extension adds only a narrow invocation-local no-op observation API and value record. Materialization implementation is extracted cohesively from HypotheticBattle.cpp859-to847 into an88-line helper. Complete46 inline callable inventory remains unchanged; no wire/save fields, retained unit pointers or generic mutation framework.",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
+      "sha256": "e49f2e69d23b93f41426924ccfb30115c6a736361b9f7ce7fc7d31d08d9192fb",
       "deferral": "AI engineer retains the existing model-interface concentration. Further additions should move projection-admission implementation to the cohesive owners rather than add inline rules. Preserve exact complete manual inventory and branch/finish/replay guards; no growth credit from the header's current size.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
@@ -26487,13 +26479,15 @@
       "sha256": "bc939a6cad754adc26e668c58ca6a95d2b9f9b124bc514177783acaa0e301fad"
     },
     "AI/BattleAI/HypotheticStrikeProjection.cpp": {
-      "kind": "review",
+      "kind": "exception",
       "lines": 523,
       "owner": "ai_engineer",
-      "rationale": "Exact Stage7 cohesive owner-boundary extraction, below the default ceiling. The source review examined this unit and its ordered responsibility; source/helper inverse proofs preserve behavior. This exact-size trigger review conveys neither inherited oversized debt nor future growth permission. Subsequent changed hotspots require fresh review.",
-      "review": "IR-STAGE7-COMPOSED-SOURCE-99f5eb64-20261015",
-      "review_scope": "exact-cohesive-extraction-trigger-review-no-ceiling-waiver",
-      "sha256": "3182ddfbc4aadebdad36dc9d033496babfde00d5d26cd7a5b815bd4d429faba6"
+      "rationale": "Exact523-line no-growth correction changes only the source-owner argument in the10-line Elemental Rebirth capture method to existing internal getSideHero, matching authoritative damage capture. Public player-filtered hero visibility remains unchanged; shared eligibility, native-rebirth, clone, chain quota, original-HP basis and placement validation are preserved. Coupling broader extraction to this demonstrated producer correction would increase risk; source-only review, native acceptance pending.",
+      "review": "life-drain-rebirth-native-owner-independent-source-review",
+      "review_scope": "single-internal-Rebirth-source-owner-correction",
+      "sha256": "88086d98901b66d947247e1dfe4af555e598d6a1fc680300fb2e29517c5fb273",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Before substantive Rebirth/Primal Burst expansion, ai_engineer must extract cohesive typed death-capture/projection/aftermath ownership from this mixed strike owner. Preserve source identity and original HP, native Phoenix precedence, recursive exclusions, legal placement, chain/Spark quotas, side-owner versus public-view boundary and exact live/parent/sibling/RNG tests; no future growth allowance."
     },
     "AI/BattleAI/HypotheticStrikeProjection.cpp::std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::Unit * postHitUnit, const newHorizonsElementalRebirth::DeathSnapshot & captured, const bool hitKilled, const bool cloneKilled, const bool nativeRebirth)#1": {
       "kind": "review",
@@ -26543,6 +26537,27 @@
       "sha256": "55e3059e54424ae2712d99ef5b704c8130b44d45c66b94144dbf0fbd28f1ec18",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth."
+    },
+    "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse, LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse)#1": {
+      "kind": "exception",
+      "lines": 1197,
+      "sha256": "ddcbec8a87a227e27525353c4d8468b8745f434515353faf72ef4993694bc4ef",
+      "owner": "ai_engineer",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "rationale": "Same logical per-candidate evaluator with an appended test-control parameter: exact1213-to1197 shrinking body after cohesive projection/combined-reuse routing extraction. Every original candidate and actual cast remains ordered; completed float suffix alone can be reused under narrow proof. This new signature is not an inherited automatic allowance; retained oversized-function deferral remains explicit.",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5747/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate."
+    },
+    "AI/BattleAI/BattleEvaluatorSpellProjection.cpp::battleEvaluatorProjection::SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback & live, const CGHeroInstance * hero, BattleSide side, const PossibleSpellcast & candidate, const heroActionProjection::Admission & admission, uint32_t & targetId, const std::vector<uint32_t> & sharedPurposeRecipients)#1": {
+      "lines": 81,
+      "sha256": "510e325712cbcdbf63591918ff2ac1d874155ece559d253960460af9246ed9ba",
+      "owner": "ai_engineer",
+      "review": "life-drain-completed-suffix-independent-source-review",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
+      "kind": "review",
+      "rationale": "Exact63-to81-line cohesive spell projection transaction preserves admission, actual cast, accepted ledger and final native certificate in explicit order. Observation only gates completed suffix reuse; no candidate or cast is skipped and unknown/incomplete work stays ordinary. This is an exact threshold review, not a future growth allowance."
     }
   }
 }

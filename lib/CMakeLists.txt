@@ -488,6 +488,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsPurify.cpp
 	spells/NewHorizonsRealityWarp.cpp
 	spells/NewHorizonsVengefulVines.cpp
+	spells/NewHorizonsLifeDrainProjection.cpp
 	spells/BattleSpellProjectionTargets.cpp
 	spells/OrientedSpellPattern.cpp
 	spells/MagicalDamageReduction.cpp
@@ -1163,6 +1164,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsFriendlyFire.h
 	spells/NewHorizonsRealityWarp.h
 	spells/NewHorizonsVengefulVines.h
+	spells/NewHorizonsLifeDrainProjection.h
 	spells/OrientedSpellPattern.h
 	spells/MagicalDamageReduction.h
 	spells/NewHorizonsSorcery.h

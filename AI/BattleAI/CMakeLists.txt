@@ -15,6 +15,9 @@ set(battleAI_SRCS
 		BattleEvaluatorSpellCandidates.cpp
 		BattleEvaluatorSpellProjection.cpp
 		VinesCandidateValueReuse.cpp
+		HeroCandidateValueContext.cpp
+		HeroCandidateValueReuse.cpp
+		LifeDrainCandidateValueReuse.cpp
 		BattleEvaluatorHeroQueue.cpp
 		HeroSpellExpectedValueProjection.cpp
 		HeroPurifyProjection.cpp
@@ -64,6 +67,7 @@ set(battleAI_SRCS
 		HypotheticOrderContinuation.cpp
 		HypotheticActivation.cpp
 		HypotheticUnitUpdates.cpp
+		HypotheticLifeDrainObservation.cpp
 		HypotheticStrikeProjection.cpp
 		HypotheticSpellServer.cpp
 		SpellTargetsEvaluator.cpp
@@ -93,6 +97,9 @@ set(battleAI_HEADERS
 		BattleEvaluatorProjection.h
 		BattleEvaluatorSpellProjection.h
 		VinesCandidateValueReuse.h
+		HeroCandidateValueContext.h
+		HeroCandidateValueReuse.h
+		LifeDrainCandidateValueReuse.h
 		HeroSpellExpectedValueProjection.h
 		HeroPurifyProjection.h
 		HeroTargetHeuristicProjection.h
@@ -106,6 +113,7 @@ set(battleAI_HEADERS
 		BraceStagePreparation.h
 		HeroActionUtility.h
 		HeroActionSelection.h
+		HeroActionSelectionIdentity.h
 		HeroActionContinuation.h
 		HeroActionTiming.h
 		HypotheticBonusApplication.h

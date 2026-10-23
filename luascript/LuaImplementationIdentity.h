@@ -38,6 +38,8 @@ private:
 	CombatEventForecastImplementation combatEventImplementation = CombatEventForecastImplementation::UNKNOWN;
 	unsigned requested = 0;
 	unsigned loaded = 0;
+	unsigned lifeDrainRequested = 0;
+	unsigned lifeDrainLoaded = 0;
 	bool finished = false;
 	bool canonicalDamageCalculator = false;
 

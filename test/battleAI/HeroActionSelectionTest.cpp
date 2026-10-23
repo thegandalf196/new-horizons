@@ -8,6 +8,8 @@
 #include "../../AI/BattleAI/PossibleSpellcast.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../lib/spells/CSpell.h"
+#include "../mock/mock_battle_Unit.h"
+#include <type_traits>
 #include <array>
 #include <bit>
 #include <cmath>
@@ -203,4 +205,66 @@ TEST(HeroActionSelectionTest, GenerationPriorCannotOverrideFinalCommonUtility)
 	EXPECT_EQ(bits(observer.bestFlank), bits(10.0f));
 	EXPECT_EQ(bits(observer.best.value), bits(11.0f));
 	EXPECT_EQ(flank.commandHeuristicValue, 1000000.0f);
+}
+
+TEST(HeroActionSelectionTest, NullAndLegacyObserversDoNotInspectOriginalUnitTargets)
+{
+	::testing::StrictMock<UnitMock> target;
+	EXPECT_CALL(target, unitId()).Times(0);
+	auto cast = value(7.0f);
+	cast.dest = {spells::Destination(&target, BattleHex(8, 5))};
+	cast.commandTargets = {10, 11};
+	const std::array candidates{cast};
+	EXPECT_TRUE(heroActionSelection::choose(candidates, 0.0f, false));
+	heroSelectionTest::Observer legacy;
+	EXPECT_TRUE(heroActionSelection::choose(candidates, 0.0f, false, &legacy));
+	EXPECT_EQ(legacy.count, 1u);
+}
+
+TEST(HeroActionSelectionTest, OptInIdentityCopiesOrderedTargetsAndAllOptionValuesWithoutRetainingViews)
+{
+	class Detailed final : public heroActionSelection::Observer
+	{
+	public:
+		std::array<heroActionSelection::CandidateIdentity, 2> identities;
+		size_t received = 0;
+		bool invalid = false;
+		void candidate(heroActionSelection::CandidateValue) noexcept override {}
+		void selected(heroActionSelection::SelectionValue) noexcept override {}
+		bool observeIdentity() const noexcept override { return true; }
+		void candidateIdentity(size_t ordinal, heroActionSelection::CandidateIdentity identity) noexcept override
+		{
+			static_assert(std::is_nothrow_move_assignable_v<heroActionSelection::CandidateIdentity>);
+			if(ordinal >= identities.size() || ordinal != received)
+				invalid = true;
+			else
+				identities[received++] = std::move(identity);
+		}
+	} observer;
+	::testing::NiceMock<UnitMock> enemy, first, second;
+	ON_CALL(enemy, unitId()).WillByDefault(::testing::Return(10u));
+	ON_CALL(first, unitId()).WillByDefault(::testing::Return(20u));
+	ON_CALL(second, unitId()).WillByDefault(::testing::Return(21u));
+	auto a = value(7.0f);
+	a.dest = {spells::Destination(&enemy, BattleHex(8, 5)), spells::Destination(&first, BattleHex(3, 3))};
+	a.commandTargets = {20, 10};
+	a.spellCurePhysicalAffliction = "frozen";
+	a.spellPurifyChoices = {{10, SpellID::SLOW}};
+	a.spellHandOfFateExpectedValue = -0.0f;
+	a.metamagicFollowup = true;
+	auto b = a;
+	b.dest[1] = spells::Destination(&second, BattleHex(4, 7));
+	b.commandTargets = {10, 20};
+	b.spellHandOfFateExpectedValue = 0.0f;
+	const std::array candidates{a, b};
+	ASSERT_TRUE(heroActionSelection::choose(candidates, 0.0f, false, &observer));
+	ASSERT_FALSE(observer.invalid);
+	ASSERT_EQ(observer.received, 2u);
+	EXPECT_EQ(observer.identities[0].targets, (std::vector<heroActionSelection::TargetIdentity>{
+		{10u, BattleHex(8, 5)}, {20u, BattleHex(3, 3)}}));
+	EXPECT_EQ(observer.identities[1].targets[1].unitId, 21u);
+	EXPECT_EQ(observer.identities[1].targets[1].hex, BattleHex(4, 7));
+	EXPECT_EQ(observer.identities[0].options, heroActionSelection::candidateOptions(a));
+	EXPECT_EQ(observer.identities[1].options, heroActionSelection::candidateOptions(b));
+	EXPECT_NE(observer.identities[0].options, observer.identities[1].options);
 }

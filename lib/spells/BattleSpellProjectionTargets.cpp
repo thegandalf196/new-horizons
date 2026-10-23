@@ -8,6 +8,9 @@
 
 #include "BattleSpellMechanics.h"
 #include "CSpell.h"
+#include "NewHorizonsMagic.h"
+#include "NewHorizonsSpellcraft.h"
+#include "../mapObjects/CGHeroInstance.h"
 #include "NewHorizonsPandemonium.h"
 #include "NewHorizonsVengefulVines.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -19,7 +22,20 @@
 
 namespace spells
 {
-std::optional<newHorizonsVengefulVines::ProjectionReceipt> BattleSpellMechanics::prepareProjectedEffects(
+bool BattleSpellMechanics::delegateConcentratedProjection(ServerCallback * server, const Target & target)
+{
+	if(!eventSnapshot || eventSnapshot->hasSpellcraftTargetSnapshot() || mode != Mode::HERO
+		|| !getHeroCaster() || !getHeroCaster()->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+			std::string(newHorizonsSpellcraft::CONCENTRATION)))
+		return false;
+	auto concentrated = eventSnapshot->mechanicsForTarget(target);
+	concentrated->castEval(server, target);
+	vinesProjectionReceipt = concentrated->vengefulVinesProjectionReceipt();
+	lifeDrainReceipt = concentrated->lifeDrainProjectionReceipt();
+	return true;
+}
+
+BattleSpellMechanics::PreparedProjectionReceipts BattleSpellMechanics::prepareProjectedEffects(
 	const Target & target, bool completedHeroProjection)
 {
 	if(newHorizonsPandemonium::enabled(*this))
@@ -27,11 +43,15 @@ std::optional<newHorizonsVengefulVines::ProjectionReceipt> BattleSpellMechanics:
 	const auto spellTarget = transformSpellTarget(target);
 	effectsToApply = effects->prepare(this, target, spellTarget);
 	filterSpellLockedEffects(target);
-	if(!completedHeroProjection || isCounterspellNegated()
-		|| !newHorizonsVengefulVines::enabled(battle()->getBattle()->getMagicRules(), getSpellId())
-		|| newHorizonsVengefulVines::footprint(target).size() != 3)
-		return std::nullopt;
-	return newHorizonsVengefulVines::captureProjection(*this, effectsToApply, resolvedConcentrationBonusPercent());
+	PreparedProjectionReceipts result;
+	if(!completedHeroProjection || isCounterspellNegated())
+		return result;
+	if(newHorizonsVengefulVines::enabled(battle()->getBattle()->getMagicRules(), getSpellId())
+		&& newHorizonsVengefulVines::footprint(target).size() == 3)
+		result.vines = newHorizonsVengefulVines::captureProjection(*this, effectsToApply, resolvedConcentrationBonusPercent());
+	if(newHorizonsLifeDrain::supportsProjection(*this, effectsToApply))
+		result.lifeDrain = newHorizonsLifeDrain::captureProjection(*this, effectsToApply, target, resolvedConcentrationBonusPercent());
+	return result;
 }
 
 size_t BattleSpellMechanics::getTargetedStackCount(const Target & target) const

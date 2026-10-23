@@ -573,11 +573,28 @@ TEST_F(HypotheticSpellServerRouteTest, GenericAllowlistAppliesThreeStatesAndProp
 	hiddenCallback->recordCompletedHeroSpellCast(BattleSide::ATTACKER, 1);
 	hiddenCallback->apply(static_cast<CPackForClient &>(weave));
 	EXPECT_EQ(hidden->getWarcastingState(BattleSide::DEFENDER).reactiveEmpowermentPercent, 15);
-	const auto hiddenBefore = viewState(*hidden);
-	expectError([&] { hiddenCallback->apply(static_cast<CPackForClient &>(response)); },
+	const auto worldBefore = gameState()->saveToMemory();
+	const auto childBeforeHidden = viewState(*child);
+	hiddenCallback->apply(static_cast<CPackForClient &>(response));
+	EXPECT_EQ(hidden->getSpellResponseState(BattleSide::DEFENDER).armedInRound, round);
+	EXPECT_EQ(hidden->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+	EXPECT_EQ(viewState(*child), childBeforeHidden);
+	EXPECT_EQ(gameState()->saveToMemory(), worldBefore);
+	record("generic-hidden-opponent-response-accepts-actual-capability-with-public-hero-still-hidden");
+	const auto * missingHero = hidden->getSideHero(BattleSide::ATTACKER);
+	ASSERT_NE(missingHero, nullptr);
+	ASSERT_FALSE(missingHero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+		std::string(newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE)));
+	auto missing = response;
+	missing.side = BattleSide::ATTACKER;
+	const auto hiddenBeforeMissing = viewState(*hidden);
+	expectError([&] { hiddenCallback->apply(static_cast<CPackForClient &>(missing)); },
 		"Hypothetical Spell Response state requires Counterpressure");
-	EXPECT_EQ(viewState(*hidden), hiddenBefore);
-	record("generic-hidden-opponent-response-rejects-with-world-perk-and-no-mutation");
+	EXPECT_EQ(viewState(*hidden), hiddenBeforeMissing);
+	EXPECT_EQ(viewState(*child), childBeforeHidden);
+	EXPECT_EQ(gameState()->saveToMemory(), worldBefore);
+	EXPECT_EQ(hidden->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+	record("generic-response-rejects-genuinely-missing-actual-perk-without-mutation");
 	callback->apply(static_cast<CPackForClient &>(response));
 	EXPECT_EQ(child->getSpellResponseState(BattleSide::DEFENDER).armedInRound, round);
 	record("generic-response-current-round");

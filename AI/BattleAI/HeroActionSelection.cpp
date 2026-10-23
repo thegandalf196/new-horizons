@@ -8,6 +8,7 @@
 #include "PossibleSpellcast.h"
 #include "BattleExchangeVariant.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/battle/Unit.h"
 
 namespace heroActionSelection
 {
@@ -45,9 +46,20 @@ std::optional<Selection> choose(std::span<const PossibleSpellcast> candidates,
 	{
 		const auto & candidate = candidates[index];
 		if(observer)
+		{
 			observer->candidate({index, candidate.command,
 				candidate.spell ? candidate.spell->getId() : SpellID::NONE,
 				candidate.spellOvercharge, candidate.value});
+			if(observer->observeIdentity())
+			{
+				CandidateIdentity identity{{}, candidateOptions(candidate)};
+				identity.targets.reserve(candidate.dest.size());
+				for(const auto & destination : candidate.dest)
+					identity.targets.push_back({destination.unitValue
+						? std::optional(destination.unitValue->unitId()) : std::nullopt, destination.hexValue});
+				observer->candidateIdentity(index, std::move(identity));
+			}
+		}
 		if(index != 0 && candidates[best].value < candidate.value)
 			best = index;
 	}

@@ -38,12 +38,13 @@ class Effect;
 using TargetType = spells::AimType;
 
 /// Attested loaded implementation, not an effect's configured name or type.
-/// Unknown implementations cannot certify Vines projection equivalence.
+/// Unknown implementations cannot certify spell-projection equivalence.
 enum class ForecastImplementation
 {
 	UNKNOWN,
 	CANONICAL_DAMAGE,
-	CANONICAL_TIMED
+	CANONICAL_TIMED,
+	CANONICAL_LIFE_DRAIN
 };
 
 struct SpellEffectValue : public scripting::ApiSerializable<SpellEffectValue>

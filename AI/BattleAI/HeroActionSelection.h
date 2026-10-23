@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #pragma once
+#include "HeroActionSelectionIdentity.h"
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/constants/EntityIdentifiers.h"
 #include <cstddef>
@@ -35,6 +36,10 @@ public:
 	virtual ~Observer() = default;
 	virtual void candidate(CandidateValue value) noexcept = 0;
 	virtual void selected(SelectionValue value) noexcept = 0;
+	/// Opt-in detailed identity, built outside noexcept callbacks and moved in.
+	/// Existing scalar observers pay no additional allocation or unit queries.
+	virtual bool observeIdentity() const noexcept { return false; }
+	virtual void candidateIdentity(size_t, CandidateIdentity) noexcept {}
 };
 struct Selection
 {

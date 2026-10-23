@@ -59,6 +59,19 @@ An exit-zero target does not prove profiling succeeded: inspect the collector's
 errors and actual sample stream before attributing CPU cost. Neither selector
 establishes Windows performance or a speedup.
 
+### Life Drain continuation reuse
+
+Life Drain's Hero Action evaluator may reuse a completed continuation value within
+one search. Every original enemy/friendly target pair still executes its cast and
+accepted-action bookkeeping. Reuse requires the canonical loaded Shadow-only
+effect and a native certificate that the friendly recipient's saved combat state,
+form and Bloodrage bookkeeping stayed unchanged. Changed, unsupported or failed
+projections retain ordinary evaluation. No entry survives the search. The
+`LifeDrainCandidateValueReuseAITest` cases compare ordered original targets,
+options, score bits, selected actions, live state and both RNGs with reuse disabled
+and enabled; positive-hit assertions distinguish reuse from an all-fallback pass.
+Elapsed-time comparisons remain separate from those semantic checks.
+
 ## Existing opt-in diagnostics
 
 `NH_RENDER_LOAD_TIMINGS=1` enables existing diagnostics only under their logger gates. `NH_RENDER_LOAD_TIMING_LIMIT` accepts ASCII decimal 1–16384; malformed/missing values fall back to 1024. Counters are bounded, and a cap notice means later events are omitted. Disabled paths do not read clocks or allocate diagnostic logs.

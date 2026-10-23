@@ -25,6 +25,7 @@
 #include "HeroActionSelection.h"
 #include "HeroActionContinuation.h"
 #include "HeroActionTiming.h"
+#include "HeroCandidateValueReuse.h"
 #include "BattleExchangeVariant.h"
 
 #include "StackWithBonuses.h"
@@ -4414,7 +4415,8 @@ bool BattleEvaluator::canCastSpell()
 }
 
 bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells,
-	heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse)
+	heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse,
+	LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse)
 {
 	const auto battleView = cb->getBattle(battleID);
 	const bool mandatoryDoubleCommand = battleView->battleHasPendingDoubleCommand(side);
@@ -4942,7 +4944,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	CStopWatch timer;
 
 	// This frame owns fixed parent/caster/scoring inputs; no entry survives it.
-	VinesCandidateValueReuse vinesValues(vinesReuse);
+	HeroCandidateValueReuse values(vinesReuse, lifeDrainReuse);
 	timing.prepare(possibleCasts.size());
 	{
 		heroActionTiming::LoopScope loop(timing.candidateSlots(), timing.sink());
@@ -4957,14 +4959,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						? ps.spell->getId().getNum() : -1;
 				}
 				heroActionTiming::Scope candidateScope(candidateTiming ? &candidateTiming->candidate : nullptr);
-				vinesValues.beginCandidate(ps);
-				bool completedVinesValue = false;
-				const auto discardIncompleteValue = vstd::makeScopeGuard([&]
-				{
-					if(!completedVinesValue)
-						vinesValues.clear();
-				});
-				std::optional<newHorizonsVengefulVines::ProjectionReceipt> vinesReceipt;
+				auto candidateReuse = values.beginCandidate(ps);
+				battleEvaluatorProjection::SpellProjection projection;
 				auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
 				const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
 					? cachedAttack.score : 0.0f;
@@ -5158,14 +5154,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 				if(ps.command == HeroCommand::NONE)
 				{
-					auto projection = battleEvaluatorProjection::projectSpell(*state, *battleCallback,
+					projection = battleEvaluatorProjection::projectSpell(*state, *battleCallback,
 						hero, side, ps, admission, targetId, sharedPurposeSpellRecipients);
 					if(!projection.accepted)
 					{
 						ps.value = std::numeric_limits<float>::lowest();
 						continue;
 					}
-					vinesReceipt = std::move(projection.vines);
 					if(isCanonicalVampirism(*cb->getBattle(battleID), ps.spell))
 					{
 						ps.value = baseline + projectedVampirismValue(env.get(), cb->getBattle(battleID),
@@ -5214,15 +5209,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						: std::numeric_limits<float>::lowest();
 					continue;
 				}
-				// Every candidate already projected its own geometry and accepted ledger.
-				if(vinesReceipt && !VinesCandidateValueReuse::scoringScriptsSupported(*state))
-					vinesReceipt.reset();
-				if(const auto reused = vinesValues.find(ps, admission, sharedPurposeSpellRecipients, vinesReceipt))
-				{
-					ps.value = *reused;
-					completedVinesValue = true;
+				// Every original cast and accepted ledger completed before value lookup.
+				if(candidateReuse.find(admission, sharedPurposeSpellRecipients, projection, *state))
 					continue;
-				}
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
 				const bool transfigureMatter = isTransfigureMatter(ps.spell);
 				const bool phantomArmy = isPhantomArmy(ps.spell);
@@ -5587,11 +5576,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				ps.value = heroActionUtility::composeAbsoluteUtility(continuation, immediate).value;
 				if(!counterspellNegated && ps.command == HeroCommand::NONE && isHavocStructuralSpell(ps.spell))
 					ps.value += ps.spellPlacementHeuristicValue;
-				// A failed scripted damage call can revoke its capability during scoring.
-				if(vinesReceipt && !VinesCandidateValueReuse::scoringScriptsSupported(*state))
-					vinesReceipt.reset();
-				vinesValues.remember(ps, admission, sharedPurposeSpellRecipients, vinesReceipt);
-				completedVinesValue = true;
+				candidateReuse.remember(admission, sharedPurposeSpellRecipients, projection, *state);
 #if BATTLE_TRACE_LEVEL >= 1
 				logAi->trace("Total score for %s: %2f (action: %2f, friedly damage: %2f, hostile damage: %2f)", ps.name(), ps.value, stackActionScore, damageToFriendliesScore, damageToHostilesScore);
 #endif

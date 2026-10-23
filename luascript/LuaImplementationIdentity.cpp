@@ -19,10 +19,15 @@ using Implementation = spells::effects::ForecastImplementation;
 constexpr unsigned UNIT_EFFECT = 1;
 constexpr unsigned BATTLE_LOG = 2;
 constexpr unsigned COMBAT_SCRIPT = 4;
+constexpr unsigned DAMAGE_MODULE = 8;
+// require executes dependencies afresh; this is the exact reviewed transitive order.
+constexpr std::array<unsigned, 5> LIFE_DRAIN_MODULES = {
+	UNIT_EFFECT, DAMAGE_MODULE, UNIT_EFFECT, BATTLE_LOG, BATTLE_LOG};
 
 // These are reviewed implementation contracts, not generated build metadata.
 // A source change must fail closed until its forecast equivalence is reviewed.
 constexpr std::string_view DAMAGE_SHA256 = "370d909ae20343bdd1eebb6ba34638ac46e10ced627a4bfd26e148f209addb11";
+constexpr std::string_view LIFE_DRAIN_SHA256 = "86b50ae5e382e1c1b9631a8e569ded27dc81ed73995d34eb277c6789b29b0917";
 constexpr std::string_view TIMED_SHA256 = "683dfcc8e294087de5b252592d4a2bd002298547fef78d1609afa76060aaa086";
 constexpr std::string_view UNIT_EFFECT_SHA256 = "cba59fd9ea526e021104813ec9602fd4d9eb1e232e46a263d894e9417d3e39a0";
 constexpr std::string_view BATTLE_LOG_SHA256 = "a05fb3578afcabce40c2f60bcac17623c7ca3b30a6ae530be2a528b0e4cb8ce7";
@@ -84,6 +89,8 @@ unsigned moduleFlag(std::string_view name)
 		return UNIT_EFFECT;
 	if(name == "battleLog")
 		return BATTLE_LOG;
+	if(name == "spells/damage")
+		return DAMAGE_MODULE;
 	if(name == "combat/combatScript")
 		return COMBAT_SCRIPT;
 	return 0;
@@ -98,6 +105,8 @@ LuaImplementationIdentity::LuaImplementationIdentity(std::string_view rootSource
 	const auto rootDigest = digest(rootSource);
 	if(rootDigest == DAMAGE_SHA256)
 		implementation = Implementation::CANONICAL_DAMAGE;
+	else if(rootDigest == LIFE_DRAIN_SHA256)
+		implementation = Implementation::CANONICAL_LIFE_DRAIN;
 	else if(rootDigest == TIMED_SHA256)
 		implementation = Implementation::CANONICAL_TIMED;
 	else if(rootDigest == FOCUS_MAGIC_SHA256)
@@ -127,6 +136,8 @@ unsigned LuaImplementationIdentity::expectedModules() const
 		return UNIT_EFFECT | BATTLE_LOG;
 	if(implementation == Implementation::CANONICAL_TIMED)
 		return UNIT_EFFECT;
+	if(implementation == Implementation::CANONICAL_LIFE_DRAIN)
+		return UNIT_EFFECT | BATTLE_LOG | DAMAGE_MODULE;
 	if(combatEventImplementation == CombatEventForecastImplementation::CANONICAL_FOCUS_MAGIC)
 		return COMBAT_SCRIPT;
 	if(combatEventImplementation == CombatEventForecastImplementation::CANONICAL_HEX_OF_PAIN)
@@ -144,6 +155,18 @@ void LuaImplementationIdentity::invalidate()
 void LuaImplementationIdentity::moduleRequested(std::string_view name)
 {
 	const unsigned flag = moduleFlag(name);
+	if(implementation == Implementation::CANONICAL_LIFE_DRAIN)
+	{
+		if(finished || lifeDrainRequested >= LIFE_DRAIN_MODULES.size()
+			|| lifeDrainLoaded != lifeDrainRequested || flag != LIFE_DRAIN_MODULES[lifeDrainRequested])
+			invalidate();
+		else
+		{
+			++lifeDrainRequested;
+			requested |= flag;
+		}
+		return;
+	}
 	if(finished || !flag || !(expectedModules() & flag) || (requested & flag))
 		invalidate();
 	requested |= flag;
@@ -152,6 +175,22 @@ void LuaImplementationIdentity::moduleRequested(std::string_view name)
 void LuaImplementationIdentity::moduleLoaded(std::string_view name, std::string_view source)
 {
 	const unsigned flag = moduleFlag(name);
+	if(implementation == Implementation::CANONICAL_LIFE_DRAIN)
+	{
+		if(finished || lifeDrainLoaded >= LIFE_DRAIN_MODULES.size()
+			|| lifeDrainRequested != lifeDrainLoaded + 1 || flag != LIFE_DRAIN_MODULES[lifeDrainLoaded])
+		{
+			invalidate();
+			return;
+		}
+		const auto expected = flag == UNIT_EFFECT ? UNIT_EFFECT_SHA256
+			: flag == DAMAGE_MODULE ? DAMAGE_SHA256 : BATTLE_LOG_SHA256;
+		if(digest(source) != expected)
+			invalidate();
+		++lifeDrainLoaded;
+		loaded |= flag;
+		return;
+	}
 	if(finished || !flag || !(expectedModules() & flag) || !(requested & flag) || (loaded & flag))
 	{
 		invalidate();
@@ -166,7 +205,9 @@ void LuaImplementationIdentity::moduleLoaded(std::string_view name, std::string_
 
 void LuaImplementationIdentity::finish(bool initialized)
 {
-	if(finished || !initialized || requested != expectedModules() || loaded != expectedModules())
+	if(finished || !initialized || requested != expectedModules() || loaded != expectedModules()
+		|| (implementation == Implementation::CANONICAL_LIFE_DRAIN
+			&& (lifeDrainRequested != LIFE_DRAIN_MODULES.size() || lifeDrainLoaded != LIFE_DRAIN_MODULES.size())))
 		invalidate();
 	finished = true;
 }

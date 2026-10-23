@@ -243,7 +243,7 @@ std::optional<newHorizonsElementalRebirth::DeathSnapshot> HypotheticBattle::capt
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return {};
 	return newHorizonsElementalRebirth::captureDeathSource(
-		unit, battleGetFightingHero(side), getRebirthChainUsed(side),
+		unit, getSideHero(side), getRebirthChainUsed(side),
 		&getCreatureCategoryRules(), getPhoenixSparkUsed(side));
 }
 

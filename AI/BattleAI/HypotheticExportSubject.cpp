@@ -28,7 +28,7 @@ battle::Units HypotheticBattle::ownedExportUnitsIf(const battle::UnitFilter & pr
 		const auto id = initial->world().sourceAt(index).unitId;
 		if(!originals.insert(id).second)
 			throw std::invalid_argument("Owned sequence requires unique packet identities");
-		const auto unit = const_cast<HypotheticBattle *>(this)->getForUpdate(id);
+		const auto unit = const_cast<HypotheticBattle *>(this)->getForUpdateImpl(id);
 		if(predicate(unit.get()))
 			result.push_back(unit.get());
 	}

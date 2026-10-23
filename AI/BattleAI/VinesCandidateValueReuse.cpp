@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "VinesCandidateValueReuse.h"
+#include "HeroCandidateValueContext.h"
 #include "BattleExchangeVariant.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
@@ -14,43 +15,10 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "NewHorizonsHexOfPain.h"
-#include <bit>
 #include <cmath>
-#include <tuple>
 
 namespace
 {
-std::optional<uint32_t> bits(const std::optional<float> & value)
-{
-	return value ? std::optional(std::bit_cast<uint32_t>(*value)) : std::nullopt;
-}
-
-// Every PossibleSpellcast option except destination and finalized value. Only
-// the certified receipt permits ignoring original aim; it is never overwritten.
-auto options(const PossibleSpellcast & c)
-{
-	return std::tuple(c.command, c.focusFire, c.commandTargets,
-		std::bit_cast<uint32_t>(c.commandHeuristicValue), c.spell, c.spellOvercharge,
-		c.spellSelectiveDispel, c.spellCureAffliction, c.spellCurePhysicalAffliction,
-		c.spellPurifyChoices, c.spellPurifyPhysicalTargets,
-		std::bit_cast<uint32_t>(c.spellPurifyHeuristicValue), c.spellMassSlow,
-		c.spellShadowGiftSacrificePercent, c.spellStormOfDaggers, c.metamagicFollowup,
-		c.metamagicGrand, c.divineMandateFollowup,
-		std::bit_cast<uint32_t>(c.spellPlacementHeuristicValue),
-		bits(c.spellHandOfFateExpectedValue), bits(c.spellBattleFormExpectedValue),
-		bits(c.spellPuppetMasterExpectedValue), bits(c.spellConfusionExpectedValue),
-		std::bit_cast<uint32_t>(c.spellNaturePoisonValue),
-		std::bit_cast<uint32_t>(c.spellSoulChainDelayedValue),
-		std::bit_cast<uint32_t>(c.spellShadowGiftHeuristicValue), c.spellFireWallDirection);
-}
-
-bool sameCounterspell(const HypotheticBattle::ProjectedCounterspellOutcome & a,
-	const HypotheticBattle::ProjectedCounterspellOutcome & b)
-{
-	return std::tie(a.wardSide, a.wardActive, a.resolutionKnown, a.negated, a.manaCost)
-		== std::tie(b.wardSide, b.wardActive, b.resolutionKnown, b.negated, b.manaCost);
-}
-
 bool eventScriptsSupported(const CBattleInfoCallback & battle)
 {
 	// These are the two Lua event families invoked by physical forecast strikes.
@@ -118,9 +86,9 @@ std::optional<float> VinesCandidateValueReuse::find(const PossibleSpellcast & ca
 	}
 	for(const auto & entry : entries)
 		if(entry.allowance == *admission.spellAllowance
-			&& sameCounterspell(entry.counterspell, admission.counterspell)
+			&& heroCandidateValueContext::sameCounterspell(entry.counterspell, admission.counterspell)
 			&& entry.sharedPurposeRecipients == sharedPurposeRecipients
-			&& entry.receipt == *receipt && options(entry.candidate) == options(candidate))
+			&& entry.receipt == *receipt && heroCandidateValueContext::sameOptions(entry.candidate, candidate))
 		{
 			if(control)
 				++control->hits;

@@ -2738,16 +2738,9 @@ battle::Units BattleSpellMechanics::filterSpellLockedEffects(const Target & aimP
 void BattleSpellMechanics::castEval(ServerCallback * server, const Target & target)
 {
 	vinesProjectionReceipt.reset();
-	if(eventSnapshot && !eventSnapshot->hasSpellcraftTargetSnapshot()
-		&& mode == Mode::HERO && getHeroCaster()
-		&& getHeroCaster()->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
-			std::string(newHorizonsSpellcraft::CONCENTRATION)))
-	{
-		auto concentrated = eventSnapshot->mechanicsForTarget(target);
-		concentrated->castEval(server, target);
-		vinesProjectionReceipt = concentrated->vengefulVinesProjectionReceipt();
+	lifeDrainReceipt.reset();
+	if(delegateConcentratedProjection(server, target))
 		return;
-	}
 	clearPandemoniumDebuffs();
 	const auto clearPandemoniumSnapshot = vstd::makeScopeGuard([this]()
 	{
@@ -2878,8 +2871,10 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	}
 	// Application can load additional Lua dependencies: certify again only once
 	// every effect and completed-cast reaction has returned successfully.
-	if(preparedReceipt && newHorizonsVengefulVines::supportsProjection(*this, effectsToApply))
-		vinesProjectionReceipt = std::move(preparedReceipt);
+	if(preparedReceipt.vines && newHorizonsVengefulVines::supportsProjection(*this, effectsToApply))
+		vinesProjectionReceipt = std::move(preparedReceipt.vines);
+	if(preparedReceipt.lifeDrain && newHorizonsLifeDrain::supportsProjection(*this, effectsToApply))
+		lifeDrainReceipt = std::move(preparedReceipt.lifeDrain);
 }
 
 void BattleSpellMechanics::doRemoveEffects(ServerCallback * server, const battle::Units & targets, const CSelector & selector)

@@ -192,20 +192,8 @@ PlayerColor HypotheticBattle::unitEffectiveOwner(const battle::Unit * unit) cons
 
 std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdate(uint32_t id)
 {
-	auto iter = stackStates.find(id);
-
-	if(iter == stackStates.end())
-	{
-		const battle::Unit * s = subject->battleGetUnitByID(id);
-
-		auto ret = std::make_shared<StackWithBonuses>(this, s);
-		stackStates[id] = ret;
-		return ret;
-	}
-	else
-	{
-		return iter->second;
-	}
+	invalidateLifeDrainFriendlyObservation(id);
+	return getForUpdateImpl(id);
 }
 
 battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate) const
@@ -310,7 +298,9 @@ void HypotheticBattle::setSpellResponseState(BattleSide side, const SpellRespons
 		throw std::runtime_error("Hypothetical Spell Response state is outside its round window");
 	if(state.hasState())
 	{
-		const auto * hero = battleGetFightingHero(side);
+		// Validate an internal native receipt against its actual side owner.
+		// Public hero queries remain player-filtered.
+		const auto * hero = getSideHero(side);
 		if(!hero || !hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
 			std::string(newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE)))
 			throw std::runtime_error("Hypothetical Spell Response state requires Counterpressure");

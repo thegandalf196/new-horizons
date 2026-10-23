@@ -798,6 +798,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroActionUtilityTest.cpp
 		battleAI/HeroActionSelectionTest.cpp
 		battleAI/VinesCandidateValueReuseTest.cpp
+		battleAI/LifeDrainCandidateValueReuseTest.cpp
+		battleAI/LifeDrainCandidateValueReuseAITest.cpp
 		battleAI/HeroActionTimingTest.cpp
 		battleAI/DamageCalculationTimingRoutingTest.cpp
 		battleAI/ProtectAttackPreviewTest.cpp
@@ -903,6 +905,7 @@ if(ENABLE_BATTLE_AI)
 		battle/NewHorizonsBattleAITimingTest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
+		battleAI/HypotheticLifeDrainObservationTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp
 		battleAI/HypotheticObstacleTest.cpp
 		battleAI/HypotheticSpellServerRouteTest.cpp

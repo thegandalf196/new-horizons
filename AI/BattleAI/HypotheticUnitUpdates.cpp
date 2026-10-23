@@ -38,6 +38,7 @@ std::optional<SpellID> entangleSpellId()
 
 void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 {
+	invalidateLifeDrainFriendlyObservation(id);
 	battle::UnitInfo info;
 	info.load(id, data);
 	auto newUnit = std::make_shared<StackWithBonuses>(this, info);
@@ -158,15 +159,48 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 
 void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta)
 {
-	std::shared_ptr<StackWithBonuses> changed = getForUpdate(id);
+	std::shared_ptr<StackWithBonuses> changed = getForUpdateImpl(id);
 	const bool wasAlive = changed->alive();
+	const bool observing = lifeDrainFriendlyObservation && lifeDrainFriendlyObservation->id == id;
+	std::optional<JsonNode> before;
+	const auto revision = changed->getBattleFormViewRevision();
+	const bool destroyedBefore = bloodrageDestroyedUnits.contains(id);
+	if(observing)
+	{
+		auto & observation = *lifeDrainFriendlyObservation;
+		observation.valid &= !observation.updateInProgress && healthDelta == 0 && wasAlive
+			&& !changed->hasBattleFormState() && !changed->isBattleFormRestorationPending();
+		observation.updateInProgress = true;
+		try
+		{
+			before = changed->save();
+		}
+		catch(...)
+		{
+			observation.valid = false;
+		}
+	}
 
 	changed->load(data);
 	recordBloodrageTransition(changed, wasAlive);
-
 	if(healthDelta < 0)
-	{
 		changed->removeUnitBonus(Bonus::UntilBeingAttacked);
+
+	if(observing)
+	{
+		auto & observation = *lifeDrainFriendlyObservation;
+		observation.updateInProgress = false;
+		try
+		{
+			observation.valid &= before && changed->alive() && !changed->isGhost()
+				&& !changed->hasBattleFormState() && !changed->isBattleFormRestorationPending()
+				&& revision == changed->getBattleFormViewRevision()
+				&& destroyedBefore == bloodrageDestroyedUnits.contains(id) && *before == changed->save();
+		}
+		catch(...)
+		{
+			observation.valid = false;
+		}
 	}
 }
 
@@ -267,6 +301,8 @@ battle::BattleEffectSnapshot HypotheticBattle::captureBattleEffects(uint32_t id)
 
 void HypotheticBattle::exchangeBattleEffects(const battle::BattleEffectExchange & exchange)
 {
+	for(const auto & endpoint : exchange.endpoints)
+		invalidateLifeDrainFriendlyObservation(endpoint.id);
 	exchange.validateShape();
 	for(const auto & endpoint : exchange.endpoints)
 		if(!battle::exactBattleEffectSnapshotEqual(captureBattleEffects(endpoint.id), endpoint.expected))
