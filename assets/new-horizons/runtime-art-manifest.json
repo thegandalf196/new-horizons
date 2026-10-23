@@ -404,12 +404,12 @@
     {
       "resource": "SPRITES/NH_CabirMasterCompleteHandoff.json",
       "source": "Mods/new-horizons/Content/sprites/NH_CabirMasterCompleteHandoff.json",
-      "size": 4148,
-      "sha256": "5ad1df1db8281dae61d3679627c16fbbce2c53f83913cc0eba19a0d89108c2c9",
+      "size": 4416,
+      "sha256": "2f4b15d9f317c0209d50bfdd6c94abc735bc0f7f77579e084b057f6cdd24ea71",
       "family": "cabir-and-master",
       "origin": "selected-original-Lizardman-derived-modified-creature-art-and-descriptors",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization"
+      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e; provisional-master-cabir-group1-2026-10-23",
+      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization; group1 Provisional draft integration; not Final; rendered acceptance pending"
     },
     {
       "resource": "SPRITES/NH_CabirMasterHandoffMap.json",
@@ -48350,6 +48350,46 @@
       "origin": "built-in-generated-specialty-symbol-using-project-wisp-subject-reference",
       "selection": "selected-provisional-standalone-specialty-foreground-v1-pasis-christian-2026-10-22",
       "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-00.png",
+      "source": "Mods/new-horizons/Images/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-00.png",
+      "size": 7264,
+      "sha256": "7cf97ba633a331d5ed2b7b61071434bec869f258d9b5354d7047abba45e808de",
+      "family": "cabir-and-master",
+      "origin": "generated-Master-Cabir-fidget-adapted-to-selected-original-Lizardman-derived-creature-identity",
+      "selection": "provisional-draft-integration-master-cabir-fidget-2026-10-23",
+      "approval": "Provisional selection under authorized draft integration; not Final; loop-facing-outline rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-01.png",
+      "source": "Mods/new-horizons/Images/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-01.png",
+      "size": 7344,
+      "sha256": "eff7abad1aff9889e5e9923bb6bd332dfe613a71df11b2e83ce21c16b0579200",
+      "family": "cabir-and-master",
+      "origin": "generated-Master-Cabir-fidget-adapted-to-selected-original-Lizardman-derived-creature-identity",
+      "selection": "provisional-draft-integration-master-cabir-fidget-2026-10-23",
+      "approval": "Provisional selection under authorized draft integration; not Final; loop-facing-outline rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-02.png",
+      "source": "Mods/new-horizons/Images/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-02.png",
+      "size": 7073,
+      "sha256": "9f53d1332f02dc19020bc9b4b28923f74e653507a5586b3de0b290e6c77cdf27",
+      "family": "cabir-and-master",
+      "origin": "generated-Master-Cabir-fidget-adapted-to-selected-original-Lizardman-derived-creature-identity",
+      "selection": "provisional-draft-integration-master-cabir-fidget-2026-10-23",
+      "approval": "Provisional selection under authorized draft integration; not Final; loop-facing-outline rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-03.png",
+      "source": "Mods/new-horizons/Images/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-03.png",
+      "size": 7199,
+      "sha256": "9def932dd256be599e29c22c65f23d5158532110174d3ea46c31953000a09662",
+      "family": "cabir-and-master",
+      "origin": "generated-Master-Cabir-fidget-adapted-to-selected-original-Lizardman-derived-creature-identity",
+      "selection": "provisional-draft-integration-master-cabir-fidget-2026-10-23",
+      "approval": "Provisional selection under authorized draft integration; not Final; loop-facing-outline rendered acceptance pending"
     }
   ],
   "requiredFamilies": [
@@ -48365,7 +48405,7 @@
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
     "builtin-skills-perks-orders-and-ui": 2757,
-    "cabir-and-master": 214,
+    "cabir-and-master": 218,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,
     "mage-guild-town-art-and-ui": 81,

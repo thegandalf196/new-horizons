@@ -8,9 +8,11 @@ import re
 import unittest
 
 if __package__:
-    from .nhart_test_resources import verified_index, read_resource, open_image, later_art_resources
+    from .nhart_test_resources import (verified_index, read_resource, open_image,
+                                      later_art_resources, later_art_waves, entries_before_wave)
 else:
-    from nhart_test_resources import verified_index, read_resource, open_image, later_art_resources
+    from nhart_test_resources import (verified_index, read_resource, open_image,
+                                     later_art_resources, later_art_waves, entries_before_wave)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -61,7 +63,8 @@ class SelectedPerkArtTest(unittest.TestCase):
             self.assertFalse(later & added)
         later.update(later_art_resources())
         self.assertFalse(later & added)
-        baseline = sorted((row for row in self.manifest['entries'] if row['resource'] not in added | later),
+        historical = entries_before_wave(self.manifest['entries'], later_art_waves(), 0)
+        baseline = sorted((row for row in historical if row['resource'] not in added | later),
                           key=lambda row: row['resource'].encode())
         self.assertEqual(len(baseline), 3137)
         self.assertEqual(hashlib.sha256(json.dumps(baseline, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),

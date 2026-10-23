@@ -10,7 +10,9 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 import import_new_horizons_spell_art as importer
-from .nhart_test_resources import open_image, read_resource, verified_index, later_art_resources, later_art_waves
+from .nhart_test_resources import (open_image, read_resource, verified_index,
+                                  later_art_resources, later_art_waves,
+                                  entries_before_wave, resource_before_wave)
 
 
 class SelectedSpellArtTest(unittest.TestCase):
@@ -45,15 +47,16 @@ class SelectedSpellArtTest(unittest.TestCase):
         new = {'SPRITES/' + filename for row in self.selection['entries'] for filename in row['exports']}
         later = later_art_resources()
         self.assertFalse(later & new)
-        baseline = sorted((row for row in self.manifest['entries'] if row['resource'] not in new | later),
+        waves = later_art_waves()
+        historical = entries_before_wave(self.manifest['entries'], waves, 0)
+        baseline = sorted((row for row in historical if row['resource'] not in new | later),
                           key=lambda row: row['resource'].encode())
         self.assertEqual(len(baseline), 3795)
         self.assertEqual(len(verified_index()), self.selection['entryCount'] + len(later))
         digest = hashlib.sha256(json.dumps(baseline, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
         self.assertEqual(digest, self.selection['baselineEntriesSha256'])
         for row in baseline:
-            self.assertEqual(hashlib.sha256(read_resource(row['resource'])).hexdigest(), row['sha256'])
-        waves = later_art_waves()
+            self.assertEqual(hashlib.sha256(resource_before_wave(row['resource'], waves, 0)).hexdigest(), row['sha256'])
         if waves:
             self.assertEqual(waves[0]['baselineArchiveSha256'], self.selection['newArchiveSha256'])
         else:

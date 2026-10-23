@@ -5406,6 +5406,75 @@
         }
       ],
       "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "baselineArchiveSha256": "ecfde8aaeaa4d2c006189a72843d506e74622969711ce02205d1116c794fe8a1",
+      "baselineManifestSha256": "70a47b3aebcf8453cced88c56528f3088ab92e4b2ee33373489d7d77f9f4579f",
+      "baselineEntriesSha256": "ce216e61f91b49152acc5d5b0efc27dc9f3a0b0b776ddc306f02d0b8013a6eda",
+      "baselineHeaderSha256": "6cfea69a7513ffa4a185755f1ada67e2ed2aac17156d50e690fc45d4b93ad439",
+      "nonStatusConfigSha256": "6bcf78af32bc3739f491572a1705a1e9440dc76cc25b19947da8998d7fc5cba2",
+      "baselineCount": 4835,
+      "entryCount": 4839,
+      "newArchiveSha256": "401d11b7926b2d5e1582ed1297bd4ac1d32b0ec718852737ace3c1852a464966",
+      "resources": [
+        "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-00.png",
+        "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-01.png",
+        "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-02.png",
+        "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-03.png"
+      ],
+      "replacedEntries": [
+        {
+          "previous": {
+            "resource": "SPRITES/NH_CabirMasterCompleteHandoff.json",
+            "source": "Mods/new-horizons/Content/sprites/NH_CabirMasterCompleteHandoff.json",
+            "size": 4148,
+            "sha256": "5ad1df1db8281dae61d3679627c16fbbce2c53f83913cc0eba19a0d89108c2c9",
+            "family": "cabir-and-master",
+            "origin": "selected-original-Lizardman-derived-modified-creature-art-and-descriptors",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization"
+          },
+          "current": {
+            "resource": "SPRITES/NH_CabirMasterCompleteHandoff.json",
+            "source": "Mods/new-horizons/Content/sprites/NH_CabirMasterCompleteHandoff.json",
+            "size": 4416,
+            "sha256": "2f4b15d9f317c0209d50bfdd6c94abc735bc0f7f77579e084b057f6cdd24ea71",
+            "family": "cabir-and-master",
+            "origin": "selected-original-Lizardman-derived-modified-creature-art-and-descriptors",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e; provisional-master-cabir-group1-2026-10-23",
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization; group1 Provisional draft integration; not Final; rendered acceptance pending"
+          },
+          "removeAppendedSequence": {
+            "group": 1,
+            "generateOverlay": 1,
+            "frames": [
+              "fidget-provisional-v1/frame-00.png",
+              "fidget-provisional-v1/frame-01.png",
+              "fidget-provisional-v1/frame-02.png",
+              "fidget-provisional-v1/frame-03.png"
+            ]
+          }
+        }
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "creatures": [
+        {
+          "id": "core:masterGremlin",
+          "animation": "NH_CabirMasterCompleteHandoff.def",
+          "group": 1,
+          "resources": [
+            "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-00.png",
+            "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-01.png",
+            "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-02.png",
+            "SPRITES/cabir-complete-handoff/cabir-master/battle/fidget-provisional-v1/frame-03.png"
+          ],
+          "origin": "generated fidget adapted to selected original-derived Master Cabir identity",
+          "approval": "Provisional; not Final; rendered facing, outline and loop acceptance pending"
+        }
+      ],
+      "approval": "Provisional; not Final; rendered acceptance pending"
     }
   ]
 }

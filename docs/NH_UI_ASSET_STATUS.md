@@ -1,6 +1,6 @@
 # Selected UI and artwork status
 
-Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, family counts and separate origin/selection/approval. Current NHART has **4,835 selected payloads**. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
+Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, family counts and separate origin/selection/approval. Current NHART has **4,839 selected payloads**. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
 
 | Current selection record | Scope |
 | --- | --- |
@@ -29,3 +29,7 @@ Heroic Spirit's Order-only opportunity is named separately from flexible Hero Ac
 Selected Cabir/Magi/Wisp sprites, portraits/projectiles and Guild/school composites retain their origin/rights records. No different icon demonstrates a distinct specialty mechanic. New engine layout remains governed by [UI guide](NH_HOMM3_UI_STYLE_GUIDE.md); offline [editor](NH_UI_EDITOR.md) previews are not runtime adapters.
 
 Build-specific outstanding checks live in [integration gaps](NH_INTEGRATION_GAPS.md). Native dimensions/resource checks, rendering, actual Windows behavior and ordinary immutable-candidate promotion remain separate.
+
+Master Cabir has a provisionally selected four-frame fidget in animation group 1.
+Its holding pose and existing action groups are preserved. Native comparison review
+does not establish in-game loop, facing or generated-outline acceptance.

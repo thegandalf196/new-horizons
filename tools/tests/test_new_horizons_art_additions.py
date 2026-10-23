@@ -10,7 +10,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 import import_new_horizons_art_wave as importer
-from .nhart_test_resources import later_art_waves, later_art_resources, read_resource, open_image, verified_index
+from .nhart_test_resources import later_art_waves, later_art_resources, read_resource, open_image, verified_index, entries_before_wave, resource_before_wave
 
 
 def config_at_wave(config, waves, index, config_path):
@@ -198,13 +198,12 @@ class ArtAdditionsTest(unittest.TestCase):
         self.assertTrue(self.waves)
         self.assertEqual(len(later_art_resources()), sum(len(wave['resources']) for wave in self.waves))
         for index, wave in enumerate(self.waves):
-            remove = {resource for later in self.waves[index:] for resource in later['resources']}
-            baseline = [row for row in self.manifest['entries'] if row['resource'] not in remove]
+            baseline = entries_before_wave(self.manifest['entries'], self.waves, index)
             self.assertEqual(len(baseline), wave['baselineCount'])
             self.assertEqual(importer.entries_digest(baseline), wave['baselineEntriesSha256'])
             self.assertEqual(wave['entryCount'], wave['baselineCount'] + len(wave['resources']))
             for row in baseline:
-                self.assertEqual(hashlib.sha256(read_resource(row['resource'])).hexdigest(), row['sha256'])
+                self.assertEqual(hashlib.sha256(resource_before_wave(row['resource'], self.waves, index)).hexdigest(), row['sha256'])
             if index:
                 self.assertEqual(wave['baselineArchiveSha256'], self.waves[index - 1]['newArchiveSha256'])
         self.assertEqual(len(verified_index()), self.waves[-1]['entryCount'])
@@ -215,7 +214,7 @@ class ArtAdditionsTest(unittest.TestCase):
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         current_ids = {row['id'] for skill in roster['skills'].values() for row in skill['perks']}
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) for name in row['resources']}
             self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
                 self.assertIn(row['id'], current_ids); self.assertEqual(lookup[row['id']], row['icon44'])

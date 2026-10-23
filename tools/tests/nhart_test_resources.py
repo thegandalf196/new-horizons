@@ -24,6 +24,50 @@ def later_art_resources():
     if len(names) != len(set(names)):
         raise ValueError('Duplicate later-art resource selection')
     return set(names)
+
+
+def entries_before_wave(entries, waves, index):
+    """Undo selected additions/replacements without rewriting historical anchors."""
+    previous = {row['resource']: row for row in entries}
+    if len(previous) != len(entries):
+        raise ValueError('Duplicate selected resource')
+    for wave in reversed(waves[index:]):
+        for replacement in wave.get('replacedEntries', []):
+            old, current = replacement['previous'], replacement['current']
+            name = current['resource']
+            if old['resource'] != name or previous.get(name) != current or name in wave['resources']:
+                raise ValueError('Broken resource replacement history')
+            previous[name] = old
+        for name in wave['resources']:
+            if name not in previous:
+                raise ValueError('Missing added resource in history')
+            del previous[name]
+    return list(previous.values())
+
+
+def resource_before_wave(name, waves, index, reader=None):
+    """Reconstruct a descriptor's exact old bytes from a reversible append."""
+    payload = (reader or read_resource)(name)
+    for wave in reversed(waves[index:]):
+        for replacement in reversed(wave.get('replacedEntries', [])):
+            current, old = replacement['current'], replacement['previous']
+            if current['resource'] != name:
+                continue
+            if old['resource'] != name or len(payload) != current['size'] or hashlib.sha256(payload).hexdigest() != current['sha256']:
+                raise ValueError('Current replacement payload mismatch')
+            if not name.endswith('.json') or set(replacement) != {'previous', 'current', 'removeAppendedSequence'}:
+                raise ValueError('Unsupported reversible resource change')
+            descriptor = json.loads(payload)
+            sequences = descriptor.get('sequences', [])
+            added = replacement['removeAppendedSequence']
+            if not sequences or sequences[-1] != added or any(row.get('group') == added['group'] for row in sequences[:-1]):
+                raise ValueError('Appended sequence does not match history')
+            sequences.pop()
+            payload = (json.dumps(descriptor, indent=2) + '\n').encode()
+            if len(payload) != old['size'] or hashlib.sha256(payload).hexdigest() != old['sha256']:
+                raise ValueError('Historical replacement payload mismatch')
+    return payload
+
 _spec = importlib.util.spec_from_file_location("nhart_test_reader", ROOT / "tools/nhart.py")
 _reader = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_reader)
