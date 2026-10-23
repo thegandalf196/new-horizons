@@ -13,6 +13,11 @@ STATUS = (ROOT / "client/battle/FrozenStatusPresentation.cpp").read_text()
 
 
 class FrozenPresentationSourceTest(unittest.TestCase):
+    def test_frozen_excludes_the_empty_status_caption(self):
+        condition = PANEL.split("if(spells.size() == hiddenReanimateSpellEffects", 1)[1]
+        condition = condition.split("labelsMultiline.push_back", 1)[0]
+        self.assertIn("!displayedStatus.frozen", condition)
+
     def test_both_status_surfaces_share_real_physical_icon_and_help(self):
         section = WINDOW.split("CStackWindow::ActiveSpellsSection::ActiveSpellsSection(", 1)[1]
         section = section.split("struct OrderIndicator", 1)[0]

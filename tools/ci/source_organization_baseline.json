@@ -19941,13 +19941,14 @@
       "sha256": "3e3f79e81670146348e1a8d972d123197d3b6045d8185d25ab77ec2ef4be94aa"
     },
     "client/battle/StackInfoBasicPanel.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 1240,
       "owner": "ui_developer",
       "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1269 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Independently reviewed Frozen presentation extraction and prism removal lowers this exact baseline; prior structural obligations remain. New cue ledger and shared icon/tooltip live in focused components; rendered and audio acceptance remain separate.",
-      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
-      "review_scope": "exact-physical-frozen-presentation-source-only",
-      "sha256": "1e6e553a326003bbdea55a0c8405a91154fbb250e17444548667dd2518ad9263",
+      "review": "IR-FROZEN-EMPTY-STATUS-CAPTION-20261022",
+      "review_scope": "Prior IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022 retained; exact empty-caption predicate only at unchanged size, not future growth",
+      "sha256": "e0bab766fc29d35795f8f3208e1633ab6852bf88b986617ae6542cf2c3158c79",
+      "deferral": "UI developer owns extraction of the empty/status-slot presentation plan before further affected-area growth. Preserve effect ordering, slot counts, temporary afflictions and hidden-spell suppression; require focused source and rendered checks. This observed caption-overlap correctness exception retains exact 1240-file/508-function ceilings and prior shrinking/extraction obligations; no future growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/battle/StackInfoBasicPanel.cpp::newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus( const CStack * stack, const CPlayerBattleCallback * battleCallback, const newHorizonsBattleStatus::BattleLuckReadback & luckReadback)#1": {
@@ -19960,13 +19961,14 @@
       "sha256": "7ac18b7dfadb2b69134863aee03a1adebd1c2920858af6eda500dfdca4a53133"
     },
     "client/battle/StackInfoBasicPanel.cpp::void StackInfoBasicPanel::initializeData(const CStack * stack)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 508,
       "owner": "ui_developer",
       "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 510 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Independently reviewed Frozen presentation extraction and prism removal lowers this exact baseline; prior structural obligations remain. New cue ledger and shared icon/tooltip live in focused components; rendered and audio acceptance remain separate.",
-      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
-      "review_scope": "exact-physical-frozen-presentation-source-only",
-      "sha256": "547153c91847805fc6261bd7a85860d0ae9dc23101ed04a0bf03cf67b69f6756",
+      "review": "IR-FROZEN-EMPTY-STATUS-CAPTION-20261022",
+      "review_scope": "Prior IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022 retained; exact empty-caption predicate only at unchanged size, not future growth",
+      "sha256": "d0d11b7e2e0300624ac489e3eeecf7748c34683fb6335fffb3c45235361950d5",
+      "deferral": "UI developer owns extraction of the empty/status-slot presentation plan before further affected-area growth. Preserve effect ordering, slot counts, temporary afflictions and hidden-spell suppression; require focused source and rendered checks. This observed caption-overlap correctness exception retains exact 1240-file/508-function ceilings and prior shrinking/extraction obligations; no future growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/globalLobby/GlobalLobbyClient.cpp": {

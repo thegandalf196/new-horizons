@@ -1177,7 +1177,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 
 	if(spells.size() == hiddenReanimateSpellEffects + hiddenJudgedSpellEffects + hiddenConfusionSpellEffects && !temporaryCreatures.active()
 		&& !battleForm.active() && !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss()
-		&& !retributionJudged.active())
+		&& !retributionJudged.active() && !displayedStatus.frozen)
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x, firstPos.y, 48, 36), EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[674]));
 	if(displayPlan.ellipsisUsesSlot)
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x + offset.x * 2, firstPos.y + offset.y * 2 - 4, 48, 36), EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "..."));
