@@ -4377,8 +4377,8 @@ bool CGameHandler::upgradeCreature(ObjectInstanceID objid, SlotID pos, CreatureI
 	const PlayerState *p = gameInfo().getPlayerState(player);
 	int crQuantity = obj->stacks.at(pos)->getCount();
 
-	//check if upgrade is possible
-	if (!upgradeInfo.hasUpgrades() && complain("That upgrade is not possible!"))
+	// Reject unoffered targets before Leadership validation or cost lookup.
+	if (!vstd::contains(upgradeInfo.getAvailableUpgrades(), upgID) && complain("That upgrade is not possible!"))
 	{
 		return false;
 	}

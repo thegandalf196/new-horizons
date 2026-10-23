@@ -33,6 +33,12 @@ Generated user Maps must remain refreshable after initialization and resolve thr
 
 ## Gameplay and forecast integrity
 
+- Creature upgrade requests must name an actually available upgrade before
+  Leadership checks or cost lookup. Having some upgrade does not admit a
+  self-upgrade or unrelated creature ID. Retain
+  `UnofferedUpgradeRequestsRejectAtomicallyBeforeCostLookup` under current and
+  historical captured rules: rejected requests change neither army nor resources,
+  stock or spending statistics, and a subsequent valid upgrade still succeeds.
 - A range-for over a dereferenced temporary shared BonusList owner can dangle. Retain the owning list through iteration. Keep distinct equal bonus identities, ordered/raw aliases, child ADD/removal/UPDATE and branch aging isolation controls.
 - Use authoritative action/activation/controller APIs and legally earned perk/Metamagic allowances in fixtures. Do not forge state to bypass admission. Damage must be meaningful and survivable where later assertions require a living stack.
 - Protect redirects the primary victim, not the original melee contact geometry.

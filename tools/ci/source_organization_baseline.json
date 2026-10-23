@@ -25270,13 +25270,14 @@
       "sha256": "ebfd0a865aac53ac14bfbd7c4727ab6a7775551bbf4bc4f837be8af66c4e9fcc"
     },
     "server/CGameHandler.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 7037,
       "owner": "engine_engineer",
-      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 7039 to 7037 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "52cac89248e84717a17eb37037ebffc03a3f8f07f1376798572ca7d1b8c22444",
+      "rationale": "Retains the Fly landing safety extraction/routing shrink, 7039 to 7037 lines, reviewed as IR-FLY-V2-SCOPED-GROWTH-20261020 (fly-v2-producer-and-validated-ai-consumer-only). Urgent upgrade-request admission correction replaces the broad has-upgrades guard with actual available-target membership before Leadership and cost lookup, avoiding assertion/out-of-bounds access without file or function growth. No unrelated or future growth permission; retained mechanics/serialization/callback order require native acceptance.",
+      "review": "IR-UPGRADE-OFFER-MEMBERSHIP-ADMISSION-20261023",
+      "review_scope": "upgrade-offer-membership-admission-only",
+      "sha256": "5d116755f08a6dd08be01ba0a44dffdfe0c9b7dc8c0910000f808553c5098fb9",
+      "deferral": "Engine owner: extract cohesive authoritative upgrade admission, payment/statistics and stack-type mutation before substantive expansion, preserving availability, ownership/active-player gates, captured Leadership, packet order and rejection atomicity under focused native regression coverage.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/CGameHandler.cpp::bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8 what, SlotID p1, SlotID p2, si32 val, PlayerColor player)#1": {
