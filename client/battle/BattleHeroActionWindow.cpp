@@ -680,15 +680,15 @@ void BattleHeroActionWindow::chooseTargetedCommand(HeroCommand command)
 	if(!callback->battleCanBeginHeroCommand(side, command))
 	{
 		if(command == HeroCommand::PROTECT)
-			CRClickPopup::createAndPush("Protect unavailable. No legal Protector/Ward pair is available; the two friendly unit footprints must touch.");
+			owner->curInt->showInfoDialog("Protect unavailable. No legal Protector/Ward pair is available; the two friendly unit footprints must touch.");
 		else
-			CRClickPopup::createAndPush(HeroCommandUI::name(command) + " unavailable. No legal target is available right now.");
+			owner->curInt->showInfoDialog(HeroCommandUI::name(command) + " unavailable. No legal target is available right now.");
 		refresh();
 		return;
 	}
 	if(!owner->actionsController->beginHeroOrderTargeting(command))
 	{
-		CRClickPopup::createAndPush(HeroCommandUI::name(command) + " unavailable. Reopen Orders and try again.");
+		owner->curInt->showInfoDialog(HeroCommandUI::name(command) + " unavailable. Reopen Orders and try again.");
 		refresh();
 		return;
 	}

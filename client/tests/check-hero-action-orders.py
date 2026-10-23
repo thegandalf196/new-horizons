@@ -69,7 +69,27 @@ order_targeting = controller.split("bool BattleActionsController::heroOrderTarge
 assert "BattleHex::getDistance" not in order_targeting
 assert "adjacent(*" not in order_targeting
 assert "visibleCommandDisplays" in action
-assert "CRClickPopup::createAndPush" in action
+# Unavailable Orders originate from a left-click. Use the ordinary information
+# dialog (OK / GLOBAL_RETURN), never a held-right-click tooltip. Keep rejection
+# local: no close, targeting start, or authoritative request in either branch.
+choose_targeted = action.split("void BattleHeroActionWindow::chooseTargetedCommand(", 1)[1].split(
+    "void BattleHeroActionWindow::chooseCommand(", 1
+)[0]
+assert "CRClickPopup::createAndPush" not in choose_targeted
+assert choose_targeted.count("owner->curInt->showInfoDialog(") == 3
+unavailable = choose_targeted.split("if(!callback->battleCanBeginHeroCommand(side, command))", 1)[1].split(
+    "if(!owner->actionsController->beginHeroOrderTargeting(command))", 1
+)[0]
+targeting_failed = choose_targeted.split("if(!owner->actionsController->beginHeroOrderTargeting(command))", 1)[1].rsplit(
+    "close();", 1
+)[0]
+for rejection in (unavailable, targeting_failed):
+    assert "showInfoDialog(" in rejection
+    assert "refresh();" in rejection
+    assert "return;" in rejection
+    assert "close();" not in rejection
+    assert "battleMakeSpellAction" not in rejection
+    assert "BattleAction::" not in rejection
 # Effect previews must use the same allowance-aware Warcasting snapshot that
 # authoritative Hold preparation will capture, plus the captured Divine Mandate
 # sum. Iron Discipline keeps the exact

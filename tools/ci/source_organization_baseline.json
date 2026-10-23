@@ -19718,13 +19718,15 @@
       "sha256": "021a38c441418e8c0dfc0af9bceec755ae45d2048357b152996449c6423e7ad7"
     },
     "client/battle/BattleHeroActionWindow.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 758,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 758 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4f72308f0863d4b23449f4518329428ffda85f610f78b055ffa89c0b506d8d3e"
+      "rationale": "Focused correctness fix replaces three held-right-click popups in unavailable left-click Order paths with the existing dismissible information dialog. Preserve messages, refusal checks, callback ownership, refresh/return, targeting cleanup and unspent actions. File remains758 lines; coupling unrelated structural extraction to this three-call fix would add risk. No future growth, gameplay change or rendered acceptance approved.",
+      "review": "IR-PROTECT-UNAVAILABLE-INFO-DIALOG-20261023",
+      "review_scope": "exact-three-left-click-refusal-dialog-replacements-no-growth-source-only",
+      "sha256": "725a339f0fe0655022a942ec8e02e8eb8b117ae23df11e7e8401194ac98d4516",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Before further chooser expansion, ui_developer must extract cohesive targeted-Order choice presentation from BattleHeroActionWindow with explicit current-battle/session ownership and refusal/success routing. Preserve callback revalidation, underlying chooser refresh, ordinary dismissal, no request or allowance consumption on refusal, and guarded rendered reopen/restart checks."
     },
     "client/battle/BattleHeroActionWindow.cpp::void BattleHeroActionWindow::refresh()#1": {
       "kind": "legacy",
