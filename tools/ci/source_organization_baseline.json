@@ -11344,51 +11344,52 @@
       "sha256": "50b5d659bdf6f09ed931d22990a2494a4e5594b3968a571eeed8ad6a88b417f7"
     },
     "lib/entities/hero/NewHorizonsNecromancy.h": {
-      "sha256": "ca85232a66090fe2ab1083e8bd8beb369b06f23c602d274088adf73f690c6d9d",
-      "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Eight bodies: serialization template77–178 (102lines) and summary/validity/empty methods180–183/185–193/195–200/202–206/208–212/214–217/219–228. Complete versioned save/load/error branches read, including all conditional fields; no preprocessed path omitted. Later APIs are prototypes and nonliving/undead={}290 are defaults. Serializer exact existing legacy numeric record retained; no new debt admission.",
+      "sha256": "7ec527bbb5cc99f5a8e64be63782ffeaa071d330be0748efea9feceecc7d440b",
+      "review": "individual-specialty-riders-source-v1",
+      "rationale": "Complete eight-body inventory retained: unchanged102-line result serializer and seven summary/validity/empty bodies shift by six declaration lines. New helper APIs and trailing defaulted resolver arguments are prototypes/defaults, not callable bodies. Exact current parser recovery is two default-argument type markers at296; all eight named bodies inspected.",
       "functions": [
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::void serialize(Handler & h)#1",
-          "start": 77,
-          "end": 178
+          "start": 83,
+          "end": 184
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool hasLordOfDeadSummary() const#1",
-          "start": 180,
-          "end": 183
+          "start": 186,
+          "end": 189
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool isLordOfDeadSummaryValid() const#1",
-          "start": 185,
-          "end": 193
+          "start": 191,
+          "end": 199
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool isOssuaryDestinationValid() const#1",
-          "start": 195,
-          "end": 200
-        },
-        {
-          "symbol": "newHorizonsNecromancy::NecromancyResult::bool isSpecialCasualtySummaryValid() const#1",
-          "start": 202,
+          "start": 201,
           "end": 206
         },
         {
-          "symbol": "newHorizonsNecromancy::NecromancyResult::bool hasSpecialCasualtySummary() const#1",
+          "symbol": "newHorizonsNecromancy::NecromancyResult::bool isSpecialCasualtySummaryValid() const#1",
           "start": 208,
           "end": 212
         },
         {
-          "symbol": "newHorizonsNecromancy::NecromancyResult::bool isSkeletonOutputValid() const#1",
+          "symbol": "newHorizonsNecromancy::NecromancyResult::bool hasSpecialCasualtySummary() const#1",
           "start": 214,
-          "end": 217
+          "end": 218
+        },
+        {
+          "symbol": "newHorizonsNecromancy::NecromancyResult::bool isSkeletonOutputValid() const#1",
+          "start": 220,
+          "end": 223
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool empty() const#1",
-          "start": 219,
-          "end": 228
+          "start": 225,
+          "end": 234
         }
-      ]
+      ],
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/entities/hero/NewHorizonsPerkState.h": {
       "sha256": "8219b861ba050afe0d852eb18f06c9aff3d6c4a9838003ddf1f5e0558b590cb1",
@@ -12402,9 +12403,9 @@
       "sha256": "be7237545da45f7abbca02f8af83289c9add95f764bde3acd249c597bf6f6b2d"
     },
     "lib/spells/NewHorizonsMagic.h": {
-      "sha256": "edc4b7a079650e242814db95bdf1534d4895fede680194571ebf865b45fe75d4",
-      "review": "IR-FLY-V2-HEADER-INVENTORIES-20261020",
-      "rationale": "Complete proposed one-body inventory renews the independently reviewed506-line base for the exact508-line Fly header. Two bodyless declarations added at43-44 shift sole AdventureSpellState::serialize159-162 to161-164. Defaulted operator==399 and default arguments407/411 add no handwritten bodies; no new macros/lambdas. Independent exact-source renewal and separate508-line numeric exception remain pending.",
+      "sha256": "e91b8393c53806f5275e70748638db3ddd439df4a7e369de79aecc89b54aff5d",
+      "review": "individual-specialty-riders-source-v1",
+      "rationale": "Complete one-body inventory retained: AdventureSpellState serializer161-164 is unchanged. Added direct-damage query is a prototype; defaulted comparison/default-argument declarations at410/414 do not introduce bodies. Exact current header coverage only, no gameplay or wire acceptance.",
       "functions": [
         {
           "symbol": "newHorizonsMagic::AdventureSpellState::void serialize(Handler & h)#1",
@@ -15854,12 +15855,12 @@
         {
           "symbol": "CGHeroInstance::void serialize(Handler &h)#1",
           "start": 698,
-          "end": 1151
+          "end": 1153
         }
       ],
-      "rationale": "Complete proposed64-body inventory renews the independently reviewed1151-line base for the exact1152-line Fly header. One serialization argument line added inside CGHeroInstance::serialize changes698-1150 to698-1151; all other spans remain unchanged. Constructor573/destructor574 and bodyless levelUp default at488 remain declarations, not new bodies. No new lambdas or macro bodies. Independent exact-source renewal and separate454-line numeric exception remain pending.",
-      "review": "IR-FLY-V2-HEADER-INVENTORIES-20261020",
-      "sha256": "34971e942cef01304aca13828382c3105e7f1374e92880a47e0f8ca6f9288680",
+      "rationale": "Complete64-body inventory retained. The existing hero serializer698-1151 becomes698-1153 solely from two independent captured-policy capability argument lines; other bodies unchanged. Recovery at488 is a bodyless defaulted declaration, not an omitted function. Direct/enclosing save guards are reviewed separately; no ongoing-battle acceptance claim.",
+      "review": "individual-specialty-riders-source-v1",
+      "sha256": "747e394020c85d50d1629e5adc8f47772aac9ef340e7d4c8af3efa16114309c7",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/callback/CGameInfoCallback.cpp": {
@@ -21898,15 +21899,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact1288-line registry endpoint only. Engine engineer owns coherent component registration extraction with shrinking parent before broader registry expansion; preserve target/linkage and source/header ordering. These exact focused registrations are independently reviewed for source scope only; this does not waive decomposition or native verification.",
+      "deferral": "Retain a mechanically ordered source/header registry with one canonical entry per component; extract actual implementation into focused units, not CMake text includes. No unrelated registry growth is approved by this record.",
       "kind": "exception",
-      "lines": 1288,
+      "lines": 1292,
       "owner": "engine_engineer",
-      "rationale": "Exact mechanical registry1287-to1288: focused finalization source only; target, linkage, options, source ordering and all callable behavior unchanged. No future allowance.",
-      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
-      "review_scope": "exact-finalization-extraction-only",
+      "rationale": "Mechanical component registry grows1288 to1292: register focused individual policy/presentation/header and direct-damage power sources. No handwritten gameplay bodies or hidden source fragments. Exact registry exception only.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "5160330dcd4474e0cd5774c455b75b27192d5190532eea6f74e96cf13912688b"
+      "sha256": "3ad9ca7d8b2894807c52f743d75415f79719f58edd99aaf278ad8e41b843365d"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21957,14 +21958,14 @@
     },
     "lib/GameSettings.h::GameSettings::void serialize(Handler & h)#1": {
       "kind": "exception",
-      "lines": 129,
+      "lines": 131,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 125 to 129 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "898674836a4ed9796203d02de755e03e976388f65e5ed981c966f3d46fe20b9a",
+      "rationale": "Exact 129-to-131-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "57e29d12287fffbcc637f1709fae9222c47ae7d1e4d7772340533de2eee556f5",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 131-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/LogicalExpression.h": {
       "kind": "legacy",
@@ -22633,12 +22634,12 @@
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp": {
       "kind": "legacy",
-      "lines": 1410,
+      "lines": 1360,
       "owner": "gameplay_engineer",
-      "rationale": "Read-only specialty presentation responsibility is extracted from this legacy file, reducing1682 to1410 physical lines. The old272-line resolver is split into ordered individual/druid118, creature-line53 and remaining resolver122 functions in a cohesive323-line component. No other parent function changes; this is a shrinking baseline, with no future expansion credit.",
-      "review": "IR-SPECIALTY-PRESENTATION-EXTRACTION-SOURCE-20261021",
-      "review_scope": "prospective-specialty-presentation-extraction-ratchet",
-      "sha256": "7a4b680b317a3e3c85472c1f9c17f7e95b29c107b222a60bfab8a79cb399f6e9",
+      "rationale": "Shrinking1410-to1360-line ratchet: move existing Fortune/Arcane policy parsing and validation into the150-line individual-policy owner; route optional capture validation there. No historical defaults are inserted. New specialty mechanics/presentation remain in focused units; no regrowth credit.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "dd49f1c7c34eaa6ceaf2fd6ad855a35029bdf3d0f1cafbd6e23764d68d8fe6a0",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp::newHorizonsHeroes::std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill( const JsonNode & resolvedRules, bool magicHero, FactionID faction, const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)#1": {
@@ -22677,14 +22678,16 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "6cd6ba48369f0babcafa7707b6c22116fd016bbd91b4b6e942738b0e6278dd06"
     },
-    "lib/entities/hero/NewHorizonsNecromancy.cpp::newHorizonsNecromancy::NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties, bool boneCollector, bool corpsePreservation, bool darkConversionAvailable, bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit, int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput, SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead, bool lordOfTheDead, bool defeatedArmyHadLivingChampion, bool boneDragonSlotAvailable, int32_t amplifierBonusPercent)#1": {
-      "kind": "legacy",
-      "lines": 124,
+    "lib/entities/hero/NewHorizonsNecromancy.cpp::newHorizonsNecromancy::NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties, bool boneCollector, bool corpsePreservation, bool darkConversionAvailable, bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit, int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput, SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead, bool lordOfTheDead, bool defeatedArmyHadLivingChampion, bool boneDragonSlotAvailable, int32_t amplifierBonusPercent, int32_t baseSpecialtyPercentagePoints)#1": {
+      "kind": "exception",
+      "lines": 125,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 124 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6474935ac19faf9c9199c6355b731552b54cc10687b7fe63acea0936813c4457"
+      "rationale": "Exact124-to125-line existing raising resolver extension: one defaulted bounded base-rate contribution joins the existing additive base before unchanged caps/floors. Rank-zero rejection and independent casualty pools/conversions remain. Identity/captured-policy arithmetic lives in the focused individual-policy owner; no perk or capacity redesign.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "6132a9ee85eea95cf111dd88b8c4fdadbf59bbe9e2dc2294960d839ebcb134e2",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Gameplay owner must introduce a cohesive typed raising-input value before further substantive parameter or branch growth. Preserve independent casualty pools, enhanced normal-rate Death Lord, fixed Grave Knowledge, rounding, capacity and choice/result parity. Exact125-line allowance only."
     },
     "lib/entities/hero/NewHorizonsNecromancy.h::newHorizonsNecromancy::NecromancyResult::void serialize(Handler & h)#1": {
       "kind": "legacy",
@@ -22725,14 +22728,14 @@
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "kind": "exception",
-      "deferral": "UI developer must extract the existing druid-presentation branch into a focused helper before the next substantive logic expansion, preserving applicability, evaluation order, descriptions and captured-policy fallbacks. This exception admits only the two Andra/Thorgrim artwork constants at122 lines and no further growth.",
-      "lines": 122,
+      "deferral": "UI developer retains the existing obligation to extract the Druid presentation branch before its next substantive logic expansion, preserving applicability, order and captured fallbacks. This two-line routing-only exception does not relax that obligation or approve unrelated growth.",
+      "lines": 124,
       "owner": "ui_developer",
-      "rationale": "Ordered individual/druid specialty applicability and description readback retain existing guards, captured policy and producer/marker checks. Two constant artwork stems at existing Andra/Thorgrim matches grow the helper from120 to122 lines without new branching or rule ownership. Independently reviewed exact two-constant exception only; below150, no future growth, druid extraction required before substantive expansion.",
-      "review": "IR-ANDRA-THORGRIM-SPECIALTY-ART-20261022",
-      "review_scope": "prospective-specialty-presentation-bounded-function",
+      "rationale": "Exact122-to124-line individual-presentation routing exception: delegate two captured-policy riders to their72-line focused resolver before existing family fallbacks. No new inline specialty formula or Druid branch; absent-policy identity/artwork remains unchanged. No further growth allowance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "0e2df02635185e0a97b64e8c4866d254a24ae92d02709b8ace9f00aa39641b62"
+      "sha256": "a8a98f181d38aee08426fba00a0e27366a92569f3668b41d592b728023f93135"
     },
     "lib/filesystem/CFilesystemLoader.cpp::std::unordered_map<ResourcePath, boost::filesystem::path> CFilesystemLoader::listFiles(const std::string &mountPoint, size_t depth, bool initial) const#1": {
       "kind": "legacy",
@@ -22765,12 +22768,12 @@
       "kind": "exception",
       "lines": 2254,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 2254 to 2254 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "48dc5ecaf6de5c4bf1c8464252113b1bbd58726bc94f73a2294a2f8b1072c312",
+      "rationale": "Exact 2254-to-2254-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "f8aa32ae107102f60e8b7bfae27cc87decc303edf8da2316d1321c18926019b1",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "No regrowth above2254. Preserve existing native graph/query, visitor/replay, publication and lifecycle decomposition obligations; extract coherently before substantive expansion. Preserve saved-member/RNG/packet order, runtime finalization, owner/thread/shutdown and prepared-tail ordering; actual route/performance acceptance remains separate. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 2254-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/gameState/CGameState.cpp::bool CGameState::checkForVictory(const PlayerColor & player, const EventCondition & condition) const#1": {
       "kind": "legacy",
@@ -22810,25 +22813,25 @@
     },
     "lib/gameState/CGameState.h": {
       "kind": "exception",
-      "lines": 625,
+      "lines": 627,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 622 to 625 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "4631cd660e282ca53fd053b06075575f77698101c9134ce585f517c3ac6909f5",
+      "rationale": "Exact 625-to-627-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "ce29e280c2bab19971b5c8babd5534f2a4ceada1d16880a6fbdffa2fab181920",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "No future growth credit. Engine/UI owners must extract cohesive native graph/query, visitor/replay or publication duties before substantive expansion; any later changed hotspot requires renewed independent exact review. Verify actual owner/thread/shutdown and prepared-tail ordering separately. Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 627-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/gameState/CGameState.h::CGameState::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 283,
+      "lines": 285,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 280 to 283 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "613a55b485abff0a2a6e4bff8be60d5eda51a2cc22bb4fda7cedbbd3951d396e",
+      "rationale": "Exact 283-to-285-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "13ee7bd7a3ded8b4167c3ae20ffccbb00adbde53a55f717abfe02ea776b8e11b",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 285-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/gameState/CGameStateCampaign.cpp": {
       "kind": "legacy",
@@ -23222,25 +23225,25 @@
     },
     "lib/mapObjects/CGHeroInstance.h": {
       "kind": "exception",
-      "lines": 1152,
+      "lines": 1154,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 1151 to 1152 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "34971e942cef01304aca13828382c3105e7f1374e92880a47e0f8ca6f9288680",
+      "rationale": "Exact 1152-to-1154-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "747e394020c85d50d1629e5adc8f47772aac9ef340e7d4c8af3efa16114309c7",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 1154-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/mapObjects/CGHeroInstance.h::CGHeroInstance::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 454,
+      "lines": 456,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 453 to 454 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "c5db8875033c849fa7dfec36283d44c296e3abb75ce3f750d5f62da4a99f1137",
+      "rationale": "Exact 454-to-456-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "6836544a5d9c539d6ddf6d8f24f4e2fe082e2ff9ff87b374103808a261380894",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 456-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/mapObjects/CGPandoraBox.cpp::void CGPandoraBox::grantRewardWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * h, int index, bool markAsVisit) const#1": {
       "kind": "legacy",
@@ -23399,12 +23402,12 @@
       "kind": "exception",
       "lines": 1645,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 1645 to 1645 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "4efd0404aceaa3a36123fd0f35b4b6deb26eb47104f847e5724b4fd50d45b7ab",
+      "rationale": "Exact 1645-to-1645-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "4aacd6b6857fbdd0ed4766e7a3b2aa98797c6cfe4139cee1de83bff2408259df",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 1645-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/mapping/CMap.cpp::CMap::checkForObjectives()::[&](EventCondition cond) -> EventExpression::Variant#1": {
       "kind": "legacy",
@@ -23426,25 +23429,25 @@
     },
     "lib/mapping/CMap.h": {
       "kind": "exception",
-      "lines": 504,
+      "lines": 505,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 503 to 504 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "358c7c133460b7390dfa3230449e8afe34efc61edb0d226f42304faf7322a685",
+      "rationale": "Exact 504-to-505-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "c839411ba7851cfbf637fd79800d51c5b973951c33f31c7411b61567817e76ed",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 505-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/mapping/CMap.h::CMap::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 127,
+      "lines": 128,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 126 to 127 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "091e1803b1098df069920d30df992cd24ee03f2576e76ed6ecfe7e5b2e0fdba5",
+      "rationale": "Exact 127-to-128-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "6505df99eca0c6f8c31c55f97d52b79e4eb477b1ee299ac7c0de2c0cd83cf5c0",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 128-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/mapping/CMapOperation.cpp": {
       "kind": "legacy",
@@ -23720,12 +23723,12 @@
       "kind": "exception",
       "lines": 1357,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 1357 to 1357 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "8f145371360badaba4c4fabd2b68f38d09809e3bd2f43caec8704820df18e704",
+      "rationale": "Exact 1357-to-1357-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "63a4bc6388414bb28f30b4604dcf4308c2a6b8ec2e737e5c40b50c07a40ca4ba",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 1357-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/networkPacks/PacksForClient.h": {
       "kind": "legacy",
@@ -23787,25 +23790,25 @@
     },
     "lib/networkPacks/PacksForLobby.h": {
       "kind": "exception",
-      "lines": 567,
+      "lines": 568,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 566 to 567 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "d9b2d797f336fcbd7114870dda9da9711a30c4c91958614fb41760bcae004ffb",
+      "rationale": "Exact 567-to-568-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "45323dfd3009caebaed73265fba1617c8a901325604b845974b65f880769f22a",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 568-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/networkPacks/PacksForLobby.h::LobbyStartGame::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 87,
+      "lines": 88,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 86 to 87 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "f2f32d605b8d96c30274b87fa6039f245ec569e0513557080962770c6c95b405",
+      "rationale": "Exact 87-to-88-line captured-policy codec routing only: thread the independent individual-specialty capability through existing direct and enclosing pre-prefix guards. No new state field, reordered member, default injection or gameplay body; substantive validation remains in the focused individual-policy component. No unrelated growth or runtime acceptance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "d170bedf42cbbf4dfef05117590490d02c5c9a5ab0b52d585ece0033ad8041fc",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner retains this exact 88-line bound. Before further substantive codec expansion, extract a cohesive captured-policy admission/validation stage while preserving all direct and enclosing prefix rejection, historical absence, saved member order and failed-read behavior. Existing lifecycle and serialization decomposition obligations remain; this flag routing does not suspend them."
     },
     "lib/networkPacks/PacksForServer.h": {
       "kind": "legacy",
@@ -24363,14 +24366,14 @@
     },
     "lib/serializer/ESerializationVersion.h": {
       "kind": "exception",
-      "lines": 539,
+      "lines": 544,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 535 to 539 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "c0295a2e56f1116f2b5a5a922481766371f3e4be130ee0130867ea1d10a59d7c",
+      "rationale": "Mechanical append-only serialization capability registry539-to544: append individual-specialty capability after Fly, advance CURRENT and assert ordering. No earlier numeric ID changes, wire fields or runtime bodies.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "8fcf89c4a395a5bf41716a65fc3ae6938e4fd516f0aaf41d0bb70f1d8f9a0247",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Engine owner must keep capability IDs append-only and guard every affected direct/enclosing writer before its prefix. Exact544-line mechanical registry scope only; no permission to add gameplay bodies or reassign historical IDs."
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -24462,13 +24465,15 @@
       "sha256": "78e6d1fdf62a79d5b5a8a95890d802a6559f8983c397ed6dedbcae1b9bb19199"
     },
     "lib/spells/CSpell.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 805,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 805 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f04fe17e146caa7c075d1763bc112cc0ea5cc2e1c254f0e88d27cb3ca92a4df3"
+      "rationale": "Exact805-line no-growth AI/readout parity routing: replace only the damage coefficient query with the shared direct-component query. Fixed terms, downstream modifiers and nondamage APIs remain unchanged. Specialty formula resides in the159-line damage-power component.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "4ad75486e095e705fe34ba5ccaef1b340a08c340fb77a9588bc479d597d249b8",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Gameplay owner must extract a cohesive damage-component evaluation boundary before further substantive expansion of this file, preserving fixed/power separation, hero and indirect modes, saved context, modifiers and preview/AI/native agreement. Exact805-line no-growth exception only."
     },
     "lib/spells/CSpell.cpp::int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage, int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints, int finalDamageMultiplierPercent, bool useIndependentMagicalDamageReduction, bool useFractionalMagicalDamageReduction, bool applyCasterBonuses, int perkMagicalDamageReductionBasisPoints, const std::vector<int> & independentPenetrationsPercent) const#1": {
       "kind": "legacy",
@@ -24508,42 +24513,47 @@
     },
     "lib/spells/ISpellMechanics.cpp": {
       "kind": "legacy",
-      "lines": 2320,
+      "lines": 2233,
       "owner": "gameplay_engineer",
-      "rationale": "Exact2349 to2320-line shrinking legacy ratchet: move one byte-identical27-line summon max-health callable plus its descriptor include into focused SummonedCreatureHealth.cpp. All other192 callable bodies unchanged. The new48-line component owns selected-source terrain capture and hypothetical summon HP evaluation; its later29-line corrected method is separately source-reviewed. This remaining oversized file is not structurally or semantically certified; no numerical waiver or future growth allowance.",
-      "review": "IR-SUMMON-HEALTH-PRODUCER-EXTRACTION-RATCHET-V1",
-      "review_scope": "exact-cohesive-summon-health-extraction-shrinking-legacy-freeze-only-no-runtime-or-growth",
-      "sha256": "c45d2d49a918370e835c144acf5f8776c20e5d78cca477a55b0de7d67547c030",
-      "deferral": "Gameplay owner retains exact2320-line decreasing freeze. Further summon-health work stays in its focused component; before unrelated substantive growth here, extract a coherent affected mechanics responsibility with exact state/RNG and saved-rule characterization, then lower this baseline. Do not restore the previous2349-line allowance or relocate the entire constructor/method collection."
+      "rationale": "Shrinking2320-to2233-line ratchet: move existing Storm rounding/coefficient getters into the159-line direct-damage power component; new direct-component routing stays there. Retain constructor/effect ordering and generic nondamage scaling; no relocation into an oversized helper or regrowth allowance.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "ba337658a0caebd46c95273ee70dcbc14286b855ed66d243e0a494da0d7d9809",
+      "deferral": "Gameplay owner retains exact2233 decreasing freeze. Before further substantive mechanics growth, extract a coherent affected formula/initialization stage with fixed/power and direct/indirect characterization, saved context and native/AI parity. Do not restore the2320 or2349 allowance.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/ISpellMechanics.cpp::spells::BaseMechanics::BaseMechanics(const IBattleCast * event): owner(event->getSpell()), mode(event->getMode()), forceMassive(event->isForceMassive()), cb(event->getBattle())#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 450,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 450 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "259eb7df34a1bd0ba5dc82e0ac72d9d4e2c085b2859b3132cc7f6930f48bbdeb"
+      "rationale": "Exact450-line no-growth component-routing exception: replace only the damage coefficient call with the focused direct-component getter. Generic nondamage/indirect coefficients, constructor stage order and fixed damage remain. The file separately shrinks by87 lines; this is not approval of the remaining long method design.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "67461e2f77a20e19a8f0fb89478ccef4b1cc2d1b4d588ba42188ac49f02e0a85",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Gameplay owner must extract a cohesive effect-value initialization or recipient-damage stage before further substantive growth in this method. Preserve explicit override precedence, mode/saved-roster guards, fixed/power separation, downstream modifiers and projection/native equality. Exact unchanged-size exception only."
     },
     "lib/spells/ISpellMechanics.cpp::spells::int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const bool applyExecution) const#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 83,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 83 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "72fbdf1922f01c12dee2f8e8c5fa072f1eab24f286d098615d5b6d71330b5923"
+      "rationale": "Exact83-line no-growth component-routing exception: replace only the damage coefficient call with the focused direct-component getter. Generic nondamage/indirect coefficients, constructor stage order and fixed damage remain. The file separately shrinks by87 lines; this is not approval of the remaining long method design.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "9b53592036c0c8b7fad50a08d120e5c927b2e53f9fe81f39dd79a2379df5eca6",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Gameplay owner must extract a cohesive effect-value initialization or recipient-damage stage before further substantive growth in this method. Preserve explicit override precedence, mode/saved-roster guards, fixed/power separation, downstream modifiers and projection/native equality. Exact unchanged-size exception only."
     },
     "lib/spells/ISpellMechanics.h": {
       "kind": "exception",
-      "lines": 759,
+      "lines": 763,
       "owner": "gameplay_engineer",
-      "rationale": "Exact abstract mechanics header751-to-759 adds one conservative optional projection-receipt virtual accessor and its explanatory contract, plus one protected const inline accessor for the existing resolved Concentration percentage. Default returns no receipt; substantive implementation stays in focused Vines/target components. The one-line accessor corrects extracted-helper access without exposing mutation. Bounded interface-only +8 exception, no new state serialization or expanded mechanics body.",
-      "review": "IR-VINES-REUSE-EXTRACTION-SOURCE-20261021",
-      "review_scope": "exact-phase2-vines-projection-extraction-source-only",
-      "sha256": "279e2aaeea647ae7a8dcb543d080fb60277d914519c18b689cca838cda4445ee",
+      "rationale": "Interface-only759-to763 extension: add direct-damage coefficient virtual/default and concrete override declarations. Default routes to existing generic behavior; implementation stays in the159-line damage-power component. No mutable field, ownership or serialization-layout change.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "658f4349cba7160872083461273f2b55eea3d9da97ff417099baa3c6361a0454",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Gameplay engineer owns extraction of a coherent mechanics capability interface before further substantive header growth. Retain default-deny receipt behavior, read-only Concentration access, callback and DLL linkage, and existing caller semantics; require canonical/unknown implementation and receipt tests. Exact759 cap only, no regrowth credit."
+      "deferral": "Gameplay owner must extract a cohesive mechanics capability interface before further substantive header growth. Preserve conservative defaults, read-only callbacks, DLL linkage and existing Vines receipt contracts. Exact763-line interface-only bound; no regrowth credit."
     },
     "lib/spells/NewHorizonsMagic.cpp": {
       "kind": "legacy",
@@ -24568,14 +24578,14 @@
     },
     "lib/spells/NewHorizonsMagic.h": {
       "kind": "exception",
-      "lines": 508,
+      "lines": 511,
       "owner": "gameplay_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 506 to 508 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "edc4b7a079650e242814db95bdf1534d4895fede680194571ebf865b45fe75d4",
+      "rationale": "Interface-only508-to511 extension: declare shared direct-damage coefficient query. No new callable body/state/wire field; complete one-body manual inventory retains unchanged AdventureSpellState serializer. Implementation lives in the focused damage-power owner.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "e91b8393c53806f5275e70748638db3ddd439df4a7e369de79aecc89b54aff5d",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "deferral": "Gameplay owner keeps this exact511-line declaration registry bound; before substantive interface expansion, split a coherent capability API without duplicating saved-rule identity or exposing mutable state. Preserve existing generic coefficient callers and defaults."
     },
     "lib/spells/NewHorizonsRealityWarp.cpp::newHorizonsRealityWarp::PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t first, uint32_t second)#1": {
       "kind": "legacy",
@@ -25811,12 +25821,13 @@
     },
     "server/battles/BattleResultProcessor.cpp": {
       "kind": "legacy",
-      "lines": 1390,
+      "lines": 1344,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1390 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ecf401f0cb2c73f949a27f18bde3aec953df6cdc7af787badb3e45d000c30e81"
+      "rationale": "Shrinking1390-to-1344-line ratchet: move existing Skeleton-upgrade eligibility and Normal-only postbattle Mana queries into the347-line Necromancy owner. Authoritative raising adds only the captured hero contribution at its existing resolver call. Capacity/choice/application and casualty ordering remain; no future regrowth credit.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "b08967353c1b9636da6bd03188a40671f98ca58230a9dc49170ac9f1c912ae94",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/battles/BattleResultProcessor.cpp::CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle, BattleSide sideInBattle): army(battle.battleGetArmyObject(sideInBattle))#1": {
       "kind": "legacy",
@@ -25829,12 +25840,13 @@
     },
     "server/battles/BattleResultProcessor.cpp::bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & result, const newHorizonsCreatures::CreatureCategoryRules & categoryRules, int32_t initialMana, const CGHeroInstance * winnerHero, BattleResultsApplied & resultsApplied)#1": {
       "kind": "legacy",
-      "lines": 156,
+      "lines": 153,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 156 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "2ca95eae78d66b8c731710bbe7515a055d73f09bd24af833455872594ae55098"
+      "rationale": "Shrinking156-to-153-line ratchet: move existing Skeleton-upgrade eligibility and Normal-only postbattle Mana queries into the347-line Necromancy owner. Authoritative raising adds only the captured hero contribution at its existing resolver call. Capacity/choice/application and casualty ordering remain; no future regrowth credit.",
+      "review": "individual-specialty-riders-source-v1",
+      "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
+      "sha256": "6e9260c6d4c48a540f79eb091f7219b1cfbd84676f234b2f30601d71d3ffb347",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/battles/BattleResultProcessor.cpp::void BattleResultProcessor::battleFinalize(const BattleID & battleID, const BattleResult & result)#1": {
       "kind": "legacy",

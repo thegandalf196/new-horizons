@@ -198,27 +198,7 @@ void validateDruidSpecialtyRules(const JsonNode & rules)
 	}
 }
 
-void validateOptionalFortuneChildSpecialtyRules(const JsonNode & rules)
-{
-	if(!rules.isStruct() || !rules.Struct().contains("fortuneChildSpecialty"))
-		return;
-	const auto & row = rules["fortuneChildSpecialty"];
-	fields(row, {"version", "luckPerStep", "levelStep"});
-	require(integer(row["version"], 1, 1), "Fortune's Child version");
-	require(integer(row["luckPerStep"], 0, 1000), "Fortune's Child Luck per step");
-	require(integer(row["levelStep"], 1, 1000), "Fortune's Child level step");
-}
 
-void validateOptionalArcanePreparationSpecialtyRules(const JsonNode & rules)
-{
-	if(!rules.isStruct() || !rules.Struct().contains("arcanePreparationSpecialty"))
-		return;
-	const auto & row = rules["arcanePreparationSpecialty"];
-	fields(row, {"version", "initialPercent", "percentPerLevel", "maximumPercent"});
-	require(integer(row["version"], 1, 1), "Arcane Preparation version");
-	for(const char * key : {"initialPercent", "percentPerLevel", "maximumPercent"})
-		require(integer(row[key], 0, 100), "Arcane Preparation percentage");
-}
 
 void validateOptionalBottomlessMindSpecialtyRules(const JsonNode & rules)
 {
@@ -522,9 +502,8 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty"});
-	validateOptionalFortuneChildSpecialtyRules(rules);
-	validateOptionalArcanePreparationSpecialtyRules(rules);
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties"});
+	validateIndividualSpecialtiesSerialization(rules, true, true);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
@@ -566,9 +545,8 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty"});
-	validateOptionalFortuneChildSpecialtyRules(rules);
-	validateOptionalArcanePreparationSpecialtyRules(rules);
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties"});
+	validateIndividualSpecialtiesSerialization(rules, true, true);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
@@ -608,6 +586,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 		result["remainingSpellSpecialtyReplacements"] = rules["remainingSpellSpecialtyReplacements"];
 	if(rules.Struct().contains("skillSpecialties"))
 		result["skillSpecialties"] = rules["skillSpecialties"];
+	if(rules.Struct().contains("individualSpecialties"))
+		result["individualSpecialties"] = rules["individualSpecialties"];
 	if(rules.Struct().contains("druidSpecialties"))
 		result["druidSpecialties"] = rules["druidSpecialties"];
 	if(rules.Struct().contains("fortuneChildSpecialty"))
@@ -804,38 +784,8 @@ void validateOffensiveStartSpecialtySerialization(const JsonNode & rules, bool s
 		throw std::runtime_error("Offensive starting specialty rules require the new save format");
 }
 
-std::optional<FortuneChildSpecialtyRules> fortuneChildSpecialtyRules(const JsonNode & development)
-{
-	if(!usesRules(development) || !development.isStruct()
-		|| !development.Struct().contains("fortuneChildSpecialty"))
-		return std::nullopt;
-	validateOptionalFortuneChildSpecialtyRules(development);
-	const auto & row = development["fortuneChildSpecialty"];
-	return FortuneChildSpecialtyRules{static_cast<int>(row["luckPerStep"].Integer()),
-		static_cast<int>(row["levelStep"].Integer())};
-}
 
-std::optional<ArcanePreparationSpecialtyRules> arcanePreparationSpecialtyRules(const JsonNode & development)
-{
-	if(!usesRules(development) || !development.isStruct()
-		|| !development.Struct().contains("arcanePreparationSpecialty"))
-		return std::nullopt;
-	validateOptionalArcanePreparationSpecialtyRules(development);
-	const auto & row = development["arcanePreparationSpecialty"];
-	return ArcanePreparationSpecialtyRules{static_cast<int>(row["initialPercent"].Integer()),
-		static_cast<int>(row["percentPerLevel"].Integer()), static_cast<int>(row["maximumPercent"].Integer())};
-}
 
-void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported)
-{
-	if(!development.isStruct() || (!development.Struct().contains("fortuneChildSpecialty")
-		&& !development.Struct().contains("arcanePreparationSpecialty")))
-		return;
-	if(!supported)
-		throw std::runtime_error("Individual hero specialties require the new save format");
-	validateOptionalFortuneChildSpecialtyRules(development);
-	validateOptionalArcanePreparationSpecialtyRules(development);
-}
 
 std::optional<BottomlessMindSpecialtyRules> bottomlessMindSpecialtyRules(const JsonNode & development)
 {

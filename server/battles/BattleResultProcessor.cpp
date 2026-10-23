@@ -33,6 +33,7 @@
 #include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
+#include "../../lib/entities/hero/NewHorizonsIndividualSpecialties.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsEagleEye.h"
 #include "../../lib/pathfinder/NewHorizonsMovement.h"
@@ -66,50 +67,6 @@ std::shared_ptr<battle::CUnitState> acquireOriginalFormState(const CStack & stac
 	return state;
 }
 
-/// Return a Skeleton upgrade offered by a currently owned Necropolis town
-/// whose corresponding upgrade dwelling is already built.
-CreatureID availableNecropolisSkeletonUpgrade(const PlayerState * ownerState)
-{
-	if(!ownerState)
-		return CreatureID::NONE;
-
-	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
-	const auto * skeletonType = (*LIBRARY->creh)[skeleton];
-	if(!skeletonType)
-		return CreatureID::NONE;
-
-	for(const auto * town : ownerState->getTowns())
-	{
-		if(!town || town->getFactionID() != FactionID::NECROPOLIS)
-			continue;
-
-		const auto * townType = town->getTown();
-		if(!townType)
-			continue;
-
-		const auto levels = std::min(townType->creatures.size(), town->creatures.size());
-		for(size_t level = 0; level < levels; ++level)
-		{
-			const auto & configuredCreatures = townType->creatures[level];
-			const auto & offeredCreatures = town->creatures[level].second;
-			for(size_t upgrade = 1; upgrade < configuredCreatures.size(); ++upgrade)
-			{
-				const auto creature = configuredCreatures[upgrade];
-				if(!skeletonType->upgrades.contains(creature) || !vstd::contains(offeredCreatures, creature))
-					continue;
-
-				const auto dwelling = BuildingID::getDwellingFromLevel(
-					static_cast<int>(level), static_cast<int>(upgrade));
-				if(!dwelling.hasValue() || !townType->buildings.count(dwelling) || !town->hasBuilt(dwelling))
-					continue;
-
-				if(LIBRARY->creatures()->getById(creature))
-					return creature;
-			}
-		}
-	}
-	return CreatureID::NONE;
-}
 
 bool originalArmyContainsLivingChampion(const CArmedInstance * army,
 	const newHorizonsCreatures::CreatureCategoryRules & categoryRules)
@@ -767,7 +724,7 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		? gameHandler->gameInfo().getPlayerState(winnerHero->tempOwner)
 		: nullptr;
 	const auto skeletonOutput = masterOfBones
-		? availableNecropolisSkeletonUpgrade(ownerState)
+		? newHorizonsNecromancy::availableNecropolisSkeletonUpgrade(ownerState)
 		: CreatureID::NONE;
 	newHorizonsNecromancy::SpecialCasualtyCounts nonlivingCasualties;
 	newHorizonsNecromancy::SpecialCasualtyCounts undeadCasualties;
@@ -781,11 +738,7 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 				result.necromancyUndeadEligibleCasualties[losingSide], categoryRules);
 	}
 
-	const bool hasTwoPoolSpellPoints = newHorizonsMagic::spellPointRulesActive(winnerHero->getMagicRules());
-	const int32_t currentNormal = winnerHero->getNormalSpellPoints();
-	const int32_t postBattleMana = hasTwoPoolSpellPoints
-		? currentNormal
-		: std::min<int32_t>(currentNormal, initialMana);
+	const int32_t postBattleMana = newHorizonsNecromancy::postBattleNormalSpellPoints(*winnerHero, initialMana);
 	// Black Harvest uses remaining Normal capacity. Combat-only Buffer never
 	// suppresses a recovery that fits in Normal.
 	auto summary = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(), eligibleCount, eligibleCoreCount,
@@ -794,7 +747,8 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		blackHarvest ? winnerHero->manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true, skeletonOutput,
 		nonlivingCasualties, undeadCasualties, lordOfTheDead,
 		result.necromancyDefeatedArmyHadLivingChampion, true,
-		winnerHero->getNewHorizonsNecromancyAmplifierBonusPercent());
+		winnerHero->getNewHorizonsNecromancyAmplifierBonusPercent(),
+		newHorizonsHeroes::graveReaperPercentagePoints(winnerHero));
 	if(!summary.active)
 		return false;
 

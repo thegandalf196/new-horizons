@@ -316,6 +316,9 @@ DLL_LINKAGE int schoolRankPowerCoefficientPercent(const JsonNode & rules, int sc
 /// Optional saved-v3 Spellcraft efficiency by the actual registered Skill's
 /// rank. Omission in an older v3 snapshot, or use with v1/v2 rules, means 100%.
 DLL_LINKAGE int spellcraftEfficiencyPercent(const JsonNode & rules, int spellcraftRank);
+/// Captured individual rider applied only to this direct-damage component.
+DLL_LINKAGE int directDamageSpellPowerCoefficientBasisPoints(const JsonNode & rules,
+	const CGHeroInstance * hero, SpellID spell, int additionalSpellPowerComponentPercent = 0);
 /// School-only percentage for the highest-ranked school on an ordinary spell
 /// in the saved roster. Multi-school spells use one highest rank; adventure
 /// spells, creature abilities, excluded spells and legacy snapshots retain 100%.

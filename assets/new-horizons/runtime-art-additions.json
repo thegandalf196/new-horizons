@@ -5475,6 +5475,72 @@
         }
       ],
       "approval": "Provisional; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "401d11b7926b2d5e1582ed1297bd4ac1d32b0ec718852737ace3c1852a464966",
+      "baselineManifestSha256": "f13259726e370a3e4378b016531d1e959ac6f5cb65efa4c4d08b08c93331b671",
+      "baselineEntriesSha256": "5f1441be474a1e71be29bd4cecb8eb92ab0c7c2847393d4bfbedcf91b3398d4b",
+      "baselineHeaderSha256": "6cfea69a7513ffa4a185755f1ada67e2ed2aac17156d50e690fc45d4b93ad439",
+      "nonStatusConfigSha256": "6bcf78af32bc3739f491572a1705a1e9440dc76cc25b19947da8998d7fc5cba2",
+      "baselineCount": 4839,
+      "entryCount": 4847,
+      "newArchiveSha256": "9325a8c11e94b363f5c2bdcfcf9a9b2fd59898a2818e956ddad075d912f1bb02",
+      "resources": [
+        "SPRITES/newHorizons/heroSpecialties/IsraGraveReaper/32.json",
+        "SPRITES/newHorizons/heroSpecialties/IsraGraveReaper/44.json",
+        "SPRITES/newHorizons/heroSpecialties/IsraGraveReaper/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/IsraGraveReaper/icon-44.png",
+        "SPRITES/newHorizons/heroSpecialties/MalekithWarlocksFormula/32.json",
+        "SPRITES/newHorizons/heroSpecialties/MalekithWarlocksFormula/44.json",
+        "SPRITES/newHorizons/heroSpecialties/MalekithWarlocksFormula/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/MalekithWarlocksFormula/icon-44.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "specialties": [
+        {
+          "id": "core:isra",
+          "identity": "IsraGraveReaper",
+          "version": "transparent-foreground-v1-safe-inset2-20261023",
+          "native44Sha256": "b39485ad37a393eb535c29fe55c86a39c0f3f6a698dcdbffc8ac4c7a28d96c71",
+          "native32Sha256": "c9aa581921623b050a00f9c424498f8e7bc600f2d3f6bbb46edcdfa234f991b9",
+          "normal44": "newHorizons/heroSpecialties/IsraGraveReaper/44",
+          "normal32": "newHorizons/heroSpecialties/IsraGraveReaper/32",
+          "selectionEvidenceSha256": "9384dc3655d4ec395bbd927970af8e3afc8423cfd258dfbb3418fbf048d99a6e",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/IsraGraveReaper/32.json",
+            "SPRITES/newHorizons/heroSpecialties/IsraGraveReaper/44.json",
+            "SPRITES/newHorizons/heroSpecialties/IsraGraveReaper/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/IsraGraveReaper/icon-44.png"
+          ],
+          "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+          "originalMasterSha256": "c33e62d779eac8e1b8fa51d09927bffe70ad7866ca9ad8d8f2233c620412d5b6",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-isra-malekith-2026-10-23",
+          "approval": "Provisional; not Final; rendered acceptance pending; no new rights grant"
+        },
+        {
+          "id": "core:malekith",
+          "identity": "MalekithWarlocksFormula",
+          "version": "transparent-foreground-v1-safe-inset2-20261023",
+          "native44Sha256": "1931a4fd98a7cf9f37673617a01135881a3410d65a0287b8a4edc784b8a067eb",
+          "native32Sha256": "2ac19231df848df57e8539b01c994df4853e8b43cf0b01771d9dd32272a173ad",
+          "normal44": "newHorizons/heroSpecialties/MalekithWarlocksFormula/44",
+          "normal32": "newHorizons/heroSpecialties/MalekithWarlocksFormula/32",
+          "selectionEvidenceSha256": "9384dc3655d4ec395bbd927970af8e3afc8423cfd258dfbb3418fbf048d99a6e",
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/MalekithWarlocksFormula/32.json",
+            "SPRITES/newHorizons/heroSpecialties/MalekithWarlocksFormula/44.json",
+            "SPRITES/newHorizons/heroSpecialties/MalekithWarlocksFormula/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/MalekithWarlocksFormula/icon-44.png"
+          ],
+          "origin": "built-in-text-only-generated-specialty-transparent-foreground-own-image-framing-correction-native-export",
+          "originalMasterSha256": "fa11d18f0d6a2db4be64e8c55dcd60320d8a0c1e3bb1cc88474305481dfdf757",
+          "selection": "selected-provisional-standalone-specialty-foreground-v1-isra-malekith-2026-10-23",
+          "approval": "Provisional; not Final; rendered acceptance pending; no new rights grant"
+        }
+      ],
+      "approval": "Provisional; not Final; rendered acceptance pending; no blanket license claim"
     }
   ]
 }

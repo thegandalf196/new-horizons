@@ -37,6 +37,20 @@ appending a quest. Valid records retain the legacy quest and synthesize the
 colour's `requiredKeys` entry. Registered type10 guard conversion, type12 gate
 identity, supported versions and the current quest-source layout are unchanged.
 
+## Captured individual specialty riders
+
+`NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS` protects the optional versioned
+`individualSpecialties` block in captured hero-development rules. It contains
+Isra's Grave Reaper and Malekith's Warlock's Formula coefficients; it adds no
+per-hero runtime receipt. New games capture the installed block. Historical
+snapshots without it retain their previous mechanics and specialty presentation,
+even when installed defaults contain the new coefficients.
+
+Direct and enclosing save writers reject unsupported captures before writing
+their prefixes. Older-format readers reject a rider block rather than silently
+discarding it. The capability is appended after the Fly day-end feature;
+historical enumerator values remain unchanged.
+
 ## Captured Fly day-end policy
 
 `NEW_HORIZONS_FLY_DAY_END` protects the presence of

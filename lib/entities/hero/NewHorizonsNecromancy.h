@@ -13,6 +13,8 @@
 #include <vector>
 
 class CCreature;
+class PlayerState;
+class CGHeroInstance;
 
 namespace newHorizonsCreatures
 {
@@ -21,6 +23,10 @@ class CreatureCategoryRules;
 
 namespace newHorizonsNecromancy
 {
+/// Existing Master of Bones dwelling query, shared with result resolution.
+DLL_LINKAGE CreatureID availableNecropolisSkeletonUpgrade(const PlayerState * ownerState);
+/// Existing Normal-only Black Harvest input; legacy profiles keep the entry-Mana ceiling.
+DLL_LINKAGE int32_t postBattleNormalSpellPoints(const CGHeroInstance & hero, int32_t initialMana);
 inline constexpr const char * SKILL_ID = "new-horizons:necromancy";
 inline constexpr const char * BONE_COLLECTOR_ID = "new-horizons:necromancy.boneCollector";
 inline constexpr const char * CORPSE_PRESERVATION_ID = "new-horizons:necromancy.corpsePreservation";
@@ -289,5 +295,5 @@ DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32
 	CreatureID skeletonOutput = CreatureID::NONE,
 	SpecialCasualtyCounts nonliving = {}, SpecialCasualtyCounts undead = {},
 	bool lordOfTheDead = false, bool defeatedArmyHadLivingChampion = false,
-	bool boneDragonSlotAvailable = true, int32_t amplifierBonusPercent = 0);
+	bool boneDragonSlotAvailable = true, int32_t amplifierBonusPercent = 0, int32_t baseSpecialtyPercentagePoints = 0);
 }

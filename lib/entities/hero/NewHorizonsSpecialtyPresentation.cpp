@@ -27,6 +27,8 @@ bool resolveIndividualPresentation(const CHero & hero,
 	const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero,
 	SpecialtyPresentation & result)
 {
+	if(resolveIndividualRiderPresentation(hero, development, magic, capturedHero, result))
+		return true;
 	const CHero * heroType = &hero;
 	if(const auto ward = masterSpellwardSpecialtyRules(development);
 		ward && heroType->getJsonKey() == "core:thorgrim"

@@ -7,6 +7,11 @@
 #include "NewHorizonsNecromancy.h"
 
 #include "../../CCreatureHandler.h"
+#include "../../GameLibrary.h"
+#include "../../CPlayerState.h"
+#include "../../mapObjects/CGHeroInstance.h"
+#include "../../spells/NewHorizonsMagic.h"
+#include "../../mapObjects/CGTownInstance.h"
 #include "../../bonuses/BonusEnum.h"
 #include "../creature/NewHorizonsCreatureCategoryRules.h"
 
@@ -79,6 +84,59 @@ SpecialCasualtyCounts normalizeSpecialCounts(SpecialCasualtyCounts counts)
 	counts.elite = std::clamp(counts.elite, 0, counts.total - counts.core);
 	return counts;
 }
+}
+
+/// Return a Skeleton upgrade offered by a currently owned Necropolis town
+/// whose corresponding upgrade dwelling is already built.
+CreatureID availableNecropolisSkeletonUpgrade(const PlayerState * ownerState)
+{
+	if(!ownerState)
+		return CreatureID::NONE;
+
+	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
+	const auto * skeletonType = (*LIBRARY->creh)[skeleton];
+	if(!skeletonType)
+		return CreatureID::NONE;
+
+	for(const auto * town : ownerState->getTowns())
+	{
+		if(!town || town->getFactionID() != FactionID::NECROPOLIS)
+			continue;
+
+		const auto * townType = town->getTown();
+		if(!townType)
+			continue;
+
+		const auto levels = std::min(townType->creatures.size(), town->creatures.size());
+		for(size_t level = 0; level < levels; ++level)
+		{
+			const auto & configuredCreatures = townType->creatures[level];
+			const auto & offeredCreatures = town->creatures[level].second;
+			for(size_t upgrade = 1; upgrade < configuredCreatures.size(); ++upgrade)
+			{
+				const auto creature = configuredCreatures[upgrade];
+				if(!skeletonType->upgrades.contains(creature) || !vstd::contains(offeredCreatures, creature))
+					continue;
+
+				const auto dwelling = BuildingID::getDwellingFromLevel(
+					static_cast<int>(level), static_cast<int>(upgrade));
+				if(!dwelling.hasValue() || !townType->buildings.count(dwelling) || !town->hasBuilt(dwelling))
+					continue;
+
+				if(LIBRARY->creatures()->getById(creature))
+					return creature;
+			}
+		}
+	}
+	return CreatureID::NONE;
+}
+
+
+int32_t postBattleNormalSpellPoints(const CGHeroInstance & hero, int32_t initialMana)
+{
+	const bool hasTwoPoolSpellPoints = newHorizonsMagic::spellPointRulesActive(hero.getMagicRules());
+	const int32_t currentNormal = hero.getNormalSpellPoints();
+	return hasTwoPoolSpellPoints ? currentNormal : std::min<int32_t>(currentNormal, initialMana);
 }
 
 int32_t countLivingEligibleCasualties(const std::map<CreatureID, si32> & casualties)
@@ -167,7 +225,7 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput,
 	SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead,
 	bool lordOfTheDead, bool defeatedArmyHadLivingChampion, bool boneDragonSlotAvailable,
-	int32_t amplifierBonusPercent)
+	int32_t amplifierBonusPercent, int32_t baseSpecialtyPercentagePoints)
 {
 	NecromancyResult result;
 	result.active = rank >= 1 && rank <= 3;
@@ -180,7 +238,8 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	result.darkConversionAvailable = darkConversionAvailable;
 	result.eligibleCasualties = std::max(0, eligibleCasualties);
 	const auto boundedAmplifierBonus = std::clamp(amplifierBonusPercent, 0, 100);
-	result.percentage = std::clamp(rank * 10 + (boneCollector ? 5 : 0) + boundedAmplifierBonus, 0, 100);
+	const auto boundedSpecialty = std::clamp(baseSpecialtyPercentagePoints, 0, 100);
+	result.percentage = std::clamp(rank * 10 + boundedSpecialty + (boneCollector ? 5 : 0) + boundedAmplifierBonus, 0, 100);
 	nonliving = normalizeSpecialCounts(nonliving);
 	undead = normalizeSpecialCounts(undead);
 	result.deathLordCasualties = nonliving.total;

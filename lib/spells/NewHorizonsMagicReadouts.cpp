@@ -215,6 +215,12 @@ void describeSpellcraft(std::string & result, const CGHeroInstance * hero, const
 		const int efficiencyPercent = spellcraftEfficiencyPercent(hero->getMagicRules(), registeredSpellcraftRank(hero));
 		result += "\n\nSpellcraft efficiency: " + std::to_string(efficiencyPercent)
 			+ "% on Spell Power-derived terms, multiplying with School rank.";
+		const int ordinary = spellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
+		const int direct = directDamageSpellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
+		if(direct != ordinary)
+			result += " Warlock's Formula changes the combined School/Spellcraft factor to "
+				+ percentFromBasisPoints(direct)
+				+ " for direct-damage Spell Power components only; other components retain the ordinary factor.";
 	}
 }
 

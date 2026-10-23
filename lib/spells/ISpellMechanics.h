@@ -378,6 +378,9 @@ public:
 	int32_t getSchoolRankPowerCoefficientPercent() const;
 	/// Effective saved-rules School × Spellcraft coefficient, in basis points.
 	int32_t getSpellPowerCoefficientBasisPoints() const;
+	/// Direct damage only: does not strengthen a mixed spell's control/duration terms.
+	virtual int32_t getDirectDamageSpellPowerCoefficientBasisPoints() const
+	{ return getSpellPowerCoefficientBasisPoints(); }
 	/// Recipient-specific second-action Crown multiplier, captured before payment.
 	virtual int32_t getCrownAndAltarBonusPercent(const battle::Unit * target) const { return 0; }
 	int64_t scaleRecipientSpellPowerComponent(int64_t numerator, int64_t divisor, const battle::Unit * target) const;
@@ -559,6 +562,7 @@ private:
 class DLL_LINKAGE BaseMechanics : public Mechanics
 {
 public:
+	int32_t getDirectDamageSpellPowerCoefficientBasisPoints() const override;
 	int32_t getHeroLuckDamageMultiplierPercent() const override;
 	virtual ~BaseMechanics();
 

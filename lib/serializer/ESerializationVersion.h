@@ -265,12 +265,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_STRICT_PERK_PROGRESSION, // independently captured next-tier and distinct offered-parent policy
 	NEW_HORIZONS_FLY_DAY_END, // optional captured same-day ordinary landing reserve for Fly
 
+	NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS, // captured Isra and Malekith individual coefficients
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_FLY_DAY_END,
+	CURRENT = NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS
+	> ESerializationVersion::NEW_HORIZONS_FLY_DAY_END, "Individual specialty capture must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_FLY_DAY_END
 	> ESerializationVersion::NEW_HORIZONS_STRICT_PERK_PROGRESSION, "Fly landing policy must remain append-only");

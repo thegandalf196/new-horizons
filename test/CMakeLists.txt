@@ -213,6 +213,7 @@ set(test_SRCS
 		hero/NewHorizonsLogisticsMasteryStateTest.cpp
 		hero/NewHorizonsLogisticsLevelWireTest.cpp
 		hero/NewHorizonsHeroRulesTest.cpp
+		hero/NewHorizonsIndividualSpecialtiesTest.cpp
 		hero/NewHorizonsSkillSpecialtyQueryTest.cpp
 		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroBiographyTest.cpp
@@ -499,6 +500,7 @@ set(test_SRCS
 		server/battles/NewHorizonsCureTest.cpp
 		server/battles/NewHorizonsCureTargetTest.cpp
 		server/battles/NewHorizonsDruidConsumerTest.cpp
+		server/battles/NewHorizonsIndividualSpecialtyConsumerTest.cpp
 		server/battles/NewHorizonsCanonicalSpellClausesSerializationTest.cpp
 		server/battles/NewHorizonsImplosionTest.cpp
 		server/battles/NewHorizonsTemporaryMagicDispelTest.cpp
@@ -863,6 +865,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsCrusadeAITest.cpp
 		battleAI/NewHorizonsEntangleAITest.cpp
 		battleAI/NewHorizonsVengefulVinesAITest.cpp
+		battleAI/IndividualRiderDamageIntegrationTest.cpp
 		battleAI/NewHorizonsSummonTrollsAITest.cpp
 		battleAI/NewHorizonsVerdantPrisonAITest.cpp
 		battleAI/NewHorizonsHydrasVitalityAITest.cpp

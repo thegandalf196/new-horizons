@@ -132,7 +132,7 @@ int64_t hopPower(const spells::Mechanics & mechanics, int32_t hopIndex)
 {
 	if(!enabled(mechanics))
 		return 0;
-	return hopPower(mechanics.getEffectPower(), mechanics.getSpellPowerCoefficientBasisPoints(),
+	return hopPower(mechanics.getEffectPower(), mechanics.getDirectDamageSpellPowerCoefficientBasisPoints(),
 		mechanics.getWarcastingBonusPercent(), mechanics.getEmpowerSpellBonusPercent(),
 		hasWorldroot(mechanics.getHeroCaster()), hopIndex);
 }

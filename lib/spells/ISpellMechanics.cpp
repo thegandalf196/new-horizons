@@ -89,56 +89,7 @@ int64_t multiplyDivideFloor(int64_t value, uint64_t multiplier, int64_t divisor)
 	return quotient;
 }
 
-int64_t checkedStormMultiply(int64_t left, int64_t right)
-{
-	if(left < 0 || right < 0
-		|| (right != 0 && left > std::numeric_limits<int64_t>::max() / right))
-		throw std::overflow_error("Storm of Daggers damage pool overflows");
-	return left * right;
-}
 
-int64_t stormOfDaggersRoundedDamage(int64_t base, int64_t powerCoefficient, int32_t effectPower,
-	int32_t powerDivisor, int32_t spellPowerCoefficientBasisPoints, int32_t warcastingBonusPercent,
-	int32_t empowerSpellBonusPercent, int32_t selectedTargetCount, bool total)
-{
-	if(base < 0 || powerCoefficient < 0 || effectPower < 0 || powerDivisor <= 0
-		|| spellPowerCoefficientBasisPoints < 0 || spellPowerCoefficientBasisPoints > 100000
-		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 1000
-		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000
-		|| selectedTargetCount < 1
-		|| selectedTargetCount > newHorizonsMagic::STORM_OF_DAGGERS_MAX_TARGETS)
-		return 0;
-
-	// Keep the authored fixed base and the full rational Spell Power component
-	// together until the final displayed-total or equal-target rounding. The
-	// generic direct-damage path truncates at the pool boundary, which differs
-	// from the Storm table at positive half values (for example, SP=1 yields 47).
-	const int64_t powerDenominator = checkedStormMultiply(
-		checkedStormMultiply(powerDivisor, 1000000), 100);
-	int64_t spellPowerNumerator = checkedStormMultiply(powerCoefficient, effectPower);
-	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator, spellPowerCoefficientBasisPoints);
-	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator,
-		100LL + warcastingBonusPercent);
-	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator,
-		100LL + empowerSpellBonusPercent);
-	const int64_t fixedNumerator = checkedStormMultiply(base, powerDenominator);
-	if(spellPowerNumerator > std::numeric_limits<int64_t>::max() - fixedNumerator)
-		throw std::overflow_error("Storm of Daggers damage pool overflows");
-	const int64_t poolNumerator = fixedNumerator + spellPowerNumerator;
-
-	const int64_t multiplierPercent = 100
-		+ newHorizonsMagic::STORM_OF_DAGGERS_EXTRA_TARGET_DAMAGE_PERCENT * (selectedTargetCount - 1);
-	const int64_t finalDivisor = (total ? 100LL : 100LL * selectedTargetCount);
-	const int64_t denominator = checkedStormMultiply(powerDenominator, finalDivisor);
-	const int64_t scaledNumerator = checkedStormMultiply(poolNumerator, multiplierPercent);
-	if(scaledNumerator > std::numeric_limits<int64_t>::max() - denominator / 2)
-		throw std::overflow_error("Storm of Daggers damage pool overflows");
-
-	// The authored reference values use ordinary positive half-up rounding for
-	// both the displayed total and the equal per-stack share, without first
-	// truncating a fractional Spell Power term at the pool boundary.
-	return (scaledNumerator + denominator / 2) / denominator;
-}
 }
 
 int64_t scaleWarcastingSpellPowerComponent(const int64_t numerator, const int64_t divisor, const int32_t bonusPercent)
@@ -345,16 +296,6 @@ int32_t Mechanics::getSchoolRankPowerCoefficientPercent() const
 		battleState->getMagicRules(), getHeroCaster(), getSpellId());
 }
 
-int32_t Mechanics::getSpellPowerCoefficientBasisPoints() const
-{
-	const auto * battleCallback = battle();
-	const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
-	if(!battleState)
-		return 10000;
-
-	return newHorizonsMagic::spellPowerCoefficientBasisPoints(
-		battleState->getMagicRules(), getHeroCaster(), getSpellId(), getCastSpellPowerComponentBonusPercent());
-}
 
 int64_t Mechanics::scaleRecipientSpellPowerComponent(int64_t numerator, int64_t divisor, const battle::Unit * target) const
 {
@@ -1312,7 +1253,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			? heroCaster->getDamageSpellSpecialtyBonusPercent(owner->getId())
 			: 0;
 		const int damageCoefficientBasisPoints = damageSpell
-			? spellPowerCoefficientBasisPoints * (100 + damagePerkBonusPercent) / 100
+			? getDirectDamageSpellPowerCoefficientBasisPoints() * (100 + damagePerkBonusPercent) / 100
 			: 10000;
 		const int effectPowerCoefficientBasisPoints = damageSpell
 			? damageCoefficientBasisPoints
@@ -1865,7 +1806,7 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 		const auto & magicRules = battleState->getMagicRules();
 		if(const auto implosion = newHorizonsImplosion::rulesFor(magicRules, owner->getId()))
 			rawDamage = newHorizonsImplosion::damage(*implosion, target->getAvailableHealth(),
-				std::max(0, getEffectPower()), getSpellPowerCoefficientBasisPoints(),
+				std::max(0, getEffectPower()), getDirectDamageSpellPowerCoefficientBasisPoints(),
 				getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
 		if(const auto missingHealthDamage = newHorizonsMagic::soulReaperMissingHealthDamage(
 			magicRules, owner->getId(), target->getShadowGiftMaximumHealth(), target->getAvailableHealth()))
@@ -2162,35 +2103,7 @@ bool BaseMechanics::setStormOfDaggersTargetCount(int32_t selectedTargetCount)
 	return true;
 }
 
-int64_t BaseMechanics::getStormOfDaggersDamagePerTarget(int32_t selectedTargetCount) const
-{
-	const auto * battleState = cb ? cb->getBattle() : nullptr;
-	if(!isNewHorizonsStormOfDaggers() || !battleState)
-		return 0;
 
-	const auto formula = newHorizonsMagic::spellDirectDamage(
-		battleState->getMagicRules(), owner->getJsonKey());
-	if(!formula)
-		return 0;
-	return stormOfDaggersRoundedDamage(formula->base, formula->powerCoefficient,
-		getEffectPower(), getEffectPowerDivisor(), getSpellPowerCoefficientBasisPoints(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), selectedTargetCount, false);
-}
-
-int64_t BaseMechanics::getStormOfDaggersTotalDamage(int32_t selectedTargetCount) const
-{
-	const auto * battleState = cb ? cb->getBattle() : nullptr;
-	if(!isNewHorizonsStormOfDaggers() || !battleState)
-		return 0;
-
-	const auto formula = newHorizonsMagic::spellDirectDamage(
-		battleState->getMagicRules(), owner->getJsonKey());
-	if(!formula)
-		return 0;
-	return stormOfDaggersRoundedDamage(formula->base, formula->powerCoefficient,
-		getEffectPower(), getEffectPowerDivisor(), getSpellPowerCoefficientBasisPoints(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), selectedTargetCount, true);
-}
 
 bool BaseMechanics::isMetamagicFollowup() const
 {

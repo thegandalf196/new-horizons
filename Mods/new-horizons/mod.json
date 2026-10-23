@@ -3084,6 +3084,17 @@
 						"new-horizons:phantomArmy"
 					]
 				},
+				"individualSpecialties": {
+					"version": 1,
+					"graveReaper": {
+						"percentagePointsPerLevel": 1,
+						"maximumPercentagePoints": 20
+					},
+					"warlocksFormula": {
+						"percentPerLevel": 5,
+						"maximumPercent": 100
+					}
+				},
 				"druidSpecialties": {
 					"version": 1,
 					"highLore": {

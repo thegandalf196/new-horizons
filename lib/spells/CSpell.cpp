@@ -95,7 +95,7 @@ int64_t CSpell::calculateDamage(const spells::Caster * caster) const
 	if(hero && newHorizonsMagic::rulesActive(hero->getMagicRules())
 		&& hero->getMagicRules()["rulesetVersion"].Integer() >= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 	{
-		const int spellPowerCoefficientBasisPoints = newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		const int spellPowerCoefficientBasisPoints = newHorizonsMagic::directDamageSpellPowerCoefficientBasisPoints(
 			hero->getMagicRules(), hero, id);
 		const int damagePerkBonusPercent = newHorizonsMagic::spellPowerDamagePerkBonusPercent(
 			hero->getMagicRules(), hero, this);

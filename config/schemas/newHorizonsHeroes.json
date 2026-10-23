@@ -51,6 +51,7 @@
 				"damageSpellSpecialties": {"$ref": "#/definitions/damageSpellSpecialties"},
 				"nonDamageSpellSpecialties": {"$ref": "#/definitions/nonDamageSpellSpecialties"},
 				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"},
+				"individualSpecialties": {"$ref": "#/definitions/individualSpecialties"},
 				"druidSpecialties": {"$ref": "#/definitions/druidSpecialties"},
 				"fortuneChildSpecialty": {
 					"type": "object", "additionalProperties": false,
@@ -97,6 +98,94 @@
 		}
 	],
 	"definitions": {
+		"individualSpecialties": {
+			"description": "Optional captured individual specialties. Absence preserves the previous specialty context; coefficients are configurable provisional balance values.",
+			"type": "object",
+			"additionalProperties": false,
+			"not": {
+				"type": "null"
+			},
+			"minProperties": 3,
+			"maxProperties": 3,
+			"required": [
+				"version",
+				"graveReaper",
+				"warlocksFormula"
+			],
+			"properties": {
+				"version": {
+					"type": "integer",
+					"enum": [
+						1
+					],
+					"not": {
+						"type": "null"
+					}
+				},
+				"graveReaper": {
+					"type": "object",
+					"additionalProperties": false,
+					"not": {
+						"type": "null"
+					},
+					"minProperties": 2,
+					"maxProperties": 2,
+					"required": [
+						"percentagePointsPerLevel",
+						"maximumPercentagePoints"
+					],
+					"properties": {
+						"percentagePointsPerLevel": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1000,
+							"not": {
+								"type": "null"
+							}
+						},
+						"maximumPercentagePoints": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1000,
+							"not": {
+								"type": "null"
+							}
+						}
+					}
+				},
+				"warlocksFormula": {
+					"type": "object",
+					"additionalProperties": false,
+					"not": {
+						"type": "null"
+					},
+					"minProperties": 2,
+					"maxProperties": 2,
+					"required": [
+						"percentPerLevel",
+						"maximumPercent"
+					],
+					"properties": {
+						"percentPerLevel": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1000,
+							"not": {
+								"type": "null"
+							}
+						},
+						"maximumPercent": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 200,
+							"not": {
+								"type": "null"
+							}
+						}
+					}
+				}
+			}
+		},
 		"druidSpecialties": {
 			"description": "Optional captured authored Druid replacements. Absence retains the prior specialty context; present coefficients are configurable provisional values.",
 			"type": "object", "additionalProperties": false,
