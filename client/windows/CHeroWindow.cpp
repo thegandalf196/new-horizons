@@ -427,8 +427,7 @@ void CHeroWindow::configureNewHorizonsLayout()
 		const int y = 192 + static_cast<int>(i) * 44;
 		move(secSkills[i], Point(12, y));
 		move(secSkillValues[i], Point(60, y + 4));
-		move(secSkillNames[i], Point(60, y + 22));
-		secSkillNames[i]->setMaxWidth(74);
+		secSkillNames[i] = heroWindowLabelText::makeSkillName(*this, Point(60, y + 22), 74, true);
 		secSkillValues[i]->setMaxWidth(74);
 		for(int ability = 0; ability < 3; ++ability)
 		{
@@ -598,8 +597,8 @@ void CHeroWindow::restoreLegacyLayout()
 		const int y = 276 + 48 * (i / 2);
 		move(secSkills[i], Point(right ? 162 : 18, y));
 		move(secSkillValues[i], Point(right ? 212 : 68, y + 4));
-		move(secSkillNames[i], Point(right ? 212 : 68, y + 24));
-		secSkillNames[i]->setMaxWidth(right && secSkillSlider ? 71 : 87);
+		secSkillNames[i] = heroWindowLabelText::makeSkillName(*this,
+			Point(right ? 212 : 68, y + 24), right && secSkillSlider ? 71 : 87, false);
 		secSkillValues[i]->setMaxWidth(right && secSkillSlider ? 71 : 87);
 	}
 }

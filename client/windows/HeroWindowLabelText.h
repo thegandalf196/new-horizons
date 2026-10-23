@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../GameEngine.h"
+#include "CMessage.h"
 #include "../render/IFont.h"
 #include "../render/IRenderHandler.h"
 #include "../widgets/TextControls.h"
@@ -12,6 +13,7 @@
 
 #include <cassert>
 #include <initializer_list>
+#include <memory>
 #include <string>
 
 namespace heroWindowLabelText
@@ -51,10 +53,37 @@ inline bool setTitle(CLabel & label, const std::string & text, bool compact)
 	return false;
 }
 
+/// Explicit capture keeps replacements attached to the hero window even when
+/// the caller has no active construction scope. Dropped labels detach on destruction.
+inline std::shared_ptr<CLabel> makeSkillName(CIntObject & owner, Point position, int width, bool compact)
+{
+	OBJECT_CONSTRUCTION_TARGETED(&owner);
+	if(compact)
+		return std::make_shared<CMultiLineLabel>(Rect(position, Point(width, 22)),
+			FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
+	return std::make_shared<CLabel>(position.x, position.y, FONT_SMALL,
+		ETextAlignment::TOPLEFT, Colors::WHITE, "", width);
+}
+
 inline void setSkillName(CLabel & label, const std::string & text, bool compact)
 {
 	if(compact)
-		setFittingText(label, text, 74, {FONT_SMALL, FONT_TINY});
+	{
+		// The learned-name box has room for two Tiny lines, not a wider row.
+		assert(dynamic_cast<CMultiLineLabel *>(&label));
+		for(const auto font : {FONT_SMALL, FONT_TINY})
+		{
+			label.font = font;
+			const auto lines = CMessage::breakText(text, 74, font);
+			const auto height = ENGINE->renderHandler().loadFont(font)->getLineHeight();
+			if(lines.size() * height <= 22)
+			{
+				label.setText(text);
+				return;
+			}
+		}
+		setFittingText(label, text, 74, {FONT_TINY});
+	}
 	else
 	{
 		label.font = FONT_SMALL;

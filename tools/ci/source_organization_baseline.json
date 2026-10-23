@@ -20793,13 +20793,13 @@
     },
     "client/windows/CHeroWindow.cpp": {
       "kind": "exception",
-      "lines": 1141,
+      "lines": 1140,
       "owner": "ui_developer",
-      "rationale": "Shrinking compact Skill-name routing through the existing measured label helper; SMALL then TINY fitting restores the preferred font on each refresh. Existing geometry, full help, click areas, ranks and gameplay remain unchanged. Independently reviewed exact source; rendering pending.",
-      "review": "compact-skill-label-independent-source-review",
-      "review_scope": "measured-compact-skill-name-font-fit-only",
-      "deferral": "UI owner retains decreasing1141-line bound and existing window/lifecycle obligations. Before substantive expansion, extract a cohesive presentation refresh stage with covered/inactive resize, hover, biography, artifact interaction and legacy-layout parity. No rendered acceptance or unrelated growth is implied.",
-      "sha256": "3c7d5345c14786c958173ea8b782c73703b9cd3c16f34eaaf9e422507fdd8e33",
+      "rationale": "Shrinking compact learned-Skill label routing through an exact-window-owned native multiline label factory. Font selection and wrapping are confined to the focused label helper; existing row width, input owners, hover and gameplay remain unchanged. Independent source review only; rendered acceptance remains required.",
+      "review": "compact-skill-wrap-independent-source-review",
+      "review_scope": "exact-owned-compact-skill-multiline-correction",
+      "deferral": "UI owner retains the decreasing1140-line bound. Before substantive expansion, extract a cohesive presentation refresh stage with covered/inactive resize, hover, biography, artifact interaction and legacy-layout parity; preserve active-child ownership and deferred-repaint cancellation.",
+      "sha256": "631f91c6757e645e4d7ad9a33dfa1ba1f0f768edf402d51b6afd244405143e80",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/CHeroWindow.cpp::CHeroWindow::CHeroWindow(const CGHeroInstance * hero) : CWindowObject(useNewHorizonsHeroLayout(hero) ? BORDERED : PLAYER_COLORED, ImagePath::builtin(useNewHorizonsHeroLayout(hero) ? \"newHorizonsHeroBackground\" : ENGINE->isRoeData() ? \"HeroScr3\" : \"HeroScr4\"))#1": {
@@ -20813,13 +20813,15 @@
       "sha256": "66b7b470767d916c7eb90e853536aaf5401bbf7ffa0cfb41ad57e710b21f5bbe"
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::configureNewHorizonsLayout()#1": {
-      "kind": "legacy",
-      "lines": 112,
+      "kind": "exception",
+      "lines": 111,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 112 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "81288b2d6718b68d84f3e4974f9ffdfff8c4146ae19822dcb4279eda44737629"
+      "rationale": "Shrinking layout routing replaces separate label positioning and width mutation with the focused owned-label factory; configureNewHorizonsLayout decreases112 to111 physical lines. No added layout responsibility, geometry or input change. Source-only review does not establish rendered fit.",
+      "review": "compact-skill-wrap-independent-source-review",
+      "review_scope": "exact-owned-compact-skill-multiline-correction",
+      "sha256": "b3fc7e892ba6df3e4453d2ee796d05c15896312b695f99a089775a419f423fb0",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Before further substantive layout expansion, ui_developer must extract a cohesive skill-row presentation/layout owner with explicit label/icon/help ownership and compact-to-legacy transition coverage; preserve parent capture, active state and repaint order."
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::refreshHero(bool refreshArtifactInteraction)#1": {
       "kind": "exception",
@@ -20836,11 +20838,12 @@
       "kind": "exception",
       "lines": 128,
       "owner": "ui_developer",
-      "rationale": "Independently reviewed matching104px legacy specialty label bound on layout restoration; restoreLegacyLayout remains128 physical lines. Exact collision correction only, preserving widget ownership and repaint order; no rendered acceptance.",
-      "review": "IR-HERO-SPECIALTY-LEGACY-LABEL-READABILITY-20261021",
-      "review_scope": "exact-specialty-label-collision-correction",
-      "deferral": "Before further substantive specialty refresh expansion, ui_developer must extract specialty image/name/hover presentation with explicit widgets and read-only input, characterizing switching and layout restoration while preserving ownership and repaint order.",
-      "sha256": "fabb3a9200b4c07d681921495453ead91007c13b5c9aa69b8653dc2e67732987"
+      "rationale": "Exact no-growth legacy restoration recreates the original SMALL single-line CLabel at its original71/87px bounds after compact multiline use. The128-line function gains no new responsibility; factory owns construction capture and old-label teardown. Source-only review; rendering remains pending.",
+      "review": "compact-skill-wrap-independent-source-review",
+      "review_scope": "exact-owned-compact-skill-multiline-correction",
+      "deferral": "Before further substantive layout restoration expansion, ui_developer must extract cohesive skill-row presentation restoration with explicit widget ownership, font reset, covered resize and hover parity. Preserve artifact and garrison owners and deferred-repaint cancellation; exact128-line exception only.",
+      "sha256": "cf4247434f17bfe84d263951cf623a1950d0acac35e19a8c8eecb6894c5cbf5f",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/CKingdomInterface.cpp": {
       "kind": "legacy",
