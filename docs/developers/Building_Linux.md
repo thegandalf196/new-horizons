@@ -160,6 +160,12 @@ as `MODS/`; placing `vcmi-test` directly at the resource root is not equivalent,
 even when its payload hashes match. GoogleTest discovery alone does not exercise
 global test-environment initialization or prove that this mount works.
 
+Native startup also validates original music resources when audio is disabled.
+Provide the original installation's `Mp3` directory alongside its `Data`
+archives through the isolated resource view. Keep original inputs read-only and
+verify them before and after the run. Dummy audio prevents playback; it does not
+replace the music files required for content validation.
+
 The opt-in `NewHorizonsTravelRoundTripAITest` exercises a production save/load
 midway through a paid Water Walk crossing, followed by AI landing and next-day
 renewal. Run its exact filter

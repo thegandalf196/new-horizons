@@ -222,6 +222,7 @@ set(test_SRCS
 		game/NewHorizonsProtectedMobilityTest.cpp
 
 		json/JsonTests.cpp
+		modding/ContentManifestTest.cpp
 
 		map/CMapEditManagerTest.cpp
 		map/CMapFormatTest.cpp
