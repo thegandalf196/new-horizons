@@ -3084,6 +3084,25 @@
 						"new-horizons:phantomArmy"
 					]
 				},
+				"schoolSpellcraftSpecialties": {
+					"version": 1,
+					"overcaster": {
+						"percentPerLevel": 5,
+						"maximumPercent": 100
+					},
+					"darkSavant": {
+						"percentPerLevel": 5,
+						"maximumPercent": 100
+					},
+					"primalFormula": {
+						"percentPerLevel": 5,
+						"maximumPercent": 100
+					},
+					"mireHexer": {
+						"percentPerLevel": 5,
+						"maximumPercent": 100
+					}
+				},
 				"individualSpecialties": {
 					"version": 1,
 					"graveReaper": {

@@ -6,48 +6,10 @@
 #include "ISpellMechanics.h"
 #include "CSpell.h"
 #include "NewHorizonsMagic.h"
-#include "NewHorizonsMagicInternal.h"
-#include "NewHorizonsSpellAvailability.h"
-#include "../entities/hero/NewHorizonsIndividualSpecialties.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/BattleInfo.h"
-#include <array>
 #include <limits>
 
-namespace newHorizonsMagic
-{
-int directDamageSpellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero,
-	SpellID spell, int additionalSpellPowerComponentPercent)
-{
-	const int ordinary = spellPowerCoefficientBasisPoints(rules, hero, spell, additionalSpellPowerComponentPercent);
-	const int specialty = newHorizonsHeroes::warlocksFormulaPercent(hero);
-	if(!specialty || !rulesActive(rules)
-		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		|| !spell.hasValue() || !spell.toSpell() || !spell.toSpell()->isCommonHeroSpell()
-		|| !spellAllowedBySavedRoster(rules, spell) || isAdventureSpell(rules, spell))
-		return ordinary;
-
-	// Component whitelist: these have an immediate damage producer. The
-	// directDamage JSON label also describes stored Fire Wall/Mine damage,
-	// which is deliberately not this contract. Vines' slow/duration still
-	// uses the generic coefficient; its immediate Damage uses this one.
-	constexpr std::array<std::string_view, 20> immediate{
-		"core:armageddon", "core:chainLightning", "new-horizons:masterChainLightning",
-		"new-horizons:soulReaper", "new-horizons:handOfFate", "new-horizons:holyWrath",
-		"new-horizons:vengefulVines", "new-horizons:lifeDrain", "new-horizons:stormOfDaggers",
-		"new-horizons:disintegrate", "core:fireball", "core:frostRing", "core:iceBolt",
-		"core:inferno", "core:lightningBolt", "core:magicArrow", "core:meteorShower",
-		"core:implosion", "core:earthquake", "new-horizons:naturesWrath"};
-	if(std::ranges::find(immediate, spell.toSpell()->getJsonKey()) == immediate.end())
-		return ordinary;
-	const int efficiency = spellcraftEfficiencyPercent(rules, detail::registeredSpellcraftRank(hero));
-	if(efficiency == 100)
-		return ordinary;
-	const int64_t strengthened = newHorizonsHeroes::strengthenedSpellcraftBasisPoints(efficiency, specialty);
-	return static_cast<int>(spellPowerCoefficientPercent(rules, hero, spell)
-		* strengthened * (100 + additionalSpellPowerComponentPercent) / 10000);
-}
-}
 
 namespace spells
 {
@@ -113,7 +75,7 @@ int32_t Mechanics::getSpellPowerCoefficientBasisPoints() const
 	if(!battleState)
 		return 10000;
 
-	return newHorizonsMagic::spellPowerCoefficientBasisPoints(
+	return newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(
 		battleState->getMagicRules(), getHeroCaster(), getSpellId(), getCastSpellPowerComponentBonusPercent());
 }
 
@@ -147,13 +109,27 @@ int64_t BaseMechanics::getStormOfDaggersTotalDamage(int32_t selectedTargetCount)
 		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), selectedTargetCount, true);
 }
 
+
+int32_t BaseMechanics::spellcraftCoefficient(newHorizonsHeroes::SpellcraftComponent component) const
+{
+	if(spellcraftContext.factors)
+		return newHorizonsHeroes::composeSpellcraftCoefficient(*spellcraftContext.factors, component,
+			getCastSpellPowerComponentBonusPercent());
+	return Mechanics::getSpellPowerCoefficientBasisPoints();
+}
+
+int32_t BaseMechanics::getSpellPowerCoefficientBasisPoints() const
+{
+	return spellcraftCoefficient(newHorizonsHeroes::SpellcraftComponent::NUMERICAL);
+}
+
+int32_t BaseMechanics::getDamageSpellPowerCoefficientBasisPoints() const
+{
+	return spellcraftCoefficient(newHorizonsHeroes::SpellcraftComponent::DAMAGE);
+}
+
 int32_t BaseMechanics::getDirectDamageSpellPowerCoefficientBasisPoints() const
 {
-	if(mode != Mode::HERO)
-		return getSpellPowerCoefficientBasisPoints();
-	const auto * battleCallback = battle();
-	const auto * state = battleCallback ? battleCallback->getBattle() : nullptr;
-	return state ? newHorizonsMagic::directDamageSpellPowerCoefficientBasisPoints(
-		state->getMagicRules(), getHeroCaster(), getSpellId(), getCastSpellPowerComponentBonusPercent()) : 10000;
+	return spellcraftCoefficient(newHorizonsHeroes::SpellcraftComponent::DIRECT_DAMAGE);
 }
 }

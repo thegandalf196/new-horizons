@@ -230,7 +230,8 @@ DLL_LINKAGE bool hasReanimatorPerk(const CGHeroInstance * hero);
 /// Base pool before per-recipient surviving wounds and Reanimator composition.
 DLL_LINKAGE std::optional<int64_t> reanimateBaseHealingPool(const JsonNode & rules,
 	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower,
-	int additionalSpellPowerComponentPercent = 0);
+	int additionalSpellPowerComponentPercent = 0,
+	std::optional<int> coefficientOverride = std::nullopt);
 /// Integer Re-animate HP pool, including Reanimator's 25% bonus after
 /// satisfying surviving-unit wounds. School × Spellcraft is kept exact until
 /// the base pool's final HP floor; legacy/non-canonical rows return nullopt.
@@ -316,7 +317,15 @@ DLL_LINKAGE int schoolRankPowerCoefficientPercent(const JsonNode & rules, int sc
 /// Optional saved-v3 Spellcraft efficiency by the actual registered Skill's
 /// rank. Omission in an older v3 snapshot, or use with v1/v2 rules, means 100%.
 DLL_LINKAGE int spellcraftEfficiencyPercent(const JsonNode & rules, int spellcraftRank);
-/// Captured individual rider applied only to this direct-damage component.
+/// Direct-only specialty admission; delayed damage is deliberately excluded.
+DLL_LINKAGE bool isImmediateSpecialtyDamageSpell(SpellID spell);
+/// Ordinary factors only, for non-HERO mechanics and unsupported proxies.
+DLL_LINKAGE int ordinarySpellPowerCoefficientBasisPoints(const JsonNode & rules,
+	const CGHeroInstance * hero, SpellID spell, int additionalSpellPowerComponentPercent = 0);
+/// Damage-qualified school riders include authored delayed damage.
+DLL_LINKAGE int damageSpellPowerCoefficientBasisPoints(const JsonNode & rules,
+	const CGHeroInstance * hero, SpellID spell, int additionalSpellPowerComponentPercent = 0);
+/// Immediate damage additionally admits the direct-only individual rider.
 DLL_LINKAGE int directDamageSpellPowerCoefficientBasisPoints(const JsonNode & rules,
 	const CGHeroInstance * hero, SpellID spell, int additionalSpellPowerComponentPercent = 0);
 /// School-only percentage for the highest-ranked school on an ordinary spell
@@ -326,7 +335,7 @@ DLL_LINKAGE int spellPowerCoefficientPercent(const JsonNode & rules, const CGHer
 /// Exact School × Spellcraft coefficient in basis points for the Spell-Power-
 /// derived term: 10000 is 100%. No rounding is done while composing factors.
 /// Spellcraft is read from the hero's registered new-horizons:spellcraft Skill.
-/// The final optional percentage (0..100) applies after both saved factors and
+/// The final optional percentage (0..200) applies after both saved factors and
 /// affects only the Spell-Power-derived term (for example, Arcane Focus).
 DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero,
 	SpellID spell, int additionalSpellPowerComponentPercent = 0);
@@ -336,13 +345,15 @@ DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const C
 /// floor. Sorrow deliberately ignores the legacy primary-growth divisor.
 DLL_LINKAGE std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInstance * hero,
 	SpellID spell, int32_t rawSpellPower, int warcastingBonusPercent = 0,
-	int empowerSpellBonusPercent = 0, int additionalSpellPowerComponentPercent = 0);
+	int empowerSpellBonusPercent = 0, int additionalSpellPowerComponentPercent = 0,
+	std::optional<int> coefficientOverride = std::nullopt);
 /// Saved-v3 Quicksand count, or nullopt for any other spell/profile. School,
 /// Spellcraft, Warcasting, and Empower scale only the Spell-Power term.
 DLL_LINKAGE std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
 	SpellID spell, int32_t spellPower, int32_t spellPowerDivisor = 1,
 	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0,
-	int additionalSpellPowerComponentPercent = 0);
+	int additionalSpellPowerComponentPercent = 0,
+	std::optional<int> coefficientOverride = std::nullopt);
 /// True only when the saved v3 spell row opts into player-selected Quicksand
 /// placement. Markerless v3 snapshots retain their random legacy placement.
 DLL_LINKAGE bool quicksandSelectedPlacementEnabled(const JsonNode & rules, SpellID spell);

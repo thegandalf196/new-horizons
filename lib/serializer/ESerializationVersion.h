@@ -267,11 +267,13 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS, // captured Isra and Malekith individual coefficients
 
+	NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES, // optional captured school-scoped Spellcraft riders
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS,
+	CURRENT = NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS
@@ -542,3 +544,6 @@ static_assert(ESerializationVersion::NEW_HORIZONS_BOTTOMLESS_MIND > ESerializati
 
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD > ESerializationVersion::NEW_HORIZONS_BOTTOMLESS_MIND,
 	"Master Spellward must remain append-only");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES
+	> ESerializationVersion::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS, "School specialty capture must remain append-only");

@@ -1,12 +1,12 @@
 # Selected UI and artwork status
 
-Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, family counts and separate origin/selection/approval. Current NHART has **4,847 selected payloads**. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
+Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, family counts and separate origin/selection/approval. Current NHART has **4,863 selected payloads**. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
 
 | Current selection record | Scope |
 | --- | --- |
 | perk-art-selections.json | Initial94 purpose-made perk drafts, semantic44 icon + four-state44 family +32 companion; selected versions/provenance explicit |
 | spell-art-selections.json | Seventeen purpose-made custom spell families: book44, scroll/scenario32, effect/immunity30 |
-| runtime-art-additions.json | Later additions and exact descriptor revisions;133 further perk drafts, four Mass-spell icon families, Arcane Breach/Lucidity30 status resources and thirteen specialty icon pairs, with historical payload and provenance checks |
+| runtime-art-additions.json | Later additions and exact descriptor revisions;133 further perk drafts, four Mass-spell icon families, Arcane Breach/Lucidity30 status resources and seventeen specialty icon pairs, with historical payload and provenance checks |
 | runtime-art-manifest.json | Complete selected creature/town/school/spell/perk/Order/interface bytes, origin and approval |
 | platform-icon-provenance.json | Explicit pre-NHART Windows/Linux application-icon exception |
 
@@ -34,7 +34,8 @@ Master Cabir has a provisionally selected four-frame fidget in animation group 1
 Its holding pose and existing action groups are preserved. Native comparison review
 does not establish in-game loop, facing or generated-outline acceptance.
 
-Isra's Grave Reaper and Malekith's Warlock's Formula select transparent 44×44 and
-32×32 specialty icons only when their captured individual-specialty policy is
+Isra's Grave Reaper, Malekith's Warlock's Formula, Zydar's Overcaster, Sandro's Dark
+Savant, Gird's Primal Formula and Styg's Mire Hexer select transparent 44×44 and
+32×32 specialty icons only when their corresponding captured specialty policy is
 present. Historical identities retain their existing presentation. These selections
 remain Provisional; rendered presentation and playable delivery are separate gates.

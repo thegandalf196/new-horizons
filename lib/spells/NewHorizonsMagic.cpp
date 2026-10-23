@@ -618,14 +618,15 @@ bool hasReanimatorPerk(const CGHeroInstance * hero)
 
 std::optional<int64_t> reanimateBaseHealingPool(const JsonNode & rules, const CGHeroInstance * hero,
 	const SpellID spell, const int32_t rawSpellPower,
-	const int additionalSpellPowerComponentPercent)
+	const int additionalSpellPowerComponentPercent,
+	const std::optional<int> coefficientOverride)
 {
 	if(!reanimateEnabled(rules, spell))
 		return std::nullopt;
 	if(rawSpellPower < 0)
 		throw std::invalid_argument("Invalid Re-animate healing-pool input");
 
-	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
+	const int coefficientBasisPoints = coefficientOverride ? *coefficientOverride : spellPowerCoefficientBasisPoints(
 		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		static_cast<int64_t>(REANIMATE_SPELL_POWER_HP_PER_POINT) * rawSpellPower, 1,
@@ -1423,36 +1424,18 @@ int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * 
 	return schoolRankPowerCoefficientPercent(rules, highestSchoolRank);
 }
 
-int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell,
-	const int additionalSpellPowerComponentPercent)
-{
-	// Legal first-cast/faction/response/concentration products can exceed +100%.
-	if(additionalSpellPowerComponentPercent < 0 || additionalSpellPowerComponentPercent > 200)
-		throw std::invalid_argument("Invalid additional Spell Power component percentage");
-
-	if(!hero || legacy(rules) || !rules.isStruct()
-		|| !integer(rules["rulesetVersion"], SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
-			SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-		|| !spell.hasValue() || !spell.toSpell() || !spell.toSpell()->isCommonHeroSpell()
-		|| !spellAllowedBySavedRoster(rules, spell) || isAdventureSpell(rules, spell))
-		return SPELL_POWER_COEFFICIENT_BASIS_POINTS;
-
-	const int schoolCoefficientPercent = spellPowerCoefficientPercent(rules, hero, spell);
-	const int spellcraftCoefficientPercent = spellcraftEfficiencyPercent(rules, registeredSpellcraftRank(hero));
-	const int combinedCoefficientBasisPoints = schoolCoefficientPercent * spellcraftCoefficientPercent;
-	return combinedCoefficientBasisPoints * (100 + additionalSpellPowerComponentPercent) / 100;
-}
 
 std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInstance * hero,
 	const SpellID spell, const int32_t rawSpellPower, const int warcastingBonusPercent,
-	const int empowerBonusPercent, const int additionalSpellPowerComponentPercent)
+	const int empowerBonusPercent, const int additionalSpellPowerComponentPercent,
+	const std::optional<int> coefficientOverride)
 {
 	if(!sorrowRulesEnabled(rules, spell))
 		return std::nullopt;
 	if(rawSpellPower < 0)
 		throw std::invalid_argument("Invalid Sorrow raw Spell Power input");
 
-	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
+	const int coefficientBasisPoints = coefficientOverride ? *coefficientOverride : spellPowerCoefficientBasisPoints(
 		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		rawSpellPower, SORROW_SPELL_POWER_PER_MORALE, coefficientBasisPoints,
@@ -1464,7 +1447,8 @@ std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInsta
 std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
 	const SpellID spell, const int32_t spellPower, const int32_t spellPowerDivisor,
 	const int warcastingBonusPercent, const int empowerBonusPercent,
-	const int additionalSpellPowerComponentPercent)
+	const int additionalSpellPowerComponentPercent,
+	const std::optional<int> coefficientOverride)
 {
 	if(!rulesActive(rules)
 		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
@@ -1476,7 +1460,7 @@ std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInsta
 		|| spellPowerDivisor > std::numeric_limits<int32_t>::max() / QUICKSAND_SPELL_POWER_PER_PATCH_V3)
 		throw std::invalid_argument("Invalid Quicksand Spell Power inputs");
 
-	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
+	const int coefficientBasisPoints = coefficientOverride ? *coefficientOverride : spellPowerCoefficientBasisPoints(
 		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int32_t divisor = spellPowerDivisor * QUICKSAND_SPELL_POWER_PER_PATCH_V3;
 	const int64_t spellPowerPatches = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(

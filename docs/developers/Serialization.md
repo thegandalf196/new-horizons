@@ -51,6 +51,21 @@ their prefixes. Older-format readers reject a rider block rather than silently
 discarding it. The capability is appended after the Fly day-end feature;
 historical enumerator values remain unchanged.
 
+## Captured school-scoped Spellcraft specialties
+
+`NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES` protects the optional versioned
+`schoolSpellcraftSpecialties` block. Its four named coefficient rows are captured
+for new games; historical absence remains absent. The existing
+`individualSpecialties` version and its compatibility boundary are unchanged.
+Direct and enclosing writers reject unsupported captures before their prefixes;
+older-format readers reject the unsupported block rather than discarding it.
+
+Original cast factors are transient mechanics context, not a new saved hero or
+status field. Copies retain the original Hero-cast fact and numerical factors
+derived from saved school membership, including an explicitly empty context. Reflection cannot
+recapture the reflecting side's specialty. Cast-specific component bonuses
+compose afterward; stored effects retain their evaluated numerical snapshot.
+
 ## Captured Fly day-end policy
 
 `NEW_HORIZONS_FLY_DAY_END` protects the presence of

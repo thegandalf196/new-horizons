@@ -220,7 +220,7 @@ int64_t Mechanics::getHexOfPainFlatDamage() const
 	if(getSpellId().toSpell()->getJsonKey() != "new-horizons:hexOfPain")
 		return 0;
 	const auto * hero = getHeroCaster();
-	return scaleHeroLuckDamage(newHorizonsMagic::hexOfPainFlatDamage(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
+	return scaleHeroLuckDamage(newHorizonsMagic::hexOfPainFlatDamage(getEffectPower(), getDamageSpellPowerCoefficientBasisPoints(),
 		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(),
 		hero ? hero->getDamageSpellSpecialtyBonusPercent(getSpellId()) : 0,
 		usesNewHorizonsMagicV3() && hero
@@ -234,7 +234,7 @@ int64_t Mechanics::getPlagueTickDamage() const
 	const auto * hero = getHeroCaster();
 	// Preserve Plague's authored initial snapshot: coefficient, not an extra
 	// Warcasting/Empower application. Children reuse this exact captured value.
-	return scaleHeroLuckDamage(newHorizonsMagic::plagueTickDamage(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
+	return scaleHeroLuckDamage(newHorizonsMagic::plagueTickDamage(getEffectPower(), getDamageSpellPowerCoefficientBasisPoints(),
 		hero ? hero->getDamageSpellSpecialtyBonusPercent(getSpellId()) : 0));
 }
 
@@ -329,7 +329,8 @@ int32_t Mechanics::getNewHorizonsQuicksandPatchCount() const
 
 	const auto patchCount = newHorizonsMagic::quicksandPatchCount(battleState->getMagicRules(),
 		getHeroCaster(), getSpellId(), getEffectPower(), getEffectPowerDivisor(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), getCastSpellPowerComponentBonusPercent());
+		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), getCastSpellPowerComponentBonusPercent(),
+		getSpellPowerCoefficientBasisPoints());
 	return patchCount.value_or(0);
 }
 
@@ -575,13 +576,6 @@ static bool spellsShareSchool(const CSpell * first, const CSpell * second)
 	return shared;
 }
 
-BattleCast::BattleCast(const CBattleInfoCallback * cb_, const Caster * caster_, const Mode mode_, const CSpell * spell_):
-	spell(spell_),
-	cb(cb_),
-	caster(caster_),
-	mode(mode_)
-{
-}
 
 BattleCast::~BattleCast() = default;
 
@@ -949,6 +943,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	cb(event->getBattle())
 {
 	caster = event->getCaster();
+	spellcraftContext = newHorizonsHeroes::resolveSpellcraftContext(event);
 	heroLuck = event->getHeroLuck();
 	metamagicFollowup = event->isMetamagicFollowup();
 	massSlow = event->getMassSlow();
@@ -1231,7 +1226,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			effectValue = *newHorizonsMagic::reanimateBaseHealingPool(
 				reanimateBattle->getMagicRules(), reanimateHero, owner->getId(),
 				std::max(reanimateHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), 0),
-				getCastSpellPowerComponentBonusPercent());
+				getCastSpellPowerComponentBonusPercent(), getSpellPowerCoefficientBasisPoints());
 		}
 		else if(value.has_value())
 			effectValue = *value; // Explicit zero is an override, not absence.
@@ -1240,10 +1235,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		else
 		{
 		const auto * battle = cb->getBattle();
-		const int spellPowerCoefficientBasisPoints = battle
-			? newHorizonsMagic::spellPowerCoefficientBasisPoints(
-				battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), getCastSpellPowerComponentBonusPercent())
-			: 10000;
+		const int spellPowerCoefficientBasisPoints = getSpellPowerCoefficientBasisPoints();
 		const auto * heroCaster = caster->getHeroCaster();
 		const bool damageSpell = owner->isDamage() || usesNewHorizonsEarthquake();
 		const int damagePerkBonusPercent = battle && damageSpell

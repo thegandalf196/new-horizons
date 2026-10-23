@@ -444,6 +444,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CHeroOverview.h
 	windows/HeroStartingPreview.h
 	windows/HeroSpecialtyPresentation.h
+	windows/HeroWindowLabelText.h
 	windows/CHeroWindow.h
 	windows/HeroGrowthWindow.h
 	windows/HeroGrowthPerkPresentation.h

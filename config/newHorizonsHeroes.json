@@ -96,6 +96,13 @@
 		"componentPercent": 20,
 		"spells": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty", "new-horizons:hydrasVitality", "new-horizons:guardianSpirit", "new-horizons:crusade", "new-horizons:focusMagic", "new-horizons:phantomArmy"]
 	},
+	"schoolSpellcraftSpecialties": {
+		"version": 1,
+		"overcaster": {"percentPerLevel": 5, "maximumPercent": 100},
+		"darkSavant": {"percentPerLevel": 5, "maximumPercent": 100},
+		"primalFormula": {"percentPerLevel": 5, "maximumPercent": 100},
+		"mireHexer": {"percentPerLevel": 5, "maximumPercent": 100}
+	},
 	"individualSpecialties": {
 		"version": 1,
 		"graveReaper": {"percentagePointsPerLevel": 1, "maximumPercentagePoints": 20},

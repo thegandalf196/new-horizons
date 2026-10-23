@@ -22,7 +22,7 @@ constexpr unsigned COMBAT_SCRIPT = 4;
 
 // These are reviewed implementation contracts, not generated build metadata.
 // A source change must fail closed until its forecast equivalence is reviewed.
-constexpr std::string_view DAMAGE_SHA256 = "eaa1d480ac162437bc442c28574e6d79a9f3c9c0123adb826b7a15d1be8c55af";
+constexpr std::string_view DAMAGE_SHA256 = "370d909ae20343bdd1eebb6ba34638ac46e10ced627a4bfd26e148f209addb11";
 constexpr std::string_view TIMED_SHA256 = "683dfcc8e294087de5b252592d4a2bd002298547fef78d1609afa76060aaa086";
 constexpr std::string_view UNIT_EFFECT_SHA256 = "cba59fd9ea526e021104813ec9602fd4d9eb1e232e46a263d894e9417d3e39a0";
 constexpr std::string_view BATTLE_LOG_SHA256 = "a05fb3578afcabce40c2f60bcac17623c7ca3b30a6ae530be2a528b0e4cb8ce7";

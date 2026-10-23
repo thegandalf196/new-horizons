@@ -11,6 +11,7 @@
 
 #include "NewHorizonsPrimaryProfile.h"
 #include "NewHorizonsIndividualSpecialties.h"
+#include "NewHorizonsSchoolSpellcraft.h"
 #include "NewHorizonsPrimaryGrowth.h"
 #include "NewHorizonsPerkState.h"
 #include <functional>
@@ -130,7 +131,7 @@ struct DLL_LINKAGE ArcanePreparationSpecialtyRules
 	int maximumPercent = 100;
 };
 DLL_LINKAGE std::optional<ArcanePreparationSpecialtyRules> arcanePreparationSpecialtyRules(const JsonNode & development);
-DLL_LINKAGE void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported, bool ridersSupported = false);
+DLL_LINKAGE void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported, bool ridersSupported = false, bool schoolSupported = false);
 
 /// Captured Andra capacity coefficient; absent historical policy is inert.
 struct DLL_LINKAGE BottomlessMindSpecialtyRules

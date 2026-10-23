@@ -23,6 +23,7 @@
 #include "../GameConstants.h"
 #include "../bonuses/Bonus.h"
 #include "NewHorizonsVengefulVines.h"
+#include "../entities/hero/NewHorizonsSchoolSpellcraft.h"
 
 struct Query;
 class IBattleState;
@@ -138,6 +139,7 @@ public:
 	virtual OptionalValue getEffectDuration() const = 0;
 	virtual bool isConcentrated() const { return false; }
 	virtual bool hasSpellcraftTargetSnapshot() const { return false; }
+	virtual std::optional<newHorizonsHeroes::SpellcraftCastContext> getSpellcraftContext() const { return std::nullopt; }
 	/// Additional mana selected for a spell-specific cast option.  The default
 	/// keeps old callers and non-Sorcery spells unchanged.
 	virtual OptionalValue getOvercharge() const { return std::nullopt; }
@@ -193,6 +195,7 @@ public:
 	OptionalValue getEffectDuration() const override;
 	bool isConcentrated() const override { return concentration; }
 	bool hasSpellcraftTargetSnapshot() const override { return concentrationClassified; }
+	std::optional<newHorizonsHeroes::SpellcraftCastContext> getSpellcraftContext() const override { return spellcraftContext; }
 	/// One unboosted deterministic target pass precedes final numerical construction.
 	std::unique_ptr<Mechanics> mechanicsForTarget(const Target & target) const;
 	OptionalValue getOvercharge() const override;
@@ -258,6 +261,7 @@ private:
 
 	bool concentration = false;
 	bool concentrationClassified = false;
+	std::optional<newHorizonsHeroes::SpellcraftCastContext> spellcraftContext;
 
 	///for Archangel-like casting
 	OptionalValue64 effectValue;
@@ -377,7 +381,8 @@ public:
 	/// Effective saved-rules school-rank coefficient for this spell and caster.
 	int32_t getSchoolRankPowerCoefficientPercent() const;
 	/// Effective saved-rules School × Spellcraft coefficient, in basis points.
-	int32_t getSpellPowerCoefficientBasisPoints() const;
+	virtual int32_t getSpellPowerCoefficientBasisPoints() const;
+	virtual int32_t getDamageSpellPowerCoefficientBasisPoints() const { return getSpellPowerCoefficientBasisPoints(); }
 	/// Direct damage only: does not strengthen a mixed spell's control/duration terms.
 	virtual int32_t getDirectDamageSpellPowerCoefficientBasisPoints() const
 	{ return getSpellPowerCoefficientBasisPoints(); }
@@ -562,6 +567,8 @@ private:
 class DLL_LINKAGE BaseMechanics : public Mechanics
 {
 public:
+	int32_t getSpellPowerCoefficientBasisPoints() const override;
+	int32_t getDamageSpellPowerCoefficientBasisPoints() const override;
 	int32_t getDirectDamageSpellPowerCoefficientBasisPoints() const override;
 	int32_t getHeroLuckDamageMultiplierPercent() const override;
 	virtual ~BaseMechanics();
@@ -667,6 +674,8 @@ protected:
 	BaseMechanics(const IBattleCast * event);
 
 private:
+	newHorizonsHeroes::SpellcraftCastContext spellcraftContext;
+	int32_t spellcraftCoefficient(newHorizonsHeroes::SpellcraftComponent component) const;
     IBattleCast::Value rangeLevel;
 	IBattleCast::Value effectLevel;
 

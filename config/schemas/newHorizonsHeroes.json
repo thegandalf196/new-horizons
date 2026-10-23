@@ -51,6 +51,7 @@
 				"damageSpellSpecialties": {"$ref": "#/definitions/damageSpellSpecialties"},
 				"nonDamageSpellSpecialties": {"$ref": "#/definitions/nonDamageSpellSpecialties"},
 				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"},
+				"schoolSpellcraftSpecialties": {"$ref": "#/definitions/schoolSpellcraftSpecialties"},
 				"individualSpecialties": {"$ref": "#/definitions/individualSpecialties"},
 				"druidSpecialties": {"$ref": "#/definitions/druidSpecialties"},
 				"fortuneChildSpecialty": {
@@ -98,6 +99,28 @@
 		}
 	],
 	"definitions": {
+		"schoolSpellcraftSpecialties": {
+			"description": "Optional captured school-scoped Spellcraft specialties. Absence preserves the prior context; coefficients are provisional balance values.",
+			"type": "object", "additionalProperties": false, "not": {"type": "null"},
+			"minProperties": 5, "maxProperties": 5,
+			"required": ["version", "overcaster", "darkSavant", "primalFormula", "mireHexer"],
+			"properties": {
+				"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
+				"overcaster": {"$ref": "#/definitions/schoolSpellcraftCoefficients"},
+				"darkSavant": {"$ref": "#/definitions/schoolSpellcraftCoefficients"},
+				"primalFormula": {"$ref": "#/definitions/schoolSpellcraftCoefficients"},
+				"mireHexer": {"$ref": "#/definitions/schoolSpellcraftCoefficients"}
+			}
+		},
+		"schoolSpellcraftCoefficients": {
+			"type": "object", "additionalProperties": false, "not": {"type": "null"},
+			"minProperties": 2, "maxProperties": 2,
+			"required": ["percentPerLevel", "maximumPercent"],
+			"properties": {
+				"percentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+				"maximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}}
+			}
+		},
 		"individualSpecialties": {
 			"description": "Optional captured individual specialties. Absence preserves the previous specialty context; coefficients are configurable provisional balance values.",
 			"type": "object",

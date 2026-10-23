@@ -2101,11 +2101,11 @@ void CGameState::validateNewHorizonsWeightedPerkSerialization(bool supported, bo
 }
 
 
-void CGameState::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported) const
+void CGameState::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported, bool schoolSupported) const
 {
-	newHorizonsHeroes::validateIndividualSpecialtiesSerialization(heroDevelopmentRules, supported, ridersSupported);
+	newHorizonsHeroes::validateIndividualSpecialtiesSerialization(heroDevelopmentRules, supported, ridersSupported, schoolSupported);
 	if(map)
-		map->validateNewHorizonsIndividualSpecialtiesSerialization(supported, ridersSupported);
+		map->validateNewHorizonsIndividualSpecialtiesSerialization(supported, ridersSupported, schoolSupported);
 }
 
 void CGameState::validateNewHorizonsBottomlessMindSerialization(bool supported) const

@@ -21,6 +21,7 @@ class IndividualRiderDamageIntegrationTest : public HeroCommandFixture
 protected:
 	using Snapshot = std::vector<std::vector<std::byte>>;
 	using Branch = std::shared_ptr<HypotheticBattle>;
+	bool schoolRider = false;
 	CStack * actor = nullptr;
 	CStack * target = nullptr;
 	CStack * other = nullptr;
@@ -48,17 +49,29 @@ protected:
 		// Deliberately unlike installed 5/100: forecasts must use the captured policy.
 		riders["warlocksFormula"]["percentPerLevel"].Integer() = 3;
 		riders["warlocksFormula"]["maximumPercent"].Integer() = 60;
+		rules.Struct().erase("schoolSpellcraftSpecialties");
+		if(schoolRider)
+		{
+			auto & school = rules["schoolSpellcraftSpecialties"];
+			school["version"].Integer() = 1;
+			for(const auto key : {"overcaster", "darkSavant", "primalFormula", "mireHexer"})
+			{
+				school[key]["percentPerLevel"].Integer() = 3;
+				school[key]["maximumPercent"].Integer() = 60;
+			}
+		}
 		ASSERT_NO_THROW(newHorizonsHeroes::validateHeroRules(rules, true));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
-	void prepare()
+	void prepare(bool school = false)
 	{
+		schoolRider = school;
 		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
 		startGame();
-		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:malekith")));
+		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode(schoolRider ? "core:gird" : "core:malekith")));
 		attackerSideHero->level = 10;
 		for(const auto & [school, skill] : attackerSideHero->getMagicRules()["schoolSkills"].Struct())
 			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill.String())),
@@ -256,4 +269,50 @@ TEST_F(IndividualRiderDamageIntegrationTest, DetachedOriginalCastKeepsCapturedCo
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action(spell)));
 	EXPECT_EQ(target->getAvailableHealth(), projectedHealth);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 4);
+}
+
+TEST_F(IndividualRiderDamageIntegrationTest, GirdDetachedMixedVinesKeepsCapturedRuleAndParentSiblingNativeIsolation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	const int64_t expected = 20 + 11LL * 200 * 115 * 139 / (10 * 100 * 100);
+	ASSERT_EQ(expected, 371);
+	const auto nativeBefore = nativeSnapshot();
+	const auto health = target->getAvailableHealth();
+	int64_t projectedHealth = 0;
+	{
+		const auto live = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		auto parent = std::make_shared<HypotheticBattle>(environment.get(), live);
+		warm(parent);
+		auto first = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		warm(first);
+		warm(sibling);
+		const auto parentBefore = branchSnapshot(parent), siblingBefore = branchSnapshot(sibling);
+		PossibleSpellcast candidate;
+		candidate.spell = vines().toSpell();
+		for(const auto hex : {BattleHex(8, 5), BattleHex(9, 5), BattleHex(10, 5)})
+			candidate.dest.emplace_back(hex);
+		spells::BattleCast original(first.get(), attackerSideHero, spells::Mode::HERO, candidate.spell);
+		const auto mechanics = original.mechanicsForTarget(candidate.dest);
+		EXPECT_EQ(mechanics->getSpellPowerCoefficientBasisPoints(), 15985);
+		EXPECT_EQ(mechanics->getDirectDamageSpellPowerCoefficientBasisPoints(), 15985);
+		EXPECT_EQ(mechanics->getEffectValue(), expected);
+		ASSERT_NO_FATAL_FAILURE(project(first, candidate, *live));
+		projectedHealth = first->battleGetUnitByID(target->unitId())->getAvailableHealth();
+		EXPECT_EQ(health - projectedHealth, expected);
+		EXPECT_EQ(first->battleGetUnitByID(other->unitId())->getAvailableHealth(), other->getAvailableHealth() - expected);
+		EXPECT_FALSE(heroActionProjection::admitCandidate(*first, BattleSide::ATTACKER, candidate).admitted);
+		EXPECT_EQ(branchSnapshot(parent), parentBefore);
+		EXPECT_EQ(branchSnapshot(sibling), siblingBefore);
+		EXPECT_EQ(nativeSnapshot(), nativeBefore);
+		ASSERT_NO_FATAL_FAILURE(project(sibling, candidate, *live));
+		EXPECT_EQ(sibling->battleGetUnitByID(target->unitId())->getAvailableHealth(), projectedHealth);
+		EXPECT_EQ(branchSnapshot(parent), parentBefore);
+		EXPECT_EQ(nativeSnapshot(), nativeBefore);
+	}
+	EXPECT_EQ(nativeSnapshot(), nativeBefore);
+	const auto mana = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action(vines())));
+	EXPECT_EQ(target->getAvailableHealth(), projectedHealth);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 5);
 }

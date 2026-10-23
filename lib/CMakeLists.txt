@@ -265,6 +265,8 @@ set(lib_MAIN_SRCS
 	entities/creature/NewHorizonsRecruitmentTraining.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
 	entities/hero/NewHorizonsIndividualSpecialties.cpp
+	entities/hero/NewHorizonsSchoolSpellcraft.cpp
+	entities/hero/NewHorizonsSchoolSpellcraftPresentation.cpp
 	entities/hero/NewHorizonsIndividualSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsSkillSpecialtyRules.cpp
@@ -465,6 +467,8 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsPandemonium.cpp
 	spells/NewHorizonsDirectDamage.cpp
 	spells/NewHorizonsDamagePower.cpp
+	spells/NewHorizonsSpellcraftPower.cpp
+	spells/NewHorizonsSpellcraftCast.cpp
 	spells/NewHorizonsEagleEye.cpp
 	spells/NewHorizonsFriendlyFire.cpp
 	spells/NewHorizonsMagic.cpp
@@ -891,6 +895,7 @@ set(lib_MAIN_HEADERS
 	entities/creature/NewHorizonsRecruitmentTraining.h
 	entities/hero/NewHorizonsHeroRules.h
 	entities/hero/NewHorizonsIndividualSpecialties.h
+	entities/hero/NewHorizonsSchoolSpellcraft.h
 	entities/hero/NewHorizonsRuleValidation.h
 	entities/hero/NewHorizonsSkillSpecialtyRules.h
 	entities/hero/HeroStartingProjection.h

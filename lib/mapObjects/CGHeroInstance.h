@@ -751,7 +751,8 @@ public:
 		if(h.saving)
 			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES));
 		if(h.saving)
 			newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
@@ -913,7 +914,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 				newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS));
+					h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS),
+					h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES));
 				newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 				newHorizonsHeroes::validateMasterSpellwardSerialization(primaryGrowthRules,

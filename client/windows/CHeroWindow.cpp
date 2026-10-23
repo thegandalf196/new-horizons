@@ -11,6 +11,7 @@
 #include "SpellPointPresentation.h"
 #include "CHeroWindow.h"
 #include "HeroSpecialtyPresentation.h"
+#include "HeroWindowLabelText.h"
 #include "NewHorizonsPerkBrowser.h"
 #include "NewHorizonsPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
@@ -39,8 +40,6 @@
 #include "../widgets/TextControls.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/Slider.h"
-#include "render/IFont.h"
-#include "render/IRenderHandler.h"
 
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CSkillHandler.h"
@@ -719,17 +718,15 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	titleText.appendTextID("core.genrltxt.342");
 	titleText.replaceNumber(curHero->level);
 	titleText.replaceTextID(curHero->getClassNameTextID());
-	title->setText(titleText.toString(&GAME->translator()));
+	const auto fullTitle = titleText.toString(&GAME->translator());
+	const bool titleElided = heroWindowLabelText::setTitle(*title, fullTitle, newHorizonsLayout);
 
 	specArea->text = curHero->getSpecialtyDescriptionTranslated();
 	const auto specialty = heroSpecialtyPresentation(*curHero);
 	specImage->setAnimationPath(specialty.animation(), specialty.frame());
 	specImage->setScale(Point(44, 44));
-	const auto specialtyFont = ENGINE->renderHandler().loadFont(FONT_SMALL);
-	const bool narrowLegacyName = !newHorizonsLayout && specialtyFont->getStringWidth(specialty.name) > 104;
-	specName->font = narrowLegacyName ? FONT_TINY : FONT_SMALL;
 	specArea->hoverText = specialty.name;
-	specName->setText(specialty.name);
+	heroWindowLabelText::setSpecialtyName(*specName, specialty.name, newHorizonsLayout);
 
 	tacticsButton = std::make_shared<CToggleButton>(newHorizonsLayout ? Point(544, 544) : Point(539, 483), AnimationPath::builtin("hsbtns8.def"), std::make_pair(LIBRARY->generaltexth->translate("core.heroscrn.26"), LIBRARY->generaltexth->translate("core.heroscrn.31")), 0, EShortcut::HERO_TOGGLE_TACTICS);
 	tacticsButton->addHoverText(EButtonState::HIGHLIGHTED, LIBRARY->generaltexth->translate("core.heroscrn.25"));
@@ -742,6 +739,8 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 
 	dismissButton->addHoverText(EButtonState::NORMAL, dismissText.toString(&GAME->translator()));
 	portraitArea->hoverText = curHero->getObjectName().toString(&GAME->translator());
+	if(titleElided)
+		portraitArea->hoverText += " / " + fullTitle;
 	portraitArea->text = GAME->translator().translate(curHero->getBiographyTextID());
 	portraitImage->setFrame(curHero->getIconIndex());
 

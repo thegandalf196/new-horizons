@@ -48470,6 +48470,166 @@
       "origin": "built-in-text-only-generated-specialty-transparent-foreground-own-image-framing-correction-native-export",
       "selection": "selected-provisional-standalone-specialty-foreground-v1-isra-malekith-2026-10-23",
       "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GirdPrimalFormula/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GirdPrimalFormula/32.json",
+      "size": 102,
+      "sha256": "5a16dd57ef0b1160e79984e661a2dba5523fab6df98e2c0adce207658548556e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GirdPrimalFormula/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GirdPrimalFormula/44.json",
+      "size": 102,
+      "sha256": "c1283bb12f850c9f3d42c54978b41268c1d57a041ee46d1dede1fabd865419dd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GirdPrimalFormula/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GirdPrimalFormula/icon-32.png",
+      "size": 1833,
+      "sha256": "805676c9e776dcea03db6d39e6daeb6c1285d146f7be455625c130ac3416f4ff",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GirdPrimalFormula/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GirdPrimalFormula/icon-44.png",
+      "size": 3255,
+      "sha256": "ec30e45d5d860e3facb04e66313e5a44d0b46ef94a40147cc5a71c24d3aa1561",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SandroDarkSavant/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SandroDarkSavant/32.json",
+      "size": 101,
+      "sha256": "bced92b604e8b95c73c6d1d4d713df3667854ccb07837dc4e9cd7b636a49aa44",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SandroDarkSavant/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SandroDarkSavant/44.json",
+      "size": 101,
+      "sha256": "a62f7309babca40381eae93f2889551c0ce67c5fee5da2850019430fa6b052b8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SandroDarkSavant/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SandroDarkSavant/icon-32.png",
+      "size": 2004,
+      "sha256": "ccd2b0929a2768ab1f5d6c4c6eb1ea1c71afcdc856fdbe240aeb44a9f92ba0a7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SandroDarkSavant/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SandroDarkSavant/icon-44.png",
+      "size": 3587,
+      "sha256": "f229bb69ed831c328b1d339e83891a445469acfc47a51caed40d040a216889aa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/StygMireHexer/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/StygMireHexer/32.json",
+      "size": 98,
+      "sha256": "75630a74f6d0b213eb23a7dd0387584405b4cd330e3256dbe1381c9ceced05e7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/StygMireHexer/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/StygMireHexer/44.json",
+      "size": 98,
+      "sha256": "e14eff49138c6e19df6aef02b6ddf0d3fb13a386d854c230a51436eb06c19e18",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/StygMireHexer/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/StygMireHexer/icon-32.png",
+      "size": 1739,
+      "sha256": "cd2c79ea54914e55fc4dc8fa25560e3e95003ad90fdda3df2abadcb50f807c10",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/StygMireHexer/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/StygMireHexer/icon-44.png",
+      "size": 3017,
+      "sha256": "19096a54f7abcdc273affa161de67d56d5e57e349f57adfac543a55b629b14e5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ZydarOvercaster/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ZydarOvercaster/32.json",
+      "size": 100,
+      "sha256": "df786a97b712e9dad735f6b75742326327bc99f799a9a22387e6639c4e244cf8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ZydarOvercaster/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ZydarOvercaster/44.json",
+      "size": 100,
+      "sha256": "7f310119173f9d02bcab598611e7c7a64bdd6b1737cf222640603466700bc986",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ZydarOvercaster/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ZydarOvercaster/icon-32.png",
+      "size": 1466,
+      "sha256": "68d4fb94cbda6baef533a02378333f85946ec3603a53c25c9f763a6c2302991d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ZydarOvercaster/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ZydarOvercaster/icon-44.png",
+      "size": 2533,
+      "sha256": "4384ad4d68f8cebac10e2f0772886afa7d47036958b4bbc7a52cc47e47d26359",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-text-only-generated-specialty-transparent-foreground-native-export",
+      "selection": "selected-provisional-standalone-specialty-foreground-v1-four-school-spellcraft-2026-10-23",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
     }
   ],
   "requiredFamilies": [
@@ -48484,7 +48644,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 2765,
+    "builtin-skills-perks-orders-and-ui": 2781,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

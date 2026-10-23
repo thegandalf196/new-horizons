@@ -213,14 +213,14 @@ void describeSpellcraft(std::string & result, const CGHeroInstance * hero, const
 		&& !spellSchoolSkills(hero->getMagicRules(), spell->getId()).empty())
 	{
 		const int efficiencyPercent = spellcraftEfficiencyPercent(hero->getMagicRules(), registeredSpellcraftRank(hero));
-		result += "\n\nSpellcraft efficiency: " + std::to_string(efficiencyPercent)
+		result += "\n\nBase Spellcraft efficiency: " + std::to_string(efficiencyPercent)
 			+ "% on Spell Power-derived terms, multiplying with School rank.";
 		const int ordinary = spellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
 		const int direct = directDamageSpellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
 		if(direct != ordinary)
-			result += " Warlock's Formula changes the combined School/Spellcraft factor to "
+			result += " The specialty changes the combined School/Spellcraft factor to "
 				+ percentFromBasisPoints(direct)
-				+ " for direct-damage Spell Power components only; other components retain the ordinary factor.";
+				+ " for damage Spell Power components; other components retain their ordinary factor.";
 	}
 }
 
@@ -238,14 +238,14 @@ void appendCapturedReadouts(std::string & result, const CGHeroInstance * hero, c
 			+ " (before battle-only Warcasting; real HP floors only after the capped fraction and Illusionist).";
 	if(spell->getJsonKey() == "new-horizons:hexOfPain")
 		result += "\nCurrent ordinary captured flat damage: "
-			+ std::to_string(hexOfPainFlatDamage(rawPower, coefficientBasisPoints, 0,
+			+ std::to_string(hexOfPainFlatDamage(rawPower, damageSpellPowerCoefficientBasisPoints(savedMagicRules, hero, spell->getId()), 0,
 				empowerSpellBonusPercent(savedMagicRules, hero, spell->getId()),
 				hero->getDamageSpellSpecialtyBonusPercent(spell->getId()),
 				hasSavedSchoolRankCoefficient && hero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.painweaver")))
 			+ " (before battle-only Warcasting). Each trigger adds the unchanged 10% damage share.";
 	if(spell->getJsonKey() == "new-horizons:plague")
 		result += "\nCurrent captured raw tick damage: "
-			+ std::to_string(plagueTickDamage(rawPower, coefficientBasisPoints,
+			+ std::to_string(plagueTickDamage(rawPower, damageSpellPowerCoefficientBasisPoints(savedMagicRules, hero, spell->getId()),
 				hero->getDamageSpellSpecialtyBonusPercent(spell->getId())))
 			+ ". Later ticks and child infections reuse this snapshot.";
 	if(phantomCoefficient && hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId()) > 0)

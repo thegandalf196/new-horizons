@@ -10,9 +10,11 @@
 #include "StdInc.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/entities/hero/NewHorizonsSchoolSpellcraft.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include <stdexcept>
+#include <limits>
 
 namespace
 {
@@ -366,6 +368,29 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandSelectedPlacementIsStrictSavedV3OptIn
 	malformed = formulaRules();
 	malformed["spells"][quicksandKey]["selectedPlacement"].Bool() = true;
 	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+}
+
+TEST(NewHorizonsMagicV2RulesTest, UnregisteredHeroUsesOrdinaryFactorsWithoutSpecialtyCapture)
+{
+	const auto current = originalRules();
+	const auto arrow = SpellID(SpellID::decode(arrowKey));
+	const auto schools = newHorizonsMagic::spellSchoolSkills(current, arrow);
+	ASSERT_EQ(schools.size(), 1u);
+	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+	ASSERT_NE(spellcraft, SecondarySkill::NONE);
+	CGHeroInstance hero(nullptr);
+	hero.secSkills = {{schools.front(), MasteryLevel::EXPERT}, {spellcraft, MasteryLevel::BASIC}};
+	for(const auto type : {HeroTypeID::NONE, HeroTypeID::RANDOM, HeroTypeID(std::numeric_limits<int32_t>::max())})
+	{
+		hero.setHeroType(type);
+		const auto captured = newHorizonsHeroes::captureSpellcraftContext(current, &hero, arrow, true);
+		EXPECT_TRUE(captured.originalHero);
+		EXPECT_FALSE(captured.factors);
+		// The generic descriptor still contributes its actual School and Spellcraft ranks.
+		EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(current, &hero, arrow), 15950);
+		EXPECT_EQ(newHorizonsMagic::damageSpellPowerCoefficientBasisPoints(current, &hero, arrow), 15950);
+		EXPECT_EQ(newHorizonsMagic::directDamageSpellPowerCoefficientBasisPoints(current, &hero, arrow), 15950);
+	}
 }
 
 TEST(NewHorizonsMagicV2RulesTest, AdventureSpellsAndCreatureAbilitiesExcludeBothRankFactors)

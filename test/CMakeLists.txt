@@ -214,6 +214,7 @@ set(test_SRCS
 		hero/NewHorizonsLogisticsLevelWireTest.cpp
 		hero/NewHorizonsHeroRulesTest.cpp
 		hero/NewHorizonsIndividualSpecialtiesTest.cpp
+	hero/NewHorizonsSchoolSpellcraftRulesTest.cpp
 		hero/NewHorizonsSkillSpecialtyQueryTest.cpp
 		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroBiographyTest.cpp
@@ -501,6 +502,7 @@ set(test_SRCS
 		server/battles/NewHorizonsCureTargetTest.cpp
 		server/battles/NewHorizonsDruidConsumerTest.cpp
 		server/battles/NewHorizonsIndividualSpecialtyConsumerTest.cpp
+	server/battles/NewHorizonsSchoolSpellcraftConsumerTest.cpp
 		server/battles/NewHorizonsCanonicalSpellClausesSerializationTest.cpp
 		server/battles/NewHorizonsImplosionTest.cpp
 		server/battles/NewHorizonsTemporaryMagicDispelTest.cpp

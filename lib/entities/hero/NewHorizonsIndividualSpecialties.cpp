@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsSchoolSpellcraft.h"
 #include "NewHorizonsRuleValidation.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
@@ -81,8 +82,9 @@ std::optional<ArcanePreparationSpecialtyRules> arcanePreparationSpecialtyRules(c
 }
 
 
-void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported, bool ridersSupported)
+void validateIndividualSpecialtiesSerialization(const JsonNode & development, bool supported, bool ridersSupported, bool schoolSupported)
 {
+	validateSchoolSpellcraftSerialization(development, schoolSupported);
 	if(!development.isStruct())
 		return;
 	if(development.Struct().contains("individualSpecialties"))
