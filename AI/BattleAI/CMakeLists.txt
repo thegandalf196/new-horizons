@@ -73,6 +73,7 @@ set(battleAI_SRCS
 		EnemyBypassReachability.cpp
 		BattleExchangeFutureAttack.cpp
 		BattleShroudStrike.cpp
+		PrimaryFortuneReceipt.cpp
 )
 
 set(battleAI_HEADERS
@@ -133,6 +134,7 @@ set(battleAI_HEADERS
 		BattleExchangeVariant.h
 		EnemyBypassReachability.h
 		BattleShroudStrike.h
+		PrimaryFortuneReceipt.h
 )
 
 assign_source_group(${battleAI_SRCS} ${battleAI_HEADERS})

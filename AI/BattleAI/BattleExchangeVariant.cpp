@@ -11,6 +11,7 @@
 #include "BracePrimaryState.h"
 #include "BattleExchangeVariant.h"
 #include "BattleShroudStrike.h"
+#include "PrimaryFortuneReceipt.h"
 #include "DamageCacheAdmission.h"
 #include "ProjectedTargetHit.h"
 #include "SelectedAttackReceipt.h"
@@ -796,11 +797,7 @@ float BattleExchangeVariant::trackAttack(
 	}
 	BattleAttackInfo projectedAttack(attacker.get(), defender.get(), 0, shooting);
 	projectedAttack.protectIntercepted = protectIntercepted;
-	const bool perfectFortune = hb->battleCanTriggerPerfectFortune(projectedAttack);
-	const auto perfectFortuneSide = hb->playerToSide(hb->battleGetActionController(projectedAttack.attacker));
-	const bool serendipityOrdinaryAttack = !projectedAttack.secondaryAttack
-		&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(projectedAttack.attacker, projectedAttack.physicalDamage);
-	const auto resolvedLuck = hb->captureFortuneStrikeOutcome(projectedAttack);
+	const auto primaryFortune = captureAppliedFortuneReceipt(*hb, projectedAttack, evaluateOnly);
 	const auto shroud = !evaluateOnly ? evaluateBattleShroudStrike(*hb, projectedAttack) : BattleShroudStrike{};
 	const bool triggersEvasiveShroud = shroud.evasiveShroud;
 	const bool triggersAmbusher = shroud.ambusher;
@@ -918,7 +915,8 @@ float BattleExchangeVariant::trackAttack(
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()),
-			resolvedLuck, true, perfectFortune, perfectFortuneSide, perfectFortuneSide, serendipityOrdinaryAttack);
+			primaryFortune->resolvedLuck, true, primaryFortune->perfectFortune,
+			primaryFortune->controllerSide, primaryFortune->controllerSide, primaryFortune->ordinaryLuckAttack);
 		hb->projectRangedMarkStrike(projectedAttack, {{defender->unitId(), actualDamage}});
 		if(defenderRebirthSource)
 			hb->projectElementalRebirth(defender.get(), *defenderRebirthSource,
