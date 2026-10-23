@@ -2,6 +2,8 @@
 
 [Download New Horizons 0.85 Early Access for Windows and Linux](https://github.com/thegandalf196/new-horizons/releases/tag/v0.85), with installation instructions. Requires Heroes III Complete; original game assets are not included.
 
+[What changes from Heroes III Complete? Read the gameplay and artwork changelog.](docs/NEW_HORIZONS_CHANGELOG.md)
+
 ## Before you begin
 
 Heroes III was love at first sight for me, back in the early 2000s. After Heroes III, I played Heroes IV, Then Heroes II, then Heroes I, then Heroes V, then King’s Bounty: The Legend, then Heroes VII. Each installment has its merits, in my opinion, but none hooked me quite like the third one. I kept coming back. And over the years, I collected ideas.
