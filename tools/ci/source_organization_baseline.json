@@ -17905,41 +17905,46 @@
           "end": 339
         },
         {
-          "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
-          "start": 403,
-          "end": 403
+          "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
+          "start": 340,
+          "end": 340
         },
         {
-          "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
+          "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
           "start": 404,
           "end": 404
         },
         {
-          "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
           "start": 405,
           "end": 405
         },
         {
-          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
+          "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
           "start": 406,
-          "end": 409
+          "end": 406
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
+          "start": 407,
+          "end": 410
         },
         {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 420,
-          "end": 423
+          "start": 421,
+          "end": 424
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 542,
-          "end": 542
+          "start": 543,
+          "end": 543
         }
       ],
-      "rationale": "Complete46 unchanged inline callable bodies retain exact source bytes; their spans are remapped after four observer API declaration lines and the private invocation-local record. Existing default-argument parser recovery remains; no new callable body is hidden. Runtime mutation/certification stays in the focused implementation owner; no save fields or semantic approval beyond this exact source.",
-      "review": "life-drain-completed-suffix-independent-source-review",
-      "sha256": "e49f2e69d23b93f41426924ccfb30115c6a736361b9f7ce7fc7d31d08d9192fb",
+      "rationale": "Exact complete47-inline-body inventory:46 existing body hashes unchanged, one new one-line raw snapshot accessor. The same single preexisting parser recovery remains; no parser waiver or callback body omission.",
+      "review": "IR-RAW-LUCK-POLICY-SCALAR-20261024",
+      "sha256": "8fac03a4d47ffa5fbc5122bed83591212372e192cd89d9c2def70eebce2dd114",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
+      "review_scope": "raw-saved-Luck-scalar-source-only-no-runtime-or-performance-acceptance",
       "deferral": "AI engineer retains the existing model-interface concentration. Further additions should move projection-admission implementation to the cohesive owners rather than add inline rules. Preserve exact complete manual inventory and branch/finish/replay guards; no growth credit from the header's current size."
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
@@ -22093,10 +22098,10 @@
       "kind": "exception",
       "lines": 5768,
       "owner": "gameplay_engineer",
-      "rationale": "Cohesive First Aid healing/Medic/preview query extraction to a 136-line owner shrinks callback. Other targeting/scoring/activation methods unchanged.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "7d0d85309516b2f8c0d2ccd7b6207d89b5f83cb9c19e4842775bced0757d319f",
+      "rationale": "Same-size5768-line callback changes only the existing raw Luck-policy boolean read to the virtual scalar API at the same null-guarded position. All other callback bodies and full chance-curve query remain unchanged; no growth allowance.",
+      "review": "IR-RAW-LUCK-POLICY-SCALAR-20261024",
+      "review_scope": "raw-saved-Luck-scalar-source-only-no-runtime-or-performance-acceptance",
+      "sha256": "6597a3ba7f7d8e4cb5514df5eb00a2e0b7923579ea2db38c12708bca61314803",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
     },
@@ -26446,12 +26451,12 @@
     },
     "AI/BattleAI/HypotheticBattle.h": {
       "kind": "exception",
-      "lines": 594,
+      "lines": 595,
       "owner": "ai_engineer",
-      "rationale": "Exact578-to594 header extension adds only a narrow invocation-local no-op observation API and value record. Materialization implementation is extracted cohesively from HypotheticBattle.cpp859-to847 into an88-line helper. Complete46 inline callable inventory remains unchanged; no wire/save fields, retained unit pointers or generic mutation framework.",
-      "review": "life-drain-completed-suffix-independent-source-review",
-      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
-      "sha256": "e49f2e69d23b93f41426924ccfb30115c6a736361b9f7ce7fc7d31d08d9192fb",
+      "rationale": "Exact594-to595 header extension adds one one-line raw saved Luck-policy accessor to the final HypotheticBattle. The existing46 inline bodies remain byte-identical; complete47-body manual inventory is renewed. No cache, saved state or wider projection responsibility is added.",
+      "review": "IR-RAW-LUCK-POLICY-SCALAR-20261024",
+      "review_scope": "raw-saved-Luck-scalar-source-only-no-runtime-or-performance-acceptance",
+      "sha256": "8fac03a4d47ffa5fbc5122bed83591212372e192cd89d9c2def70eebce2dd114",
       "deferral": "AI engineer retains the existing model-interface concentration. Further additions should move projection-admission implementation to the cohesive owners rather than add inline rules. Preserve exact complete manual inventory and branch/finish/replay guards; no growth credit from the header's current size.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },

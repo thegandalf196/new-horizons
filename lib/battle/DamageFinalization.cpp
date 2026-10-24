@@ -31,7 +31,7 @@ constexpr int FORTIFICATION_ENGINEER_SIEGE_PERCENT = 125;
 void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	DamageAttackInfo & payload, const IBattleInfo * currentBattle) const
 {
-	const bool finalLuckPolicy = getBattle()->getLuckRollRules().finalDirectPhysicalMultiplier;
+	const bool finalLuckPolicy = getBattle()->getRawFinalDirectPhysicalLuckPolicy();
 	const bool luckEligible = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(info.attacker, info.physicalDamage);
 	payload.luckyStrike = info.luckyStrike && (!finalLuckPolicy || luckEligible);
 	payload.newHorizonsFinalLuck = finalLuckPolicy && luckEligible;

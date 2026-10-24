@@ -337,6 +337,7 @@ public:
 	float projectMoraleActivationDelta(const battle::Unit * original, const battle::Unit * projected,
 		float before, float after, float horizon);
 	LuckRollRules getLuckRollRules() const override { return fortuneRollRules; }
+	bool getRawFinalDirectPhysicalLuckPolicy() const override { return fortuneRollRules.finalDirectPhysicalMultiplier; }
 
 	/// Apply Luck history in an isolated or selected branch, never live state.
 	/// Record-only mode expires one-strike modifiers before subsequent blows;

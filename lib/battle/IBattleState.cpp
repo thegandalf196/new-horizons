@@ -11,3 +11,8 @@
 
 #include "IBattleState.h"
 
+
+bool IBattleInfo::getRawFinalDirectPhysicalLuckPolicy() const
+{
+	return getLuckRollRules().finalDirectPhysicalMultiplier;
+}

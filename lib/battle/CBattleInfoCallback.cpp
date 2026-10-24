@@ -814,7 +814,7 @@ int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, cons
 {
 	if(!attacker || !getBattle())
 		return 0;
-	if(getBattle()->getLuckRollRules().finalDirectPhysicalMultiplier
+	if(getBattle()->getRawFinalDirectPhysicalLuckPolicy()
 		&& !newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker,
 			!(shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))))
 		return 0;

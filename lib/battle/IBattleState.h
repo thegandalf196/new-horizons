@@ -264,6 +264,8 @@ public:
 		throw std::logic_error("Battle state does not support Armorer Last Stand updates");
 	}
 	virtual LuckRollRules getLuckRollRules() const { return {}; }
+	/// Raw saved flag, independent of chance-curve/global fallback. Unknown implementations retain virtual full-query behavior.
+	virtual bool getRawFinalDirectPhysicalLuckPolicy() const;
 	virtual const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const
 	{
 		static const std::map<CreatureID, TQuantity> empty;
