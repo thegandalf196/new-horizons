@@ -17,6 +17,8 @@
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/entities/hero/NewHorizonsHerbalSurgeon.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
@@ -28,9 +30,24 @@ SpellID regenerationSpell()
 	return SpellID(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
 }
 
+// Supply reflection mode through the cast interface while copying its frozen context.
+class ReflectedRegenerationCast final : public spells::BattleCast
+{
+public:
+	explicit ReflectedRegenerationCast(const spells::BattleCast & original)
+		: spells::BattleCast(original)
+	{
+	}
+
+	spells::Mode getMode() const override { return spells::Mode::MAGIC_MIRROR; }
+};
+
 class NewHorizonsRegenerationBattleTest : public BattleTestFixture
 {
 protected:
+	bool verdish = false;
+	bool herbalPolicy = false;
+	bool legacyMagic = false;
 	CStack * target = nullptr;
 	CStack * enemy = nullptr;
 
@@ -44,8 +61,24 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		BattleTestFixture::mapLoaded(map);
+		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		rules.setOverrideFlag(true);
+		if(legacyMagic)
+			rules["startingSkills"].Struct().erase("startingBookReplacements");
+		if(herbalPolicy)
+		{
+			auto & table = rules["recoverySpecialties"];
+			table["version"].Integer() = 1;
+			for(const auto key : {"tentPercentPerLevel", "regenerationPercentPerLevel"})
+				table["herbalSurgeon"][key].Integer() = 5;
+			for(const auto key : {"tentMaximumPercent", "regenerationMaximumPercent"})
+				table["herbalSurgeon"][key].Integer() = 100;
+		}
+		else if(rules["recoverySpecialties"].isStruct())
+			rules["recoverySpecialties"].Struct().erase("herbalSurgeon");
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
@@ -54,6 +87,11 @@ protected:
 		const bool herbalist = false)
 	{
 		startGame();
+		if(verdish)
+		{
+			attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:verdish")));
+			attackerSideHero->level = 20;
+		}
 		const auto natureSkill = SecondarySkill::decode(std::string(newHorizonsMagic::NATURE_MAGIC_SKILL));
 		ASSERT_GE(natureSkill, 0);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(natureSkill), natureRank, ChangeValueMode::ABSOLUTE);
@@ -285,4 +323,89 @@ TEST_F(NewHorizonsRegenerationBattleTest, StateRoundTripPreservesFixedPointAccum
 	EXPECT_EQ(restored->regenerationRateMillionths, 319'000);
 	EXPECT_EQ(restored->regenerationPendingMicroHealth, INT64_C(957000));
 	EXPECT_EQ(restored->regenerationProjectedHeal(), 0);
+}
+
+TEST_F(NewHorizonsRegenerationBattleTest, VerdishActualRegenerationScalesOnlyPowerRateAndKeepsHerbalistFlat)
+{
+	verdish = herbalPolicy = true;
+	prepare(40, MasteryLevel::BASIC, true);
+	ASSERT_TRUE(castRegeneration(target));
+	EXPECT_EQ(target->regenerationRateMillionths, 488000); // 25% + 6.9%*2 + 10pp.
+	EXPECT_EQ(target->regenerationPendingMicroHealth, 0);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.verdantCommunion"));
+}
+TEST_F(NewHorizonsRegenerationBattleTest, VerdishZeroPowerDoesNotIncreaseFixedRate)
+{
+	verdish = herbalPolicy = true;
+	prepare(0, MasteryLevel::BASIC, false);
+	ASSERT_TRUE(castRegeneration(target));
+	EXPECT_EQ(target->regenerationRateMillionths, 250000);
+}
+TEST_F(NewHorizonsRegenerationBattleTest, VerdishRecastChangesFutureRateWithoutRescalingSavedMarksOrResurrecting)
+{
+	verdish = herbalPolicy = true;
+	prepare(40, MasteryLevel::BASIC, true);
+	ASSERT_TRUE(castRegeneration(target));
+	endRound();
+	injure(target, 3);
+	ASSERT_EQ(target->regenerationPendingMicroHealth, INT64_C(1464000));
+	attackerSideHero->level = 1;
+	ASSERT_TRUE(castRegeneration(target));
+	EXPECT_EQ(target->regenerationRateMillionths, 422450);
+	EXPECT_EQ(target->regenerationPendingMicroHealth, INT64_C(1464000));
+	auto loaded = target->acquireState();
+	loaded->load(target->save());
+	EXPECT_EQ(loaded->regenerationRateMillionths, 422450);
+	EXPECT_EQ(loaded->regenerationPendingMicroHealth, INT64_C(1464000));
+	const auto count = target->getCount();
+	const auto health = target->getAvailableHealth();
+	ASSERT_TRUE(advanceUntilNextActivation(target));
+	EXPECT_EQ(target->getAvailableHealth(), health + 1);
+	EXPECT_EQ(target->getCount(), count);
+	EXPECT_EQ(target->regenerationPendingMicroHealth, 0);
+}
+TEST_F(NewHorizonsRegenerationBattleTest, VerdishOriginalContextCopiesFrozenFactorAndExplicitZeroNeverRecaptures)
+{
+	verdish = herbalPolicy = true;
+	prepare(40, MasteryLevel::BASIC, false);
+	spells::BattleCast original(battle(), attackerSideHero, spells::Mode::HERO, regenerationSpell().toSpell());
+	ASSERT_EQ(original.getHerbalSurgeonRegenerationPercent(), std::optional<int32_t>(100));
+	attackerSideHero->level = 1;
+	auto copy = original;
+	EXPECT_EQ(copy.mechanicsForTarget({spells::Destination(target)})->getHerbalSurgeonRegenerationPercent(), 100);
+	ReflectedRegenerationCast reflected(copy);
+	auto reflectedMechanics = regenerationSpell().toSpell()->battleMechanics(&reflected);
+	ASSERT_NE(reflectedMechanics, nullptr);
+	EXPECT_TRUE(reflectedMechanics->isMagicMirror());
+	EXPECT_EQ(reflectedMechanics->getHerbalSurgeonRegenerationPercent(), 100);
+	spells::BattleCast mirror(battle(), attackerSideHero, spells::Mode::MAGIC_MIRROR, regenerationSpell().toSpell());
+	EXPECT_EQ(mirror.mechanicsForTarget({spells::Destination(target)})->getHerbalSurgeonRegenerationPercent(), 0);
+	spells::BattleCast passive(battle(), attackerSideHero, spells::Mode::PASSIVE, regenerationSpell().toSpell());
+	EXPECT_EQ(passive.mechanicsForTarget({spells::Destination(target)})->getHerbalSurgeonRegenerationPercent(), 0);
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:christian")));
+	spells::BattleCast empty(battle(), attackerSideHero, spells::Mode::HERO, regenerationSpell().toSpell());
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:verdish")));
+	EXPECT_EQ(empty.mechanicsForTarget({spells::Destination(target)})->getHerbalSurgeonRegenerationPercent(), 0);
+}
+TEST_F(NewHorizonsRegenerationBattleTest, VerdishAbsentPolicyKeepsOrdinaryRateAndDeadTargetsStayIllegal)
+{
+	verdish = true;
+	prepare(40, MasteryLevel::BASIC, false);
+	ASSERT_TRUE(castRegeneration(target));
+	EXPECT_EQ(target->regenerationRateMillionths, 319000);
+	auto * survivor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(4, 8), 1);
+	ASSERT_NE(survivor, nullptr);
+	injure(target, target->getAvailableHealth());
+	EXPECT_FALSE(target->alive());
+	EXPECT_EQ(target->regenerationPendingMicroHealth, 0);
+	EXPECT_FALSE(castRegeneration(target));
+}
+
+TEST_F(NewHorizonsRegenerationBattleTest, VerdishLegacyMagicCapturesNoRegenerationRider)
+{
+	verdish = herbalPolicy = legacyMagic = true;
+	prepare(40, MasteryLevel::BASIC, false);
+	spells::BattleCast original(battle(), attackerSideHero, spells::Mode::HERO, regenerationSpell().toSpell());
+	EXPECT_EQ(original.getHerbalSurgeonRegenerationPercent(), std::optional<int32_t>(0));
+	EXPECT_EQ(newHorizonsHeroes::herbalSurgeonRegenerationPercent(attackerSideHero), 100);
 }

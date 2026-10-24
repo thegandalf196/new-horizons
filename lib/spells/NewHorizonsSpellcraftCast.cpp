@@ -33,7 +33,7 @@ BattleCast::BattleCast(const CBattleInfoCallback * cb_, const Caster * caster_, 
 	caster(caster_),
 	mode(mode_)
 {
-	spellcraftContext = newHorizonsHeroes::resolveSpellcraftContext(this);
+	captureOriginalSpellSpecialties();
 }
 
 }

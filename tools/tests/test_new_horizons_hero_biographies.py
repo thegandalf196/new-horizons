@@ -104,13 +104,16 @@ class NewHorizonsHeroBiographyTest(unittest.TestCase):
         matching = source.split("for(const auto & object : map->objects)", 1)[1]
         matching, remaining = matching.split("catch(const std::exception & error)", 1)
         self.assertIn("hero && hero->getHeroTypeID() == id && hero->getOwner() == owner", matching)
+        self.assertIn("authored = hero;", matching)
+        self.assertIn("if(!authored && newHorizonsHeroes::guaranteesDefaultFirstAidTent(id, context.development))", matching)
+        self.assertIn("authored = map->tryGetFromHeroPool(id);", matching)
         self.assertIn("if(!capturedHero)", matching)
         self.assertIn("CompositeTranslator mapTranslator;", matching)
         self.assertIn("mapTranslator.install(map->texts);", matching)
-        self.assertIn("result.biography = heroStartingBiography(prototype, mapTranslator, hero);", matching)
+        self.assertIn("result.biography = heroStartingBiography(prototype, mapTranslator, authored);", matching)
         self.assertLess(matching.index("if(!capturedHero)"), matching.index("mapTranslator.install(map->texts)"))
         self.assertLess(matching.index("hero->getOwner() == owner"),
-                        matching.index("heroStartingBiography(prototype, mapTranslator, hero)"))
+                        matching.index("heroStartingBiography(prototype, mapTranslator, authored)"))
         fallback = remaining.split("else if(!selectedMap", 1)[0]
         self.assertIn("result.biography = heroStartingBiography(prototype, biographyTranslator, capturedHero);", fallback)
         overview = (ROOT / "client/windows/CHeroOverview.cpp").read_text()

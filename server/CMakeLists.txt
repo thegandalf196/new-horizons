@@ -6,6 +6,7 @@ set(vcmiservercommon_SRCS
 		battles/BattleFlowProcessor.cpp
 		battles/BattleProcessor.cpp
 		battles/BattleResultProcessor.cpp
+		battles/NewHorizonsWellspringRecovery.cpp
 		battles/PhysicalAfflictionEffectPreparation.cpp
 
 		queries/BattleQueries.cpp
@@ -44,6 +45,7 @@ set(vcmiservercommon_HEADERS
 		battles/BattleFlowProcessor.h
 		battles/BattleProcessor.h
 		battles/BattleResultProcessor.h
+		battles/NewHorizonsWellspringRecovery.h
 
 		queries/BattleQueries.h
 		queries/CQuery.h

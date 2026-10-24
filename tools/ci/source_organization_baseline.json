@@ -12405,9 +12405,9 @@
       "sha256": "be7237545da45f7abbca02f8af83289c9add95f764bde3acd249c597bf6f6b2d"
     },
     "lib/spells/NewHorizonsMagic.h": {
-      "sha256": "76b7d6bb8611d0d41a68f39663ea284f5aa03188cd9ad589d464d70cac8908c6",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "rationale": "Complete one-body inventory retained: AdventureSpellState serializer161-164 unchanged. Added pure-query prototypes/optional default arguments introduce no new bodies. Defaulted comparison/default-argument recoveries at421/425 are declarations; no callable hidden by parser recovery. Exact current header coverage only.",
+      "sha256": "c056fcfed31d378e55c8b4f0bbc0a03cfb768fe7730d24f565a933045af7670a",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "rationale": "Three pure rate-query declaration lines only; existing AdventureSpellState serializer body unchanged. One-body manual inventory retained; macro/default-argument parser recoveries remain declarations.",
       "functions": [
         {
           "symbol": "newHorizonsMagic::AdventureSpellState::void serialize(Handler & h)#1",
@@ -12415,7 +12415,7 @@
           "end": 164
         }
       ],
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/spells/adventure/TownRelatedAdventureSpellEffect.h": {
       "functions": [
@@ -15725,150 +15725,165 @@
           "end": 377
         },
         {
-          "symbol": "CGHeroInstance::int32_t getNewHorizonsScholarWeek() const#1",
+          "symbol": "CGHeroInstance::int64_t getNewHorizonsLastAcceptedCombatDay() const#1",
           "start": 380,
           "end": 380
         },
         {
-          "symbol": "CGHeroInstance::const std::vector<ObjectInstanceID> & getNewHorizonsScholarPartners() const#1",
+          "symbol": "CGHeroInstance::void setNewHorizonsLastAcceptedCombatDay(int64_t day)#1",
           "start": 381,
-          "end": 381
+          "end": 386
         },
         {
-          "symbol": "CGHeroInstance::void validateNewHorizonsScholarSerialization(bool supported) const#1",
-          "start": 383,
-          "end": 389
+          "symbol": "CGHeroInstance::void validateRecoverySpecialtyStateSerialization(bool supported) const#1",
+          "start": 387,
+          "end": 393
         },
         {
-          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsLearningMentor(int32_t week) const#1",
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsScholarWeek() const#1",
           "start": 394,
           "end": 394
         },
         {
-          "symbol": "CGHeroInstance::const LearningMentorRecipients & getNewHorizonsLearningMentorRecipients() const#1",
-          "start": 396,
-          "end": 396
+          "symbol": "CGHeroInstance::const std::vector<ObjectInstanceID> & getNewHorizonsScholarPartners() const#1",
+          "start": 395,
+          "end": 395
         },
         {
-          "symbol": "CGHeroInstance::void markNewHorizonsLearningMentorUsed(int32_t week)#1",
-          "start": 400,
+          "symbol": "CGHeroInstance::void validateNewHorizonsScholarSerialization(bool supported) const#1",
+          "start": 397,
           "end": 403
         },
         {
-          "symbol": "CGHeroInstance::int32_t getNewHorizonsLandSurveyorLastWeek() const#1",
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsLearningMentor(int32_t week) const#1",
           "start": 408,
           "end": 408
         },
         {
-          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsLandSurveyor(int32_t week) const#1",
-          "start": 409,
-          "end": 409
-        },
-        {
-          "symbol": "CGHeroInstance::int32_t getNewHorizonsProspectorLastWeek() const#1",
+          "symbol": "CGHeroInstance::const LearningMentorRecipients & getNewHorizonsLearningMentorRecipients() const#1",
           "start": 410,
           "end": 410
         },
         {
+          "symbol": "CGHeroInstance::void markNewHorizonsLearningMentorUsed(int32_t week)#1",
+          "start": 414,
+          "end": 417
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsLandSurveyorLastWeek() const#1",
+          "start": 422,
+          "end": 422
+        },
+        {
+          "symbol": "CGHeroInstance::bool hasUsedNewHorizonsLandSurveyor(int32_t week) const#1",
+          "start": 423,
+          "end": 423
+        },
+        {
+          "symbol": "CGHeroInstance::int32_t getNewHorizonsProspectorLastWeek() const#1",
+          "start": 424,
+          "end": 424
+        },
+        {
           "symbol": "CGHeroInstance::bool hasUsedNewHorizonsProspector(int32_t week) const#1",
-          "start": 411,
-          "end": 411
+          "start": 425,
+          "end": 425
         },
         {
           "symbol": "CGHeroInstance::ObjectInstanceID getNewHorizonsMagnateLastTown() const#1",
-          "start": 412,
-          "end": 412
+          "start": 426,
+          "end": 426
         },
         {
           "symbol": "CGHeroInstance::int32_t getNewHorizonsMagnateVisitWeek() const#1",
-          "start": 413,
-          "end": 413
+          "start": 427,
+          "end": 427
         },
         {
           "symbol": "CGHeroInstance::void recordNewHorizonsMagnateTownVisit(ObjectInstanceID town, int32_t week)#1",
-          "start": 414,
-          "end": 420
+          "start": 428,
+          "end": 434
         },
         {
           "symbol": "CGHeroInstance::void validateNewHorizonsMagnateSerialization(bool supported) const#1",
-          "start": 421,
-          "end": 428
+          "start": 435,
+          "end": 442
         },
         {
           "symbol": "CGHeroInstance::int32_t getNewHorizonsPeacemakerLastWeek() const#1",
-          "start": 429,
-          "end": 429
+          "start": 443,
+          "end": 443
         },
         {
           "symbol": "CGHeroInstance::ObjectInstanceID getNewHorizonsPacifiedCreatureId() const#1",
-          "start": 430,
-          "end": 430
+          "start": 444,
+          "end": 444
         },
         {
           "symbol": "CGHeroInstance::bool hasUsedNewHorizonsPeacemaker(int32_t week) const#1",
-          "start": 431,
-          "end": 431
+          "start": 445,
+          "end": 445
         },
         {
           "symbol": "CGHeroInstance::bool isNewHorizonsCreaturePacified(ObjectInstanceID creatureId, int32_t week) const#1",
-          "start": 432,
-          "end": 438
+          "start": 446,
+          "end": 452
         },
         {
           "symbol": "CGHeroInstance::int32_t getNewHorizonsTributeLastWeek() const#1",
-          "start": 439,
-          "end": 439
+          "start": 453,
+          "end": 453
         },
         {
           "symbol": "CGHeroInstance::bool hasUsedNewHorizonsTribute(int32_t week) const#1",
-          "start": 440,
-          "end": 440
+          "start": 454,
+          "end": 454
         },
         {
           "symbol": "CGHeroInstance::int32_t getNewHorizonsRecruitmentPactExpiryDay() const#1",
-          "start": 441,
-          "end": 441
+          "start": 455,
+          "end": 455
         },
         {
           "symbol": "CGHeroInstance::bool hasNewHorizonsRecruitmentPact(int32_t currentDay) const#1",
-          "start": 442,
-          "end": 447
+          "start": 456,
+          "end": 461
         },
         {
           "symbol": "CGHeroInstance::void setNewHorizonsDiplomacyState(int32_t peacemakerLastWeek, ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek, int32_t pactExpiryDay = -1)#1",
-          "start": 448,
-          "end": 457
+          "start": 462,
+          "end": 471
         },
         {
           "symbol": "CGHeroInstance::bool isPrimaryRatingNode() const override#1",
-          "start": 479,
-          "end": 479
+          "start": 493,
+          "end": 493
         },
         {
           "symbol": "CGHeroInstance::bool requestsDefaultStartingEquipment() const#1",
-          "start": 561,
-          "end": 561
+          "start": 575,
+          "end": 575
         },
         {
           "symbol": "CGHeroInstance::static bool isValidNewHorizonsDiplomacyState(int32_t peacemakerLastWeek, ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek, int32_t pactExpiryDay = -1)#1",
-          "start": 687,
-          "end": 693
+          "start": 702,
+          "end": 708
         },
         {
           "symbol": "CGHeroInstance::static bool isValidNewHorizonsForcedMarchState(int32_t lastUseDay, int32_t penaltyDay)#1",
-          "start": 694,
-          "end": 698
+          "start": 709,
+          "end": 713
         },
         {
           "symbol": "CGHeroInstance::void serialize(Handler &h)#1",
-          "start": 706,
-          "end": 1166
+          "start": 721,
+          "end": 1191
         }
       ],
-      "rationale": "Complete65-body inventory retains all64 existing inline bodies byte-for-byte and adds only the one-line loader-equipment intent getter. Subsequent spans shift by one; serializer payload remains unchanged. Existing bodyless parser recovery remains unchanged. Declarations and default member initializers are not callable bodies.",
-      "review": "default-tent-starting-preview-complete-header-v1",
-      "sha256": "cfc49ea2ff97ac99189c28f4113ee7b2609f6829c50cc0d9de396aac871ec9f7",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "rationale": "Typed validated accepted-day getter/setter/state and mechanical append-only writer/read-default codec. Complete68-body inventory retains all65 prior bodies, with only serializer changed plus3 short receipt bodies. File1192/serialize471 exact bounds.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "sha256": "7e3689843a73e652d6ce68619322bd210daa09b5beb684effd67c0f1b68c110c",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/callback/CGameInfoCallback.cpp": {
       "functions": [
@@ -21891,15 +21906,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact declarative registry bound only. Keep behavior in focused compiled owners; future registry edits need renewed exact review and grant no executable growth allowance.",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact declarative registry bound only. Keep behavior in focused compiled owners; future registry edits need renewed exact review and grant no executable growth allowance.",
       "kind": "exception",
-      "lines": 1317,
+      "lines": 1327,
       "owner": "engine_engineer",
-      "rationale": "Mechanical registration of the focused replay planner or memory/provenance codec source/header owners only. No target, dependency, compiler, platform or build-policy changes.",
-      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
-      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "afdd1653106972b8bbaa8525807cc7edea139fe2a30d77fe0a7bf95871a78256"
+      "rationale": "Ten additive source/header registrations for focused recovery, original-caster and SP-rate owners; preserve all current replay, Life Drain and artwork registrations. Mechanical registry only.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "sha256": "93db747b19d518a4f21cab020f00bcb5be5524e429de2e69376c76d69f7761c5"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21950,14 +21965,14 @@
     },
     "lib/GameSettings.h::GameSettings::void serialize(Handler & h)#1": {
       "kind": "exception",
-      "lines": 135,
+      "lines": 137,
       "owner": "engine_engineer",
-      "rationale": "One additional optional specialty capability forwarded through existing direct writer/reader guards; prefix order and historical absence retained.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "6afde305c0e2856af6d14bb74def7997cb3fe017e8bd4d0c51b68372e75a62a1",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "rationale": "Two lines forward independently captured Recovery support into the existing strict resolved-policy validation. No new inline policy scan; exact137-line serializer only.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "8ef8f4ae981aed582686c77f618c436987057ec13339fadae03dd784118afaa8",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/LogicalExpression.h": {
       "kind": "legacy",
@@ -22056,25 +22071,25 @@
     },
     "lib/battle/BattleInfo.h": {
       "kind": "exception",
-      "lines": 1507,
-      "sha256": "a43d96cf68428bd2168ab88ae42aaab55defc29af01b59f3c562af6e30751170",
+      "lines": 1510,
+      "sha256": "8f82e0a52e1598230a013bad4aedc10e7025e0e8bac88f1b30d87a7596010c26",
       "owner": "gameplay_engineer",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "rationale": "Three mechanical pre-prefix Side recovery-validation lines; actual provenance validation lives in focused Side helper. No new battle lifecycle implementation.",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "rationale": "Exactly three protected entry-side Recovery preflight lines, delegating typed receipt validation before any enclosing prefix. File1510 and serialize697 bounds only.",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/battle/BattleInfo.h::BattleInfo::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 694,
+      "lines": 697,
       "owner": "gameplay_engineer",
-      "rationale": "Three mechanical pre-prefix Side recovery-validation lines; actual provenance validation lives in focused Side helper. No new battle lifecycle implementation.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "4a3896d71c3510b3b07362f06ecf95b67e77ca83b896f11310cf9855f8c6831e",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "rationale": "Exactly three protected entry-side Recovery preflight lines, delegating typed receipt validation before any enclosing prefix. File1510 and serialize697 bounds only.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "27a7b7fd8b0dd8f704a6ed5b989d028b6870a29e2b35e6e0e47f6122c56a1401",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/battle/CBattleInfoCallback.cpp": {
       "kind": "exception",
@@ -22371,23 +22386,25 @@
     },
     "lib/battle/SideInBattle.h": {
       "kind": "exception",
-      "lines": 831,
+      "lines": 851,
       "owner": "gameplay_engineer",
-      "rationale": "Append-only bounded actual Mana Furnace recovery field and mechanical codec guards/default-zero. Actual entry and legacy ceiling arithmetic remain in focused implementation owners.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "e215cedd060428de6682654a0a8e3f1fc36d42fdda9cd4ea7ff5cbd062f3567c",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "rationale": "Typed day/consumed/actual-recovery receipt state, old-read false/-1/zero defaults and pre-prefix validation only. File851 and serialize428 bounds; arithmetic remains in focused source owner.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "03020225b15764d88df8ff8cf68ac0f65ae9eaf9375d22348633b2b73d93ba45",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth.",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/battle/SideInBattle.h::SideInBattle::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 412,
+      "lines": 428,
       "owner": "gameplay_engineer",
-      "rationale": "Append-only bounded actual Mana Furnace recovery field and mechanical codec guards/default-zero. Actual entry and legacy ceiling arithmetic remain in focused implementation owners.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "379b3b47b2f866223f5d10cabed6e2eefcf393534ac4c5f0e862de883b0978af",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "rationale": "Typed day/consumed/actual-recovery receipt state, old-read false/-1/zero defaults and pre-prefix validation only. File851 and serialize428 bounds; arithmetic remains in focused source owner.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "135a643a620167064abdfbaaff17b5e9da27cc9d1b4ea237b420231ab56d94fd",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth.",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/bonuses/Bonus.h::Bonus::void serialize(Handler &h)#1": {
       "kind": "legacy",
@@ -22630,14 +22647,14 @@
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp": {
       "kind": "exception",
-      "lines": 1359,
+      "lines": 1361,
       "owner": "gameplay_engineer",
-      "rationale": "Allow/capture optional additional-specialty block and forward strict validation to focused policy owners; existing registry and progression behavior unchanged.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "57319b6905a2c696eca1eebabfe94f83169aaa96ecdddb38b33dbb2305f9b78a",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should extract the next touched installed/resolved allowed-field and optional-policy forwarding family into a focused registry validator, preserving captured absence and migration checks before further growth."
+      "rationale": "Two root allowlist additions, existing validator capability forwarding and explicit optional capture copy; strict row parser lives in96-line focused owner. No new policy monolith.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "807f1d5695470c71196a158543ccb34a29f1bdbd46c4c622e73c5759c2ba7e6a",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should extract the next touched installed/resolved allowed-field and optional-policy forwarding family into a focused registry validator, preserving captured absence and migration checks before further growth."
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp::newHorizonsHeroes::std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill( const JsonNode & resolvedRules, bool magicHero, FactionID faction, const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)#1": {
       "kind": "legacy",
@@ -22726,14 +22743,14 @@
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "kind": "exception",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay/UI owner should route later individual identities to focused captured-policy presentation resolvers rather than adding hero branches to this dispatcher; preserve historical fallback and exact runtime math.",
-      "lines": 126,
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay/UI owner should route later individual identities to focused captured-policy presentation resolvers rather than adding hero branches to this dispatcher; preserve historical fallback and exact runtime math.",
+      "lines": 128,
       "owner": "ui_developer",
-      "rationale": "One narrow dispatch to focused captured additional-specialty presentation; existing hero routing and fallbacks preserved.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "de03e691d55041c8591b3f7dc6df061157dffb4ce37d5dce5cab29092ece7439"
+      "rationale": "Exactly two conditional delegation lines route captured Herbal Surgeon presentation to41-line focused owner; current artwork resolution preserved. No inline rider arithmetic.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "sha256": "536112936f563dcc93484ee32f7d0da5a5aef4a8c35e80c365ff043813f449e4"
     },
     "lib/filesystem/CFilesystemLoader.cpp::std::unordered_map<ResourcePath, boost::filesystem::path> CFilesystemLoader::listFiles(const std::string &mountPoint, size_t depth, bool initial) const#1": {
       "kind": "legacy",
@@ -22766,12 +22783,12 @@
       "kind": "exception",
       "lines": 2227,
       "owner": "engine_engineer",
-      "rationale": "Extract the complete existing memory-copy serializer to the focused67-line CGameStateMemory owner, shrinking2254 to2227 lines. Actual producer-version capture and explicit-version replay loading stay in that owner; no game mechanics or ownership ordering change.",
-      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
-      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
-      "sha256": "2d58e26169803225b6a82a3867dda34fe77c0b063084c83fa2883b5497e5814a",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact2227-line shrinking bound only. Before future substantive growth, extract the next touched coherent captured-policy/preflight family with prefix-rejection and historical-absence coverage. Existing unrelated oversized routines receive no growth credit."
+      "rationale": "Existing complete hero-policy preflight forwards Recovery capability; unchanged2227 physical lines preserve actual prior27-line memory/replay extraction and all typed replay entrypoints.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "94e2bce3741a717acf4d2202ffa546dce30d27f6993d078309098a42fd9974f4",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact2227-line shrinking bound only. Before future substantive growth, extract the next touched coherent captured-policy/preflight family with prefix-rejection and historical-absence coverage. Existing unrelated oversized routines receive no growth credit."
     },
     "lib/gameState/CGameState.cpp::bool CGameState::checkForVictory(const PlayerColor & player, const EventCondition & condition) const#1": {
       "kind": "legacy",
@@ -22811,25 +22828,25 @@
     },
     "lib/gameState/CGameState.h": {
       "kind": "exception",
-      "lines": 637,
+      "lines": 639,
       "owner": "engine_engineer",
-      "rationale": "Exact typed replay snapshot entrypoints and two-line earliest enclosing downgrade preflight; serialize289 to291 lines, paired with the actual2254-to2227-line memory-codec extraction. This protects provenance before any world prefix and leaves native field order/validators intact.",
-      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
-      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
-      "sha256": "1ff6008d63e91df13820b39af4b356814a40dee45122f0285c5caddaa336278c",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact637-line header and291-line serialize bounds only. Before further substantive serializer growth, extract a coherent typed version/preflight validation family into a focused non-writing owner, preserving direct/enclosing prefix rejection, historical absence and exact wire order. No blanket exception or runtime acceptance."
+      "rationale": "Exactly two lines forward the existing ordered capture-preflight family Recovery capability; file639 and serialize293 bounds only. Current replay preflight and memory-codec extraction retained; no new inline policy scan.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "1f0ebbd0aff7c0c731ddf89dd20910fefdb3e9a96b7e34d4da3e0bcf5dbfffc6",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact639-line header and293-line serialize bounds only. Before further substantive serializer growth, extract a coherent typed version/preflight validation family into a focused non-writing owner, preserving direct/enclosing prefix rejection, historical absence and exact wire order. No blanket exception or runtime acceptance."
     },
     "lib/gameState/CGameState.h::CGameState::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 291,
+      "lines": 293,
       "owner": "engine_engineer",
-      "rationale": "Exact typed replay snapshot entrypoints and two-line earliest enclosing downgrade preflight; serialize289 to291 lines, paired with the actual2254-to2227-line memory-codec extraction. This protects provenance before any world prefix and leaves native field order/validators intact.",
-      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
-      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
-      "sha256": "77966b2500e71c74510b2c31033dd12e7ceb59e5b6b310239587fb5cf8788451",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact637-line header and291-line serialize bounds only. Before further substantive serializer growth, extract a coherent typed version/preflight validation family into a focused non-writing owner, preserving direct/enclosing prefix rejection, historical absence and exact wire order. No blanket exception or runtime acceptance."
+      "rationale": "Exactly two lines forward the existing ordered capture-preflight family Recovery capability; file639 and serialize293 bounds only. Current replay preflight and memory-codec extraction retained; no new inline policy scan.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "b842c383f0fa12f5fa67a084a903fe670ea980a03a6817b8bc9594ea0bc19b9a",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact639-line header and293-line serialize bounds only. Before further substantive serializer growth, extract a coherent typed version/preflight validation family into a focused non-writing owner, preserving direct/enclosing prefix rejection, historical absence and exact wire order. No blanket exception or runtime acceptance."
     },
     "lib/gameState/CGameStateCampaign.cpp": {
       "kind": "legacy",
@@ -22869,14 +22886,14 @@
     },
     "lib/gameState/GameStatePackVisitor.cpp": {
       "kind": "exception",
-      "lines": 4335,
+      "lines": 4337,
       "owner": "engine_engineer",
-      "rationale": "Extract accepted both-side Spell Point entry into focused owner and route bounded legacy completion ceiling through Side provenance helper; cancellation and lifecycle order retained.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "601dc663e0f48fa27f5ac5c38f431ec63a70deb979e49f5278d725638001dff8",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract remaining battle-completion Spell Point restoration into a focused ordered helper, retaining temporary Buffer, legacy ceiling, recovery and original cancellation snapshots with packet/state/rejection characterization before further visitor growth."
+      "rationale": "Two bounded cancellation-restoration lines return Rosic original accepted-day receipt; accepted-entry planning and grants remain in focused source owner.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "f26fe84c1ab767bef2b535668d394977208fa24e7a458bfc7de20c72e902aea5",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract remaining battle-completion Spell Point restoration into a focused ordered helper, retaining temporary Buffer, legacy ceiling, recovery and original cancellation snapshots with packet/state/rejection characterization before further visitor growth."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)#1": {
       "kind": "legacy",
@@ -23166,14 +23183,14 @@
     },
     "lib/mapObjects/CGHeroInstance.cpp": {
       "kind": "exception",
-      "lines": 3686,
+      "lines": 3635,
       "owner": "engine_engineer",
-      "rationale": "Cohesive starting army/book/catapult equipment initialization extracted to152-line HeroStartingEquipment owner. Fresh default Tent intent stays in that owner; Nimbus Learning extraction retained and unrelated hero responsibilities unchanged.",
-      "review": "default-hero-equipment-creation-source-v1",
-      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
-      "sha256": "1703fd799b7658c10b02b0609957f3606daaff6f123d6d15d6ff664195cb54d0",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth."
+      "rationale": "Shrinking3686-to3635 ratchet: extract adjacent daily manaRegain/getManaNewTurn methods into65-line HeroManaRegeneration owner without API changes. No central recovery switch or future regrowth credit.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "c71f4c2bde23a6f5817d5b04185b0c0c823acf465b5821b53da57b89dc86fa1f",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth."
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",
@@ -23215,25 +23232,25 @@
     },
     "lib/mapObjects/CGHeroInstance.h": {
       "kind": "exception",
-      "lines": 1167,
+      "lines": 1192,
       "owner": "engine_engineer",
-      "rationale": "One-line read-only intent getter; all64 existing inline body bytes, serializer payload and field order unchanged. Complete65-body manual inventory.",
-      "review": "default-tent-starting-preview-source-v1",
-      "review_scope": "shared-pure-equipment-eligibility-and-loader-aware-starting-preview-only",
-      "sha256": "cfc49ea2ff97ac99189c28f4113ee7b2609f6829c50cc0d9de396aac871ec9f7",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact getter only. Further executable header growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity; no general growth allowance."
+      "rationale": "Typed validated accepted-day getter/setter/state and mechanical append-only writer/read-default codec. Complete68-body inventory retains all65 prior bodies, with only serializer changed plus3 short receipt bodies. File1192/serialize471 exact bounds.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "7e3689843a73e652d6ce68619322bd210daa09b5beb684effd67c0f1b68c110c",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact getter only. Further executable header growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity; no general growth allowance."
     },
     "lib/mapObjects/CGHeroInstance.h::CGHeroInstance::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 461,
+      "lines": 471,
       "owner": "engine_engineer",
-      "rationale": "Seven loader-only equipment-intent/declaration lines and one read-reset line; no new binary payload or inline implementation. Full64-body manual inventory renewed. Equipment allocation and artifact JSON behavior remain in focused implementation.",
-      "review": "default-hero-equipment-creation-source-v1",
-      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
-      "sha256": "cf7c58aa5bc648947a186caf8bd2c5156765a4f8be79178f62849d1d0908ff18",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact header/serializer scope only. Preserve original field order and historical captured boundary; further executable growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity. No general header growth allowance."
+      "rationale": "Typed validated accepted-day getter/setter/state and mechanical append-only writer/read-default codec. Complete68-body inventory retains all65 prior bodies, with only serializer changed plus3 short receipt bodies. File1192/serialize471 exact bounds.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "c32cab576a7ec0e749dfb6588ab115b20d1b186435180cba2dfdcc601da38e49",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact header/serializer scope only. Preserve original field order and historical captured boundary; further executable growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity. No general header growth allowance."
     },
     "lib/mapObjects/CGPandoraBox.cpp::void CGPandoraBox::grantRewardWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * h, int index, bool markAsVisit) const#1": {
       "kind": "legacy",
@@ -23390,14 +23407,14 @@
     },
     "lib/mapping/CMap.cpp": {
       "kind": "exception",
-      "lines": 1645,
+      "lines": 1651,
       "owner": "engine_engineer",
-      "rationale": "Mechanical additional-specialty preflight forwarding for map settings, heroes and pool; no map lifecycle behavior added.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "1bd6d0683074ecc7601ccd6c6ad479c246a7ff2d00713b4b0f7a54d2c36998c6",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
+      "rationale": "Six-line shared Recovery capability preflight validates complete hero/map capture before prefixes; no map mutation or new stored parallel policy.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "fbc3a07959c8c79f17336484a8bcbedfe61ce8add88169bead7641a02bb66390",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
     },
     "lib/mapping/CMap.cpp::CMap::checkForObjectives()::[&](EventCondition cond) -> EventExpression::Variant#1": {
       "kind": "legacy",
@@ -23419,25 +23436,25 @@
     },
     "lib/mapping/CMap.h": {
       "kind": "exception",
-      "lines": 507,
+      "lines": 508,
       "owner": "engine_engineer",
-      "rationale": "One additional-specialty preflight argument and serializer capability line; existing prefix order retained.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "369510336748be4fb26f20abac5edaede132ec9818eb07ded4b2f75911bfc38f",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "rationale": "One declaration and one serializer routing line for map-level Recovery capture preflight; exact508-line header/131-line serializer only.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "e585ef5fefc92ffb969b6f814655d3415cfc7899a2cd34519c8b85ea928d22f2",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/mapping/CMap.h::CMap::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 130,
+      "lines": 131,
       "owner": "engine_engineer",
-      "rationale": "One additional-specialty preflight argument and serializer capability line; existing prefix order retained.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "dd348fdb8ba49afc996f4d39321c564466b34e290a931410f5e89fca2ade1b6a",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "rationale": "One declaration and one serializer routing line for map-level Recovery capture preflight; exact508-line header/131-line serializer only.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "fa701180c961abb40c4ca7392a5e85fcfc1923636cd25638f3dc7b6da740e891",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/mapping/CMapOperation.cpp": {
       "kind": "legacy",
@@ -23714,12 +23731,12 @@
       "kind": "exception",
       "lines": 1357,
       "owner": "engine_engineer",
-      "rationale": "Mechanical additional-specialty argument forwarding in initialized-world lobby preflight only.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "bd3019945e5988c78e0a899f9090beb28b83895b4dca6f3b53d2c7e25fed9891",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
+      "rationale": "Existing actual legacy completion ceiling delegates include only actual independent recovery; unchanged1357 lines, no new result or RNG lifecycle.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "afca1a78b7b66ff0c7be6b9451715c287e30c5b3390f76a320000c5aca7205f3",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
     },
     "lib/networkPacks/PacksForClient.h": {
       "kind": "legacy",
@@ -23732,14 +23749,14 @@
     },
     "lib/networkPacks/PacksForClientBattle.h": {
       "kind": "exception",
-      "lines": 2273,
-      "sha256": "bc25a3713fd6fd13ac66cfe49a03a9c59771aee36c67a7d707c1ebb346ef4b71",
+      "lines": 2276,
+      "sha256": "19b5eb52adaf158c9f569afab4701167a8d5cfaf8a0ea073b9aea77e249016b6",
       "owner": "engine_engineer",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "rationale": "Three mechanical pre-prefix Side recovery-validation lines; no command or battle lifecycle responsibility added.",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth.",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "rationale": "Three entry packet pre-prefix side validation lines only; protected actual receipt layout remains in existing Side owner. File2276/serialize179 exact bounds.",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth.",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleAttack::void validateSerializationPrefix(Handler & h)#1": {
       "kind": "review",
@@ -23770,36 +23787,36 @@
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleStart::void serialize(Handler & h)#1": {
       "kind": "exception",
-      "lines": 176,
+      "lines": 179,
       "owner": "engine_engineer",
-      "rationale": "Three mechanical pre-prefix Side recovery-validation lines; no command or battle lifecycle responsibility added.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "dd05aaa114c17fdb26219793a2af68eb6964f29487029d4739dcaa2e57b01e32",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "rationale": "Three entry packet pre-prefix side validation lines only; protected actual receipt layout remains in existing Side owner. File2276/serialize179 exact bounds.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "477a402072df043daba73146cafeaac51c491c4e39461e0d5a20f85781ad1085",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/networkPacks/PacksForLobby.h": {
       "kind": "exception",
-      "lines": 570,
+      "lines": 571,
       "owner": "engine_engineer",
-      "rationale": "Mechanical additional-specialty capability forwarding before enclosing lobby prefix.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "f7f1844d6cf4ed8c813c1931ca36f8cb8303faeafc71c9fedbb1bbf547dd283f",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "rationale": "One capability-forwarding argument in enclosing initialized-world capture validation; preserve rejection before lobby prefix. File571/serialize91 exact bounds.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "cd3b813272e5b7ab8a73cd37057f96a76496f3f39d232acaf21482a69afb30ca",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/networkPacks/PacksForLobby.h::LobbyStartGame::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 90,
+      "lines": 91,
       "owner": "engine_engineer",
-      "rationale": "Mechanical additional-specialty capability forwarding before enclosing lobby prefix.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "153bb9c10393a412287bc5b066d3f64367513722a2d8d2ba8189d327b8d70e23",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "rationale": "One capability-forwarding argument in enclosing initialized-world capture validation; preserve rejection before lobby prefix. File571/serialize91 exact bounds.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "800ccb2c21b2aaa41da955b674c093173d1a7110a68ec8910c11ec76237a81ef",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
     },
     "lib/networkPacks/PacksForServer.h": {
       "kind": "legacy",
@@ -24357,14 +24374,14 @@
     },
     "lib/serializer/ESerializationVersion.h": {
       "kind": "exception",
-      "lines": 559,
+      "lines": 564,
       "owner": "engine_engineer",
-      "rationale": "Append the replay-payload provenance capability, advanceCURRENT and retain append-only assertions without altering prior enumerators. Provenance validation remains in focused replay owners.",
-      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
-      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
-      "sha256": "ce10bed3afba10001f886a172833628f23765ffcc36e71947552e61a917e1adf",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact559-line declarative capability registry only. No unrelated helper/validator growth; each future append requires exact independent review."
+      "rationale": "Append Recovery after current Replay payload capability without renumbering existing enum values; CURRENT and exact greater-than-Replay assertion only. Mechanical registry564 lines.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "bcaec7fa2f95943aa0c0dd1653016f35c9df22869ae6d6e0591f1b3b1c3822da",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact559-line declarative capability registry only. No unrelated helper/validator growth; each future append requires exact independent review."
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -24385,15 +24402,15 @@
       "sha256": "003cb077bbef527b0dd7304996267cf53c31fe82e63f105324e2a6df86fd491d"
     },
     "lib/spells/BattleSpellMechanics.cpp": {
-      "deferral": "Before further Cure-validator growth, the gameplay engineer must extract the existing Cure eligibility and selector block into a cohesive shared validator with a current battle and canonical destination. Preserve identity refusal, owner/receptivity/rules/selection and pre-cost ordering; retain hex/unit/refusal, no-mutation/RNG/cost, authoritative Cure/Dispel/Frozen and modal lifecycle coverage, and reduce this baseline. Before further growth, extract coherent accepted effect preparation/application transaction preserving parent/recipient provenance, typed action/payment/Luck/refund/RNG/packet order. Retain existing Cure validator extraction obligation. Exact shrinking file3122 and castEval146 caps only; the gameplay engineer owns extraction of the remaining accepted projection transaction before substantive castEval expansion. Preserve authoritative effect order, target preparation, Concentration delegation, post-application certification, failure revocation and no saved-state change. Require canonical/unknown script, geometry/recipient and state/packet/both-RNG characterization; runtime acceptance remains separate.",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Before further Cure-validator growth, the gameplay engineer must extract the existing Cure eligibility and selector block into a cohesive shared validator with a current battle and canonical destination. Preserve identity refusal, owner/receptivity/rules/selection and pre-cost ordering; retain hex/unit/refusal, no-mutation/RNG/cost, authoritative Cure/Dispel/Frozen and modal lifecycle coverage, and reduce this baseline. Before further growth, extract coherent accepted effect preparation/application transaction preserving parent/recipient provenance, typed action/payment/Luck/refund/RNG/packet order. Retain existing Cure validator extraction obligation. Exact shrinking file3122 and castEval146 caps only; the gameplay engineer owns extraction of the remaining accepted projection transaction before substantive castEval expansion. Preserve authoritative effect order, target preparation, Concentration delegation, post-application certification, failure revocation and no saved-state change. Require canonical/unknown script, geometry/recipient and state/packet/both-RNG characterization; runtime acceptance remains separate.",
       "kind": "exception",
-      "lines": 3117,
+      "lines": 3118,
       "owner": "gameplay_engineer",
-      "rationale": "Exact3122-to3117 shrinking mechanics owner: LifeDrain receipt capture is delegated to a focused validated helper and existing Concentration target projection is extracted to its focused owner. Actual cast/payment/effect ordering remains and postcast identity is checked. Retain existing Cure/accepted-transaction extraction obligations and required runtime parity.",
-      "review": "life-drain-completed-suffix-independent-source-review",
-      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
-      "sha256": "90ba57cb00ea63d9f792b00650cf5f02eb4b9b3dedc1ddaadc4f48c6916bb8d1",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "rationale": "One rate-helper routing argument for original-caster SP-term percentage; current Concentration/LifeDrain projection routes preserved. No new lifecycle scan; file3118 exact bound.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "7ee903ead9366d4ab904f39c7ee811d03905ac2603a9422ae4f04ae085495364",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::bool BattleSpellMechanics::canBeCast(Problem & problem) const#1": {
       "deferral": "Before further growth, extract the affected compound targeting/accepted-effect transaction into cohesive validated helpers; preserve identity, owner, rejection/action/payment/RNG order and reduce this exact baseline. Existing Cure extraction obligation remains.",
@@ -24506,23 +24523,23 @@
       "kind": "exception",
       "lines": 2211,
       "owner": "gameplay_engineer",
-      "rationale": "Extract complete canonical Cure budget into a 29-line helper, retaining fixed/SP floors, Gem and Healer order and legacy fallback; dispatcher shrinks.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "19dd648e28d36eeedeb38f2702e16dc9ba74566893874178faaacb98d6c0dfcc",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should continue extracting per-spell numerical budget calculations through typed pure helpers, preserving constructor stage order, original-cast coefficient context, fixed/SP floors and target scaling before further dispatcher growth.",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "rationale": "Existing constructor replaces one original-cast capture call with focused shared specialty capture;433-line constructor and2211-line file do not grow. New capture implementation lives in58-line owner.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "80bb18815baed4f549db0608384de0efe73a845ba7ec89b88b4a7db8b796731f",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should continue extracting per-spell numerical budget calculations through typed pure helpers, preserving constructor stage order, original-cast coefficient context, fixed/SP floors and target scaling before further dispatcher growth.",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/spells/ISpellMechanics.cpp::spells::BaseMechanics::BaseMechanics(const IBattleCast * event): owner(event->getSpell()), mode(event->getMode()), forceMassive(event->isForceMassive()), cb(event->getBattle())#1": {
       "kind": "exception",
       "lines": 433,
       "owner": "gameplay_engineer",
-      "rationale": "Extract complete canonical Cure budget into a 29-line helper, retaining fixed/SP floors, Gem and Healer order and legacy fallback; dispatcher shrinks.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "ed305ab6a6e88463fbc38ba0963e6629367282c66169c298f22835df86e4b886",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should continue extracting per-spell numerical budget calculations through typed pure helpers, preserving constructor stage order, original-cast coefficient context, fixed/SP floors and target scaling before further dispatcher growth."
+      "rationale": "Existing constructor replaces one original-cast capture call with focused shared specialty capture;433-line constructor and2211-line file do not grow. New capture implementation lives in58-line owner.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "e7347906db0d245a19be3bc45333654c3b7e195e60a91bbc591ae40c545a00a8",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should continue extracting per-spell numerical budget calculations through typed pure helpers, preserving constructor stage order, original-cast coefficient context, fixed/SP floors and target scaling before further dispatcher growth."
     },
     "lib/spells/ISpellMechanics.cpp::spells::int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const bool applyExecution) const#1": {
       "kind": "exception",
@@ -24537,24 +24554,24 @@
     },
     "lib/spells/ISpellMechanics.h": {
       "kind": "exception",
-      "lines": 778,
+      "lines": 786,
       "owner": "gameplay_engineer",
-      "rationale": "Exact772-to778 interface extension adds a default-null optional LifeDrain receipt query while preserving ordinary and historical mechanics defaults. Prepared receipt validation remains in a focused owner; no mutation, persistence or generic export interface is added.",
-      "review": "life-drain-completed-suffix-independent-source-review",
-      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
-      "sha256": "a727ed3663c5970275d26955b84a85c3a7ec7a96bf8490070b0705a0d83406ff",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Gameplay owner must split a cohesive mechanics capability interface before further substantive header growth. Preserve default behavior, DLL linkage, copied event-context lifetime and existing read-only Vines receipt contracts. Exact772-line interface bound; no regrowth credit."
+      "rationale": "Transient optional original-cast0/positive factor and read-only getter declarations/copy layout only. No persistent runtime state or inline policy scan; file786 exact bound.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "f71db21de3f8a8bfa4bfc83d4c4bbda73673ed44f37eefac5446f28dc138f295",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Gameplay owner must split a cohesive mechanics capability interface before further substantive header growth. Preserve default behavior, DLL linkage, copied event-context lifetime and existing read-only Vines receipt contracts. Exact772-line interface bound; no regrowth credit."
     },
     "lib/spells/NewHorizonsMagic.cpp": {
       "kind": "legacy",
-      "lines": 2158,
+      "lines": 2122,
       "owner": "gameplay_engineer",
-      "rationale": "Shrinking2174-to2158-line ratchet: move ordinary/pure component coefficient implementation into76-line owner; add explicit optional instance-coefficient inputs to existing healing/control utilities. No new central hero switch, saved defaults or fixed-base scaling; no future regrowth credit.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "5589a51e3034631930df55a2dae7b4919527c48e63a455076c9e7638db312788",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "rationale": "Shrinking2158-to2122 ratchet: extract two cohesive existing Regeneration rate functions to56-line exact-rational owner preserving public API and existing fixed terms/cap. No future regrowth credit.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "c1f9cf7e0a5e2d4a653a4f6b186c95693cfd6af173ce1ff58aa28915b66fb18d",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/spells/NewHorizonsMagic.cpp::newHorizonsMagic::void validateRules(const JsonNode & rules)#1": {
       "kind": "exception",
@@ -24569,14 +24586,14 @@
     },
     "lib/spells/NewHorizonsMagic.h": {
       "kind": "exception",
-      "lines": 522,
+      "lines": 525,
       "owner": "gameplay_engineer",
-      "rationale": "Declaration-only511-to522 extension: explicit ordinary/damage queries and optional instance coefficient inputs for existing healing/control helpers. Sole AdventureSpellState body remains unchanged; factor/cast implementation stays in focused owners.",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "sha256": "76b7d6bb8611d0d41a68f39663ea284f5aa03188cd9ad589d464d70cac8908c6",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Gameplay owner keeps exact522-line declaration registry bound; before substantive interface expansion, split a cohesive capability API without duplicating saved-rule identity or exposing mutable state. Preserve generic callers and conservative defaults."
+      "rationale": "Three pure rate-query declaration lines only; existing AdventureSpellState serializer body unchanged. One-body manual inventory retained; macro/default-argument parser recoveries remain declarations.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "c056fcfed31d378e55c8b4f0bbc0a03cfb768fe7730d24f565a933045af7670a",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Gameplay owner keeps exact522-line declaration registry bound; before substantive interface expansion, split a cohesive capability API without duplicating saved-rule identity or exposing mutable state. Preserve generic callers and conservative defaults."
     },
     "lib/spells/NewHorizonsRealityWarp.cpp::newHorizonsRealityWarp::PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t first, uint32_t second)#1": {
       "kind": "legacy",
@@ -25814,14 +25831,14 @@
     },
     "server/battles/BattleResultProcessor.cpp": {
       "kind": "exception",
-      "lines": 1344,
+      "lines": 1348,
       "owner": "engine_engineer",
-      "rationale": "Two no-growth Eagle Eye dispatch changes use shared distinct ordered selector for winner and retained heroes; packet ordering and ordinary learning gates unchanged.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "6acdb2b07e4a377450040618f76fc04810c20103a69c88e83aac5d8e7b7129ee",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should separately extract postbattle spell-learning collection into a focused plan returning ChangeSpells data, preserving winner/retained-hero eligibility and packet order before further growth."
+      "rationale": "Four file lines/three finalize lines route winning-result Axsis restoration to33-line focused owner after existing cleanup before removal. Existing result lifecycle owns once-only behavior; no new ledger.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "9fd3ed536e79de5abe99b48dfa9547e7b4c34d8c98b260bc2749840964b3b6d1",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should separately extract postbattle spell-learning collection into a focused plan returning ChangeSpells data, preserving winner/retained-hero eligibility and packet order before further growth."
     },
     "server/battles/BattleResultProcessor.cpp::CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle, BattleSide sideInBattle): army(battle.battleGetArmyObject(sideInBattle))#1": {
       "kind": "legacy",
@@ -25844,13 +25861,14 @@
     },
     "server/battles/BattleResultProcessor.cpp::void BattleResultProcessor::battleFinalize(const BattleID & battleID, const BattleResult & result)#1": {
       "kind": "exception",
-      "lines": 413,
+      "lines": 416,
       "owner": "engine_engineer",
-      "rationale": "Two no-growth Eagle Eye dispatch changes use shared distinct ordered selector for winner and retained heroes; packet ordering and ordinary learning gates unchanged.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "a7730fe8097cdbcaafb556fd37b3dc30bce1119e484e1bd45c53431431d71b64",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should separately extract postbattle spell-learning collection into a focused plan returning ChangeSpells data, preserving winner/retained-hero eligibility and packet order before further growth."
+      "rationale": "Four file lines/three finalize lines route winning-result Axsis restoration to33-line focused owner after existing cleanup before removal. Existing result lifecycle owns once-only behavior; no new ledger.",
+      "review": "recovery-verdish-current-rebase-source-v1",
+      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
+      "sha256": "b0e6da0d6b0145e292bed2dc57627c5a4d08e891fc3ad6c425298dc163d6a491",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should separately extract postbattle spell-learning collection into a focused plan returning ChangeSpells data, preserving winner/retained-hero eligibility and packet order before further growth.",
+      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "server/battles/BattleResultProcessor.cpp::void BattleResultProcessor::endBattle(const CBattleInfoCallback & battle)#1": {
       "kind": "legacy",

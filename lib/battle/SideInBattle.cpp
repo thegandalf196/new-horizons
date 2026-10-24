@@ -17,6 +17,9 @@
 void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town)
 {
 	manaFurnaceRecoveredNormal = 0;
+	initialAcceptedCombatDay = -1;
+	deepTranceConsumed = false;
+	deepTranceRecoveredNormal = 0;
 	armyObjectID = Army->id;
 	if (Hero)
 	{
@@ -75,9 +78,20 @@ void SideInBattle::validateManaFurnaceSerialization(bool supported) const
 		throw std::runtime_error("Cannot discard Mana Furnace entry recovery");
 }
 
+void SideInBattle::validateRecoverySpecialtySerialization(bool supported) const
+{
+	if(initialAcceptedCombatDay < -1 || initialAcceptedCombatDay > std::numeric_limits<uint32_t>::max()
+		|| deepTranceRecoveredNormal < 0
+		|| (!deepTranceConsumed && (initialAcceptedCombatDay != -1 || deepTranceRecoveredNormal != 0)))
+		throw std::runtime_error("Invalid Deep Trance entry provenance");
+	if(!supported && (deepTranceConsumed || initialAcceptedCombatDay != -1 || deepTranceRecoveredNormal != 0))
+		throw std::runtime_error("Cannot discard Deep Trance entry provenance");
+}
+
 int32_t SideInBattle::legacySpellPointCompletionCeiling() const
 {
 	validateManaFurnaceSerialization(true);
-	return static_cast<int32_t>(std::clamp<int64_t>(static_cast<int64_t>(initialMana) + manaFurnaceRecoveredNormal,
+	validateRecoverySpecialtySerialization(true);
+	return static_cast<int32_t>(std::clamp<int64_t>(static_cast<int64_t>(initialMana) + manaFurnaceRecoveredNormal + deepTranceRecoveredNormal,
 		0, std::numeric_limits<int32_t>::max()));
 }

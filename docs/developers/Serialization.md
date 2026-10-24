@@ -112,6 +112,22 @@ revalidated before granting XP. The existing 250/500 authorization coefficient a
 weekly recipient receipts are unchanged; recipient XP modifiers apply once.
 Historical row absence retains the former mechanics and specialty presentation.
 
+## Captured recovery specialties
+
+`NEW_HORIZONS_RECOVERY_SPECIALTIES` protects the optional versioned
+`recoverySpecialties` table and accepted-combat recovery receipts. Its independently
+optional rows are `infernalWellspring`, `ritualReserve`, `deepTrance` and
+`herbalSurgeon`; historical absence remains absent. Unsupported direct and enclosing
+writers reject before their prefixes, and readers validate captures and receipts.
+
+Deep Trance records the accepted-combat day on the hero and actual recovered Normal
+Spell Points on the battle side. Entry validation precedes mutation; cancellation
+and restart retain the existing rollback rules. Legacy readers reset absent
+receipts, and pool completion retains only actual persistent recovery. These fields
+do not add ongoing-battle world-save support. Herbal Surgeon's original-caster
+percentage travels with the existing transient cast context; reflection must not
+recapture the reflecting hero's specialty.
+
 ## Captured Fly day-end policy
 
 `NEW_HORIZONS_FLY_DAY_END` protects the presence of

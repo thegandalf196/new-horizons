@@ -944,7 +944,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	cb(event->getBattle())
 {
 	caster = event->getCaster();
-	spellcraftContext = newHorizonsHeroes::resolveSpellcraftContext(event);
+	captureOriginalSpellSpecialties(event);
 	heroLuck = event->getHeroLuck();
 	metamagicFollowup = event->isMetamagicFollowup();
 	massSlow = event->getMassSlow();

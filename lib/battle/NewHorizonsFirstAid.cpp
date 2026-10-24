@@ -8,6 +8,7 @@
 #include "CUnitState.h"
 #include "../CStack.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsHerbalSurgeon.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../mapObjects/CGHeroInstance.h"
 namespace
@@ -48,14 +49,14 @@ int64_t CBattleInfoCallback::battleGetFirstAidCreatureHealingOutput(
 		|| !battleMatchActionController(healer, target, true))
 		return ordinary;
 	const auto * hero = battleGetOwnerHero(healer);
-	const auto physician = newHorizonsHeroes::fieldPhysicianHealing(ordinary, hero);
+	const auto specialtyBudget = newHorizonsHeroes::tentCreatureHealingBudget(ordinary, hero);
 	if(target->getFirstHPleft() >= target->getMaxHealth())
-		return physician;
+		return specialtyBudget;
 	const auto specialty = hero
 		? hero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::RESTORATIVE_SORCERESS) : std::nullopt;
 	if(!specialty)
-		return physician;
-	return physician + newHorizonsHeroes::druidSpecialtyExtra(ordinary,
+		return specialtyBudget;
+	return specialtyBudget + newHorizonsHeroes::druidSpecialtyExtra(ordinary,
 		newHorizonsHeroes::druidSpecialtyPercent(hero->level, specialty->restorativeSorceress));
 }
 int64_t CBattleInfoCallback::battleGetBattlefieldMedicRestorationBudget(
@@ -75,7 +76,7 @@ int64_t CBattleInfoCallback::battleGetBattlefieldMedicRestorationBudget(
 		return 0;
 
 	// Calculated output, not the HP actually healed or the unused healing remainder.
-	return newHorizonsHeroes::fieldPhysicianHealing(battleGetFirstAidHealingOutput(healer), hero) / 2;
+	return newHorizonsHeroes::tentCreatureHealingBudget(battleGetFirstAidHealingOutput(healer), hero) / 2;
 }
 
 FirstAidHealingPreview CBattleInfoCallback::battleGetFirstAidHealingPreview(

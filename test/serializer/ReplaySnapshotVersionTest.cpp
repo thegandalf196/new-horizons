@@ -14,6 +14,26 @@
 class ReplaySnapshotVersionTest : public HeroCommandFixture
 {
 protected:
+	bool historicalCapture = false;
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		if(!historicalCapture)
+			return;
+		auto rules = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+		rules.setOverrideFlag(true);
+		rules.Struct().erase("recoverySpecialties");
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+	}
+	void expectHistoricalCapture(const CGameState & world)
+	{
+		EXPECT_TRUE(world.getHeroDevelopmentRules()["recoverySpecialties"].isNull());
+		EXPECT_EQ(world.getHeroDevelopmentRules(), gameState()->getHeroDevelopmentRules());
+		const auto * hero = world.getHero(attackerSideHero->id);
+		ASSERT_NE(hero, nullptr);
+		EXPECT_TRUE(hero->getPrimaryGrowthRules()["recoverySpecialties"].isNull());
+		EXPECT_EQ(hero->getPrimaryGrowthRules(), attackerSideHero->getPrimaryGrowthRules());
+	}
 	std::vector<std::byte> rngState()
 	{
 		CMemorySerializer wire;
@@ -39,7 +59,9 @@ TEST_F(ReplaySnapshotVersionTest, UnknownSnapshotRefusesBeforeChangingExistingWo
 
 TEST_F(ReplaySnapshotVersionTest, HistoricalNativeSnapshotRecaptureUsesCurrentLocalRewindVersion)
 {
+	historicalCapture = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
+	ASSERT_NO_FATAL_FAILURE(expectHistoricalCapture(*gameState()));
 	gameState()->replayLog = ReplayLog();
 	gameState()->nextBattleID = BattleID(9);
 	const auto rngBefore = rngState();
@@ -50,6 +72,7 @@ TEST_F(ReplaySnapshotVersionTest, HistoricalNativeSnapshotRecaptureUsesCurrentLo
 	CGameState restored;
 	restored.preInit(LIBRARY);
 	restored.loadReplaySnapshot(historical);
+	ASSERT_NO_FATAL_FAILURE(expectHistoricalCapture(restored));
 	EXPECT_EQ(restored.day, gameState()->day);
 	EXPECT_EQ(restored.nextBattleID, BattleID(9));
 	EXPECT_EQ(restored.getMagicRules(), gameState()->getMagicRules());
@@ -63,7 +86,9 @@ TEST_F(ReplaySnapshotVersionTest, HistoricalNativeSnapshotRecaptureUsesCurrentLo
 
 TEST_F(ReplaySnapshotVersionTest, LegacyOpaqueReplayDoesNotBlockOrdinaryWorldLoadOrCurrentResave)
 {
+	historicalCapture = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
+	ASSERT_NO_FATAL_FAILURE(expectHistoricalCapture(*gameState()));
 	gameState()->replayLog = ReplayLog();
 	gameState()->replayLog.beginDay(gameState()->day, {std::byte{7}});
 	gameState()->replayLog.addPack({std::byte{8}});
@@ -73,6 +98,7 @@ TEST_F(ReplaySnapshotVersionTest, LegacyOpaqueReplayDoesNotBlockOrdinaryWorldLoa
 	CGameState restored;
 	restored.preInit(LIBRARY);
 	restored.loadReplaySnapshot(ReplayPayload{old.extractBuffer(), old.oser.version});
+	ASSERT_NO_FATAL_FAILURE(expectHistoricalCapture(restored));
 	ASSERT_EQ(restored.replayLog.getChapters().size(), 1u);
 	const auto & opaque = restored.replayLog.getChapters().front();
 	EXPECT_EQ(opaque.gamestateSnapshot, (std::vector<std::byte>{std::byte{7}}));

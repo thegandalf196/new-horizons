@@ -95,3 +95,16 @@ TEST(NewHorizonsRegenerationTest, RejectsImpossibleRateInputs)
 	EXPECT_THROW(regenerationRateMillionths(100, 1001, false), std::invalid_argument);
 	EXPECT_THROW(regenerationRateMillionths(100, 100, false, -1), std::invalid_argument);
 }
+
+TEST(NewHorizonsRegenerationTest, HerbalSurgeonScalesOnlyPowerWithOneFinalFloorAndPreservesFixedTerms)
+{
+	EXPECT_EQ(regenerationRateMillionthsBasisPointsWithSpecialty(0, 14500, false, 0, 0, 200), 250000);
+	EXPECT_EQ(regenerationRateMillionthsBasisPointsWithSpecialty(0, 14500, true, 0, 0, 200), 350000);
+	EXPECT_EQ(regenerationRateMillionthsBasisPointsWithSpecialty(40, 11500, true, 0, 0, 100), 488000);
+	EXPECT_EQ(regenerationRateMillionthsBasisPoints(40, 11500, true), 419000);
+	// floor(1500*7*1.265*1.10*1.20*1.05), with no early SP rounding.
+	EXPECT_EQ(regenerationRateMillionthsBasisPointsWithSpecialty(7, 12650, false, 10, 20, 5), 268409);
+	EXPECT_EQ(regenerationRateMillionthsBasisPointsWithSpecialty(std::numeric_limits<int32_t>::max(), 100000, true, 1000, 1000, 200), 500000);
+	EXPECT_THROW(regenerationRateMillionthsBasisPointsWithSpecialty(10, 10000, false, 0, 0, 201), std::invalid_argument);
+	EXPECT_THROW(regenerationRateMillionthsBasisPointsWithSpecialty(10, 10000, false, 0, 0, -1), std::invalid_argument);
+}

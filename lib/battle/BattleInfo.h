@@ -593,6 +593,9 @@ public:
 	{
 		if(h.saving)
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				getSide(side).validateRecoverySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
+		if(h.saving)
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 				getSide(side).validateManaFurnaceSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
 		if(h.saving)
 			validateNoQuarterLifetimeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));

@@ -3,11 +3,13 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include <limits>
 #include "HeroCommandFixture.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/battle/PhysicalAffliction.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../../lib/entities/hero/NewHorizonsHerbalSurgeon.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
@@ -28,6 +30,7 @@ protected:
 	}
 	bool captured = true;
 	bool legacyMagic = false;
+	bool herbalPolicy = false;
 	CStack * patient = nullptr;
 	const CStack * tent = nullptr;
 	void mapLoaded(CMap * loaded) override
@@ -42,6 +45,18 @@ protected:
 			rules["additionalSpecialties"]["fieldPhysician"]["healingPercentPerLevel"].Integer() = 5;
 			rules["additionalSpecialties"]["fieldPhysician"]["healingMaximumPercent"].Integer() = 100;
 		}
+
+		if(herbalPolicy)
+		{
+			auto & table = rules["recoverySpecialties"];
+			table["version"].Integer() = 1;
+			for(const auto key : {"tentPercentPerLevel", "regenerationPercentPerLevel"})
+				table["herbalSurgeon"][key].Integer() = 5;
+			for(const auto key : {"tentMaximumPercent", "regenerationMaximumPercent"})
+				table["herbalSurgeon"][key].Integer() = 100;
+		}
+		else if(rules["recoverySpecialties"].isStruct())
+			rules["recoverySpecialties"].Struct().erase("herbalSurgeon");
 		// A legacy magic fixture cannot request modern starting-book migration.
 		if(legacyMagic)
 			rules["startingSkills"].Struct().erase("startingBookReplacements");
@@ -277,4 +292,54 @@ TEST_F(NewHorizonsFieldPhysicianTest, CapturedRionWithLegacyMagicKeepsOrdinaryCu
 	EXPECT_NE(description.find("Current Tent healing increase: +100%."), std::string::npos);
 	EXPECT_EQ(battle()->battleGetFirstAidCreatureHealingOutput(tent, patient), 80);
 	ASSERT_NO_FATAL_FAILURE(castAndExpect(ordinary));
+}
+
+TEST_F(NewHorizonsFieldPhysicianTest, VerdishCreatureTentBudgetFeedsMedicButDoesNotImproveCure)
+{
+	herbalPolicy = true;
+	ASSERT_NO_FATAL_FAILURE(prepare("core:verdish", 10, false, "new-horizons:warMachines.battlefieldMedic"));
+	ASSERT_NO_FATAL_FAILURE(injure(patient, patient->getMaxHealth() + 3));
+	ASSERT_NO_FATAL_FAILURE(reachTent());
+	EXPECT_EQ(battle()->battleGetFirstAidHealingOutput(tent), 40);
+	EXPECT_EQ(battle()->battleGetFirstAidCreatureHealingOutput(tent, patient), 80);
+	EXPECT_EQ(battle()->battleGetBattlefieldMedicRestorationBudget(tent, patient), 40);
+	const auto preview = battle()->battleGetFirstAidHealingPreview(tent, patient);
+	EXPECT_EQ(preview.survivorHealedHP, 3);
+	EXPECT_EQ(preview.restoredHP, 40);
+	const auto health = patient->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeHeal(tent, patient)));
+	EXPECT_EQ(patient->getAvailableHealth() - health, 43);
+	EXPECT_EQ(newHorizonsMagic::cureHealingBudget(attackerSideHero, 10, 10000), 40);
+}
+TEST_F(NewHorizonsFieldPhysicianTest, VerdishWorkshopRepairKeepsOrdinaryOutput)
+{
+	herbalPolicy = true;
+	ASSERT_NO_FATAL_FAILURE(prepare("core:verdish", 10, false, "new-horizons:warMachines.fieldWorkshop"));
+	auto * machine = addStack(BattleSide::ATTACKER, creatureByName("core:ballista"), BattleHex(4, 8), 1);
+	ASSERT_NE(machine, nullptr);
+	ASSERT_NO_FATAL_FAILURE(injure(machine, 100));
+	ASSERT_NO_FATAL_FAILURE(reachTent());
+	EXPECT_EQ(battle()->battleGetFirstAidCreatureHealingOutput(tent, machine), 40);
+	const auto health = machine->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeHeal(tent, machine)));
+	EXPECT_EQ(machine->getAvailableHealth() - health, 40);
+}
+TEST_F(NewHorizonsFieldPhysicianTest, VerdishHistoricalAbsenceKeepsOrdinaryTent)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:verdish"));
+	EXPECT_EQ(battle()->battleGetFirstAidCreatureHealingOutput(tent, patient), 40);
+}
+TEST_F(NewHorizonsFieldPhysicianTest, VerdishLegacyMagicStillUsesTentOnlyAndSaturatesLargePureBudget)
+{
+	herbalPolicy = true;
+	legacyMagic = true;
+	ASSERT_NO_FATAL_FAILURE(prepare("core:verdish"));
+	EXPECT_EQ(battle()->battleGetFirstAidCreatureHealingOutput(tent, patient), 80);
+	EXPECT_EQ(newHorizonsHeroes::tentCreatureHealingBudget(std::numeric_limits<int64_t>::max(), attackerSideHero),
+		std::numeric_limits<int64_t>::max());
+	EXPECT_THROW(newHorizonsHeroes::tentCreatureHealingBudget(-1, attackerSideHero), std::invalid_argument);
+	const auto text = newHorizonsHeroes::resolveSpecialtyPresentation(*attackerSideHero->getHeroType(),
+		attackerSideHero->getPrimaryGrowthRules(), attackerSideHero->getMagicRules(), std::nullopt, attackerSideHero);
+	EXPECT_EQ(text.name, "Herbal Surgeon");
+	EXPECT_NE(text.description.find("ordinary effect under this game's legacy magic"), std::string::npos);
 }

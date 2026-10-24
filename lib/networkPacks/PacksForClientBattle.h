@@ -56,6 +56,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	{
 		if(h.saving && info)
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				info->getSide(side).validateRecoverySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
+		if(h.saving && info)
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 				info->getSide(side).validateManaFurnaceSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
 		if(h.saving && info)
 			info->validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));

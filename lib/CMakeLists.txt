@@ -267,6 +267,11 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsHeroRules.cpp
 	entities/hero/NewHorizonsIndividualSpecialties.cpp
 	entities/hero/NewHorizonsAdditionalSpecialties.cpp
+	entities/hero/NewHorizonsRecoverySpecialtyRules.cpp
+	entities/hero/NewHorizonsHerbalSurgeon.cpp
+	entities/hero/NewHorizonsHerbalSurgeonPresentation.cpp
+	entities/hero/NewHorizonsMysticismRecovery.cpp
+	entities/hero/NewHorizonsRecoverySpecialtyPresentation.cpp
 	entities/hero/NewHorizonsLearningSpecialtyRules.cpp
 	entities/hero/NewHorizonsLearningExperience.cpp
 	entities/hero/NewHorizonsLearningSpecialtyPresentation.cpp
@@ -335,6 +340,7 @@ set(lib_MAIN_SRCS
 	mapObjects/CGCreaturePopupText.cpp
 	mapObjects/CGDwelling.cpp
 	mapObjects/CGHeroInstance.cpp
+	mapObjects/HeroManaRegeneration.cpp
 	mapObjects/HeroStartingEquipment.cpp
 	mapObjects/HeroSpellCasting.cpp
 	mapObjects/HeroPrimarySkillQueries.cpp
@@ -481,6 +487,8 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsCureHealing.cpp
 	spells/NewHorizonsSpellcraftPower.cpp
 	spells/NewHorizonsSpellcraftCast.cpp
+	spells/NewHorizonsHerbalSurgeonCast.cpp
+	spells/NewHorizonsRegenerationRate.cpp
 	spells/NewHorizonsEagleEye.cpp
 	spells/NewHorizonsFriendlyFire.cpp
 	spells/NewHorizonsMagic.cpp
@@ -910,6 +918,8 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsSpecialtyArtwork.h
 	entities/hero/NewHorizonsIndividualSpecialties.h
 	entities/hero/NewHorizonsAdditionalSpecialties.h
+	entities/hero/NewHorizonsRecoverySpecialties.h
+	entities/hero/NewHorizonsHerbalSurgeon.h
 	entities/hero/NewHorizonsLearningSpecialties.h
 	entities/hero/NewHorizonsSchoolSpellcraft.h
 	entities/hero/NewHorizonsRuleValidation.h

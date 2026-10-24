@@ -377,6 +377,20 @@ public:
 	const std::set<ObjectInstanceID> & getNewHorizonsSageGuildVisits() const { return newHorizonsSageGuildVisits; }
 	void markNewHorizonsSageGuildVisit(ObjectInstanceID town);
 	void validateNewHorizonsSageSerialization(bool supported) const;
+	int64_t getNewHorizonsLastAcceptedCombatDay() const { return newHorizonsLastAcceptedCombatDay; }
+	void setNewHorizonsLastAcceptedCombatDay(int64_t day)
+	{
+		if(day < -1 || day > std::numeric_limits<uint32_t>::max())
+			throw std::runtime_error("Invalid accepted combat day");
+		newHorizonsLastAcceptedCombatDay = day;
+	}
+	void validateRecoverySpecialtyStateSerialization(bool supported) const
+	{
+		if(newHorizonsLastAcceptedCombatDay < -1 || newHorizonsLastAcceptedCombatDay > std::numeric_limits<uint32_t>::max())
+			throw std::runtime_error("Invalid accepted combat day");
+		if(!supported && newHorizonsLastAcceptedCombatDay != -1)
+			throw std::runtime_error("Cannot discard accepted combat day");
+	}
 	int32_t getNewHorizonsScholarWeek() const { return newHorizonsScholarWeek; }
 	const std::vector<ObjectInstanceID> & getNewHorizonsScholarPartners() const { return newHorizonsScholarPartners; }
 	static bool isValidNewHorizonsScholarState(ObjectInstanceID hero, int32_t week, const std::vector<ObjectInstanceID> & partners);
@@ -665,6 +679,7 @@ private:
 	int32_t newHorizonsMusterLastWeek = -1;
 	int32_t newHorizonsMusterUsesThisWeek = 0;
 	int32_t newHorizonsLearningMentorLastWeek = -1;
+	int64_t newHorizonsLastAcceptedCombatDay = -1;
 	int32_t newHorizonsScholarWeek = -1;
 	std::vector<ObjectInstanceID> newHorizonsScholarPartners;
 	int32_t newHorizonsRecruitersContactsLastWeek = -1;
@@ -705,6 +720,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateRecoverySpecialtyStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
@@ -761,7 +778,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)
 			newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
@@ -925,7 +943,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION),
 					h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS),
 					h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES),
-					h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
+					h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 				newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 				newHorizonsHeroes::validateMasterSpellwardSerialization(primaryGrowthRules,
@@ -1163,5 +1182,11 @@ public:
 			protectedAdventureFlightLayer = EPathfindingLayer::LAND;
 		if(!h.saving)
 			validateProtectedAdventureMobilitySerialization(true);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES))
+			h & newHorizonsLastAcceptedCombatDay;
+		else if(!h.saving)
+			newHorizonsLastAcceptedCombatDay = -1;
+		if(!h.saving)
+			validateRecoverySpecialtyStateSerialization(true);
 	}
 };

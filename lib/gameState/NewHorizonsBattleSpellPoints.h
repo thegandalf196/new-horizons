@@ -14,6 +14,8 @@ namespace newHorizonsHeroes
 struct DLL_LINKAGE BattleSpellPointEntry
 {
 	BattleSideArray<std::optional<ManaFurnaceRules>> manaFurnace;
+	BattleSideArray<bool> deepTrance{};
+	int64_t acceptedDay = -1;
 };
 /// Validate both sides before attaching a battle or mutating either hero.
 DLL_LINKAGE BattleSpellPointEntry validateBattleSpellPointEntry(const CGameState & state, const BattleInfo & battle);

@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsRecoverySpecialties.h"
+#include "NewHorizonsHerbalSurgeon.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsSpecialtyArtwork.h"
 #include "HeroStartingProjection.h"
@@ -28,7 +30,9 @@ bool resolveIndividualPresentation(const CHero & hero,
 	const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero,
 	SpecialtyPresentation & result)
 {
-	if(resolveAdditionalSpecialtyPresentation(hero, development, magic, capturedHero, result)
+	if(resolveHerbalSurgeonPresentation(hero, development, magic, capturedHero, result)
+		|| resolveRecoverySpecialtyPresentation(hero, development, capturedHero, result)
+		|| resolveAdditionalSpecialtyPresentation(hero, development, magic, capturedHero, result)
 		|| resolveIndividualRiderPresentation(hero, development, magic, capturedHero, result)
 		|| resolveSchoolSpellcraftPresentation(hero, development, magic, capturedHero, result))
 		return true;

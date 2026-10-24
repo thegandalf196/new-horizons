@@ -131,9 +131,10 @@ int32_t newHorizonsRegenerationRate(const BattleSpellMechanics & mechanics)
 	const bool herbalist = hero && hero->hasActivePerk(
 		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
 		std::string(newHorizonsMagic::NATURE_HERBALIST));
-	return newHorizonsMagic::regenerationRateMillionthsBasisPoints(
+	return newHorizonsMagic::regenerationRateMillionthsBasisPointsWithSpecialty(
 		std::max<int32_t>(0, mechanics.getEffectPower()), mechanics.getSpellPowerCoefficientBasisPoints(),
-		herbalist, mechanics.getWarcastingBonusPercent(), mechanics.getEmpowerSpellBonusPercent());
+		herbalist, mechanics.getWarcastingBonusPercent(), mechanics.getEmpowerSpellBonusPercent(),
+		mechanics.getHerbalSurgeonRegenerationPercent());
 }
 
 void applyRegenerationRateSnapshot(ServerCallback * server, const CBattleInfoCallback * battle,

@@ -369,7 +369,7 @@ protected:
 			development.Struct().erase("masterSpellwardSpecialty"); // Explicit pre-Bottomless capture.
 			capturePreFlyDayEndMagic(*loaded);
 			// These optional tables were introduced after the declared historical codec.
-			for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties"})
+			for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties"})
 				development.Struct().erase(key);
 			// This historical world predates R2 but retains captured policy1.
 			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
@@ -450,7 +450,7 @@ protected:
 		development.Struct().erase("bottomlessMindSpecialty");
 		development.Struct().erase("masterSpellwardSpecialty");
 		// These optional tables were introduced after the declared historical codec.
-		for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties"})
+		for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties"})
 			development.Struct().erase(key);
 		// Isolate Druid admission/codec guards from the same-epoch weighted
 		// offer feature; the existing fixture uses its historical offer helper.

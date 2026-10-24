@@ -1113,10 +1113,10 @@ void LobbyStartGame::validateNewHorizonsWeightedPerkSerialization(bool supported
 }
 
 
-void LobbyStartGame::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported, bool schoolSupported, bool additionalSupported) const
+void LobbyStartGame::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported, bool schoolSupported, bool additionalSupported, bool recoverySupported) const
 {
 	if(initializedGameState)
-		initializedGameState->validateNewHorizonsIndividualSpecialtiesSerialization(supported, ridersSupported, schoolSupported, additionalSupported);
+		initializedGameState->validateNewHorizonsIndividualSpecialtiesSerialization(supported, ridersSupported, schoolSupported, additionalSupported, recoverySupported);
 }
 
 void LobbyStartGame::validateNewHorizonsBottomlessMindSerialization(bool supported) const

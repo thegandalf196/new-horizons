@@ -373,6 +373,9 @@ DLL_LINKAGE int32_t regenerationRateMillionths(int32_t spellPower, int schoolRan
 /// until the Regeneration rate's final integer floor.
 DLL_LINKAGE int32_t regenerationRateMillionthsBasisPoints(int32_t spellPower, int coefficientBasisPoints,
 	bool herbalist, int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0);
+/// Adds an original-cast specialty only to the SP-derived rate numerator, before its final floor.
+DLL_LINKAGE int32_t regenerationRateMillionthsBasisPointsWithSpecialty(int32_t spellPower, int coefficientBasisPoints,
+	bool herbalist, int warcastingBonusPercent, int empowerSpellBonusPercent, int specialtyPercent);
 /// Resolve fixed-point Regeneration marks into healable surviving creature wounds.
 DLL_LINKAGE int64_t regenerationHealAmount(int64_t pendingMicroHealth, int64_t survivingWounds);
 /// New Horizons' detailed Sorcery rules make the existing Magic Arrow an

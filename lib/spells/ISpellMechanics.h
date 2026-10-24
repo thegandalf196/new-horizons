@@ -141,6 +141,7 @@ public:
 	virtual bool isConcentrated() const { return false; }
 	virtual bool hasSpellcraftTargetSnapshot() const { return false; }
 	virtual std::optional<newHorizonsHeroes::SpellcraftCastContext> getSpellcraftContext() const { return std::nullopt; }
+	virtual std::optional<int32_t> getHerbalSurgeonRegenerationPercent() const { return std::nullopt; }
 	/// Additional mana selected for a spell-specific cast option.  The default
 	/// keeps old callers and non-Sorcery spells unchanged.
 	virtual OptionalValue getOvercharge() const { return std::nullopt; }
@@ -197,6 +198,7 @@ public:
 	bool isConcentrated() const override { return concentration; }
 	bool hasSpellcraftTargetSnapshot() const override { return concentrationClassified; }
 	std::optional<newHorizonsHeroes::SpellcraftCastContext> getSpellcraftContext() const override { return spellcraftContext; }
+	std::optional<int32_t> getHerbalSurgeonRegenerationPercent() const override { return herbalSurgeonRegenerationPercent; }
 	/// One unboosted deterministic target pass precedes final numerical construction.
 	std::unique_ptr<Mechanics> mechanicsForTarget(const Target & target) const;
 	OptionalValue getOvercharge() const override;
@@ -263,6 +265,8 @@ private:
 	bool concentration = false;
 	bool concentrationClassified = false;
 	std::optional<newHorizonsHeroes::SpellcraftCastContext> spellcraftContext;
+	std::optional<int32_t> herbalSurgeonRegenerationPercent;
+	void captureOriginalSpellSpecialties();
 
 	///for Archangel-like casting
 	OptionalValue64 effectValue;
@@ -388,6 +392,7 @@ public:
 	int32_t getSchoolRankPowerCoefficientPercent() const;
 	/// Effective saved-rules School × Spellcraft coefficient, in basis points.
 	virtual int32_t getSpellPowerCoefficientBasisPoints() const;
+	virtual int32_t getHerbalSurgeonRegenerationPercent() const { return 0; }
 	virtual int32_t getDamageSpellPowerCoefficientBasisPoints() const { return getSpellPowerCoefficientBasisPoints(); }
 	/// Direct damage only: does not strengthen a mixed spell's control/duration terms.
 	virtual int32_t getDirectDamageSpellPowerCoefficientBasisPoints() const
@@ -574,6 +579,7 @@ class DLL_LINKAGE BaseMechanics : public Mechanics
 {
 public:
 	int32_t getSpellPowerCoefficientBasisPoints() const override;
+	int32_t getHerbalSurgeonRegenerationPercent() const override { return herbalSurgeonRegenerationPercent; }
 	int32_t getDamageSpellPowerCoefficientBasisPoints() const override;
 	int32_t getDirectDamageSpellPowerCoefficientBasisPoints() const override;
 	int32_t getHeroLuckDamageMultiplierPercent() const override;
@@ -681,6 +687,8 @@ protected:
 
 private:
 	newHorizonsHeroes::SpellcraftCastContext spellcraftContext;
+	int32_t herbalSurgeonRegenerationPercent = 0;
+	void captureOriginalSpellSpecialties(const IBattleCast * event);
 	int32_t spellcraftCoefficient(newHorizonsHeroes::SpellcraftComponent component) const;
     IBattleCast::Value rangeLevel;
 	IBattleCast::Value effectLevel;

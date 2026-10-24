@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleResultProcessor.h"
+#include "NewHorizonsWellspringRecovery.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "battle/BattleInfo.h"
 
@@ -1161,6 +1162,9 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		defenderIsWinner || defenderEscapes || (drawHeroesRetreat && defenderHero));
 	if(!manaConservationRewards.lines.empty())
 		gameHandler->sendAndApply(manaConservationRewards);
+
+	if(!finishingBattle->isDraw())
+		applyWellspringVictoryRecovery(*gameHandler, battleID, winnerHero);
 
 	// The declared surviving winner also qualifies when the opponent escapes or
 	// surrenders. Apply recovery after ordinary battle cleanup, before removal.

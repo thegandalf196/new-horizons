@@ -110,6 +110,13 @@
 		"graveArchivist": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalEagleEyeSpells": 1},
 		"spiritTeacher": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "mentorExperiencePercent": 25}
 	},
+	"recoverySpecialties": {
+		"version": 1,
+		"infernalWellspring": {"dailyPercentPerLevel": 5, "dailyMaximumPercent": 100, "victoryPercent": 25},
+		"ritualReserve": {"dailyPercentPerLevel": 5, "dailyMaximumPercent": 100, "lowNormalPercent": 50},
+		"deepTrance": {"dailyPercentPerLevel": 5, "dailyMaximumPercent": 100, "firstCombatPercent": 50},
+		"herbalSurgeon": {"tentPercentPerLevel": 5, "tentMaximumPercent": 100, "regenerationPercentPerLevel": 5, "regenerationMaximumPercent": 100}
+	},
 	"individualSpecialties": {
 		"version": 1,
 		"graveReaper": {"percentagePointsPerLevel": 1, "maximumPercentagePoints": 20},

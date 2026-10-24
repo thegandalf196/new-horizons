@@ -32,6 +32,9 @@
 #include <string>
 #include <utility>
 #include "../../../AI/BattleAI/HypotheticBattle.h"
+#include "../../../AI/BattleAI/BattleEvaluatorSpellProjection.h"
+#include "../../../AI/BattleAI/HeroActionAdmission.h"
+#include "../../../AI/BattleAI/PossibleSpellcast.h"
 
 namespace
 {
@@ -85,6 +88,7 @@ class NewHorizonsMassRegenerationTest : public HeroCommandFixture
 {
 protected:
 	bool oldSnapshot = false;
+	bool herbalPolicy = false;
 	CStack * firstFriendly = nullptr;
 	CStack * secondFriendly = nullptr;
 	CStack * undeadFriendly = nullptr;
@@ -110,6 +114,21 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
+		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		rules.setOverrideFlag(true);
+		if(herbalPolicy)
+		{
+			auto & table = rules["recoverySpecialties"];
+			table["version"].Integer() = 1;
+			for(const auto key : {"tentPercentPerLevel", "regenerationPercentPerLevel"})
+				table["herbalSurgeon"][key].Integer() = 5;
+			for(const auto key : {"tentMaximumPercent", "regenerationMaximumPercent"})
+				table["herbalSurgeon"][key].Integer() = 100;
+		}
+		else if(rules["recoverySpecialties"].isStruct())
+			rules["recoverySpecialties"].Struct().erase("herbalSurgeon");
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+
 
 		JsonNode magicRules = oldSnapshot
 			? olderMagicSnapshotWithoutMassVariants()
@@ -129,6 +148,11 @@ protected:
 		int spellPower = 40, int wisdomRank = MasteryLevel::NONE)
 	{
 		startGame();
+		if(herbalPolicy)
+		{
+			attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:verdish")));
+			attackerSideHero->level = 20;
+		}
 		attackerSideHero->removeAllSpells();
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(regenerationSpell());
@@ -661,4 +685,49 @@ TEST_F(NewHorizonsMassRegenerationTest, OlderRosterKeepsBaseRegenerationSingleTa
 	EXPECT_EQ(regenerationEffect(secondFriendly), nullptr);
 	EXPECT_EQ(firstFriendly->regenerationRateMillionths, 310'000)
 		<< "The direct-damage-era snapshot retains the unranked 100% Spell Power coefficient";
+}
+
+TEST_F(NewHorizonsMassRegenerationTest, VerdishProductionProjectionMatchesActualMassAndLeavesNativeParentAndSiblingUnchanged)
+{
+	herbalPolicy = true;
+	prepareHero(true);
+	prepareBattle(false);
+	const auto nativeState = firstFriendly->save();
+	const auto nativeMana = attackerSideHero->getManaAvailable();
+	const auto nativeCasts = battle()->battleCastSpells(BattleSide::ATTACKER);
+	auto live = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	MassRegenerationPredictionEnvironment environment(gameState());
+	auto parent = std::make_shared<HypotheticBattle>(&environment, live);
+	auto branch = std::make_shared<HypotheticBattle>(&environment, parent);
+	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+	const auto parentBefore = parent->getForUpdate(firstFriendly->unitId())->save();
+	const auto siblingBefore = sibling->getForUpdate(firstFriendly->unitId())->save();
+	const auto parentAllowance = parent->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto siblingAllowance = sibling->getHeroActionAllowances(BattleSide::ATTACKER);
+	PossibleSpellcast candidate;
+	candidate.spell = massRegenerationSpell().toSpell();
+	candidate.dest = massAim();
+	const auto admission = heroActionProjection::admitCandidate(*branch, BattleSide::ATTACKER, candidate);
+	ASSERT_TRUE(admission.admitted);
+	uint32_t id = firstFriendly->unitId();
+	const auto result = battleEvaluatorProjection::projectSpell(*branch, *live, attackerSideHero,
+		BattleSide::ATTACKER, candidate, admission, id, {});
+	ASSERT_TRUE(result.accepted);
+	const auto projected = branch->getForUpdate(firstFriendly->unitId());
+	EXPECT_EQ(projected->regenerationRateMillionths, 406000); // 25% + SP40*0.15%*1.3*2.
+	EXPECT_EQ(branch->getForUpdate(secondFriendly->unitId())->regenerationRateMillionths, 406000);
+	EXPECT_EQ(projected->regenerationPendingMicroHealth, 0);
+	EXPECT_EQ(parent->getForUpdate(firstFriendly->unitId())->save(), parentBefore);
+	EXPECT_EQ(sibling->getForUpdate(firstFriendly->unitId())->save(), siblingBefore);
+	EXPECT_EQ(parent->getHeroActionAllowances(BattleSide::ATTACKER), parentAllowance);
+	EXPECT_EQ(sibling->getHeroActionAllowances(BattleSide::ATTACKER), siblingAllowance);
+	EXPECT_EQ(firstFriendly->save(), nativeState);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), nativeMana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), nativeCasts);
+	const auto secondAdmission = heroActionProjection::admitCandidate(*branch, BattleSide::ATTACKER, candidate);
+	EXPECT_FALSE(secondAdmission.admitted);
+	ASSERT_TRUE(castSpell(massRegenerationSpell()));
+	EXPECT_EQ(firstFriendly->regenerationRateMillionths, projected->regenerationRateMillionths);
+	EXPECT_EQ(secondFriendly->regenerationRateMillionths, 406000);
+	EXPECT_EQ(firstFriendly->regenerationPendingMicroHealth, 0);
 }

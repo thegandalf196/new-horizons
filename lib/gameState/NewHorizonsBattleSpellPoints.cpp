@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "NewHorizonsBattleSpellPoints.h"
 #include "CGameState.h"
+#include "../entities/hero/NewHorizonsRecoverySpecialties.h"
 #include "../battle/BattleInfo.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -19,11 +20,15 @@ BattleSpellPointEntry validateBattleSpellPointEntry(const CGameState & state, co
 	if(attacker.hasValue() && attacker == defender)
 		throw std::runtime_error("BattleStart assigns the same hero to both sides");
 	BattleSpellPointEntry result;
+	result.acceptedDay = state.day;
 	// Preserve the existing complete pool validation before inspecting new policy.
 	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		const auto & side = battle.getSide(sideID);
 		side.validateManaFurnaceSerialization(true);
+		side.validateRecoverySpecialtySerialization(true);
+		if(side.deepTranceConsumed || side.initialAcceptedCombatDay != -1 || side.deepTranceRecoveredNormal != 0)
+			throw std::runtime_error("BattleStart contains already-applied Deep Trance recovery");
 		if(side.manaFurnaceRecoveredNormal != 0)
 			throw std::runtime_error("BattleStart contains already-applied Mana Furnace recovery");
 		if(side.initialNormalSpellPoints < 0 || side.initialBufferSpellPoints < 0 || side.temporaryBufferRemaining < 0)
@@ -42,6 +47,11 @@ BattleSpellPointEntry validateBattleSpellPointEntry(const CGameState & state, co
 		const auto * hero = state.getHero(side.heroID);
 		if(!hero)
 			throw std::runtime_error("BattleStart references a missing hero");
+		hero->validateRecoverySpecialtyStateSerialization(true);
+		if(hero->getNewHorizonsLastAcceptedCombatDay() > result.acceptedDay)
+			throw std::runtime_error("Accepted combat receipt is ahead of the world day");
+		result.deepTrance[sideID] = hasCapturedDeepTrance(*hero)
+			&& hero->getNewHorizonsLastAcceptedCombatDay() != result.acceptedDay;
 		result.manaFurnace[sideID] = manaFurnaceRules(hero->getPrimaryGrowthRules());
 	}
 	return result;
@@ -82,6 +92,17 @@ void applyAcceptedBattleSpellPointEntry(CGameState & state, BattleInfo & battle,
 				if(restored > 0 && !hero->restoreNormalSpellPoints(restored))
 					throw std::runtime_error("Failed to apply accepted Mana Furnace recovery");
 				side.manaFurnaceRecoveredNormal = hero->getNormalSpellPoints() - beforeRecovery;
+			}
+			if(spellPointEntry.deepTrance[i])
+			{
+				side.initialAcceptedCombatDay = hero->getNewHorizonsLastAcceptedCombatDay();
+				side.deepTranceConsumed = true;
+				hero->setNewHorizonsLastAcceptedCombatDay(spellPointEntry.acceptedDay);
+				const auto beforeRecovery = hero->getNormalSpellPoints();
+				const auto restored = firstCombatMysticismRecovery(*hero);
+				if(restored > 0 && !hero->restoreNormalSpellPoints(restored))
+					throw std::runtime_error("Failed to apply accepted Deep Trance recovery");
+				side.deepTranceRecoveredNormal = hero->getNormalSpellPoints() - beforeRecovery;
 			}
 		}
 	}

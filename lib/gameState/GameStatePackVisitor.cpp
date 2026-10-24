@@ -3706,6 +3706,8 @@ void GameStatePackVisitor::visitBattleCancelled(BattleCancelled & pack)
 		{
 			CGHeroInstance * hero = gs.getHero(currentBattle.getSideHero(i)->id);
 			const auto & side = currentBattle.getSide(i);
+			if(side.deepTranceConsumed)
+				hero->setNewHorizonsLastAcceptedCombatDay(side.initialAcceptedCombatDay);
 			if(newHorizonsMagic::spellPointRulesActive(hero->getMagicRules()))
 				hero->restoreSpellPointSnapshot(side.initialNormalSpellPoints, side.initialBufferSpellPoints);
 			else

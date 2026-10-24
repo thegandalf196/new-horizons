@@ -4,11 +4,10 @@ This is a player’s guide to what changes when coming from **Heroes III Complet
 The first entry collects the main differences; later entries will track additions
 and revisions as the game develops.
 
-## Current development baseline — 23 October 2026
+## Current development baseline — 24 October 2026
 
-This comparison describes the current development version. It is not a list of
-changes all introduced in the published **0.85 Early Access** release. Older
-saved games may retain earlier rules. New Horizons remains in development;
+This comparison describes the current development version, including changes after
+the published Early Access releases. Older saved games may retain earlier rules. New Horizons remains in development;
 balance, artwork and some interactions are still being refined.
 
 ### Gameplay
@@ -78,6 +77,9 @@ balance, artwork and some interactions are still being refined.
   and learns an additional eligible spell with Eagle Eye, while Oris strengthens
   Learning and authorized Mentor teaching. Rion and Verdish start with a First
   Aid Tent when using default equipment; explicitly authored equipment is respected.
+  Axsis gains a Mysticism-based refill after victory; Jaegar gains extra day-end
+  recovery when Mana is low; Rosic gains a refill on the day's first combat.
+  Verdish improves Tent healing and Regeneration's Spell Power component.
   Further individual hero redesigns remain in development.
 
 ### Artwork and presentation

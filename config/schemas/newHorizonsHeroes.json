@@ -53,6 +53,7 @@
 				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"},
 				"schoolSpellcraftSpecialties": {"$ref": "#/definitions/schoolSpellcraftSpecialties"},
 				"additionalSpecialties": {"$ref": "#/definitions/additionalSpecialties"},
+				"recoverySpecialties": {"$ref": "#/definitions/recoverySpecialties"},
 				"individualSpecialties": {"$ref": "#/definitions/individualSpecialties"},
 				"druidSpecialties": {"$ref": "#/definitions/druidSpecialties"},
 				"fortuneChildSpecialty": {
@@ -225,6 +226,56 @@
 								"type": "null"
 							}
 						}
+					}
+				}
+			}
+		},
+		"recoverySpecialties": {
+			"description": "Optional captured recovery and creature-healing specialties. Absent rows preserve prior behavior; coefficients are provisional balance values.",
+			"type": "object", "additionalProperties": false, "not": {"type": "null"},
+			"minProperties": 1, "maxProperties": 5,
+			"required": ["version"],
+			"properties": {
+				"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
+				"infernalWellspring": {
+					"type": "object", "additionalProperties": false, "not": {"type": "null"},
+					"minProperties": 3, "maxProperties": 3,
+					"required": ["dailyPercentPerLevel", "dailyMaximumPercent", "victoryPercent"],
+					"properties": {
+						"dailyPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+						"dailyMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}},
+						"victoryPercent": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}}
+					}
+				},
+				"ritualReserve": {
+					"type": "object", "additionalProperties": false, "not": {"type": "null"},
+					"minProperties": 3, "maxProperties": 3,
+					"required": ["dailyPercentPerLevel", "dailyMaximumPercent", "lowNormalPercent"],
+					"properties": {
+						"dailyPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+						"dailyMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}},
+						"lowNormalPercent": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}}
+					}
+				},
+				"deepTrance": {
+					"type": "object", "additionalProperties": false, "not": {"type": "null"},
+					"minProperties": 3, "maxProperties": 3,
+					"required": ["dailyPercentPerLevel", "dailyMaximumPercent", "firstCombatPercent"],
+					"properties": {
+						"dailyPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+						"dailyMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}},
+						"firstCombatPercent": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}}
+					}
+				},
+				"herbalSurgeon": {
+					"type": "object", "additionalProperties": false, "not": {"type": "null"},
+					"minProperties": 4, "maxProperties": 4,
+					"required": ["tentPercentPerLevel", "tentMaximumPercent", "regenerationPercentPerLevel", "regenerationMaximumPercent"],
+					"properties": {
+						"tentPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+						"tentMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}},
+						"regenerationPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+						"regenerationMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}}
 					}
 				}
 			}

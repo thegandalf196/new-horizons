@@ -222,8 +222,11 @@ set(test_SRCS
 	hero/NewHorizonsSchoolSpellcraftRulesTest.cpp
 	hero/NewHorizonsAdditionalSpecialtiesTest.cpp
 	battle/NewHorizonsManaFurnacePersistenceTest.cpp
+	battle/NewHorizonsDeepTrancePersistenceTest.cpp
 	hero/NewHorizonsManaFurnaceRulesTest.cpp
 	hero/NewHorizonsLearningSpecialtyRulesTest.cpp
+	hero/NewHorizonsRecoverySpecialtyRulesTest.cpp
+	hero/NewHorizonsHerbalSurgeonRulesTest.cpp
 		hero/NewHorizonsSkillSpecialtyQueryTest.cpp
 		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroBiographyTest.cpp
@@ -514,7 +517,9 @@ set(test_SRCS
 		server/battles/NewHorizonsIndividualSpecialtyConsumerTest.cpp
 	server/battles/NewHorizonsSchoolSpellcraftConsumerTest.cpp
 	server/battles/NewHorizonsFieldPhysicianTest.cpp
+	server/battles/NewHorizonsDeepTranceTest.cpp
 	server/battles/NewHorizonsManaFurnaceTest.cpp
+	server/battles/NewHorizonsMysticismRecoveryTest.cpp
 		server/battles/NewHorizonsCanonicalSpellClausesSerializationTest.cpp
 		server/battles/NewHorizonsImplosionTest.cpp
 		server/battles/NewHorizonsTemporaryMagicDispelTest.cpp

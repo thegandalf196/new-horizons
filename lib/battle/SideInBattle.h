@@ -218,6 +218,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// Actual persistent Normal recovery, separate from rollback snapshots.
 	int32_t manaFurnaceRecoveredNormal = 0;
 
+	int64_t initialAcceptedCombatDay = -1;
+	bool deepTranceConsumed = false;
+	int32_t deepTranceRecoveredNormal = 0;
+	void validateRecoverySpecialtySerialization(bool supported) const;
 	void validateManaFurnaceSerialization(bool supported) const;
 	int32_t legacySpellPointCompletionCeiling() const;
 
@@ -404,6 +408,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateRecoverySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)
 			validateManaFurnaceSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
 		heroActionAllowances.validateHeroicSpiritSerialization(h);
@@ -813,6 +819,20 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			manaFurnaceRecoveredNormal = 0;
 		if(!h.saving)
 			validateManaFurnaceSerialization(true);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES))
+		{
+			h & initialAcceptedCombatDay;
+			h & deepTranceConsumed;
+			h & deepTranceRecoveredNormal;
+		}
+		else if(!h.saving)
+		{
+			initialAcceptedCombatDay = -1;
+			deepTranceConsumed = false;
+			deepTranceRecoveredNormal = 0;
+		}
+		if(!h.saving)
+			validateRecoverySpecialtySerialization(true);
 	}
 
 	void clearMetamagicSequence()
