@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../../bonuses/BonusCustomTypes.h"
+
 #include <array>
 #include <optional>
 #include <string>
@@ -164,4 +166,19 @@ inline std::optional<std::string> resolvedSpecialtyArtwork(std::string_view hero
 			return "newHorizons/heroSpecialties/" + std::string(binding.stem);
 	return std::nullopt;
 }
+
+/// Builtin registration is authoritative even when optional bonus presentation
+/// metadata is absent and BonusTypeID::encode has no display identifier.
+inline std::optional<std::string> resolvedSpecialtyArtwork(std::string_view hero, BonusType type)
+{
+	if(type == BonusType::NONE)
+		return std::nullopt;
+	for(const auto & binding : specialtyArtworkBindings)
+		if(binding.hero == hero && binding.family == SpecialtyArtworkFamily::Bonus)
+			if(const int decoded = BonusTypeID::decode(std::string(binding.target));
+				decoded >= 0 && decoded == BonusTypeID(type).getNum())
+				return "newHorizons/heroSpecialties/" + std::string(binding.stem);
+	return std::nullopt;
+}
+
 }

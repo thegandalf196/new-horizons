@@ -44,8 +44,7 @@ std::optional<std::string> resolveMetamagicSpecialtyArtwork(const CHero & hero,
 		if(bonus && bonus->type == BonusType::METAMAGIC_USES_PER_COMBAT
 			&& bonus->source == BonusSource::HERO_SPECIAL && bonus->sid == BonusSourceID(hero.getId())
 			&& bonus->valType == BonusValueType::BASE_NUMBER && bonus->val == 1)
-			return detail::resolvedSpecialtyArtwork(hero.getJsonKey(), detail::SpecialtyArtworkFamily::Bonus,
-				BonusTypeID::encode(BonusTypeID(bonus->type).getNum()));
+			return detail::resolvedSpecialtyArtwork(hero.getJsonKey(), bonus->type);
 	return std::nullopt;
 }
 

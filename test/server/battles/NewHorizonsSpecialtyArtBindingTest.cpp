@@ -331,13 +331,13 @@ constexpr std::array<ResolvedArtCase, 98> resolvedArtCases = {{
 	{"core:lorelei", "creatureLineSpecialties", "core:harpy", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "LoreleiHarpyLine"},
 	{"core:marius", "creatureLineSpecialties", "core:demon", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "MariusDemonLine"},
 	{"core:brissa", "nonDamageSpellSpecialties", "core:haste", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "BrissaHaste"},
-	{"core:aenain", "remainingSpellSpecialtyReplacements", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AenainFrailty"},
-	{"core:olema", "remainingSpellSpecialtyReplacements", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "OlemaFrailty"},
-	{"core:xsi", "remainingSpellSpecialtyReplacements", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "XsiFrailty"},
+	{"core:aenain", "nonDamageSpellSpecialties", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AenainFrailty"},
+	{"core:olema", "nonDamageSpellSpecialties", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "OlemaFrailty"},
+	{"core:xsi", "nonDamageSpellSpecialties", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "XsiFrailty"},
 	{"core:astral", "remainingSpellSpecialtyReplacements", "new-horizons:phantomArmy", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AstralPhantomArmy"},
 	{"core:cyra", "nonDamageSpellSpecialties", "core:haste", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "CyraHaste"},
 	{"core:rashka", "creatureLineSpecialties", "core:efreet", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "RashkaEfreetLine"},
-	{"core:labetha", "remainingSpellSpecialtyReplacements", "new-horizons:guardianSpirit", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "LabethaGuardianSpirit"},
+	{"core:labetha", "nonDamageSpellSpecialties", "new-horizons:guardianSpirit", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "LabethaGuardianSpirit"},
 }};
 
 void expectResolvedArt(const CHero & hero, const newHorizonsHeroes::SpecialtyPresentation & metadata,

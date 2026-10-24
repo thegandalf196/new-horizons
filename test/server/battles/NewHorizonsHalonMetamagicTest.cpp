@@ -68,6 +68,14 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
+		if(legacyMagic)
+		{
+			// A pre-roster capture cannot request current starting-book migration.
+			JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+			rules["startingSkills"].Struct().erase("startingBookReplacements");
+			rules.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		}
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
@@ -94,7 +102,10 @@ protected:
 		if(halon)
 		{
 			EXPECT_EQ(attackerSideHero->getPerkSkillRank(META), 1);
-			EXPECT_EQ(attackerSideHero->getPerkSkillRank("new-horizons:spellcraft"), 1);
+			EXPECT_EQ(attackerSideHero->getPerkSkillRank("new-horizons:warcasting"), 1);
+			EXPECT_EQ(attackerSideHero->getPerkSkillRank("new-horizons:spellcraft"), 0);
+			EXPECT_TRUE(attackerSideHero->hasActivePerk("new-horizons:warcasting",
+				"new-horizons:warcasting.battleMeditation"));
 		}
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(META)), rank, ChangeValueMode::ABSOLUTE);
 		if(withGrand)
@@ -212,6 +223,9 @@ TEST_F(NewHorizonsHalonMetamagicTest, LegacyBonusOnlyProfileRetainsPriorEffectiv
 {
 	legacyMagic = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(0));
+	EXPECT_TRUE(attackerSideHero->getMagicRules().isNull());
+	EXPECT_FALSE(attackerSideHero->getPrimaryGrowthRules()["startingSkills"].Struct()
+		.contains("startingBookReplacements"));
 	EXPECT_EQ(newHorizonsMagic::metamagicRank(attackerSideHero), 1);
 	EXPECT_EQ(newHorizonsMagic::metamagicCapacity(attackerSideHero), 1);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,

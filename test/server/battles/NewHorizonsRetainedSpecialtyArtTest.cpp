@@ -86,7 +86,7 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		if(historicalDevelopment)
+		if(historicalDevelopment || magicMode == 1)
 		{
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
@@ -237,6 +237,12 @@ TEST_P(SolmyrSavedSpecialtyArtTest, AbsentHistoricalDisabledOrDeniedRosterKeepsA
 	prepare();
 	const auto * hero = findHeroAt({6, 5, 0});
 	ASSERT_NE(hero, nullptr);
+	if(magicMode == 1)
+	{
+		EXPECT_TRUE(hero->getPrimaryGrowthRules().isNull());
+		EXPECT_TRUE(hero->getPerkState().rules.isNull());
+		EXPECT_TRUE(hero->getMagicRules().isNull());
+	}
 	expectRetainedFallback(*hero->getHeroType(), hero->getSpecialtyPresentation());
 	expectRetainedFallback(*hero->getHeroType(), newHorizonsHeroes::resolveSpecialtyPresentation(
 		*hero->getHeroType(), hero->getPrimaryGrowthRules(), hero->getMagicRules(), std::nullopt));
@@ -291,12 +297,16 @@ TEST_F(NewHorizonsRetainedSpecialtyArtTest, RetainedProvidersPreserveMatchingCap
 TEST_F(NewHorizonsRetainedSpecialtyArtTest, RetainedLookupRequiresExactHeroFamilyAndCurrentTarget)
 {
 	using namespace newHorizonsHeroes::detail;
-	const auto bonus = BonusTypeID::encode(BonusTypeID(BonusType::METAMAGIC_USES_PER_COMBAT).getNum());
-	EXPECT_EQ(resolvedSpecialtyArtwork("core:halon", SpecialtyArtworkFamily::Bonus, bonus),
+	const BonusTypeID bonus(BonusType::METAMAGIC_USES_PER_COMBAT);
+	EXPECT_EQ(BonusTypeID::decode("METAMAGIC_USES_PER_COMBAT"), bonus.getNum());
+	EXPECT_EQ(resolvedSpecialtyArtwork("core:halon", bonus.toEnum()),
 		"newHorizons/heroSpecialties/HalonMetamagicAdept");
-	EXPECT_FALSE(resolvedSpecialtyArtwork("core:solmyr", SpecialtyArtworkFamily::Bonus, bonus));
+	EXPECT_FALSE(resolvedSpecialtyArtwork("core:solmyr", bonus.toEnum()));
 	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", SpecialtyArtworkFamily::Skill, "new-horizons:metamagic"));
-	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", SpecialtyArtworkFamily::Bonus, "MANA_REGENERATION"));
+	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", BonusType::MANA_REGENERATION));
+	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", BonusType::NONE));
+	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", BonusType::BUILTIN_BONUSES_COUNT));
+	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", static_cast<BonusType>(-1)));
 	EXPECT_EQ(resolvedSpecialtyArtwork("core:solmyr", SpecialtyArtworkFamily::Spell, "new-horizons:masterChainLightning"),
 		"newHorizons/heroSpecialties/SolmyrChainLightning");
 	EXPECT_FALSE(resolvedSpecialtyArtwork("core:solmyr", SpecialtyArtworkFamily::Spell, "core:chainLightning"));

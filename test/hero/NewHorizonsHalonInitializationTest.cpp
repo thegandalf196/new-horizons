@@ -53,7 +53,7 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesMetamagicAndSpellcraft)
+TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesMetamagicAndWarcasting)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0))
@@ -64,16 +64,20 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesMetamagicAndSpellcraft)
 	ASSERT_NE(halon, nullptr);
 
 	const auto metamagic = scopedSkill("new-horizons:metamagic");
-	const auto spellcraft = scopedSkill("new-horizons:spellcraft");
+	const auto warcasting = scopedSkill("new-horizons:warcasting");
 	ASSERT_EQ(halon->secSkills.size(), 2u);
 	EXPECT_EQ(halon->getSecSkillLevel(metamagic), MasteryLevel::BASIC);
-	EXPECT_EQ(halon->getSecSkillLevel(spellcraft), MasteryLevel::BASIC);
+	EXPECT_EQ(halon->getSecSkillLevel(warcasting), MasteryLevel::BASIC);
+	EXPECT_EQ(halon->getSecSkillLevel(scopedSkill("new-horizons:spellcraft")), MasteryLevel::NONE);
+	EXPECT_TRUE(halon->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.battleMeditation"));
+	ASSERT_EQ(halon->getPerkState().selected.size(), 1u);
+	EXPECT_EQ(halon->getPerkState().selected.front().perkId, "new-horizons:warcasting.battleMeditation");
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::MYSTICISM), MasteryLevel::NONE);
 
 	// Basic Metamagic supplies one use and Halon's converted specialty supplies
-	// the additional use described by the hero text. Basic Spellcraft also owns
-	// the former Mysticism regeneration role.
+	// the additional use described by the hero text. His unchanged one-point
+	// regeneration is the ordinary per-hero baseline, not learned Spellcraft.
 	EXPECT_EQ(halon->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT), 2);
 	EXPECT_EQ(halon->valOfBonuses(BonusType::MANA_REGENERATION), 1);
 	EXPECT_EQ(halon->getHeroType()->getSpecialtyNameTranslated(), "Metamagic Adept");
@@ -92,7 +96,12 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaKeepsHasteAndStartsWithinL
 	ASSERT_NE(brissa, nullptr);
 	EXPECT_TRUE(brissa->spellbookContainsSpell(SpellID(SpellID::HASTE)));
 	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:elementalRebirth")), MasteryLevel::BASIC);
-	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:sorceryMagic")), MasteryLevel::BASIC);
+	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:natureMagic")), MasteryLevel::BASIC);
+	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:sorceryMagic")), MasteryLevel::NONE);
+	ASSERT_EQ(brissa->secSkills.size(), 2u);
+	EXPECT_TRUE(brissa->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.rootcaller"));
+	ASSERT_EQ(brissa->getPerkState().selected.size(), 1u);
+	EXPECT_EQ(brissa->getPerkState().selected.front().perkId, "new-horizons:natureMagic.rootcaller");
 	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
 	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::AIR_MAGIC), MasteryLevel::NONE);
 
