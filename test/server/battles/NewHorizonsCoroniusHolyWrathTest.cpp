@@ -5,6 +5,8 @@
 #include "StdInc.h"
 #include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "HeroCommandFixture.h"
+#include "../../hero/NewHorizonsHeroRulesFixture.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/entities/hero/CHero.h"
@@ -50,6 +52,7 @@ protected:
 	bool legacy = false;
 	bool presetBook = false;
 	bool historicalDamage = false;
+	bool historicalSaveContext = false;
 	CStack * target = nullptr;
 	void SetUp() override
 	{
@@ -71,14 +74,30 @@ protected:
 			std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
 				[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
 		}
+		// Legacy magic cannot request the current starting-book migration.
+		if(legacy)
+			rules["startingSkills"].Struct().erase("startingBookReplacements");
 		if(disabled)
 			rules["damageSpellSpecialties"]["coroniusHolyWrathReplacement"].Bool() = false;
+		if(historicalSaveContext)
+			rules = testHeroRules(); // Complete pre-feature profile for the positive old-format control only.
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
-		JsonNode magic = legacy ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+		JsonNode magic = (legacy || historicalSaveContext) ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		if(historicalDamage)
 			magic["spells"]["new-horizons:holyWrath"]["directDamage"]["powerCoefficient"].Integer() = 2;
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+		if(historicalSaveContext)
+		{
+			captureLegacyPerkOfferPolicy(*loaded);
+			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			// Match the maintained Legendary Reputation pre-Crisis registry control.
+			for(auto & perk : perks["skills"]["new-horizons:command"]["perks"].Vector())
+				if(perk["id"].String() == "new-horizons:command.crisisCommand")
+					perk["effect"]["status"].String() = "planned";
+			perks.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+		}
 		if(absent)
 			isolateHistoricalAdventurePolicies(*loaded);
 	}
@@ -130,6 +149,24 @@ protected:
 		ASSERT_NE(battle()->battleActiveUnit(), nullptr);
 		ASSERT_EQ(battle()->battleGetActionController(battle()->battleActiveUnit()), PlayerColor(0));
 	}
+	void expectCastingPremises(const spells::Mechanics & mechanics, int concentration) const
+	{
+		const auto light = SecondarySkill(SecondarySkill::decode("new-horizons:lightMagic"));
+		const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+		ASSERT_EQ(attackerSideHero->getSecSkillLevel(light), MasteryLevel::BASIC);
+		ASSERT_EQ(attackerSideHero->getSecSkillLevel(spellcraft), MasteryLevel::BASIC);
+		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:spellcraft", "new-horizons:spellcraft.concentration"));
+		ASSERT_EQ(newHorizonsMagic::spellcraftEfficiencyPercent(attackerSideHero->getMagicRules(), MasteryLevel::BASIC) * 100, 11000);
+		ASSERT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(attackerSideHero->getMagicRules(), attackerSideHero, holyWrath()), 115);
+		ASSERT_EQ(attackerSideHero->getDamageSpellSpecialtyBonusPercent(holyWrath()), 15);
+		ASSERT_EQ(mechanics.getEffectPower(), 100);
+		ASSERT_EQ(mechanics.getEffectPowerDivisor(), 10);
+		ASSERT_EQ(mechanics.getWarcastingBonusPercent(), 0);
+		ASSERT_EQ(mechanics.getCastSpellPowerComponentBonusPercent(), concentration);
+		ASSERT_EQ(mechanics.getSpellPowerCoefficientBasisPoints(), concentration == 0 ? 12650 : 14547);
+		ASSERT_EQ(mechanics.getTargetedStackCount({spells::Destination(target)}), 1u);
+	}
+
 	bool paid()
 	{
 		BattleAction action;
@@ -185,32 +222,44 @@ TEST_F(NewHorizonsCoroniusHolyWrathTest, ActualPaidOrdinaryDamagePreservesFixedB
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, holyWrath().toSpell());
 	const auto mechanics = holyWrath().toSpell()->battleMechanics(&cast);
-	EXPECT_EQ(mechanics->getEffectValue(), 304); // 40 + floor(200 * 1.15 School * 1.15 specialty)
+	ASSERT_NO_FATAL_FAILURE(expectCastingPremises(*mechanics, 0));
+	EXPECT_EQ(mechanics->getEffectValue(), 330); // Includes Basic Spellcraft and Coronius, before target classification.
+	const auto focused = cast.mechanicsForTarget({spells::Destination(target)});
+	ASSERT_NO_FATAL_FAILURE(expectCastingPremises(*focused, 15));
+	EXPECT_EQ(focused->getEffectValue(), 374);
 	const auto hp = target->getAvailableHealth();
 	const auto mana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(paid());
-	EXPECT_EQ(hp - target->getAvailableHealth(), 304);
+	EXPECT_EQ(hp - target->getAvailableHealth(), 374);
 	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 11);
 	ASSERT_EQ(server.castsOf(holyWrath()).size(), 1u);
-	EXPECT_EQ(server.castsOf(holyWrath()).front().damage, 304);
+	EXPECT_EQ(server.castsOf(holyWrath()).front().damage, 374);
 }
 
 TEST_F(NewHorizonsCoroniusHolyWrathTest, ActualPaidUndeadKeepsSingleClassificationMultiplier)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(combat("core:skeleton"));
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, holyWrath().toSpell());
+	const auto focused = cast.mechanicsForTarget({spells::Destination(target)});
+	ASSERT_NO_FATAL_FAILURE(expectCastingPremises(*focused, 15));
+	EXPECT_EQ(focused->getEffectValue(), 374);
 	const auto hp = target->getAvailableHealth();
 	ASSERT_TRUE(paid());
-	EXPECT_EQ(hp - target->getAvailableHealth(), 456);
+	EXPECT_EQ(hp - target->getAvailableHealth(), 561);
 }
 
 TEST_F(NewHorizonsCoroniusHolyWrathTest, ActualPaidInfernoKeepsSingleClassificationMultiplier)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(combat("core:imp"));
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, holyWrath().toSpell());
+	const auto focused = cast.mechanicsForTarget({spells::Destination(target)});
+	ASSERT_NO_FATAL_FAILURE(expectCastingPremises(*focused, 15));
+	EXPECT_EQ(focused->getEffectValue(), 374);
 	const auto hp = target->getAvailableHealth();
 	ASSERT_TRUE(paid());
-	EXPECT_EQ(hp - target->getAvailableHealth(), 456);
+	EXPECT_EQ(hp - target->getAvailableHealth(), 561);
 }
 
 TEST_F(NewHorizonsCoroniusHolyWrathTest, ExplicitMapBookRetainsSlayerWhileCapturedSpecialtyIsIndependent)
@@ -226,6 +275,7 @@ TEST_F(NewHorizonsCoroniusHolyWrathTest, ExplicitMapBookRetainsSlayerWhileCaptur
 TEST_F(NewHorizonsCoroniusHolyWrathTest, AbsentFlagRetainsOriginalProducerWithoutNewBook)
 {
 	absent = true;
+	historicalSaveContext = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(holyWrath()));
 	EXPECT_EQ(attackerSideHero->getDamageSpellSpecialtyBonusPercent(holyWrath()), 0);
@@ -322,14 +372,18 @@ TEST_F(NewHorizonsCoroniusHolyWrathTest, DetachedActualCastMatchesPaidAndDoesNot
 	spells::BattleCast cast(&projected, attackerSideHero, spells::Mode::HERO, holyWrath().toSpell());
 	const auto mechanics = holyWrath().toSpell()->battleMechanics(&cast);
 	spells::Target aim{spells::Destination(projected.battleGetUnitByID(target->unitId()))};
+	ASSERT_NO_FATAL_FAILURE(expectCastingPremises(*mechanics, 0));
+	const auto focused = cast.mechanicsForTarget(aim);
+	ASSERT_NO_FATAL_FAILURE(expectCastingPremises(*focused, 15));
+	EXPECT_EQ(focused->getEffectValue(), 374);
 	ASSERT_TRUE(mechanics->canBeCastAt(aim));
 	mechanics->castEval(projected.getServerCallback(), aim);
-	EXPECT_EQ(hp - projected.battleGetUnitByID(target->unitId())->getAvailableHealth(), 304);
+	EXPECT_EQ(hp - projected.battleGetUnitByID(target->unitId())->getAvailableHealth(), 374);
 	EXPECT_EQ(target->getAvailableHealth(), hp);
 	EXPECT_EQ(sibling.battleGetUnitByID(target->unitId())->getAvailableHealth(), hp);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	ASSERT_TRUE(paid());
-	EXPECT_EQ(hp - target->getAvailableHealth(), 304);
+	EXPECT_EQ(hp - target->getAvailableHealth(), 374);
 }
 #endif
 
@@ -341,10 +395,15 @@ TEST_F(NewHorizonsCoroniusHolyWrathTest, CapturedEarlierCoefficientKeepsPaidDama
 	const auto & rules = battle()->getMagicRules();
 	ASSERT_EQ(rules["spells"]["new-horizons:holyWrath"]["directDamage"]["powerCoefficient"].Integer(), 2);
 	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, holyWrath().toSpell());
-	EXPECT_EQ(holyWrath().toSpell()->battleMechanics(&cast)->getEffectValue(), 66);
+	const auto unclassified = holyWrath().toSpell()->battleMechanics(&cast);
+	ASSERT_NO_FATAL_FAILURE(expectCastingPremises(*unclassified, 0));
+	EXPECT_EQ(unclassified->getEffectValue(), 69);
+	const auto focused = cast.mechanicsForTarget({spells::Destination(target)});
+	ASSERT_NO_FATAL_FAILURE(expectCastingPremises(*focused, 15));
+	EXPECT_EQ(focused->getEffectValue(), 73);
 	const auto hp = target->getAvailableHealth();
 	const auto mana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(paid());
-	EXPECT_EQ(hp - target->getAvailableHealth(), 66);
+	EXPECT_EQ(hp - target->getAvailableHealth(), 73);
 	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 11);
 }

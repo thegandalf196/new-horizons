@@ -33,6 +33,7 @@
 #include "../../../lib/entities/hero/CHeroClass.h"
 #include "../../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../../lib/entities/hero/NewHorizonsPrimaryGrowth.h"
+#include "../../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/CSkillHandler.h"
 #include "../../../lib/gameState/CGameState.h"
@@ -915,10 +916,11 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		NewHorizonsPerSlotLeadershipTest::mapLoaded(map);
-		// Keep this fixture independent of the build tree's copied config files:
-		// extend the known-good per-slot v2 fixture with the canonical v3 tables.
+		// Capture a genuine v3 capability context, excluding only v4-only policies.
 		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"));
 		rules["rulesetVersion"].Integer() = 3;
+		for(const auto * key : {"skeletonTransformer", "warMachineShop"})
+			rules.Struct().erase(key);
 		rules["siege"]["siegeRating"].Vector().clear();
 		rules["siege"]["directControlChance"].Vector().clear();
 		for(int value : {0, 20, 40, 60})
@@ -932,7 +934,14 @@ protected:
 			rules["siege"]["outputs"][output]["base"].Integer() = base;
 			rules["siege"]["outputs"][output]["siegeCoefficientHalf"].Integer() = coefficientHalf;
 		}
+		// Replace instead of merging the omitted v4 fields back from installed defaults.
+		rules.setOverrideFlag(true);
+		ASSERT_NO_THROW(newHorizonsHeroes::validateCapabilityRules(rules, true));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, rules);
+		const auto & captured = map->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES);
+		ASSERT_EQ(captured["rulesetVersion"].Integer(), 3);
+		ASSERT_FALSE(captured.Struct().contains("skeletonTransformer"));
+		ASSERT_FALSE(captured.Struct().contains("warMachineShop"));
 	}
 
 	void SetUp() override

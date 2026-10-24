@@ -23,36 +23,52 @@ SpellID holyWrathSpell()
 	return SpellID(SpellID::decode(holyWrathKey));
 }
 
-JsonNode savedV1MagicRules()
+JsonNode savedMagicRules(int version)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["rulesetVersion"].Integer() = newHorizonsMagic::RULESET_VERSION;
-	rules.Struct().erase("warcasting");
-	rules.Struct().erase("spellPoints");
-	rules.Struct().erase("mageGuildGeneration");
-	rules.Struct().erase("physicalDamageReductionCapPercent");
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
-	for(auto & [factionId, faction] : rules["factions"].Struct())
+	rules["rulesetVersion"].Integer() = version;
+	for(const auto * key : {"schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent",
+		"morale", "creatureAbilities", "protectedAdventureBarriers", "heroLuck", "heroMorale"})
+		rules.Struct().erase(key);
+	for(const auto * spell : {"core:waterWalk", "core:fly"})
+		rules["adventureSpells"][spell].Struct().erase("requireLegalDayEnd");
+	if(version == newHorizonsMagic::RULESET_VERSION)
 	{
-		(void)factionId;
-		faction["major"] = faction["preferredA"];
-		faction["minor"] = faction["preferredB"];
-		faction.Struct().erase("preferredA");
-		faction.Struct().erase("preferredB");
+		for(const auto * key : {"warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent"})
+			rules.Struct().erase(key);
+		for(auto & [factionId, faction] : rules["factions"].Struct())
+		{
+			(void)factionId;
+			faction["major"] = faction["preferredA"];
+			faction["minor"] = faction["preferredB"];
+			faction.Struct().erase("preferredA");
+			faction.Struct().erase("preferredB");
+		}
 	}
 	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
 	{
-		if(it->first.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
+		if(it->first == holyWrathKey || (version == newHorizonsMagic::RULESET_VERSION
+			&& it->first.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':')))
 		{
 			it = rules["spells"].Struct().erase(it);
 			continue;
 		}
-		it->second.Struct().erase("active");
-		it->second.Struct().erase("directDamage");
-		it->second.Struct().erase("cureAfflictions");
+		auto & spell = it->second;
+		for(const auto * key : {"selectedPlacement", "rawSpellPowerPerPatch", "earthquake", "structures", "heroAccess",
+			"restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly",
+			"schoolRankDurations", "burnGroundedFlyers"})
+			spell.Struct().erase(key);
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+			spell["active"].Bool() = false;
+		}
+		if(version == newHorizonsMagic::RULESET_VERSION)
+			for(const auto * key : {"active", "directDamage", "cureAfflictions"})
+				spell.Struct().erase(key);
 		++it;
 	}
+	rules.setOverrideFlag(true); // Do not reintroduce omitted current fields through base-settings merge.
 	return rules;
 }
 }
@@ -74,14 +90,13 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-		if(magicRulesVersion == newHorizonsMagic::RULESET_VERSION)
-			rules = savedV1MagicRules();
-		else if(magicRulesVersion == newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION)
+		if(magicRulesVersion != newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 		{
-			rules["rulesetVersion"].Integer() = magicRulesVersion;
-			rules.Struct().erase("schoolRankPowerCoefficientPercent");
-			rules.Struct().erase("spellcraftEfficiencyPercent");
-			rules["spells"].Struct().erase(holyWrathKey);
+			rules = savedMagicRules(magicRulesVersion);
+			JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+			heroes["startingSkills"].Struct().erase("startingBookReplacements");
+			heroes.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
 		}
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 	}
