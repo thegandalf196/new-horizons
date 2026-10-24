@@ -347,7 +347,7 @@ void ExecuteHeroChain::accept(AIGateway * aiGw)
 				{
 					try
 					{
-						if(moveHeroToTile(aiGw, hero, node->coord))
+						if(moveHeroToTile(aiGw, hero, *node, i))
 						{
 							continue;
 						}
@@ -419,13 +419,24 @@ std::string ExecuteHeroChain::toString() const
 #endif
 }
 
-bool ExecuteHeroChain::moveHeroToTile(AIGateway * aiGw, const CGHeroInstance * hero, const int3 & tile)
+bool ExecuteHeroChain::moveHeroToTile(AIGateway * aiGw, const CGHeroInstance * hero,
+	const AIPathNodeInfo & node, int index)
 {
-	if(tile == hero->visitablePos() && aiGw->cc->getVisitableObjs(hero->visitablePos()).size() < 2)
+	const auto & tile = node.coord;
+	if(tile == hero->visitablePos())
 	{
-		logAi->warn("Why do I want to move hero %s to tile %s? Already standing on that tile! ", hero->getNameTextID(), tile.toString());
+		const auto objects = aiGw->cc->getVisitableObjs(tile);
+		const bool hasDependency = node.parentIndex >= 0 && node.parentIndex < index
+			&& static_cast<size_t>(index) < chainPath.nodes.size();
+		if(hasDependency && node.isExchangeReadinessFor(hero, chainPath.nodes[node.parentIndex])
+			&& objects.size() == 1 && objects.front() == hero)
+			return true;
 
-		return true;
+		if(objects.size() < 2)
+		{
+			logAi->warn("Why do I want to move hero %s to tile %s? Already standing on that tile! ", hero->getNameTextID(), tile.toString());
+			return true;
+		}
 	}
 
 	return aiGw->moveHeroToTile(tile, HeroPtr(hero, aiGw->cc.get()));

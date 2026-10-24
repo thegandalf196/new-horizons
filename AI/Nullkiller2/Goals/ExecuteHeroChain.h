@@ -40,7 +40,7 @@ namespace Goals
 		const CGHeroInstance * getBlockedInitialRoute(const Nullkiller * aiNk) const override;
 
 	private:
-		bool moveHeroToTile(AIGateway * aiGw, const CGHeroInstance * hero, const int3 & tile);
+		bool moveHeroToTile(AIGateway * aiGw, const CGHeroInstance * hero, const AIPathNodeInfo & node, int index);
 	};
 }
 

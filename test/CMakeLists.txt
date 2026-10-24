@@ -973,6 +973,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Behaviors/RecruitHeroBehaviorTest.cpp
 		nullkiller2/Engine/PriorityEvaluatorTest.cpp
 		nullkiller2/Engine/TaskFailureTest.cpp
+		nullkiller2/Goals/HeroChainSourceAnchorTest.cpp
 		nullkiller2/Engine/NewHorizonsLogisticsMovementAITest.cpp
 		nullkiller2/Engine/NewHorizonsLighthouseDepartureAITest.cpp
 		nullkiller2/NewHorizonsTravelLandingAITest.cpp

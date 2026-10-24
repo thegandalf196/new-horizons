@@ -253,6 +253,16 @@ Special actions on future-day chain nodes must wait for that day; earlier legal
 current-day approach nodes may still execute. Preserve the future route rather
 than spending its spell opportunity prematurely.
 
+An exchange chain can retain a receiver-readiness entry before its donor arrives,
+even when the receiver already occupies the meeting tile. `exportAIPathNode`
+certifies that native dependency; coordinates alone do not establish intent.
+Execution rechecks the current actor, indexed donor dependency, day/layer and
+hero-only tile before satisfying the entry without movement. Keep donor movement
+and exchange ordering intact. Real object visits, special actions and unknown
+same-tile intentions retain their ordinary handling. This provenance is transient,
+not saved state. `HeroChainSourceAnchorTest` covers generated exchanges and copied
+or truncated dependencies.
+
 Adventure spell goals check general casting admission even without a target tile.
 `AdventureSpellExecution` pairs the outgoing request with its authoritative
 `PackageApplied` result by player, type and request ID, including replies arriving

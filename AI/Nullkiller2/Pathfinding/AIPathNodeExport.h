@@ -25,6 +25,18 @@ struct AIPathNodeInfo
 	uint64_t chainMask;
 	std::shared_ptr<const SpecialAction> specialAction;
 	bool actionIsBlocked;
+	// Native exchange receiver already at its source, waiting for this donor.
+	// Synthetic graph actions have no such provenance.
+	const CGHeroInstance * exchangeReadinessDonor = nullptr;
+
+	bool isExchangeReadinessFor(const CGHeroInstance * hero, const AIPathNodeInfo & dependency) const
+	{
+		return hero && targetHero == hero && exchangeReadinessDonor && exchangeReadinessDonor != hero
+			&& dependency.targetHero == exchangeReadinessDonor && dependency.coord == coord
+			&& turns == 0 && dependency.turns == 0
+			&& layer == EPathfindingLayer::LAND && dependency.layer == EPathfindingLayer::LAND
+			&& !specialAction && !actionIsBlocked && !dependency.specialAction && !dependency.actionIsBlocked;
+	}
 };
 
 /// Materialize one native chain entry for execution.
