@@ -315,6 +315,32 @@ protected:
 	}
 };
 
+// These cases exercise original spell effects through real casts. The settled
+// Forgetfulness fixture supplies the same explicit spell/Orders/hero context.
+class HistoricalSpellDamageTest : public LegacyForgetfulnessDamageTest
+{
+public:
+	void SetUp() override
+	{
+		ASSERT_NO_FATAL_FAILURE(LegacyForgetfulnessDamageTest::SetUp());
+		ASSERT_TRUE(gameState()->getMagicRules().isNull());
+		ASSERT_TRUE(gameState()->getHeroCommandRules().isNull());
+		ASSERT_TRUE(gameState()->getHeroDevelopmentRules().isNull());
+		for(const auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			ASSERT_TRUE(hero->getMagicRules().isNull());
+			ASSERT_TRUE(hero->getPrimaryGrowthRules().isNull());
+		}
+		ASSERT_TRUE(battle()->getMagicRules().isNull());
+		ASSERT_TRUE(battle()->getHeroCommandRules().isNull());
+		// Castle, Academy and Stronghold are native to grass, sand and rough.
+		// Dirt keeps their intrinsic A/D inputs in the historical goldens isolated.
+		battle()->terrainType = TerrainId(ETerrainId::DIRT);
+		battle()->nodeHasChanged();
+		ASSERT_EQ(battle()->getTerrainType(), TerrainId(ETerrainId::DIRT));
+	}
+};
+
 class NewHorizonsPhysicalReductionTest : public DamageCalculatorTestBase
 {
 protected:
@@ -917,7 +943,7 @@ TEST_F(DamageCalculatorTest, PetrificationReducesDamageWithoutCountingAsArmorer)
 }
 
 /// Blindness lowers the attack of whoever is under it, whatever they strike.
-TEST_F(DamageCalculatorTest, BlindnessLowersTheDamageOfItsBearer)
+TEST_F(HistoricalSpellDamageTest, BlindnessLowersTheDamageOfItsBearer)
 {
 	const auto * source = attacker(angel);
 
@@ -1100,7 +1126,7 @@ TEST_F(DamageCalculatorTest, ArtilleryIsIgnoredOnAnOrdinaryShot)
 
 // ---- base damage: bless and curse ---------------------------------------------------------------
 
-TEST_F(DamageCalculatorTest, BlessCollapsesTheRangeOntoItsMaximum)
+TEST_F(HistoricalSpellDamageTest, BlessCollapsesTheRangeOntoItsMaximum)
 {
 	const auto * source = attacker(titan);
 	cast(attackerSideHero, SpellID(SpellID::BLESS), source);
@@ -1111,7 +1137,7 @@ TEST_F(DamageCalculatorTest, BlessCollapsesTheRangeOntoItsMaximum)
 	EXPECT_EQ(result.damage.max, 6000);
 }
 
-TEST_F(DamageCalculatorTest, CurseCollapsesTheRangeOntoItsMinimum)
+TEST_F(HistoricalSpellDamageTest, CurseCollapsesTheRangeOntoItsMinimum)
 {
 	const auto * source = attacker(titan);
 
@@ -1126,7 +1152,7 @@ TEST_F(DamageCalculatorTest, CurseCollapsesTheRangeOntoItsMinimum)
 
 /// From advanced mastery the spell shifts the whole range by a point before collapsing it, which is
 /// what makes an expert blessing worth more than a plain one.
-TEST_F(DamageCalculatorTest, ExpertBlessAddsAPointBeforeCollapsing)
+TEST_F(HistoricalSpellDamageTest, ExpertBlessAddsAPointBeforeCollapsing)
 {
 	const auto * source = attacker(titan);
 	cast(attackerSideHero, SpellID(SpellID::BLESS), source, MasteryLevel::EXPERT); // 40..60 becomes 41..61
@@ -1137,7 +1163,7 @@ TEST_F(DamageCalculatorTest, ExpertBlessAddsAPointBeforeCollapsing)
 	EXPECT_EQ(result.damage.max, 6100);
 }
 
-TEST_F(DamageCalculatorTest, ExpertCurseTakesAPointBeforeCollapsing)
+TEST_F(HistoricalSpellDamageTest, ExpertCurseTakesAPointBeforeCollapsing)
 {
 	const auto * source = attacker(titan);
 	cast(defenderSideHero, SpellID(SpellID::CURSE), source, MasteryLevel::EXPERT); // 40..60 becomes 39..59
@@ -1217,17 +1243,22 @@ INSTANTIATE_TEST_SUITE_P(Scenarios, CasualtiesTest, ::testing::Values(
 /// impose the distance penalty on top of that, off a check that compared the value of the bonus - a
 /// percentage - against MasteryLevel::ADVANCED, so every Air Shield of every mastery halved the shot
 /// a second time.
-TEST_F(DamageCalculatorTest, AirShieldOnlyReducesDamageByItsOwnValue)
+TEST_F(HistoricalSpellDamageTest, AirShieldOnlyReducesDamageByItsOwnValue)
 {
-	const auto * target = defender(titan);
+	const auto * source = attacker(titan);
+	const auto * target = defender(titan, stackSize, BattleHex(attackerHex + 3));
+	ASSERT_FALSE(source->getSurroundingHexes().contains(target->getPosition()));
+	ASSERT_FALSE(battle()->battleHasDistancePenalty(source, source->getPosition(), target->getPosition()));
+	ASSERT_EQ(source->getAttack(true), 24);
+	ASSERT_EQ(target->getDefense(true), 24);
 	cast(defenderSideHero, SpellID::AIR_SHIELD, target, MasteryLevel::EXPERT);
 
-	// the two stacks stand next to each other, so nothing but the spell can penalise the shot
-	EXPECT_EQ(estimate(attacker(titan), target, 0, true).damage.min, 2000);
+	// Neither adjacency nor distance penalises this shot; only Air Shield does.
+	EXPECT_EQ(estimate(source, target, 0, true).damage.min, 2000);
 }
 
 /// A shot from across the field is penalised the once, whether or not the target is shielded.
-TEST_F(DamageCalculatorTest, AirShieldDoesNotDeepenTheDistancePenalty)
+TEST_F(HistoricalSpellDamageTest, AirShieldDoesNotDeepenTheDistancePenalty)
 {
 	const auto * source = attacker(titan, stackSize, BattleHex(nearEdgeHex));
 	const auto * target = defender(titan, stackSize, BattleHex(farEdgeHex));
@@ -1241,7 +1272,7 @@ TEST_F(DamageCalculatorTest, AirShieldDoesNotDeepenTheDistancePenalty)
 /// Frenzy trades the defense of its bearer for attack. A behemoth makes whatever it fights ignore
 /// part of its own defense, so there is that much less to trade: 20 defense less the 9 a behemoth
 /// takes off leaves 11 to convert, for 31 attack against 17 defense.
-TEST_F(DamageCalculatorTest, FrenzyBoostIsBuiltOnTheDefenceABehemothLeaves)
+TEST_F(HistoricalSpellDamageTest, FrenzyBoostIsBuiltOnTheDefenceABehemothLeaves)
 {
 	const auto * source = attacker(angel);
 	cast(attackerSideHero, SpellID(SpellID::FRENZY), source);
@@ -1250,7 +1281,7 @@ TEST_F(DamageCalculatorTest, FrenzyBoostIsBuiltOnTheDefenceABehemothLeaves)
 }
 
 /// An ancient behemoth takes off 17, leaving 3 to convert, for 23 attack against 19 defense.
-TEST_F(DamageCalculatorTest, FrenzyBoostIsBuiltOnTheDefenceAnAncientBehemothLeaves)
+TEST_F(HistoricalSpellDamageTest, FrenzyBoostIsBuiltOnTheDefenceAnAncientBehemothLeaves)
 {
 	const auto * source = attacker(angel);
 	cast(attackerSideHero, SpellID(SpellID::FRENZY), source);
@@ -1259,7 +1290,7 @@ TEST_F(DamageCalculatorTest, FrenzyBoostIsBuiltOnTheDefenceAnAncientBehemothLeav
 }
 
 /// Against anything without such an ability the whole defense is converted.
-TEST_F(DamageCalculatorTest, FrenzyConvertsTheWholeDefenceIntoAttack)
+TEST_F(HistoricalSpellDamageTest, FrenzyConvertsTheWholeDefenceIntoAttack)
 {
 	const auto * source = attacker(angel);
 	cast(attackerSideHero, SpellID(SpellID::FRENZY), source); // 20 attack plus 20 defense against 20
@@ -1268,7 +1299,7 @@ TEST_F(DamageCalculatorTest, FrenzyConvertsTheWholeDefenceIntoAttack)
 }
 
 /// An advanced frenzy converts half again as much, for 50 attack against 20 defense.
-TEST_F(DamageCalculatorTest, AdvancedFrenzyConvertsHalfAgainAsMuchDefence)
+TEST_F(HistoricalSpellDamageTest, AdvancedFrenzyConvertsHalfAgainAsMuchDefence)
 {
 	const auto * source = attacker(angel);
 	cast(attackerSideHero, SpellID(SpellID::FRENZY), source, MasteryLevel::ADVANCED);
@@ -1277,7 +1308,7 @@ TEST_F(DamageCalculatorTest, AdvancedFrenzyConvertsHalfAgainAsMuchDefence)
 }
 
 /// And the unit that spent its defense has none left when it is the one being hit.
-TEST_F(DamageCalculatorTest, FrenzyLeavesItsBearerWithNoDefence)
+TEST_F(HistoricalSpellDamageTest, FrenzyLeavesItsBearerWithNoDefence)
 {
 	const auto * target = defender(angel);
 	cast(defenderSideHero, SpellID(SpellID::FRENZY), target);
