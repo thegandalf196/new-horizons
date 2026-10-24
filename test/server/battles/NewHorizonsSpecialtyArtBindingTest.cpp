@@ -239,7 +239,7 @@ struct ResolvedArtCase
 	newHorizonsHeroes::detail::SpecialtyArtworkFamily family;
 	const char * stem;
 };
-constexpr std::array<ResolvedArtCase, 76> resolvedArtCases = {{
+constexpr std::array<ResolvedArtCase, 86> resolvedArtCases = {{
 	{"core:melodia", "remainingSpellSpecialtyReplacements", "core:bless", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MelodiaBless"},
 	{"core:pyre", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "PyreBallistaLine"},
 	{"core:ash", "remainingSpellSpecialtyReplacements", "core:fireball", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AshFireball"},
@@ -316,6 +316,16 @@ constexpr std::array<ResolvedArtCase, 76> resolvedArtCases = {{
 	{"core:merist", "nonDamageSpellSpecialties", "new-horizons:hydrasVitality", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MeristHydrasVitality"},
 	{"core:sylvia", "skillSpecialties", "core:logistics", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "SylviaLogisticsCore"},
 	{"core:lordHaart", "skillSpecialties", "core:estates", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "LordHaartEstatesCore"},
+	{"core:piquedram", "creatureLineSpecialties", "core:stoneGargoyle", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "PiquedramGargoyleLine"},
+	{"core:erdamon", "creatureLineSpecialties", "core:earthElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ErdamonEarthElementalLine"},
+	{"core:kyrre", "skillSpecialties", "core:logistics", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "KyrreLogistics"},
+	{"core:alamar", "nonDamageSpellSpecialties", "core:resurrection", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AlamarResurrection"},
+	{"core:mephala", "skillSpecialties", "core:armorer", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "MephalaArmorer"},
+	{"core:vey", "creatureLineSpecialties", "core:ogre", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "VeyOgreLine"},
+	{"core:thane", "creatureLineSpecialties", "core:genie", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ThaneGenieLine"},
+	{"core:josephine", "creatureLineSpecialties", "core:ironGolem", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "JosephineGolemLine"},
+	{"core:torosar", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TorosarBallistaLine"},
+	{"core:fafner", "creatureLineSpecialties", "core:naga", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "FafnerNagaLine"},
 }};
 
 void expectResolvedArt(const CHero & hero, const newHorizonsHeroes::SpecialtyPresentation & metadata,
@@ -462,4 +472,41 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, ZubinArtworkRequiresCurrentFocusMagic
 		noSuccessor, magic, std::nullopt).artwork);
 	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:zubin"),
 		configured, JsonNode(), std::nullopt).artwork);
+}
+
+
+TEST_F(NewHorizonsSpecialtyArtBindingTest, SyntheticArmorerIdentityRetainsGenericSkillFallback)
+{
+	class UnboundPrototype final : public CHero
+	{
+	public:
+		explicit UnboundPrototype(const CHero & source) : CHero(source) {}
+		std::string getJsonKey() const override { return "test:unbound-armorer"; }
+	};
+	const UnboundPrototype hero(prototype("core:mephala"));
+	ASSERT_TRUE(hero.secondarySkillSpecialtyAlias);
+	const auto & alias = *hero.secondarySkillSpecialtyAlias;
+	ASSERT_EQ(alias.skill, SecondarySkill(SecondarySkill::ARMORER));
+	ASSERT_FALSE(alias.bonuses.empty());
+	for(const auto & bonus : alias.bonuses)
+	{
+		ASSERT_NE(bonus, nullptr);
+		EXPECT_TRUE(vstd::contains(hero.specialty, bonus));
+	}
+	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	const auto before = hero.specialty.toJsonNode();
+	const auto metadata = newHorizonsHeroes::resolveSpecialtyPresentation(
+		hero, development, magic, std::nullopt);
+	EXPECT_FALSE(metadata.artwork);
+	EXPECT_EQ(metadata.skill, alias.skill);
+	EXPECT_FALSE(metadata.spell);
+	EXPECT_FALSE(metadata.creature);
+	const auto view = heroSpecialtyPresentation(hero, metadata);
+	EXPECT_EQ(view.animation().getOriginalName(), "SECSKILL");
+	EXPECT_EQ(view.animation(true).getOriginalName(), "SECSK32");
+	EXPECT_EQ(view.frame(), alias.skill.toEntity(LIBRARY)->getIconIndex());
+	EXPECT_EQ(view.name, metadata.name);
+	EXPECT_EQ(view.description, metadata.description);
+	EXPECT_EQ(hero.specialty.toJsonNode(), before);
 }

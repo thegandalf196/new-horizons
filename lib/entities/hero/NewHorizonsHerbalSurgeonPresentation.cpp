@@ -19,6 +19,7 @@ bool resolveHerbalSurgeonPresentation(const CHero & hero, const JsonNode & devel
 	if(!rule)
 		return false;
 	result.name = "Herbal Surgeon";
+	result.artwork = "newHorizons/heroSpecialties/VerdishHerbalSurgeon";
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:warMachines"));
 	result.description = "First Aid Tent creature healing increases by " + std::to_string(rule->tentPercentPerLevel)
 		+ "% per hero level, up to +" + std::to_string(rule->tentMaximumPercent)

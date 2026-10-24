@@ -27,6 +27,9 @@ bool resolveRecoverySpecialtyPresentation(const CHero & hero, const JsonNode & d
 		return false;
 	result.name = *kind == RecoverySpecialtyKind::INFERNAL_WELLSPRING ? "Infernal Wellspring"
 		: *kind == RecoverySpecialtyKind::RITUAL_RESERVE ? "Ritual Reserve" : "Deep Trance";
+	result.artwork = "newHorizons/heroSpecialties/" + std::string(*kind == RecoverySpecialtyKind::INFERNAL_WELLSPRING
+		? "AxsisInfernalWellspring" : *kind == RecoverySpecialtyKind::RITUAL_RESERVE
+		? "JaegarRitualReserve" : "RosicDeepTrance");
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
 	result.description = "With Mysticism active, its daily recovery is at least 5 Normal Spell Points or 10% of maximum Normal, whichever is greater. "
 		"That Mysticism amount increases by " + std::to_string(rule->dailyPercentPerLevel)

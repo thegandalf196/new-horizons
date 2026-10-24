@@ -20,7 +20,8 @@ enum class SpecialtyArtworkFamily
 {
 	Creature,
 	Spell,
-	Skill
+	Skill,
+	Resource
 };
 
 struct SpecialtyArtworkBinding
@@ -30,7 +31,7 @@ struct SpecialtyArtworkBinding
 	std::string_view target;
 	std::string_view stem;
 };
-inline constexpr std::array<SpecialtyArtworkBinding, 80> specialtyArtworkBindings = {{
+inline constexpr std::array<SpecialtyArtworkBinding, 105> specialtyArtworkBindings = {{
 	{"core:monere", SpecialtyArtworkFamily::Creature, "new-horizons:wisp", "MonereWispLine"},
 	{"core:pasis", SpecialtyArtworkFamily::Creature, "new-horizons:wisp", "PasisWispLine"},
 	{"core:gerwulf", SpecialtyArtworkFamily::Creature, "core:ballista", "GerwulfBallistaLine"},
@@ -111,6 +112,31 @@ inline constexpr std::array<SpecialtyArtworkBinding, 80> specialtyArtworkBinding
 	{"core:merist", SpecialtyArtworkFamily::Spell, "new-horizons:hydrasVitality", "MeristHydrasVitality"},
 	{"core:sylvia", SpecialtyArtworkFamily::Skill, "core:logistics", "SylviaLogisticsCore"},
 	{"core:lordHaart", SpecialtyArtworkFamily::Skill, "core:estates", "LordHaartEstatesCore"},
+	{"core:caitlin", SpecialtyArtworkFamily::Resource, "gold", "CaitlinGoldIncome"},
+	{"core:clavius", SpecialtyArtworkFamily::Resource, "gold", "ClaviusGoldIncome"},
+	{"core:rissa", SpecialtyArtworkFamily::Resource, "mercury", "RissaMercuryIncome"},
+	{"core:calid", SpecialtyArtworkFamily::Resource, "sulfur", "CalidSulfurIncome"},
+	{"core:saurug", SpecialtyArtworkFamily::Resource, "gems", "SaurugGemsIncome"},
+	{"core:sephinroth", SpecialtyArtworkFamily::Resource, "crystal", "SephinrothCrystalIncome"},
+	{"core:neela", SpecialtyArtworkFamily::Skill, "core:armorer", "NeelaArmorerCore"},
+	{"core:gunnar", SpecialtyArtworkFamily::Skill, "core:logistics", "GunnarLogisticsCore"},
+	{"core:gelare", SpecialtyArtworkFamily::Resource, "gold", "GelareGoldIncome"},
+	{"core:grindan", SpecialtyArtworkFamily::Resource, "gold", "GrindanGoldIncome"},
+	{"core:aine", SpecialtyArtworkFamily::Resource, "gold", "AineGoldIncome"},
+	{"core:octavia", SpecialtyArtworkFamily::Resource, "gold", "OctaviaGoldIncome"},
+	{"core:nagash", SpecialtyArtworkFamily::Resource, "gold", "NagashGoldIncome"},
+	{"core:damacon", SpecialtyArtworkFamily::Resource, "gold", "DamaconGoldIncome"},
+	{"core:jenova", SpecialtyArtworkFamily::Resource, "gold", "JenovaGoldIncome"},
+	{"core:piquedram", SpecialtyArtworkFamily::Creature, "core:stoneGargoyle", "PiquedramGargoyleLine"},
+	{"core:erdamon", SpecialtyArtworkFamily::Creature, "core:earthElemental", "ErdamonEarthElementalLine"},
+	{"core:kyrre", SpecialtyArtworkFamily::Skill, "core:logistics", "KyrreLogistics"},
+	{"core:alamar", SpecialtyArtworkFamily::Spell, "core:resurrection", "AlamarResurrection"},
+	{"core:mephala", SpecialtyArtworkFamily::Skill, "core:armorer", "MephalaArmorer"},
+	{"core:vey", SpecialtyArtworkFamily::Creature, "core:ogre", "VeyOgreLine"},
+	{"core:thane", SpecialtyArtworkFamily::Creature, "core:genie", "ThaneGenieLine"},
+	{"core:josephine", SpecialtyArtworkFamily::Creature, "core:ironGolem", "JosephineGolemLine"},
+	{"core:torosar", SpecialtyArtworkFamily::Creature, "core:ballista", "TorosarBallistaLine"},
+	{"core:fafner", SpecialtyArtworkFamily::Creature, "core:naga", "FafnerNagaLine"},
 }};
 
 /// Presentation only. Call after the captured mechanic has resolved successfully;

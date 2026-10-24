@@ -51830,6 +51830,1326 @@
       "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
       "selection": "root-selected-provisional-model-assisted-next-twenty-specialty-foreground-future-phase2-2026-10-24",
       "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AxsisInfernalWellspring/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AxsisInfernalWellspring/32.json",
+      "size": 108,
+      "sha256": "ff0101106690fd422a70aaf28c8b276214d1a044075a3b4d9db18bb2a6614d13",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AxsisInfernalWellspring/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AxsisInfernalWellspring/44.json",
+      "size": 108,
+      "sha256": "cc73ddd7b5d44644d20fd4493eb331fb8067d1f3eb31e82a745ec3fb112deafc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AxsisInfernalWellspring/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AxsisInfernalWellspring/icon-32.png",
+      "size": 1931,
+      "sha256": "ef12e26672331ae3361da74dd39421113c32789e0bdbf35e8efdd3fff3a44301",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AxsisInfernalWellspring/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AxsisInfernalWellspring/icon-44.png",
+      "size": 3373,
+      "sha256": "f1dd4584754a367b42624281d32994c56fb463bd1c8859ec25331201fa1cde68",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CaitlinGoldIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CaitlinGoldIncome/32.json",
+      "size": 102,
+      "sha256": "ee206e3b033ee1c168a09465a90ab5c62c1d5eb7fe6960823f629ecb2e36fd05",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CaitlinGoldIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CaitlinGoldIncome/44.json",
+      "size": 102,
+      "sha256": "364c849f4f1a41d6eafdefd5f6adbb7df9eac6ccf259c3b81987baff76dfc411",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CaitlinGoldIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CaitlinGoldIncome/icon-32.png",
+      "size": 1963,
+      "sha256": "d0ee366c72b303909a252ecf3e3c7cef5b48f4cd7e5e6db8f93589dbfc0c249d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CaitlinGoldIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CaitlinGoldIncome/icon-44.png",
+      "size": 3323,
+      "sha256": "5f04c84b12715e6334a04396f4e6202818fa86d78c8380410b5ea6f2c7dcbdd4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CalidSulfurIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CalidSulfurIncome/32.json",
+      "size": 102,
+      "sha256": "cb83f81553f36322853d144b1b31f1edd7ad289e136efa0affe731f75b464b78",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CalidSulfurIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CalidSulfurIncome/44.json",
+      "size": 102,
+      "sha256": "b33c145e61a394909228a4aeccd7111606ec6788fc109535e69ee2dcd396a8a8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CalidSulfurIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CalidSulfurIncome/icon-32.png",
+      "size": 1853,
+      "sha256": "a1d9abcf9ca6ccb516300d85a1efe13c3a9f4b8037156f5b59c2f57926fbad4f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CalidSulfurIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CalidSulfurIncome/icon-44.png",
+      "size": 3224,
+      "sha256": "5f724b7eb01d4175465a16dcdb706a6ec6e17f33fc884e8b0af3f52cc1ef5513",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ClaviusGoldIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ClaviusGoldIncome/32.json",
+      "size": 102,
+      "sha256": "879dcebc8b9d1584e056f92e151867790a05cdf322fc90a5e60449aa67a417dd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ClaviusGoldIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ClaviusGoldIncome/44.json",
+      "size": 102,
+      "sha256": "61da6495ca75bf3818ac76544e6e955da51f939645057b6383318832f52b4f3c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ClaviusGoldIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ClaviusGoldIncome/icon-32.png",
+      "size": 2206,
+      "sha256": "b4169b4e50b4290995aaa028a078e3ff8707b8defb32ba6286e04766ed11e8d7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ClaviusGoldIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ClaviusGoldIncome/icon-44.png",
+      "size": 3940,
+      "sha256": "0022b259369e1f47bdb930988ff1a726dcb031324c1f580ea994c75fabf55bdd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GeonOccultScholar/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GeonOccultScholar/32.json",
+      "size": 102,
+      "sha256": "c488c483742881ee168306db9367e0fe16cd3d27bc406f093dcc67b126190ec7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GeonOccultScholar/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GeonOccultScholar/44.json",
+      "size": 102,
+      "sha256": "7a4b70363478b0998073b6a99efdf727ffad5333800587340c4ca0330ae457b9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GeonOccultScholar/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GeonOccultScholar/icon-32.png",
+      "size": 1935,
+      "sha256": "74d16de8880b2817b370f65239ac746caba59877dc9ecb1e211086a67f3713e0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GeonOccultScholar/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GeonOccultScholar/icon-44.png",
+      "size": 3405,
+      "sha256": "aba7591bd0736837856778dbc2549f0ca94f8265f85deab245199b8035adc8e3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GunnarLogisticsCore/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GunnarLogisticsCore/32.json",
+      "size": 104,
+      "sha256": "93a51fbafe9aa8df6f014fbadf1638506ad8e748ba10ad619715fc6ad9b00eb5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GunnarLogisticsCore/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GunnarLogisticsCore/44.json",
+      "size": 104,
+      "sha256": "8e8a1a66906a148ac1b795227d9f2953b006f68f5f28a47385a5fb88f929346a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GunnarLogisticsCore/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GunnarLogisticsCore/icon-32.png",
+      "size": 2102,
+      "sha256": "3b29b2588765eb8477a1da753552f7b45d7c5254ab3e53ee4179d74eced2c5a5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GunnarLogisticsCore/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GunnarLogisticsCore/icon-44.png",
+      "size": 3812,
+      "sha256": "7b125c9e80ec9094cad1519e603cc34ab7e98302da8cf2e3d6a9f5ce41e25ace",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JaegarRitualReserve/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JaegarRitualReserve/32.json",
+      "size": 104,
+      "sha256": "2a99fff27f7abcad5a0e8ec59036c6273f2c510a65550998ab4ca63546384d51",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JaegarRitualReserve/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JaegarRitualReserve/44.json",
+      "size": 104,
+      "sha256": "64d4869e4aab173dccfaeda9115529bfd2afe4bbddaf0cacb4b879a06a9eded0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JaegarRitualReserve/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JaegarRitualReserve/icon-32.png",
+      "size": 1753,
+      "sha256": "24a9e6c51915ef20c3b16240de8ab728939a0efba551e744c3934209f599d102",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JaegarRitualReserve/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JaegarRitualReserve/icon-44.png",
+      "size": 3097,
+      "sha256": "6c5b952a049a726a4dd843b19f4eb3ba9d52c0e4829dd7fc6a057ebbb54f893c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NeelaArmorerCore/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NeelaArmorerCore/32.json",
+      "size": 101,
+      "sha256": "6c275c8e0febb37c8da0d250e86ac98cf0bba4d49cbc31636501e85b121ad3d1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NeelaArmorerCore/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NeelaArmorerCore/44.json",
+      "size": 101,
+      "sha256": "3533efd8f60adca569b11eca90d9860d774121c9b0a69c0fdde9a1525d98d86a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NeelaArmorerCore/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NeelaArmorerCore/icon-32.png",
+      "size": 2378,
+      "sha256": "4566a6ee95c911d24eda29608b426b0ede05631a819b59a4351cfb551a7d8dc4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NeelaArmorerCore/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NeelaArmorerCore/icon-44.png",
+      "size": 4270,
+      "sha256": "8c70e559e73b8f12a67ebe9482b01146956ac6005a7651b384f4926b610ba645",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RissaMercuryIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RissaMercuryIncome/32.json",
+      "size": 103,
+      "sha256": "099d943582f7f0a2ecdee34de3962c2fb255410e28e099d91cc66e893d288190",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RissaMercuryIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RissaMercuryIncome/44.json",
+      "size": 103,
+      "sha256": "5cc34c7bb211930487fd1acdfb340f4d1b6fa768424775f48be56b1c6c806e98",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RissaMercuryIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RissaMercuryIncome/icon-32.png",
+      "size": 2030,
+      "sha256": "86679857ed10418d067bf423ccf7ebc06d1ca67666b73c42c401c7d959c2fa51",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RissaMercuryIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RissaMercuryIncome/icon-44.png",
+      "size": 3566,
+      "sha256": "26f29b375ae37b3e15b40a0b6e8d26f5281747b82bd4cd98400bb8c00c68cf1e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RosicDeepTrance/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RosicDeepTrance/32.json",
+      "size": 100,
+      "sha256": "e213921569716012b421437f256770955c492ee7d8cf0c0cad4a66d6964e0dd6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RosicDeepTrance/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RosicDeepTrance/44.json",
+      "size": 100,
+      "sha256": "dc99cbc798c1140fcbc1ee00c079cd977173e8ee1c1e67f37a0891076e7283ba",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RosicDeepTrance/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RosicDeepTrance/icon-32.png",
+      "size": 1856,
+      "sha256": "2bf597c73a641d753993af8221778c488579cd6bcc89e9fbfd1a1a2395e26133",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RosicDeepTrance/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RosicDeepTrance/icon-44.png",
+      "size": 3184,
+      "sha256": "def898ed0b566b0a7b3bc74536861f682e5bec6bf29ca2b31c311dbff1a5660c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SanyaEcumenicalScholar/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SanyaEcumenicalScholar/32.json",
+      "size": 107,
+      "sha256": "e50ccc41f19b613f823f03766f3c7f91ca8bf81d724bf9707ce67a9b2e7ccdf1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SanyaEcumenicalScholar/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SanyaEcumenicalScholar/44.json",
+      "size": 107,
+      "sha256": "3cb6f0cc8d5a94270988f6166bdf45647a297bcbd8f2c43a31c7705a7055a786",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SanyaEcumenicalScholar/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SanyaEcumenicalScholar/icon-32.png",
+      "size": 2290,
+      "sha256": "25d5e6487e6c9445e8fe34b2cc71f83b56a315b74c9a1a93f9cc1c5c29117b8a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SanyaEcumenicalScholar/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SanyaEcumenicalScholar/icon-44.png",
+      "size": 4019,
+      "sha256": "45c67b43b0508d1feb2b81ec37b7ee8543d1c312b0ff3d30c29cf855fee25603",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SaurugGemsIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SaurugGemsIncome/32.json",
+      "size": 101,
+      "sha256": "2f8f9f64a8ac58067d121d307334938f3b56ca129e739062bfa97322cb13c1b8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SaurugGemsIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SaurugGemsIncome/44.json",
+      "size": 101,
+      "sha256": "0a141828adff94ef4a667450356d9094f34882ec5ef24f6f63d71f241472096f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SaurugGemsIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SaurugGemsIncome/icon-32.png",
+      "size": 2241,
+      "sha256": "e9017188f8636f34bb23691dd03f90371eab31eb7c2bcaaca80c8d2a8f33ced1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SaurugGemsIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SaurugGemsIncome/icon-44.png",
+      "size": 4018,
+      "sha256": "bc4011e33de1cf13b47fcaa68c8a0c383c1fda20d32cb614eaa2f538aae9a231",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SephinrothCrystalIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SephinrothCrystalIncome/32.json",
+      "size": 108,
+      "sha256": "84c592b953d21b9d471c0fe139e954aaf8f66749dfe140e16fa772f0ca9f44a2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SephinrothCrystalIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SephinrothCrystalIncome/44.json",
+      "size": 108,
+      "sha256": "3b158cfc5c05da81a8907ab8ce7aa2e596bb8bb9c94ca29c4ffb23a7691be3fb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SephinrothCrystalIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SephinrothCrystalIncome/icon-32.png",
+      "size": 1925,
+      "sha256": "b92f695c3b47e35a92f6286c26e6c44e81d57e44a5b08c170e6ef60b6dc093eb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SephinrothCrystalIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SephinrothCrystalIncome/icon-44.png",
+      "size": 3303,
+      "sha256": "0fca85da7652cb166150b21df14fc62cd9bc39bb92b8193a37618c17e4564299",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-assisted-own-specialty-draft-background-removal-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TivaSwampSeer/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TivaSwampSeer/32.json",
+      "size": 98,
+      "sha256": "cf35a65aacd8356728a2a62efa8c1d3593b1ff928bd2bc86ab717ef3da56a656",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TivaSwampSeer/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TivaSwampSeer/44.json",
+      "size": 98,
+      "sha256": "d05a1a40b73de16e7ad398adc9743f92ffc1944c24c79373f7558a49029adc64",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TivaSwampSeer/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TivaSwampSeer/icon-32.png",
+      "size": 1694,
+      "sha256": "29a9154be2ccb3717a3597b2513b21a4a838f27bacc2646f7ea0167e0f3548af",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TivaSwampSeer/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TivaSwampSeer/icon-44.png",
+      "size": 2964,
+      "sha256": "fa6eb558bf0ee5d1d3c3184eef0ff74e422d94091961691f68c225a0906dec62",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VerdishHerbalSurgeon/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VerdishHerbalSurgeon/32.json",
+      "size": 105,
+      "sha256": "3d2dc7d97d795ed13f895d18f1eea54f73d212036ecd873df9cd145cec000e9d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VerdishHerbalSurgeon/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VerdishHerbalSurgeon/44.json",
+      "size": 105,
+      "sha256": "2f45200e2b8d9765d3b446cad64a11ff5d65d06f8cf1e466829d60636e029d4b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VerdishHerbalSurgeon/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VerdishHerbalSurgeon/icon-32.png",
+      "size": 2407,
+      "sha256": "2d99e797f38972c82e2fd3bcff2df0f1ec2c4abf8d718349356021ddab4d1cd5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VerdishHerbalSurgeon/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VerdishHerbalSurgeon/icon-44.png",
+      "size": 4409,
+      "sha256": "0d4ed1dc262eb22c312381077eb59cb7807f0734551f3fee645bc24b0c9148d8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VidominaDarkReclaimer/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VidominaDarkReclaimer/32.json",
+      "size": 106,
+      "sha256": "17276bb8db00c60a6fcb5f0d3d451c2a3cf11f2f89ea91ae473b2425810b8bd5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VidominaDarkReclaimer/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VidominaDarkReclaimer/44.json",
+      "size": 106,
+      "sha256": "4acd76c73e6e27d2a049a76354c060df737e564a3227d3f6845c1dd2368cc37a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VidominaDarkReclaimer/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VidominaDarkReclaimer/icon-32.png",
+      "size": 1606,
+      "sha256": "49320641bc6a3e68bc81dcaff7acb259bc5f24a19ac5ba02156873b833d3842c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VidominaDarkReclaimer/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VidominaDarkReclaimer/icon-44.png",
+      "size": 2779,
+      "sha256": "00264d50c0bc379faf7304d6ee2af59e127bd2588eb2beb1dc325dee9c6ef66d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "built-in-model-generated-own-specialty-original-native-export",
+      "selection": "root-selected-provisional-sixteen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AineGoldIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AineGoldIncome/32.json",
+      "size": 99,
+      "sha256": "7478a2d9d36eba06c731b6397f151468a9395e5b6c4f6963781000e0caf84813",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AineGoldIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AineGoldIncome/44.json",
+      "size": 99,
+      "sha256": "951f70970e7f914260daadbd3e4906b462aa46fc46f1e548d02a3fd14cb7fd02",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AineGoldIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AineGoldIncome/icon-32.png",
+      "size": 2321,
+      "sha256": "8b69f7750da137b7728ef5928ee95a50c5200edeb8ebaa8011639fa490fd665d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AineGoldIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AineGoldIncome/icon-44.png",
+      "size": 4234,
+      "sha256": "03d5c2fbd955b6df0b1dac3cbf1a2f43665a401dc598e6c0984430e747951bd5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AlamarResurrection/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AlamarResurrection/32.json",
+      "size": 103,
+      "sha256": "3e9ffd994d9b928f0d3db80173900adce9b27a6f1e715b4ae66e185e429afd28",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AlamarResurrection/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AlamarResurrection/44.json",
+      "size": 103,
+      "sha256": "0f4982ae6b52de623f7b7d8bca4bb6764a74f15f95aedc960ed3d23cf707c295",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AlamarResurrection/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AlamarResurrection/icon-32.png",
+      "size": 1623,
+      "sha256": "14dab22b5041858f23610e214617156679ea66b295f7a3cc0f528d4bf2000dec",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AlamarResurrection/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AlamarResurrection/icon-44.png",
+      "size": 2802,
+      "sha256": "ff41bf7d1b00b279d0427b250a7551364d00d9671427029c5a5c8194b8e4c468",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/DamaconGoldIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/DamaconGoldIncome/32.json",
+      "size": 102,
+      "sha256": "17bbe006e31c51436b56991282feb645597134ca3fc272bd08c21fdea9690e97",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/DamaconGoldIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/DamaconGoldIncome/44.json",
+      "size": 102,
+      "sha256": "ae9f4a2ee9063a45055b0e59a9f27c478064cbd86df2b644b2dea4888eca4702",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/DamaconGoldIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/DamaconGoldIncome/icon-32.png",
+      "size": 2188,
+      "sha256": "7798e6864693594d6d6f149389c7934f2bafd9911770a1729fbb4060ea67bd59",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/DamaconGoldIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/DamaconGoldIncome/icon-44.png",
+      "size": 3925,
+      "sha256": "4dc4036759a12551a485af1fd1b01934d9cbbdffa52977866f6c86186ec4fa12",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ErdamonEarthElementalLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ErdamonEarthElementalLine/32.json",
+      "size": 110,
+      "sha256": "a77ec7a7089e3d3c318fb0df2834b9100bf9c1e6aa012675b15fdd0d54f7a597",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ErdamonEarthElementalLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ErdamonEarthElementalLine/44.json",
+      "size": 110,
+      "sha256": "8751db9d61fdc307c2b08036e6fdb4cad8edd733efabeef53a49565783ef0ca6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ErdamonEarthElementalLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ErdamonEarthElementalLine/icon-32.png",
+      "size": 1644,
+      "sha256": "5057d15afb64b70893e2665ce5cf32f9f09ee5069a4164a27ee32443bfb03513",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ErdamonEarthElementalLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ErdamonEarthElementalLine/icon-44.png",
+      "size": 2883,
+      "sha256": "3afc821945a603319e344a51e9fc8d375aa8190ecf183226953e1025de85bf77",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FafnerNagaLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FafnerNagaLine/32.json",
+      "size": 99,
+      "sha256": "49ff59c3e6b72fad6e7efb9bbc874566b1b58807ed18d61f44f1f8e42aa2ab81",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FafnerNagaLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FafnerNagaLine/44.json",
+      "size": 99,
+      "sha256": "8e313cda37fadc2e197b492d11dd417d0074c893679d24068e3958537820394a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FafnerNagaLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FafnerNagaLine/icon-32.png",
+      "size": 2362,
+      "sha256": "dc64fd457d0aab605e8ab0344482f064ee31edba51aae104a6e1ed7899d36f9d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FafnerNagaLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FafnerNagaLine/icon-44.png",
+      "size": 4104,
+      "sha256": "5f37645a3faf98cf1cd51c80d9a9282a3135f9928d6689d5dd5a7758f4a96cc0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GelareGoldIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GelareGoldIncome/32.json",
+      "size": 101,
+      "sha256": "0dcbea2fce8c6578ab4e392e92e11d516cc9334670c706d8c9b95e9b3f6ccfeb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GelareGoldIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GelareGoldIncome/44.json",
+      "size": 101,
+      "sha256": "0dc5cddd7d2b4d718cad6a7059a7dec0fc960dd396e2b4c0881b8c904cbe73ad",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GelareGoldIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GelareGoldIncome/icon-32.png",
+      "size": 1616,
+      "sha256": "d8ead9c551ded9ac9a6379ff02e7ba39028307c94949a48af19b35c2b8a3b929",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GelareGoldIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GelareGoldIncome/icon-44.png",
+      "size": 2854,
+      "sha256": "b8308fcd5e69ce2c8ee3c0f5299289f34da5a666656dda322e7156de532c1f89",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GrindanGoldIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GrindanGoldIncome/32.json",
+      "size": 102,
+      "sha256": "751ed4b2ad33890c9da2530430e2a0bcba10fec214c4682ba4598ba778f996b3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GrindanGoldIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GrindanGoldIncome/44.json",
+      "size": 102,
+      "sha256": "08c5b0af9354685e0e64540ce7da1970544e61f7fd7cd9aa37971889d41d7dc8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GrindanGoldIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GrindanGoldIncome/icon-32.png",
+      "size": 2088,
+      "sha256": "d8af3d51c9a18adaa0b99ca57b35ef2e89f801c6caa66c5e2a00a34a25248dbd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/GrindanGoldIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/GrindanGoldIncome/icon-44.png",
+      "size": 3763,
+      "sha256": "5774958169b28b91a70add8d60307224e6c410919c8f23837926d2466d17c0c4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JenovaGoldIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JenovaGoldIncome/32.json",
+      "size": 101,
+      "sha256": "cfe546a2e3cc5d7f88ee8cb5844dea68e1b21ef7d6876ff7e3bd5231450f9e40",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JenovaGoldIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JenovaGoldIncome/44.json",
+      "size": 101,
+      "sha256": "a97fdb5bc102f7d24d584e471f7f23c60b9ee372e60a444a33c53036b2b213cb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JenovaGoldIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JenovaGoldIncome/icon-32.png",
+      "size": 2396,
+      "sha256": "15cf57077b9f03695ee2ce3b584c15bbe4e1161fc5d718e7cfce2f6605f64b97",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JenovaGoldIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JenovaGoldIncome/icon-44.png",
+      "size": 4364,
+      "sha256": "e574ff98ad5d9918d314d2462c576f0058a0c4bff23a54e42275b07b948d8bc6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JosephineGolemLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JosephineGolemLine/32.json",
+      "size": 103,
+      "sha256": "271623ae3a060644e80267482f9f6eb9aa55827fafa18d2091d8ba7994f17629",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JosephineGolemLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JosephineGolemLine/44.json",
+      "size": 103,
+      "sha256": "849b7363af1f302f3b0e034a44ae56fb32270e60c5fb4f3c0f5610054e0aef2e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JosephineGolemLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JosephineGolemLine/icon-32.png",
+      "size": 2419,
+      "sha256": "b29fa764b1111abd9667ecb4c20fd0443407253991d5fec65642c09bfad5f841",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/JosephineGolemLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/JosephineGolemLine/icon-44.png",
+      "size": 4437,
+      "sha256": "ec7f6667c04e3e3e4cf45b98127182aca3386a329384ce598878818079717e26",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/KyrreLogistics/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/KyrreLogistics/32.json",
+      "size": 99,
+      "sha256": "f2bdfdad5e7cb961accd110e82ec25ca0813b280893f0492c9a00e1de39066cd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/KyrreLogistics/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/KyrreLogistics/44.json",
+      "size": 99,
+      "sha256": "2ac439c577ce808d17ad4815b72b640adc201af88422c068c6d6d2fdaf22f39d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/KyrreLogistics/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/KyrreLogistics/icon-32.png",
+      "size": 2209,
+      "sha256": "76c41e36f7ed019589f1d510bb2aeffa34d038327809f8b541f15f477b887bc2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/KyrreLogistics/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/KyrreLogistics/icon-44.png",
+      "size": 4015,
+      "sha256": "d42382ed211f2e01b1009778faff12743795f0424caf5665743ba5fe5da218de",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MephalaArmorer/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MephalaArmorer/32.json",
+      "size": 99,
+      "sha256": "e8cb7c9a7e1ddd3264ba0f1eae009229c1b4cec01e45696f48f18abd8cbbee43",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MephalaArmorer/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MephalaArmorer/44.json",
+      "size": 99,
+      "sha256": "0de7b77ae3a89eeb8630af6edcbc377b1da06b1f826ecfa66f4633d20b05a4f1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MephalaArmorer/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MephalaArmorer/icon-32.png",
+      "size": 2176,
+      "sha256": "b508e028591039995059c3f1e4c421afb22db5781cbefc1e559bb6371d9683b5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MephalaArmorer/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MephalaArmorer/icon-44.png",
+      "size": 3808,
+      "sha256": "0131d7bd3b550969d8443301d7921edfbe8aa1edd536d2ff71fee40bafadafb5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NagashGoldIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NagashGoldIncome/32.json",
+      "size": 101,
+      "sha256": "e89e34dffca47d34914d6845d4b8be056fe5bd022fea9dd4f4c28be211b0a202",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NagashGoldIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NagashGoldIncome/44.json",
+      "size": 101,
+      "sha256": "eacca1b3ea249fc7b1b1951d10ad47d423b0d1a7d129964a3842109f7de0b337",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NagashGoldIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NagashGoldIncome/icon-32.png",
+      "size": 2224,
+      "sha256": "0253b6bdf54145487b4c0b45ce95b2bf00745ebcbcc11660d2fa64fb1bc44b80",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/NagashGoldIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/NagashGoldIncome/icon-44.png",
+      "size": 3997,
+      "sha256": "2078c914b39af5c2977c3afffe471f3d17f682404f133db070a62bc263bc0df0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OctaviaGoldIncome/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OctaviaGoldIncome/32.json",
+      "size": 102,
+      "sha256": "e468a674a21418f17a5a504542c6c886e275bddbdc073266b3d8e23a75b38da7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OctaviaGoldIncome/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OctaviaGoldIncome/44.json",
+      "size": 102,
+      "sha256": "6faab2f27b78c173a0a5ea7ad6c885f7a015d681f2ea3214286e744e3e20a772",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OctaviaGoldIncome/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OctaviaGoldIncome/icon-32.png",
+      "size": 2017,
+      "sha256": "dc92b5cfce926018f02d863f3dddbd5aeb1f3318d6eabad03a3e776dc208e2a6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OctaviaGoldIncome/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OctaviaGoldIncome/icon-44.png",
+      "size": 3626,
+      "sha256": "d74c1f6665e6e422ef51b732cc1d9080eca656a8033188bc26741dd0c03145bc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/PiquedramGargoyleLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/PiquedramGargoyleLine/32.json",
+      "size": 106,
+      "sha256": "f365e90af590c6b07f4e0dff9bb81cb5e12b255987216030c699afb3ee3af5f7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/PiquedramGargoyleLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/PiquedramGargoyleLine/44.json",
+      "size": 106,
+      "sha256": "a5bf3f467e62cd540f2629a168b1d7fe29b89a0f6a3bd86ddbb9d15e32c6a99f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/PiquedramGargoyleLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/PiquedramGargoyleLine/icon-32.png",
+      "size": 2582,
+      "sha256": "a8e35e524bf94773edb390aabe12610de0707a5da7cc079b5fa745e1ec8d2670",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/PiquedramGargoyleLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/PiquedramGargoyleLine/icon-44.png",
+      "size": 4772,
+      "sha256": "471ac1bbb48628e9e047bb9df3728b5220261d2872a530a10c8f7fd19baa9951",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ThaneGenieLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ThaneGenieLine/32.json",
+      "size": 99,
+      "sha256": "f8706bc4cede890db4d133deaaa47662f8c5303ee0ecc8a8d2ac6e30ecc77961",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ThaneGenieLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ThaneGenieLine/44.json",
+      "size": 99,
+      "sha256": "8f8c6be031d0c4c5f02816f250bcee39888f31aa29a1e2e69a4262627c78d692",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ThaneGenieLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ThaneGenieLine/icon-32.png",
+      "size": 1578,
+      "sha256": "de29433fb50ef262c05dc0103fa84511ad087a497f70e724d46f83b300176188",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/ThaneGenieLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/ThaneGenieLine/icon-44.png",
+      "size": 2645,
+      "sha256": "003cd6bf767480b59d66a827585bc3a79f2eecca29dc86d6a0a62ccea54350a6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TorosarBallistaLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TorosarBallistaLine/32.json",
+      "size": 104,
+      "sha256": "ce2712cdafbe9d181aa749f1afef34a71850604925e59a1a888842515dfc49bf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TorosarBallistaLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TorosarBallistaLine/44.json",
+      "size": 104,
+      "sha256": "d6554347bcb1d77390ae3c4d4f1772953768669f7da708a73597a34ccee9a048",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TorosarBallistaLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TorosarBallistaLine/icon-32.png",
+      "size": 2073,
+      "sha256": "53585f51f1781a3eaf9b54a4d489bd0b068fc9f5fa7654095276d5aad9901e4c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TorosarBallistaLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TorosarBallistaLine/icon-44.png",
+      "size": 3576,
+      "sha256": "923ad21e6ff4b96ef2040c4788f5b0bdb9299e69712150832c7d681a70094f3d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VeyOgreLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VeyOgreLine/32.json",
+      "size": 96,
+      "sha256": "3d911a8b9992958b98dda927801a634a649ac55bddb7eab1545b2b50fa1144d5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VeyOgreLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VeyOgreLine/44.json",
+      "size": 96,
+      "sha256": "f9ed858b60c7b351bab2aa90a0fcc2f897c92ab123e3f5c4a1be173220caf0c9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VeyOgreLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VeyOgreLine/icon-32.png",
+      "size": 1551,
+      "sha256": "382e9c6f2dec376196d22a3957be25c92be5ea558b4296bcf19a97ab3460f8e9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VeyOgreLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VeyOgreLine/icon-44.png",
+      "size": 2572,
+      "sha256": "30803cf056026f3298ff6fcc3abc37e7782f31a34a78c92736f18d9823ac350e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-specialty-native-export",
+      "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
     }
   ],
   "requiredFamilies": [
@@ -51844,7 +53164,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 3101,
+    "builtin-skills-perks-orders-and-ui": 3233,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

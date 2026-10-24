@@ -1,12 +1,12 @@
 # Selected UI and artwork status
 
-Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, family counts and separate origin/selection/approval. Current NHART has **4,863 selected payloads**. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
+Use [runtime-art-manifest.json](../assets/new-horizons/runtime-art-manifest.json) for selected resource bytes, payload and family counts, and separate origin/selection/approval. Technical inclusion is not Final approval or rendered/build-specific playable acceptance.
 
 | Current selection record | Scope |
 | --- | --- |
 | perk-art-selections.json | Initial94 purpose-made perk drafts, semantic44 icon + four-state44 family +32 companion; selected versions/provenance explicit |
 | spell-art-selections.json | Seventeen purpose-made custom spell families: book44, scroll/scenario32, effect/immunity30 |
-| runtime-art-additions.json | Later additions and exact descriptor revisions;133 further perk drafts, four Mass-spell icon families, Arcane Breach/Lucidity30 status resources and seventeen specialty icon pairs, with historical payload and provenance checks |
+| runtime-art-additions.json | Later additions and exact descriptor revisions;133 further perk drafts, four Mass-spell icon families, Arcane Breach/Lucidity30 status resources and specialty icon pairs, with historical payload and provenance checks |
 | runtime-art-manifest.json | Complete selected creature/town/school/spell/perk/Order/interface bytes, origin and approval |
 | platform-icon-provenance.json | Explicit pre-NHART Windows/Linux application-icon exception |
 
@@ -44,4 +44,4 @@ remain Provisional; rendered presentation and playable delivery are separate gat
 
 Shakti, Synca, Yog, Jabarkas, Charna, Tamika and Bron select distinct current creature-line specialty icons; Crag Hack selects core Offense, Uland Cure and Alagar Ice Bolt. These transparent 44×44 and 32×32 normal frame 0 pairs follow the resolved captured mechanic. Shakti includes an explicitly selected model-completed silhouette. Selection remains Provisional, with rendered acceptance pending.
 
-Twenty further provisional specialty pairs use transparent 44×44 and 32×32 normal frame 0 artwork for their current resolved creature, spell or core Skill identity. This includes revised Cuthbert Frailty, Ciele Magic Arrow and Sylvia Logistics; artwork introduces no workbook riders. Historical captured fallbacks remain unchanged. Rendered acceptance is pending.
+Additional provisional specialty pairs use transparent 44×44 and 32×32 normal frame 0 artwork for their current resolved creature, spell, core Skill, resource income or individual specialty identity. This includes Cuthbert Frailty, Ciele Magic Arrow, Sylvia Logistics and the individual Learning and recovery specialties. Selection requires the exact hero and matching resolved mechanic; artwork adds no gameplay riders. Historical captured fallbacks remain unchanged. Native resource checks and rendered acceptance remain separate.

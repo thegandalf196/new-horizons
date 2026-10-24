@@ -18,6 +18,7 @@ bool resolveReclaimerPresentation(const CHero & hero, const JsonNode & developme
 	if(!rule)
 		return false;
 	result.name = "Dark Reclaimer";
+	result.artwork = "newHorizons/heroSpecialties/VidominaDarkReclaimer";
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:necromancy"));
 	result.description = "After ordinary Necromancy conversions, " + std::to_string(rule->conversionPercentPerLevel)
 		+ "% per hero level of remaining Skeleton equivalents, up to " + std::to_string(rule->conversionMaximumPercent)

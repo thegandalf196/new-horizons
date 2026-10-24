@@ -46,7 +46,7 @@ const std::array<SpecialtyCase, 13> heroes = {{
 	{"core:thorgrim", "newHorizons/heroSpecialties/ThorgrimMasterSpellward", {21, 11, 0}},
 	{"core:pasis", "newHorizons/heroSpecialties/PasisWispLine", {22, 10, 0}, "new-horizons:wisp"},
 	{"core:christian", "newHorizons/heroSpecialties/ChristianBallistaLine", {22, 11, 0}, "core:ballista"},
-	{"core:mephala", nullptr, {23, 10, 0}}
+	{"core:mephala", "newHorizons/heroSpecialties/MephalaArmorer", {23, 10, 0}}
 }};
 }
 
@@ -114,21 +114,36 @@ protected:
 			ASSERT_TRUE(metadata.artwork);
 			ASSERT_EQ(*metadata.artwork, row.artwork);
 		}
-		else
+		if(row.identity == std::string_view("core:mephala"))
+			ASSERT_NO_FATAL_FAILURE(expectUnboundSkillFallback(*hero, development, magic));
+	}
+
+	void expectUnboundSkillFallback(const CGHeroInstance & hero, const JsonNode & development,
+		const JsonNode & magic)
+	{
+		// Preserve the real specialty and source identity; only the artwork key
+		// is synthetic, so future named-hero selections cannot invalidate this control.
+		class UnboundPrototype final : public CHero
 		{
-			ASSERT_FALSE(metadata.artwork);
-			// Specialty identity retains the core alias; starting Skills use the NH registry.
-			const auto & alias = hero->getHeroType()->secondarySkillSpecialtyAlias;
-			ASSERT_TRUE(alias);
-			ASSERT_EQ(alias->skill, SecondarySkill(SecondarySkill::ARMORER));
-			ASSERT_EQ(metadata.skill, alias->skill);
-			ASSERT_FALSE(metadata.spell);
-			ASSERT_FALSE(metadata.creature);
-			const auto view = heroSpecialtyPresentation(*hero->getHeroType(), metadata);
-			ASSERT_EQ(view.animation().getOriginalName(), "SECSKILL");
-			ASSERT_EQ(view.animation(true).getOriginalName(), "SECSK32");
-			ASSERT_EQ(view.frame(), alias->skill.toEntity(LIBRARY)->getIconIndex());
-		}
+		public:
+			explicit UnboundPrototype(const CHero & source) : CHero(source) {}
+			std::string getJsonKey() const override { return "test:unbound-armorer"; }
+		};
+		const UnboundPrototype prototype(*hero.getHeroType());
+		const auto & alias = prototype.secondarySkillSpecialtyAlias;
+		ASSERT_TRUE(alias);
+		ASSERT_EQ(alias->skill, SecondarySkill(SecondarySkill::ARMORER));
+		ASSERT_GT(hero.getSkillSpecialtyCoreBonusPercent(alias->skill), 0);
+		const auto metadata = newHorizonsHeroes::resolveSpecialtyPresentation(
+			prototype, development, magic, std::nullopt);
+		ASSERT_FALSE(metadata.artwork);
+		ASSERT_EQ(metadata.skill, alias->skill);
+		ASSERT_FALSE(metadata.spell);
+		ASSERT_FALSE(metadata.creature);
+		const auto view = heroSpecialtyPresentation(prototype, metadata);
+		ASSERT_EQ(view.animation().getOriginalName(), "SECSKILL");
+		ASSERT_EQ(view.animation(true).getOriginalName(), "SECSK32");
+		ASSERT_EQ(view.frame(), alias->skill.toEntity(LIBRARY)->getIconIndex());
 	}
 
 	void expectExportBytes(const std::string & name, const std::vector<uint8_t> & expected)
@@ -165,7 +180,7 @@ TEST_F(NewHorizonsSpecialtyPresentationFixtureExportTest, ExportOrdinarySpecialt
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).name(name)
 		.description("Specialty presentation diagnostic, not a balanced scenario or gameplay certification. "
-			"Red owns adjacent Serena, Gem, Daremyth, Orrin, Monere, Gerwulf, Elleshar, Malcom, Andra, Thorgrim, Pasis, Christian and ordinary control Mephala with authored starts; "
+			"Red owns adjacent Serena, Gem, Daremyth, Orrin, Monere, Gerwulf, Elleshar, Malcom, Andra, Thorgrim, Pasis, Christian and Mephala with authored starts; Mephala uses selected specialty art. "
 			"no map Skill, perk, experience, primary, army or spellbook overrides. "
 			"Open each normal Hero Window and meet adjacent heroes through normal exchange. "
 			"Inspect specialty icons and tooltips, then save/reload and inspect again. "

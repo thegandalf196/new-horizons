@@ -19,7 +19,7 @@ bool resolveSwampSeerPresentation(const CHero & hero, const JsonNode & developme
 	if(!rule)
 		return false;
 	result.name = "Swamp Seer";
-	result.artwork.reset();
+	result.artwork = "newHorizons/heroSpecialties/TivaSwampSeer";
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
 	result.description = "Learning's core experience bonus increases by " + std::to_string(rule->learningPercentPerLevel)
 		+ "% per hero level, up to +" + std::to_string(rule->learningMaximumPercent)

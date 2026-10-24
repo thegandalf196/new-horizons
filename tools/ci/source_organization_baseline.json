@@ -22731,15 +22731,15 @@
       "sha256": "d77772a1ede34de3884cee9989bc9a66c05a23ec458bb92090e6bb5a78bf9ef8"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target, const CGHeroInstance * capturedHero)#1": {
-      "deferral": "UI developer: extract the remaining spell and Skill presentation stages into focused typed helpers, preserving resolver order, captured-policy gates and historical fallbacks. Keep this exact artwork-routing change bounded at 132 lines; validate the extraction with current, historical and wrong-target specialty presentation tests.",
+      "deferral": "UI developer: extract the remaining spell and Skill presentation stages into focused typed helpers, preserving resolver order, captured-policy gates and historical fallbacks. Keep this exact artwork-routing change bounded at 133 lines; validate the extraction with current, historical and wrong-target specialty presentation tests.",
       "kind": "exception",
-      "lines": 132,
+      "lines": 133,
       "owner": "ui_developer",
-      "rationale": "Existing remaining-spell/damage/non-damage/skill resolution order and captured bonus gates are unchanged. Six successful family branches only route to a focused exact hero/family/resolved-entity artwork lookup. No new gameplay, save fields, translated-name matching or legacy-fallback artwork. Exact 132-line function remains below150; source-only review, native/rendered acceptance is separate.",
-      "review": "selected-thirty-two-specialty-art-independent-source-review",
-      "review_scope": "resolved-specialty-artwork-success-gates-only",
+      "rationale": "Existing remaining-spell/damage/non-damage/skill resolution order and captured bonus gates are unchanged. One final dispatch calls the focused read-only resource-artwork helper only after all existing branches fall through. Exact 133-line function remains below150; independent resource source review permits only this one-line renewal and retains the UI extraction obligation. No gameplay, save fields, translated-name matching or historical producer repair. Native/rendered acceptance is separate.",
+      "review": "resource-specialty-independent-source-review-20261024",
+      "review_scope": "resource-family-final-dispatch-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "37a59d26d21634fcc09e942cf9494caf333305838dda7e72c57fba298e1a663b"
+      "sha256": "7b11d5de170dc36132fcdea65217c7ea91147c659600fade69b6c5ed366a4694"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "kind": "exception",

@@ -21,7 +21,7 @@ bool resolveLearningExchangePresentation(const CHero & hero, const JsonNode & de
 	if(!rule)
 		return false;
 	result.name = outgoing ? "Ecumenical Scholar" : "Occult Scholar";
-	result.artwork.reset(); // Individual artwork selection/packaging is a separate content task.
+	result.artwork = "newHorizons/heroSpecialties/" + std::string(outgoing ? "SanyaEcumenicalScholar" : "GeonOccultScholar");
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
 	result.description = "Learning's core experience bonus increases by " + std::to_string(rule->learningPercentPerLevel)
 		+ "% per hero level, up to +" + std::to_string(rule->learningMaximumPercent)
