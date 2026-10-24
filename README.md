@@ -4,7 +4,7 @@
 
 [What changes from Heroes III Complete? Read the gameplay and artwork changelog.](docs/NEW_HORIZONS_CHANGELOG.md)
 
-[Detailed gameplay reference: Skills, all 310 perks, spells, Orders and creature changes.](docs/NEW_HORIZONS_GAMEPLAY_CHANGELOG.md)
+[Player wiki: Skills, perks, spells, creatures, heroes and combat.](docs/wiki/README.md)
 
 ## Before you begin
 

@@ -5,7 +5,7 @@ The first entry collects the main differences; later entries will track addition
 and revisions as the game develops.
 
 For individual perk effects, spell formulas, creature statistics and Order rules,
-read the [detailed gameplay changelog](NEW_HORIZONS_GAMEPLAY_CHANGELOG.md).
+read the [player wiki](wiki/README.md).
 
 ## Current development baseline — 24 October 2026
 

@@ -7,8 +7,8 @@ to a human contributor who has never seen the author's agent conversations.
 ## Public and private destinations
 
 `https://github.com/thegandalf196/new-horizons` contains public source, selected
-runtime resources, a short feature overview, implementation contracts, build
-guides and reproducible runtime verification. Detailed design, philosophy,
+runtime resources, a player wiki, a short feature overview, implementation
+contracts, build guides and reproducible runtime verification. Detailed design, philosophy,
 research papers, proposed amendments and design decisions belong in the private
 `https://github.com/thegandalf196/new-horizons-docs` repository.
 
@@ -51,6 +51,10 @@ Credentials and unnecessary personal records belong in neither Git repository.
 ## Appropriate repository content
 
 - Player installation, gameplay, controls, compatibility, and release notes.
+  The [player wiki](wiki/README.md) is the public home for detailed player
+  reference pages. Update the relevant page when its implemented rule or data
+  changes; keep the short changelog as an overview and link to the wiki rather
+  than maintaining duplicate reference tables.
 - Public implementation rationale and contracts; detailed canonical design,
   pending amendments and design research use the private repository above.
 - Architecture, invariants, serialization, public schemas/formats, and code maps.
