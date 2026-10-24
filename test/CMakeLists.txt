@@ -1007,6 +1007,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Pathfinding/DimensionDoorActionTest.cpp
 		nullkiller2/Pathfinding/CastleGateActionTest.cpp
 		nullkiller2/Pathfinding/AdventureSpellDailyPathfindingTest.cpp
+		nullkiller2/Pathfinding/NearestTownPortalAccessTest.cpp
 	)
 
 	list(APPEND test_HEADERS

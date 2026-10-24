@@ -7081,9 +7081,9 @@
       "sha256": "fd5f40caad7cbbd935b75d6121fd2733a7e58e28e8ae60e4441179e3d335e86d"
     },
     "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp": {
-      "sha256": "fb33696429c9eba08c2bbe09406cc1551bb4ca2d299131c13d64a758893540fc",
-      "review": "IR-MANUAL-AINODESTORAGE-fb336964-20261015",
-      "rationale": "Complete handwritten physical source 1\u20132364 inspected, including disabled preprocessor branches. Exact body-bearing inventory: 102 callables = 82 functions/methods and 20 lambdas. Defaulted destructor at 163 explicitly accounted for separately; it has no handwritten body and is excluded by the existing tool body-required convention, as are five class member declarations 697\u2013713 whose definitions occur later. Constructor initializer lists are included at 59\u201364,154\u2013161,650\u2013655,1563\u20131576,2236\u20132239. Template declarations 1667 and 1806 belong to their method spans. Disabled lambda 1766\u20131772 included. All nested callbacks included, especially reconstruction 2092\u20132109,2111\u20132231 containing 2121\u20132192 containing 2163\u20132166. Sole parser recovery is else at 1776: #if 0 starts at 1763, its if body closes 1775, but the else body follows #endif at 1777. This split preprocessor/control-flow syntax is not a definition and does not hide any callable; its complete surrounding method is 1736\u20131784. Comments, initializer/aggregate braces, control-flow blocks, declarations, operator[] invocations and macro calls are not extra callables; no function-like macro definitions occur. No unresolved callable syntax found. All six existing numeric debt entries must remain verbatim. Coverage proposal only: no numeric approval, growth waiver, ceiling exception or behavior certification.",
+      "sha256": "153f8c5c949dbb3245c42730687528c259a5ba91e1f78db51976af61268965dd",
+      "review": "IR-TOWN-PORTAL-ROSTER-ADMISSION-20261024",
+      "rationale": "Complete handwritten physical source 1\u20132370 inspected, including disabled preprocessor branches. Exact body-bearing inventory: 102 callables = 82 functions/methods and 20 lambdas. Defaulted destructor at 163 explicitly accounted for separately; it has no handwritten body and is excluded by the existing tool body-required convention, as are five class member declarations 697\u2013713 whose definitions occur later. Constructor initializer lists are included at 59\u201364,154\u2013161,650\u2013655,1563\u20131576,2242\u20132245. Template declarations 1667 and 1812 belong to their method spans. Disabled lambda 1772\u20131778 included. All nested callbacks included, especially reconstruction 2098\u20132115,2117\u20132237 containing 2127\u20132198 containing 2169\u20132172. Sole parser recovery is else at 1782: #if 0 starts at 1769, its if body closes 1781, but the else body follows #endif at 1783. This split preprocessor/control-flow syntax is not a definition and does not hide any callable; its complete surrounding method is 1742\u20131790. Comments, initializer/aggregate braces, control-flow blocks, declarations, operator[] invocations and macro calls are not extra callables; no function-like macro definitions occur. No unresolved callable syntax found. Five existing function/lambda numeric debt entries remain verbatim; the owning-file record separately carries the bounded six-line urgent correctness exception. This exact inventory renews coverage only, not runtime or behavior certification. The template-inclusive calculateTownPortal span is 1667\u20131740 (74 lines); only its guarded body changes, and all other 101 callable bodies remain byte-identical.",
       "functions": [
         {
           "symbol": "NK2AI::bool containsCastleGateAction(const std::shared_ptr<const SpecialAction> & action)#1",
@@ -7428,7 +7428,7 @@
         {
           "symbol": "NK2AI::void AINodeStorage::calculateTownPortal( const ChainActor * actor, const HeroMap<int> & maskMap, const std::vector<CGPathNode *> & initialNodes, TVector & output)#1",
           "start": 1667,
-          "end": 1734
+          "end": 1740
         },
         {
           "symbol": "NK2AI::AINodeStorage::calculateTownPortal( const ChainActor * actor, const HeroMap<int> & maskMap, const std::vector<CGPathNode *> & initialNodes, TVector & output)::[&](const CGTownInstance * t) -> bool#1",
@@ -7437,165 +7437,166 @@
         },
         {
           "symbol": "NK2AI::void AINodeStorage::calculateTownPortalTeleportations(std::vector<CGPathNode *> & initialNodes)#1",
-          "start": 1736,
-          "end": 1784
+          "start": 1742,
+          "end": 1790
         },
         {
           "symbol": "NK2AI::AINodeStorage::calculateTownPortalTeleportations(std::vector<CGPathNode *> & initialNodes)::[&](const tbb::blocked_range<size_t> & r)#1",
-          "start": 1766,
-          "end": 1772
+          "start": 1772,
+          "end": 1778
         },
         {
           "symbol": "NK2AI::bool AINodeStorage::hasBetterChain(const PathNodeInfo & source, CDestinationNodeInfo & destination) const#1",
-          "start": 1786,
-          "end": 1791
+          "start": 1792,
+          "end": 1797
         },
         {
           "symbol": "NK2AI::bool AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode) const#1",
-          "start": 1793,
-          "end": 1804
+          "start": 1799,
+          "end": 1810
         },
         {
           "symbol": "NK2AI::AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode) const::[this, &source, candidateNode](const AIPathNode & node) -> bool#1",
-          "start": 1800,
-          "end": 1803
+          "start": 1806,
+          "end": 1809
         },
         {
           "symbol": "NK2AI::bool AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode, const NodeRange & nodes) const#1",
-          "start": 1806,
-          "end": 1819
+          "start": 1812,
+          "end": 1825
         },
         {
           "symbol": "NK2AI::bool AINodeStorage::isOtherChainBetter( const CGPathNode * source, const AIPathNode & candidateNode, const AIPathNode & other) const#1",
-          "start": 1821,
-          "end": 1909
+          "start": 1827,
+          "end": 1915
         },
         {
           "symbol": "NK2AI::bool AINodeStorage::isTileAccessible(const HeroPtr & heroPtr, const int3 & pos, const EPathfindingLayer layer) const#1",
-          "start": 1911,
-          "end": 1927
+          "start": 1917,
+          "end": 1933
         },
         {
           "symbol": "NK2AI::bool AINodeStorage::hasCurrentNodes(const int3 & pos) const#1",
-          "start": 1929,
-          "end": 1935
+          "start": 1935,
+          "end": 1941
         },
         {
           "symbol": "NK2AI::void AINodeStorage::calculateChainInfo(std::vector<AIPath> & paths, const int3 & pos, const bool isOnLand) const#1",
-          "start": 1937,
-          "end": 1949
+          "start": 1943,
+          "end": 1955
         },
         {
           "symbol": "NK2AI::void AINodeStorage::calculatePathSummaries( std::vector<AIPathSummary> & summaries, const int3 & pos, const bool isOnLand) const#1",
-          "start": 1951,
-          "end": 1994
+          "start": 1957,
+          "end": 2000
         },
         {
           "symbol": "NK2AI::bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathSummary & summary) const#1",
-          "start": 1996,
-          "end": 2007
+          "start": 2002,
+          "end": 2013
         },
         {
           "symbol": "NK2AI::bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathNode * node) const#1",
-          "start": 2009,
-          "end": 2081
+          "start": 2015,
+          "end": 2087
         },
         {
           "symbol": "NK2AI::bool AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const#1",
-          "start": 2083,
-          "end": 2234
+          "start": 2089,
+          "end": 2240
         },
         {
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[](const AIPathNode * exchangeNode, const AIPathNode * predecessor) -> std::optional<ExchangeMaskTransition>#1",
-          "start": 2092,
-          "end": 2109
+          "start": 2098,
+          "end": 2115
         },
         {
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[this, &getVerifiedExchangeTransition](auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool#1",
-          "start": 2111,
-          "end": 2231
+          "start": 2117,
+          "end": 2237
         },
         {
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::(auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool::[this, spineRoot, &currentMasks, &expectedTransition]( const AIPathNode * node, AIPath & pathToAppend, int parent, RealMoveMasksByHero & masks) -> std::optional<int>#1",
-          "start": 2121,
-          "end": 2192
+          "start": 2127,
+          "end": 2198
         },
         {
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::(auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool::( const AIPathNode * node, AIPath & pathToAppend, int parent, RealMoveMasksByHero & masks) -> std::optional<int>::[spineRoot, nodeMask](const RealMoveMaskCommitment & commitment)#1",
-          "start": 2163,
-          "end": 2166
+          "start": 2169,
+          "end": 2172
         },
         {
           "symbol": "NK2AI::AIPath::AIPath() : nodes({})#1",
-          "start": 2236,
-          "end": 2239
+          "start": 2242,
+          "end": 2245
         },
         {
           "symbol": "NK2AI::std::shared_ptr<const SpecialAction> AIPath::getFirstBlockedAction() const#1",
-          "start": 2241,
-          "end": 2250
+          "start": 2247,
+          "end": 2256
         },
         {
           "symbol": "NK2AI::int3 AIPath::firstTileToGet() const#1",
-          "start": 2252,
-          "end": 2260
+          "start": 2258,
+          "end": 2266
         },
         {
           "symbol": "NK2AI::int3 AIPath::targetTile() const#1",
-          "start": 2262,
-          "end": 2270
+          "start": 2268,
+          "end": 2276
         },
         {
           "symbol": "NK2AI::const AIPathNodeInfo & AIPath::firstNode() const#1",
-          "start": 2272,
-          "end": 2275
+          "start": 2278,
+          "end": 2281
         },
         {
           "symbol": "NK2AI::const AIPathNodeInfo & AIPath::targetNode() const#1",
-          "start": 2277,
-          "end": 2294
+          "start": 2283,
+          "end": 2300
         },
         {
           "symbol": "NK2AI::uint64_t AIPath::getPathDanger() const#1",
-          "start": 2296,
-          "end": 2302
+          "start": 2302,
+          "end": 2308
         },
         {
           "symbol": "NK2AI::float AIPath::movementCost() const#1",
-          "start": 2304,
-          "end": 2310
+          "start": 2310,
+          "end": 2316
         },
         {
           "symbol": "NK2AI::uint8_t AIPath::turn() const#1",
-          "start": 2312,
-          "end": 2318
-        },
-        {
-          "symbol": "NK2AI::uint64_t AIPath::getHeroStrength() const#1",
-          "start": 2320,
+          "start": 2318,
           "end": 2324
         },
         {
-          "symbol": "NK2AI::uint64_t AIPath::getTotalDanger() const#1",
+          "symbol": "NK2AI::uint64_t AIPath::getHeroStrength() const#1",
           "start": 2326,
-          "end": 2332
+          "end": 2330
+        },
+        {
+          "symbol": "NK2AI::uint64_t AIPath::getTotalDanger() const#1",
+          "start": 2332,
+          "end": 2338
         },
         {
           "symbol": "NK2AI::bool AIPath::containsHero(const CGHeroInstance * hero) const#1",
-          "start": 2334,
-          "end": 2346
+          "start": 2340,
+          "end": 2352
         },
         {
           "symbol": "NK2AI::uint64_t AIPath::getTotalArmyLoss() const#1",
-          "start": 2348,
-          "end": 2351
+          "start": 2354,
+          "end": 2357
         },
         {
           "symbol": "NK2AI::std::string AIPath::toString() const#1",
-          "start": 2353,
-          "end": 2362
+          "start": 2359,
+          "end": 2368
         }
-      ]
+      ],
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "CI/wininstaller/build_installer.cmd": {
       "functions": [],
@@ -19202,13 +19203,15 @@
       "sha256": "3ae1e58aac70b5f97c50506efcdaa8df6935b7743189e1a2e625ae6f7e210c02"
     },
     "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp": {
-      "kind": "legacy",
-      "lines": 2364,
+      "kind": "exception",
+      "lines": 2370,
       "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 2364 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "fb33696429c9eba08c2bbe09406cc1551bb4ca2d299131c13d64a758893540fc"
+      "rationale": "Urgent bounded correctness exception: six lines guard nearest-controlled-town roster resolution by the existing callback full-information capability before the private query. Only calculateTownPortal grows, template-inclusive 68 to 74 lines; all other callable bodies and five pre-existing function/lambda debt records remain exact. This does not authorize general growth, alter player access, or certify runtime behavior. Existing structural debt and shrinking-baseline requirements remain.",
+      "review": "IR-TOWN-PORTAL-ROSTER-ADMISSION-20261024",
+      "review_scope": "exact-source-only-six-line-nearest-town-roster-admission",
+      "sha256": "153f8c5c949dbb3245c42730687528c259a5ba91e1f78db51976af61268965dd",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "AI engineer: extract TownPortalFinder and calculateTownPortal/calculateTownPortalTeleportations into one cohesive Town Portal path-generation component before further expansion in this area. Preserve actor/node ordering, initial-node input/output, callback full-roster capability, nearest/tie/occupied-town and movement/mana semantics; verify denied/own/allied forecasts and exact world/RNG preservation. The next structural change must reduce AINodeStorage; this six-line exception gives no unrelated regrowth credit."
     },
     "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp::NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[this, &getVerifiedExchangeTransition](auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool#1": {
       "kind": "legacy",

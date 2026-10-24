@@ -19,6 +19,7 @@ class ResourceSet;
 class DLL_LINKAGE CPlayerSpecificInfoCallback : public CGameInfoCallback
 {
 public:
+	using CGameInfoCallback::canGetFullInfo;
 	// keep player-specific override in scope
 	using CGameInfoCallback::howManyTowns;
 

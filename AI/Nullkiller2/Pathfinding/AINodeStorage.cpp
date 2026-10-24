@@ -1693,6 +1693,12 @@ void AINodeStorage::calculateTownPortal(
 		if (!townPortalEffect)
 			continue;
 
+		// Nearest-town resolution requires the complete controlled-town roster.
+		// Enemy threat forecasts cannot infer that pool from visible towns.
+		if(townPortalEffect->usesNearestControlledTown(actor->hero)
+			&& !aiNk->cc->canGetFullInfo(actor->hero))
+			continue;
+
 		const auto candidateTowns = townPortalEffect->usesNearestControlledTown(actor->hero)
 			? townPortalEffect->getControlledTowns(*aiNk->cc, actor->hero) : towns;
 		TownPortalFinder townPortalFinder(actor, initialNodes, candidateTowns, this, spell->id);
