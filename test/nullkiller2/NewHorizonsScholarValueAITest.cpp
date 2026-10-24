@@ -134,6 +134,10 @@ protected:
 TEST_F(NewHorizonsScholarValueAITest, SanyaValuesTwoOutgoingAndOneIncomingBeforeActualMeeting)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	// TinyMap initialization is day zero; this meeting occurs on ordinary day one.
+	gameState()->day = 1;
+	ASSERT_EQ(gateway->cc->getCalendar().getCurrentDay(), 1);
+	ASSERT_EQ(week(), 0);
 	const auto high = named("core:implosion"), middle = named("core:lightningBolt"), low = named("core:magicArrow");
 	const auto incoming = named("core:dispel"), leftover = named("core:haste");
 	handler->changeSpells(sanya, true, {high, middle, low});
@@ -155,6 +159,8 @@ TEST_F(NewHorizonsScholarValueAITest, SanyaValuesTwoOutgoingAndOneIncomingBefore
 	EXPECT_TRUE(scholar->hasNewHorizonsScholarMeeting(sanya->id, week()));
 	expectPureReward(sanya, scholar, 0);
 	gameState()->day += gateway->cc->getCalendar().getDaysInWeek();
+	ASSERT_EQ(gateway->cc->getCalendar().getCurrentDay(), 8);
+	ASSERT_EQ(week(), 1);
 	expectPureReward(sanya, scholar, sanya->getSpellLevel(leftover.toSpell()) * 0.5f
 		+ scholar->getSpellLevel(low.toSpell()) * 0.25f);
 }

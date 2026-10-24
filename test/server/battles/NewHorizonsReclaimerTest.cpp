@@ -135,6 +135,8 @@ public:
 };
 TEST_F(NewHorizonsReclaimerAbsentFixture, InstalledDwellingDoesNotInventHistoricalCapture)
 {
+	ASSERT_TRUE(gameState()->getMap().getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS)["reclamationSpecialty"].isNull());
+	ASSERT_TRUE(gameState()->getHeroDevelopmentRules()["reclamationSpecialty"].isNull());
 	dwelling(*nearTown);
 	EXPECT_FALSE(attackerSideHero->getPrimaryGrowthRules().Struct().contains("reclamationSpecialty"));
 	EXPECT_EQ(newHorizonsHeroes::reclaimerConversionPercent(*attackerSideHero, owner()), 0);

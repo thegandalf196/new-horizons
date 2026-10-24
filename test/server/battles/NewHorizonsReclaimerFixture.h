@@ -54,7 +54,10 @@ protected:
 			row["conversionMaximumPercent"].Integer() = 100;
 		}
 		else
+		{
 			rules.Struct().erase("reclamationSpecialty");
+			rules.setOverrideFlag(true); // Capture absence instead of merging installed defaults back in.
+		}
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 	}
 	void SetUp() override
