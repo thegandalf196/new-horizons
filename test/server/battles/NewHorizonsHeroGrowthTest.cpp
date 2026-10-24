@@ -962,6 +962,11 @@ protected:
 TEST_F(NewHorizonsWarMachinesTest, CanonicalRanksProvideExactSiegeOutputAndControl)
 {
 	prepareCommands();
+	ASSERT_DOUBLE_EQ(LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_ATTACK_POINT_DAMAGE_FACTOR), 0.05);
+	// Pikemen are grass-native; Dirt preserves the intended intrinsic Defense 5.
+	battle()->terrainType = TerrainId(ETerrainId::DIRT);
+	battle()->nodeHasChanged();
+	ASSERT_EQ(battle()->getTerrainType(), TerrainId(ETerrainId::DIRT));
 	ASSERT_EQ(attackerSideHero->getCapabilityRules()["rulesetVersion"].Integer(), 3);
 	ASSERT_EQ(SecondarySkill::encode(warMachines().getNum()), "new-horizons:warMachines");
 	auto * ours = addStack(BattleSide::ATTACKER, CreatureID::BALLISTA, BattleHex(70), 1);
@@ -974,6 +979,8 @@ TEST_F(NewHorizonsWarMachinesTest, CanonicalRanksProvideExactSiegeOutputAndContr
 	ASSERT_EQ(battleHero, attackerSideHero);
 	ASSERT_EQ(battleHero->getCapabilityRules()["rulesetVersion"].Integer(), 3);
 	ASSERT_TRUE(ours->hasBonusOfType(BonusType::SIEGE_WEAPON));
+	ASSERT_FALSE(ours->isOnNativeTerrain());
+	ASSERT_FALSE(enemy->isOnNativeTerrain());
 
 	attackerSideHero->setSecSkillLevel(SecondarySkill::ARTILLERY, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 0, ChangeValueMode::ABSOLUTE);
@@ -983,6 +990,8 @@ TEST_F(NewHorizonsWarMachinesTest, CanonicalRanksProvideExactSiegeOutputAndContr
 	{
 		SCOPED_TRACE(rank);
 		attackerSideHero->setSecSkillLevel(warMachines(), rank, ChangeValueMode::ABSOLUTE);
+		ASSERT_EQ(ours->getAttack(true), 10);
+		ASSERT_EQ(enemy->getDefense(true), 5);
 		const auto capabilities = attackerSideHero->getSiegeCapabilities();
 		ASSERT_TRUE(capabilities);
 		EXPECT_EQ(capabilities->warMachinesRank, rank);
