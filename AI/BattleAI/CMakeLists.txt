@@ -2,6 +2,10 @@ set(battleAI_SRCS
 		AttackPossibility.cpp
 		AttackPreviewArcheryAdmission.cpp
 		DamageCache.cpp
+		DamageCacheSnapshot.cpp
+		RegenerationBaselineReuse.cpp
+		RegenerationForecast.cpp
+		ProjectedBestAction.cpp
 		DamageCacheAdmission.cpp
 		DamageCachePreparation.cpp
 		AttackPreviewHitContext.cpp
@@ -99,6 +103,9 @@ set(battleAI_HEADERS
 		VinesCandidateValueReuse.h
 		HeroCandidateValueContext.h
 		HeroCandidateValueReuse.h
+		RegenerationBaselineReuse.h
+		RegenerationForecast.h
+		ProjectedBestAction.h
 		LifeDrainCandidateValueReuse.h
 		HeroSpellExpectedValueProjection.h
 		HeroPurifyProjection.h

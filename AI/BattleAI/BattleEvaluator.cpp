@@ -26,6 +26,8 @@
 #include "HeroActionContinuation.h"
 #include "HeroActionTiming.h"
 #include "HeroCandidateValueReuse.h"
+#include "RegenerationForecast.h"
+#include "ProjectedBestAction.h"
 #include "BattleExchangeVariant.h"
 
 #include "StackWithBonuses.h"
@@ -1061,192 +1063,6 @@ HolyArmorProtection holyArmorProtection(const battle::Unit * unit, SpellID spell
 			result = current;
 	}
 	return result;
-}
-
-int regenerationEffectRounds(const battle::Unit * unit, SpellID spell)
-{
-	if(!unit)
-		return 0;
-
-	int result = 0;
-	const auto effects = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)));
-	for(const auto & effect : *effects)
-		if(effect)
-			result = std::max<int>(result, effect->turnsRemain);
-	return std::max(0, result);
-}
-
-std::set<uint32_t> improvedRegenerationTargets(
-	const HypotheticBattle & projectedBattle,
-	const CBattleInfoCallback & originalBattle,
-	SpellID spell)
-{
-	std::set<uint32_t> result;
-	for(const auto * projected : projectedBattle.battleGetAllUnits())
-	{
-		const auto * projectedState = dynamic_cast<const battle::CUnitState *>(projected);
-		if(!projectedState || !projectedState->alive() || projectedState->regenerationRateMillionths <= 0)
-			continue;
-
-		const auto * original = originalBattle.battleGetUnitByID(projected->unitId());
-		const auto * originalState = dynamic_cast<const battle::CUnitState *>(original);
-		const int originalRate = originalState ? originalState->regenerationRateMillionths : 0;
-		const int originalRounds = regenerationEffectRounds(original, spell);
-		if(projectedState->regenerationRateMillionths > originalRate
-			|| regenerationEffectRounds(projected, spell) > originalRounds)
-			result.insert(projected->unitId());
-	}
-	return result;
-}
-
-void applyProjectedBestAction(HypotheticBattle & state, const battle::Unit * liveUnit,
-	const AttackPossibility & action)
-{
-	auto attackerState = state.getForUpdate(liveUnit->unitId());
-	const bool attackerWasAlive = attackerState->alive();
-	*attackerState = *action.attackerState;
-	state.recordBloodrageTransition(attackerState, attackerWasAlive);
-
-	if(action.defenderDamageReduce > 0)
-	{
-		attackerState->removeUnitBonus(Bonus::UntilAttack);
-		attackerState->removeUnitBonus(Bonus::UntilOwnAttack);
-	}
-	if(action.attackerDamageReduce > 0)
-		attackerState->removeUnitBonus(Bonus::UntilBeingAttacked);
-
-	// Accepted movement/attack actions break Sanctuary before resolving. Keep
-	// the detached actor used by later morale forecasts in the same state.
-	const auto sanctuaryMarkers = attackerState->getBonusesOfType(BonusType::SANCTIFIED);
-	if(sanctuaryMarkers && !sanctuaryMarkers->empty())
-	{
-		std::vector<BonusSourceID> sanctuarySources;
-		for(const auto & marker : *sanctuaryMarkers)
-		{
-			if(!marker || marker->source != BonusSource::SPELL_EFFECT)
-				continue;
-			if(std::find(sanctuarySources.begin(), sanctuarySources.end(), marker->sid) == sanctuarySources.end())
-				sanctuarySources.push_back(marker->sid);
-		}
-		for(const auto & sourceID : sanctuarySources)
-			attackerState->removeUnitBonus(Selector::source(BonusSource::SPELL_EFFECT, sourceID));
-		attackerState->removeUnitBonus(Selector::type()(BonusType::SANCTIFIED));
-	}
-
-	for(const auto & affected : action.affectedUnits)
-	{
-		if(!affected)
-			continue;
-		auto affectedState = state.getForUpdate(affected->unitId());
-		const bool affectedWasAlive = affectedState->alive();
-		*affectedState = *affected;
-		state.recordBloodrageTransition(affectedState, affectedWasAlive);
-
-		if(action.defenderDamageReduce > 0)
-			affectedState->removeUnitBonus(Bonus::UntilBeingAttacked);
-		if(action.attackerDamageReduce > 0 && action.attack.defender->unitId() == affected->unitId())
-			affectedState->removeUnitBonus(Bonus::UntilAttack);
-	}
-}
-
-float projectedRegenerationValue(
-	const Environment * environment,
-	const std::shared_ptr<CBattleInfoCallback> & beforeCast,
-	const std::shared_ptr<HypotheticBattle> & afterCast,
-	const std::vector<battle::Units> & turnOrder,
-	const std::set<uint32_t> & targets,
-	DamageCache & damageCache,
-	BattleSide ourSide,
-	PlayerColor ourPlayer,
-	float positiveEffectMultiplier)
-{
-	if(targets.empty())
-		return 0.0f;
-
-	auto forecast = std::make_shared<HypotheticBattle>(environment, afterCast);
-	auto baseline = std::make_shared<HypotheticBattle>(environment, beforeCast);
-	DamageCache forecastDamage(&damageCache);
-	DamageCache baselineDamage(&damageCache);
-	forecastDamage.buildDamageCache(forecast, ourSide);
-	baselineDamage.buildDamageCache(baseline, ourSide);
-	float score = 0.0f;
-	bool firstRound = true;
-
-	for(const auto & round : turnOrder)
-	{
-		if(!firstRound)
-		{
-			forecast->nextRound();
-			baseline->nextRound();
-		}
-		firstRound = false;
-
-		for(const auto * queuedUnit : round)
-		{
-			const auto * unit = forecast->battleGetUnitByID(queuedUnit->unitId());
-			const auto * baselineUnit = baseline->battleGetUnitByID(queuedUnit->unitId());
-			const auto * unitState = dynamic_cast<const battle::CUnitState *>(unit);
-			const auto * baselineState = dynamic_cast<const battle::CUnitState *>(baselineUnit);
-			const bool startsActivation = unit
-				&& forecast->battleBeginsActivation(unit, BattleUnitTurnReason::TURN_QUEUE);
-			if(startsActivation && unit->alive() && targets.contains(unit->unitId())
-				&& forecast->battleGetOwner(unit) == ourPlayer)
-			{
-				const auto projectedHeal = unitState ? unitState->regenerationProjectedHeal() : 0;
-				const auto baselineHeal = baselineUnit && baselineUnit->alive() && baselineState
-					? baselineState->regenerationProjectedHeal() : 0;
-				const auto additionalHeal = std::max<int64_t>(0, projectedHeal - baselineHeal);
-				if(additionalHeal > 0)
-				{
-					const auto healedValue = AttackPossibility::calculateDamageReduce(
-						nullptr, unit, static_cast<uint64_t>(additionalHeal), forecastDamage, forecast);
-					score += healedValue * positiveEffectMultiplier;
-				}
-			}
-
-			const bool forecastForfeits = unit && newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
-			const bool baselineForfeits = baselineUnit && newHorizonsFrozen::forfeitsNormalActivation(*baselineUnit, BattleUnitTurnReason::TURN_QUEUE);
-			if(unit && unit->alive())
-				forecast->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
-			if(baselineUnit && baselineUnit->alive())
-				baseline->nextTurn(baselineUnit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
-
-			const auto * currentForecastUnit = unit
-				? forecast->battleGetUnitByID(unit->unitId()) : nullptr;
-			const auto * currentBaselineUnit = baselineUnit
-				? baseline->battleGetUnitByID(baselineUnit->unitId()) : nullptr;
-			if(!forecastForfeits && currentForecastUnit && currentForecastUnit->alive())
-			{
-				PotentialTargets potentialTargets(currentForecastUnit, forecastDamage, forecast);
-				if(!potentialTargets.possibleAttacks.empty())
-					applyProjectedBestAction(*forecast, currentForecastUnit, potentialTargets.bestAction());
-				if(potentialTargets.berserk)
-					expireCompletedProjectedBerserkActivation(*forecast,
-						forecast->battleGetUnitByID(queuedUnit->unitId()));
-			}
-			if(currentForecastUnit)
-				{
-				forecast->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
-				newHorizonsDivineMandate::completeDisciplineActivation(*forecast, queuedUnit->unitId());
-			}
-			if(!baselineForfeits && currentBaselineUnit && currentBaselineUnit->alive())
-			{
-				PotentialTargets potentialTargets(currentBaselineUnit, baselineDamage, baseline);
-				if(!potentialTargets.possibleAttacks.empty())
-					applyProjectedBestAction(*baseline, currentBaselineUnit, potentialTargets.bestAction());
-				if(potentialTargets.berserk)
-					expireCompletedProjectedBerserkActivation(*baseline,
-						baseline->battleGetUnitByID(queuedUnit->unitId()));
-			}
-			if(currentBaselineUnit)
-				{
-				baseline->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
-				newHorizonsDivineMandate::completeDisciplineActivation(*baseline, queuedUnit->unitId());
-			}
-		}
-	}
-
-	return score;
 }
 
 float projectedCapacityRegenerationValue(
@@ -4416,7 +4232,8 @@ bool BattleEvaluator::canCastSpell()
 
 bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells,
 	heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse,
-	LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse)
+	LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse,
+	RegenerationBaselineReuse::TestControl * regenerationReuse)
 {
 	const auto battleView = cb->getBattle(battleID);
 	const bool mandatoryDoubleCommand = battleView->battleHasPendingDoubleCommand(side);
@@ -4945,6 +4762,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	// This frame owns fixed parent/caster/scoring inputs; no entry survives it.
 	HeroCandidateValueReuse values(vinesReuse, lifeDrainReuse);
+	RegenerationBaselineReuse regenerationBaseline(regenerationReuse);
 	timing.prepare(possibleCasts.size());
 	{
 		heroActionTiming::LoopScope loop(timing.candidateSlots(), timing.sink());
@@ -5281,13 +5099,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				float projectedCrusadeBonusScore = 0;
 				if(isCanonicalRegeneration(ps.spell, state->getBattle()->getMagicRules()))
 				{
-					const auto targets = improvedRegenerationTargets(
-						*state, *cb->getBattle(battleID),
-						newHorizonsMagic::spellVariantBase(state->getBattle()->getMagicRules(), ps.spell->getId()));
-					const auto regenerationValue = projectedRegenerationValue(env.get(), cb->getBattle(battleID), state,
-						regenerationTurnOrder, targets, innerCache, side, playerID,
-						scoreEvaluator.getPositiveEffectMultiplier());
-					damageToHostilesScore += regenerationValue;
+					damageToHostilesScore += projectedRegenerationValue(env.get(), cb->getBattle(battleID), state,
+						regenerationTurnOrder, newHorizonsMagic::spellVariantBase(state->getBattle()->getMagicRules(), ps.spell->getId()),
+						innerCache, side, playerID, scoreEvaluator.getPositiveEffectMultiplier(), &regenerationBaseline);
 				}
 				if(isCanonicalHolyArmor(ps.spell) && targetId != std::numeric_limits<uint32_t>::max())
 				{

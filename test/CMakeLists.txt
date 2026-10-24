@@ -837,6 +837,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/EnemyBypassReachabilityTest.cpp
 		battleAI/DamageCacheObstacleVisibilityTest.cpp
 		battleAI/CreaturePressureCachePreparationTest.cpp
+		battleAI/RegenerationBaselineReuseTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
 		battleAI/DamageFinalizationParityTest.cpp
 		battleAI/PrimaryFortuneProducerTest.cpp

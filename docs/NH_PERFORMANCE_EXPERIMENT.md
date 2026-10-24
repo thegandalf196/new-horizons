@@ -72,6 +72,21 @@ options, score bits, selected actions, live state and both RNGs with reuse disab
 and enabled; positive-hit assertions distinguish reuse from an all-fallback pass.
 Elapsed-time comparisons remain separate from those semantic checks.
 
+### Regeneration baseline reuse
+
+Regeneration's Hero Action search may reuse completed before-cast healing
+observations within that search. The key includes the environment, immutable
+before-cast callback, ordered activation queue, side, player and an owning snapshot
+of the complete parent DamageCache chain. Each candidate still performs its own
+cast and after-cast forecast; target-specific scores are never cached.
+
+Unknown or failing scoring-script capability checks retain ordinary evaluation.
+An incomplete or failed baseline cannot publish reusable observations, and no
+entry survives the search. `RegenerationBaselineReuseTest` checks exact scores,
+state and both RNGs, changed keys, calculation failures and capability revocation.
+Measure disabled/enabled reuse on the same binary and workload, with identical
+diagnostic settings, before claiming a timing improvement.
+
 ## Existing opt-in diagnostics
 
 `NH_RENDER_LOAD_TIMINGS=1` enables existing diagnostics only under their logger gates. `NH_RENDER_LOAD_TIMING_LIMIT` accepts ASCII decimal 1–16384; malformed/missing values fall back to 1024. Counters are bounded, and a cap notice means later events are omitted. Disabled paths do not read clocks or allocate diagnostic logs.

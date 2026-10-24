@@ -14,6 +14,7 @@
 #include "BattleExchangeVariant.h"
 #include "VinesCandidateValueReuse.h"
 #include "LifeDrainCandidateValueReuse.h"
+#include "RegenerationBaselineReuse.h"
 #include <utility>
 #include "HypotheticBattle.h"
 
@@ -102,7 +103,8 @@ public:
 	bool attemptCastingSpell(const CStack * stack, bool allowSpells = true,
 		heroActionSelection::Observer * observer = nullptr,
 		VinesCandidateValueReuse::TestControl * vinesReuse = nullptr,
-		LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse = nullptr);
+		LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse = nullptr,
+		RegenerationBaselineReuse::TestControl * regenerationReuse = nullptr);
 	bool canCastSpell();
 	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack);
 	/// Deterministic full-pool forecast; does not choose the eventual random spell.

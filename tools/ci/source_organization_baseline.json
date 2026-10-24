@@ -6670,9 +6670,9 @@
       "sha256": "4e16898f372a3f2cc153db43b5326a4327a9156ee29722a3d3ce0e31b1b2dd09"
     },
     "AI/BattleAI/AttackPossibility.h": {
-      "sha256": "ca822b6afb517ad889d63a242219305c755deb6227ae3e71559f86112bd07a3a",
-      "review": "IR-CREATURE-PRESSURE-PREPARATION-20261022",
-      "rationale": "Complete five-callable exact header inventory renewed for two preparation declarations and the terminal-root lifetime contract. All five callable bodies are unchanged; the two constructors shift by one line. Existing initializer-list annotation parser recovery remains explicitly covered; no callable is omitted.",
+      "sha256": "fcbab24e6d8f3e54269b47464637576d016703638048424d1ff26435268e6133",
+      "review": "IR-REGENERATION-BASELINE-REUSE-R2-20261024",
+      "rationale": "Complete five-callable exact inventory renewed for eight declaration lines introducing owning DamageCache snapshot query. All five bodies byte-identical; two constructors shift192/193\u2192200/201. Existing line163 parser recovery explicitly covered. No body omission, parser waiver or runtime claim.",
       "functions": [
         {
           "symbol": "inline battle::DamageProvenance battleAIDamageProvenance(const battle::Unit * attacker, bool physicalDamage)#1",
@@ -6691,13 +6691,13 @@
         },
         {
           "symbol": "DamageCache::DamageCache() : parent(nullptr)#1",
-          "start": 192,
-          "end": 192
+          "start": 200,
+          "end": 200
         },
         {
           "symbol": "DamageCache::DamageCache(DamageCache * parent) : parent(parent)#1",
-          "start": 193,
-          "end": 193
+          "start": 201,
+          "end": 201
         }
       ],
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
@@ -18167,14 +18167,14 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "exception",
-      "lines": 5711,
-      "sha256": "267fec14214f88456413f14e4b917c45eeefd891204cbb1145e256cac682a501",
+      "lines": 5525,
+      "sha256": "9b9cba6d63319d36dfc16d710b5a0d3ebbb8f60acccfb483f27c01626909afc4",
       "owner": "ai_engineer",
-      "review": "life-drain-completed-suffix-independent-source-review",
-      "rationale": "Exact5726-to5711 shrinking evaluator ratchet extracts completed-suffix routing/comparators into focused owners, preserves original candidate iteration, actual cast and original aim, and adds only the invocation-local LifeDrain reuse boundary. Exact source review is distinct from required candidate/value/state/RNG parity and performance measurement.",
-      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
+      "review": "IR-REGENERATION-BASELINE-REUSE-R2-20261024",
+      "rationale": "Exact shrinking5711\u21925525 after cohesive Regeneration forecast/shared action extraction. Same remaining routing owner; no inherited growth allowance or runtime certification.",
+      "review_scope": "exact-completed-Regeneration-baseline-source-only-no-runtime-or-performance-acceptance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5726/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate. No future growth credit; this exact rules-aware query argument only requires independent review. Extract cohesive decision work before broader expansion."
+      "deferral": "AI engineer must extract a cohesive remaining per-candidate admission/continuation owner before substantive expansion. Preserve canonical/historical selector policy, ordered conditions/early exits, FP grouping, callbacks, mandatory Orders, rejection/packet/state and both RNG parity. This exact shrinking cap is evaluator5525/attempt1195; no future growth credit. Runtime acceptance is separate."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -18251,15 +18251,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "29f88cc4ee082883a283494464d0086c0838fc9289c391349dbdb71d4772b838"
-    },
-    "AI/BattleAI/BattleEvaluator.cpp::float projectedRegenerationValue( const Environment * environment, const std::shared_ptr<CBattleInfoCallback> & beforeCast, const std::shared_ptr<HypotheticBattle> & afterCast, const std::vector<battle::Units> & turnOrder, const std::set<uint32_t> & targets, DamageCache & damageCache, BattleSide ourSide, PlayerColor ourPlayer, float positiveEffectMultiplier)#1": {
-      "kind": "legacy",
-      "lines": 99,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 99 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "08531b863264311c7ea624ddeb64a727f34993c203c3bc838ed80c982e3b7446"
     },
     "AI/BattleAI/BattleEvaluator.cpp::float projectedVampirismValue( const Environment * environment, const std::shared_ptr<CBattleInfoCallback> & beforeCast, const std::shared_ptr<HypotheticBattle> & afterCast, const std::vector<battle::Units> & turnOrder, uint32_t targetId, DamageCache & damageCache, BattleSide ourSide, PlayerColor ourPlayer, float positiveEffectMultiplier)#1": {
       "kind": "legacy",
@@ -26535,17 +26526,6 @@
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth."
     },
-    "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse, LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse)#1": {
-      "kind": "exception",
-      "lines": 1197,
-      "sha256": "ddcbec8a87a227e27525353c4d8468b8745f434515353faf72ef4993694bc4ef",
-      "owner": "ai_engineer",
-      "review": "life-drain-completed-suffix-independent-source-review",
-      "rationale": "Same logical per-candidate evaluator with an appended test-control parameter: exact1213-to1197 shrinking body after cohesive projection/combined-reuse routing extraction. Every original candidate and actual cast remains ordered; completed float suffix alone can be reused under narrow proof. This new signature is not an inherited automatic allowance; retained oversized-function deferral remains explicit.",
-      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must next extract a coherent remaining per-candidate admission/continuation responsibility before substantive expansion. Preserve canonical and historical selector policy, ordered conditions/early exits, FP grouping, private branch/cache, original identities and callbacks. Retain mandatory Orders, rejection isolation, packet/state and both RNG parity controls plus real Call/exception diagnostics. Exact shrinking caps evaluator5747/attempt1213; focused spell projection125 and reuse143 do not inherit oversized allowances. Runtime and matched acceptance remain separate."
-    },
     "AI/BattleAI/BattleEvaluatorSpellProjection.cpp::battleEvaluatorProjection::SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback & live, const CGHeroInstance * hero, BattleSide side, const PossibleSpellcast & candidate, const heroActionProjection::Admission & admission, uint32_t & targetId, const std::vector<uint32_t> & sharedPurposeRecipients)#1": {
       "lines": 81,
       "sha256": "510e325712cbcdbf63591918ff2ac1d874155ece559d253960460af9246ed9ba",
@@ -26564,6 +26544,27 @@
       "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
       "review_status": "SOURCE_AND_METADATA_CLEAR",
       "rationale": "Cohesive extracted skill/study reward query, preserving prior choices and adding only captured Tiva study projection. Existing engine preview primitive avoids duplicated primary cap arithmetic; no authoritative mutation. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged."
+    },
+    "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse, LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse, RegenerationBaselineReuse::TestControl * regenerationReuse)#1": {
+      "kind": "exception",
+      "lines": 1195,
+      "sha256": "325f276ff6c90a72e96736ea3aabc9daf45a11dc981a81ba18a17d831e684c47",
+      "owner": "ai_engineer",
+      "review": "IR-REGENERATION-BASELINE-REUSE-R2-20261024",
+      "rationale": "Exact1197\u21921195 shrinking logical candidate evaluator; appended optional Regeneration test control deliberately renews its changed symbol, not an inherited allowance. Distinct casts, candidate order and forecasts remain.",
+      "review_scope": "exact-completed-Regeneration-baseline-source-only-no-runtime-or-performance-acceptance",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "AI engineer must extract a cohesive remaining per-candidate admission/continuation owner before substantive expansion. Preserve canonical/historical selector policy, ordered conditions/early exits, FP grouping, callbacks, mandatory Orders, rejection/packet/state and both RNG parity. This exact shrinking cap is evaluator5525/attempt1195; no future growth credit. Runtime acceptance is separate."
+    },
+    "AI/BattleAI/RegenerationForecast.cpp::float projectedRegenerationValue( const Environment * environment, const std::shared_ptr<CBattleInfoCallback> & beforeCast, const std::shared_ptr<HypotheticBattle> & afterCast, const std::vector<battle::Units> & turnOrder, SpellID spell, DamageCache & damageCache, BattleSide ourSide, PlayerColor ourPlayer, float positiveEffectMultiplier, RegenerationBaselineReuse * reuse)#1": {
+      "kind": "review",
+      "lines": 119,
+      "sha256": "bf387121b64df9b85d00c05e0b28241bec8c082e0b5c848456c538079b1ab732",
+      "owner": "ai_engineer",
+      "review": "IR-REGENERATION-BASELINE-REUSE-R2-20261024",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "rationale": "Focused119-line four-round Regeneration forecast owner, below150 ceiling. One ordered forecast/baseline activation trajectory with completed baseline observations; target-specific scores remain recomputed. Extracted helpers remain separate callables. No old99-line allowance inherited or runtime/performance certification.",
+      "review_scope": "exact-completed-Regeneration-baseline-source-only-no-runtime-or-performance-acceptance"
     }
   }
 }

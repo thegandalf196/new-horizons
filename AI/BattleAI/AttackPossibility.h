@@ -189,6 +189,14 @@ private:
 	bool tracksFrozen(uint32_t defenderId) const;
 
 public:
+	/// Owning exact cache-chain identity for completed Regeneration baseline reuse only.
+	class Snapshot
+	{
+		friend class DamageCache;
+		std::vector<DamageCache> layers;
+	};
+	Snapshot captureSnapshot() const;
+	bool matchesSnapshot(const Snapshot & snapshot) const;
 	DamageCache() : parent(nullptr) {}
 	DamageCache(DamageCache * parent) : parent(parent) {}
 
