@@ -50,6 +50,7 @@ public:
 		ASSERT_EQ(actualSpell->getId(), testSpellId);
 		ASSERT_EQ(actualSpell->getJsonKey(), SpellID::encode(testSpellId.getNum()));
 		EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(actualSpell));
+		EXPECT_CALL(mechanicsMock, usesNewHorizonsMagicV3()).WillRepeatedly(Return(false));
 		EXPECT_CALL(mechanicsMock, getEffectDuration()).WillRepeatedly(Return(duration));
 		EXPECT_CALL(serverMock, describeChanges()).WillRepeatedly(Return(false));
 	}
@@ -238,6 +239,7 @@ TEST_F(TimedTest, ConvertBonusUsesSpellDurationWhenTurnsRemainIsZero)
 	ASSERT_EQ(actualSpell->getId(), testSpellId);
 	ASSERT_EQ(actualSpell->getJsonKey(), SpellID::encode(testSpellId.getNum()));
 	EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(actualSpell));
+	EXPECT_CALL(mechanicsMock, usesNewHorizonsMagicV3()).WillRepeatedly(Return(false));
 	EXPECT_CALL(mechanicsMock, getEffectDuration()).WillRepeatedly(Return(spellDuration));
 	EXPECT_CALL(serverMock, describeChanges()).WillRepeatedly(Return(false));
 
@@ -275,6 +277,7 @@ TEST_F(TimedTest, ConvertBonusKeepsExplicitTurnsRemain)
 	ASSERT_EQ(actualSpell->getId(), testSpellId);
 	ASSERT_EQ(actualSpell->getJsonKey(), SpellID::encode(testSpellId.getNum()));
 	EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(actualSpell));
+	EXPECT_CALL(mechanicsMock, usesNewHorizonsMagicV3()).WillRepeatedly(Return(false));
 	EXPECT_CALL(mechanicsMock, getEffectDuration()).WillRepeatedly(Return(57)); // different from customDuration
 	EXPECT_CALL(serverMock, describeChanges()).WillRepeatedly(Return(false));
 
