@@ -7,6 +7,7 @@
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsSpellAvailability.h"
+#include "ISpellMechanics.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include <limits>
 #include <stdexcept>
