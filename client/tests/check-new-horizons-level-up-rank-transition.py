@@ -71,7 +71,7 @@ def verify_rank_transition_wiring() -> None:
     require(perk_branch, "perk.requiredRank, perk.name", "pass prerequisite rank and name to perk card")
     require(perk_branch, "perk.name", "existing perk name subtitle")
     require(perk_branch, "newHorizonsPerkHelp::format", "existing perk help")
-    require(perk_branch, "newHorizonsPerkIcon(perk.selection.perkId)", "existing perk icon")
+    require(perk_branch, "newHorizonsPerkIcon(perk.selection.perkId, perk.name)", "existing perk icon")
     _, _, parent_card = braced_block(LEVEL, "class CLevelUpPerkComponent")
     require(parent_card, 'parentSkill->customSubtitle = parentName + "\\n"', "visible canonical parent Skill name")
     require(parent_card, 'translate("core.skilllev", requiredRank - 1)', "parent Skill's required rank")

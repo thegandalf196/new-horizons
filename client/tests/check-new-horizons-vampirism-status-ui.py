@@ -43,7 +43,7 @@ class VampirismStatusUiSourceTest(unittest.TestCase):
 
     def test_night_feeder_uses_its_art_and_existing_perk_help(self):
         self.assertIn('{"new-horizons:shadowMagic.nightFeeder", "NH_perk_night_feeder"}', PERK_ICONS)
-        self.assertIn('AnimationPath::builtin(newHorizonsPerkIcon(perk.id))', PERK_BROWSER)
+        self.assertIn('AnimationPath::builtin(newHorizonsPerkIcon(perk.id, perk.name))', PERK_BROWSER)
         self.assertIn("newHorizonsPerkHelp::format(&hero, skillId, perk.name", PERK_BROWSER)
         self.assertIn("newHorizonsPerkHelp::format(&hero, skillId, perk.name", HERO_GROWTH)
         self.assertIn("Vampirism returns an additional 15 percentage points of damage as healing.", PERKS)

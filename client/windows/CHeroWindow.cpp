@@ -848,7 +848,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				if(slot.selectedPerk)
 				{
 					const auto & perk = *slot.selectedPerk;
-					const auto iconKey = newHorizonsPerkIcon(perk.id);
+					const auto iconKey = newHorizonsPerkIcon(perk.id, perk.name);
 					provisionalAbilityIcons[g][ability]->setAnimationPath(AnimationPath::builtin(iconKey), 0);
 					provisionalAbilityIcons[g][ability]->enable();
 					const auto details = newHorizonsPerkHelp::format(curHero, skillId,

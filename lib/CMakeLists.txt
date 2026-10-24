@@ -287,6 +287,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsSchoolSpellcraftPresentation.cpp
 	entities/hero/NewHorizonsIndividualSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsSpecialtyPresentation.cpp
+	entities/hero/NewHorizonsRetainedSpecialtyArtwork.cpp
 	entities/hero/NewHorizonsSkillSpecialtyRules.cpp
 	entities/hero/HeroStartingProjection.cpp
 	entities/hero/NewHorizonsLeadership.cpp
@@ -936,6 +937,7 @@ set(lib_MAIN_HEADERS
 	entities/creature/NewHorizonsRecruitmentTraining.h
 	entities/hero/NewHorizonsHeroRules.h
 	entities/hero/NewHorizonsSpecialtyArtwork.h
+	entities/hero/NewHorizonsRetainedSpecialtyArtwork.h
 	entities/hero/NewHorizonsSpecialtySerialization.h
 	entities/hero/NewHorizonsIndividualSpecialties.h
 	entities/hero/NewHorizonsAdditionalSpecialties.h

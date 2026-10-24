@@ -423,7 +423,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 					const auto background = std::make_shared<TransparentFilledRectangle>(Rect(x, y, cardWidth, cardHeight), panelColor, borderColor);
 					panel.push_back(background);
 					elements.push_back(background);
-					const auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsPerkIcon(perk.id)), 0,
+					const auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsPerkIcon(perk.id, perk.name)), 0,
 						Rect(x + 4, y + 3, 20, 20));
 					panel.push_back(icon);
 					elements.push_back(icon);

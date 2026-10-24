@@ -6623,13 +6623,13 @@
     },
     ".github/workflows/aab-from-build.yml": {
       "functions": [],
-      "rationale": "Embedded Bash consists of curl/tar pipeline29 and build script33\u201344 (set/cd/assignments/sed/echo/gradlew). Three command substitutions invoke pwd/ls, not shell function definitions. Artifact path is YAML/GitHub expression. No inline named function/lambda, function-like macro or other embedded-language implementation body.",
+      "rationale": "Embedded Bash consists of curl/tar pipeline29 and build script33–44 (set/cd/assignments/sed/echo/gradlew). Three command substitutions invoke pwd/ls, not shell function definitions. Artifact path is YAML/GitHub expression. No inline named function/lambda, function-like macro or other embedded-language implementation body.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "e19348a8d7cf949cc1798bc62eec3be3af1677271e347d86387ea4ec518842fb"
     },
     ".github/workflows/cache_cleanup.yml": {
       "functions": [],
-      "rationale": "YAML contains one embedded Bash script19\u201329: variable assignment with command substitution invoking gh/jq, set flags, a for loop24\u201326 and echo. No shell function definitions or inline jq def; jq select/test are builtin invocations. Command substitution and control-flow groups are not callable definitions. No other embedded code fields.",
+      "rationale": "YAML contains one embedded Bash script19–29: variable assignment with command substitution invoking gh/jq, set flags, a for loop24–26 and echo. No shell function definitions or inline jq def; jq select/test are builtin invocations. Command substitution and control-flow groups are not callable definitions. No other embedded code fields.",
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "79b754724efaebac53aaf906a1382711ea280074f20adde336ea30991b62965a"
     },
@@ -6647,19 +6647,19 @@
     },
     ".github/workflows/new-horizons-windows-notices.yml": {
       "functions": [],
-      "rationale": "Only embedded code is Python run block27\u201333: import, assignments, runpy loading external tracked module, calling collect_microsoft_notices, and for/if/print. No def/async def/lambda/class body in this file. External module callable is separately inventoried, not defined by its dictionary lookup invocation here.",
+      "rationale": "Only embedded code is Python run block27–33: import, assignments, runpy loading external tracked module, calling collect_microsoft_notices, and for/if/print. No def/async def/lambda/class body in this file. External module callable is separately inventoried, not defined by its dictionary lookup invocation here.",
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "bd66b074647abf7f7ae776177b5f2d79749df9d574e36359a585976d3bd833b6"
     },
     ".github/workflows/new-horizons-windows.yml": {
       "sha256": "ef9f082a4476426871e71764e6651b8606e6efa04e89dcc51b903929d9cd08ce",
       "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015",
-      "rationale": "Complete workflow read1\u2013542, every run block and folded command, embedded Bash/Python/PowerShell and Python heredocs. No function/def/lambda definitions, Bash function declarations, or PowerShell callable scriptblocks. Control-flow braces56/257/259, Python comprehensions380/455 and generator221, shell substitutions, here-string534\u2013542 and trap strings444/479 are not callable-definition spans under the maintained metric. Explicit functions[] does not exclude542-line physical file or certify CI behavior.",
+      "rationale": "Complete workflow read1–542, every run block and folded command, embedded Bash/Python/PowerShell and Python heredocs. No function/def/lambda definitions, Bash function declarations, or PowerShell callable scriptblocks. Control-flow braces56/257/259, Python comprehensions380/455 and generator221, shell substitutions, here-string534–542 and trap strings444/479 are not callable-definition spans under the maintained metric. Explicit functions[] does not exclude542-line physical file or certify CI behavior.",
       "functions": []
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
-      "rationale": "All four embedded Bash run scripts read: apt commands28, gettext/msgmerge loop33\u201336, lupdate41, lupdate46. No shell function definition or other callable body. PR body56\u201357 and path lists are data/prose, not scripts. External actions are invocations rather than local definitions.",
+      "rationale": "All four embedded Bash run scripts read: apt commands28, gettext/msgmerge loop33–36, lupdate41, lupdate46. No shell function definition or other callable body. PR body56–57 and path lists are data/prose, not scripts. External actions are invocations rather than local definitions.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "c5cab739aae960edd6460adb2bf6586615415fc105756c17f6a0c08476f52fd7"
     },
@@ -6672,7 +6672,7 @@
     "AI/BattleAI/AttackPossibility.h": {
       "sha256": "fcbab24e6d8f3e54269b47464637576d016703638048424d1ff26435268e6133",
       "review": "IR-REGENERATION-BASELINE-REUSE-R2-20261024",
-      "rationale": "Complete five-callable exact inventory renewed for eight declaration lines introducing owning DamageCache snapshot query. All five bodies byte-identical; two constructors shift192/193\u2192200/201. Existing line163 parser recovery explicitly covered. No body omission, parser waiver or runtime claim.",
+      "rationale": "Complete five-callable exact inventory renewed for eight declaration lines introducing owning DamageCache snapshot query. All five bodies byte-identical; two constructors shift192/193→200/201. Existing line163 parser recovery explicitly covered. No body omission, parser waiver or runtime claim.",
       "functions": [
         {
           "symbol": "inline battle::DamageProvenance battleAIDamageProvenance(const battle::Unit * attacker, bool physicalDamage)#1",
@@ -6771,7 +6771,7 @@
     "AI/MMAI/BAI/v13/nn_model.cpp": {
       "sha256": "112b2a952e47ee3c6c4290a7425380bad71ccb8495197c51982cce7e8b5fbe59",
       "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015",
-      "rationale": "Complete file read1\u2013600. Twenty complete definitions, including template helpers29\u201335/37\u201371/73\u201390/92\u2013117, empty-body timer ctor123 and destructor129\u2013133, categorical143\u2013215, read methods219\u2013373, constructor375\u2013390, accessors392\u2013410, getAction412\u2013506, getValue508\u2013513, prepareInputs515\u2013580, toTensor582\u2013598. Deleted ScopedTimer members125\u2013128 are not handwritten bodies. Raw diagnostic at423 concerns typeid(...) expression, no hidden callable. Existing95-line getAction numeric freeze retained; no new mechanics/AI execution.",
+      "rationale": "Complete file read1–600. Twenty complete definitions, including template helpers29–35/37–71/73–90/92–117, empty-body timer ctor123 and destructor129–133, categorical143–215, read methods219–373, constructor375–390, accessors392–410, getAction412–506, getValue508–513, prepareInputs515–580, toTensor582–598. Deleted ScopedTimer members125–128 are not handwritten bodies. Raw diagnostic at423 concerns typeid(...) expression, no hidden callable. Existing95-line getAction numeric freeze retained; no new mechanics/AI execution.",
       "functions": [
         {
           "symbol": "MMAI::BAI::V13::[[noreturn]] inline void throwf(const std::string & fmt, Args &&... args)#1",
@@ -6878,7 +6878,7 @@
     "AI/MMAI/BAI/v13/render.cpp": {
       "sha256": "d46dc1f37f6a6a990a135455069166d5f797a91e600be40f3f5e1996c5d1b416",
       "review": "IR-MANUAL-MMAI-V13-RENDER-d46dc1f3-20261015",
-      "rationale": "Complete handwritten physical source 1\u20131564 inspected. Exact inventory: 34 body-bearing definitions = 14 functions and 20 lambdas. Includes PadLeft, both expect overloads (variadic template declaration/requires clause 60\u201373), all validation helpers including abbreviated auto-parameter template 135\u2013144, Verify 287\u20131024 and Render 1028\u20131563. Functions ending }; retain closing physical line. Twenty lambdas include anyobstacle 467\u2013477 and its nested predicate 472\u2013475; repeated [&cstack] callbacks retain ordinals. All 18 Verify lambdas and two helper lambdas included; Render has no lambdas. Sole tree-sitter ERROR const ISupplementaryData * at 1032 is a type-id operand of typeid, not a declaration or callable. Complete Render body inventoried. Data-only Context struct, using aliases, aggregates, fold expression 70, switch/control-flow blocks and macro invocations are not independent definitions; no function-like macro definitions, deleted/defaulted members or conditional compilation branches occur. All original symbols/spans verified against whole-source inspection. No unresolved callable syntax found. Existing VCMI GPL2-or-later attribution preserved. Preserve all three numeric debt records verbatim; coverage only, no numeric approval, growth waiver, ceiling exception or native/rendered acceptance.",
+      "rationale": "Complete handwritten physical source 1–1564 inspected. Exact inventory: 34 body-bearing definitions = 14 functions and 20 lambdas. Includes PadLeft, both expect overloads (variadic template declaration/requires clause 60–73), all validation helpers including abbreviated auto-parameter template 135–144, Verify 287–1024 and Render 1028–1563. Functions ending }; retain closing physical line. Twenty lambdas include anyobstacle 467–477 and its nested predicate 472–475; repeated [&cstack] callbacks retain ordinals. All 18 Verify lambdas and two helper lambdas included; Render has no lambdas. Sole tree-sitter ERROR const ISupplementaryData * at 1032 is a type-id operand of typeid, not a declaration or callable. Complete Render body inventoried. Data-only Context struct, using aliases, aggregates, fold expression 70, switch/control-flow blocks and macro invocations are not independent definitions; no function-like macro definitions, deleted/defaulted members or conditional compilation branches occur. All original symbols/spans verified against whole-source inspection. No unresolved callable syntax found. Existing VCMI GPL2-or-later attribution preserved. Preserve all three numeric debt records verbatim; coverage only, no numeric approval, growth waiver, ceiling exception or native/rendered acceptance.",
       "functions": [
         {
           "symbol": "MMAI::BAI::V13::std::string PadLeft(const std::string & input, size_t desiredLength, char paddingChar)#1",
@@ -7055,7 +7055,7 @@
     "AI/MMAI/schema/v13/types.h": {
       "sha256": "ccc513f5bfb78a69b30da664fcc576c5480c3c4486f18cdb49571ccf22534577",
       "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015",
-      "rationale": "Complete header read1\u2013640, all enums, aliases, abstract interface members and nested ISupplementaryData Type enum. No handwritten callable bodies; virtual destructors542/549/567/577/592/601/638 are =default and other methods pure declarations. Parser class MMAI_DLL_LINKAGE ISupplementaryData614\u2013639 is a class mistaken for callable; remove this false positive explicitly. No function-like macro definitions.",
+      "rationale": "Complete header read1–640, all enums, aliases, abstract interface members and nested ISupplementaryData Type enum. No handwritten callable bodies; virtual destructors542/549/567/577/592/601/638 are =default and other methods pure declarations. Parser class MMAI_DLL_LINKAGE ISupplementaryData614–639 is a class mistaken for callable; remove this false positive explicitly. No function-like macro definitions.",
       "functions": []
     },
     "AI/Nullkiller2/Helpers/NewHorizonsMuster.h": {
@@ -7076,14 +7076,14 @@
           "end": 69
         }
       ],
-      "rationale": "Three inline implementations externalAmountMultiplier35\u201341, Candidate::isSplit56\u201359 and Candidate::valid61\u201369. Candidate/CoreMusterRow data and remaining amount/choose declarations are not bodies; modifiers={}31/98 are defaults. Every validity/split conditional read. No lambda/function-like macro definition.",
+      "rationale": "Three inline implementations externalAmountMultiplier35–41, Candidate::isSplit56–59 and Candidate::valid61–69. Candidate/CoreMusterRow data and remaining amount/choose declarations are not bodies; modifiers={}31/98 are defaults. Every validity/split conditional read. No lambda/function-like macro definition.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "fd5f40caad7cbbd935b75d6121fd2733a7e58e28e8ae60e4441179e3d335e86d"
     },
     "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp": {
       "sha256": "fb33696429c9eba08c2bbe09406cc1551bb4ca2d299131c13d64a758893540fc",
       "review": "IR-MANUAL-AINODESTORAGE-fb336964-20261015",
-      "rationale": "Complete handwritten physical source 1\u20132364 inspected, including disabled preprocessor branches. Exact body-bearing inventory: 102 callables = 82 functions/methods and 20 lambdas. Defaulted destructor at 163 explicitly accounted for separately; it has no handwritten body and is excluded by the existing tool body-required convention, as are five class member declarations 697\u2013713 whose definitions occur later. Constructor initializer lists are included at 59\u201364,154\u2013161,650\u2013655,1563\u20131576,2236\u20132239. Template declarations 1667 and 1806 belong to their method spans. Disabled lambda 1766\u20131772 included. All nested callbacks included, especially reconstruction 2092\u20132109,2111\u20132231 containing 2121\u20132192 containing 2163\u20132166. Sole parser recovery is else at 1776: #if 0 starts at 1763, its if body closes 1775, but the else body follows #endif at 1777. This split preprocessor/control-flow syntax is not a definition and does not hide any callable; its complete surrounding method is 1736\u20131784. Comments, initializer/aggregate braces, control-flow blocks, declarations, operator[] invocations and macro calls are not extra callables; no function-like macro definitions occur. No unresolved callable syntax found. All six existing numeric debt entries must remain verbatim. Coverage proposal only: no numeric approval, growth waiver, ceiling exception or behavior certification.",
+      "rationale": "Complete handwritten physical source 1–2364 inspected, including disabled preprocessor branches. Exact body-bearing inventory: 102 callables = 82 functions/methods and 20 lambdas. Defaulted destructor at 163 explicitly accounted for separately; it has no handwritten body and is excluded by the existing tool body-required convention, as are five class member declarations 697–713 whose definitions occur later. Constructor initializer lists are included at 59–64,154–161,650–655,1563–1576,2236–2239. Template declarations 1667 and 1806 belong to their method spans. Disabled lambda 1766–1772 included. All nested callbacks included, especially reconstruction 2092–2109,2111–2231 containing 2121–2192 containing 2163–2166. Sole parser recovery is else at 1776: #if 0 starts at 1763, its if body closes 1775, but the else body follows #endif at 1777. This split preprocessor/control-flow syntax is not a definition and does not hide any callable; its complete surrounding method is 1736–1784. Comments, initializer/aggregate braces, control-flow blocks, declarations, operator[] invocations and macro calls are not extra callables; no function-like macro definitions occur. No unresolved callable syntax found. All six existing numeric debt entries must remain verbatim. Coverage proposal only: no numeric approval, growth waiver, ceiling exception or behavior certification.",
       "functions": [
         {
           "symbol": "NK2AI::bool containsCastleGateAction(const std::shared_ptr<const SpecialAction> & action)#1",
@@ -7599,14 +7599,14 @@
     },
     "CI/wininstaller/build_installer.cmd": {
       "functions": [],
-      "rationale": "Entire133-line CRLF batch script read without executing. Top-level assignments, if/else and for groups, dir command substitution, goto :eof exits and continued ISCC invocation118\u2013131. No colon-label definitions, CALL :label subroutines or embedded script functions. goto :eof is built-in exit target, not a defined callable. Hash is exact raw CRLF bytes; no normalization.",
+      "rationale": "Entire133-line CRLF batch script read without executing. Top-level assignments, if/else and for groups, dir command substitution, goto :eof exits and continued ISCC invocation118–131. No colon-label definitions, CALL :label subroutines or embedded script functions. goto :eof is built-in exit target, not a defined callable. Hash is exact raw CRLF bytes; no normalization.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "1ff90232acaf75d7af6e8dd4d9efa3337c3c501fa2f780bed60587b562d24e5e"
     },
     "Global.h": {
       "sha256": "4ed469157a5768704766fe2498823940d7e3d7f10fd5098a62b9a4c932e4bf57",
       "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015",
-      "rationale": "Complete file read1\u2013739 across all OS/compiler conditional branches. All56 parser units retained: function-like VCMI_LIB_WRAP_NAMESPACE macro237, fifty-three template/member/helper definitions and two nested comparator lambdas539\u2013542/554\u2013557. Object-like DLL_IMPORT/EXPORT/ELF_VISIBILITY/TBB/OS defines are not function-like despite parenthesized replacements. Parser recovery574 is dependent-type value construction inside fully inventoried backOrNull568\u2013575, not a separate callable. No conditional body omitted.",
+      "rationale": "Complete file read1–739 across all OS/compiler conditional branches. All56 parser units retained: function-like VCMI_LIB_WRAP_NAMESPACE macro237, fifty-three template/member/helper definitions and two nested comparator lambdas539–542/554–557. Object-like DLL_IMPORT/EXPORT/ELF_VISIBILITY/TBB/OS defines are not function-like despite parenthesized replacements. Parser recovery574 is dependent-type value construction inside fully inventoried backOrNull568–575, not a separate callable. No conditional body omitted.",
       "functions": [
         {
           "symbol": "#define VCMI_LIB_WRAP_NAMESPACE#1",
@@ -7923,7 +7923,7 @@
           "end": 25
         }
       ],
-      "rationale": "All Groovy DSL closure bodies inspected: buildscript2\u201317, nested repositories3\u20139/maven6\u20138 and dependencies10\u201316, allprojects19\u201321, clean task configuration23\u201325. No named method or other closure/lambda. Method calls google/mavenCentral/classpath/apply/delete invoke existing APIs, not definitions.",
+      "rationale": "All Groovy DSL closure bodies inspected: buildscript2–17, nested repositories3–9/maven6–8 and dependencies10–16, allprojects19–21, clean task configuration23–25. No named method or other closure/lambda. Method calls google/mavenCentral/classpath/apply/delete invoke existing APIs, not definitions.",
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "ec614931e0b45f1e8aeb21a34534cfe5e6f5daccd40b0ff46fb3c4571cef73c4"
     },
@@ -7935,7 +7935,7 @@
           "end": 3
         }
       ],
-      "rationale": "Whole file is ext { ... } DSL call with one Groovy closure (lines1\u20133), comment-only body. The closure is a callable despite containing no statements; not an empty function inventory.",
+      "rationale": "Whole file is ext { ... } DSL call with one Groovy closure (lines1–3), comment-only body. The closure is a callable despite containing no statements; not an empty function inventory.",
       "review": "ROOT-MANUAL-SPANS-10-20261015",
       "sha256": "afa37dee6cd225eedcd32a5719d4d144c61f4911eb1fcda7852c7f9c0f90510a"
     },
@@ -7957,14 +7957,14 @@
           "end": 18
         }
       ],
-      "rationale": "Two Groovy closures: dependencyResolutionManagement4\u201310 contains repositories6\u20139. One named method File absolutePath(String fileName)16\u201318. Other lines are imports, assignments, project include, and XML API calls; no additional closures or method definitions.",
+      "rationale": "Two Groovy closures: dependencyResolutionManagement4–10 contains repositories6–9. One named method File absolutePath(String fileName)16–18. Other lines are imports, assignments, project include, and XML API calls; no additional closures or method definitions.",
       "review": "ROOT-MANUAL-SPANS-10-20261015",
       "sha256": "657667b4ce9dee1abba3684883213f81364f323e2609608cc8b31287b13d4dfe"
     },
     "android/vcmi-app/build.gradle": {
       "sha256": "ac2a1634ba04c209e7e8e6425b94e420a72b38a939439d4e514a169c0a8471ae",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Fifteen Groovy DSL closures: android4\u2013102; buildFeatures23\u201326; defaultConfig31\u201340; sourceSets42\u201352/main43\u201351; signingConfigs54\u201359; buildTypes61\u201387/debug62\u201372/ndk69\u201371/release73\u201386/ndk83\u201385; tasks.withType89\u201391; compileOptions93\u201396; aaptOptions99\u2013101; dependencies150\u2013160. Three named method definitions107\u2013109/111\u2013113/115\u2013148. All signing conditional branches121\u2013147 read; maps/list literals and API calls are not closures. android closure99physical lines separately requires numeric existing-debt review.",
+      "rationale": "Fifteen Groovy DSL closures: android4–102; buildFeatures23–26; defaultConfig31–40; sourceSets42–52/main43–51; signingConfigs54–59; buildTypes61–87/debug62–72/ndk69–71/release73–86/ndk83–85; tasks.withType89–91; compileOptions93–96; aaptOptions99–101; dependencies150–160. Three named method definitions107–109/111–113/115–148. All signing conditional branches121–147 read; maps/list literals and API calls are not closures. android closure99physical lines separately requires numeric existing-debt review.",
       "functions": [
         {
           "symbol": "android::<closure>#1",
@@ -8093,7 +8093,7 @@
           "end": 52
         }
       ],
-      "rationale": "Four namespace-iOS_utils C++ functions: screenScale23\u201326, showLoadingIndicator28\u201338, hideLoadingIndicator40\u201346, hapticFeedback48\u201352. Objective-C bracket messages are calls, initializer list37 is aggregate assignment, NSCAssert30 is an invocation rather than a macro definition. No Objective-C blocks/method definitions or hidden lambdas.",
+      "rationale": "Four namespace-iOS_utils C++ functions: screenScale23–26, showLoadingIndicator28–38, hideLoadingIndicator40–46, hapticFeedback48–52. Objective-C bracket messages are calls, initializer list37 is aggregate assignment, NSCAssert30 is an invocation rather than a macro definition. No Objective-C blocks/method definitions or hidden lambdas.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "b8af70d4ac02878cb4bd1d32bd6316151efbe7b5c8cec7608fdee16b5502a5e2"
     },
@@ -8183,7 +8183,7 @@
           "end": 131
         }
       ],
-      "rationale": "Ten ordinary definitions16\u201334/36\u201339/41\u201348/50\u201353/55\u201362/64\u201371/73\u201378/80\u201383/85\u2013103/105\u2013131 and nested lerpMuxer lambda87\u201395. Both genRangeShifter overloads retained with full signatures. Aggregate return/channel initializers and operator== invocation38 are not definitions; no function-like #defines.",
+      "rationale": "Ten ordinary definitions16–34/36–39/41–48/50–53/55–62/64–71/73–78/80–83/85–103/105–131 and nested lerpMuxer lambda87–95. Both genRangeShifter overloads retained with full signatures. Aggregate return/channel initializers and operator== invocation38 are not definitions; no function-like #defines.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "1fef38431de1afd0db42d9a8248871bf7562898386f75d732770bb2a1a13de6d"
     },
@@ -8208,7 +8208,7 @@
     "client/widgets/markets/TradePanels.h": {
       "sha256": "d6bc50fd6c0e5281d39a12660c70ede368d29fed960f8a2aa4290558207dd206",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Seven classes have data, callback type aliases and constructor/method declarations only. slotsPos73\u201378/95\u2013100/112\u2013117/127\u2013132/146\u2013156 are aggregate vector initializers, not callable bodies. tradeableResources={}90 is a default argument; callback fields are not lambdas. No inline implementation or function-like macro definition.",
+      "rationale": "Seven classes have data, callback type aliases and constructor/method declarations only. slotsPos73–78/95–100/112–117/127–132/146–156 are aggregate vector initializers, not callable bodies. tradeableResources={}90 is a default argument; callback fields are not lambdas. No inline implementation or function-like macro definition.",
       "functions": []
     },
     "client/windows/CWindowObject.h": {
@@ -8220,31 +8220,31 @@
     "client/windows/GUIClasses.h": {
       "sha256": "7321969ccf912ff5391648f483400bb40fcc27c63c8cdd1cd6abbe1bd780eaf0",
       "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015",
-      "rationale": "Complete header read1\u2013631. All constructors/methods/callbacks are declarations or std::function data members; no handwritten callable body, macro definition or lambda. Nested classes and aggregate/enum braces are not functions. Default value {} at192/312/313 causes diagnostics. Explicit functions[] does not remove631-line physical size freeze.",
+      "rationale": "Complete header read1–631. All constructors/methods/callbacks are declarations or std::function data members; no handwritten callable body, macro definition or lambda. Nested classes and aggregate/enum braces are not functions. Default value {} at192/312/313 causes diagnostics. Explicit functions[] does not remove631-line physical size freeze.",
       "functions": []
     },
     "client/windows/wiki/WikiArtifactContent.h": {
       "functions": [],
-      "rationale": "Forward declarations and WikiArtifactNavigateCallback std::function type alias; buildArtifactContent prototype34\u201339 only. {}39 is a default empty callback initializer, not a callable body. missing:type_identifier39 does not hide a definition.",
+      "rationale": "Forward declarations and WikiArtifactNavigateCallback std::function type alias; buildArtifactContent prototype34–39 only. {}39 is a default empty callback initializer, not a callable body. missing:type_identifier39 does not hide a definition.",
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "c84095b597b5c1b923f7dce9fd9c2d3c101813666492cbd77772cea0fb730a25"
     },
     "client/windows/wiki/WikiCreatureContent.h": {
       "functions": [],
-      "rationale": "Forward declarations, WikiCreatureNavigateCallback std::function type alias, and buildCreatureContent prototype35\u201340 only. {}40 default callback initializer is not a function body/lambda. No handwritten implementations.",
+      "rationale": "Forward declarations, WikiCreatureNavigateCallback std::function type alias, and buildCreatureContent prototype35–40 only. {}40 default callback initializer is not a function body/lambda. No handwritten implementations.",
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "c46c4b1d24562f04e16c04b38665dbf67f9fb0c001b2e326b77a05985ece79fe"
     },
     "client/windows/wiki/WikiHeroContent.h": {
       "functions": [],
-      "rationale": "Only forward declarations, callback std::function type alias and buildHeroContent prototype35\u201342. The default callback {}40 and nullable mapHero argument41 do not introduce bodies/lambdas. No function-like macro definitions.",
+      "rationale": "Only forward declarations, callback std::function type alias and buildHeroContent prototype35–42. The default callback {}40 and nullable mapHero argument41 do not introduce bodies/lambdas. No function-like macro definitions.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "a4f1d34459c2107b37e0d2b4c9e587c2f135af4c55de6dbd16dfe5e9ff643651"
     },
     "client/xBRZ/xbrz.cpp": {
       "sha256": "05c90d3c1b89d4d5406d58d9fbed19db3bfbf5db03a48f23acd3428eb67c8c21",
       "review": "IR-MANUAL-XBRZ-05c90d3c-20261015",
-      "rationale": "Whole physical source 1\u20131384 inspected. Retain existing conservative selected production coverage and numeric debt; do not reclassify by directory. Existing xBRZ third-party GPL3 attribution and special exception header are unchanged. Exact source matches Git blob 1eda5a46beb87ad49cdeca829f937581a58bbc43 in current reference and fork common ancestor bc0fc2a9. Complete inventory has 85 entries: 68 functions/methods, 13 lambdas, four DEF_GETTER function-like macro definitions at 333,340,346,352. Each macro has nine invocations; these 36 expansions share four authored replacement-list bodies, not 36 separately written implementations. Object-like FORCE_INLINE and b\u2013i definitions are not function-like macros. All templates, constructor initializers and disabled branches included: distRGB 144\u2013153; CPU helper 1287\u20131303 with lambdas 1295\u20131301 and 1300; AMP helper 1308\u20131383 with restrict(amp) lambda 1325\u20131381 and interpolation lambda 1354\u20131368. The sole parser ERROR is void at 394 after FORCE_INLINE; this macro is the inline/compiler-attribute spelling defined 81\u201387, not a return type or separate definition. Complete blendPixel span 392\u2013479 includes its template and all three lambdas. Original parser-compatible symbols retained. Commented functions, data-only type declarations, aggregate braces, invocations and control flow are not extra definitions. No unresolved callable syntax found. Preserve all three numeric debt records verbatim; no growth waiver, ceiling exception, provenance reassignment or runtime claim.",
+      "rationale": "Whole physical source 1–1384 inspected. Retain existing conservative selected production coverage and numeric debt; do not reclassify by directory. Existing xBRZ third-party GPL3 attribution and special exception header are unchanged. Exact source matches Git blob 1eda5a46beb87ad49cdeca829f937581a58bbc43 in current reference and fork common ancestor bc0fc2a9. Complete inventory has 85 entries: 68 functions/methods, 13 lambdas, four DEF_GETTER function-like macro definitions at 333,340,346,352. Each macro has nine invocations; these 36 expansions share four authored replacement-list bodies, not 36 separately written implementations. Object-like FORCE_INLINE and b–i definitions are not function-like macros. All templates, constructor initializers and disabled branches included: distRGB 144–153; CPU helper 1287–1303 with lambdas 1295–1301 and 1300; AMP helper 1308–1383 with restrict(amp) lambda 1325–1381 and interpolation lambda 1354–1368. The sole parser ERROR is void at 394 after FORCE_INLINE; this macro is the inline/compiler-attribute spelling defined 81–87, not a return type or separate definition. Complete blendPixel span 392–479 includes its template and all three lambdas. Original parser-compatible symbols retained. Commented functions, data-only type declarations, aggregate braces, invocations and control flow are not extra definitions. No unresolved callable syntax found. Preserve all three numeric debt records verbatim; no growth waiver, ceiling exception, provenance reassignment or runtime claim.",
       "functions": [
         {
           "symbol": "inline uint32_t gradientRGB(uint32_t pixFront, uint32_t pixBack) //blend front color with opacity M / N over opaque background: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending#1",
@@ -8675,7 +8675,7 @@
     },
     "clientapp/ios/GameChatKeyboardHandler.h": {
       "functions": [],
-      "rationale": "Objective-C @interface declaration22\u201326 with one class-method prototype24 and @end; no @implementation, method body, or block literal. NS_ASSUME_NONNULL_BEGIN/END are annotations, SDL selection is include-only. Recovery at22/24/26 does not hide implementation bodies.",
+      "rationale": "Objective-C @interface declaration22–26 with one class-method prototype24 and @end; no @implementation, method body, or block literal. NS_ASSUME_NONNULL_BEGIN/END are annotations, SDL selection is include-only. Recovery at22/24/26 does not hide implementation bodies.",
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "083a6c75571ad9a9db231f24f9bffa7a268a4db555f61f7b2f7fc717260dd318"
     },
@@ -8713,7 +8713,7 @@
           "end": 91
         }
       ],
-      "rationale": "Two functions removeQtNotificationObserver43\u201349 and startSDL51\u2013103, with three Objective-C blocks57\u201359/60\u201362/88\u201391. Full startSDL span includes both SDL2/SDL3 event-pump and RunApp conditional branches. @autoreleasepool53\u2013102 is control scope, not a callable. Empty SDLViewObserver @implementation39\u201341/property declarations are not handwritten methods; SDL_MAIN_NOIMPL21 is object-like. No other body/function-like macro definition.",
+      "rationale": "Two functions removeQtNotificationObserver43–49 and startSDL51–103, with three Objective-C blocks57–59/60–62/88–91. Full startSDL span includes both SDL2/SDL3 event-pump and RunApp conditional branches. @autoreleasepool53–102 is control scope, not a callable. Empty SDLViewObserver @implementation39–41/property declarations are not handwritten methods; SDL_MAIN_NOIMPL21 is object-like. No other body/function-like macro definition.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "086fcbf605bfb9f3785c86db92347ff9a600c4ed9339b0bcb462e4455fc8b4bc"
     },
@@ -8765,7 +8765,7 @@
           "end": 43
         }
       ],
-      "rationale": "Three inline member function templates: subscribeBefore24\u201329, subscribeAfter31\u201336, executeEvent38\u201343. Spans include each template signature. ExecHandler default constructor expression39 is not another callable body. No lambda or function-like macro definition.",
+      "rationale": "Three inline member function templates: subscribeBefore24–29, subscribeAfter31–36, executeEvent38–43. Spans include each template signature. ExecHandler default constructor expression39 is not another callable body. No lambda or function-like macro definition.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "2fec702a236715da40c7fae8e86d5fb04754e94a11c38d9288d9068233398c44"
     },
@@ -8842,7 +8842,7 @@
           "end": 93
         }
       ],
-      "rationale": "Thirteen ordinary function bodies: native/helper21\u201324/25; paths31/32/35\u201346/49/50/52; OS/display54\u201357/59\u201362/64\u201367; share69\u201386; iphoneHardwareId88\u201393. Simulator-only hostApplicationSupportPath35\u201346 and nested dispatch_once block39\u201344 are both included despite TARGET_OS_SIMULATOR. Parser's namespace29\u201394 is not callable; parser omits actual iphoneHardwareId88\u201393, restored here. Message sends, NSCAssert invocation and array literal are not extra definitions. No function-like #defines.",
+      "rationale": "Thirteen ordinary function bodies: native/helper21–24/25; paths31/32/35–46/49/50/52; OS/display54–57/59–62/64–67; share69–86; iphoneHardwareId88–93. Simulator-only hostApplicationSupportPath35–46 and nested dispatch_once block39–44 are both included despite TARGET_OS_SIMULATOR. Parser's namespace29–94 is not callable; parser omits actual iphoneHardwareId88–93, restored here. Message sends, NSCAssert invocation and array literal are not extra definitions. No function-like #defines.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "384d20e8d1f6f4e2f22767e91bf7b6a1298c11c893df602a23effab18200be92"
     },
@@ -8870,7 +8870,7 @@
           "end": 88
         }
       ],
-      "rationale": "Exactly constructor23\u201340, destructor42\u201349 and poll51\u201388. Full physical spans include both VCMI_SDL3 and SDL2 init/quit/switch branches (including #else/#endif); no branch is preprocessed away. emit startGameRequested71/83 invokes a signal, not a callable definition. No lambdas or function-like macro definitions.",
+      "rationale": "Exactly constructor23–40, destructor42–49 and poll51–88. Full physical spans include both VCMI_SDL3 and SDL2 init/quit/switch branches (including #else/#endif); no branch is preprocessed away. emit startGameRequested71/83 invokes a signal, not a callable definition. No lambdas or function-like macro definitions.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "1d48d1d92debceb4380d7b940b8258d6804d7eff3f7514280db711cbb4016ccc"
     },
@@ -8882,7 +8882,7 @@
           "end": 21
         }
       ],
-      "rationale": "Exactly one C++ function in namespace iOS_utils,16\u201321. Objective-C messages at18/20 are calls, @{} is an empty dictionary literal, and completionHandler:nil creates no block/lambda. Parser recovery spuriously lists namespace iOS_utils14\u201322 as another callable; complete manual inventory replaces that false record rather than unioning it.",
+      "rationale": "Exactly one C++ function in namespace iOS_utils,16–21. Objective-C messages at18/20 are calls, @{} is an empty dictionary literal, and completionHandler:nil creates no block/lambda. Parser recovery spuriously lists namespace iOS_utils14–22 as another callable; complete manual inventory replaces that false record rather than unioning it.",
       "review": "ROOT-MANUAL-SPANS-10-20261015",
       "sha256": "2bc1e5f182fd35ad289e4265aa2e8bf06f7be8e9d078a752ff34bcf351649d26"
     },
@@ -8914,14 +8914,14 @@
           "end": 72
         }
       ],
-      "rationale": "Five handwritten implementations: Objective-C eventLoop29, documentPicker:didPickDocumentsAtURLs:31\u201335, documentPickerWasCancelled:37\u201340; C++ destructor47\u201351 and getExistingDirectory53\u201372. @implementation ivar block25\u201327 is not a function. @property declarations20\u201321 may generate accessors but are not handwritten bodies. Both @available branches58\u201361 read; messages, @[] literal and return{}68 create no extra callable.",
+      "rationale": "Five handwritten implementations: Objective-C eventLoop29, documentPicker:didPickDocumentsAtURLs:31–35, documentPickerWasCancelled:37–40; C++ destructor47–51 and getExistingDirectory53–72. @implementation ivar block25–27 is not a function. @property declarations20–21 may generate accessors but are not handwritten bodies. Both @available branches58–61 read; messages, @[] literal and return{}68 create no extra callable.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "574237d35ebcc66d49264150da47f55d0c8da28db509cb5173dec63c6379ba9c"
     },
     "launcher/main.cpp": {
       "sha256": "c6ccedd8eb2bdca5d515cf9c0d6b2fe1ca8eb36c0858c07e7d0ab20a1a1d7325",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Four ordinary function bodies: main51\u2013113 (parser recovery omits it), startGame115\u2013137, startEditor139\u2013150 and nonmobile startExecutable153\u2013186. Two nested lambdas: Android resize99\u2013101 and error callback156\u2013160. All iOS/Android/desktop/Qt-version/ENABLE_EDITOR and platform execution branches read; full physical main includes conditional brace55/108 without truncating function. MAIN_EXPORT46/48 are object-like macros. __has_include/include/plugin logic defines no other local callable.",
+      "rationale": "Four ordinary function bodies: main51–113 (parser recovery omits it), startGame115–137, startEditor139–150 and nonmobile startExecutable153–186. Two nested lambdas: Android resize99–101 and error callback156–160. All iOS/Android/desktop/Qt-version/ENABLE_EDITOR and platform execution branches read; full physical main includes conditional brace55/108 without truncating function. MAIN_EXPORT46/48 are object-like macros. __has_include/include/plugin logic defines no other local callable.",
       "functions": [
         {
           "symbol": "int MAIN_EXPORT main(int argc, char * argv[])#1",
@@ -8958,7 +8958,7 @@
     "launcher/modManager/cdownloadmanager_moc.cpp": {
       "sha256": "60938cc7316fc312b9834a822960399e27a52091fcef31837a5d7ca3759a672a",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Handwritten source despite _moc name: nine ordinary functions17\u201325/27\u201351/53\u201362/64\u2013126/128\u2013150/152\u2013160/162\u2013170/172\u2013185/187\u2013195 plus SSL callback lambda21\u201324. All redirect/error/completion/queue branches read. SIGNAL/SLOT macros19\u201320/168\u2013169 and Q_EMIT97/121/149 are invocations, not locally defined macros/callable bodies. No generated/vendor exclusion.",
+      "rationale": "Handwritten source despite _moc name: nine ordinary functions17–25/27–51/53–62/64–126/128–150/152–160/162–170/172–185/187–195 plus SSL callback lambda21–24. All redirect/error/completion/queue branches read. SIGNAL/SLOT macros19–20/168–169 and Q_EMIT97/121/149 are invocations, not locally defined macros/callable bodies. No generated/vendor exclusion.",
       "functions": [
         {
           "symbol": "CDownloadManager::CDownloadManager()#1",
@@ -9015,7 +9015,7 @@
     "launcher/modManager/chroniclesextractor.cpp": {
       "sha256": "f0896ed3ef9953c8bc52dc6f6d19115f4ff1355d03a02b20c547ef3c011489b7",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Nine ordinary bodies20\u201323/25\u201338/40\u201343/45\u201365/67\u201388/90\u2013135/137\u2013162/164\u2013244/246\u2013303 and progress69\u201373/archive-extract184\u2013198 lambdas. All installer fallback/map/video/archive loop branches read; nested JSON/object initializers are not callables and default files={}184 belongs to lambda signature. extractFiles164\u201324481lines matches existing legacy numeric record. No function-like macros.",
+      "rationale": "Nine ordinary bodies20–23/25–38/40–43/45–65/67–88/90–135/137–162/164–244/246–303 and progress69–73/archive-extract184–198 lambdas. All installer fallback/map/video/archive loop branches read; nested JSON/object initializers are not callables and default files={}184 belongs to lambda signature. extractFiles164–24481lines matches existing legacy numeric record. No function-like macros.",
       "functions": [
         {
           "symbol": "ChroniclesExtractor::ChroniclesExtractor(QWidget *p, std::function<void(float percent)> cb) : cb{cb}#1",
@@ -9077,7 +9077,7 @@
     "launcher/modManager/cmodlistview_moc.cpp": {
       "sha256": "af5fda1738b43fedabbc7fc1b06e04024b498d3959662b30da6cfb77ae382374",
       "review": "independent-cmodlistview-complete-callables-af5fda1738b4-20261015-v1",
-      "rationale": "Whole handwritten physical source 1\u20131966 inspected, despite the _moc filename. Complete inventory: 97 definitions, comprising 74 CModListView methods including constructor/destructor, nine free/helper functions (three templates), and 14 lambdas. Constructor signature/initializer lines 125\u2013127 belong to span 125\u2013162. Template declaration lines 1287,1300,1324 belong to their helper spans. Nested lambda 549 belongs within 544\u2013553 and nested lambda 1210 within 1208\u20131212; all are counted separately. Qt string-based SIGNAL/SLOT macro arguments at 112\u2013116 cause ten tree-sitter recoveries: const reference type spellings are parsed as expressions, not callable declarations. Every recovery is confined to these four macro arguments. Control flow, catch bodies, local result struct and enum, initializer braces, preprocessor branches, Qt signal addresses and invocations are not independent callables. No function-like macro definitions occur. All original callable symbols and physical spans verified against whole-source inspection. No unresolved callable syntax found. Coverage only: preserve all five existing numeric debt records verbatim; no growth waiver, ceiling exception or behavior certification is proposed.",
+      "rationale": "Whole handwritten physical source 1–1966 inspected, despite the _moc filename. Complete inventory: 97 definitions, comprising 74 CModListView methods including constructor/destructor, nine free/helper functions (three templates), and 14 lambdas. Constructor signature/initializer lines 125–127 belong to span 125–162. Template declaration lines 1287,1300,1324 belong to their helper spans. Nested lambda 549 belongs within 544–553 and nested lambda 1210 within 1208–1212; all are counted separately. Qt string-based SIGNAL/SLOT macro arguments at 112–116 cause ten tree-sitter recoveries: const reference type spellings are parsed as expressions, not callable declarations. Every recovery is confined to these four macro arguments. Control flow, catch bodies, local result struct and enum, initializer braces, preprocessor branches, Qt signal addresses and invocations are not independent callables. No function-like macro definitions occur. All original callable symbols and physical spans verified against whole-source inspection. No unresolved callable syntax found. Coverage only: preserve all five existing numeric debt records verbatim; no growth waiver, ceiling exception or behavior certification is proposed.",
       "functions": [
         {
           "symbol": "void CModListView::setupModModel()#1",
@@ -9584,20 +9584,20 @@
           "end": 42
         }
       ],
-      "rationale": "Two C++ definitions: anonymous-namespace swizzled_supportedInterfaceOrientations19\u201324 and launcher::prepareIos29\u201343. prepareIos contains exactly one Objective-C block31\u201342 passed as usingBlock. @selector35 and @available40 are expressions, not extra callables. All block/control-flow bodies read; no function-like macro definitions.",
+      "rationale": "Two C++ definitions: anonymous-namespace swizzled_supportedInterfaceOrientations19–24 and launcher::prepareIos29–43. prepareIos contains exactly one Objective-C block31–42 passed as usingBlock. @selector35 and @available40 are expressions, not extra callables. All block/control-flow bodies read; no function-like macro definitions.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "8cb383c0b997f868fa57b75f9a83d1629b08e12f6e0f4cca3ed3d8714f8d3e30"
     },
     "lib/CBonusTypeHandler.h": {
       "functions": [],
-      "rationale": "Two classes with fields, prototypes and one =default constructor23 (no handwritten body, excluded by maintained body rule). Conditional extern-template declaration72\u201374 instantiates vector type rather than defining a local callable. No function-like #define or inline implementation.",
+      "rationale": "Two classes with fields, prototypes and one =default constructor23 (no handwritten body, excluded by maintained body rule). Conditional extern-template declaration72–74 instantiates vector type rather than defining a local callable. No function-like #define or inline implementation.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "ab6003e3279e0d599a490767a38ce7f011d0f8101b8f6a3598c332bdb4c0ada9"
     },
     "lib/CConfigHandler.cpp": {
       "sha256": "00f2d9c402a747e6b4b34dd8cef10a2ea9f3b35f8c3e2e54a1b98ead1a62b93b",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Twenty-four definitions including four NodeAccessor member templates22\u201327/29\u201335/37\u201341/43\u201349, conversion/call/index operators, constructors/destructors and settings/listener methods51\u2013201. Full initializer lists, template lines and invalidation/save/cleanup conditionals read. Explicit instantiation statements205\u2013206 are type instantiations, not extra handwritten bodies. No lambdas or function-like macros.",
+      "rationale": "Twenty-four definitions including four NodeAccessor member templates22–27/29–35/37–41/43–49, conversion/call/index operators, constructors/destructors and settings/listener methods51–201. Full initializer lists, template lines and invalidation/save/cleanup conditionals read. Explicit instantiation statements205–206 are type instantiations, not extra handwritten bodies. No lambdas or function-like macros.",
       "functions": [
         {
           "symbol": "SettingsStorage::NodeAccessor<Accessor>::NodeAccessor(SettingsStorage & _parent, std::vector<std::string> _path): parent(_parent), path(std::move(_path))#1",
@@ -9851,14 +9851,14 @@
           "end": 95
         }
       ],
-      "rationale": "Three constexpr constructors30\u201336/38\u201343/45\u201350 with initializer lists and explicit empty bodies, template serialize52\u201359 (template line included), comparisons61\u201364/66\u201371, and namespace template lerp86\u201395. These empty constructor bodies DO count, unlike =default declarations. Enum18\u201322, data and RayColor::fromJson prototype81 are not bodies. No lambdas/function-like #defines.",
+      "rationale": "Three constexpr constructors30–36/38–43/45–50 with initializer lists and explicit empty bodies, template serialize52–59 (template line included), comparisons61–64/66–71, and namespace template lerp86–95. These empty constructor bodies DO count, unlike =default declarations. Enum18–22, data and RayColor::fromJson prototype81 are not bodies. No lambdas/function-like #defines.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "e0ee507befb506edd10e86cfbb41284bf763fb7cf66e9216c431877b4be5cf1c"
     },
     "lib/LogicalExpression.h": {
       "sha256": "fc6e5be2b3a578e8b07dfeb696692ab670348d3848e0f6504f7569cc9434860b",
       "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015",
-      "rationale": "Complete template header read1\u2013711. All visitor/operator overload bodies, inline empty constructors44/45\u201347/80\u201382/139\u2013145/239\u2013241/288\u2013290/383\u2013385/410\u2013412/515\u2013517/519\u2013522, and nested lambdas74\u201377/124\u2013127/132\u2013135/466/471/481/487/534\u2013537 inspected. All81 parser spans retained exactly. Defaulted LogicalExpression ctor615 excluded; explicit body618 included. Diagnostics366/368/370 are dependent typename constructor expressions, not lost bodies. No function-like macros.",
+      "rationale": "Complete template header read1–711. All visitor/operator overload bodies, inline empty constructors44/45–47/80–82/139–145/239–241/288–290/383–385/410–412/515–517/519–522, and nested lambdas74–77/124–127/132–135/466/471/481/487/534–537 inspected. All81 parser spans retained exactly. Defaulted LogicalExpression ctor615 excluded; explicit body618 included. Diagnostics366/368/370 are dependent typename constructor expressions, not lost bodies. No function-like macros.",
       "functions": [
         {
           "symbol": "LogicalExpressionDetail::ExpressionBase::Element::Element()#1",
@@ -10270,7 +10270,7 @@
     "lib/ResourceSet.cpp": {
       "sha256": "bae288237e1c07c168fb814f8a4f2aec98327a54ecd0cfd1eafaf203a6794456",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Twenty-two ordinary definitions/overloads/iterator operators19\u201322/24\u201328/30\u201337/39\u201347/49\u201357/59\u201366/68\u201372/74\u201378/80\u201384/86\u201394/96\u2013103/105\u2013108/110\u2013113/115\u2013121/123\u2013134/136\u2013139/141\u2013145/147\u2013152/154\u2013157/159\u2013162/164\u2013179/181\u2013189 plus resolveFromJson lambda42\u201346. Complete empty constructor bodies/initializer lists and iterator control branches read. operator[] invocations are expressions, not extra definitions. No function-like macros.",
+      "rationale": "Twenty-two ordinary definitions/overloads/iterator operators19–22/24–28/30–37/39–47/49–57/59–66/68–72/74–78/80–84/86–94/96–103/105–108/110–113/115–121/123–134/136–139/141–145/147–152/154–157/159–162/164–179/181–189 plus resolveFromJson lambda42–46. Complete empty constructor bodies/initializer lists and iterator control branches read. operator[] invocations are expressions, not extra definitions. No function-like macros.",
       "functions": [
         {
           "symbol": "ResourceSet::ResourceSet()#1",
@@ -10392,7 +10392,7 @@
     "lib/ResourceSet.h": {
       "sha256": "6fca1f4d9d2a0f59dbc4db9191f6aacd3c7111d5526033cfc7fc5fdab7ed8210",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Three function-like operator-generation macro definitions scalarOperator36\u201344/vectorOperator46\u201354/twoOperands56\u201361 measured in full, not expanded duplicate functions at invocation sites63\u201374. Eighteen explicit member bodies87\u201391/93\u2013100/102\u2013106/108\u2013115/117\u2013124/127\u2013130/132\u2013135/137\u2013140/142\u2013145/147\u2013150/153\u2013161/164\u2013181/183\u2013189/191\u2013198/200\u2013206/208\u2013214/216\u2013219/221\u2013224. All fallback/loop branches read; declarations and aggregate defaults do not count.",
+      "rationale": "Three function-like operator-generation macro definitions scalarOperator36–44/vectorOperator46–54/twoOperands56–61 measured in full, not expanded duplicate functions at invocation sites63–74. Eighteen explicit member bodies87–91/93–100/102–106/108–115/117–124/127–130/132–135/137–140/142–145/147–150/153–161/164–181/183–189/191–198/200–206/208–214/216–219/221–224. All fallback/loop branches read; declarations and aggregate defaults do not count.",
       "functions": [
         {
           "symbol": "#define scalarOperator#1",
@@ -10659,7 +10659,7 @@
           "end": 72
         }
       ],
-      "rationale": "Eight ordinary definitions17\u201322/24\u201327/29\u201332/34\u201339/41\u201355/57\u201362/64\u201367/69\u201372 plus nested capture-by-reference lambda48\u201354. ASSERT_IF_CALLED_WITH_PLAYER15 is object-like (no macro parameter list), outside the function-like macro metric, despite control-flow braces in its expansion. RETURN_IF_NOT_BATTLE invocations36/59 expand only in enclosing functions; defining header22 was inspected and adds no callable definitions here. No other function-like #defines.",
+      "rationale": "Eight ordinary definitions17–22/24–27/29–32/34–39/41–55/57–62/64–67/69–72 plus nested capture-by-reference lambda48–54. ASSERT_IF_CALLED_WITH_PLAYER15 is object-like (no macro parameter list), outside the function-like macro metric, despite control-flow braces in its expansion. RETURN_IF_NOT_BATTLE invocations36/59 expand only in enclosing functions; defining header22 was inspected and adds no callable definitions here. No other function-like #defines.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "f16b6dfd61b001dcf80880a9466faea4f575538b7d110d2ecc570e79bfab6a34"
     },
@@ -10709,7 +10709,7 @@
           "end": 120
         }
       ],
-      "rationale": "Function-like variadic macro RETURN_IF_NOT_BATTLE22\u201322 is measured even though expansion is an in-function guard. One inline method getWallStructuralHP120\u2013120. Other virtuals are pure declarations and destructor77 is =default with no handwritten body. Data structs/UnitFilter alias/default initialPos={}109 are not functions. No omitted conditional bodies.",
+      "rationale": "Function-like variadic macro RETURN_IF_NOT_BATTLE22–22 is measured even though expansion is an in-function guard. One inline method getWallStructuralHP120–120. Other virtuals are pure declarations and destructor77 is =default with no handwritten body. Data structs/UnitFilter alias/default initialPos={}109 are not functions. No omitted conditional bodies.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "6d2782e95d2814d136388fd3d45c74dcbe9224ca6f18f9ad55b5af34e0dde9ae"
     },
@@ -10723,7 +10723,7 @@
     "lib/battle/Unit.h": {
       "sha256": "356bc3377816ae6ca619f5140ff1cf6fa967926eabcf4cbc4db09871caea4df6",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Twenty-one bodies: HealInfo constructor60\u201362/operator67\u201372; Unit inline defaults113/126\u2013130/147/152\u2013155/161/164/166/168/170/172/174/176/178/180/186/196/200; getMaximumHealth251\u2013255; UnitInfo serializeScript template280\u2013291. All one-line virtual defaults count. HealInfo()=default59 has no handwritten body; remaining virtuals/prototypes/callback types/data do not count. No function-like macros.",
+      "rationale": "Twenty-one bodies: HealInfo constructor60–62/operator67–72; Unit inline defaults113/126–130/147/152–155/161/164/166/168/170/172/174/176/178/180/186/196/200; getMaximumHealth251–255; UnitInfo serializeScript template280–291. All one-line virtual defaults count. HealInfo()=default59 has no handwritten body; remaining virtuals/prototypes/callback types/data do not count. No function-like macros.",
       "functions": [
         {
           "symbol": "battle::HealInfo::HealInfo(int64_t healedHP, int32_t resurrected) : healedHealthPoints(healedHP), resurrectedCount(resurrected)#1",
@@ -10835,7 +10835,7 @@
     "lib/bonuses/Bonus.h": {
       "sha256": "808292b9505953bd60d16626953b02c8b4b9c03a3297fcc2be0a0e39b8c8ab53",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Twenty-seven bodies: five metadata helpers96\u201399/100\u2013108/109\u2013112/113\u2013126/127\u2013131; four feature validators142\u2013147/149\u2013176/178\u2013183/185\u2013190; serialize192\u2013341150lines; fifteen duration predicates345\u2013419 in five-line spans; operators420\u2013423/424\u2013427. Complete version and legacy migration branches read. Serializer matches existing150-line numeric freeze. =default constructor140 and remaining APIs are bodyless; default customValue={}429 is initialization. No macros/lambdas.",
+      "rationale": "Twenty-seven bodies: five metadata helpers96–99/100–108/109–112/113–126/127–131; four feature validators142–147/149–176/178–183/185–190; serialize192–341150lines; fifteen duration predicates345–419 in five-line spans; operators420–423/424–427. Complete version and legacy migration branches read. Serializer matches existing150-line numeric freeze. =default constructor140 and remaining APIs are bodyless; default customValue={}429 is initialization. No macros/lambdas.",
       "functions": [
         {
           "symbol": "Bonus::static bool isValidStatusTag(BonusStatusTag tag)#1",
@@ -11002,14 +11002,14 @@
           "end": 76
         }
       ],
-      "rationale": "Four function-like macro definitions, including enum/table generation, are measured: BONUS_VALUE15, BONUS_SOURCE19, BONUS_ITEM23 and separately redefined BONUS_ITEM45 (distinct #1/#2). Expansion sites26\u201340/48\u201350 are map entries, not extra definitions. One ordinary function BonusDuration::toJson56\u201376, all branches read; map initializers are not bodies.",
+      "rationale": "Four function-like macro definitions, including enum/table generation, are measured: BONUS_VALUE15, BONUS_SOURCE19, BONUS_ITEM23 and separately redefined BONUS_ITEM45 (distinct #1/#2). Expansion sites26–40/48–50 are map entries, not extra definitions. One ordinary function BonusDuration::toJson56–76, all branches read; map initializers are not bodies.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "0e837fa3f6ef2c9788684921cfebdcc6cf1efa17230d486b82fee3580beb1a8d"
     },
     "lib/bonuses/BonusEnum.h": {
       "sha256": "2fa5568628729ff960fe7da35eeae3f395e87633501abb6d8b04de0ed0530800",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Three function-like enum macros BONUS_NAME282/BONUS_SOURCE319/BONUS_VALUE333 are measured, despite non-runtime expansions. BONUS_LIST15\u2013243, BONUS_SOURCE_LIST247\u2013267 and BONUS_VALUE_LIST269\u2013277 are object-like lists and do not count as function-like units. All list entries and enums read; no emitted/handwritten function bodies, and toJson315 is a prototype. Recovery swallowing enum macro definitions is replaced by complete three-unit manual inventory.",
+      "rationale": "Three function-like enum macros BONUS_NAME282/BONUS_SOURCE319/BONUS_VALUE333 are measured, despite non-runtime expansions. BONUS_LIST15–243, BONUS_SOURCE_LIST247–267 and BONUS_VALUE_LIST269–277 are object-like lists and do not count as function-like units. All list entries and enums read; no emitted/handwritten function bodies, and toJson315 is a prototype. Recovery swallowing enum macro definitions is replaced by complete three-unit manual inventory.",
       "functions": [
         {
           "symbol": "#define BONUS_NAME#1",
@@ -11031,7 +11031,7 @@
     "lib/bonuses/BonusSelector.h": {
       "sha256": "0fb2f9f99feee477caca61a6cd9e0bc091b7b09f1773cde61bbd55e5de5b87e5",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Seventeen bodies including template/SFINAE constructor20\u201325, explicit empty nullptr constructor27\u201328, And/Or/Not30\u201335/36\u201340/42\u201346 with lambdas34/39/45, call/conversion operators48\u201351/53\u201356, CSelectFieldEqual constructor65\u201368 and call70\u201377 plus lambda73\u201376, and Turns/Days constructors84\u201386/101\u2013103 and call operators88\u201393/105\u2013116. =default constructor19 has no handwritten body; namespace Selector holds declarations only. Member-pointer/SFINAE syntax errors do not hide additional bodies. No function-like macros.",
+      "rationale": "Seventeen bodies including template/SFINAE constructor20–25, explicit empty nullptr constructor27–28, And/Or/Not30–35/36–40/42–46 with lambdas34/39/45, call/conversion operators48–51/53–56, CSelectFieldEqual constructor65–68 and call70–77 plus lambda73–76, and Turns/Days constructors84–86/101–103 and call operators88–93/105–116. =default constructor19 has no handwritten body; namespace Selector holds declarations only. Member-pointer/SFINAE syntax errors do not hide additional bodies. No function-like macros.",
       "functions": [
         {
           "symbol": "CSelector::CSelector(const T &t, //SFINAE trick -> include this c-tor in overload resolution only if parameter is class //(includes functors, lambdas) or function. Without that VC is going mad about ambiguities. typename std::enable_if_t < std::is_class_v<T> || std::is_function_v<T> > *dummy = nullptr) : TBase(t)#1",
@@ -11211,7 +11211,7 @@
     "lib/campaign/CampaignBonus.h": {
       "sha256": "469faa24340c9571bf37ab6261623fd25a70da3b03c3fa37ed03ad7a96776a7f",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Ten per-variant serialize templates24\u201328/37\u201342/50\u201354/62\u201366/74\u201378/86\u201390/99\u2013104/112\u2013116/124\u2013128/136\u2013140; CampaignBonus template constructor168\u2013171 with explicit empty body, getValue176\u2013180, getTargetedHero182\u2013196 plus visit lambda186\u2013193, isBonusForHero198\u2013207, getType209\u2013212 and serialize216\u2013219. Template lines and constexpr else/throw read. =default constructor166 and two DLL constructors173\u2013174 are bodyless; HasHero traits160/163 are structs not callable bodies. No macros.",
+      "rationale": "Ten per-variant serialize templates24–28/37–42/50–54/62–66/74–78/86–90/99–104/112–116/124–128/136–140; CampaignBonus template constructor168–171 with explicit empty body, getValue176–180, getTargetedHero182–196 plus visit lambda186–193, isBonusForHero198–207, getType209–212 and serialize216–219. Template lines and constexpr else/throw read. =default constructor166 and two DLL constructors173–174 are bodyless; HasHero traits160/163 are structs not callable bodies. No macros.",
       "functions": [
         {
           "symbol": "CampaignBonusSpell::void serialize(Handler &h)#1",
@@ -11308,7 +11308,7 @@
           "end": 20
         }
       ],
-      "rationale": "X-macro enumerator table ART_BEARER_LIST12\u201316 and enum class ArtBearer18\u201323. The maintained inventory metric includes function-like preprocessor macros even when their expansion is not a runtime function: ART_BEARER(x) at20 therefore receives its complete20\u201320 span. It expands to an enum entry only. ART_BEARER_LIST is an object-like macro, outside the function-like metric. ERROR20\u201321 is enum macro expansion syntax; no hidden runtime callable bodies.",
+      "rationale": "X-macro enumerator table ART_BEARER_LIST12–16 and enum class ArtBearer18–23. The maintained inventory metric includes function-like preprocessor macros even when their expansion is not a runtime function: ART_BEARER(x) at20 therefore receives its complete20–20 span. It expands to an enum entry only. ART_BEARER_LIST is an object-like macro, outside the function-like metric. ERROR20–21 is enum macro expansion syntax; no hidden runtime callable bodies.",
       "review": "ROOT-MANUAL-SPANS-10-20261015",
       "sha256": "a0b0da5dcbe78535621ae730fa97b1ea6d8c08ae55eaf8877eda39014475c18a"
     },
@@ -11335,7 +11335,7 @@
           "end": 102
         }
       ],
-      "rationale": "Exactly four inline bodies amountForCategory35\u201375, maximumUsesPerWeek77\u201380, amountForExternalCategory84\u201392, absoluteWeek97\u2013102. All switch/default/perk/guard branches inspected. PerkModifiers is data-only and modifiers={}36 is default initialization. No lambda or function-like macro definition.",
+      "rationale": "Exactly four inline bodies amountForCategory35–75, maximumUsesPerWeek77–80, amountForExternalCategory84–92, absoluteWeek97–102. All switch/default/perk/guard branches inspected. PerkModifiers is data-only and modifiers={}36 is default initialization. No lambda or function-like macro definition.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "7ea010d43ac61e1539e85c27bd052b97ded11ba12212595666fc3e8cf5ba41c9"
     },
@@ -11401,7 +11401,7 @@
     "lib/entities/hero/NewHorizonsPerkState.h": {
       "sha256": "8219b861ba050afe0d852eb18f06c9aff3d6c4a9838003ddf1f5e0558b590cb1",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Five bodies: PerkSelection serialize30\u201334, PerkOfferCandidate serialize60\u201366, OfferWeightContext constructors107/108\u2013110 with explicit empty bodies+initializer lists, PerkState serialize125\u2013152 with complete save/load conditionals. =default equality operators28/45/58 have no handwritten body. Remaining functions are prototypes and callback aliases types; defaults={} are initializers. No lambdas or function-like macros.",
+      "rationale": "Five bodies: PerkSelection serialize30–34, PerkOfferCandidate serialize60–66, OfferWeightContext constructors107/108–110 with explicit empty bodies+initializer lists, PerkState serialize125–152 with complete save/load conditionals. =default equality operators28/45/58 have no handwritten body. Remaining functions are prototypes and callback aliases types; defaults={} are initializers. No lambdas or function-like macros.",
       "functions": [
         {
           "symbol": "newHorizonsHeroes::PerkSelection::void serialize(Handler & h)#1",
@@ -11438,7 +11438,7 @@
           "end": 23
         }
       ],
-      "rationale": "Exactly one inline method implementation: updateFilteredFiles(std::function<bool(const std::string &)>)23\u201323 with empty body. Other members are prototypes, enum/data declarations or nested Entry fields; constructor default cacheRoot={}19 is an initializer, not another body.",
+      "rationale": "Exactly one inline method implementation: updateFilteredFiles(std::function<bool(const std::string &)>)23–23 with empty body. Other members are prototypes, enum/data declarations or nested Entry fields; constructor default cacheRoot={}19 is an initializer, not another body.",
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "a3ad0b3caff8435b00369edcfca97f26bb32fe3057deb49f4a787f5ac2d22b51"
     },
@@ -11451,7 +11451,7 @@
     "lib/filesystem/ResourcePath.cpp": {
       "sha256": "25e904614a2ca1d8470d6a22049cd720b6428ebd73bddde42b35e9ffba195dcc",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Nine ordinary functions17\u201320/22\u201325/27\u201347/49\u201353/55\u201359/61\u201366/68\u201385/87\u2013140/142\u2013178 plus function-like MAP_ENUM macro144\u2013144. Three constructor initializer lists and empty bodies count. Macro expansion148\u2013169 produces map entries, not extra functions; all map/guard branches read. No lambdas.",
+      "rationale": "Nine ordinary functions17–20/22–25/27–47/49–53/55–59/61–66/68–85/87–140/142–178 plus function-like MAP_ENUM macro144–144. Three constructor initializer lists and empty bodies count. Macro expansion148–169 produces map entries, not extra functions; all map/guard branches read. No lambdas.",
       "functions": [
         {
           "symbol": "static inline void toUpper(std::string & string)#1",
@@ -11508,7 +11508,7 @@
     "lib/json/JsonKeyExtractor.h": {
       "sha256": "316668bebbd536f0f1037415173e0ea4cd18f0c2179bf291d80f8842baf8ac31",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Ten out-of-class function-template/specialization definitions42\u201391/93\u2013100/102\u2013109/111\u2013118/120\u2013127/129\u2013133/135\u2013139/141\u2013145/147\u2013151/156\u2013160 plus filterKeys lambda71\u201374. Complete template<> lines included, full signatures distinguish overloads and return-type specializations. Class constructor/method declarations12\u201337 contain no other body. Variables={}17 is a default initializer. No function-like macros.",
+      "rationale": "Ten out-of-class function-template/specialization definitions42–91/93–100/102–109/111–118/120–127/129–133/135–139/141–145/147–151/156–160 plus filterKeys lambda71–74. Complete template<> lines included, full signatures distinguish overloads and return-type specializations. Class constructor/method declarations12–37 contain no other body. Variables={}17 is a default initializer. No function-like macros.",
       "functions": [
         {
           "symbol": "std::set<IdentifierType> JsonKeyExtractor::filterKeys(const JsonNode & value, const std::set<IdentifierType> & valuesSet, const Variables & variables)#1",
@@ -11570,7 +11570,7 @@
     "lib/logging/CLogger.cpp": {
       "sha256": "1469565563228a7fc73f406fbfb9e1284082d39cd254ef9fde3fe71c84d48751",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Fifty handwritten definitions including Android-only ELogLevel::toAndroid22\u201335, all logger/domain/manager/formatter/color/target methods50\u2013458, both setPattern overloads298/299, and conditional-initializer CLogConsoleTarget constructor343\u2013350 missed by parser recovery. All Android/iOS/desktop output and VCMI_MOBILE constructor branches read. CLoggerBase destructor47 and CLogManager ctor/dtor210/212 are =default without bodies, commented former destructor215\u2013218 is inactive text. No lambdas or function-like macros.",
+      "rationale": "Fifty handwritten definitions including Android-only ELogLevel::toAndroid22–35, all logger/domain/manager/formatter/color/target methods50–458, both setPattern overloads298/299, and conditional-initializer CLogConsoleTarget constructor343–350 missed by parser recovery. All Android/iOS/desktop output and VCMI_MOBILE constructor branches read. CLoggerBase destructor47 and CLogManager ctor/dtor210/212 are =default without bodies, commented former destructor215–218 is inactive text. No lambdas or function-like macros.",
       "functions": [
         {
           "symbol": "ELogLevel::int toAndroid(ELogLevel logLevel)#1",
@@ -11857,13 +11857,13 @@
           "end": 98
         }
       ],
-      "rationale": "Six inline implementations: nested Line constructor50\u201353, Text constructor63\u201366, VisualLogBuilder constructor77\u201383, addLine85\u201388 and two addText overloads90\u201393/95\u201398. Empty handwritten constructor bodies count and spans include initializer lists. Other virtuals, public methods and std::function parameter are declarations/types only; no additional lambda/function-like macro.",
+      "rationale": "Six inline implementations: nested Line constructor50–53, Text constructor63–66, VisualLogBuilder constructor77–83, addLine85–88 and two addText overloads90–93/95–98. Empty handwritten constructor bodies count and spans include initializer lists. Other virtuals, public methods and std::function parameter are declarations/types only; no additional lambda/function-like macro.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "264a8336fb9abf4b904e0bb331610da5cd1cc5ace7277317cd3b407cc6f8c83f"
     },
     "lib/mapping/MapReaderH3M.h": {
       "functions": [],
-      "rationale": "Only class data and prototypes, including constructor27 and method templates94\u201398. Default string context={}36/37 is not a body; template method declarations have semicolons, no implementation. No lambda/function-like macro definition.",
+      "rationale": "Only class data and prototypes, including constructor27 and method templates94–98. Default string context={}36/37 is not a body; template method declarations have semicolons, no implementation. No lambda/function-like macro definition.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "e3d2b848aed92282d616dfee795ed127cd2949e43cfe881b78e504207029f44b"
     },
@@ -12028,20 +12028,20 @@
           "end": 81
         }
       ],
-      "rationale": "Seven function definitions14\u201322/24\u201328/30\u201335/37\u201350/52\u201360/62\u201376/78\u201381 plus one nested async_accept lambda33\u201333. Constructor initializer list retained; both NH_PERF_EXPERIMENTS conditional regions18\u201321/65\u201367 are inside enclosing functions and introduce no additional callable. No function-like #defines.",
+      "rationale": "Seven function definitions14–22/24–28/30–35/37–50/52–60/62–76/78–81 plus one nested async_accept lambda33–33. Constructor initializer list retained; both NH_PERF_EXPERIMENTS conditional regions18–21/65–67 are inside enclosing functions and introduce no additional callable. No function-like #defines.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "7384540a274f35d61175956d44f40b4a33b77e38594590cc9bd5d100e391f8af"
     },
     "lib/serializer/CSerializer.h": {
       "functions": [],
-      "rationale": "is_serializeable template has aliases, two static test declarations21\u201323 and sizeof/decltype unevaluated expressions24; no test body. IBinaryReader/Writer have explicitly defaulted destructors31/39 (no handwritten body) and pure virtual read/write declarations32/40. Inventory contract measures implementations with bodies, excluding declarations/defaulted methods. ERROR22 is template/SFINAE declaration syntax, not hidden function code.",
+      "rationale": "is_serializeable template has aliases, two static test declarations21–23 and sizeof/decltype unevaluated expressions24; no test body. IBinaryReader/Writer have explicitly defaulted destructors31/39 (no handwritten body) and pure virtual read/write declarations32/40. Inventory contract measures implementations with bodies, excluding declarations/defaulted methods. ERROR22 is template/SFINAE declaration syntax, not hidden function code.",
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "c91033659480bf206d60f7257ca2d1b5737f86235fba318513869f1b0620c3cd"
     },
     "lib/serializer/JsonDeserializer.cpp": {
       "sha256": "2e88cc1b5d8ff0068d1c157b8fc830f76a7c719cdab8689109234d79a528fecf",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Fifteen ordinary definitions/overloads15\u201319/21\u201328/30\u201355/57\u201371/73\u201381/83\u201391/93\u2013104/106\u2013118/120\u2013128/130\u2013133/135\u2013138/140\u2013145/147\u2013190/192\u2013195/197\u2013211 and isBanned lambda178\u2013181. All fallback-resolution/LIC/permissive-restrictive and default-value branches read. operator[] calls are invocation syntax at recovery diagnostics, not extra callable definitions. No function-like macros.",
+      "rationale": "Fifteen ordinary definitions/overloads15–19/21–28/30–55/57–71/73–81/83–91/93–104/106–118/120–128/130–133/135–138/140–145/147–190/192–195/197–211 and isBanned lambda178–181. All fallback-resolution/LIC/permissive-restrictive and default-value branches read. operator[] calls are invocation syntax at recovery diagnostics, not extra callable definitions. No function-like macros.",
       "functions": [
         {
           "symbol": "JsonDeserializer::JsonDeserializer(const IInstanceResolver * instanceResolver_, const JsonNode & root_): JsonTreeSerializer(instanceResolver_, &root_, false, false)#1",
@@ -12128,7 +12128,7 @@
     "lib/serializer/JsonSerializer.cpp": {
       "sha256": "aa85b757c5e9c27ce84b88a18e2f717d309ef88cfa44c38a9ddc8f8599ff3e08",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Twenty-two ordinary definitions/overloads13\u201317/19\u201323/25\u201332/34\u201338/40\u201344/46\u201350/52\u201362/64\u201374/76\u201385/87\u201391/93\u201396/98\u2013104/106\u2013113/115\u2013122/124\u2013128/130\u2013134/136\u2013140/142\u2013146/148\u2013157/159\u2013169/171\u2013180/182\u2013193. All guards/loops and empty constructor body read. operator[](fieldName) calls at recovery sites are invocations, not hidden definitions. No lambdas or function-like macro definitions.",
+      "rationale": "Twenty-two ordinary definitions/overloads13–17/19–23/25–32/34–38/40–44/46–50/52–62/64–74/76–85/87–91/93–96/98–104/106–113/115–122/124–128/130–134/136–140/142–146/148–157/159–169/171–180/182–193. All guards/loops and empty constructor body read. operator[](fieldName) calls at recovery sites are invocations, not hidden definitions. No lambdas or function-like macro definitions.",
       "functions": [
         {
           "symbol": "JsonSerializer::JsonSerializer(const IInstanceResolver * instanceResolver_, JsonNode & root_): JsonTreeSerializer(instanceResolver_, &root_, true, false)#1",
@@ -12290,14 +12290,14 @@
           "end": 71
         }
       ],
-      "rationale": "Nine inline template-class members with handwritten bodies: getCurrent19\u201322, constructor28\u201332 (initializer list included), pop34\u201339, pushStruct41\u201344, pushArray46\u201349, pushArrayElement51\u201354, pushField56\u201359, and distinct pushObject overloads62\u201365/67\u201371. Template class declaration15\u201316 is not a callable and does not extend member spans. No function-like macros or lambdas.",
+      "rationale": "Nine inline template-class members with handwritten bodies: getCurrent19–22, constructor28–32 (initializer list included), pop34–39, pushStruct41–44, pushArray46–49, pushArrayElement51–54, pushField56–59, and distinct pushObject overloads62–65/67–71. Template class declaration15–16 is not a callable and does not extend member spans. No function-like macros or lambdas.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "a2ea6995b4b4b6bcf0f70e7b6d5126f99263b83c8b2dc4041a5c9bdf6f40d804"
     },
     "lib/serializer/JsonUpdater.cpp": {
       "sha256": "76b3407518af84fcecb85626d7cc2821ef2e393c7fe0abf79da32832c8509e6c",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Sixteen ordinary definitions/overloads17\u201321/23\u201328/30\u201343/45\u201359/61\u201364/66\u201369/71\u201377/79\u201385/87\u201398/100\u2013103/105\u2013108/110\u2013115/117\u2013163/165\u2013170/172\u2013177/179\u2013218 plus lambdas151\u2013154/202\u2013213. Comment-only/TODO implementation bodies30\u201343/45\u201359/61\u201364/66\u201369/87\u201398 still count in full; commented-out sample statements are not separate active definitions. All LIC/add-remove branches read. No function-like macros.",
+      "rationale": "Sixteen ordinary definitions/overloads17–21/23–28/30–43/45–59/61–64/66–69/71–77/79–85/87–98/100–103/105–108/110–115/117–163/165–170/172–177/179–218 plus lambdas151–154/202–213. Comment-only/TODO implementation bodies30–43/45–59/61–64/66–69/87–98 still count in full; commented-out sample statements are not separate active definitions. All LIC/add-remove branches read. No function-like macros.",
       "functions": [
         {
           "symbol": "JsonUpdater::JsonUpdater(const IInstanceResolver * instanceResolver_, const JsonNode & root_) : JsonTreeSerializer(instanceResolver_, &root_, false, true)#1",
@@ -12394,7 +12394,7 @@
     "lib/spells/CSpell.h": {
       "sha256": "efcab4bb196abe7409c96bc6135ff17dbb4a27b0057d1f529c10ec2eaee6d7ff",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "One inline getDamageElement body139\u2013139. Other methods/constructors/destructors and nested AnimationInfo/TargetInfo APIs are prototypes, with data fields only. independentPenetrationsPercent={}240 is a default initializer. No lambda or function-like macro definitions.",
+      "rationale": "One inline getDamageElement body139–139. Other methods/constructors/destructors and nested AnimationInfo/TargetInfo APIs are prototypes, with data fields only. independentPenetrationsPercent={}240 is a default initializer. No lambda or function-like macro definitions.",
       "functions": [
         {
           "symbol": "CSpell::SpellDamageElement getDamageElement() const#1",
@@ -12405,7 +12405,7 @@
     },
     "lib/spells/NewHorizonsElementalTerrain.h": {
       "functions": [],
-      "rationale": "Two DLL_LINKAGE function prototypes only: resolve20\u201321 and primaryElemental23. The {} at21 is a default std::string_view argument initializer, not a body/lambda. Forward declaration and namespace contain no callable implementations. missing:type_identifier21 does not hide an inline definition.",
+      "rationale": "Two DLL_LINKAGE function prototypes only: resolve20–21 and primaryElemental23. The {} at21 is a default std::string_view argument initializer, not a body/lambda. Forward declaration and namespace contain no callable implementations. missing:type_identifier21 does not hide an inline definition.",
       "review": "ROOT-MANUAL-SPANS-10-20261015",
       "sha256": "be7237545da45f7abbca02f8af83289c9add95f764bde3acd249c597bf6f6b2d"
     },
@@ -12430,14 +12430,14 @@
           "end": 42
         }
       ],
-      "rationale": "Exactly one inline implementation: townSelectionAllowed42\u201342. All other constructors/methods including two findNearestTown overloads are prototypes, and data members are not callable bodies. Default nullptr argument on the inline method is included in its one-line span. No function-like macro definitions.",
+      "rationale": "Exactly one inline implementation: townSelectionAllowed42–42. All other constructors/methods including two findNearestTown overloads are prototypes, and data members are not callable bodies. Default nullptr argument on the inline method is included in its one-line span. No function-like macro definitions.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "dcc343acca155d31ec7c71229a13dd58732837995419c25f2b17bd936bd42fa9"
     },
     "lib/texts/TextOperations.h": {
       "sha256": "74c3cb9610170e57b38db133eb3dea5c4c511cc6928b6405884c70d48ee24147",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "Two implementation templates formatMetric99\u2013117 and parseMetric119\u2013179; template lines included. Three parseMetric lambdas127/128/150\u2013153, including identically-shaped whitespace lambdas distinguished #1/#2. All switch/overflow/catch branches read. Namespace top17\u201396 contains prototypes only; default chrono seconds={} are initializers. No function-like macros.",
+      "rationale": "Two implementation templates formatMetric99–117 and parseMetric119–179; template lines included. Three parseMetric lambdas127/128/150–153, including identically-shaped whitespace lambdas distinguished #1/#2. All switch/overflow/catch branches read. Namespace top17–96 contains prototypes only; default chrono seconds={} are initializers. No function-like macros.",
       "functions": [
         {
           "symbol": "inline std::string TextOperations::formatMetric(Arithmetic number, int maxDigits)#1",
@@ -12481,7 +12481,7 @@
     "luascript/LuaCallWrapper.h": {
       "sha256": "9b3cda4f079be700d9f38d1bc08a99f5f5888ada8b3edb4a40173186e7395b71",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Thirteen bodies: LuaMethodWrapper helper templates98\u2013106/108\u2013116/118\u2013122/124\u2013128 and invokeImpl130\u2013162/invoke165\u2013177; LuaFunctionWrapper helpers210\u2013218/220\u2013228/230\u2013234/236\u2013240 and invokeImpl242\u2013263/invoke266\u2013278; LuaCallWrapper invoke287\u2013299. Template lines, constexpr branches, try/catch and final lua_error paths included. Pointer/function/const/noexcept trait specializations are data/types, not callable bodies. No macros/lambdas.",
+      "rationale": "Thirteen bodies: LuaMethodWrapper helper templates98–106/108–116/118–122/124–128 and invokeImpl130–162/invoke165–177; LuaFunctionWrapper helpers210–218/220–228/230–234/236–240 and invokeImpl242–263/invoke266–278; LuaCallWrapper invoke287–299. Template lines, constexpr branches, try/catch and final lua_error paths included. Pointer/function/const/noexcept trait specializations are data/types, not callable bodies. No macros/lambdas.",
       "functions": [
         {
           "symbol": "scripting::LuaMethodWrapper::static void fetchArg(LuaStack & stack, TupleType & t)#1",
@@ -12601,14 +12601,14 @@
           "end": 67
         }
       ],
-      "rationale": "Constructor22\u201347, fillArtifacts49\u201362, destructor64\u201367 and nested [this]() lambda29\u201333. The lambda signature shares a physical line with connect and its closing brace shares line33 with );, so complete physical span29\u201333 is retained. Signal-pointer/static_cast and slot loop expressions are not extra function definitions. No function-like macro definitions.",
+      "rationale": "Constructor22–47, fillArtifacts49–62, destructor64–67 and nested [this]() lambda29–33. The lambda signature shares a physical line with connect and its closing brace shares line33 with );, so complete physical span29–33 is retained. Signal-pointer/static_cast and slot loop expressions are not extra function definitions. No function-like macro definitions.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "26018d8c67693fcb9c7589f655b259cddb3426afa74c7136ebaab8a46cac7ad5"
     },
     "mapeditor/mainwindow.cpp": {
       "sha256": "a54ebfc920af710d17a89aa32cdea21fd06dcb9a62ae20f4e23b5a6bbd589e0f",
       "review": "IR-MANUAL-EDITOR-MAINWINDOW-a54ebfc9-20261015",
-      "rationale": "Complete handwritten physical source 1\u20131942 inspected. Exact 100 callable definitions: 81 EditorMainWindow methods including constructor/destructor, four AndroidInputOffsetFix/local Accessor methods, two local RecentFileDialog methods, three free helpers, ten lambdas. Android-only constructor/eventFilter and both Accessor::set definitions at 81,83,101,115 are included. Constructor initializer lines 273\u2013276 are included in 273\u2013483; RecentFileDialog initializer 653\u2013654 is included in 653\u2013677. Nested local class methods 653\u2013677 and 679\u2013682 overlap enclosing on_actionOpenRecent_triggered 644\u2013695, with lambda 657\u2013660 inside the nested constructor. All Android/mobile/template-editor conditional branches inspected. Eight tree-sitter diagnostics at 1011 arise exclusively from const-reference type spellings inside Qt string-based SIGNAL/SLOT macro payloads, not definitions. Control flow, catch handlers, GroupCat enum, initializer braces, Qt signal addresses, calls and preprocessor directives are not independent callables; no function-like macro definitions occur. All callable symbols and spans verified against whole-source inspection; no unresolved callable syntax found. Preserve all four numeric debt records verbatim; this coverage proposal provides no numeric approval, growth waiver, ceiling exception or runtime certification.",
+      "rationale": "Complete handwritten physical source 1–1942 inspected. Exact 100 callable definitions: 81 EditorMainWindow methods including constructor/destructor, four AndroidInputOffsetFix/local Accessor methods, two local RecentFileDialog methods, three free helpers, ten lambdas. Android-only constructor/eventFilter and both Accessor::set definitions at 81,83,101,115 are included. Constructor initializer lines 273–276 are included in 273–483; RecentFileDialog initializer 653–654 is included in 653–677. Nested local class methods 653–677 and 679–682 overlap enclosing on_actionOpenRecent_triggered 644–695, with lambda 657–660 inside the nested constructor. All Android/mobile/template-editor conditional branches inspected. Eight tree-sitter diagnostics at 1011 arise exclusively from const-reference type spellings inside Qt string-based SIGNAL/SLOT macro payloads, not definitions. Control flow, catch handlers, GroupCat enum, initializer braces, Qt signal addresses, calls and preprocessor directives are not independent callables; no function-like macro definitions occur. All callable symbols and spans verified against whole-source inspection; no unresolved callable syntax found. Preserve all four numeric debt records verbatim; this coverage proposal provides no numeric approval, growth waiver, ceiling exception or runtime certification.",
       "functions": [
         {
           "symbol": "AndroidInputOffsetFix::AndroidInputOffsetFix(QObject * parent) : QObject(parent)#1",
@@ -13115,7 +13115,7 @@
     "mapeditor/playerparams.cpp": {
       "sha256": "3612550c17afecc63696693fc7105a2a5e0843cd109754a68daf2e86f6cd257c",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Twelve ordinary definitions: constructor20\u2013111 (92lines), destructor113\u2013116 and slots118\u2013122/125\u2013129/132\u2013135/138\u2013141/144\u2013150/152\u2013168/171\u2013174/177\u2013186/189\u2013207/209\u2013233; nested town predicate lambda191\u2013196. All loops and conditional branches read. SIGNAL/SLOT63\u201364 are invocations, not macro definitions. Constructor matches existing numeric legacy freeze exactly; no new debt admission.",
+      "rationale": "Twelve ordinary definitions: constructor20–111 (92lines), destructor113–116 and slots118–122/125–129/132–135/138–141/144–150/152–168/171–174/177–186/189–207/209–233; nested town predicate lambda191–196. All loops and conditional branches read. SIGNAL/SLOT63–64 are invocations, not macro definitions. Constructor matches existing numeric legacy freeze exactly; no new debt admission.",
       "functions": [
         {
           "symbol": "PlayerParams::PlayerParams(MapController & ctrl, int playerId, QWidget *parent) : QWidget(parent), ui(new Ui::PlayerParams), controller(ctrl)#1",
@@ -13262,7 +13262,7 @@
           "end": 137
         }
       ],
-      "rationale": "Two function templates24\u201336/38\u201351, constructor64\u2013101 and three ordinary methods103\u2013108/110\u2013132/134\u2013137. Nine lambdas: template visitor26\u201335, six constructor visitors75\u201378/79\u201382/83\u201386/87\u201390/91\u201394/96\u201398, and accepted-handler visitors112\u2013114/122\u2013127. Full template signatures, constexpr alternative branches and constructor initializers included. overloaded helper struct53 and deduction guide54 declare composition/type deduction, not handwritten callable bodies. No function-like macros.",
+      "rationale": "Two function templates24–36/38–51, constructor64–101 and three ordinary methods103–108/110–132/134–137. Nine lambdas: template visitor26–35, six constructor visitors75–78/79–82/83–86/87–90/91–94/96–98, and accepted-handler visitors112–114/122–127. Full template signatures, constexpr alternative branches and constructor initializers included. overloaded helper struct53 and deduction guide54 declare composition/type deduction, not handwritten callable bodies. No function-like macros.",
       "review": "IR-MANUAL-BATCH4-3bcdc1ad-20261015",
       "sha256": "f3608bc5e8a717812cd911e21ac85dc967e9982e35cb996e0503d5da552e4415"
     },
@@ -13274,7 +13274,7 @@
           "end": 14
         }
       ],
-      "rationale": "One anonymous Nix function from args@ attribute-pattern signature (lines1\u20139) through derivation expression line14. The src default uses with/toSource/gitTrackedWith applications and attribute sets, not nested lambda definitions.",
+      "rationale": "One anonymous Nix function from args@ attribute-pattern signature (lines1–9) through derivation expression line14. The src default uses with/toSource/gitTrackedWith applications and attribute sets, not nested lambda definitions.",
       "review": "ROOT-MANUAL-SPANS-10-20261015",
       "sha256": "24a59cfbd905b40f9452a3bd507ab3ff27082b4d0fbc98c48279d9a438dc9f8b"
     },
@@ -13291,7 +13291,7 @@
           "end": 45
         }
       ],
-      "rationale": "Two anonymous Nix functions: outputs binding9\u201346 with inputs@ attribute-pattern signature9\u201313, and nested perSystem22\u201345 with argument pattern22\u201329 and let/in body29\u201345. Both branches of self?rev/dirtyRev conditionals33 are attribute sets, not lambdas. mkFlake/import/toSource/gitTrackedWith are applications. Outer file1\u201347 is an attribute set, not a third function.",
+      "rationale": "Two anonymous Nix functions: outputs binding9–46 with inputs@ attribute-pattern signature9–13, and nested perSystem22–45 with argument pattern22–29 and let/in body29–45. Both branches of self?rev/dirtyRev conditionals33 are attribute sets, not lambdas. mkFlake/import/toSource/gitTrackedWith are applications. Outer file1–47 is an attribute set, not a third function.",
       "review": "IR-MANUAL-NEXT20-9495a48b-20261015",
       "sha256": "fdb658dabccdb42cd6eb24275f101f3add5030e6b8f4c0868edeba96978db1f1"
     },
@@ -13303,14 +13303,14 @@
           "end": 21
         }
       ],
-      "rationale": "One anonymous Nix function: attribute-pattern arguments at1\u201312, mkDerivation expression at13\u201321. fetchsvn default source is function application to an attribute set, not a nested lambda; derivation fields are scalar/list/attribute values.",
+      "rationale": "One anonymous Nix function: attribute-pattern arguments at1–12, mkDerivation expression at13–21. fetchsvn default source is function application to an attribute set, not a nested lambda; derivation fields are scalar/list/attribute values.",
       "review": "ROOT-MANUAL-SPANS-10-20261015",
       "sha256": "7934725466d03d48278b22bbd8a8242072c1892e780d945b6b2dd0b015231498"
     },
     "nix/package.nix": {
       "sha256": "76747fe032f59272652e52438c3c0518722d3ba639013715219dca067748b532",
       "review": "IR-MANUAL-BATCH5-674fe125-20261015",
-      "rationale": "One anonymous Nix attribute-pattern function1\u2013145 with let/in body. All optional buildInputs/cmake/native input branches read. postFixup73\u201382 is an embedded shell command string (wrapProgram), not a Nix or shell function; interpolation75\u201381 calls makeBinPath and defines no lambda. No nested callable. This newly measured145-line existing unit separately requires numeric legacy-debt freeze review; no automatic exception.",
+      "rationale": "One anonymous Nix attribute-pattern function1–145 with let/in body. All optional buildInputs/cmake/native input branches read. postFixup73–82 is an embedded shell command string (wrapProgram), not a Nix or shell function; interpolation75–81 calls makeBinPath and defines no lambda. No nested callable. This newly measured145-line existing unit separately requires numeric legacy-debt freeze review; no automatic exception.",
       "functions": [
         {
           "symbol": "<lambda>({pkgs,src,libsquish,minizip,generator,docs,launcher,client,video,scripting})#1",
@@ -13327,7 +13327,7 @@
           "end": 14
         }
       ],
-      "rationale": "One anonymous Nix function from args@ attribute-pattern signature (lines1\u20139) through mkShell expression line14. The src default and import/attribute merges contain applications and attribute sets, not additional lambda definitions.",
+      "rationale": "One anonymous Nix function from args@ attribute-pattern signature (lines1–9) through mkShell expression line14. The src default and import/attribute merges contain applications and attribute sets, not additional lambda definitions.",
       "review": "ROOT-MANUAL-SPANS-10-20261015",
       "sha256": "5d17aabe7ae00bf26f13f3f87a1cffc1778fabec821256f2842ee8785cd4f135"
     },
@@ -13411,7 +13411,7 @@
     "tools/windows/Start-New-Horizons.ps1": {
       "sha256": "674f37ac905c805cba37cac3737eb0dc416ded62f5a771e014063b9e17fd58c4",
       "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Seven named functions17\u201329/31\u201346/48\u201365/67\u201388/90\u2013115/117\u2013146/148\u2013161, plus two Where-Object predicate scriptblocks256\u2013256/257\u2013257. All nested if/try/catch/finally/loop branches and top-level163\u2013337 read. Top-level try/finally and function control-flow braces are not extra callable definitions; @{} objects are hashtables, not scriptblocks. No scriptblocks hidden in strings or nested function declarations. No execution performed.",
+      "rationale": "Seven named functions17–29/31–46/48–65/67–88/90–115/117–146/148–161, plus two Where-Object predicate scriptblocks256–256/257–257. All nested if/try/catch/finally/loop branches and top-level163–337 read. Top-level try/finally and function control-flow braces are not extra callable definitions; @{} objects are hashtables, not scriptblocks. No scriptblocks hidden in strings or nested function declarations. No execution performed.",
       "functions": [
         {
           "symbol": "function Assert-PlainPath([string]$Path)#1",
@@ -14376,7 +14376,7 @@
           "end": 1038
         }
       ],
-      "rationale": "Entire1047-line header read. VCMI_SOUND_LIST14\u20131030 is an object-like macro (no parameter list after its name) containing only comments and VCMI_SOUND_NAME/VCMI_SOUND_FILE invocations; invocations do not define callables and expansions are not counted again. The only function-like macro definitions are VCMI_SOUND_NAME(x)1037 and VCMI_SOUND_FILE(y)1038, each one physical line, even though replacements only build enum entries. soundBase contains an enum1039\u20131044, no handwritten methods or lambdas. Raw parser's1017-line '#define VCMI_SOUND_NAME#1' is a false positive caused by recovery14\u201316, not a function or valid function-like macro. Manual names are ordinal1 for each actual definition. The obsolete numeric record for that parser artifact is removed under independent review IR-SOUND-FALSE-MACRO-RATCHET-20261015; the physical file freeze remains. No ceiling exception or source edit is authorized.",
+      "rationale": "Entire1047-line header read. VCMI_SOUND_LIST14–1030 is an object-like macro (no parameter list after its name) containing only comments and VCMI_SOUND_NAME/VCMI_SOUND_FILE invocations; invocations do not define callables and expansions are not counted again. The only function-like macro definitions are VCMI_SOUND_NAME(x)1037 and VCMI_SOUND_FILE(y)1038, each one physical line, even though replacements only build enum entries. soundBase contains an enum1039–1044, no handwritten methods or lambdas. Raw parser's1017-line '#define VCMI_SOUND_NAME#1' is a false positive caused by recovery14–16, not a function or valid function-like macro. Manual names are ordinal1 for each actual definition. The obsolete numeric record for that parser artifact is removed under independent review IR-SOUND-FALSE-MACRO-RATCHET-20261015; the physical file freeze remains. No ceiling exception or source edit is authorized.",
       "review": "IR-MANUAL-SOUND-ENTITY-46409b73-20261015",
       "sha256": "b510e3c2aec7a67625dbc8a06b7b94eca8c790f2bdb63511e118500f47b94f90"
     },
@@ -14493,7 +14493,7 @@
           "end": 1153
         }
       ],
-      "rationale": "Entire1181-line header read. Complete22 callable bodies: HeroTypeID118\u2013121,SlotID134\u2013137,FactionID277\u2013280; BuildingID nine methods322\u2013334/339\u2013343/344\u2013348/353\u2013364/366\u2013372/375\u2013385/388\u2013399/401\u2013406/408\u2013416; MapObjectID conversion618\u2013621; MapObjectSubID two explicit empty-body constructors629\u2013631/632\u2013634,two assignment overloads636\u2013640/642\u2013646,conversion652\u2013655,templated serializeIdentifier657\u2013669; ArtifactPosition conversion776\u2013779; SpellSchool serialize1065\u20131078; BuildingTypeUniqueID serialize1142\u20131153. Includes template signature lines per maintained metric. All22 genuine parser symbols/spans retained. Numerous enum/catalogue entries, inherited constructor using-declarations and function prototypes are not callable bodies. No locally defined function-like macros, lambdas, conditional callable branches or hidden definitions; diagnostics869/959 lie in SpellIDBase enum near deprecated enumerator/closing brace, not missing bodies. Maximum function14lines; existing1181-line physical file debt unchanged.",
+      "rationale": "Entire1181-line header read. Complete22 callable bodies: HeroTypeID118–121,SlotID134–137,FactionID277–280; BuildingID nine methods322–334/339–343/344–348/353–364/366–372/375–385/388–399/401–406/408–416; MapObjectID conversion618–621; MapObjectSubID two explicit empty-body constructors629–631/632–634,two assignment overloads636–640/642–646,conversion652–655,templated serializeIdentifier657–669; ArtifactPosition conversion776–779; SpellSchool serialize1065–1078; BuildingTypeUniqueID serialize1142–1153. Includes template signature lines per maintained metric. All22 genuine parser symbols/spans retained. Numerous enum/catalogue entries, inherited constructor using-declarations and function prototypes are not callable bodies. No locally defined function-like macros, lambdas, conditional callable branches or hidden definitions; diagnostics869/959 lie in SpellIDBase enum near deprecated enumerator/closing brace, not missing bodies. Maximum function14lines; existing1181-line physical file debt unchanged.",
       "review": "IR-MANUAL-SOUND-ENTITY-46409b73-20261015",
       "sha256": "886d53e54b076fc7f423cb7f51bbd83537d8446aafe1eb102c4f6fac99e13b23"
     },
@@ -17158,7 +17158,7 @@
     "mapeditor/templateeditor/templateeditor.cpp": {
       "sha256": "c434bc9a615a8b5edc517dff2b3ad33d438ce0614c824ac6b85fdfd441bd2bba",
       "review": "IR-MANUAL-TEMPLATEEDITOR-c434bc9a-20261015",
-      "rationale": "Complete physical source 1\u20131311 inspected, not a lexical function-name search. Exact 108 callable definitions: 87 TemplateEditor methods including constructor and destructor, plus 21 lambdas. All nested callbacks included, notably the setPlayersTable lambda 249\u2013289 and its four callbacks 266\u2013268, 269\u2013271, 273\u2013276, 284\u2013287. Constructor initializer list 36\u201337 belongs to its 36\u201379 span. Control-flow blocks, aggregate/initializer braces, pointer-to-member type declarators, function calls, signal addresses and preprocessor directives are not separate callables. No function-like macro definitions or catch handlers occur. Android conditional 920\u2013927 stays inside closeEvent 915\u2013931; its callMethod<void> is an invocation. Tree-sitter diagnostics at 266,269,488,493,498 are recovery within static_cast<void(QSpinBox::*)(int)> type-ids, not missing function definitions. All callable spans and parser-compatible symbols were verified against whole-source inspection. No unresolved callable syntax. This is coverage evidence only: all five existing numeric debt records remain verbatim, with no growth waiver, ceiling exception or gameplay certification.",
+      "rationale": "Complete physical source 1–1311 inspected, not a lexical function-name search. Exact 108 callable definitions: 87 TemplateEditor methods including constructor and destructor, plus 21 lambdas. All nested callbacks included, notably the setPlayersTable lambda 249–289 and its four callbacks 266–268, 269–271, 273–276, 284–287. Constructor initializer list 36–37 belongs to its 36–79 span. Control-flow blocks, aggregate/initializer braces, pointer-to-member type declarators, function calls, signal addresses and preprocessor directives are not separate callables. No function-like macro definitions or catch handlers occur. Android conditional 920–927 stays inside closeEvent 915–931; its callMethod<void> is an invocation. Tree-sitter diagnostics at 266,269,488,493,498 are recovery within static_cast<void(QSpinBox::*)(int)> type-ids, not missing function definitions. All callable spans and parser-compatible symbols were verified against whole-source inspection. No unresolved callable syntax. This is coverage evidence only: all five existing numeric debt records remain verbatim, with no growth waiver, ceiling exception or gameplay certification.",
       "functions": [
         {
           "symbol": "TemplateEditor::TemplateEditor(QWidget * parent): QWidget{parent}, ui(new Ui::TemplateEditor)#1",
@@ -18171,7 +18171,7 @@
       "sha256": "9b9cba6d63319d36dfc16d710b5a0d3ebbb8f60acccfb483f27c01626909afc4",
       "owner": "ai_engineer",
       "review": "IR-REGENERATION-BASELINE-REUSE-R2-20261024",
-      "rationale": "Exact shrinking5711\u21925525 after cohesive Regeneration forecast/shared action extraction. Same remaining routing owner; no inherited growth allowance or runtime certification.",
+      "rationale": "Exact shrinking5711→5525 after cohesive Regeneration forecast/shared action extraction. Same remaining routing owner; no inherited growth allowance or runtime certification.",
       "review_scope": "exact-completed-Regeneration-baseline-source-only-no-runtime-or-performance-acceptance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "AI engineer must extract a cohesive remaining per-candidate admission/continuation owner before substantive expansion. Preserve canonical/historical selector policy, ordered conditions/early exits, FP grouping, callbacks, mandatory Orders, rejection/packet/state and both RNG parity. This exact shrinking cap is evaluator5525/attempt1195; no future growth credit. Runtime acceptance is separate."
@@ -19383,7 +19383,7 @@
       "lines": 99,
       "sha256": "96fe1dd863267cded1d148167f626fb6a8a6894348759d9af4b32a783fd27ae5",
       "review": "IR-NUMERIC-DEBT-BATCH5-ad16ea9b-20261015",
-      "rationale": "Exact existing-byte numeric debt admission only: complete manually inventoried groovy function at physical lines 4\u2013102. Source is byte-identical to HEAD and cf2e62f9; no new/expanded behavior or source. Freeze current count only, no permanent size/behavior exception. Before an affected-area edit, the engine/build owner must extract cohesive dependency/configuration groups and lower the reviewed count, or obtain a separately reviewed bounded deferral; unchanged source remains pinned.",
+      "rationale": "Exact existing-byte numeric debt admission only: complete manually inventoried groovy function at physical lines 4–102. Source is byte-identical to HEAD and cf2e62f9; no new/expanded behavior or source. Freeze current count only, no permanent size/behavior exception. Before an affected-area edit, the engine/build owner must extract cohesive dependency/configuration groups and lower the reviewed count, or obtain a separately reviewed bounded deferral; unchanged source remains pinned.",
       "owner": "engine_engineer: build and packaging",
       "review_scope": "numeric-legacy-debt-freeze-only"
     },
@@ -20782,11 +20782,11 @@
       "kind": "exception",
       "lines": 1140,
       "owner": "ui_developer",
-      "rationale": "Exact no-growth compact learned-Skill label width74 to78px, ending at the existing perk-area boundary before its icon. Focused helper measures actual box width and full native font-chain line height; ownership, rank width, input, preferred-font restoration and legacy layout stay unchanged. Independently reviewed source/geometry; rendered acceptance remains pending.",
-      "review": "compact-skill-width-font-chain-independent-source-review",
-      "review_scope": "four-pixel-compact-learned-name-width-correction",
+      "rationale": "Only existing icon lookup argument adds immutable captured/authored perk label. File/function physical size unchanged; geometry, lifecycle, input, labels, rule capture and gameplay unchanged. Existing source concentration retained without growth; finite source-only metadata renewal independently reviewed.",
+      "review": "IR-ARCANE-BALLISTICS-VISUAL-BINDING-20261024",
+      "review_scope": "exact-no-growth-captured-label-perk-icon-call-only",
       "deferral": "UI owner retains exact1140-line no-growth bound. Before substantive expansion, extract cohesive presentation refresh with covered/inactive resize, hover, biography, artifact interaction and legacy-layout parity; preserve active-child ownership and deferred-repaint cancellation.",
-      "sha256": "011205cb0c0dff5ccdec6e268dc67632a95a99e4217c0040bf2b5e2556abdb7c",
+      "sha256": "cb43e584a7f119a42c86e5b76c8e12afc0e29de85d9ef6b4e20f252c4df385fe",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/CHeroWindow.cpp::CHeroWindow::CHeroWindow(const CGHeroInstance * hero) : CWindowObject(useNewHorizonsHeroLayout(hero) ? BORDERED : PLAYER_COLORED, ImagePath::builtin(useNewHorizonsHeroLayout(hero) ? \"newHorizonsHeroBackground\" : ENGINE->isRoeData() ? \"HeroScr3\" : \"HeroScr4\"))#1": {
@@ -20814,11 +20814,11 @@
       "kind": "exception",
       "lines": 396,
       "owner": "ui_developer",
-      "rationale": "Shrinking compact Skill-name routing through the existing measured label helper; SMALL then TINY fitting restores the preferred font on each refresh. Existing geometry, full help, click areas, ranks and gameplay remain unchanged. Independently reviewed exact source; rendering pending.",
-      "review": "compact-skill-label-independent-source-review",
-      "review_scope": "measured-compact-skill-name-font-fit-only",
+      "rationale": "Only existing icon lookup argument adds immutable captured/authored perk label. File/function physical size unchanged; geometry, lifecycle, input, labels, rule capture and gameplay unchanged. Existing source concentration retained without growth; finite source-only metadata renewal independently reviewed.",
+      "review": "IR-ARCANE-BALLISTICS-VISUAL-BINDING-20261024",
+      "review_scope": "exact-no-growth-captured-label-perk-icon-call-only",
       "deferral": "UI owner must separate cohesive presentation-label refresh from artifact/tactics interaction before further substantive growth. Preserve active-window cursor ownership, covered redraw behavior, full hover/biography, preferred-font restoration and legacy-layout transitions. Exact396-line no-growth exception only.",
-      "sha256": "0bcb44ccc11f8bb986d84d8688b1c2d1cba7f32cda978beed5799e9dca21b4d9",
+      "sha256": "ad38f9e4679242122e98b2da1b7d2982496f978eca35ac73dd366dc04221711a",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::restoreLegacyLayout()#1": {
@@ -20966,11 +20966,12 @@
       "kind": "exception",
       "lines": 3066,
       "owner": "ui_developer",
-      "rationale": "Exact no-growth freeze at 3066 physical lines retained. Bounded urgent correctness exception changes only the University confirmation heading translation index from Advanced to Basic, matching the existing authoritative Basic purchase and other dialog labels. No gameplay, layout, ownership or size change. This amendment does not approve unrelated structural debt.",
-      "review": "IR-UNIVERSITY-BASIC-RANK-LABEL-20261021",
-      "review_scope": "urgent-one-token-ui-correctness-zero-growth-deferral",
-      "sha256": "b9ce653291245908e6ab85e99bd37854b95eb08e6a6e794cc9d2b54ac8c0500d",
-      "deferral": "UI developer owns extraction of CUniversityWindow/CUnivConfirmWindow and cohesive helpers into a focused UniversityWindow component before expansion. Preserve interfaces, original art/layout and command submission. Acceptance requires local compile, existing regression coverage and rendered offer/acquired rank, tuition/help, affordability/payment, cancellation and close checks; decrease this exact3066-line baseline. No unrelated GUI extraction is approved."
+      "rationale": "Only existing icon lookup argument adds immutable captured/authored perk label. File/function physical size unchanged; geometry, lifecycle, input, labels, rule capture and gameplay unchanged. Existing source concentration retained without growth; finite source-only metadata renewal independently reviewed.",
+      "review": "IR-ARCANE-BALLISTICS-VISUAL-BINDING-20261024",
+      "review_scope": "exact-no-growth-captured-label-perk-icon-call-only",
+      "sha256": "93149cedd8b0fd7e9710953cd4725a2531f38a51f46b4d0f304a49022a24d237",
+      "deferral": "UI developer owns extraction of CUniversityWindow/CUnivConfirmWindow and cohesive helpers into a focused UniversityWindow component before expansion. Preserve interfaces, original art/layout and command submission. Acceptance requires local compile, existing regression coverage and rendered offer/acquired rank, tuition/help, affordability/payment, cancellation and close checks; decrease this exact3066-line baseline. No unrelated GUI extraction is approved.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/GUIClasses.cpp::CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_, int leftAmount_, int rightAmount_, CSplitWindowOwner leftOwnerInfo, CSplitWindowOwner rightOwnerInfo) : CWindowObject(0, splitDialogBackgroundImage()), callback(callback_), leftAmount(leftAmount_), rightAmount(rightAmount_), initialLeftAmount(leftAmount_), initialRightAmount(rightAmount_), splitCreature(creature), leftArmy(leftOwnerInfo.army), rightArmy(rightOwnerInfo.army), leftMin(leftMin_), rightMin(rightMin_)#1": {
       "kind": "legacy",
@@ -21018,13 +21019,15 @@
       "sha256": "80b8809899fc34a2250dd292c8873a59cad98b99e62dadca2f6d1eae80cd2c80"
     },
     "client/windows/GUIClasses.cpp::void CLevelWindow::createSkillBox()#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 133,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 133 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "dd76e954e3dd342a79b958ef53fde553212ef16d12ceb9e1ce42ef0dd17327bb"
+      "rationale": "Only existing icon lookup argument adds immutable captured/authored perk label. File/function physical size unchanged; geometry, lifecycle, input, labels, rule capture and gameplay unchanged. Existing source concentration retained without growth; finite source-only metadata renewal independently reviewed.",
+      "review": "IR-ARCANE-BALLISTICS-VISUAL-BINDING-20261024",
+      "review_scope": "exact-no-growth-captured-label-perk-icon-call-only",
+      "sha256": "e5c67e20fd464d11b9e3d901765a02ebeadb53d7e694c60b00bd4302fbf3438d",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI developer owns extraction of the read-only level-up choice-panel projection and widget construction into a focused LevelUpChoicePanel owner before substantive affected-area growth. Accept immutable saved Skill/perk offers, current rank/read-only hero context, page selection and selection callbacks; return owned components, category boxes and original-index display order while CLevelWindow retains query/command submission. Preserve up-to-two choices per category, legacy/extended paging, current versus offered rank, captured names/icons/help, category ordering, mutually exclusive selection, shortcuts, default first selection, parent/child event lifetime and deferred repaint cancellation. Require maintained layout/rank guards, native legal-selection/current-historical offer checks and isolated rendered page/selection/close/reopen parity. Exact133-line no-growth allowance covers only the single captured-name icon argument; no future growth or general structural clearance."
     },
     "client/windows/GUIClasses.cpp::void CRecruitmentWindow::availableCreaturesChanged()#1": {
       "kind": "legacy",
@@ -21058,20 +21061,22 @@
       "kind": "exception",
       "lines": 515,
       "owner": "ui_developer",
-      "rationale": "Independently reviewed no-growth urgent icon-consumer correction replaces the bare bitmap request with the existing animation descriptor/frame-zero widget. Eligibility, input ownership and gameplay are unchanged. Exact size freeze only: no structural clearance, future growth permission or rendered acceptance.",
-      "review": "independent-source-review-perk-development-animation-consumer-v1",
-      "review_scope": "bounded-no-growth-urgent-consumer-fix-with-panel-extraction-deferral",
-      "sha256": "ee98b038d59fd2320d9723fb7fe17043af7ec010b9cdbe5b510dbfa18500c936"
+      "rationale": "Only existing icon lookup argument adds immutable captured/authored perk label. File/function physical size unchanged; geometry, lifecycle, input, labels, rule capture and gameplay unchanged. Existing source concentration retained without growth; finite source-only metadata renewal independently reviewed.",
+      "review": "IR-ARCANE-BALLISTICS-VISUAL-BINDING-20261024",
+      "review_scope": "exact-no-growth-captured-label-perk-icon-call-only",
+      "sha256": "7d0bab2f970da5b01bc9d31d811fd428f9c0b06d4f594d66364cb28de33bdb13",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/HeroGrowthWindow.cpp::void HeroGrowthWindow::refresh(const CGHeroInstance & hero)#1": {
       "deferral": "Extract read-only perk-skill panel construction into a focused UI presentation owner returning card widgets; preserve event lifetime, selection/page state, positions and native rendered equivalence. Remaining 397-line refresh/515-line window remains debt; future affected expansion requires characterization and independent review, not restored old limits.",
       "kind": "exception",
       "lines": 397,
       "owner": "ui_developer",
-      "rationale": "Independently reviewed no-growth urgent icon-consumer correction replaces the bare bitmap request with the existing animation descriptor/frame-zero widget. Eligibility, input ownership and gameplay are unchanged. Exact size freeze only: no structural clearance, future growth permission or rendered acceptance.",
-      "review": "independent-source-review-perk-development-animation-consumer-v1",
-      "review_scope": "bounded-no-growth-urgent-consumer-fix-with-panel-extraction-deferral",
-      "sha256": "42cacca6c57ee840149f556d0c42fa5055c6967df1b82c409c50015420387e40"
+      "rationale": "Only existing icon lookup argument adds immutable captured/authored perk label. File/function physical size unchanged; geometry, lifecycle, input, labels, rule capture and gameplay unchanged. Existing source concentration retained without growth; finite source-only metadata renewal independently reviewed.",
+      "review": "IR-ARCANE-BALLISTICS-VISUAL-BINDING-20261024",
+      "review_scope": "exact-no-growth-captured-label-perk-icon-call-only",
+      "sha256": "c240c157d91fc5077e86fdac4dafdacb74d811c77d09785338ca70f2866ef55c",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/windows/HeroSkillOddsWindow.cpp::HeroSkillOddsWindow::HeroSkillOddsWindow(const CGHeroInstance & hero) : CWindowObject(BORDERED)#1": {
       "kind": "legacy",
@@ -21112,13 +21117,15 @@
       "sha256": "5bc33e4eb6a5b6ccab25c1c8c994f436ab6f4494fcf1781837c2fa242130a256"
     },
     "client/windows/NewHorizonsPerkBrowser.cpp::NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, const std::string & skillId) : CWindowObject(BORDERED, ImagePath::builtin(\"newHorizonsOrdersBackground.png\"))#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 115,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 115 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "1c0d3beffbb3660d5dabbc1234d31036807445ce5190139802d4ca8982fd6eb7"
+      "rationale": "Only existing icon lookup argument adds immutable captured/authored perk label. File/function physical size unchanged; geometry, lifecycle, input, labels, rule capture and gameplay unchanged. Existing source concentration retained without growth; finite source-only metadata renewal independently reviewed.",
+      "review": "IR-ARCANE-BALLISTICS-VISUAL-BINDING-20261024",
+      "review_scope": "exact-no-growth-captured-label-perk-icon-call-only",
+      "sha256": "40e757f5b432965f5a02bba2c4148aae68c52ba6869b3c339af5e9dc92604a4a",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI developer owns extraction of read-only perk rank-column/card construction into a focused PerkBrowserCards presentation owner before substantive affected-area growth. Accept the saved SkillDefinition/PerkState read model, current Skill rank and explicit native geometry; return parent-owned widgets and popup-only help values without retaining borrowed temporary definitions or mutating gameplay. Preserve three rank columns, ten-perk catalogue and tier/eligibility captions, current/historical captured label/icon identity, exact card positions/font/colors, learned state, lazy popup creation, child ownership, Close/Escape and shadow behavior. Require maintained browser guards, native saved-catalogue/current-historical icon checks and isolated rendered open/right-click/close/reopen/legacy-absence parity. Exact115-line no-growth allowance covers only the single captured-name icon argument; no future growth or general structural clearance."
     },
     "client/windows/QuickRecruitmentWindow.cpp::void QuickRecruitmentWindow::setCreaturePurchaseCards()#1": {
       "kind": "legacy",
@@ -21174,7 +21181,7 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "5bbad86f2e944dd32700f9bc3415065b2dbdc0c91fe158808a3c1814068a5050"
     },
-    "client/windows/wiki/WikiCreatureContent.cpp::std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (complex by nature \u2013 many creature attributes) CViewport & viewport, const CCreature * creature, int viewportWidth, bool blueStyle, WikiCreatureNavigateCallback navigateCallback)#1": {
+    "client/windows/wiki/WikiCreatureContent.cpp::std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (complex by nature – many creature attributes) CViewport & viewport, const CCreature * creature, int viewportWidth, bool blueStyle, WikiCreatureNavigateCallback navigateCallback)#1": {
       "kind": "legacy",
       "lines": 466,
       "owner": "ui_developer",
@@ -21900,13 +21907,13 @@
     "lib/CMakeLists.txt": {
       "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact declarative registry bound only. Keep behavior in focused compiled owners; future registry edits need renewed exact review and grant no executable growth allowance. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth.",
       "kind": "exception",
-      "lines": 1352,
+      "lines": 1354,
       "owner": "engine_engineer",
-      "rationale": "Mechanical exact registrations for remaining-family parser/presentation/query, primary transition and typed preflight owners; no target flags/dependencies or artifact selection changed. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "review_status": "SOURCE_AND_METADATA_CLEAR",
-      "sha256": "81b35dfe3aa8442919a7d577423867a7ee929cd46db5f2bdd15e7cc81f1dfee2"
+      "rationale": "Only two mechanical file registrations for the focused retained-art owner,1352to1354lines. Existing target flags, link dependencies, resource selection and registry order stay unchanged. Finite source-only mechanical exception independently reviewed; no executable growth permission.",
+      "review": "IR-FINAL14-RETAINED-SPECIALTY-20261024",
+      "review_scope": "exact-two-retained-art-owner-source-and-header-registrations-only",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "sha256": "a20ba3c6e9fef4bbf61c55eaa99a6769375cca38a180902bbd4d5a9337ca2e4f"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -22726,11 +22733,11 @@
       "kind": "exception",
       "lines": 133,
       "owner": "ui_developer",
-      "rationale": "Existing remaining-spell/damage/non-damage/skill resolution order and captured bonus gates are unchanged. One final dispatch calls the focused read-only resource-artwork helper only after all existing branches fall through. Exact 133-line function remains below150; independent resource source review permits only this one-line renewal and retains the UI extraction obligation. No gameplay, save fields, translated-name matching or historical producer repair. Native/rendered acceptance is separate.",
-      "review": "resource-specialty-independent-source-review-20261024",
-      "review_scope": "resource-family-final-dispatch-only",
+      "rationale": "Exact 133-line resolver stays unchanged except the final read-only dispatch to the focused retained-specialty-artwork helper. Existing20-line Resource helper extracted byte-identically; Halon typed retained bonus and Solmyr authored Master spell artwork only. No dispatcher growth, gameplay, save fields, names, math or captured-context guard changes. Exact source/baseline renewal independently reviewed; native/rendered acceptance separate.",
+      "review": "IR-FINAL14-RETAINED-SPECIALTY-20261024",
+      "review_scope": "resource-helper-extraction-and-retained-artwork-final-dispatch-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "7b11d5de170dc36132fcdea65217c7ea91147c659600fade69b6c5ed366a4694"
+      "sha256": "2172eba7b65bc06ad19b82d2f29b218529077402d85c50e08e4a7d07b4e34418"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "kind": "exception",
@@ -25212,7 +25219,7 @@
       "lines": 145,
       "sha256": "e6fe38941aba809becf1011ee192dc90594c6061ec53aefe2918bf899914d79e",
       "review": "IR-NUMERIC-DEBT-BATCH5-ad16ea9b-20261015",
-      "rationale": "Exact existing-byte numeric debt admission only: complete manually inventoried nix function at physical lines 1\u2013145. Source is byte-identical to HEAD and cf2e62f9; no new/expanded behavior or source. Freeze current count only, no permanent size/behavior exception. Before an affected-area edit, the engine/build owner must extract cohesive dependency/configuration groups and lower the reviewed count, or obtain a separately reviewed bounded deferral; unchanged source remains pinned.",
+      "rationale": "Exact existing-byte numeric debt admission only: complete manually inventoried nix function at physical lines 1–145. Source is byte-identical to HEAD and cf2e62f9; no new/expanded behavior or source. Freeze current count only, no permanent size/behavior exception. Before an affected-area edit, the engine/build owner must extract cohesive dependency/configuration groups and lower the reviewed count, or obtain a separately reviewed bounded deferral; unchanged source remains pinned.",
       "owner": "engine_engineer: build and packaging",
       "review_scope": "numeric-legacy-debt-freeze-only"
     },
@@ -26551,7 +26558,7 @@
       "sha256": "325f276ff6c90a72e96736ea3aabc9daf45a11dc981a81ba18a17d831e684c47",
       "owner": "ai_engineer",
       "review": "IR-REGENERATION-BASELINE-REUSE-R2-20261024",
-      "rationale": "Exact1197\u21921195 shrinking logical candidate evaluator; appended optional Regeneration test control deliberately renews its changed symbol, not an inherited allowance. Distinct casts, candidate order and forecasts remain.",
+      "rationale": "Exact1197→1195 shrinking logical candidate evaluator; appended optional Regeneration test control deliberately renews its changed symbol, not an inherited allowance. Distinct casts, candidate order and forecasts remain.",
       "review_scope": "exact-completed-Regeneration-baseline-source-only-no-runtime-or-performance-acceptance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "AI engineer must extract a cohesive remaining per-candidate admission/continuation owner before substantive expansion. Preserve canonical/historical selector policy, ordered conditions/early exits, FP grouping, callbacks, mandatory Orders, rejection/packet/state and both RNG parity. This exact shrinking cap is evaluator5525/attempt1195; no future growth credit. Runtime acceptance is separate."

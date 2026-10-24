@@ -10,6 +10,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 import import_new_horizons_art_wave as importer
+from .nhart_perk_presentations import header_before_perk_presentation, validate_perk_presentation
 from .nhart_test_resources import later_art_waves, later_art_resources, read_resource, open_image, verified_index, entries_before_wave, resource_before_wave
 
 
@@ -27,6 +28,9 @@ def config_at_wave(config, waves, index, config_path):
 
 def perk_header_history_forms(header):
     """Retain exact hashes across the approved inline-map/table extraction."""
+    previous = header_before_perk_presentation(header)
+    if previous != header:
+        return (header,) + perk_header_history_forms(previous)
     if 'newHorizonsPerkIconBindings' not in header:
         return (header,)
     # Undo only the known syntactic extraction. Binding bytes/order and the
@@ -214,7 +218,7 @@ class ArtAdditionsTest(unittest.TestCase):
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         current_ids = {row['id'] for skill in roster['skills'].values() for row in skill['perks']}
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) for name in row['resources']}
             self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
                 self.assertIn(row['id'], current_ids); self.assertEqual(lookup[row['id']], row['icon44'])
@@ -229,6 +233,27 @@ class ArtAdditionsTest(unittest.TestCase):
                     for index, state in enumerate(('normal', 'pressed', 'disabled', 'highlighted'))])
                 for frame in frames:
                     self.assertEqual(open_image('SPRITES/' + frame['file']).size, (44, 44))
+
+    def test_optional_perk_presentations_preserve_named_condition_and_historical_shield(self):
+        for wave in self.waves:
+            for row in wave.get('perkPresentations', []):
+                validate_perk_presentation(row, self.header)
+                stem = row['icon44']
+                frames = json.loads(read_resource('SPRITES/' + stem + '.json'))['images']
+                self.assertEqual(frames, [{'group': 0, 'frame': index, 'file': stem + '_' + state + '.png'}
+                    for index, state in enumerate(('normal', 'pressed', 'disabled', 'highlighted'))])
+                for name in row['resources']:
+                    if name.endswith('.json'):
+                        continue
+                    image = open_image(name)
+                    self.assertEqual(image.mode, 'RGBA'); self.assertFalse(image.info)
+                    self.assertEqual(image.size, (32, 32) if name.endswith('_32.png') else (44, 44))
+                    self.assertEqual(image.getchannel('A').getextrema(), (0, row['alphaMaximum32'] if name.endswith('_32.png') else row['alphaMaximum44']))
+                for size in (44, 32):
+                    name = 'SPRITES/' + stem + ('_32' if size == 32 else '') + '.png'
+                    self.assertEqual(hashlib.sha256(read_resource(name)).hexdigest(), row['native' + str(size) + 'Sha256'])
+                for suffix in ('.json', '_normal.png', '_pressed.png', '_disabled.png', '_highlighted.png'):
+                    self.assertIn('SPRITES/' + row['historicalIcon44'] + suffix, verified_index())
 
     def test_header_baseline_and_status_only_graphics(self):
         for index, wave in enumerate(self.waves):

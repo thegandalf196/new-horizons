@@ -218,6 +218,7 @@ set(test_SRCS
 		hero/NewHorizonsPerkStateTest.cpp
 		hero/NewHorizonsPerkAvailabilityTest.cpp
 		hero/HeroGrowthPerkPresentationTest.cpp
+		hero/NewHorizonsPerkIconPresentationTest.cpp
 		hero/NewHorizonsPerkOfferWireTest.cpp
 		hero/NewHorizonsLogisticsMasteryStateTest.cpp
 		hero/NewHorizonsLogisticsLevelWireTest.cpp
@@ -461,6 +462,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSpecialtyArtBindingTest.cpp
 		server/battles/NewHorizonsResourceSpecialtyArtTest.cpp
 		server/battles/NewHorizonsSelectedSpecialtyArtTest.cpp
+		server/battles/NewHorizonsRetainedSpecialtyArtTest.cpp
 		server/battles/NewHorizonsSpecialtyCapturedPresentationTest.cpp
 		server/battles/NewHorizonsCastleCreatureStatsTest.cpp
 		server/battles/NewHorizonsCanonicalCreatureGrowthTest.cpp

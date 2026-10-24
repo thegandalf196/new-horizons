@@ -21,7 +21,8 @@ enum class SpecialtyArtworkFamily
 	Creature,
 	Spell,
 	Skill,
-	Resource
+	Resource,
+	Bonus
 };
 
 struct SpecialtyArtworkBinding
@@ -31,7 +32,7 @@ struct SpecialtyArtworkBinding
 	std::string_view target;
 	std::string_view stem;
 };
-inline constexpr std::array<SpecialtyArtworkBinding, 105> specialtyArtworkBindings = {{
+inline constexpr std::array<SpecialtyArtworkBinding, 119> specialtyArtworkBindings = {{
 	{"core:monere", SpecialtyArtworkFamily::Creature, "new-horizons:wisp", "MonereWispLine"},
 	{"core:pasis", SpecialtyArtworkFamily::Creature, "new-horizons:wisp", "PasisWispLine"},
 	{"core:gerwulf", SpecialtyArtworkFamily::Creature, "core:ballista", "GerwulfBallistaLine"},
@@ -137,6 +138,20 @@ inline constexpr std::array<SpecialtyArtworkBinding, 105> specialtyArtworkBindin
 	{"core:josephine", SpecialtyArtworkFamily::Creature, "core:ironGolem", "JosephineGolemLine"},
 	{"core:torosar", SpecialtyArtworkFamily::Creature, "core:ballista", "TorosarBallistaLine"},
 	{"core:fafner", SpecialtyArtworkFamily::Creature, "core:naga", "FafnerNagaLine"},
+	{"core:iona", SpecialtyArtworkFamily::Creature, "core:genie", "IonaGenieLine"},
+	{"core:halon", SpecialtyArtworkFamily::Bonus, "METAMAGIC_USES_PER_COMBAT", "HalonMetamagicAdept"},
+	{"core:theodorus", SpecialtyArtworkFamily::Creature, "core:mage", "TheodorusMageLine"},
+	{"core:solmyr", SpecialtyArtworkFamily::Spell, "new-horizons:masterChainLightning", "SolmyrChainLightning"},
+	{"core:lorelei", SpecialtyArtworkFamily::Creature, "core:harpy", "LoreleiHarpyLine"},
+	{"core:marius", SpecialtyArtworkFamily::Creature, "core:demon", "MariusDemonLine"},
+	{"core:brissa", SpecialtyArtworkFamily::Spell, "core:haste", "BrissaHaste"},
+	{"core:aenain", SpecialtyArtworkFamily::Spell, "new-horizons:frailty", "AenainFrailty"},
+	{"core:olema", SpecialtyArtworkFamily::Spell, "new-horizons:frailty", "OlemaFrailty"},
+	{"core:xsi", SpecialtyArtworkFamily::Spell, "new-horizons:frailty", "XsiFrailty"},
+	{"core:astral", SpecialtyArtworkFamily::Spell, "new-horizons:phantomArmy", "AstralPhantomArmy"},
+	{"core:cyra", SpecialtyArtworkFamily::Spell, "core:haste", "CyraHaste"},
+	{"core:rashka", SpecialtyArtworkFamily::Creature, "core:efreet", "RashkaEfreetLine"},
+	{"core:labetha", SpecialtyArtworkFamily::Spell, "new-horizons:guardianSpirit", "LabethaGuardianSpirit"},
 }};
 
 /// Presentation only. Call after the captured mechanic has resolved successfully;

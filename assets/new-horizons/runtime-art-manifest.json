@@ -53150,6 +53150,636 @@
       "origin": "selected-model-generated-own-specialty-native-export",
       "selection": "root-selected-provisional-seventeen-specialty-pairs-future-phase2-2026-10-24",
       "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_ballistics.json",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_ballistics.json",
+      "size": 437,
+      "sha256": "59cce2d0be73c706148a6b8024552a544143087815164dc67c0d738f276557f1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-perk-foreground-family",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_ballistics.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_ballistics.png",
+      "size": 2578,
+      "sha256": "023a81ff615330d3641d8be2b7857fd976c84592b1d8f832d11cf06c3e787d7c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-perk-foreground-family",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_ballistics_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_ballistics_32.png",
+      "size": 1520,
+      "sha256": "120d3fdbda246f6781b1105b0907ed0d3ebf01de22b03e1a374e814ec7cd60a9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-perk-foreground-family",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_ballistics_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_ballistics_disabled.png",
+      "size": 2423,
+      "sha256": "b0f6aa997be6feaebfd41a3fb5f1fe9de3882d6d758419b172e91b365d428d5c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-perk-foreground-family",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_ballistics_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_ballistics_highlighted.png",
+      "size": 2612,
+      "sha256": "1d28b9ff77fcb291391280e65666e84e53337378920a4932d8bed06e2c2c0ba1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-perk-foreground-family",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_ballistics_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_ballistics_normal.png",
+      "size": 2578,
+      "sha256": "023a81ff615330d3641d8be2b7857fd976c84592b1d8f832d11cf06c3e787d7c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-perk-foreground-family",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/NH_perk_arcane_ballistics_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_arcane_ballistics_pressed.png",
+      "size": 2506,
+      "sha256": "f71107fff573a463e50d429a3477653f8dcf99eb3662ea164d4deb03d5d91f1e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-model-generated-own-perk-foreground-family",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AenainFrailty/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AenainFrailty/32.json",
+      "size": 98,
+      "sha256": "85d4a49b628f93bf320197152e4e1a9a04af49490e466654b69d231cae59a735",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AenainFrailty/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AenainFrailty/44.json",
+      "size": 98,
+      "sha256": "5d4bfceaaa7ae79f80850e5692af37a04eb4cc08386b02b88fee620443719bf8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AenainFrailty/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AenainFrailty/icon-32.png",
+      "size": 2047,
+      "sha256": "2d36bf49afeefff441307cd76dc599c780b6d9d1c1e06d371c20e4e764323b63",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AenainFrailty/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AenainFrailty/icon-44.png",
+      "size": 3534,
+      "sha256": "96ea1a3f3862bb66926c62f613533cb4f57882e7fd771531df5de0610af7d2dd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AstralPhantomArmy/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AstralPhantomArmy/32.json",
+      "size": 102,
+      "sha256": "34ccfd07ff691e829213580472e827ebae8185d1a785ae1b6b90b4adc50d7ade",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AstralPhantomArmy/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AstralPhantomArmy/44.json",
+      "size": 102,
+      "sha256": "a46d0921ce5a32c4e31cf6c36f32a5d718c2550073f70ec57173669bca5cc958",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AstralPhantomArmy/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AstralPhantomArmy/icon-32.png",
+      "size": 2269,
+      "sha256": "955100ba5d3062fe833bbdb78c47b7c4dd4a6fc9c9b6d81517d87370dfb3d9ff",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AstralPhantomArmy/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AstralPhantomArmy/icon-44.png",
+      "size": 4140,
+      "sha256": "18bde194fc41bc672e23bb9b14b109d5e942728baa3246489d0906f5acbf5401",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/BrissaHaste/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/BrissaHaste/32.json",
+      "size": 96,
+      "sha256": "b2f16294e71640768180a36f21d7d93a49ee8b656f6e4a8bbc9a6915bd4c880e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/BrissaHaste/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/BrissaHaste/44.json",
+      "size": 96,
+      "sha256": "03c3cf15f6602b4cfe79daf8daf5117ad6a75a03dd46b119e5cc46647227ccd9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/BrissaHaste/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/BrissaHaste/icon-32.png",
+      "size": 2250,
+      "sha256": "54a7dd9f4d1b96a4a704ec877ab0f2a7d7c740309faefc0fddc8e1d8027516e4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/BrissaHaste/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/BrissaHaste/icon-44.png",
+      "size": 3997,
+      "sha256": "5125394b53c371df694701a7c87282c5271b3ddd443fd832fcf7d0d8d06ddc77",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CyraHaste/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CyraHaste/32.json",
+      "size": 94,
+      "sha256": "aac975f259a11cd1587688478b3b64d2dd2564b4efc01e13063d3320e6d343df",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CyraHaste/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CyraHaste/44.json",
+      "size": 94,
+      "sha256": "7ef60dc74621db0785ca14d124a5135deb5612b0082ffbfe04a12bdb1a019401",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CyraHaste/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CyraHaste/icon-32.png",
+      "size": 2196,
+      "sha256": "0e22ec557dcc4a5f69c64fd6d7b7a6bb48969b5a5e01300f9f7660e00e4bf173",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/CyraHaste/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/CyraHaste/icon-44.png",
+      "size": 3887,
+      "sha256": "ebc8b36d482e3bb541097a8e4fcb77bf3a56f91afca1ebe2898a17ab17f7a4db",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/HalonMetamagicAdept/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/HalonMetamagicAdept/32.json",
+      "size": 104,
+      "sha256": "301f438c7029d279f20b9aab376db6935a0f14fb75381b3196e76a693231a5c1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/HalonMetamagicAdept/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/HalonMetamagicAdept/44.json",
+      "size": 104,
+      "sha256": "e361223c0c06f6ac2a1c1e0bb04a6a01e657d7800e2a6a387f1b0c1ac7e5b414",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/HalonMetamagicAdept/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/HalonMetamagicAdept/icon-32.png",
+      "size": 1835,
+      "sha256": "33a753fbb5d43e8d2616b3fcec82125a79b7a54a29315dfdfd03a2d9fc9a122a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/HalonMetamagicAdept/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/HalonMetamagicAdept/icon-44.png",
+      "size": 3083,
+      "sha256": "efb888c9284397d1de676d872bee9eb8b556a7346eeb02a27d6b0b4c1acd5eeb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IonaGenieLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IonaGenieLine/32.json",
+      "size": 98,
+      "sha256": "b7e4445266c9660cd3f108549288c7486e40555ef33238f57588fbf15fde62af",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IonaGenieLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IonaGenieLine/44.json",
+      "size": 98,
+      "sha256": "277198da4a53fa6e932b81d99c9597d338d4065a8556a04ba5931ab2fa0640ba",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IonaGenieLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IonaGenieLine/icon-32.png",
+      "size": 1959,
+      "sha256": "f2c08f7e428cbc90e741bd9c336a83b6f6a20cdd2656f0a1937d965e10e548d9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IonaGenieLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IonaGenieLine/icon-44.png",
+      "size": 3334,
+      "sha256": "b43be815b52e2d9ff53d07ad24994af0e061cc7788b86780dfbb5cb281dc289e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/LabethaGuardianSpirit/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/LabethaGuardianSpirit/32.json",
+      "size": 106,
+      "sha256": "c6155d8ed828c32563800d9d01befe33f0a14740d4d899d6e97ea5d85d7715aa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/LabethaGuardianSpirit/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/LabethaGuardianSpirit/44.json",
+      "size": 106,
+      "sha256": "88a025616436a219fd08da8f615ccb0bf9824c964f8ef43003dab473c9d9495c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/LabethaGuardianSpirit/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/LabethaGuardianSpirit/icon-32.png",
+      "size": 1859,
+      "sha256": "cef627ee326986e710f18d8fa44f2f0fc1e304360b259832809ec2e318d0d44c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/LabethaGuardianSpirit/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/LabethaGuardianSpirit/icon-44.png",
+      "size": 3178,
+      "sha256": "f8db631a91c5c5e1f6db7f8160258a1bda4fa002ed0f5eb963ea066f5e049292",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/LoreleiHarpyLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/LoreleiHarpyLine/32.json",
+      "size": 101,
+      "sha256": "941e1e06374ae1195f9277db20f369e188191bed28d10a9ab1d95bb34b887c79",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/LoreleiHarpyLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/LoreleiHarpyLine/44.json",
+      "size": 101,
+      "sha256": "0897926df7c1c079ed6d177ba223c9320f7b8228b6b9aa278abe38f11089b676",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/LoreleiHarpyLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/LoreleiHarpyLine/icon-32.png",
+      "size": 1968,
+      "sha256": "56be25aba4492fb28aef56268f1af4b9ed0810a82afd4a174ded56119ba5ba0d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/LoreleiHarpyLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/LoreleiHarpyLine/icon-44.png",
+      "size": 3471,
+      "sha256": "7a9852684b23eccfadbefd812294e6d9accc4c5bab4fc766e07e1d2ae20d2855",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MariusDemonLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MariusDemonLine/32.json",
+      "size": 100,
+      "sha256": "2e84f0f27ede1fd2cf7c0e2fd45971487278c1f5f464f83d52a4df170c3aa921",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MariusDemonLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MariusDemonLine/44.json",
+      "size": 100,
+      "sha256": "bbb7c7aeb2fd9b4375b7fe7bc1c7cce40402adb0e754880343566862879fd819",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MariusDemonLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MariusDemonLine/icon-32.png",
+      "size": 1805,
+      "sha256": "07a394e6e068096a188427490652729e5eb223b6a73aad5eefd21162c3695e62",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/MariusDemonLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/MariusDemonLine/icon-44.png",
+      "size": 3125,
+      "sha256": "596fef60092edb99b4e1b99f8b40ca79a115c6a87f858834adc0fc6fb0b6bf0a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OlemaFrailty/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OlemaFrailty/32.json",
+      "size": 97,
+      "sha256": "153fca709bc123804dd8d2f668b3e86bbad35dd8d98037f2964f72e8b68832aa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OlemaFrailty/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OlemaFrailty/44.json",
+      "size": 97,
+      "sha256": "546fa16be6045f741ef71dda8e84a78f2372518aac740aff341ddccc5e1c915b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OlemaFrailty/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OlemaFrailty/icon-32.png",
+      "size": 2402,
+      "sha256": "9a86be27013c1ebbacf5b4819133eb3e7c1cd0d8ef43c2300e0fcc758e24a7e8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/OlemaFrailty/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/OlemaFrailty/icon-44.png",
+      "size": 4413,
+      "sha256": "fe14857fa4cfa03422bc1d54ae6a99907857682cd4addf69faae0e76ad651e9e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RashkaEfreetLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RashkaEfreetLine/32.json",
+      "size": 101,
+      "sha256": "d03a9194005c383e7cf09ceb0b32c6f4499113a13437e468fdaecefd9ecba4c6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RashkaEfreetLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RashkaEfreetLine/44.json",
+      "size": 101,
+      "sha256": "5cb0de75661bd516bc9ab5894a0b2ddcbb21db1c4e1d01ad71c9a5b2548e5eaa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RashkaEfreetLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RashkaEfreetLine/icon-32.png",
+      "size": 1260,
+      "sha256": "2539d653dba291a5ece2fa1656c62432ba884d5d857d314cc4ba718fe8efc898",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/RashkaEfreetLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/RashkaEfreetLine/icon-44.png",
+      "size": 2137,
+      "sha256": "4a1b3f90e720c1cdf9d49d88d6e0ba3a177e0e8e91d14174dd6454d7b4105b0a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SolmyrChainLightning/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SolmyrChainLightning/32.json",
+      "size": 105,
+      "sha256": "6a5de47c20976325d4a84ea9f1a9547042555fe5877cd16c7d4e0b9dbc47d6b6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SolmyrChainLightning/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SolmyrChainLightning/44.json",
+      "size": 105,
+      "sha256": "82ed1b55bf32530cbeacebc536a9d9c9b2535e5c858f1a7f2161c47808dbe999",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SolmyrChainLightning/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SolmyrChainLightning/icon-32.png",
+      "size": 1799,
+      "sha256": "f11a586cf948176ca86a95afe2811d8bb62ab6761fb0202570750a96b1a89e35",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/SolmyrChainLightning/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/SolmyrChainLightning/icon-44.png",
+      "size": 3095,
+      "sha256": "552146280938b5d553aeaffbf264f2a6f5c476ca1dbd3339760cdaf73a6f48c5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusMageLine/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TheodorusMageLine/32.json",
+      "size": 102,
+      "sha256": "698f4cb906fc08b375c24921315af3f9b07deedac552f1948030a874d565eb92",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusMageLine/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TheodorusMageLine/44.json",
+      "size": 102,
+      "sha256": "6cfb664bfe4594909b6d08e4355868a79ad48892d6d90b65ed6bfc65a6f67146",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusMageLine/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TheodorusMageLine/icon-32.png",
+      "size": 1834,
+      "sha256": "a89ea8f304a8e91a5439c5d6d486cf7d1164a1cdcc67a4b4da0140169973d2b6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusMageLine/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TheodorusMageLine/icon-44.png",
+      "size": 3123,
+      "sha256": "79860b3c2d90f4d127dbc7796215d4c0a463f6eeea369456cc99c20b298e7b33",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/XsiFrailty/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/XsiFrailty/32.json",
+      "size": 95,
+      "sha256": "ef331e09b0a7054e05ea5ad09e40e3d5a019ac3a550bd16bb92ab8809f4cc4b4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/XsiFrailty/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/XsiFrailty/44.json",
+      "size": 95,
+      "sha256": "889cf5bfd4c561b847e11c8cfb83b4be52bbeed24e9835d90698748cca1ce991",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "authored-normal-group0-frame0-animation-descriptor",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/XsiFrailty/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/XsiFrailty/icon-32.png",
+      "size": 2150,
+      "sha256": "22b712b052476a139d0bb2e041da5b778df573d27be6579e8fed1a281ebf404b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/XsiFrailty/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/XsiFrailty/icon-44.png",
+      "size": 3804,
+      "sha256": "3f361fc385ebebf476bbc4da413bd1f1d48d4ceece73f2edb3c5b77997f79b36",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "selected-own-specialty-draft-native-export",
+      "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
+      "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
     }
   ],
   "requiredFamilies": [
@@ -53164,7 +53794,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 3233,
+    "builtin-skills-perks-orders-and-ui": 3296,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

@@ -183,7 +183,7 @@ NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, cons
 						: evaluation.status == newHorizonsPerkAvailability::Status::LOCKED ? unlearnedBorder
 						: ColorRGBA(117, 96, 64, 255)));
 
-				auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsPerkIcon(perk.id)), 0,
+				auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsPerkIcon(perk.id, perk.name)), 0,
 					Rect(cardLeft + 4, top + 3, 24, 24));
 				elements.push_back(icon);
 				elements.push_back(std::make_shared<CMultiLineLabel>(Rect(cardLeft + 34, top + 2, cardWidth - 40, 26),

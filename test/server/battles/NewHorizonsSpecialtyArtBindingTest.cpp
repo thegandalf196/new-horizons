@@ -239,7 +239,7 @@ struct ResolvedArtCase
 	newHorizonsHeroes::detail::SpecialtyArtworkFamily family;
 	const char * stem;
 };
-constexpr std::array<ResolvedArtCase, 86> resolvedArtCases = {{
+constexpr std::array<ResolvedArtCase, 98> resolvedArtCases = {{
 	{"core:melodia", "remainingSpellSpecialtyReplacements", "core:bless", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MelodiaBless"},
 	{"core:pyre", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "PyreBallistaLine"},
 	{"core:ash", "remainingSpellSpecialtyReplacements", "core:fireball", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AshFireball"},
@@ -326,6 +326,18 @@ constexpr std::array<ResolvedArtCase, 86> resolvedArtCases = {{
 	{"core:josephine", "creatureLineSpecialties", "core:ironGolem", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "JosephineGolemLine"},
 	{"core:torosar", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TorosarBallistaLine"},
 	{"core:fafner", "creatureLineSpecialties", "core:naga", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "FafnerNagaLine"},
+	{"core:iona", "creatureLineSpecialties", "core:genie", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "IonaGenieLine"},
+	{"core:theodorus", "creatureLineSpecialties", "core:mage", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TheodorusMageLine"},
+	{"core:lorelei", "creatureLineSpecialties", "core:harpy", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "LoreleiHarpyLine"},
+	{"core:marius", "creatureLineSpecialties", "core:demon", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "MariusDemonLine"},
+	{"core:brissa", "nonDamageSpellSpecialties", "core:haste", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "BrissaHaste"},
+	{"core:aenain", "remainingSpellSpecialtyReplacements", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AenainFrailty"},
+	{"core:olema", "remainingSpellSpecialtyReplacements", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "OlemaFrailty"},
+	{"core:xsi", "remainingSpellSpecialtyReplacements", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "XsiFrailty"},
+	{"core:astral", "remainingSpellSpecialtyReplacements", "new-horizons:phantomArmy", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AstralPhantomArmy"},
+	{"core:cyra", "nonDamageSpellSpecialties", "core:haste", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "CyraHaste"},
+	{"core:rashka", "creatureLineSpecialties", "core:efreet", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "RashkaEfreetLine"},
+	{"core:labetha", "remainingSpellSpecialtyReplacements", "new-horizons:guardianSpirit", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "LabethaGuardianSpirit"},
 }};
 
 void expectResolvedArt(const CHero & hero, const newHorizonsHeroes::SpecialtyPresentation & metadata,

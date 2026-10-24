@@ -1147,7 +1147,7 @@ void CLevelWindow::createSkillBox()
 				const auto parentName = hasCanonicalSkillIcon
 					? LIBRARY->skillh->getById(iconSkill)->getNameTranslated() : perk.selection.skillId;
 				comp = std::make_shared<CLevelUpPerkComponent>(iconSkill, hasCanonicalSkillIcon,
-					perk.requiredRank, perk.name, AnimationPath::builtin(newHorizonsPerkIcon(perk.selection.perkId)), parentName);
+					perk.requiredRank, perk.name, AnimationPath::builtin(newHorizonsPerkIcon(perk.selection.perkId, perk.name)), parentName);
 				comp->customDescription = newHorizonsPerkHelp::format(hero, perk.selection.skillId,
 					perk.name, newHorizonsPerkHelp::tierName(perk.requiredRank), perk.description);
 				perkComps.push_back(comp);

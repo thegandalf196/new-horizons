@@ -13,6 +13,7 @@
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsReclaimer.h"
 #include "NewHorizonsSpecialtyArtwork.h"
+#include "NewHorizonsRetainedSpecialtyArtwork.h"
 #include "HeroStartingProjection.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
@@ -27,27 +28,6 @@ namespace newHorizonsHeroes
 {
 namespace
 {
-std::optional<std::string> resolveResourceSpecialtyArtwork(const CHero & hero,
-	const CGHeroInstance * capturedHero)
-{
-	// A live hero's retained specialty is authoritative; installed prototype
-	// bonuses are only the source for a detached starting preview.
-	const auto & bonuses = capturedHero ? capturedHero->getExportedBonusList() : hero.specialty;
-	for(const auto & bonus : bonuses)
-	{
-		if(!bonus || bonus->type != BonusType::GENERATE_RESOURCE
-			|| bonus->source != BonusSource::HERO_SPECIAL || bonus->sid != BonusSourceID(hero.getId()))
-			continue;
-		const auto resource = bonus->subtype.as<GameResID>();
-		if(!resource.hasValue())
-			continue;
-		if(const auto artwork = detail::resolvedSpecialtyArtwork(hero.getJsonKey(),
-			detail::SpecialtyArtworkFamily::Resource, GameResID::encode(resource.getNum())))
-			return artwork;
-	}
-	return std::nullopt;
-}
-
 bool resolveIndividualPresentation(const CHero & hero,
 	const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero,
 	SpecialtyPresentation & result)
@@ -365,7 +345,7 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 			return result;
 		}
 
-	result.artwork = resolveResourceSpecialtyArtwork(hero, capturedHero);
+	result.artwork = detail::resolveRetainedSpecialtyArtwork(hero, magic, capturedHero);
 	return result;
 }
 

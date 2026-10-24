@@ -34,7 +34,7 @@ def main() -> None:
     require(BROWSER, "std::array<std::vector<const newHorizonsHeroes::PerkDefinition *>, 3>", "three rank groups")
     for rank in ("Basic", "Advanced", "Expert"):
         require(BROWSER, f'"{rank}"', f"{rank} group label")
-    require(BROWSER, 'AnimationPath::builtin(newHorizonsPerkIcon(perk.id))', "existing perk animation lookup")
+    require(BROWSER, 'AnimationPath::builtin(newHorizonsPerkIcon(perk.id, perk.name))', "existing perk animation lookup")
     require(BROWSER, "CMultiLineLabel>(Rect(cardLeft + 34, top + 2, cardWidth - 40, 26)", "wrapped full-width perk name")
     require(BROWSER, 'cardLeft + 34, top + 30, FONT_TINY', "learned state below the wrapped name")
     require(BROWSER, 'cardLeft + 34, top + 42, FONT_TINY', "full-width effect status on its own line")

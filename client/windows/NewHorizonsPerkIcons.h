@@ -7,6 +7,7 @@
 #include <iterator>
 #include <map>
 #include <string>
+#include <string_view>
 #include <utility>
 
 // Constant binding data; the runtime map remains lazy below.
@@ -337,4 +338,18 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 	static const std::string fallback = "NH_perk_neutral";
 	const auto found = icons.find(perkId);
 	return found == icons.end() ? fallback : found->second;
+}
+
+
+/// Presentation-only distinction for a reused stable ID. Use the authored label
+/// from saved definitions or the immutable offer; never look up installed rules.
+/// Missing/renamed/translated labels conservatively retain the historical icon.
+inline const std::string & newHorizonsPerkIcon(const std::string & perkId, std::string_view capturedName)
+{
+	if(perkId == "new-horizons:sorceryMagic.countermage" && capturedName == "Arcane Ballistics")
+	{
+		static const std::string arcaneBallistics = "NH_perk_arcane_ballistics";
+		return arcaneBallistics;
+	}
+	return newHorizonsPerkIcon(perkId);
 }
