@@ -24770,13 +24770,15 @@
       "sha256": "c901670e97e11c202001276c08f8fd386edb0bbd1b9806c02c6127ee54249ceb"
     },
     "luascript/api/callback/IBattleInfoCallback.cpp::scripting::api::void IBattleInfoCallbackProxy::registerMethods(MethodRegistrar & R)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 126,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 126 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "557e43b75a33e246163ac9819a6163e44d49c2b067b7d51b03eccfa925f2d39d"
+      "rationale": "Same-size126-line method registry updates one description to match the urgent observer-scoped obstacle query correction. Registered names/signatures/order and all other registration bytes are unchanged; no rule implementation moved into the registry and no growth allowance.",
+      "review": "IR-LUA-OBSTACLE-VISIBILITY-20261024",
+      "review_scope": "exact-observer-scoped-Lua-binding-source-only-no-native-or-campaign-acceptance",
+      "sha256": "501c75a7d9f4b7462994a5255166256ea1d8d7a4f233617508f1dc3c0940f70e",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Engine owner must extract a cohesive obstacle/unit-query registration family before the next substantive registration expansion, preserving Lua names/signatures/order and implementation-identity contracts; retain126 as the shrinking baseline ceiling, not future growth credit."
     },
     "luascript/api/callback/ServerCallback.cpp": {
       "kind": "legacy",

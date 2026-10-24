@@ -127,7 +127,7 @@ void IBattleInfoCallbackProxy::registerMethods(MethodRegistrar & R)
 		{"Unit?", "Current unit in this battle, including a dead stack; nil if entirely removed."},
 		"Resolves the current battle-owned unit after an authoritative update or detached projection.");
 	R.function<&IBattleInfoCallbackProxy::getAllObstacles>("getAllObstacles", {},
-		"Returns all obstacles on the battlefield.");
+		"Returns obstacles visible to this callback; an observer-free simulation callback sees all obstacles.");
 	R.function<&IBattleInfoCallbackProxy::getObstaclesOnPos>("getObstaclesOnPos",
 		{
 			{"hex",          "Hex whose obstacles are queried."},
@@ -271,7 +271,7 @@ int IBattleInfoCallbackProxy::getUnitByID(lua_State * L)
 
 std::vector<std::shared_ptr<const CObstacleInstance>> IBattleInfoCallbackProxy::getAllObstacles(const IBattleInfoCallback & object)
 {
-	return object.battleGetAllObstacles(BattleSide::ALL_KNOWING);
+	return object.battleGetAllObstacles();
 }
 
 std::vector<std::shared_ptr<const CObstacleInstance>> IBattleInfoCallbackProxy::getObstaclesOnPos(const IBattleInfoCallback & object, BattleHex hex, bool onlyBlocking)

@@ -1132,7 +1132,8 @@ if(ENABLE_NULLKILLER2_AI)
 			scripting/LuaImplementationIdentityTest.cpp
 			scripting/LuaDamageCalculatorIdentityTest.cpp
 			scripting/LuaCombatEventIdentityTest.cpp
-			scripting/LuaStackFieldKeyTest.cpp)
+			scripting/LuaStackFieldKeyTest.cpp
+			scripting/LuaObstacleVisibilityTest.cpp)
 	endif()
 	set(vcmitest_LIBS gtest gmock vcmiMain vcmiservercommon TBB::tbb ${SYSTEM_LIBS})
 	foreach(optional_vcmitest_target IN ITEMS vcmiLua EmptyAI StupidAI MMAI)
