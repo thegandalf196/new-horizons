@@ -1,6 +1,7 @@
 set(Nullkiller2_SRCS
 		Pathfinding/AIPathfinderConfig.cpp
 		Pathfinding/AIPathfinder.cpp
+		Pathfinding/AIPathNodeExport.cpp
 		Pathfinding/AINodeStorage.cpp
 		Pathfinding/Actors.cpp
 		Pathfinding/Actions/SpecialAction.cpp
@@ -82,6 +83,7 @@ set(Nullkiller2_HEADERS
 
 		Pathfinding/AIPathfinderConfig.h
 		Pathfinding/AIPathfinder.h
+		Pathfinding/AIPathNodeExport.h
 		Pathfinding/AINodeStorage.h
 		Pathfinding/Actors.h
 		Pathfinding/Actions/SpecialAction.h

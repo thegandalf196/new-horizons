@@ -14,6 +14,7 @@
 #include "../../../lib/pathfinder/INodeStorage.h"
 #include "Actions/SpecialAction.h"
 #include "Actors.h"
+#include "AIPathNodeExport.h"
 #include "../Helpers/HeroMap.h"
 
 #include <map>
@@ -101,19 +102,6 @@ inline bool hasNewHorizonsAdventureSpellCastFlag(const DayFlags flags)
 	return (flags & DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST) != DayFlags::NONE;
 }
 
-struct AIPathNodeInfo
-{
-	float cost;
-	uint8_t turns;
-	int3 coord;
-	EPathfindingLayer layer;
-	uint64_t danger;
-	const CGHeroInstance * targetHero;
-	int parentIndex;
-	uint64_t chainMask;
-	std::shared_ptr<const SpecialAction> specialAction;
-	bool actionIsBlocked;
-};
 
 struct AIPath
 {

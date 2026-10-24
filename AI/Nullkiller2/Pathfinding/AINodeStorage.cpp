@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "../../../lib/pathfinder/NewHorizonsProtectedMobility.h"
 #include "AINodeStorage.h"
+#include "AIPathNodeExport.h"
 
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/IGameSettings.h"
@@ -2174,23 +2175,7 @@ bool AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & pa
 					heroCommitments.push_back({nodeMask, spineRoot});
 			}
 
-			AIPathNodeInfo pathNode;
-			pathNode.cost = node->getCost();
-			pathNode.targetHero = node->actor->hero;
-			pathNode.chainMask = node->actor->chainMask;
-			pathNode.specialAction = node->specialAction;
-			pathNode.turns = node->turns;
-			pathNode.danger = node->danger;
-			pathNode.coord = node->coord;
-			pathNode.parentIndex = parent;
-			pathNode.actionIsBlocked = false;
-			pathNode.layer = node->layer;
-
-			if(pathNode.specialAction)
-			{
-				auto targetNode = node->theNodeBefore ? getAINode(node->theNodeBefore) : node;
-				pathNode.actionIsBlocked = !pathNode.specialAction->canAct(aiNk, targetNode, node->turns);
-			}
+			auto pathNode = exportAIPathNode(*node, parent, aiNk);
 
 			const int nextParentIndex = static_cast<int>(pathToAppend.nodes.size());
 			pathToAppend.nodes.push_back(pathNode);
