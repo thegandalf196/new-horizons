@@ -104,6 +104,6 @@ TEST(BuiltinBonusIdentityTest, BinaryEnumStateRetainsEachIdentityWithoutJsonConv
 TEST(BuiltinBonusIdentityTest, NoneEncodingAndOutOfRangeRefusalRemainUnchanged)
 {
 	EXPECT_TRUE(BonusTypeID::encode(static_cast<int32_t>(BonusType::NONE)).empty());
-	EXPECT_EQ(BonusTypeID::decode(""), -1);
+	EXPECT_EQ(BonusTypeID::decode(""), static_cast<int32_t>(BonusType::NONE));
 	EXPECT_THROW(BonusTypeID::encode(std::numeric_limits<int32_t>::max()), std::out_of_range);
 }

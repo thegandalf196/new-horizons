@@ -44,8 +44,11 @@ public:
 	void setDefaultExpectations()
 	{
 		unitsFake.setDefaultBonusExpectations();
-		EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(&spellStub));
-		EXPECT_CALL(spellStub, getJsonKey()).WillRepeatedly(Return(SpellID::encode(testSpellId.getNum())));
+		const auto * actualSpell = testSpellId.toSpell();
+		ASSERT_NE(actualSpell, nullptr);
+		ASSERT_EQ(actualSpell->getId(), testSpellId);
+		ASSERT_EQ(actualSpell->getJsonKey(), SpellID::encode(testSpellId.getNum()));
+		EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(actualSpell));
 		EXPECT_CALL(mechanicsMock, getEffectDuration()).WillRepeatedly(Return(duration));
 		EXPECT_CALL(serverMock, describeChanges()).WillRepeatedly(Return(false));
 	}
@@ -229,8 +232,11 @@ TEST_F(TimedTest, ConvertBonusUsesSpellDurationWhenTurnsRemainIsZero)
 	EXPECT_CALL(unit, creatureLevel()).WillRepeatedly(Return(1));
 	unitsFake.setDefaultBonusExpectations();
 
-	EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(&spellStub));
-	EXPECT_CALL(spellStub, getJsonKey()).WillRepeatedly(Return(SpellID::encode(testSpellId.getNum())));
+	const auto * actualSpell = testSpellId.toSpell();
+	ASSERT_NE(actualSpell, nullptr);
+	ASSERT_EQ(actualSpell->getId(), testSpellId);
+	ASSERT_EQ(actualSpell->getJsonKey(), SpellID::encode(testSpellId.getNum()));
+	EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(actualSpell));
 	EXPECT_CALL(mechanicsMock, getEffectDuration()).WillRepeatedly(Return(spellDuration));
 	EXPECT_CALL(serverMock, describeChanges()).WillRepeatedly(Return(false));
 
@@ -263,8 +269,11 @@ TEST_F(TimedTest, ConvertBonusKeepsExplicitTurnsRemain)
 	EXPECT_CALL(unit, creatureLevel()).WillRepeatedly(Return(1));
 	unitsFake.setDefaultBonusExpectations();
 
-	EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(&spellStub));
-	EXPECT_CALL(spellStub, getJsonKey()).WillRepeatedly(Return(SpellID::encode(testSpellId.getNum())));
+	const auto * actualSpell = testSpellId.toSpell();
+	ASSERT_NE(actualSpell, nullptr);
+	ASSERT_EQ(actualSpell->getId(), testSpellId);
+	ASSERT_EQ(actualSpell->getJsonKey(), SpellID::encode(testSpellId.getNum()));
+	EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(actualSpell));
 	EXPECT_CALL(mechanicsMock, getEffectDuration()).WillRepeatedly(Return(57)); // different from customDuration
 	EXPECT_CALL(serverMock, describeChanges()).WillRepeatedly(Return(false));
 
