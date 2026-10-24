@@ -6,6 +6,7 @@
 #include "CGHeroInstance.h"
 #include "../spells/CSpell.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSpellAvailability.h"
 #include <algorithm>
 #include <stdexcept>
 std::vector<SpellID> CGHeroInstance::getNewHorizonsScholarSpellsFor(
