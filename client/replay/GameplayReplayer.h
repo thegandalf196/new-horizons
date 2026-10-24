@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "../../lib/gameState/ReplayPayload.h"
 #include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/int3.h"
 
@@ -42,7 +43,7 @@ struct ReplayPass
 /// interleaved - every pass ends with the last pack of the player it is watched with.
 struct ReplayDay
 {
-	std::vector<std::vector<std::byte>> packs;
+	std::vector<ReplayPayload> packs;
 	std::vector<ReplayPass> passes;
 };
 
@@ -52,13 +53,14 @@ struct ReplaySequence
 	PlayerColor replayedPlayer;
 	uint32_t day = 0;
 
-	std::vector<std::byte> snapshot;
+	ReplayPayload snapshot;
 
 	/// packs between the snapshot and the beginning of the replayed part - applied without visuals
-	std::vector<std::vector<std::byte>> fastForwardPacks;
+	std::vector<ReplayPayload> fastForwardPacks;
 
 	/// days that are actually shown
 	std::vector<ReplayDay> days;
+	void validate() const;
 };
 
 /// Player the camera has to follow because a day of simultaneous turns is being replayed.

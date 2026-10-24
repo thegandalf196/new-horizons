@@ -19392,13 +19392,13 @@
     },
     "client/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 596,
-      "sha256": "d86527cecc91ce94904fa51029d8142127baef848232ec14f63a10a6c9a06d43",
+      "lines": 597,
+      "sha256": "552c1e0426e62822f524f706c1fbe5099724f1057f823650d00c2eaa988d56c7",
       "owner": "ui_developer",
-      "review": "school-spellcraft-cast-context-source-v1",
-      "review_scope": "school-scoped-coefficient-context-and-bounded-label-fit-only",
-      "rationale": "Mechanical595-to-596-line source/header registry extension for the focused school-policy, cast-context/coefficient and label-fit components. No implementation bodies or textual source fragments in this registry.",
-      "deferral": "Keep one canonical mechanically ordered registry entry per component. Actual implementation remains in focused units; this exact registration exception grants no unrelated growth.",
+      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
+      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
+      "rationale": "Mechanical registration of the focused replay planner or memory/provenance codec source/header owners only. No target, dependency, compiler, platform or build-policy changes.",
+      "deferral": "Exact declarative registry bound only. Keep behavior in focused compiled owners; future registry edits need renewed exact review and grant no executable growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/CPlayerInterface.cpp": {
@@ -20457,27 +20457,16 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "420ee69c49c3bf76a3b5d05c4c3558508579650c4b1711746f0307cbd358ce9c"
     },
-    "client/replay/GameplayReplayer.cpp": {
-      "kind": "exception",
-      "lines": 516,
-      "owner": "ui_developer",
-      "rationale": "Bounded native battle-root lifetime integration only: exact guard/declaration lines or two mechanical lifetime CPP/header registrations. Coordination resides in the focused native-root lifetime and commit-admission components; saved fields, original payload order and graph CAS tail remain exact.",
-      "review": "IR-F08-BATTLE-ROOT-LIFETIME-V2-20261017",
-      "review_scope": "Exact sealed v2 native-root lifetime seam; no payload lease, dispatcher, thread-owner or full-world acceptance.",
-      "sha256": "04ae38552f5ff950497d72b9a32390116d65208459ed4df29c6ebe8b7e82a432",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "deferral": "No future growth credit. Any subsequent edit requires renewed independent review; engine/UI owners must retain focused state/visitor/replay debt extraction and separately validate origin-thread destruction, native root-writer/restart ordering and real owner integration before routing use."
-    },
     "client/replay/GameplayReplayer.cpp::void GameplayReplayer::run(ReplaySequence sequence, PlayerColor observer, Options options)#1": {
-      "kind": "legacy",
-      "lines": 137,
+      "kind": "exception",
+      "lines": 138,
       "owner": "ui_developer",
-      "rationale": "Exact 161-to-137-line shrinking extraction of live-session restoration into the independently inspected 33-line helper; original payload and UI teardown order recover byte-exactly.",
-      "review": "IR-F08-BATTLE-ROOT-LIFETIME-V2-20261017",
-      "review_scope": "Exact sealed v2 native-root lifetime seam; no payload lease, dispatcher, thread-owner or full-world acceptance.",
-      "sha256": "d72c3f07d03e2fec81d42d3f5d9f4009c4994727068c6ee34ed989eb158f3ba1",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "deferral": "No future growth credit. Any subsequent edit requires renewed independent review; engine/UI owners must retain focused state/visitor/replay debt extraction and separately validate origin-thread destruction, native root-writer/restart ordering and real owner integration before routing use."
+      "rationale": "Exact137-to138-line lifecycle method adds early sequence provenance validation and typed historical/local snapshot routing. Planner extraction shrinks the containing owner516 to374 lines; thread, window, teardown and restoration order remain unchanged.",
+      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
+      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
+      "sha256": "96bf419d3f9ef49bea03ce07d9c2a6ab63dbebf95fbec9e1b5742e27ff12c00d",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Exact138-line bound only. Future substantive lifecycle growth requires renewed independent review and focused extraction preserving root lifetime, origin-thread teardown and live-session restoration. Rendered replay acceptance remains separate."
     },
     "client/widgets/Buttons.cpp": {
       "kind": "legacy",
@@ -21902,15 +21891,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact single registration growth only. Keep behavior in focused compiled owners; further declarative registry growth requires renewed exact review and does not authorize executable helpers.",
+      "deferral": "Exact declarative registry bound only. Keep behavior in focused compiled owners; future registry edits need renewed exact review and grant no executable growth allowance.",
       "kind": "exception",
-      "lines": 1313,
+      "lines": 1317,
       "owner": "engine_engineer",
-      "rationale": "Exact1312-to1313 mechanical CMake registry addition lists the focused NewHorizonsSpecialtyArtwork header only. Removing that single entry reproduces the reviewed current1312-line registry, including the existing LifeDrain projection receipt source/header pair. No target, dependency, platform, compiler or build-policy change.",
-      "review": "selected-thirty-two-specialty-art-independent-source-review",
-      "review_scope": "exact-single-specialty-art-header-registration-preserving-LifeDrain",
+      "rationale": "Mechanical registration of the focused replay planner or memory/provenance codec source/header owners only. No target, dependency, compiler, platform or build-policy changes.",
+      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
+      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "a342902ca9132d32bfb6b3af63e09637cea75cc4211d5a306c0c2e395f4ce37e"
+      "sha256": "afdd1653106972b8bbaa8525807cc7edea139fe2a30d77fe0a7bf95871a78256"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -22775,14 +22764,14 @@
     },
     "lib/gameState/CGameState.cpp": {
       "kind": "exception",
-      "lines": 2254,
+      "lines": 2227,
       "owner": "engine_engineer",
-      "rationale": "One optional specialty capability argument forwarded through existing world/map preflight wrappers only.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "359d1c07b286f5392512f1eb92e5f315bf51ab4b58bb5d918f87024ad794a4e7",
+      "rationale": "Extract the complete existing memory-copy serializer to the focused67-line CGameStateMemory owner, shrinking2254 to2227 lines. Actual producer-version capture and explicit-version replay loading stay in that owner; no game mechanics or ownership ordering change.",
+      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
+      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
+      "sha256": "2d58e26169803225b6a82a3867dda34fe77c0b063084c83fa2883b5497e5814a",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
+      "deferral": "Exact2227-line shrinking bound only. Before future substantive growth, extract the next touched coherent captured-policy/preflight family with prefix-rejection and historical-absence coverage. Existing unrelated oversized routines receive no growth credit."
     },
     "lib/gameState/CGameState.cpp::bool CGameState::checkForVictory(const PlayerColor & player, const EventCondition & condition) const#1": {
       "kind": "legacy",
@@ -22822,25 +22811,25 @@
     },
     "lib/gameState/CGameState.h": {
       "kind": "exception",
-      "lines": 631,
+      "lines": 637,
       "owner": "engine_engineer",
-      "rationale": "Mechanical additional-specialty capability forwarding through existing writer/read validation; no new world runtime state or battle-resume claim.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "36f6b8ea9e396bb73cdb0a00bfca133e7ee14a2e4efab76658067e083e5dc32b",
+      "rationale": "Exact typed replay snapshot entrypoints and two-line earliest enclosing downgrade preflight; serialize289 to291 lines, paired with the actual2254-to2227-line memory-codec extraction. This protects provenance before any world prefix and leaves native field order/validators intact.",
+      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
+      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
+      "sha256": "1ff6008d63e91df13820b39af4b356814a40dee45122f0285c5caddaa336278c",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "deferral": "Exact637-line header and291-line serialize bounds only. Before further substantive serializer growth, extract a coherent typed version/preflight validation family into a focused non-writing owner, preserving direct/enclosing prefix rejection, historical absence and exact wire order. No blanket exception or runtime acceptance."
     },
     "lib/gameState/CGameState.h::CGameState::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 289,
+      "lines": 291,
       "owner": "engine_engineer",
-      "rationale": "Mechanical additional-specialty capability forwarding through existing writer/read validation; no new world runtime state or battle-resume claim.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "6d688a0dfdb5b31a6155092c3dcf6ec51395316aa916f73e29419b041f1dc4f8",
+      "rationale": "Exact typed replay snapshot entrypoints and two-line earliest enclosing downgrade preflight; serialize289 to291 lines, paired with the actual2254-to2227-line memory-codec extraction. This protects provenance before any world prefix and leaves native field order/validators intact.",
+      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
+      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
+      "sha256": "77966b2500e71c74510b2c31033dd12e7ceb59e5b6b310239587fb5cf8788451",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "deferral": "Exact637-line header and291-line serialize bounds only. Before further substantive serializer growth, extract a coherent typed version/preflight validation family into a focused non-writing owner, preserving direct/enclosing prefix rejection, historical absence and exact wire order. No blanket exception or runtime acceptance."
     },
     "lib/gameState/CGameStateCampaign.cpp": {
       "kind": "legacy",
@@ -24368,14 +24357,14 @@
     },
     "lib/serializer/ESerializationVersion.h": {
       "kind": "exception",
-      "lines": 554,
+      "lines": 559,
       "owner": "engine_engineer",
-      "rationale": "Append one deliberately unpublished additional-specialty capability and monotonic assertion; protects optional captured policies and explicit Side recovery suffix.",
-      "review": "additional-hero-specialty-integration-source-v1",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "f15a68d988a2e2933420c1472e890c434356a162e14d11189c4d574aba0b24ba",
+      "rationale": "Append the replay-payload provenance capability, advanceCURRENT and retain append-only assertions without altering prior enumerators. Provenance validation remains in focused replay owners.",
+      "review": "IR-REPLAY-PAYLOAD-PROVENANCE-20261023",
+      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
+      "sha256": "ce10bed3afba10001f886a172833628f23765ffcc36e71947552e61a917e1adf",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Keep append-only feature registry declarative. New state-specific validation remains in its focused owner; future enum growth requires renewed exact review and cannot authorize unrelated executable helpers."
+      "deferral": "Exact559-line declarative capability registry only. No unrelated helper/validator growth; each future append requires exact independent review."
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",

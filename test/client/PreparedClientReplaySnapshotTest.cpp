@@ -46,8 +46,9 @@ TEST_F(PreparedClientReplaySnapshotTest, EmptyUnconfiguredLogCapturesActualPrewr
 	ASSERT_EQ(state->replayLog.getChapters().size(), 1);
 	const auto & chapter = state->replayLog.getChapters().front();
 	EXPECT_EQ(chapter.gamestateSnapshot, expectedSnapshot);
+	EXPECT_EQ(chapter.snapshotVersion, ESerializationVersion::CURRENT);
 	ASSERT_EQ(chapter.packs.size(), 1);
-	EXPECT_EQ(chapter.packs.front(), expectedPack);
+	EXPECT_EQ(chapter.packPayload(0), expectedPack);
 	EXPECT_FALSE(state->replayLog.isRecordingPacks());
 	EXPECT_EQ(caller.changedStacks.back().data, scalar.changedStacks.back().data);
 }

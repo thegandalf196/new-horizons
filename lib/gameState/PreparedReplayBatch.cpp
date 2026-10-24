@@ -10,15 +10,19 @@
 
 void PreparedReplayAppend::reservePacks(size_t count)
 {
-	auto & packs = owner.chapters.back().packs;
-	if(count > packs.max_size() - packs.size())
-		throw std::length_error("Replay pack vector is full");
-	const auto required = packs.size() + count;
-	if(packs.capacity() < required)
+	auto & chapter = owner.chapters.back();
+	if(count > chapter.packs.max_size() - chapter.packs.size()
+		|| count > chapter.packVersions.max_size() - chapter.packVersions.size())
+		throw std::length_error("Prepared replay count exceeds container limits");
+	const auto required = chapter.packs.size() + count;
+	if(required > chapter.packs.capacity())
 	{
-		const auto growth = std::min(std::max(packs.size(), size_t{1}), packs.max_size() - packs.size());
-		packs.reserve(std::max(required, packs.size() + growth));
+		const auto growth = std::min(std::max(chapter.packs.size(), size_t{1}), chapter.packs.max_size() - chapter.packs.size());
+		chapter.packs.reserve(std::max(required, chapter.packs.size() + growth));
 	}
+	// Both reserves precede publication. Failure may change capacity, never
+	// logical bytes/versions; exclusive ownership invalidates stale plans.
+	chapter.packVersions.reserve(std::min(chapter.packs.capacity(), chapter.packVersions.max_size()));
 }
 
 PreparedReplayAppend::PreparedReplayAppend(ReplayLog & log, Records records, uint32_t day,
@@ -27,6 +31,9 @@ PreparedReplayAppend::PreparedReplayAppend(ReplayLog & log, Records records, uin
 	  recording((mode == RecordingMode::UNCONDITIONAL || configured) && !encoded.empty()),
 	  opensChapter(log.chapters.empty())
 {
+	owner.validateAppendState();
+	for(const auto & record : encoded)
+		replayPayload::validateStoredVersion(record.version);
 	if(!recording)
 		return;
 	if(!log.preparationStamp)

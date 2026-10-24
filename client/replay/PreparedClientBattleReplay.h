@@ -5,6 +5,7 @@
  */
 #pragma once
 #include "../netlag/NetworkLagReplyState.h"
+#include "../../lib/gameState/ReplayPayload.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
 #include <shared_mutex>
@@ -44,8 +45,8 @@ class PreparedClientBattleReplay final
 	BattleUnitsChanged & caller;
 	BattleUnitsChanged originalInput;
 	BattleUnitsChanged writerProjection;
-	std::vector<std::byte> snapshot;
-	std::vector<std::byte> outerRecord;
+	ReplayPayload snapshot;
+	ReplayPayload outerRecord;
 	std::optional<BattleReplyInspection> inspection;
 	std::unique_ptr<PreparedReplayAppend> batch;
 	// Retires world participants/roots BEFORE the remaining client snapshots.

@@ -308,6 +308,9 @@ set(lib_MAIN_SRCS
 	gameState/InfoAboutArmy.cpp
 	gameState/QuestInfo.cpp
 	gameState/ReplayLog.cpp
+	gameState/ReplayPayload.cpp
+	gameState/ReplayProvenance.cpp
+	gameState/CGameStateMemory.cpp
 	gameState/PreparedReplayAppend.cpp
 	gameState/PreparedReplayBatch.cpp
 	gameState/PreparedReplaySnapshot.cpp
@@ -944,6 +947,7 @@ set(lib_MAIN_HEADERS
 	gameState/HighScore.h
 	gameState/InfoAboutArmy.h
 	gameState/ReplayLog.h
+	gameState/ReplayPayload.h
 	gameState/PreparedReplayAppend.h
 	gameState/PreparedReplaySnapshot.h
 	gameState/BattleRootLifetime.h

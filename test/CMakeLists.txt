@@ -115,6 +115,10 @@ set(test_SRCS
 		battle/BattleRootLifetimeTest.cpp
 		battle/BattleRootCommitAdmissionTest.cpp
 		battle/PreparedReplayAppendTest.cpp
+		serializer/ReplayPayloadVersionTest.cpp
+		serializer/ReplaySnapshotVersionTest.cpp
+		client/ReplayPlannerPayloadTest.cpp
+		../client/replay/ReplayPlanner.cpp
 		battle/CUnitStateMagicTest.cpp
 		battle/PhysicalAfflictionTest.cpp
 		server/battles/PhysicalAfflictionStampingTest.cpp

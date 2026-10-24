@@ -99,7 +99,7 @@ TEST_F(PreparedBattleWorldCommitTest, ValidUpdateTransfersWholeJsonAndExactRepla
 	ASSERT_FALSE(gameHandler->gs->replayLog.getChapters().empty());
 	const auto & chapter = gameHandler->gs->replayLog.getChapters().back();
 	ASSERT_EQ(chapter.packs.size(), 1);
-	EXPECT_EQ(chapter.packs[0], encoded);
+	EXPECT_EQ(chapter.packPayload(0), encoded);
 }
 
 TEST_F(PreparedBattleWorldCommitTest, ScalarLiveUpdateOracleMatchesCommittedCanonicalState)
@@ -298,8 +298,9 @@ TEST_F(PreparedBattleWorldCommitTest, EmptyChapterSnapshotIsPreparedBeforeStateA
 	const auto & chapters = gameHandler->gs->replayLog.getChapters();
 	ASSERT_EQ(chapters.size(), 1);
 	EXPECT_FALSE(chapters[0].gamestateSnapshot.empty());
+	EXPECT_EQ(chapters[0].snapshotVersion, ESerializationVersion::CURRENT);
 	ASSERT_EQ(chapters[0].packs.size(), 1);
-	EXPECT_EQ(chapters[0].packs[0], encoded);
+	EXPECT_EQ(chapters[0].packPayload(0), encoded);
 }
 
 TEST_F(PreparedBattleWorldCommitTest, AddThenRemoveKeepsNativePhysicalOccurrenceAndQueryOnlyExclusion)

@@ -25,7 +25,7 @@ namespace battle { class PreparedBattleWorldCommit; }
 class DLL_LINKAGE PreparedReplayAppend final
 {
 public:
-	using Records = std::vector<std::vector<std::byte>>;
+	using Records = std::vector<ReplayPayload>;
 	enum class RecordingMode { WHEN_CONFIGURED, UNCONDITIONAL };
 private:
 	friend class battle::PreparedBattleWorldCommit;
@@ -43,7 +43,7 @@ private:
 	void reservePacks(size_t count);
 
 public:
-	using SnapshotProvider = std::function<std::vector<std::byte>()>;
+	using SnapshotProvider = std::function<ReplayPayload()>;
 	PreparedReplayAppend(ReplayLog & log, const BattleUnitsChanged & pack,
 		uint32_t day, const SnapshotProvider & snapshot);
 	/// Preencoded records under ONE reservation. Capture a real pre-packet

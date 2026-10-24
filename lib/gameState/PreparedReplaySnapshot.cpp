@@ -8,7 +8,7 @@
 #include "CGameState.h"
 #include <type_traits>
 
-std::vector<std::byte> capturePreparedReplaySnapshot(CGameState & state, bool recording)
+ReplayPayload capturePreparedReplaySnapshot(CGameState & state, bool recording)
 {
 	if(!recording || !state.replayLog.empty())
 		return {};
@@ -17,7 +17,7 @@ std::vector<std::byte> capturePreparedReplaySnapshot(CGameState & state, bool re
 	ReplayLog preserved = state.replayLog;
 	try
 	{
-		return state.saveToMemory();
+		return state.saveReplaySnapshot();
 	}
 	catch(...)
 	{

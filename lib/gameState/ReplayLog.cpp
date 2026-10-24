@@ -61,28 +61,6 @@ ReplayLog & ReplayLog::operator=(ReplayLog && other) noexcept
 	return *this;
 }
 
-std::vector<std::byte> ReplayPackSerializer::write(const CPackForClient & pack)
-{
-	CMemorySerializer serializer;
-	serializer.oser & &pack;
-
-	return serializer.extractBuffer();
-}
-
-std::unique_ptr<CPack> ReplayPackSerializer::read(const std::vector<std::byte> & data, IGameInfoCallback * cb)
-{
-	CMemorySerializer serializer(data);
-	serializer.iser.cb = cb;
-
-	std::unique_ptr<CPack> result;
-	serializer.iser & result;
-
-	if(result == nullptr)
-		throw std::runtime_error("Failed to read a netpack from the replay log!");
-
-	return result;
-}
-
 void ReplayLog::configure(bool recordEntireGameValue, uint32_t roundsKeptValue)
 {
 	preparationStamp.reset();
@@ -98,14 +76,17 @@ void ReplayLog::reconfigureOnLoad(uint32_t roundsKeptValue)
 	recordingPacks = true;
 }
 
-void ReplayLog::beginDay(uint32_t day, std::vector<std::byte> gamestateSnapshot)
+void ReplayLog::beginDay(uint32_t day, ReplayPayload snapshot)
 {
+	validateAppendState();
+	replayPayload::validateStoredVersion(snapshot.version);
 	preparationStamp.reset();
-	logGlobal->debug("Replay: new chapter, snapshot of %d bytes, %d chapters kept", gamestateSnapshot.size(), chapters.size() + 1);
+	logGlobal->debug("Replay: new chapter, snapshot of %d bytes, %d chapters kept", snapshot.bytes.size(), chapters.size() + 1);
 
 	chapters.emplace_back();
 	chapters.back().day = day;
-	chapters.back().gamestateSnapshot = std::move(gamestateSnapshot);
+	chapters.back().snapshotVersion = snapshot.bytes.empty() ? ESerializationVersion::NONE : snapshot.version;
+	chapters.back().gamestateSnapshot = std::move(snapshot.bytes);
 
 	dropExpiredData();
 }
@@ -129,6 +110,7 @@ void ReplayLog::dropExpiredData()
 	for(size_t i = 1; i < chapters.size() - chaptersToKeep; ++i)
 	{
 		chapters[i].gamestateSnapshot.clear();
+		chapters[i].snapshotVersion = ESerializationVersion::NONE;
 		chapters[i].gamestateSnapshot.shrink_to_fit();
 	}
 }
@@ -175,7 +157,7 @@ void ReplayLog::recordPack(CPackForClient & pack, CGameState & gs)
 	// NewTurn is recorded before it is applied, so the new day is only known from the pack itself
 	const auto * newTurn = dynamic_cast<const NewTurn *>(&pack);
 	if(chapters.empty() || newTurn != nullptr)
-		beginDay(newTurn ? newTurn->day : gs.day, gs.saveToMemory());
+		beginDay(newTurn ? newTurn->day : gs.day, gs.saveReplaySnapshot());
 
 	if(const auto * turnStart = dynamic_cast<const PlayerStartsTurn *>(&pack))
 		addTurn(turnStart->player);
@@ -186,13 +168,27 @@ void ReplayLog::recordPack(CPackForClient & pack, CGameState & gs)
 	addPack(ReplayPackSerializer::write(pack));
 }
 
-void ReplayLog::addPack(std::vector<std::byte> data)
+void ReplayLog::addPack(ReplayPayload payload)
 {
+	validateAppendState();
+	replayPayload::validateStoredVersion(payload.version);
 	preparationStamp.reset();
 	if(chapters.empty())
 		return;
-
-	chapters.back().packs.push_back(std::move(data));
+	auto & chapter = chapters.back();
+	if(chapter.packs.size() == chapter.packs.max_size() || chapter.packVersions.size() == chapter.packVersions.max_size())
+		throw std::length_error("Replay packet count exceeds container limits");
+	const auto required = chapter.packs.size() + 1;
+	if(required > chapter.packs.capacity())
+	{
+		const auto growth = std::min(std::max(chapter.packs.size(), size_t{1}), chapter.packs.max_size() - chapter.packs.size());
+		chapter.packs.reserve(std::max(required, chapter.packs.size() + growth));
+	}
+	chapter.packVersions.reserve(std::min(chapter.packs.capacity(), chapter.packVersions.max_size()));
+	static_assert(std::is_nothrow_move_constructible_v<std::vector<std::byte>>);
+	static_assert(std::is_nothrow_copy_constructible_v<ESerializationVersion>);
+	chapter.packs.push_back(std::move(payload.bytes));
+	chapter.packVersions.push_back(payload.version);
 }
 
 bool ReplayLog::isRecordingPacks() const
@@ -212,7 +208,15 @@ bool ReplayLog::isRecordingEntireGame() const
 
 bool ReplayLog::canReplayEntireGame() const
 {
-	return recordEntireGame && !chapters.empty() && !chapters.front().gamestateSnapshot.empty();
+	validateStorage();
+	if(!recordEntireGame || chapters.empty() || chapters.front().gamestateSnapshot.empty()
+		|| chapters.front().snapshotVersion == ESerializationVersion::NONE)
+		return false;
+	for(const auto & chapter : chapters)
+		for(const auto version : chapter.packVersions)
+			if(version == ESerializationVersion::NONE)
+				return false;
+	return true;
 }
 
 const std::vector<ReplayChapter> & ReplayLog::getChapters() const

@@ -100,6 +100,7 @@ set(vcmiclientcommon_SRCS
 	netlag/PackRollbackGeneratorVisitor.cpp
 
 	replay/GameplayReplayer.cpp
+	replay/ReplayPlanner.cpp
 	replay/ClientPacketReceiveSession.cpp
 	replay/ClientReceiveAccess.cpp
 	replay/ClientReceiveConsumedFactory.cpp

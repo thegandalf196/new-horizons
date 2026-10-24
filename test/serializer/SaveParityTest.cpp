@@ -165,6 +165,7 @@ saveParity::Evidence coverageStart()
 	chapter.day = 2;
 	chapter.gamestateSnapshot = {std::byte{1}};
 	chapter.packs = {{std::byte{2}}};
+	chapter.packVersions = {ESerializationVersion::NONE};
 	ReplayTurnMark mark;
 	mark.player = PlayerColor(0);
 	chapter.turns.push_back(mark);
@@ -177,6 +178,7 @@ saveParity::Evidence coverageFinish(const saveParity::Evidence & start)
 	auto finish = start;
 	++finish.day;
 	finish.chapters[0].packs.push_back({std::byte{3}});
+	finish.chapters[0].packVersions.push_back(ESerializationVersion::NONE);
 	finish.chapters[0].turns[0].lastPack = 2;
 	auto next = start.chapters[0];
 	next.day = finish.day;
@@ -229,7 +231,7 @@ protected:
 		handler = std::make_unique<CGameHandler>(server, gameState());
 		handler->randomizer->setSeed(42);
 		gameState()->replayLog.configure(false, 1);
-		gameState()->replayLog.beginDay(gameState()->day, gameState()->saveToMemory());
+		gameState()->replayLog.beginDay(gameState()->day, gameState()->saveReplaySnapshot());
 		gameState()->replayLog.addTurn(PlayerColor(0));
 	}
 	void TearDown() override

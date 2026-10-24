@@ -19,6 +19,7 @@ PreparedReplayAppend::PreparedReplayAppend(ReplayLog & log,
 	const BattleUnitsChanged & pack, uint32_t day, const SnapshotProvider & snapshot)
 	: owner(log), configured(log.recordingPacks), recording(configured), opensChapter(log.chapters.empty())
 {
+	owner.validateAppendState();
 	if(!recording)
 		return;
 	if(!log.preparationStamp)
@@ -72,8 +73,12 @@ void PreparedReplayAppend::exchangePreparedStorage() noexcept
 			static_assert(std::is_nothrow_move_constructible_v<std::vector<std::byte>>);
 			// Constructor reserved this slot; exclusive ownership forbids changes
 			// to capacity/size except through invalidating ReplayLog operations.
+			static_assert(std::is_nothrow_copy_constructible_v<ESerializationVersion>);
 			for(auto & record : encoded)
-				owner.chapters.back().packs.emplace_back(std::move(record));
+			{
+				owner.chapters.back().packs.emplace_back(std::move(record.bytes));
+				owner.chapters.back().packVersions.emplace_back(record.version);
+			}
 		}
 	}
 	consumed = true;

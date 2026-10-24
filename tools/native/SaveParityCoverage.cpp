@@ -46,7 +46,10 @@ void requireTurnCoverage(const Evidence & start, const Evidence & finish)
 	const auto & before = chapterAt(start, start.day);
 	const auto & after = chapterAt(finish, start.day);
 	const auto & next = chapterAt(finish, finish.day);
-	if(before.gamestateSnapshot != after.gamestateSnapshot
+	if(before.snapshotVersion != after.snapshotVersion
+		|| before.packVersions.size() > after.packVersions.size()
+		|| !std::equal(before.packVersions.begin(), before.packVersions.end(), after.packVersions.begin())
+		|| before.gamestateSnapshot != after.gamestateSnapshot
 		|| before.packs.size() > after.packs.size()
 		|| !std::equal(before.packs.begin(), before.packs.end(), after.packs.begin())
 		|| before.turns.size() > after.turns.size())

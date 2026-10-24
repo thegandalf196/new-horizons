@@ -978,3 +978,26 @@ remains authored. This loader-only intent is consumed by fresh initialization; i
 not new binary state. Binary and crossover reads retain their existing captured-hero
 boundary and never request new default equipment. JSON writers preserve an explicit
 empty artifact object so a map authoring roundtrip cannot turn it into DEFAULT.
+
+## Embedded replay payload provenance
+
+`NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS` records the exact snapshot encoding and
+one encoding version per recorded packet. A chapter can contain packets from
+multiple supported versions after loading and continuing an older game. The
+canonical packet and replay-snapshot writers return bytes with their actual
+writer version; prepared single/batch storage preserves each pair atomically.
+Copies, retention, replay planning and cross-chapter fast-forward retain those
+versions. A locally captured simultaneous-turn rewind uses its own current
+writer version, independently of the historical snapshot that began playback.
+
+Legacy logs contain no trustworthy per-payload provenance. They remain opaque
+UNKNOWN records during ordinary load and current resave; the outer save version
+is not inferred to describe every historical blob. Playback refuses a sequence
+that needs UNKNOWN data before decoding it. A later known snapshot can anchor
+later turns without discarding the earlier raw history. No trial decoding or
+serializer guard relaxation is used. Unsupported writers refuse loss of known
+provenance before direct chapter/log and enclosing world prefixes. UNKNOWN
+storage is permitted; UNKNOWN execution is not. Metadata counts, supported
+version ranges and empty-snapshot/tag consistency validate on decode, planning
+and save. Append reservation checks the current array shape and incoming tags,
+then reserves both arrays before its no-throw publication step.

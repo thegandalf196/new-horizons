@@ -60,7 +60,7 @@ TEST(PreparedReplayAppendTest, ExistingChapterMatchesLegacyBytesOrderAndSingleUs
 	static_assert(noexcept(plan.commit()));
 	ASSERT_TRUE(plan.commit());
 	EXPECT_EQ(replayBytes(log), replayBytes(expected));
-	EXPECT_EQ(log.getChapters().back().packs.back(), encoded);
+	EXPECT_EQ(log.getChapters().back().packPayload(log.getChapters().back().packs.size() - 1), encoded);
 	EXPECT_EQ(log.getChapters().back().packs.front().data(), retainedPayload);
 	EXPECT_EQ(snapshots, 0);
 	EXPECT_FALSE(plan.readyToCommit());

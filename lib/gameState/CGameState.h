@@ -238,10 +238,14 @@ public:
 	/// Serializes the whole gamestate into a memory buffer. The replay log is deliberately left
 	/// out - a snapshot lives inside that very log, and including it would nest snapshots.
 	std::vector<std::byte> saveToMemory();
+	/// Canonical replay writer returns bytes and their exact encoding together.
+	ReplayPayload saveReplaySnapshot();
 
 	/// Replaces contents of this gamestate with a snapshot made by saveToMemory().
 	/// Identity of this object is preserved, so all shared_ptr's to it stay valid.
 	void loadFromMemory(std::vector<std::byte> data);
+	/// Historical replay bytes require proven per-payload provenance.
+	void loadReplaySnapshot(ReplayPayload payload);
 	void validateCrossSchoolFormulaSerialization(bool supported) const;
 	void validateOpportunistSerialization(bool supported) const;
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
@@ -283,6 +287,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			replayLog.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS));
 		if(h.saving)
 			validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving)

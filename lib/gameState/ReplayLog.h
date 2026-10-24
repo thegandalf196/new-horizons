@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../constants/EntityIdentifiers.h"
+#include "ReplayPayload.h"
 #include <memory>
 
 struct CPack;
@@ -22,8 +23,8 @@ class PreparedReplayAppend;
 /// Lives in lib because both the recording server and the replaying client need it.
 namespace ReplayPackSerializer
 {
-	DLL_LINKAGE std::vector<std::byte> write(const CPackForClient & pack);
-	DLL_LINKAGE std::unique_ptr<CPack> read(const std::vector<std::byte> & data, IGameInfoCallback * cb);
+	DLL_LINKAGE ReplayPayload write(const CPackForClient & pack);
+	DLL_LINKAGE std::unique_ptr<CPack> read(const ReplayPayload & payload, IGameInfoCallback * cb);
 }
 
 /// Marks a single player turn inside a chapter. With simturns those ranges overlap.
@@ -58,13 +59,34 @@ struct DLL_LINKAGE ReplayChapter
 	std::vector<std::byte> gamestateSnapshot;
 	std::vector<std::vector<std::byte>> packs;
 	std::vector<ReplayTurnMark> turns;
+	ESerializationVersion snapshotVersion = ESerializationVersion::NONE;
+	std::vector<ESerializationVersion> packVersions;
+	void validateStorage() const;
+	void validateSerialization(bool provenanceSupported) const;
+	ReplayPayload snapshotPayload() const;
+	ReplayPayload packPayload(size_t index) const;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS));
 		h & day;
 		h & gamestateSnapshot;
 		h & packs;
 		h & turns;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS))
+		{
+			h & snapshotVersion;
+			h & packVersions;
+		}
+		else if(!h.saving)
+		{
+			// The enclosing file version is not proof of each embedded payload.
+			snapshotVersion = ESerializationVersion::NONE;
+			packVersions.assign(packs.size(), ESerializationVersion::NONE);
+		}
+		if(!h.saving)
+			validateStorage();
 	}
 };
 
@@ -89,6 +111,7 @@ class DLL_LINKAGE ReplayLog
 	bool recordingPacks = false;
 
 	void dropExpiredData();
+	void validateAppendState() const;
 
 public:
 	ReplayLog() = default;
@@ -103,11 +126,11 @@ public:
 	void reconfigureOnLoad(uint32_t roundsKept);
 
 	/// Opens a chapter for a new game day. `gamestateSnapshot` must be the gamestate as of right now.
-	void beginDay(uint32_t day, std::vector<std::byte> gamestateSnapshot);
+	void beginDay(uint32_t day, ReplayPayload snapshot);
 
 	void addTurn(const PlayerColor & player);
 	void endTurn(const PlayerColor & player);
-	void addPack(std::vector<std::byte> data);
+	void addPack(ReplayPayload payload);
 
 	/// Records a single netpack. Must be called before the pack is applied on `gs`, so that a
 	/// snapshot taken here holds the state the new day started from.
@@ -123,9 +146,13 @@ public:
 	bool canReplayEntireGame() const;
 
 	const std::vector<ReplayChapter> & getChapters() const;
+	void validateStorage() const;
+	void validateSerialization(bool provenanceSupported) const;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS));
 		if(!h.saving)
 			preparationStamp.reset();
 		h & chapters;

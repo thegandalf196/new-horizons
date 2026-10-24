@@ -2212,33 +2212,6 @@ void CGameState::saveGame(CSaveFile & file) const
 	file.save(*this);
 }
 
-std::vector<std::byte> CGameState::saveToMemory()
-{
-	NativeBonusGraphAccess graphAccess;
-	// a snapshot is stored inside the replay log itself, so the log must not be part of it.
-	// Swapping keeps the serialized layout identical - an empty log is written instead.
-	ReplayLog logBackup;
-	std::swap(logBackup, replayLog);
-
-	CMemorySerializer serializer;
-	serializer.oser & *this;
-
-	std::swap(logBackup, replayLog);
-
-	return serializer.extractBuffer();
-}
-
-void CGameState::loadFromMemory(std::vector<std::byte> data)
-{
-	auto rootMutation = battleRootLifetime.mutate();
-	// battles are not part of serialize(), so leftovers of the discarded state have to go explicitly
-	currentBattles.clear();
-
-	CMemorySerializer serializer(std::move(data));
-	serializer.iser.loadingGamestate = true;
-	serializer.iser.cb = this;
-	serializer.iser & *this;
-}
 
 void CGameState::loadGame(CLoadFile & file)
 {

@@ -271,11 +271,13 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_ADDITIONAL_SPECIALTIES, // optional captured additional individual specialty policies
 
+	NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS, // exact snapshot and per-packet replay encoding provenance
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_ADDITIONAL_SPECIALTIES,
+	CURRENT = NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS
@@ -552,3 +554,6 @@ static_assert(ESerializationVersion::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES
 
 static_assert(ESerializationVersion::NEW_HORIZONS_ADDITIONAL_SPECIALTIES
 	> ESerializationVersion::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES, "Additional specialty capture must remain append-only");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS
+	> ESerializationVersion::NEW_HORIZONS_ADDITIONAL_SPECIALTIES, "Replay provenance must remain append-only");
