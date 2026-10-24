@@ -8,10 +8,14 @@
 #include "../../AI/BattleAI/DamageCacheAdmission.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../lib/CRandomGenerator.h"
+#include "../../lib/CStack.h"
+#include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include <bit>
 #include <future>
+#include <stdexcept>
+#include <utility>
 
 namespace
 {
@@ -32,6 +36,26 @@ public:
 		return source.getUnstackedBonuses(selector);
 	}
 	int32_t getTreeVersion() const override { return source.getTreeVersion(); }
+};
+
+// Real virtual saved-rules query, with no mocked damage/value implementation.
+class CountingRulesBattle final : public BattleInfo
+{
+public:
+	JsonNode rules;
+	mutable unsigned queries = 0;
+	mutable bool failNext = false;
+	explicit CountingRulesBattle(JsonNode rules) : BattleInfo(nullptr), rules(std::move(rules)) {}
+	const JsonNode & getHeroCommandRules() const override
+	{
+		++queries;
+		if(failNext)
+		{
+			failNext = false;
+			throw std::runtime_error("fixture saved-rules query failure");
+		}
+		return rules;
+	}
 };
 
 class DamageCacheAdmissionTest : public ProjectedTargetHitFixture
@@ -80,6 +104,10 @@ protected:
 		DamageCache actualCache;
 		actualCache.buildDamageCache(child, BattleSide::ATTACKER);
 		const auto before = snapshot();
+		for(const auto & unit : battle()->stacks)
+			(void)unit->counterAttacks.available();
+		const auto world = gameState()->saveToMemory();
+		const auto defaultRng = projectedHitTest::serialized(CRandomGenerator::getDefault());
 		const auto serverRng = projectedHitTest::serialized(*gameHandler->randomizer);
 		const auto gameRng = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
 		const auto spawns = child->getElementalRebirthSpawnUnitIds();
@@ -118,6 +146,8 @@ protected:
 				}
 			}
 		}
+		EXPECT_EQ(gameState()->saveToMemory(), world);
+		EXPECT_EQ(projectedHitTest::serialized(CRandomGenerator::getDefault()), defaultRng);
 		EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
 		EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
 		EXPECT_EQ(child->getElementalRebirthSpawnUnitIds(), spawns);
@@ -173,10 +203,16 @@ TEST_F(DamageCacheAdmissionTest, WrongActorAndSiblingBranchFallBackToIndependent
 	siblingActor->addUnitBonus({newHorizonsCombatSkills::gamblerLuckPenalty()});
 	DamageCacheAdmission wrongBranch(*siblingActor, *sibling);
 	ASSERT_TRUE(wrongBranch.hasGamblerPenalty());
+	const JsonNode canonical(JsonPath::builtin("config/newHorizonsCombat"));
+	CountingRulesBattle otherRules(canonical["combat"]["heroCommands"]);
+	DamageCacheAdmission wrongRules(*actor, otherRules);
+	ASSERT_TRUE(wrongRules.supportsFocusFire());
+	ASSERT_FALSE(wrongActor.supportsFocusFire());
+	ASSERT_FALSE(wrongBranch.supportsFocusFire());
 	DamageCache cache;
 	cache.buildDamageCache(child, BattleSide::ATTACKER);
 	const auto expected = cache.getDamage(actor.get(), defender.get(), child);
-	for(auto * hint : {&wrongActor, &wrongBranch})
+	for(auto * hint : {&wrongActor, &wrongBranch, &wrongRules})
 	{
 		DamageCacheProbeTiming timing;
 		EXPECT_EQ(cache.getDamage(actor.get(), defender.get(), child, &timing, hint), expected);
@@ -286,4 +322,82 @@ TEST_F(DamageCacheAdmissionTest, ParallelSiblingBatchesOwnSeparateFactsAndDamage
 	EXPECT_EQ(rightActor->save(), rightBefore);
 	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
 	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
+}
+
+TEST_F(DamageCacheAdmissionTest, CanonicalMainProbesMatchReferenceWithRepeatedMixedTargets)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(heroCommands::supportedByRules(child->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE));
+	const auto * other = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(94), 20);
+	resetChild();
+	ASSERT_NO_FATAL_FAILURE(compareMainBatch(child->getForUpdate(incoming->unitId()),
+		{braced, other, braced, other}));
+}
+
+TEST_F(DamageCacheAdmissionTest, SavedRulesSupportIsLazyAndCachesTrueAndFalseWithoutInventingUnknownSupport)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto actor = child->getForUpdate(incoming->unitId());
+	const JsonNode canonical(JsonPath::builtin("config/newHorizonsCombat"));
+	const JsonNode targeted(JsonPath::builtin("config/newHorizonsCombatV2"));
+	auto legacy = targeted["combat"]["heroCommands"];
+	legacy["rulesetVersion"].Integer() = 1;
+	legacy["commands"].Struct().erase("focusFire");
+	heroCommands::validateRules(legacy);
+	auto unknown = canonical["combat"]["heroCommands"];
+	unknown["rulesetVersion"].Integer() = 999;
+	auto malformed = unknown;
+	malformed["rulesetVersion"].String() = "future";
+	const std::vector<std::pair<JsonNode, bool>> variants{
+		{canonical["combat"]["heroCommands"], true}, {targeted["combat"]["heroCommands"], true},
+		{legacy, false}, {unknown, false}, {malformed, false}, {JsonNode(), false}};
+	for(const auto & [rules, expected] : variants)
+	{
+		CountingRulesBattle source(rules);
+		DamageCacheAdmission admission(*actor, source);
+		EXPECT_EQ(source.queries, 0u);
+		EXPECT_EQ(admission.supportsFocusFire(), expected);
+		EXPECT_EQ(admission.supportsFocusFire(), heroCommands::supportedByRules(rules, HeroCommand::FOCUS_FIRE));
+		EXPECT_EQ(source.queries, 1u);
+	}
+}
+
+TEST_F(DamageCacheAdmissionTest, FailedRulesQueryDoesNotPublishAndRetryRetainsFirstUseOrdering)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto actor = child->getForUpdate(incoming->unitId());
+	const JsonNode canonical(JsonPath::builtin("config/newHorizonsCombat"));
+	CountingRulesBattle source(canonical["combat"]["heroCommands"]);
+	source.failNext = true;
+	DamageCacheAdmission admission(*actor, source);
+	EXPECT_EQ(source.queries, 0u);
+	EXPECT_TRUE(source.failNext); // Construction did not move this query before other preflight facts.
+	EXPECT_THROW(admission.supportsFocusFire(), std::runtime_error);
+	EXPECT_EQ(source.queries, 1u);
+	EXPECT_TRUE(admission.supportsFocusFire());
+	EXPECT_EQ(source.queries, 2u);
+	EXPECT_TRUE(admission.supportsFocusFire());
+	EXPECT_EQ(source.queries, 2u);
+}
+
+TEST_F(DamageCacheAdmissionTest, NewBatchObservesChangedSavedRulesAndCallbackIdentity)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto actor = child->getForUpdate(incoming->unitId());
+	const JsonNode canonical(JsonPath::builtin("config/newHorizonsCombat"));
+	CountingRulesBattle source(canonical["combat"]["heroCommands"]);
+	{
+		DamageCacheAdmission first(*actor, source);
+		EXPECT_TRUE(first.supportsFocusFire());
+		EXPECT_EQ(source.queries, 1u);
+	}
+	source.rules["rulesetVersion"].Integer() = 999; // Prior immutable batch ended.
+	CountingRulesBattle sibling(canonical["combat"]["heroCommands"]);
+	DamageCacheAdmission next(*actor, source), independent(*actor, sibling);
+	EXPECT_FALSE(next.supportsFocusFire());
+	EXPECT_TRUE(independent.supportsFocusFire());
+	EXPECT_FALSE(next.matches(*actor, sibling));
+	EXPECT_FALSE(independent.matches(*actor, source));
+	EXPECT_EQ(source.queries, 2u);
+	EXPECT_EQ(sibling.queries, 1u);
 }

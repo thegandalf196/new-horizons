@@ -270,7 +270,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	// Evasive Shroud is a temporary defender-side reduction. Remember any target
 	// whose marker was present while this cache tree was populated so expiry does
 	// not make an earlier reduced ID-only entry appear valid again.
-	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE)
+	if(admission.supportsFocusFire()
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
 		|| hasRangedFollowUp
 		|| hasReducedExtraActivation

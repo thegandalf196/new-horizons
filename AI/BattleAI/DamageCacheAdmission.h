@@ -14,7 +14,7 @@ namespace battle { class Unit; }
 class CBattleInfoCallback;
 class CGHeroInstance;
 
-/// Lazy actor-only admission facts for ONE immutable main-target probe batch.
+/// Lazy actor and callback-only admission facts for ONE immutable main-target probe batch.
 /// Not a damage cache or mutation-aware cache. End before any applied action,
 /// activation, actor replacement or branch mutation. Never pass to reverse DPS,
 /// detached strike actors or reaction children. Queries retain first-use order.
@@ -35,10 +35,11 @@ public:
 	bool hasGamblerPenalty();
 	bool hasReducedExtraActivation();
 	bool hasBloodragePain();
+	bool supportsFocusFire();
 
 private:
 	enum Fact : std::size_t { AMBUSHER, SHADOW, NIGHT, NIGHT_EFFECT, RELENTLESS, GAMBLER,
-		REDUCED_ACTIVATION, BLOODRAGE, COUNT };
+		REDUCED_ACTIVATION, BLOODRAGE, FOCUS_FIRE_RULES, COUNT };
 	const battle::Unit & actor;
 	const CBattleInfoCallback & battle;
 	std::optional<BattleSide> actorSide;

@@ -7,6 +7,7 @@
 #include "DamageCacheAdmission.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
@@ -91,5 +92,13 @@ bool DamageCacheAdmission::hasBloodragePain()
 		return actor.getPersonalBloodrageIncrement() > 0
 			|| (info && (side() == BattleSide::ATTACKER || side() == BattleSide::DEFENDER)
 				&& info->getBloodragePainIncrement(side()) > 0);
+	});
+}
+
+bool DamageCacheAdmission::supportsFocusFire()
+{
+	return remember(FOCUS_FIRE_RULES, [&]
+	{
+		return heroCommands::supportedByRules(battle.getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE);
 	});
 }
