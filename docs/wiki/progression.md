@@ -2,6 +2,12 @@
 
 [Wiki home](README.md) · [Progression](progression.md) · [Combat](combat.md) · [Orders](orders.md) · [Creatures](creatures.md) · [Heroes](heroes.md) · [Towns](towns.md) · [Skills](skills/README.md) · [Spells](spells/README.md)
 
+## Experience and levels
+
+Experience is cumulative and currently uses the inherited level thresholds: **1,000 total XP for level 2**, **4,600 for level 5**, **14,700 for level 10** and **81,961 for level 20**.
+
+Learning and relevant specialties modify XP awards. Scenario level caps can limit further advancement.
+
 ## Hero attributes
 
 In Heroes III Complete, a hero's Attack and Defense are added to the army's creature statistics. In New Horizons, creature Attack and Defense remain intrinsic combat values. Hero Attack and Defense contribute through Orders and effects that explicitly use them. A high-Attack hero therefore has a reason to issue an offensive Order, rather than receiving the same passive benefit on every attack.
