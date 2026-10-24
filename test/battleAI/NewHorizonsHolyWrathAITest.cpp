@@ -97,8 +97,9 @@ protected:
 		setTestSpellPointTotal(attackerSideHero, 1000);
 
 		active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
-		ordinary = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 3), 20);
-		undead = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 7), 20);
+		// Both targets must survive the current 260/390 damage so classification remains distinguishable.
+		ordinary = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 3), 100);
+		undead = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 7), 100);
 		ASSERT_NE(active, nullptr);
 		ASSERT_NE(ordinary, nullptr);
 		ASSERT_NE(undead, nullptr);
@@ -167,7 +168,7 @@ TEST_F(NewHorizonsHolyWrathAITest, PrefersUndeadTargetAndHypotheticalDamageMatch
 	spell->battleMechanics(&preview)->castEval(projected.getServerCallback(), projectedTarget);
 	const auto projectedDamage = undeadHealth
 		- projected.battleGetUnitByID(undead->unitId())->getAvailableHealth();
-	EXPECT_EQ(projectedDamage, 93);
+	EXPECT_EQ(projectedDamage, 390);
 	EXPECT_EQ(ordinary->getAvailableHealth(), ordinaryHealth);
 	EXPECT_EQ(undead->getAvailableHealth(), undeadHealth);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);

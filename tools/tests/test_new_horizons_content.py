@@ -847,7 +847,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(row['schools'], ['new-horizons:light'])
         self.assertEqual(row['level'], 3)
         self.assertEqual(row['costs'], [11, 11, 11, 11])
-        self.assertEqual(row['directDamage'], {'base': 40, 'powerCoefficient': 2})
+        self.assertEqual(row['directDamage'], {'base': 40, 'powerCoefficient': 20})
 
         definition = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['holyWrath']
         self.assertEqual(definition['name'], 'Holy Wrath')

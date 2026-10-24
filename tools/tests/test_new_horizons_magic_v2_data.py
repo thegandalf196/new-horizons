@@ -220,7 +220,7 @@ class MagicV2DataTest(unittest.TestCase):
                 'schools': ['new-horizons:light'],
                 'level': 3,
                 'costs': [11, 11, 11, 11],
-                'directDamage': {'base': 40, 'powerCoefficient': 2},
+                'directDamage': {'base': 40, 'powerCoefficient': 20},
             },
         }
         for identity, expected_row in expected.items():

@@ -701,7 +701,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"description" : "In current New Horizons games, deal 40 + 2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Earlier games retain their own damage formula. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
@@ -711,7 +711,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"description" : "In current New Horizons games, deal 40 + 2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Earlier games retain their own damage formula. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
@@ -721,7 +721,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"description" : "In current New Horizons games, deal 40 + 2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Earlier games retain their own damage formula. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
@@ -731,7 +731,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"description" : "In current New Horizons games, deal 40 + 2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Earlier games retain their own damage formula. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {

@@ -144,7 +144,7 @@ TEST_F(NewHorizonsHolyWrathTest, CanonicalRosterAndSchoolRankUseTheFortyPlusTwoT
 
 	const auto lightMagic = SecondarySkill(SecondarySkill::decode("new-horizons:lightMagic"));
 	ASSERT_TRUE(lightMagic.hasValue());
-	const std::array<int64_t, 4> expectedDamage{62, 65, 68, 71};
+	const std::array<int64_t, 4> expectedDamage{260, 293, 326, 359};
 	const std::array<int, 4> expectedCoefficient{100, 115, 130, 145};
 	for(size_t rank = 0; rank < expectedDamage.size(); ++rank)
 	{
@@ -160,7 +160,7 @@ TEST_F(NewHorizonsHolyWrathTest, CanonicalRosterAndSchoolRankUseTheFortyPlusTwoT
 
 	const auto description = newHorizonsMagic::spellDescriptionForHero(
 		attackerSideHero, spell, MasteryLevel::EXPERT);
-	EXPECT_NE(description.find("40 + 2 x Spell Power"), std::string::npos);
+	EXPECT_NE(description.find("40 + 2 x displayed Spell Power"), std::string::npos);
 	EXPECT_NE(description.find("Undead"), std::string::npos);
 	EXPECT_NE(description.find("base faction is Inferno"), std::string::npos);
 	EXPECT_NE(description.find("Expert School: 145% Spell Power damage coefficient."), std::string::npos);
@@ -173,10 +173,10 @@ TEST_F(NewHorizonsHolyWrathTest, AuthoritativeCastDamagesOrdinaryEnemyAndSpendsE
 	const auto beforeMana = attackerSideHero->getManaAvailable();
 
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), holyWrathAction(target)));
-	EXPECT_EQ(beforeHealth - target->getAvailableHealth(), 62);
+	EXPECT_EQ(beforeHealth - target->getAvailableHealth(), 260);
 	EXPECT_EQ(beforeMana - attackerSideHero->getManaAvailable(), 11);
 	ASSERT_EQ(server.castsOf(holyWrathSpell()).size(), 1u);
-	EXPECT_EQ(server.castsOf(holyWrathSpell()).front().damage, 62);
+	EXPECT_EQ(server.castsOf(holyWrathSpell()).front().damage, 260);
 }
 
 TEST_F(NewHorizonsHolyWrathTest, AuthoritativeCastDealsOneHundredFiftyPercentToUndead)
@@ -184,7 +184,7 @@ TEST_F(NewHorizonsHolyWrathTest, AuthoritativeCastDealsOneHundredFiftyPercentToU
 	ASSERT_NO_FATAL_FAILURE(prepare(110, "core:skeleton", 1000));
 	const auto undeadBefore = target->getAvailableHealth();
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), holyWrathAction(target)));
-	EXPECT_EQ(undeadBefore - target->getAvailableHealth(), 93);
+	EXPECT_EQ(undeadBefore - target->getAvailableHealth(), 390);
 }
 
 TEST_F(NewHorizonsHolyWrathTest, FinalDamageBonusIsAppliedBeforeDamageReceivedCap)
@@ -211,7 +211,7 @@ TEST_F(NewHorizonsHolyWrathTest, CreatureWithBothQualifyingTraitsReceivesOneMult
 	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::UNDEAD, BonusSource::OTHER, 1, BonusSourceID()));
 	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, holyWrathSpell().toSpell());
-	EXPECT_EQ(holyWrathSpell().toSpell()->battleMechanics(&cast)->adjustEffectValue(target), 93);
+	EXPECT_EQ(holyWrathSpell().toSpell()->battleMechanics(&cast)->adjustEffectValue(target), 390);
 }
 
 TEST_F(NewHorizonsHolyWrathTest, InfernoBaseFactionReceivesBonusAndOddDamageRoundsDownAfterResistance)
@@ -219,17 +219,25 @@ TEST_F(NewHorizonsHolyWrathTest, InfernoBaseFactionReceivesBonusAndOddDamageRoun
 	ASSERT_NO_FATAL_FAILURE(prepare(110, "core:imp", 1000));
 	ASSERT_EQ(target->getFactionID(), FactionID::INFERNO);
 	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, holyWrathSpell().toSpell());
-	EXPECT_EQ(holyWrathSpell().toSpell()->battleMechanics(&cast)->adjustEffectValue(target), 93);
+	EXPECT_EQ(holyWrathSpell().toSpell()->battleMechanics(&cast)->adjustEffectValue(target), 390);
 
-	// Pick a base formula that produces 63, then verify Holy Wrath multiplies the
-	// ordinarily resistance-adjusted 31 damage: floor(31 * 1.5) = 46.
-	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 115, ChangeValueMode::ABSOLUTE);
+	// Basic Light at displayed Spell Power 113 gives 40 + floor(226 * 1.15) = 299.
+	// Mitigation first gives floor(299 / 2) = 149, then floor(149 * 1.5) = 223.
+	// Reversing that order would give floor(floor(299 * 1.5) / 2) = 224.
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 113, ChangeValueMode::ABSOLUTE);
+	const auto lightMagic = SecondarySkill(SecondarySkill::decode("new-horizons:lightMagic"));
+	attackerSideHero->setSecSkillLevel(lightMagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getSecSkillLevel(lightMagic), MasteryLevel::BASIC);
 	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(),
 		BonusSubtypeID(SpellSchool::ANY)));
 	spells::BattleCast resisted(battle(), attackerSideHero, spells::Mode::HERO, holyWrathSpell().toSpell());
-	EXPECT_EQ(holyWrathSpell().toSpell()->battleMechanics(&resisted)->getEffectValue(), 63);
-	EXPECT_EQ(holyWrathSpell().toSpell()->battleMechanics(&resisted)->adjustEffectValue(target), 46);
+	const auto mechanics = holyWrathSpell().toSpell()->battleMechanics(&resisted);
+	ASSERT_EQ(mechanics->getEffectPower(), 113);
+	ASSERT_EQ(mechanics->getEffectPowerDivisor(), 10);
+	ASSERT_EQ(mechanics->getSpellPowerCoefficientBasisPoints(), 11500);
+	EXPECT_EQ(mechanics->getEffectValue(), 299);
+	EXPECT_EQ(mechanics->adjustEffectValue(target), 223);
 }
 
 TEST_F(NewHorizonsHolyWrathTest, SpellImmunityRejectsCastWithoutManaOrDamage)

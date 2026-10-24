@@ -955,7 +955,7 @@
 						],
 						"directDamage": {
 							"base": 40,
-							"powerCoefficient": 2
+							"powerCoefficient": 20
 						}
 					},
 					"new-horizons:holyArmor": {

@@ -683,3 +683,23 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandJsonRoundTripRetainsRawAndMarkerlessC
 			SpellID(SpellID::QUICKSAND), 60, 10), rawStep ? 3 : 2);
 	}
 }
+
+TEST(NewHorizonsMagicV2RulesTest, HolyWrathCurrentAndCapturedEarlierCoefficientsRemainIndependent)
+{
+	const auto current = originalRules();
+	constexpr auto key = "new-horizons:holyWrath";
+	ASSERT_EQ(current["spells"][key]["directDamage"]["powerCoefficient"].Integer(), 20);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(current, key, 0, 10), 40);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(current, key, 100, 10), 240);
+	auto captured = current;
+	captured["spells"][key]["directDamage"]["powerCoefficient"].Integer() = 2;
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(captured));
+	CMemorySerializer wire;
+	wire.oser & captured;
+	JsonNode restored;
+	wire.iser & restored;
+	ASSERT_EQ(restored, captured);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(restored, key, 0, 10), 40);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(restored, key, 100, 10), 60);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(current, key, 100, 10), 240);
+}
