@@ -183,7 +183,27 @@ TEST_P(NewHorizonsSelectedSpecialtyArtTest, WrongIdentityOrResolvedSkillCannotCl
 	const auto & row = selectedArtCases.at(GetParam());
 	if(GetParam() < 2)
 	{
-		auto changed = prototype(row.hero);
+		class ChangedSkillPrototype final : public CHero
+		{
+			const CHero & source;
+
+		public:
+			explicit ChangedSkillPrototype(const CHero & original) : CHero(), source(original)
+			{
+				// Copy presentation metadata only; Entity and registered heroes stay untouched.
+				imageIndex = source.imageIndex;
+				secondarySkillSpecialtyAlias = source.secondarySkillSpecialtyAlias;
+				for(const auto & bonus : source.specialty)
+					specialty.push_back(bonus);
+			}
+			std::string getJsonKey() const override { return source.getJsonKey(); }
+			HeroTypeID getId() const override { return source.getId(); }
+			std::string getSpecialtyNameTranslated() const override { return source.getSpecialtyNameTranslated(); }
+			std::string getSpecialtyDescriptionTranslated() const override { return source.getSpecialtyDescriptionTranslated(); }
+		};
+		const auto & original = prototype(row.hero);
+		const auto before = original.specialty.toJsonNode();
+		ChangedSkillPrototype changed(original);
 		ASSERT_TRUE(changed.secondarySkillSpecialtyAlias);
 		changed.secondarySkillSpecialtyAlias->skill = SecondarySkill(SecondarySkill::OFFENCE);
 		const auto wrong = resolveSpecialtyPresentation(changed, development, magic, std::nullopt);
@@ -192,6 +212,8 @@ TEST_P(NewHorizonsSelectedSpecialtyArtTest, WrongIdentityOrResolvedSkillCannotCl
 		EXPECT_FALSE(resolvedSpecialtyArtwork(row.hero, SpecialtyArtworkFamily::Skill, "core:offence"));
 		EXPECT_FALSE(resolvedSpecialtyArtwork(row.hero, SpecialtyArtworkFamily::Spell, row.skill));
 		EXPECT_FALSE(resolvedSpecialtyArtwork("core:christian", SpecialtyArtworkFamily::Skill, row.skill));
+		EXPECT_EQ(original.secondarySkillSpecialtyAlias->skill, SecondarySkill(SecondarySkill::decode(row.skill)));
+		EXPECT_EQ(original.specialty.toJsonNode(), before);
 	}
 	else
 	{

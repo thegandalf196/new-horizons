@@ -479,9 +479,21 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, SyntheticArmorerIdentityRetainsGeneri
 {
 	class UnboundPrototype final : public CHero
 	{
+		const CHero & source;
+
 	public:
-		explicit UnboundPrototype(const CHero & source) : CHero(source) {}
+		explicit UnboundPrototype(const CHero & original) : CHero(), source(original)
+		{
+			// Copy presentation metadata only; Entity and registered heroes stay untouched.
+			imageIndex = source.imageIndex;
+			secondarySkillSpecialtyAlias = source.secondarySkillSpecialtyAlias;
+			for(const auto & bonus : source.specialty)
+				specialty.push_back(bonus);
+		}
 		std::string getJsonKey() const override { return "test:unbound-armorer"; }
+		HeroTypeID getId() const override { return source.getId(); }
+		std::string getSpecialtyNameTranslated() const override { return source.getSpecialtyNameTranslated(); }
+		std::string getSpecialtyDescriptionTranslated() const override { return source.getSpecialtyDescriptionTranslated(); }
 	};
 	const UnboundPrototype hero(prototype("core:mephala"));
 	ASSERT_TRUE(hero.secondarySkillSpecialtyAlias);
