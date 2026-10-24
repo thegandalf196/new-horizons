@@ -87,7 +87,12 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		if(historical)
+		{
+			// Capture both absent before hero initialization: weighted perks require
+			// the Hero rules that this historical context intentionally predates.
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+		}
 	}
 
 	void prepare()
@@ -177,7 +182,23 @@ TEST_P(NewHorizonsResourceSpecialtyArtTest, RetainedHistoricalResourceMechanicNe
 	const auto * hero = findHeroAt({5, 5, 0});
 	ASSERT_NE(hero, nullptr);
 	EXPECT_TRUE(hero->getPrimaryGrowthRules().isNull());
-	expectResourceArt(*hero->getHeroType(), hero->getSpecialtyPresentation(), resourceArtCases.at(GetParam()));
+	EXPECT_TRUE(hero->getPerkState().rules.isNull());
+	const auto & row = resourceArtCases.at(GetParam());
+	const auto beforeBonuses = hero->getExportedBonusList().toJsonNode();
+	const auto beforeIncome = hero->dailyIncome();
+	int specialtyIncome = 0;
+	for(const auto & bonus : hero->getExportedBonusList())
+		if(bonus && bonus->type == BonusType::GENERATE_RESOURCE
+			&& bonus->source == BonusSource::HERO_SPECIAL
+			&& bonus->sid == BonusSourceID(hero->getHeroTypeID())
+			&& bonus->subtype == BonusSubtypeID(row.resource))
+			specialtyIncome += bonus->val;
+	EXPECT_EQ(specialtyIncome, row.configuredValue);
+	expectResourceArt(*hero->getHeroType(), hero->getSpecialtyPresentation(), row);
+	expectResourceArt(*hero->getHeroType(), newHorizonsHeroes::resolveSpecialtyPresentation(
+		*hero->getHeroType(), hero->getPrimaryGrowthRules(), hero->getMagicRules(), std::nullopt), row);
+	EXPECT_EQ(hero->getExportedBonusList().toJsonNode(), beforeBonuses);
+	EXPECT_EQ(hero->dailyIncome(), beforeIncome);
 }
 
 TEST_P(NewHorizonsResourceSpecialtyArtTest, ResourceLookupRequiresExactHeroFamilyAndTarget)
