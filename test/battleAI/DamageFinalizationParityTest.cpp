@@ -10,6 +10,7 @@
 #include "../../lib/GameSettings.h"
 #include "../../lib/ScopeGuard.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/combatScripts/IDamageCalculatorScript.h"
 #include "../../lib/modding/IdentifierStorage.h"
@@ -232,7 +233,37 @@ public:
 			throw std::runtime_error("custom Luck rules query failed");
 		return rules;
 	}
+
+	// BattleProxy intentionally leaves mutation and a few read delegates
+	// abstract. Forward reads; reject mutations so these callback tests cannot
+	// accidentally simulate or repair state through their fault-injection wrapper.
+	BattleID getBattleID() const override { return subject->getBattle()->getBattleID(); }
+	const scripting::Pool & getScriptContextPool() const override { return subject->getBattle()->getScriptContextPool(); }
+	std::vector<SpellID> getUsedSpells(BattleSide side) const override { return subject->getBattle()->getUsedSpells(side); }
+	uint32_t nextUnitId() const override { return subject->getBattle()->nextUnitId(); }
+	int64_t getActualDamage(const DamageRange & damage, int32_t count, vstd::RNG & rng) const override
+	{
+		return subject->getBattle()->getActualDamage(damage, count, rng);
+	}
+	int3 getLocation() const override { return subject->getBattle()->getLocation(); }
+	BattleLayout getLayout() const override { return subject->getBattle()->getLayout(); }
+	void nextRound() override { refuseMutation(); }
+	void nextTurn(uint32_t, BattleUnitTurnReason) override { refuseMutation(); }
+	void addUnit(uint32_t, const JsonNode &) override { refuseMutation(); }
+	void updateUnit(uint32_t, const JsonNode &, int64_t) override { refuseMutation(); }
+	void moveUnit(uint32_t, const BattleHex &) override { refuseMutation(); }
+	void removeUnit(uint32_t) override { refuseMutation(); }
+	void addUnitBonus(uint32_t, const std::vector<Bonus> &) override { refuseMutation(); }
+	void updateUnitBonus(uint32_t, const std::vector<Bonus> &) override { refuseMutation(); }
+	void removeUnitBonus(uint32_t, const std::vector<Bonus> &) override { refuseMutation(); }
+	void setWallState(EWallPart, EWallState) override { refuseMutation(); }
+	void addObstacle(const ObstacleChanges &) override { refuseMutation(); }
+	void updateObstacle(const ObstacleChanges &) override { refuseMutation(); }
+	void removeObstacle(uint32_t) override { refuseMutation(); }
+private:
+	[[noreturn]] static void refuseMutation() { throw std::logic_error("Read-only Luck policy callback cannot mutate battle"); }
 };
+static_assert(!std::is_abstract_v<FullLuckPolicyProxy>);
 
 LuckRollRules rawLuckPolicy(bool finalMultiplier, int shape)
 {
