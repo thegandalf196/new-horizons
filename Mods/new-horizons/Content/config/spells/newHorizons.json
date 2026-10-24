@@ -23,7 +23,7 @@
 		"levels": {
 			"base": {
 				"range": "0",
-				"description": "The target's next activation becomes Attack, Defend or Wander, chosen randomly. Applying Confusion removes Berserk. A negative Morale forfeiture consumes Confusion. Dispel removes pending Confusion. This spell is unavailable until its forced activation and AI implementation are complete.",
+				"description": "The target's next activation becomes Attack, Defend or Wander, chosen randomly. Attack approaches its chosen enemy if no attack is in reach; if no legal attack or approach is possible, it Defends. Wander also Defends if no legal destination exists. Applying Confusion removes Berserk. A negative Morale forfeiture consumes Confusion. Dispel removes pending Confusion.",
 				"cost": 5,
 				"power": 0,
 				"targetModifier": {"smart": true},
@@ -701,7 +701,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"description" : "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
@@ -711,7 +711,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"description" : "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
@@ -721,7 +721,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"description" : "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
@@ -731,7 +731,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"description" : "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
