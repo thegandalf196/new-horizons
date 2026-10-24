@@ -10,6 +10,7 @@
 #include "StdInc.h"
 
 #include "EffectFixture.h"
+#include "../../../lib/spells/CSpell.h"
 
 #include <vstd/RNG.h>
 #include "../../../lib/modding/ModScope.h"
