@@ -723,10 +723,10 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 			resultsApplied.raisedStack = winnerHero->calculateNecromancy(result);
 			if(resultsApplied.raisedStack.getCreature() && !finishingBattle->isDraw())
 			{
-				const auto plan = planRaisedArmy(*winnerHero,
+				const auto plan = newHorizonsNecromancy::planRaisedArmy(*winnerHero,
 					{{resultsApplied.raisedStack.getCreature()->getId(), resultsApplied.raisedStack.getCount()}});
 				if(plan)
-					applyRaisedArmy(*gameHandler, *winnerHero, *plan);
+					newHorizonsNecromancy::applyRaisedArmy(*gameHandler, *winnerHero, *plan);
 				else
 					resultsApplied.raisedStack = CStackBasicDescriptor();
 			}

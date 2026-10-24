@@ -9,6 +9,7 @@
 #include "../../lib/CStack.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/networkPacks/StackLocation.h"
 namespace newHorizonsNecromancy
 {
 namespace
