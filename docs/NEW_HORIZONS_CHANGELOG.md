@@ -4,6 +4,9 @@ This is a player’s guide to what changes when coming from **Heroes III Complet
 The first entry collects the main differences; later entries will track additions
 and revisions as the game develops.
 
+For individual perk effects, spell formulas, creature statistics and Order rules,
+read the [detailed gameplay changelog](NEW_HORIZONS_GAMEPLAY_CHANGELOG.md).
+
 ## Current development baseline — 24 October 2026
 
 This comparison describes the current development version, including changes after

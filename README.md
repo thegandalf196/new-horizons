@@ -4,6 +4,8 @@
 
 [What changes from Heroes III Complete? Read the gameplay and artwork changelog.](docs/NEW_HORIZONS_CHANGELOG.md)
 
+[Detailed gameplay reference: Skills, all 310 perks, spells, Orders and creature changes.](docs/NEW_HORIZONS_GAMEPLAY_CHANGELOG.md)
+
 ## Before you begin
 
 Heroes III was love at first sight for me, back in the early 2000s. After Heroes III, I played Heroes IV, Then Heroes II, then Heroes I, then Heroes V, then King’s Bounty: The Legend, then Heroes VII. Each installment has its merits, in my opinion, but none hooked me quite like the third one. I kept coming back. And over the years, I collected ideas.
