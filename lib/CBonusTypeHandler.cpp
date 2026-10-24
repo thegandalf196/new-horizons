@@ -52,7 +52,11 @@ CBonusTypeHandler::CBonusTypeHandler()
 #undef BONUS_NAME
 
 	for (int i = 0; i < builtinBonusNames.size(); ++i)
-		bonusTypes.push_back(std::make_shared<CBonusType>());
+	{
+		auto type = std::make_shared<CBonusType>();
+		type->identifier = builtinBonusNames[i]; // Identity exists even without optional display metadata.
+		bonusTypes.push_back(std::move(type));
+	}
 
 	for (int i = 0; i < builtinBonusNames.size(); ++i)
 		registerObject(ModScope::scopeBuiltin(), "bonus", builtinBonusNames[i], JsonNode(), i);

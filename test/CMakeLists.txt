@@ -167,6 +167,7 @@ set(test_SRCS
 		battle/DamageCalculationTimingTest.cpp
 		bonus/NativeBonusGraphAdmissionTest.cpp
 		bonus/BonusStatusTagsTest.cpp
+		bonus/BuiltinBonusIdentityTest.cpp
 		bonus/NewHorizonsUnstackedBonusTest.cpp
 		bonus/NewHorizonsCreatureProbabilityTest.cpp
 

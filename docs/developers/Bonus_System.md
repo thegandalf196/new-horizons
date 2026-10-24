@@ -33,6 +33,16 @@ It applies once after ordinary magical defenses and outgoing damage bonuses,
 but before the per-creature damage cap. Untagged, nonmagical and nondamage spells
 (including healing) are unchanged. No Magic School supplies an implicit element.
 
+## Canonical builtin identifiers
+
+Builtin bonus identifiers come from `BONUS_LIST` and are initialized before
+optional presentation metadata. A missing icon or description must not erase a
+bonus type’s identity. Bonus and dependency-limiter JSON retain distinct canonical
+names even when their other fields are identical.
+
+Binary bonus types continue to serialize their existing enum values. The typed
+`NONE` encoder sentinel and invalid-index rejection are unchanged.
+
 ## Explicit status tags
 
 `Bonus::statusTags` records opt-in status classification. `DEBUFF` means the
