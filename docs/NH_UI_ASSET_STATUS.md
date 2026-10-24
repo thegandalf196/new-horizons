@@ -43,3 +43,5 @@ present. Historical identities retain their existing presentation. These selecti
 remain Provisional; rendered presentation and playable delivery are separate gates.
 
 Shakti, Synca, Yog, Jabarkas, Charna, Tamika and Bron select distinct current creature-line specialty icons; Crag Hack selects core Offense, Uland Cure and Alagar Ice Bolt. These transparent 44×44 and 32×32 normal frame 0 pairs follow the resolved captured mechanic. Shakti includes an explicitly selected model-completed silhouette. Selection remains Provisional, with rendered acceptance pending.
+
+Twenty further provisional specialty pairs use transparent 44×44 and 32×32 normal frame 0 artwork for their current resolved creature, spell or core Skill identity. This includes revised Cuthbert Frailty, Ciele Magic Arrow and Sylvia Logistics; artwork introduces no workbook riders. Historical captured fallbacks remain unchanged. Rendered acceptance is pending.

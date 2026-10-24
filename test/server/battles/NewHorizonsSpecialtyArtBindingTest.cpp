@@ -239,7 +239,7 @@ struct ResolvedArtCase
 	newHorizonsHeroes::detail::SpecialtyArtworkFamily family;
 	const char * stem;
 };
-constexpr std::array<ResolvedArtCase, 56> resolvedArtCases = {{
+constexpr std::array<ResolvedArtCase, 76> resolvedArtCases = {{
 	{"core:melodia", "remainingSpellSpecialtyReplacements", "core:bless", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MelodiaBless"},
 	{"core:pyre", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "PyreBallistaLine"},
 	{"core:ash", "remainingSpellSpecialtyReplacements", "core:fireball", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AshFireball"},
@@ -296,6 +296,26 @@ constexpr std::array<ResolvedArtCase, 56> resolvedArtCases = {{
 	{"core:cragHack", "skillSpecialties", "core:offence", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "CragHackOffenseCore"},
 	{"core:uland", "nonDamageSpellSpecialties", "core:cure", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "UlandCure"},
 	{"core:alagar", "damageSpellSpecialties", "core:iceBolt", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AlagarIceBolt"},
+	{"core:luna", "damageSpellSpecialties", "core:fireWall", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "LunaFireWall"},
+	{"core:ciele", "damageSpellSpecialties", "core:magicArrow", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "CieleMagicArrow"},
+	{"core:adelaide", "damageSpellSpecialties", "core:frostRing", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AdelaideFrostRing"},
+	{"core:cuthbert", "nonDamageSpellSpecialties", "new-horizons:frailty", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "CuthbertFrailty"},
+	{"core:deemer", "damageSpellSpecialties", "core:meteorShower", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "DeemerMeteorShower"},
+	{"core:xarfax", "damageSpellSpecialties", "core:fireball", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "XarfaxFireball"},
+	{"core:septienna", "remainingSpellSpecialtyReplacements", "new-horizons:plague", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "SeptiennaPlague"},
+	{"core:thant", "nonDamageSpellSpecialties", "new-horizons:reanimate", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "ThantReanimate"},
+	{"core:coronius", "damageSpellSpecialties", "new-horizons:holyWrath", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "CoroniusHolyWrath"},
+	{"core:loynis", "nonDamageSpellSpecialties", "new-horizons:crusade", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "LoynisCrusade"},
+	{"core:adela", "nonDamageSpellSpecialties", "core:bless", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AdelaBless"},
+	{"core:arlach", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ArlachBallistaLine"},
+	{"core:thunar", "creatureLineSpecialties", "core:earthElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ThunarEarthElementalLine"},
+	{"core:lacus", "creatureLineSpecialties", "core:waterElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "LacusWaterElementalLine"},
+	{"core:ignissa", "creatureLineSpecialties", "core:fireElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "IgnissaFireElementalLine"},
+	{"core:xyron", "damageSpellSpecialties", "core:inferno", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "XyronInferno"},
+	{"core:darkstorn", "remainingSpellSpecialtyReplacements", "new-horizons:hexOfPain", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "DarkstornHexOfPain"},
+	{"core:merist", "nonDamageSpellSpecialties", "new-horizons:hydrasVitality", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MeristHydrasVitality"},
+	{"core:sylvia", "skillSpecialties", "core:logistics", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "SylviaLogisticsCore"},
+	{"core:lordHaart", "skillSpecialties", "core:estates", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "LordHaartEstatesCore"},
 }};
 
 void expectResolvedArt(const CHero & hero, const newHorizonsHeroes::SpecialtyPresentation & metadata,
