@@ -46,7 +46,7 @@ const std::array<SpecialtyCase, 13> heroes = {{
 	{"core:thorgrim", "newHorizons/heroSpecialties/ThorgrimMasterSpellward", {21, 11, 0}},
 	{"core:pasis", "newHorizons/heroSpecialties/PasisWispLine", {22, 10, 0}, "new-horizons:wisp"},
 	{"core:christian", "newHorizons/heroSpecialties/ChristianBallistaLine", {22, 11, 0}, "core:ballista"},
-	{"core:gundula", nullptr, {23, 10, 0}}
+	{"core:mephala", nullptr, {23, 10, 0}}
 }};
 }
 
@@ -120,7 +120,7 @@ protected:
 			// Specialty identity retains the core alias; starting Skills use the NH registry.
 			const auto & alias = hero->getHeroType()->secondarySkillSpecialtyAlias;
 			ASSERT_TRUE(alias);
-			ASSERT_EQ(alias->skill, SecondarySkill(SecondarySkill::OFFENCE));
+			ASSERT_EQ(alias->skill, SecondarySkill(SecondarySkill::ARMORER));
 			ASSERT_EQ(metadata.skill, alias->skill);
 			ASSERT_FALSE(metadata.spell);
 			ASSERT_FALSE(metadata.creature);
@@ -165,7 +165,7 @@ TEST_F(NewHorizonsSpecialtyPresentationFixtureExportTest, ExportOrdinarySpecialt
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).name(name)
 		.description("Specialty presentation diagnostic, not a balanced scenario or gameplay certification. "
-			"Red owns adjacent Serena, Gem, Daremyth, Orrin, Monere, Gerwulf, Elleshar, Malcom, Andra, Thorgrim, Pasis, Christian and ordinary control Gundula with authored starts; "
+			"Red owns adjacent Serena, Gem, Daremyth, Orrin, Monere, Gerwulf, Elleshar, Malcom, Andra, Thorgrim, Pasis, Christian and ordinary control Mephala with authored starts; "
 			"no map Skill, perk, experience, primary, army or spellbook overrides. "
 			"Open each normal Hero Window and meet adjacent heroes through normal exchange. "
 			"Inspect specialty icons and tooltips, then save/reload and inspect again. "

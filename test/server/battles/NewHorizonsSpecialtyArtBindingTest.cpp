@@ -239,7 +239,7 @@ struct ResolvedArtCase
 	newHorizonsHeroes::detail::SpecialtyArtworkFamily family;
 	const char * stem;
 };
-constexpr std::array<ResolvedArtCase, 32> resolvedArtCases = {{
+constexpr std::array<ResolvedArtCase, 56> resolvedArtCases = {{
 	{"core:melodia", "remainingSpellSpecialtyReplacements", "core:bless", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MelodiaBless"},
 	{"core:pyre", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "PyreBallistaLine"},
 	{"core:ash", "remainingSpellSpecialtyReplacements", "core:fireball", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AshFireball"},
@@ -272,6 +272,30 @@ constexpr std::array<ResolvedArtCase, 32> resolvedArtCases = {{
 	{"core:gretchin", "creatureLineSpecialties", "core:goblin", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "GretchinGoblinLine"},
 	{"core:shiva", "creatureLineSpecialties", "core:roc", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ShivaRocLine"},
 	{"core:tyraxor", "creatureLineSpecialties", "core:goblinWolfRider", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TyraxorGoblinWolfRiderLine"},
+	{"core:vokial", "creatureLineSpecialties", "core:vampire", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "VokialVampireLine"},
+	{"core:krellion", "creatureLineSpecialties", "core:ogre", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "KrellionOgreLine"},
+	{"core:gundula", "skillSpecialties", "core:offence", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "GundulaOffenseCore"},
+	{"core:dessa", "skillSpecialties", "core:logistics", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "DessaLogisticsCore"},
+	{"core:drakon", "creatureLineSpecialties", "core:gnoll", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "DrakonGnollLine"},
+	{"core:broghild", "creatureLineSpecialties", "core:wyvern", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "BroghildWyvernLine"},
+	{"core:alkin", "creatureLineSpecialties", "core:gorgon", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "AlkinGorgonLine"},
+	{"core:korbac", "creatureLineSpecialties", "core:serpentFly", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "KorbacSerpentFlyLine"},
+	{"core:tazar", "skillSpecialties", "core:armorer", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "TazarArmorerCore"},
+	{"core:wystan", "creatureLineSpecialties", "core:lizardman", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "WystanLizardmanLine"},
+	{"core:moandor", "creatureLineSpecialties", "core:lich", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "MoandorLichLine"},
+	{"core:galthran", "creatureLineSpecialties", "core:skeleton", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "GalthranSkeletonLine"},
+	{"core:dace", "creatureLineSpecialties", "core:minotaur", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "DaceMinotaurLine"},
+	{"core:ajit", "creatureLineSpecialties", "core:beholder", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "AjitBeholderLine"},
+	{"core:shakti", "creatureLineSpecialties", "core:troglodyte", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ShaktiTroglodyteLine"},
+	{"core:synca", "creatureLineSpecialties", "core:manticore", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "SyncaManticoreLine"},
+	{"core:yog", "creatureLineSpecialties", "core:cyclop", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "YogCyclopLine"},
+	{"core:jabarkas", "creatureLineSpecialties", "core:orc", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "JabarkasOrcLine"},
+	{"core:charna", "creatureLineSpecialties", "core:wight", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "CharnaWightLine"},
+	{"core:tamika", "creatureLineSpecialties", "core:blackKnight", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TamikaBlackKnightLine"},
+	{"core:bron", "creatureLineSpecialties", "core:basilisk", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "BronBasiliskLine"},
+	{"core:cragHack", "skillSpecialties", "core:offence", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "CragHackOffenseCore"},
+	{"core:uland", "nonDamageSpellSpecialties", "core:cure", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "UlandCure"},
+	{"core:alagar", "damageSpellSpecialties", "core:iceBolt", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AlagarIceBolt"},
 }};
 
 void expectResolvedArt(const CHero & hero, const newHorizonsHeroes::SpecialtyPresentation & metadata,

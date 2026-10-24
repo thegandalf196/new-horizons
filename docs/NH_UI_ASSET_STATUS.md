@@ -30,6 +30,8 @@ Selected Cabir/Magi/Wisp sprites, portraits/projectiles and Guild/school composi
 
 Build-specific outstanding checks live in [integration gaps](NH_INTEGRATION_GAPS.md). Native dimensions/resource checks, rendering, actual Windows behavior and ordinary immutable-candidate promotion remain separate.
 
+Vokial, Krellion, Drakon, Broghild, Alkin, Korbac, Wystan, Moandor, Galthran, Dace and Ajit select distinct creature-line specialty icons. Gundula, Dessa and Tazar select their current core Offense, Logistics and Armorer specialty icons. Each has transparent 44×44 and 32×32 normal frame 0 artwork, selected only after the matching captured mechanic resolves. These selections remain Provisional; historical fallbacks, mechanics and descriptions are unchanged. Rendered acceptance remains pending.
+
 Master Cabir has a provisionally selected four-frame fidget in animation group 1.
 Its holding pose and existing action groups are preserved. Native comparison review
 does not establish in-game loop, facing or generated-outline acceptance.
@@ -39,3 +41,5 @@ Savant, Gird's Primal Formula and Styg's Mire Hexer select transparent 44×44 an
 32×32 specialty icons only when their corresponding captured specialty policy is
 present. Historical identities retain their existing presentation. These selections
 remain Provisional; rendered presentation and playable delivery are separate gates.
+
+Shakti, Synca, Yog, Jabarkas, Charna, Tamika and Bron select distinct current creature-line specialty icons; Crag Hack selects core Offense, Uland Cure and Alagar Ice Bolt. These transparent 44×44 and 32×32 normal frame 0 pairs follow the resolved captured mechanic. Shakti includes an explicitly selected model-completed silhouette. Selection remains Provisional, with rendered acceptance pending.

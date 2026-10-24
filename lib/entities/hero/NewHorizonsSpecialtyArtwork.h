@@ -35,7 +35,7 @@ inline std::optional<std::string> resolvedSpecialtyArtwork(std::string_view hero
 		std::string_view target;
 		std::string_view stem;
 	};
-	static constexpr std::array<Binding, 36> bindings = {{
+	static constexpr std::array<Binding, 60> bindings = {{
 		{"core:monere", SpecialtyArtworkFamily::Creature, "new-horizons:wisp", "MonereWispLine"},
 		{"core:pasis", SpecialtyArtworkFamily::Creature, "new-horizons:wisp", "PasisWispLine"},
 		{"core:gerwulf", SpecialtyArtworkFamily::Creature, "core:ballista", "GerwulfBallistaLine"},
@@ -72,6 +72,30 @@ inline std::optional<std::string> resolvedSpecialtyArtwork(std::string_view hero
 		{"core:gretchin", SpecialtyArtworkFamily::Creature, "core:goblin", "GretchinGoblinLine"},
 		{"core:shiva", SpecialtyArtworkFamily::Creature, "core:roc", "ShivaRocLine"},
 		{"core:tyraxor", SpecialtyArtworkFamily::Creature, "core:goblinWolfRider", "TyraxorGoblinWolfRiderLine"},
+		{"core:vokial", SpecialtyArtworkFamily::Creature, "core:vampire", "VokialVampireLine"},
+		{"core:krellion", SpecialtyArtworkFamily::Creature, "core:ogre", "KrellionOgreLine"},
+		{"core:gundula", SpecialtyArtworkFamily::Skill, "core:offence", "GundulaOffenseCore"},
+		{"core:dessa", SpecialtyArtworkFamily::Skill, "core:logistics", "DessaLogisticsCore"},
+		{"core:drakon", SpecialtyArtworkFamily::Creature, "core:gnoll", "DrakonGnollLine"},
+		{"core:broghild", SpecialtyArtworkFamily::Creature, "core:wyvern", "BroghildWyvernLine"},
+		{"core:alkin", SpecialtyArtworkFamily::Creature, "core:gorgon", "AlkinGorgonLine"},
+		{"core:korbac", SpecialtyArtworkFamily::Creature, "core:serpentFly", "KorbacSerpentFlyLine"},
+		{"core:tazar", SpecialtyArtworkFamily::Skill, "core:armorer", "TazarArmorerCore"},
+		{"core:wystan", SpecialtyArtworkFamily::Creature, "core:lizardman", "WystanLizardmanLine"},
+		{"core:moandor", SpecialtyArtworkFamily::Creature, "core:lich", "MoandorLichLine"},
+		{"core:galthran", SpecialtyArtworkFamily::Creature, "core:skeleton", "GalthranSkeletonLine"},
+		{"core:dace", SpecialtyArtworkFamily::Creature, "core:minotaur", "DaceMinotaurLine"},
+		{"core:ajit", SpecialtyArtworkFamily::Creature, "core:beholder", "AjitBeholderLine"},
+		{"core:shakti", SpecialtyArtworkFamily::Creature, "core:troglodyte", "ShaktiTroglodyteLine"},
+		{"core:synca", SpecialtyArtworkFamily::Creature, "core:manticore", "SyncaManticoreLine"},
+		{"core:yog", SpecialtyArtworkFamily::Creature, "core:cyclop", "YogCyclopLine"},
+		{"core:jabarkas", SpecialtyArtworkFamily::Creature, "core:orc", "JabarkasOrcLine"},
+		{"core:charna", SpecialtyArtworkFamily::Creature, "core:wight", "CharnaWightLine"},
+		{"core:tamika", SpecialtyArtworkFamily::Creature, "core:blackKnight", "TamikaBlackKnightLine"},
+		{"core:bron", SpecialtyArtworkFamily::Creature, "core:basilisk", "BronBasiliskLine"},
+		{"core:cragHack", SpecialtyArtworkFamily::Skill, "core:offence", "CragHackOffenseCore"},
+		{"core:uland", SpecialtyArtworkFamily::Spell, "core:cure", "UlandCure"},
+		{"core:alagar", SpecialtyArtworkFamily::Spell, "core:iceBolt", "AlagarIceBolt"},
 	}};
 	for(const auto & binding : bindings)
 		if(binding.hero == hero && binding.family == family && binding.target == target)
