@@ -25,6 +25,11 @@
 #include "../../../lib/modding/ModScope.h"
 #include "../../../lib/spells/CSpellHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/bonuses/BonusParameters.h"
+#include "../../../lib/spells/AbilityCaster.h"
+#include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../server/CGameHandler.h"
 
 namespace
 {
@@ -338,6 +343,29 @@ public:
 		battle()->terrainType = TerrainId(ETerrainId::DIRT);
 		battle()->nodeHasChanged();
 		ASSERT_EQ(battle()->getTerrainType(), TerrainId(ETerrainId::DIRT));
+	}
+};
+
+class HistoricalMachineDamageTest : public HistoricalSpellDamageTest
+{
+public:
+	void SetUp() override
+	{
+		ASSERT_NO_FATAL_FAILURE(HistoricalSpellDamageTest::SetUp());
+		ASSERT_TRUE(gameState()->getHeroCapabilityRules().isNull());
+		for(const auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			ASSERT_TRUE(hero->getCapabilityRules().isNull());
+			ASSERT_FALSE(hero->getSiegeCapabilities().has_value());
+		}
+		ASSERT_EQ(attackerSideHero->getPrimSkillLevel(PrimarySkill::ATTACK), 0);
+	}
+
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		HistoricalSpellDamageTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode());
 	}
 };
 
@@ -722,6 +750,8 @@ INSTANTIATE_TEST_SUITE_P(Scenarios, SylvanLuckDamageTest, ::testing::Values(
 
 TEST_F(SylvanLuckPerkDamageTest, ElvenPrecisionAppliesToLuckyRangedDamage)
 {
+	battle()->terrainType = TerrainId(ETerrainId::DIRT);
+	battle()->nodeHasChanged();
 	setSkill(attackerSideHero, "new-horizons:sylvanLuck", basic);
 	attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"));
@@ -729,6 +759,12 @@ TEST_F(SylvanLuckPerkDamageTest, ElvenPrecisionAppliesToLuckyRangedDamage)
 	const auto * source = attacker(titan);
 	// Keep this shot outside the adjacent-shot penalty, but inside normal range.
 	const auto * target = defender(angel, stackSize, BattleHex(attackerHex + 3));
+	ASSERT_FALSE(source->isOnNativeTerrain());
+	ASSERT_FALSE(target->isOnNativeTerrain());
+	ASSERT_EQ(source->getAttack(true), 24);
+	ASSERT_EQ(target->getDefense(true), 20);
+	ASSERT_FALSE(source->getSurroundingHexes().contains(target->getPosition()));
+	ASSERT_FALSE(battle()->battleHasDistancePenalty(source, source->getPosition(), target->getPosition()));
 	BattleAttackInfo info(source, target, 0, true);
 	info.luckyStrike = true;
 
@@ -937,7 +973,31 @@ INSTANTIATE_TEST_SUITE_P(Scenarios, DamageReductionTest, ::testing::Values(
 TEST_F(DamageCalculatorTest, PetrificationReducesDamageWithoutCountingAsArmorer)
 {
 	const auto * target = defender(titan);
-	cast(attackerSideHero, SpellID::STONE_GAZE, target);
+	const auto * medusaCaster = attacker(medusa, 1, BattleHex(attackerHex - 3));
+	const auto stoneGaze = SpellID(SpellID::STONE_GAZE);
+	const auto trigger = medusaCaster->getBonus(Selector::typeSubtype(
+		BonusType::SPELL_AFTER_ATTACK, BonusSubtypeID(stoneGaze)));
+	ASSERT_NE(trigger, nullptr);
+	ASSERT_EQ(trigger->val, 20);
+	ASSERT_NE(trigger->parameters, nullptr);
+	ASSERT_TRUE(trigger->parameters->isVector());
+	const auto & metadata = trigger->parameters->toVector();
+	ASSERT_GE(metadata.size(), 2u);
+	ASSERT_EQ(metadata[0], 0);
+	ASSERT_EQ(metadata[1], 2);
+	ASSERT_FALSE(target->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(stoneGaze))));
+	// Exercise the real creature-effect producer, not the random proc incidence.
+	spells::AbilityCaster caster(medusaCaster, metadata[0]);
+	spells::BattleCast passive(battle(), &caster, spells::Mode::PASSIVE, stoneGaze.toSpell());
+	spells::Target destination;
+	destination.emplace_back(target);
+	auto mechanics = stoneGaze.toSpell()->battleMechanics(&passive);
+	ASSERT_TRUE(mechanics->canBeCastAt(destination));
+	passive.cast(gameHandler->spellEnv.get(), destination);
+	const auto effect = target->getBonus(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(stoneGaze)).And(Selector::type()(BonusType::GENERAL_DAMAGE_REDUCTION)));
+	ASSERT_NE(effect, nullptr);
+	EXPECT_EQ(effect->val, 50);
 
 	EXPECT_EQ(estimate(attacker(titan), target).damage.min, 2000);
 }
@@ -955,12 +1015,22 @@ TEST_F(HistoricalSpellDamageTest, BlindnessLowersTheDamageOfItsBearer)
 
 /// A reduction that swallows the whole attack still leaves the one point of damage every hit deals.
 /// No spell reduces damage that far, so the bonus is granted directly.
-TEST_F(DamageCalculatorTest, DamageNeverDropsBelowOne)
+TEST_F(HistoricalPhysicalReductionTest, DamageNeverDropsBelowOne)
 {
+	ASSERT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(battle()->getMagicRules()), -1);
 	auto * target = defender(titan);
 	grant(target, BonusType::GENERAL_DAMAGE_REDUCTION, 100, BonusSubtypeID(BonusCustomSubtype::damageTypeMelee));
 
 	EXPECT_EQ(estimate(attacker(titan), target).damage.min, 1);
+}
+
+TEST_F(NewHorizonsPhysicalReductionTest, FullMeleeReductionRetainsCurrentEightyPercentCap)
+{
+	ASSERT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(battle()->getMagicRules()), 80);
+	auto * target = defender(titan);
+	grant(target, BonusType::GENERAL_DAMAGE_REDUCTION, 100, BonusSubtypeID(BonusCustomSubtype::damageTypeMelee));
+
+	EXPECT_EQ(estimate(attacker(titan), target).damage.min, 800);
 }
 
 /// A reduction limited to ranged combat has no business applying to a melee attack.
@@ -1101,24 +1171,35 @@ TEST_F(DamageCalculatorTest, PsychicElementalDealsFullDamageToEverythingElse)
 
 /// Artillery doubles what a ballista deals on the shots that roll for it. Its base damage also
 /// scales with the attack of its hero, which is zero here, so 100 ballistae shoot for 200..300.
-TEST_F(DamageCalculatorTest, ArtilleryDoublesTheDamageOfADoubleDamageShot)
+TEST_F(HistoricalMachineDamageTest, ArtilleryDoublesTheDamageOfADoubleDamageShot)
 {
 	setSkill(attackerSideHero, "artillery", expert);
+	const auto * source = attacker(ballista);
+	const auto * target = defender(hornedDemon, stackSize, BattleHex(attackerHex + 3));
+	ASSERT_FALSE(source->getSurroundingHexes().contains(target->getPosition()));
+	ASSERT_FALSE(battle()->battleHasDistancePenalty(source, source->getPosition(), target->getPosition()));
+	ASSERT_EQ(source->getAttack(true), 10);
+	ASSERT_EQ(target->getDefense(true), 10);
 
-	BattleAttackInfo info(attacker(ballista), defender(hornedDemon), 0, true);
+	BattleAttackInfo info(source, target, 0, true);
 	info.doubleDamage = true;
-
 	auto result = battle()->calculateDmgRange(info);
 
 	EXPECT_EQ(result.damage.min, 400);
 	EXPECT_EQ(result.damage.max, 600);
 }
 
-TEST_F(DamageCalculatorTest, ArtilleryIsIgnoredOnAnOrdinaryShot)
+TEST_F(HistoricalMachineDamageTest, ArtilleryIsIgnoredOnAnOrdinaryShot)
 {
 	setSkill(attackerSideHero, "artillery", expert);
+	const auto * source = attacker(ballista);
+	const auto * target = defender(hornedDemon, stackSize, BattleHex(attackerHex + 3));
+	ASSERT_FALSE(source->getSurroundingHexes().contains(target->getPosition()));
+	ASSERT_FALSE(battle()->battleHasDistancePenalty(source, source->getPosition(), target->getPosition()));
+	ASSERT_EQ(source->getAttack(true), 10);
+	ASSERT_EQ(target->getDefense(true), 10);
 
-	auto result = estimate(attacker(ballista), defender(hornedDemon), 0, true);
+	auto result = estimate(source, target, 0, true);
 
 	EXPECT_EQ(result.damage.min, 200);
 	EXPECT_EQ(result.damage.max, 300);
