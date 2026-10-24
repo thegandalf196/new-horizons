@@ -103,7 +103,9 @@ protected:
 			for(const auto school : SCHOOLS)
 				hero->setSecSkillLevel(skill(school), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 			if(!hero->hasSpellbook())
+			{
 				ASSERT_TRUE(handler->giveHeroNewArtifact(hero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK));
+			}
 			handler->changeSpells(hero, false, hero->getSpellsInSpellbook());
 			hero->level = 1; // Equal levels isolate Scholar from the preserved Mentor reward.
 		}
@@ -257,7 +259,10 @@ TEST_F(NewHorizonsScholarValueAITest, ZeroManaDoesNotDiscountPermanentLegalTeach
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto spell = named("core:magicArrow");
 	handler->changeSpells(sanya, true, {spell});
-	sanya->mana = scholar->mana = 0;
+	sanya->restoreSpellPointSnapshot(0, 0);
+	scholar->restoreSpellPointSnapshot(0, 0);
+	ASSERT_EQ(sanya->getManaAvailable(), 0);
+	ASSERT_EQ(scholar->getManaAvailable(), 0);
 	expectPureReward(sanya, scholar, scholar->getSpellLevel(spell.toSpell()) * 0.25f);
 }
 
