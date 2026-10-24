@@ -1804,6 +1804,7 @@
 						]
 					},
 					"core:quicksand": {
+						"rawSpellPowerPerPatch": 60,
 						"schools": [
 							"new-horizons:nature"
 						],

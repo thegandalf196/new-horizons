@@ -4450,144 +4450,144 @@
           "symbol": "SpellID crusadeSpell()#1"
         },
         {
-          "end": 86,
+          "end": 87,
           "start": 36,
           "symbol": "JsonNode legacyMagicRules(int version)#1"
         },
         {
-          "end": 92,
-          "start": 88,
+          "end": 93,
+          "start": 89,
           "symbol": "TConstBonusListPtr crusadeBonuses(const CStack * unit)#1"
         },
         {
-          "end": 98,
-          "start": 94,
+          "end": 99,
+          "start": 95,
           "symbol": "std::shared_ptr<Bonus> flatDamageReduction(int value)#1"
         },
         {
-          "end": 116,
-          "start": 111,
+          "end": 117,
+          "start": 112,
           "symbol": "NewHorizonsCrusadeTest::void SetUp() override#1"
         },
         {
-          "end": 127,
-          "start": 118,
+          "end": 128,
+          "start": 119,
           "symbol": "NewHorizonsCrusadeTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 136,
-          "start": 129,
+          "end": 137,
+          "start": 130,
           "symbol": "NewHorizonsCrusadeTest::void removeDeployedUnits()#1"
         },
         {
-          "end": 161,
-          "start": 138,
+          "end": 162,
+          "start": 139,
           "symbol": "NewHorizonsCrusadeTest::void prepare(int power = 50, int lightMagicRank = MasteryLevel::NONE)#1"
         },
         {
-          "end": 172,
-          "start": 163,
+          "end": 173,
+          "start": 164,
           "symbol": "NewHorizonsCrusadeTest::BattleAction crusadeAction(bool followup = false) const#1"
         },
         {
-          "end": 178,
-          "start": 174,
+          "end": 179,
+          "start": 175,
           "symbol": "NewHorizonsCrusadeTest::bool castCrusade(bool followup = false)#1"
         },
         {
-          "end": 188,
-          "start": 180,
+          "end": 189,
+          "start": 181,
           "symbol": "NewHorizonsCrusadeTest::bool castHaste()#1"
         },
         {
-          "end": 200,
-          "start": 190,
+          "end": 201,
+          "start": 191,
           "symbol": "NewHorizonsCrusadeTest::void selectEchoedDuration()#1"
         },
         {
-          "end": 214,
-          "start": 202,
+          "end": 215,
+          "start": 203,
           "symbol": "NewHorizonsCrusadeTest::void selectLightCrusader()#1"
         },
         {
-          "end": 221,
-          "start": 216,
+          "end": 222,
+          "start": 217,
           "symbol": "NewHorizonsCrusadeTest::void advanceRound()#1"
         },
         {
-          "end": 230,
-          "start": 223,
+          "end": 231,
+          "start": 224,
           "symbol": "NewHorizonsCrusadeTest::std::shared_ptr<Bonus> bonusOfType(const CStack * unit, BonusType type, BonusSubtypeID subtype = {}) const#1"
         },
         {
-          "end": 293,
-          "start": 233,
+          "end": 294,
+          "start": 234,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, AuthoritativeCastEmpowersAlliesAndUsesOneHeroAction)#1"
         },
         {
-          "end": 306,
-          "start": 295,
+          "end": 307,
+          "start": 296,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, SpellPowerTableAndSchoolRankScaleOnlyDerivedTerms)#1"
         },
         {
-          "end": 319,
-          "start": 308,
+          "end": 320,
+          "start": 309,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, AuthoredAttackDefenseInitiativeAndReductionCapsAreEnforced)#1"
         },
         {
-          "end": 328,
-          "start": 321,
+          "end": 329,
+          "start": 322,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, BasicLightScalesOnlyTheSpellPowerReductionTerm)#1"
         },
         {
-          "end": 337,
-          "start": 330,
+          "end": 338,
+          "start": 331,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, ExpertLightScalesOnlyTheSpellPowerReductionTerm)#1"
         },
         {
-          "end": 352,
-          "start": 339,
+          "end": 353,
+          "start": 340,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, CrusaderExtendsEveryAppliedBonusToFourRounds)#1"
         },
         {
-          "end": 364,
-          "start": 354,
+          "end": 365,
+          "start": 355,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, EchoedDurationAddsOneRoundToAllCrusadeBonuses)#1"
         },
         {
-          "end": 378,
-          "start": 366,
+          "end": 379,
+          "start": 367,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, EchoedDurationAndCrusaderEachAddOneRoundToAllCrusadeBonuses)#1"
         },
         {
-          "end": 416,
-          "start": 380,
+          "end": 417,
+          "start": 381,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, RecastRefreshesTheSameSourceAndTheNormalDurationExpires)#1"
         },
         {
-          "end": 436,
-          "start": 418,
+          "end": 437,
+          "start": 419,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, FractionalReductionMultipliesWithExistingMagicalProtection)#1"
         },
         {
-          "end": 447,
-          "start": 438,
+          "end": 448,
+          "start": 439,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, VersionOneSavedRulesDoNotGainCrusade)#1"
         },
         {
-          "end": 458,
-          "start": 449,
+          "end": 459,
+          "start": 450,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, VersionTwoSavedRulesDoNotGainCrusade)#1"
         },
         {
-          "end": 479,
-          "start": 460,
+          "end": 480,
+          "start": 461,
           "symbol": "TEST(NewHorizonsCrusadeSerializationTest, FractionalReductionRoundTripsInCurrentSavesAndRejectsDownsave)#1"
         }
       ],
-      "rationale": "All479 lines read; free helpers, fixture methods, twelve TEST_F bodies and one TEST body. Braced default argument223 is not another callable. No lambdas.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "1f84625e61650e1569dfbe94ce892e85352569a03373c23c551a2d4b73a89812"
+      "rationale": "Preserve the previously reviewed complete callable inventory; only one historical-profile field-removal statement is inserted. Independently verified exact original bytes after removing that line and adjusted all recorded spans; no new callable or assertion change.",
+      "review": "IR-QUICKSAND-RAW-RATING-20261024",
+      "sha256": "d1af9601bbf40d408c68e717223d087cb0927078b836e574449a5869a3dd4f36"
     },
     "test/server/battles/NewHorizonsMasteryTest.cpp": {
       "functions": [
@@ -5571,179 +5571,179 @@
           "symbol": "NewHorizonsPurifyTest::void SetUp() override#1"
         },
         {
-          "end": 94,
+          "end": 95,
           "start": 60,
           "symbol": "NewHorizonsPurifyTest::void mapLoaded(CMap * map) override#1"
         },
         {
-          "end": 121,
-          "start": 96,
+          "end": 122,
+          "start": 97,
           "symbol": "NewHorizonsPurifyTest::void acceptPerkThroughOffer(CGHeroInstance * hero, const std::string_view skillId, const std::string_view perkId)#1"
         },
         {
-          "end": 102,
-          "start": 99,
+          "end": 103,
+          "start": 100,
           "symbol": "NewHorizonsPurifyTest::acceptPerkThroughOffer(CGHeroInstance * hero, const std::string_view skillId, const std::string_view perkId)::[hero](const std::string & queriedSkillId)#1"
         },
         {
-          "end": 110,
-          "start": 107,
+          "end": 111,
+          "start": 108,
           "symbol": "NewHorizonsPurifyTest::acceptPerkThroughOffer(CGHeroInstance * hero, const std::string_view skillId, const std::string_view perkId)::[&](const auto & candidate)#1"
         },
         {
-          "end": 133,
-          "start": 123,
+          "end": 134,
+          "start": 124,
           "symbol": "NewHorizonsPurifyTest::void selectPurifyingMandate()#1"
         },
         {
-          "end": 168,
-          "start": 135,
+          "end": 169,
+          "start": 136,
           "symbol": "NewHorizonsPurifyTest::void prepare(int32_t spellPower = 0, bool purifier = false, bool purifyingMandate = false)#1"
         },
         {
-          "end": 177,
-          "start": 170,
+          "end": 178,
+          "start": 171,
           "symbol": "NewHorizonsPurifyTest::void removeDeployedUnits()#1"
         },
         {
-          "end": 189,
-          "start": 179,
+          "end": 190,
+          "start": 180,
           "symbol": "NewHorizonsPurifyTest::void addSourceGroup(CStack * unit, SpellID source, int firstValue = -2, bool secondBonus = false)#1"
         },
         {
-          "end": 203,
-          "start": 191,
+          "end": 204,
+          "start": 192,
           "symbol": "NewHorizonsPurifyTest::void addPhysicalPoison(CStack * unit)#1"
         },
         {
-          "end": 221,
-          "start": 205,
+          "end": 222,
+          "start": 206,
           "symbol": "NewHorizonsPurifyTest::void addMarkedAffliction(CStack * unit, const std::string & kind, const int64_t applicationOrder, const int32_t sourceNumber)#1"
         },
         {
-          "end": 230,
-          "start": 223,
+          "end": 231,
+          "start": 224,
           "symbol": "NewHorizonsPurifyTest::bool hasAffliction(const CStack * unit, const std::string & kind) const#1"
         },
         {
-          "end": 229,
-          "start": 226,
+          "end": 230,
+          "start": 227,
           "symbol": "NewHorizonsPurifyTest::hasAffliction(const CStack * unit, const std::string & kind) const::[&](const auto & affliction)#1"
         },
         {
-          "end": 241,
-          "start": 232,
+          "end": 242,
+          "start": 233,
           "symbol": "NewHorizonsPurifyTest::BattleAction action(BattleHex center, std::vector<std::pair<int32_t, SpellID>> choices = {}) const#1"
         },
         {
-          "end": 247,
-          "start": 243,
+          "end": 248,
+          "start": 244,
           "symbol": "NewHorizonsPurifyTest::bool cast(std::vector<std::pair<int32_t, SpellID>> choices = {}, BattleHex center = BattleHex(3, 5))#1"
         },
         {
-          "end": 254,
-          "start": 249,
+          "end": 255,
+          "start": 250,
           "symbol": "NewHorizonsPurifyTest::bool hasEffect(const CStack * unit, SpellID source) const#1"
         },
         {
-          "end": 268,
-          "start": 262,
+          "end": 269,
+          "start": 263,
           "symbol": "TEST(NewHorizonsPurifyHelpersTest, SpellPowerCapChangesAt120)#1"
         },
         {
-          "end": 278,
-          "start": 270,
+          "end": 279,
+          "start": 271,
           "symbol": "TEST_F(NewHorizonsPurifyTest, SavedV2RulesDoNotEnablePurify)#1"
         },
         {
-          "end": 294,
-          "start": 280,
+          "end": 295,
+          "start": 281,
           "symbol": "TEST(NewHorizonsPurifyHelpersTest, SchoolCoefficientFloorsOnlyThePowerTermAndPreservesCap)#1"
         },
         {
-          "end": 312,
-          "start": 296,
+          "end": 313,
+          "start": 297,
           "symbol": "TEST_F(NewHorizonsPurifyTest, CapturedOlderRulesKeepUnmodifiedCountDespiteCurrentExpertHero)#1"
         },
         {
-          "end": 344,
-          "start": 318,
+          "end": 345,
+          "start": 319,
           "symbol": "TEST_P(NewHorizonsPurifySchoolRankTest, PaidTwoGroupCleanseUsesCapturedRankAndRejectsBelowThreshold)#1"
         },
         {
-          "end": 388,
-          "start": 350,
+          "end": 389,
+          "start": 351,
           "symbol": "TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)#1"
         },
         {
-          "end": 364,
-          "start": 361,
+          "end": 365,
+          "start": 362,
           "symbol": "TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)::[this](const auto & stack)#1"
         },
         {
-          "end": 373,
-          "start": 370,
+          "end": 374,
+          "start": 371,
           "symbol": "TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)::[this](const auto & stack)#2"
         },
         {
-          "end": 418,
-          "start": 390,
+          "end": 419,
+          "start": 391,
           "symbol": "TEST_F(NewHorizonsPurifyTest, RejectsNoopForgedPositiveAndOverCapChoicesBeforeSpending)#1"
         },
         {
-          "end": 443,
-          "start": 420,
+          "end": 444,
+          "start": 421,
           "symbol": "TEST_F(NewHorizonsPurifyTest, DoesNotRemoveOrderSourcedEffects)#1"
         },
         {
-          "end": 467,
-          "start": 445,
+          "end": 468,
+          "start": 446,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PhysicalPoisonIsASelectableBaseEffectWithoutPurifier)#1"
         },
         {
-          "end": 485,
-          "start": 469,
+          "end": 486,
+          "start": 470,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierAutomaticallyClearsPhysicalPoisonInAdditionToSelectedGroups)#1"
         },
         {
-          "end": 508,
-          "start": 487,
+          "end": 509,
+          "start": 488,
           "symbol": "TEST_F(NewHorizonsPurifyTest, DivineMandateOrderFollowupPurifyRemovesOneStoredPoisonAffliction)#1"
         },
         {
-          "end": 527,
-          "start": 510,
+          "end": 528,
+          "start": 511,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierCleanupPrecedesMandateDiseaseRemoval)#1"
         },
         {
-          "end": 550,
-          "start": 529,
+          "end": 551,
+          "start": 530,
           "symbol": "TEST_F(NewHorizonsPurifyTest, OrdinaryInitialHeroSpellDoesNotReceivePurifyingMandateBonus)#1"
         },
         {
-          "end": 576,
-          "start": 552,
+          "end": 577,
+          "start": 553,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PhysicalOnlyMandatePurifyDoesNotTriggerAnExtraAfflictionRemoval)#1"
         },
         {
-          "end": 606,
-          "start": 578,
+          "end": 607,
+          "start": 579,
           "symbol": "TEST_F(NewHorizonsPurifyTest, MandateDiseaseGroupRemovalDoesNotUnlockAnotherAfflictionRemoval)#1"
         },
         {
-          "end": 592,
-          "start": 589,
+          "end": 593,
+          "start": 590,
           "symbol": "TEST_F(NewHorizonsPurifyTest, MandateDiseaseGroupRemovalDoesNotUnlockAnotherAfflictionRemoval)::[](const auto & affliction)#1"
         },
         {
-          "end": 641,
-          "start": 608,
+          "end": 642,
+          "start": 609,
           "symbol": "TEST(NewHorizonsPurifyHelpersTest, ActionRoundTripsAndOlderProtocolRejectsOnlyPopulatedPurifyChoices)#1"
         }
       ],
-      "rationale": "All641 lines read; free helpers, complete fixture methods, nested offer/affliction/eligibility lambdas and TEST/TEST_F/TEST_P bodies. Braced defaults232/243 are initializers. INSTANTIATE_TEST_SUITE_P346-348 is declaration/invocation-only, not another handwritten body.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "307f4e017263ded25962316b3dbf37f417803680a7fbee17bf483997c56a9aef"
+      "rationale": "Preserve the previously reviewed complete callable inventory; only one historical-profile field-removal statement is inserted. Independently verified exact original bytes after removing that line and adjusted all recorded spans; no new callable or assertion change.",
+      "review": "IR-QUICKSAND-RAW-RATING-20261024",
+      "sha256": "c5ecf21a35fa6511848aed6b9a70dd18a853b209fca7b3b337b09e368975f5b9"
     },
     "test/server/battles/NewHorizonsShieldOfChaosTest.cpp": {
       "functions": [
@@ -6067,129 +6067,129 @@
           "symbol": "SpellID summonTrollsSpell()#1"
         },
         {
-          "end": 79,
+          "end": 80,
           "start": 43,
           "symbol": "JsonNode magicRulesAtVersion(const int version)#1"
         },
         {
-          "end": 87,
-          "start": 81,
+          "end": 88,
+          "start": 82,
           "symbol": "int64_t expectedPool(const int spellPower, const int coefficientBasisPoints, const int modifierPercent = 100)#1"
         },
         {
-          "end": 97,
-          "start": 91,
+          "end": 98,
+          "start": 92,
           "symbol": "ArmySnapshot armySnapshot(const CGHeroInstance * hero)#1"
         },
         {
-          "end": 115,
-          "start": 110,
+          "end": 116,
+          "start": 111,
           "symbol": "NewHorizonsSummonTrollsTest::void SetUp() override#1"
         },
         {
-          "end": 124,
-          "start": 117,
+          "end": 125,
+          "start": 118,
           "symbol": "NewHorizonsSummonTrollsTest::void mapLoaded(CMap * map) override#1"
         },
         {
-          "end": 151,
-          "start": 126,
+          "end": 152,
+          "start": 127,
           "symbol": "NewHorizonsSummonTrollsTest::void prepare(const int spellPower = 21, const int rulesVersion = newHorizonsMagic::CURRENT_RULESET_VERSION, const std::string_view healthArtifactKey = {})#1"
         },
         {
-          "end": 160,
-          "start": 153,
+          "end": 161,
+          "start": 154,
           "symbol": "NewHorizonsSummonTrollsTest::void removeDeployedUnits()#1"
         },
         {
-          "end": 170,
-          "start": 162,
+          "end": 171,
+          "start": 163,
           "symbol": "NewHorizonsSummonTrollsTest::BattleAction summonAction(const BattleHex & hex) const#1"
         },
         {
-          "end": 176,
-          "start": 172,
+          "end": 177,
+          "start": 173,
           "symbol": "NewHorizonsSummonTrollsTest::bool castAt(const BattleHex & hex)#1"
         },
         {
-          "end": 186,
-          "start": 178,
+          "end": 187,
+          "start": 179,
           "symbol": "NewHorizonsSummonTrollsTest::bool castHaste()#1"
         },
         {
-          "end": 192,
-          "start": 188,
+          "end": 193,
+          "start": 189,
           "symbol": "NewHorizonsSummonTrollsTest::SpellEffectValUptr preview(const BattleHex & hex) const#1"
         },
         {
-          "end": 202,
-          "start": 194,
+          "end": 203,
+          "start": 195,
           "symbol": "NewHorizonsSummonTrollsTest::std::vector<const CStack *> temporaryTrolls() const#1"
         },
         {
-          "end": 201,
-          "start": 196,
+          "end": 202,
+          "start": 197,
           "symbol": "NewHorizonsSummonTrollsTest::temporaryTrolls() const::[](const CStack * unit)#1"
         },
         {
-          "end": 212,
-          "start": 204,
+          "end": 213,
+          "start": 205,
           "symbol": "NewHorizonsSummonTrollsTest::void selectBeastcaller()#1"
         },
         {
-          "end": 219,
-          "start": 214,
+          "end": 220,
+          "start": 215,
           "symbol": "NewHorizonsSummonTrollsTest::void advanceRound()#1"
         },
         {
-          "end": 299,
-          "start": 222,
+          "end": 300,
+          "start": 223,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, CastMatchesPreviewAndKeepsTheChosenTemporaryTrollStack)#1"
         },
         {
-          "end": 298,
-          "start": 293,
+          "end": 299,
+          "start": 294,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, CastMatchesPreviewAndKeepsTheChosenTemporaryTrollStack)::[](const std::string & line)#1"
         },
         {
-          "end": 332,
-          "start": 301,
+          "end": 333,
+          "start": 302,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, NatureRankScalesOnlyTheSpellPowerComponent)#1"
         },
         {
-          "end": 353,
-          "start": 334,
+          "end": 354,
+          "start": 335,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, BeastcallerScalesTheUnroundedWholePoolBeforeFinalFloor)#1"
         },
         {
-          "end": 371,
-          "start": 355,
+          "end": 372,
+          "start": 356,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, AdditiveHeroHealthBonusMatchesPreviewCountAndExactPool)#1"
         },
         {
-          "end": 389,
-          "start": 373,
+          "end": 390,
+          "start": 374,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, PercentToBaseHeroHealthBonusMatchesPreviewCount)#1"
         },
         {
-          "end": 401,
-          "start": 391,
+          "end": 402,
+          "start": 392,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, OccupiedSelectedHexRejectsBeforeManaOrHeroAction)#1"
         },
         {
-          "end": 417,
-          "start": 403,
+          "end": 418,
+          "start": 404,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, LaterRoundCreatesAnIndependentStackWithoutCombatWideRecastLock)#1"
         },
         {
-          "end": 427,
-          "start": 419,
+          "end": 428,
+          "start": 420,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, SavedV2RejectsBeforeManaAndHeroAction)#1"
         }
       ],
-      "rationale": "All427 lines read; four free helpers, fixture methods, temporaryTrolls lambda196-201 and log predicate293-298, eight TEST_F bodies. Braced default128 belongs to prepare126-151.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "096af6dc9435fd78ebb32255e8d2ea86f9f8d09ad5eb37538bd1da64f0262a2c"
+      "rationale": "Preserve the previously reviewed complete callable inventory; only one historical-profile field-removal statement is inserted. Independently verified exact original bytes after removing that line and adjusted all recorded spans; no new callable or assertion change.",
+      "review": "IR-QUICKSAND-RAW-RATING-20261024",
+      "sha256": "a6d3d4438e703a33fb7fbfc5b719d7e0d83f39da3b1c4da1d8a8858bd286983c"
     },
     "test/server/queries/NewHorizonsGlyphsOfFearTest.cpp": {
       "functions": [
@@ -21912,13 +21912,13 @@
     "lib/CMakeLists.txt": {
       "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact declarative registry bound only. Keep behavior in focused compiled owners; future registry edits need renewed exact review and grant no executable growth allowance. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth.",
       "kind": "exception",
-      "lines": 1354,
+      "lines": 1355,
       "owner": "engine_engineer",
-      "rationale": "Only two mechanical file registrations for the focused retained-art owner,1352to1354lines. Existing target flags, link dependencies, resource selection and registry order stay unchanged. Finite source-only mechanical exception independently reviewed; no executable growth permission.",
-      "review": "IR-FINAL14-RETAINED-SPECIALTY-20261024",
-      "review_scope": "exact-two-retained-art-owner-source-and-header-registrations-only",
+      "rationale": "Exact one-line Quicksand source registration only:1354 to1355 mechanical CMake registry lines. No executable behavior or unrelated registry/link/flag/resource changes; preserve inherited registry boundary and extraction obligations.",
+      "review": "IR-QUICKSAND-RAW-RATING-20261024",
+      "review_scope": "exact-quicksand-captured-raw-rating-and-cohesive-shrinking-extraction-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "a20ba3c6e9fef4bbf61c55eaa99a6769375cca38a180902bbd4d5a9337ca2e4f"
+      "sha256": "4adc15a86fb9a2d31e98f6eb9a39a55493946a63c657cc2a87bb88452cf92b77"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -24566,22 +24566,22 @@
     },
     "lib/spells/NewHorizonsMagic.cpp": {
       "kind": "legacy",
-      "lines": 2122,
+      "lines": 2085,
       "owner": "gameplay_engineer",
-      "rationale": "Shrinking2158-to2122 ratchet: extract two cohesive existing Regeneration rate functions to56-line exact-rational owner preserving public API and existing fixed terms/cap. No future regrowth credit.",
-      "review": "recovery-verdish-current-rebase-source-v1",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "c1f9cf7e0a5e2d4a653a4f6b186c95693cfd6af173ce1ff58aa28915b66fb18d",
-      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
+      "rationale": "Shrinking2122 to2085 ratchet: extract cohesive Quicksand count/unit selection/row validation to an81-line owner, maxfunction28. Readout reuses unit helper; other spell responsibilities remain. No future regrowth credit or native/gameplay acceptance.",
+      "review": "IR-QUICKSAND-RAW-RATING-20261024",
+      "review_scope": "exact-quicksand-captured-raw-rating-and-cohesive-shrinking-extraction-only",
+      "sha256": "1cf44b9c47c5a7ad173eb23b915cd4b90f70d96a34870db5132316355be4cbb8",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/NewHorizonsMagic.cpp::newHorizonsMagic::void validateRules(const JsonNode & rules)#1": {
       "kind": "exception",
-      "lines": 347,
+      "lines": 341,
       "owner": "gameplay_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 347 to 347 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "sha256": "d4a0adfebfe62defe787e918830558da4e4dde2c47fe8c46d032f9f049a79bb6",
+      "rationale": "Shrink ordered validateRules registry from347 to341 lines by extracting the existing selectedPlacement validation and new optional Quicksand-unit validation into the cohesive81-line owner. Preserve all other ordered admissions and the inherited future-extraction obligation; no regrowth credit or native acceptance.",
+      "review": "IR-QUICKSAND-RAW-RATING-20261024",
+      "review_scope": "exact-quicksand-captured-raw-rating-and-cohesive-shrinking-extraction-only",
+      "sha256": "70aad40cccee817c9939e8ae8c0f61b2aa4fd28405f7f03c5e8d0647801e18e2",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },

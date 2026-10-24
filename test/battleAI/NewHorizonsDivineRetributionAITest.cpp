@@ -44,6 +44,7 @@ JsonNode savedV2MagicRulesWithCurrentSpellRoster()
 	{
 		(void)name;
 		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("rawSpellPowerPerPatch");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
 		for(const auto * key : {"heroAccess", "restoration", "propagationLimit", "implosion",

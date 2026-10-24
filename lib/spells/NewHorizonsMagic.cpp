@@ -266,7 +266,6 @@ std::optional<size_t> schoolCoefficientRankIndex(int coefficientPercent)
 
 using detail::hasMaledictionPerk;
 using detail::registeredSpellcraftRank;
-using detail::NATURE_MIRE_SHAPER;
 
 bool rulesActive(const JsonNode & rules)
 {
@@ -1061,7 +1060,7 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "rawSpellPowerPerPatch", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"});
 		if(data.Struct().contains("implosion"))
 		{
 			require(name == "core:implosion", "Implosion profile requires its canonical spell row");
@@ -1136,13 +1135,7 @@ void validateRules(const JsonNode & rules)
 		if(data.Struct().contains("heroAccess"))
 			require(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION && data["heroAccess"].isBool(),
 				"heroAccess spell flag requires a boolean saved-v3 value");
-		if(data.Struct().contains("selectedPlacement"))
-		{
-			const auto & selectedPlacement = data["selectedPlacement"];
-			require(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-				&& name == "core:quicksand" && selectedPlacement.isBool() && selectedPlacement.Bool(),
-				"selectedPlacement is only true for core:quicksand in magic rules v3");
-		}
+		detail::validateQuicksandSpellRow(rules, name, data);
 		if(version >= DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("active"))
 			require(data["active"].isBool(), "spell active flag");
 		if(version >= DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("cureAfflictions"))
@@ -1442,36 +1435,6 @@ std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInsta
 		warcastingBonusPercent, empowerBonusPercent);
 	return SORROW_BASE_MORALE_PENALTY + static_cast<int>(std::min<int64_t>(
 		SORROW_MAX_MORALE_PENALTY - SORROW_BASE_MORALE_PENALTY, scaledPowerTerm));
-}
-
-std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
-	const SpellID spell, const int32_t spellPower, const int32_t spellPowerDivisor,
-	const int warcastingBonusPercent, const int empowerBonusPercent,
-	const int additionalSpellPowerComponentPercent,
-	const std::optional<int> coefficientOverride)
-{
-	if(!rulesActive(rules)
-		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		|| spell != SpellID(SpellID::QUICKSAND)
-		|| !spellAllowedBySavedRoster(rules, spell))
-		return std::nullopt;
-
-	if(spellPower < 0 || spellPowerDivisor <= 0
-		|| spellPowerDivisor > std::numeric_limits<int32_t>::max() / QUICKSAND_SPELL_POWER_PER_PATCH_V3)
-		throw std::invalid_argument("Invalid Quicksand Spell Power inputs");
-
-	const int coefficientBasisPoints = coefficientOverride ? *coefficientOverride : spellPowerCoefficientBasisPoints(
-		rules, hero, spell, additionalSpellPowerComponentPercent);
-	const int32_t divisor = spellPowerDivisor * QUICKSAND_SPELL_POWER_PER_PATCH_V3;
-	const int64_t spellPowerPatches = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		spellPower, divisor, coefficientBasisPoints, warcastingBonusPercent, empowerBonusPercent);
-	const int baseCount = QUICKSAND_BASE_PATCH_COUNT_V3 + static_cast<int>(std::min<int64_t>(
-		QUICKSAND_MAX_PATCH_COUNT_V3 - QUICKSAND_BASE_PATCH_COUNT_V3, spellPowerPatches));
-	// The additional patch is independent of Spell Power and follows the
-	// ordinary cap, allowing six patches without changing unselected heroes.
-	const bool mireShaper = hero && hero->hasActivePerk(
-		std::string(NATURE_MAGIC_SKILL), std::string(NATURE_MIRE_SHAPER));
-	return baseCount + (mireShaper ? 1 : 0);
 }
 
 bool quicksandSelectedPlacementEnabled(const JsonNode & rules, const SpellID spell)

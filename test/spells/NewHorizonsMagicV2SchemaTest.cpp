@@ -43,6 +43,7 @@ JsonNode v1Rules()
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
 		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("rawSpellPowerPerPatch");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
 		spell.Struct().erase("heroAccess");
@@ -67,6 +68,7 @@ JsonNode v2Rules()
 	{
 		(void)name;
 		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("rawSpellPowerPerPatch");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
 		spell.Struct().erase("heroAccess");

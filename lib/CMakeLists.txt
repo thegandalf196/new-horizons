@@ -513,6 +513,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsEagleEye.cpp
 	spells/NewHorizonsFriendlyFire.cpp
 	spells/NewHorizonsMagic.cpp
+	spells/NewHorizonsQuicksand.cpp
 	spells/NewHorizonsTravelDayEnd.cpp
 	spells/NewHorizonsMagicPresentation.cpp
 	spells/NewHorizonsMagicReadouts.cpp

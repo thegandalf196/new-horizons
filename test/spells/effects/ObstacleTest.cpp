@@ -224,6 +224,7 @@ TEST_F(ObstacleApplyTest, SavedV3QuicksandUsesCanonicalPowerAndSchoolRankPatchCo
 	savedBattle->magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 	// Older v3 snapshots have the new count formula but retain random placement.
 	savedBattle->magicRules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
+	savedBattle->magicRules["spells"]["core:quicksand"].Struct().erase("rawSpellPowerPerPatch");
 	EXPECT_CALL(*savedBattle, getScriptContextPool()).WillRepeatedly(ReturnRef(*pool));
 	ON_CALL(*savedBattle, getUnitsIf(_)).WillByDefault(Invoke(&unitsFake, &battle::UnitsFake::getUnitsIf));
 	EXPECT_CALL(*savedBattle, getUnitsIf(_)).Times(AtLeast(0));

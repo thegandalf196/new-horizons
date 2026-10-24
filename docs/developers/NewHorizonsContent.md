@@ -91,6 +91,22 @@ infer a category from legacy tier, upgrade graph or installed defaults; an absen
 battle view does not fall through to world data. Recapture and clear optional
 widgets when their subject changes, including commander rebuild paths.
 
+### Quicksand Spell Power units
+
+New Quicksand rows capture `rawSpellPowerPerPatch: 60`: ordinary patch count is
+`min(5, 2 + floor(scaled displayed Spell Power / 60))`. School, Spellcraft and
+eligible cast modifiers strengthen only the power term; Mire Shaper adds its
+patch after the ordinary cap. The field is a positive integer exclusive to the
+Quicksand row in magic rules version 3.
+
+An absent field preserves the earlier count denominator of `60 × caster power
+divisor`; a historical hero with divisor 10 therefore retains unmodified thresholds
+600/1200/1800. Never add the field to a loaded historical profile or rewrite its
+other captured values. Count generation and descriptions share the same unit
+selection. The existing JSON representation retains the optional field without a
+new binary state layout. Synthetic tests projecting current data into v1/v2 must
+remove the v3-only field, rather than widening historical schemas.
+
 ## Focused verification
 
 Use the narrow fixtures corresponding to the changed consumer, then the relevant

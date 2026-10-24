@@ -73,6 +73,7 @@ protected:
 				rules.Struct().erase(key);
 			rules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
 			rules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
+			rules["spells"]["core:quicksand"].Struct().erase("rawSpellPowerPerPatch");
 			rules["spells"]["core:earthquake"].Struct().erase("earthquake");
 			for(auto & [identity, row] : rules["spells"].Struct())
 			{

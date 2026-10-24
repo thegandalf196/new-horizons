@@ -19,11 +19,15 @@ namespace
 class NewHorizonsQuicksandRuntimeTest : public HeroCommandFixture
 {
 protected:
+	bool useRawStep = true;
+
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
-		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+		if(!useRawStep)
+			magic["spells"]["core:quicksand"].Struct().erase("rawSpellPowerPerPatch");
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
@@ -39,6 +43,32 @@ protected:
 		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 			BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 		attackerSideHero->addSpellToSpellbook(SpellID::QUICKSAND);
+	}
+
+	void checkPaidThreshold(int expected, int powerStep)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepareQuicksand());
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 60, ChangeValueMode::ABSOLUTE);
+		const SpellID spell(SpellID::QUICKSAND);
+		ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell.toSpell()), 10);
+		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+		const auto mechanics = spell.toSpell()->battleMechanics(&cast);
+		ASSERT_EQ(mechanics->getEffectPower(), 60);
+		ASSERT_EQ(mechanics->getSpellPowerCoefficientBasisPoints(), 10000);
+		EXPECT_EQ(mechanics->getNewHorizonsQuicksandPatchCount(), expected);
+		const auto description = newHorizonsMagic::spellDescriptionForHero(
+			attackerSideHero, spell.toSpell(), MasteryLevel::EXPERT);
+		EXPECT_NE(description.find("Places " + std::to_string(expected) + " concealed"), std::string::npos);
+		EXPECT_NE(description.find("displayed Spell Power / " + std::to_string(powerStep)), std::string::npos);
+		const auto mana = attackerSideHero->getManaAvailable();
+		const auto malformed = expected == 3 ? quicksandAction({70, 71}) : quicksandAction({70, 71, 72});
+		EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), malformed));
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+		EXPECT_TRUE(battle()->obstacles.empty());
+		const auto legal = expected == 3 ? quicksandAction({70, 71, 72}) : quicksandAction({70, 71});
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), legal));
+		EXPECT_EQ(battle()->obstacles.size(), static_cast<size_t>(expected));
+		EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
 	}
 
 	bool selectNaturePerk(const std::string & perk)
@@ -140,6 +170,12 @@ TEST_F(NewHorizonsQuicksandRuntimeTest, MireShaperAddsOneAfterScalingAndBaseCap)
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 45), 3);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 45, 1, 25), 4);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 180), 6);
+	auto historical = rules;
+	historical["spells"]["core:quicksand"].Struct().erase("rawSpellPowerPerPatch");
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 45, 10, 25), 4);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(historical, attackerSideHero, spell, 45, 10, 25), 3);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 180, 10), 6);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(historical, attackerSideHero, spell, 180, 10), 3);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, nullptr, spell, 180), 5);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(JsonNode(), attackerSideHero, spell, 180), std::nullopt);
 	EXPECT_NE(newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), MasteryLevel::ADVANCED)
@@ -212,4 +248,15 @@ TEST_F(NewHorizonsQuicksandRuntimeTest, AcceptedPlacementKeepsOrderedEffectTarge
 	EXPECT_TRUE(server.startedActions.back().ba.target.empty());
 	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_NE(battle()->battleCanCastSpell(attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
+}
+
+TEST_F(NewHorizonsQuicksandRuntimeTest, RawRatingProfileReadoutAndPaidCastUseSixtyPointThreshold)
+{
+	ASSERT_NO_FATAL_FAILURE(checkPaidThreshold(3, 60));
+}
+
+TEST_F(NewHorizonsQuicksandRuntimeTest, OlderCapturedV3ReadoutAndPaidCastKeepSixHundredPointThreshold)
+{
+	useRawStep = false;
+	ASSERT_NO_FATAL_FAILURE(checkPaidThreshold(2, 600));
 }

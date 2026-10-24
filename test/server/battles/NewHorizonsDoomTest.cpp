@@ -37,6 +37,7 @@ JsonNode savedV2RulesContainingDoom()
 	{
 		(void)name;
 		row.Struct().erase("selectedPlacement");
+		row.Struct().erase("rawSpellPowerPerPatch");
 		row.Struct().erase("earthquake");
 		row.Struct().erase("structures");
 		if(row.Struct().contains("variant"))

@@ -144,7 +144,13 @@
 		"spells": {
 			"type": "object",
 			"minProperties": 1,
-			"additionalProperties": {"$ref": "#/definitions/spell"}
+			"properties": {"core:quicksand": {"$ref": "#/definitions/spell"}},
+			"additionalProperties": {
+				"allOf": [
+					{"$ref": "#/definitions/spell"},
+					{"not": {"required": ["rawSpellPowerPerPatch"]}}
+				]
+			}
 		},
 		"schoolSkills": {
 			"type": "object",
@@ -273,6 +279,10 @@
 					}
 				},
 				"selectedPlacement": {"type": "boolean", "enum": [true]},
+				"rawSpellPowerPerPatch": {
+					"type": "integer", "minimum": 1, "maximum": 1000000,
+					"description": "Optional Quicksand step measured in displayed Spell Power. Omission preserves the older caster-divisor-scaled step."
+				},
 				"structures": {
 					"type": "object",
 					"additionalProperties": false,

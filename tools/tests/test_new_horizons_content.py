@@ -168,6 +168,7 @@ def legacy_rules(rules):
             spell.pop('active', None)
             spell.pop('cureAfflictions', None)
             spell.pop('selectedPlacement', None)
+            spell.pop('rawSpellPowerPerPatch', None)
             spell.pop('earthquake', None)
             spell.pop('structures', None)
             spell.pop('heroAccess', None)

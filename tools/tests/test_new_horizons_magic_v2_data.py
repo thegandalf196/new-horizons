@@ -68,6 +68,7 @@ class MagicV2DataTest(unittest.TestCase):
         self.rules['adventureSpells']['core:waterWalk'].pop('requireLegalDayEnd', None)
         self.rules['adventureSpells']['core:fly'].pop('requireLegalDayEnd', None)
         self.rules['spells']['core:quicksand'].pop('selectedPlacement')
+        self.rules['spells']['core:quicksand'].pop('rawSpellPowerPerPatch')
         self.rules['spells']['core:earthquake'].pop('earthquake')
         for row in self.rules['spells'].values():
             row.pop('structures', None)
@@ -663,6 +664,32 @@ class MagicV2DataTest(unittest.TestCase):
         # Buffer is an explicit reward, not a new ordinary-Mana requirement.
         validator.validate({'rewards': [{'manaPoints': 25}]})
         self.assertNotIn('manaBuffer', schema['definitions']['limiter']['properties'])
+
+
+    def test_quicksand_raw_step_is_optional_strict_and_confined_to_its_v3_row(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        self.assertEqual(self.v3_rules['spells']['core:quicksand']['rawSpellPowerPerPatch'], 60)
+        validator.validate(self.v3_rules)
+        historical = copy.deepcopy(self.v3_rules)
+        historical['spells']['core:quicksand'].pop('rawSpellPowerPerPatch')
+        validator.validate(historical)
+        for value in (None, False, 0, -1, 0.5, 60.0, '60', 1000001):
+            with self.subTest(value=value):
+                invalid = copy.deepcopy(self.v3_rules)
+                invalid['spells']['core:quicksand']['rawSpellPowerPerPatch'] = value
+                self.assertFalse(validator.is_valid(invalid))
+        tuned = copy.deepcopy(self.v3_rules)
+        tuned['spells']['core:quicksand']['rawSpellPowerPerPatch'] = 90
+        validator.validate(tuned)
+        wrong_spell = copy.deepcopy(self.v3_rules)
+        wrong_spell['spells']['core:haste']['rawSpellPowerPerPatch'] = 60
+        self.assertFalse(validator.is_valid(wrong_spell))
+        for old, old_validator in ((self.old_rules, self.old_validator), (self.rules, self.validator)):
+            with self.subTest(version=old['rulesetVersion']):
+                self.assertNotIn('rawSpellPowerPerPatch', old['spells']['core:quicksand'])
+                invalid = copy.deepcopy(old)
+                invalid['spells']['core:quicksand']['rawSpellPowerPerPatch'] = 60
+                self.assertFalse(old_validator.is_valid(invalid))
 
 
 if __name__ == '__main__':

@@ -26,6 +26,7 @@ JsonNode savedV2MagicRules()
 	{
 		(void)name;
 		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("rawSpellPowerPerPatch");
 		spell.Struct().erase("heroAccess");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");

@@ -81,6 +81,7 @@ protected:
 			{
 				(void)spellId;
 				spellRow.Struct().erase("selectedPlacement");
+				spellRow.Struct().erase("rawSpellPowerPerPatch");
 				spellRow.Struct().erase("earthquake");
 				spellRow.Struct().erase("structures");
 				if(spellRow.Struct().contains("variant"))

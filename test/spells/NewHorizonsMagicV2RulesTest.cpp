@@ -58,6 +58,7 @@ JsonNode legacyRules()
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
 		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("rawSpellPowerPerPatch");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
 		spell.Struct().erase("heroAccess");
@@ -78,6 +79,7 @@ JsonNode formulaRules()
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
 	rules["spells"][quicksandKey].Struct().erase("selectedPlacement");
+	rules["spells"][quicksandKey].Struct().erase("rawSpellPowerPerPatch");
 	rules["spells"]["core:earthquake"].Struct().erase("earthquake");
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
@@ -353,6 +355,7 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandSelectedPlacementIsStrictSavedV3OptIn
 
 	auto markerlessV3 = current;
 	markerlessV3["spells"][quicksandKey].Struct().erase("selectedPlacement");
+	markerlessV3["spells"][quicksandKey].Struct().erase("rawSpellPowerPerPatch");
 	EXPECT_FALSE(newHorizonsMagic::quicksandSelectedPlacementEnabled(markerlessV3, quicksand));
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(markerlessV3));
 
@@ -594,4 +597,89 @@ TEST(NewHorizonsMagicV2RulesTest, JsonSnapshotRoundTripRetainsFormulaNotLaterSou
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(restored));
 	EXPECT_EQ(newHorizonsMagic::directDamageValue(restored, arrowKey, 24, 10), 68);
 	// JsonNode round-trip only, not actual CGameState/BattleStart entrypoints.
+}
+
+TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepUsesDisplayedPowerAndAbsentStepPreservesCasterUnits)
+{
+	const auto current = originalRules();
+	const SpellID spell(SpellID::QUICKSAND);
+	ASSERT_EQ(current["spells"][quicksandKey]["rawSpellPowerPerPatch"].Integer(), 60);
+	for(const int divisor : {1, 10})
+	{
+		for(const auto [power, expected] : {std::pair{59, 2}, {60, 3}, {119, 3}, {120, 4}, {179, 4}, {180, 5}})
+			EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, nullptr, spell, power, divisor), expected);
+	}
+	auto historical = current;
+	historical["spells"][quicksandKey].Struct().erase("rawSpellPowerPerPatch");
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(historical));
+	for(const auto [power, expected] : {std::pair{59, 2}, {60, 3}, {120, 4}, {180, 5}})
+		EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(historical, nullptr, spell, power, 1), expected);
+	for(const auto [power, expected] : {std::pair{60, 2}, {180, 2}, {599, 2}, {600, 3}, {1200, 4}, {1800, 5}})
+		EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(historical, nullptr, spell, power, 10), expected);
+	EXPECT_FALSE(historical["spells"][quicksandKey].Struct().contains("rawSpellPowerPerPatch"));
+}
+
+TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepRetainsModifiersAndSupportsCapturedTuning)
+{
+	auto current = originalRules();
+	const SpellID spell(SpellID::QUICKSAND);
+	CGHeroInstance hero(nullptr);
+	const auto school = newHorizonsMagic::spellSchoolSkills(current, spell).front();
+	hero.secSkills.emplace_back(school, MasteryLevel::BASIC);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 59, 10), 3);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 0, 10), 2);
+	hero.secSkills.clear();
+	hero.secSkills.emplace_back(SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft")), MasteryLevel::EXPERT);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 48, 10), 3);
+	hero.secSkills.clear();
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 48, 10), 2);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 48, 10, 25), 3);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 48, 10, 0, 25), 3);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 1000, 10, 100, 100), 5);
+	current["spells"][quicksandKey]["rawSpellPowerPerPatch"].Integer() = 90;
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(current));
+	for(const int divisor : {1, 10})
+	{
+		EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, nullptr, spell, 89, divisor), 2);
+		EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, nullptr, spell, 90, divisor), 3);
+	}
+}
+
+TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepRejectsInvalidValuesRowsAndOlderPolicies)
+{
+	const auto current = originalRules();
+	for(const auto & invalid : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(-1),
+		JsonNode(0.5), JsonNode(60.0), JsonNode(1000001), JsonNode(std::string("60"))})
+	{
+		auto malformed = current;
+		malformed["spells"][quicksandKey]["rawSpellPowerPerPatch"] = invalid;
+		EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+		EXPECT_THROW(newHorizonsMagic::quicksandPatchCount(malformed, nullptr, SpellID(SpellID::QUICKSAND), 60, 10), std::runtime_error);
+	}
+	auto wrongSpell = current;
+	wrongSpell["spells"]["core:haste"]["rawSpellPowerPerPatch"].Integer() = 60;
+	EXPECT_THROW(newHorizonsMagic::validateRules(wrongSpell), std::runtime_error);
+	for(auto old : {legacyRules(), formulaRules()})
+	{
+		old["spells"][quicksandKey]["rawSpellPowerPerPatch"].Integer() = 60;
+		EXPECT_THROW(newHorizonsMagic::validateRules(old), std::runtime_error);
+	}
+}
+
+TEST(NewHorizonsMagicV2RulesTest, QuicksandJsonRoundTripRetainsRawAndMarkerlessCountSemantics)
+{
+	for(const bool rawStep : {false, true})
+	{
+		auto rules = originalRules();
+		if(!rawStep)
+			rules["spells"][quicksandKey].Struct().erase("rawSpellPowerPerPatch");
+		CMemorySerializer wire;
+		wire.oser & rules;
+		JsonNode restored;
+		wire.iser & restored;
+		ASSERT_EQ(restored, rules);
+		EXPECT_NO_THROW(newHorizonsMagic::validateRules(restored));
+		EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(restored, nullptr,
+			SpellID(SpellID::QUICKSAND), 60, 10), rawStep ? 3 : 2);
+	}
 }

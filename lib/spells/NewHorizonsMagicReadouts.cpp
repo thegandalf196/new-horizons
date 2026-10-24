@@ -59,9 +59,12 @@ void describeQuicksand(std::string & result, const CGHeroInstance * hero, const 
 			std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)), 0, empowerBonusPercent);
 		if(patchCount)
 		{
+			const int32_t powerStep = detail::quicksandSpellPowerStep(rules,
+				std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)));
 			result = "Places " + std::to_string(*patchCount)
-				+ " concealed Quicksand patches on legal empty ground hexes. The saved v3 base count is min(5, "
-				+ "2 + floor(Spell Power / 60)); Nature rank, Spellcraft, and Empower strengthen only the Spell Power term. "
+				+ " concealed Quicksand patches on legal empty ground hexes. Base count is min(5, "
+				+ "2 + floor(displayed Spell Power / " + std::to_string(powerStep)
+				+ ")); Nature rank, Spellcraft, and Empower strengthen only the Spell Power term. "
 				+ "The current count excludes battle-only Warcasting, which may further strengthen the Spell Power term.";
 			if(hero->hasActivePerk(std::string(NATURE_MAGIC_SKILL), std::string(NATURE_MIRE_SHAPER)))
 				result += " Mire Shaper adds one patch after the ordinary five-patch cap, allowing up to six patches.";

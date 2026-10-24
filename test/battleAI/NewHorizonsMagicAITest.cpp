@@ -292,6 +292,7 @@ JsonNode legacyMagicRules(int version)
 				spell.Struct().erase(key);
 		}
 		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("rawSpellPowerPerPatch");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
 		if(spell.Struct().contains("variant"))
