@@ -11,6 +11,7 @@
 #include "NewHorizonsRecoverySpecialties.h"
 #include "NewHorizonsHerbalSurgeon.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsReclaimer.h"
 #include "NewHorizonsSpecialtyArtwork.h"
 #include "HeroStartingProjection.h"
 #include "CHero.h"
@@ -32,6 +33,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 {
 	if(resolveHerbalSurgeonPresentation(hero, development, magic, capturedHero, result)
 		|| resolveRecoverySpecialtyPresentation(hero, development, capturedHero, result)
+		|| resolveReclaimerPresentation(hero, development, capturedHero, result)
 		|| resolveAdditionalSpecialtyPresentation(hero, development, magic, capturedHero, result)
 		|| resolveIndividualRiderPresentation(hero, development, magic, capturedHero, result)
 		|| resolveSchoolSpellcraftPresentation(hero, development, magic, capturedHero, result))

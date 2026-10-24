@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "Reward.h"
+#include "PrimaryAndExperienceReward.h"
 
 #include "../mapObjects/CGHeroInstance.h"
 #include "../GameLibrary.h"
@@ -21,14 +22,6 @@
 #include "../serializer/JsonSerializeFormat.h"
 #include "../constants/StringConstants.h"
 #include "../CSkillHandler.h"
-
-namespace
-{
-bool scalesPrimaryLevelExperience(const Rewardable::Reward & reward, const CGHeroInstance * hero)
-{
-	return hero && reward.primaryExperienceReward && newHorizonsMagic::rulesActive(hero->getMagicRules());
-}
-}
 
 void Rewardable::RewardRevealTiles::serializeJson(JsonSerializeFormat & handler)
 {
@@ -58,76 +51,6 @@ Rewardable::Reward::Reward()
 }
 
 Rewardable::Reward::~Reward() = default;
-
-TExpType Rewardable::Reward::calculateHeroExperience(const CGHeroInstance * hero, bool includePrimaryExperienceBonus,
-	std::optional<Obj> sourceObject) const
-{
-	const auto specialty = hero && sourceObject
-		&& (*sourceObject == Obj::TREE_OF_KNOWLEDGE || *sourceObject == Obj::LEARNING_STONE)
-		? hero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::NATURAL_PHILOSOPHER) : std::nullopt;
-	const auto experienceFor = [&](TExpType base)
-	{
-		if(!specialty || base <= 0)
-			return base;
-		const auto extra = newHorizonsHeroes::druidSpecialtyExtra(base, specialty->knowledgeObjectExperiencePercent);
-		return base + std::min(extra, std::numeric_limits<TExpType>::max() - base);
-	};
-	const auto addExperience = [&](TExpType left, TExpType right)
-	{
-		if(specialty)
-		{
-			if(right > 0 && left > std::numeric_limits<TExpType>::max() - right)
-				return std::numeric_limits<TExpType>::max();
-			if(right < 0 && left < std::numeric_limits<TExpType>::min() - right)
-				return std::numeric_limits<TExpType>::min();
-		}
-		return left + right;
-	};
-	const bool historianBonus = includePrimaryExperienceBonus && primaryExperienceReward && hero
-		&& hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.historian");
-	TExpType result = 0;
-	if(heroExperience > 0)
-	{
-		result = hero ? hero->calculateXp(experienceFor(heroExperience), historianBonus ? 50 : 0) : heroExperience;
-	}
-
-	if(!hero)
-		return result;
-	if(heroLevel > 0 && !scalesPrimaryLevelExperience(*this, hero))
-		result = addExperience(result,
-			LIBRARY->heroh->reqExp(hero->level + heroLevel) - LIBRARY->heroh->reqExp(hero->level));
-
-	ui32 maximumLevel = LIBRARY->heroh->maxSupportedLevel();
-	if(hero->cb)
-	{
-		if(const auto * mapHeader = hero->cb->getMapHeader(); mapHeader && mapHeader->levelLimit > 0)
-			maximumLevel = std::min<ui32>(maximumLevel, mapHeader->levelLimit);
-	}
-
-	if(hero->level >= maximumLevel)
-		return result;
-
-	if(heroLevel > 0 && scalesPrimaryLevelExperience(*this, hero))
-	{
-		// Keep legacy level rewards unscaled. Primary Experience objects use
-		// the same Learning/Historian composition as fixed Experience rewards.
-		const ui32 targetLevel = std::min<uint64_t>(maximumLevel,
-			static_cast<uint64_t>(hero->level) + heroLevel);
-		const TExpType levelExperience = LIBRARY->heroh->reqExp(targetLevel) - LIBRARY->heroh->reqExp(hero->level);
-		result = addExperience(result, hero->calculateXp(experienceFor(levelExperience), historianBonus ? 50 : 0));
-	}
-
-	if(heroExperienceNextLevelPercent <= 0)
-		return result;
-
-	const TExpType nextLevelExperience = LIBRARY->heroh->reqExp(hero->level + 1);
-	const TExpType missingExperience = nextLevelExperience > hero->exp ? nextLevelExperience - hero->exp : 0;
-	const TExpType percent = heroExperienceNextLevelPercent;
-	const TExpType percentageExperience = (missingExperience / 100) * percent
-		+ (missingExperience % 100) * percent / 100;
-
-	return addExperience(result, hero->calculateXp(experienceFor(percentageExperience), historianBonus ? 50 : 0));
-}
 
 si32 Rewardable::Reward::calculateManaPoints(const CGHeroInstance * hero) const
 {
@@ -211,23 +134,7 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 			comps.emplace_back(ComponentType::LUCK, bonus->val);
 	}
 	
-	if (heroExperience || heroExperienceNextLevelPercent || (scalesPrimaryLevelExperience(*this, h) && heroLevel > 0))
-	{
-		TExpType experience = h ? calculateHeroExperience(h, true, sourceObject) : heroExperience;
-		// Unclassified level rewards retain their separate legacy Level component.
-		if(h && !scalesPrimaryLevelExperience(*this, h) && heroLevel > 0)
-			experience -= LIBRARY->heroh->reqExp(h->level + heroLevel) - LIBRARY->heroh->reqExp(h->level);
-		// Negative fixed Experience rewards were historically previewed even though
-		// grantRewardBeforeLevelup only grants positive fixed Experience.
-		if(h && heroExperience < 0 && heroExperienceNextLevelPercent == 0)
-			experience = h->calculateXp(heroExperience);
-		const si32 componentExperience = static_cast<si32>(std::clamp<TExpType>(experience,
-			std::numeric_limits<si32>::min(), std::numeric_limits<si32>::max()));
-		comps.emplace_back(ComponentType::EXPERIENCE, componentExperience);
-	}
-
-	if (heroLevel && !(scalesPrimaryLevelExperience(*this, h) && heroLevel > 0))
-		comps.emplace_back(ComponentType::LEVEL, heroLevel);
+	appendExperienceComponents(comps, *this, h, sourceObject);
 
 	if (manaDiff || manaPercentage >= 0 || manaBuffer != 0)
 	{
@@ -240,11 +147,7 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 			std::numeric_limits<si32>::min(), std::numeric_limits<si32>::max())));
 	}
 
-	for (size_t i=0; i<primary.size(); i++)
-	{
-		if (primary[i] != 0)
-			comps.emplace_back(ComponentType::PRIM_SKILL, PrimarySkill(i), primary[i]);
-	}
+	appendPrimaryStudyComponents(comps, *this, h, sourceObject);
 
 	for(const auto & entry : secondary)
 	{

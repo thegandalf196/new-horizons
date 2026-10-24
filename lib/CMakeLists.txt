@@ -265,6 +265,7 @@ set(lib_MAIN_SRCS
 	entities/creature/NewHorizonsCreatureCategories.cpp
 	entities/creature/NewHorizonsRecruitmentTraining.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
+	entities/hero/NewHorizonsSpecialtySerialization.cpp
 	entities/hero/NewHorizonsIndividualSpecialties.cpp
 	entities/hero/NewHorizonsAdditionalSpecialties.cpp
 	entities/hero/NewHorizonsRecoverySpecialtyRules.cpp
@@ -274,6 +275,12 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsRecoverySpecialtyPresentation.cpp
 	entities/hero/NewHorizonsLearningSpecialtyRules.cpp
 	entities/hero/NewHorizonsLearningExperience.cpp
+	entities/hero/NewHorizonsSwampSeerRules.cpp
+	entities/hero/NewHorizonsSwampSeerExperience.cpp
+	entities/hero/NewHorizonsSwampSeerPresentation.cpp
+	entities/hero/NewHorizonsLearningExchangeRules.cpp
+	entities/hero/NewHorizonsScholarExchange.cpp
+	entities/hero/NewHorizonsLearningExchangePresentation.cpp
 	entities/hero/NewHorizonsLearningSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsManaFurnace.cpp
 	entities/hero/NewHorizonsSchoolSpellcraft.cpp
@@ -290,6 +297,11 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsPerkRules.cpp
 	entities/hero/NewHorizonsPerkState.cpp
 	entities/hero/NewHorizonsNecromancy.cpp
+	entities/hero/NewHorizonsReclaimerSerialization.cpp
+	entities/hero/NewHorizonsNecromancyResult.cpp
+	entities/hero/NewHorizonsReclaimerRules.cpp
+	entities/hero/NewHorizonsReclaimerDwelling.cpp
+	entities/hero/NewHorizonsReclaimerPresentation.cpp
 	entities/hero/NewHorizonsDiplomacy.cpp
 	entities/hero/NewHorizonsLegendaryReputation.cpp
 	entities/ResourceTypeHandler.cpp
@@ -305,6 +317,7 @@ set(lib_MAIN_SRCS
 	json/JsonRandom.cpp
 	json/JsonKeyExtractor.cpp
 
+	gameState/CGameStateSpecialtyPreflight.cpp
 	gameState/CGameState.cpp
 	gameState/CGameStateCampaign.cpp
 	gameState/GameStatePackVisitor.cpp
@@ -341,6 +354,8 @@ set(lib_MAIN_SRCS
 	mapObjects/CGDwelling.cpp
 	mapObjects/CGHeroInstance.cpp
 	mapObjects/HeroManaRegeneration.cpp
+	mapObjects/HeroScholar.cpp
+	mapObjects/HeroPrimarySkill.cpp
 	mapObjects/HeroStartingEquipment.cpp
 	mapObjects/HeroSpellCasting.cpp
 	mapObjects/HeroPrimarySkillQueries.cpp
@@ -371,6 +386,7 @@ set(lib_MAIN_SRCS
 	mapObjects/army/CStackInstance.cpp
 
 	mapping/CDrawRoadsOperation.cpp
+	mapping/MapSpecialtyPreflight.cpp
 	mapping/CMap.cpp
 	mapping/CMapHeader.cpp
 	mapping/CMapEditManager.cpp
@@ -398,6 +414,7 @@ set(lib_MAIN_SRCS
 	modding/ModUtility.cpp
 	modding/ModVerificationInfo.cpp
 
+	networkPacks/NetPacksSpecialtyPreflight.cpp
 	networkPacks/NetPacksLib.cpp
 
 	pathfinder/CGPathNode.cpp
@@ -417,6 +434,9 @@ set(lib_MAIN_SRCS
 	rewardable/Interface.cpp
 	rewardable/Limiter.cpp
 	rewardable/Reward.cpp
+	rewardable/RewardExperience.cpp
+	rewardable/PrimaryAndExperienceReward.cpp
+	rewardable/PrimaryAndExperienceRewardComponents.cpp
 
 	rmg/RmgArea.cpp
 	rmg/RmgObject.cpp
@@ -916,11 +936,14 @@ set(lib_MAIN_HEADERS
 	entities/creature/NewHorizonsRecruitmentTraining.h
 	entities/hero/NewHorizonsHeroRules.h
 	entities/hero/NewHorizonsSpecialtyArtwork.h
+	entities/hero/NewHorizonsSpecialtySerialization.h
 	entities/hero/NewHorizonsIndividualSpecialties.h
 	entities/hero/NewHorizonsAdditionalSpecialties.h
 	entities/hero/NewHorizonsRecoverySpecialties.h
 	entities/hero/NewHorizonsHerbalSurgeon.h
 	entities/hero/NewHorizonsLearningSpecialties.h
+	entities/hero/NewHorizonsLearningExchangeSpecialties.h
+	entities/hero/NewHorizonsSwampSeer.h
 	entities/hero/NewHorizonsSchoolSpellcraft.h
 	entities/hero/NewHorizonsRuleValidation.h
 	entities/hero/NewHorizonsSkillSpecialtyRules.h
@@ -933,6 +956,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsPerkRules.h
 	entities/hero/NewHorizonsPerkState.h
 	entities/hero/NewHorizonsNecromancy.h
+	entities/hero/NewHorizonsReclaimer.h
 	entities/hero/NewHorizonsDiplomacy.h
 	entities/hero/NewHorizonsLegendaryReputation.h
 	entities/ResourceTypeHandler.h
@@ -1093,6 +1117,7 @@ set(lib_MAIN_HEADERS
 	rewardable/Interface.h
 	rewardable/Limiter.h
 	rewardable/Reward.h
+	rewardable/PrimaryAndExperienceReward.h
 
 	rmg/RmgArea.h
 	rmg/RmgObject.h

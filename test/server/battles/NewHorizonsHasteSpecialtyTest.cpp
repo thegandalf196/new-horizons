@@ -32,6 +32,15 @@ const Bonus * hastePrototype(const CGHeroInstance * hero)
 	return nullptr;
 }
 
+// This one old-format fixture exercises Haste admission, not later specialty families.
+void removePostVeteranSpecialties(JsonNode & rules)
+{
+	for(const auto key : {"druidSpecialties", "fortuneChildSpecialty", "arcanePreparationSpecialty",
+		"bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties",
+		"additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+		rules.Struct().erase(key);
+}
+
 class NewHorizonsHasteSpecialtyTest : public HeroCommandFixture
 {
 protected:
@@ -78,6 +87,15 @@ protected:
 		rules.setOverrideFlag(true);
 		if(historicalList)
 		{
+			removePostVeteranSpecialties(rules);
+			// No perk or canonical-magic behavior is needed by this old Haste codec control.
+			JsonNode absentPerks;
+			absentPerks.Struct();
+			absentPerks.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, absentPerks);
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, JsonNode(false));
+			loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT, JsonNode(100));
 			auto & spells = rules["nonDamageSpellSpecialties"]["spells"].Vector();
 			std::erase_if(spells, [](const JsonNode & spell) { return spell.String() == "core:haste"; });
 			rules.setOverrideFlag(true);
@@ -383,6 +401,10 @@ TEST_F(NewHorizonsHasteSpecialtyTest, HistoricalListsRemainOldWritableAndRawRead
 {
 	historicalList = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	EXPECT_FALSE(newHorizonsMagic::rulesActive(gameState()->getMagicRules()));
+	EXPECT_FALSE(newHorizonsHeroes::usesPerkRules(gameState()->getHeroPerkRules()));
+	EXPECT_TRUE(gameState()->getHeroDevelopmentRules()["recoverySpecialties"].isNull());
+	EXPECT_TRUE(gameState()->getHeroDevelopmentRules()["reclamationSpecialty"].isNull());
 	const auto ordinaryOldWriter = [](auto & value)
 	{
 		CMemorySerializer memory;
@@ -399,6 +421,7 @@ TEST_F(NewHorizonsHasteSpecialtyTest, HistoricalListsRemainOldWritableAndRawRead
 	ordinaryOldWriter(lobby);
 	JsonNode captured;
 	captured["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	removePostVeteranSpecialties(captured["heroes"]["newHorizons"]);
 	captured["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 	captured["heroes"]["newHorizons"]["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");

@@ -4,6 +4,8 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsLearningSpecialties.h"
+#include "NewHorizonsLearningExchangeSpecialties.h"
+#include "NewHorizonsSwampSeer.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../spells/NewHorizonsMagic.h"
@@ -12,6 +14,9 @@ namespace newHorizonsHeroes
 bool resolveLearningSpecialtyPresentation(const CHero & hero, const JsonNode & development,
 	const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
 {
+	if(resolveSwampSeerPresentation(hero, development, capturedHero, result)
+		|| resolveLearningExchangePresentation(hero, development, magic, capturedHero, result))
+		return true;
 	const auto identity = hero.getJsonKey();
 	if(identity != "core:nimbus" && identity != "core:oris")
 		return false;

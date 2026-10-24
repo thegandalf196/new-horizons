@@ -115,6 +115,10 @@ set(test_SRCS
 		battle/BattleRootLifetimeTest.cpp
 		battle/BattleRootCommitAdmissionTest.cpp
 		battle/PreparedReplayAppendTest.cpp
+		serializer/NewHorizonsSpecialtySerializationTest.cpp
+		serializer/NewHorizonsSwampSeerSerializationTest.cpp
+		serializer/NewHorizonsReclaimerSerializationTest.cpp
+		serializer/RemainingSpecialtyLobbySerializationTest.cpp
 		serializer/ReplayPayloadVersionTest.cpp
 		serializer/ReplaySnapshotVersionTest.cpp
 		client/ReplayPlannerPayloadTest.cpp
@@ -219,6 +223,8 @@ set(test_SRCS
 		hero/NewHorizonsLogisticsLevelWireTest.cpp
 		hero/NewHorizonsHeroRulesTest.cpp
 		hero/NewHorizonsIndividualSpecialtiesTest.cpp
+		hero/NewHorizonsReclaimerRulesTest.cpp
+		../client/NewHorizonsNecromancyText.cpp
 	hero/NewHorizonsSchoolSpellcraftRulesTest.cpp
 	hero/NewHorizonsAdditionalSpecialtiesTest.cpp
 	battle/NewHorizonsManaFurnacePersistenceTest.cpp
@@ -227,6 +233,8 @@ set(test_SRCS
 	hero/NewHorizonsLearningSpecialtyRulesTest.cpp
 	hero/NewHorizonsRecoverySpecialtyRulesTest.cpp
 	hero/NewHorizonsHerbalSurgeonRulesTest.cpp
+	hero/NewHorizonsLearningExchangeRulesTest.cpp
+	hero/NewHorizonsSwampSeerRulesTest.cpp
 		hero/NewHorizonsSkillSpecialtyQueryTest.cpp
 		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroBiographyTest.cpp
@@ -487,6 +495,8 @@ set(test_SRCS
 		server/battles/NewHorizonsMasteryTest.cpp
 		server/battles/NewHorizonsLogisticsMasteryTest.cpp
 		server/battles/NewHorizonsNecromancyTest.cpp
+		server/battles/NewHorizonsReclaimerTest.cpp
+		server/battles/NewHorizonsReclaimerFixture.h
 		server/battles/NewHorizonsBloodrageTest.cpp
 		server/battles/NewHorizonsBloodragePerksTest.cpp
 		server/battles/NewHorizonsBloodrageThresholdTest.cpp
@@ -674,6 +684,7 @@ set(test_SRCS
 		server/NewHorizonsEstatesMagnateTest.cpp
 		server/NewHorizonsAcademicStudyTest.cpp
 		server/queries/NewHorizonsScholarTest.cpp
+		server/queries/NewHorizonsLearningExchangeTest.cpp
 		server/queries/NewHorizonsSageTest.cpp
 		server/queries/NewHorizonsRecruitersContactsTest.cpp
 		server/NewHorizonsResourceBrokerTest.cpp
@@ -942,6 +953,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsAcademicStudyAITest.cpp
 		nullkiller2/NewHorizonsSageAITest.cpp
 		nullkiller2/NewHorizonsRecruitersContactsAITest.cpp
+		server/queries/NewHorizonsSwampSeerTest.cpp
 		server/queries/NewHorizonsHistorianRewardTest.cpp
 		server/queries/NewHorizonsArchivistTest.cpp
 		nullkiller2/AIUtilityTest.cpp
@@ -978,6 +990,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsLearningMentorAITest.cpp
 		nullkiller2/NewHorizonsLearningMasterTeacherAITest.cpp
 		nullkiller2/NewHorizonsTeachingMeetingAITest.cpp
+		nullkiller2/NewHorizonsScholarValueAITest.cpp
 		nullkiller2/NewHorizonsExternalMusterAITest.cpp
 		nullkiller2/NewHorizonsTownMusterAITest.cpp
 		nullkiller2/NewHorizonsNeutralDiplomacyPlannerTest.cpp

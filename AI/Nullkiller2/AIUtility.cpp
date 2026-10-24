@@ -23,6 +23,7 @@
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
+#include "../../lib/entities/hero/NewHorizonsLearningExchangeSpecialties.h"
 #include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/mapObjects/MapObjects.h"
@@ -687,12 +688,12 @@ float teachingMeetingReward(const Nullkiller * aiNk, const CGHeroInstance * trav
 	const auto calendar = aiNk->cc->getCalendar();
 	const auto week = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 	float reward = 0;
-	if(traveler->canExchangeNewHorizonsScholarWith(*partner, week))
+	if(const auto exchange = newHorizonsHeroes::prepareScholarExchange(*traveler, *partner, week))
 	{
-		if(const auto incoming = partner->getNewHorizonsScholarSpellFor(*traveler))
-			reward += traveler->getSpellLevel(incoming->toSpell()) * 0.5f;
-		if(const auto outgoing = traveler->getNewHorizonsScholarSpellFor(*partner))
-			reward += partner->getSpellLevel(outgoing->toSpell()) * 0.25f;
+		for(const auto incoming : exchange->secondTeaches)
+			reward += traveler->getSpellLevel(incoming.toSpell()) * 0.5f;
+		for(const auto outgoing : exchange->firstTeaches)
+			reward += partner->getSpellLevel(outgoing.toSpell()) * 0.25f;
 	}
 	const auto mentorReward = [week](const CGHeroInstance & mentor, const CGHeroInstance & recipient)
 	{

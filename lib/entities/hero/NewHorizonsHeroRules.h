@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "NewHorizonsSpecialtySerialization.h"
 #include "NewHorizonsPrimaryProfile.h"
 #include "NewHorizonsIndividualSpecialties.h"
 #include "NewHorizonsAdditionalSpecialties.h"

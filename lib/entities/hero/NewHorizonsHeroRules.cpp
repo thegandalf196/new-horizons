@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsLearningExchangeSpecialties.h"
+#include "NewHorizonsSwampSeer.h"
 #include "HeroStartingProjection.h"
 #include "NewHorizonsRuleValidation.h"
 #include "NewHorizonsSkillSpecialtyRules.h"
@@ -502,8 +504,8 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties"});
-	validateIndividualSpecialtiesSerialization(rules, true, true, true, true, true);
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"});
+	validateCurrentSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
@@ -545,8 +547,8 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties"});
-	validateIndividualSpecialtiesSerialization(rules, true, true, true, true, true);
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"});
+	validateCurrentSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
 	newHorizonsLighthouse::validateRulesSerialization(rules, true);
@@ -589,6 +591,12 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	copyCapturedIndividualSpecialties(result, rules);
 	if(rules.Struct().contains("recoverySpecialties"))
 		result["recoverySpecialties"] = rules["recoverySpecialties"];
+	if(rules.Struct().contains("learningExchangeSpecialties"))
+		result["learningExchangeSpecialties"] = rules["learningExchangeSpecialties"];
+	if(rules.Struct().contains("swampSeerSpecialty"))
+		result["swampSeerSpecialty"] = rules["swampSeerSpecialty"];
+	if(rules.Struct().contains("reclamationSpecialty"))
+		result["reclamationSpecialty"] = rules["reclamationSpecialty"];
 	if(rules.Struct().contains("druidSpecialties"))
 		result["druidSpecialties"] = rules["druidSpecialties"];
 	if(rules.Struct().contains("fortuneChildSpecialty"))

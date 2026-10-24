@@ -138,6 +138,11 @@ struct DLL_LINKAGE Reward final
 	TExpType calculateHeroExperience(const CGHeroInstance * hero, bool includePrimaryExperienceBonus = true,
 		std::optional<Obj> sourceObject = std::nullopt) const;
 
+	/// Ordinary algorithm plus a measured post-mutation study delta, never reprojected.
+	TExpType calculateHeroExperienceForAcceptedReward(const CGHeroInstance * hero,
+		std::optional<Obj> sourceObject, int64_t acceptedStudyPrimaryPoints) const;
+	bool scalesPrimaryLevelExperience(const CGHeroInstance * hero) const;
+
 	si32 calculateManaPoints(const CGHeroInstance * h) const;
 	si32 calculateMovePoints(const CGHeroInstance * h) const;
 

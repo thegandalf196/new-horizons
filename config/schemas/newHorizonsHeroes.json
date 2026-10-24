@@ -54,6 +54,9 @@
 				"schoolSpellcraftSpecialties": {"$ref": "#/definitions/schoolSpellcraftSpecialties"},
 				"additionalSpecialties": {"$ref": "#/definitions/additionalSpecialties"},
 				"recoverySpecialties": {"$ref": "#/definitions/recoverySpecialties"},
+				"reclamationSpecialty": {"$ref": "#/definitions/reclamationSpecialty"},
+				"swampSeerSpecialty": {"$ref": "#/definitions/swampSeerSpecialty"},
+				"learningExchangeSpecialties": {"$ref": "#/definitions/learningExchangeSpecialties"},
 				"individualSpecialties": {"$ref": "#/definitions/individualSpecialties"},
 				"druidSpecialties": {"$ref": "#/definitions/druidSpecialties"},
 				"fortuneChildSpecialty": {
@@ -278,6 +281,58 @@
 						"regenerationMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}}
 					}
 				}
+			}
+		},
+		"learningExchangeSpecialties": {
+			"description": "Optional captured directed Scholar-exchange and Learning-core specialties. Absent rows preserve prior behavior; coefficients are provisional balance values.",
+			"type": "object", "additionalProperties": false, "not": {"type": "null"},
+			"minProperties": 1, "maxProperties": 3,
+			"required": ["version"],
+			"properties": {
+				"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
+				"ecumenicalScholar": {
+					"type": "object", "additionalProperties": false, "not": {"type": "null"},
+					"minProperties": 3, "maxProperties": 3,
+					"required": ["learningPercentPerLevel", "learningMaximumPercent", "additionalSpellsTaught"],
+					"properties": {
+						"learningPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+						"learningMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}},
+						"additionalSpellsTaught": {"type": "integer", "minimum": 0, "maximum": 1, "not": {"type": "null"}}
+					}
+				},
+				"occultScholar": {
+					"type": "object", "additionalProperties": false, "not": {"type": "null"},
+					"minProperties": 3, "maxProperties": 3,
+					"required": ["learningPercentPerLevel", "learningMaximumPercent", "additionalSpellsReceived"],
+					"properties": {
+						"learningPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+						"learningMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}},
+						"additionalSpellsReceived": {"type": "integer", "minimum": 0, "maximum": 1, "not": {"type": "null"}}
+					}
+				}
+			}
+		},
+		"swampSeerSpecialty": {
+			"description": "Optional captured Learning-core and magical-study specialty. Absence preserves prior behavior; coefficients are provisional balance values.",
+			"type": "object", "additionalProperties": false, "not": {"type": "null"},
+			"minProperties": 4, "maxProperties": 4,
+			"required": ["version", "learningPercentPerLevel", "learningMaximumPercent", "studyExperiencePerMagicPrimaryPoint"],
+			"properties": {
+				"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
+				"learningPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+				"learningMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 200, "not": {"type": "null"}},
+				"studyExperiencePerMagicPrimaryPoint": {"type": "integer", "minimum": 0, "maximum": 1000000, "not": {"type": "null"}}
+			}
+		},
+		"reclamationSpecialty": {
+			"description": "Optional captured residual Necromancy reclamation specialty. Absence preserves prior behavior; coefficients are provisional balance values.",
+			"type": "object", "additionalProperties": false, "not": {"type": "null"},
+			"minProperties": 3, "maxProperties": 3,
+			"required": ["version", "conversionPercentPerLevel", "conversionMaximumPercent"],
+			"properties": {
+				"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
+				"conversionPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000, "not": {"type": "null"}},
+				"conversionMaximumPercent": {"type": "integer", "minimum": 0, "maximum": 100, "not": {"type": "null"}}
 			}
 		},
 		"individualSpecialties": {

@@ -7,6 +7,9 @@ set(vcmiservercommon_SRCS
 		battles/BattleProcessor.cpp
 		battles/BattleResultProcessor.cpp
 		battles/NewHorizonsWellspringRecovery.cpp
+		battles/NewHorizonsRaisedArmy.cpp
+		battles/NewHorizonsNecromancyDelivery.cpp
+		battles/NewHorizonsNecromancyResolution.cpp
 		battles/PhysicalAfflictionEffectPreparation.cpp
 
 		queries/BattleQueries.cpp
@@ -23,6 +26,7 @@ set(vcmiservercommon_SRCS
 
 		CGameHandler.cpp
 		NewHorizonsLearningMentor.cpp
+		NewHorizonsScholar.cpp
 		GlobalLobbyProcessor.cpp
 		ServerSpellCastEnvironment.cpp
 		CVCMIServer.cpp
@@ -45,6 +49,7 @@ set(vcmiservercommon_HEADERS
 		battles/BattleFlowProcessor.h
 		battles/BattleProcessor.h
 		battles/BattleResultProcessor.h
+		battles/NewHorizonsRaisedArmy.h
 		battles/NewHorizonsWellspringRecovery.h
 
 		queries/BattleQueries.h
@@ -61,6 +66,7 @@ set(vcmiservercommon_HEADERS
 		processors/TurnOrderProcessor.h
 
 		CGameHandler.h
+		NewHorizonsScholar.h
 		GlobalLobbyProcessor.h
 		IGameServer.h
 		ServerSpellCastEnvironment.h

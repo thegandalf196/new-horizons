@@ -80,6 +80,9 @@ balance, artwork and some interactions are still being refined.
   Axsis gains a Mysticism-based refill after victory; Jaegar gains extra day-end
   recovery when Mana is low; Rosic gains a refill on the day's first combat.
   Verdish improves Tent healing and Regeneration's Spell Power component.
+  Sanya can teach an additional eligible Scholar spell, while Geon can receive
+  one. Tiva gains experience from permanent magical study. Vidomina can turn
+  leftover Necromancy value into Zombies after building their dwelling.
   Further individual hero redesigns remain in development.
 
 ### Artwork and presentation

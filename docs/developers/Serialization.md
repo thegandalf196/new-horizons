@@ -128,6 +128,22 @@ do not add ongoing-battle world-save support. Herbal Surgeon's original-caster
 percentage travels with the existing transient cast context; reflection must not
 recapture the reflecting hero's specialty.
 
+## Captured Learning and reclamation specialties
+
+`NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS` protects the independently optional
+`learningExchangeSpecialties`, `swampSeerSpecialty` and `reclamationSpecialty`
+captures. Historical absence remains absent; explicit zero remains a capture.
+The shared `SpecialtySerializationContext` admits each family through the same
+direct and enclosing guards, including world and lobby serialization. Unsupported
+writers reject before their prefixes; readers validate before installing rules.
+The older boolean compatibility wrapper cannot admit these later captures.
+
+`NecromancyResult::reclaimerZombiesRaised` records the Zombie subset funded by
+reclamation. Current readers validate its bounds and conservation with the final
+batch; historical readers reset it to zero. Direct result and enclosing
+`BattleResultsApplied` writers reject lossy output before either prefix. This
+suffix does not reinterpret historical casualty summaries or add battle saving.
+
 ## Captured Fly day-end policy
 
 `NEW_HORIZONS_FLY_DAY_END` protects the presence of

@@ -21,6 +21,7 @@ class NewHorizonsDeepTranceTest : public HeroCommandFixture
 {
 protected:
 	bool captured = true;
+	bool historicalCodecCapture = false;
 	bool legacyMagic = false;
 	void SetUp() override
 	{
@@ -33,6 +34,10 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		rules.setOverrideFlag(true);
+		// Only the explicit old positive codec fixture predates later families.
+		if(historicalCodecCapture)
+			for(const auto key : {"learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+				rules.Struct().erase(key);
 		rules.Struct().erase("recoverySpecialties");
 		if(captured)
 		{
@@ -333,6 +338,7 @@ TEST_F(NewHorizonsDeepTranceTest, ReplayPredecessorRejectsCapturedPolicyAndActua
 }
 TEST_F(NewHorizonsDeepTranceTest, ReplayPredecessorAbsentWorldRetainsAbsentPolicyAndDefaultReceipt)
 {
+	historicalCodecCapture = true;
 	captured = false;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_TRUE(attackerSideHero->getPrimaryGrowthRules()["recoverySpecialties"].isNull());

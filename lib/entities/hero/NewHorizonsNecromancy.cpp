@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsNecromancy.h"
+#include "NewHorizonsReclaimer.h"
 
 #include "../../CCreatureHandler.h"
 #include "../../GameLibrary.h"
@@ -323,25 +324,7 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	if(result.skeletonsRaised > 0 && skeletonOutput.hasValue() && skeletonOutput != baseSkeleton)
 		result.skeletonCreature = skeletonOutput;
 
-	const int outputKinds = (result.skeletonsRaised > 0) + (result.zombiesRaised > 0)
-		+ (result.wightsRaised > 0) + (result.boneDragonsRaised > 0);
-	if(outputKinds == 1 && result.zombiesRaised > 0)
-		result.raisedCreature = CreatureID(CreatureID::decode("core:zombie"));
-	else if(outputKinds == 1 && result.wightsRaised > 0)
-		result.raisedCreature = CreatureID(CreatureID::decode("core:wight"));
-	else if(outputKinds == 1 && result.boneDragonsRaised > 0)
-		result.raisedCreature = CreatureID(CreatureID::decode("core:boneDragon"));
-	else if(outputKinds == 1 && result.skeletonsRaised > 0)
-		result.raisedCreature = result.skeletonCreature.hasValue() ? result.skeletonCreature : baseSkeleton;
-
-	const int32_t totalRaised = result.skeletonsRaised + result.zombiesRaised
-		+ result.wightsRaised + result.boneDragonsRaised;
-	if(totalRaised >= 10)
-	{
-		const int32_t available = std::max(0, manaLimit - currentMana);
-		result.manaRecovered = std::min(10, totalRaised / 10);
-		result.manaRecovered = std::min(result.manaRecovered, available);
-	}
+	finalizeRaisedResult(result, currentMana, manaLimit);
 	return result;
 }
 }

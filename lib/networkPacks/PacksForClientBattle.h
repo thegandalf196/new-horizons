@@ -2009,34 +2009,11 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 	{
 		if(h.saving)
 			trainingCompletion.validateSerialization(h);
-		if(h.saving && !necromancy.isLordOfDeadSummaryValid())
-			throw std::runtime_error("Invalid Necromancy Lord of the Dead summary");
-		if(h.saving && necromancy.hasLordOfDeadSummary()
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD))
-			throw std::runtime_error("Cannot write Necromancy Lord of the Dead summary to an older format");
-		if(h.saving && !necromancy.isSkeletonOutputValid())
-			throw std::runtime_error("Invalid Necromancy Skeleton output form");
-		if(h.saving && !necromancy.isOssuaryDestinationValid())
-			throw std::runtime_error("Invalid Necromancy Ossuary destination");
-		if(h.saving && necromancy.ossuaryTown != ObjectInstanceID::NONE
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_OSSUARY))
-			throw std::runtime_error("Cannot write Necromancy Ossuary destination to an older format");
-		if(h.saving && !necromancy.isSpecialCasualtySummaryValid())
-			throw std::runtime_error("Invalid negative Necromancy special casualty summary");
-		if(h.saving && necromancy.hasSpecialCasualtySummary()
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES))
-			throw std::runtime_error("Cannot write Necromancy special casualties to an older format");
-		if(h.saving && necromancy.skeletonCreature != CreatureID::NONE
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_SKELETON_FORM))
-			throw std::runtime_error("Cannot write Necromancy Skeleton form to an older format");
+		if(h.saving)
+			necromancy.validateSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY)
 			&& !necromancy.empty())
 			throw std::runtime_error("Cannot write New Horizons Necromancy summary to an older format");
-		if(h.saving && necromancy.wightsRaised != 0
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_WIGHTS))
-			throw std::runtime_error("Cannot write Necromancy Wights to an older format");
-		if(h.saving && necromancy.wightsRaised < 0)
-			throw std::runtime_error("Invalid negative Necromancy Wight count");
 		h & battleID;
 		h & victor;
 		h & loser;

@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "BattleResultProcessor.h"
 #include "NewHorizonsWellspringRecovery.h"
+#include "NewHorizonsRaisedArmy.h"
+#include "../../lib/entities/hero/NewHorizonsReclaimer.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "battle/BattleInfo.h"
 
@@ -45,15 +47,6 @@ namespace
 {
 constexpr auto wisdomSkillId = "new-horizons:wisdom";
 constexpr auto manaConservationPerkId = "new-horizons:wisdom.manaConservation";
-
-struct RaisedArmyAddition
-{
-	SlotID slot;
-	CreatureID creature;
-	TQuantity count;
-};
-
-using RaisedArmyPlan = std::vector<RaisedArmyAddition>;
 
 /// Return a detached source-species view for post-battle accounting while a
 /// replacement form is active. Result projection must not change the live
@@ -95,121 +88,6 @@ bool originalArmyContainsLivingChampion(const CArmedInstance * army,
 	return false;
 }
 
-/// Select the nearest currently owned Necropolis by the same squared-distance
-/// and first-on-tie convention used by the adventure spell town selector.
-const CGTownInstance * nearestOwnedNecropolisTown(const PlayerState * ownerState, PlayerColor owner,
-	const int3 & origin)
-{
-	if(!ownerState)
-		return nullptr;
-
-	const CGTownInstance * nearest = nullptr;
-	ui32 nearestDistance = std::numeric_limits<ui32>::max();
-	for(const auto * town : ownerState->getTowns())
-	{
-		if(!town || town->getOwner() != owner || town->getFactionID() != FactionID::NECROPOLIS)
-			continue;
-
-		const ui32 distance = town->visitablePos().dist2dSQ(origin);
-		if(!nearest || distance < nearestDistance)
-		{
-			nearest = town;
-			nearestDistance = distance;
-		}
-	}
-	return nearest;
-}
-
-bool validRaisedArmyOutputs(const std::vector<std::pair<CreatureID, int64_t>> & outputs)
-{
-	for(const auto & [creature, count] : outputs)
-		if(count < 0 || (count > 0 && (!creature.hasValue() || !creature.toCreature())))
-			return false;
-	return true;
-}
-
-bool validRaisedArmyState(const CArmedInstance & army)
-{
-	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-	{
-		if(const auto * stack = army.getStackPtr(SlotID(i)))
-		{
-			if(stack->getCount() < 0 || !stack->getCreatureID().hasValue()
-				|| !stack->getCreatureID().toCreature())
-				return false;
-		}
-	}
-	return true;
-}
-
-// Resolve every output against one projected army before emitting any packs.
-// A matching stack may be full even though another slot can admit the reward.
-std::optional<RaisedArmyPlan> planRaisedArmy(const CArmedInstance & army,
-	const std::vector<std::pair<CreatureID, int64_t>> & outputs)
-{
-	struct ProjectedSlot
-	{
-		CreatureID creature = CreatureID::NONE;
-		int64_t count = 0;
-	};
-	std::array<ProjectedSlot, GameConstants::ARMY_SIZE> slots;
-	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-		if(const auto * stack = army.getStackPtr(SlotID(i)))
-		{
-			if(stack->getCount() < 0)
-				return std::nullopt;
-			slots[i] = {stack->getCreatureID(), stack->getCount()};
-		}
-
-	RaisedArmyPlan plan;
-	for(const auto & [creature, count] : outputs)
-	{
-		if(count < 0 || (count > 0 && !creature.hasValue()))
-			return std::nullopt;
-		if(count == 0)
-			continue;
-		int64_t capacity = std::numeric_limits<TQuantity>::max();
-		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(&army))
-		{
-			if(const auto leadership = hero->getLeadershipSlotCapacity(creature))
-				capacity = std::min<int64_t>(capacity, leadership->maximum);
-		}
-		int64_t remaining = count;
-		// Fill every matching stack first, then reserve distinct empty slots.
-		for(const bool empty : {false, true})
-			for(int i = 0; i < GameConstants::ARMY_SIZE && remaining > 0; ++i)
-			{
-				auto & slot = slots[i];
-				if(empty ? slot.creature.hasValue() : slot.creature != creature)
-					continue;
-				const int64_t amount = std::min(remaining, std::max<int64_t>(0, capacity - slot.count));
-				if(amount == 0)
-					continue;
-				plan.push_back({SlotID(i), creature, static_cast<TQuantity>(amount)});
-				slot.creature = creature;
-				slot.count += amount;
-				remaining -= amount;
-			}
-		if(remaining > 0)
-			return std::nullopt;
-	}
-	return plan;
-}
-
-void applyRaisedArmy(CGameHandler & handler, const CArmedInstance & army, const RaisedArmyPlan & plan)
-{
-	for(const auto & addition : plan)
-	{
-		const StackLocation location(army.id, addition.slot);
-		const bool applied = army.hasStackAtSlot(addition.slot)
-			? handler.changeStackCount(location, addition.count, ChangeValueMode::RELATIVE)
-			: handler.insertNewStack(location, addition.creature.toCreature(), addition.count);
-		// The simulation thread applies this preflighted plan without yielding.
-		// A rejection is an internal error, not an ordinary capacity failure.
-		if(!applied)
-			throw std::runtime_error("Preflighted Necromancy army addition was rejected");
-	}
-}
 }
 
 BattleResultProcessor::BattleResultProcessor(CGameHandler * gameHandler)
@@ -688,149 +566,27 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 {
 	if(!winnerHero || !winnerHero->usesNewHorizonsNecromancy())
 		return false;
-
-	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
-	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
-	const auto wight = CreatureID(CreatureID::decode("core:wight"));
-	const auto boneDragon = CreatureID(CreatureID::decode("core:boneDragon"));
-	const auto losingSide = CBattleInfoEssentials::otherSide(result.winner);
-	const auto & eligible = result.necromancyEligibilityCaptured
-		? result.necromancyEligibleCasualties[losingSide]
-		: result.casualties[losingSide];
-	const auto eligibleCount = newHorizonsNecromancy::countLivingEligibleCasualties(eligible);
-	const auto eligibleCoreCount = newHorizonsNecromancy::countLivingEligibleCoreCasualties(eligible, categoryRules);
-	const auto eligibleEliteCount = newHorizonsNecromancy::countLivingEligibleEliteCasualties(eligible, categoryRules);
-
-	const bool boneCollector = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::BONE_COLLECTOR_ID);
-	const bool corpsePreservation = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
-	const bool darkConversion = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::DARK_CONVERSION_ID);
-	const bool soulHarvester = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::SOUL_HARVESTER_ID);
-	const bool deathLord = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::DEATH_LORD_ID);
-	const bool graveKnowledge = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID);
-	const bool masterOfBones = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::MASTER_OF_BONES_ID);
-	const bool ossuary = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::OSSUARY_ID);
-	const bool lordOfTheDead = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::LORD_OF_THE_DEAD_ID);
-	const bool blackHarvest = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-		newHorizonsNecromancy::BLACK_HARVEST_ID);
-	const auto * ownerState = masterOfBones || ossuary
-		? gameHandler->gameInfo().getPlayerState(winnerHero->tempOwner)
-		: nullptr;
-	const auto skeletonOutput = masterOfBones
-		? newHorizonsNecromancy::availableNecropolisSkeletonUpgrade(ownerState)
-		: CreatureID::NONE;
-	newHorizonsNecromancy::SpecialCasualtyCounts nonlivingCasualties;
-	newHorizonsNecromancy::SpecialCasualtyCounts undeadCasualties;
-	if(result.necromancySpecialEligibilityCaptured)
-	{
-		if(deathLord)
-			nonlivingCasualties = newHorizonsNecromancy::countEligibleNonlivingCasualties(
-				result.necromancyNonlivingEligibleCasualties[losingSide], categoryRules);
-		if(graveKnowledge)
-			undeadCasualties = newHorizonsNecromancy::countEligibleUndeadCasualties(
-				result.necromancyUndeadEligibleCasualties[losingSide], categoryRules);
-	}
-
-	const int32_t postBattleMana = newHorizonsNecromancy::postBattleNormalSpellPoints(*winnerHero, initialMana);
-	// Black Harvest uses remaining Normal capacity. Combat-only Buffer never
-	// suppresses a recovery that fits in Normal.
-	auto summary = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(), eligibleCount, eligibleCoreCount,
-		boneCollector, corpsePreservation, darkConversion,
-		true, true, postBattleMana,
-		blackHarvest ? winnerHero->manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true, skeletonOutput,
-		nonlivingCasualties, undeadCasualties, lordOfTheDead,
-		result.necromancyDefeatedArmyHadLivingChampion, true,
-		winnerHero->getNewHorizonsNecromancyAmplifierBonusPercent(),
-		newHorizonsHeroes::graveReaperPercentagePoints(winnerHero));
-	if(!summary.active)
+	const auto * ownerState = gameHandler->gameInfo().getPlayerState(winnerHero->tempOwner);
+	const auto prepared = newHorizonsNecromancy::prepareBattleNecromancy(result, categoryRules,
+		initialMana, *winnerHero, ownerState);
+	if(!prepared.ordinary.active)
 		return false;
-
-	const auto raisedSkeleton = summary.skeletonCreature.hasValue() ? summary.skeletonCreature : skeleton;
-	const std::vector<std::pair<CreatureID, int64_t>> outputs = {
-		{raisedSkeleton, summary.skeletonsRaised},
-		{zombie, summary.zombiesRaised},
-		{wight, summary.wightsRaised},
-		{boneDragon, summary.boneDragonsRaised}};
-	if(!validRaisedArmyOutputs(outputs))
-		throw std::runtime_error("Invalid Necromancy army output");
-	if(!validRaisedArmyState(*winnerHero))
-		throw std::runtime_error("Invalid winner army state during Necromancy resolution");
-	const bool hasRaisedOutput = summary.skeletonsRaised > 0 || summary.zombiesRaised > 0
-		|| summary.wightsRaised > 0 || summary.boneDragonsRaised > 0;
-
-	auto acceptedPlan = planRaisedArmy(*winnerHero, outputs);
-	const CArmedInstance * receivingArmy = winnerHero;
-	const CGTownInstance * destinationTown = nullptr;
-	if(!acceptedPlan && ossuary && hasRaisedOutput)
+	auto selected = newHorizonsNecromancy::selectRaisedArmyDelivery(*winnerHero, ownerState, prepared);
+	if(!selected)
 	{
-		// Ossuary has one deterministic destination attempt. Do not search farther
-		// towns if the nearest owned Necropolis cannot accept the complete batch.
-		destinationTown = nearestOwnedNecropolisTown(ownerState, winnerHero->tempOwner,
-			winnerHero->visitablePos());
-		// getUpperArmy is the visible garrison side (garrison Hero when present,
-		// otherwise the town army); the visiting Hero is deliberately excluded.
-		const auto * townArmy = destinationTown ? destinationTown->getUpperArmy() : nullptr;
-		if(townArmy && townArmy->getOwner() == winnerHero->tempOwner)
-		{
-			if(!validRaisedArmyState(*townArmy))
-				throw std::runtime_error("Invalid Necropolis army state during Ossuary resolution");
-			acceptedPlan = planRaisedArmy(*townArmy, outputs);
-			if(acceptedPlan)
-				receivingArmy = townArmy;
-		}
-		else
-		{
-			acceptedPlan.reset();
-		}
-	}
-	if(!acceptedPlan)
-	{
-		summary.applied = false;
-		summary.blockedByArmyCapacity = true;
-		summary.skeletonsRaised = 0;
-		summary.zombiesRaised = 0;
-		summary.wightsRaised = 0;
-		summary.lordOfDeadSkeletonsConsumed = 0;
-		summary.boneDragonsRaised = 0;
-		summary.skeletonCreature = CreatureID::NONE;
-		summary.darkConversionChosen = false;
-		summary.manaRecovered = 0;
-		summary.raisedCreature = CreatureID::NONE;
-		summary.ossuaryTown = ObjectInstanceID::NONE;
-		resultsApplied.necromancy = summary;
+		auto blocked = prepared.ordinary;
+		newHorizonsNecromancy::blockRaisedResult(blocked);
+		resultsApplied.necromancy = blocked;
 		return true;
 	}
-
-	applyRaisedArmy(*gameHandler, *receivingArmy, *acceptedPlan);
-	if(destinationTown
-		&& (summary.skeletonsRaised > 0 || summary.zombiesRaised > 0
-			|| summary.wightsRaised > 0 || summary.boneDragonsRaised > 0))
-		summary.ossuaryTown = destinationTown->id;
-
-	// Keep the legacy descriptor useful for clients when there is one output
-	// kind. Combined conversions may produce multiple output stacks; leaving the
-	// legacy single-stack field empty avoids a misleading partial popup while
-	// New Horizons clients consume the complete summary below.
-	if(summary.skeletonsRaised > 0 && summary.zombiesRaised == 0 && summary.wightsRaised == 0
-		&& summary.boneDragonsRaised == 0)
-		resultsApplied.raisedStack = CStackBasicDescriptor(raisedSkeleton, summary.skeletonsRaised);
-	else if(summary.zombiesRaised > 0 && summary.skeletonsRaised == 0 && summary.wightsRaised == 0
-		&& summary.boneDragonsRaised == 0)
-		resultsApplied.raisedStack = CStackBasicDescriptor(zombie, summary.zombiesRaised);
-	else if(summary.wightsRaised > 0 && summary.skeletonsRaised == 0 && summary.zombiesRaised == 0
-		&& summary.boneDragonsRaised == 0)
-		resultsApplied.raisedStack = CStackBasicDescriptor(wight, summary.wightsRaised);
-	else if(summary.boneDragonsRaised > 0 && summary.skeletonsRaised == 0
-		&& summary.zombiesRaised == 0 && summary.wightsRaised == 0)
-		resultsApplied.raisedStack = CStackBasicDescriptor(boneDragon, summary.boneDragonsRaised);
+	newHorizonsNecromancy::applyRaisedArmy(*gameHandler, *selected->army, selected->additions);
+	const auto & summary = selected->summary;
+	if(summary.raisedCreature.hasValue())
+	{
+		const int64_t total = static_cast<int64_t>(summary.skeletonsRaised) + summary.zombiesRaised
+			+ summary.wightsRaised + summary.boneDragonsRaised;
+		resultsApplied.raisedStack = CStackBasicDescriptor(summary.raisedCreature, static_cast<TQuantity>(total));
+	}
 	resultsApplied.necromancy = summary;
 	return true;
 }

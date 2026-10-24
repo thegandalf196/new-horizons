@@ -440,11 +440,18 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(!captureMasterSpellward())
-			rules.Struct().erase("masterSpellwardSpecialty");
+			for(const auto key : {"masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties",
+				"additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+				rules.Struct().erase(key);
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		auto magic = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+		if(!captureMasterSpellward())
+		{
+			magic["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
+			magic.setOverrideFlag(true);
+		}
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 		if(!captureMasterSpellward())
 		{
@@ -710,6 +717,9 @@ TEST_F(MasterSpellwardTest, StrictCapturedPolicyRejects1117EnclosingWritersAndCu
 TEST_F(MasterSpellwardAbsentTest, OlderWorldAbsenceRemainsOrdinarySpellwardWithoutInstalledFallback)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareMaster(false));
+	for(const auto key : {"masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties",
+		"recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+		ASSERT_TRUE(gameState()->getHeroDevelopmentRules()[key].isNull());
 	defenderSideHero->level = 20;
 	EXPECT_EQ(defenderSideHero->getMasterSpellwardExtraBasisPoints(1000), 0);
 	CMemorySerializer wire;
@@ -728,6 +738,10 @@ TEST_F(MasterSpellwardAbsentTest, OlderWorldAbsenceRemainsOrdinarySpellwardWitho
 	ASSERT_EQ(hero->getSecSkillLevel(warcasting()), MasteryLevel::ADVANCED);
 	ASSERT_TRUE(hero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
 	ASSERT_FALSE(hero->getPrimaryGrowthRules().Struct().contains("masterSpellwardSpecialty"));
+	EXPECT_EQ(restored.getHeroDevelopmentRules(), gameState()->getHeroDevelopmentRules());
+	for(const auto key : {"masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties",
+		"recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+		EXPECT_TRUE(hero->getPrimaryGrowthRules()[key].isNull());
 	EXPECT_EQ(hero->getMasterSpellwardExtraBasisPoints(1000), 0);
 	const auto * restoredAttacker = restored.getHero(attackerSideHero->id);
 	ASSERT_NE(restoredAttacker, nullptr);

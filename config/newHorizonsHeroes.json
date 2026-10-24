@@ -117,6 +117,13 @@
 		"deepTrance": {"dailyPercentPerLevel": 5, "dailyMaximumPercent": 100, "firstCombatPercent": 50},
 		"herbalSurgeon": {"tentPercentPerLevel": 5, "tentMaximumPercent": 100, "regenerationPercentPerLevel": 5, "regenerationMaximumPercent": 100}
 	},
+	"learningExchangeSpecialties": {
+		"version": 1,
+		"ecumenicalScholar": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalSpellsTaught": 1},
+		"occultScholar": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalSpellsReceived": 1}
+	},
+	"swampSeerSpecialty": {"version": 1, "learningPercentPerLevel": 5, "learningMaximumPercent": 100, "studyExperiencePerMagicPrimaryPoint": 250},
+	"reclamationSpecialty": {"version": 1, "conversionPercentPerLevel": 5, "conversionMaximumPercent": 100},
 	"individualSpecialties": {
 		"version": 1,
 		"graveReaper": {"percentagePointsPerLevel": 1, "maximumPercentagePoints": 20},

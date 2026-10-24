@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "UIHelper.h"
+#include "NewHorizonsNecromancyText.h"
 
 #include "widgets/CComponent.h"
 #include "CPlayerInterface.h"
@@ -149,40 +150,7 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 		text.appendRawString("\n");
 	}
 
-	if(result.lordOfDeadSkeletonsConsumed > 0 || result.boneDragonsRaised > 0)
-	{
-		text.appendRawString("Lord of the Dead: ");
-		text.appendNumber(result.lordOfDeadSkeletonsConsumed);
-		text.appendRawString(" base ");
-		text.appendName(baseSkeleton, 1);
-		text.appendRawString(" equivalents -> ");
-		text.appendNumber(result.boneDragonsRaised);
-		text.appendRawString(" ");
-		text.appendName(boneDragon, result.boneDragonsRaised);
-		text.appendRawString("\n");
-	}
-
-	if(result.darkConversionChosen && result.zombiesRaised > 0)
-	{
-		text.appendRawString("Converted: ");
-		text.appendNumber(result.zombiesRaised);
-		text.appendRawString(" ");
-		text.appendName(zombie, result.zombiesRaised);
-		text.appendRawString(" from Core casualties (three ");
-		text.appendName(baseSkeleton, 3);
-		text.appendRawString(" each)\n");
-	}
-
-	if(result.wightsRaised > 0)
-	{
-		text.appendRawString("Converted: ");
-		text.appendNumber(result.wightsRaised);
-		text.appendRawString(" ");
-		text.appendName(wight, result.wightsRaised);
-		text.appendRawString(" from Elite casualties (six ");
-		text.appendName(baseSkeleton, 6);
-		text.appendRawString(" per Wight)\n");
-	}
+	necromancyPresentation::appendConversions(text, result);
 
 	const bool hasNecromancyOutput = result.skeletonsRaised > 0
 		|| result.zombiesRaised > 0

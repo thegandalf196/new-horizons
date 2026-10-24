@@ -22,16 +22,19 @@ protected:
 			return;
 		auto rules = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
 		rules.setOverrideFlag(true);
-		rules.Struct().erase("recoverySpecialties");
+		for(const auto key : {"recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+			rules.Struct().erase(key);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 	}
 	void expectHistoricalCapture(const CGameState & world)
 	{
-		EXPECT_TRUE(world.getHeroDevelopmentRules()["recoverySpecialties"].isNull());
+		for(const auto key : {"recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+			EXPECT_TRUE(world.getHeroDevelopmentRules()[key].isNull());
 		EXPECT_EQ(world.getHeroDevelopmentRules(), gameState()->getHeroDevelopmentRules());
 		const auto * hero = world.getHero(attackerSideHero->id);
 		ASSERT_NE(hero, nullptr);
-		EXPECT_TRUE(hero->getPrimaryGrowthRules()["recoverySpecialties"].isNull());
+		for(const auto key : {"recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+			EXPECT_TRUE(hero->getPrimaryGrowthRules()[key].isNull());
 		EXPECT_EQ(hero->getPrimaryGrowthRules(), attackerSideHero->getPrimaryGrowthRules());
 	}
 	std::vector<std::byte> rngState()

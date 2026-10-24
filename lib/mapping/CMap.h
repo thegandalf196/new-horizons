@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "../entities/hero/NewHorizonsSpecialtySerialization.h"
 #include "CMapEvent.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "CMapHeader.h"
@@ -217,6 +218,7 @@ public:
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported = false, bool schoolSupported = false, bool additionalSupported = false, bool recoverySupported = false) const;
 	void validateNewHorizonsBottomlessMindSerialization(bool supported) const;
 	void validateNewHorizonsMasterSpellwardSerialization(bool supported) const;
@@ -391,11 +393,8 @@ public:
 		if(h.saving)
 			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)
-			validateNewHorizonsIndividualSpecialtiesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
+			validateNewHorizonsSpecialtySerialization(
+				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
 		if(h.saving)
 			validateNewHorizonsBottomlessMindSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 		if(h.saving)

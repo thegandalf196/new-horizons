@@ -79,9 +79,13 @@ struct DLL_LINKAGE NecromancyResult
 	int32_t lordOfDeadSkeletonsConsumed = 0;
 	/// Bone Dragons actually delivered by Lord of the Dead (zero or one).
 	int32_t boneDragonsRaised = 0;
+	/// Zombie subset funded by Vidomina's remaining Skeleton equivalents.
+	int32_t reclaimerZombiesRaised = 0;
+	bool isReclaimerSummaryValid() const;
+	void validateReclaimerSerialization(bool supported) const;
 
 	template <typename Handler>
-	void serialize(Handler & h)
+	void validateSerialization(const Handler & h) const
 	{
 		if(h.saving && !isOssuaryDestinationValid())
 			throw std::runtime_error("Invalid Necromancy Ossuary destination");
@@ -108,6 +112,15 @@ struct DLL_LINKAGE NecromancyResult
 		if(h.saving && wightsRaised != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_WIGHTS))
 			throw std::runtime_error("Cannot write Necromancy Wights to an older format");
+		if(h.saving)
+			validateReclaimerSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS));
+	}
+
+	template <typename Handler>
+	void serialize(Handler & h)
+	{
+		if(h.saving)
+			validateSerialization(h);
 		h & active;
 		h & boneCollector;
 		h & corpsePreservation;
@@ -177,6 +190,12 @@ struct DLL_LINKAGE NecromancyResult
 			lordOfDeadSkeletonsConsumed = 0;
 			boneDragonsRaised = 0;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS))
+			h & reclaimerZombiesRaised;
+		else if(!h.saving)
+			reclaimerZombiesRaised = 0;
+		if(!h.saving)
+			validateReclaimerSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS));
 		if(!isLordOfDeadSummaryValid())
 			throw std::runtime_error("Invalid Necromancy Lord of the Dead summary");
 		if(!isOssuaryDestinationValid())
@@ -230,7 +249,8 @@ struct DLL_LINKAGE NecromancyResult
 			&& skeletonsOffered == 0 && skeletonsRaised == 0 && zombiesRaised == 0
 			&& wightsRaised == 0 && manaRecovered == 0 && raisedCreature == CreatureID::NONE
 			&& skeletonCreature == CreatureID::NONE && !hasSpecialCasualtySummary()
-			&& ossuaryTown == ObjectInstanceID::NONE && !hasLordOfDeadSummary();
+			&& ossuaryTown == ObjectInstanceID::NONE && !hasLordOfDeadSummary()
+			&& reclaimerZombiesRaised == 0;
 	}
 };
 

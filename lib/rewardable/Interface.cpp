@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "Interface.h"
+#include "PrimaryAndExperienceReward.h"
 
 #include "../TerrainHandler.h"
 #include "../CPlayerState.h"
@@ -270,15 +271,7 @@ void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEv
 			gameEvents.changeSecSkill(hero, *skill, newLevelClamped, ChangeValueMode::ABSOLUTE);
 	}
 
-	for(int i=0; i< info.reward.primary.size(); i++)
-		if (info.reward.primary[i] != 0)
-			gameEvents.changePrimSkill(hero, static_cast<PrimarySkill>(i), info.reward.primary[i], ChangeValueMode::RELATIVE);
-
-	const TExpType expToGive = info.reward.calculateHeroExperience(hero, true,
-		experienceRewardSource(getObject()));
-
-	if(expToGive)
-		gameEvents.giveExperience(hero, expToGive);
+	grantPrimaryAndExperience(gameEvents, info.reward, *hero, experienceRewardSource(getObject()));
 }
 
 void Rewardable::Interface::grantRewardAfterLevelup(IGameEventCallback & gameEvents, const Rewardable::VisitInfo & info, const CArmedInstance * army, const CGHeroInstance * hero) const

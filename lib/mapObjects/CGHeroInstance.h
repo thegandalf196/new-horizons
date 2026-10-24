@@ -405,6 +405,8 @@ public:
 	bool hasNewHorizonsScholarMeeting(ObjectInstanceID partner, int32_t week) const;
 	bool canExchangeNewHorizonsScholarWith(const CGHeroInstance & partner, int32_t week) const;
 	std::optional<SpellID> getNewHorizonsScholarSpellFor(const CGHeroInstance & recipient) const;
+	/// Pure selector; callers establish ordinary legality and captured directional budget.
+	std::vector<SpellID> getNewHorizonsScholarSpellsFor(const CGHeroInstance & recipient, size_t maximumSpells) const;
 	bool hasUsedNewHorizonsLearningMentor(int32_t week) const { return newHorizonsLearningMentorLastWeek == week; }
 	using LearningMentorRecipients = std::array<ObjectInstanceID, 2>;
 	const LearningMentorRecipients & getNewHorizonsLearningMentorRecipients() const { return newHorizonsLearningMentorRecipients; }
@@ -498,6 +500,7 @@ public:
 
 	void setExperience(si64 value, ChangeValueMode mode);
 	void setPrimarySkill(PrimarySkill primarySkill, si64 value, ChangeValueMode mode);
+	newHorizonsHeroes::PrimarySkillChange projectPrimarySkillChange(PrimarySkill primarySkill, si64 value, ChangeValueMode mode) const;
 	void setSecSkillLevel(const SecondarySkill & which, int val, ChangeValueMode mode); // abs == 0 - changes by value; 1 - sets to value
 	void levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS> & gains = {});
 
@@ -774,12 +777,8 @@ public:
 			newHorizonsHeroes::validateDruidSpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)
-			newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
+			newHorizonsHeroes::validateCapturedSpecialtiesSerialization(primaryGrowthRules,
+				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
 		if(h.saving)
 			newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
@@ -939,12 +938,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 				newHorizonsHeroes::validateDruidSpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
-				newHorizonsHeroes::validateIndividualSpecialtiesSerialization(primaryGrowthRules,
-					h.hasFeature(Handler::Version::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION),
-					h.hasFeature(Handler::Version::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS),
-					h.hasFeature(Handler::Version::NEW_HORIZONS_SCHOOL_SPELLCRAFT_SPECIALTIES),
-					h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
+				newHorizonsHeroes::validateCapturedSpecialtiesSerialization(primaryGrowthRules,
+				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
 				newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 				newHorizonsHeroes::validateMasterSpellwardSerialization(primaryGrowthRules,

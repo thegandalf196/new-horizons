@@ -13,6 +13,7 @@
 #include "../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "../lib/mapObjects/NewHorizonsSage.h"
 #include "CGameHandler.h"
+#include "NewHorizonsScholar.h"
 #include "../lib/entities/hero/NewHorizonsLegendaryReputation.h"
 #include "../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 
@@ -1956,21 +1957,7 @@ void CGameHandler::useScholarSkill(ObjectInstanceID fromHero, ObjectInstanceID t
 		return;
 	if(newHorizonsMagic::rulesActive(gameInfo().getMagicRules()))
 	{
-		const auto & calendar = gameInfo().getCalendar();
-		const auto week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
-		if(!h1->canExchangeNewHorizonsScholarWith(*h2, week))
-			return;
-		const auto firstTeaches = h1->getNewHorizonsScholarSpellFor(*h2);
-		const auto secondTeaches = h2->getNewHorizonsScholarSpellFor(*h1);
-		SetNewHorizonsScholarMeeting receipt;
-		receipt.first = std::min(fromHero, toHero);
-		receipt.second = std::max(fromHero, toHero);
-		receipt.week = week;
-		sendAndApply(receipt);
-		if(firstTeaches)
-			changeSpells(h2, true, {*firstTeaches});
-		if(secondTeaches)
-			changeSpells(h1, true, {*secondTeaches});
+		newHorizonsScholar::execute(*this, *h1, *h2);
 		return;
 	}
 	int h1_scholarSpellLevel = h1->valOfBonuses(BonusType::LEARN_MEETING_SPELL_LIMIT);

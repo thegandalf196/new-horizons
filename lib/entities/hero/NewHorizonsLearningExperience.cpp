@@ -4,6 +4,8 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsLearningSpecialties.h"
+#include "NewHorizonsLearningExchangeSpecialties.h"
+#include "NewHorizonsSwampSeer.h"
 #include "../../GameLibrary.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../modding/IdentifierStorage.h"
@@ -14,7 +16,9 @@ int64_t calculateLearningSpecialtyExperience(const CGHeroInstance & hero, int64_
 {
 	const auto specialty = hero.getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::NATURAL_PHILOSOPHER);
 	const auto learned = learningSpecialtyRules(&hero);
-	if((!specialty && !learned) || exp <= 0)
+	const auto exchange = learningExchangeSpecialtyRules(&hero);
+	const auto seer = swampSeerRules(&hero);
+	if((!specialty && !learned && !exchange && !seer) || exp <= 0)
 		return static_cast<TExpType>(
 			exp * (hero.valOfBonuses(BonusType::HERO_EXPERIENCE_GAIN_PERCENT) + additionalPercent) / 100.0);
 	const auto scaledExperience = [](TExpType base, int64_t percent) -> TExpType
@@ -54,10 +58,13 @@ int64_t calculateLearningSpecialtyExperience(const CGHeroInstance & hero, int64_
 			corePercent += bonus->val;
 	const auto coreExperience = scaledExperience(exp,
 		static_cast<int>(std::clamp<int64_t>(corePercent, 0, std::numeric_limits<int>::max())));
-	const auto extra = newHorizonsHeroes::druidSpecialtyExtra(coreExperience,
-		specialty ? newHorizonsHeroes::druidSpecialtyPercent(hero.level, specialty->naturalPhilosopher)
-			: static_cast<int>(std::min<int64_t>(static_cast<int64_t>(hero.level) * learned->learning.percentPerLevel,
-				learned->learning.maximumPercent)));
+	const LevelScaledSpecialty scaling = specialty ? specialty->naturalPhilosopher
+		: learned ? learned->learning
+		: exchange ? LevelScaledSpecialty{exchange->learningPercentPerLevel, exchange->learningMaximumPercent}
+		: LevelScaledSpecialty{seer->learningPercentPerLevel, seer->learningMaximumPercent};
+	const auto percent = specialty ? druidSpecialtyPercent(hero.level, scaling)
+		: static_cast<int>(std::min<int64_t>(int64_t(hero.level) * scaling.percentPerLevel, scaling.maximumPercent));
+	const auto extra = druidSpecialtyExtra(coreExperience, percent);
 	if(ordinary > 0 && extra > std::numeric_limits<TExpType>::max() - ordinary)
 		return std::numeric_limits<TExpType>::max();
 	return ordinary + extra;

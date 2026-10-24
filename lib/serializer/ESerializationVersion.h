@@ -274,12 +274,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS, // exact snapshot and per-packet replay encoding provenance
 
 	NEW_HORIZONS_RECOVERY_SPECIALTIES, // captured recovery riders and accepted-combat day provenance
+	NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS, // independently optional remaining specialty families
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_RECOVERY_SPECIALTIES,
+	CURRENT = NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS
@@ -562,3 +563,6 @@ static_assert(ESerializationVersion::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS
 
 static_assert(ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES
 	> ESerializationVersion::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS, "Recovery specialty state must remain append-only");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS
+	> ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES);

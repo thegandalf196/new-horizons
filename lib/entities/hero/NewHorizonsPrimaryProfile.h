@@ -39,6 +39,13 @@ struct DLL_LINKAGE PrimaryProfile
 	std::array<int64_t, GameConstants::PRIMARY_SKILLS> baseAtLevel(int level) const;
 };
 
+/// Pure before/after values of an ordinary permanent base-primary mutation; never serialized.
+struct DLL_LINKAGE PrimarySkillChange
+{
+	int32_t before = 0;
+	int32_t after = 0;
+};
+
 /// Versioned tunable primary profile. Missing progressionVersion preserves the
 /// historical ten-point growth formula; version 2 requires 100 starting points
 /// and 18 growth points. Version 3 requires 20 growth points and starting

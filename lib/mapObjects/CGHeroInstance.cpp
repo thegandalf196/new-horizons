@@ -2704,31 +2704,6 @@ ArtBearer CGHeroInstance::bearerType() const
 	return ArtBearer::HERO;
 }
 
-void CGHeroInstance::setPrimarySkill(PrimarySkill primarySkill, si64 value, ChangeValueMode mode)
-{
-	auto skill = getLocalBonus(Selector::type()(BonusType::PRIMARY_SKILL)
-		.And(Selector::subtype()(BonusSubtypeID(primarySkill)))
-		.And(Selector::sourceType()(BonusSource::HERO_BASE_SKILL)));
-	assert(skill);
-
-	if(usesPrimaryGrowth())
-	{
-		const int64_t maximum = primaryGrowthRules["maxPrimary"].Integer();
-		const auto next = mode == ChangeValueMode::ABSOLUTE ? value
-			: skill->val + std::clamp<int64_t>(value, -maximum, maximum);
-		skill->val = std::clamp<int64_t>(next, 0, maximum);
-	}
-	else if(mode == ChangeValueMode::ABSOLUTE)
-	{
-		skill->val = static_cast<si32>(value);
-	}
-	else
-	{
-		skill->val += static_cast<si32>(value);
-	}
-	nodeHasChanged();
-}
-
 void CGHeroInstance::setExperience(si64 value, ChangeValueMode mode)
 {
 	if(mode == ChangeValueMode::ABSOLUTE)
@@ -2799,24 +2774,6 @@ bool CGHeroInstance::hasNewHorizonsScholarMeeting(ObjectInstanceID partner, int3
 {
 	return week == newHorizonsScholarWeek
 		&& std::binary_search(newHorizonsScholarPartners.begin(), newHorizonsScholarPartners.end(), partner);
-}
-
-std::optional<SpellID> CGHeroInstance::getNewHorizonsScholarSpellFor(const CGHeroInstance & recipient) const
-{
-	if(this == &recipient || !hasSpellbook() || !recipient.hasSpellbook())
-		return std::nullopt;
-	std::optional<SpellID> selected;
-	for(const auto spell : getSpellsInSpellbook())
-	{
-		if(!spells.contains(spell) || !newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spell)
-			|| !recipient.canLearnSpell(spell.toSpell()))
-			continue;
-		if(!selected || recipient.getSpellLevel(spell.toSpell()) > recipient.getSpellLevel(selected->toSpell())
-			|| (recipient.getSpellLevel(spell.toSpell()) == recipient.getSpellLevel(selected->toSpell())
-				&& spell.toSpell()->getJsonKey() < selected->toSpell()->getJsonKey()))
-			selected = spell;
-	}
-	return selected;
 }
 
 bool CGHeroInstance::canExchangeNewHorizonsScholarWith(const CGHeroInstance & partner, int32_t week) const

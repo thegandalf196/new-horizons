@@ -232,6 +232,7 @@ set(vcmiclientcommon_SRCS
 	NetPacksLobbyClient.cpp
 	ServerRunner.cpp
 	UIHelper.cpp
+	NewHorizonsNecromancyText.cpp
 	Discord.cpp
 )
 
@@ -519,6 +520,7 @@ set(vcmiclientcommon_HEADERS
 	ServerRunner.h
 	resource.h
 	UIHelper.h
+	NewHorizonsNecromancyText.h
 	Discord.h
 )
 

@@ -52,6 +52,7 @@ set(Nullkiller2_SRCS
 		Engine/TaskExecution.cpp
 		Engine/DeepDecomposer.cpp
 		Engine/PriorityEvaluator.cpp
+		Engine/SkillRewardEvaluator.cpp
 		Engine/ResourceTrader.cpp
 		Analyzers/DangerHitMapAnalyzer.cpp
 		Analyzers/BuildAnalyzer.cpp
