@@ -193,7 +193,7 @@ BattleSiegeController::BattleSiegeController(BattleInterface & owner, const CGTo
 {
 	assert(owner.fieldController.get() == nullptr); // must be created after this
 
-	for (int g = 0; g < wallPieceImages.size(); ++g)
+	for (int g = EWallVisual::WALL_FIRST; g < wallPieceImages.size(); ++g)
 	{
 		if ( g == EWallVisual::GATE ) // gate is initially closed and has no image to display in this state
 			continue;
