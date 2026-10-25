@@ -4,9 +4,11 @@
 
 No process-name scans, shell launch, host environment inheritance or input driver.
 The owner is a subreaper before any Wine fork. One input request is ONE logical
-click/move/key gesture, not an XTest press/release packet. Fresh game proof is
+click/move/key gesture, not an XTest press/release packet. Live game proof is
 required before/after that gesture; the exact maintained input CLI separately
-verifies its owned Xvfb. No reusable input lease or per-XTest-packet proof claim.
+verifies its owned Xvfb. A proved selected-game zero exit stops input without a
+completion ACK, never substitutes for live proof or certifies a Quit gesture.
+No reusable input lease or per-XTest-packet proof claim.
 Caller owns display/capture cleanup and the independent640s outer deadline.
 """
 import ctypes
@@ -26,6 +28,7 @@ import threading
 import time
 
 INPUT = 600
+POST_INPUT_EXIT_SETTLE = 2  # Selected-proc post-input loss only; always clamped to INPUT.
 TERM = 605
 KILL = 610
 DISPLAY = 630
@@ -593,6 +596,67 @@ class Owner:
             raise Refusal('Input completion crossed fixed deadline')
         return result
 
+    def run_input_provider(self, program, pin, guard, args, root, log):
+        """Execute the existing trusted provider and require our actual wait status."""
+        if file_proof(program)['sha256'] != pin:
+            raise Refusal('Pinned maintained input provider changed')
+        child, _ = self.spawn([sys.executable, str(program), '--guard', str(guard), *args],
+                              cwd=root, stdout=log)
+        until = min(self.age() + 2, INPUT)
+        while self.age() < until:
+            self.reap()
+            if child.pid in self.reaped:
+                if self.reaped[child.pid] != 0:
+                    raise Refusal('Maintained input provider failed')
+                return
+            time.sleep(.01)
+        self.signal_owned(signal.SIGTERM)
+        raise Refusal('Input provider timeout')
+
+    def normal_game_exit(self, identity, *, settle=False):
+        """Terminal evidence only; optional bounded settling dispatches no input."""
+        until = min(self.age() + POST_INPUT_EXIT_SETTLE, INPUT) if settle else INPUT
+        while True:
+            with self.lock:
+                if not 0 <= self.age() < until:
+                    return False
+                row = self.ledger.get(identity['pid'])
+                keys = ('pid', 'start_ticks', 'uid', 'boot_id')
+                if row is None or row['identity'] is None or any(
+                        row['identity'][key] != identity[key] for key in keys):
+                    return False
+                self.reap()
+                if (self.errors or not self.armed.is_set() or self.finished.is_set()
+                        or not 0 <= self.age() < until or identity['pid'] in self.parent_reaped):
+                    return False
+                if identity['pid'] in self.reaped:
+                    if self.reaped[identity['pid']] != 0:
+                        return False
+                    if self.backend.exited(row['pidfd']):
+                        return (not self.errors and self.armed.is_set() and not self.finished.is_set()
+                                and 0 <= self.age() < until)
+            remaining = until - self.age()
+            if not settle or remaining <= 0:
+                return False
+            time.sleep(min(.01, remaining))
+
+    def perform_input(self, context_factory, verifier, event, game_identity):
+        """Return False for proved terminal exit, without acknowledging the gesture."""
+        self.verify_input(context_factory, verifier, event)
+        if self.normal_game_exit(game_identity):
+            return False
+        try:
+            self.verify_input(context_factory, verifier)
+        except (FileNotFoundError, PermissionError) as error:
+            # A successful Quit can remove proc visibility during the post-proof.
+            # Live/unknown/nonzero exits and every other missing file still fail.
+            paths = {str(Path('/proc', str(game_identity['pid']), name))
+                     for name in ('stat', 'exe', 'cmdline', 'maps', 'environ')}
+            if error.filename not in paths or not self.normal_game_exit(game_identity, settle=True):
+                raise
+            return False
+        return True
+
     def watchdog(self):
         self.armed.set()
         while not self.finished.wait(.05):
@@ -867,6 +931,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     process = None
     stopped = None
     status = 1
+    terminal_input = None
     try:
         owner.verify_xvfb()
         mapping.verify()
@@ -893,6 +958,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                     time.sleep(.02)
                 if game_pid is None:
                     raise Refusal('Owned game witness discovery exceeded30s')
+            input_game_identity = copy.deepcopy(owner.ledger[game_pid]['identity'])
             def context():
                 mapping.verify()
                 profile.verify_staged_content(plan['content'], root, verify_copy_bytes=False)
@@ -969,27 +1035,18 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                     buffer = b''
                     request = json.loads(line)
                     args = input_argv(request)
-                    # Reserve the bounded five-second provider startup/execute
-                    # interval; no late launch may run past600.
+                    # Retain the five-second margin for provider execution and
+                    # selected-proc exit settling; neither may run past600.
                     if owner.age() >= INPUT - 5:
                         raise Refusal('Insufficient input deadline margin')
-                    def gesture():
-                        if file_proof(input_script)['sha256'] != input_pin:
-                            raise Refusal('Pinned maintained input provider changed')
-                        child, _ = owner.spawn([sys.executable, str(input_script), '--guard', str(plan['guard']), *args],
-                                               cwd=root, stdout=log)
-                        until = min(owner.age() + 2, INPUT)
-                        while owner.age() < until:
-                            owner.reap()
-                            if child.pid in owner.reaped:
-                                if owner.reaped[child.pid] != 0:
-                                    raise Refusal('Maintained input provider failed')
-                                return
-                            time.sleep(.01)
-                        owner.signal_owned(signal.SIGTERM)
-                        raise Refusal('Input provider timeout')
-                    owner.verify_input(context, checked_runtime, gesture)
-                    owner.verify_input(context, checked_runtime)  # Fresh game proof AFTER actual gesture.
+                    gesture = lambda: owner.run_input_provider(
+                        input_script, input_pin, plan['guard'], args, root, log)
+                    if not owner.perform_input(context, checked_runtime, gesture, input_game_identity):
+                        terminal_input = {'id': request['id'], 'game_identity': input_game_identity,
+                            'proof': 'actual-owner-waitpid-zero-and-retained-pidfd-exited',
+                            'input_done': False}
+                        stdin_open = False  # No further input; await the original bootstrap status.
+                        continue
                     print(json.dumps({'id': request['id'], 'input_done': True, 'age': owner.age()}), flush=True)
                 else:
                     time.sleep(.02)
@@ -1020,7 +1077,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
         (root / 'owner-receipt.json').write_text(json.dumps({'owner_pid': backend.pid, 'boot_id': backend.boot,
             'age': owner.age(), 'status': status, 'errors': owner.errors, 'reaped': owner.reaped,
             'parent_reaped': owner.parent_reaped, 'owned_graph_drained': owner.graph_drained(),
-            'runtime_refusals': runtime_refusals,
+            'runtime_refusals': runtime_refusals, 'terminal_input': terminal_input,
             'ledger': {str(pid): row['identity'] for pid, row in owner.ledger.items()},
             'prior_lifetimes': [{'pid': row['pid'], 'identity': row['entry']['identity'], 'status': row['status'],
                                 'parent_reaped': row.get('parent_reaped')}

@@ -140,10 +140,21 @@ owner window. Map/link checks remain active during input; configuration files
 may legitimately be rewritten by the engine. Keep manifests, profiles, saves,
 logs, and proprietary inputs private and outside disposable build directories.
 
-Process-free regression commands:
+A game can exit while the helper performs its post-gesture check. When the
+same retained game process has been reaped with status zero and its pidfd
+confirms exit, the helper stops input and records `terminal_input` without an
+`input_done` acknowledgement. This records process exit only; visual Quit
+acceptance remains separate. The original bootstrap must still exit successfully.
+If that post-gesture check loses access to the selected game's process files,
+the helper allows at most two seconds for this exit proof, within the existing
+input deadline. A live, unknown, or unsuccessful exit still fails verification.
+
+Set `NH_PYTHON` to a verified absolute interpreter path, then run these
+process-free regressions:
 
 ```sh
-python3 tools/tests/test_nh_private_launch.py
-python3 tools/tests/test_nh_wine_fullgame_owner.py
-python3 -m unittest discover -s tools/tests -p test_nh_wine_profile.py
+"${NH_PYTHON:?Set NH_PYTHON to a verified absolute interpreter}" tools/tests/test_nh_private_launch.py
+"$NH_PYTHON" tools/tests/test_nh_wine_fullgame_owner.py
+"$NH_PYTHON" tools/tests/test_nh_wine_input_completion.py
+"$NH_PYTHON" -m unittest discover -s tools/tests -p test_nh_wine_profile.py
 ```
