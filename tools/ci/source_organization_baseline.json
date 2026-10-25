@@ -18919,21 +18919,21 @@
     },
     "AI/Nullkiller2/Behaviors/DefenceBehavior.cpp": {
       "kind": "legacy",
-      "lines": 758,
+      "lines": 749,
       "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 758 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "7431bc1c4d917919d5f140f963cb59f7d22a637820ee6a7e63ff93a205ec0908"
+      "rationale": "Current-owned-visitor composition and legal-preparation admission move to focused TownGarrisonAdmission. Defence routing shrinks from758 to749 lines and evaluateDefence from270 to260; remaining inherited defence/recruitment responsibility is frozen at this lower exact size. No growth exception or runtime certification.",
+      "review": "IR-GARRISON-FIXED-SOURCE-ORGANIZATION-20261024",
+      "review_scope": "exact-source-organization-only-no-native-or-gameplay-acceptance",
+      "sha256": "a3c897da5c2595735b43be064da074c996eb9c07495a42cf1fd28fe3abd30ff8"
     },
     "AI/Nullkiller2/Behaviors/DefenceBehavior.cpp::NK2AI::void DefenceBehavior::evaluateDefence(Goals::TGoalVec & tasks, const CGTownInstance * town, const Nullkiller * aiNk) const#1": {
       "kind": "legacy",
-      "lines": 270,
+      "lines": 260,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 270 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "70b9b1c002676e6a65d6e11331109e09c02f3cfbb45d7b8147b9747647f7de8c"
+      "rationale": "Current-owned-visitor composition and legal-preparation admission move to focused TownGarrisonAdmission. Defence routing shrinks from758 to749 lines and evaluateDefence from270 to260; remaining inherited defence/recruitment responsibility is frozen at this lower exact size. No growth exception or runtime certification.",
+      "review": "IR-GARRISON-FIXED-SOURCE-ORGANIZATION-20261024",
+      "review_scope": "exact-source-organization-only-no-native-or-gameplay-acceptance",
+      "sha256": "71db811cc26c84ad764965e0877e8dede5636086637919b6127c09c67f404475"
     },
     "AI/Nullkiller2/Behaviors/DefenceBehavior.cpp::NK2AI::void DefenceBehavior::evaluateRecruitingHero(Goals::TGoalVec & tasks, const HitMapInfo & threat, const CGTownInstance * town, const Nullkiller * aiNk)#1": {
       "kind": "legacy",
@@ -19105,24 +19105,6 @@
       "sha256": "d3d4306bea22e349bea041a0a0fa3637120e325500bb0cda7f7aed305c1feb6a",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "AI engineer must extract current-node execution stages with explicit parent-index and blocked-index context before further growth. Preserve composites, pending special actions, ordinary future movement, DimensionDoor recovery, validated callback order, hero ownership, battle/exchange/transport and exception semantics; characterize accepted request/packet/RNG/dependency order and lower the baseline. Prior ten-case adventure-execution and existing daily/movement/landing/muster native coverage remain required, alongside the new route recovery cohort, battle, exchange, authoritative-rejection regressions and ordinary replay."
-    },
-    "AI/Nullkiller2/Helpers/ArmyFormation.cpp": {
-      "kind": "legacy",
-      "lines": 601,
-      "owner": "ai_engineer",
-      "rationale": "Existing file owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 601 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "0a57287813c7bb31b9b07a7d1319fd03c5025b1d2534d686388486df5c8355de"
-    },
-    "AI/Nullkiller2/Helpers/ArmyFormation.cpp::NK2AI::armyFormation::ArmyExchangeProjection projectArmyExchange( const CCreatureSet * receiverArmy, const CCreatureSet * sourceArmy, const CGHeroInstance * receiverHero, const CGHeroInstance * sourceHero, const std::vector<DesiredArmyStack> & desiredReceiver)#1": {
-      "kind": "legacy",
-      "lines": 181,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 181 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "9318573b72dbf48dc208d704d231f13ca76446b5bee16589101c5e21f7928f0c"
     },
     "AI/Nullkiller2/Helpers/ExplorationHelper.cpp": {
       "kind": "legacy",
@@ -22640,15 +22622,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "4ee7570df340930f7528a7b1b01fb1b7a2c3aefdc2a351eb313cb2c0b485c72d"
-    },
-    "lib/entities/hero/NewHorizonsLeadership.cpp::newHorizonsHeroes::bool canMergeArmies(const CArmedInstance * source, const CArmedInstance * destination)#1": {
-      "kind": "legacy",
-      "lines": 102,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 102 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "8c30e7423b16e57da74aa9ad100a0d5b8ab8d492bfe8531a4557cd0ac6a0ad72"
     },
     "lib/entities/hero/NewHorizonsMasteryEffects.cpp::newHorizonsHeroes::int chooseMasteryForArmy(const MasteryOffer & offer, const CGHeroInstance & hero, const CPlayerSpecificInfoCallback * visible)#1": {
       "kind": "legacy",
@@ -26543,6 +26516,15 @@
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "rationale": "Focused119-line four-round Regeneration forecast owner, below150 ceiling. One ordered forecast/baseline activation trajectory with completed baseline observations; target-specific scores remain recomputed. Extracted helpers remain separate callables. No old99-line allowance inherited or runtime/performance certification.",
       "review_scope": "exact-completed-Regeneration-baseline-source-only-no-runtime-or-performance-acceptance"
+    },
+    "lib/entities/hero/NewHorizonsLeadership.cpp::newHorizonsHeroes::bool canMergeArmies(const CCreatureSet * source, const CCreatureSet * destination, const CGHeroInstance * hero)#1": {
+      "kind": "review",
+      "owner": "gameplay_engineer",
+      "lines": 102,
+      "sha256": "721a2d0e8576209f51aa0dce8e577055c0602cbc992db1dabd2124f9f0adb4e6",
+      "review": "IR-GARRISON-FIXED-SOURCE-ORGANIZATION-20261024",
+      "review_scope": "exact-source-organization-only-no-native-or-gameplay-acceptance",
+      "rationale": "One deterministic whole-army merge-policy function accepts concrete slot views plus the real destination hero for captured saved-rule capacity. The original two-armed-instance API delegates; matching/first-empty/duplicate-consolidation order and per-stack check are preserved. The102-line function remains one cohesive shared server-equivalent policy below150; no AI types, numeric changes, saved fields or runtime certification."
     }
   }
 }

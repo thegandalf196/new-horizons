@@ -57,6 +57,8 @@ struct DLL_LINKAGE ArmyExchangeTransfer
 	int transferCount = 0;
 	int resultingDestinationCount = 0;
 	bool swapsStacks = false;
+	// A same-army receiver consolidation; false retains both cross-army directions.
+	bool withinReceiver = false;
 };
 
 struct DLL_LINKAGE ArmyExchangeProjection

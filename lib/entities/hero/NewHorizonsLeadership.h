@@ -16,6 +16,8 @@
 #include <span>
 
 class CArmedInstance;
+class CCreatureSet;
+class CGHeroInstance;
 
 namespace newHorizonsHeroes
 {
@@ -71,4 +73,7 @@ DLL_LINKAGE SlotID recruitmentSlot(const CArmedInstance * army, CreatureID creat
 /// duplicate-consolidation order. No splitting, partial transfer or mutation.
 /// Shared by client preflight and AI; authoritative validation remains required.
 DLL_LINKAGE bool canMergeArmies(const CArmedInstance * source, const CArmedInstance * destination);
+/// The same deterministic merge for projected slots, with the real destination hero's saved capacity policy.
+DLL_LINKAGE bool canMergeArmies(const CCreatureSet * source, const CCreatureSet * destination,
+	const CGHeroInstance * destinationHero);
 }

@@ -49,6 +49,12 @@ int leadershipMovement(int unscaledMovement, int movementPercent)
 
 bool canMergeArmies(const CArmedInstance * source, const CArmedInstance * destination)
 {
+	return canMergeArmies(source, destination, dynamic_cast<const CGHeroInstance *>(destination));
+}
+
+bool canMergeArmies(const CCreatureSet * source, const CCreatureSet * destination,
+	const CGHeroInstance * hero)
+{
 	if(!source || !destination || source == destination)
 		return false;
 
@@ -58,7 +64,6 @@ bool canMergeArmies(const CArmedInstance * source, const CArmedInstance * destin
 	if(!destination->canBeMergedWith(*source, true))
 		return false;
 
-	const auto * hero = dynamic_cast<const CGHeroInstance *>(destination);
 	const auto acceptsProjectedStack = [hero](CreatureID creature, int64_t count)
 	{
 		const auto capacity = hero ? hero->getLeadershipSlotCapacity(creature) : std::nullopt;

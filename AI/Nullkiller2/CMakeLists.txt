@@ -61,6 +61,7 @@ set(Nullkiller2_SRCS
 		Behaviors/CaptureObjectsBehavior.cpp
 		Behaviors/RecruitHeroBehavior.cpp
 		Behaviors/BuyArmyBehavior.cpp
+		Behaviors/TownGarrisonAdmission.cpp
 		Behaviors/DefenceBehavior.cpp
 		Behaviors/EscapeBehavior.cpp
 		Behaviors/StartupBehavior.cpp
@@ -69,6 +70,7 @@ set(Nullkiller2_SRCS
 		Behaviors/ClusterBehavior.cpp
 		Behaviors/StayAtTownBehavior.cpp
 		Behaviors/ExplorationBehavior.cpp
+		Helpers/ArmyExchangeProjection.cpp
 		Helpers/ArmyFormation.cpp
 		Helpers/ArmyExchangeExecution.cpp
 		Helpers/RouteActorObservation.cpp
@@ -150,6 +152,7 @@ set(Nullkiller2_HEADERS
 		Behaviors/CaptureObjectsBehavior.h
 		Behaviors/RecruitHeroBehavior.h
 		Behaviors/BuyArmyBehavior.h
+		Behaviors/TownGarrisonAdmission.h
 		Behaviors/DefenceBehavior.h
 		Behaviors/DefenceBehaviorUtils.h
 		Behaviors/EscapeBehavior.h

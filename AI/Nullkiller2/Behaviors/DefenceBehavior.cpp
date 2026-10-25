@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "DefenceBehavior.h"
 #include "DefenceBehaviorUtils.h"
+#include "TownGarrisonAdmission.h"
 
 #include "../../../lib/IGameSettings.h"
 #include "../AIGateway.h"
@@ -521,22 +522,12 @@ void DefenceBehavior::evaluateDefence(Goals::TGoalVec & tasks, const CGTownInsta
 
 			if(path.targetHero == town->getVisitingHero() && path.exchangeCount == 1)
 			{
-#if NK2AI_TRACE_LEVEL >= 1
-				logAi->trace("Put %s to garrison of town %s", path.targetHero->getNameTextID(), town->getNameTextID());
-#endif
-
-				// dismiss creatures we are not able to pick to be able to hide in garrison
-				if(town->getGarrisonHero() || town->getUpperArmy()->stacksCount() == 0 || path.targetHero->canBeMergedWith(*town)
-				   || (town->getUpperArmy()->getArmyStrength() < 500 && town->fortLevel() >= CGTownInstance::CITADEL))
+				auto composition = currentVisitorGarrisonDefence(*town, threat, *aiNk->armyManager, *aiNk->cc);
+				if(composition)
 				{
-					Composition composition;
-					composition.addNext(DefendTown(town, threat, path.targetHero))
-						.addNext(ExchangeSwapTownHeroes(town, town->getVisitingHero(), HeroLockedReason::DEFENCE));
-
-					setDefensiveEmergencyPriority(composition, lockDefenderNow);
-					tasks.push_back(Goals::sptr(composition));
+					setDefensiveEmergencyPriority(*composition, lockDefenderNow);
+					tasks.push_back(Goals::sptr(*composition));
 				}
-
 				continue;
 			}
 

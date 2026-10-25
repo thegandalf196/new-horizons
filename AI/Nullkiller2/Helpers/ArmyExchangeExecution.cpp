@@ -40,7 +40,12 @@ void executeArmyExchange(const std::shared_ptr<CCallback> & cc,
 	{
 		const bool fromReceiver = transfer.sourceSide == armyFormation::ArmyExchangeSide::RECEIVER;
 		const auto * fromArmy = fromReceiver ? destinationArmy : source;
-		const auto * toArmy = fromReceiver ? source : destinationArmy;
+		if(transfer.withinReceiver && (!fromReceiver || transfer.sourceSlot == transfer.destinationSlot))
+		{
+			logAi->warn("Stopping projected army exchange before an invalid receiver consolidation");
+			break;
+		}
+		const auto * toArmy = transfer.withinReceiver ? destinationArmy : (fromReceiver ? source : destinationArmy);
 		if(!stackMatches(fromArmy, transfer.sourceSlot, transfer.expectedSourceCreature, transfer.expectedSourceCount)
 			|| !stackMatches(toArmy, transfer.destinationSlot,
 				transfer.expectedDestinationCreature, transfer.expectedDestinationCount))
