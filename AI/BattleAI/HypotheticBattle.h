@@ -37,6 +37,10 @@ class InitialExportBattleSubject;
 class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment
 {
 	friend class InitialExportBattleSubject;
+	// Borrowed route view; public proxy-base rebinding must use the original RTTI path.
+	CBattleInfoCallback * boundSubjectPointer;
+	std::weak_ptr<CBattleInfoCallback> boundSubjectOwner;
+	InitialExportBattleSubject * initialExportView;
 	SeizeInitiativeState seizeInitiative;
 	battle::Units ownedExportUnitsIf(const battle::UnitFilter & predicate) const;
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,

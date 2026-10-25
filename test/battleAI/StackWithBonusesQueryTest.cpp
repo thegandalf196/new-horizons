@@ -5,9 +5,16 @@
  */
 #include "StdInc.h"
 #include "ProjectedTargetHitFixture.h"
+#include "../../AI/BattleAI/InitialExportBattleSubject.h"
+#include "../../lib/battle/BattleLayout.h"
+#include "../../lib/int3.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/bonuses/BonusList.h"
 #include <array>
+#include <type_traits>
+
+static_assert(!std::is_copy_constructible_v<HypotheticBattle>);
+static_assert(!std::is_copy_assignable_v<HypotheticBattle>);
 
 namespace
 {
@@ -28,6 +35,46 @@ public:
 	}
 	int32_t getTreeVersion() const override { return source.getTreeVersion(); }
 };
+
+class ForeignBattleSubject final : public CPlayerBattleCallback
+{
+public:
+	using CPlayerBattleCallback::CPlayerBattleCallback;
+};
+
+// Carries a legal proxy-base subject for assignment tests; never simulates a battle.
+class ReadOnlySubjectProxy final : public BattleProxy
+{
+public:
+	using BattleProxy::BattleProxy;
+	BattleID getBattleID() const override { return subject->getBattle()->getBattleID(); }
+	const scripting::Pool & getScriptContextPool() const override { return subject->getBattle()->getScriptContextPool(); }
+	std::vector<SpellID> getUsedSpells(BattleSide side) const override { return subject->getBattle()->getUsedSpells(side); }
+	uint32_t nextUnitId() const override { return subject->getBattle()->nextUnitId(); }
+	int64_t getActualDamage(const DamageRange &, int32_t, vstd::RNG &) const override
+	{
+		throw std::logic_error("Read-only subject proxy cannot realize damage");
+	}
+	int3 getLocation() const override { return subject->getBattle()->getLocation(); }
+	BattleLayout getLayout() const override { return subject->getBattle()->getLayout(); }
+	void nextRound() override { rejectMutation(); }
+	void nextTurn(uint32_t, BattleUnitTurnReason) override { rejectMutation(); }
+	void addUnit(uint32_t, const JsonNode &) override { rejectMutation(); }
+	void updateUnit(uint32_t, const JsonNode &, int64_t) override { rejectMutation(); }
+	void moveUnit(uint32_t, const BattleHex &) override { rejectMutation(); }
+	void removeUnit(uint32_t) override { rejectMutation(); }
+	void addUnitBonus(uint32_t, const std::vector<Bonus> &) override { rejectMutation(); }
+	void updateUnitBonus(uint32_t, const std::vector<Bonus> &) override { rejectMutation(); }
+	void removeUnitBonus(uint32_t, const std::vector<Bonus> &) override { rejectMutation(); }
+	void setWallState(EWallPart, EWallState) override { rejectMutation(); }
+	void addObstacle(const ObstacleChanges &) override { rejectMutation(); }
+	void updateObstacle(const ObstacleChanges &) override { rejectMutation(); }
+	void removeObstacle(uint32_t) override { rejectMutation(); }
+private:
+	[[noreturn]] static void rejectMutation() { throw std::logic_error("Read-only subject proxy cannot mutate battle"); }
+};
+static_assert(!std::is_abstract_v<ReadOnlySubjectProxy>);
+static_assert(std::is_copy_assignable_v<BattleProxy>);
 
 struct ForcedCopyView
 {
@@ -235,4 +282,172 @@ TEST_F(StackWithBonusesQueryTest, ThrowingSelectorLeavesStatesBothRngsAndHeldMem
 	EXPECT_EQ((std::array{projected->save().toString(), reference.projected->save().toString()}), before);
 	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
 	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
+}
+
+TEST_F(StackWithBonusesQueryTest, OrdinaryAndForeignRouteViewsRemainEmptyAcrossParentOverlayChanges)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	for(const auto * unit : battle()->battleGetAllStacks(false))
+		(void)unit->counterAttacks.total();
+	const auto nativeBefore = braced->acquireState()->save();
+	const auto nativeValues = values(braced->getBonusesBeforeCreatureAbilitySuppression(Selector::all));
+	const auto serverRng = projectedHitTest::serialized(*gameHandler->randomizer);
+	const auto fixtureRng = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto foreign = std::make_shared<ForeignBattleSubject>(battle(), PlayerColor(0));
+	const auto foreignBranch = std::make_shared<HypotheticBattle>(environment.get(), foreign);
+	for(const auto & branch : {child, foreignBranch})
+	{
+		const auto sourceOwners = live.use_count();
+		for(int query = 0; query != 4; ++query)
+		{
+			const auto view = branch->initialExportSubject();
+			EXPECT_EQ(view.get(), nullptr);
+			EXPECT_EQ(view.use_count(), 0);
+		}
+		EXPECT_EQ(live.use_count(), sourceOwners);
+		const auto unit = branch->getForUpdate(braced->unitId());
+		EXPECT_EQ(values(unit->getBonusesBeforeCreatureAbilitySuppression(Selector::all)), nativeValues);
+	}
+	const auto parent = std::make_shared<StackWithBonuses>(child.get(), braced);
+	const auto descendant = std::make_shared<StackWithBonuses>(child.get(), parent.get());
+	const auto held = descendant->getBonusesBeforeCreatureAbilitySuppression(Selector::all);
+	const auto before = values(held);
+	parent->addUnitBonus({addedAttack()});
+	EXPECT_FALSE(child->initialExportSubject());
+	EXPECT_NE(values(descendant->getBonusesBeforeCreatureAbilitySuppression(Selector::all)), before);
+	EXPECT_EQ(values(held), before);
+	EXPECT_EQ(braced->acquireState()->save(), nativeBefore);
+	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
+}
+
+TEST_F(StackWithBonusesQueryTest, ExportRouteViewsBindEachForkAndRetainOnlyTheirExistingSharedOwner)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	for(const auto * unit : battle()->battleGetAllStacks(false))
+		(void)unit->counterAttacks.total();
+	const auto serverRng = projectedHitTest::serialized(*gameHandler->randomizer);
+	const auto fixtureRng = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto nativeBefore = braced->acquireState()->save();
+	const auto nativeValues = values(braced->getBonusesBeforeCreatureAbilitySuppression(Selector::all));
+	const auto allKnowing = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	ASSERT_EQ(allKnowing->battleGetMySide(), BattleSide::ALL_KNOWING);
+	const auto origin = InitialExportBattleSubject::capture(allKnowing, *battle());
+	const auto parent = std::make_shared<HypotheticBattle>(environment.get(), origin);
+	const auto parentView = parent->initialExportSubject();
+	ASSERT_NE(parentView, nullptr);
+	EXPECT_NE(parentView.get(), origin.get());
+	EXPECT_EQ(parentView.use_count(), 2);
+	{
+		const auto copied = parentView;
+		const auto repeated = parent->initialExportSubject();
+		EXPECT_EQ(repeated.get(), copied.get());
+		EXPECT_FALSE(repeated.owner_before(copied));
+		EXPECT_FALSE(copied.owner_before(repeated));
+		EXPECT_EQ(parentView.use_count(), 4);
+	}
+	EXPECT_EQ(parentView.use_count(), 2);
+	const auto descendant = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto descendantView = descendant->initialExportSubject();
+	ASSERT_NE(descendantView, nullptr);
+	EXPECT_NE(descendantView.get(), parentView.get());
+	auto last = std::make_shared<HypotheticBattle>(environment.get(), descendant);
+	auto lastView = last->initialExportSubject();
+	ASSERT_NE(lastView, nullptr);
+	EXPECT_NE(lastView.get(), descendantView.get());
+	EXPECT_NE(lastView.get(), parentView.get());
+	for(const auto & branch : {parent, descendant, last})
+	{
+		const auto unit = branch->getForUpdate(braced->unitId());
+		EXPECT_EQ(values(unit->getBonusesBeforeCreatureAbilitySuppression(Selector::all)), nativeValues);
+	}
+	const std::weak_ptr<InitialExportBattleSubject> retained = lastView;
+	last.reset();
+	EXPECT_FALSE(retained.expired());
+	EXPECT_GT(lastView->world().size(), 0);
+	lastView.reset();
+	EXPECT_TRUE(retained.expired());
+	EXPECT_EQ(braced->acquireState()->save(), nativeBefore);
+	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
+}
+
+TEST_F(StackWithBonusesQueryTest, RouteGetterTracksBaseSubjectRebindingAndRetiredOwners)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto serverRng = projectedHitTest::serialized(*gameHandler->randomizer);
+	const auto fixtureRng = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto allKnowing = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	const auto origin = InitialExportBattleSubject::capture(allKnowing, *battle());
+	const auto branch = std::make_shared<HypotheticBattle>(environment.get(), origin);
+	const std::weak_ptr<InitialExportBattleSubject> retired = branch->initialExportSubject();
+	ASSERT_FALSE(retired.expired());
+	const ReadOnlySubjectProxy ordinary(live);
+	static_cast<BattleProxy &>(*branch) = ordinary;
+	EXPECT_TRUE(retired.expired()); // A cached weak owner must not retain the old object.
+	const bool ordinaryClassifiedAsExport = static_cast<bool>(branch->initialExportSubject());
+	EXPECT_FALSE(ordinaryClassifiedAsExport); // Never print or dereference a potentially retired view.
+	const auto first = InitialExportBattleSubject::capture(allKnowing, *battle());
+	const ReadOnlySubjectProxy firstExport(first);
+	static_cast<BattleProxy &>(*branch) = firstExport;
+	const auto firstView = branch->initialExportSubject();
+	EXPECT_EQ(firstView.get(), first.get());
+	EXPECT_FALSE(firstView.owner_before(first));
+	EXPECT_FALSE(first.owner_before(firstView));
+	const auto second = InitialExportBattleSubject::capture(allKnowing, *battle());
+	const ReadOnlySubjectProxy secondExport(second);
+	static_cast<BattleProxy &>(*branch) = secondExport;
+	EXPECT_EQ(branch->initialExportSubject().get(), second.get());
+	const ReadOnlySubjectProxy empty(BattleProxy::Subject{});
+	static_cast<BattleProxy &>(*branch) = empty;
+	const bool nullClassifiedAsExport = static_cast<bool>(branch->initialExportSubject());
+	EXPECT_FALSE(nullClassifiedAsExport);
+	EXPECT_EQ(branch->initialExportSubject().use_count(), 0);
+	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
+}
+
+TEST_F(StackWithBonusesQueryTest, AliasedBaseSubjectsPreservePointerAndControlBlockIdentity)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto allKnowing = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	const auto origin = InitialExportBattleSubject::capture(allKnowing, *battle());
+	const auto exported = std::make_shared<HypotheticBattle>(environment.get(), origin);
+	const auto view = exported->initialExportSubject();
+	ASSERT_NE(view, nullptr);
+	const std::shared_ptr<CBattleInfoCallback> aliasOrdinary(view, live.get());
+	EXPECT_FALSE(aliasOrdinary.owner_before(view));
+	EXPECT_FALSE(view.owner_before(aliasOrdinary));
+	EXPECT_NE(aliasOrdinary.get(), static_cast<CBattleInfoCallback *>(view.get()));
+	const auto ordinary = std::make_shared<HypotheticBattle>(environment.get(), aliasOrdinary);
+	const ReadOnlySubjectProxy positive(view);
+	static_cast<BattleProxy &>(*ordinary) = positive;
+	EXPECT_EQ(ordinary->initialExportSubject().get(), view.get());
+	const ReadOnlySubjectProxy negative(aliasOrdinary);
+	static_cast<BattleProxy &>(*exported) = negative;
+	const bool aliasClassifiedAsExport = static_cast<bool>(exported->initialExportSubject());
+	EXPECT_FALSE(aliasClassifiedAsExport);
+	const auto other = std::make_shared<HypotheticBattle>(environment.get(), origin);
+	const auto otherView = other->initialExportSubject();
+	const auto holder = std::make_shared<std::shared_ptr<InitialExportBattleSubject>>(otherView);
+	const std::shared_ptr<CBattleInfoCallback> differentOwner(holder, otherView.get());
+	EXPECT_EQ(differentOwner.get(), static_cast<CBattleInfoCallback *>(otherView.get()));
+	EXPECT_TRUE(differentOwner.owner_before(otherView) || otherView.owner_before(differentOwner));
+	const ReadOnlySubjectProxy rebound(differentOwner);
+	static_cast<BattleProxy &>(*other) = rebound;
+	const auto oldObjectOwners = otherView.use_count();
+	const auto actual = other->initialExportSubject();
+	EXPECT_EQ(actual.get(), otherView.get());
+	EXPECT_FALSE(actual.owner_before(differentOwner));
+	EXPECT_FALSE(differentOwner.owner_before(actual));
+	EXPECT_EQ(otherView.use_count(), oldObjectOwners);
+	const std::shared_ptr<CBattleInfoCallback> noOwner(std::shared_ptr<void>{}, live.get());
+	const auto unowned = std::make_shared<HypotheticBattle>(environment.get(), noOwner);
+	EXPECT_FALSE(unowned->initialExportSubject());
+	const std::shared_ptr<CBattleInfoCallback> unownedExport(std::shared_ptr<void>{}, view.get());
+	const ReadOnlySubjectProxy unownedPositive(unownedExport);
+	static_cast<BattleProxy &>(*unowned) = unownedPositive;
+	const auto unownedView = unowned->initialExportSubject();
+	EXPECT_EQ(unownedView.get(), view.get());
+	EXPECT_EQ(unownedView.use_count(), 0);
 }

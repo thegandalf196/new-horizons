@@ -17672,246 +17672,246 @@
       "functions": [
         {
           "symbol": "HypotheticBattle::const SeizeInitiativeState & getSeizeInitiativeState() const override#1",
-          "start": 46,
-          "end": 46
+          "start": 50,
+          "end": 50
         },
         {
           "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
-          "start": 47,
-          "end": 51
+          "start": 51,
+          "end": 55
         },
         {
           "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
-          "start": 52,
-          "end": 52
+          "start": 56,
+          "end": 56
         },
         {
           "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
-          "start": 62,
-          "end": 62
+          "start": 66,
+          "end": 66
         },
         {
           "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
-          "start": 63,
-          "end": 63
+          "start": 67,
+          "end": 67
         },
         {
           "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
-          "start": 68,
-          "end": 71
+          "start": 72,
+          "end": 75
         },
         {
           "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
-          "start": 82,
-          "end": 82
+          "start": 86,
+          "end": 86
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
-          "start": 90,
-          "end": 94
+          "start": 94,
+          "end": 98
         },
         {
           "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
-          "start": 97,
-          "end": 97
+          "start": 101,
+          "end": 101
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-          "start": 118,
-          "end": 118
+          "start": 122,
+          "end": 122
         },
         {
           "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
-          "start": 119,
-          "end": 128
-        },
-        {
-          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
-          "start": 129,
+          "start": 123,
           "end": 132
         },
         {
-          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
           "start": 133,
           "end": 136
         },
         {
-          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 138,
-          "end": 138
-        },
-        {
-          "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
-          "start": 140,
+          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
+          "start": 137,
           "end": 140
         },
         {
-          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
-          "start": 141,
-          "end": 141
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
           "start": 142,
           "end": 142
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
-          "start": 143,
-          "end": 143
-        },
-        {
-          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
           "start": 144,
           "end": 144
         },
         {
-          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
           "start": 145,
           "end": 145
         },
         {
-          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
           "start": 146,
+          "end": 146
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
+          "start": 147,
+          "end": 147
+        },
+        {
+          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
+          "start": 148,
+          "end": 148
+        },
+        {
+          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "start": 149,
           "end": 149
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
           "start": 150,
           "end": 153
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
           "start": 154,
           "end": 157
         },
         {
+          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
+          "start": 158,
+          "end": 161
+        },
+        {
           "symbol": "HypotheticBattle::ProjectedActionReceipt::bool isHeroAction() const#1",
-          "start": 167,
-          "end": 170
+          "start": 171,
+          "end": 174
         },
         {
           "symbol": "HypotheticBattle::ui8 getProjectedPendingTimeStopHeroActionSides() const#1",
-          "start": 255,
-          "end": 255
+          "start": 259,
+          "end": 259
         },
         {
           "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 261,
-          "end": 261
+          "start": 265,
+          "end": 265
         },
         {
           "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
-          "start": 262,
-          "end": 262
+          "start": 266,
+          "end": 266
         },
         {
           "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 269,
-          "end": 269
+          "start": 273,
+          "end": 273
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 289,
-          "end": 289
+          "start": 293,
+          "end": 293
         },
         {
           "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
-          "start": 290,
-          "end": 290
+          "start": 294,
+          "end": 294
         },
         {
           "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
-          "start": 291,
-          "end": 291
+          "start": 295,
+          "end": 295
         },
         {
           "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
-          "start": 292,
-          "end": 296
+          "start": 296,
+          "end": 300
         },
         {
           "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-          "start": 297,
-          "end": 301
+          "start": 301,
+          "end": 305
         },
         {
           "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 302,
-          "end": 302
-        },
-        {
-          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
-          "start": 303,
+          "start": 306,
           "end": 306
         },
         {
-          "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
+          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
           "start": 307,
-          "end": 312
+          "end": 310
+        },
+        {
+          "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
+          "start": 311,
+          "end": 316
         },
         {
           "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 313,
-          "end": 323
+          "start": 317,
+          "end": 327
         },
         {
           "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 326,
-          "end": 329
+          "start": 330,
+          "end": 333
         },
         {
           "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 330,
-          "end": 334
+          "start": 334,
+          "end": 338
         },
         {
           "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 339,
-          "end": 339
+          "start": 343,
+          "end": 343
         },
         {
           "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
-          "start": 340,
-          "end": 340
+          "start": 344,
+          "end": 344
         },
         {
           "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
-          "start": 404,
-          "end": 404
+          "start": 408,
+          "end": 408
         },
         {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-          "start": 405,
-          "end": 405
+          "start": 409,
+          "end": 409
         },
         {
           "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
-          "start": 406,
-          "end": 406
-        },
-        {
-          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
-          "start": 407,
+          "start": 410,
           "end": 410
         },
         {
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
+          "start": 411,
+          "end": 414
+        },
+        {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 421,
-          "end": 424
+          "start": 425,
+          "end": 428
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 543,
-          "end": 543
+          "start": 547,
+          "end": 547
         }
       ],
-      "rationale": "Exact complete47-inline-body inventory:46 existing body hashes unchanged, one new one-line raw snapshot accessor. The same single preexisting parser recovery remains; no parser waiver or callback body omission.",
-      "review": "IR-RAW-LUCK-POLICY-SCALAR-20261024",
-      "sha256": "8fac03a4d47ffa5fbc5122bed83591212372e192cd89d9c2def70eebce2dd114",
+      "rationale": "Complete47inline-body inventory renewed: every prior body byte-identical, all spans shift4 for three private binding fields/comment. Same single preexisting parser recovery229-to233; no omitted callback/body or parser waiver.",
+      "review": "IR-GUARDED-SUBJECT-RTTI-V2-SOURCE-20261025",
+      "sha256": "95756835c4eac12fa525d35d4bd6388de14ab8b2180a2763624f5909247552ab",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "review_scope": "raw-saved-Luck-scalar-source-only-no-runtime-or-performance-acceptance",
-      "deferral": "AI engineer retains the existing model-interface concentration. Further additions should move projection-admission implementation to the cohesive owners rather than add inline rules. Preserve exact complete manual inventory and branch/finish/replay guards; no growth credit from the header's current size."
+      "review_scope": "guarded-subject-RTTI-V2-exact-source-only-no-runtime-or-speedup",
+      "deferral": "AI owner: future header additions must extract projected action/allowance receipt types into existing HypotheticBattleTypes with nested API aliases and complete inventory; no further growth credit."
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
       "sha256": "b7713bdd3beefb2d448056f2a1d12023e682e222b9f176c057e07f830eda7875",
@@ -18010,15 +18010,16 @@
       "rationale": "Explicit independent review of the new143-line legacyCommand-signature commit, replacing the obsolete139-line record. Four added signature/routing lines preserve one ordered accounting transaction. Legacy preparation/effects live in their53-line owner with max23-line functions; canonical grants remain shared. The private raw route checks exact branch/command/target binding and the existing begun allowance, NONE cannot downgrade either binding, and finish clears the binding. Keeping validation/accounting/grant/finish phases together is cohesive below150; no inherited139 approval is used.",
       "deferral": "AI engineer must retain this exact143-line transaction limit. Before further rule growth, extract a typed read-only preflight/result or cohesive grant-plan stage with exact rejection, single-payment, grant-order and finish-state characterization; do not move the whole transaction to another oversized helper. C++ legacy/canonical rejection/native/grant/isolation controls remain required."
     },
-    "AI/BattleAI/HypotheticBattle.cpp::HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle) : BattleProxy(InitialExportBattleSubject::forkForBranch(realBattle)), env(ENV), bonusTreeVersion(1)#1": {
+    "AI/BattleAI/HypotheticBattle.cpp::HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle) : BattleProxy(InitialExportBattleSubject::forkForBranch(realBattle)), boundSubjectPointer(subject.get()), boundSubjectOwner(subject), initialExportView(dynamic_cast<InitialExportBattleSubject *>(subject.get())), env(ENV), bonusTreeVersion(1)#1": {
       "kind": "exception",
-      "lines": 105,
+      "lines": 108,
       "owner": "ai_engineer",
-      "rationale": "Exact105-line constructor with only reviewed owned-subject fork initializer; existing initialization body retained, no whole-horizon or alias lease claim.",
-      "review": "IR-OWNED-EXPORT-LIFECYCLE-CURRENT-UNION-20261017",
-      "review_scope": "exact-owned-export-lifecycle-source-union-only-no-runtime-or-future-growth",
-      "sha256": "5a47e6b00498e8ad8245f74642092962696ee0dcd367d386f550e2a40e8c9302",
-      "deferral": "No further branch/header routing growth approved. AI owner must keep new ownership/query/history behavior in InitialExportBattleSubject and HypotheticExportSubject; further expansion needs cohesive extraction and renewed native/branch-lifetime evidence."
+      "rationale": "Exact105-to108 constructor: three post-base-fork binding initializers only; existing initialization body byte-identical. Stores raw subject identity, weak original ownership and typed view before firstgetter. Weak owner retains control block, not callback object; fallback preserves existing public base assignment. Native/parity/timing evidence pending.",
+      "review": "IR-GUARDED-SUBJECT-RTTI-V2-SOURCE-20261025",
+      "review_scope": "guarded-subject-RTTI-V2-exact-source-only-no-runtime-or-speedup",
+      "sha256": "557ef04aa7a9ef671711ede5aeb137e33601d79ba2af0fc389a448edfc55af85",
+      "deferral": "AI owner: no further constructor/header routing growth credit. Keep further query/history/lifecycle behavior in focused export components; future header debt extraction retains action/allowance API aliases and branch/finish/replay guards.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     ".github/workflows/github.yml": {
       "kind": "legacy",
@@ -26379,24 +26380,24 @@
     },
     "AI/BattleAI/HypotheticBattle.cpp": {
       "kind": "exception",
-      "lines": 849,
+      "lines": 826,
       "owner": "ai_engineer",
-      "rationale": "Exact847-to849 bounded correction validates an internal Counterpressure receipt against the actual side owner via existing getSideHero, matching existing Reactive Weave authority. Public hero visibility remains filtered; invalid side, shape, round-window and missing actual perk checks stay intact. Prior materialization extraction remains859-to849 overall shrinking debt. Source-only review; native and performance acceptance pending.",
-      "review": "life-drain-counterpressure-internal-owner-independent-source-review",
-      "review_scope": "internal-receipt-capability-owner-correction",
-      "sha256": "6901daf07427ada8ab135842c82ec598034938201c5014ba5647c043db9cabb1",
-      "deferral": "AI owner: retain new query/history/lifecycle rules in focused owned-export components; before further HypotheticBattle growth extract coherent side-token validation behind the existing mechanical-state interface, preserving invalid-side, missing-perk and double-spend rejection plus native/private branch lifetime and token parity tests. No future growth approved.",
+      "rationale": "Exact849-to826 overall shrink after unchanged roster-route extraction and three post-fork binding initializers. Guarded typed-view memo preserves original RTTI for rebound/null/foreign/nonowning subjects using pointer and weak-owner control-block identity; no scoring, gameplay, bonus-content cache or saved-state change. Source review only; native/parity/performance remain pending.",
+      "review": "IR-GUARDED-SUBJECT-RTTI-V2-SOURCE-20261025",
+      "review_scope": "guarded-subject-RTTI-V2-exact-source-only-no-runtime-or-speedup",
+      "sha256": "3848d5696bc177c693063ab83ca3b7f68b3515e24b22a4f591715ba3d3d87653",
+      "deferral": "AI owner: keep ownership/query/history behavior in focused export components. No further centralfile growth approved; new source-binding behavior must preserve public base assignment, branch isolation and retained alias/control-block lifetime.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/HypotheticBattle.h": {
       "kind": "exception",
-      "lines": 595,
+      "lines": 599,
       "owner": "ai_engineer",
-      "rationale": "Exact594-to595 header extension adds one one-line raw saved Luck-policy accessor to the final HypotheticBattle. The existing46 inline bodies remain byte-identical; complete47-body manual inventory is renewed. No cache, saved state or wider projection responsibility is added.",
-      "review": "IR-RAW-LUCK-POLICY-SCALAR-20261024",
-      "review_scope": "raw-saved-Luck-scalar-source-only-no-runtime-or-performance-acceptance",
-      "sha256": "8fac03a4d47ffa5fbc5122bed83591212372e192cd89d9c2def70eebce2dd114",
-      "deferral": "AI engineer retains the existing model-interface concentration. Further additions should move projection-admission implementation to the cohesive owners rather than add inline rules. Preserve exact complete manual inventory and branch/finish/replay guards; no growth credit from the header's current size.",
+      "rationale": "Exact595-to599 header: one ownership comment plus three private transient binding fields (raw subject identity, weak owner, typed view). Complete47inline bodies remain byte-identical; no inline rule, public API restriction, serialization/netpack field or general bonus/version cache. Source-only approval, no runtime/performance claim.",
+      "review": "IR-GUARDED-SUBJECT-RTTI-V2-SOURCE-20261025",
+      "review_scope": "guarded-subject-RTTI-V2-exact-source-only-no-runtime-or-speedup",
+      "sha256": "95756835c4eac12fa525d35d4bd6388de14ab8b2180a2763624f5909247552ab",
+      "deferral": "AI owner: further header additions require cohesive projected action/allowance receipt-type extraction into existing HypotheticBattleTypes with nested API aliases, complete manual inventory and admission/finish/replay invariants. This exact+4 exception grants no future regrowth credit.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/HypotheticHeroActions.cpp::bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target, bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated, const ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & affectedRecipients)#1": {

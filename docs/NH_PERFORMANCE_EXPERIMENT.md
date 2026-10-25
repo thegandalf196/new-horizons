@@ -41,6 +41,21 @@ selector's deterministic seed and state exports for subsequent comparisons.
 
 Do not run concurrent builds/heavy tests during measurements. Graphical probes require the maintained silent guarded helper, isolated Xvfb, disposable saves and actual dummy-driver/process-identity checks before input. Owned absence is not parent reaping or exit-zero proof. Keep raw logs/captures/receipts private; do not change guard budgets to conceal an invalid run.
 
+### Projected battle subject dispatch
+
+`HypotheticBattle` binds its export-subject type once after creating the branch.
+The borrowed typed view is usable only while both the callback address and its
+live shared-ownership identity match that binding. Public `BattleProxy` base
+reassignment, expired owners and different aliases retain ordinary RTTI dispatch.
+The weak binding does not retain the original object or cache gameplay values.
+
+`StackWithBonusesQueryTest` covers rebinding, aliases and owner expiration.
+`VinesCandidateValueReuseAITest.ShippingConsumerWallSamplesKeepDecisionStateAndRng`
+provides eight observer-free whole-consumer samples, including construction and
+destruction. Compare identical state, actions and both RNG streams before timing
+reference and optimized binaries in interleaved fresh processes. This authored
+workload does not establish a whole-turn or Windows performance improvement.
+
 ### Creature-wish forecast workload
 
 `NewHorizonsGenieSupportAITest.SyntheticSevenVsThreeForecastMatchesCompleteOrderedPoolOracle`

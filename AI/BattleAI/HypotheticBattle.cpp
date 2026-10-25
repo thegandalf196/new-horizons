@@ -36,6 +36,9 @@ using hypotheticEffectSnapshotRules::hasTimedMagicalSpellEffects;
 
 HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	: BattleProxy(InitialExportBattleSubject::forkForBranch(realBattle)),
+	boundSubjectPointer(subject.get()),
+	boundSubjectOwner(subject),
+	initialExportView(dynamic_cast<InitialExportBattleSubject *>(subject.get())),
 	env(ENV),
 	bonusTreeVersion(1)
 {
@@ -194,32 +197,6 @@ std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdate(uint32_t id)
 {
 	invalidateLifeDrainFriendlyObservation(id);
 	return getForUpdateImpl(id);
-}
-
-battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate) const
-{
-	if(initialExportSubject())
-		return ownedExportUnitsIf(predicate);
-	const auto original = BattleProxy::getUnitsIf([](const battle::Unit *)
-	{
-		return true;
-	});
-	battle::Units result;
-	result.reserve(original.size() + stackStates.size());
-	std::set<uint32_t> originalIds;
-	for(const auto * unit : original)
-	{
-		originalIds.insert(unit->unitId());
-		const auto replacement = stackStates.find(unit->unitId());
-		const auto * current = replacement == stackStates.end() ? unit : replacement->second.get();
-		if(predicate(current))
-			result.push_back(current);
-	}
-	// Preserve real battle order for replacements; append only newly projected units.
-	for(const auto & [id, unit] : stackStates)
-		if(!originalIds.contains(id) && predicate(unit.get()))
-			result.push_back(unit.get());
-	return result;
 }
 
 BattleID HypotheticBattle::getBattleID() const

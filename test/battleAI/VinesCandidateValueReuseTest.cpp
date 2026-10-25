@@ -15,6 +15,8 @@
 #include "../../lib/spells/NewHorizonsSpellcraft.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include <bit>
+#include <chrono>
+#include <sstream>
 #include <tuple>
 
 namespace
@@ -66,6 +68,20 @@ public:
 		submitted.push_back(action);
 	}
 };
+
+std::string byteHex(const std::vector<std::byte> & bytes)
+{
+	constexpr char digits[] = "0123456789abcdef";
+	std::string result;
+	result.reserve(bytes.size() * 2);
+	for(const auto byte : bytes)
+	{
+		const auto value = std::to_integer<unsigned int>(byte);
+		result.push_back(digits[value >> 4]);
+		result.push_back(digits[value & 15]);
+	}
+	return result;
+}
 
 class Scores final : public heroActionSelection::Observer
 {
@@ -198,6 +214,7 @@ protected:
 	}
 	void prepare(bool withPerks)
 	{
+		dynamic_cast<CRandomGenerator &>(*getRNG()).setSeed(seed);
 		startGame();
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		for(const auto known : attackerSideHero->getSpellsInSpellbook())
@@ -273,17 +290,33 @@ protected:
 		attach("new-horizons:hexOfPain", "core:hexOfPain", 20, pain);
 		ASSERT_EQ(active->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER)->size(), 2u);
 	}
-	void compare()
+	std::vector<std::byte> decisionSnapshot()
 	{
 		const auto live = callback->getBattle(BattleID(0));
-		const auto snapshot = [&]
-		{
-			auto bytes = heroSelectionTest::snapshot(*live, *gameHandler->randomizer,
-				dynamic_cast<CRandomGenerator &>(*getRNG()));
-			appendSpellReceipts(bytes, *live);
-			return bytes;
-		};
-		const auto before = snapshot();
+		auto bytes = heroSelectionTest::snapshot(*live, *gameHandler->randomizer,
+			dynamic_cast<CRandomGenerator &>(*getRNG()));
+		appendSpellReceipts(bytes, *live);
+		return bytes;
+	}
+	void recordDecision(const std::vector<std::byte> & before, const Scores & scores,
+		const std::vector<std::byte> & hero, const std::vector<std::byte> & unit, bool accepted)
+	{
+		std::ostringstream rows;
+		for(const auto & [ordinal, command, spell, overcharge, bits] : scores.rows)
+			rows << ordinal << ',' << static_cast<int>(command) << ',' << spell.getNum()
+				<< ',' << overcharge << ',' << bits << ';';
+		RecordProperty("DecisionRows", rows.str());
+		RecordProperty("DecisionStateAndRng", byteHex(before));
+		RecordProperty("DecisionHeroAction", byteHex(hero));
+		RecordProperty("DecisionUnitAction", byteHex(unit));
+		RecordProperty("DecisionAccepted", accepted ? 1 : 0);
+		RecordProperty("DecisionOrdinal", std::to_string(scores.selection->ordinal));
+		RecordProperty("DecisionDisposition", static_cast<int>(scores.selection->disposition));
+		RecordProperty("DecisionBaselineBits", std::to_string(std::bit_cast<uint32_t>(scores.selection->baseline)));
+	}
+	void compare()
+	{
+		const auto before = decisionSnapshot();
 		std::vector<Scores::Row> expected;
 		std::vector<std::byte> expectedHero, expectedUnit;
 		std::optional<heroActionSelection::SelectionValue> expectedSelection;
@@ -295,11 +328,11 @@ protected:
 			BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
 				BattleSide::ATTACKER, 1.0f, 2);
 			const auto unit = evaluator.selectStackAction(active);
-			EXPECT_EQ(snapshot(), before);
+			EXPECT_EQ(decisionSnapshot(), before);
 			Scores scores;
 			VinesCandidateValueReuse::TestControl control{enabled};
 			const bool accepted = evaluator.attemptCastingSpell(active, true, &scores, &control);
-			EXPECT_EQ(snapshot(), before); // Full state, bonuses, Orders, allowances, mana and BOTH RNG.
+			EXPECT_EQ(decisionSnapshot(), before); // Full state, bonuses, Orders, allowances, mana and BOTH RNG.
 			ASSERT_EQ(callback->submitted.size(), accepted ? 1u : 0u);
 			ASSERT_TRUE(scores.selection);
 			ASSERT_FALSE(scores.rows.empty());
@@ -324,6 +357,7 @@ protected:
 				EXPECT_EQ(scores.selection->disposition, expectedSelection->disposition);
 				EXPECT_EQ(std::bit_cast<uint32_t>(scores.selection->baseline),
 					std::bit_cast<uint32_t>(expectedSelection->baseline));
+				recordDecision(before, scores, hero, expectedUnit, accepted);
 			}
 		}
 	}
@@ -339,4 +373,54 @@ TEST_F(VinesCandidateValueReuseAITest, PerksMovementFocusMagicAndHexOfPainStillR
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	ASSERT_NO_FATAL_FAILURE(compare());
+}
+
+TEST_F(VinesCandidateValueReuseAITest, ShippingConsumerWallSamplesKeepDecisionStateAndRng)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false));
+	const auto before = decisionSnapshot();
+	std::vector<std::byte> expectedHero, expectedUnit;
+	bool expectedAccepted = false;
+	std::ostringstream samples;
+	constexpr int sampleCount = 8;
+	for(int sample = 0; sample != sampleCount; ++sample)
+	{
+		SCOPED_TRACE(sample);
+		callback->submitted.clear();
+		BattleAction unit;
+		bool accepted;
+		const auto started = std::chrono::steady_clock::now();
+		{
+			BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+				BattleSide::ATTACKER, 1.0f, 2);
+			unit = evaluator.selectStackAction(active);
+			accepted = evaluator.attemptCastingSpell(active);
+		}
+		const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+			std::chrono::steady_clock::now() - started).count();
+		samples << (sample ? "," : "") << elapsed;
+		// Serialization and parity observations are outside the measured consumer.
+		EXPECT_EQ(decisionSnapshot(), before);
+		ASSERT_EQ(callback->submitted.size(), accepted ? 1u : 0u);
+		const auto hero = projectedHitTest::serialized(callback->submitted);
+		const auto ordinary = projectedHitTest::serialized(unit);
+		if(sample == 0)
+		{
+			expectedHero = hero;
+			expectedUnit = ordinary;
+			expectedAccepted = accepted;
+		}
+		else
+		{
+			EXPECT_EQ(hero, expectedHero);
+			EXPECT_EQ(ordinary, expectedUnit);
+			EXPECT_EQ(accepted, expectedAccepted);
+		}
+	}
+	RecordProperty("WallSamplesMicroseconds", samples.str());
+	RecordProperty("WallSampleCount", sampleCount);
+	RecordProperty("InitialStateAndRng", byteHex(before));
+	RecordProperty("HeroAction", byteHex(expectedHero));
+	RecordProperty("UnitAction", byteHex(expectedUnit));
+	RecordProperty("Accepted", expectedAccepted ? 1 : 0);
 }
