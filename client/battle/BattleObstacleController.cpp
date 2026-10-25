@@ -146,7 +146,17 @@ void BattleObstacleController::placeNextObstacle()
 	auto oi = obstaclePlacementQueue.front();
 	obstaclePlacementQueue.erase(obstaclePlacementQueue.begin());
 
-	auto animation = ENGINE->renderHandler().loadAnimation(oi->getAppearAnimation(), EImageBlitMode::SIMPLE);
+	const auto & appearAnimation = oi->getAppearAnimation();
+	if(appearAnimation.empty())
+	{
+		// An obstacle may appear immediately without a placement effect.
+		if(oi->obstacleType != CObstacleInstance::MOAT) // moats are rendered by the siege controller
+			loadObstacleImage(*oi);
+		placeNextObstacle();
+		return;
+	}
+
+	auto animation = ENGINE->renderHandler().loadAnimation(appearAnimation, EImageBlitMode::SIMPLE);
 	auto first = animation->getImage(0, 0);
 	if(!first)
 	{
