@@ -974,6 +974,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Engine/PriorityEvaluatorTest.cpp
 		nullkiller2/Engine/TaskFailureTest.cpp
 		nullkiller2/Goals/HeroChainSourceAnchorTest.cpp
+		nullkiller2/Goals/RouteActorLossTest.cpp
 		nullkiller2/Engine/NewHorizonsLogisticsMovementAITest.cpp
 		nullkiller2/Engine/NewHorizonsLighthouseDepartureAITest.cpp
 		nullkiller2/NewHorizonsTravelLandingAITest.cpp
@@ -987,6 +988,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/ArmyExchangeExecutionTest.cpp
 		nullkiller2/AdventureSpellExecutionTest.cpp
 		nullkiller2/EspritDeCorpsArmySelectionTest.cpp
+		nullkiller2/Helpers/RouteActorObservationTest.cpp
 		nullkiller2/Helpers/ExplorationHelperTest.cpp
 		nullkiller2/Helpers/NewHorizonsMusterTest.cpp
 		nullkiller2/NewHorizonsAdventureSpellUnlockAITest.cpp

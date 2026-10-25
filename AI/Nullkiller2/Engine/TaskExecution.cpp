@@ -37,6 +37,14 @@ bool Nullkiller::tryReplanUnavailableRoute(
 	return false;
 }
 
+void logTaskFailure(const TaskExecutionResult & execution, const char * message)
+{
+	if(execution.observedActorRemoval)
+		logAi->info(message);
+	else
+		logAi->warn(message);
+}
+
 TaskExecutionResult executeTask(AIGateway & gateway, const Goals::TTask & task)
 {
 	auto start = std::chrono::high_resolution_clock::now();
@@ -54,6 +62,16 @@ TaskExecutionResult executeTask(AIGateway & gateway, const Goals::TTask & task)
 	catch(goalFulfilledException &)
 	{
 		logAi->trace("Task %s completed in %lld", taskDescr, timeElapsed(start));
+	}
+	catch(const RouteActorUnavailable & e)
+	{
+		ai.invalidatePathfinderData();
+		if(e.observedRemoval)
+			logAi->info("Route actor %s (%d) was removed during its issued action. Aborting dependent tasks.",
+				e.heroName, e.heroID.getNum());
+		else
+			logAi->error("Route actor %s (%d) became unavailable unexpectedly: %s", e.heroName, e.heroID.getNum(), e.what());
+		return {false, std::nullopt, e.observedRemoval};
 	}
 	catch(const unavailableRouteException & e)
 	{

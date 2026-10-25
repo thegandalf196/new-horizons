@@ -752,13 +752,13 @@ void Nullkiller::makeTurn()
 
 					if(failureAction == TaskFailureAction::TRY_NEXT_TASK)
 					{
-						logAi->warn("Task failed to execute. Trying the next available task.");
+						logTaskFailure(execution, "Task failed to execute. Trying the next available task.");
 						continue;
 					}
 
 					if(failureAction == TaskFailureAction::REPLAN)
 					{
-						logAi->warn("Task failed to execute. Replanning.");
+						logTaskFailure(execution, "Task failed to execute. Replanning.");
 						hasAnySuccess = true;
 						break;
 					}
@@ -836,7 +836,7 @@ bool Nullkiller::updateStateAndExecutePriorityPass(
 						// regular planning, not only at the next outer pass.
 						updateState();
 					}
-					logAi->warn("Task failed to execute during priority pass. Continuing with regular turn planning.");
+					logTaskFailure(execution, "Task failed to execute during priority pass. Continuing with regular turn planning.");
 					break;
 				}
 			}

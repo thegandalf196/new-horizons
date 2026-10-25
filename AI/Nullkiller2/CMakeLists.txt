@@ -71,6 +71,8 @@ set(Nullkiller2_SRCS
 		Behaviors/ExplorationBehavior.cpp
 		Helpers/ArmyFormation.cpp
 		Helpers/ArmyExchangeExecution.cpp
+		Helpers/RouteActorObservation.cpp
+		Helpers/RouteMovement.cpp
 		Helpers/AdventureSpellExecution.cpp
 		Helpers/NewHorizonsMuster.cpp
 		Helpers/NewHorizonsTravelLanding.cpp
@@ -159,6 +161,8 @@ set(Nullkiller2_HEADERS
 		Behaviors/ExplorationBehavior.h
 		Helpers/ArmyFormation.h
 		Helpers/ArmyExchangeExecution.h
+		Helpers/RouteActorObservation.h
+		Helpers/RouteMovement.h
 		Helpers/AdventureSpellExecution.h
 		Helpers/NewHorizonsMuster.h
 		Helpers/NewHorizonsTravelLanding.h

@@ -19,7 +19,10 @@ struct TaskExecutionResult
 {
 	bool success;
 	std::optional<ObjectInstanceID> unavailableRouteHero;
+	bool observedActorRemoval = false;
 };
+
+void logTaskFailure(const TaskExecutionResult & execution, const char * message);
 
 TaskExecutionResult executeTask(AIGateway & gateway, const Goals::TTask & task);
 }

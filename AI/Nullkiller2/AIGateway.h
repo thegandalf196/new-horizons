@@ -20,6 +20,7 @@
 #include "Pathfinding/AIPathfinder.h"
 #include "Engine/Nullkiller.h"
 #include "Helpers/AdventureSpellExecution.h"
+#include "Helpers/RouteActorObservation.h"
 
 #include <map>
 #include <mutex>
@@ -77,6 +78,7 @@ public:
 
 	AIStatus status;
 	AdventureSpellExecution adventureSpellExecution;
+	RouteActorObservation routeActorObservation;
 	std::string battlename;
 	/// Same instance as in cbc. cbc is used to keep CAdventureAI simpler without unnecessary class requirements
 	std::shared_ptr<CCallback> cc;
