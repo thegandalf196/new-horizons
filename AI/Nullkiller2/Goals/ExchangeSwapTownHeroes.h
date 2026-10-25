@@ -16,18 +16,22 @@ namespace NK2AI
 {
 namespace Goals
 {
+	enum class GarrisonPreparation { REQUIRED, IF_COMMANDABLE, VISITING_ONLY };
 	class DLL_EXPORT ExchangeSwapTownHeroes : public ElementarGoal<ExchangeSwapTownHeroes>
 	{
 	private:
 		const CGTownInstance * town;
 		const CGHeroInstance * garrisonHero;
 		HeroLockedReason lockingReason;
+		GarrisonPreparation preparation;
+		void acceptConditional(AIGateway * aiGw);
 
 	public:
 		ExchangeSwapTownHeroes(
 			const CGTownInstance * town,
 			const CGHeroInstance * garrisonHero = nullptr,
-			HeroLockedReason lockingReason = HeroLockedReason::NOT_LOCKED);
+			HeroLockedReason lockingReason = HeroLockedReason::NOT_LOCKED,
+			GarrisonPreparation preparation = GarrisonPreparation::REQUIRED);
 
 		void accept(AIGateway * aiGw) override;
 		std::string toString() const override;

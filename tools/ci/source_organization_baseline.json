@@ -18919,21 +18919,21 @@
     },
     "AI/Nullkiller2/Behaviors/DefenceBehavior.cpp": {
       "kind": "legacy",
-      "lines": 749,
+      "lines": 747,
       "owner": "ai_engineer",
-      "rationale": "Current-owned-visitor composition and legal-preparation admission move to focused TownGarrisonAdmission. Defence routing shrinks from758 to749 lines and evaluateDefence from270 to260; remaining inherited defence/recruitment responsibility is frozen at this lower exact size. No growth exception or runtime certification.",
-      "review": "IR-GARRISON-FIXED-SOURCE-ORGANIZATION-20261024",
+      "rationale": "Arriving-chain append and concrete post-exchange army garrison forecast move to focused TownGarrisonAdmission; Defence routing shrinks749 to747 lines and evaluateDefence260 to258. Remaining inherited defence/recruitment responsibility stays frozen at this lower exact size, with no growth exception or runtime certification.",
+      "review": "IR-ARRIVING-TOWN-DEFENCE-SOURCE-ORGANIZATION-20261025",
       "review_scope": "exact-source-organization-only-no-native-or-gameplay-acceptance",
-      "sha256": "a3c897da5c2595735b43be064da074c996eb9c07495a42cf1fd28fe3abd30ff8"
+      "sha256": "10491b9793c19a99aa7ae46d35ae65eb72432001ff76f0eb5dd5e043e9055be5"
     },
     "AI/Nullkiller2/Behaviors/DefenceBehavior.cpp::NK2AI::void DefenceBehavior::evaluateDefence(Goals::TGoalVec & tasks, const CGTownInstance * town, const Nullkiller * aiNk) const#1": {
       "kind": "legacy",
-      "lines": 260,
+      "lines": 258,
       "owner": "ai_engineer",
-      "rationale": "Current-owned-visitor composition and legal-preparation admission move to focused TownGarrisonAdmission. Defence routing shrinks from758 to749 lines and evaluateDefence from270 to260; remaining inherited defence/recruitment responsibility is frozen at this lower exact size. No growth exception or runtime certification.",
-      "review": "IR-GARRISON-FIXED-SOURCE-ORGANIZATION-20261024",
+      "rationale": "Arriving-chain append and concrete post-exchange army garrison forecast move to focused TownGarrisonAdmission; Defence routing shrinks749 to747 lines and evaluateDefence260 to258. Remaining inherited defence/recruitment responsibility stays frozen at this lower exact size, with no growth exception or runtime certification.",
+      "review": "IR-ARRIVING-TOWN-DEFENCE-SOURCE-ORGANIZATION-20261025",
       "review_scope": "exact-source-organization-only-no-native-or-gameplay-acceptance",
-      "sha256": "71db811cc26c84ad764965e0877e8dede5636086637919b6127c09c67f404475"
+      "sha256": "05bde9402c597efaf7f1701393f72f701542e9a4820ebc356239db270e483c18"
     },
     "AI/Nullkiller2/Behaviors/DefenceBehavior.cpp::NK2AI::void DefenceBehavior::evaluateRecruitingHero(Goals::TGoalVec & tasks, const HitMapInfo & threat, const CGTownInstance * town, const Nullkiller * aiNk)#1": {
       "kind": "legacy",

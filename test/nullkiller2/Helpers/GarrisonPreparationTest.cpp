@@ -6,6 +6,9 @@
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
 #include "AI/Nullkiller2/AIUtility.h"
 #include "AI/Nullkiller2/Goals/ExchangeSwapTownHeroes.h"
+#include "AI/Nullkiller2/Goals/ExecuteHeroChain.h"
+#include "AI/Nullkiller2/Goals/Composition.h"
+#include "AI/Nullkiller2/Pathfinding/AIPathfinder.h"
 #include "lib/gameState/UpgradeInfo.h"
 #include "AI/Nullkiller2/Behaviors/TownGarrisonAdmission.h"
 #include "AI/Nullkiller2/Analyzers/DangerHitMapAnalyzer.h"
@@ -138,7 +141,7 @@ protected:
 	}
 	void prepare(const std::string & heroName, int level,
 		std::vector<std::pair<CreatureID, uint16_t>> heroArmy,
-		std::vector<std::pair<CreatureID, uint16_t>> townArmy, bool secondHero = false, FactionID townFaction = FactionID::TOWER)
+		std::vector<std::pair<CreatureID, uint16_t>> townArmy, bool secondHero = false, FactionID townFaction = FactionID::TOWER, bool currentVisitor = true)
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(OWNER).playerActive(PlayerColor(1))
@@ -160,16 +163,19 @@ protected:
 		ASSERT_EQ(findAll<CGTownInstance>().size(), 2);
 		ChangeObjPos move;
 		move.objid = hero->id;
-		move.nPos = town->visitablePos();
+		move.nPos = town->visitablePos() + (currentVisitor ? int3(0, 0, 0) : int3(0, 1, 0));
 		move.initiator = OWNER;
 		gameState()->apply(move);
-		// ChangeObjPos already registered the visible hero on the entrance tile.
-		HeroVisitCastle visiting;
-		visiting.tid = town->id;
-		visiting.hid = hero->id;
-		visiting.startVisit = true;
-		gameState()->apply(visiting);
-		ASSERT_EQ(town->getVisitingHero(), hero);
+		if(currentVisitor)
+		{
+			// ChangeObjPos registered the visible hero; visit does not add it twice.
+			HeroVisitCastle visiting;
+			visiting.tid = town->id;
+			visiting.hid = hero->id;
+			visiting.startVisit = true;
+			gameState()->apply(visiting);
+		}
+		ASSERT_EQ(town->getVisitingHero(), currentVisitor ? hero : nullptr);
 		ASSERT_EQ(town->getGarrisonHero(), nullptr);
 		server = std::make_unique<GarrisonServer>(gameState());
 		handler = std::make_unique<CGameHandler>(*server, gameState());
@@ -180,7 +186,7 @@ protected:
 		initialWaitTillRealize = callback->waitTillRealize;
 		ASSERT_TRUE(initialWaitTillRealize);
 	}
-	static Army snapshot(const CArmedInstance * army)
+	static Army snapshot(const CCreatureSet * army)
 	{
 		Army result;
 		for(const auto & [slot, stack] : army->Slots())
@@ -246,6 +252,100 @@ protected:
 		EXPECT_EQ(gameState()->saveToMemory(), before);
 		NK2AI::armyFormation::executeArmyExchange(callback, hero, town, plan);
 	}
+	void ordinaryArrivalPaths(std::vector<NK2AI::AIPath> & paths)
+	{
+		ASSERT_EQ(hero->getVisitedTown(), nullptr);
+		ASSERT_EQ(town->getVisitingHero(), nullptr);
+		ASSERT_NE(hero->visitablePos(), town->visitablePos());
+		ASSERT_EQ(callback->getVisitableObjs(town->visitablePos()),
+			(std::vector<const CGObjectInstance *>{town}));
+		ASSERT_EQ(map()->getTile(town->visitablePos()).visitableObjects,
+			(std::vector<ObjectInstanceID>{town->id}));
+		revealMap(OWNER);
+		NK2AI::HeroMap<NK2AI::HeroRole> heroes;
+		heroes.emplace(hero, NK2AI::MAIN);
+		NK2AI::PathfinderSettings settings;
+		settings.useHeroChain = false;
+		settings.useDimensionDoor = false;
+		gateway->nullkiller->pathfinder->updatePaths(heroes, settings);
+		paths = gateway->nullkiller->pathfinder->getPathInfo(town->visitablePos());
+		std::erase_if(paths, [&](const auto & path)
+		{ return path.targetHero != hero || path.turn() != 0 || path.getFirstBlockedAction(); });
+		ASSERT_FALSE(paths.empty());
+		ASSERT_EQ(paths.front().exchangeCount, 1);
+		ASSERT_NE(paths.front().heroArmy, nullptr);
+		ASSERT_EQ(snapshot(paths.front().heroArmy), snapshot(hero));
+		for(const auto & node : paths.front().nodes)
+			ASSERT_EQ(node.specialAction, nullptr);
+		ASSERT_FALSE(town->hasBuilt(BuildingID::BLACKSMITH));
+		ASSERT_FALSE(town->hasBuilt(BuildingID::MAGES_GUILD_1));
+		ASSERT_EQ(NK2AI::townMusterArmyReward(gateway->nullkiller.get(), hero, town), 0);
+		server->gateway = gateway.get();
+		client->gateway = gateway.get();
+	}
+	void executeCurrentArrival(const NK2AI::AIPath & path)
+	{
+		// Use the same arriving dispatch factory as DefenceBehavior.
+		const auto before = gameState()->saveToMemory();
+		const auto rng = rngState();
+		NK2AI::Goals::TGoalVec sequence;
+		NK2AI::appendArrivingTownDefence(sequence, *town, NK2AI::Goals::ExecuteHeroChain(path, town),
+			true, *gateway->nullkiller->armyManager, *callback);
+		EXPECT_EQ(gameState()->saveToMemory(), before);
+		EXPECT_EQ(rngState(), rng);
+		NK2AI::Goals::Composition composition;
+		composition.addNextSequence(sequence);
+		std::shared_lock stateLock(CGameState::mutex);
+		composition.accept(gateway.get());
+	}
+
+	CGHeroInstance * placeSecondTownHero(bool garrison)
+	{
+		auto * other = findHeroAt({8, 5, 0});
+		if(!other)
+			throw std::runtime_error("Authored second hero is absent");
+		ChangeObjPos move;
+		move.objid = other->id;
+		move.nPos = town->visitablePos();
+		move.initiator = OWNER;
+		gameState()->apply(move);
+		if(garrison)
+		{
+			SetHeroesInTown roles;
+			roles.tid = town->id;
+			roles.visiting = ObjectInstanceID::NONE;
+			roles.garrison = other->id;
+			gameState()->apply(roles);
+		}
+		HeroVisitCastle visit;
+		visit.tid = town->id;
+		visit.hid = garrison ? hero->id : other->id;
+		visit.startVisit = true;
+		gameState()->apply(visit);
+		return other;
+	}
+	void conditionalGoal(NK2AI::Goals::GarrisonPreparation policy)
+	{
+		std::shared_lock stateLock(CGameState::mutex);
+		NK2AI::Goals::ExchangeSwapTownHeroes goal(town, hero, NK2AI::HeroLockedReason::DEFENCE, policy);
+		goal.accept(gateway.get());
+	}
+	void expectConditionalNoop()
+	{
+		const auto world = gameState()->saveToMemory();
+		const auto rng = rngState();
+		for(const auto policy : {NK2AI::Goals::GarrisonPreparation::IF_COMMANDABLE,
+			NK2AI::Goals::GarrisonPreparation::VISITING_ONLY})
+		{
+			EXPECT_NO_THROW(conditionalGoal(policy));
+			EXPECT_EQ(gameState()->saveToMemory(), world);
+			EXPECT_EQ(rngState(), rng);
+			EXPECT_FALSE(gateway->nullkiller->isHeroLocked(hero));
+			EXPECT_EQ(client->moves + client->arrangements + client->swaps + client->disbands, 0);
+			checkAccepted();
+		}
+	}
+
 	void TearDown() override
 	{
 		gateway.reset();
@@ -564,4 +664,215 @@ TEST_F(GarrisonPreparationTest, FullCurrentVisitorGoalConservesRissaArmyWithoutD
 	EXPECT_EQ(rngState(), rng);
 	checkAccepted();
 	checkCapacities();
+}
+
+TEST_F(GarrisonPreparationTest, ArrivingNeelaKeepsLegalVisitorDefenceWhenWholeGarrisonCannotFit)
+{
+	const CreatureID cabir(CreatureID::decode("core:gremlin"));
+	const CreatureID naga(CreatureID::decode("core:naga"));
+	const CreatureID genie(CreatureID::decode("core:genie"));
+	const CreatureID archer(CreatureID::decode("core:archer"));
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	ASSERT_NO_FATAL_FAILURE(prepare("core:neela", 1,
+		{{cabir, 17}, {naga, 1}, {naga, 1}, {genie, 3}, {genie, 3}, {genie, 3}, {genie, 3}},
+		{{archer, 56}, {pikeman, 58}}, false, FactionID::CASTLE, false));
+	const auto capacity = hero->getLeadershipSlotCapacity(genie);
+	ASSERT_TRUE(capacity);
+	ASSERT_EQ(capacity->leadership, 875);
+	ASSERT_EQ(capacity->maximum, 3);
+	const auto initial = totals();
+	int requiredSlots = 0;
+	for(const auto & [creature, count] : initial)
+	{
+		const auto cap = hero->getLeadershipSlotCapacity(creature);
+		ASSERT_TRUE(cap && cap->maximum > 0);
+		requiredSlots += (count + cap->maximum - 1) / cap->maximum;
+	}
+	ASSERT_GT(requiredSlots, 7); // Physical total cannot all inhabit this hero.
+	std::vector<NK2AI::AIPath> paths;
+	ASSERT_NO_FATAL_FAILURE(ordinaryArrivalPaths(paths));
+	const auto rng = rngState();
+	const auto movement = hero->movementPointsRemaining();
+	EXPECT_NO_THROW(executeCurrentArrival(paths.front()));
+	EXPECT_EQ(town->getVisitingHero(), hero);
+	EXPECT_EQ(town->getGarrisonHero(), nullptr);
+	EXPECT_EQ(hero->getVisitedTown(), town);
+	EXPECT_FALSE(hero->isGarrisoned());
+	EXPECT_EQ(map()->getTile(town->visitablePos()).visitableObjects,
+		(std::vector<ObjectInstanceID>{town->id, hero->id}));
+	EXPECT_GT(client->moves, 0);
+	EXPECT_LT(hero->movementPointsRemaining(), movement);
+	EXPECT_EQ(client->swaps, 0);
+	EXPECT_EQ(client->disbands, 0);
+	EXPECT_TRUE(gateway->nullkiller->isHeroLocked(hero));
+	EXPECT_EQ(gateway->nullkiller->getHeroLockedReason(hero), NK2AI::HeroLockedReason::DEFENCE);
+	EXPECT_FALSE(NK2AI::armyFormation::canSwapGarrisonHero(town));
+	EXPECT_GT(town->stacksCount(), 0);
+	EXPECT_EQ(totals(), initial);
+	EXPECT_EQ(rngState(), rng);
+	checkAccepted();
+	checkCapacities();
+}
+
+TEST_F(GarrisonPreparationTest, ArrivingNeelaConsolidatesAndSplitsLegalResidualBeforeGarrison)
+{
+	const CreatureID cabir(CreatureID::decode("core:gremlin"));
+	const CreatureID naga(CreatureID::decode("core:naga"));
+	const CreatureID genie(CreatureID::decode("core:genie"));
+	ASSERT_NO_FATAL_FAILURE(prepare("core:neela", 1,
+		{{cabir, 17}, {naga, 1}, {naga, 1}, {genie, 3}, {genie, 3}, {genie, 1}, {genie, 1}},
+		{{cabir, 1}}, false, FactionID::CASTLE, false));
+	const auto capacity = hero->getLeadershipSlotCapacity(cabir);
+	ASSERT_TRUE(capacity);
+	ASSERT_EQ(capacity->leadership, 875);
+	ASSERT_EQ(capacity->maximum, 17);
+	const auto initial = totals();
+	ASSERT_EQ(initial.at(cabir), 18);
+	ASSERT_EQ(initial.at(naga), 2);
+	ASSERT_EQ(initial.at(genie), 8);
+	ASSERT_EQ(hero->getLeadershipSlotCapacity(naga)->maximum, 1);
+	ASSERT_EQ(hero->getLeadershipSlotCapacity(genie)->maximum, 3);
+	int requiredSlots = 0;
+	for(const auto & [creature, count] : initial)
+	{
+		const auto cap = hero->getLeadershipSlotCapacity(creature);
+		ASSERT_TRUE(cap && cap->maximum > 0);
+		requiredSlots += (count + cap->maximum - 1) / cap->maximum;
+	}
+	ASSERT_EQ(requiredSlots, 7); // Genie1+1 can consolidate; Naga1+1 cannot.
+	ASSERT_FALSE(newHorizonsHeroes::canMergeArmies(town, hero));
+	std::vector<NK2AI::AIPath> paths;
+	ASSERT_NO_FATAL_FAILURE(ordinaryArrivalPaths(paths));
+	const auto rng = rngState();
+	const auto movement = hero->movementPointsRemaining();
+	EXPECT_NO_THROW(executeCurrentArrival(paths.front()));
+	EXPECT_EQ(town->getGarrisonHero(), hero);
+	EXPECT_EQ(town->getVisitingHero(), nullptr);
+	EXPECT_TRUE(hero->isGarrisoned());
+	EXPECT_EQ(hero->getVisitedTown(), town);
+	EXPECT_EQ(map()->getTile(town->visitablePos()).visitableObjects,
+		(std::vector<ObjectInstanceID>{town->id}));
+	EXPECT_GT(client->moves, 0);
+	EXPECT_LT(hero->movementPointsRemaining(), movement);
+	EXPECT_GT(client->arrangements, 0);
+	EXPECT_EQ(client->swaps, 1);
+	EXPECT_EQ(client->disbands, 0);
+	EXPECT_TRUE(gateway->nullkiller->isHeroLocked(hero));
+	EXPECT_EQ(town->stacksCount(), 0);
+	EXPECT_EQ(hero->stacksCount(), 7);
+	EXPECT_EQ(totals(), initial);
+	EXPECT_EQ(rngState(), rng);
+	checkAccepted();
+	checkCapacities();
+}
+
+TEST_F(GarrisonPreparationTest, ConditionalArrivalUnlocksDisplacedGarrisonOnlyAfterSuccessfulSwap)
+{
+	const CreatureID mage(CreatureID::decode("core:mage"));
+	ASSERT_NO_FATAL_FAILURE(prepare("core:rissa", 7, {{mage, 3}}, {}, true));
+	auto * other = placeSecondTownHero(true);
+	ASSERT_EQ(town->getVisitingHero(), hero);
+	ASSERT_EQ(town->getGarrisonHero(), other);
+	ASSERT_EQ(map()->getTile(town->visitablePos()).visitableObjects,
+		(std::vector<ObjectInstanceID>{town->id, hero->id}));
+	ASSERT_EQ(other->getVisitedTown(), town);
+	ASSERT_TRUE(other->isGarrisoned());
+	gateway->nullkiller->lockHero(other, NK2AI::HeroLockedReason::DEFENCE);
+	ASSERT_TRUE(gateway->nullkiller->isHeroLocked(other));
+	const auto firstArmy = snapshot(hero);
+	const auto otherArmy = snapshot(other);
+	const auto townArmy = snapshot(town);
+	const auto rng = rngState();
+	server->gateway = gateway.get();
+	client->gateway = gateway.get();
+	ASSERT_NO_THROW(conditionalGoal(NK2AI::Goals::GarrisonPreparation::IF_COMMANDABLE));
+	EXPECT_EQ(town->getGarrisonHero(), hero);
+	EXPECT_EQ(town->getVisitingHero(), other);
+	EXPECT_TRUE(hero->isGarrisoned());
+	EXPECT_FALSE(other->isGarrisoned());
+	EXPECT_EQ(map()->getTile(town->visitablePos()).visitableObjects,
+		(std::vector<ObjectInstanceID>{town->id, other->id}));
+	EXPECT_TRUE(gateway->nullkiller->isHeroLocked(hero));
+	EXPECT_EQ(gateway->nullkiller->getHeroLockedReason(hero), NK2AI::HeroLockedReason::DEFENCE);
+	EXPECT_FALSE(gateway->nullkiller->isHeroLocked(other));
+	EXPECT_EQ(snapshot(hero), firstArmy);
+	EXPECT_EQ(snapshot(other), otherArmy);
+	EXPECT_EQ(snapshot(town), townArmy);
+	EXPECT_EQ(client->moves, 0);
+	EXPECT_EQ(client->arrangements, 0);
+	EXPECT_EQ(client->swaps, 1);
+	EXPECT_EQ(client->disbands, 0);
+	EXPECT_EQ(rngState(), rng);
+	checkAccepted();
+	checkCapacities();
+}
+
+TEST_F(GarrisonPreparationTest, ConditionalDeferredArrivalWithNoVisitorDoesNotMutateOrLock)
+{
+	const CreatureID cabir(CreatureID::decode("core:gremlin"));
+	ASSERT_NO_FATAL_FAILURE(prepare("core:neela", 1, {{cabir, 1}}, {{cabir, 1}},
+		false, FactionID::CASTLE, false));
+	ASSERT_NE(hero->visitablePos(), town->visitablePos());
+	ASSERT_EQ(hero->getVisitedTown(), nullptr);
+	ASSERT_EQ(town->getVisitingHero(), nullptr);
+	ASSERT_EQ(town->getGarrisonHero(), nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectConditionalNoop());
+	EXPECT_EQ(map()->getTile(town->visitablePos()).visitableObjects,
+		(std::vector<ObjectInstanceID>{town->id}));
+}
+
+TEST_F(GarrisonPreparationTest, ConditionalArrivalDoesNotPrepareOrLockAnotherActualVisitor)
+{
+	const CreatureID cabir(CreatureID::decode("core:gremlin"));
+	ASSERT_NO_FATAL_FAILURE(prepare("core:neela", 1, {{cabir, 1}}, {{cabir, 1}},
+		true, FactionID::CASTLE, false));
+	auto * other = placeSecondTownHero(false);
+	ASSERT_EQ(town->getVisitingHero(), other);
+	ASSERT_EQ(other->visitablePos(), town->visitablePos());
+	ASSERT_EQ(other->getVisitedTown(), town);
+	ASSERT_EQ(hero->getVisitedTown(), nullptr);
+	ASSERT_NE(hero->visitablePos(), town->visitablePos());
+	ASSERT_EQ(map()->getTile(town->visitablePos()).visitableObjects,
+		(std::vector<ObjectInstanceID>{town->id, other->id}));
+	ASSERT_NO_FATAL_FAILURE(expectConditionalNoop());
+	EXPECT_EQ(town->getVisitingHero(), other);
+	EXPECT_EQ(town->getGarrisonHero(), nullptr);
+	EXPECT_FALSE(gateway->nullkiller->isHeroLocked(other));
+}
+
+TEST_F(GarrisonPreparationTest, ArrivingForecastUsesExplicitArmyAndRealHeroSavedCapacityWithoutMutation)
+{
+	const CreatureID cabir(CreatureID::decode("core:gremlin"));
+	const CreatureID naga(CreatureID::decode("core:naga"));
+	const CreatureID genie(CreatureID::decode("core:genie"));
+	ASSERT_NO_FATAL_FAILURE(prepare("core:neela", 1,
+		{{cabir, 17}, {naga, 1}, {naga, 1}, {genie, 3}, {genie, 3}, {genie, 3}, {genie, 3}},
+		{{cabir, 1}}, false, FactionID::CASTLE, false));
+	const auto cap = hero->getLeadershipSlotCapacity(cabir);
+	ASSERT_TRUE(cap);
+	ASSERT_EQ(cap->leadership, 875);
+	ASSERT_EQ(cap->maximum, 17);
+	// A standalone hypothetical army is an explicit pure helper argument.
+	// It is NOT injected into an AIPath or claimed as an actual hero exchange.
+	CCreatureSet projected;
+	for(const auto & [slot, stack] : hero->Slots())
+		ASSERT_TRUE(projected.setCreature(slot, stack->getCreatureID(), slot.getNum() >= 5 ? 1 : stack->getCount()));
+	const auto liveArmy = snapshot(hero);
+	const auto plannedArmy = snapshot(&projected);
+	ASSERT_NE(plannedArmy, liveArmy);
+	const auto before = gameState()->saveToMemory();
+	const auto rng = rngState();
+	EXPECT_FALSE(NK2AI::canPrepareArrivingTownGarrison(*town, *hero, *hero,
+		*gateway->nullkiller->armyManager, *callback));
+	EXPECT_TRUE(NK2AI::canPrepareArrivingTownGarrison(*town, *hero, projected,
+		*gateway->nullkiller->armyManager, *callback));
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(rngState(), rng);
+	EXPECT_EQ(snapshot(hero), liveArmy);
+	EXPECT_EQ(snapshot(&projected), plannedArmy);
+	EXPECT_EQ(town->getVisitingHero(), nullptr);
+	EXPECT_EQ(hero->getVisitedTown(), nullptr);
+	EXPECT_EQ(client->moves + client->arrangements + client->swaps + client->disbands, 0);
+	EXPECT_FALSE(gateway->nullkiller->isHeroLocked(hero));
+	checkAccepted();
 }

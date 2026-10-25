@@ -626,10 +626,8 @@ void DefenceBehavior::evaluateDefence(Goals::TGoalVec & tasks, const CGTownInsta
 				heroChain.closestWayRatio = closestWay->movementCost() / heroChain.getPath().movementCost();
 			}
 
-			sequence.push_back(sptr(heroChain));
-
-			if(lockDefenderNow)
-				sequence.push_back(sptr(ExchangeSwapTownHeroes(town, path.targetHero, HeroLockedReason::DEFENCE)));
+			appendArrivingTownDefence(sequence, *town, heroChain, lockDefenderNow,
+				*aiNk->armyManager, *aiNk->cc);
 
 			composition.addNextSequence(sequence);
 			setDefensiveEmergencyPriority(composition, lockDefenderNow);

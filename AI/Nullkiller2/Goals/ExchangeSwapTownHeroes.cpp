@@ -12,6 +12,7 @@
 #include "ExecuteHeroChain.h"
 #include "../AIGateway.h"
 #include "../Engine/Nullkiller.h"
+#include "../Helpers/ArmyFormation.h"
 
 namespace NK2AI
 {
@@ -21,8 +22,8 @@ using namespace Goals;
 ExchangeSwapTownHeroes::ExchangeSwapTownHeroes(
 	const CGTownInstance * town,
 	const CGHeroInstance * garrisonHero,
-	HeroLockedReason lockingReason)
-	:ElementarGoal(Goals::EXCHANGE_SWAP_TOWN_HEROES), town(town), garrisonHero(garrisonHero), lockingReason(lockingReason)
+	HeroLockedReason lockingReason, GarrisonPreparation preparation)
+	:ElementarGoal(Goals::EXCHANGE_SWAP_TOWN_HEROES), town(town), garrisonHero(garrisonHero), lockingReason(lockingReason), preparation(preparation)
 {
 }
 
@@ -53,11 +54,54 @@ std::string ExchangeSwapTownHeroes::toString() const
 
 bool ExchangeSwapTownHeroes::operator==(const ExchangeSwapTownHeroes & other) const
 {
-	return town == other.town;
+	return town == other.town && preparation == other.preparation
+		&& (preparation == GarrisonPreparation::REQUIRED || garrisonHero == other.garrisonHero);
+}
+
+void ExchangeSwapTownHeroes::acceptConditional(AIGateway * aiGw)
+{
+	// A deferred chain must not prepare or lock another hero already in town.
+	const auto isIntendedVisitor = [&]()
+	{
+		return garrisonHero && HeroPtr(garrisonHero, aiGw->cc.get()).isVerified()
+			&& town->getOwner() == aiGw->playerID && garrisonHero->getOwner() == aiGw->playerID
+			&& town->getVisitingHero() == garrisonHero && garrisonHero->getVisitedTown() == town
+			&& garrisonHero->visitablePos() == town->visitablePos();
+	};
+	if(!isIntendedVisitor())
+		return;
+	if(preparation == GarrisonPreparation::IF_COMMANDABLE)
+	{
+		aiGw->makePossibleUpgrades(town);
+		// Arrival normally already prepared the army. Revisit only if still needed.
+		if(!armyFormation::canSwapGarrisonHero(town))
+			aiGw->moveHeroToTile(town->visitablePos(), HeroPtr(garrisonHero, aiGw->cc.get()));
+		if(!isIntendedVisitor())
+			return;
+		if(armyFormation::canSwapGarrisonHero(town))
+		{
+			aiGw->swapGarrisonHero(town);
+			const auto * displaced = town->getVisitingHero();
+			if(town->getGarrisonHero() == garrisonHero && displaced && displaced != garrisonHero)
+			{
+				aiGw->nullkiller->unlockHero(displaced);
+				aiGw->makePossibleUpgrades(displaced);
+			}
+		}
+	}
+	// A useful visiting defender remains reserved even when town stock cannot fit.
+	if(lockingReason != HeroLockedReason::NOT_LOCKED)
+		aiGw->nullkiller->lockHero(garrisonHero, lockingReason);
 }
 
 void ExchangeSwapTownHeroes::accept(AIGateway * aiGw)
 {
+	if(preparation != GarrisonPreparation::REQUIRED)
+	{
+		acceptConditional(aiGw);
+		return;
+	}
+
 	if(!getGarrisonHero())
 	{
 		auto currentGarrisonHero = town->getGarrisonHero();
