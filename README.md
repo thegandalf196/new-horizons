@@ -174,7 +174,9 @@ You may disagree with how I’ve used these tools. You may enjoy the game and di
 
 There’s room for that, and I hope there’s room for this project to improve.
 
-I could provide a twenty-page changelog, but its reconstruction is left as an exercise for the player.
+~~I could provide a twenty-page changelog, but its reconstruction is left as an exercise for the player.~~
+
+You can now explore the changes in the [New Horizons Wiki](https://github.com/thegandalf196/new-horizons/wiki).
 
 I’ve wanted to share this game for a long time.
 
