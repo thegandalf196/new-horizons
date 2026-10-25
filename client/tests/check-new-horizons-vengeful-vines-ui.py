@@ -9,6 +9,8 @@ CONTROLLER = (ROOT / "client/battle/BattleActionsController.cpp").read_text(enco
 CONTROLLER_H = (ROOT / "client/battle/BattleActionsController.h").read_text(encoding="utf-8")
 FIELD = (ROOT / "client/battle/BattleFieldController.cpp").read_text(encoding="utf-8")
 WINDOW = (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
+PANEL = (ROOT / "client/battle/BattleTargetSelectionPanel.cpp").read_text(encoding="utf-8")
+PANEL_H = (ROOT / "client/battle/BattleTargetSelectionPanel.h").read_text(encoding="utf-8")
 RUNTIME_H = (ROOT / "lib/spells/NewHorizonsVengefulVines.h").read_text(encoding="utf-8")
 RUNTIME = (ROOT / "lib/spells/NewHorizonsVengefulVines.cpp").read_text(encoding="utf-8")
 
@@ -97,7 +99,10 @@ def main() -> None:
     assert "vengefulVinesHexIsLegalCandidate(hovered)" in field
     assert "cellShade" in field and "cellUnitMovementHighlight" in field
 
-    panel = between(WINDOW, "class BattleTargetSelectionPanel", "BattleWindow::BattleWindow")
+    assert '#include "BattleTargetSelectionPanel.h"' in WINDOW
+    assert "std::make_shared<BattleTargetSelectionPanel>(owner)" in WINDOW
+    assert "class BattleTargetSelectionPanel final" in PANEL_H
+    panel = PANEL_H + PANEL
     assert "vengefulVines" not in panel
     assert 'ImagePath::builtin("DiBoxBck")' in panel
     assert 'AnimationPath::builtin("settingsWindow/button80")' in panel
