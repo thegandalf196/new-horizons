@@ -4,7 +4,7 @@
 
 [What changes from Heroes III Complete? Read the gameplay and artwork changelog.](docs/NEW_HORIZONS_CHANGELOG.md)
 
-[Player wiki: Skills, perks, spells, creatures, heroes and combat.](docs/wiki/README.md)
+[Player wiki: Skills, perks, spells, creatures, heroes and combat.](https://github.com/thegandalf196/new-horizons/wiki/Home)
 
 ## Before you begin
 

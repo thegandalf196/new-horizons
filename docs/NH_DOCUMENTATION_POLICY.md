@@ -51,9 +51,10 @@ Credentials and unnecessary personal records belong in neither Git repository.
 ## Appropriate repository content
 
 - Player installation, gameplay, controls, compatibility, and release notes.
-  The [player wiki](wiki/README.md) is the public home for detailed player
-  reference pages. Update the relevant page when its implemented rule or data
-  changes; keep the short changelog as an overview and link to the wiki rather
+  The [native GitHub player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home) is the public home for detailed player
+  reference pages. Keep authored player reference pages in the native Wiki,
+  rather than maintaining copies under `docs/wiki/`. Update the relevant Wiki page
+  when its implemented rule or data changes; keep the short changelog as an overview and link to the wiki rather
   than maintaining duplicate reference tables.
 - Public implementation rationale and contracts; detailed canonical design,
   pending amendments and design research use the private repository above.
