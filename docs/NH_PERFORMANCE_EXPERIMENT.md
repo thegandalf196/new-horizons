@@ -8,6 +8,22 @@ Pin source, client/facade, configuration, save/map, resource inventory, renderer
 
 Separate adventure planning, combat callback work, server dispatch/completion waits, rendering and pacing. Wall-time sums are not CPU time; nested children must not be added twice to disjoint totals. ACK, CPU draw return and available images are not physical presentation. Clock domains and missing joins remain explicit. OS cache is not cold merely because a process is fresh.
 
+BattleAI controller lifetime ends when its `battleEnd` callback runs, which can
+occur after the human has dismissed the result window. Battle-end dispatch is
+synchronous: a human receiver can wait for that dismissal before later AI
+receivers receive their terminal callbacks. An adventure AI's `makeTurn` interval
+can likewise include human decisions and result-window waits when it attacks a
+human player. Neither interval alone measures AI computation or instant-combat
+resolution. See [battle-end dispatch](../client/BattleEndDispatch.h) and
+[player battle completion](../client/CPlayerInterface.cpp).
+
+For instant combat, distinguish the accepted auto-resolve request, result receipt,
+first visible result and result dismissal. Report observed bounds when captures
+do not establish the exact transition. Keep callback totals separate: they omit
+work outside those callbacks, and callbacks before auto-resolve began must not be
+counted as its exclusive workload. Do not derive unmeasured resolution time by
+subtracting callback totals or dialog dwell from controller lifetime.
+
 The native `NewHorizonsExchangeReadParityTest.ShippingCommandNormalCallbackKeepsNaturalHeroAndUnitChoices`
 fixture supports the test-only `NH_TEST_SHIPPING_TBB_LIMIT` selector: `default`,
 `1`, `2` or `4`. Explicit selection seeds the fixture's game RNG identically and
