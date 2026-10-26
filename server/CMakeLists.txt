@@ -2,6 +2,7 @@ set(vcmiservercommon_SRCS
 		StdInc.cpp
 
 		battles/BattleActionProcessor.cpp
+		battles/HeroOrderLog.cpp
 		battles/FrozenAttackResolution.cpp
 		battles/BattleFlowProcessor.cpp
 		battles/BattleProcessor.cpp
@@ -45,6 +46,7 @@ set(vcmiservercommon_HEADERS
 		StdInc.h
 
 		battles/BattleActionProcessor.h
+		battles/HeroOrderLog.h
 		battles/FrozenAttackResolution.h
 		battles/BattleFlowProcessor.h
 		battles/BattleProcessor.h

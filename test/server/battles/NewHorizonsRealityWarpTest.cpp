@@ -6,6 +6,7 @@
 #include "NewHorizonsElementalTerrainFixture.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsRealityWarp.h"
+#include "../../../lib/spells/NewHorizonsTheChosen.h"
 #include "../../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../../lib/battle/BattleEffectExchange.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
@@ -68,6 +69,25 @@ protected:
 		result.turnsRemain = rounds;
 		result.spellCasterOwner = caster;
 		return result;
+	}
+	SpellID chosen() const
+	{
+		return SpellID(SpellID::decode(std::string(newHorizonsTheChosen::SPELL_KEY)));
+	}
+	void addChosen(CStack * unit, PlayerColor caster, int rounds = 3)
+	{
+		for(const auto type : {BonusType::ADDITIONAL_ATTACK, BonusType::UNLIMITED_RETALIATIONS,
+			BonusType::FLYING, BonusType::JOUSTING})
+		{
+			auto bonus = std::make_shared<Bonus>(effect(chosen(), type,
+				type == BonusType::JOUSTING ? 5 : 1, caster, rounds));
+			bonus->valType = BonusValueType::INDEPENDENT_MAX;
+			unit->addNewBonus(bonus);
+		}
+	}
+	size_t chosenCount(const CStack * unit) const
+	{
+		return unit->getAllBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(chosen())))->size();
 	}
 	bool cast(const battle::Unit * first, const battle::Unit * second)
 	{
@@ -301,4 +321,58 @@ TEST_F(NewHorizonsRealityWarpTest, MissingSavedV3RulesRejectWithoutChargeOrExcha
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(friendly->save(), first);
 	EXPECT_EQ(enemy->save(), second);
+}
+
+TEST_F(NewHorizonsRealityWarpTest, ChosenBundleStaysAtOriginWhenRecipientArmyAlreadyHasAChosenStack)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	addChosen(friendly, PlayerColor(0));
+	addChosen(enemy, PlayerColor(1));
+	// A stopped third stack still owns its paused Chosen bundle.
+	friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
+	EXPECT_FALSE(newHorizonsTheChosen::canTransferTo(*battle(), enemy->unitId(), *other));
+	const auto planned = newHorizonsRealityWarp::prepareExchange(*battle(), other->unitId(), enemy->unitId());
+	ASSERT_TRUE(planned.exchange);
+	ASSERT_EQ(planned.previews.size(), 1u);
+	EXPECT_EQ(planned.previews.front().reason, newHorizonsRealityWarp::StayReason::ILLEGAL_RECIPIENT);
+	ASSERT_TRUE(cast(other, enemy));
+	ASSERT_NO_FATAL_FAILURE(expectCommitted(*planned.exchange, other, enemy));
+	EXPECT_EQ(chosenCount(friendly), 4u);
+	EXPECT_EQ(chosenCount(enemy), 4u);
+	EXPECT_EQ(chosenCount(other), 0u);
+}
+
+TEST_F(NewHorizonsRealityWarpTest, BothChosenEndpointsExchangeTogetherWithoutBlockingEachOther)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	addChosen(friendly, PlayerColor(0), 4);
+	addChosen(enemy, PlayerColor(1), 2);
+	EXPECT_TRUE(newHorizonsTheChosen::canTransferTo(*battle(), enemy->unitId(), *friendly));
+	EXPECT_TRUE(newHorizonsTheChosen::canTransferTo(*battle(), friendly->unitId(), *enemy));
+	const auto planned = newHorizonsRealityWarp::prepareExchange(*battle(), friendly->unitId(), enemy->unitId());
+	ASSERT_TRUE(planned.exchange);
+	ASSERT_EQ(planned.previews.size(), 2u);
+	for(const auto & preview : planned.previews)
+		EXPECT_EQ(preview.reason, newHorizonsRealityWarp::StayReason::MOVED);
+	ASSERT_TRUE(cast(friendly, enemy));
+	ASSERT_NO_FATAL_FAILURE(expectCommitted(*planned.exchange, friendly, enemy));
+	EXPECT_EQ(chosenCount(friendly), 4u);
+	EXPECT_EQ(chosenCount(enemy), 4u);
+	EXPECT_EQ(chosenCount(other), 0u);
+}
+
+TEST_F(NewHorizonsRealityWarpTest, ChosenBundleTransfersToAnArmyWithoutAnotherRecipient)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	addChosen(enemy, PlayerColor(1));
+	const auto planned = newHorizonsRealityWarp::prepareExchange(*battle(), other->unitId(), enemy->unitId());
+	ASSERT_TRUE(planned.exchange);
+	ASSERT_EQ(planned.previews.size(), 1u);
+	EXPECT_EQ(planned.previews.front().reason, newHorizonsRealityWarp::StayReason::MOVED);
+	ASSERT_TRUE(cast(other, enemy));
+	ASSERT_NO_FATAL_FAILURE(expectCommitted(*planned.exchange, other, enemy));
+	EXPECT_EQ(chosenCount(friendly), 0u);
+	EXPECT_EQ(chosenCount(enemy), 0u);
+	EXPECT_EQ(chosenCount(other), 4u);
 }

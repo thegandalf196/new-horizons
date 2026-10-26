@@ -6,6 +6,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 #include "HeroCommandFixture.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../../lib/GameConstants.h"
@@ -35,7 +36,7 @@ SpellID crusadeSpell()
 
 JsonNode legacyMagicRules(int version)
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	JsonNode rules = historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")), version);
 	rules["rulesetVersion"].Integer() = version;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
@@ -120,9 +121,20 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode rules = magicRulesVersion == newHorizonsMagic::CURRENT_RULESET_VERSION
-			? JsonNode(JsonPath::builtin("config/newHorizonsMagic"))
+			? historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")))
 			: legacyMagicRules(magicRulesVersion);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+		if(magicRulesVersion == newHorizonsMagic::RULESET_VERSION)
+		{
+			// This captured v1 fixture has no later starting-book replacement policy.
+			JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+			heroes["startingSkills"].Struct().erase("startingBookReplacements");
+			heroes.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroes));
+			ASSERT_FALSE(loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS)
+				["startingSkills"].Struct().contains("startingBookReplacements"));
+		}
+
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
@@ -440,6 +452,8 @@ TEST_F(NewHorizonsCrusadeTest, VersionOneSavedRulesDoNotGainCrusade)
 {
 	magicRulesVersion = newHorizonsMagic::RULESET_VERSION;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	EXPECT_FALSE(attackerSideHero->getPrimaryGrowthRules()["startingSkills"].Struct().contains("startingBookReplacements"));
+	EXPECT_FALSE(attackerSideHero->getMagicRules()["spells"].Struct().contains(crusadeKey));
 	EXPECT_FALSE(newHorizonsMagic::spellAllowedBySavedRoster(attackerSideHero->getMagicRules(), crusadeSpell()));
 	const auto manaBefore = attackerSideHero->getManaAvailable();
 	EXPECT_FALSE(castCrusade());

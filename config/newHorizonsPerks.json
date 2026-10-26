@@ -52,12 +52,12 @@
 				},
 				{
 					"id": "new-horizons:offense.encirclement",
-					"name": "Encirclement",
+					"name": "Spearhead",
 					"requires": "basic",
-					"description": "Flank! gains +7% damage per additional distinct attack side instead of +4%.",
+					"description": "Charge! grants an additional +5 percentage points of damage.",
 					"effect": {
 						"status": "active",
-						"description": "Flank! gains +7% damage per additional distinct attack side instead of +4%."
+						"description": "Charge! grants an additional +5 percentage points of damage."
 					}
 				},
 				{
@@ -176,10 +176,10 @@
 					"id": "new-horizons:armorer.shieldMaster",
 					"name": "Shield Master",
 					"requires": "basic",
-					"description": "Protect! may intercept the first two qualifying melee attacks against the Ward each round instead of only the first.",
+					"description": "Hold the Line! grants an additional +5 percentage points of physical damage reduction.",
 					"effect": {
 						"status": "active",
-						"description": "Protect! may intercept the first two qualifying melee attacks against the Ward each round instead of only the first."
+						"description": "Hold the Line! grants an additional +5 percentage points of physical damage reduction."
 					}
 				},
 				{
@@ -1018,10 +1018,10 @@
 					"id": "new-horizons:command.combinedArms",
 					"name": "Combined Arms",
 					"requires": "advanced",
-					"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Flank! grants friendly ranged attacks 50% of its Attack-derived damage bonus; shooters do not add Flank sides.",
+					"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Feint! grants an additional +5 percentage points of retaliation damage reduction, up to its final 60% cap.",
 					"effect": {
 						"status": "active",
-						"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Flank! grants friendly ranged attacks 50% of its Attack-derived damage bonus; shooters do not add Flank sides."
+						"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Feint! grants an additional +5 percentage points of retaliation damage reduction, up to its final 60% cap."
 					}
 				},
 				{
@@ -1188,12 +1188,12 @@
 				},
 				{
 					"id": "new-horizons:lightMagic.crusader",
-					"name": "Crusader",
+					"name": "Exalted Champion",
 					"requires": "expert",
-					"description": "Crusade! lasts 1 additional round and affected creatures cannot suffer negative Morale while it remains active.",
+					"description": "The Chosen lasts 1 additional round, added after its nominal duration cap.",
 					"effect": {
 						"status": "active",
-						"description": "Crusade! lasts 1 additional round and affected creatures cannot suffer negative Morale while it remains active."
+						"description": "The Chosen lasts 1 additional round, added after its nominal duration cap."
 					}
 				}
 			]

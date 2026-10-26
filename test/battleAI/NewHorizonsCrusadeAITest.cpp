@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../spells/HistoricalCrusadeRules.h"
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
@@ -33,32 +34,8 @@ SpellID crusadeSpell()
 
 JsonNode savedV2MagicRulesWithCurrentSpellRoster()
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
-	for(auto & [name, spell] : rules["spells"].Struct())
-	{
-		(void)name;
-		spell.Struct().erase("selectedPlacement");
-		spell.Struct().erase("rawSpellPowerPerPatch");
-		spell.Struct().erase("earthquake");
-		spell.Struct().erase("structures");
-		if(spell.Struct().contains("variant"))
-		{
-			spell.Struct().erase("variant");
-			spell["active"].Bool() = false;
-		}
-	}
-	if(newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION
-		< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-	{
-		auto & sorrow = rules["spells"]["core:sorrow"];
-		sorrow.Struct().erase("level");
-		sorrow.Struct().erase("costs");
-		sorrow["schools"].Vector().clear();
-		sorrow["schools"].Vector().emplace_back(std::string("new-horizons:chaos"));
-	}
+	JsonNode rules = historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")),
+		newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
 	newHorizonsMagic::validateRules(rules);
 	return rules;
 }
@@ -128,7 +105,9 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, useSavedV2Rules
 			? savedV2MagicRulesWithCurrentSpellRoster()
-			: JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+			: historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic"))));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
@@ -143,7 +122,9 @@ protected:
 	void prepare(bool savedV2Rules = false)
 	{
 		useSavedV2Rules = savedV2Rules;
-		useCommands = false;
+		// Weighted perk capture requires the full hero profile and its Orders.
+		// Keep the frozen V3 command profile while varying only saved magic rules.
+		useCommands = true;
 		startGame();
 
 		const auto lightMagic = SecondarySkill::decode(lightMagicSkill);
@@ -289,8 +270,11 @@ TEST_F(NewHorizonsCrusadeAITest, DoesNotOfferCrusadeToSavedVersionTwoBattles)
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
 		BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active);
-	EXPECT_FALSE(evaluator.attemptCastingSpell(active));
-	EXPECT_TRUE(callback->submitted.empty());
+	evaluator.attemptCastingSpell(active);
+	EXPECT_TRUE(std::none_of(callback->submitted.begin(), callback->submitted.end(), [spell = crusadeSpell()](const auto & action)
+	{
+		return action.actionType == EActionType::HERO_SPELL && action.spell == spell;
+	})) << "Saved V2 must never offer Crusade, even when another legal Hero Action exists";
 	EXPECT_FALSE(marksmen->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
 		BonusSourceID(crusadeSpell()))));
 }

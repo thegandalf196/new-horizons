@@ -57,6 +57,7 @@
 	"new-horizons.spellCost.stage": "%s: %d -> %d",
 	"new-horizons.spellCost.overcharge": "Optional Overcharge is added after target selection.",
 	"new-horizons.spellCost.modifier.listedMultiplier": "Listed-cost multiplier",
+	"new-horizons.spellCost.modifier.chosenSpecialty": "Anointed Champions",
 	"new-horizons.spellCost.modifier.wisdom": "Wisdom",
 	"new-horizons.spellCost.modifier.adventureArtifact": "Adventure artifact",
 	"new-horizons.spellCost.modifier.knightlySequence": "Knightly Sequence",

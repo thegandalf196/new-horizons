@@ -84,7 +84,7 @@ def main() -> None:
 
     assert len(set(master_hashes)) == len(ORDERS), "duplicate Order masters"
     assert len(set(runtime_normal_hashes)) == len(ORDERS), "duplicate normal Order icons"
-    action = (ROOT / "client/battle/BattleHeroActionWindow.cpp").read_text(encoding="utf-8")
+    action = (ROOT / "client/battle/BattleHeroActionWindow.cpp").read_text(encoding="utf-8") + (ROOT / "client/battle/NewHorizonsOrderPresentation.h").read_text(encoding="utf-8")
     assert "NH_hero_actions_entry" not in action, "generic hero-action placeholder still bound"
     for stem in ORDERS.values():
         assert f'"{stem}_button"' in action, f"{stem}: client binding missing"

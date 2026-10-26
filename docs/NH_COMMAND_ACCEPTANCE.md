@@ -1,8 +1,10 @@
 # Orders acceptance contract
 
 Canonical behavior is in the [private game-design canon](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md).
-The eight Orders are Charge, Focus Fire, Riposte, Hold the Line, Brace, Protect,
-Flank and Second Wind. Doctrine is not active New Horizons gameplay.
+The current eight Orders are Charge, Focus Fire, Riposte, Hold the Line, Brace,
+Feint, Vanguard and Second Wind. Captured historical rules retain Protect and
+Flank with their original identities and effects. Doctrine is not active New
+Horizons gameplay.
 
 ## Required checks
 
@@ -18,7 +20,17 @@ Flank and Second Wind. Doctrine is not active New Horizons gameplay.
 - Forecasts preserve live state and deterministic RNG. Validate copy-on-write
   branches, target status, expiry, initiative and downstream damage.
 - Save/load retains representable state and historical contexts; unsupported
-  formats reject required new state rather than dropping it.
+  formats reject required new state rather than dropping it. Do not reinterpret
+  captured Protect, Flank, Encirclement, Shield Master, Combined Arms or Crusader
+  behavior using current defaults.
+- Feint reduces physical retaliation damage only; its final reduction remains
+  capped at 60% after Command, Warcasting and Combined Arms modifiers. Vanguard
+  grants native bonuses to its eligible issue-time recipients; verify refresh,
+  expiry, stasis and coexistence with other Orders.
+- Spearhead adds 5 percentage points to Charge damage; Shield Master adds 5
+  percentage points to Hold the Line physical damage reduction. Combined Arms
+  retains the half-strength Focus Fire melee benefit and adds 5 percentage
+  points to Feint reduction. Validate these against captured perk coefficients.
 - Show availability, disabled reasons, targeting, effect values/durations and
   meaningful causal logs. Cancellation, modal return and battle shutdown work.
 - Numerical combat logs use the authoritative resolved calculation, with defined

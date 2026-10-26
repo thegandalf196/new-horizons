@@ -39,6 +39,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:vengefulVines',
     'new-horizons:entangle',
     'new-horizons:crusade',
+    'new-horizons:theChosen',
     'new-horizons:divineRetribution',
     'new-horizons:purify',
     'new-horizons:focusMagic',
@@ -776,8 +777,9 @@ class NewHorizonsContentTest(unittest.TestCase):
             self.assertEqual(bonuses['luck']['val'], -10)
             self.assertTrue(all(b['duration'] == 'N_TURNS' for b in bonuses.values()))
 
-    def test_crusade_is_rostered_full_army_light_empowerment(self):
+    def test_retired_crusade_retains_historical_full_army_definition(self):
         row = self.rules['spells']['new-horizons:crusade']
+        self.assertFalse(row['active'])
         self.assertEqual((row['schools'], row['level'], row['costs']),
                          (['new-horizons:light'], 5, [24, 24, 24, 24]))
         spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['crusade']
@@ -963,11 +965,11 @@ class NewHorizonsContentTest(unittest.TestCase):
 
     def test_new_horizons_combat_emits_orders_only(self):
         combat = load('config/newHorizonsCombat.json')['combat']['heroCommands']
-        Draft4Validator(load('config/schemas/newHorizonsCombatV3.json')).validate(combat)
-        self.assertEqual(combat['rulesetVersion'], 3)
+        Draft4Validator(load('config/schemas/newHorizonsCombatV4.json')).validate(combat)
+        self.assertEqual(combat['rulesetVersion'], 4)
         self.assertEqual(set(combat['commands']), {
             'charge', 'holdTheLine', 'focusFire', 'riposte', 'brace',
-            'protect', 'flank', 'secondWind',
+            'feint', 'vanguard', 'secondWind',
         })
         self.assertNotIn('advance', combat['commands'])
         self.assertNotIn('aggressive', combat['commands'])

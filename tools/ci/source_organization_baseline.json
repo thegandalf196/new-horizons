@@ -4408,151 +4408,152 @@
       "sha256": "2498c7b55fd72571a868d8072f73c74e42226845062f1929d6aeb22edd6a81e3"
     },
     "test/server/battles/NewHorizonsCrusadeTest.cpp": {
+      "sha256": "f146d514bd8a74c331754d7803da4b19586e54ef1ee28ba704652aa91da44de4",
+      "review": "IR-HISTORICAL-CRUSADE-V1-EFFECTIVE-OVERRIDE-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "rationale": "Complete28-callable inventory after a3-line fixture-only correction. Only mapLoaded changes: exact whole-profile override flag prevents recursive base-setting merge from restoring the removed modern starting-book table, followed by an immediate assertion on effective map settings. Other27 callable bodies are byte-identical with shifted spans. Existing captured-policy, roster, cast-rejection, Mana and effect assertions remain. Production validation unchanged; parser recovery still explicitly enclosed. Native single-case/full-slice reruns remain separate.",
       "functions": [
         {
-          "end": 34,
-          "start": 31,
-          "symbol": "SpellID crusadeSpell()#1"
+          "symbol": "SpellID crusadeSpell()#1",
+          "start": 32,
+          "end": 35
         },
         {
-          "end": 87,
-          "start": 36,
-          "symbol": "JsonNode legacyMagicRules(int version)#1"
+          "symbol": "JsonNode legacyMagicRules(int version)#1",
+          "start": 37,
+          "end": 88
         },
         {
-          "end": 93,
-          "start": 89,
-          "symbol": "TConstBonusListPtr crusadeBonuses(const CStack * unit)#1"
+          "symbol": "TConstBonusListPtr crusadeBonuses(const CStack * unit)#1",
+          "start": 90,
+          "end": 94
         },
         {
-          "end": 99,
-          "start": 95,
-          "symbol": "std::shared_ptr<Bonus> flatDamageReduction(int value)#1"
+          "symbol": "std::shared_ptr<Bonus> flatDamageReduction(int value)#1",
+          "start": 96,
+          "end": 100
         },
         {
-          "end": 117,
-          "start": 112,
-          "symbol": "NewHorizonsCrusadeTest::void SetUp() override#1"
+          "symbol": "NewHorizonsCrusadeTest::void SetUp() override#1",
+          "start": 113,
+          "end": 118
         },
         {
-          "end": 128,
-          "start": 119,
-          "symbol": "NewHorizonsCrusadeTest::void mapLoaded(CMap * loaded) override#1"
+          "symbol": "NewHorizonsCrusadeTest::void mapLoaded(CMap * loaded) override#1",
+          "start": 120,
+          "end": 140
         },
         {
-          "end": 137,
-          "start": 130,
-          "symbol": "NewHorizonsCrusadeTest::void removeDeployedUnits()#1"
+          "symbol": "NewHorizonsCrusadeTest::void removeDeployedUnits()#1",
+          "start": 142,
+          "end": 149
         },
         {
-          "end": 162,
-          "start": 139,
-          "symbol": "NewHorizonsCrusadeTest::void prepare(int power = 50, int lightMagicRank = MasteryLevel::NONE)#1"
+          "symbol": "NewHorizonsCrusadeTest::void prepare(int power = 50, int lightMagicRank = MasteryLevel::NONE)#1",
+          "start": 151,
+          "end": 174
         },
         {
-          "end": 173,
-          "start": 164,
-          "symbol": "NewHorizonsCrusadeTest::BattleAction crusadeAction(bool followup = false) const#1"
+          "symbol": "NewHorizonsCrusadeTest::BattleAction crusadeAction(bool followup = false) const#1",
+          "start": 176,
+          "end": 185
         },
         {
-          "end": 179,
-          "start": 175,
-          "symbol": "NewHorizonsCrusadeTest::bool castCrusade(bool followup = false)#1"
+          "symbol": "NewHorizonsCrusadeTest::bool castCrusade(bool followup = false)#1",
+          "start": 187,
+          "end": 191
         },
         {
-          "end": 189,
-          "start": 181,
-          "symbol": "NewHorizonsCrusadeTest::bool castHaste()#1"
+          "symbol": "NewHorizonsCrusadeTest::bool castHaste()#1",
+          "start": 193,
+          "end": 201
         },
         {
-          "end": 201,
-          "start": 191,
-          "symbol": "NewHorizonsCrusadeTest::void selectEchoedDuration()#1"
-        },
-        {
-          "end": 215,
+          "symbol": "NewHorizonsCrusadeTest::void selectEchoedDuration()#1",
           "start": 203,
-          "symbol": "NewHorizonsCrusadeTest::void selectLightCrusader()#1"
+          "end": 213
         },
         {
-          "end": 222,
-          "start": 217,
-          "symbol": "NewHorizonsCrusadeTest::void advanceRound()#1"
+          "symbol": "NewHorizonsCrusadeTest::void selectLightCrusader()#1",
+          "start": 215,
+          "end": 227
         },
         {
-          "end": 231,
-          "start": 224,
-          "symbol": "NewHorizonsCrusadeTest::std::shared_ptr<Bonus> bonusOfType(const CStack * unit, BonusType type, BonusSubtypeID subtype = {}) const#1"
+          "symbol": "NewHorizonsCrusadeTest::void advanceRound()#1",
+          "start": 229,
+          "end": 234
         },
         {
-          "end": 294,
-          "start": 234,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, AuthoritativeCastEmpowersAlliesAndUsesOneHeroAction)#1"
+          "symbol": "NewHorizonsCrusadeTest::std::shared_ptr<Bonus> bonusOfType(const CStack * unit, BonusType type, BonusSubtypeID subtype = {}) const#1",
+          "start": 236,
+          "end": 243
         },
         {
-          "end": 307,
-          "start": 296,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, SpellPowerTableAndSchoolRankScaleOnlyDerivedTerms)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, AuthoritativeCastEmpowersAlliesAndUsesOneHeroAction)#1",
+          "start": 246,
+          "end": 306
         },
         {
-          "end": 320,
-          "start": 309,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, AuthoredAttackDefenseInitiativeAndReductionCapsAreEnforced)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, SpellPowerTableAndSchoolRankScaleOnlyDerivedTerms)#1",
+          "start": 308,
+          "end": 319
         },
         {
-          "end": 329,
-          "start": 322,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, BasicLightScalesOnlyTheSpellPowerReductionTerm)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, AuthoredAttackDefenseInitiativeAndReductionCapsAreEnforced)#1",
+          "start": 321,
+          "end": 332
         },
         {
-          "end": 338,
-          "start": 331,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, ExpertLightScalesOnlyTheSpellPowerReductionTerm)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, BasicLightScalesOnlyTheSpellPowerReductionTerm)#1",
+          "start": 334,
+          "end": 341
         },
         {
-          "end": 353,
-          "start": 340,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, CrusaderExtendsEveryAppliedBonusToFourRounds)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, ExpertLightScalesOnlyTheSpellPowerReductionTerm)#1",
+          "start": 343,
+          "end": 350
         },
         {
-          "end": 365,
-          "start": 355,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, EchoedDurationAddsOneRoundToAllCrusadeBonuses)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, CrusaderExtendsEveryAppliedBonusToFourRounds)#1",
+          "start": 352,
+          "end": 365
         },
         {
-          "end": 379,
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, EchoedDurationAddsOneRoundToAllCrusadeBonuses)#1",
           "start": 367,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, EchoedDurationAndCrusaderEachAddOneRoundToAllCrusadeBonuses)#1"
+          "end": 377
         },
         {
-          "end": 417,
-          "start": 381,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, RecastRefreshesTheSameSourceAndTheNormalDurationExpires)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, EchoedDurationAndCrusaderEachAddOneRoundToAllCrusadeBonuses)#1",
+          "start": 379,
+          "end": 391
         },
         {
-          "end": 437,
-          "start": 419,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, FractionalReductionMultipliesWithExistingMagicalProtection)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, RecastRefreshesTheSameSourceAndTheNormalDurationExpires)#1",
+          "start": 393,
+          "end": 429
         },
         {
-          "end": 448,
-          "start": 439,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, VersionOneSavedRulesDoNotGainCrusade)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, FractionalReductionMultipliesWithExistingMagicalProtection)#1",
+          "start": 431,
+          "end": 449
         },
         {
-          "end": 459,
-          "start": 450,
-          "symbol": "TEST_F(NewHorizonsCrusadeTest, VersionTwoSavedRulesDoNotGainCrusade)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, VersionOneSavedRulesDoNotGainCrusade)#1",
+          "start": 451,
+          "end": 462
         },
         {
-          "end": 480,
-          "start": 461,
-          "symbol": "TEST(NewHorizonsCrusadeSerializationTest, FractionalReductionRoundTripsInCurrentSavesAndRejectsDownsave)#1"
+          "symbol": "TEST_F(NewHorizonsCrusadeTest, VersionTwoSavedRulesDoNotGainCrusade)#1",
+          "start": 464,
+          "end": 473
+        },
+        {
+          "symbol": "TEST(NewHorizonsCrusadeSerializationTest, FractionalReductionRoundTripsInCurrentSavesAndRejectsDownsave)#1",
+          "start": 475,
+          "end": 494
         }
-      ],
-      "rationale": "Preserve the previously reviewed complete callable inventory; only one historical-profile field-removal statement is inserted. Independently verified exact original bytes after removing that line and adjusted all recorded spans; no new callable or assertion change.",
-      "review": "IR-QUICKSAND-RAW-RATING-20261024",
-      "sha256": "d1af9601bbf40d408c68e717223d087cb0927078b836e574449a5869a3dd4f36"
+      ]
     },
     "test/server/battles/NewHorizonsMasteryTest.cpp": {
       "functions": [
@@ -10564,18 +10565,17 @@
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/CBattleInfoCallback.h": {
-      "sha256": "5373fef75d49942f2ce91f88827a31bd910dadd16d76e87366fcc5f86d9c751d",
-      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
-      "rationale": "Complete header reviewed: sole existing FirstAidHealingPreview::totalHealedHP body byte-identical; added forward declarations/overload/protected-helper declarations introduce no callable bodies. Exact coverage renewal only; no numeric or runtime approval.",
+      "sha256": "b04c7259f3f6256db2ccbcb3611c5975637d46d81eb80e383f013f5da3649e51",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "rationale": "Complete one-callable manual review: FirstAidHealingPreview::totalHealedHP remains lines93-96 and byte-identical. Four new callback declarations add no bodies; parser recovery at three empty default arguments is explicitly retained. Source review only.",
       "functions": [
         {
           "symbol": "FirstAidHealingPreview::int64_t totalHealedHP() const#1",
           "start": 93,
           "end": 96
         }
-      ],
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "review_scope": "complete-exact-header-callable-renewal-declarations-only"
+      ]
     },
     "lib/battle/CPlayerBattleCallback.cpp": {
       "functions": [
@@ -14464,707 +14464,692 @@
       "sha256": "886d53e54b076fc7f423cb7f51bbd83537d8446aafe1eb102c4f6fac99e13b23"
     },
     "server/battles/BattleActionProcessor.cpp": {
+      "sha256": "da1b8d51e720728aa8095f9edac96113044a7fcc3f0f2dc04cb5ef30dd6cc92f",
+      "review": "IR-ORDER-LOG-EXTRACTION-AND-FEEDBACK-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "rationale": "Complete136-callable exact inventory after extracting three Order feedback functions. Every retained callable body is byte-identical to the previously reviewed139-callable source, with shifted spans only. Existing operator[] parser recovery at5488 remains covered by the complete getSpellsForAttackCasting body. Moved formatting lives in focused HeroOrderLog; no native/runtime certification.",
       "functions": [
         {
           "symbol": "bool armorerLastStandEndedActivation(const CStack * stack)#1",
-          "start": 72,
-          "end": 78
+          "start": 73,
+          "end": 79
         },
         {
           "symbol": "bool consumeDefiant(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause)#1",
-          "start": 80,
-          "end": 97
+          "start": 81,
+          "end": 98
         },
         {
           "symbol": "bool isLongReachAttack(const CBattleInfoCallback & battle, const battle::Unit * attacker, const battle::Unit * defender)#1",
-          "start": 99,
-          "end": 107
+          "start": 100,
+          "end": 108
         },
         {
           "symbol": "void awardBattlefieldMasteryIfEligible(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const CStack * stack, BattlecraftMasteryAction action)#1",
-          "start": 109,
-          "end": 131
+          "start": 110,
+          "end": 132
         },
         {
           "symbol": "BattleSide activeDeploymentSide(const CBattleInfoCallback & battle)#1",
-          "start": 133,
-          "end": 148
+          "start": 134,
+          "end": 149
         },
         {
           "symbol": "bool isDeploymentPositionLegal(const CBattleInfoCallback & battle, const battle::Unit & unit, const BattleHex & position, BattleSide side)#1",
-          "start": 150,
-          "end": 184
+          "start": 151,
+          "end": 185
         },
         {
           "symbol": "isDeploymentPositionLegal(const CBattleInfoCallback & battle, const battle::Unit & unit, const BattleHex & position, BattleSide side)::[side, distance](const BattleHex & hex)#1",
-          "start": 166,
-          "end": 179
+          "start": 167,
+          "end": 180
         },
         {
           "symbol": "BattleHex resolveMovementDestination(const CBattleInfoCallback & battle, const battle::Unit & unit, const BattleHex & requested)#1",
-          "start": 186,
-          "end": 203
+          "start": 187,
+          "end": 204
         },
         {
           "symbol": "bool hasLegalHostileBallistaShot(const CBattleInfoCallback & battle, const battle::Unit * shooter)#1",
-          "start": 205,
-          "end": 221
+          "start": 206,
+          "end": 222
         },
         {
           "symbol": "void publishRangedFollowUpState(const CBattleInfoCallback & battle, CGameHandler & gameHandler, const battle::Unit * unit, int percent)#1",
-          "start": 223,
-          "end": 239
+          "start": 224,
+          "end": 240
         },
         {
           "symbol": "void logRangedFollowUp(const CBattleInfoCallback & battle, CGameHandler & gameHandler, const battle::Unit * unit, std::string text)#1",
-          "start": 241,
-          "end": 253
+          "start": 242,
+          "end": 254
         },
         {
           "symbol": "bool isCreatureActionAllowedDuringForgetfulness(const CBattleInfoCallback & battle, const BattleAction & action)#1",
-          "start": 255,
-          "end": 280
+          "start": 256,
+          "end": 281
         },
         {
           "symbol": "static AttackedTarget unitAboutToBeAttacked(const battle::Unit * unit)#1",
-          "start": 285,
-          "end": 291
+          "start": 286,
+          "end": 292
         },
         {
           "symbol": "static SpellID divineRetributionSpellID()#1",
-          "start": 293,
-          "end": 297
+          "start": 294,
+          "end": 298
         },
         {
           "symbol": "static void recordDivineRetributionDamage(const CBattleInfoCallback & battle, CGameHandler & gameHandler, const battle::Unit * attacker, const battle::Unit * protectedUnit, int64_t actualHpDamage)#1",
-          "start": 299,
-          "end": 394
+          "start": 300,
+          "end": 395
         },
         {
           "symbol": "static bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle, const AccessibilityInfo & accessibility, const BattleHex & hex)#1",
-          "start": 396,
-          "end": 419
+          "start": 397,
+          "end": 420
         },
         {
           "symbol": "static bool isTimeStopHeroAction(const BattleAction & action)#1",
-          "start": 421,
-          "end": 427
+          "start": 422,
+          "end": 428
         },
         {
           "symbol": "static bool shouldActivateGrandMetamagic(const CBattleInfoCallback & battle, BattleSide side, const CGHeroInstance * hero, bool metamagicFollowup)#1",
-          "start": 429,
-          "end": 440
-        },
-        {
-          "symbol": "static const char * heroOrderDisplayName(HeroCommand command)#1",
-          "start": 442,
-          "end": 456
+          "start": 430,
+          "end": 441
         },
         {
           "symbol": "static bool isSanctifiedHostileTarget(const CBattleInfoCallback & battle, const battle::Unit * attacker, const battle::Unit * target)#1",
-          "start": 458,
-          "end": 463
+          "start": 443,
+          "end": 448
         },
         {
           "symbol": "static bool creatureSpellDirectlyTargetsSanctified(const CBattleInfoCallback & battle, const CStack * caster, SpellID spellID, const battle::Target & target, BonusType abilityType)#1",
-          "start": 465,
-          "end": 496
+          "start": 450,
+          "end": 481
         },
         {
           "symbol": "static bool actionDirectlyTargetsSanctified(const CBattleInfoCallback & battle, const BattleAction & action, const CStack * stack)#1",
-          "start": 498,
-          "end": 526
+          "start": 483,
+          "end": 511
         },
         {
           "symbol": "static void appendHeroOrderCauseName(MetaString & line, const CBattleInfoCallback & battle, const battle::Unit * unit, HeroCommand command)#1",
-          "start": 528,
-          "end": 541
+          "start": 513,
+          "end": 526
         },
         {
           "symbol": "static void appendHeroOrderCauseNames(MetaString & line, const CBattleInfoCallback & battle, const battle::Unit * unit, const std::vector<HeroCommand> & commands)#1",
-          "start": 543,
-          "end": 552
+          "start": 528,
+          "end": 537
         },
         {
           "symbol": "static std::vector<HeroCommand> damageOrderCauses(const DamageEstimation & estimation, bool attacker)#1",
-          "start": 554,
-          "end": 561
+          "start": 539,
+          "end": 546
         },
         {
           "symbol": "static MetaString orderDamageLogLine(const CBattleInfoCallback & battle, const CStack * attacker, const battle::Unit * target, const BattleStackAttacked & hit, const std::vector<HeroCommand> & attackerOrderCauses, const std::vector<HeroCommand> & defenderOrderCauses)#1",
-          "start": 563,
-          "end": 614
-        },
-        {
-          "symbol": "static void appendHeroOrderTarget(MetaString & line, const CBattleInfoCallback & battle, uint32_t unitId)#1",
-          "start": 616,
-          "end": 623
-        },
-        {
-          "symbol": "static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSide side, const HeroOrderState & state)#1",
-          "start": 625,
-          "end": 724
+          "start": 548,
+          "end": 599
         },
         {
           "symbol": "static bool validateCanonicalLandMineTargets(const CBattleInfoCallback & battle, const spells::Mechanics & mechanics, const battle::Target & target)#1",
-          "start": 726,
-          "end": 743
+          "start": 601,
+          "end": 618
         },
         {
           "symbol": "static bool validateCanonicalQuicksandTargets(const CBattleInfoCallback & battle, const spells::Mechanics & mechanics, const battle::Target & target)#1",
-          "start": 745,
-          "end": 761
+          "start": 620,
+          "end": 636
         },
         {
           "symbol": "static bool validateShadowGiftAction(const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const CSpell * spell, const battle::Target & target)#1",
-          "start": 763,
-          "end": 789
+          "start": 638,
+          "end": 664
         },
         {
           "symbol": "static void applyShadowGiftSacrifice(CGameHandler & handler, const CBattleInfoCallback & battle, const BattleAction & action, const CStack & recipient, const int32_t costBasisPoints)#1",
-          "start": 791,
-          "end": 816
+          "start": 666,
+          "end": 691
         },
         {
           "symbol": "static std::vector<std::shared_ptr<Bonus>> activeShadowGiftStatusBonuses( const CStack & recipient, const SpellID spell)#1",
-          "start": 818,
-          "end": 831
+          "start": 693,
+          "end": 706
         },
         {
           "symbol": "activeShadowGiftStatusBonuses( const CStack & recipient, const SpellID spell)::[](const auto & bonus)#1",
-          "start": 826,
-          "end": 829
+          "start": 701,
+          "end": 704
         },
         {
           "symbol": "static bool hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell, const std::vector<std::shared_ptr<Bonus>> & previous)#1",
-          "start": 833,
-          "end": 844
+          "start": 708,
+          "end": 719
         },
         {
           "symbol": "hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell, const std::vector<std::shared_ptr<Bonus>> & previous)::[&](const auto & bonus)#1",
-          "start": 837,
-          "end": 843
+          "start": 712,
+          "end": 718
         },
         {
           "symbol": "hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell, const std::vector<std::shared_ptr<Bonus>> & previous)::(const auto & bonus)::[&](const auto & oldBonus)#1",
-          "start": 839,
-          "end": 842
+          "start": 714,
+          "end": 717
         },
         {
           "symbol": "static bool canonicalFireWallDirection(BattleHex::EDir direction)#1",
-          "start": 846,
-          "end": 849
+          "start": 721,
+          "end": 724
         },
         {
           "symbol": "static bool chainGateKillQualifies(const CBattleInfoCallback & battle, const CStack * attacker, const std::vector<BattleStackAttacked> & hits)#1",
-          "start": 851,
-          "end": 875
+          "start": 726,
+          "end": 750
         },
         {
           "symbol": "chainGateKillQualifies(const CBattleInfoCallback & battle, const CStack * attacker, const std::vector<BattleStackAttacked> & hits)::[&battle, attacker, rewardSide](const auto & hit)#1",
-          "start": 868,
-          "end": 874
+          "start": 743,
+          "end": 749
         },
         {
           "symbol": "static bool demonicGateFootprintHasObstacle(const CBattleInfoCallback & battle, const BattleHex & position, bool doubleWide, BattleSide side)#1",
-          "start": 877,
-          "end": 886
+          "start": 752,
+          "end": 761
         },
         {
           "symbol": "static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)#1",
-          "start": 888,
-          "end": 939
+          "start": 763,
+          "end": 814
         },
         {
           "symbol": "validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)::[](const auto & destination)#1",
-          "start": 892,
-          "end": 895
+          "start": 767,
+          "end": 770
         },
         {
           "symbol": "static bool validateCanonicalFireWallAction(const CBattleInfoCallback & battle, const BattleAction & action, battle::Target & expandedTarget)#1",
-          "start": 941,
-          "end": 964
+          "start": 816,
+          "end": 839
         },
         {
           "symbol": "BattleActionProcessor::BattleActionProcessor(BattleProcessor * owner, CGameHandler * newGameHandler) : owner(owner) , gameHandler(newGameHandler)#1",
-          "start": 966,
-          "end": 970
+          "start": 841,
+          "end": 845
         },
         {
           "symbol": "void BattleActionProcessor::publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const#1",
-          "start": 972,
-          "end": 984
+          "start": 847,
+          "end": 859
         },
         {
           "symbol": "bool BattleActionProcessor::doEmptyAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 986,
-          "end": 1013
+          "start": 861,
+          "end": 888
         },
         {
           "symbol": "bool BattleActionProcessor::doEndTacticsAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1015,
-          "end": 1018
+          "start": 890,
+          "end": 893
         },
         {
           "symbol": "bool BattleActionProcessor::doWaitAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1020,
-          "end": 1044
+          "start": 895,
+          "end": 919
         },
         {
           "symbol": "bool BattleActionProcessor::doRetreatAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1046,
-          "end": 1056
+          "start": 921,
+          "end": 931
         },
         {
           "symbol": "bool BattleActionProcessor::doSurrenderAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1058,
-          "end": 1077
+          "start": 933,
+          "end": 952
         },
         {
           "symbol": "static bool validatePurifyAction(const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const battle::Target & target)#1",
-          "start": 1079,
-          "end": 1129
+          "start": 954,
+          "end": 1004
         },
         {
           "symbol": "validatePurifyAction(const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const battle::Target & target)::[](const auto & stack)#1",
-          "start": 1124,
-          "end": 1127
+          "start": 999,
+          "end": 1002
         },
         {
           "symbol": "static std::vector<uint32_t> applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const bool purifyingMandate)#1",
-          "start": 1131,
-          "end": 1302
+          "start": 1006,
+          "end": 1177
         },
         {
           "symbol": "bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1304,
-          "end": 1360
+          "start": 1179,
+          "end": 1235
         },
         {
           "symbol": "bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1362,
-          "end": 1615
+          "start": 1237,
+          "end": 1490
         },
         {
           "symbol": "BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[&spellAllowance](const auto & entry)#1",
-          "start": 1511,
-          "end": 1514
+          "start": 1386,
+          "end": 1389
         },
         {
           "symbol": "BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[](const auto & entry)#1",
-          "start": 1537,
-          "end": 1541
+          "start": 1412,
+          "end": 1416
         },
         {
           "symbol": "bool BattleActionProcessor::doWalkAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1617,
-          "end": 1668
+          "start": 1492,
+          "end": 1543
         },
         {
           "symbol": "bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1670,
-          "end": 1677
+          "start": 1545,
+          "end": 1552
         },
         {
           "symbol": "bool BattleActionProcessor::applyDefendStance(const CBattleInfoCallback & battle, const CStack * stack, bool voluntary)#1",
-          "start": 1679,
-          "end": 1752
+          "start": 1554,
+          "end": 1627
         },
         {
           "symbol": "bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1",
-          "start": 1754,
-          "end": 2095
+          "start": 1629,
+          "end": 1970
         },
         {
           "symbol": "BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)::[&]() -> const CStack *#1",
-          "start": 1935,
-          "end": 1938
+          "start": 1810,
+          "end": 1813
         },
         {
           "symbol": "BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)::[&](const BattleHex & hex)#1",
-          "start": 2037,
-          "end": 2041
+          "start": 1912,
+          "end": 1916
         },
         {
           "symbol": "void BattleActionProcessor::finalizeOpportunistSequence(const CBattleInfoCallback & battle, const CStack * stack, int remainingMovement, bool allowMovement) const#1",
-          "start": 2097,
-          "end": 2113
+          "start": 1972,
+          "end": 1988
         },
         {
           "symbol": "void BattleActionProcessor::setPursuitMovementRemaining(const CBattleInfoCallback & battle, const CStack * stack, int32_t remaining) const#1",
-          "start": 2115,
-          "end": 2128
+          "start": 1990,
+          "end": 2003
         },
         {
           "symbol": "void BattleActionProcessor::setCleaveUsed(const CBattleInfoCallback & battle, const CStack * stack) const#1",
-          "start": 2130,
-          "end": 2142
+          "start": 2005,
+          "end": 2017
         },
         {
           "symbol": "void BattleActionProcessor::removeBonuses(const CBattleInfoCallback & battle, const battle::Unit * stack, BonusList bonuses)#1",
-          "start": 2144,
-          "end": 2163
+          "start": 2019,
+          "end": 2038
         },
         {
           "symbol": "BattleActionProcessor::RainOfArrowsAction BattleActionProcessor::beginRainOfArrows( const CBattleInfoCallback & battle, const CStack * attacker, const CStack * primaryTarget) const#1",
-          "start": 2165,
-          "end": 2187
+          "start": 2040,
+          "end": 2062
         },
         {
           "symbol": "void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)#1",
-          "start": 2189,
-          "end": 2294
+          "start": 2064,
+          "end": 2169
         },
         {
           "symbol": "BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)::[&action](const battle::Unit * candidate)#1",
-          "start": 2195,
-          "end": 2206
+          "start": 2070,
+          "end": 2081
         },
         {
           "symbol": "BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)::[](const battle::Unit * unit)#1",
-          "start": 2207,
-          "end": 2214
+          "start": 2082,
+          "end": 2089
         },
         {
           "symbol": "BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)::[](const battle::Unit * unit)#2",
-          "start": 2216,
-          "end": 2217
+          "start": 2091,
+          "end": 2092
         },
         {
           "symbol": "bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1",
-          "start": 2296,
-          "end": 2451
+          "start": 2171,
+          "end": 2326
         },
         {
           "symbol": "bool BattleActionProcessor::doCatapultAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2453,
-          "end": 2475
+          "start": 2328,
+          "end": 2350
         },
         {
           "symbol": "bool BattleActionProcessor::prepareUnitSpellAction(const CBattleInfoCallback & battle, BattleAction & ba)#1",
-          "start": 2477,
-          "end": 2555
+          "start": 2352,
+          "end": 2430
         },
         {
           "symbol": "bool BattleActionProcessor::doUnitSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2557,
-          "end": 2583
+          "start": 2432,
+          "end": 2458
         },
         {
           "symbol": "bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2585,
-          "end": 2751
+          "start": 2460,
+          "end": 2626
         },
         {
           "symbol": "bool BattleActionProcessor::doWalkAndSpellcastAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2753,
-          "end": 2822
+          "start": 2628,
+          "end": 2697
         },
         {
           "symbol": "bool BattleActionProcessor::canStackAct(const CBattleInfoCallback & battle, const CStack * stack)#1",
-          "start": 2824,
-          "end": 2864
+          "start": 2699,
+          "end": 2739
         },
         {
           "symbol": "bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1",
-          "start": 2866,
-          "end": 2918
+          "start": 2741,
+          "end": 2793
         },
         {
           "symbol": "bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2920,
-          "end": 3033
+          "start": 2795,
+          "end": 2908
         },
         {
           "symbol": "BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[&ba](const auto & gate)#1",
-          "start": 2982,
-          "end": 2985
+          "start": 2857,
+          "end": 2860
         },
         {
           "symbol": "BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[&ba](const auto & gate)#2",
-          "start": 3011,
-          "end": 3014
+          "start": 2886,
+          "end": 2889
         },
         {
           "symbol": "bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 3035,
-          "end": 3088
+          "start": 2910,
+          "end": 2970
         },
         {
           "symbol": "bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba, bool * masterGateActivationContinuationOut, bool voluntary)#1",
-          "start": 3090,
-          "end": 3568
+          "start": 2972,
+          "end": 3453
         },
         {
           "symbol": "BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba, bool * masterGateActivationContinuationOut, bool voluntary)::MovementProvenanceGuard::~MovementProvenanceGuard()#1",
-          "start": 3097,
-          "end": 3097
+          "start": 2979,
+          "end": 2979
         },
         {
           "symbol": "void BattleActionProcessor::breakSanctuary(const CBattleInfoCallback & battle, const battle::Unit * stack)#1",
-          "start": 3570,
-          "end": 3609
+          "start": 3455,
+          "end": 3494
         },
         {
           "symbol": "void BattleActionProcessor::resolveOverwatch(const CBattleInfoCallback & battle, const CStack * mover, const BattleHex & from, const BattleHex & to)#1",
-          "start": 3611,
-          "end": 3644
+          "start": 3496,
+          "end": 3529
         },
         {
           "symbol": "BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1",
-          "start": 3646,
-          "end": 4193
+          "start": 3531,
+          "end": 4078
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[](const std::shared_ptr<const CObstacleInstance> & obst)#1",
-          "start": 3738,
-          "end": 3741
+          "start": 3623,
+          "end": 3626
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & hex) -> bool#1",
-          "start": 3743,
-          "end": 3753
+          "start": 3628,
+          "end": 3638
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & hex) -> bool#2",
-          "start": 3755,
-          "end": 3768
+          "start": 3640,
+          "end": 3653
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[hasWideMoat, i, unitPath = unitPath](const BattleHex & hex) -> bool#1",
-          "start": 3816,
-          "end": 3826
+          "start": 3701,
+          "end": 3711
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&]() -> int#1",
-          "start": 3867,
-          "end": 3900
+          "start": 3752,
+          "end": 3785
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#1",
-          "start": 3921,
-          "end": 3925
+          "start": 3806,
+          "end": 3810
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#2",
-          "start": 3927,
-          "end": 3933
+          "start": 3812,
+          "end": 3818
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#3",
-          "start": 3936,
-          "end": 3940
+          "start": 3821,
+          "end": 3825
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#4",
-          "start": 3968,
-          "end": 3971
+          "start": 3853,
+          "end": 3856
         },
         {
           "symbol": "void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const#1",
-          "start": 4195,
-          "end": 4295
+          "start": 4080,
+          "end": 4180
         },
         {
           "symbol": "BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const::[this, ownerArmy, attackerLuck]()#1",
-          "start": 4223,
-          "end": 4226
+          "start": 4108,
+          "end": 4111
         },
         {
           "symbol": "BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const::[this, ownerArmy, deathBlowChance]()#1",
-          "start": 4269,
-          "end": 4272
+          "start": 4154,
+          "end": 4157
         },
         {
           "symbol": "BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const::[this, ownerArmy, chance]()#1",
-          "start": 4284,
-          "end": 4287
+          "start": 4169,
+          "end": 4172
         },
         {
           "symbol": "void BattleActionProcessor::describeUpcomingAttack(CombatEventPayload & payload, const CStack * defender, const battle::Units & secondaryTargets) const#1",
-          "start": 4297,
-          "end": 4304
+          "start": 4182,
+          "end": 4189
         },
         {
           "symbol": "battle::Units BattleActionProcessor::collectSecondaryTargets(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, BattleAttack & bat) const#1",
-          "start": 4306,
-          "end": 4350
+          "start": 4191,
+          "end": 4235
         },
         {
           "symbol": "BattleActionProcessor::collectSecondaryTargets(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, BattleAttack & bat) const::[&result, defender](const battle::Unit * unit)#1",
-          "start": 4310,
-          "end": 4314
+          "start": 4195,
+          "end": 4199
         },
         {
           "symbol": "void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleAttack & bat) const#1",
-          "start": 4352,
-          "end": 4367
+          "start": 4237,
+          "end": 4252
         },
         {
           "symbol": "void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)#1",
-          "start": 4369,
-          "end": 5512
+          "start": 4254,
+          "end": 5397
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const DamageEstimation & estimation, const battle::Unit * target)#1",
-          "start": 4514,
-          "end": 4543
+          "start": 4399,
+          "end": 4428
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const DamageEstimation & estimation, const battle::Unit * target)#2",
-          "start": 4544,
-          "end": 4562
+          "start": 4429,
+          "end": 4447
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[defender](const auto & hit)#1",
-          "start": 4688,
-          "end": 4691
+          "start": 4573,
+          "end": 4576
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&battle](const BattleStackAttacked & hit)#1",
-          "start": 4774,
-          "end": 4783
+          "start": 4659,
+          "end": 4668
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const BattleStackAttacked & hit)#1",
-          "start": 4790,
-          "end": 4793
+          "start": 4675,
+          "end": 4678
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&target](const auto & hit)#1",
-          "start": 4809,
-          "end": 4809
+          "start": 4694,
+          "end": 4694
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[defender](const BattleStackAttacked & hit)#1",
-          "start": 4981,
-          "end": 4984
+          "start": 4866,
+          "end": 4869
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const Bonus * bonus)#1",
-          "start": 5063,
-          "end": 5066
+          "start": 4948,
+          "end": 4951
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const Bonus * bonus)#2",
-          "start": 5094,
-          "end": 5097
+          "start": 4979,
+          "end": 4982
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const Bonus * bonus)#3",
-          "start": 5205,
-          "end": 5208
+          "start": 5090,
+          "end": 5093
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const auto & target)#1",
-          "start": 5247,
-          "end": 5250
+          "start": 5132,
+          "end": 5135
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[defender](const battle::Unit * unit)#1",
-          "start": 5363,
-          "end": 5364
+          "start": 5248,
+          "end": 5249
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const battle::Unit * unit)#1",
-          "start": 5470,
-          "end": 5476
+          "start": 5355,
+          "end": 5361
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const battle::Unit * left, const battle::Unit * right)#1",
-          "start": 5477,
-          "end": 5483
+          "start": 5362,
+          "end": 5368
         },
         {
           "symbol": "void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender)#1",
-          "start": 5514,
-          "end": 5592
+          "start": 5399,
+          "end": 5477
         },
         {
           "symbol": "BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender)::[this, ownerArmy, effectiveChance]()#1",
-          "start": 5570,
-          "end": 5573
+          "start": 5455,
+          "end": 5458
         },
         {
           "symbol": "std::set<SpellID> BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)#1",
-          "start": 5594,
-          "end": 5645
+          "start": 5479,
+          "end": 5530
         },
         {
           "symbol": "BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)::[&](int layer) -> void#1",
-          "start": 5609,
-          "end": 5620
+          "start": 5494,
+          "end": 5505
         },
         {
           "symbol": "BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)::[&](const std::shared_ptr<Bonus> spell)#1",
-          "start": 5631,
-          "end": 5635
+          "start": 5516,
+          "end": 5520
         },
         {
           "symbol": "void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload)#1",
-          "start": 5649,
-          "end": 5656
+          "start": 5534,
+          "end": 5541
         },
         {
           "symbol": "DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted, int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent, bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack) const#1",
-          "start": 5658,
-          "end": 5804
+          "start": 5543,
+          "end": 5689
         },
         {
           "symbol": "void BattleActionProcessor::addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const#1",
-          "start": 5806,
-          "end": 5832
+          "start": 5691,
+          "end": 5717
         },
         {
           "symbol": "void BattleActionProcessor::addGenericDamageLog(BattleLogMessage& blm, const std::shared_ptr<battle::CUnitState> &attackerState, int64_t damageDealt) const#1",
-          "start": 5834,
-          "end": 5841
+          "start": 5719,
+          "end": 5726
         },
         {
           "symbol": "bool BattleActionProcessor::makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 5843,
-          "end": 5846
+          "start": 5728,
+          "end": 5731
         },
         {
           "symbol": "bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction &ba, BattleAction * effectiveActionOut, bool * masterGateActivationContinuationOut)#1",
-          "start": 5848,
-          "end": 6012
+          "start": 5733,
+          "end": 5897
         },
         {
           "symbol": "void BattleActionProcessor::runPredefinedReaction(const CBattleInfoCallback & battle, const Bonus & bonus, const battle::Unit * self, const battle::Unit * other)#1",
-          "start": 6014,
-          "end": 6053
+          "start": 5899,
+          "end": 5938
         },
         {
           "symbol": "void BattleActionProcessor::collectEventTriggers(const CBattleInfoCallback & battle, std::vector<PendingTrigger> & pending, CombatEventType event, const battle::Unit * self, const battle::Unit * other) const#1",
-          "start": 6055,
-          "end": 6103
+          "start": 5940,
+          "end": 5988
         },
         {
           "symbol": "BattleActionProcessor::collectEventTriggers(const CBattleInfoCallback & battle, std::vector<PendingTrigger> & pending, CombatEventType event, const battle::Unit * self, const battle::Unit * other) const::[&pending, event, self, other](const std::shared_ptr<const Bonus> & bonus, int priority, const ICombatEventScript * script)#1",
-          "start": 6057,
-          "end": 6067
+          "start": 5942,
+          "end": 5952
         },
         {
           "symbol": "void BattleActionProcessor::runEventTriggers(const CBattleInfoCallback & battle, std::vector<PendingTrigger> & pending, const CombatEventPayload & payload)#1",
-          "start": 6105,
-          "end": 6140
+          "start": 5990,
+          "end": 6025
         },
         {
           "symbol": "void BattleActionProcessor::processBattleEventTriggers(const CBattleInfoCallback & battle, CombatEventType event, const battle::Unit * target, const battle::Unit * secondary, const CombatEventPayload & payload)#1",
-          "start": 6142,
-          "end": 6147
+          "start": 6027,
+          "end": 6032
         },
         {
           "symbol": "void BattleActionProcessor::processAttackTriggers(const CBattleInfoCallback & battle, CombatEventType attackerEvent, CombatEventType targetEvent, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload)#1",
-          "start": 6149,
-          "end": 6158
+          "start": 6034,
+          "end": 6043
         }
-      ],
-      "rationale": "The complete139-callable after.functions value is approved exactly as selected by this key in the hash-bound proposal. No callable was added/removed by Stage11 composition; only makeAttack changed and all following spans shift39 lines, with the include adding one earlier line. The inherited operator[] parser recovery is explicitly covered by the complete manual inventory at line5603; this is not AST error-free coverage.",
-      "review": "IR-COMMON-FINAL-BAP-COMPOSITION-20261017",
-      "sha256": "25b48cddde5e907665d0e070ee4ccbd95ceb29ed97411fd257f8ad99d963fa7d",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      ]
     },
     "lib/battle/HeroActionAllowanceState.h": {
       "functions": [
@@ -18138,15 +18123,12 @@
       "deferral": "AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate."
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
+      "lines": 5356,
+      "sha256": "b1e6496ce2e6a8a20ffa261d8dcd16df820417ecff15672cc881a1e1f5454da3",
       "kind": "exception",
-      "lines": 5347,
-      "sha256": "a8c90d4198e5077589119ac9cf3f1c1c8c6043428612ac35dd8d40b9fcded9ca",
-      "owner": "ai_engineer",
-      "review": "IR-CREATURE-SELECTION-DIAGNOSTIC-SOURCE-20261025",
-      "rationale": "Exact shrinking5525\u21925347 through cohesive creature selection/pressure extraction; all167 retained central callables byte-identical. Diagnostic routing stays in focused creature component, with no regrowth allowance.",
-      "review_scope": "exact-creature-selection-extraction-and-diagnostic-source-only-no-runtime-acceptance",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer retains remaining oversized Hero admission/continuation responsibility; preserve candidate/pool order, FP grouping, callback visibility, state and both RNG before further bounded extraction."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Route Chosen marginal valuation and Flying cache invalidation to the focused helper; fixed horizon and utility model unchanged.",
+      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -19351,15 +19333,12 @@
       "sha256": "1d18f6fb5bdce91f74fa6694c7bc6c5fd9cc728ea852542e0618fcc1a5db28b2"
     },
     "client/CMakeLists.txt": {
+      "lines": 603,
+      "sha256": "c9b4ee9021f10feb7276530f1b0bb1f28ca3438709bdb1875b146cd39bf193dd",
       "kind": "exception",
-      "lines": 600,
-      "sha256": "f9e41d7dc8abf9ee5ac28a1284d5ae25d6afb53e0f107a1658a1d46658915b0f",
-      "owner": "ui_developer",
-      "review": "rmg-template-selector-independent-source-review-20261025",
-      "review_scope": "bounded-rmg-template-selector-extraction-and-local-readback",
-      "rationale": "One mechanical source registration for extracted RandomMapTab template-selection presentation; no flags, linking behavior or unrelated registrations changed.",
-      "deferral": "Bounded one-line registration exception for extraction reducing RandomMapTab.cpp933 to838. Retain declarative source registry ownership; future additions require renewed exact review. No runtime behavior or open-ended file growth allowance.",
-      "review_status": "SOURCE_CLEAR_AFTER_DIRECT_GUI_CLASSES_INCLUDE_FIX"
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Mechanical source/header registrations only.",
+      "deferral": "Owner: UI developer. Interface/acceptance: Keep the coherent mechanical registry; any later module manifest split must preserve exact target membership and ordinary build without private assets."
     },
     "client/CPlayerInterface.cpp": {
       "kind": "legacy",
@@ -19676,24 +19655,19 @@
       "sha256": "021a38c441418e8c0dfc0af9bceec755ae45d2048357b152996449c6423e7ad7"
     },
     "client/battle/BattleHeroActionWindow.cpp": {
+      "lines": 534,
+      "sha256": "1ebdca408bf2fdd9c7f4b2715c9b47da4af7bc734db833172cb44214c5921cd2",
       "kind": "exception",
-      "lines": 758,
-      "owner": "ui_developer",
-      "rationale": "Focused correctness fix replaces three held-right-click popups in unavailable left-click Order paths with the existing dismissible information dialog. Preserve messages, refusal checks, callback ownership, refresh/return, targeting cleanup and unspent actions. File remains758 lines; coupling unrelated structural extraction to this three-call fix would add risk. No future growth, gameplay change or rendered acceptance approved.",
-      "review": "IR-PROTECT-UNAVAILABLE-INFO-DIALOG-20261023",
-      "review_scope": "exact-three-left-click-refusal-dialog-replacements-no-growth-source-only",
-      "sha256": "725a339f0fe0655022a942ec8e02e8eb8b117ae23df11e7e8401194ac98d4516",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Before further chooser expansion, ui_developer must extract cohesive targeted-Order choice presentation from BattleHeroActionWindow with explicit current-battle/session ownership and refusal/success routing. Preserve callback revalidation, underlying chooser refresh, ordinary dismissal, no request or allowance consumption on refusal, and guarded rendered reopen/restart checks."
+      "review": "IR-VANGUARD-FOOTER-SAVED-PROFILE-SOURCE-20261026",
+      "rationale": "Extracted read-only display/preview component shrinks chooser file and refresh method. Narrow follow-up grows the ratcheted530-line file by4 lines solely for an observed duration-wording correction: saved-v4 names Vanguard displayed duration; historical text and widget coordinates remain exact. All other19 callable bodies, including constructor and refresh, are byte-identical. Layout builder49 to53 remains below80.",
+      "deferral": "Owner: UI developer. Interface/acceptance: next substantive chooser change extracts cohesive layout/readback assembly into the existing focused Order presentation boundary; preserve receiving-window lifetime, redraw invalidation, disabled controls, target selection and native-resolution layout. This bounded four-line text correction is not permission for further hotspot growth."
     },
     "client/battle/BattleHeroActionWindow.cpp::void BattleHeroActionWindow::refresh()#1": {
+      "lines": 202,
+      "sha256": "831f9fbceb2fd137044c3cc3ec8314dd911eb187ae16a026f6cd72567e416269",
       "kind": "legacy",
-      "lines": 251,
-      "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 251 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "437086504b8030cad8abd566bcf615ab0378bc800706ed5b815fda1a557b05ef"
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Extracted read-only display/preview component shrinks chooser file and refresh method."
     },
     "client/battle/BattleInterface.cpp": {
       "kind": "exception",
@@ -19891,15 +19865,11 @@
       "sha256": "3e3f79e81670146348e1a8d972d123197d3b6045d8185d25ab77ec2ef4be94aa"
     },
     "client/battle/StackInfoBasicPanel.cpp": {
-      "kind": "exception",
-      "lines": 1240,
-      "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1269 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Independently reviewed Frozen presentation extraction and prism removal lowers this exact baseline; prior structural obligations remain. New cue ledger and shared icon/tooltip live in focused components; rendered and audio acceptance remain separate.",
-      "review": "IR-FROZEN-EMPTY-STATUS-CAPTION-20261022",
-      "review_scope": "Prior IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022 retained; exact empty-caption predicate only at unchanged size, not future growth",
-      "sha256": "e0bab766fc29d35795f8f3208e1633ab6852bf88b986617ae6542cf2c3158c79",
-      "deferral": "UI developer owns extraction of the empty/status-slot presentation plan before further affected-area growth. Preserve effect ordering, slot counts, temporary afflictions and hidden-spell suppression; require focused source and rendered checks. This observed caption-overlap correctness exception retains exact 1240-file/508-function ceilings and prior shrinking/extraction obligations; no future growth allowance.",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "lines": 1220,
+      "sha256": "7d8e3314add5e68a74f5c1521474f663a71680d070d17f917c45ffd0bd61697f",
+      "kind": "legacy",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Focused spell-status priority helper owns new Chosen behavior; existing initializer receives only bounded badge/readback routing."
     },
     "client/battle/StackInfoBasicPanel.cpp::newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus( const CStack * stack, const CPlayerBattleCallback * battleCallback, const newHorizonsBattleStatus::BattleLuckReadback & luckReadback)#1": {
       "kind": "legacy",
@@ -19911,15 +19881,12 @@
       "sha256": "7ac18b7dfadb2b69134863aee03a1adebd1c2920858af6eda500dfdca4a53133"
     },
     "client/battle/StackInfoBasicPanel.cpp::void StackInfoBasicPanel::initializeData(const CStack * stack)#1": {
+      "lines": 518,
+      "sha256": "89f66a11ae3ab038be847e0ae78fe9923c5779738ae7bde35a80bd662d21436a",
       "kind": "exception",
-      "lines": 508,
-      "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 510 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Independently reviewed Frozen presentation extraction and prism removal lowers this exact baseline; prior structural obligations remain. New cue ledger and shared icon/tooltip live in focused components; rendered and audio acceptance remain separate.",
-      "review": "IR-FROZEN-EMPTY-STATUS-CAPTION-20261022",
-      "review_scope": "Prior IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022 retained; exact empty-caption predicate only at unchanged size, not future growth",
-      "sha256": "d0d11b7e2e0300624ac489e3eeecf7748c34683fb6335fffb3c45235361950d5",
-      "deferral": "UI developer owns extraction of the empty/status-slot presentation plan before further affected-area growth. Preserve effect ordering, slot counts, temporary afflictions and hidden-spell suppression; require focused source and rendered checks. This observed caption-overlap correctness exception retains exact 1240-file/508-function ceilings and prior shrinking/extraction obligations; no future growth allowance.",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Focused spell-status priority helper owns new Chosen behavior; existing initializer receives only bounded badge/readback routing.",
+      "deferral": "Owner: UI developer. Interface/acceptance: Extract status description and badge composition from initializeData behind an immutable status snapshot; preserve status priority, layout, cache invalidation and rendered refresh transitions."
     },
     "client/globalLobby/GlobalLobbyClient.cpp": {
       "kind": "legacy",
@@ -20640,15 +20607,11 @@
       "sha256": "079a1ca7c587fa5bda678bc8aeb36fb518e8a0cd0653728a6dd9c4d8cb44e695"
     },
     "client/windows/CCreatureWindow.cpp": {
-      "kind": "exception",
-      "lines": 1830,
-      "owner": "ui_developer",
-      "rationale": "Urgent bounded Frozen presentation correction: BattleInterface only routes accepted packets to focused feedback; full stack window adds one physical-first status row using the extracted shared icon/tooltip. No gameplay, save, RNG or teardown state changes. Exact source-only approval, no future growth.",
-      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
-      "review_scope": "exact-physical-frozen-presentation-source-only",
-      "sha256": "9a79c7542a046238e522c2c5bc5ff10203f3263d3c6b4c188f3bb0eb594ba01d",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "UI owner must extract complete full-stack active-effect row construction, priority and slot admission before further expansion, preserving captured battle context, physical-first eight-slot limit, ordinary spell order, help and current status; lower file/function baselines and verify right-click, reopen, Cure and expiry. BattleInterface owner must retain focused presentation routing before substantive expansion; no teardown/restart/state mutation enlargement."
+      "lines": 1694,
+      "sha256": "6b4bd4b99c61c4d5ce54b07869adc202d613f75224daae4e2fe1c4aa88816490",
+      "kind": "legacy",
+      "review": "IR-ROYAL-STANDARD-ENTITLEMENT-SOURCE-20261026",
+      "rationale": "Extracted read-only Order indicator builder shrinks oversized creature window. Same-length namespace qualification of extracted Order indicator lookup only."
     },
     "client/windows/CCreatureWindow.cpp::CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset) : CWindowSection(owner, ImagePath::builtin(\"stackWindow/spell-effects\"), yOffset)#1": {
       "kind": "exception",
@@ -20688,15 +20651,6 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "6694036689b898c7b4ad41362b01c898805263799c7d84f23bd899966e4f7ff0"
     },
-    "client/windows/CCreatureWindow.cpp::std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)#1": {
-      "kind": "legacy",
-      "lines": 104,
-      "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 104 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "a4a9a434d195f2b29ec94ae821ed6cc824378cadeba277818b05c97bec08f127"
-    },
     "client/windows/CCreatureWindow.cpp::void CStackWindow::initBonusesList()#1": {
       "kind": "legacy",
       "lines": 182,
@@ -20707,13 +20661,14 @@
       "sha256": "a69df94a6958962e739131b93a9f2edfaf2044e3837e7bbdeae3fc169e4bc225"
     },
     "client/windows/CCreatureWindow.cpp::void CStackWindow::initSections()#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 84,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 84 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Same84-line method; qualify the previously extracted Order indicator lookup in its namespace. No section lifecycle, layout or input change.",
+      "review": "IR-ROYAL-STANDARD-ENTITLEMENT-SOURCE-20261026",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c242842ced9d75ef9d20367b907bdbe2b686c8b39aa0de2a61c75670d641179c"
+      "sha256": "85499c4a6323eeddf003def2ca1fd1aef428301dfd4081c716a8b61bdb22b9ce",
+      "deferral": "Owner: UI developer. Interface/acceptance: retain focused section composition and extracted read-only Order indicators; any later section-builder extraction must preserve unit lifetime, tooltip, native layout and rendered refresh behavior."
     },
     "client/windows/CExchangeWindow.cpp::CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2, QueryID queryID) : CWindowObject(PLAYER_COLORED | BORDERED, ImagePath::builtin(isQuickExchangeLayoutAvailable() ? QUICK_EXCHANGE_BG : (ENGINE->isRoeData() ? \"TRADE\" : \"TRADE2\"))), controller(hero1, hero2)#1": {
       "kind": "exception",
@@ -20835,15 +20790,12 @@
       "sha256": "38015e023477e7f68a885cbc062717a177c1cbb8c10fb23b02b1035269ec8b82"
     },
     "client/windows/CSpellWindow.cpp": {
+      "lines": 1421,
+      "sha256": "4b0259abb30d81043cf59a71bde8f9f63e9d62d7a81e6a871787246fff5222ae",
       "kind": "exception",
-      "lines": 1420,
-      "owner": "ui_developer",
-      "rationale": "Urgent UI/result agreement fix only: insufficient-School lock consults existing canonical canCastThisSpell so eligible equipped combat scrolls are not incorrectly disabled. One added condition; no artifact policy duplication, mutation or layout change.",
-      "review": "IR-SCROLL-CASTING-SCHOOL-ACCESS-20261022",
-      "review_scope": "exact-scroll-school-lock-source-only",
-      "sha256": "3fff576217eff09bef7602c85d535367a8d988d9b93721efe763cffcadf345d5",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "UI owner must extract cohesive School-lock/requirement presentation from setSpell before its next substantive expansion, preserving slot reset, requirement text, authoritative cast admission and icon placement; lower the oversized file/function baseline. This exact one-line exception grants no future growth."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "One cost-stage label case maps the new authoritative Chosen specialty stage.",
+      "deferral": "Owner: UI developer. Interface/acceptance: Extract cost-stage label formatting to a focused formatter; test every existing stage and exact breakdown ordering/text, with native spellbook rendering before acceptance."
     },
     "client/windows/CSpellWindow.cpp::CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _myInt, bool openOnBattleSpells, const std::function<void(SpellID)> & onSpellSelect): CWindowObject(PLAYER_COLORED | (settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool() ? BORDERED : 0)), battleSpellsOnly(openOnBattleSpells), selectedTab(SpellSchool::ANY), currentPage(0), myHero(_myHero), myInt(_myInt), openOnBattleSpells(openOnBattleSpells), onSpellSelect(onSpellSelect), isBigSpellbook(settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool()), spellsPerPage(24), offL(-11), offR(195), offRM(110), offT(-37), offB(56)#1": {
       "kind": "legacy",
@@ -21862,15 +21814,12 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact declarative registry bound only. Keep behavior in focused compiled owners; future registry edits need renewed exact review and grant no executable growth allowance. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth.",
+      "lines": 1368,
+      "sha256": "3e799d7c04f024f2140a99c603842b4ee11516ef931a2a225586b96703754c23",
       "kind": "exception",
-      "lines": 1355,
-      "owner": "engine_engineer",
-      "rationale": "Exact one-line Quicksand source registration only:1354 to1355 mechanical CMake registry lines. No executable behavior or unrelated registry/link/flag/resource changes; preserve inherited registry boundary and extraction obligations.",
-      "review": "IR-QUICKSAND-RAW-RATING-20261024",
-      "review_scope": "exact-quicksand-captured-raw-rating-and-cohesive-shrinking-extraction-only",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "4adc15a86fb9a2d31e98f6eb9a39a55493946a63c657cc2a87bb88452cf92b77"
+      "review": "IR-ROYAL-STANDARD-ENTITLEMENT-SOURCE-20261026",
+      "rationale": "Mechanical cohesive source/header registrations for focused extracted components only. Register the focused14-line Royal Standard declaration header.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Keep registry coherent; future manifest decomposition requires exact target-membership checks and Linux/Windows build parity."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21966,15 +21915,11 @@
       "sha256": "073826fa014c7297f24e13221bd266a340709307fcbea0b49db3be9de946c500"
     },
     "lib/battle/BattleInfo.cpp": {
-      "deferral": "No future growth credit. Engine/UI owners must extract cohesive native graph/query, visitor/replay or publication duties before substantive expansion; any later changed hotspot requires renewed independent exact review. Verify actual owner/thread/shutdown and prepared-tail ordering separately. Exact one-argument routing only; no future growth credit. Retain existing lifecycle/round extraction obligations before substantive expansion.",
-      "kind": "exception",
-      "lines": 2825,
-      "owner": "gameplay_engineer",
-      "rationale": "Exact rules-aware round-selector call only. Canonical optional Plague identity preserves installed marker exclusion; null/empty core absence remains optional and required NH absence fails closed. Round order and timed-effect predicates unchanged.",
-      "review": "IR-OPTIONAL-PLAGUE-ROUND-QUERY-IDENTITY-20261022",
-      "review_scope": "optional-plague-round-query-identity-only",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "df04342c9c76baaa57f4d60761cda9fa1c8bb72100a8da099034afff9fa9b8c3"
+      "lines": 2742,
+      "sha256": "f525d968d1be4aeb97bd3355b2373b896ad964b108a61255d68dfa0f41a7cb5d",
+      "kind": "legacy",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Extracted Order-state/context validation shrinks existing battle-state owner."
     },
     "lib/battle/BattleInfo.cpp::std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const int3 & tile, TerrainId terrain, const BattleField & battlefieldType, BattleSideArray<const CArmedInstance *> armies, BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance * town)#1": {
       "kind": "legacy",
@@ -22014,48 +21959,28 @@
       "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
       "deferral": "Further extraction requires preserving preparse ignore, load, root invalidation, Protect, damage, clone and completion order. No future growth or runtime acceptance."
     },
-    "lib/battle/BattleInfo.cpp::void BattleInfo::validateFocusFireStates() const#1": {
-      "kind": "legacy",
-      "lines": 82,
-      "owner": "gameplay_engineer",
-      "rationale": "Exact101-to82 shrinking validator freeze: only mark-context validation is extracted. The remaining82-line enclosing command/history/Order validator retains its responsibility and existing debt; renewed extraction/review required before expansion. No blanket ceiling waiver.",
-      "review": "IR-FOCUS-FIRE-SAVED-V2-COMPATIBILITY-20261016",
-      "review_scope": "exact-saved-v2-focus-fire-compatibility-and-four-record-ratchet-only",
-      "sha256": "99d03399e5e87d07795fce18fbdcc8c47cb0fb53efd9f903194e8739915eba26",
-      "review_status": "APPROVED_EXACT_SOURCE_SCOPE"
-    },
     "lib/battle/BattleInfo.h": {
+      "lines": 1532,
+      "sha256": "a4f4b3026fa8846e9b5003e5b3ed3c12e470f5611a54d7865ad150f455e3621d",
       "kind": "exception",
-      "lines": 1510,
-      "sha256": "8f82e0a52e1598230a013bad4aedc10e7025e0e8bac88f1b30d87a7596010c26",
-      "owner": "gameplay_engineer",
-      "review": "recovery-verdish-current-rebase-source-v1",
-      "rationale": "Exactly three protected entry-side Recovery preflight lines, delegating typed receipt validation before any enclosing prefix. File1510 and serialize697 bounds only.",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Existing serialization template receives fail-closed revised policy and captured specialty gates; no new runtime state ownership.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes."
     },
     "lib/battle/BattleInfo.h::BattleInfo::void serialize(Handler &h)#1": {
+      "lines": 717,
+      "sha256": "a53f0dbecc4b6628f62d07887c2be457d9e2835365fd6bd427661290bd24c33f",
       "kind": "exception",
-      "lines": 697,
-      "owner": "gameplay_engineer",
-      "rationale": "Exactly three protected entry-side Recovery preflight lines, delegating typed receipt validation before any enclosing prefix. File1510 and serialize697 bounds only.",
-      "review": "recovery-verdish-current-rebase-source-v1",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "27a7b7fd8b0dd8f704a6ed5b989d028b6870a29e2b35e6e0e47f6122c56a1401",
-      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Existing serialization template receives fail-closed revised policy and captured specialty gates; no new runtime state ownership.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes."
     },
     "lib/battle/CBattleInfoCallback.cpp": {
-      "kind": "exception",
-      "lines": 5768,
-      "owner": "gameplay_engineer",
-      "rationale": "Same-size5768-line callback changes only the existing raw Luck-policy boolean read to the virtual scalar API at the same null-guarded position. All other callback bodies and full chance-curve query remain unchanged; no growth allowance.",
-      "review": "IR-RAW-LUCK-POLICY-SCALAR-20261024",
-      "review_scope": "raw-saved-Luck-scalar-source-only-no-runtime-or-performance-acceptance",
-      "sha256": "6597a3ba7f7d8e4cb5514df5eb00a2e0b7923579ea2db38c12708bca61314803",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth."
+      "lines": 5558,
+      "sha256": "a6701a5862eec550dfc7dc568bbe81306eec1bccbdf361bc9d611880c96408be",
+      "kind": "legacy",
+      "review": "IR-ROYAL-STANDARD-ENTITLEMENT-SOURCE-20261026",
+      "rationale": "Order preparation/adjacency extraction reduces file; added code routes native Vanguard benefits, Feint/riders and shared specialty cost calculation. Bounded follow-up adds one focused header include and two-line native Royal Standard entitlement query; remains below the ratcheted pre-extraction file size."
     },
     "lib/battle/CBattleInfoCallback.cpp::AttackableTiles CBattleInfoCallback::getPotentiallyAttackableHexes( const battle::Unit* attacker, const battle::Unit * defender, BattleHex destinationTile, BattleHex attackerPos, BattleHex defenderPos) const#1": {
       "kind": "legacy",
@@ -22076,24 +22001,20 @@
       "sha256": "8d642b72ebfa65adf25762acc0dda0d7fd38c4763f536c5f0ff97c708330506d"
     },
     "lib/battle/CBattleInfoCallback.cpp::BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * unit) const#1": {
-      "kind": "legacy",
-      "lines": 129,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 129 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "894e504a17fd8599c34b274f1966eb04d03e9da68fc621682d9d6ca48fdc1988"
+      "lines": 131,
+      "sha256": "50cff12b8376c0f478e8b9aa19581bf19ed978290fcc605bae550a3ad18fc6d6",
+      "kind": "exception",
+      "review": "IR-ROYAL-STANDARD-ENTITLEMENT-SOURCE-20261026",
+      "rationale": "Order preparation/adjacency extraction reduces file; added code routes native Vanguard benefits, Feint/riders and shared specialty cost calculation. Two-line Royal Standard floor query uses the existing current-owner side with a native paused entitlement marker; existing floor ordering preserved.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract canonical Order damage payload stage plus shared cost-stage composition from callback; preserve all per-hit cause/packet/RNG ordering, physical exclusions, stasis, side ownership, rejected actions and exact cost-breakdown parity."
     },
     "lib/battle/CBattleInfoCallback.cpp::DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) const#1": {
+      "lines": 454,
+      "sha256": "d97e1acb8fa9aa8672b57b71f3748365b4c4c29db6647a86c841c75a9a472168",
       "kind": "exception",
-      "lines": 445,
-      "owner": "gameplay_engineer",
-      "rationale": "Exact inherited calculation509->445 after cohesive finalization extraction; remaining algorithm unchanged. Exact no-future-growth ratchet; source-only scope.",
-      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
-      "review_scope": "exact-inherited-calculation-no-new-algorithm",
-      "sha256": "263b98b5bd0483d75d07a56bfa3e05a5f429b93347ee2ba7df9b13559ec052d1",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Gameplay engineer owns focused defender-stance/native physical-modifier extraction before further substantive growth: const callback and attack info plus the existing captured IBattleInfo pointer into DamageAttackInfo, retaining protected coefficient and visibility authority. Follow with a separate Hero Orders payload stage using explicit attacker/defender cause outputs. Preserve query/exception order, all payload and DamageEstimation fields, reaction/redirect/Luck/Frozen/siege behavior, state/packets/both RNGs, unknown-script fallback, and exact577 ordered145 decisions/action/allowance bytes. Each helper stays cohesive below150 lines, no oversized relocation; callback and remaining function shrink and baseline ratchets. Engine engineer reviews shared-library/build boundaries. No unrelated growth or runtime acceptance."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Order preparation/adjacency extraction reduces file; added code routes native Vanguard benefits, Feint/riders and shared specialty cost calculation.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract canonical Order damage payload stage plus shared cost-stage composition from callback; preserve all per-hit cause/packet/RNG ordering, physical exclusions, stasis, side ownership, rejected actions and exact cost-breakdown parity."
     },
     "lib/battle/CBattleInfoCallback.cpp::ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const#1": {
       "kind": "legacy",
@@ -22114,22 +22035,12 @@
       "sha256": "6e25aad06fcb674cac97a751fdbb69bdab6cac06f65afce3565a910bb7d41bb3"
     },
     "lib/battle/CBattleInfoCallback.cpp::int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster, int32_t listedCostMultiplier, bool metamagicFollowup, SpellCostBreakdown * breakdown) const#1": {
-      "kind": "legacy",
-      "lines": 113,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 113 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "577475f3d0c9c2ca7ad3de66b97651f76430f53d62992a5a80bc2ed9d95ce4b8"
-    },
-    "lib/battle/CBattleInfoCallback.cpp::std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateImpl(BattleSide side, HeroCommand command, const std::vector<uint32_t> & targetUnitIds, heroCommands::TargetRejection & rejection) const#1": {
-      "kind": "legacy",
-      "lines": 219,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 219 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "772caec07a91e8dcd520e92b4c3e4f493d82d1afe49b6e82d21736f3b1018777"
+      "lines": 121,
+      "sha256": "d547c852078769799555344a3c9af2f1144bcb3e4c80460e19742db70fef76c4",
+      "kind": "exception",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Order preparation/adjacency extraction reduces file; added code routes native Vanguard benefits, Feint/riders and shared specialty cost calculation.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract canonical Order damage payload stage plus shared cost-stage composition from callback; preserve all per-hit cause/packet/RNG ordering, physical exclusions, stasis, side ownership, rejected actions and exact cost-breakdown parity."
     },
     "lib/battle/CBattleInfoCallback.cpp::std::vector<ForcedAction> CBattleInfoCallback::getBerserkForcedActions(const battle::Unit * berserker) const#1": {
       "kind": "legacy",
@@ -22168,15 +22079,12 @@
       "sha256": "69179bbe44ce19533239e4ecfa37009f4662a2d346b9fc5e048b2a3f652b1075"
     },
     "lib/battle/CBattleInfoCallback.h": {
+      "lines": 521,
+      "sha256": "b04c7259f3f6256db2ccbcb3611c5975637d46d81eb80e383f013f5da3649e51",
       "kind": "exception",
-      "lines": 517,
-      "owner": "gameplay_engineer",
-      "rationale": "Exact declaration-only routing515-to517: forward types, protected finalization helper; sole inline body unchanged, no state, virtual or inline algorithm growth. No future allowance.",
-      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
-      "review_scope": "exact-finalization-extraction-only",
-      "sha256": "5373fef75d49942f2ce91f88827a31bd910dadd16d76e87366fcc5f86d9c751d",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "No further growth allowed by this proposal. Continue cohesive AI/callback decomposition and full typed-hero/common-horizon implementation; native/source/alias lifetime evidence remains separate. Freeze exact517; substantive query authority remains in cohesive owners."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Four declarations expose cohesive extracted preparation stages; only existing one callable body remains.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Keep declarations with callback until focused Order query interface extraction; preserve symbol visibility and all call-site behavior."
     },
     "lib/battle/CBattleInfoEssentials.cpp": {
       "kind": "legacy",
@@ -22284,23 +22192,13 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "51867e982fc475a91d55c08dfc42420b03c7f6602398ccf5766be94285cc8e09"
     },
-    "lib/battle/HeroCommand.h": {
-      "kind": "legacy",
-      "lines": 531,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 531 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "abf099da013851741271616dbb2c5bbf210d25ff7ea03f533b68d388c0c8f479"
-    },
     "lib/battle/HeroCommand.h::HeroOrderState::void serialize(Handler & h)#1": {
-      "kind": "legacy",
-      "lines": 110,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 110 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "373f75d6c102633e400767276bfea082fade379302fe5a56f599e11cdba8454d"
+      "lines": 116,
+      "sha256": "ffe1ac8c7ca5b4d0753682a9de20469b1c37c2dbe4c7dfb97d306904efb362d6",
+      "kind": "exception",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "State-shape implementation extracted; template retains bounded feature-gated revised snapshot serialization.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract serialization capability preflight without payload reordering; current/historical state roundtrips and unsupported downsave rejection must remain exact."
     },
     "lib/battle/NewHorizonsConfusion.cpp::newHorizonsConfusion::Choices enumerateChoices(const CBattleInfoCallback & battle, const battle::Unit * unit)#1": {
       "kind": "legacy",
@@ -22601,15 +22499,12 @@
       "deferral": "Gameplay engineer: split attribute, capability and equipment projection stages before further growth, preserving profile precedence, authored overrides and captured policy. Exact107-line method only; no general growth allowance."
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp": {
+      "lines": 1371,
+      "sha256": "e75fafb6e7f5a94f7f9b42b94de5d683ed6396ef4eea2108ff6b716e3ac72aa7",
       "kind": "exception",
-      "lines": 1369,
-      "owner": "gameplay_engineer",
-      "rationale": "Strict root/resolved allowlists and optional presence copying for the new families; fresh admission delegates to focused named typed-current validator. No positional flag growth, defaults recapture or unrelated rules. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "6b751d12fedc37a0169e9932ca587928c4dae2da62806a65250ae59d2d310aa7",
-      "review_status": "SOURCE_AND_METADATA_CLEAR",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should extract the next touched installed/resolved allowed-field and optional-policy forwarding family into a focused registry validator, preserving captured absence and migration checks before further growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Allowed captured-policy fields and one optional policy copy route only; substantive specialty rules live in focused helper.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured optional specialty clause dispatch with stable validation errors and historical absence; test resolved/unresolved rules, fresh initialization and old saves without installing defaults."
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp::newHorizonsHeroes::std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill( const JsonNode & resolvedRules, bool magicHero, FactionID faction, const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)#1": {
       "kind": "legacy",
@@ -22678,15 +22573,12 @@
       "sha256": "d77772a1ede34de3884cee9989bc9a66c05a23ec458bb92090e6bb5a78bf9ef8"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target, const CGHeroInstance * capturedHero)#1": {
-      "deferral": "UI developer: extract the remaining spell and Skill presentation stages into focused typed helpers, preserving resolver order, captured-policy gates and historical fallbacks. Keep this exact artwork-routing change bounded at 133 lines; validate the extraction with current, historical and wrong-target specialty presentation tests.",
+      "lines": 134,
+      "sha256": "2833106fb604099d5c1ce1bb563b80241807f16f19b7a81a5226a7fb98483d6a",
       "kind": "exception",
-      "lines": 133,
-      "owner": "ui_developer",
-      "rationale": "Exact 133-line resolver stays unchanged except the final read-only dispatch to the focused retained-specialty-artwork helper. Existing20-line Resource helper extracted byte-identically; Halon typed retained bonus and Solmyr authored Master spell artwork only. No dispatcher growth, gameplay, save fields, names, math or captured-context guard changes. Exact source/baseline renewal independently reviewed; native/rendered acceptance separate.",
-      "review": "IR-FINAL14-RETAINED-SPECIALTY-20261024",
-      "review_scope": "resource-helper-extraction-and-retained-artwork-final-dispatch-only",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "2172eba7b65bc06ad19b82d2f29b218529077402d85c50e08e4a7d07b4e34418"
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "One focused specialty presentation dispatch plus include.",
+      "deferral": "Owner: UI developer. Interface/acceptance: Extract specialty-category dispatch into cohesive resolvers returning the same presentation contract; preserve captured identity, icons, text and unavailable-roster fallback."
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "kind": "exception",
@@ -22775,25 +22667,20 @@
       "sha256": "d0c1c6cc9d2112f2efbad2e25274cbccc51977d106fa726abcfaa7442ffd27ea"
     },
     "lib/gameState/CGameState.h": {
-      "kind": "legacy",
-      "lines": 633,
-      "owner": "engine_engineer",
-      "rationale": "Six-line positional specialty support route becomes named typed context; serializer shrinks and all original wire operations remain. No world suffix or new battle-save promise. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "59680eba05eb4096bc77ba8b706ee4a407d7293b73ac6285217bfd132d543c29",
-      "review_status": "SOURCE_AND_METADATA_CLEAR"
+      "lines": 645,
+      "sha256": "2cb73ed48df3dec02bd55c24353baf693af1bbec95151d6d2461336073ba18a2",
+      "kind": "exception",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Bounded fail-closed gates for captured revised Order and Chosen magic policy before/after existing fields.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract captured-rules serialization preflight with explicit feature flags; protect world current/historical roundtrips and reject unsupported loss without default substitution."
     },
     "lib/gameState/CGameState.h::CGameState::void serialize(Handler &h)#1": {
+      "lines": 297,
+      "sha256": "1b60e153f3cfd754f690aebdc3a13cade1ddfc5f982a585841c578d62d97b771",
       "kind": "exception",
-      "lines": 286,
-      "owner": "engine_engineer",
-      "rationale": "Six-line positional specialty support route becomes named typed context; serializer shrinks and all original wire operations remain. No world suffix or new battle-save promise. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "87fa8107d37608af3aeac3569fd7e924147de1258cb935f852fa184a54efad12",
-      "review_status": "SOURCE_AND_METADATA_CLEAR",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact639-line header and293-line serialize bounds only. Before further substantive serializer growth, extract a coherent typed version/preflight validation family into a focused non-writing owner, preserving direct/enclosing prefix rejection, historical absence and exact wire order. No blanket exception or runtime acceptance. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Bounded fail-closed gates for captured revised Order and Chosen magic policy before/after existing fields.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract captured-rules serialization preflight with explicit feature flags; protect world current/historical roundtrips and reject unsupported loss without default substitution."
     },
     "lib/gameState/CGameStateCampaign.cpp": {
       "kind": "legacy",
@@ -22832,15 +22719,12 @@
       "sha256": "5b49a7ff2d4b8ae1750fecda2dd74cc753f8c985600187dc543e3d50f8d8368b"
     },
     "lib/gameState/GameStatePackVisitor.cpp": {
+      "lines": 4339,
+      "sha256": "dff2e4ce8371dd540da68a8931ba5394b1d05f4665ca99c3be76e8cf7d3413c0",
       "kind": "exception",
-      "lines": 4337,
-      "owner": "engine_engineer",
-      "rationale": "Two bounded cancellation-restoration lines return Rosic original accepted-day receipt; accepted-entry planning and grants remain in focused source owner.",
-      "review": "recovery-verdish-current-rebase-source-v1",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "f26fe84c1ab767bef2b535668d394977208fa24e7a458bfc7de20c72e902aea5",
-      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract remaining battle-completion Spell Point restoration into a focused ordered helper, retaining temporary Buffer, legacy ceiling, recovery and original cancellation snapshots with packet/state/rejection characterization before further visitor growth."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Two-line shared finalizer call after captured Luck/Morale validation and before equality; authority validation order preserved.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract canonical Order StartAction validation into a focused validated transition contract; preserve pre-cleanup capture, draw context, idempotence, equality, allowance spending and packet/RNG order."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)#1": {
       "kind": "legacy",
@@ -22918,15 +22802,12 @@
       "sha256": "ba82120d10d74f201ba7dafb8ba1e21344909c80165f8f1c1b2802ea0f2da480"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitStartAction(StartAction & pack)#1": {
+      "lines": 473,
+      "sha256": "f1a373a675447742b933f9c660475ae17250a574a3973a98693d719941063f89",
       "kind": "exception",
-      "lines": 471,
-      "owner": "engine_engineer",
-      "rationale": "Reviewed one-line correctness exception: after clearing canonical Orders for an accepted noncanonical Hero command, restore the existing legacy activeOrder marker from the validated accepted command. Prevents a valid Focus Fire mark from contradicting its unchanged serializer/validator. No new validation, state fields, wire version, allocation, callback or RNG; all other code stays exact. Coupling this urgent representation correction to the large visitor extraction would increase review risk.",
-      "review": "IR-LEGACY-MARKER-20261017",
-      "review_scope": "exact-one-line-accepted-legacy-command-marker-correction-only",
-      "sha256": "c3753269db110ade2043bf8b9cd9bd1cda5af4eda29b167bef25b1c5fdd5c046",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_RUNTIME_PENDING",
-      "deferral": "Limited to this exact source hash and one added assignment. Deferred to focused validated Hero Order transition extraction alongside the pending packet/world and AI action-admission integration. That integration remains separately reviewed/unapplied; no generic oversized-file/function growth credit or future edit authority."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Two-line shared finalizer call after captured Luck/Morale validation and before equality; authority validation order preserved.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract canonical Order StartAction validation into a focused validated transition contract; preserve pre-cleanup capture, draw context, idempotence, equality, allowance spending and packet/RNG order."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)#1": {
       "kind": "exception",
@@ -23129,15 +23010,12 @@
       "sha256": "aebf3e62ed5bcf798ff31c425cdd5c55768f44457bb8c036121a078c20537cff"
     },
     "lib/mapObjects/CGHeroInstance.cpp": {
+      "lines": 3598,
+      "sha256": "0b81e634bfbdc60108800aee88d5d0118ceba5277863a355d3d5ef8b678dd286",
       "kind": "exception",
-      "lines": 3592,
-      "owner": "engine_engineer",
-      "rationale": "Primary field transition/setter moves to focused primitive; XP/Scholar consumption delegates to reviewed pure family plans. No generic level curve or primary cap rebalance. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "1e0de704680aabc7e6158d6081dc25ee9a0114ab67dbeb19fd75dcebcda8ba3f",
-      "review_status": "SOURCE_AND_METADATA_CLEAR",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Bounded fresh producer suppression and shared specialty cost routing; actual captured policy lives in focused Chosen helper.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity."
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",
@@ -23158,14 +23036,12 @@
       "sha256": "708894003cfd0904955f9276d3f509eb89c1ea2fb5141cc43bf61b487b2ea937"
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)#1": {
+      "lines": 370,
+      "sha256": "8a0a41a75a2e637017860f1736df0e2e74a5a98137bf916703c8d38b4c0ef9d8",
       "kind": "exception",
-      "lines": 367,
-      "owner": "engine_engineer",
-      "rationale": "Cohesive starting army/book/catapult equipment initialization extracted to152-line HeroStartingEquipment owner. Fresh default Tent intent stays in that owner; Nimbus Learning extraction retained and unrelated hero responsibilities unchanged.",
-      "review": "default-hero-equipment-creation-source-v1",
-      "review_scope": "fresh-default-equipment-intent-and-existing-artifact-routing-only",
-      "sha256": "7aed8f355a791f045ff468482f6db911fadb3556e7e128ca9e8526109204b756",
-      "deferral": "Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Bounded fresh producer suppression and shared specialty cost routing; actual captured policy lives in focused Chosen helper.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity."
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)#1": {
       "kind": "exception",
@@ -24319,15 +24195,12 @@
       "sha256": "cf553e17beb1f81fce90fee209b9fd0f3c9e6a508a4ad5b332d6709d6462fa74"
     },
     "lib/serializer/ESerializationVersion.h": {
+      "lines": 569,
+      "sha256": "f84bb8a484193a9cb00896a56f621fcae0e54b170ff11bac7f27eadb8ab03871",
       "kind": "exception",
-      "lines": 568,
-      "owner": "engine_engineer",
-      "rationale": "Mechanical single append after Recovery and monotonic CURRENT; all prior ordinals/aliases stay stable, no third rider capability. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "d3b4b202de7a707dd28b1aac0295412aca1dd7a71dd58ab299eea0823da6a3de",
-      "review_status": "SOURCE_AND_METADATA_CLEAR",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact559-line declarative capability registry only. No unrelated helper/validator growth; each future append requires exact independent review. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Mechanical appended save-feature enum and CURRENT alias only.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Keep coherent append-only version registry; require exact value/history compatibility checks before future version changes."
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -24499,36 +24372,28 @@
       "deferral": "Gameplay owner must extract a cohesive effect-value initialization or recipient-damage stage before further substantive growth in this method. Preserve explicit override precedence, mode/saved-roster guards, fixed/power separation, downstream modifiers and projection/native equality. Exact unchanged-size exception only."
     },
     "lib/spells/ISpellMechanics.h": {
+      "lines": 789,
+      "sha256": "aff435ba41e4dd5289cf92ef71641fa71172fc75f7b11f53e8a0aeaf7a4bdb66",
       "kind": "exception",
-      "lines": 786,
-      "owner": "gameplay_engineer",
-      "rationale": "Transient optional original-cast0/positive factor and read-only getter declarations/copy layout only. No persistent runtime state or inline policy scan; file786 exact bound.",
-      "review": "recovery-verdish-current-rebase-source-v1",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "f71db21de3f8a8bfa4bfc83d4c4bbda73673ed44f37eefac5446f28dc138f295",
-      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Gameplay owner must split a cohesive mechanics capability interface before further substantive header growth. Preserve default behavior, DLL linkage, copied event-context lifetime and existing read-only Vines receipt contracts. Exact772-line interface bound; no regrowth credit."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Three focused Chosen query declarations only; implementations live in small Chosen component.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Group mechanic-specific query declarations behind cohesive query interfaces only with Lua/API/shared-library linkage parity and historical spell regression coverage."
     },
     "lib/spells/NewHorizonsMagic.cpp": {
-      "kind": "legacy",
-      "lines": 2085,
-      "owner": "gameplay_engineer",
-      "rationale": "Shrinking2122 to2085 ratchet: extract cohesive Quicksand count/unit selection/row validation to an81-line owner, maxfunction28. Readout reuses unit helper; other spell responsibilities remain. No future regrowth credit or native/gameplay acceptance.",
-      "review": "IR-QUICKSAND-RAW-RATING-20261024",
-      "review_scope": "exact-quicksand-captured-raw-rating-and-cohesive-shrinking-extraction-only",
-      "sha256": "1cf44b9c47c5a7ad173eb23b915cd4b90f70d96a34870db5132316355be4cbb8",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "lines": 2087,
+      "sha256": "ea5896988b549b8c947520abe70fd74d06ea9b28a41ecab0dce58f09dbe0d440",
+      "kind": "exception",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "One focused Chosen validator dispatch/include and allowed field; no substantive Chosen rules in legacy validator.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured spell-clause dispatch into a dedicated validator preserving accepted rows, validation errors and historical profile behavior."
     },
     "lib/spells/NewHorizonsMagic.cpp::newHorizonsMagic::void validateRules(const JsonNode & rules)#1": {
+      "lines": 342,
+      "sha256": "1c8ffd39de28b896bbb776d007f89503141193246ffd2b7bccc3830f8986b1fa",
       "kind": "exception",
-      "lines": 341,
-      "owner": "gameplay_engineer",
-      "rationale": "Shrink ordered validateRules registry from347 to341 lines by extracting the existing selectedPlacement validation and new optional Quicksand-unit validation into the cohesive81-line owner. Preserve all other ordered admissions and the inherited future-extraction obligation; no regrowth credit or native acceptance.",
-      "review": "IR-QUICKSAND-RAW-RATING-20261024",
-      "review_scope": "exact-quicksand-captured-raw-rating-and-cohesive-shrinking-extraction-only",
-      "sha256": "70aad40cccee817c9939e8ae8c0f61b2aa4fd28405f7f03c5e8d0647801e18e2",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "One focused Chosen validator dispatch/include and allowed field; no substantive Chosen rules in legacy validator.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured spell-clause dispatch into a dedicated validator preserving accepted rows, validation errors and historical profile behavior."
     },
     "lib/spells/NewHorizonsMagic.h": {
       "kind": "exception",
@@ -24542,22 +24407,12 @@
       "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Gameplay owner keeps exact522-line declaration registry bound; before substantive interface expansion, split a cohesive capability API without duplicating saved-rule identity or exposing mutable state. Preserve generic callers and conservative defaults."
     },
     "lib/spells/NewHorizonsRealityWarp.cpp::newHorizonsRealityWarp::PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t first, uint32_t second)#1": {
-      "kind": "legacy",
       "lines": 141,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 141 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "cad8b0c09ac468222eac0827ce0430ec8f1a163f44ae91f5a89cd7be8e719f7b"
-    },
-    "lib/spells/NewHorizonsRealityWarp.cpp::newHorizonsRealityWarp::StayReason recipientReason(const CBattleInfoCallback & callback, const JsonNode & rules, Collected & group, const battle::Unit & recipient, const battle::BattleEffectSnapshot & destination)#1": {
-      "kind": "legacy",
-      "lines": 90,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 90 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "25b23169f8bf0d905c3a9448e31adffcc7fb59e71db1b72dbb5e0dbf8eec6a4f"
+      "sha256": "765f2b0ca71be69da5d4fa5f1d0d44ddbb45c5d05f1e217607cb4daed2842d19",
+      "kind": "exception",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Recipient legality forwards origin id into focused Chosen army-uniqueness helper; native simultaneous exchange planner remains intact.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract specialized recipient adapters only with reciprocal/mixed-legality transfer, stasis, corpse and same-army uniqueness regressions preserving held bundles and packet atomicity."
     },
     "lib/spells/TargetCondition.cpp": {
       "kind": "legacy",
@@ -24744,13 +24599,12 @@
       "sha256": "81986bb9f472717345601c335fa8c7fc6c028a99cce2051c8e8e5895272d6d4a"
     },
     "luascript/api/spells/Mechanics.cpp::scripting::api::void MechanicsProxy::registerMethods(MethodRegistrar & R)#1": {
-      "kind": "legacy",
-      "lines": 279,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 279 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "da8bef52b98eb4ab5e2a486b9c04e6e3ebaa7db862ca3841ad86f2e8720a393e"
+      "lines": 285,
+      "sha256": "558a1bf8b5c2621102dba614b1d2c0243be437154920d4a3fe82e4eddcebe0b9",
+      "kind": "exception",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Mechanical registrations route to focused native Chosen queries without Lua-side formula copies.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Keep coherent API registry; any category extraction must preserve registered names, signatures, docs and Lua5.4/LuaJIT binding behavior."
     },
     "mapeditor/Animation.cpp": {
       "kind": "legacy",
@@ -25471,15 +25325,12 @@
       "sha256": "86424b16bdbdb1f8d1cead11d9372dbf6bf3a7c0c7f3d47ed7dbf6d368d2002e"
     },
     "server/battles/BattleActionProcessor.cpp": {
-      "kind": "legacy",
-      "lines": 6158,
-      "owner": "engine_engineer",
-      "rationale": "Exact shrinking combined canonical Order grant extraction and Stage11 Frozen extraction. Current6254 to common6197 to combined6158. Only makeAttack body changes between common and combined; all other138 complete callable bodies and existing13 engine/aura fixes are retained. Focused extracted owners are98,78 and66 lines; no transferred oversized helper or independent authority seam.",
-      "review": "IR-COMMON-FINAL-BAP-COMPOSITION-20261017",
-      "review_scope": "exact-common-plus-stage11-union-only",
-      "sha256": "25b48cddde5e907665d0e070ee4ccbd95ceb29ed97411fd257f8ad99d963fa7d",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine engineer retains native orchestration debt at this exact6158-line ceiling. Next affected makeAttack work must extract one further ordered reaction stage behind synchronous prepare/resolve input/result values while retaining packet publication, RNG draw order, attacker/recipient identity and lifetime. Require current Frozen full-action, affliction stamping, attack/reaction/LastStand and save-state regression evidence. No regrowth or blanket ceiling waiver."
+      "lines": 6043,
+      "sha256": "da1b8d51e720728aa8095f9edac96113044a7fcc3f0f2dc04cb5ef30dd6cc92f",
+      "kind": "exception",
+      "review": "IR-ORDER-LOG-EXTRACTION-AND-FEEDBACK-SOURCE-20261026",
+      "rationale": "Seven removal-before-add packet lines and three shared finalization lines after existing Luck/Morale receipts, before immutable StartAction. Follow-up extracts Order name/target/log formatting into a194-line cohesive component, ratcheting this owner down by125 lines; all retained callable bodies are unchanged.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract prepared Order effect packet installation and Order StartAction preparation into focused transition helpers; preserve remove/add/log/action/RNG order, rejected-command atomicity and immutable snapshot equality."
     },
     "server/battles/BattleActionProcessor.cpp::BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1": {
       "kind": "legacy",
@@ -25545,15 +25396,12 @@
       "sha256": "cd376294ca5c7fdfbd2f4ee802f1cc04266abb1d7366cd3f5a9fa7798f206c5f"
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba, bool * masterGateActivationContinuationOut, bool voluntary)#1": {
-      "kind": "legacy",
-      "lines": 479,
-      "owner": "engine_engineer",
-      "rationale": "Exact makeBattleActionImpl480 to479-line canonical admission route uses shared precleanup Order preparation while preserving the native legacy branch and original shape/allowance validation. The remaining large command dispatcher is unchanged responsibility debt.",
-      "review": "IR-COMMON-LEGACY-CONTROLLER-FINAL-20261017",
-      "review_scope": "exact-shrinking-Order-composition-ratchet",
-      "sha256": "6194916e5c62ec5b78f11ec6e53d27d03e4ed02f8a3806df94be1efc4c955700",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine engineer owns further authoritative command-admission decomposition into read-only prepared plans before substantive expansion. Preserve command shape, saved-rule identity, pre-StartAction rejection, one payment, packet/RNG order and all canonical/legacy native rejection controls. Exact479-line freeze only."
+      "lines": 482,
+      "sha256": "d571948ee6295a4b2500174e416ad2011b95d0bafd0a1d71a3277643563d1208",
+      "kind": "exception",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Seven removal-before-add packet lines and three shared finalization lines after existing Luck/Morale receipts, before immutable StartAction.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract prepared Order effect packet installation and Order StartAction preparation into focused transition helpers; preserve remove/add/log/action/RNG order, rejected-command atomicity and immutable snapshot equality."
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction &ba, BattleAction * effectiveActionOut, bool * masterGateActivationContinuationOut)#1": {
       "kind": "legacy",
@@ -25563,15 +25411,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "24cd7f4bdfe6e4a24476fbced7f2588cf892c2edcfc7f873d46cf10c0d908e60"
-    },
-    "server/battles/BattleActionProcessor.cpp::static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSide side, const HeroOrderState & state)#1": {
-      "kind": "legacy",
-      "lines": 100,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 100 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c2dc59b8702696954ea6614e943d42747c8692e1d924cbabb85d3d08aceb902b"
     },
     "server/battles/BattleActionProcessor.cpp::static std::vector<uint32_t> applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const bool purifyingMandate)#1": {
       "kind": "legacy",
@@ -26505,15 +26344,12 @@
       "rationale": "Cohesive extracted skill/study reward query, preserving prior choices and adding only captured Tiva study projection. Existing engine preview primitive avoids duplicated primary cap arithmetic; no authoritative mutation. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged."
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse, LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse, RegenerationBaselineReuse::TestControl * regenerationReuse)#1": {
+      "lines": 1203,
+      "sha256": "928ff0db08d15e10da3f9f6a3f56f7bfc1a1f61f5d500177ef716784818834a5",
       "kind": "exception",
-      "lines": 1195,
-      "sha256": "325f276ff6c90a72e96736ea3aabc9daf45a11dc981a81ba18a17d831e684c47",
-      "owner": "ai_engineer",
-      "review": "IR-REGENERATION-BASELINE-REUSE-R2-20261024",
-      "rationale": "Exact1197\u21921195 shrinking logical candidate evaluator; appended optional Regeneration test control deliberately renews its changed symbol, not an inherited allowance. Distinct casts, candidate order and forecasts remain.",
-      "review_scope": "exact-completed-Regeneration-baseline-source-only-no-runtime-or-performance-acceptance",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must extract a cohesive remaining per-candidate admission/continuation owner before substantive expansion. Preserve canonical/historical selector policy, ordered conditions/early exits, FP grouping, callbacks, mandatory Orders, rejection/packet/state and both RNG parity. This exact shrinking cap is evaluator5525/attempt1195; no future growth credit. Runtime acceptance is separate."
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Route Chosen marginal valuation and Flying cache invalidation to the focused helper; fixed horizon and utility model unchanged.",
+      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance."
     },
     "AI/BattleAI/RegenerationForecast.cpp::float projectedRegenerationValue( const Environment * environment, const std::shared_ptr<CBattleInfoCallback> & beforeCast, const std::shared_ptr<HypotheticBattle> & afterCast, const std::vector<battle::Units> & turnOrder, SpellID spell, DamageCache & damageCache, BattleSide ourSide, PlayerColor ourPlayer, float positiveEffectMultiplier, RegenerationBaselineReuse * reuse)#1": {
       "kind": "review",
@@ -26533,6 +26369,55 @@
       "review": "IR-GARRISON-FIXED-SOURCE-ORGANIZATION-20261024",
       "review_scope": "exact-source-organization-only-no-native-or-gameplay-acceptance",
       "rationale": "One deterministic whole-army merge-policy function accepts concrete slot views plus the real destination hero for captured saved-rule capacity. The original two-armed-instance API delegates; matching/first-empty/duplicate-consolidation order and per-stack check are preserved. The102-line function remains one cohesive shared server-equivalent policy below150; no AI types, numeric changes, saved fields or runtime certification."
+    },
+    "client/windows/NewHorizonsOrderIndicators.h::newHorizonsOrderIndicators::inline std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)#1": {
+      "lines": 121,
+      "sha256": "f1353850305a82657e9c904b3f176995c50d091e87ded9036324c7730be990af",
+      "kind": "review",
+      "review": "IR-ORDER-LOG-EXTRACTION-AND-FEEDBACK-SOURCE-20261026",
+      "rationale": "New cohesive extracted rules/state/query component; callable responsibility reviewed at the80-line trigger and below150-line ceiling. Same121-line follow-up only removes misleading presentation-only wording from tactical Order help; no input, native benefit or timer behavior change."
+    },
+    "lib/battle/HeroCommandBattleValidation.cpp::void BattleInfo::validateFocusFireStates() const#1": {
+      "lines": 89,
+      "sha256": "913d21b41fc32f190961611f8581f4daa6e0caf4d45181a8d495075ac1c42569",
+      "kind": "review",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "New cohesive extracted rules/state/query component; callable responsibility reviewed at the80-line trigger and below150-line ceiling."
+    },
+    "lib/battle/HeroCommandPreparation.cpp::std::optional<HeroOrderState> CBattleInfoCallback::battleFinalizeHeroOrderState(BattleSide side, HeroOrderState result) const#1": {
+      "lines": 91,
+      "sha256": "cf7176abc18c71ef473d7642c2fa94d6b45565fef1c7f4c52a18ecdc8956c6a4",
+      "kind": "review",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "New cohesive extracted rules/state/query component; callable responsibility reviewed at the80-line trigger and below150-line ceiling."
+    },
+    "lib/battle/HeroCommandPreparation.cpp::std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateImpl(BattleSide side, HeroCommand command, const std::vector<uint32_t> & targetUnitIds, heroCommands::TargetRejection & rejection) const#1": {
+      "lines": 129,
+      "sha256": "b3b87af7a5e7c720cca8e293a935a213c23d30a855992ec13136355bcd5bedc3",
+      "kind": "review",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "New cohesive extracted rules/state/query component; callable responsibility reviewed at the80-line trigger and below150-line ceiling."
+    },
+    "lib/battle/HeroCommandState.cpp::void HeroOrderState::validateShape() const#1": {
+      "lines": 92,
+      "sha256": "5fce67e1a88c4adccb3b0bf787d577e0309b34f3023fb362a0754f254c0ee2ea",
+      "kind": "review",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "New cohesive extracted rules/state/query component; callable responsibility reviewed at the80-line trigger and below150-line ceiling."
+    },
+    "lib/spells/NewHorizonsRealityWarp.cpp::newHorizonsRealityWarp::StayReason recipientReason(const CBattleInfoCallback & callback, const JsonNode & rules, Collected & group, uint32_t originalSourceUnitId, const battle::Unit & recipient, const battle::BattleEffectSnapshot & destination)#1": {
+      "lines": 93,
+      "sha256": "ee57acf10e48760cf67b2024a264f63732d0664e26844efe2db3b5f6ac80f2a5",
+      "kind": "review",
+      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "rationale": "Recipient legality forwards origin id into focused Chosen army-uniqueness helper; native simultaneous exchange planner remains intact."
+    },
+    "server/battles/HeroOrderLog.cpp::MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSide side, const HeroOrderState & state)#1": {
+      "lines": 104,
+      "sha256": "f8a9c504455bedcd2463d10df5c067fd5143c5f646c96327e7854704b9dcdcfe",
+      "kind": "review",
+      "review": "IR-ORDER-LOG-EXTRACTION-AND-FEEDBACK-SOURCE-20261026",
+      "rationale": "Cohesive authoritative Order feedback formatter extracted from the action processor. Historical branch text remains exact; Feint/Vanguard append only finalized stored base/Crown potency and inclusive duration. Five total helper bodies in194-line component, this formatter104 lines below150 ceiling. No action/state/RNG mutation or duplicated new formulas."
     }
   }
 }

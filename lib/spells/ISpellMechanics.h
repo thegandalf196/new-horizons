@@ -390,6 +390,9 @@ public:
 	virtual int32_t getEffectPowerDivisor() const { return 1; }
 	/// Effective saved-rules school-rank coefficient for this spell and caster.
 	int32_t getSchoolRankPowerCoefficientPercent() const;
+	int32_t getTheChosenNominalDuration() const;
+	int32_t getTheChosenDuration() const;
+	int32_t getTheChosenJoustingPercent() const;
 	/// Effective saved-rules School × Spellcraft coefficient, in basis points.
 	virtual int32_t getSpellPowerCoefficientBasisPoints() const;
 	virtual int32_t getHerbalSurgeonRegenerationPercent() const { return 0; }

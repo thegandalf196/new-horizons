@@ -341,3 +341,45 @@ TEST_F(LazyChargeValueTest, SevenBySevenFreshEagerFirstThenWarmAndBonusInvalidat
 	ASSERT_NO_FATAL_FAILURE(compareRoutes(true));
 	ASSERT_NO_FATAL_FAILURE(checkChargeOracle());
 }
+
+TEST_F(CanonicalOrderValueTest, RevisedFeintUsesOnlyExpectedEnemyRetaliation)
+{
+	useRevisedOrders = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const std::vector<uint32_t> noTargets;
+	heroOrderValue::CanonicalOrderValue value(*battle(), BattleSide::ATTACKER, HeroCommand::FEINT, noTargets);
+	const auto prepared = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER, HeroCommand::FEINT, {});
+	ASSERT_TRUE(prepared && prepared->revision);
+	float expected = 0.0f;
+	for(const auto * own : value.ownUnits)
+	{
+		if(!own->willMove(0) || !own->isMeleeAttacker())
+			continue;
+		float best = 0.0f;
+		for(const auto * enemy : value.enemyUnits)
+		{
+			DamageEstimation counter;
+			battle()->battleEstimateDamage(BattleAttackInfo(own, enemy, 0, false), &counter);
+			best = std::max(best, battleDamageValue::averageOrderDamage(counter));
+		}
+		expected += best;
+	}
+	const auto actual = value.directValue(std::nullopt).direct;
+	ASSERT_TRUE(actual);
+	EXPECT_FLOAT_EQ(*actual, expected * prepared->revision->feintReductionPercent / 100.0f);
+}
+
+TEST_F(CanonicalOrderValueTest, RevisedVanguardAdmissionUsesCapturedEligibleRecipients)
+{
+	useRevisedOrders = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const std::vector<uint32_t> noTargets;
+	heroOrderValue::CanonicalOrderValue value(*battle(), BattleSide::ATTACKER, HeroCommand::VANGUARD, noTargets);
+	const auto prepared = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER, HeroCommand::VANGUARD, {});
+	ASSERT_TRUE(prepared && prepared->revision);
+	const auto actual = value.directValue(std::nullopt).direct;
+	ASSERT_TRUE(actual);
+	EXPECT_GT(*actual, 0.0f);
+	EXPECT_FLOAT_EQ(*actual, static_cast<float>(prepared->revision->recipientUnitIds.size()
+		* prepared->revision->vanguardStatBonus));
+}

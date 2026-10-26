@@ -19,6 +19,7 @@
 
 #include "../battle/HeroCommand.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsTheChosen.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../battle/NewHorizonsPlague.h"
 
@@ -409,9 +410,14 @@ public:
 
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{
+			if(h.saving)
+				heroCommands::validateRevisedRulesSerialization(heroCommandRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 			h & heroCommandRules;
 			if(!h.saving)
 			{
+				heroCommands::validateRevisedRulesSerialization(heroCommandRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 				heroCommands::validateRules(heroCommandRules);
 				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 					&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
@@ -425,7 +431,13 @@ public:
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC))
 		{
+			if(h.saving)
+				newHorizonsTheChosen::validateSerialization(magicRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 			h & magicRules;
+			if(!h.saving)
+				newHorizonsTheChosen::validateSerialization(magicRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 			if(!h.saving)
 				newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));

@@ -23,6 +23,8 @@ class HeroCommandFixture : public BattleTestFixture
 {
 protected:
 	bool useCommands = true;
+	// Historical Order characterizations remain pinned when current defaults change.
+	bool useRevisedOrders = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -30,7 +32,7 @@ protected:
 		JsonNode rules;
 		if(useCommands)
 		{
-			const JsonNode file(JsonPath::builtin("config/newHorizonsCombat"));
+			const JsonNode file(JsonPath::builtin(useRevisedOrders ? "config/newHorizonsCombat" : "config/newHorizonsCombatV3"));
 			rules = file["combat"]["heroCommands"];
 			heroCommands::validateRules(rules);
 		}

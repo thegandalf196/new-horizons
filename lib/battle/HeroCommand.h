@@ -11,6 +11,7 @@
 
 #include "../json/JsonNode.h"
 #include "NewHorizonsHeroLuck.h"
+#include "HeroCommandRevision.h"
 
 #include <algorithm>
 #include <array>
@@ -45,7 +46,9 @@ enum class HeroCommand : int8_t
 	BRACE = 9,
 	PROTECT = 10,
 	FLANK = 11,
-	SECOND_WIND = 12
+	SECOND_WIND = 12,
+	FEINT = 13,
+	VANGUARD = 14
 };
 
 /// A value-only snapshot of the transient state created when an Order is issued.
@@ -85,6 +88,7 @@ struct DLL_LINKAGE HeroOrderState
 	static constexpr uint16_t MAX_HOLD_MAGICAL_REDUCTION_BASIS_POINTS = 5000;
 	static constexpr uint16_t BASIS_POINTS_PER_PHYSICAL_PERCENT = 50;
 
+	std::optional<heroCommands::RevisedOrderSnapshot> revision;
 	HeroCommand command = HeroCommand::NONE;
 	int32_t issuedRound = 0;
 	uint32_t primaryTargetUnitId = INVALID_UNIT_ID;
@@ -157,6 +161,9 @@ struct DLL_LINKAGE HeroOrderState
 
 	bool scheduledFor(uint32_t unitId, int32_t currentRound) const
 	{
+		if(revision && command == HeroCommand::VANGUARD)
+			return currentRound >= issuedRound && currentRound <= revision->expiresAfterRound
+				&& (command == HeroCommand::FEINT || revision->contains(unitId));
 		return currentRound == issuedRound || (currentRound > issuedRound
 			&& std::binary_search(divineDisciplineRecipientUnitIds.begin(), divineDisciplineRecipientUnitIds.end(), unitId)
 			&& !std::binary_search(divineDisciplineCompletedUnitIds.begin(), divineDisciplineCompletedUnitIds.end(), unitId));
@@ -164,18 +171,13 @@ struct DLL_LINKAGE HeroOrderState
 
 	bool hasScheduledRecipients(int32_t currentRound) const
 	{
+		if(revision && command == HeroCommand::VANGUARD)
+			return currentRound >= issuedRound && currentRound <= revision->expiresAfterRound;
 		return currentRound == issuedRound || (currentRound > issuedRound
 			&& divineDisciplineCompletedUnitIds.size() < divineDisciplineRecipientUnitIds.size());
 	}
 
-	bool completeDisciplineActivation(uint32_t unitId, int32_t currentRound)
-	{
-		if(currentRound <= issuedRound || !scheduledFor(unitId, currentRound))
-			return false;
-		divineDisciplineCompletedUnitIds.insert(std::lower_bound(divineDisciplineCompletedUnitIds.begin(),
-			divineDisciplineCompletedUnitIds.end(), unitId), unitId);
-		return true;
-	}
+	bool completeDisciplineActivation(uint32_t unitId, int32_t currentRound);
 
 	template <typename Handler> void validateRoyalStandardSerialization(Handler & h) const
 	{
@@ -252,86 +254,14 @@ struct DLL_LINKAGE HeroOrderState
 		return it == flankTargets.end() ? nullptr : &*it;
 	}
 
-	void validateShape() const
-	{
-		if(ironWillLifetime && (command == HeroCommand::SECOND_WIND || divineDisciplineRecipientUnitIds.empty()))
-			throw std::runtime_error("Invalid Iron Will Order carry");
-		const auto validIds = [](const auto & ids)
-		{
-			return std::is_sorted(ids.begin(), ids.end())
-				&& std::adjacent_find(ids.begin(), ids.end()) == ids.end()
-				&& std::all_of(ids.begin(), ids.end(), [](uint32_t id)
-					{ return id <= static_cast<uint32_t>(std::numeric_limits<int32_t>::max()); });
-		};
-		if(!validIds(crownAndAltarRecipientUnitIds) || crownAndAltarFocusFirePercent < 0
-			|| crownAndAltarFocusFirePercent > 200
-			|| crownAndAltarHoldReductionBasisPoints > MAX_HOLD_MAGICAL_REDUCTION_BASIS_POINTS
-			|| crownAndAltarHoldReductionBasisPoints % BASIS_POINTS_PER_PHYSICAL_PERCENT != 0
-			|| (crownAndAltarFocusFirePercent != 0 && command != HeroCommand::FOCUS_FIRE)
-			|| (crownAndAltarHoldReductionBasisPoints != 0 && command != HeroCommand::HOLD_THE_LINE)
-			|| (crownAndAltarRecipientUnitIds.empty()
-				&& (crownAndAltarFocusFirePercent != 0 || crownAndAltarHoldReductionBasisPoints != 0)))
-			throw std::runtime_error("Invalid Crown and Altar recipient components");
-		if(!validIds(divineDisciplineRecipientUnitIds) || !validIds(divineDisciplineCompletedUnitIds)
-			|| !std::includes(divineDisciplineRecipientUnitIds.begin(), divineDisciplineRecipientUnitIds.end(),
-				divineDisciplineCompletedUnitIds.begin(), divineDisciplineCompletedUnitIds.end()))
-			throw std::runtime_error("Invalid Divine Discipline recipient lifetime");
-		const auto maxWireId = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
-		if(!std::is_sorted(royalStandardRecipientUnitIds.begin(), royalStandardRecipientUnitIds.end())
-			|| std::adjacent_find(royalStandardRecipientUnitIds.begin(), royalStandardRecipientUnitIds.end())
-				!= royalStandardRecipientUnitIds.end()
-			|| std::any_of(royalStandardRecipientUnitIds.begin(), royalStandardRecipientUnitIds.end(),
-				[maxWireId](uint32_t id) { return id > maxWireId; }))
-			throw std::runtime_error("Invalid Royal Standard recipient identities");
-		if(command == HeroCommand::NONE || issuedRound < 1
-			|| warcastingBonusPercent < 0 || warcastingBonusPercent > 100
-			|| (sacredCommandEfficiencyBonusPercent != 0 && sacredCommandEfficiencyBonusPercent != 10)
-			|| (knightlySequenceEfficiencyBonusPercent != 0 && knightlySequenceEfficiencyBonusPercent != 5)
-			|| holdMagicalReductionBasisPoints > MAX_HOLD_MAGICAL_REDUCTION_BASIS_POINTS
-			|| holdMagicalReductionBasisPoints % BASIS_POINTS_PER_PHYSICAL_PERCENT != 0
-			|| protectInterceptionLimit < 1 || protectInterceptionLimit > 2
-			|| protectInterceptionsConsumed > protectInterceptionLimit
-			|| (primaryTargetUnitId != INVALID_UNIT_ID && primaryTargetUnitId > maxWireId)
-			|| (secondaryTargetUnitId != INVALID_UNIT_ID && secondaryTargetUnitId > maxWireId)
-			|| !std::is_sorted(consumedUnitIds.begin(), consumedUnitIds.end())
-			|| std::adjacent_find(consumedUnitIds.begin(), consumedUnitIds.end()) != consumedUnitIds.end()
-			|| !std::is_sorted(braceTriggeredUnitIds.begin(), braceTriggeredUnitIds.end())
-			|| std::adjacent_find(braceTriggeredUnitIds.begin(), braceTriggeredUnitIds.end()) != braceTriggeredUnitIds.end()
-			|| !std::is_sorted(holdBrokenUnitIds.begin(), holdBrokenUnitIds.end())
-			|| std::adjacent_find(holdBrokenUnitIds.begin(), holdBrokenUnitIds.end()) != holdBrokenUnitIds.end())
-			throw std::runtime_error("Invalid New Horizons Hero Order state shape");
-		if(command != HeroCommand::PROTECT
-			&& (protectInterceptionsConsumed != 0 || protectInterceptionLimit != 1))
-			throw std::runtime_error("Non-Protect Hero Order contains Protect interception state");
-		if(command != HeroCommand::HOLD_THE_LINE && holdMagicalReductionBasisPoints != 0)
-			throw std::runtime_error("Non-Hold Hero Order contains Iron Discipline state");
-		for(const auto & id : consumedUnitIds)
-			if(id > maxWireId)
-				throw std::runtime_error("Invalid consumed Hero Order unit identity");
-		for(const auto & id : braceTriggeredUnitIds)
-			if(id > maxWireId)
-				throw std::runtime_error("Invalid Brace Hero Order unit identity");
-		for(const auto & id : holdBrokenUnitIds)
-			if(id > maxWireId)
-				throw std::runtime_error("Invalid Hold the Line Hero Order unit identity");
-		for(const auto & anchor : anchors)
-			if(anchor.unitId > maxWireId || anchor.position < 0 || anchor.position >= 2047)
-				throw std::runtime_error("Invalid Hold the Line anchor");
-		uint32_t previous = 0;
-		bool firstFlankTarget = true;
-		for(const auto & target : flankTargets)
-		{
-			if(target.unitId > maxWireId || target.sideMask > 0x3f || (!firstFlankTarget && target.unitId <= previous))
-				throw std::runtime_error("Invalid Flank target state");
-			previous = target.unitId;
-			firstFlankTarget = false;
-		}
-	}
+	void validateShape() const;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
 		validateHeroLuckSerialization(h);
 		validateRoyalStandardSerialization(h);
+		if(h.saving && revision && !h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS))
+			throw std::runtime_error("Cannot discard revised Order snapshot");
 		if(h.saving && (protectInterceptionsConsumed > 1 || protectInterceptionLimit > 1)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHIELD_MASTER))
 			throw std::runtime_error("Cannot discard Shield Master Protect state");
@@ -434,6 +364,10 @@ struct DLL_LINKAGE HeroOrderState
 			heroMorale.reset();
 			heroMoraleActionGrantId = 0;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS))
+			h & revision;
+		else if(!h.saving)
+			revision.reset();
 		validateHeroLuckSerialization(h);
 		if(!h.saving)
 			validateShape();
@@ -459,18 +393,19 @@ namespace heroCommands
 {
 constexpr int RULESET_VERSION = 1;
 constexpr int TARGETED_RULESET_VERSION = 2;
-/// Current New Horizons data emits Orders only.  Versions 1 and 2 remain
-/// readable because they are embedded in existing saves and battle snapshots.
+/// Historical Orders-only snapshots (partial three-Order or original eight-Order).
+/// Earlier captured profiles remain readable with their own definitions.
 constexpr int ORDERS_ONLY_RULESET_VERSION = 3;
-constexpr int CURRENT_RULESET_VERSION = ORDERS_ONLY_RULESET_VERSION;
+constexpr int REVISED_ORDERS_RULESET_VERSION = 4;
+constexpr int CURRENT_RULESET_VERSION = REVISED_ORDERS_RULESET_VERSION;
 inline constexpr std::array<HeroCommand, 8> CANONICAL_COMMANDS{
 	HeroCommand::CHARGE,
 	HeroCommand::HOLD_THE_LINE,
 	HeroCommand::FOCUS_FIRE,
 	HeroCommand::RIPOSTE,
 	HeroCommand::BRACE,
-	HeroCommand::PROTECT,
-	HeroCommand::FLANK,
+	HeroCommand::FEINT,
+	HeroCommand::VANGUARD,
 	HeroCommand::SECOND_WIND};
 constexpr int MIN_EFFECT_PERCENT = -90;
 constexpr int MAX_EFFECT_PERCENT = 200;
@@ -483,9 +418,12 @@ DLL_LINKAGE bool isDoctrine(HeroCommand command);
 DLL_LINKAGE bool valid(HeroCommand command);
 /// Rules must have passed validateRules; legacy enum values never enable a new command.
 DLL_LINKAGE bool supportedByRules(const JsonNode & rules, HeroCommand command);
-/// True only for the command identifiers emitted by the current ruleset.
+/// Recognized executable Order identifiers, including historical Protect/Flank.
 DLL_LINKAGE bool isActive(HeroCommand command);
-/// True for the canonical eight-Order profile (as opposed to a legacy three-Order v3 snapshot).
+/// Current issuance roster, distinct from historical executable identifiers.
+DLL_LINKAGE bool isIssuable(HeroCommand command);
+DLL_LINKAGE bool isRevisedRules(const JsonNode & rules);
+/// True for either captured eight-Order profile, excluding partial three-Order v3 snapshots.
 DLL_LINKAGE bool isCanonicalRules(const JsonNode & rules);
 /// Empty rules mean legacy gameplay. Unsupported or malformed nonempty rules fail closed.
 DLL_LINKAGE void validateRules(const JsonNode & rules);
@@ -505,6 +443,8 @@ DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero
 	int divineMandateEfficiencyBonusPercent);
 DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent);
 DLL_LINKAGE int efficiencyPercent(const CGHeroInstance & hero);
+DLL_LINKAGE int leadershipEfficiencyPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
+	int divineMandateEfficiencyBonusPercent);
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero);
 /// Warcasting and Divine Mandate scale only Second Wind's Leadership-derived
 /// part; its base 50% damage component remains flat.

@@ -18,6 +18,8 @@
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsDiscipline.h"
 #include "NewHorizonsPlague.h"
+#include "../spells/NewHorizonsTheChosen.h"
+#include "../entities/hero/NewHorizonsChosenSpecialties.h"
 
 #include "../callback/GameCallbackHolder.h"
 #include "../bonuses/Bonus.h"
@@ -593,6 +595,11 @@ public:
 	{
 		if(h.saving)
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				if(const auto * hero = getSideHero(side))
+					newHorizonsHeroes::validateChosenSpecialtiesSerialization(hero->getPrimaryGrowthRules(),
+						h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
+		if(h.saving)
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 				getSide(side).validateRecoverySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -794,6 +801,8 @@ public:
 				throw std::runtime_error("Cannot discard Relentless Assault battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER) && hasNoQuarterState())
 				throw std::runtime_error("Cannot discard No Quarter battle state");
+			heroCommands::validateRevisedRulesSerialization(heroCommandRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 			heroCommands::validateRules(heroCommandRules);
 			validateFocusFireStates();
 			validateRelentlessAssaultStates();
@@ -843,6 +852,11 @@ public:
 		}
 		h & battleID;
 		h & sides;
+		if(!h.saving)
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				if(const auto * hero = getSideHero(side))
+					newHorizonsHeroes::validateChosenSpecialtiesSerialization(hero->getPrimaryGrowthRules(),
+						h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
 			h & luckRollRules;
 		else if(!h.saving)
@@ -970,7 +984,9 @@ public:
 			h & heroCommandRules;
 			if(!h.saving)
 			{
-				heroCommands::validateRules(heroCommandRules);
+				heroCommands::validateRevisedRulesSerialization(heroCommandRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
+			heroCommands::validateRules(heroCommandRules);
 				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 					&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
 					throw std::runtime_error("Targeted battle rules require the new save format");
@@ -987,7 +1003,13 @@ public:
 			moraleExtraDamagePercent = 100;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC))
 		{
+			if(h.saving)
+				newHorizonsTheChosen::validateSerialization(magicRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 			h & magicRules;
+			if(!h.saving)
+				newHorizonsTheChosen::validateSerialization(magicRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 			if(!h.saving)
 				newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));

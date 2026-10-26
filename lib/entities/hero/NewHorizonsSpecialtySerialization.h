@@ -18,6 +18,7 @@ struct SpecialtySerializationContext
 	bool additional = false;
 	bool recovery = false;
 	bool remainingRiders = false;
+	bool chosenSpecialties = false;
 
 	template<class Handler>
 	static SpecialtySerializationContext fromHandler(const Handler & h)
@@ -29,6 +30,7 @@ struct SpecialtySerializationContext
 		result.additional = h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES);
 		result.recovery = h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES);
 		result.remainingRiders = h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS);
+		result.chosenSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS);
 		return result;
 	}
 };

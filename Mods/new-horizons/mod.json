@@ -42,7 +42,12 @@
 			"luckBias": 0,
 			"heroCommands": {
 				"schemaVersion": 1,
-				"rulesetVersion": 3,
+				"rulesetVersion": 4,
+				"perkBonuses": {
+					"spearheadDamagePercent": 5,
+					"shieldMasterReductionPercent": 5,
+					"combinedArmsFeintReductionPercent": 5
+				},
 				"commands": {
 					"charge": {
 						"kind": "order",
@@ -113,34 +118,36 @@
 							}
 						}
 					},
-					"protect": {
+					"feint": {
 						"kind": "order",
 						"coverage": "ownLivingNonWarMachines",
 						"duration": "round",
-						"target": "protectorAndWard",
 						"effects": {
-							"interceptedDamageReductionPercent": {
-								"base": 5,
-								"attack": 0,
-								"defense": 0.15
+							"retaliationDamageReductionPercent": {
+								"base": 15,
+								"leadership": 0.015,
+								"cap": 60
 							}
 						}
 					},
-					"flank": {
+					"vanguard": {
 						"kind": "order",
-						"coverage": "ownLivingNonWarMachines",
-						"duration": "round",
-						"target": "enemyUnit",
+						"coverage": "ownNonUndeadNonMechanicalAtIssue",
+						"duration": {
+							"leadershipPerRound": 750,
+							"minimum": 1,
+							"maximum": 3
+						},
 						"effects": {
-							"meleeDamagePercent": {
-								"base": 8,
-								"attack": 0.12,
-								"defense": 0
+							"primaryAndMorale": {
+								"base": 1,
+								"ratingStep": 75,
+								"cap": 3
 							},
-							"additionalSidePercent": {
-								"base": 4,
-								"attack": 0,
-								"defense": 0
+							"initiativePercent": {
+								"base": 5,
+								"minimumRating": 0.05,
+								"cap": 18
 							}
 						}
 					},
@@ -1170,7 +1177,27 @@
 							24,
 							24,
 							24
-						]
+						],
+						"active": false
+					},
+					"new-horizons:theChosen": {
+						"schools": [
+							"new-horizons:light"
+						],
+						"level": 5,
+						"costs": [
+							25,
+							25,
+							25,
+							25
+						],
+						"theChosen": {
+							"baseDuration": 2,
+							"maximumDuration": 4,
+							"spellPowerPerRound": 150,
+							"joustingPercent": 5,
+							"exaltedChampionDurationBonus": 1
+						}
 					},
 					"new-horizons:purify": {
 						"schools": [
@@ -3030,6 +3057,11 @@
 						]
 					}
 				],
+				"chosenSpecialties": {
+					"version": 1,
+					"inteusDurationBonus": 1,
+					"loynisManaDiscountPercent": 20
+				},
 				"creatureLineSpecialties": {
 					"version": 1,
 					"speed": 1,
@@ -6352,12 +6384,12 @@
 							},
 							{
 								"id": "new-horizons:offense.encirclement",
-								"name": "Encirclement",
+								"name": "Spearhead",
 								"requires": "basic",
-								"description": "Flank! gains +7% damage per additional distinct attack side instead of +4%.",
+								"description": "Charge! grants an additional +5 percentage points of damage.",
 								"effect": {
 									"status": "active",
-									"description": "Flank! gains +7% damage per additional distinct attack side instead of +4%."
+									"description": "Charge! grants an additional +5 percentage points of damage."
 								}
 							},
 							{
@@ -6476,10 +6508,10 @@
 								"id": "new-horizons:armorer.shieldMaster",
 								"name": "Shield Master",
 								"requires": "basic",
-								"description": "Protect! may intercept the first two qualifying melee attacks against the Ward each round instead of only the first.",
+								"description": "Hold the Line! grants an additional +5 percentage points of physical damage reduction.",
 								"effect": {
 									"status": "active",
-									"description": "Protect! may intercept the first two qualifying melee attacks against the Ward each round instead of only the first."
+									"description": "Hold the Line! grants an additional +5 percentage points of physical damage reduction."
 								}
 							},
 							{
@@ -7318,10 +7350,10 @@
 								"id": "new-horizons:command.combinedArms",
 								"name": "Combined Arms",
 								"requires": "advanced",
-								"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Flank! grants friendly ranged attacks 50% of its Attack-derived damage bonus; shooters do not add Flank sides.",
+								"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Feint! grants an additional +5 percentage points of retaliation damage reduction, up to its final 60% cap.",
 								"effect": {
 									"status": "active",
-									"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Flank! grants friendly ranged attacks 50% of its Attack-derived damage bonus; shooters do not add Flank sides."
+									"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Feint! grants an additional +5 percentage points of retaliation damage reduction, up to its final 60% cap."
 								}
 							},
 							{
@@ -7488,12 +7520,12 @@
 							},
 							{
 								"id": "new-horizons:lightMagic.crusader",
-								"name": "Crusader",
+								"name": "Exalted Champion",
 								"requires": "expert",
-								"description": "Crusade! lasts 1 additional round and affected creatures cannot suffer negative Morale while it remains active.",
+								"description": "The Chosen lasts 1 additional round, added after its nominal duration cap.",
 								"effect": {
 									"status": "active",
-									"description": "Crusade! lasts 1 additional round and affected creatures cannot suffer negative Morale while it remains active."
+									"description": "The Chosen lasts 1 additional round, added after its nominal duration cap."
 								}
 							}
 						]
@@ -12497,6 +12529,7 @@
 		"new-horizons.spellCost.stage": "%s: %d -> %d",
 		"new-horizons.spellCost.overcharge": "Optional Overcharge is added after target selection.",
 		"new-horizons.spellCost.modifier.listedMultiplier": "Listed-cost multiplier",
+		"new-horizons.spellCost.modifier.chosenSpecialty": "Anointed Champions",
 		"new-horizons.spellCost.modifier.wisdom": "Wisdom",
 		"new-horizons.spellCost.modifier.adventureArtifact": "Adventure artifact",
 		"new-horizons.spellCost.modifier.knightlySequence": "Knightly Sequence",

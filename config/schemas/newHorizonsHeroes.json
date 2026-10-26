@@ -50,6 +50,15 @@
 				"creatureLineSpecialties": {"$ref": "#/definitions/creatureLineSpecialties"},
 				"damageSpellSpecialties": {"$ref": "#/definitions/damageSpellSpecialties"},
 				"nonDamageSpellSpecialties": {"$ref": "#/definitions/nonDamageSpellSpecialties"},
+				"chosenSpecialties": {
+					"type": "object", "additionalProperties": false,
+					"required": ["version", "inteusDurationBonus", "loynisManaDiscountPercent"],
+					"properties": {
+						"version": {"enum": [1]},
+						"inteusDurationBonus": {"type": "integer", "minimum": 0, "maximum": 100},
+						"loynisManaDiscountPercent": {"type": "integer", "minimum": 0, "maximum": 100}
+					}
+				},
 				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"},
 				"schoolSpellcraftSpecialties": {"$ref": "#/definitions/schoolSpellcraftSpecialties"},
 				"additionalSpecialties": {"$ref": "#/definitions/additionalSpecialties"},

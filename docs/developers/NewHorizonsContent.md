@@ -67,6 +67,25 @@ internal naming such as Stone Golem's `core:ironGolem`.
 Do not invent absent level scaling, Masterful variants or extra riders from an
 art brief. Configuration, bonus producer and resolved presentation must agree.
 
+The current perk catalogue preserves saved identities when effects are revised:
+`offense.encirclement` is displayed as Spearhead, `armorer.shieldMaster` remains
+Shield Master, `command.combinedArms` remains Combined Arms, and
+`lightMagic.crusader` is displayed as Exalted Champion (all in `new-horizons:`).
+Resolve names and effects from the captured rules context for historical heroes;
+never relabel or reinterpret saved historical perks with current defaults.
+
+The Chosen has its own `new-horizons:theChosen` spell identity. Current magic
+configuration keeps historical Crusade inactive rather than reusing its ID.
+The Chosen is a level-5 Light spell costing 25 Mana, granting native additional
+attack, unlimited retaliations, flight and jousting to one eligible recipient
+per original army. Its captured profile supplies a nominal 2–4-round duration;
+with Expert Light's coefficient, raw Spell Power 104 and 207 reach 3 and 4 rounds.
+Apply Exalted Champion's extra round after the nominal cap, alongside the
+established duration extensions. Validate replacement, immunity, stasis and
+Reality Warp against the one-recipient invariant, including dead stacks.
+These are content/runtime contracts; source checks do not establish gameplay
+acceptance.
+
 Normal Spell Points and Buffer are separate pools, spent Buffer first. Capacity
 changes are event-driven complete equipment/bonus transactions, not render/movement
 polling; capacity growth does not refill Normal or alter Buffer. Inscribed eligible

@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "HeroStartingProjection.h"
+#include "NewHorizonsChosenSpecialties.h"
 #include "CHeroClass.h"
 #include "CHeroHandler.h"
 #include "../../IGameSettings.h"
@@ -110,7 +111,9 @@ std::optional<SpellID> authoredDamageSpellReplacement(const CHero & hero, const 
 
 std::optional<SpellID> authoredNonDamageSpellReplacement(const CHero & hero, const JsonNode & development, const JsonNode & magic, SpellID source)
 {
-		const auto & key = hero.getJsonKey();
+	if(const auto target = chosenStartingSpellReplacement(development, magic, hero.getJsonKey(), source))
+		return target;
+	const auto & key = hero.getJsonKey();
 	const auto & remainingFlag = development["nonDamageSpellSpecialties"]["remainingStartReplacements"];
 	const bool remaining = remainingFlag.isBool() && remainingFlag.Bool();
 	// Halon's replacement is an inscription only. Do not add Guardian Spirit

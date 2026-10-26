@@ -27,7 +27,7 @@ JsonNode legacyRules()
 
 JsonNode ordersOnlyRules()
 {
-	const JsonNode config(JsonPath::builtin("config/newHorizonsCombat"));
+	const JsonNode config(JsonPath::builtin("config/newHorizonsCombatV3"));
 	return config["combat"]["heroCommands"];
 }
 

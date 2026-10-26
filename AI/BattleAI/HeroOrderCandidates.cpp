@@ -27,9 +27,12 @@ void appendSideWideOrders(std::vector<PossibleSpellcast> & possibleCasts,
 	// Side-wide Orders use the authoritative availability query.  Targeted Orders
 	// are enumerated through the callback's legal target-set query, with no local
 	// guess about action budget, ownership, or current-round state.
+	const auto revised = heroCommands::isRevisedRules(callback.getBattle(battleID)->getBattle()->getHeroCommandRules());
 	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
-		riposteCommand(), braceCommand()})
+		riposteCommand(), braceCommand(), HeroCommand::FEINT, HeroCommand::VANGUARD})
 	{
+		if(!revised && (command == HeroCommand::FEINT || command == HeroCommand::VANGUARD))
+			continue;
 		const auto battleView = callback.getBattle(battleID);
 		if(battleView->battleCanUseHeroCommand(side, command))
 		{
@@ -50,8 +53,11 @@ void appendTargetedOrders(std::vector<PossibleSpellcast> & possibleCasts,
 	CBattleCallback & callback, BattleID battleID, BattleSide side,
 	bool mandatoryOrder, const Valuation & valuation)
 {
+	const auto revised = heroCommands::isRevisedRules(callback.getBattle(battleID)->getBattle()->getHeroCommandRules());
 	for(auto command : {HeroCommand::FOCUS_FIRE, protectCommand(), flankCommand(), secondWindCommand()})
 	{
+		if(revised && (command == protectCommand() || command == flankCommand()))
+			continue;
 		for(const auto & targetIds : orderTargetOptions(*callback.getBattle(battleID), side, command))
 		{
 			if(!commandTargetIsLegal(*callback.getBattle(battleID), side, command, targetIds))

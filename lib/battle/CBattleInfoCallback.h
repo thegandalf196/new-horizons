@@ -501,6 +501,10 @@ protected:
 	heroCommands::TargetRejection battleFocusFireTargetRejection(BattleSide side, HeroCommand command,
 		uint32_t targetUnitId) const;
 	heroCommands::TargetRejection battleOwnOrderUnitRejection(BattleSide side, const battle::Unit * unit) const;
+	void battleCaptureHeroOrderModifiers(BattleSide side, HeroOrderState & result) const;
+	std::optional<heroCommands::RevisedOrderSnapshot> battlePrepareRevisedOrderSnapshot(
+		BattleSide side, const HeroOrderState & order, bool crown = false) const;
+	std::optional<HeroOrderState> battleFinalizeHeroOrderState(BattleSide side, HeroOrderState result) const;
 	std::optional<HeroOrderState> battlePrepareHeroOrderStateImpl(BattleSide side, HeroCommand command,
 		const std::vector<uint32_t> & targetUnitIds, heroCommands::TargetRejection & rejection) const;
 	int32_t calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,

@@ -8,6 +8,7 @@
 #include "CSpell.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsTheChosen.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
@@ -186,7 +187,7 @@ std::vector<Collected> collect(const battle::BattleEffectSnapshot & snapshot, co
 }
 
 StayReason recipientReason(const CBattleInfoCallback & callback, const JsonNode & rules, Collected & group,
-	const battle::Unit & recipient, const battle::BattleEffectSnapshot & destination)
+	uint32_t originalSourceUnitId, const battle::Unit & recipient, const battle::BattleEffectSnapshot & destination)
 {
 	if(group.reason != StayReason::MOVED)
 		return group.reason;
@@ -195,6 +196,9 @@ StayReason recipientReason(const CBattleInfoCallback & callback, const JsonNode 
 		return StayReason::ILLEGAL_RECIPIENT;
 	const auto family = newHorizonsMagic::spellVariantBase(rules, group.bundle.spell);
 	const auto familyKey = family.toSpell()->getJsonKey();
+	if(familyKey == newHorizonsTheChosen::SPELL_KEY
+		&& !newHorizonsTheChosen::canTransferTo(callback, originalSourceUnitId, recipient))
+		return StayReason::ILLEGAL_RECIPIENT;
 	const auto caster = group.bundle.bonuses.front().spellCasterOwner;
 	std::optional<bool> opposition;
 	if(caster != PlayerColor::CANNOT_DETERMINE)
@@ -359,7 +363,7 @@ PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t 
 	for(size_t side = 0; side < ids.size(); ++side)
 		for(auto & group : groups[side])
 		{
-			group.reason = recipientReason(callback, state->getMagicRules(), group, *units[1 - side], exchange.endpoints[1 - side].expected);
+			group.reason = recipientReason(callback, state->getMagicRules(), group, ids[side], *units[1 - side], exchange.endpoints[1 - side].expected);
 			group.bundle.transferable = group.reason == StayReason::MOVED;
 		}
 	// Resolve representability against the final simultaneous plan. A held pool

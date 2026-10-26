@@ -2722,6 +2722,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				}
 			}
 		}
+		if(expected)
+			heroCommands::finalizeRevisedOrderSnapshot(*expected, battleContext->getMagicRules());
 		if(!expected || expected != pack.orderState)
 			throw std::runtime_error("Invalid canonical Order StartAction snapshot");
 		const auto existingOrders = battleContext->getHeroOrderStates(pack.ba.side);

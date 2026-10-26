@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "StackInfoBasicPanel.h"
 #include "FrozenStatusPresentation.h"
+#include "StackSpellStatusPresentation.h"
 
 #include "../widgets/Images.h"
 #include "../widgets/MiscWidgets.h"
@@ -551,37 +552,6 @@ std::string soulChainStatusSignature(const CStack * stack, const CPlayerBattleCa
 	return result;
 }
 
-newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
-{
-	const auto spellKey = effect.toSpell()->getJsonKey();
-	if(newHorizonsBattleStatus::isConfusion(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::CONFUSION;
-	if(newHorizonsBattleStatus::isTimeStop(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::TIME_STOP;
-	if(newHorizonsBattleStatus::isEntangle(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::ENTANGLE;
-	if(newHorizonsBattleStatus::isSpellLock(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::SPELL_LOCK;
-	if(newHorizonsBattleStatus::isDoom(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::DOOM;
-	if(newHorizonsBattleStatus::isDivineRetribution(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::DIVINE_RETRIBUTION;
-	if(newHorizonsBattleStatus::isGuardianSpirit(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::GUARDIAN_SPIRIT;
-	if(newHorizonsBattleStatus::isHeavenlyGale(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::HEAVENLY_GALE;
-	if(newHorizonsBattleStatus::isCrusade(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::CRUSADE;
-	if(newHorizonsBattleStatus::isRegeneration(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::REGENERATION;
-	if(newHorizonsBattleStatus::isShadowGift(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_BUFF;
-	if(newHorizonsBattleStatus::isVampirism(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::VAMPIRISM;
-	if(newHorizonsBattleStatus::isFocusMagic(spellKey) || newHorizonsBattleStatus::isArcaneBreach(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::FOCUS_OR_ARCANE;
-	return newHorizonsBattleStatus::StackStatusIconKind::ORDINARY;
-}
 
 std::string replaceStatusPlaceholder(std::string text, std::string_view token, const std::string & replacement)
 {
@@ -850,7 +820,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			++hiddenJudgedSpellEffects;
 			continue;
 		}
-		const auto kind = statusIconKind(effect);
+		const auto kind = newHorizonsStackSpellPresentation::statusIconKind(effect);
 		statusEntries.push_back({kind, effect});
 		statusKinds.push_back(kind);
 	}
@@ -1012,6 +982,9 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool sanctuary = newHorizonsBattleStatus::isSanctuary(spellKey);
 		const bool guardianSpirit = newHorizonsBattleStatus::isGuardianSpirit(spellKey);
 		const bool heavenlyGale = newHorizonsBattleStatus::isHeavenlyGale(spellKey);
+		const bool chosen = spellKey == newHorizonsTheChosen::SPELL_KEY;
+		const auto chosenEffect = chosen ? newHorizonsStackSpellPresentation::chosenStatus(*spellBonuses)
+			: newHorizonsStackSpellPresentation::ChosenStatus{};
 		const bool crusade = newHorizonsBattleStatus::isCrusade(spellKey);
 		const auto galeStatus = heavenlyGale
 			? newHorizonsBattleStatus::heavenlyGaleStatus(*spellBonuses)
@@ -1030,7 +1003,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || confusion || timeStop || (entangle && displayedStatus.entangle.active()) || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade)
+		if(settings["general"]["enableUiEnhancements"].Bool() || confusion || timeStop || (entangle && displayedStatus.entangle.active()) || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade || chosen)
 		{
 			const std::string badge = confusion ? std::string(newHorizonsBattleStatus::CONFUSION_BADGE) : timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
@@ -1050,6 +1023,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 					? TextOperations::formatMetric(displayedStatus.guardianSpirit.remainingHitPoints, 4)
 				: heavenlyGale && galeStatus.active()
 					? newHorizonsBattleStatus::formatBasisPoints(galeStatus.reductionBasisPoints)
+				: chosen ? std::to_string(chosenEffect.remainingRounds)
 				: crusade && crusadeEffect.active()
 					? std::to_string(crusadeEffect.remainingRounds)
 				: vampirism && displayedStatus.vampirism.active()
@@ -1105,6 +1079,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		{
 			const auto tooltip = newHorizonsBattleStatus::heavenlyGaleTooltip(
 				effect.toSpell()->getDescriptionTranslated(0), galeStatus);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(chosen)
+		{
+			const auto tooltip = newHorizonsStackSpellPresentation::chosenTooltip(
+				effect.toSpell()->getDescriptionTranslated(0), chosenEffect);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 		else if(crusade)

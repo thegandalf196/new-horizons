@@ -15,6 +15,7 @@
 #include "NewHorizonsSpecialtyArtwork.h"
 #include "NewHorizonsRetainedSpecialtyArtwork.h"
 #include "HeroStartingProjection.h"
+#include "NewHorizonsChosenSpecialties.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../CSkillHandler.h"
@@ -226,7 +227,8 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 		|| capturedHero->getPrimaryGrowthRules() != development || capturedHero->getMagicRules() != magic))
 		throw std::invalid_argument("Specialty presentation requires the matching captured context");
 
-	if(resolveIndividualPresentation(hero, development, magic, capturedHero, result))
+	if(resolveChosenSpecialtyPresentation(hero, development, magic, result)
+		|| resolveIndividualPresentation(hero, development, magic, capturedHero, result))
 		return result;
 	if(resolveCreatureLinePresentation(hero, development, target, capturedHero, result))
 		return result;

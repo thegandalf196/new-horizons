@@ -1441,6 +1441,105 @@
 		"flags": {"negative": true, "offensive": true},
 		"targetCondition": {"noneOf": {"bonus.FLYING": "absolute"}}
 	},
+	"theChosen": {
+		"name": "The Chosen",
+		"type": "combat",
+		"school": {
+			"new-horizons:light": true
+		},
+		"level": 5,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "NH_spell_crusade-44.png",
+			"iconScroll": "NH_spell_crusade-32.png",
+			"iconEffect": "NH_spell_crusade-30.png",
+			"iconImmune": "NH_spell_crusade-30.png",
+			"iconScenarioBonus": "NH_spell_crusade-32.png"
+		},
+		"animation": {
+			"affect": [
+				{
+					"defName": "C10SPW",
+					"verticalPosition": "bottom",
+					"transparency": 0.5
+				}
+			]
+		},
+		"sounds": {
+			"cast": "PRAYER"
+		},
+		"levels": {
+			"none": {
+				"range": "0",
+				"description": "Choose one friendly living, non-mechanical stack. It gains at least double offensive attacks, unlimited retaliations, Flying and native Jousting (+5% damage per charged hex). Existing stronger abilities are retained. Only one stack per original army may be Chosen; a successful recast replaces the previous effect. Nominal duration is min(4, 2 + floor(School coefficient x raw Spell Power / 150)); Expert Light coefficient is 1.45. Spellcraft does not strengthen this duration.",
+				"cost": 25,
+				"power": 0,
+				"battleEffects": {
+					"theChosen": {
+						"type": "theChosenEffect"
+					}
+				},
+				"targetModifier": {
+					"smart": true
+				}
+			},
+			"basic": {
+				"range": "0",
+				"description": "Choose one friendly living, non-mechanical stack. It gains at least double offensive attacks, unlimited retaliations, Flying and native Jousting (+5% damage per charged hex). Existing stronger abilities are retained. Only one stack per original army may be Chosen; a successful recast replaces the previous effect. Nominal duration is min(4, 2 + floor(School coefficient x raw Spell Power / 150)); Expert Light coefficient is 1.45. Spellcraft does not strengthen this duration.",
+				"cost": 25,
+				"power": 0,
+				"battleEffects": {
+					"theChosen": {
+						"type": "theChosenEffect"
+					}
+				},
+				"targetModifier": {
+					"smart": true
+				}
+			},
+			"advanced": {
+				"range": "0",
+				"description": "Choose one friendly living, non-mechanical stack. It gains at least double offensive attacks, unlimited retaliations, Flying and native Jousting (+5% damage per charged hex). Existing stronger abilities are retained. Only one stack per original army may be Chosen; a successful recast replaces the previous effect. Nominal duration is min(4, 2 + floor(School coefficient x raw Spell Power / 150)); Expert Light coefficient is 1.45. Spellcraft does not strengthen this duration.",
+				"cost": 25,
+				"power": 0,
+				"battleEffects": {
+					"theChosen": {
+						"type": "theChosenEffect"
+					}
+				},
+				"targetModifier": {
+					"smart": true
+				}
+			},
+			"expert": {
+				"range": "0",
+				"description": "Choose one friendly living, non-mechanical stack. It gains at least double offensive attacks, unlimited retaliations, Flying and native Jousting (+5% damage per charged hex). Existing stronger abilities are retained. Only one stack per original army may be Chosen; a successful recast replaces the previous effect. Nominal duration is min(4, 2 + floor(School coefficient x raw Spell Power / 150)); Expert Light coefficient is 1.45. Spellcraft does not strengthen this duration.",
+				"cost": 25,
+				"power": 0,
+				"battleEffects": {
+					"theChosen": {
+						"type": "theChosenEffect"
+					}
+				},
+				"targetModifier": {
+					"smart": true
+				}
+			}
+		},
+		"flags": {
+			"positive": true
+		},
+		"targetCondition": {
+			"noneOf": {
+				"bonus.UNDEAD": "absolute",
+				"bonus.NON_LIVING": "absolute",
+				"bonus.MECHANICAL": "absolute"
+			}
+		}
+	},
 	"crusade" : {
 		"name": "Crusade!",
 		"type": "combat",

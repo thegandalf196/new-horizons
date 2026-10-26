@@ -46,9 +46,10 @@ std::optional<heroCommands::PreparedOrderEffects> HypotheticBattle::beginProject
 {
 	if(!isCurrentPreparedOrderAction(side, prepared, false))
 		return {};
-	const auto effects = heroCommands::prepareOrderEffects(*this, side, command, targets);
+	auto effects = heroCommands::prepareOrderEffects(*this, side, command, targets);
 	if(!effects)
 		return {};
+	heroCommands::finalizeRevisedOrderSnapshot(effects->order, getBattle()->getMagicRules());
 	// Canonical preparation validates both shapes before action-boundary cleanup.
 	// Bind an owned copy, not the openly mutable value returned to the caller.
 	auto bound = BoundProjectedOrderEffects{this, *effects, targets};

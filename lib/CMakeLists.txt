@@ -67,6 +67,12 @@ set(lib_MAIN_SRCS
 	battle/BattleHex.cpp
 	battle/BattleHexArray.cpp
 	battle/HeroCommand.cpp
+	battle/HeroCommandPreparation.cpp
+	battle/HeroCommandRevision.cpp
+	battle/HeroCommandVanguardEffects.cpp
+	battle/HeroCommandState.cpp
+	battle/HeroCommandCompanions.cpp
+	battle/HeroCommandBattleValidation.cpp
 	battle/HeroOrderEffects.cpp
 	battle/HeroCommandCoefficient.cpp
 	battle/HeroCommandCoefficientMath.cpp
@@ -267,6 +273,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsHeroRules.cpp
 	entities/hero/NewHorizonsSpecialtySerialization.cpp
 	entities/hero/NewHorizonsIndividualSpecialties.cpp
+	entities/hero/NewHorizonsChosenSpecialties.cpp
 	entities/hero/NewHorizonsAdditionalSpecialties.cpp
 	entities/hero/NewHorizonsRecoverySpecialtyRules.cpp
 	entities/hero/NewHorizonsHerbalSurgeon.cpp
@@ -517,6 +524,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsTravelDayEnd.cpp
 	spells/NewHorizonsMagicPresentation.cpp
 	spells/NewHorizonsMagicReadouts.cpp
+	spells/NewHorizonsTheChosen.cpp
 	spells/NewHorizonsImplosion.cpp
 	spells/NewHorizonsPurify.cpp
 	spells/NewHorizonsRealityWarp.cpp
@@ -722,6 +730,9 @@ set(lib_MAIN_HEADERS
 	battle/BattleHex.h
 	battle/BattleHexArray.h
 	battle/HeroCommand.h
+	battle/HeroCommandRevision.h
+	battle/HeroCommandRoyalStandard.h
+	battle/HeroCommandAdjacency.h
 	battle/HeroOrderEffects.h
 	battle/HeroCommandCoefficient.h
 	battle/HeroCommandCoefficientMath.h
@@ -941,6 +952,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsRetainedSpecialtyArtwork.h
 	entities/hero/NewHorizonsSpecialtySerialization.h
 	entities/hero/NewHorizonsIndividualSpecialties.h
+	entities/hero/NewHorizonsChosenSpecialties.h
 	entities/hero/NewHorizonsAdditionalSpecialties.h
 	entities/hero/NewHorizonsRecoverySpecialties.h
 	entities/hero/NewHorizonsHerbalSurgeon.h
@@ -1201,6 +1213,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsCureHealing.h
 	spells/NewHorizonsMagicInternal.h
 	spells/NewHorizonsMagicPresentation.h
+	spells/NewHorizonsTheChosen.h
 	spells/NewHorizonsImplosion.h
 	spells/NewHorizonsFireWall.h
 	spells/NewHorizonsPurify.h

@@ -1,0 +1,518 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "New Horizons revised Orders combat rules v4",
+	"description": "Captured revised eight-Order profile; historical v3 remains distinct.",
+	"type": "object",
+	"minProperties": 4,
+	"required": [
+		"schemaVersion",
+		"rulesetVersion",
+		"commands",
+		"perkBonuses"
+	],
+	"additionalProperties": false,
+	"properties": {
+		"schemaVersion": {
+			"type": "integer",
+			"enum": [
+				1
+			]
+		},
+		"rulesetVersion": {
+			"type": "integer",
+			"enum": [
+				4
+			]
+		},
+		"commands": {
+			"type": "object",
+			"minProperties": 8,
+			"required": [
+				"charge",
+				"holdTheLine",
+				"focusFire",
+				"riposte",
+				"brace",
+				"feint",
+				"vanguard",
+				"secondWind"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"charge": {
+					"$ref": "#/definitions/charge"
+				},
+				"holdTheLine": {
+					"$ref": "#/definitions/holdTheLine"
+				},
+				"focusFire": {
+					"$ref": "#/definitions/focusFire"
+				},
+				"riposte": {
+					"$ref": "#/definitions/riposte"
+				},
+				"brace": {
+					"$ref": "#/definitions/brace"
+				},
+				"secondWind": {
+					"$ref": "#/definitions/secondWind"
+				},
+				"feint": {
+					"$ref": "#/definitions/feint"
+				},
+				"vanguard": {
+					"$ref": "#/definitions/vanguard"
+				}
+			}
+		},
+		"perkBonuses": {
+			"type": "object",
+			"required": [
+				"spearheadDamagePercent",
+				"shieldMasterReductionPercent",
+				"combinedArmsFeintReductionPercent"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"spearheadDamagePercent": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100
+				},
+				"shieldMasterReductionPercent": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100
+				},
+				"combinedArmsFeintReductionPercent": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100
+				}
+			}
+		}
+	},
+	"definitions": {
+		"coefficient": {
+			"type": "object",
+			"minProperties": 3,
+			"required": [
+				"base",
+				"attack",
+				"defense"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"base": {
+					"type": "number",
+					"minimum": -1000000,
+					"maximum": 1000000
+				},
+				"attack": {
+					"type": "number",
+					"minimum": -1000000,
+					"maximum": 1000000
+				},
+				"defense": {
+					"type": "number",
+					"minimum": -1000000,
+					"maximum": 1000000
+				}
+			}
+		},
+		"command": {
+			"type": "object",
+			"minProperties": 4,
+			"required": [
+				"kind",
+				"coverage",
+				"duration",
+				"effects"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"kind": {
+					"type": "string",
+					"enum": [
+						"order"
+					]
+				},
+				"coverage": {
+					"type": "string",
+					"enum": [
+						"ownLivingNonWarMachines",
+						"ownOrdinaryShootersAtIssue"
+					]
+				},
+				"duration": {
+					"type": "string",
+					"enum": [
+						"round"
+					]
+				},
+				"trigger": {
+					"type": "string"
+				},
+				"anchor": {
+					"type": "string"
+				},
+				"target": {
+					"type": "string"
+				},
+				"effects": {
+					"type": "object",
+					"minProperties": 1,
+					"additionalProperties": false,
+					"properties": {
+						"meleeDamagePercent": {
+							"$ref": "#/definitions/coefficient"
+						},
+						"rangedDamagePercent": {
+							"$ref": "#/definitions/coefficient"
+						},
+						"meleeDamageReductionPercent": {
+							"$ref": "#/definitions/coefficient"
+						},
+						"retaliationDamagePercent": {
+							"$ref": "#/definitions/coefficient"
+						},
+						"damageReductionPercent": {
+							"$ref": "#/definitions/coefficient"
+						},
+						"speedPercent": {
+							"$ref": "#/definitions/coefficient"
+						},
+						"preemptiveDamagePercent": {
+							"$ref": "#/definitions/coefficient"
+						},
+						"interceptedDamageReductionPercent": {
+							"$ref": "#/definitions/coefficient"
+						},
+						"additionalSidePercent": {
+							"$ref": "#/definitions/coefficient"
+						},
+						"additionalActivationDamagePercent": {
+							"$ref": "#/definitions/coefficient"
+						}
+					}
+				}
+			}
+		},
+		"order": {
+			"$ref": "#/definitions/command"
+		},
+		"focusFire": {
+			"type": "object",
+			"minProperties": 5,
+			"required": [
+				"kind",
+				"coverage",
+				"duration",
+				"effects",
+				"target"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"kind": {
+					"type": "string",
+					"enum": [
+						"order"
+					]
+				},
+				"coverage": {
+					"type": "string",
+					"enum": [
+						"ownOrdinaryShootersAtIssue"
+					]
+				},
+				"duration": {
+					"type": "string",
+					"enum": [
+						"round"
+					]
+				},
+				"effects": {
+					"type": "object",
+					"minProperties": 1,
+					"required": [
+						"rangedDamagePercent"
+					],
+					"additionalProperties": false,
+					"properties": {
+						"rangedDamagePercent": {
+							"$ref": "#/definitions/coefficient"
+						}
+					}
+				},
+				"target": {
+					"type": "string",
+					"enum": [
+						"enemyUnit"
+					]
+				}
+			}
+		},
+		"charge": {
+			"allOf": [
+				{
+					"$ref": "#/definitions/command"
+				},
+				{
+					"required": [
+						"trigger"
+					]
+				},
+				{
+					"properties": {
+						"trigger": {
+							"enum": [
+								"firstMeleeAfterMovingAtLeast3"
+							]
+						}
+					}
+				}
+			]
+		},
+		"holdTheLine": {
+			"allOf": [
+				{
+					"$ref": "#/definitions/command"
+				},
+				{
+					"required": [
+						"anchor"
+					]
+				},
+				{
+					"properties": {
+						"anchor": {
+							"enum": [
+								"issuePosition"
+							]
+						}
+					}
+				}
+			]
+		},
+		"riposte": {
+			"$ref": "#/definitions/command"
+		},
+		"brace": {
+			"allOf": [
+				{
+					"$ref": "#/definitions/command"
+				},
+				{
+					"required": [
+						"trigger"
+					]
+				},
+				{
+					"properties": {
+						"trigger": {
+							"enum": [
+								"enemyMeleeMovedAtLeast3"
+							]
+						}
+					}
+				}
+			]
+		},
+		"secondWind": {
+			"allOf": [
+				{
+					"$ref": "#/definitions/command"
+				},
+				{
+					"required": [
+						"target"
+					]
+				},
+				{
+					"properties": {
+						"target": {
+							"enum": [
+								"friendlyCompletedActivation"
+							]
+						}
+					}
+				}
+			]
+		},
+		"feint": {
+			"type": "object",
+			"required": [
+				"kind",
+				"coverage",
+				"duration",
+				"effects"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"kind": {
+					"enum": [
+						"order"
+					]
+				},
+				"coverage": {
+					"enum": [
+						"ownLivingNonWarMachines"
+					]
+				},
+				"duration": {
+					"enum": [
+						"round"
+					]
+				},
+				"effects": {
+					"type": "object",
+					"required": [
+						"retaliationDamageReductionPercent"
+					],
+					"additionalProperties": false,
+					"properties": {
+						"retaliationDamageReductionPercent": {
+							"type": "object",
+							"required": [
+								"base",
+								"leadership",
+								"cap"
+							],
+							"additionalProperties": false,
+							"properties": {
+								"base": {
+									"type": "number",
+									"minimum": 0,
+									"maximum": 1000000
+								},
+								"leadership": {
+									"type": "number",
+									"minimum": 0,
+									"maximum": 1000000
+								},
+								"cap": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 60
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"vanguard": {
+			"type": "object",
+			"required": [
+				"kind",
+				"coverage",
+				"duration",
+				"effects"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"kind": {
+					"enum": [
+						"order"
+					]
+				},
+				"coverage": {
+					"enum": [
+						"ownNonUndeadNonMechanicalAtIssue"
+					]
+				},
+				"duration": {
+					"type": "object",
+					"required": [
+						"leadershipPerRound",
+						"minimum",
+						"maximum"
+					],
+					"additionalProperties": false,
+					"properties": {
+						"leadershipPerRound": {
+							"type": "number",
+							"minimum": 0,
+							"maximum": 1000000,
+							"exclusiveMinimum": true
+						},
+						"minimum": {
+							"type": "integer",
+							"enum": [
+								1
+							]
+						},
+						"maximum": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 3
+						}
+					}
+				},
+				"effects": {
+					"type": "object",
+					"required": [
+						"primaryAndMorale",
+						"initiativePercent"
+					],
+					"additionalProperties": false,
+					"properties": {
+						"primaryAndMorale": {
+							"type": "object",
+							"required": [
+								"base",
+								"ratingStep",
+								"cap"
+							],
+							"additionalProperties": false,
+							"properties": {
+								"base": {
+									"type": "number",
+									"minimum": 0,
+									"maximum": 1000000
+								},
+								"ratingStep": {
+									"type": "number",
+									"minimum": 0,
+									"maximum": 1000000,
+									"exclusiveMinimum": true
+								},
+								"cap": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 3
+								}
+							}
+						},
+						"initiativePercent": {
+							"type": "object",
+							"required": [
+								"base",
+								"minimumRating",
+								"cap"
+							],
+							"additionalProperties": false,
+							"properties": {
+								"base": {
+									"type": "number",
+									"minimum": 0,
+									"maximum": 1000000
+								},
+								"minimumRating": {
+									"type": "number",
+									"minimum": 0,
+									"maximum": 1000000
+								},
+								"cap": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 18
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

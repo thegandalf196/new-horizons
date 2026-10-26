@@ -8,6 +8,8 @@
 #pragma once
 
 #include <cstdint>
+#include <algorithm>
+#include <string>
 
 #include "../../lib/battle/BattleSide.h"
 #include "../../lib/battle/HeroCommand.h"
@@ -21,6 +23,17 @@ inline MetaString sourceAndExpiry(const HeroOrderState & state, BattleSide side,
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		|| state.issuedRound <= 0 || !state.hasScheduledRecipients(currentRound))
 		return {};
+
+	if(state.command == HeroCommand::VANGUARD && state.revision)
+	{
+		MetaString result;
+		result.appendRawString(std::string(side == BattleSide::ATTACKER ? "Attacker" : "Defender")
+			+ " Order issued in round " + std::to_string(state.issuedRound)
+			+ "; expires at the end of round " + std::to_string(state.revision->expiresAfterRound)
+			+ " (" + std::to_string(std::max(0, state.revision->expiresAfterRound - currentRound + 1))
+			+ " rounds remaining, including this round).");
+		return result;
+	}
 
 	MetaString result = MetaString::createFromTextID(currentRound == state.issuedRound
 		? "new-horizons.combat.orderBadge.sourceExpiry"

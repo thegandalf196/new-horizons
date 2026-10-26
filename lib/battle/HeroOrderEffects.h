@@ -31,7 +31,8 @@ struct DLL_LINKAGE PreparedOrderEffects
 struct DLL_LINKAGE IssuedOrderGrants
 {
 	using Batch = std::vector<std::pair<uint32_t, std::vector<Bonus>>>;
-	/// Native packet ordering: Enchanted Command, Vengeance, Hold Fast.
+	/// Remove obsolete Vanguard grants first; additions retain companion ordering.
+	std::vector<Batch> removals;
 	std::vector<Batch> batches;
 	size_t holdFastRecipientCount = 0;
 };
@@ -40,6 +41,8 @@ struct DLL_LINKAGE IssuedOrderGrants
 DLL_LINKAGE std::optional<PreparedOrderEffects> prepareOrderEffects(
 	const CBattleInfoCallback & battle, BattleSide side, HeroCommand command,
 	const std::vector<uint32_t> & targets);
+DLL_LINKAGE void appendVanguardGrants(IssuedOrderGrants & grants, const CBattleInfoCallback & battle,
+	BattleSide side, const HeroOrderState & order);
 /// Called after the accepted Order has been installed and Shared Purpose applied.
 DLL_LINKAGE IssuedOrderGrants prepareIssuedOrderGrants(const CBattleInfoCallback & battle,
 	BattleSide side, const HeroOrderState & order);

@@ -62,6 +62,7 @@
 		{"skill": "new-horizons:spellcraft", "primary": 2, "chances": [0, 10, 20, 30]},
 		{"skill": "new-horizons:wisdom", "primary": 3, "chances": [0, 10, 20, 30]}
 	],
+	"chosenSpecialties": {"version": 1, "inteusDurationBonus": 1, "loynisManaDiscountPercent": 20},
 	"creatureLineSpecialties": {
 		"version": 1,
 		"speed": 1,

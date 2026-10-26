@@ -12,6 +12,9 @@
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsCureHealing.h"
+#include "NewHorizonsTheChosen.h"
+#include "../entities/hero/NewHorizonsChosenSpecialties.h"
+#include "../entities/hero/CHero.h"
 #include "../entities/hero/NewHorizonsAdditionalSpecialties.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsSorcery.h"
@@ -353,6 +356,25 @@ void appendPowerCoefficientReadout(std::string & result, const CGHeroInstance * 
 
 void applyContextualOverrides(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
 {
+	if(hero && spell->getJsonKey() == newHorizonsTheChosen::SPELL_KEY)
+	{
+		if(const auto rules = newHorizonsTheChosen::rulesFor(hero->getMagicRules()))
+		{
+			const int schoolPercent = spellPowerCoefficientPercent(hero->getMagicRules(), hero, spell->getId());
+			const int nominal = newHorizonsTheChosen::nominalDuration(*rules,
+				hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), schoolPercent);
+			const int exalted = newHorizonsTheChosen::exaltedChampionDurationBonus(*rules, hero);
+			const int specialty = newHorizonsHeroes::chosenSpecialtyDurationBonus(
+				hero->getPrimaryGrowthRules(), hero->getHeroType()->getJsonKey(), spell->getId());
+			const int duration = nominal + exalted + specialty;
+			result += "\n\nCurrent duration: " + std::to_string(duration)
+				+ " rounds (capped ordinary duration " + std::to_string(nominal)
+				+ "; Exalted Champion +" + std::to_string(exalted) + "; Inteus +" + std::to_string(specialty)
+				+ "). Battle-only Extend Spell and Echoed Duration may add rounds after the ordinary cap. "
+				"Only one stack per army; a successful recast replaces the previous recipient.";
+		}
+		return;
+	}
 	describeResurrection(result, hero, spell);
 	describeQuicksand(result, hero, spell);
 	describeTimeStop(result, hero, spell);

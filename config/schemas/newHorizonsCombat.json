@@ -64,6 +64,9 @@
 		},
 		{
 			"$ref": "newHorizonsCombatV3.json"
+		},
+		{
+			"$ref": "newHorizonsCombatV4.json"
 		}
 	],
 	"definitions": {

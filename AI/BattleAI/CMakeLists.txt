@@ -26,6 +26,7 @@ set(battleAI_SRCS
 		HeroSpellExpectedValueProjection.cpp
 		HeroPurifyProjection.cpp
 		HeroTargetHeuristicProjection.cpp
+		TheChosenValue.cpp
 		CanonicalOrderValue.cpp
 		SecondWindOpportunity.cpp
 		BattleDamageValue.cpp
@@ -111,6 +112,7 @@ set(battleAI_HEADERS
 		HeroSpellExpectedValueProjection.h
 		HeroPurifyProjection.h
 		HeroTargetHeuristicProjection.h
+		TheChosenValue.h
 		CanonicalOrderValue.h
 		SecondWindOpportunity.h
 		BattleDamageValue.h

@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
@@ -1104,6 +1105,9 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 			{
 				if(!producer->supported)
 					throw std::runtime_error("New Horizons cannot convert a non-damage spell specialty with limiters, updaters, propagation, or a non-base value type");
+				if(newHorizonsHeroes::chosenStartingSpellReplacement(primaryGrowthRules, getMagicRules(),
+					heroType->getJsonKey(), producer->spell))
+					continue;
 				auto converted = std::make_shared<Bonus>(*b);
 				converted->val = 0;
 				const auto target = authoredNonDamageSpellReplacement(*this, producer->spell).value_or(producer->spell);
@@ -2057,8 +2061,10 @@ int32_t CGHeroInstance::getSpellCost(const spells::Spell * sp) const
 		return listedCost;
 	}
 	const int rank = newHorizonsMagic::wisdomRank(this);
-	return rank == MasteryLevel::NONE ? listedCost
+	const int cost = rank == MasteryLevel::NONE ? listedCost
 		: newHorizonsMagic::wisdomAdjustedCost(listedCost, 1, rank);
+	return newHorizonsHeroes::chosenSpecialtyAdjustedCost(cost,
+		newHorizonsHeroes::chosenSpecialtyManaDiscount(primaryGrowthRules, getHeroType()->getJsonKey(), sp->getId()));
 }
 
 void CGHeroInstance::pushPrimSkill( PrimarySkill which, int val )

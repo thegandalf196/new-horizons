@@ -58,6 +58,8 @@ CanonicalOrderValue::CanonicalOrderValue(const CBattleInfoCallback & battle, Bat
 	preparedOrder = hero
 		? battle.battlePrepareHeroOrderState(side, command, targetIds)
 		: std::optional<HeroOrderState>();
+	if(preparedOrder)
+		heroCommands::finalizeRevisedOrderSnapshot(*preparedOrder, battle.getBattle()->getMagicRules());
 	warcastingBonus = hero && orderAllowance
 		&& orderAllowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO
 		&& newHorizonsWarcasting::enabled(battle.getBattle()->getMagicRules())
@@ -341,6 +343,34 @@ DamageEstimation CanonicalOrderValue::estimateExtraCounter(const battle::Unit * 
 DirectOrderValue CanonicalOrderValue::directValue(std::optional<int> focusFireSnapshotPercent,
 	const Environment * environment, const std::shared_ptr<CBattleInfoCallback> & projectionSource) const
 {
+	if(command == HeroCommand::VANGUARD)
+	{
+		// Admission only: unified scoring prices the native grant in its existing
+		// projected continuation. Do not create a second world or a second utility.
+		return {preparedOrder && preparedOrder->revision
+			? static_cast<float>(preparedOrder->revision->recipientUnitIds.size()
+				* preparedOrder->revision->vanguardStatBonus) : 0.0f};
+	}
+	if(command == HeroCommand::FEINT)
+	{
+		if(!preparedOrder || !preparedOrder->revision)
+			return {0.0f};
+		float retaliation = 0.0f;
+		for(const auto * own : ownUnits)
+		{
+			if(!own->willMove(0) || !own->isMeleeAttacker())
+				continue;
+			float best = 0.0f;
+			for(const auto * enemy : enemyUnits)
+			{
+				DamageEstimation counter;
+				battle.battleEstimateDamage(BattleAttackInfo(own, enemy, 0, false), &counter);
+				best = std::max(best, averageOrderDamage(counter));
+			}
+			retaliation += best;
+		}
+		return {retaliation * preparedOrder->revision->feintReductionPercent / 100.0f};
+	}
 	const auto ownMeleePotential = command == HeroCommand::CHARGE
 		? sumOwnMeleeDamage() : 0.0f;
 	if(command == HeroCommand::FOCUS_FIRE && targetIds.size() == 1)

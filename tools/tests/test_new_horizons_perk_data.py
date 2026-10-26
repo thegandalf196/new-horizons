@@ -446,6 +446,29 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertEqual(sylvan['description'], description)
         self.assertEqual(sylvan['effect'], {'status': 'active', 'description': description})
 
+    def test_revised_order_perks_preserve_saved_ids_and_tiers(self):
+        expected = (
+            ('offense', 'encirclement', 'Spearhead', 'basic',
+             'Charge! grants an additional +5 percentage points of damage.'),
+            ('armorer', 'shieldMaster', 'Shield Master', 'basic',
+             'Hold the Line! grants an additional +5 percentage points of physical damage reduction.'),
+            ('command', 'combinedArms', 'Combined Arms', 'advanced',
+             'Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. '
+             'Feint! grants an additional +5 percentage points of retaliation damage reduction, up to its final 60% cap.'),
+            ('lightMagic', 'crusader', 'Exalted Champion', 'expert',
+             'The Chosen lasts 1 additional round, added after its nominal duration cap.'),
+        )
+        for skill_id, perk_id, name, tier, description in expected:
+            skill = self.rules['skills']['new-horizons:' + skill_id]
+            identity = 'new-horizons:' + skill_id + '.' + perk_id
+            with self.subTest(identity=identity):
+                matches = [perk for perk in skill['perks'] if perk['id'] == identity]
+                self.assertEqual(len(matches), 1)
+                perk = matches[0]
+                self.assertEqual((perk['name'], perk['requires']), (name, tier))
+                self.assertEqual(perk['description'], description)
+                self.assertEqual(perk['effect'], {'status': 'active', 'description': description})
+
     def test_heroic_spirit_is_an_expert_order_only_hero_morale_perk(self):
         perk = next(p for p in self.rules['skills']['new-horizons:discipline']['perks']
                     if p['id'] == 'new-horizons:discipline.heroicSpirit')

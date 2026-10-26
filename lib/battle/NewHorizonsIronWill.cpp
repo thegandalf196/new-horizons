@@ -22,8 +22,8 @@ std::vector<uint32_t> recipients(const CBattleInfoCallback & battle,
 {
 	std::vector<uint32_t> result;
 	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| order.command == HeroCommand::SECOND_WIND
-		|| !vstd::contains(heroCommands::CANONICAL_COMMANDS, order.command)
+		|| order.command == HeroCommand::SECOND_WIND || order.command == HeroCommand::VANGUARD
+		|| !heroCommands::isActive(order.command)
 		|| !hasPerk(battle.battleGetFightingHero(side)))
 		return result;
 	const auto * hero = battle.battleGetFightingHero(side);

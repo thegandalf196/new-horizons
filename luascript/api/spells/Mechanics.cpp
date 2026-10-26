@@ -238,6 +238,12 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns one Arcane Breach mark's penetration in basis points, including the cast's Warcasting boost to its Spell Power component before the cap.");
 	R.method<&Mechanics::getEffectPower>("getEffectPower", {},
 		"Returns the effective spell power applied to the magnitude calculation.");
+	R.method<&Mechanics::getTheChosenNominalDuration>("getTheChosenNominalDuration", {},
+		"Returns The Chosen's saved nominal duration from raw Spell Power and School rank only.");
+	R.method<&Mechanics::getTheChosenDuration>("getTheChosenDuration", {},
+		"Returns the capped nominal Chosen duration followed by captured exceptional duration extensions.");
+	R.method<&Mechanics::getTheChosenJoustingPercent>("getTheChosenJoustingPercent", {},
+		"Returns The Chosen's saved native Jousting percentage per charged hex.");
 	R.method<&Mechanics::getEffectPowerDivisor>("getEffectPowerDivisor", {},
 		"Returns the saved caster power divisor; legacy and ordinary creature casts use one.");
 	R.method<&Mechanics::getSchoolRankPowerCoefficientPercent>("getSchoolRankPowerCoefficientPercent", {},

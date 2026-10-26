@@ -36,6 +36,7 @@ IssuedOrderGrants prepareIssuedOrderGrants(const CBattleInfoCallback & battle,
 	BattleSide side, const HeroOrderState & order)
 {
 	IssuedOrderGrants result;
+	appendVanguardGrants(result, battle, side, order);
 	const auto * hero = battle.battleGetFightingHero(side);
 	if(newHorizonsEnchantedCommand::eligible(battle.getBattle()->getMagicRules(), hero, order))
 	{
@@ -91,6 +92,9 @@ IssuedOrderGrants prepareIssuedOrderGrants(const CBattleInfoCallback & battle,
 
 void applyIssuedOrderGrants(IBattleState & state, const IssuedOrderGrants & grants)
 {
+	for(const auto & batch : grants.removals)
+		for(const auto & [id, bonuses] : batch)
+			state.removeUnitBonus(id, bonuses);
 	for(const auto & batch : grants.batches)
 		for(const auto & [id, bonuses] : batch)
 			state.addUnitBonus(id, bonuses);

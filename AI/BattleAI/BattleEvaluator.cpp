@@ -18,6 +18,7 @@
 #include "HeroTargetHeuristicProjection.h"
 #include "HeroOrderCandidates.h"
 #include "CanonicalOrderValue.h"
+#include "TheChosenValue.h"
 #include "BattleDamageValue.h"
 #include "HeroOrderCandidateRules.h"
 #include "HeroActionAdmission.h"
@@ -4873,6 +4874,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								!= original->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE))
 							|| (slowFamily
 								&& u->getInitiative() != original->getInitiative())
+							|| (theChosenValue::isTheChosen(ps.spell)
+								&& u->hasBonusOfType(BonusType::FLYING) != original->hasBonusOfType(BonusType::FLYING))
 							|| u->getPosition() != original->getPosition()
 							|| u->alive() != original->alive() || u->isGhost() != original->isGhost();
 					});
@@ -4956,6 +4959,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						continue;
 					}
 					damageToHostilesScore += mitigationValue * scoreEvaluator.getPositiveEffectMultiplier();
+				}
+				if(theChosenValue::isTheChosen(ps.spell) && !counterspellNegated)
+				{
+					damageToHostilesScore += theChosenValue::marginalValue(side, activeStack->unitId(),
+						hb, state, ps.spell->getId(), damageCache, innerCache,
+						scoreEvaluator.getPositiveEffectMultiplier(), scoreEvaluator.getNegativeEffectMultiplier());
 				}
 				if(isCanonicalCrusade(ps.spell))
 				{

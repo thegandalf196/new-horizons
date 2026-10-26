@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommand.h"
+#include "HeroCommandRevision.h"
 #include "HeroCommandCoefficient.h"
 #include "HeroCommandCoefficientMath.h"
 #include "IBattleState.h"
@@ -20,13 +21,6 @@ namespace heroCommands
 {
 namespace
 {
-constexpr char COMMAND_SKILL[] = "new-horizons:command";
-constexpr char VETERAN_COMMANDER_PERK[] = "new-horizons:command.veteranCommander";
-constexpr char COMBINED_ARMS_PERK[] = "new-horizons:command.combinedArms";
-constexpr char DOUBLE_COMMAND_PERK[] = "new-horizons:command.doubleCommand";
-constexpr char BATTLE_PLAN_PERK[] = "new-horizons:command.battlePlan";
-constexpr int VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT = 25;
-
 bool legacyVersionOne(const JsonNode & value)
 {
 	// Preserve the legacy const Integer() interpretation without unsafe conversion
@@ -235,6 +229,8 @@ std::string key(HeroCommand command)
 	case HeroCommand::PROTECT: return "protect";
 	case HeroCommand::FLANK: return "flank";
 	case HeroCommand::SECOND_WIND: return "secondWind";
+	case HeroCommand::FEINT: return "feint";
+	case HeroCommand::VANGUARD: return "vanguard";
 	default: return {};
 	}
 }
@@ -249,11 +245,25 @@ bool isActive(HeroCommand command)
 	return command == HeroCommand::CHARGE || command == HeroCommand::HOLD_THE_LINE
 		|| command == HeroCommand::FOCUS_FIRE || command == HeroCommand::RIPOSTE
 		|| command == HeroCommand::BRACE || command == HeroCommand::PROTECT
-		|| command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND;
+		|| command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND
+		|| command == HeroCommand::FEINT || command == HeroCommand::VANGUARD;
+}
+
+bool isIssuable(HeroCommand command)
+{
+	return std::find(CANONICAL_COMMANDS.begin(), CANONICAL_COMMANDS.end(), command) != CANONICAL_COMMANDS.end();
+}
+
+bool isRevisedRules(const JsonNode & rules)
+{
+	return rules.isStruct() && rules["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& rules["rulesetVersion"].Integer() == REVISED_ORDERS_RULESET_VERSION;
 }
 
 bool isCanonicalRules(const JsonNode & rules)
 {
+	if(isRevisedRules(rules))
+		return true;
 	return rules.isStruct() && rules["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
 		&& rules["rulesetVersion"].Integer() == ORDERS_ONLY_RULESET_VERSION
 		&& rules["commands"].isStruct() && rules["commands"].Struct().size() == 8
@@ -272,8 +282,14 @@ bool supportedByRules(const JsonNode & rules, HeroCommand command)
 	if(!isActive(command) || !rules.isStruct() || rules.Struct().empty())
 		return false;
 	const auto & version = rules["rulesetVersion"];
+	if((command == HeroCommand::FEINT || command == HeroCommand::VANGUARD) && !isRevisedRules(rules))
+		return false;
 	if(version.getType() != JsonNode::JsonType::DATA_INTEGER)
 		return legacyVersionOne(version) && command != HeroCommand::FOCUS_FIRE;
+	if(isRevisedRules(rules))
+		return isIssuable(command) && rules["commands"].Struct().contains(key(command));
+	if(command == HeroCommand::FEINT || command == HeroCommand::VANGUARD)
+		return false;
 	if(version.Integer() == RULESET_VERSION)
 		return command != HeroCommand::FOCUS_FIRE;
 	if(version.Integer() == TARGETED_RULESET_VERSION)
@@ -295,6 +311,11 @@ void validateRules(const JsonNode & rules)
 		return;
 	if(!rules.isStruct())
 		throw std::runtime_error("Invalid New Horizons combat ruleset shape");
+	if(isRevisedRules(rules))
+	{
+		validateRevisedRules(rules);
+		return;
+	}
 	const auto & version = rules["rulesetVersion"];
 	if(version.getType() == JsonNode::JsonType::DATA_INTEGER
 		&& version.Integer() == ORDERS_ONLY_RULESET_VERSION)
@@ -344,81 +365,6 @@ int orderPotency(int intrinsicValue, int valueWithCompanions,
 		+ static_cast<int64_t>(valueWithCompanions) - intrinsicValue;
 	return static_cast<int>(std::clamp<int64_t>(result,
 		std::numeric_limits<int>::min(), std::numeric_limits<int>::max()));
-}
-
-int efficiencyPercent(const CGHeroInstance & hero)
-{
-	return 100 + std::clamp(hero.getPerkSkillRank("new-horizons:command"), 0, 3) * 10;
-}
-
-int secondWindPercent(const CGHeroInstance & hero)
-{
-	return secondWindPercent(hero, 0, 0);
-}
-
-int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent)
-{
-	return secondWindPercent(hero, warcastingBonusPercent, 0);
-}
-
-int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
-	int divineMandateEfficiencyBonusPercent)
-{
-	return secondWindPercent(hero, warcastingBonusPercent, divineMandateEfficiencyBonusPercent, false);
-}
-
-int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
-	int divineMandateEfficiencyBonusPercent, bool crownAndAltar)
-{
-	int64_t leadership = 0;
-	if(const auto capacity = hero.getLeadershipCapacity())
-		leadership = capacity->capacity;
-	const int veteranCommanderBonus = hero.hasActivePerk(COMMAND_SKILL, VETERAN_COMMANDER_PERK)
-		? VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT : 0;
-	const int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100)
-		+ std::clamp(divineMandateEfficiencyBonusPercent, 0, 15)
-		+ veteranCommanderBonus;
-	const double leadershipComponent = 0.015 * static_cast<double>(leadership) * efficiency / 100.0 * (crownAndAltar ? 1.2 : 1.0);
-	return std::clamp(50 + static_cast<int>(std::lround(leadershipComponent)), 0, 100);
-}
-
-bool hasCombinedArms(const CGHeroInstance * hero)
-{
-	return hero && hero->hasActivePerk(COMMAND_SKILL, COMBINED_ARMS_PERK);
-}
-
-bool hasDoubleCommand(const CGHeroInstance * hero)
-{
-	return hero && hero->hasActivePerk(COMMAND_SKILL, DOUBLE_COMMAND_PERK);
-}
-
-bool hasBattlePlan(const CGHeroInstance * hero)
-{
-	return hero && hero->hasActivePerk(COMMAND_SKILL, BATTLE_PLAN_PERK);
-}
-
-double combinedArmsFocusFirePercent(int rangedDamagePercent, const CGHeroInstance & hero)
-{
-	if(!hasCombinedArms(&hero))
-		return 0;
-	return static_cast<double>(rangedDamagePercent) / 2.0;
-}
-
-double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula, const CGHeroInstance & hero,
-	int warcastingBonusPercent)
-{
-	return combinedArmsFlankPercent(meleeDamageFormula, hero, warcastingBonusPercent, 0);
-}
-
-double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula, const CGHeroInstance & hero,
-	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent)
-{
-	if(!hasCombinedArms(&hero))
-		return 0;
-	const double attackFactor = static_cast<double>(hero.getPrimSkillLevel(PrimarySkill::ATTACK))
-		* attributeEfficiencyPercent(hero, PrimarySkill::ATTACK, warcastingBonusPercent,
-			divineMandateEfficiencyBonusPercent, true) / 100.0;
-	return coefficientMath::boundedCoefficientComponent(meleeDamageFormula["attack"].Float(), attackFactor) / 2.0;
 }
 
 std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero)

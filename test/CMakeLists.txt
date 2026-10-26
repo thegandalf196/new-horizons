@@ -131,6 +131,7 @@ set(test_SRCS
 		battle/FocusFireStateTest.cpp
 		battle/RelentlessAssaultStateTest.cpp
 		battle/HeroCommandFocusFireRulesTest.cpp
+		battle/HeroCommandRevisionTest.cpp
 		battle/battle_UnitTest.cpp
 
 		bonus/BonusSystemTest.cpp
@@ -228,6 +229,7 @@ set(test_SRCS
 		hero/NewHorizonsReclaimerRulesTest.cpp
 		../client/NewHorizonsNecromancyText.cpp
 	hero/NewHorizonsSchoolSpellcraftRulesTest.cpp
+	hero/NewHorizonsChosenSpecialtiesTest.cpp
 	hero/NewHorizonsAdditionalSpecialtiesTest.cpp
 	battle/NewHorizonsManaFurnacePersistenceTest.cpp
 	battle/NewHorizonsDeepTrancePersistenceTest.cpp
@@ -413,6 +415,8 @@ set(test_SRCS
 		server/battles/NewHorizonsDisciplineTest.cpp
 		server/battles/NewHorizonsEspritDeCorpsTest.cpp
 		server/battles/HeroCommandPersistenceTest.cpp
+		server/battles/HeroCommandRevisionEffectsTest.cpp
+		server/battles/HeroOrderLogTest.cpp
 		server/battles/HeroCommandFixtureExportTest.cpp
 		server/battles/NewHorizonsDemonicGatingFixtureExportTest.cpp
 		server/battles/HeroCommandRejectionTest.cpp
@@ -561,6 +565,7 @@ set(test_SRCS
 		server/battles/NewHorizonsDivineRetributionTest.cpp
 		server/battles/NewHorizonsPurifyTest.cpp
 		server/battles/NewHorizonsCrusadeTest.cpp
+		server/battles/NewHorizonsTheChosenTest.cpp
 		server/battles/NewHorizonsEntangleTest.cpp
 		server/battles/NewHorizonsVengefulVinesTest.cpp
 		server/battles/NewHorizonsSummonTrollsTest.cpp
@@ -818,6 +823,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/CanonicalOrderValueTest.cpp
 		battleAI/SecondWindOpportunityTest.cpp
 		battleAI/HeroOrderCandidatesTest.cpp
+		battleAI/TheChosenValueTest.cpp
 		battleAI/SpellAdmissionCharacterizationTest.cpp
 		battleAI/HeroActionAdmissionTest.cpp
 		battleAI/HeroActionUtilityTest.cpp
@@ -869,6 +875,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroQueueCompletionSelectorTest.cpp
 		battleAI/HeroQueueContinuationSelectorTest.cpp
 		battleAI/HeroQueueOrderSelectorTest.cpp
+		battleAI/HeroOrderDecisionMeasurementTest.cpp
 		battleAI/HeroExpectedSpellFixture.cpp
 		battleAI/HeroExpectedSpellSelectorTest.cpp
 		battleAI/HeroExpectedSpellComponentTest.cpp

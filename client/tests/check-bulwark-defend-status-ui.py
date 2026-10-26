@@ -98,7 +98,7 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
         self.assertIn("currentStackInfoStatus(updatedInfo, battleCallback.get())", PANEL)
 
     def test_physical_poison_uses_public_state_and_authoritative_next_tick(self):
-        status_source = PANEL[PANEL.index("currentStackInfoStatus("):PANEL.index("statusIconKind(")]
+        status_source = PANEL[PANEL.index("currentStackInfoStatus("):PANEL.index("replaceStatusPlaceholder(")]
         self.assertIn("stack->physicalPoisonBaseDamage", status_source)
         self.assertIn("stack->physicalPoisonActivationsRemaining", status_source)
         self.assertIn("newHorizonsBulwark::physicalPoisonTickDamage(stack)", status_source)

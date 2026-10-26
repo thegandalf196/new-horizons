@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 helper = (ROOT / "client/windows/NewHorizonsOrderBadgeHelp.h").read_text()
-consumer = (ROOT / "client/windows/CCreatureWindow.cpp").read_text()
+consumer = (ROOT / "client/windows/CCreatureWindow.cpp").read_text() + (ROOT / "client/windows/NewHorizonsOrderIndicators.h").read_text()
 texts = json.loads((ROOT / "config/newHorizonsCombatTexts.json").read_text())
 
 for token in (

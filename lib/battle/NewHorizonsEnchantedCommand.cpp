@@ -70,6 +70,10 @@ std::vector<uint32_t> recipientIds(const CBattleInfoCallback & battle,
 				covered = std::any_of(order.anchors.begin(), order.anchors.end(),
 					[unit](const HeroOrderAnchor & anchor) { return anchor.unitId == unit->unitId(); });
 				break;
+			case HeroCommand::VANGUARD:
+				covered = order.revision && order.revision->contains(unit->unitId());
+				break;
+			case HeroCommand::FEINT:
 			case HeroCommand::CHARGE:
 			case HeroCommand::FLANK:
 			case HeroCommand::RIPOSTE:

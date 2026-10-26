@@ -166,11 +166,16 @@ TEST_F(HeroOrderCandidatesTest, AppendsAfterSpellPrefixAndKeepsExactCommandTarge
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto view = callback.getBattle(BattleID(0));
 	std::vector<std::pair<HeroCommand, std::vector<uint32_t>>> expected;
-	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::RIPOSTE, HeroCommand::BRACE})
-		if(view->battleCanUseHeroCommand(BattleSide::ATTACKER, command))
+	const bool revised = heroCommands::isRevisedRules(view->getBattle()->getHeroCommandRules());
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::RIPOSTE, HeroCommand::BRACE,
+		HeroCommand::FEINT, HeroCommand::VANGUARD})
+		if((revised || (command != HeroCommand::FEINT && command != HeroCommand::VANGUARD))
+			&& view->battleCanUseHeroCommand(BattleSide::ATTACKER, command))
 			expected.emplace_back(command, std::vector<uint32_t>{});
 	for(auto command : {HeroCommand::FOCUS_FIRE, HeroCommand::PROTECT, HeroCommand::FLANK, HeroCommand::SECOND_WIND})
 	{
+		if(revised && (command == HeroCommand::PROTECT || command == HeroCommand::FLANK))
+			continue;
 		const auto ids = view->battleGetHeroCommandTargets(BattleSide::ATTACKER, command);
 		for(auto first : ids)
 		{
@@ -198,7 +203,7 @@ TEST_F(HeroOrderCandidatesTest, AppendsAfterSpellPrefixAndKeepsExactCommandTarge
 	{
 		return choice.first == HeroCommand::FOCUS_FIRE;
 	});
-	EXPECT_EQ(callback.reads - readsBefore, 8u + 2u * targeted + focus);
+	EXPECT_EQ(callback.reads - readsBefore, 10u + 2u * targeted + focus);
 	EXPECT_EQ(result.front().spellOvercharge, 913);
 	for(size_t i = 0; i < expected.size(); ++i)
 	{
@@ -292,5 +297,41 @@ TEST_F(HeroOrderCandidatesTest, LegacySideWideBypassesValuationWhileFocusFireUse
 	EXPECT_TRUE(std::any_of(mandatory.begin(), mandatory.end(), [](const auto & candidate)
 	{
 		return candidate.command == HeroCommand::FOCUS_FIRE && candidate.focusFire.has_value();
+	}));
+}
+
+TEST_F(HeroOrderCandidatesTest, RevisedProfileHasOnlyOneTargetlessCandidatePerReplacementOrder)
+{
+	useRevisedOrders = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(heroCommands::isRevisedRules(battle()->getBattle()->getHeroCommandRules()));
+	const auto result = collect(true);
+	for(const auto command : {HeroCommand::FEINT, HeroCommand::VANGUARD})
+	{
+		EXPECT_EQ(std::count_if(result.begin(), result.end(), [command](const auto & candidate)
+		{
+			return candidate.command == command && candidate.commandTargets.empty();
+		}), 1);
+	}
+	EXPECT_TRUE(std::none_of(result.begin(), result.end(), [](const auto & candidate)
+	{
+		return candidate.command == HeroCommand::PROTECT || candidate.command == HeroCommand::FLANK;
+	}));
+}
+
+TEST_F(HeroOrderCandidatesTest, CapturedCanonicalV3KeepsHistoricalTargetedOrders)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(heroCommands::isCanonicalRules(battle()->getBattle()->getHeroCommandRules()));
+	ASSERT_FALSE(heroCommands::isRevisedRules(battle()->getBattle()->getHeroCommandRules()));
+	const auto result = collect(true);
+	for(const auto command : {HeroCommand::PROTECT, HeroCommand::FLANK})
+		EXPECT_TRUE(std::any_of(result.begin(), result.end(), [command](const auto & candidate)
+		{
+			return candidate.command == command && !candidate.commandTargets.empty();
+		}));
+	EXPECT_TRUE(std::none_of(result.begin(), result.end(), [](const auto & candidate)
+	{
+		return candidate.command == HeroCommand::FEINT || candidate.command == HeroCommand::VANGUARD;
 	}));
 }

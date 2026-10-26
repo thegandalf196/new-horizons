@@ -8,7 +8,11 @@
  *
  */
 #include "StdInc.h"
+#include "../entities/hero/CHero.h"
+#include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "CBattleInfoCallback.h"
+#include "HeroCommandAdjacency.h"
+#include "HeroCommandRoyalStandard.h"
 #include "DamageCalculationTiming.h"
 #include "UnitAdjacency.h"
 #include "../mapObjects/NewHorizonsGlyphsOfFear.h"
@@ -97,24 +101,6 @@ LuckRollRules battleLuckRules(const IBattleInfo & battle)
 /// Order targeting is based on occupied hexes, not a unit's primary position.
 /// This matters for double-wide stacks: their rear hex may be the one actually
 /// touching the ward or presenting a flank.
-bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second,
-	const BattleHex & firstPosition = BattleHex::INVALID, const BattleHex & secondPosition = BattleHex::INVALID)
-{
-	if(!first || !second)
-		return false;
-	const auto & firstHexes = firstPosition.isValid() ? first->getHexes(firstPosition) : first->getHexes();
-	const auto & secondHexes = secondPosition.isValid() ? second->getHexes(secondPosition) : second->getHexes();
-	for(const auto & firstHex : firstHexes)
-	{
-		if(!firstHex.isValid())
-			continue;
-		for(const auto & secondHex : secondHexes)
-			if(secondHex.isValid() && BattleHex::getDistance(firstHex, secondHex) == 1)
-				return true;
-	}
-	return false;
-}
-
 uint8_t orderContactingSideMask(const battle::Unit * attacker, const battle::Unit * defender,
 	const BattleHex & attackerPosition = BattleHex::INVALID, const BattleHex & defenderPosition = BattleHex::INVALID)
 {
@@ -1138,7 +1124,7 @@ bool CBattleInfoCallback::battleHasFormationFightingProtection(const battle::Uni
 			|| battleGetOwner(friendly) != owner)
 			continue;
 
-		if(orderUnitsAdjacent(defender, friendly, assumedPosition))
+		if(heroCommands::orderUnitsAdjacent(defender, friendly, assumedPosition))
 			return true;
 	}
 	return false;
@@ -1177,7 +1163,7 @@ bool CBattleInfoCallback::battleOrderBenefitAppliesTo(const HeroOrderState & sta
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		|| !heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		|| !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), state.command)
-		|| !state.scheduledFor(unit->unitId(), battleGetRound())
+		|| (state.command != HeroCommand::VANGUARD && !state.scheduledFor(unit->unitId(), battleGetRound()))
 		|| battleGetOwner(unit) != sideToPlayer(side)
 		|| unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
 		|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
@@ -1199,6 +1185,9 @@ bool CBattleInfoCallback::battleOrderBenefitAppliesTo(const HeroOrderState & sta
 			&& mark->targetUnitId == state.primaryTargetUnitId
 			&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), unit->unitId());
 	}
+	case HeroCommand::VANGUARD:
+		return heroCommands::activeVanguardBonuses(unit).has_value();
+	case HeroCommand::FEINT:
 	case HeroCommand::RIPOSTE:
 	case HeroCommand::BRACE:
 		return true;
@@ -1214,7 +1203,7 @@ bool CBattleInfoCallback::battleOrderBenefitAppliesTo(const HeroOrderState & sta
 			|| protector->isGhost() || ward->isGhost()
 			|| battleGetOwner(protector) != sideToPlayer(side)
 			|| battleGetOwner(ward) != sideToPlayer(side)
-			|| !orderUnitsAdjacent(protector, ward))
+			|| !heroCommands::orderUnitsAdjacent(protector, ward))
 			return false;
 		return unit->unitId() == protector->unitId() || unit->unitId() == ward->unitId();
 	}
@@ -1248,6 +1237,8 @@ bool CBattleInfoCallback::battleHasCommandingPresence(const battle::Unit * unit)
 	if(!controllerHero || !controllerHero->hasActivePerk(
 		"new-horizons:command", "new-horizons:command.commandingPresence"))
 		return false;
+	if(heroCommands::activeVanguardBonuses(unit))
+		return true; // Stasis can preserve a native grant beyond its latest side snapshot.
 	const auto orderStates = battleGetHeroOrderStates(side);
 	return std::ranges::any_of(orderStates, [this, side, unit](const HeroOrderState & orderState)
 	{
@@ -1284,7 +1275,7 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 			if(supporter->unitId() == unit->unitId() || battleGetOwner(supporter) != owner)
 				continue;
 
-			if(orderUnitsAdjacent(unit, supporter))
+			if(heroCommands::orderUnitsAdjacent(unit, supporter))
 			{
 				additionalMorale = 1;
 				break;
@@ -1308,6 +1299,8 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 		const auto side = playerToSide(battleGetOwner(unit));
 		if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 		{
+			if(heroCommands::hasVanguardRoyalStandardEntitlement(unit, side))
+				return 0;
 			const auto orders = battleGetHeroOrderStates(side);
 			if(std::ranges::any_of(orders, [this, unit](const HeroOrderState & order)
 			{
@@ -1519,226 +1512,6 @@ heroCommands::TargetRejection CBattleInfoCallback::battleGetHeroOrderTargetRejec
 	return rejection;
 }
 
-std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateImpl(BattleSide side,
-	HeroCommand command, const std::vector<uint32_t> & targetUnitIds, heroCommands::TargetRejection & rejection) const
-{
-	using Reason = heroCommands::TargetRejection;
-	rejection = Reason::NONE;
-	const auto reject = [&rejection](Reason reason) -> std::optional<HeroOrderState>
-	{
-		rejection = reason;
-		return {};
-	};
-	if(!getBattle() || !heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
-		|| !heroCommands::isActive(command) || !battleHeroCommandCommonAvailable(side, command))
-		return reject(Reason::UNAVAILABLE);
-	const auto * hero = battleGetFightingHero(side);
-	if(!hero)
-		return reject(Reason::UNAVAILABLE);
-	const auto owner = sideToPlayer(side);
-	const auto ownCombatUnit = [this, side](const battle::Unit * unit)
-	{
-		return battleOwnOrderUnitRejection(side, unit) == Reason::NONE;
-	};
-	const auto * rules = &getBattle()->getHeroCommandRules()["commands"][heroCommands::key(command)];
-	HeroOrderState result;
-	result.command = command;
-	result.issuedRound = battleGetRound();
-	if(result.issuedRound < 1)
-		return reject(Reason::UNAVAILABLE);
-	const auto allowance = battleGetOrderActionAllowance(side);
-	if(newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
-		&& allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO)
-		result.warcastingBonusPercent = newHorizonsWarcasting::orderBonus(
-			hero, getBattle()->getWarcastingState(side), result.issuedRound);
-	if(allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
-		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
-	{
-		result.sacredCommandEfficiencyBonusPercent =
-			newHorizonsDivineMandate::sacredCommandEfficiencyBonusPercent(hero);
-		result.knightlySequenceEfficiencyBonusPercent =
-			newHorizonsDivineMandate::knightlySequenceOrderBonusPercent(hero);
-	}
-	if(command == HeroCommand::HOLD_THE_LINE
-		&& hero->hasActivePerk(newHorizonsIronDiscipline::SKILL, newHorizonsIronDiscipline::PERK))
-	{
-		const int physicalReduction = std::clamp(heroCommands::coefficient(
-			(*rules)["effects"]["damageReductionPercent"], *hero, result.warcastingBonusPercent,
-			result.divineMandateEfficiencyBonusPercent()), 0, 100);
-		result.holdMagicalReductionBasisPoints = static_cast<uint16_t>(physicalReduction
-			* newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
-	}
-
-	const auto finish = [&]() -> std::optional<HeroOrderState>
-	{
-		if(allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
-			&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
-			&& (newHorizonsDivineMandate::hasRoyalStandardPerk(hero)
-				|| newHorizonsDivineMandate::hasDivineDisciplinePerk(hero)
-				|| newHorizonsDivineMandate::hasCrownAndAltarPerk(hero)))
-		{
-			for(const auto * unit : battleAliveUnits())
-			{
-				if(!ownCombatUnit(unit))
-					continue;
-				bool recipient = true;
-				switch(command)
-				{
-				case HeroCommand::FOCUS_FIRE:
-					recipient = battleIsFocusFireRecipient(unit, side)
-						|| (heroCommands::hasCombinedArms(hero) && unit->isMeleeAttacker()
-							&& !unit->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
-					break;
-				case HeroCommand::FLANK:
-					recipient = unit->isMeleeAttacker() || (heroCommands::hasCombinedArms(hero)
-						&& newHorizonsArchery::isOrdinaryPhysicalShooter(unit));
-					break;
-				case HeroCommand::PROTECT:
-					recipient = unit->unitId() == result.primaryTargetUnitId
-						|| unit->unitId() == result.secondaryTargetUnitId;
-					break;
-				case HeroCommand::SECOND_WIND:
-					recipient = unit->unitId() == result.primaryTargetUnitId;
-					break;
-				default:
-					break;
-				}
-				if(recipient)
-					result.royalStandardRecipientUnitIds.push_back(unit->unitId());
-			}
-			std::sort(result.royalStandardRecipientUnitIds.begin(), result.royalStandardRecipientUnitIds.end());
-			if(newHorizonsDivineMandate::hasCrownAndAltarPerk(hero))
-			{
-				const auto & ledger = getBattle()->getHeroActionAllowances(side);
-				const auto grant = std::find_if(ledger.grants.begin(), ledger.grants.end(),
-					[&allowance](const auto & entry) { return entry.id == allowance->grantId; });
-				if(grant != ledger.grants.end())
-					std::set_intersection(result.royalStandardRecipientUnitIds.begin(), result.royalStandardRecipientUnitIds.end(),
-						grant->divineMandateRecipients.begin(), grant->divineMandateRecipients.end(),
-						std::back_inserter(result.crownAndAltarRecipientUnitIds));
-				if(!result.crownAndAltarRecipientUnitIds.empty())
-				{
-					if(command == HeroCommand::FOCUS_FIRE)
-						result.crownAndAltarFocusFirePercent = heroCommands::coefficient(
-							newHorizonsDivineMandate::crownOrderFormula((*rules)["effects"]["rangedDamagePercent"], true),
-							*hero, result.warcastingBonusPercent, result.divineMandateEfficiencyBonusPercent());
-					if(command == HeroCommand::HOLD_THE_LINE && result.holdMagicalReductionBasisPoints != 0)
-						result.crownAndAltarHoldReductionBasisPoints = static_cast<uint16_t>(std::clamp(
-							heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(
-								(*rules)["effects"]["damageReductionPercent"], true), *hero,
-								result.warcastingBonusPercent, result.divineMandateEfficiencyBonusPercent()), 0, 100)
-							* newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
-				}
-			}
-			if(command != HeroCommand::SECOND_WIND && newHorizonsDivineMandate::hasDivineDisciplinePerk(hero))
-				result.divineDisciplineRecipientUnitIds = result.royalStandardRecipientUnitIds;
-			if(!newHorizonsDivineMandate::hasRoyalStandardPerk(hero))
-				result.royalStandardRecipientUnitIds.clear();
-		}
-		const auto ironRecipients = newHorizonsIronWill::recipients(*this, side, result);
-		if(!ironRecipients.empty())
-		{
-			result.ironWillLifetime = true;
-			result.divineDisciplineRecipientUnitIds = ironRecipients;
-		}
-		result.validateShape();
-		return result;
-	};
-
-	if(command == HeroCommand::FOCUS_FIRE)
-	{
-		if(targetUnitIds.size() != 1)
-			return reject(Reason::TARGET_COUNT);
-		const auto reason = battleFocusFireTargetRejection(side, command, targetUnitIds.front());
-		if(reason != Reason::NONE)
-			return reject(reason);
-		result.primaryTargetUnitId = targetUnitIds.front();
-		return finish();
-	}
-	if(command == HeroCommand::FLANK)
-	{
-		if(targetUnitIds.size() != 1)
-			return reject(Reason::TARGET_COUNT);
-		const auto * target = battleGetUnitByID(targetUnitIds.front());
-		if(!target)
-			return reject(Reason::NO_STACK);
-		if(!target->alive() || target->isGhost())
-			return reject(Reason::NOT_LIVING);
-		if(target->isTurret())
-			return reject(Reason::ORDINARY_REQUIRED);
-		if(battleGetOwner(target) == owner)
-			return reject(Reason::ENEMY_REQUIRED);
-		bool hasMelee = false;
-		for(const auto * unit : battleAliveUnits())
-			if(ownCombatUnit(unit) && unit->isMeleeAttacker())
-				hasMelee = true;
-		if(!hasMelee)
-			return reject(Reason::NO_MELEE_RECIPIENT);
-		result.primaryTargetUnitId = target->unitId();
-		result.flankTargets.push_back({target->unitId(), 0});
-		return finish();
-	}
-	if(command == HeroCommand::PROTECT)
-	{
-		if(targetUnitIds.size() != 2)
-			return reject(Reason::TARGET_COUNT);
-		if(targetUnitIds.front() == targetUnitIds.back())
-			return reject(Reason::SAME_STACK);
-		const auto * protector = battleGetUnitByID(targetUnitIds.front());
-		const auto * ward = battleGetUnitByID(targetUnitIds.back());
-		for(const auto * unit : {protector, ward})
-		{
-			const auto reason = battleOwnOrderUnitRejection(side, unit);
-			if(reason != Reason::NONE)
-				return reject(reason);
-		}
-		if(!orderUnitsAdjacent(protector, ward))
-			return reject(Reason::NOT_ADJACENT);
-		result.primaryTargetUnitId = protector->unitId();
-		result.secondaryTargetUnitId = ward->unitId();
-		result.protectInterceptionLimit = hero->hasActivePerk(
-			newHorizonsShieldMaster::SKILL, newHorizonsShieldMaster::PERK)
-			? newHorizonsShieldMaster::SHIELD_MASTER_PROTECT_INTERCEPTION_LIMIT
-			: newHorizonsShieldMaster::ORDINARY_PROTECT_INTERCEPTION_LIMIT;
-		return finish();
-	}
-	if(command == HeroCommand::SECOND_WIND)
-	{
-		if(targetUnitIds.size() != 1)
-			return reject(Reason::TARGET_COUNT);
-		const auto * target = battleGetUnitByID(targetUnitIds.front());
-		const bool canonicalRules = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules());
-		const auto targetState = target ? target->acquireState() : nullptr;
-		const bool hasSpentActivation = target
-			&& (target->moved() || (canonicalRules && targetState && targetState->defending));
-		const auto reason = battleOwnOrderUnitRejection(side, target);
-		if(reason != Reason::NONE)
-			return reject(reason);
-		if(newHorizonsSwiftRebirth::blocksAdditionalActivation(*target, battleGetRound()))
-			return reject(Reason::ACTIVATION_UNSPENT);
-		if(!hasSpentActivation)
-			return reject(Reason::ACTIVATION_UNSPENT);
-		result.primaryTargetUnitId = target->unitId();
-		return finish();
-	}
-	if(!targetUnitIds.empty())
-		return reject(Reason::TARGET_COUNT);
-	bool hasRecipient = false;
-	for(const auto * unit : battleAliveUnits())
-	{
-		if(!ownCombatUnit(unit))
-			continue;
-		hasRecipient = true;
-		if(command == HeroCommand::HOLD_THE_LINE)
-			result.anchors.push_back({unit->unitId(), unit->getPosition().toInt()});
-	}
-	if(!hasRecipient)
-		return reject(Reason::NO_RECIPIENT);
-	(void)rules;
-	result.validateShape();
-	return finish();
-}
-
 const battle::Unit * CBattleInfoCallback::battleResolveHeroOrderTarget(const battle::Unit * attacker,
 	const battle::Unit * defender, bool shooting) const
 {
@@ -1754,7 +1527,7 @@ const battle::Unit * CBattleInfoCallback::battleResolveHeroOrderTarget(const bat
 		return defender;
 	const auto * protector = battleGetUnitByID(state->primaryTargetUnitId);
 	if(!protector || !protector->alive() || protector->isGhost()
-		|| !orderUnitsAdjacent(protector, defender))
+		|| !heroCommands::orderUnitsAdjacent(protector, defender))
 		return defender;
 	return protector;
 }
@@ -3895,7 +3668,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 						*attack, attackerState.warcastingBonusPercent, attackerState.divineMandateEfficiencyBonusPercent());
 					const int orderDamagePercent = heroCommands::orderPotency(intrinsic + 2 * (info.chargeDistance - 3),
 						heroOrderCoefficient(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState, info.attacker->unitId(), false)
-							+ 2 * (info.chargeDistance - 3), attackerState, getBattle()->getMagicRules());
+							+ 2 * (info.chargeDistance - 3), attackerState, getBattle()->getMagicRules())
+						+ (info.physicalDamage
+							? heroCommands::revisedPerkBonus(getBattle()->getHeroCommandRules(), attack, HeroCommand::CHARGE) : 0);
 					payload.heroOrderDamagePercent += orderDamagePercent;
 					if(orderDamagePercent > 0)
 						recordAttackerCause(HeroCommand::CHARGE);
@@ -3985,13 +3760,20 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			int orderDamageReductionPercent = 0;
 			switch(defenderState.command)
 			{
+			case HeroCommand::FEINT:
+				if(info.retaliation && !info.shooting && !info.secondaryAttack && !info.bracePreemptive
+					&& defenderState.revision
+					&& battleGetOwner(info.attacker) != battleGetOwner(info.defender))
+					orderDamageReductionPercent = heroCommands::revisedFeintReductionFor(defenderState, info.defender->unitId());
+				break;
 			case HeroCommand::RIPOSTE:
 				if(!info.shooting)
 					orderDamageReductionPercent = heroOrderCoefficient(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend, &defenderState, info.defender->unitId());
 				break;
 			case HeroCommand::HOLD_THE_LINE:
 				if(battleIsHoldTheLineRecipient(defenderState, info.defender))
-					orderDamageReductionPercent = heroOrderCoefficient(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend, &defenderState, info.defender->unitId());
+					orderDamageReductionPercent = heroOrderCoefficient(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend, &defenderState, info.defender->unitId())
+						+ heroCommands::revisedPerkBonus(getBattle()->getHeroCommandRules(), defend, HeroCommand::HOLD_THE_LINE);
 				break;
 			case HeroCommand::PROTECT:
 				if(!info.shooting && info.protectIntercepted
@@ -5305,6 +5087,14 @@ int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, 
 			recordStage(SpellCostStage::Kind::LISTED_MULTIPLIER, listedCost, multipliedListedCost);
 		if(wisdom != MasteryLevel::NONE)
 			recordStage(SpellCostStage::Kind::WISDOM, multipliedListedCost, ret);
+	}
+	const int specialtyDiscount = newHorizonsHeroes::chosenSpecialtyManaDiscount(
+		caster->getPrimaryGrowthRules(), caster->getHeroType()->getJsonKey(), sp->getId());
+	if(specialtyDiscount > 0)
+	{
+		const int32_t before = ret;
+		ret = newHorizonsHeroes::chosenSpecialtyAdjustedCost(ret, specialtyDiscount);
+		recordStage(SpellCostStage::Kind::CHOSEN_SPECIALTY, before, ret);
 	}
 	const bool newHorizonsOrdinarySpell = newHorizonsMagic::rulesActive(caster->getMagicRules())
 		&& sp->isCommonHeroSpell() && sp->isCombat() && !sp->isAdventure();

@@ -275,12 +275,13 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_RECOVERY_SPECIALTIES, // captured recovery riders and accepted-combat day provenance
 	NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS, // independently optional remaining specialty families
+	NEW_HORIZONS_REVISED_ORDERS, // captured Feint/Vanguard profile and nominal snapshots
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS,
+	CURRENT = NEW_HORIZONS_REVISED_ORDERS,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS

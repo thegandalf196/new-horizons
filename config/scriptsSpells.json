@@ -524,6 +524,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"theChosenEffect": {
+		"implements": "spellEffect",
+		"script": "spells/theChosen",
+		"patches": [],
+		"schema": {
+			"properties": {
+				"type": {},
+				"indirect": {},
+				"optional": {}
+			},
+			"additionalProperties": false
+		}
+	},
 	"timed" : {
 		"implements" : "spellEffect",
 		"script" : "spells/timed",

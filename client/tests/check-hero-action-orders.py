@@ -17,9 +17,9 @@ HERO_WINDOW = ROOT / "client/windows/CHeroWindow.cpp"
 DEVELOPMENT_WINDOW = ROOT / "client/windows/HeroGrowthWindow.cpp"
 ASSET_GENERATOR = ROOT / "client/render/AssetGenerator.cpp"
 
-action = ACTION.read_text(encoding="utf-8")
+action = ACTION.read_text(encoding="utf-8") + (ROOT / "client/battle/NewHorizonsOrderPresentation.h").read_text(encoding="utf-8")
 controller = CONTROLLER.read_text(encoding="utf-8")
-creature_window = CREATURE_WINDOW.read_text(encoding="utf-8")
+creature_window = CREATURE_WINDOW.read_text(encoding="utf-8") + (ROOT / "client/windows/NewHorizonsOrderIndicators.h").read_text(encoding="utf-8")
 hero_window = HERO_WINDOW.read_text(encoding="utf-8")
 development_window = DEVELOPMENT_WINDOW.read_text(encoding="utf-8")
 asset_generator = ASSET_GENERATOR.read_text(encoding="utf-8")
@@ -33,6 +33,8 @@ orders = {
     "PROTECT": "Protect",
     "FLANK": "Flank",
     "SECOND_WIND": "Second Wind",
+    "FEINT": "Feint",
+    "VANGUARD": "Vanguard",
 }
 
 for identifier, label in orders.items():

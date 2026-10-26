@@ -13,6 +13,7 @@
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "../../lib/battle/OrderActionTransition.h"
 #include "BattleActionProcessor.h"
+#include "HeroOrderLog.h"
 #include "FrozenAttackResolution.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
@@ -439,22 +440,6 @@ static bool shouldActivateGrandMetamagic(const CBattleInfoCallback & battle, Bat
 		battle.battleMetamagicGrandUsed(side));
 }
 
-static const char * heroOrderDisplayName(HeroCommand command)
-{
-	switch(command)
-	{
-		case HeroCommand::CHARGE: return "Charge";
-		case HeroCommand::HOLD_THE_LINE: return "Hold the Line";
-		case HeroCommand::FOCUS_FIRE: return "Focus Fire";
-		case HeroCommand::RIPOSTE: return "Riposte";
-		case HeroCommand::BRACE: return "Brace";
-		case HeroCommand::PROTECT: return "Protect";
-		case HeroCommand::FLANK: return "Flank";
-		case HeroCommand::SECOND_WIND: return "Second Wind";
-		default: return "Order";
-	}
-}
-
 static bool isSanctifiedHostileTarget(const CBattleInfoCallback & battle,
 	const battle::Unit * attacker, const battle::Unit * target)
 {
@@ -609,116 +594,6 @@ static MetaString orderDamageLogLine(const CBattleInfoCallback & battle, const C
 		line.appendNumber(hit.killedAmount);
 		line.appendRawString(" killed) from %s.");
 		attacker->addNameReplacement(line, attacker->getCount());
-	}
-	return line;
-}
-
-static void appendHeroOrderTarget(MetaString & line, const CBattleInfoCallback & battle, uint32_t unitId)
-{
-	const auto * target = battle.battleGetUnitByID(unitId);
-	if(!target)
-		return;
-	line.appendRawString(" %s");
-	target->addNameReplacement(line);
-}
-
-static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSide side,
-	const HeroOrderState & state)
-{
-	const auto * hero = battle.battleGetFightingHero(side);
-	MetaString line = hero
-		? MetaString::createFromTextID(hero->getNameTextID())
-		: MetaString::createFromRawString("Hero");
-	line.appendRawString(": ");
-	line.appendRawString(heroOrderDisplayName(state.command));
-	line.appendRawString("!");
-	if(state.warcastingBonusPercent > 0)
-	{
-		line.appendRawString(" Warcasting adds +");
-		line.appendNumber(state.warcastingBonusPercent);
-		line.appendRawString(" percentage points to attribute-derived efficiency.");
-	}
-	if(state.sacredCommandEfficiencyBonusPercent > 0)
-	{
-		line.appendRawString(" Sacred Command adds +");
-		line.appendNumber(state.sacredCommandEfficiencyBonusPercent);
-		line.appendRawString(" percentage points to attribute-derived efficiency.");
-	}
-	if(state.knightlySequenceEfficiencyBonusPercent > 0)
-	{
-		line.appendRawString(" Knightly Sequence adds +");
-		line.appendNumber(state.knightlySequenceEfficiencyBonusPercent);
-		line.appendRawString(" additional percentage points to attribute-derived efficiency.");
-	}
-
-	switch(state.command)
-	{
-		case HeroCommand::CHARGE:
-			line.appendRawString(" Each allied stack's first melee attack after moving at least 3 hexes gains +");
-			line.appendNumber(hero ? heroCommands::coefficient(
-				battle.getBattle()->getHeroCommandRules()["commands"]["charge"]["effects"]["meleeDamagePercent"],
-				*hero, state.warcastingBonusPercent, state.divineMandateEfficiencyBonusPercent()) : 0);
-			line.appendRawString("% damage, plus 2 percentage points per additional hex, this round.");
-			break;
-		case HeroCommand::HOLD_THE_LINE:
-			line.appendRawString(" Allied stacks that hold position resist physical damage this round.");
-			if(state.holdMagicalReductionBasisPoints > 0)
-			{
-				line.appendRawString(" Iron Discipline adds ");
-				line.appendNumber(state.holdMagicalReductionBasisPoints / 100);
-				const int remainder = state.holdMagicalReductionBasisPoints % 100;
-				if(remainder != 0)
-				{
-					line.appendRawString(".");
-					if(remainder < 10)
-						line.appendRawString("0");
-					line.appendNumber(remainder % 10 == 0 ? remainder / 10 : remainder);
-				}
-				line.appendRawString("% magical damage reduction while they hold position.");
-			}
-			break;
-		case HeroCommand::FOCUS_FIRE:
-			line.appendRawString(" Target:");
-			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
-			if(heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
-				&& heroCommands::hasCombinedArms(hero))
-				line.appendRawString(". Allied shooters concentrate fire; melee stacks included when issuing gain half this damage bonus against this target this round.");
-			else
-				line.appendRawString(". Allied shooters concentrate fire this round.");
-			break;
-		case HeroCommand::RIPOSTE:
-			line.appendRawString(" Allied stacks take less melee damage and retaliate more fiercely this round.");
-			if(hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE))
-				line.appendRawString(" Vengeance grants each affected stack one additional retaliation this round.");
-			break;
-		case HeroCommand::BRACE:
-			line.appendRawString(" Allied stacks strike first when an enemy moves at least 3 hexes before a melee attack this round.");
-			break;
-		case HeroCommand::PROTECT:
-			line.appendRawString(" Protector:");
-			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
-			line.appendRawString(". Ward:");
-			appendHeroOrderTarget(line, battle, state.secondaryTargetUnitId);
-			line.appendRawString(battle.battleHeroOrderProtectInterceptionLimit(side) > 1
-				? ". The first two qualifying melee attacks are intercepted this round."
-				: ". The first qualifying melee attack is intercepted this round.");
-			break;
-		case HeroCommand::FLANK:
-			line.appendRawString(" Target:");
-			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
-			if(heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
-				&& heroCommands::hasCombinedArms(hero))
-				line.appendRawString(". Allied melee attackers exploit new sides; ranged attacks gain half the Attack-derived damage bonus without adding sides this round.");
-			else
-				line.appendRawString(". Allied melee attackers exploit new sides this round.");
-			break;
-		case HeroCommand::SECOND_WIND:
-			line.appendRawString(" Target:");
-			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
-			line.appendRawString(". One reduced-strength activation is granted this round.");
-			break;
-		default:
-			break;
 	}
 	return line;
 }
@@ -3043,6 +2918,13 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 		if(!state || state->command != ba.command)
 			return false;
 		const auto grants = heroCommands::prepareIssuedOrderGrants(battle, ba.side, *state);
+		for(const auto & batch : grants.removals)
+		{
+			SetStackEffect update;
+			update.battleID = battle.getBattle()->getBattleID();
+			update.toRemove = batch;
+			gameHandler->sendAndApply(update);
+		}
 		for(const auto & batch : grants.batches)
 		{
 			SetStackEffect update;
@@ -3485,6 +3367,9 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 				preparedOrderState->heroMorale->mark(newHorizonsHeroLuck::Proc::HeroicSpirit);
 		}
 	}
+
+	if(preparedOrderState)
+		heroCommands::finalizeRevisedOrderSnapshot(*preparedOrderState, battle.getBattle()->getMagicRules());
 
 	// for these events client does not expects StartAction/EndAction wrapper
 	if (!ba.isBattleEndAction())

@@ -8,7 +8,8 @@
 		"luckBias": 0,
 		"heroCommands": {
 			"schemaVersion": 1,
-			"rulesetVersion": 3,
+			"rulesetVersion": 4,
+			"perkBonuses": { "spearheadDamagePercent": 5, "shieldMasterReductionPercent": 5, "combinedArmsFeintReductionPercent": 5 },
 			"commands": {
 				"charge": {
 					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
@@ -37,17 +38,37 @@
 					"trigger": "enemyMeleeMovedAtLeast3",
 					"effects": { "preemptiveDamagePercent": { "base": 50, "attack": 0, "defense": 0.25 } }
 				},
-				"protect": {
-					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
-					"target": "protectorAndWard",
-					"effects": { "interceptedDamageReductionPercent": { "base": 5, "attack": 0, "defense": 0.15 } }
-				},
-				"flank": {
-					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
-					"target": "enemyUnit",
+				"feint": {
+					"kind": "order",
+					"coverage": "ownLivingNonWarMachines",
+					"duration": "round",
 					"effects": {
-						"meleeDamagePercent": { "base": 8, "attack": 0.12, "defense": 0 },
-						"additionalSidePercent": { "base": 4, "attack": 0, "defense": 0 }
+						"retaliationDamageReductionPercent": {
+							"base": 15,
+							"leadership": 0.015,
+							"cap": 60
+						}
+					}
+				},
+				"vanguard": {
+					"kind": "order",
+					"coverage": "ownNonUndeadNonMechanicalAtIssue",
+					"duration": {
+						"leadershipPerRound": 750,
+						"minimum": 1,
+						"maximum": 3
+					},
+					"effects": {
+						"primaryAndMorale": {
+							"base": 1,
+							"ratingStep": 75,
+							"cap": 3
+						},
+						"initiativePercent": {
+							"base": 5,
+							"minimumRating": 0.05,
+							"cap": 18
+						}
 					}
 				},
 				"secondWind": {

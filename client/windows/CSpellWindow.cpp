@@ -81,6 +81,7 @@ const char * spellCostStageTextKey(SpellCostStage::Kind kind)
 	switch(kind)
 	{
 		case SpellCostStage::Kind::LISTED_MULTIPLIER: return "new-horizons.spellCost.modifier.listedMultiplier";
+		case SpellCostStage::Kind::CHOSEN_SPECIALTY: return "new-horizons.spellCost.modifier.chosenSpecialty";
 		case SpellCostStage::Kind::WISDOM: return "new-horizons.spellCost.modifier.wisdom";
 		case SpellCostStage::Kind::ADVENTURE_ARTIFACT: return "new-horizons.spellCost.modifier.adventureArtifact";
 		case SpellCostStage::Kind::KNIGHTLY_SEQUENCE: return "new-horizons.spellCost.modifier.knightlySequence";

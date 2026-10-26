@@ -40,7 +40,8 @@ class DoomStatusUiSourceTest(unittest.TestCase):
 
         hover_partition = HOVER_PANEL.index("stackStatusDisplayPlan(statusKinds, totalEffectCount)")
         self.assertLess(HOVER_PANEL.index("statusIconKind(effect)"), hover_partition)
-        self.assertIn("return newHorizonsBattleStatus::StackStatusIconKind::DOOM", HOVER_PANEL)
+        self.assertIn("return newHorizonsBattleStatus::StackStatusIconKind::DOOM",
+                      (ROOT / "client/battle/StackSpellStatusPresentation.h").read_text(encoding="utf-8"))
 
         priority_partition = STACK_WINDOW.index("const auto prioritizedEnd = std::stable_partition(spells.begin(), spells.end()")
         time_stop_partition = STACK_WINDOW.index("const auto timeStopEnd = std::stable_partition", priority_partition)

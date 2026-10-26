@@ -12,6 +12,7 @@
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsMagicPresentation.h"
 #include "NewHorizonsImplosion.h"
+#include "NewHorizonsTheChosen.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "ISpellMechanics.h"
 
@@ -1060,7 +1061,8 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "rawSpellPowerPerPatch", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "rawSpellPowerPerPatch", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers", "theChosen"});
+		newHorizonsTheChosen::validateSpellRow(rules, name, data);
 		if(data.Struct().contains("implosion"))
 		{
 			require(name == "core:implosion", "Implosion profile requires its canonical spell row");

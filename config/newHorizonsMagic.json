@@ -440,7 +440,14 @@
 		"new-horizons:crusade": {
 			"schools": ["new-horizons:light"],
 			"level": 5,
-			"costs": [24, 24, 24, 24]
+			"costs": [24, 24, 24, 24],
+			"active": false
+		},
+		"new-horizons:theChosen": {
+			"schools": ["new-horizons:light"],
+			"level": 5,
+			"costs": [25, 25, 25, 25],
+			"theChosen": {"baseDuration": 2, "maximumDuration": 4, "spellPowerPerRound": 150, "joustingPercent": 5, "exaltedChampionDurationBonus": 1}
 		},
 		"new-horizons:purify": {
 			"schools": ["new-horizons:light"],

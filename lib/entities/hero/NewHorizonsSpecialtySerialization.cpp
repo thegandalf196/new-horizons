@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "NewHorizonsSpecialtySerialization.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsChosenSpecialties.h"
 #include "NewHorizonsLearningExchangeSpecialties.h"
 #include "NewHorizonsSwampSeer.h"
 #include "NewHorizonsReclaimer.h"
@@ -19,6 +20,7 @@ void validateCapturedSpecialtiesSerialization(const JsonNode & development,
 	validateLearningExchangeSpecialtiesSerialization(development, context.remainingRiders);
 	validateSwampSeerSerialization(development, context.remainingRiders);
 	validateReclamationSpecialtySerialization(development, context.remainingRiders);
+	validateChosenSpecialtiesSerialization(development, context.chosenSpecialties);
 }
 
 void validateCurrentSpecialtyRules(const JsonNode & development)
@@ -30,6 +32,7 @@ void validateCurrentSpecialtyRules(const JsonNode & development)
 	current.additional = true;
 	current.recovery = true;
 	current.remainingRiders = true;
+	current.chosenSpecialties = true;
 	validateCapturedSpecialtiesSerialization(development, current);
 }
 
