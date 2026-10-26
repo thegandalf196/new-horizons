@@ -474,6 +474,10 @@ TEST_F(NewHorizonsCrisisCommandTest, ActiveProfileRejectsBeforeSettingsHeroMapWo
 TEST(NewHorizonsCrisisCommandProtocolTest, PlannedAndAbsentProfilesRemainOldCompatibleWhileMalformedAndRawActiveDoNot)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	// Capture historical absence of later offer policies so the old writer
+	// and raw reader assertions exercise the Crisis Command compatibility fence.
+	for(const auto key : {"perkProgressionPolicyVersion", "offerWeightPolicyVersion", "perkOfferNormalization"})
+		rules.Struct().erase(key);
 	for(auto & perk : rules["skills"][newHorizonsCrisisCommand::SKILL]["perks"].Vector())
 		if(perk["id"].String() == newHorizonsCrisisCommand::PERK) perk["effect"]["status"].String() = "planned";
 	EXPECT_NO_THROW(newHorizonsCrisisCommand::validateProfileSerialization(JsonNode(), false));

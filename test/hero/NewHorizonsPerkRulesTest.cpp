@@ -84,6 +84,14 @@ TEST(NewHorizonsPerkRules, RuntimeRejectsIdentityCardinalityRankAndEffectForgery
 	invalid[9]["skills"]["new-horizons:offense"]["availability"].String() = "Everyone sometimes";
 	for(const auto & rules : invalid)
 		EXPECT_THROW(validatePerkRules(rules), std::runtime_error);
+
+	// Corruption outside Command must still fail when every target feature is supported.
+	const auto & unrelatedCorruption = invalid[1];
+	const auto before = unrelatedCorruption;
+	EXPECT_THROW(crisisCommandProfileActive(unrelatedCorruption), std::runtime_error);
+	EXPECT_THROW(validateCrisisCommandProfileSerialization(unrelatedCorruption, true), std::runtime_error);
+	EXPECT_THROW(validateWeightedPerkSerialization(unrelatedCorruption, true, true, true), std::runtime_error);
+	EXPECT_EQ(unrelatedCorruption, before);
 }
 
 TEST(NewHorizonsPerkRules, SettingsSchemaAcceptsTheActualRegistry)
@@ -160,6 +168,34 @@ TEST(NewHorizonsPerkRules, WeightedOfferPolicyRejectsMalformedAndUnknownVersions
 		EXPECT_FALSE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "malformed weighted perk marker"));
 		EXPECT_EQ(rules, before);
 	}
+}
+
+TEST(NewHorizonsPerkRules, CompatibilityRefusalsRetainMalformedStrictWeightedR2Order)
+{
+	using namespace newHorizonsHeroes;
+	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(usesStrictPerkProgression(rules));
+	const auto rejection = [&rules](bool supported, bool r2Supported, bool strictSupported) -> std::string
+	{
+		try
+		{
+			validateWeightedPerkSerialization(rules, supported, r2Supported, strictSupported);
+			return {};
+		}
+		catch(const std::runtime_error & error)
+		{
+			return error.what();
+		}
+	};
+	const auto before = rules;
+	EXPECT_EQ(rejection(false, false, false), "Cannot serialize strict perk progression to an older format");
+	EXPECT_EQ(rejection(false, false, true), "Cannot serialize weighted perk offers to an older format");
+	EXPECT_EQ(rejection(true, false, true), "Cannot serialize R2 perk offers to an older format");
+	EXPECT_EQ(rejection(true, true, true), "");
+	EXPECT_EQ(rules, before);
+
+	rules["skills"]["new-horizons:offense"]["perks"].Vector().pop_back();
+	EXPECT_TRUE(rejection(false, false, false).starts_with("Invalid New Horizons perk rules: "));
 }
 
 TEST(NewHorizonsPerkRules, GlobalSettingsCodecGuardsWeightedPolicyBeforeInstallingOverridesWithoutHeroes)

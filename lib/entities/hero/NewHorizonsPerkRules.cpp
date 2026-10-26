@@ -21,7 +21,6 @@ namespace newHorizonsHeroes
 {
 bool crisisCommandProfileActive(const JsonNode & rules)
 {
-	validatePerkRules(rules);
 	const auto definition = perkDefinition(rules, "new-horizons:command", "new-horizons:command.crisisCommand");
 	return definition && definition->effect["status"].String() == "active";
 }
@@ -253,13 +252,10 @@ bool usesStrictPerkProgression(const JsonNode & rules)
 
 void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported, bool strictSupported)
 {
-	if(rules.isStruct() && rules.Struct().contains("perkProgressionPolicyVersion"))
-	{
-		validatePerkRules(rules);
-		if(!strictSupported)
-			throw std::runtime_error("Cannot serialize strict perk progression to an older format");
-	}
-	if(usesWeightedPerkOffers(rules) && !supported)
+	validatePerkRules(rules);
+	if(rules.isStruct() && rules.Struct().contains("perkProgressionPolicyVersion") && !strictSupported)
+		throw std::runtime_error("Cannot serialize strict perk progression to an older format");
+	if(usesPerkRules(rules) && rules.Struct().contains("offerWeightPolicyVersion") && !supported)
 		throw std::runtime_error("Cannot serialize weighted perk offers to an older format");
 	if(usesR2PerkOffers(rules) && !r2Supported)
 		throw std::runtime_error("Cannot serialize R2 perk offers to an older format");
