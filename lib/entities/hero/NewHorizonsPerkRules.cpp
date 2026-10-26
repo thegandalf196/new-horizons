@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsPerkRules.h"
+#include "NewHorizonsNecromancyPolicy.h"
 #include "NewHorizonsHeroRules.h"
 
 #include <array>
@@ -156,7 +157,9 @@ void validatePerkRules(const JsonNode & rules)
 	if(!usesPerkRules(rules))
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
-		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion", "perkOfferNormalization", "perkProgressionPolicyVersion"});
+		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
+		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy"});
+	newHorizonsNecromancy::validatePolicy(rules);
 	require(integer(rules["schemaVersion"], PERK_SCHEMA_VERSION, PERK_SCHEMA_VERSION), "schemaVersion");
 	require(integer(rules["rulesetVersion"], PERK_MIN_RULESET_VERSION, PERK_RULESET_VERSION), "rulesetVersion");
 	if(rules.Struct().contains("offerWeightPolicyVersion"))

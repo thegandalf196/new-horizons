@@ -95,6 +95,7 @@ set(lib_MAIN_SRCS
 	battle/OrderActionTransition.cpp
 	battle/NewHorizonsSwiftRebirth.cpp
 	battle/NewHorizonsMagicalAbilityDamage.cpp
+	battle/NewHorizonsNecromancyCombat.cpp
 	battle/NewHorizonsCreatureAbilitySuppression.cpp
 	battle/NewHorizonsBulwark.cpp
 	battle/NewHorizonsBerserk.cpp
@@ -305,6 +306,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsPerkRules.cpp
 	entities/hero/NewHorizonsPerkState.cpp
 	entities/hero/NewHorizonsNecromancy.cpp
+	entities/hero/NewHorizonsNecromancyPolicy.cpp
 	entities/hero/NewHorizonsReclaimerSerialization.cpp
 	entities/hero/NewHorizonsNecromancyResult.cpp
 	entities/hero/NewHorizonsReclaimerRules.cpp
@@ -771,6 +773,7 @@ set(lib_MAIN_HEADERS
 	battle/OrderActionTransition.h
 	battle/NewHorizonsSwiftRebirth.h
 	battle/NewHorizonsMagicalAbilityDamage.h
+	battle/NewHorizonsNecromancyCombat.h
 	battle/NewHorizonsCreatureAbilitySuppression.h
 	battle/NewHorizonsBulwark.h
 	battle/NewHorizonsBerserk.h
@@ -971,6 +974,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsPerkRules.h
 	entities/hero/NewHorizonsPerkState.h
 	entities/hero/NewHorizonsNecromancy.h
+	entities/hero/NewHorizonsNecromancyPolicy.h
 	entities/hero/NewHorizonsReclaimer.h
 	entities/hero/NewHorizonsDiplomacy.h
 	entities/hero/NewHorizonsLegendaryReputation.h

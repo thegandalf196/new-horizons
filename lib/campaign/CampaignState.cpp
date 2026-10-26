@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CampaignState.h"
+#include "../entities/hero/NewHorizonsNecromancyPolicy.h"
 
 #include "../Point.h"
 #include "../filesystem/ResourcePath.h"
@@ -323,6 +324,15 @@ std::shared_ptr<CMapInfo> CampaignState::getMapInfo(CampaignScenarioID scenarioI
 	mapInfo->mapHeader = getMapHeader(scenarioId);
 	mapInfo->countPlayers();
 	return mapInfo;
+}
+
+void CampaignState::validateNecromancyPolicySerialization(bool supported) const
+{
+	for(const auto & [scenario, pool] : scenarioHeroPool)
+		for(const auto & hero : pool)
+			newHorizonsNecromancy::validatePolicySerialization(hero["perkState"]["rules"], supported);
+	for(const auto & [id, hero] : globalHeroPool)
+		newHorizonsNecromancy::validatePolicySerialization(hero["perkState"]["rules"], supported);
 }
 
 void CampaignState::validateDefaultCreatureLineSerialization(bool supported) const

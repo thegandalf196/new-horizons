@@ -226,8 +226,16 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput,
 	SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead,
 	bool lordOfTheDead, bool defeatedArmyHadLivingChampion, bool boneDragonSlotAvailable,
-	int32_t amplifierBonusPercent, int32_t baseSpecialtyPercentagePoints)
+	int32_t amplifierBonusPercent, int32_t baseSpecialtyPercentagePoints,
+	bool skeletonPerkOutputsOnly)
 {
+	if(skeletonPerkOutputsOnly)
+	{
+		corpsePreservation = false;
+		darkConversionAvailable = false;
+		soulHarvester = false;
+		lordOfTheDead = false;
+	}
 	NecromancyResult result;
 	result.active = rank >= 1 && rank <= 3;
 	if(!result.active)

@@ -277,12 +277,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS, // independently optional remaining specialty families
 	NEW_HORIZONS_REVISED_ORDERS, // captured Feint/Vanguard profile and nominal snapshots
 
+	NEW_HORIZONS_SKELETON_NECROMANCY, // captured Skeleton-focused Necromancy perk policy
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_REVISED_ORDERS,
+	CURRENT = NEW_HORIZONS_SKELETON_NECROMANCY,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY
+	> ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS, "Necromancy policy must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS
 	> ESerializationVersion::NEW_HORIZONS_FLY_DAY_END, "Individual specialty capture must remain append-only");

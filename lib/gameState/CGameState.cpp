@@ -2093,6 +2093,17 @@ void CGameState::validateNewHorizonsLighthouseSerialization(bool supported) cons
 }
 
 
+void CGameState::validateNewHorizonsNecromancyPolicySerialization(bool supported) const
+{
+	if(initialOpts)
+		initialOpts->validateNecromancyPolicySerialization(supported);
+	if(scenarioOps)
+		scenarioOps->validateNecromancyPolicySerialization(supported);
+	newHorizonsNecromancy::validatePolicySerialization(heroPerkRules, supported);
+	if(map)
+		map->validateNewHorizonsNecromancyPolicySerialization(supported);
+}
+
 void CGameState::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported) const
 {
 	newHorizonsHeroes::validateWeightedPerkSerialization(heroPerkRules, supported, r2Supported, strictSupported);

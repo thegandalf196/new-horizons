@@ -15,6 +15,8 @@
 #include "WikiArtifactContent.h"
 #include "WikiModContent.h"
 #include "WikiMarkdown.h"
+#include "../NewHorizonsSkillPresentation.h"
+#include "../../CPlayerInterface.h"
 
 #include "../../gui/Shortcut.h"
 #include "../../gui/WindowHandler.h"
@@ -36,6 +38,8 @@
 #include "../InfoWindows.h"
 
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/IGameSettings.h"
+#include "../../../lib/callback/CCallback.h"
 #include "../../../lib/entities/faction/CFaction.h"
 #include "../../../lib/entities/faction/CTownHandler.h"
 #include "../../../lib/entities/faction/CTown.h"
@@ -632,20 +636,14 @@ WikiWindow::WikiWindow(WikiWindow::Style style_, std::optional<WikiEntryKey> ini
 	// Secondary skills
 	{
 		const int iSkill = static_cast<int>(WikiCategory::SKILL);
+		const auto & rules = GAME->interface() && GAME->interface()->cb
+			? GAME->interface()->cb->getHeroPerkRules()
+			: LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
 		for(const auto & skill : LIBRARY->skillh->objects)
 			if(skill)
 			{
-				// Build multi-level description (Basic / Advanced / Expert)
-				std::string desc;
-				for(int lvl = 1; lvl <= 3; lvl++)
-				{
-					const std::string ld = skill->getDescriptionTranslated(lvl);
-					if(!ld.empty())
-					{
-						if(!desc.empty()) desc += "\n\n";
-						desc += ld;
-					}
-				}
+				const auto desc = newHorizonsSkillPresentation::allRankDescriptions(rules, skill->getJsonKey(),
+					{skill->getDescriptionTranslated(1), skill->getDescriptionTranslated(2), skill->getDescriptionTranslated(3)});
 				categoryEntries[iSkill].push_back({
 					skill->getJsonKey(),
 					skill->getNameTranslated(), desc,

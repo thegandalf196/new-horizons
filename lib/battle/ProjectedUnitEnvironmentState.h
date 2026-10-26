@@ -8,6 +8,7 @@
 #include <array>
 #include "SylvanLuckState.h"
 #include "BattleSide.h"
+#include "NewHorizonsNecromancyCombat.h"
 #include "../GameConstants.h"
 #include "../json/JsonNode.h"
 
@@ -25,6 +26,7 @@ public:
 		PlayerColor color;
 		bool ammoArtifact = false;
 		bool veteranCohesion = false;
+		newHorizonsNecromancy::CombatPassives necromancy;
 		int bloodrageRank = 0;
 		int bloodrageCap = 0;
 		int bloodrageSpeed = 0;

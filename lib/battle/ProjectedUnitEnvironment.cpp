@@ -67,3 +67,12 @@ int battle::ProjectedUnitEnvironment::unitAdditionalRetaliations(const Unit * un
 int battle::ProjectedUnitEnvironment::unitBloodragePainIncrement(const Unit * unit) const { return queries.unitBloodragePainIncrement(unit); }
 bool battle::ProjectedUnitEnvironment::unitHasVeteranCohesion(const Unit * unit) const { return queries.unitHasVeteranCohesion(unit); }
 std::optional<std::pair<int32_t, int32_t>> battle::ProjectedUnitEnvironment::unitMoraleLimits(const Unit * unit) const { return queries.unitMoraleLimits(unit); }
+
+newHorizonsNecromancy::CombatPassives battle::ProjectedUnitEnvironmentContext::necromancyPassives(BattleSide side) const
+{
+	return values.inputs(side).necromancy;
+}
+newHorizonsNecromancy::CombatPassives battle::ProjectedUnitEnvironment::unitNecromancyPassives(const Unit * unit) const
+{
+	return queries.unitNecromancyPassives(unit);
+}

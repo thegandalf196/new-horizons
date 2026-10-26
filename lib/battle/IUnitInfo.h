@@ -15,6 +15,7 @@
 
 #include "../GameConstants.h"
 #include "BattleSide.h"
+#include "NewHorizonsNecromancyCombat.h"
 
 class CCreature;
 
@@ -32,6 +33,7 @@ public:
 	virtual std::optional<int> unitMagicResistance(const Unit *) const { return std::nullopt; }
 	virtual int unitFortuneSpeed(const Unit *) const { return 0; }
 	virtual int unitSpeedBonus(const Unit *) const { return 0; }
+	virtual newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const Unit *) const { return {}; }
 	virtual int unitAdditionalRetaliations(const Unit *) const { return 0; }
 	virtual int unitBloodragePainIncrement(const Unit *) const { return 0; }
 	virtual bool unitHasVeteranCohesion(const Unit *) const { return false; }

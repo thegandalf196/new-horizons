@@ -212,11 +212,15 @@ set(test_SRCS
 		client/NewHorizonsFlankReadbackTest.cpp
 		client/NewHorizonsHeroMoraleLuckReadbackTest.cpp
 		hero/NewHorizonsLeadershipTest.cpp
+		hero/NewHorizonsNecromancyPolicyTest.cpp
+		hero/NewHorizonsSkillPresentationTest.cpp
+		server/NewHorizonsSkeletonLeadershipTest.cpp
 		hero/NewHorizonsMovementRulesTest.cpp
 		hero/NewHorizonsCapabilityRulesTest.cpp
 		hero/NewHorizonsMasteryRulesTest.cpp
 		hero/NewHorizonsMasteryStateTest.cpp
 		hero/NewHorizonsPerkRulesTest.cpp
+		hero/NewHorizonsNecromancyCaptureTest.cpp
 		hero/NewHorizonsPerkStateTest.cpp
 		hero/NewHorizonsPerkAvailabilityTest.cpp
 		hero/HeroGrowthPerkPresentationTest.cpp
@@ -381,6 +385,7 @@ set(test_SRCS
 		server/battles/NewHorizonsRealityWarpTest.cpp
 		server/battles/NewHorizonsPursuitMarchTest.cpp
 		server/battles/NewHorizonsElementalRebirthTest.cpp
+		server/battles/NewHorizonsNecromancyCombatTest.cpp
 		server/battles/NewHorizonsElementalConvergenceTest.cpp
 		server/battles/NewHorizonsRebirthTerrainTest.cpp
 		server/battles/NewHorizonsRebirthChainTest.cpp
@@ -504,6 +509,12 @@ set(test_SRCS
 		server/battles/NewHorizonsMasteryTest.cpp
 		server/battles/NewHorizonsLogisticsMasteryTest.cpp
 		server/battles/NewHorizonsNecromancyTest.cpp
+		server/battles/HistoricalNecromancyFixture.h
+		server/battles/HistoricalNecromancyFixtureData.h
+		server/battles/NewHorizonsBoneAndSteelTest.cpp
+		server/battles/NewHorizonsNecromancyHellfireTest.cpp
+		server/battles/NewHorizonsSkeletonNecromancyTest.cpp
+		server/battles/NewHorizonsNecromancyCampaignCaptureTest.cpp
 		server/battles/NewHorizonsReclaimerTest.cpp
 		server/battles/NewHorizonsReclaimerFixture.h
 		server/battles/NewHorizonsBloodrageTest.cpp

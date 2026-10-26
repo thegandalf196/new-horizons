@@ -21,6 +21,7 @@ battle::ProjectedUnitEnvironmentState battle::ProjectedUnitEnvironmentState::cap
 		const auto * hero = source.getSideHero(side);
 		inputs.ammoArtifact = heroHasAmmoCartArtifact(hero);
 		inputs.veteranCohesion = newHorizonsDiscipline::hasVeteranCohesion(hero);
+		inputs.necromancy = newHorizonsNecromancy::captureCombatPassives(hero);
 		inputs.bloodrageRank = source.getBloodrageRank(side);
 		inputs.bloodrageCap = source.getBloodrageCapPercent(side);
 		inputs.bloodrageSpeed = source.getBloodrageSpeedBonus(side);

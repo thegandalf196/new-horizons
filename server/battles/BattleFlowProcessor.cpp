@@ -30,6 +30,7 @@
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsBerserk.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsNecromancyCombat.h"
 #include "../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../lib/battle/NewHorizonsConfusionResolution.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
@@ -1034,7 +1035,7 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 				BattleStackAttacked hit;
 				hit.attackerID = sourceId;
 				hit.stackAttacked = enemy->unitId();
-				hit.damageAmount = damagePerEnemy;
+				hit.damageAmount = newHorizonsNecromancy::adjustUnmitigatedMagicalDamage(*enemy, damagePerEnemy);
 				hit.flags |= BattleStackAttacked::SPELL_EFFECT;
 				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), enemy->acquireState(),
 					false, false, battle::DamageProvenance::SPELL);

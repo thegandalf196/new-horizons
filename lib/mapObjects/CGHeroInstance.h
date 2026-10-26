@@ -14,6 +14,7 @@
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsMasteryState.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
+#include "../entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../entities/hero/SpellPointState.h"
 #include "../spells/NewHorizonsMagic.h"
 
@@ -723,6 +724,9 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			newHorizonsNecromancy::validatePolicySerialization(perkState.rules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
 		if(h.saving)
 			validateRecoverySpecialtyStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)

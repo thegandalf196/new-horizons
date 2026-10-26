@@ -4,10 +4,12 @@
  */
 #include "StdInc.h"
 #include "HeroStartingPreview.h"
+#include "NewHorizonsSkillPresentation.h"
 #include "../GameInstance.h"
 #include "../CPlayerInterface.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/CSkillHandler.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/mapping/CMapInfo.h"
 #include "../../lib/mapping/CMap.h"
@@ -106,6 +108,9 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 		context.resolved = true;
 	}
 	result.values = newHorizonsHeroes::projectStartingHero(prototype, context, overrides);
+	for(const auto & [skill, rank] : result.values.skills)
+		result.skillDescriptions[skill] = newHorizonsSkillPresentation::rankDescription(context.perks,
+			skill.toSkill()->getJsonKey(), rank, skill.toSkill()->getDescriptionTranslated(rank));
 	std::optional<CreatureID> specialtyTarget;
 	if(capturedHero)
 		specialtyTarget = capturedHero->getCreatureLineSpecialtyTarget();
@@ -136,5 +141,12 @@ std::string startingSkillPerkNames(const HeroStartingPreview & preview, Secondar
 				? selection.perkId : found->second;
 		}
 	return result;
+}
+
+std::string startingSkillDescription(const HeroStartingPreview & preview, SecondarySkill skill, int rank)
+{
+	const auto description = preview.skillDescriptions.find(skill);
+	return description == preview.skillDescriptions.end()
+		? skill.toSkill()->getDescriptionTranslated(rank) : description->second;
 }
 

@@ -170,6 +170,7 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateNewHorizonsGlyphsOfFearSerialization(bool supported) const;
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
 	void validateNavigationStartSerialization(bool supported) const;
+	void validateNecromancyPolicySerialization(bool supported) const;
 	void validateDefaultCreatureLineSerialization(bool supported) const;
 	void validateNewHorizonsStartingBookSerialization(bool supported) const;
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
@@ -231,6 +232,8 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 			validateNewHorizonsStartingDevelopmentSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
 			validateNavigationStartSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
+		if(h.saving)
+			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
 		if(h.saving)
 			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		if(h.saving)

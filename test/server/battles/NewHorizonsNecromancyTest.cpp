@@ -6,6 +6,7 @@
 #include "../../SpellPointTestUtils.h"
 
 #include "BattleTestFixture.h"
+#include "HistoricalNecromancyFixture.h"
 #include "../../mock/TinyH3MBuilder.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
@@ -592,7 +593,7 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+			necromancyTest::historicalRules());
 	}
 
 	void configurePlayer(PlayerSettings & settings) const override

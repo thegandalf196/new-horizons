@@ -42,6 +42,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	env(ENV),
 	bonusTreeVersion(1)
 {
+	captureNecromancyPassives(*realBattle);
 	crisisCommand = realBattle->getBattle()->getCrisisCommandState();
 	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get()))
 	{
@@ -137,6 +138,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		if(unit->unitId() == static_cast<uint32_t>(activeUnitId)
 			|| hasTimedMagicalSpellEffects(*unit)
 			|| hasSnapshotHeroSpecialEffects(*unit)
+			|| newHorizonsNecromancy::needsCombatPassiveSnapshot(*unit)
 			|| newHorizonsFrozen::isFrozen(*unit)
 			|| (dynamic_cast<const battle::CUnitState *>(unit)
 				&& dynamic_cast<const battle::CUnitState *>(unit)->moraleExtraActivation))

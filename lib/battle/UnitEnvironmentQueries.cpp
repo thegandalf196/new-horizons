@@ -146,3 +146,14 @@ std::optional<std::pair<int32_t, int32_t>> battle::UnitEnvironmentQueries::unitM
 	context.requireSubject(*unit);
 	return newHorizonsMagic::moraleLimits(context.magicRules());
 }
+
+newHorizonsNecromancy::CombatPassives battle::UnitEnvironmentQueries::unitNecromancyPassives(const Unit * unit) const
+{
+	if(!context.available() || !unit)
+		return {};
+	context.requireSubject(*unit);
+	const auto side = context.ownership().playerToSide(context.ownership().owner(*unit));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return {};
+	return newHorizonsNecromancy::passivesForCreature(context.necromancyPassives(side), unit->creatureId());
+}

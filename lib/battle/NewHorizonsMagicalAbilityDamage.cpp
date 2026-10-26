@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMagicalAbilityDamage.h"
+#include "NewHorizonsNecromancyCombat.h"
 
 #include "CBattleInfoCallback.h"
 #include "Unit.h"
@@ -24,9 +25,12 @@ int64_t adjustDamage(const CBattleInfoCallback & battle, const battle::Unit & ta
 		return 0;
 
 	if(!battle.battleUsesNewHorizonsMultiplicativeMDR())
-		return rawDamage;
+		return newHorizonsNecromancy::adjustUnmitigatedMagicalDamage(target, rawDamage);
 
 	std::vector<int> reductionSourcesBasisPoints;
+	const int intrinsicReduction = target.intrinsicMagicalDamageReductionPercent();
+	if(intrinsicReduction > 0)
+		reductionSourcesBasisPoints.push_back(std::clamp(intrinsicReduction, 0, 100) * 100);
 	const auto anySchoolReductions = target.getBonuses(
 		Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY)),
 		"new_horizons_ability_damage_any_school_reduction");

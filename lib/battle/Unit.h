@@ -145,6 +145,9 @@ public:
 
 	/// returns casualties whose remains cannot be restored or harvested
 	virtual int32_t getUnusableRemains() const { return 0; }
+	/// Independent, non-resistance magical mitigation supplied by the captured unit environment.
+	virtual int32_t intrinsicMagicalDamageReductionPercent() const { return 0; }
+	virtual newHorizonsNecromancy::CombatPassives necromancyCombatPassives() const { return {}; }
 
 	/// returns total health that unit still has
 	virtual int64_t getAvailableHealth() const = 0;

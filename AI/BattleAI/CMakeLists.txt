@@ -68,6 +68,7 @@ set(battleAI_SRCS
 		StackWithBonuses.cpp
 		StackWithBonusesEffects.cpp
 		HypotheticBattle.cpp
+		HypotheticNecromancy.cpp
 		HypotheticHeroActions.cpp
 		HypotheticOrderActions.cpp
 		HypotheticLegacyOrders.cpp

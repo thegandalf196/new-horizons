@@ -886,6 +886,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		heroWindowLabelText::setSkillName(*secSkillNames[g], skill.toEntity(LIBRARY)->getNameTranslated(), newHorizonsLayout);
 		secSkillValues[g]->setText(skillValue);
 		secSkills[g]->setSkill(skill, level);
+		secSkills[g]->text = newHorizonsPerkHelp::skillDescription(curHero, skill, level);
 	}
 
 	std::ostringstream expstr;

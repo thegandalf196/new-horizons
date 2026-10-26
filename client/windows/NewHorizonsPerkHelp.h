@@ -9,6 +9,7 @@
 #include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "NewHorizonsSkillPresentation.h"
 
 #include <optional>
 #include <string>
@@ -93,6 +94,17 @@ inline std::string skillName(const CGHeroInstance * hero, std::string_view skill
 	}
 
 	return "Unknown";
+}
+
+inline std::string skillDescription(const CGHeroInstance * hero, SecondarySkill skill, int rank)
+{
+	const auto * definition = skill.toSkill();
+	const auto fallback = definition->getDescriptionTranslated(rank);
+	if(!hero)
+		return fallback;
+	const auto id = definition->getJsonKey() == "core:necromancy" && hero->usesNewHorizonsNecromancy()
+		? "new-horizons:necromancy" : definition->getJsonKey();
+	return newHorizonsSkillPresentation::rankDescription(hero->getPerkState().rules, id, rank, fallback);
 }
 
 inline std::string tierName(int requiredRank)

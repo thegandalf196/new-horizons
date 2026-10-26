@@ -222,13 +222,14 @@ void CHeroOverview::genControls()
 	{
 		secSkills.push_back(std::make_shared<CSecSkillPlace>(Point(302, 7 * borderOffset + yOffset + 186 + i * (32 + borderOffset)),
 															 CSecSkillPlace::ImageSize::SMALL, skill.first, skill.second));
+		secSkills.back()->text = startingSkillDescription(starting, skill.first, skill.second);
 		labelSecSkillsNames.push_back(std::make_shared<CLabel>(334 + 2 * borderOffset, 8 * borderOffset + yOffset + 186 + i * (32 + borderOffset) - 5, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
 			GAME->translator().translate("core.skilllev", skill.second - 1)
 			+ (startingSkillPerkNames(starting, skill.first).empty() ? "" : " / " + startingSkillPerkNames(starting, skill.first)), 90));
 		labelSecSkillsNames.push_back(std::make_shared<CLabel>(334 + 2 * borderOffset, 8 * borderOffset + yOffset + 186 + i * (32 + borderOffset) + 10, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
 			(*LIBRARY->skillh)[skill.first]->getNameTranslated(), 90));
 		const auto perkNames = startingSkillPerkNames(starting, skill.first);
-		const auto help = (*LIBRARY->skillh)[skill.first]->getDescriptionTranslated(skill.second)
+		const auto help = startingSkillDescription(starting, skill.first, skill.second)
 			+ (perkNames.empty() ? "" : "\n" + perkNames);
 		startingSkillHelp.push_back(std::make_shared<LRClickableAreaWText>(
 			Rect(302, 7 * borderOffset + yOffset + 186 + i * (32 + borderOffset), 140, 32), help, help));

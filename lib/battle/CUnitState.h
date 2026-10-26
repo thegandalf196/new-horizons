@@ -381,6 +381,8 @@ public:
 	int64_t getGuardianSpiritHitPoints() const override;
 	int32_t getGuardianSpiritRoundsRemaining() const override;
 	int32_t magicResistance() const override;
+	int32_t intrinsicMagicalDamageReductionPercent() const override;
+	newHorizonsNecromancy::CombatPassives necromancyCombatPassives() const override;
 	uint32_t getMaxHealth() const override;
 
 	/// Install the transient Phantom Army durability profile after the stack has

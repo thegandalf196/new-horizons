@@ -70,6 +70,8 @@ void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battl
 	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing)
 {
 	DamageCachePhaseScope preflight(timing, &DamageCacheProbeTiming::preflight);
+	if(defender->intrinsicMagicalDamageReductionPercent() > 0)
+		intrinsicMdrTargets.insert(defender->unitId());
 	if(defender->hasBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection)))
 		evasiveShroudTargets.insert(defender->unitId());
 	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker));
@@ -225,6 +227,8 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	DamageCachePhaseScope preflight(timing, &DamageCacheProbeTiming::preflight);
 	if(newHorizonsFrozen::isFrozen(*defender))
 		frozenTargets.insert(defender->unitId());
+	if(defender->intrinsicMagicalDamageReductionPercent() > 0)
+		intrinsicMdrTargets.insert(defender->unitId());
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
 		rangedMarkTargets.insert(defender->unitId());
 	if(defender->hasBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection)))
@@ -270,7 +274,10 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	// Evasive Shroud is a temporary defender-side reduction. Remember any target
 	// whose marker was present while this cache tree was populated so expiry does
 	// not make an earlier reduced ID-only entry appear valid again.
-	if(admission.supportsFocusFire()
+	// Boneward is controller/form-sensitive environment state, not a bonus-tree node.
+	// Remember its prior presence so removing it cannot revive a reduced pair entry.
+	if((!attack.physicalDamage && tracksIntrinsicMdr(defender->unitId()))
+		|| admission.supportsFocusFire()
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
 		|| hasRangedFollowUp
 		|| hasReducedExtraActivation
@@ -391,4 +398,12 @@ int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const batt
 	}
 	preflight.finish();
 	return getDamage(attacker, defender, hb, timing);
+}
+
+bool DamageCache::tracksIntrinsicMdr(uint32_t defenderId) const
+{
+	for(const auto * cache = this; cache; cache = cache->parent)
+		if(cache->intrinsicMdrTargets.contains(defenderId))
+			return true;
+	return false;
 }

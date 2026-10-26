@@ -446,14 +446,14 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 				MARGIN + iconW + nameW + CELL_L, curY + rowH / 2 - 5,
 				FONT_SMALL, ETextAlignment::TOPLEFT, valCol, lvlStr));
 
-			const CSkill * skPtr = sk.get();
 			const int skLvl = level;
 			const auto startingPerks = startingSkillPerkNames(starting, skillId);
+			const auto skillDescription = startingSkillDescription(starting, skillId, skLvl);
 			widgets.push_back(std::make_shared<WikiClickable>(
 				Rect(MARGIN, curY, tableW, rowH),
 				nullptr,
-				[skPtr, skLvl, startingPerks](){
-					CRClickPopup::createAndPush(skPtr->getDescriptionTranslated(skLvl)
+				[skillDescription, startingPerks](){
+					CRClickPopup::createAndPush(skillDescription
 						+ (startingPerks.empty() ? "" : "\n" + startingPerks));
 				},
 				blueStyle, clipRect));

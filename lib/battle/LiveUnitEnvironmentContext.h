@@ -33,6 +33,7 @@ public:
 	int bloodrageRetaliations(BattleSide side) const override;
 	int bloodragePain(BattleSide side) const override;
 	int magicResistance(const Unit * unit) const override;
+	newHorizonsNecromancy::CombatPassives necromancyPassives(BattleSide side) const override;
 	const JsonNode & magicRules() const override;
 };
 }

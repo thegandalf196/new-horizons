@@ -17,6 +17,7 @@
 #include "../entities/hero/NewHorizonsLearningSpecialties.h"
 #include "../entities/hero/HeroStartingProjection.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsLeadership.h"
 #include "../entities/hero/NewHorizonsDiplomacy.h"
 #include "NewHorizonsGlyphsOfFear.h"
 
@@ -522,14 +523,7 @@ std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadersh
 
 std::optional<newHorizonsHeroes::LeadershipSlotCapacity> CGHeroInstance::getLeadershipSlotCapacity(CreatureID creature) const
 {
-	if(!newHorizonsHeroes::usesRules(capabilityRules) || capabilityRules["rulesetVersion"].Integer() < 2)
-		return std::nullopt;
-	auto result = newHorizonsHeroes::capabilityLeadershipSlot(capabilityRules, level, creature);
-	if(result)
-	{
-		newHorizonsHeroes::applyStartingLeadershipBonus(*result, valOfBonuses(BonusType::LEADERSHIP));
-	}
-	return result;
+	return newHorizonsHeroes::heroLeadershipSlotCapacity(*this, creature);
 }
 
 int CGHeroInstance::movementPointsLimit() const

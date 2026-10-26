@@ -566,6 +566,9 @@ std::vector<int> CSpell::magicalDamageReductionSourcesBasisPoints(const battle::
 		sources.push_back(std::clamp(magicalDamageReductionBasisPoints, 0, 10000));
 	if(perkMagicalDamageReductionBasisPoints > 0)
 		sources.push_back(std::clamp(perkMagicalDamageReductionBasisPoints, 0, 10000));
+	const int intrinsicReduction = affectedCreature->intrinsicMagicalDamageReductionPercent();
+	if(intrinsicReduction > 0)
+		sources.push_back(std::clamp(intrinsicReduction, 0, 100) * 100);
 	return sources;
 }
 
@@ -641,6 +644,15 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 					- std::clamp(effectiveReductionBasisPoints, 0, 10000);
 				ret = ret / 10000 * remainingDamageBasisPoints
 					+ ret % 10000 * remainingDamageBasisPoints / 10000;
+			}
+			// A new captured unit passive may coexist with historical magic rules.
+			// Retain every legacy reduction/floor above, then apply only this new source.
+			if(isMagical())
+			{
+				const int intrinsicReduction = affectedCreature->intrinsicMagicalDamageReductionPercent();
+				if(intrinsicReduction > 0)
+					ret = spells::calculateMagicalDamageReduction(ret, std::vector<int>{intrinsicReduction},
+						ignoreSpellDamageReductionPercent).damageWithPenetration;
 			}
 		}
 

@@ -21,6 +21,7 @@ class CGHeroInstance;
 
 namespace newHorizonsHeroes
 {
+struct LeadershipSlotCapacity;
 /// Capacity arithmetic and the read-only result for a saved-capability hero.
 /// The primitive never mutates an army or movement budget.  `movementPercent`
 /// is retained as an inspectable over-capacity diagnostic for saved views; it
@@ -49,6 +50,11 @@ DLL_LINKAGE LeadershipCapacity leadershipCapacity(int classBase, int classPerLev
 /// this helper: Leadership is per-stack capacity, never a shared movement
 /// budget. Changing armies must not award fresh movement points.
 DLL_LINKAGE int leadershipMovement(int unscaledMovement, int movementPercent);
+
+/// Hero-owned captured capacity plus trained Leadership and applicable creature
+/// policy. Shared admission callers continue to use the hero's public method.
+DLL_LINKAGE std::optional<LeadershipSlotCapacity> heroLeadershipSlotCapacity(
+	const CGHeroInstance & hero, CreatureID creature);
 
 /// Read-only occupied slot for recruitment forecasting; counts stay wide across
 /// repeated purchases. This is transient input, not saved army state.

@@ -3,6 +3,14 @@
 	"rulesetVersion": 2,
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 1,
+	"necromancyPolicy": {
+		"version": 1,
+		"skeletonLeadershipReductionPercent": [0, 50, 60, 70],
+		"lordOfTheDeadLeadershipReductionPercent": 90,
+		"deathMarchSpeed": 2,
+		"bonewardMagicalReductionPercent": 30,
+		"tombGuardAdditionalRetaliations": 1
+	},
 	"perkOfferNormalization": {"maximumPreferenceRatio": 2.0, "mathVersion": 1},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
 	"sourceSha256": "05a5c09cdd4549af9749b73ba8144a182cdb6317171b6d1829c576c6325b6866",
@@ -3579,27 +3587,27 @@
 			"name": "Necromancy",
 			"domain": "Faction",
 			"availability": "Necropolis heroes only",
-			"description": "Faction-locked Skill. Necromancy converts eligible enemy casualties into permanent Undead after victory. It creates strategic army growth without consuming the hero's Hero Action in combat.",
+			"description": "Faction-locked Skill. Necromancy raises permanent Skeletons from eligible enemy casualties after victory, without consuming a Hero Action. Skeletons and Skeleton Warriors commanded by this hero require less Leadership. Ordinary magical casualties are eligible; explicitly destroyed or invalid remains are excluded.",
 			"ranks": {
 				"basic": {
-					"description": "After victory, raise Skeletons equal to 10% of eligible living enemy creature casualties, rounded down.",
+					"description": "After victory, raise Skeletons equal to 10% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 50% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, raise Skeletons equal to 10% of eligible living enemy creature casualties, rounded down."
+						"description": "After victory, raise Skeletons equal to 10% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 50% less Leadership; round their discounted requirement up to a whole point, minimum 1."
 					}
 				},
 				"advanced": {
-					"description": "Raise Skeletons equal to 20% of eligible casualties.",
+					"description": "After victory, raise Skeletons equal to 20% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 60% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
 					"effect": {
 						"status": "active",
-						"description": "Raise Skeletons equal to 20% of eligible casualties."
+						"description": "After victory, raise Skeletons equal to 20% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 60% less Leadership; round their discounted requirement up to a whole point, minimum 1."
 					}
 				},
 				"expert": {
-					"description": "Raise Skeletons equal to 30% of eligible casualties.",
+					"description": "After victory, raise Skeletons equal to 30% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 70% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
 					"effect": {
 						"status": "active",
-						"description": "Raise Skeletons equal to 30% of eligible casualties."
+						"description": "After victory, raise Skeletons equal to 30% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 70% less Leadership; round their discounted requirement up to a whole point, minimum 1."
 					}
 				}
 			},
@@ -3615,28 +3623,28 @@
 					}
 				},
 				{
-					"id": "new-horizons:necromancy.corpsePreservation",
-					"name": "Corpse Preservation",
+					"id": "new-horizons:necromancy.masterOfBones",
+					"name": "Bone and Steel",
 					"requires": "basic",
-					"description": "Casualties caused by ordinary magical damage become eligible for Necromancy. Without this perk, ordinary magical casualties are excluded. Effects that explicitly destroy or invalidate remains, such as Disintegrate, remain excluded even with the perk.",
+					"description": "Skeletons raised by Necromancy are raised as their upgraded form when the appropriate Necropolis upgrade is available to the player.",
 					"effect": {
 						"status": "active",
-						"description": "Casualties caused by ordinary magical damage become eligible for Necromancy. Without this perk, ordinary magical casualties are excluded. Effects that explicitly destroy or invalidate remains, such as Disintegrate, remain excluded even with the perk."
+						"description": "Skeletons raised by Necromancy are raised as their upgraded form when the appropriate Necropolis upgrade is available to the player."
 					}
 				},
 				{
 					"id": "new-horizons:necromancy.darkConversion",
-					"name": "Dark Conversion",
+					"name": "Boneward",
 					"requires": "basic",
-					"description": "When resolving Necromancy, every complete group of 3 Skeletons generated from eligible Core-tier casualties is automatically raised as 1 Zombie instead.",
+					"description": "Skeletons and Skeleton Warriors commanded by this hero take 30% less magical damage.",
 					"effect": {
 						"status": "active",
-						"description": "When resolving Necromancy, every complete group of 3 Skeletons generated from eligible Core-tier casualties is automatically raised as 1 Zombie instead."
+						"description": "Skeletons and Skeleton Warriors commanded by this hero take 30% less magical damage."
 					}
 				},
 				{
 					"id": "new-horizons:necromancy.blackHarvest",
-					"name": "Black Harvest",
+					"name": "Soul Harvester",
 					"requires": "basic",
 					"description": "After Necromancy raises at least 10 creatures, recover 1 Mana per 10 creatures raised, up to 10 Mana.",
 					"effect": {
@@ -3646,12 +3654,12 @@
 				},
 				{
 					"id": "new-horizons:necromancy.soulHarvester",
-					"name": "Soul Harvester",
+					"name": "Tomb Guard",
 					"requires": "advanced",
-					"description": "When resolving Necromancy, every complete group of 6 Skeletons generated from eligible Elite-tier casualties is automatically raised as 1 Wight. Wights remain Core-tier; the conversion's input is Elite-tier casualties, not its output.",
+					"description": "Skeletons and Skeleton Warriors commanded by this hero gain +1 retaliation per round. Normal retaliation restrictions still apply.",
 					"effect": {
 						"status": "active",
-						"description": "When resolving Necromancy, every complete group of 6 Skeletons generated from eligible Elite-tier casualties is automatically raised as 1 Wight. Wights remain Core-tier; the conversion's input is Elite-tier casualties, not its output."
+						"description": "Skeletons and Skeleton Warriors commanded by this hero gain +1 retaliation per round. Normal retaliation restrictions still apply."
 					}
 				},
 				{
@@ -3685,23 +3693,23 @@
 					}
 				},
 				{
-					"id": "new-horizons:necromancy.masterOfBones",
-					"name": "Master of Bones",
+					"id": "new-horizons:necromancy.corpsePreservation",
+					"name": "Death March",
 					"requires": "expert",
-					"description": "Skeletons raised by Necromancy are raised as their upgraded form when the appropriate Necropolis upgrade is available to the player.",
+					"description": "Skeletons and Skeleton Warriors commanded by this hero gain +2 Speed. Initiative is unchanged.",
 					"effect": {
 						"status": "active",
-						"description": "Skeletons raised by Necromancy are raised as their upgraded form when the appropriate Necropolis upgrade is available to the player."
+						"description": "Skeletons and Skeleton Warriors commanded by this hero gain +2 Speed. Initiative is unchanged."
 					}
 				},
 				{
 					"id": "new-horizons:necromancy.lordOfTheDead",
 					"name": "Lord of the Dead",
 					"requires": "expert",
-					"description": "After defeating an army containing at least one Champion-tier living creature, if the base Necromancy result contains at least 12 Skeletons, 12 are automatically replaced with 1 Bone Dragon, once per combat. This conversion resolves before other Necromancy conversion perks. Consume the 12 Skeleton equivalents from Champion/unclassified contributions first, then Elite contributions, then Core contributions; only remaining contributions may fund the later conversions.",
+					"description": "Skeletons and Skeleton Warriors commanded by this hero require 90% less Leadership. This replaces Necromancy's rank-based reduction; round the discounted requirement up to a whole point, minimum 1.",
 					"effect": {
 						"status": "active",
-						"description": "After defeating an army containing at least one Champion-tier living creature, if the base Necromancy result contains at least 12 Skeletons, 12 are automatically replaced with 1 Bone Dragon, once per combat. This conversion resolves before other Necromancy conversion perks. Consume the 12 Skeleton equivalents from Champion/unclassified contributions first, then Elite contributions, then Core contributions; only remaining contributions may fund the later conversions."
+						"description": "Skeletons and Skeleton Warriors commanded by this hero require 90% less Leadership. This replaces Necromancy's rank-based reduction; round the discounted requirement up to a whole point, minimum 1."
 					}
 				}
 			]

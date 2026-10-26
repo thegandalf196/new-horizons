@@ -216,6 +216,7 @@ public:
 	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
+	void validateNewHorizonsNecromancyPolicySerialization(bool supported) const;
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
@@ -386,6 +387,8 @@ public:
 			validateNewHorizonsGlyphsOfFearSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
 		if(h.saving)
 			validateNewHorizonsLighthouseSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+		if(h.saving)
+			validateNewHorizonsNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
 		if(h.saving)
 			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),

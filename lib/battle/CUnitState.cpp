@@ -327,7 +327,9 @@ int32_t CRetaliations::total() const
 
 	// Legacy Heroic Spirit state remains readable, but no longer grants a
 	// creature retaliation: the reworked perk grants a typed Hero Order action.
-	const int64_t additionalRetaliations = env ? env->unitAdditionalRetaliations(owner) : 0;
+	const int64_t additionalRetaliations = env
+		? static_cast<int64_t>(env->unitAdditionalRetaliations(owner))
+			+ env->unitNecromancyPassives(owner).additionalRetaliations : 0;
 	if(newHorizonsCreatureAbilitySuppression::suppressionLevel(*owner) >= 2)
 	{
 		// The ordinary bonus cache normally preserves a larger observed cap for
@@ -1926,7 +1928,7 @@ int32_t CUnitState::getInitiative(int turn) const
 
 ui32 CUnitState::getMovementRange(int turn) const
 {
-	if(isTimeStopped())
+	if(isTimeStopped() || isFrozen())
 		return 0;
 
 	if (immobilizedPerTurn.getValue(0) != 0)
@@ -1935,6 +1937,7 @@ ui32 CUnitState::getMovementRange(int turn) const
 	const int64_t movementRange = stackSpeedPerTurn.getValue(0) + movementRangePerTurn.getValue(0)
 		+ (env ? env->unitFortuneSpeed(this) : 0)
 		+ (env ? env->unitSpeedBonus(this) : 0)
+		+ (env ? env->unitNecromancyPassives(this).movementSpeed : 0)
 		+ (turn == 0 ? activationMovementBonus : 0);
 	return static_cast<ui32>(std::max<int64_t>(0, movementRange));
 }

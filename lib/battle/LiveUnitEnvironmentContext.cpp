@@ -90,3 +90,10 @@ std::optional<std::pair<int32_t, int32_t>> CStack::unitMoraleLimits(const battle
 	const battle::LiveUnitEnvironmentContext context(*battle);
 	return battle::UnitEnvironmentQueries(context).unitMoraleLimits(unit);
 }
+
+newHorizonsNecromancy::CombatPassives battle::LiveUnitEnvironmentContext::necromancyPassives(BattleSide side) const
+{
+	const auto observer = callback.battleGetMySide();
+	const bool known = observer == BattleSide::ALL_KNOWING || observer == side;
+	return newHorizonsNecromancy::captureCombatPassives(known ? callback.battleGetFightingHero(side) : nullptr);
+}

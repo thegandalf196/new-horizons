@@ -1124,6 +1124,7 @@ void CLevelWindow::createSkillBox()
 				const int offeredRank = currentRank + 1;
 				comp = std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, skill,
 					offeredRank, CComponent::medium);
+				comp->customDescription = newHorizonsPerkHelp::skillDescription(hero, skill, offeredRank);
 				if(newHorizonsMagic::rulesActive(hero->getMagicRules()))
 				{
 					const auto offeredRankText = GAME->translator().translate("core.skilllev", offeredRank - 1);

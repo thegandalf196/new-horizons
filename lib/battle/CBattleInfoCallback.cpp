@@ -31,6 +31,7 @@
 #include "NewHorizonsBattlecraft.h"
 #include "NewHorizonsArchery.h"
 #include "NewHorizonsCombatSkills.h"
+#include "NewHorizonsNecromancyCombat.h"
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsShroud.h"
 #include "NewHorizonsWarcasting.h"
@@ -3796,6 +3797,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	finalizeDamagePayload(info, payload, currentBattle);
 	payloadTiming.finish();
 	auto result = script->calculate(*this, payload);
+	newHorizonsNecromancy::adjustCreatureDamage(info, result);
 	result.attackerOrderCause = attackerOrderCause;
 	result.defenderOrderCause = defenderOrderCause;
 	result.attackerOrderCauses = std::move(attackerOrderCauses);

@@ -308,6 +308,8 @@ DLL_LINKAGE SpecialCasualtyCounts countEligibleUndeadCasualties(
 /// Each category is independently floored for its conversion gate, while every
 /// remainder from global base rounding remains Skeletons. Slot booleans preflight
 /// all output stacks atomically before state mutation.
+/// Skeleton-only perks suppress the historical Zombie/Wight/Bone Dragon
+/// conversions without changing the base raising rate or specialty behavior.
 DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties,
 	bool boneCollector, bool corpsePreservation, bool darkConversionAvailable,
 	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit,
@@ -315,5 +317,6 @@ DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32
 	CreatureID skeletonOutput = CreatureID::NONE,
 	SpecialCasualtyCounts nonliving = {}, SpecialCasualtyCounts undead = {},
 	bool lordOfTheDead = false, bool defeatedArmyHadLivingChampion = false,
-	bool boneDragonSlotAvailable = true, int32_t amplifierBonusPercent = 0, int32_t baseSpecialtyPercentagePoints = 0);
+	bool boneDragonSlotAvailable = true, int32_t amplifierBonusPercent = 0, int32_t baseSpecialtyPercentagePoints = 0,
+	bool skeletonPerkOutputsOnly = false);
 }

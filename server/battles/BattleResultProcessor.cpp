@@ -36,6 +36,7 @@
 #include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
+#include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../lib/entities/hero/NewHorizonsIndividualSpecialties.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsEagleEye.h"
@@ -1021,7 +1022,9 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 	battleResult->attacker = battle.getBattle()->getSidePlayer(BattleSide::ATTACKER);
 	const auto * winnerHero = victoriusSide == BattleSide::NONE
 		? nullptr : battle.battleGetFightingHero(victoriusSide);
-	const bool excludeMagicalCasualties = winnerHero && winnerHero->usesNewHorizonsNecromancy()
+	const bool skeletonPolicy = winnerHero
+		&& newHorizonsNecromancy::policy(winnerHero->getPerkState().rules).has_value();
+	const bool excludeMagicalCasualties = !skeletonPolicy && winnerHero && winnerHero->usesNewHorizonsNecromancy()
 		&& !winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 			newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
 	const bool deathLord = winnerHero && winnerHero->usesNewHorizonsNecromancy()
@@ -1030,7 +1033,7 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 	const bool graveKnowledge = winnerHero && winnerHero->usesNewHorizonsNecromancy()
 		&& winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 			newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID);
-	const bool lordOfTheDead = winnerHero && winnerHero->usesNewHorizonsNecromancy()
+	const bool lordOfTheDead = !skeletonPolicy && winnerHero && winnerHero->usesNewHorizonsNecromancy()
 		&& winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 			newHorizonsNecromancy::LORD_OF_THE_DEAD_ID);
 	if(lordOfTheDead)
@@ -1065,7 +1068,8 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 			// Temporary summons, clones, legacy DISINTEGRATE stacks, undead and
 			// other nonliving creatures never enter the living-casualty pool.
 			// Destroyed remains are never eligible. Ordinary magical casualties
-			// additionally require the winner's active Corpse Preservation perk.
+			// additionally require Corpse Preservation only in historical captures.
+			// The captured Skeleton policy includes them without a perk gate.
 			// Resolve this once for both the Necromancy choice and its application.
 			const si32 unusableRemains = std::min(killed, resultState->getUnusableRemains());
 			const si32 usableCasualties = killed - unusableRemains;

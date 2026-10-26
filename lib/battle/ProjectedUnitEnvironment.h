@@ -40,6 +40,7 @@ public:
 	int bloodrageRetaliations(BattleSide side) const override;
 	int bloodragePain(BattleSide side) const override;
 	int magicResistance(const Unit * unit) const override;
+	newHorizonsNecromancy::CombatPassives necromancyPassives(BattleSide side) const override;
 	const JsonNode & magicRules() const override;
 };
 
@@ -63,6 +64,7 @@ public:
 	std::optional<int> unitMagicResistance(const Unit * unit) const override;
 	int unitFortuneSpeed(const Unit * unit) const override;
 	int unitSpeedBonus(const Unit * unit) const override;
+	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const Unit * unit) const override;
 	int unitAdditionalRetaliations(const Unit * unit) const override;
 	int unitBloodragePainIncrement(const Unit * unit) const override;
 	bool unitHasVeteranCohesion(const Unit * unit) const override;

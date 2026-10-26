@@ -11,6 +11,7 @@
 #include "SpellPointPresentation.h"
 #include "CExchangeWindow.h"
 #include "HeroSpecialtyPresentation.h"
+#include "NewHorizonsPerkHelp.h"
 
 #include "CHeroBackpackWindow.h"
 
@@ -405,10 +406,13 @@ void CExchangeWindow::updateArtifacts()
 		}
 
 		const bool overflow = refreshExchangeSecondarySkillSlots(hero->secSkills,
-			[this, leftRight](std::size_t index, const auto * skill)
+			[this, leftRight, hero](std::size_t index, const auto * skill)
 		{
 			if(skill)
+			{
 				secSkills[leftRight][index]->setSkill(skill->first, skill->second);
+				secSkills[leftRight][index]->text = newHorizonsPerkHelp::skillDescription(hero, skill->first, skill->second);
+			}
 			else
 				secSkills[leftRight][index]->setSkill(SecondarySkill::NONE);
 		});

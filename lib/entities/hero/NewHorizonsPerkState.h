@@ -6,6 +6,7 @@
 #pragma once
 
 #include "NewHorizonsPerkRules.h"
+#include "NewHorizonsNecromancyPolicy.h"
 
 #include <functional>
 #include <map>
@@ -134,7 +135,13 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
+		if(h.saving)
+			newHorizonsNecromancy::validatePolicySerialization(capturedRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
 		h & rules;
+		if(!h.saving)
+			newHorizonsNecromancy::validatePolicySerialization(capturedRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
 		if(!h.saving)
 			validateWeightedPerkSerialization(capturedRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),

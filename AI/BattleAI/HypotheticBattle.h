@@ -42,6 +42,8 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	std::weak_ptr<CBattleInfoCallback> boundSubjectOwner;
 	InitialExportBattleSubject * initialExportView;
 	SeizeInitiativeState seizeInitiative;
+	BattleSideArray<newHorizonsNecromancy::CombatPassives> necromancyPassives;
+	void captureNecromancyPassives(const CBattleInfoCallback & source);
 	battle::Units ownedExportUnitsIf(const battle::UnitFilter & predicate) const;
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
 		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const override;
@@ -65,6 +67,7 @@ public:
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;
 	int unitFortuneSpeed(const battle::Unit * unit) const override { return battleFortuneSpeed(unit); }
 	int unitSpeedBonus(const battle::Unit * unit) const override { return battleBloodrageSpeed(unit); }
+	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const battle::Unit * unit) const override;
 	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
 	bool unitHasVeteranCohesion(const battle::Unit * unit) const override;
 	std::optional<int> unitMagicResistance(const battle::Unit * unit) const override;

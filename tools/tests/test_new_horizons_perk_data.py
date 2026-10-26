@@ -469,6 +469,74 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 self.assertEqual(perk['description'], description)
                 self.assertEqual(perk['effect'], {'status': 'active', 'description': description})
 
+    def test_necromancy_revision_keeps_ids_and_correct_tier_alternatives(self):
+        skill = self.rules['skills']['new-horizons:necromancy']
+        perks = {p['id'].split('.', 1)[1]: p for p in skill['perks']}
+        expected = (
+            ('masterOfBones', 'Bone and Steel', 'basic', 'upgraded form'),
+            ('corpsePreservation', 'Death March', 'expert', '+2 Speed. Initiative is unchanged.'),
+            ('darkConversion', 'Boneward', 'basic', '30% less magical damage'),
+            ('blackHarvest', 'Soul Harvester', 'basic', 'recover 1 Mana per 10 creatures raised'),
+            ('soulHarvester', 'Tomb Guard', 'advanced', '+1 retaliation per round'),
+            ('lordOfTheDead', 'Lord of the Dead', 'expert', '90% less Leadership'),
+        )
+        for identity, name, tier, effect in expected:
+            with self.subTest(perk=identity):
+                perk = perks[identity]
+                self.assertEqual((perk['name'], perk['requires']), (name, tier))
+                self.assertIn(effect, perk['description'])
+                self.assertEqual(perk['effect'], {
+                    'status': 'active', 'description': perk['description']})
+        self.assertIn('Normal retaliation restrictions still apply', perks['soulHarvester']['description'])
+        self.assertIn('up to 10 Mana', perks['blackHarvest']['description'])
+        self.assertIn('replaces', perks['lordOfTheDead']['description'])
+        self.assertNotIn('boneAndSteel', perks)
+        self.assertNotIn('deathMarch', perks)
+        for rank, discount in zip(RANKS, (50, 60, 70)):
+            description = skill['ranks'][rank]['description']
+            self.assertIn(f'{discount}% less Leadership', description)
+            self.assertIn('round their discounted requirement up', description)
+            self.assertIn('minimum 1', description)
+        self.assertIn('Ordinary magical casualties are eligible', skill['description'])
+        self.assertIn('explicitly destroyed or invalid remains are excluded', skill['description'])
+
+    def test_necromancy_policy_is_optional_strict_and_configurable(self):
+        policy = self.rules['necromancyPolicy']
+        self.assertEqual(policy, {
+            'version': 1,
+            'skeletonLeadershipReductionPercent': [0, 50, 60, 70],
+            'lordOfTheDeadLeadershipReductionPercent': 90,
+            'deathMarchSpeed': 2,
+            'bonewardMagicalReductionPercent': 30,
+            'tombGuardAdditionalRetaliations': 1,
+        })
+        validator = Draft4Validator(self.schema)
+        historical = json.loads(json.dumps(self.rules))
+        del historical['necromancyPolicy']
+        validator.validate(historical)
+        configurable = json.loads(json.dumps(self.rules))
+        configurable['necromancyPolicy'].update({
+            'skeletonLeadershipReductionPercent': [0, 0, 1, 99],
+            'lordOfTheDeadLeadershipReductionPercent': 99,
+            'deathMarchSpeed': 0,
+            'bonewardMagicalReductionPercent': 100,
+            'tombGuardAdditionalRetaliations': 0,
+        })
+        validator.validate(configurable)
+        invalid = [None, {}, {**policy, 'unknown': 1}, {**policy, 'version': 2}]
+        invalid.extend({k: v for k, v in policy.items() if k != omitted} for omitted in policy)
+        invalid.extend({**policy, 'skeletonLeadershipReductionPercent': value} for value in (
+            [0, 50, 60], [0, 50, 60, 70, 80], [1, 50, 60, 70],
+            [0, -1, 60, 70], [0, 50, 60, 100], [0, 50.5, 60, 70], '50'))
+        invalid.extend({**policy, key: value} for key, value in (
+            ('lordOfTheDeadLeadershipReductionPercent', 100),
+            ('deathMarchSpeed', -1), ('bonewardMagicalReductionPercent', 101),
+            ('tombGuardAdditionalRetaliations', -1), ('version', True)))
+        for value in invalid:
+            with self.subTest(invalid=value):
+                candidate = {**self.rules, 'necromancyPolicy': value}
+                self.assertTrue(list(validator.iter_errors(candidate)))
+
     def test_heroic_spirit_is_an_expert_order_only_hero_morale_perk(self):
         perk = next(p for p in self.rules['skills']['new-horizons:discipline']['perks']
                     if p['id'] == 'new-horizons:discipline.heroicSpirit')

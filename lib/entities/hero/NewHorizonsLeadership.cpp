@@ -9,6 +9,10 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsLeadership.h"
+#include "HeroStartingProjection.h"
+#include "NewHorizonsCapabilityRules.h"
+#include "NewHorizonsHeroRules.h"
+#include "NewHorizonsNecromancyPolicy.h"
 
 #include "../../mapObjects/CGHeroInstance.h"
 
@@ -45,6 +49,21 @@ int leadershipMovement(int unscaledMovement, int movementPercent)
 	if(unscaledMovement < 0 || movementPercent <= 0 || movementPercent > 100)
 		throw std::invalid_argument("Invalid New Horizons leadership movement inputs");
 	return static_cast<int>(int64_t(unscaledMovement) * movementPercent / 100);
+}
+
+std::optional<LeadershipSlotCapacity> heroLeadershipSlotCapacity(
+	const CGHeroInstance & hero, CreatureID creature)
+{
+	const auto & rules = hero.getCapabilityRules();
+	if(!usesRules(rules) || rules["rulesetVersion"].Integer() < 2)
+		return std::nullopt;
+	auto result = capabilityLeadershipSlot(rules, hero.level, creature);
+	if(result)
+	{
+		applyStartingLeadershipBonus(*result, hero.valOfBonuses(BonusType::LEADERSHIP));
+		newHorizonsNecromancy::applyLeadershipPolicy(*result, hero, creature);
+	}
+	return result;
 }
 
 bool canMergeArmies(const CArmedInstance * source, const CArmedInstance * destination)

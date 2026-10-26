@@ -23,6 +23,12 @@
 #include "modding/ModIncompatibility.h"
 #include "serializer/JsonSerializeFormat.h"
 
+void StartInfo::validateNecromancyPolicySerialization(bool supported) const
+{
+	if(campState)
+		campState->validateNecromancyPolicySerialization(supported);
+}
+
 void StartInfo::validateDefaultCreatureLineSerialization(bool supported) const
 {
 	if(campState)

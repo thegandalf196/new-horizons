@@ -52,7 +52,7 @@ class NewHorizonsUiPerkInventoryTest(unittest.TestCase):
         # image at the icon stem. This guards the read-only Development pool;
         # it is not a rendered assertion about the level-up offer dialog.
         self.assertRegex(source, re.compile(
-            r"std::make_shared<CAnimImage>\(\s*AnimationPath::builtin\(newHorizonsPerkIcon\(perk.id\)\),"
+            r"std::make_shared<CAnimImage>\(\s*AnimationPath::builtin\(newHorizonsPerkIcon\(perk.id,\s*perk.name\)\),"
             r"\s*0\s*,"))
         self.assertNotRegex(source, re.compile(
             r"std::make_shared<CPicture>\(ImagePath::builtin\(newHorizonsPerkIcon\("))

@@ -37,6 +37,25 @@ appending a quest. Valid records retain the legacy quest and synthesize the
 colour's `requiredKeys` entry. Registered type10 guard conversion, type12 gate
 identity, supported versions and the current quest-source layout are unchanged.
 
+## Captured Skeleton-focused Necromancy
+
+`NEW_HORIZONS_SKELETON_NECROMANCY` protects the optional versioned
+`necromancyPolicy` in the captured perk registry. Present policy rows validate
+strictly; historical absence keeps the previous perk meanings and is never filled
+from installed defaults. The stable perk identifiers retain their historical
+names, tiers and mechanics when this marker is absent.
+
+Direct perk-state and hero writers, authored map overrides, pooled/map heroes and
+enclosing world writers reject unsupported captures before writing their prefixes.
+Campaign scenario/global crossover JSON pools and their StartInfo, lobby and world
+envelopes apply the same guard, including heroes reserved outside the current map.
+Readers reject an unsupported policy rather than silently discarding it. The
+feature appends no battle-result fields: old Zombie, Wight, Bone Dragon and corpse
+provenance fields remain readable for historical captures and specialty results.
+The new policy includes ordinary magical casualties, still excludes destroyed
+remains, and produces Skeletons from perks; Vidomina's independent specialty keeps
+its existing conversion behavior.
+
 ## Captured individual specialty riders
 
 `NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS` protects the optional versioned

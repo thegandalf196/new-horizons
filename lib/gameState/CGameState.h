@@ -14,6 +14,7 @@
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsMasteryRules.h"
 #include "../entities/hero/NewHorizonsPerkRules.h"
+#include "../entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../entities/artifact/RandomArtifactPool.h"
 
@@ -267,6 +268,7 @@ public:
 	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
+	void validateNewHorizonsNecromancyPolicySerialization(bool supported) const;
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
@@ -316,6 +318,8 @@ public:
 			validateNewHorizonsRemainingSpellSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
 		if(h.saving)
 			validateNewHorizonsLighthouseSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+		if(h.saving)
+			validateNewHorizonsNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
 		if(h.saving)
 			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
@@ -537,6 +541,8 @@ public:
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PERKS))
 		{
 			h & heroPerkRules;
+			if(!h.saving) newHorizonsNecromancy::validatePolicySerialization(heroPerkRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
 			if(!h.saving) newHorizonsHeroes::validateWeightedPerkSerialization(heroPerkRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
