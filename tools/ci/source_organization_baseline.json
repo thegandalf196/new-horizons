@@ -6670,9 +6670,9 @@
       "review_scope": "whole-exact-callable-inventory-no-parser-waiver-no-runtime-claim"
     },
     "AI/BattleAI/BattleExchangeVariant.h": {
-      "sha256": "ad55601f5a67be17c67c7afe432e5d3b5a0248a4581ff1a57f6a2b9b1fa9886b",
-      "review": "IR-ENEMY-BYPASS-HEADER-CALLABLES-20261022",
-      "rationale": "Complete exact header callable inventory independently renewed for the focused enemy-bypass reachability interface. Only the ReachabilityInfo include is replaced by the owning focused header; all ten existing inline/constructor names, bodies and offsets remain exact. Two existing empty-default-argument parser recoveries remain covered by this complete inventory, not waived. No runtime or build acceptance is implied.",
+      "sha256": "ff75586c83f9bdc237477402c75f74d6bad078e2492fbb7292401aeeec582c66",
+      "review": "IR-COMBAT-AI-EXCHANGE-HEADER-INVENTORY-20261026",
+      "rationale": "Complete297-line header independently inspected after removal of unused AttackerValue and unread map. All ten retained callable bodies byte-identical versus the prior snapshot at adjusted spans32-35/37/39-42/44-52/75-78/90-91/113/250-256/295/296. Existing parser recovery at default arguments244/282 does not hide bodies. This complete inventory replaces prior exact-hash coverage; no exclusions, aliases, size limits or coverage rules changed.",
       "functions": [
         {
           "symbol": "BattleScore::BattleScore(float enemyDamageReduce, float ourDamageReduce) :enemyDamageReduce(enemyDamageReduce), ourDamageReduce(ourDamageReduce)#1",
@@ -6696,37 +6696,37 @@
         },
         {
           "symbol": "EvaluationResult::EvaluationResult(const AttackPossibility & ap) :wait(false), score(INEFFECTIVE_SCORE), bestAttack(ap), defend(false)#1",
-          "start": 84,
-          "end": 87
+          "start": 75,
+          "end": 78
         },
         {
           "symbol": "BattleExchangeVariant::BattleExchangeVariant() : dpsScore()#1",
-          "start": 99,
-          "end": 100
+          "start": 90,
+          "end": 91
         },
         {
           "symbol": "BattleExchangeVariant::const BattleScore & getScore() const#1",
-          "start": 122,
-          "end": 122
+          "start": 113,
+          "end": 113
         },
         {
           "symbol": "BattleExchangeEvaluator::BattleExchangeEvaluator( std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, float strengthRatio, int simulationTurnsCount): cb(cb), env(env), simulationTurnsCount(simulationTurnsCount)#1",
-          "start": 260,
-          "end": 266
+          "start": 250,
+          "end": 256
         },
         {
           "symbol": "BattleExchangeEvaluator::float getPositiveEffectMultiplier() const#1",
-          "start": 305,
-          "end": 305
+          "start": 295,
+          "end": 295
         },
         {
           "symbol": "BattleExchangeEvaluator::float getNegativeEffectMultiplier() const#1",
-          "start": 306,
-          "end": 306
+          "start": 296,
+          "end": 296
         }
       ],
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "review_scope": "whole-exact-callable-inventory-no-parser-waiver-no-runtime-claim"
+      "review_scope": "complete-exact-ten-callable-header-inventory-no-parser-waiver-no-runtime-certification"
     },
     "AI/BattleAI/SpellTargetsEvaluator.h": {
       "sha256": "59d9bce6b64956bf0875b88c7423daeb303fce7e527477a3314377141038f81b",
@@ -18026,25 +18026,25 @@
     },
     "AI/BattleAI/AttackPossibility.cpp": {
       "kind": "exception",
-      "lines": 2091,
+      "lines": 2065,
       "owner": "ai_engineer",
-      "rationale": "Extract complete existing DamageCache methods and shared mark selectors into focused395-line cache owner, preserving bodies exactly; file2446-to2091 shrinking ratchet. No future regrowth or relaxed cache lifetime.",
-      "review": "IR-FINALIZATION-EXACT-EXCEPTION-20261023",
-      "review_scope": "exact-finalization-extraction-only",
-      "sha256": "4eb5ace24b452d8987602048671894af124233d554cbb42fedf102c7214837be",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth.",
+      "rationale": "Independently source-reviewed reuse of the existing BattleShroudStrike query owner, replacing duplicated read-only eligibility lambdas while retaining primary, cleave and retaliation call boundaries. File2091-to2065; evaluate1727-to1700. Exact shrinking ratchet only; no action, score, ordering or RNG policy expansion.",
+      "review": "IR-COMBAT-AI-SHROUD-DEDUP-SOURCE-20261026",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "sha256": "1258ee44059db996538a55061d6b8c8cdd5377cf9fc8cab7623ec589e2a0e305",
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/AttackPossibility.cpp::AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1": {
       "kind": "exception",
-      "lines": 1727,
+      "lines": 1700,
       "owner": "ai_engineer",
-      "rationale": "Source-reviewed exact841-2567/1727-line ratchet after extracting Archery receipt admission into its own small owner and gating Immovable/Mire Grip detached snapshots behind existing eligibility. Preserve candidate membership/order, ties, state/branch ownership, score and both RNGs; runtime acceptance remains separate.",
-      "review": "IR-ATTACK-PREVIEW-ARCHERY-ADMISSION-20261022",
-      "review_scope": "exact-archery-receipt-extraction-and-gated-snapshots-shrinking-ratchet-only",
-      "sha256": "0e883b98f890a0c27ca70e0ed45a78595c802d6a64e3990673e1081d4ee7f9c4",
-      "review_status": "independently-reviewed-source-boundary",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2567/1727 ceilings only; no regrowth allowance."
+      "rationale": "Independently source-reviewed reuse of the existing BattleShroudStrike query owner, replacing duplicated read-only eligibility lambdas while retaining primary, cleave and retaliation call boundaries. File2091-to2065; evaluate1727-to1700. Exact shrinking ratchet only; no action, score, ordering or RNG policy expansion.",
+      "review": "IR-COMBAT-AI-SHROUD-DEDUP-SOURCE-20261026",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "sha256": "b5602573b57efe6a6ddfe034a3aef667f981589982f2b4c1955cd57f558298f7",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2567/1727 ceilings only; no regrowth allowance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit."
     },
     "AI/BattleAI/AttackPossibility.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1": {
       "kind": "legacy",
@@ -18056,14 +18056,14 @@
       "sha256": "9fee335f471ac487e5a244001c24dd4e67783b3a330704af2350b5dd66bd7d6c"
     },
     "AI/BattleAI/BattleAI.cpp": {
-      "kind": "exception",
-      "lines": 1455,
+      "kind": "review",
+      "lines": 836,
       "owner": "ai_engineer",
-      "rationale": "Extract repeated evaluator construction into a focused five-line member; file1457-to-1455 and activeStack229-to-221. Forward the optional nonowning selection observer and Vines test control through every hero-selection route. No candidate policy or lifetime authority changes; exact shrinking cap only.",
-      "review": "IR-VINES-REUSE-EXTRACTION-SOURCE-20261021",
-      "review_scope": "exact-phase2-vines-projection-extraction-source-only",
-      "sha256": "3d3b13f2dfa973d5d685937d1c1ff3f0afc1d9844fde227a5c41345645e326eb",
-      "deferral": "AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate.",
+      "rationale": "Independently source-reviewed extraction of diagnostic timing/lifecycle ownership into private BattleAITiming.cpp/.h; original orchestration file1455-to836. Private nested state/scope ownership, callback lifetime and action dispatch remain. This is relocation with aggregate declaration overhead, not net code elimination or performance acceptance. Exact836-line file ratchet; existing substantive-growth deferrals remain.",
+      "review": "IR-COMBAT-AI-TIMING-BOUNDARY-SOURCE-20261026",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "sha256": "ebd4c5715ffc20d793526be90fa0c11a408f98cb7aecdc32dc9de1eddd34fc99",
+      "deferral": "AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/BattleAI.cpp::BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)#1": {
@@ -18074,24 +18074,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "7b8b88e158cc1a2ea853fcad09f6a1272ef3781afbbd4ae3e1030a801cc72351"
-    },
-    "AI/BattleAI/BattleAI.cpp::CBattleAI::TimingScope::~TimingScope()#1": {
-      "kind": "legacy",
-      "lines": 148,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 148 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "12dbd1162c3eb54ae17ec218ce27fbb8a1c912c4549bef81027dab6b501969dc"
-    },
-    "AI/BattleAI/BattleAI.cpp::CBattleAI::TimingState::void log(const std::optional<TimingSummary> & result) const#1": {
-      "kind": "legacy",
-      "lines": 235,
-      "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 235 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e006e07bcad6e704c41af5af607ad207825bc331f8deb7312800245be867c577"
     },
     "AI/BattleAI/BattleAI.cpp::bool CBattleAI::shouldUseCreatureCatapult(CBattleInfoCallback & battle, const CStack * stack, const BattleAction & ordinaryAction, PlayerColor actionController)#1": {
       "kind": "legacy",
@@ -18124,11 +18106,14 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "lines": 5356,
-      "sha256": "b1e6496ce2e6a8a20ffa261d8dcd16df820417ecff15672cc881a1e1f5454da3",
+      "sha256": "22c573b7f8f30454a66d26df3cb28c095da995011f85709772bbbb2e2e66a2c1",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Route Chosen marginal valuation and Flying cache invalidation to the focused helper; fixed horizon and utility model unchanged.",
-      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance."
+      "review": "IR-COMBAT-AI-EXPECTED-VIEWS-SOURCE-20261026",
+      "rationale": "Independently source-reviewed two argument substitutions after removing redundant borrowed-float tagged variants in the focused expected-value owners. Main file5356 and attemptCastingSpell1203 are unchanged in size; aggregate affected production source shrinks37 lines. This narrow representation-only exception preserves separate canonical/positive gates, null/negation rejection, accepted-action ordering, late float reads and baseline-plus-value expression; no added responsibility or future growth credit.",
+      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "owner": "ai_engineer"
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -18236,14 +18221,14 @@
       "sha256": "cfef4a8b887c5bfc9111edcac72cca0042a817cb76f26ffd557f2f2491d5118d"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp": {
-      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2186/340 ratchet only. Separately, before further movement-cache expansion, ai_engineer must extract ReachabilityMapCache update/getOneTurnReachableUnits/computeOneTurnReachableUnits into one focused component after defining a single shared controller-predicate owner for cache, movement and blocking/bypass consumers. Preserve exact membership pointer/order/multiplicity, turn wrapping, branch/state/RNG and whole-exchange score/action parity; do not duplicate controller rules. This exact four-net-line local-lifetime exception does not permit any unrelated growth. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance. Before further substantive affected-area expansion, ai_engineer owns a cohesive typed prehit snapshot and applied aftermath stage with requested/resolved identities and damage boundary explicit. Preserve unknown-Lua query/order failures, Night Prowler/Bastion/Frozen producer behavior, branch/native/RNG isolation and exact145 score/action parity.",
+      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2186/340 ratchet only. Separately, before further movement-cache expansion, ai_engineer must extract ReachabilityMapCache update/getOneTurnReachableUnits/computeOneTurnReachableUnits into one focused component after defining a single shared controller-predicate owner for cache, movement and blocking/bypass consumers. Preserve exact membership pointer/order/multiplicity, turn wrapping, branch/state/RNG and whole-exchange score/action parity; do not duplicate controller rules. This exact four-net-line local-lifetime exception does not permit any unrelated growth. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance. Before further substantive affected-area expansion, ai_engineer owns a cohesive typed prehit snapshot and applied aftermath stage with requested/resolved identities and damage boundary explicit. Preserve unknown-Lua query/order failures, Night Prowler/Bastion/Frozen producer behavior, branch/native/RNG isolation and exact145 score/action parity. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
       "kind": "exception",
-      "lines": 2186,
+      "lines": 2171,
       "owner": "ai_engineer",
-      "rationale": "Exact no-growth five-initializer probe bypass. Primary Fortune extraction ratchet remains2186/439. Applied paths retain all original metadata reads at their original sites and order across requested-target redirection and the pre-damage boundary; evaluateOnly skips only facts with no probe consumer. No new responsibility, cache, scoring, state, RNG or future growth allowance. A broader extraction is separate from this narrowly reviewed ordering-sensitive change.",
-      "review": "IR-APPLIED-STRIKE-FACTS-ORGANIZATION-20261023",
-      "review_scope": "exact-five-initializer-applied-only-no-growth-exception",
-      "sha256": "45b9350dd6b24c292bcbce78429bd79defe8c3326f6485a896694d7c7090a44f",
+      "rationale": "Independently source-reviewed removal of the unread AttackerValue bookkeeping, its constructor, an unused local exchange object and an unused include. File2186-to2171; AP-track340-to339; direct-track439-to434; movement180-to178. Existing score arithmetic and ordered projected execution remain. Exact shrinking ratchet only; runtime acceptance is separate.",
+      "review": "IR-COMBAT-AI-DEAD-EXCHANGE-SOURCE-20261026",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "sha256": "0d4bec74c32735d1ce96cee253d6c24524d6f1a14c10647c0673a28e7761f2f3",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::BattleScore BattleExchangeEvaluator::calculateExchange( const AttackPossibility & ap, uint8_t turn, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, const battle::Units & additionalUnits, BattleMovementTiming::ExchangeTiming * timing) const#1": {
@@ -18268,12 +18253,13 @@
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable( const battle::Unit * activeStack, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, BattleMovementTiming * timing)#1": {
       "kind": "legacy",
-      "lines": 180,
+      "lines": 178,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 180 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "df542e09f9a5bcfb1895dadf7caee54cdefe6fbd0bf70c9631cc3c858652d315"
+      "rationale": "Independently source-reviewed removal of the unread AttackerValue bookkeeping, its constructor, an unused local exchange object and an unused include. File2186-to2171; AP-track340-to339; direct-track439-to434; movement180-to178. Existing score arithmetic and ordered projected execution remain. Exact shrinking ratchet only; runtime acceptance is separate.",
+      "review": "IR-COMBAT-AI-DEAD-EXCHANGE-SOURCE-20261026",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "sha256": "7baf3632c3fe34d8bf8941b9a132f8d9e95e3bbebddc621007d9e21576489916",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::ReachabilityData BattleExchangeEvaluator::getExchangeUnits( const AttackPossibility & ap, uint8_t turn, PotentialTargets & targets, std::shared_ptr<HypotheticBattle> hb, const battle::Units & additionalUnits) const#1": {
       "kind": "legacy",
@@ -18286,25 +18272,25 @@
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttack( const AttackPossibility & ap, std::shared_ptr<HypotheticBattle> hb, DamageCache & damageCache)#1": {
       "kind": "legacy",
-      "lines": 340,
+      "lines": 339,
       "owner": "ai_engineer",
-      "rationale": "Source-reviewed exact411-750/340-line selected-receipt trackAttack ratchet replaces only the prior melee endpoint assignment with the focused restorePosition call before attackValue/resource replay. The helper owns current branch/unit/source identity and legal Skirmisher endpoint admission; no other shooting from-field grants movement. Preserve all existing resource/counter/damage/RNG ordering and further extraction obligations.",
-      "review": "IR-SKIRMISHER-SELECTED-POSITION-20261022",
-      "review_scope": "exact-selected-attack-position-restoration-routing-shrinking-ratchet-only",
-      "sha256": "b2db645eb6ba2e8290a2ffedb13ec05c1b9c04a02bd39ba82a977796e6cf8908",
+      "rationale": "Independently source-reviewed removal of the unread AttackerValue bookkeeping, its constructor, an unused local exchange object and an unused include. File2186-to2171; AP-track340-to339; direct-track439-to434; movement180-to178. Existing score arithmetic and ordered projected execution remain. Exact shrinking ratchet only; runtime acceptance is separate.",
+      "review": "IR-COMBAT-AI-DEAD-EXCHANGE-SOURCE-20261026",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "sha256": "145e4a67bc23efe60f70784076cd0bb94b80bb748cd95e72b5ef71d127532369",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2237/340 ratchet only."
+      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2237/340 ratchet only. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit."
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttack( std::shared_ptr<StackWithBonuses> attacker, std::shared_ptr<StackWithBonuses> defender, bool shooting, bool isOurAttack, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool evaluateOnly, bool allowRetaliation, std::optional<bool> * readyOverwatch, const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission, BattleExchangeAttackResult * actionResult)#1": {
       "kind": "exception",
-      "lines": 439,
+      "lines": 434,
       "owner": "ai_engineer",
-      "rationale": "Exact no-growth five-initializer probe bypass. Primary Fortune extraction ratchet remains2186/439. Applied paths retain all original metadata reads at their original sites and order across requested-target redirection and the pre-damage boundary; evaluateOnly skips only facts with no probe consumer. No new responsibility, cache, scoring, state, RNG or future growth allowance. A broader extraction is separate from this narrowly reviewed ordering-sensitive change.",
-      "review": "IR-APPLIED-STRIKE-FACTS-ORGANIZATION-20261023",
-      "review_scope": "exact-five-initializer-applied-only-no-growth-exception",
-      "sha256": "2cc1772462d30a2137116c951c9e76638558673247ddad68a86ee347ce017a88",
+      "rationale": "Independently source-reviewed removal of the unread AttackerValue bookkeeping, its constructor, an unused local exchange object and an unused include. File2186-to2171; AP-track340-to339; direct-track439-to434; movement180-to178. Existing score arithmetic and ordered projected execution remain. Exact shrinking ratchet only; runtime acceptance is separate.",
+      "review": "IR-COMBAT-AI-DEAD-EXCHANGE-SOURCE-20261026",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "sha256": "c783710d098c681e6f8d90ee92097c02f55a8cebcc7466ae6544a046e7265095",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance. Before further substantive affected-area expansion, ai_engineer owns a cohesive typed prehit snapshot and applied aftermath stage with requested/resolved identities and damage boundary explicit. Preserve unknown-Lua query/order failures, Night Prowler/Bastion/Frozen producer behavior, branch/native/RNG isolation and exact145 score/action parity."
+      "deferral": "Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance. Before further substantive affected-area expansion, ai_engineer owns a cohesive typed prehit snapshot and applied aftermath stage with requested/resolved identities and damage boundary explicit. Preserve unknown-Lua query/order failures, Night Prowler/Bastion/Frozen producer behavior, branch/native/RNG isolation and exact145 score/action parity. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit."
     },
     "AI/BattleAI/PotentialTargets.cpp::PotentialTargets::PotentialTargets( const battle::Unit * attacker, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> state)#1": {
       "kind": "exception",
@@ -26345,11 +26331,14 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse, LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse, RegenerationBaselineReuse::TestControl * regenerationReuse)#1": {
       "lines": 1203,
-      "sha256": "928ff0db08d15e10da3f9f6a3f56f7bfc1a1f61f5d500177ef716784818834a5",
+      "sha256": "f72eb4671a9b38ed693bc3f11c7793d9e8d3c8c5d5f1984b553486d4ba461114",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Route Chosen marginal valuation and Flying cache invalidation to the focused helper; fixed horizon and utility model unchanged.",
-      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance."
+      "review": "IR-COMBAT-AI-EXPECTED-VIEWS-SOURCE-20261026",
+      "rationale": "Independently source-reviewed two argument substitutions after removing redundant borrowed-float tagged variants in the focused expected-value owners. Main file5356 and attemptCastingSpell1203 are unchanged in size; aggregate affected production source shrinks37 lines. This narrow representation-only exception preserves separate canonical/positive gates, null/negation rejection, accepted-action ordering, late float reads and baseline-plus-value expression; no added responsibility or future growth credit.",
+      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "owner": "ai_engineer"
     },
     "AI/BattleAI/RegenerationForecast.cpp::float projectedRegenerationValue( const Environment * environment, const std::shared_ptr<CBattleInfoCallback> & beforeCast, const std::shared_ptr<HypotheticBattle> & afterCast, const std::vector<battle::Units> & turnOrder, SpellID spell, DamageCache & damageCache, BattleSide ourSide, PlayerColor ourPlayer, float positiveEffectMultiplier, RegenerationBaselineReuse * reuse)#1": {
       "kind": "review",
@@ -26418,6 +26407,37 @@
       "kind": "review",
       "review": "IR-ORDER-LOG-EXTRACTION-AND-FEEDBACK-SOURCE-20261026",
       "rationale": "Cohesive authoritative Order feedback formatter extracted from the action processor. Historical branch text remains exact; Feint/Vanguard append only finalized stored base/Crown potency and inclusive duration. Five total helper bodies in194-line component, this formatter104 lines below150 ceiling. No action/state/RNG mutation or duplicated new formulas."
+    },
+    "AI/BattleAI/BattleAITiming.cpp": {
+      "lines": 601,
+      "sha256": "87056e45b5c793ee1961494a7931f778d7071a5075152e792058937bbc87ca77",
+      "review": "IR-COMBAT-AI-TIMING-BOUNDARY-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "owner": "ai_engineer",
+      "kind": "review",
+      "rationale": "Independently source-reviewed601-line private diagnostic timing owner extracted from BattleAI.cpp. One trailing blank EOF line removed from reviewed602-line candidate; bodies/order unchanged. The235-line mechanical logging method has its own narrowly scoped exception; this file record grants no function-ceiling waiver or future growth credit."
+    },
+    "AI/BattleAI/BattleAITiming.cpp::CBattleAI::TimingScope::~TimingScope()#1": {
+      "lines": 148,
+      "sha256": "d16962cd076ef0a46cfff9824417bf26051f6120058792af78a52e99cfcf9a21",
+      "review": "IR-COMBAT-AI-TIMING-BOUNDARY-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "owner": "ai_engineer",
+      "kind": "review",
+      "rationale": "Existing148-line timing-scope closure/destructor moved byte-for-byte into its private diagnostic owner. Exact148-line freeze below150 ceiling; callback lifetime, exception classification, clock boundaries and deferred-summary behavior remain. No inherited legacy exemption or native/runtime certification."
+    },
+    "AI/BattleAI/BattleAITiming.cpp::CBattleAI::TimingState::void log(const std::optional<TimingSummary> & result) const#1": {
+      "lines": 235,
+      "sha256": "e006e07bcad6e704c41af5af607ad207825bc331f8deb7312800245be867c577",
+      "review": "IR-COMBAT-AI-TIMING-BOUNDARY-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
+      "owner": "ai_engineer",
+      "kind": "exception",
+      "rationale": "Existing235-line ordered diagnostic formatting/schema table moved intact into its private timing owner. Preserve exact format strings, argument alignment, subordinate log ordering and optional-result rejection; splitting the table during this bounded lifetime-sensitive extraction would unnecessarily mix formatting redesign with ownership changes. This exception covers only this exact mechanical method and hash, not other timing logic.",
+      "deferral": "Owner: AI engineer. Freeze this mechanical log schema at235 physical lines with no regrowth allowance. Before substantive logging/schema expansion, extract cohesive named formatting stages with explicit immutable TimingSummary inputs and unchanged emitted fields/order, exception behavior and clock boundaries; retain timing/lifetime native controls and exact field-schema comparisons. Any new oversized method requires separate independent review. This source exception is not performance or runtime acceptance."
     }
   }
 }

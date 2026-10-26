@@ -10,44 +10,24 @@
 #include "../../lib/spells/CSpell.h"
 
 #include <limits>
-#include <variant>
 
 namespace
 {
-// Nonowning alternatives: retain the original field's float until acceptance succeeds.
-struct HandOfFateExpectation
-{
-	const float & value;
-};
-struct BattleFormExpectation
-{
-	const float & value;
-};
-struct ConfusionExpectation
-{
-	const float & value;
-};
-struct PuppetMasterExpectation
-{
-	const float & value;
-};
-using ExpectedValueView = std::variant<HandOfFateExpectation, BattleFormExpectation,
-	ConfusionExpectation, PuppetMasterExpectation>;
-
-std::optional<ExpectedValueView> expectedValueView(const PossibleSpellcast & ps)
+// Borrow the original field; read its float only after acceptance succeeds.
+const float * expectedValueView(const PossibleSpellcast & ps)
 {
 	// Preserve precedence even for a malformed candidate with multiple populated fields.
 	// Hand of Fate and Battle Form cover the full random pool, not RNGStub's one outcome.
 	if(ps.command == HeroCommand::NONE && ps.spellHandOfFateExpectedValue.has_value())
-		return HandOfFateExpectation{*ps.spellHandOfFateExpectedValue};
+		return &*ps.spellHandOfFateExpectedValue;
 	if(ps.command == HeroCommand::NONE && ps.spellBattleFormExpectedValue.has_value())
-		return BattleFormExpectation{*ps.spellBattleFormExpectedValue};
+		return &*ps.spellBattleFormExpectedValue;
 	if(ps.command == HeroCommand::NONE && ps.spellConfusionExpectedValue.has_value())
-		return ConfusionExpectation{*ps.spellConfusionExpectedValue};
+		return &*ps.spellConfusionExpectedValue;
 	// Control has no immediate HP delta; retain its precomputed activation swing.
 	if(ps.command == HeroCommand::NONE && ps.spellPuppetMasterExpectedValue.has_value())
-		return PuppetMasterExpectation{*ps.spellPuppetMasterExpectedValue};
-	return std::nullopt;
+		return &*ps.spellPuppetMasterExpectedValue;
+	return nullptr;
 }
 }
 
@@ -71,9 +51,6 @@ bool heroSpellProjection::projectPrecomputedValue(PossibleSpellcast & ps, Hypoth
 			counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 		ps.value = std::numeric_limits<float>::lowest();
 	else
-		ps.value = std::visit([&baseline](const auto & value)
-		{
-			return baseline + value.value;
-		}, *expected);
+		ps.value = baseline + *expected;
 	return true;
 }

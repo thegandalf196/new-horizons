@@ -13,6 +13,7 @@ set(battleAI_SRCS
 		PreemptiveAttackRequest.cpp
 		BracePrimaryState.cpp
 		BattleAI.cpp
+		BattleAITiming.cpp
 		BattleEvaluator.cpp
 		BattleEvaluatorCreaturePressure.cpp
 		BattleEvaluatorHeroSubmit.cpp
@@ -99,6 +100,7 @@ set(battleAI_HEADERS
 		PreemptiveAttackRequest.h
 		BracePrimaryState.h
 		BattleAI.h
+		BattleAITiming.h
 		BattleEvaluator.h
 		BattleEvaluatorProjection.h
 		BattleEvaluatorSpellProjection.h

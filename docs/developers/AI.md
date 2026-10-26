@@ -20,6 +20,26 @@ One important class is `HypotheticBattle`. It is used to evaluate the effects of
 
 ## BattleAI
 
+### Responsibility boundaries
+
+`BattleAI.cpp` owns callback/action orchestration. Its private `BattleAITiming`
+implementation owns per-battle diagnostic state, locking, reporting and the
+stack-owned callback timing scope. This is separate from the call-local Hero
+Action timing machinery. A submission may destroy the AI owner: the timing
+scope retains shared diagnostic state, never a pointer back to that owner.
+
+`AttackPossibility` projects one candidate's ordered strikes;
+`BattleExchangeVariant` applies and scores that candidate and subsequent actors
+in a detached battle. Both use `BattleShroudStrike` for the same read-only
+per-strike facts. Query those facts afresh at each hit's existing phase; do not
+carry eligibility across intervening damage or marker changes. These forecasts
+reuse authoritative rules but do not replace authoritative execution.
+
+Precomputed spell expectations and terminal target heuristics borrow their
+source values until action acceptance succeeds. Preserve selection precedence,
+rejection gates and the final `baseline + forecast` operation order. Binding a
+view must not eagerly evaluate the float or mutate live/parent/sibling state.
+
 ### Detached forecast integrity
 
 Use current allegiance/controller and caster perspective where authority requires

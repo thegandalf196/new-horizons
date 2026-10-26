@@ -59,6 +59,7 @@ class CBattleAI : public CBattleGameInterface
 {
 	struct TimingState;
 	class TimingScope;
+	static std::shared_ptr<TimingState> makeTimingState(BattleID battleID, PlayerColor player);
 	std::atomic<std::shared_ptr<TimingState>> timingState;
 	// Optional test-driver-owned value observers; never preferences or game state.
 	heroActionSelection::Observer * heroValueObserver;

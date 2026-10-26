@@ -52,15 +52,6 @@ struct BattleScore
 	}
 };
 
-struct AttackerValue
-{
-	float value;
-	bool isRetaliated;
-	BattleHex position;
-
-	AttackerValue();
-};
-
 struct MoveTarget
 {
 	float score;
@@ -140,7 +131,6 @@ private:
 		bool referenceActorIsOurs, DamageCache & damageCache,
 		const std::shared_ptr<HypotheticBattle> & hb);
 	BattleScore dpsScore;
-	std::map<uint32_t, AttackerValue> attackerValue;
 	std::set<uint32_t> scoredElementalRebirthSpawnUnitIds;
 };
 

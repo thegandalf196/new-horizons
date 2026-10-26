@@ -12,7 +12,10 @@
 #include "../../lib/modding/CModHandler.h"
 #include <boost/algorithm/hex.hpp>
 #include <array>
+#include <bit>
 #include <chrono>
+#include <locale>
+#include <sstream>
 
 namespace heroQueueTest
 {
@@ -22,20 +25,57 @@ struct Trial { int pair; bool revised; };
 class Counts final : public heroActionSelection::Observer
 {
 public:
+	static constexpr size_t capacity = 256;
 	std::array<size_t, 15> byCommand{};
+	std::array<heroActionSelection::CandidateValue, capacity> values{};
+	heroActionSelection::SelectionValue selection{};
 	size_t candidates = 0, choices = 0;
 	bool spells = false, invalid = false;
 	void candidate(heroActionSelection::CandidateValue value) noexcept override
 	{
+		if(candidates < values.size()) values[candidates] = value;
+		else invalid = true;
 		invalid |= value.ordinal != candidates++;
 		spells |= value.spell != SpellID::NONE;
 		const auto index = static_cast<size_t>(value.command);
 		if(index < byCommand.size()) ++byCommand[index];
 		else invalid = true;
 	}
-	void selected(heroActionSelection::SelectionValue) noexcept override { ++choices; }
+	void selected(heroActionSelection::SelectionValue value) noexcept override
+	{
+		invalid |= choices != 0 || value.ordinal >= candidates;
+		selection = value;
+		++choices;
+	}
 	size_t count(HeroCommand command) const { return byCommand.at(static_cast<size_t>(command)); }
+	std::string trace() const
+	{
+		// Formatting is outside timing. This scalar roster deliberately excludes
+		// optional detailed identities; complete submitted action wires follow.
+		std::ostringstream output;
+		output.imbue(std::locale::classic());
+		output << "v1;scope=ordered-scalar-candidates;capacity=" << capacity
+			<< ";count=" << candidates << ";choices=" << choices << ";invalid=" << invalid;
+		for(size_t index = 0; index < std::min(candidates, values.size()); ++index)
+		{
+			const auto & value = values[index];
+			output << ";C=" << value.ordinal << ',' << static_cast<int>(value.command)
+				<< ',' << value.spell.getNum() << ',' << value.overcharge
+				<< ',' << std::bit_cast<uint32_t>(value.value);
+		}
+		if(choices)
+			output << ";S=" << selection.ordinal << ',' << std::bit_cast<uint32_t>(selection.baseline)
+				<< ',' << static_cast<int>(selection.disposition);
+		return output.str();
+	}
 };
+
+std::string asciiHex(const std::string & value)
+{
+	std::string result;
+	boost::algorithm::hex(value, std::back_inserter(result));
+	return result;
+}
 }
 
 class HeroOrderDecisionMeasurementTest : public HeroQueueSelectorTest,
@@ -153,6 +193,15 @@ TEST_P(HeroOrderDecisionMeasurementTest, MeasuresOneExistingProductionOrderDecis
 	const auto started = std::chrono::steady_clock::now();
 	const bool submitted = evaluator.attemptCastingSpell(active, true, &counts);
 	const auto elapsed = std::chrono::steady_clock::now() - started;
+	const auto after = observation();
+	RecordProperty("selectionTrace", counts.trace());
+	RecordProperty("observationBeforeHex", asciiHex(before));
+	RecordProperty("observationAfterHex", asciiHex(after));
+	RecordProperty("submitted", submitted ? "1" : "0");
+	// wire() already emits hex for the complete native BattleAction serializer,
+	// including every target and option, rather than a chosen-command summary.
+	RecordProperty("heroRequestWires", wire(callback->heroRequests));
+	RecordProperty("unitRequestWires", wire(callback->unitRequests));
 	RecordProperty("decisionNanoseconds", std::to_string(
 		std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count()));
 	RecordProperty("candidateEvaluations", std::to_string(counts.candidates));
@@ -160,7 +209,7 @@ TEST_P(HeroOrderDecisionMeasurementTest, MeasuresOneExistingProductionOrderDecis
 	for(auto command : {HeroCommand::PROTECT, HeroCommand::FLANK, HeroCommand::FEINT, HeroCommand::VANGUARD})
 		RecordProperty("candidates_" + std::string(heroCommands::key(command)), std::to_string(counts.count(command)));
 	EXPECT_EQ(wire(battle()->getHeroCommandRules()), capturedRules);
-	EXPECT_EQ(observation(), before); // Native source, RNG, untouched parent and sibling.
+	EXPECT_EQ(after, before); // Native source, RNG, untouched parent and sibling.
 	EXPECT_FALSE(counts.invalid);
 	EXPECT_FALSE(counts.spells);
 	EXPECT_GT(counts.candidates, 0u);

@@ -13,6 +13,7 @@
 #include "DamageCacheAdmission.h"
 #include "DamageCacheMarks.h"
 #include "AttackPreviewHitContext.h"
+#include "BattleShroudStrike.h"
 #include "AttackPreviewTargets.h"
 #include "PreemptiveAttackRequest.h"
 #include "BracePrimaryState.h"
@@ -754,51 +755,16 @@ AttackPossibility AttackPossibility::evaluate(
 		target->removeUnitBonus(CSelector(newHorizonsShroud::isNoEscapeSpeedPenalty));
 		target->addUnitBonus({newHorizonsShroud::noEscapeSpeedPenalty()});
 	};
-	const auto qualifiesForEvasiveShroud = [&fortunePreview](const BattleAttackInfo & projectedAttack)
-	{
-		if(!fortunePreview || !fortunePreview->battleIsShroudFlankingAttack(projectedAttack))
-			return false;
-		const auto side = fortunePreview->playerToSide(
-			fortunePreview->battleGetOwner(projectedAttack.attacker));
-		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-			return false;
-		return newHorizonsShroud::hasEvasiveShroud(fortunePreview->battleGetFightingHero(side));
-	};
 	const auto refreshEvasiveShroud = [&fortunePreview](uint32_t attackerUnitId)
 	{
 		auto attacker = fortunePreview->getForUpdate(attackerUnitId);
 		attacker->removeUnitBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection));
 		attacker->addUnitBonus({newHorizonsShroud::evasiveShroudProtection()});
 	};
-	const auto qualifiesForAmbusher = [&fortunePreview](const BattleAttackInfo & projectedAttack)
-	{
-		if(!fortunePreview || !fortunePreview->battleIsShroudFlankingAttack(projectedAttack))
-			return false;
-		const auto side = fortunePreview->playerToSide(
-			fortunePreview->battleGetOwner(projectedAttack.attacker));
-		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-			return false;
-		return newHorizonsShroud::ambusherDamagePercent(
-			fortunePreview->battleGetFightingHero(side), projectedAttack.attacker) > 0;
-	};
 	const auto spendAmbusher = [&fortunePreview](uint32_t attackerUnitId)
 	{
 		auto attacker = fortunePreview->getForUpdate(attackerUnitId);
 		attacker->addUnitBonus({newHorizonsShroud::ambusherSpentMarker()});
-	};
-	const auto qualifyingShadowAssaultSide = [&fortunePreview](const BattleAttackInfo & projectedAttack)
-		-> std::optional<BattleSide>
-	{
-		if(!fortunePreview || !fortunePreview->battleIsShroudFlankingAttack(projectedAttack))
-			return {};
-		const auto side = fortunePreview->playerToSide(
-			fortunePreview->battleGetOwner(projectedAttack.attacker));
-		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-			return {};
-		if(newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
-			fortunePreview->battleGetFightingHero(side), projectedAttack.defender, side) <= 0)
-			return {};
-		return side;
 	};
 	const auto spendShadowAssault = [&fortunePreview](uint32_t targetUnitId, BattleSide attackingSide)
 	{
@@ -989,9 +955,11 @@ AttackPossibility AttackPossibility::evaluate(
 					preemptive.preemptiveDamagePercent = preemptivePercent;
 					preemptive.attackerPos = strikeDefenderState->second->getPosition();
 					preemptive.defenderPos = ap.attackerState->getPosition();
-					const bool triggersEvasiveShroud = qualifiesForEvasiveShroud(preemptive);
-					const bool triggersAmbusher = qualifiesForAmbusher(preemptive);
-					const auto shadowAssaultSide = qualifyingShadowAssaultSide(preemptive);
+					const auto shroud = fortunePreview
+						? evaluateBattleShroudStrike(*fortunePreview, preemptive) : BattleShroudStrike{};
+					const bool triggersEvasiveShroud = shroud.evasiveShroud;
+					const bool triggersAmbusher = shroud.ambusher;
+					const auto shadowAssaultSide = shroud.shadowAssaultSide;
 					const bool preemptivePerfectFortune = luckState.battleCanTriggerPerfectFortune(preemptive);
 					const auto preemptivePerfectFortuneSide = luckState.playerToSide(luckState.battleGetActionController(preemptive.attacker));
 					auto preemptiveDamage = luckState.battleExpectedLuckDamage(preemptive);
@@ -1148,9 +1116,11 @@ AttackPossibility AttackPossibility::evaluate(
 				const bool triggersNoEscape = qualifiesForNoEscape(victimAttack);
 				const bool triggersVanish = projectsVanish && !victimAttack.secondaryAttack
 					&& luckState.battleIsShroudFlankingAttack(victimAttack);
-				const bool triggersEvasiveShroud = qualifiesForEvasiveShroud(victimAttack);
-				const bool triggersAmbusher = qualifiesForAmbusher(victimAttack);
-				const auto shadowAssaultSide = qualifyingShadowAssaultSide(victimAttack);
+				const auto shroud = fortunePreview
+					? evaluateBattleShroudStrike(*fortunePreview, victimAttack) : BattleShroudStrike{};
+				const bool triggersEvasiveShroud = shroud.evasiveShroud;
+				const bool triggersAmbusher = shroud.ambusher;
+				const auto shadowAssaultSide = shroud.shadowAssaultSide;
 				if(strike.perfectMoment || strike.perfectFortune)
 				{
 					// Non-lucky collateral of a forced positive strike is neutral,
@@ -1630,9 +1600,11 @@ AttackPossibility AttackPossibility::evaluate(
 					const bool cleaveMayRebirth = !targetState->isClone() && targetState->canCast()
 						&& targetState->valOfBonuses(BonusType::REBIRTH) > 0
 						&& targetState->getPhantomInitialIntegrity() == 0;
-					const bool triggersEvasiveShroud = qualifiesForEvasiveShroud(cleaveAttack);
-					const bool triggersAmbusher = qualifiesForAmbusher(cleaveAttack);
-					const auto shadowAssaultSide = qualifyingShadowAssaultSide(cleaveAttack);
+					const auto shroud = fortunePreview
+						? evaluateBattleShroudStrike(*fortunePreview, cleaveAttack) : BattleShroudStrike{};
+					const bool triggersEvasiveShroud = shroud.evasiveShroud;
+					const bool triggersAmbusher = shroud.ambusher;
+					const auto shadowAssaultSide = shroud.shadowAssaultSide;
 					const bool cleavePerfectFortune = luckState.battleCanTriggerPerfectFortune(cleaveAttack);
 					const auto cleavePerfectFortuneSide = luckState.playerToSide(luckState.battleGetActionController(cleaveAttack.attacker));
 					int64_t cleaveDamage = luckState.battleExpectedLuckDamage(cleaveAttack);
@@ -1824,9 +1796,11 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliationAttack.attackerPos = retaliatorState->getPosition();
 					retaliationAttack.defenderPos = targetState->getPosition();
 					triggersNoEscape = qualifiesForNoEscape(retaliationAttack);
-					triggersEvasiveShroud = qualifiesForEvasiveShroud(retaliationAttack);
-					triggersAmbusher = qualifiesForAmbusher(retaliationAttack);
-					shadowAssaultSide = qualifyingShadowAssaultSide(retaliationAttack);
+					const auto shroud = fortunePreview
+						? evaluateBattleShroudStrike(*fortunePreview, retaliationAttack) : BattleShroudStrike{};
+					triggersEvasiveShroud = shroud.evasiveShroud;
+					triggersAmbusher = shroud.ambusher;
+					shadowAssaultSide = shroud.shadowAssaultSide;
 					consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 						retaliationAttack.attacker, retaliationAttack.physicalDamage)
 						&& luckState.battleHasBastionProtection(targetState.get());

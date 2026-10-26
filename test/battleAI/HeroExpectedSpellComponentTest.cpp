@@ -227,9 +227,8 @@ protected:
 		ASSERT_NO_FATAL_FAILURE(prepareTransition(oldState, oldPrepared, begin));
 		ASSERT_NO_FATAL_FAILURE(prepareTransition(newState, newPrepared, begin));
 		PossibleSpellcast oldCandidate = input, newCandidate = input;
-		heroSpellProjection::TargetHeuristicForecast forecast = blink
-			? heroSpellProjection::TargetHeuristicForecast{heroSpellProjection::BlinkLandingForecast{newCandidate.spellPlacementHeuristicValue}}
-			: heroSpellProjection::TargetHeuristicForecast{heroSpellProjection::HydraRegenerationForecast{newCandidate.spellPlacementHeuristicValue}};
+		SCOPED_TRACE(blink ? "Blink" : "Hydra");
+		const float & forecast = newCandidate.spellPlacementHeuristicValue;
 		if(changeAfterBinding)
 			oldCandidate.spellPlacementHeuristicValue = newCandidate.spellPlacementHeuristicValue = 7.0f;
 		HypotheticBattle::ProjectedCounterspellOutcome counterspell;

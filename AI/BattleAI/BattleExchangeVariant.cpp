@@ -30,7 +30,6 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 
-#include <tbb/parallel_for.h>
 #include <chrono>
 #include <utility>
 #include "HypotheticBattle.h"
@@ -296,12 +295,6 @@ void spendShadowAssault(HypotheticBattle & battle, uint32_t targetUnitId, Battle
 }
 }
 
-AttackerValue::AttackerValue()
-	: value(0),
-	isRetaliated(false)
-{
-}
-
 void BattleExchangeVariant::accountForNewElementalRebirthSpawns(
 	const std::set<uint32_t> & idsBefore, const battle::Unit * referenceActor,
 	const bool referenceActorIsOurs, DamageCache & damageCache,
@@ -442,7 +435,6 @@ float BattleExchangeVariant::trackAttack(
 
 	dpsScore.ourDamageReduce += ap.attackerDamageReduce + ap.collateralDamageReduce;
 	dpsScore.enemyDamageReduce += ap.defenderDamageReduce + ap.shootersBlockedDmg;
-	attackerValue[attacker->unitId()].value = attackValue;
 
 	selected.captureDamage(*hb);
 	const auto & affectedUnits = selected.affectedUnits();
@@ -892,7 +884,6 @@ float BattleExchangeVariant::trackAttack(
 		if(isOurAttack)
 		{
 			dpsScore.enemyDamageReduce += defenderDamageReduce;
-			attackerValue[attacker->unitId()].value += defenderDamageReduce;
 		}
 		else
 			dpsScore.ourDamageReduce += defenderDamageReduce;
@@ -962,7 +953,6 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.ourDamageReduce += value;
 		else
 			dpsScore.enemyDamageReduce += value;
-		attackerValue[actorBeforeTrigger->unitId()].value -= value;
 	};
 	if(projectedAttacker && newHorizonsHexOfPainAI::hasEffect(projectedAttacker.get()))
 	{
@@ -1022,7 +1012,6 @@ float BattleExchangeVariant::trackAttack(
 				if(isOurAttack)
 				{
 					dpsScore.enemyDamageReduce += cleaveDamageReduce;
-					attackerValue[attacker->unitId()].value += cleaveDamageReduce;
 				}
 				else
 					dpsScore.ourDamageReduce += cleaveDamageReduce;
@@ -1118,12 +1107,10 @@ float BattleExchangeVariant::trackAttack(
 		if(isOurAttack)
 		{
 			dpsScore.ourDamageReduce += attackerDamageReduce;
-			attackerValue[attacker->unitId()].isRetaliated = true;
 		}
 		else
 		{
 			dpsScore.enemyDamageReduce += attackerDamageReduce;
-			attackerValue[defender->unitId()].value += attackerDamageReduce;
 		}
 
 		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
@@ -1299,8 +1286,6 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 		}
 		return result;
 	}
-
-	BattleExchangeVariant ev;
 
 	logAi->trace("Find move towards unreachable. Enemies count %d", targets.unreachableEnemies.size());
 

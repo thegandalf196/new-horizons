@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "ProjectedTargetHitFixture.h"
+#include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleShroudStrike.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../lib/CRandomGenerator.h"
@@ -111,7 +112,60 @@ protected:
 		EXPECT_EQ(rng(), random);
 		return actual;
 	}
+	void expectAttackPreview(bool shadow)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepare());
+		ASSERT_NO_FATAL_FAILURE(selectShroud(shadow));
+		const auto attack = rear(child);
+		const auto facts = expectOracle(*child, attack);
+		ASSERT_TRUE(facts.evasiveShroud);
+		ASSERT_EQ(facts.ambusher, !shadow);
+		ASSERT_EQ(facts.shadowAssaultSide.has_value(), shadow);
+		const auto before = snapshot(child);
+		const auto sibling = std::make_shared<HypotheticBattle>(environment.get(), child);
+		const auto siblingBefore = snapshot(sibling);
+		const auto orders = child->getHeroOrderStates(BattleSide::DEFENDER);
+		DamageCache cache;
+		cache.buildDamageCache(child, BattleSide::DEFENDER);
+		const auto random = rng();
+		const auto preview = AttackPossibility::evaluate(attack, attack.attacker->getPosition(), cache, child);
+		ASSERT_TRUE(preview.effectPreview);
+		ASSERT_TRUE(preview.attackerState);
+		ASSERT_TRUE(preview.attackerState->alive());
+		const auto primary = std::ranges::find_if(preview.fortuneStrikes, [&](const auto & strike)
+		{
+			return strike.attackerId == incoming->unitId() && !strike.retaliation;
+		});
+		ASSERT_NE(primary, preview.fortuneStrikes.end());
+		EXPECT_EQ(primary->defenderId, braced->unitId());
+		EXPECT_FALSE(primary->hits.empty());
+		EXPECT_TRUE(preview.attackerState->hasBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection)));
+		EXPECT_EQ(preview.attackerState->hasBonus(CSelector(newHorizonsShroud::isAmbusherSpentMarker)), !shadow);
+		const auto * target = preview.effectPreview->battleGetUnitByID(braced->unitId());
+		ASSERT_TRUE(target);
+		EXPECT_EQ(target->hasBonus(CSelector([](const Bonus * bonus)
+			{ return newHorizonsShroud::isShadowAssaultSpentMarker(bonus, BattleSide::DEFENDER); })), shadow);
+		// The next query observes consumed markers on this preview only.
+		const BattleAttackInfo next(preview.attackerState.get(), target, 0, false);
+		const auto remaining = expectOracle(*preview.effectPreview, next);
+		EXPECT_FALSE(remaining.ambusher);
+		EXPECT_FALSE(remaining.shadowAssaultSide);
+		EXPECT_EQ(snapshot(child), before);
+		EXPECT_EQ(snapshot(sibling), siblingBefore);
+		EXPECT_EQ(child->getHeroOrderStates(BattleSide::DEFENDER), orders);
+		EXPECT_EQ(rng(), random);
+	}
 };
+
+TEST_F(BattleShroudStrikeTest, AttackPreviewConsumesAmbusherAndRefreshesEvasiveWithoutChangingItsSource)
+{
+	ASSERT_NO_FATAL_FAILURE(expectAttackPreview(false));
+}
+
+TEST_F(BattleShroudStrikeTest, AttackPreviewConsumesShadowAssaultForItsConcreteVictimOnly)
+{
+	ASSERT_NO_FATAL_FAILURE(expectAttackPreview(true));
+}
 
 TEST_F(BattleShroudStrikeTest, NoPerkAndExcludedModesMatchIndependentThreeQueryOracle)
 {

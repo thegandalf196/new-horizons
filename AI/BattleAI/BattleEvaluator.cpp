@@ -4718,7 +4718,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					&& ps.spellPlacementHeuristicValue > 0.0f)
 				{
 					heroSpellProjection::projectTargetHeuristic(ps,
-						heroSpellProjection::HydraRegenerationForecast{ps.spellPlacementHeuristicValue},
+						ps.spellPlacementHeuristicValue,
 						*state, side, baseline, counterspell, counterspellNegated, spellAllowance,
 						sharedPurposeSpellRecipients, targetId);
 					continue;
@@ -4730,7 +4730,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					&& ps.spellPlacementHeuristicValue > 0.0f)
 				{
 					heroSpellProjection::projectTargetHeuristic(ps,
-						heroSpellProjection::BlinkLandingForecast{ps.spellPlacementHeuristicValue},
+						ps.spellPlacementHeuristicValue,
 						*state, side, baseline, counterspell, counterspellNegated, spellAllowance,
 						sharedPurposeSpellRecipients, targetId);
 					continue;

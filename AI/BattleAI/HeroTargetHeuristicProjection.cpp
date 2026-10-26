@@ -15,7 +15,7 @@
 #include <limits>
 
 void heroSpellProjection::projectTargetHeuristic(PossibleSpellcast & ps,
-	const TargetHeuristicForecast & forecast, HypotheticBattle & state, BattleSide side,
+	const float & forecast, HypotheticBattle & state, BattleSide side,
 	const float & baseline, const HypotheticBattle::ProjectedCounterspellOutcome & counterspell,
 	bool counterspellNegated, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
 	const std::vector<uint32_t> & sharedPurposeSpellRecipients, uint32_t & targetId)
@@ -32,8 +32,5 @@ void heroSpellProjection::projectTargetHeuristic(PossibleSpellcast & ps,
 			counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 		ps.value = std::numeric_limits<float>::lowest();
 	else
-		ps.value = std::visit([&baseline](const auto & value)
-		{
-			return baseline + value.value;
-		}, forecast);
+		ps.value = baseline + forecast;
 }
