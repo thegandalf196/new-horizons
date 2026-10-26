@@ -214,8 +214,10 @@ def input_argv(request):
         if type(request['x']) is int and type(request['y']) is int and 0 <= request['x'] < 1280 and 0 <= request['y'] < 800:
             return [action, str(request['x']), str(request['y'])]
     if action == 'key' and set(request) == {'id', 'action', 'key'}:
-        if isinstance(request['key'], str) and request['key'] in {'Escape', 'Return', 'f', 'F', 'e', 'E', 'space', 'Left', 'Right', 'Up', 'Down'}:
-            return ['key', request['key']]
+        key = request['key']
+        if isinstance(key, str) and (key in {'Escape', 'Return', 'BackSpace', 'space', 'Left', 'Right', 'Up', 'Down'}
+                or (len(key) == 1 and key.isascii() and key.isalnum())):
+            return ['key', key]
     raise Refusal('Only one bounded click/move/allowlisted key is permitted')
 
 
@@ -743,12 +745,12 @@ def run_fullgame(plan, *, verify_xvfb, verify_runtime):
         failure = error
     finally:
         # Even an admission/runtime refusal must retain an original-byte audit.
-        # No huge source hashes are included in input proofs or timing samples.
+        # Full original Data/Mp3 hashes stay outside input proofs and timing samples.
         if state['staged']:
             try:
                 profile.verify_staged_content(plan['content'], Path(plan['root']), verify_copy_bytes=False)
             except Exception as error:
-                final_errors.append('Final immutable map/link verification failed: ' + str(error))
+                final_errors.append('Final immutable map/save/link verification failed: ' + str(error))
         try:
             profile.verify_original_content(plan['content'])
             final_originals_verified = True

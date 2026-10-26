@@ -120,25 +120,42 @@ not a replacement for the normal Windows launcher or evidence of gameplay
 acceptance.
 
 `--wine-content-manifest` and `--wine-content-manifest-sha256` select private
-test inputs. The version-1 JSON has these exact top-level fields:
+test inputs. The version-1 JSON has these required top-level fields and only
+the optional `inputSave` field below:
 
 - `version`: integer `1`.
 - `original`: `data` and `music`, each with an absolute directory `path` and
   a nonempty `files` object mapping relative filenames to SHA-256 hashes.
 - `map`: absolute `path`, `sha256`, and a plain `.vmap` or `.h3m` `filename`.
 - `settings` and `modPreset`: absolute `path` and `sha256` for each JSON file.
+- Optional `inputSave`: exactly `path`, `sha256`, and a plain `.vsgm1` `filename`;
+  the pinned source must be a regular file of at most 128 MiB, without symlink
+  ancestors. Omitting this field preserves the existing map-only behavior.
 
 The preset is the curated default with `vcmi`, `core`, and `new-horizons`, and
 an empty preset settings object. Admission is read-only. Before launch, staging
 links external Data/Mp3 directories and copies only the selected map and small
-configuration files into the disposable profile. Links are resource references,
+configuration files into the disposable profile. An admitted input save is
+copied into the existing private `%LOCALAPPDATA%/new-horizons/Saves` directory
+selected by shipped `tools/windows/dirs.json`, without replacing an existing
+file. The owner maps `%LOCALAPPDATA%` to its owned `root/localappdata`; save
+staging never derives this location by escaping a content directory.
+Ordinary saves must use a different filename: the source and staged input save
+remain hash-checked on each input and after cleanup. Runtime package resources
+are never changed by this staging. Links are resource references,
 not an OS-enforced read-only sandbox. Only declared original files are verified;
 the manifest must list every original resource used by the test.
 
-Original bytes are verified before launch and after cleanup, outside the timed
-owner window. Map/link checks remain active during input; configuration files
+Original Data/Mp3 bytes are verified before launch and after cleanup, outside
+the timed owner window. Map/save/link checks remain active during input; configuration files
 may legitimately be rewritten by the engine. Keep manifests, profiles, saves,
 logs, and proprietary inputs private and outside disposable build directories.
+
+Each key request admits one ASCII letter or digit, `BackSpace`, or an existing
+navigation/control key (`Escape`, `Return`, `space`, or an arrow). Each remains
+one logical gesture under fresh ownership proof and nonce acknowledgement; text
+batches, key combinations, console keys, and arbitrary commands are refused.
+The operator must verify the focused ordinary UI field before each search key.
 
 A game can exit while the helper performs its post-gesture check. When the
 same retained game process has been reaped with status zero and its pidfd

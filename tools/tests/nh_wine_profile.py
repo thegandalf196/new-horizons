@@ -18,6 +18,7 @@ class Refusal(Exception):
 
 METADATA_LIMIT = 1024 * 1024
 MAP_LIMIT = 16 * 1024 * 1024
+SAVE_LIMIT = 128 * 1024 * 1024
 FILE_COUNT_LIMIT = 4096
 
 
@@ -93,6 +94,8 @@ def _relative(name):
 
 def verify_original_content(content):
     """Full declared original-byte check before launch and after owned cleanup."""
+    if "inputSave" in content:
+        _file(content["inputSave"], limit=SAVE_LIMIT)
     for group in ("data", "music"):
         row = content["original"][group]
         directory = _plain(row["path"], directory=True)
@@ -104,7 +107,8 @@ def load_content_manifest(path, sha):
     """Read-only admission: exact bounded schema and pins; creates nothing."""
     manifest_path = _file({"path": path, "sha256": sha}, limit=METADATA_LIMIT)
     content = _json(manifest_path)
-    _fields(content, ("version", "original", "map", "settings", "modPreset"))
+    fields = ("version", "original", "map", "settings", "modPreset")
+    _fields(content, fields + (("inputSave",) if isinstance(content, dict) and "inputSave" in content else ()))
     if type(content["version"]) is not int or content["version"] != 1:
         raise Refusal("Unsupported content manifest version")
     _fields(content["original"], ("data", "music"))
@@ -128,6 +132,14 @@ def load_content_manifest(path, sha):
     if "/" in name or Path(name).suffix.lower() not in (".vmap", ".h3m"):
         raise Refusal("Selected map must have a plain vmap/h3m basename")
     content["map"]["path"] = str(_file(content["map"], limit=MAP_LIMIT))
+    if "inputSave" in content:
+        row = content["inputSave"]
+        _fields(row, ("path", "sha256", "filename"))
+        name = row["filename"]
+        _relative(name)
+        if "/" in name or Path(name).suffix.lower() != ".vsgm1":
+            raise Refusal("Selected input save must have a plain vsgm1 basename")
+        row["path"] = str(_file(row, limit=SAVE_LIMIT))
     for key in ("settings", "modPreset"):
         _fields(content[key], ("path", "sha256"))
         content[key]["path"] = str(_file(content[key], limit=METADATA_LIMIT))
@@ -158,7 +170,7 @@ def _destinations(root):
     if root.stat().st_uid != os.getuid() or stat.S_IMODE(root.stat().st_mode) != 0o700:
         raise Refusal("Staging root must remain owned0700")
     profile = root / "localappdata" / "HeroesIII-NewHorizons"
-    return profile / "content", profile / "config"
+    return profile / "content", profile / "config", root / "localappdata/new-horizons/Saves"
 
 
 def _copy(row, destination, limit):
@@ -177,7 +189,7 @@ def stage_content(content, root):
     Original directories remain external symlink targets, never copied wholesale.
     Existing destination files/links are never overwritten.
     """
-    content_dir, config_dir = _destinations(Path(root))
+    content_dir, config_dir, saves_dir = _destinations(Path(root))
     _file(content["manifest"], limit=METADATA_LIMIT)
     for group in ("data", "music"):
         _plain(content["original"][group]["path"], directory=True)
@@ -186,14 +198,17 @@ def stage_content(content, root):
     for link, group in (("Data", "data"), ("Mp3", "music")):
         (content_dir / link).symlink_to(content["original"][group]["path"], target_is_directory=True)
     _copy(content["map"], content_dir / "Maps" / content["map"]["filename"], MAP_LIMIT)
+    if "inputSave" in content:
+        _private_directory(saves_dir)
+        _copy(content["inputSave"], saves_dir / content["inputSave"]["filename"], SAVE_LIMIT)
     _copy(content["settings"], config_dir / "settings.json", METADATA_LIMIT)
     _copy(content["modPreset"], config_dir / "modSettings.json", METADATA_LIMIT)
     verify_staged_content(content, root)
 
 
 def verify_staged_content(content, root, *, verify_copy_bytes=True):
-    """Map/link integrity each input; configs are byte-checked only before fork."""
-    content_dir, config_dir = _destinations(Path(root))
+    """Map/save/link integrity each input; configs are byte-checked only before fork."""
+    content_dir, config_dir, saves_dir = _destinations(Path(root))
     for directory in (content_dir, content_dir / "Maps", config_dir):
         _plain(directory, directory=True)
         info = directory.stat()
@@ -206,6 +221,13 @@ def verify_staged_content(content, root, *, verify_copy_bytes=True):
             raise Refusal("Staged original-content link changed")
     _file({"path": str(content_dir / "Maps" / content["map"]["filename"]),
            "sha256": content["map"]["sha256"]}, limit=MAP_LIMIT)
+    if "inputSave" in content:
+        row = content["inputSave"]
+        _file(row, limit=SAVE_LIMIT)
+        saves = _plain(saves_dir, directory=True)
+        if saves.stat().st_uid != os.getuid() or stat.S_IMODE(saves.stat().st_mode) != 0o700:
+            raise Refusal("Staged Saves directory no longer owned0700")
+        _file({"path": str(saves / row["filename"]), "sha256": row["sha256"]}, limit=SAVE_LIMIT)
     if verify_copy_bytes:
         for name, key in (("settings.json", "settings"), ("modSettings.json", "modPreset")):
             _file({"path": str(config_dir / name), "sha256": content[key]["sha256"]}, limit=METADATA_LIMIT)

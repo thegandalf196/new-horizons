@@ -459,6 +459,19 @@ class Tests(unittest.TestCase):
                         {'id': 1, 'action': 'key', 'key': 'F12'}, {'id': True, 'action': 'key', 'key': 'Return'}):
             with self.assertRaises(owner.Refusal): owner.input_argv(request)
 
+    def test_search_keys_remain_one_ascii_alphanumeric_or_backspace(self):
+        for key in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789':
+            with self.subTest(key=key):
+                self.assertEqual(owner.input_argv({'id': 1, 'action': 'key', 'key': key}), ['key', key])
+        self.assertEqual(owner.input_argv({'id': 2, 'action': 'key', 'key': 'BackSpace'}), ['key', 'BackSpace'])
+        for key in ('', 'ab', 'Ctrl+a', 'Control_L', 'Shift_L', 'F8', 'F12', 'Tab',
+                    'é', '١', '\x00', '\n', ';', '`', '/', '-', ' '):
+            with self.subTest(key=key), self.assertRaises(owner.Refusal):
+                owner.input_argv({'id': 3, 'action': 'key', 'key': key})
+        for extra in ({'repeat': 2}, {'then': 'Return'}, {'text': 'abc'}):
+            with self.assertRaises(owner.Refusal):
+                owner.input_argv({'id': 4, 'action': 'key', 'key': 'a', **extra})
+
     def test_file_proof_symlink_refused(self):
         with tempfile.TemporaryDirectory() as name:
             p = Path(name); (p/'file').write_bytes(b'owned'); (p/'link').symlink_to(p/'file')
