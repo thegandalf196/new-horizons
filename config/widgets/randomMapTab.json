@@ -19,13 +19,48 @@
 		},
 
 		{
-			"name": "labelHeadlineSmall",
+			"name": "labelTemplate",
 			"type": "label",
 			"font": "small",
 			"alignment": "center",
 			"color": "white",
-			"text": "core.genrltxt.739",
-			"position": {"x": 222, "y": 56}
+			"text": "vcmi.randomMapTab.widgets.templateLabel",
+			"maxWidth": 90,
+			"position": {"x": 104, "y": 56}
+		},
+
+		{
+			"name": "templateList",
+			"type": "comboBox",
+			"image": "lobby/dropdown",
+			"imageOrder": [0, 1, 0, 0],
+			"position": {"x": 158, "y": 47},
+			"help": "vcmi.lobby.templatesSelect",
+			"items":
+			[
+				{
+					"type": "label",
+					"font": "small",
+					"alignment": "center",
+					"color": "white",
+					"text": "vcmi.randomMapTab.widgets.randomTemplate",
+					"maxWidth": 168
+				}
+			],
+			// The existing callback replaces this dropdown with the searchable template dialog.
+			"dropDown":
+			{
+				"items":
+				[
+					{
+						"type": "label",
+						"font": "small",
+						"alignment": "center",
+						"color": "white",
+						"text": "vcmi.randomMapTab.widgets.randomTemplate"
+					}
+				]
+			}
 		},
 
 		{
@@ -506,5 +541,9 @@
 				}
 			]
 		}
-	]
+	],
+	"variables":
+	{
+		"randomTemplate": "vcmi.randomMapTab.widgets.randomTemplate"
+	}
 }

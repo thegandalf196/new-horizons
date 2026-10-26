@@ -24,7 +24,6 @@
 #include "../widgets/ComboBox.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/MiscWidgets.h"
-#include "../widgets/ObjectLists.h"
 #include "../widgets/Slider.h"
 #include "../widgets/TextControls.h"
 #include "../widgets/GraphicalPrimitiveCanvas.h"
@@ -39,7 +38,6 @@
 #include "../../lib/mapping/CMapHeader.h"
 #include "../../lib/mapping/MapFormat.h"
 #include "../../lib/rmg/CMapGenOptions.h"
-#include "../../lib/rmg/CRmgTemplateStorage.h"
 #include "../../lib/MapLayerHandler.h"
 #include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/RoadHandler.h"
@@ -148,71 +146,8 @@ RandomMapTab::RandomMapTab():
 		});
 	}
 
-	//set combo box callbacks
-	if(auto w = widget<ComboBox>("templateList"))
-	{
-		auto getTemplates = [](){
-			auto templates = LIBRARY->tplh->getTemplates();
-			std::ranges::sort(templates, [](const CRmgTemplate * a, const CRmgTemplate * b){
-				return a->getName() < b->getName();
-			});
-			return templates;
-		};
+	initializeTemplateSelector();
 
-		w->onConstructItems = [getTemplates](std::vector<const void *> & curItems){
-			curItems.push_back(nullptr); //default template
-			
-			for(auto & t : getTemplates())
-				curItems.push_back(t);
-		};
-		
-		w->onSetItem = [&](const void * item){
-			this->setTemplate(reinterpret_cast<const CRmgTemplate *>(item));
-		};
-		
-		w->getItemText = [this](int idx, const void * item){
-			if(item)
-				return reinterpret_cast<const CRmgTemplate *>(item)->getName();
-			if(idx == 0)
-				return readText(variables["randomTemplate"]);
-			return std::string("");
-		};
-
-		w->addCallback([this, getTemplates]() // no real dropdown... - instead open dialog
-		{
-			std::vector<std::string> texts;
-			std::vector<std::string> popupTexts;
-			texts.push_back(readText(variables["randomTemplate"]));
-			popupTexts.push_back("");
-
-			auto selectedTemplate = mapGenOptions->getMapTemplate();
-			const auto& templates = getTemplates();
-			for(int i = 0; i < templates.size(); i++)
-			{
-				if(selectedTemplate)
-				{
-					if(templates[i]->getId() == selectedTemplate->getId())
-						templateIndex = i + 1;
-				}
-				else
-					templateIndex = 0;
-
-				texts.push_back(templates[i]->getName());
-				popupTexts.push_back("{" + templates[i]->getName() + "}" + (templates[i]->getDescription().empty() ? "" : "\n\n") + templates[i]->getDescription());
-			}
-
-			ENGINE->windows().popWindows(1);
-			auto window = std::make_shared<CObjectListWindow>(texts, nullptr, LIBRARY->generaltexth->translate("vcmi.lobby.templatesSelect.hover"), LIBRARY->generaltexth->translate("vcmi.lobby.templatesSelect.help"), [this](int index){
-				widget<ComboBox>("templateList")->setItem(index);
-			}, templateIndex, std::vector<std::shared_ptr<IImage>>(), true, true);
-			window->onPopup = [popupTexts](int index){
-				if(!popupTexts[index].empty())
-					CRClickPopup::createAndPush(popupTexts[index]);
-			};
-			ENGINE->windows().pushWindow(window);
-		});
-	}
-	
 	loadOptions();
 }
 
@@ -498,13 +433,7 @@ void RandomMapTab::setMapGenOptions(std::shared_ptr<CMapGenOptions> opts)
 	}
 	if(auto w = widget<CToggleGroup>("groupMonsterStrength"))
 		w->setSelected(opts->getMonsterStrength());
-	if(auto w = widget<CButton>("templateButton"))
-	{
-		if(tmpl)
-			w->setTextOverlay(tmpl->getName(), EFonts::FONT_SMALL, Colors::WHITE);
-		else
-			w->setTextOverlay(readText(variables["randomTemplate"]), EFonts::FONT_SMALL, Colors::WHITE);
-	}
+	updateTemplateSelection();
 	for(const auto & r : LIBRARY->roadTypeHandler->objects)
 	{
 		// Workaround for vcmi-extras bug
@@ -516,30 +445,6 @@ void RandomMapTab::setMapGenOptions(std::shared_ptr<CMapGenOptions> opts)
 			w->setSelected(opts->isRoadEnabled(r->getId()));
 		}
 	}
-}
-
-void RandomMapTab::setTemplate(const CRmgTemplate * tmpl)
-{
-	mapGenOptions->setMapTemplate(tmpl);
-	customMapSizeMode = false;
-	setMapGenOptions(mapGenOptions);
-	if(auto w = widget<CButton>("templateButton"))
-	{
-		if(tmpl)
-			w->setTextOverlay(tmpl->getName(), EFonts::FONT_SMALL, Colors::WHITE);
-		else
-			w->setTextOverlay(readText(variables["randomTemplate"]), EFonts::FONT_SMALL, Colors::WHITE);
-	}
-
-	if(auto w = widget<ComboBox>("templateList"))
-	{
-		if(tmpl)
-			w->setTextOverlay(tmpl->getName(), EFonts::FONT_SMALL, Colors::WHITE);
-		else
-			w->setTextOverlay(readText(variables["randomTemplate"]), EFonts::FONT_SMALL, Colors::WHITE);
-	}
-
-	updateMapInfoByHost();
 }
 
 void RandomMapTab::deactivateButtonsFrom(CToggleGroup & group, const std::set<int> & allowed)

@@ -46,6 +46,8 @@ public:
 	CFunctionList<void(std::shared_ptr<CMapInfo>, std::shared_ptr<CMapGenOptions>)> mapInfoChanged;
 
 private:
+	void initializeTemplateSelector();
+	void updateTemplateSelection();
 	void deactivateButtonsFrom(CToggleGroup & group, const std::set<int> & allowed);
 	std::vector<int> getStandardMapSizes() const;
 	std::optional<int> getMapSizeForButtonId(int btnId) const;

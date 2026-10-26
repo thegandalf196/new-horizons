@@ -19352,14 +19352,14 @@
     },
     "client/CMakeLists.txt": {
       "kind": "exception",
-      "lines": 599,
-      "sha256": "f1d55734e906f3e62ca1dd2ee5b8eae33fddd9195a4f886295e3592616269b32",
+      "lines": 600,
+      "sha256": "f9e41d7dc8abf9ee5ac28a1284d5ae25d6afb53e0f107a1658a1d46658915b0f",
       "owner": "ui_developer",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
-      "review_scope": "exact-reviewed-replay-payload-provenance-and-focused-codec-planner-extraction",
-      "rationale": "Mechanical registration of two reviewed Necromancy summary presentation sources; no build flags or runtime behavior in this registry. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "deferral": "Exact declarative registry bound only. Keep behavior in focused compiled owners; future registry edits need renewed exact review and grant no executable growth allowance. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth.",
-      "review_status": "SOURCE_AND_METADATA_CLEAR"
+      "review": "rmg-template-selector-independent-source-review-20261025",
+      "review_scope": "bounded-rmg-template-selector-extraction-and-local-readback",
+      "rationale": "One mechanical source registration for extracted RandomMapTab template-selection presentation; no flags, linking behavior or unrelated registrations changed.",
+      "deferral": "Bounded one-line registration exception for extraction reducing RandomMapTab.cpp933 to838. Retain declarative source registry ownership; future additions require renewed exact review. No runtime behavior or open-ended file growth allowance.",
+      "review_status": "SOURCE_CLEAR_AFTER_DIRECT_GUI_CLASSES_INCLUDE_FIX"
     },
     "client/CPlayerInterface.cpp": {
       "kind": "legacy",
@@ -20095,21 +20095,23 @@
     },
     "client/lobby/RandomMapTab.cpp": {
       "kind": "legacy",
-      "lines": 933,
+      "lines": 838,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 933 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f620217e19386383eee63e36b670710b90b7fe5dacffb7ad7bbaddb47e238432"
+      "rationale": "Exact shrinking legacy debt ratchet after extracting template chooser and selection presentation into focused RandomMapTabTemplates.cpp (115 lines). Constructor167\u2192104, setMapGenOptions176\u2192170, file933\u2192838; existing options and unrelated methods preserved.",
+      "review": "rmg-template-selector-independent-source-review-20261025",
+      "review_scope": "bounded-rmg-template-selector-extraction-and-local-readback",
+      "sha256": "8b636048e08f8de26d0bbf1dd1af117e6a2bc73f3ffb6968149852b879d09522",
+      "review_status": "SOURCE_CLEAR_AFTER_DIRECT_GUI_CLASSES_INCLUDE_FIX"
     },
     "client/lobby/RandomMapTab.cpp::RandomMapTab::RandomMapTab(): InterfaceObjectConfigurable(), templateIndex(0)#1": {
       "kind": "legacy",
-      "lines": 167,
+      "lines": 104,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 167 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "29cb153c76d02e8dbbae0431660ebaf4c4d8a1fecfa847e1bf883609aae2b026"
+      "rationale": "Exact shrinking legacy debt ratchet after extracting template chooser and selection presentation into focused RandomMapTabTemplates.cpp (115 lines). Constructor167\u2192104, setMapGenOptions176\u2192170, file933\u2192838; existing options and unrelated methods preserved.",
+      "review": "rmg-template-selector-independent-source-review-20261025",
+      "review_scope": "bounded-rmg-template-selector-extraction-and-local-readback",
+      "sha256": "0942067dde7aa60445922e5036c45fb708d7d6af1d167693ed8a3357e45ddd65",
+      "review_status": "SOURCE_CLEAR_AFTER_DIRECT_GUI_CLASSES_INCLUDE_FIX"
     },
     "client/lobby/RandomMapTab.cpp::SetSizeWindow::SetSizeWindow(RandomMapTab & randomMapTab, int3 initSize, const CRmgTemplate * mapTemplate, std::function<void(int3)> cb) : CWindowObject(BORDERED)#1": {
       "kind": "legacy",
@@ -20131,12 +20133,13 @@
     },
     "client/lobby/RandomMapTab.cpp::void RandomMapTab::setMapGenOptions(std::shared_ptr<CMapGenOptions> opts)#1": {
       "kind": "legacy",
-      "lines": 176,
+      "lines": 170,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 176 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6e7f6ce0fa9ca28f124b29d58bff466a04f8b70555cbbe6f5e4732c1c6a8c3a0"
+      "rationale": "Exact shrinking legacy debt ratchet after extracting template chooser and selection presentation into focused RandomMapTabTemplates.cpp (115 lines). Constructor167\u2192104, setMapGenOptions176\u2192170, file933\u2192838; existing options and unrelated methods preserved.",
+      "review": "rmg-template-selector-independent-source-review-20261025",
+      "review_scope": "bounded-rmg-template-selector-extraction-and-local-readback",
+      "sha256": "da9390e7f06dc04c461ff132bfc0ce6a5cf274283cb1170ab774eddfefc6d6c1",
+      "review_status": "SOURCE_CLEAR_AFTER_DIRECT_GUI_CLASSES_INCLUDE_FIX"
     },
     "client/lobby/SelectionTab.cpp": {
       "kind": "legacy",

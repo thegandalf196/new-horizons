@@ -67,6 +67,7 @@ set(vcmiclientcommon_SRCS
 	lobby/OptionsTab.cpp
 	lobby/OptionsTabBase.cpp
 	lobby/RandomMapTab.cpp
+	lobby/RandomMapTabTemplates.cpp
 	lobby/SelectionTab.cpp
 
 	mainmenu/CCampaignScreen.cpp
