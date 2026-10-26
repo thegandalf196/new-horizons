@@ -85,6 +85,7 @@ void TinyMapGameTest::startWithMap(TinyH3M::TinyH3MBuilder builder, EMapDifficul
 	}
 
 	GameRandomizer randomizer(*currentGameState);
+	configureWorldInitialization(startInfo, randomizer);
 	Load::ProgressAccumulator progressTracker;
 	currentGameState->init(mapService.get(), &startInfo, randomizer, progressTracker, false);
 

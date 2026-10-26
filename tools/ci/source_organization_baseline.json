@@ -10630,36 +10630,36 @@
       "sha256": "f16b6dfd61b001dcf80880a9466faea4f575538b7d110d2ecc570e79bfab6a34"
     },
     "lib/battle/CUnitState.h": {
-      "sha256": "86fc1e21dd8baa9e56a8fa57d03735294c6a2a389068cb8911f5a87381b64f5a",
+      "sha256": "7b7cddfbaf41da04c53f78dde2d148c16fa6ecb744ea163cd1369bdcae8aa8e1",
       "functions": [
         {
           "symbol": "battle::CUnitState::int32_t getActivationMovementBonus() const#1",
-          "start": 245,
-          "end": 245
+          "start": 249,
+          "end": 249
         },
         {
           "symbol": "battle::CUnitState::int32_t getPersonalBloodrageIncrement() const override#1",
-          "start": 367,
-          "end": 367
+          "start": 371,
+          "end": 371
         },
         {
           "symbol": "battle::CUnitState::int32_t getPhantomRoundsRemaining() const#1",
-          "start": 376,
-          "end": 376
+          "start": 380,
+          "end": 380
         },
         {
           "symbol": "battle::CUnitState::int32_t getBattleFormRoundsRemaining() const#1",
-          "start": 389,
-          "end": 389
+          "start": 393,
+          "end": 393
         },
         {
           "symbol": "battle::CUnitState::bool isBattleFormRestorationPending() const#1",
-          "start": 390,
-          "end": 390
+          "start": 394,
+          "end": 394
         }
       ],
-      "review": "independent-native-corrections-composition-review-20261017",
-      "rationale": "Complete exact577-line/source86fc1e21 header manually reviewed. The same five one-line accessor bodies remain at245/367/376/389/390 with unchanged bytes; one getBonusBearer override declaration adds no body. Existing default-reference declaration parser recovery moves552to553 and remains explicitly covered. No omitted executable body, callable macro or pending-coverage waiver.",
+      "review": "detached-provider-dispatch-source-review-20261026",
+      "rationale": "Complete exact592-line header reviewed against the approved acquire-only dispatch change. Five unchanged one-line accessor bodies now at249/371/380/393/394; new private helpers are declarations with implementations in CUnitStateDetachedBonuses.cpp. Type include, forward declaration, friendship and raw pointer member defaults add no callable body. Existing default-reference declaration parser recovery is explicitly covered; no executable body or callable macro omitted.",
       "review_status": "independently-reviewed-source-scope"
     },
     "lib/battle/IBattleInfoCallback.h": {
@@ -22200,14 +22200,14 @@
     },
     "lib/battle/CUnitState.cpp": {
       "kind": "exception",
-      "lines": 2865,
-      "sha256": "aa41cd2040645ce3284ab1fc145ad329789a16624800c5be14a7193c4a27c9f9",
+      "lines": 2861,
+      "sha256": "3c4825bb0c831c323d813eb331faaa2503bd598b401233108f5cb5fdb373e299",
       "owner": "gameplay_engineer",
-      "review": "prepared-state-composition-independent-source-review-20261017",
-      "rationale": "Exact2865-to2865 signature-only noexcept annotations for CShots::setEnv289-292, CRetaliations::setEnv365-368 and CUnitState::bindStateEnvironment2333-2339. Removing those three tokens reconstructs every current byte. Existing4/4/7-line bodies only store borrowed environment pointers/call those same noexcept stores; no query, allocation or state field added. The prior eight-body lifecycle extraction and2865 ratchet remain preserved.",
-      "review_scope": "typed-packet-admission-and-prepared-state-commit",
+      "review": "detached-provider-dispatch-source-review-20261026",
+      "rationale": "Exact2865-to2861 ratchet: detached five-line constructor moves into its existing focused bonus owner; two one-line acquire/acquireState calls admit a provider dispatch snapshot before wrapper exposure. State transitions, bonus values and serialization stay with their existing owners. No unrelated body or lifecycle extraction is combined with this change.",
+      "review_scope": "exact-acquire-only-typed-provider-dispatch-and-constructor-extraction",
       "review_status": "independently-reviewed-source-scope",
-      "deferral": "Limited to exact2865-line/hash three-signature contract needed by post-CAS tail. Gameplay engineer owns remaining state/lifecycle debt (max169) under bounded future extraction. If environment wiring grows, review its cohesive owner (possibly existing CUnitStateLifecycle) before expanding; no gratuitous setter move, fake shrink, future growth or no-allocation runtime proof is authorized."
+      "deferral": "Existing gameplay engineer ownership of state/lifecycle debt remains. Further substantive expansion requires bounded cohesive extraction; this reduction is not permission to regrow the file. Preserve borrowed providers, type-transition fallback, state-only assignment and no serialized dispatch data; runtime equivalence and performance acceptance remain separate."
     },
     "lib/battle/CUnitState.cpp::battle::HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power, const bool trackCasualtyProvenance)#1": {
       "kind": "legacy",
@@ -22248,14 +22248,14 @@
     },
     "lib/battle/CUnitState.h": {
       "kind": "exception",
-      "lines": 577,
-      "sha256": "86fc1e21dd8baa9e56a8fa57d03735294c6a2a389068cb8911f5a87381b64f5a",
+      "lines": 592,
+      "sha256": "7b7cddfbaf41da04c53f78dde2d148c16fa6ecb744ea163cd1369bdcae8aa8e1",
       "owner": "gameplay_engineer",
-      "review": "independent-native-corrections-composition-review-20261017",
-      "rationale": "Exact576-to577 declaration-only provider correction independently reviewed against source86fc1e21. Adds only the existing virtual getBonusBearer override declaration; all five inline bodies/spans, fields, defaults, serialization and object state layout remain exact. Implementation remains the focused detached-bonus owner, returning only its exact evaluated-unit-bound projected view and preserving ordinary bearer identity and foreign-unit refusal. No blanket header growth or gameplay-rule waiver.",
-      "review_scope": "exact-projected-provider-declaration-only",
+      "review": "detached-provider-dispatch-source-review-20261026",
+      "rationale": "Exact577-to592 private detached-provider interface growth independently source reviewed: three non-owning dispatch fields, four private helper declarations, CUnitState friendship, type_info include and ProjectedBonusView forward declaration. No public method declaration or five existing inline bodies change. Query-time type guard and projected evaluated-unit checks preserve lifetime-stage fallback; no bonus values or evaluated-unit result are cached.",
+      "review_scope": "exact-acquire-only-private-provider-dispatch-interface",
       "review_status": "independently-reviewed-source-scope",
-      "deferral": "Engine engineer owns cohesive detached-state provider/binding interface extraction before substantive header expansion. Approval is only exact577-line/source86fc1e21 declaration growth with complete five-body manual continuity; preserve DLL linkage, save compatibility, ordinary/foreign provider guards, source-local provenance and filtering/form behavior. Require unchanged owned lifecycle/frame comparisons, corrupt Morale receipt rejection and initialization/form/suppression native coverage before functional acceptance; further growth needs renewed review."
+      "deferral": "Engine engineer owns cohesive detached provider/binding header extraction before further substantive header expansion. This exact592-line interface allowance retains DLL linkage, existing borrowed lifetime/assignment and save-format contracts. Added process-local pointers change native object layout: rebuild all consumers before any playable delivery; compilation/source review is not runtime or performance acceptance."
     },
     "lib/battle/HeroActionAllowanceState.h": {
       "kind": "legacy",

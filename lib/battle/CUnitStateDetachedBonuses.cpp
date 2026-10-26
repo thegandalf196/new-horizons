@@ -15,6 +15,38 @@
 
 namespace battle
 {
+CUnitStateDetached::CUnitStateDetached(const IUnitInfo * unit_, const IBonusBearer * bonus_):
+	unit(unit_),
+	bonus(bonus_)
+{
+}
+
+void CUnitStateDetached::captureBonusProviderDispatch()
+{
+	// Called by acquire/acquireState before the wrapper is exposed. No bonus
+	// values or evaluatedUnit binding are captured, and queries never mutate it.
+	bonusDispatchProjected = dynamic_cast<const ProjectedBonusView *>(bonus);
+	bonusDispatchUnit = bonusDispatchProjected ? nullptr : dynamic_cast<const Unit *>(bonus);
+	bonusDispatchType = bonus ? &typeid(*bonus) : nullptr;
+}
+
+bool CUnitStateDetached::hasCurrentBonusProviderDispatch() const
+{
+	return bonusDispatchType && *bonusDispatchType == typeid(*bonus);
+}
+
+const ProjectedBonusView * CUnitStateDetached::projectedBonusProvider() const
+{
+	return hasCurrentBonusProviderDispatch() ? bonusDispatchProjected
+		: dynamic_cast<const ProjectedBonusView *>(bonus);
+}
+
+const Unit * CUnitStateDetached::unitBonusProvider() const
+{
+	return hasCurrentBonusProviderDispatch() ? bonusDispatchUnit
+		: dynamic_cast<const Unit *>(bonus);
+}
+
 bool CUnitStateDetached::usesBonusProvider(const IBonusBearer & expected) const noexcept
 {
 	return bonus == &expected;
@@ -22,7 +54,7 @@ bool CUnitStateDetached::usesBonusProvider(const IBonusBearer & expected) const 
 
 const IBonusBearer * CUnitStateDetached::getBonusBearer() const
 {
-	if(const auto * projected = dynamic_cast<const ProjectedBonusView *>(bonus))
+	if(const auto * projected = projectedBonusProvider())
 	{
 		if(projected->evaluatedUnit() != this)
 			throw std::logic_error("Projected bonus view belongs to another detached unit");
@@ -34,7 +66,7 @@ const IBonusBearer * CUnitStateDetached::getBonusBearer() const
 void CUnitStateDetached::onBattleFormChanged()
 {
 	CUnitState::onBattleFormChanged();
-	if(const auto * projected = dynamic_cast<const ProjectedBonusView *>(bonus))
+	if(const auto * projected = projectedBonusProvider())
 		projected->onBattleFormChanged(*this);
 }
 
@@ -59,7 +91,7 @@ TConstBonusListPtr CUnitStateDetached::getUnstackedBonuses(const CSelector & sel
 TConstBonusListPtr CUnitStateDetached::getBonusesBeforeCreatureAbilitySuppression(const CSelector & selector,
 	const std::string & cachingStr, const bool unstacked) const
 {
-	if(const auto * projected = dynamic_cast<const ProjectedBonusView *>(bonus))
+	if(const auto * projected = projectedBonusProvider())
 	{
 		if(projected->evaluatedUnit() != this)
 			throw std::logic_error("Projected bonus view belongs to another detached unit");
@@ -68,7 +100,7 @@ TConstBonusListPtr CUnitStateDetached::getBonusesBeforeCreatureAbilitySuppressio
 	}
 	const auto sourceBonuses = [this, &selector, &cachingStr, unstacked]()
 	{
-		if(const auto * sourceUnit = dynamic_cast<const Unit *>(bonus))
+		if(const auto * sourceUnit = unitBonusProvider())
 			return newHorizonsDiscipline::veteranCohesionBonuses(
 				sourceUnit->getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, unstacked), selector, veteranCohesionEarned);
 

@@ -2147,6 +2147,7 @@ int CUnitState::getDefenseIgnoringDefensiveStance(bool ranged) const
 std::shared_ptr<Unit> CUnitState::acquire() const
 {
 	auto ret = std::make_shared<CUnitStateDetached>(this, this);
+	ret->captureBonusProviderDispatch();
 	ret->localInit(env);
 	*ret = *this;
 	return ret;
@@ -2155,6 +2156,7 @@ std::shared_ptr<Unit> CUnitState::acquire() const
 std::shared_ptr<CUnitState> CUnitState::acquireState() const
 {
 	auto ret = std::make_shared<CUnitStateDetached>(this, this);
+	ret->captureBonusProviderDispatch();
 	ret->localInit(env);
 	*ret = *this;
 	return ret;
@@ -2767,12 +2769,6 @@ HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
 	}
 
 	return {};
-}
-
-CUnitStateDetached::CUnitStateDetached(const IUnitInfo * unit_, const IBonusBearer * bonus_):
-	unit(unit_),
-	bonus(bonus_)
-{
 }
 
 CUnitStateDetached & CUnitStateDetached::operator=(const CUnitState & other)

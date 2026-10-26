@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include <typeinfo>
+
 #include "BattleUnitTurnReason.h"
 #include "CUnitAmmo.h"
 #include "NewHorizonsConfusionState.h"
@@ -26,6 +28,8 @@ namespace vstd
 {
 	class RNG;
 }
+
+class ProjectedBonusView;
 
 namespace battle
 {
@@ -538,6 +542,7 @@ DLL_LINKAGE bool hasHeroicSpiritState(const JsonNode & unitSnapshot);
 
 class DLL_LINKAGE CUnitStateDetached final : public CUnitState
 {
+	friend class CUnitState;
 public:
 	explicit CUnitStateDetached(const IUnitInfo * unit_, const IBonusBearer * bonus_);
 
@@ -570,8 +575,18 @@ public:
 	void spendMana(ServerCallback * server, const int spellCost) const override;
 
 private:
+	// Opt in only after the provider is available for ordinary queries. The
+	// dynamic-type guard keeps construction/destruction transitions on fallback.
+	void captureBonusProviderDispatch();
+	const ProjectedBonusView * projectedBonusProvider() const;
+	const Unit * unitBonusProvider() const;
+	bool hasCurrentBonusProviderDispatch() const;
+
 	const IUnitInfo * unit;
 	const IBonusBearer * bonus;
+	const std::type_info * bonusDispatchType = nullptr;
+	const ProjectedBonusView * bonusDispatchProjected = nullptr;
+	const Unit * bonusDispatchUnit = nullptr;
 };
 
 }

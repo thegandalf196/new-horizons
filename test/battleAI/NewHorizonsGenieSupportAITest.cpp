@@ -9,6 +9,7 @@
 #include "StdInc.h"
 
 #include "../server/battles/HeroCommandFixture.h"
+#include "HeroActionSelectionState.h"
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/CreatureSpellTiming.h"
@@ -34,6 +35,32 @@
 
 namespace
 {
+std::string genieWitnessHex(const std::vector<std::byte> & bytes)
+{
+	constexpr char digits[] = "0123456789abcdef";
+	std::string result;
+	result.reserve(bytes.size() * 2);
+	for(const auto byte : bytes)
+	{
+		const auto value = std::to_integer<unsigned int>(byte);
+		result.push_back(digits[value >> 4]);
+		result.push_back(digits[value & 15]);
+	}
+	return result;
+}
+
+std::string genieChoiceWitness(const std::optional<PossibleSpellcast> & choice)
+{
+	if(!choice)
+		return "none";
+	std::ostringstream out;
+	out << choice->spell->getId().getNum() << ':' << std::bit_cast<uint32_t>(choice->value);
+	for(const auto & destination : choice->dest)
+		out << ':' << (destination.unitValue ? int64_t(destination.unitValue->unitId()) : -1)
+			<< '@' << destination.hexValue.toInt();
+	return out.str();
+}
+
 class GenieEnvironment final : public Environment
 {
 	std::shared_ptr<CGameState> state;
@@ -64,6 +91,17 @@ protected:
 	CStack * enemy = nullptr;
 	std::shared_ptr<GenieEnvironment> environment;
 	std::shared_ptr<GenieCallback> callback;
+	bool fixedSyntheticWorldInitialization = false;
+
+	void configureWorldInitialization(StartInfo & info, GameRandomizer & randomizer) const override
+	{
+		if(!fixedSyntheticWorldInitialization)
+			return;
+		// Match full world inputs across fresh processes, before init consumes RNG
+		// or copies StartInfo. Consumer roster, horizon and battle seeds stay authored.
+		info.startTime = 1'700'000'000;
+		randomizer.setSeed(seed);
+	}
 
 	void prepare(bool upgraded = false, const char * enemyCreature = "core:boneDragon", int allyCount = 100)
 	{
@@ -136,7 +174,9 @@ protected:
 
 	void prepareSyntheticSevenVsThree()
 	{
+		fixedSyntheticWorldInitialization = true;
 		startGame();
+		fixedSyntheticWorldInitialization = false;
 		startBattle();
 		BattleUnitsChanged remove;
 		remove.battleID = BattleID(0);
@@ -196,6 +236,87 @@ protected:
 		const int horizon = gameState()->getStartInfo()->difficulty < 4 ? 2 : 10;
 		return BattleEvaluator(environment, callback, genie, PlayerColor(0), BattleID(0),
 			BattleSide::ATTACKER, ratio, horizon);
+	}
+
+	BattleEvaluator syntheticEvaluator(const std::shared_ptr<HypotheticBattle> & projected, DamageCache & cache)
+	{
+		// Match CBattleAI::makeEvaluator, including its difficulty-dependent horizon.
+		int our = 0;
+		int opposing = 0;
+		for(const auto * unit : battle()->battleGetAllStacks())
+		{
+			const auto * creature = unit->creatureId().toCreature();
+			if(!creature)
+				continue;
+			(unit->unitSide() == BattleSide::ATTACKER ? our : opposing)
+				+= unit->getCount() * creature->getAIValue();
+		}
+		const float ratio = opposing == 0 ? 1.0f : static_cast<float>(our) / opposing;
+		const int horizon = gameState()->getStartInfo()->difficulty < 4 ? 2 : 10;
+		return BattleEvaluator(environment, callback, projected, cache, genie, PlayerColor(0), BattleID(0),
+			BattleSide::ATTACKER, ratio, horizon);
+	}
+
+	auto nativeTraffic() const
+	{
+		return std::tuple(server.startedActions.size(), server.stackActivations.size(),
+			server.orderStateUpdates.size(), server.attacks.size(), server.injuries.size(), server.battleLogLines.size(),
+			server.casts.size(), server.battleAnimations.size(), server.unitAdditionRounds.size(), server.progressionPackets.size());
+	}
+
+	std::string projectedRootWitness(const CBattleInfoCallback & view)
+	{
+		std::ostringstream out;
+		out << genieWitnessHex(heroSelectionTest::snapshot(view, *gameHandler->randomizer,
+			CRandomGenerator::getDefault()));
+		for(const auto * unit : view.battleGetAllUnits(false))
+			out << ':' << unit->unitId() << ':' << view.battleGetOwner(unit).getNum() << ':'
+				<< genieWitnessHex(projectedHitTest::serialized(heroQueueTest::bonusSnapshots(
+					*unit->getUnstackedBonuses(Selector::all))));
+		return out.str();
+	}
+
+	std::pair<std::string, std::string> completeObserverFreeForecast(BattleEvaluator & forecast)
+	{
+		const auto ability = genie->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
+		if(!ability)
+			throw std::logic_error("Synthetic Genie fixture has no random-caster ability");
+		std::optional<PossibleSpellcast> oracle;
+		std::ostringstream outcomes;
+		size_t recipients = 0;
+		for(const auto * recipient : battle()->battleAliveUnits())
+		{
+			const auto pool = battle()->getAvailableRandomCreatureSpells(genie, recipient);
+			outcomes << recipient->unitId() << '[' << pool.size() << "]:";
+			double total = 0;
+			for(const auto spell : pool)
+			{
+				const auto value = forecast.beneficialCreatureSpellOutcomeValue(genie, recipient, spell.toSpell());
+				EXPECT_TRUE(std::isfinite(value));
+				total += value;
+				outcomes << spell.getNum() << '@'
+					<< BattleEvaluator::creatureAbilitySpellLevel(genie, spell.toSpell(), ability->val)
+					<< '=' << std::bit_cast<uint32_t>(value) << ',';
+			}
+			const float mean = pool.empty() ? 0.0f : static_cast<float>(total / pool.size());
+			EXPECT_EQ(std::bit_cast<uint32_t>(mean), std::bit_cast<uint32_t>(
+				forecast.expectedBeneficialCreatureSpellValue(genie, recipient)));
+			outcomes << "mean=" << std::bit_cast<uint32_t>(mean) << ';';
+			if(!pool.empty())
+				++recipients;
+			if(mean > 0 && (!oracle || mean > oracle->value))
+			{
+				PossibleSpellcast candidate;
+				candidate.spell = pool.front().toSpell();
+				candidate.dest = {spells::Destination(recipient)};
+				candidate.value = mean;
+				oracle = std::move(candidate);
+			}
+		}
+		EXPECT_EQ(recipients, 7u);
+		const auto selected = forecast.findBestCreatureSpell(genie);
+		EXPECT_EQ(genieChoiceWitness(selected), genieChoiceWitness(oracle));
+		return {outcomes.str(), genieChoiceWitness(selected)};
 	}
 
 	std::vector<std::byte> serverRandomizerBytes()
@@ -747,4 +868,81 @@ TEST_F(NewHorizonsGenieSupportAITest, UnavailableCasterLeavesItsDiagnosticSinkUn
 	EXPECT_EQ(timing.total.calls, 0u);
 	EXPECT_EQ(timing.outcomes, 0u);
 	EXPECT_FALSE(timing.selected);
+}
+
+// Exact existing synthetic roster, seed, saved rules, ratio and horizon. This
+// semantic witness has no timers or consumer observers; snapshots stay outside
+// consumer calls and are NOT evidence of factory traffic inside those calls.
+TEST_F(NewHorizonsGenieSupportAITest, SyntheticSevenVsThreeObserverFreeRootStateWitness)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSyntheticSevenVsThree());
+	const auto live = gameState()->saveToMemory();
+	const auto authorityRng = serverRandomizerBytes();
+	const auto aiRng = aiRandomBytes();
+	const auto traffic = nativeTraffic();
+	auto natural = syntheticEvaluator();
+	const auto ordinary = completeObserverFreeForecast(natural);
+	const auto action = syntheticEvaluator().selectStackAction(genie);
+	const auto root = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto sibling = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto rootBefore = projectedRootWitness(*root);
+	const auto siblingBefore = projectedRootWitness(*sibling);
+	DamageCache cache;
+	cache.buildDamageCache(root, BattleSide::ATTACKER);
+	auto retained = syntheticEvaluator(root, cache);
+	const auto projected = completeObserverFreeForecast(retained);
+	EXPECT_EQ(projected, ordinary);
+	EXPECT_EQ(syntheticEvaluator(root, cache).selectStackAction(genie), action);
+	EXPECT_EQ(projectedRootWitness(*root), rootBefore);
+	EXPECT_EQ(projectedRootWitness(*sibling), siblingBefore);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_EQ(serverRandomizerBytes(), authorityRng);
+	EXPECT_EQ(aiRandomBytes(), aiRng);
+	EXPECT_EQ(nativeTraffic(), traffic);
+	EXPECT_TRUE(callback->actions.empty());
+	RecordProperty("OutcomeBitsInPoolOrder", ordinary.first);
+	RecordProperty("SelectedChoice", ordinary.second);
+	RecordProperty("CompleteActionWire", genieWitnessHex(projectedHitTest::serialized(action)));
+	RecordProperty("LiveStateWire", genieWitnessHex(live));
+	RecordProperty("ProjectedRootWitness", rootBefore);
+	RecordProperty("ProjectedSiblingWitness", siblingBefore);
+	RecordProperty("AuthorityRngWire", genieWitnessHex(authorityRng));
+	RecordProperty("AiRngWire", genieWitnessHex(aiRng));
+}
+
+// Fresh process selector only. No optional diagnostic pointers, timing bindings,
+// observer, pool oracle or snapshots run inside either timed consumer lifetime.
+TEST_F(NewHorizonsGenieSupportAITest, DISABLED_SyntheticSevenVsThreeWholeConsumerWall)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSyntheticSevenVsThree());
+	const auto live = gameState()->saveToMemory();
+	const auto authorityRng = serverRandomizerBytes();
+	const auto aiRng = aiRandomBytes();
+	const auto traffic = nativeTraffic();
+	const auto forecastStarted = std::chrono::steady_clock::now();
+	const auto selected = [&]()
+	{
+		auto forecast = syntheticEvaluator();
+		return forecast.findBestCreatureSpell(genie);
+	}();
+	const auto forecastEnded = std::chrono::steady_clock::now();
+	const auto selectionStarted = std::chrono::steady_clock::now();
+	const auto action = [&]()
+	{
+		auto fresh = syntheticEvaluator();
+		return fresh.selectStackAction(genie);
+	}();
+	const auto selectionEnded = std::chrono::steady_clock::now();
+	ASSERT_TRUE(selected);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_EQ(serverRandomizerBytes(), authorityRng);
+	EXPECT_EQ(aiRandomBytes(), aiRng);
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_EQ(nativeTraffic(), traffic);
+	RecordProperty("WholeForecastNanoseconds", std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(
+		forecastEnded - forecastStarted).count()));
+	RecordProperty("WholeSelectionNanoseconds", std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(
+		selectionEnded - selectionStarted).count()));
+	RecordProperty("SelectedChoice", genieChoiceWitness(selected));
+	RecordProperty("CompleteActionWire", genieWitnessHex(projectedHitTest::serialized(action)));
 }

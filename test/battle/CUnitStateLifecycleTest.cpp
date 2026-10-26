@@ -13,10 +13,43 @@
 #include "../../lib/json/JsonNode.h"
 
 #include <array>
+#include <type_traits>
+#include <utility>
 
 namespace test
 {
 using namespace ::testing;
+
+// These assertions must be compiled on the unchanged implementation first.
+static_assert(!std::is_copy_constructible_v<battle::CUnitState>);
+static_assert(!std::is_move_constructible_v<battle::CUnitState>);
+static_assert(std::is_copy_assignable_v<battle::CUnitState>);
+static_assert(!std::is_move_assignable_v<battle::CUnitState>);
+static_assert(!std::is_copy_constructible_v<battle::CUnitStateDetached>);
+static_assert(!std::is_move_constructible_v<battle::CUnitStateDetached>);
+static_assert(std::is_copy_assignable_v<battle::CUnitStateDetached>);
+static_assert(std::is_move_assignable_v<battle::CUnitStateDetached>);
+
+namespace
+{
+class DelegationBearer final : public BonusBearerMock
+{
+public:
+	mutable std::string key;
+	mutable int stacked = 0, unstacked = 0;
+	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cacheKey = "") const override
+	{
+		key = cacheKey;
+		++stacked;
+		return BonusBearerMock::getAllBonuses(selector, cacheKey);
+	}
+	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override
+	{
+		++unstacked;
+		return BonusBearerMock::getUnstackedBonuses(selector);
+	}
+};
+}
 
 // Reuse the maintained UnitStateTest mocks and detached-unit initialization.
 class UnitLifecycleTest : public Test
@@ -246,5 +279,113 @@ TEST_F(UnitLifecycleTest, roundGhostsUnmarkedCloneButRetainsMarkedClone)
 	unit.afterNewRound();
 	EXPECT_FALSE(unit.ghostPending);
 	EXPECT_TRUE(unit.alive());
+}
+
+TEST_F(UnitLifecycleTest, genericProviderDelegatesKeyAndRawModeAndObservesLaterMembership)
+{
+	DelegationBearer provider;
+	battle::CUnitStateDetached view(&info, &provider);
+	EXPECT_EQ(provider.stacked, 0);
+	EXPECT_EQ(provider.unstacked, 0);
+	EXPECT_EQ(view.getBonusBearer(), &view);
+	const auto marker = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::LUCK, BonusSource::OTHER, 2, BonusSourceID());
+	provider.addNewBonus(marker);
+	const auto selector = Selector::type()(BonusType::LUCK);
+	const auto found = view.getBonusesBeforeCreatureAbilitySuppression(selector, "detached.characterization");
+	ASSERT_EQ(found->size(), 1u);
+	EXPECT_EQ(found->front(), marker);
+	EXPECT_EQ(provider.key, "detached.characterization");
+	EXPECT_EQ(provider.stacked, 1);
+	EXPECT_EQ(provider.unstacked, 0);
+	const auto raw = view.getBonusesBeforeCreatureAbilitySuppression(selector, "ignored.raw.key", true);
+	ASSERT_EQ(raw->size(), 1u);
+	EXPECT_EQ(raw->front(), marker);
+	EXPECT_EQ(provider.unstacked, 1);
+	provider.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::LUCK, BonusSource::OTHER, 3, BonusSourceID()));
+	EXPECT_EQ(view.valOfBonuses(BonusType::LUCK), 5);
+	EXPECT_EQ(view.getTreeVersion(), provider.getTreeVersion());
+}
+
+TEST_F(UnitLifecycleTest, bothAcquireEntrypointsRetainProviderChainsAndIndependentState)
+{
+	seed();
+	const auto before = unit.save();
+	const auto asUnit = unit.acquire();
+	const auto asState = unit.acquireState();
+	const auto nested = asState->acquireState();
+	for(auto * acquired : std::array<battle::CUnitState *, 3>{
+		dynamic_cast<battle::CUnitState *>(asUnit.get()), asState.get(), nested.get()})
+	{
+		ASSERT_NE(acquired, nullptr);
+		EXPECT_EQ(acquired->save(), before);
+		EXPECT_EQ(acquired->valOfBonuses(BonusType::LUCK), 0);
+	}
+	add(BonusType::LUCK, 4);
+	EXPECT_EQ(asUnit->valOfBonuses(BonusType::LUCK), 4);
+	EXPECT_EQ(asState->valOfBonuses(BonusType::LUCK), 4);
+	EXPECT_EQ(nested->valOfBonuses(BonusType::LUCK), 4);
+	asState->afterNewRound();
+	EXPECT_EQ(unit.save(), before);
+	EXPECT_EQ(nested->save(), before);
+}
+
+TEST_F(UnitLifecycleTest, sameTypeAssignmentRebindsProviderWhileBaseAssignmentKeepsIt)
+{
+	BonusBearerMock otherBonuses;
+	otherBonuses.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::LUCK, BonusSource::OTHER, 9, BonusSourceID()));
+	UnitInfoMock otherInfo;
+	EXPECT_CALL(otherInfo, unitBaseAmount()).WillRepeatedly(Return(3));
+	EXPECT_CALL(otherInfo, unitType()).WillRepeatedly(Return(CreatureID(0).toCreature()));
+	battle::CUnitStateDetached other(&otherInfo, &otherBonuses);
+	other.localInit(&environment);
+	other.defending = true;
+	const auto sourceBefore = other.save();
+	const auto acquired = unit.acquireState();
+	auto * destination = dynamic_cast<battle::CUnitStateDetached *>(acquired.get());
+	ASSERT_NE(destination, nullptr);
+	*destination = static_cast<const battle::CUnitState &>(other);
+	EXPECT_TRUE(destination->usesBonusProvider(unit));
+	EXPECT_TRUE(destination->usesUnitInfo(unit));
+	EXPECT_EQ(destination->valOfBonuses(BonusType::LUCK), 0);
+	*destination = other;
+	EXPECT_TRUE(destination->usesBonusProvider(otherBonuses));
+	EXPECT_TRUE(destination->usesUnitInfo(otherInfo));
+	EXPECT_EQ(destination->valOfBonuses(BonusType::LUCK), 9);
+	EXPECT_EQ(destination->save(), sourceBefore);
+	*destination = *destination;
+	EXPECT_EQ(destination->save(), sourceBefore);
+	// Rvalue assignment's availability and actual behavior are characterized together.
+	*destination = std::move(other);
+	EXPECT_TRUE(destination->usesBonusProvider(otherBonuses));
+	EXPECT_EQ(other.save(), sourceBefore);
+	const auto admitted = unit.acquireState();
+	*destination = dynamic_cast<const battle::CUnitStateDetached &>(*admitted);
+	EXPECT_TRUE(destination->usesBonusProvider(unit));
+	add(BonusType::LUCK, 5);
+	EXPECT_EQ(destination->valOfBonuses(BonusType::LUCK), 5);
+
+	// Distinct providers have the SAME dynamic type: a type mismatch cannot
+	// rescue a stale dispatch pointer when either assignment forgets to pair it.
+	const auto first = unit.acquireState();
+	const auto second = other.acquireState();
+	const auto originalFirst = unit.acquireState();
+	auto & a = dynamic_cast<battle::CUnitStateDetached &>(*first);
+	auto & b = dynamic_cast<battle::CUnitStateDetached &>(*second);
+	const auto & savedA = dynamic_cast<const battle::CUnitStateDetached &>(*originalFirst);
+	a = b;
+	EXPECT_TRUE(a.usesBonusProvider(other));
+	EXPECT_EQ(a.valOfBonuses(BonusType::LUCK), 9);
+	const auto aRaw = a.getBonusesBeforeCreatureAbilitySuppression(Selector::type()(BonusType::LUCK), {}, true);
+	ASSERT_EQ(aRaw->size(), 1u);
+	EXPECT_EQ(aRaw->front()->val, 9);
+	b = savedA;
+	EXPECT_TRUE(b.usesBonusProvider(unit));
+	EXPECT_EQ(b.valOfBonuses(BonusType::LUCK), 5);
+	const auto bRaw = b.getBonusesBeforeCreatureAbilitySuppression(Selector::type()(BonusType::LUCK), {}, true);
+	ASSERT_EQ(bRaw->size(), 1u);
+	EXPECT_EQ(bRaw->front()->val, 5);
 }
 }

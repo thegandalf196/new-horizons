@@ -102,6 +102,8 @@ protected:
 	virtual Services * gameServices() { return &services; }
 	/// Applied to every player of the scenario, for tests that need a specific starting setup.
 	virtual void configurePlayer(PlayerSettings & settings) const {}
+	/// Optional fixture-scoped setup before world randomization and option copies.
+	virtual void configureWorldInitialization(StartInfo & info, GameRandomizer & randomizer) const {}
 
 	const std::shared_ptr<CGameState> & gameState() const { return currentGameState; }
 	CMap * map() const { return loadedMap; }

@@ -358,4 +358,24 @@ TEST_F(ProjectedUnitInitializationTest, BoundProviderRoundTripsEarnedMoraleAndRe
 		EXPECT_STREQ(error.what(), "Morale activation provenance requires its earned receipt");
 	}
 }
+
+TEST_F(ProjectedUnitInitializationTest, DirectGenericViewObservesLateBindingAndRejectsWrongOwnerAndPoison)
+{
+	const auto & view = graph.view(first);
+	EXPECT_EQ(view.evaluatedUnit(), nullptr);
+	EXPECT_THROW(one.getBonusBearer(), std::logic_error);
+	EXPECT_THROW(one.getBonusesBeforeCreatureAbilitySuppression(Selector::all), std::logic_error);
+	ProjectedBonusRoster roster({&one}, ProjectedBonusRoster::Identity::OrderedOccurrences);
+	graph.bindOccurrence(first, one, roster);
+	EXPECT_EQ(one.getBonusBearer(), &view);
+	EXPECT_NO_THROW(one.getBonusesBeforeCreatureAbilitySuppression(Selector::all, "late.bound"));
+	battle::CUnitStateDetached wrong(&first, &view);
+	EXPECT_THROW(wrong.getBonusBearer(), std::logic_error);
+	EXPECT_THROW(wrong.getBonusesBeforeCreatureAbilitySuppression(Selector::all, {}, true), std::logic_error);
+	graph.abandonPreparation();
+	// Binding still exists; poison must remain observable through query delegation.
+	EXPECT_EQ(view.evaluatedUnit(), &one);
+	EXPECT_THROW(one.getBonusesBeforeCreatureAbilitySuppression(Selector::all), std::logic_error);
+	EXPECT_THROW(one.getBonusesBeforeCreatureAbilitySuppression(Selector::all, {}, true), std::logic_error);
+}
 }
