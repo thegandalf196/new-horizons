@@ -274,7 +274,7 @@ namespace nhart
 				ui8 extra;
 				check(file.read(&extra,1)==0,"NHART cache payload length mismatch: "+name);
 			}
-			for(const auto & entry:fs::directory_iterator(directory.path))
+			for(const auto & entry:boost::filesystem::directory_iterator(boost::filesystem::path(directory.path.native())))
 			check(expected.erase(entry.path().filename().string())==1,"Unexpected file or directory in NHART cache");
 			check(expected.empty(),"Missing NHART cache inventory file");
 		}
@@ -339,7 +339,7 @@ namespace nhart
 		try
 		{
 			const auto cache=root.path/identity;
-			if(fs::exists(fs::symlink_status(cache)))
+			if(boost::filesystem::exists(boost::filesystem::symlink_status(boost::filesystem::path(cache.native()))))
 			{
 				Directory existing(cache,false);
 				verifyFiles(existing,records);

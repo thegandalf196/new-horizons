@@ -385,6 +385,37 @@ TEST_F(CNhArtLoaderTest, PreparedBackingAndExplicitDirectBenchmarkHaveIdenticalB
 	EXPECT_EQ(readAll(*cached.load(ResourcePath("art.png"))),syntheticPng());
 }
 
+TEST_F(CNhArtLoaderTest, DeepCachePathPreparesReusesAndRejectsExtraOrCorruptPayloads)
+{
+	const auto archive=makeArchive({{"art.png",{1,2,3}}});
+	const auto path=write(archive.data);
+	auto deepRoot=cacheRoot();
+	while(deepRoot.native().size()<180)
+		deepRoot/="deep-cache-xxxxxxxxxxxxxxxx";
+	const auto version=deepRoot/"new-horizons-art"/"v1";
+	const auto preparedPath=version/nhart::hex(nhart::sha256(archive.data));
+	ASSERT_GT(preparedPath.native().size(),260u);
+	{
+		CNhArtLoader prepared("",path,deepRoot);
+		CNhArtLoader direct("",path,deepRoot,CNhArtLoader::Backing::DirectArchiveForTests);
+		EXPECT_EQ(readAll(*prepared.load(ResourcePath("art.png"))),readAll(*direct.load(ResourcePath("art.png"))));
+	}
+	{
+		CNhArtLoader reused("",path,deepRoot);
+		EXPECT_EQ(readAll(*reused.load(ResourcePath("art.png"))),(Bytes{1,2,3}));
+	}
+	const auto extra=preparedPath/"unexpected";
+	ASSERT_TRUE(boost::filesystem::create_directory(extra));
+	EXPECT_THROW(CNhArtLoader("",path,deepRoot),std::runtime_error);
+	ASSERT_TRUE(boost::filesystem::remove(extra));
+	const auto payload=preparedPath/nhart::cacheFileName(0);
+	boost::filesystem::resize_file(payload,1);
+	EXPECT_THROW(CNhArtLoader("",path,deepRoot),std::runtime_error);
+	EXPECT_TRUE(boost::filesystem::exists(payload));
+	for(const auto & entry:boost::filesystem::directory_iterator(version))
+		EXPECT_EQ(entry.path(),preparedPath); // No stale stage/lock or broad deletion after rejection.
+}
+
 TEST_F(CNhArtLoaderTest, BothMountScopesSharePreparedBackingWithoutCollapsingIdentities)
 {
 	const auto path=write(makeArchive({{"DATA/value.json",{1,2}}}).data);

@@ -22717,13 +22717,14 @@
       "sha256": "b523cea485234996224c35cf17e4b34305ae5ed0efd1ee876a53da216747c52a"
     },
     "lib/filesystem/NhArtCache.cpp::nhart::std::shared_ptr<const PreparedCache> prepareCache(const boost::filesystem::path & archive, const boost::filesystem::path & cacheRoot,const std::vector<Record> & records)#1": {
-      "kind": "legacy",
+      "deferral": "Before further substantive expansion, extract stage payload population into a cohesive helper while keeping locking, verification and atomic publication in prepareCache. Deferred only for this two-line Windows long-path correctness repair.",
+      "kind": "exception",
       "lines": 105,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 105 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f68068382246b304fbc4c85310d1831f6f0450a65c93f96993836cfc415e3314"
+      "rationale": "Windows long-path enumeration and no-follow metadata use the existing Boost filesystem backend. Exact 105-line no-growth correction preserves payload verification, locking and atomic publication. Extract stage payload population into a cohesive helper before further substantive expansion; retain locking and publication in this owner.",
+      "review": "nhart-cache-long-path-metadata-20261026",
+      "review_scope": "bounded-windows-long-path-correctness-deferral-only",
+      "sha256": "f39bf12e7e6b2cc8b3cad45fb2b7a5ab05203cc1d80aa659d068f32bcfaafe87"
     },
     "lib/gameState/CGameState.cpp": {
       "kind": "exception",

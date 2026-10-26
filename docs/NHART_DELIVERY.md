@@ -187,6 +187,13 @@ actionable startup error rather than unverified artwork. Other package versions
 and user saves are not removed. Keep the shipped NHART file: the cache is not a
 replacement distribution, and ordinary builds still use the committed package.
 
+Windows cache paths can exceed 260 characters. Keep cache enumeration and
+no-follow status checks on the project's Boost filesystem backend: the current
+MinGW runtime's CRT directory enumeration can fail on such paths even when file
+creation succeeds. `CNhArtLoaderTest.DeepCachePathPreparesReusesAndRejectsExtraOrCorruptPayloads`
+protects preparation, reuse and integrity rejection. Verify Windows startup with
+an equally deep cold cache; Linux regression results alone do not establish it.
+
 Storage preparation and rendering performance are separate concerns. In
 particular, replacing archive reads does not by itself fix SDL texture uploads
 or image decoding; improvements must be measured rather than assumed.
