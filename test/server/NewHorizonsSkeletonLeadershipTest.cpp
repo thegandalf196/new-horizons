@@ -173,4 +173,39 @@ TEST_P(NewHorizonsSkeletonLeadershipTest, SaveLoadRetainsCapturedPolicyAndEffect
 	}
 }
 
+TEST_P(NewHorizonsSkeletonLeadershipTest, GraveplateProtectsOnlySkeletonsUnderItsActiveCapturedPerk)
+{
+	ASSERT_NO_FATAL_FAILURE(startScenario());
+	rank(3);
+	select(newHorizonsNecromancy::DARK_CONVERSION_ID);
+	select(newHorizonsNecromancy::DEATH_LORD_ID);
+	select(newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
+	for(const auto creature : skeletons())
+		EXPECT_EQ(newHorizonsNecromancy::graveplatePhysicalReductionPercent(hero, creature), GetParam() ? 20 : 0);
+	EXPECT_EQ(newHorizonsNecromancy::graveplatePhysicalReductionPercent(hero,
+		CreatureID(CreatureID::decode("core:zombie"))), 0);
+	EXPECT_EQ(newHorizonsNecromancy::graveplatePhysicalReductionPercent(nullptr, skeletons().front()), 0);
+	EXPECT_EQ(newHorizonsNecromancy::graveKnowledgeRecoveryPercent(hero), 0);
+	rank(1);
+	for(const auto creature : skeletons())
+		EXPECT_EQ(newHorizonsNecromancy::graveplatePhysicalReductionPercent(hero, creature), 0);
+}
+
+TEST_P(NewHorizonsSkeletonLeadershipTest, GraveKnowledgeRecoveryUsesItsOwnCapturedPerkAndCurrentRank)
+{
+	ASSERT_NO_FATAL_FAILURE(startScenario());
+	rank(3);
+	select(newHorizonsNecromancy::DARK_CONVERSION_ID);
+	select(newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID);
+	select(newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
+	EXPECT_EQ(newHorizonsNecromancy::graveKnowledgeRecoveryPercent(hero), GetParam() ? 20 : 0);
+	EXPECT_EQ(newHorizonsNecromancy::graveKnowledgeRecoveryPercent(nullptr), 0);
+	for(const auto creature : skeletons())
+		EXPECT_EQ(newHorizonsNecromancy::graveplatePhysicalReductionPercent(hero, creature), 0);
+	rank(1);
+	EXPECT_EQ(newHorizonsNecromancy::graveKnowledgeRecoveryPercent(hero), 0);
+	rank(2);
+	EXPECT_EQ(newHorizonsNecromancy::graveKnowledgeRecoveryPercent(hero), GetParam() ? 20 : 0);
+}
+
 INSTANTIATE_TEST_SUITE_P(CapturedPolicies, NewHorizonsSkeletonLeadershipTest, ::testing::Bool());

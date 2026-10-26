@@ -13,12 +13,13 @@ struct DamageEstimation;
 
 namespace newHorizonsNecromancy
 {
-/// Captured per-controller inputs; recipient form and current allegiance remain query-time facts.
+/// Captured per-allegiance inputs; recipient form and current allegiance remain query-time facts.
 struct CombatPassives
 {
 	int movementSpeed = 0;
 	int magicalReductionPercent = 0;
 	int additionalRetaliations = 0;
+	int physicalReductionPercent = 0;
 };
 DLL_LINKAGE CombatPassives captureCombatPassives(const CGHeroInstance * hero);
 DLL_LINKAGE CombatPassives passivesForCreature(const CombatPassives & captured, CreatureID creature);

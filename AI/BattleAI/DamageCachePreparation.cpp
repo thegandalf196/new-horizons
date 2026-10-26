@@ -25,7 +25,7 @@ void DamageCache::buildCreaturePressureCache(std::shared_ptr<HypotheticBattle> h
 	const bool populated = !damageCache.empty() || !obstacleDamage.empty()
 		|| !rangedMarkTargets.empty() || !evasiveShroudTargets.empty()
 		|| !ambusherAttackers.empty() || !shadowAssaultTargetSides.empty()
-		|| !nightProwlerAttackers.empty() || !frozenTargets.empty() || !intrinsicMdrTargets.empty();
+		|| !nightProwlerAttackers.empty() || !frozenTargets.empty() || !intrinsicMdrTargets.empty() || !intrinsicPdrTargets.empty();
 	if(parent || populated
 		|| !heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE))
 	{

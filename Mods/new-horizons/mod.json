@@ -6343,7 +6343,9 @@
 					"lordOfTheDeadLeadershipReductionPercent": 90,
 					"deathMarchSpeed": 2,
 					"bonewardMagicalReductionPercent": 30,
-					"tombGuardAdditionalRetaliations": 1
+					"tombGuardAdditionalRetaliations": 1,
+					"graveplatePhysicalReductionPercent": 20,
+					"graveKnowledgeRecoveryPercent": 20
 				},
 				"perkOfferNormalization": {
 					"maximumPreferenceRatio": 2.0,
@@ -9983,10 +9985,10 @@
 								"id": "new-horizons:necromancy.blackHarvest",
 								"name": "Soul Harvester",
 								"requires": "basic",
-								"description": "After Necromancy raises at least 10 creatures, recover 1 Mana per 10 creatures raised, up to 10 Mana.",
+								"description": "After Necromancy raises at least 10 new creatures, recover 1 Mana per 10 newly raised creatures, up to 10 Mana. Grave Knowledge recovery does not count.",
 								"effect": {
 									"status": "active",
-									"description": "After Necromancy raises at least 10 creatures, recover 1 Mana per 10 creatures raised, up to 10 Mana."
+									"description": "After Necromancy raises at least 10 new creatures, recover 1 Mana per 10 newly raised creatures, up to 10 Mana. Grave Knowledge recovery does not count."
 								}
 							},
 							{
@@ -10001,22 +10003,22 @@
 							},
 							{
 								"id": "new-horizons:necromancy.deathLord",
-								"name": "Death Lord",
+								"name": "Graveplate",
 								"requires": "advanced",
-								"description": "Construct and Elemental casualties become eligible at 25% of the normal Necromancy conversion rate.",
+								"description": "Skeletons and Skeleton Warriors commanded by this hero take 20% less physical damage.",
 								"effect": {
 									"status": "active",
-									"description": "Construct and Elemental casualties become eligible at 25% of the normal Necromancy conversion rate."
+									"description": "Skeletons and Skeleton Warriors commanded by this hero take 20% less physical damage."
 								}
 							},
 							{
 								"id": "new-horizons:necromancy.graveKnowledge",
 								"name": "Grave Knowledge",
 								"requires": "advanced",
-								"description": "When defeating Undead enemies, 20% of their eligible casualties may be reclaimed as Skeletons even though they are not living.",
+								"description": "After victory, restore 20% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester.",
 								"effect": {
 									"status": "active",
-									"description": "When defeating Undead enemies, 20% of their eligible casualties may be reclaimed as Skeletons even though they are not living."
+									"description": "After victory, restore 20% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester."
 								}
 							},
 							{

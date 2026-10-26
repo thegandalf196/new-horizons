@@ -128,6 +128,63 @@ TEST_F(NewHorizonsReclaimerFixture, BothZombieSourcesHaveDistinctActualExplanati
 	EXPECT_NE(actual.find("Dark Reclaimer: 3"), std::string::npos);
 	EXPECT_EQ(actual.find("Converted: 7"), std::string::npos);
 }
+TEST_F(NewHorizonsReclaimerFixture, OwnRecoveryReadbackPreservesFormsAndExcludesFreshConversions)
+{
+	newHorizonsNecromancy::NecromancyResult result;
+	result.skeletonCreature = id("core:skeletonWarrior");
+	result.skeletonsRaised = 11;
+	result.zombiesRaised = 7;
+	result.reclaimerZombiesRaised = 7;
+	result.recoveredSkeletons = 3;
+	result.recoveredSkeletonWarriors = 2;
+	result.manaRecovered = 1;
+	const auto outputs = necromancyPresentation::recoveryOutputs(result);
+	ASSERT_EQ(outputs.size(), 2);
+	EXPECT_EQ(outputs[0].creature, id("core:skeleton"));
+	EXPECT_EQ(outputs[0].count, 3);
+	EXPECT_EQ(outputs[1].creature, id("core:skeletonWarrior"));
+	EXPECT_EQ(outputs[1].count, 2);
+	MetaString recovery;
+	necromancyPresentation::appendRecovery(recovery, result);
+	const auto restored = recovery.toString(LIBRARY->generaltexth.get());
+	EXPECT_NE(restored.find("Grave Knowledge restored to army: 3 "), std::string::npos);
+	EXPECT_NE(restored.find(" and 2 "), std::string::npos);
+	EXPECT_NE(restored.find("from your own fallen troops."), std::string::npos);
+	EXPECT_EQ(restored.find("11"), std::string::npos);
+	EXPECT_EQ(restored.find("Mana"), std::string::npos);
+	MetaString fresh;
+	necromancyPresentation::appendFreshDelivery(fresh, result, "");
+	const auto delivered = fresh.toString(LIBRARY->generaltexth.get());
+	EXPECT_NE(delivered.find("Delivered to army: 11 "), std::string::npos);
+	EXPECT_NE(delivered.find(" and 7 "), std::string::npos);
+	EXPECT_EQ(delivered.find("own fallen"), std::string::npos);
+	EXPECT_EQ(result.recoveredSkeletons, 3);
+	EXPECT_EQ(result.recoveredSkeletonWarriors, 2);
+	EXPECT_EQ(result.manaRecovered, 1);
+}
+TEST_F(NewHorizonsReclaimerFixture, RecoveryOnlyDoesNotInventFreshOssuaryOutput)
+{
+	newHorizonsNecromancy::NecromancyResult result;
+	result.recoveredSkeletonWarriors = 4;
+	MetaString fresh;
+	necromancyPresentation::appendFreshDelivery(fresh, result, "Example town");
+	EXPECT_TRUE(fresh.toString(LIBRARY->generaltexth.get()).empty());
+	const auto outputs = necromancyPresentation::recoveryOutputs(result);
+	ASSERT_EQ(outputs.size(), 1);
+	EXPECT_EQ(outputs[0].creature, id("core:skeletonWarrior"));
+	EXPECT_EQ(outputs[0].count, 4);
+}
+TEST_F(NewHorizonsReclaimerFixture, HistoricalZeroRecoveryAddsNoRowOrComponent)
+{
+	newHorizonsNecromancy::NecromancyResult result;
+	result.skeletonsRaised = 20;
+	result.graveKnowledgeCasualties = 100;
+	result.graveKnowledgeSkeletons = 20;
+	EXPECT_TRUE(necromancyPresentation::recoveryOutputs(result).empty());
+	MetaString recovery;
+	necromancyPresentation::appendRecovery(recovery, result);
+	EXPECT_TRUE(recovery.toString(LIBRARY->generaltexth.get()).empty());
+}
 class NewHorizonsReclaimerAbsentFixture : public NewHorizonsReclaimerFixture
 {
 public:

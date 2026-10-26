@@ -51,7 +51,8 @@ bool DamageCache::matchesSnapshot(const Snapshot & snapshot) const
 			|| layer->shadowAssaultTargetSides != saved.shadowAssaultTargetSides
 			|| layer->nightProwlerAttackers != saved.nightProwlerAttackers
 			|| layer->frozenTargets != saved.frozenTargets
-			|| layer->intrinsicMdrTargets != saved.intrinsicMdrTargets)
+			|| layer->intrinsicMdrTargets != saved.intrinsicMdrTargets
+			|| layer->intrinsicPdrTargets != saved.intrinsicPdrTargets)
 			return false;
 		layer = layer->parent;
 	}

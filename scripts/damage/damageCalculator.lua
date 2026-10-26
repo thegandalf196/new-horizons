@@ -187,6 +187,10 @@ local function getPhysicalDamageReductionFactor(info)
 	end
 
 	table.insert(reductions, { info.newHorizonsArmorerReductionPercent or 0, 100 })
+	local intrinsicReduction = info.intrinsicPhysicalDamageReductionPercent or 0
+	if intrinsicReduction > 0 then
+		table.insert(reductions, { intrinsicReduction, 100 })
+	end
 	table.insert(reductions, { info.formationFightingReductionPercent or 0, 100 })
 	table.insert(reductions, { info.paviseDamageReductionPercent or 0, 100 })
 	local defendReductionRemainingFraction = getDefendReductionRemainingFraction(info)
@@ -703,6 +707,14 @@ function Script:calculate(battle, info)
 		* counterBatteryMultiplier
 		* ((info.frozenShatterFinalDamageMultiplier or 100) / 100)
 		* finalLuckMultiplier
+	-- New unit passives also coexist with historical uncapped physical rules.
+	-- Keep their existing factors and floors; zero/absent adds no arithmetic.
+	local intrinsicReduction = info.intrinsicPhysicalDamageReductionPercent or 0
+	if info.physicalDamage and not usesPhysicalDamageReductionStage and intrinsicReduction > 0 then
+		local reduction = math.max(0, math.min(100, intrinsicReduction)) / 100
+		local ignored = math.max(0, math.min(100, info.physicalDamageReductionIgnorePercent or 0)) / 100
+		damageFactor = damageFactor * (1 - reduction * (1 - ignored))
+	end
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
 	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
 	local damageMax = apply(baseMax, damageFactor, stabilizePdrRounding)

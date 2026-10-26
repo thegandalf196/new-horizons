@@ -51,7 +51,7 @@ PreparedBattleNecromancy prepareBattleNecromancy(const BattleResult & result,
 		: CreatureID::NONE;
 	newHorizonsNecromancy::SpecialCasualtyCounts nonlivingCasualties;
 	newHorizonsNecromancy::SpecialCasualtyCounts undeadCasualties;
-	if(result.necromancySpecialEligibilityCaptured)
+	if(!capturedPolicy && result.necromancySpecialEligibilityCaptured)
 	{
 		if(deathLord)
 			nonlivingCasualties = newHorizonsNecromancy::countEligibleNonlivingCasualties(

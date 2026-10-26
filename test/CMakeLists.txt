@@ -118,6 +118,7 @@ set(test_SRCS
 		serializer/NewHorizonsSpecialtySerializationTest.cpp
 		serializer/NewHorizonsSwampSeerSerializationTest.cpp
 		serializer/NewHorizonsReclaimerSerializationTest.cpp
+		serializer/NewHorizonsSkeletonRecoverySerializationTest.cpp
 		serializer/RemainingSpecialtyLobbySerializationTest.cpp
 		serializer/ReplayPayloadVersionTest.cpp
 		serializer/ReplaySnapshotVersionTest.cpp
@@ -514,6 +515,7 @@ set(test_SRCS
 		server/battles/NewHorizonsBoneAndSteelTest.cpp
 		server/battles/NewHorizonsNecromancyHellfireTest.cpp
 		server/battles/NewHorizonsSkeletonNecromancyTest.cpp
+		server/battles/NewHorizonsGraveKnowledgeRecoveryTest.cpp
 		server/battles/NewHorizonsNecromancyCampaignCaptureTest.cpp
 		server/battles/NewHorizonsReclaimerTest.cpp
 		server/battles/NewHorizonsReclaimerFixture.h

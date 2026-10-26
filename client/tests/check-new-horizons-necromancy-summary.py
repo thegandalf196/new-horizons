@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 HELPER = (ROOT / "client/UIHelper.cpp").read_text(encoding="utf-8")
+CONVERSIONS = (ROOT / "client/NewHorizonsNecromancyText.cpp").read_text(encoding="utf-8")
 HEADER = (ROOT / "client/UIHelper.h").read_text(encoding="utf-8")
 VISITOR = (ROOT / "client/NetPacksClient.cpp").read_text(encoding="utf-8")
 
@@ -40,6 +41,9 @@ def function_body(source: str, signature: str) -> str:
 
 
 def main() -> None:
+    conversion_builder = function_body(CONVERSIONS, "void appendConversions(")
+    conversion_call = "necromancyPresentation::appendConversions(text, result);"
+    require(HELPER, conversion_call, "shared conversion text receives the packet result")
     for field in (
         "percentage",
         "eligibleCasualties",
@@ -58,10 +62,10 @@ def main() -> None:
         "blockedByArmyCapacity",
         "ossuaryTown",
     ):
-        require(HELPER, f"result.{field}", f"authoritative summary field {field}")
+        require(HELPER + conversion_builder, f"result.{field}", f"authoritative summary field {field}")
 
     require(HELPER, '"Generated: "', "generated count")
-    require(HELPER, '"Converted: "', "conversion count")
+    require(conversion_builder, '"Converted: "', "conversion count")
     if "#if defined(NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD)" in HELPER:
         raise AssertionError(
             "NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD is an enum, not a preprocessor symbol"
@@ -74,6 +78,43 @@ def main() -> None:
         HELPER,
         "UIHelper::getNewHorizonsNecromancyInfoWindowText(",
     )
+    require(summary_builder, conversion_call, "summary delegates its conversion text")
+    summary_builder = summary_builder.replace(conversion_call, conversion_builder, 1)
+    fresh_builder = function_body(CONVERSIONS, "void appendFreshDelivery(")
+    require(summary_builder, "necromancyPresentation::appendFreshDelivery(text, result,",
+            "fresh delivery delegates the authoritative packet")
+    require(summary_builder, "necromancyPresentation::appendRecovery(text, result);",
+            "own recovery is separate from fresh/Ossuary output")
+    require(component_builder, "necromancyPresentation::recoveryOutputs(result)",
+            "recovered components use the same original-form readback")
+    require(component_builder, "ComponentType::CREATURE, recovered.creature, recovered.count",
+            "recovery components use actual restored counts")
+    recovery_builder = function_body(CONVERSIONS, "std::vector<RecoveryOutput> recoveryOutputs(")
+    for field, creature in (("recoveredSkeletons", "core:skeleton"),
+                            ("recoveredSkeletonWarriors", "core:skeletonWarrior")):
+        require(recovery_builder, f"if(result.{field} > 0)", "positive actual recovery count")
+        require(recovery_builder, f'CreatureID::decode("{creature}")', "original recovered form")
+        require(recovery_builder, f", result.{field}}}", "no fresh-output count substitution")
+    if any(field in fresh_builder for field in ("recoveredSkeletons", "recoveredSkeletonWarriors")):
+        raise AssertionError("fresh delivery/Ossuary counts must not include own recovery")
+    require(CONVERSIONS, '"Grave Knowledge restored to army: "', "separate own recovery row")
+    # Recovery is independent of eligible enemy casualties and fresh delivery.
+    # In particular, a capacity-blocked fresh batch must not hide restored own troops.
+    recovery_call = "necromancyPresentation::appendRecovery(text, result);"
+    prefix = summary_builder.split(recovery_call, 1)[0]
+    if prefix.count("{") != prefix.count("}"):
+        raise AssertionError("own recovery must not be nested under a fresh-output gate")
+    if summary_builder.index(recovery_call) > summary_builder.index("if(result.blockedByArmyCapacity)"):
+        raise AssertionError("own recovery must remain visible before fresh-capacity failure text")
+    recovery_text = function_body(CONVERSIONS, "void appendRecovery(")
+    require(recovery_text, "const auto outputs = recoveryOutputs(result);", "shared original-form recovery text")
+    require(recovery_text, "if(outputs.empty())", "historical zero recovery remains silent")
+    if any(field in recovery_text + recovery_builder for field in (
+            "eligibleCasualties", "blockedByArmyCapacity", "ossuaryTown", "manaRecovered")):
+        raise AssertionError("own recovery readback must not depend on fresh-output or Mana fields")
+    if "Black Harvest recovered" in HELPER + CONVERSIONS:
+        raise AssertionError("generic Mana result must not advertise the retired Black Harvest name")
+    summary_builder += fresh_builder
     selected_skeleton = (
         "result.skeletonCreature.hasValue()\n"
         "\t\t? result.skeletonCreature\n"
@@ -83,7 +124,7 @@ def main() -> None:
             "authoritative Skeleton creature with legacy fallback for result components")
     require(summary_builder, selected_skeleton,
             "authoritative Skeleton creature with legacy fallback for result text")
-    if HELPER.count('CreatureID::decode("core:skeleton")') != 3:
+    if HELPER.count('CreatureID::decode("core:skeleton")') != 2:
         raise AssertionError(
             "core:skeleton may appear only as the missing-field fallback "
             "and base Skeleton-equivalent binding"
@@ -208,9 +249,9 @@ def main() -> None:
             "Necromancy result text must name the selected Skeleton creature, "
             f"not hardcode a base-only label: {hardcoded_skeleton_labels}"
         )
-    require(HELPER, '"Delivered to army: "', "delivered count")
-    require(HELPER, '"Black Harvest recovered +"', "mana recovery")
-    require(HELPER, '"No creatures were delivered: no legal army capacity or Necropolis destination was available',
+    require(CONVERSIONS, '"Delivered to army: "', "delivered count")
+    require(HELPER, '"Necromancy recovered +"', "mana recovery")
+    require(HELPER, '"No newly raised creatures were delivered: no legal army capacity or Necropolis destination was available',
             "blocked capacity reason")
     require(HELPER, '"The eligible casualty count was below the current Necromancy raising threshold.',
             "rounded-zero threshold reason")

@@ -25,7 +25,7 @@ bool resolveReclaimerPresentation(const CHero & hero, const JsonNode & developme
 		+ "%, may become Zombies: three equivalents per Zombie. Fractions remain Skeletons. "
 		"Requires an owned Necropolis with a built Walking Dead or Zombie dwelling; stock is not spent. "
 		"It grants no perk or extra eligible corpses. A complete ordinary raise is retained if the enhanced batch cannot fit. "
-		"Black Harvest counts the final creatures delivered.";
+		"Mana recovery counts the final creatures delivered.";
 	if(capturedHero)
 		result.description += " Current conversion share before the owned-dwelling requirement: "
 			+ std::to_string(cappedSpecialtyContribution(capturedHero->level, rule->conversionPercentPerLevel,

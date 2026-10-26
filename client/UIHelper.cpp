@@ -87,18 +87,14 @@ std::vector<Component> UIHelper::getNewHorizonsNecromancyComponents(const newHor
 		components.emplace_back(ComponentType::CREATURE, wight, result.wightsRaised);
 	if(result.boneDragonsRaised > 0)
 		components.emplace_back(ComponentType::CREATURE, boneDragon, result.boneDragonsRaised);
+	for(const auto & recovered : necromancyPresentation::recoveryOutputs(result))
+		components.emplace_back(ComponentType::CREATURE, recovered.creature, recovered.count);
 	return components;
 }
 
 std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNecromancy::NecromancyResult & result)
 {
-	const auto skeleton = result.skeletonCreature.hasValue()
-		? result.skeletonCreature
-		: CreatureID(CreatureID::decode("core:skeleton"));
 	const auto baseSkeleton = CreatureID(CreatureID::decode("core:skeleton"));
-	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
-	const auto wight = CreatureID(CreatureID::decode("core:wight"));
-	const auto boneDragon = CreatureID(CreatureID::decode("core:boneDragon"));
 	const CGTownInstance * ossuaryTown = nullptr;
 	if(result.ossuaryTown != ObjectInstanceID::NONE && GAME->interface() && GAME->interface()->cb)
 		ossuaryTown = GAME->interface()->cb->getTown(result.ossuaryTown);
@@ -152,70 +148,20 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 
 	necromancyPresentation::appendConversions(text, result);
 
-	const bool hasNecromancyOutput = result.skeletonsRaised > 0
-		|| result.zombiesRaised > 0
-		|| result.wightsRaised > 0
-		|| result.boneDragonsRaised > 0;
-	if(hasNecromancyOutput)
-	{
-		if(result.ossuaryTown != ObjectInstanceID::NONE)
-		{
-			text.appendRawString("Delivered to Ossuary: ");
-			if(ossuaryTown)
-				text.appendRawString(ossuaryTown->getObjectName().toString(&GAME->translator()));
-			else
-				text.appendRawString("a Necropolis town");
-			text.appendRawString(" instead of the hero: ");
-		}
-		else
-			text.appendRawString("Delivered to army: ");
-		bool hasOutput = false;
-		if(result.skeletonsRaised > 0)
-		{
-			text.appendNumber(result.skeletonsRaised);
-			text.appendRawString(" ");
-			text.appendName(skeleton, result.skeletonsRaised);
-			hasOutput = true;
-		}
-		if(result.zombiesRaised > 0)
-		{
-			if(hasOutput)
-				text.appendRawString(" and ");
-			text.appendNumber(result.zombiesRaised);
-			text.appendRawString(" ");
-			text.appendName(zombie, result.zombiesRaised);
-			hasOutput = true;
-		}
-		if(result.wightsRaised > 0)
-		{
-			if(hasOutput)
-				text.appendRawString(" and ");
-			text.appendNumber(result.wightsRaised);
-			text.appendRawString(" ");
-			text.appendName(wight, result.wightsRaised);
-			hasOutput = true;
-		}
-		if(result.boneDragonsRaised > 0)
-		{
-			if(hasOutput)
-				text.appendRawString(" and ");
-			text.appendNumber(result.boneDragonsRaised);
-			text.appendRawString(" ");
-			text.appendName(boneDragon, result.boneDragonsRaised);
-		}
-		text.appendRawString("\n");
-	}
+	necromancyPresentation::appendFreshDelivery(text, result,
+		ossuaryTown ? ossuaryTown->getObjectName().toString(&GAME->translator()) : std::string());
+	necromancyPresentation::appendRecovery(text, result);
 
 	if(result.manaRecovered > 0)
 	{
-		text.appendRawString("Black Harvest recovered +");
+		text.appendRawString("Necromancy recovered +");
 		text.appendNumber(result.manaRecovered);
 		text.appendRawString(" Mana.\n");
 	}
 
 	if(result.blockedByArmyCapacity)
 	{
-		text.appendRawString("No creatures were delivered: no legal army capacity or Necropolis destination was available for the Necromancy result.");
+		text.appendRawString("No newly raised creatures were delivered: no legal army capacity or Necropolis destination was available for the Necromancy result.");
 	}
 	else if(result.eligibleCasualties == 0)
 	{

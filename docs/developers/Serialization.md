@@ -49,12 +49,24 @@ Direct perk-state and hero writers, authored map overrides, pooled/map heroes an
 enclosing world writers reject unsupported captures before writing their prefixes.
 Campaign scenario/global crossover JSON pools and their StartInfo, lobby and world
 envelopes apply the same guard, including heroes reserved outside the current map.
-Readers reject an unsupported policy rather than silently discarding it. The
-feature appends no battle-result fields: old Zombie, Wight, Bone Dragon and corpse
-provenance fields remain readable for historical captures and specialty results.
+Readers reject an unsupported policy rather than silently discarding it. The old
+Zombie, Wight, Bone Dragon and corpse provenance fields remain readable for
+historical captures and specialty results.
 The new policy includes ordinary magical casualties, still excludes destroyed
-remains, and produces Skeletons from perks; Vidomina's independent specialty keeps
-its existing conversion behavior.
+remains, and produces Skeletons from enemy living casualties. Graveplate no longer
+raises Constructs/Elementals. Grave Knowledge instead restores the winner's
+eligible original Skeleton/Skeleton Warrior losses in their original forms before
+fresh raising consumes capacity. The existing winner-side Undead eligibility map
+carries that filtered input; historical captures retain enemy Undead/Construct
+raising. Temporary surplus, summons, clones and destroyed remains are excluded.
+
+The same capability appends actual `recoveredSkeletons` and
+`recoveredSkeletonWarriors` counts to the Necromancy result. Direct and enclosing
+result writers reject unsupported nonzero receipts before their prefixes; older
+readers reset them to zero. Recovery remains separate from fresh output, Mana,
+Ossuary delivery and Vidomina's independent conversion. `applied` and
+`blockedByArmyCapacity` describe fresh delivery; actual recovery counts remain
+visible even when fresh raising is empty or blocked.
 
 ## Captured individual specialty riders
 

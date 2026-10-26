@@ -48,7 +48,7 @@ constexpr std::array<ReviewedLayer, 3> TIMED_LAYERS = {{
 }};
 
 constexpr std::array<ReviewedLayer, 9> CALCULATOR_LAYERS = {{
-	{"damage/damageCalculator", "817acc55e9661d15c9d85d8fb2a771f3897ee3f867ef89ac8c374c33b4ca1970"},
+	{"damage/damageCalculator", "2766d212452b043f9356ed478177ce6b1020e50d954ff98641f66fc826caa01e"},
 	{"damage/siegeWeapon", "e81a2555552e38c46826532e126bc8d17e205c2ee0147afcf52b10e6770b6240"},
 	{"damage/magicElemental", "887c15857c72dc2c4c5d3b5d6ce4589257e97aadd714f64c290ca1672a74bda5"},
 	{"damage/psychicElemental", "1535506d256fbe06f68e14388688eaf452717712e88d0017ab2b1fe16fad7884"},

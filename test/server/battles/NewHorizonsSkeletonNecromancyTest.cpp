@@ -27,15 +27,15 @@ newHorizonsNecromancy::NecromancyResult output(bool current, bool room = true,
 }
 }
 
-TEST(NewHorizonsSkeletonNecromancy, NewPerksKeepRaisingPoolsAndManaWithoutAlternateConversions)
+TEST(NewHorizonsSkeletonNecromancy, NewPerksKeepLivingRaisingAndManaWithoutEnemySpecialPoolsOrConversions)
 {
 	const auto value = output(true);
 	EXPECT_EQ(value.percentage, 35);
 	EXPECT_EQ(value.eligibleCasualties, 200);
-	EXPECT_EQ(value.deathLordSkeletons, 7);
-	EXPECT_EQ(value.graveKnowledgeSkeletons, 10);
-	EXPECT_EQ(value.skeletonsOffered, 87);
-	EXPECT_EQ(value.skeletonsRaised, 87);
+	EXPECT_EQ(value.deathLordSkeletons, 0);
+	EXPECT_EQ(value.graveKnowledgeSkeletons, 0);
+	EXPECT_EQ(value.skeletonsOffered, 70);
+	EXPECT_EQ(value.skeletonsRaised, 70);
 	EXPECT_EQ(value.zombiesRaised, 0);
 	EXPECT_EQ(value.wightsRaised, 0);
 	EXPECT_EQ(value.boneDragonsRaised, 0);
@@ -48,7 +48,7 @@ TEST(NewHorizonsSkeletonNecromancy, NewPerksKeepRaisingPoolsAndManaWithoutAltern
 	const auto legacy = output(false);
 	EXPECT_TRUE(legacy.blockedByArmyCapacity)
 		<< "Historical multi-output perks still require their Zombie/Wight/Dragon slots";
-	EXPECT_EQ(legacy.skeletonsOffered, value.skeletonsOffered);
+	EXPECT_EQ(legacy.skeletonsOffered, 87);
 }
 
 TEST(NewHorizonsSkeletonNecromancy, RankRatesAndHistoricalConversionsKeepTheirSeparatePolicies)
@@ -72,23 +72,23 @@ TEST(NewHorizonsSkeletonNecromancy, SkeletonCapacityRemainsAtomicAndBoneSteelKee
 {
 	const auto blocked = output(true, false);
 	EXPECT_TRUE(blocked.blockedByArmyCapacity);
-	EXPECT_EQ(blocked.skeletonsOffered, 87);
+	EXPECT_EQ(blocked.skeletonsOffered, 70);
 	EXPECT_EQ(blocked.skeletonsRaised, 0);
 	EXPECT_EQ(blocked.manaRecovered, 0);
 	const CreatureID upgraded(CreatureID::decode("core:skeletonWarrior"));
 	const auto raised = output(true, true, upgraded);
 	EXPECT_EQ(raised.skeletonCreature, upgraded);
 	EXPECT_EQ(raised.raisedCreature, upgraded);
-	EXPECT_EQ(raised.skeletonsRaised, 87);
+	EXPECT_EQ(raised.skeletonsRaised, 70);
 }
 
 TEST(NewHorizonsSkeletonNecromancy, VidominaStillReclaimsResidualSkeletonsIndependentlyOfPerks)
 {
 	const auto ordinary = output(true);
 	const auto specialty = newHorizonsNecromancy::reclaimResidualSkeletons(ordinary, 100, 95, 100);
-	EXPECT_EQ(specialty.reclaimerZombiesRaised, 29);
-	EXPECT_EQ(specialty.zombiesRaised, 29);
-	EXPECT_EQ(specialty.skeletonsRaised, 0);
+	EXPECT_EQ(specialty.reclaimerZombiesRaised, 23);
+	EXPECT_EQ(specialty.zombiesRaised, 23);
+	EXPECT_EQ(specialty.skeletonsRaised, 1);
 	EXPECT_EQ(specialty.skeletonsOffered, ordinary.skeletonsOffered);
 }
 

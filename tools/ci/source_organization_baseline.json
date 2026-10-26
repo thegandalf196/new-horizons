@@ -6636,9 +6636,9 @@
       "sha256": "4e16898f372a3f2cc153db43b5326a4327a9156ee29722a3d3ce0e31b1b2dd09"
     },
     "AI/BattleAI/AttackPossibility.h": {
-      "sha256": "bb4ff5ba483f2383f2196c1704c328e97e5c157b5c72976457fd536696af19f6",
-      "review": "IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026",
-      "rationale": "Complete exact callable inventory independently checked: 179 bodies across eight headers, including 175 unchanged retained bodies, two serializers with captured-policy guards, and two new neutral Unit defaults. Declaration-only additions do not add callable bodies. Exact-source coverage only; no runtime certification.",
+      "sha256": "94476f8e65d50e81b4f3e34bfb77f00ba78e2351612804ade9e6ec64b49c425f",
+      "review": "IR-NECROMANCY-ADVANCED-MANUAL-SOURCE-20261026",
+      "rationale": "Complete independently checked exact four-header inventory: 43 callable bodies, comprising 39 unchanged retained bodies, three modified NecromancyResult validation/codec/empty bodies and one neutral Unit physical-reduction default. Declaration-only additions introduce no other bodies. Source-only coverage, not runtime certification.",
       "functions": [
         {
           "symbol": "inline battle::DamageProvenance battleAIDamageProvenance(const battle::Unit * attacker, bool physicalDamage)#1",
@@ -6657,13 +6657,13 @@
         },
         {
           "symbol": "DamageCache::DamageCache() : parent(nullptr)#1",
-          "start": 202,
-          "end": 202
+          "start": 203,
+          "end": 203
         },
         {
           "symbol": "DamageCache::DamageCache(DamageCache * parent) : parent(parent)#1",
-          "start": 203,
-          "end": 203
+          "start": 204,
+          "end": 204
         }
       ],
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
@@ -10631,7 +10631,7 @@
       "sha256": "f16b6dfd61b001dcf80880a9466faea4f575538b7d110d2ecc570e79bfab6a34"
     },
     "lib/battle/CUnitState.h": {
-      "sha256": "c105f9c00f6375d45d99c1b7e0a1b8494dc26483fbfdcc1dd12196db2ea3a99c",
+      "sha256": "9d696d84ee5ec00b14200e81274df11fd1da02a552b310efc2d1ff981c63363c",
       "functions": [
         {
           "symbol": "battle::CUnitState::int32_t getActivationMovementBonus() const#1",
@@ -10650,17 +10650,17 @@
         },
         {
           "symbol": "battle::CUnitState::int32_t getBattleFormRoundsRemaining() const#1",
-          "start": 395,
-          "end": 395
+          "start": 396,
+          "end": 396
         },
         {
           "symbol": "battle::CUnitState::bool isBattleFormRestorationPending() const#1",
-          "start": 396,
-          "end": 396
+          "start": 397,
+          "end": 397
         }
       ],
-      "review": "IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026",
-      "rationale": "Complete exact callable inventory independently checked: 179 bodies across eight headers, including 175 unchanged retained bodies, two serializers with captured-policy guards, and two new neutral Unit defaults. Declaration-only additions do not add callable bodies. Exact-source coverage only; no runtime certification.",
+      "review": "IR-NECROMANCY-ADVANCED-MANUAL-SOURCE-20261026",
+      "rationale": "Complete independently checked exact four-header inventory: 43 callable bodies, comprising 39 unchanged retained bodies, three modified NecromancyResult validation/codec/empty bodies and one neutral Unit physical-reduction default. Declaration-only additions introduce no other bodies. Source-only coverage, not runtime certification.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/IBattleInfoCallback.h": {
@@ -10688,9 +10688,9 @@
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/Unit.h": {
-      "sha256": "1bbbb82fb3267dbf1503a9499e37061dff78e1c3d9458912724c85da7a13ee95",
-      "review": "IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026",
-      "rationale": "Complete exact callable inventory independently checked: 179 bodies across eight headers, including 175 unchanged retained bodies, two serializers with captured-policy guards, and two new neutral Unit defaults. Declaration-only additions do not add callable bodies. Exact-source coverage only; no runtime certification.",
+      "sha256": "c2addeb2845b637d4f9971ec6005c91e892bacf635408f4680cb0e18105645d8",
+      "review": "IR-NECROMANCY-ADVANCED-MANUAL-SOURCE-20261026",
+      "rationale": "Complete independently checked exact four-header inventory: 43 callable bodies, comprising 39 unchanged retained bodies, three modified NecromancyResult validation/codec/empty bodies and one neutral Unit physical-reduction default. Declaration-only additions introduce no other bodies. Source-only coverage, not runtime certification.",
       "functions": [
         {
           "symbol": "battle::HealInfo::HealInfo(int64_t healedHP, int32_t resurrected) : healedHealthPoints(healedHP), resurrectedCount(resurrected)#1",
@@ -10723,89 +10723,94 @@
           "end": 149
         },
         {
-          "symbol": "battle::Unit::virtual newHorizonsNecromancy::CombatPassives necromancyCombatPassives() const#1",
+          "symbol": "battle::Unit::virtual int32_t intrinsicPhysicalDamageReductionPercent() const#1",
           "start": 150,
           "end": 150
         },
         {
+          "symbol": "battle::Unit::virtual newHorizonsNecromancy::CombatPassives necromancyCombatPassives() const#1",
+          "start": 151,
+          "end": 151
+        },
+        {
           "symbol": "battle::Unit::virtual int64_t getSurvivingMissingHealth() const#1",
-          "start": 155,
-          "end": 158
+          "start": 156,
+          "end": 159
         },
         {
           "symbol": "battle::Unit::virtual int64_t getShadowGiftCurrentHealth() const#1",
-          "start": 164,
-          "end": 164
+          "start": 165,
+          "end": 165
         },
         {
           "symbol": "battle::Unit::virtual int64_t getShadowGiftMaximumHealth() const#1",
-          "start": 167,
-          "end": 167
+          "start": 168,
+          "end": 168
         },
         {
           "symbol": "battle::Unit::virtual int64_t getShadowGiftMaximumHealthLost() const#1",
-          "start": 169,
-          "end": 169
+          "start": 170,
+          "end": 170
         },
         {
           "symbol": "battle::Unit::virtual int64_t getPhantomIntegrity() const#1",
-          "start": 171,
-          "end": 171
+          "start": 172,
+          "end": 172
         },
         {
           "symbol": "battle::Unit::virtual int64_t getPhantomInitialIntegrity() const#1",
-          "start": 173,
-          "end": 173
+          "start": 174,
+          "end": 174
         },
         {
           "symbol": "battle::Unit::virtual int64_t getGuardianSpiritHitPoints() const#1",
-          "start": 175,
-          "end": 175
+          "start": 176,
+          "end": 176
         },
         {
           "symbol": "battle::Unit::virtual int32_t getGuardianSpiritRoundsRemaining() const#1",
-          "start": 177,
-          "end": 177
+          "start": 178,
+          "end": 178
         },
         {
           "symbol": "battle::Unit::virtual int64_t getBattleStartMaximumAggregateHP() const#1",
-          "start": 179,
-          "end": 179
+          "start": 180,
+          "end": 180
         },
         {
           "symbol": "battle::Unit::virtual int64_t getRebirthOriginalAggregateHP() const#1",
-          "start": 181,
-          "end": 181
+          "start": 182,
+          "end": 182
         },
         {
           "symbol": "battle::Unit::virtual int32_t getPersonalBloodrageIncrement() const#1",
-          "start": 183,
-          "end": 183
+          "start": 184,
+          "end": 184
         },
         {
           "symbol": "battle::Unit::virtual int getDefenseIgnoringDefensiveStance(bool ranged) const#1",
-          "start": 189,
-          "end": 189
+          "start": 190,
+          "end": 190
         },
         {
           "symbol": "battle::Unit::virtual bool timeStopTurnConsumed() const#1",
-          "start": 199,
-          "end": 199
+          "start": 200,
+          "end": 200
         },
         {
           "symbol": "battle::Unit::virtual bool battlecraftWaitBonusAvailable() const#1",
-          "start": 203,
-          "end": 203
+          "start": 204,
+          "end": 204
         },
         {
           "symbol": "battle::inline int64_t getMaximumHealth(const Unit & unit)#1",
-          "start": 254,
-          "end": 258
+          "start": 255,
+          "end": 259
         },
         {
           "symbol": "battle::UnitInfo::void serializeScript(Serializer & s)#1",
-          "start": 283,
-          "end": 294
+          "start": 284,
+          "end": 295
         }
       ],
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
@@ -11324,55 +11329,55 @@
       "sha256": "dd510ad651f876d7dc71534cb7aed2e9128dcd6bc9bc4651301e625e206f8da6"
     },
     "lib/entities/hero/NewHorizonsNecromancy.h": {
-      "sha256": "24f3d20a3a4abc099a77f99dc00ba15f5b278939083b54d5f115bfc3f3998436",
-      "review": "IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026",
+      "sha256": "75e18df63fc665d47351feef64bf89f549872ab51b306b051b71026d03ca033f",
+      "review": "IR-NECROMANCY-ADVANCED-MANUAL-SOURCE-20261026",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "rationale": "Complete exact callable inventory independently checked: 179 bodies across eight headers, including 175 unchanged retained bodies, two serializers with captured-policy guards, and two new neutral Unit defaults. Declaration-only additions do not add callable bodies. Exact-source coverage only; no runtime certification.",
+      "rationale": "Complete independently checked exact four-header inventory: 43 callable bodies, comprising 39 unchanged retained bodies, three modified NecromancyResult validation/codec/empty bodies and one neutral Unit physical-reduction default. Declaration-only additions introduce no other bodies. Source-only coverage, not runtime certification.",
       "functions": [
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::void validateSerialization(const Handler & h) const#1",
-          "start": 87,
-          "end": 117
+          "start": 91,
+          "end": 123
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::void serialize(Handler & h)#1",
-          "start": 119,
-          "end": 203
+          "start": 125,
+          "end": 221
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool hasLordOfDeadSummary() const#1",
-          "start": 205,
-          "end": 208
+          "start": 223,
+          "end": 226
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool isLordOfDeadSummaryValid() const#1",
-          "start": 210,
-          "end": 218
+          "start": 228,
+          "end": 236
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool isOssuaryDestinationValid() const#1",
-          "start": 220,
-          "end": 225
+          "start": 238,
+          "end": 243
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool isSpecialCasualtySummaryValid() const#1",
-          "start": 227,
-          "end": 231
+          "start": 245,
+          "end": 249
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool hasSpecialCasualtySummary() const#1",
-          "start": 233,
-          "end": 237
+          "start": 251,
+          "end": 255
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool isSkeletonOutputValid() const#1",
-          "start": 239,
-          "end": 242
+          "start": 257,
+          "end": 260
         },
         {
           "symbol": "newHorizonsNecromancy::NecromancyResult::bool empty() const#1",
-          "start": 244,
-          "end": 254
+          "start": 262,
+          "end": 272
         }
       ]
     },
@@ -19417,14 +19422,15 @@
       "deferral": "Engine engineer, coordinated with UI ownership, must extract cohesive battle-interface admission/routing behind explicit CClient, battle-ID and receiver contracts before further substantive routing growth. Characterize admitted receiver identity/lifetime, primary/additional/side ordering, spectator gate, before/state/after packet order, restart and shutdown. Retain snapshot terminal ownership and reduce this file baseline below1276; do not move the whole visitor collection into another oversized helper or reuse this one-time +21 allowance. UI developer must separately extract cohesive Mage Guild packet-to-window refresh routing behind explicit headless-session and town-ID presentation inputs before substantive presentation growth. Characterize all three visitors, both AdventureSpellUnlock window types, no-engine headless skip and unchanged graphical refresh; preserve before/state/after application ordering and reduce the1282-line baseline. Keep authoritative state in the shared visitor and do not move the full packet visitor collection."
     },
     "client/UIHelper.cpp::std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNecromancy::NecromancyResult & result)#1": {
-      "kind": "legacy",
-      "lines": 138,
+      "kind": "review",
+      "lines": 82,
       "owner": "ui_developer",
-      "rationale": "Necromancy source paragraph extraction to focused text owner; retain all unrelated UI callables and actual total/source distinction. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
+      "rationale": "Summary projection shrinks from 138 to 82 lines through focused fresh-delivery and own-recovery text stages while retaining appendConversions ownership and authoritative result fields; this original-body reduction is not a claim of overall implementation shrink.",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "de2bd068b01869a77d12885f219bf994b00bbde26311abfd77251a860de4904f",
-      "review_status": "SOURCE_AND_METADATA_CLEAR"
+      "sha256": "8e488881e3055e6e790af212841f849949abc123803f453a76bd2334e7f3358d",
+      "review_status": "SOURCE_AND_METADATA_CLEAR",
+      "deferral": "UI developer: before further substantive summary logic growth, extract cohesive remaining casualty-pool and delivery-format stages with explicit immutable NecromancyResult, selected creature-name and destination presentation inputs. Retain existing appendConversions ownership, packet-authoritative amounts, paragraph/conditional order, creature localization, blocked/zero output and historical/current text controls. Do not introduce empty wrappers or move the whole body to another oversized helper."
     },
     "client/adventureMap/AdventureMapInterface.cpp": {
       "kind": "legacy",
@@ -22162,14 +22168,14 @@
     },
     "lib/battle/CUnitState.h": {
       "kind": "exception",
-      "lines": 594,
-      "sha256": "c105f9c00f6375d45d99c1b7e0a1b8494dc26483fbfdcc1dd12196db2ea3a99c",
+      "lines": 595,
+      "sha256": "9d696d84ee5ec00b14200e81274df11fd1da02a552b310efc2d1ff981c63363c",
       "owner": "gameplay_engineer",
-      "review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy.",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
+      "rationale": "Single passive query declaration routes to the focused captured unit-environment owner; no new inline implementation or serialized unit state.",
       "review_scope": "exact-acquire-only-private-provider-dispatch-interface",
       "review_status": "independently-reviewed-source-scope",
-      "deferral": "Engine engineer owns cohesive detached provider/binding header extraction before further substantive header expansion. This exact592-line interface allowance retains DLL linkage, existing borrowed lifetime/assignment and save-format contracts. Added process-local pointers change native object layout: rebuild all consumers before any playable delivery; compilation/source review is not runtime or performance acceptance. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence."
+      "deferral": "Engine engineer owns cohesive detached provider/binding header extraction before further substantive header expansion. This exact592-line interface allowance retains DLL linkage, existing borrowed lifetime/assignment and save-format contracts. Added process-local pointers change native object layout: rebuild all consumers before any playable delivery; compilation/source review is not runtime or performance acceptance. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: retain cohesive unit-environment ownership; further substantive header growth requires focused query-interface extraction preserving detached-provider and historical behavior."
     },
     "lib/battle/HeroActionAllowanceState.h": {
       "kind": "legacy",
@@ -22396,13 +22402,14 @@
       "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests."
     },
     "lib/combatScripts/IDamageCalculatorScript.h::DamageAttackInfo::void serializeScript(Serializer & s)#1": {
-      "kind": "legacy",
-      "lines": 113,
+      "kind": "exception",
+      "lines": 115,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 113 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Cohesive named-field codec suffix additions carry explicit recovery amounts or passive scalar payloads; substantive rule and summary validation remains in focused owners, preserving old wire feature guards and field order.",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "a8d3db09c9ead5eed66295c5cf72b3099bcddd1c6cf0c011a2b62adcc0035759"
+      "sha256": "c13ba6d0e547afe8baefddf2e0e085988373f33e9d49c87370f6d971335f21e4",
+      "deferral": "This exact advanced-Necromancy source hash/size exception grants no future growth. Engine/gameplay engineers: before further substantive codec rule growth, extract a separate focused validation/codec owner with explicit fields and feature support; preserve prefix rejection, suffix order, historical zero defaults and exact scalar payload identity."
     },
     "lib/constants/EntityIdentifiers.cpp": {
       "kind": "legacy",
@@ -22541,14 +22548,15 @@
       "sha256": "6cd6ba48369f0babcafa7707b6c22116fd016bbd91b4b6e942738b0e6278dd06"
     },
     "lib/entities/hero/NewHorizonsNecromancy.h::newHorizonsNecromancy::NecromancyResult::void serialize(Handler & h)#1": {
-      "kind": "legacy",
-      "lines": 85,
+      "kind": "exception",
+      "lines": 97,
       "owner": "gameplay_engineer",
-      "rationale": "Complete result writer guard block moves verbatim into shared31-line preflight; serializer102->85 with one append-only typed suffix and old-read0. Seven old non-serializer bodies byte-exact, no validation waiver. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
+      "rationale": "Cohesive named-field codec suffix additions carry explicit recovery amounts or passive scalar payloads; substantive rule and summary validation remains in focused owners, preserving old wire feature guards and field order.",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "057c8552434cb1c6ab06bf54bdb85f5bace8b0be2ed973910e3fb73d64a41ffa",
-      "review_status": "SOURCE_AND_METADATA_CLEAR"
+      "sha256": "50688a41a9c8cf633820e4f5b1de32c1c34d68eea58af82e127e5242542e0f6c",
+      "review_status": "SOURCE_AND_METADATA_CLEAR",
+      "deferral": "This exact advanced-Necromancy source hash/size exception grants no future growth. Engine/gameplay engineers: before further substantive codec rule growth, extract a separate focused validation/codec owner with explicit fields and feature support; preserve prefix rejection, suffix order, historical zero defaults and exact scalar payload identity."
     },
     "lib/entities/hero/NewHorizonsPerkState.cpp": {
       "kind": "exception",
@@ -25032,22 +25040,24 @@
       "review_scope": "numeric-legacy-debt-freeze-only"
     },
     "scripts/damage/damageCalculator.lua": {
-      "kind": "legacy",
-      "lines": 742,
+      "kind": "exception",
+      "lines": 754,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 742 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Captured Graveplate participates as an independent physical mitigation factor while preserving existing source order, shared physical cap and one final floor. Scalar and nil/zero handling retain historical behavior; Lua implementation attestation is maintained separately.",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "817acc55e9661d15c9d85d8fb2a771f3897ee3f867ef89ac8c374c33b4ca1970"
+      "sha256": "2766d212452b043f9356ed478177ce6b1020e50d954ff98641f66fc826caa01e",
+      "deferral": "This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: before further affected growth, extract coherent independent physical-reduction/final intrinsic-factor stages with explicit scalar, cap and penetration inputs; preserve nil/zero arithmetic skips, source order, shared cap, single floor and complete Lua attestation."
     },
     "scripts/damage/damageCalculator.lua::function Script:calculate(battle, info) -- the battle answers the queries that depend on where the blow happens; it rides along with the -- rest of the attack rather than in a global, which a script shared between threads must not have#1": {
-      "kind": "legacy",
-      "lines": 90,
+      "kind": "exception",
+      "lines": 98,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 90 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Captured Graveplate participates as an independent physical mitigation factor while preserving existing source order, shared physical cap and one final floor. Scalar and nil/zero handling retain historical behavior; Lua implementation attestation is maintained separately.",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c74c377b706bd65c0071fa9450ae717a5ee3db1d051e2066b767b549303334e8"
+      "sha256": "1a90b7e6fa1a320054fe8287802d32e7b573d9b2b7bbe1769c0c895f59d6e544",
+      "deferral": "This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: before further affected growth, extract coherent independent physical-reduction/final intrinsic-factor stages with explicit scalar, cap and penetration inputs; preserve nil/zero arithmetic skips, source order, shared cap, single floor and complete Lua attestation."
     },
     "scripts/spells/obstacle.lua::function Script:apply(mechanics, server, target)#1": {
       "kind": "legacy",
@@ -25622,14 +25632,14 @@
     },
     "server/battles/BattleResultProcessor.cpp": {
       "kind": "exception",
-      "lines": 1108,
+      "lines": 1114,
       "owner": "engine_engineer",
-      "rationale": "Bounded current-policy Skeleton-only conversion gating preserves historical alternate outputs and independently retained specialty behavior. Casualty capture bypasses only the obsolete ordinary-magical exclusion, retaining destroyed-remain/provenance rules.",
-      "review": "IR-NECROMANCY-POSTBATTLE-SOURCE-20261026",
+      "rationale": "Bounded postbattle routing delegates own fallen Skeleton-family provenance and recovery to the focused 91-line recovery owner, preserving the existing packet/result sequence.",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "371ec45f7cd9500780ccf63190610c9e0e48203411c33a5d3f8ca1a50ca4d890",
+      "sha256": "990779d3c66b2f20275758cbef53e0e0a229bd3aec8c119fbdeba848579aa28b",
       "review_status": "SOURCE_AND_METADATA_CLEAR",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should separately extract postbattle spell-learning collection into a focused plan returning ChangeSpells data, preserving winner/retained-hero eligibility and packet order before further growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay engineer: before further affected growth, extract canonical eligibility capture accepting original unit state and casualty provenance and returning explicit counts; verify casualty-pool order, totals, destroyed remains and historical-policy parity."
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner should separately extract postbattle spell-learning collection into a focused plan returning ChangeSpells data, preserving winner/retained-hero eligibility and packet order before further growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay engineer: before further affected growth, extract canonical eligibility capture accepting original unit state and casualty provenance and returning explicit counts; verify casualty-pool order, totals, destroyed remains and historical-policy parity. This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: preserve the pending canonical eligibility-capture extraction before further growth; accept original unit state and provenance, return explicit counts and verify corpse order, destroyed exclusions and historical/current packet parity."
     },
     "server/battles/BattleResultProcessor.cpp::CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle, BattleSide sideInBattle): army(battle.battleGetArmyObject(sideInBattle))#1": {
       "kind": "legacy",
@@ -25671,13 +25681,13 @@
     },
     "server/battles/BattleResultProcessor.cpp::void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, EBattleResult resultType, BattleSide victoriusSide)#1": {
       "kind": "exception",
-      "lines": 92,
+      "lines": 95,
       "owner": "engine_engineer",
-      "rationale": "Bounded current-policy Skeleton-only conversion gating preserves historical alternate outputs and independently retained specialty behavior. Casualty capture bypasses only the obsolete ordinary-magical exclusion, retaining destroyed-remain/provenance rules.",
-      "review": "IR-NECROMANCY-POSTBATTLE-SOURCE-20261026",
+      "rationale": "Bounded postbattle routing delegates own fallen Skeleton-family provenance and recovery to the focused 91-line recovery owner, preserving the existing packet/result sequence.",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "a930dd7afcedbbe060567fc0b49687c015ddbb4b46e386b34f752315947c0331",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay engineer: before further affected growth, extract canonical eligibility capture accepting original unit state and casualty provenance and returning explicit counts; verify casualty-pool order, totals, destroyed remains and historical-policy parity."
+      "sha256": "b3052b17db5878bdde8c0f04e6a0af4ca854e839ac7894d8172519f092879ece",
+      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay engineer: before further affected growth, extract canonical eligibility capture accepting original unit state and casualty provenance and returning explicit counts; verify casualty-pool order, totals, destroyed remains and historical-policy parity. This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: preserve the pending canonical eligibility-capture extraction before further growth; accept original unit state and provenance, return explicit counts and verify corpse order, destroyed exclusions and historical/current packet parity."
     },
     "server/processors/HeroPoolProcessor.cpp::bool HeroPoolProcessor::hireHero(const ObjectInstanceID & objectID, const HeroTypeID & heroToRecruit, const PlayerColor & player, const HeroTypeID & nextHero)#1": {
       "kind": "legacy",
@@ -26319,14 +26329,14 @@
     },
     "AI/BattleAI/DamageCache.cpp::int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver, DamageCacheAdmission * mainProbeAdmission)#1": {
       "kind": "exception",
-      "lines": 125,
+      "lines": 127,
       "owner": "ai_engineer",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy.",
-      "review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
+      "rationale": "Existing branch-local damage cache remembers physical as well as magical intrinsic passive target families; new queries stay under the existing ordered admission and cache chain.",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
       "review_scope": "one-lazy-saved-rules-support-fact-source-only-no-runtime-or-speedup-claim",
-      "sha256": "585721e8a1b65aa1341415d2e2af6734cc84696b32f0655b7af52267575307fe",
+      "sha256": "9ac8af7087abc3a014ae14ef19b2780a137bacef02902a6462704decb6d451f3",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth. This exact120-line unchanged-size query redirection permits no substantive getDamage growth; AI engineer retains ordered damage/admission extraction before any further affected-area expansion. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence."
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth. This exact120-line unchanged-size query redirection permits no substantive getDamage growth; AI engineer retains ordered damage/admission extraction before any further affected-area expansion. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. AI engineer: retain ordered admission/query extraction obligations before further cache growth; preserve branch visibility, target order, source identity, state isolation and both RNG streams."
     },
     "AI/BattleAI/BattleEvaluatorSpellProjection.cpp::battleEvaluatorProjection::SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback & live, const CGHeroInstance * hero, BattleSide side, const PossibleSpellcast & candidate, const heroActionProjection::Admission & admission, uint32_t & targetId, const std::vector<uint32_t> & sharedPurposeRecipients)#1": {
       "lines": 81,
@@ -26458,11 +26468,12 @@
       "deferral": "Owner: AI engineer. Freeze this mechanical log schema at235 physical lines with no regrowth allowance. Before substantive logging/schema expansion, extract cohesive named formatting stages with explicit immutable TimingSummary inputs and unchanged emitted fields/order, exception behavior and clock boundaries; retain timing/lifetime native controls and exact field-schema comparisons. Any new oversized method requires separate independent review. This source exception is not performance or runtime acceptance."
     },
     "lib/entities/hero/NewHorizonsNecromancy.cpp::newHorizonsNecromancy::NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties, bool boneCollector, bool corpsePreservation, bool darkConversionAvailable, bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit, int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput, SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead, bool lordOfTheDead, bool defeatedArmyHadLivingChampion, bool boneDragonSlotAvailable, int32_t amplifierBonusPercent, int32_t baseSpecialtyPercentagePoints, bool skeletonPerkOutputsOnly)#1": {
-      "lines": 115,
-      "sha256": "c22f3f683d7eb29968dac7cd30174c872b7e0f66b6590fee7cabd5623d1d1b8d",
-      "kind": "review",
-      "review": "IR-NECROMANCY-POSTBATTLE-SOURCE-20261026",
-      "rationale": "Bounded current-policy Skeleton-only conversion gating preserves historical alternate outputs and independently retained specialty behavior. Casualty capture bypasses only the obsolete ordinary-magical exclusion, retaining destroyed-remain/provenance rules."
+      "lines": 117,
+      "sha256": "035f061bc9dcda70e7645ef0de71939dfb34d2be08f4641f0fe555d95c7a03b6",
+      "kind": "exception",
+      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
+      "rationale": "Current Skeleton-only mode explicitly bypasses retired nonliving/enemy-Undead perk conversions while historical branches and independent specialty behavior remain intact.",
+      "deferral": "This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: retain canonical casualty/conversion ownership; further substantive growth requires a focused eligibility/conversion plan preserving floor order, historical absence, capacity atomicity and specialty parity."
     },
     "lib/entities/hero/NewHorizonsPerkRules.cpp::newHorizonsHeroes::void validatePerkRules(const JsonNode & rules)#1": {
       "lines": 81,

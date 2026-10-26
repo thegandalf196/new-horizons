@@ -20,7 +20,7 @@ CombatPassives captureCombatPassives(const CGHeroInstance * hero)
 {
 	const CreatureID skeleton(CreatureID::SKELETON);
 	return {deathMarchSpeed(hero, skeleton), bonewardMagicalReductionPercent(hero, skeleton),
-		tombGuardAdditionalRetaliations(hero, skeleton)};
+		tombGuardAdditionalRetaliations(hero, skeleton), graveplatePhysicalReductionPercent(hero, skeleton)};
 }
 
 CombatPassives passivesForCreature(const CombatPassives & captured, CreatureID creature)
@@ -34,7 +34,7 @@ bool needsCombatPassiveSnapshot(const battle::Unit & unit)
 		return false;
 	const auto passives = unit.necromancyCombatPassives();
 	return passives.movementSpeed > 0 || passives.magicalReductionPercent > 0
-		|| passives.additionalRetaliations > 0;
+		|| passives.additionalRetaliations > 0 || passives.physicalReductionPercent > 0;
 }
 
 int64_t adjustUnmitigatedMagicalDamage(const battle::Unit & target, int64_t rawDamage)
@@ -71,6 +71,11 @@ void adjustCreatureDamage(const BattleAttackInfo & attack, DamageEstimation & da
 int32_t battle::CUnitState::intrinsicMagicalDamageReductionPercent() const
 {
 	return necromancyCombatPassives().magicalReductionPercent;
+}
+
+int32_t battle::CUnitState::intrinsicPhysicalDamageReductionPercent() const
+{
+	return necromancyCombatPassives().physicalReductionPercent;
 }
 
 newHorizonsNecromancy::CombatPassives battle::CUnitState::necromancyCombatPassives() const

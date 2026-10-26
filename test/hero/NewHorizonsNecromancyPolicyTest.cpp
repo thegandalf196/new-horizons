@@ -22,6 +22,8 @@ JsonNode capturedPolicy()
 	row["deathMarchSpeed"].Integer() = 2;
 	row["bonewardMagicalReductionPercent"].Integer() = 30;
 	row["tombGuardAdditionalRetaliations"].Integer() = 1;
+	row["graveplatePhysicalReductionPercent"].Integer() = 20;
+	row["graveKnowledgeRecoveryPercent"].Integer() = 20;
 	return rules;
 }
 }
@@ -48,6 +50,8 @@ TEST(NewHorizonsNecromancyPolicy, CapturedCoefficientsOwnTheirValues)
 	EXPECT_EQ(captured->deathMarchSpeed, 2);
 	EXPECT_EQ(captured->bonewardMagicalReductionPercent, 30);
 	EXPECT_EQ(captured->tombGuardAdditionalRetaliations, 1);
+	EXPECT_EQ(captured->graveplatePhysicalReductionPercent, 20);
+	EXPECT_EQ(captured->graveKnowledgeRecoveryPercent, 20);
 	rules[newHorizonsNecromancy::POLICY_KEY]["deathMarchSpeed"].Integer() = 5;
 	EXPECT_EQ(captured->deathMarchSpeed, 2);
 	EXPECT_EQ(newHorizonsNecromancy::policy(rules)->deathMarchSpeed, 5);
@@ -65,7 +69,8 @@ TEST(NewHorizonsNecromancyPolicy, RejectsMissingUnknownAndUnsupportedFields)
 {
 	for(const auto * key : {"version", "skeletonLeadershipReductionPercent",
 		"lordOfTheDeadLeadershipReductionPercent", "deathMarchSpeed",
-		"bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations"})
+		"bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations",
+		"graveplatePhysicalReductionPercent", "graveKnowledgeRecoveryPercent"})
 	{
 		SCOPED_TRACE(key);
 		auto rules = capturedPolicy();
@@ -101,7 +106,8 @@ TEST(NewHorizonsNecromancyPolicy, RejectsMalformedRanksAndFractionalOrNonfiniteC
 		EXPECT_THROW(newHorizonsNecromancy::validatePolicy(rules), std::runtime_error);
 	}
 	for(const auto * key : {"lordOfTheDeadLeadershipReductionPercent", "deathMarchSpeed",
-		"bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations"})
+		"bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations",
+		"graveplatePhysicalReductionPercent", "graveKnowledgeRecoveryPercent"})
 		for(double value : {-1.0, 101.0, 1.5, std::numeric_limits<double>::quiet_NaN()})
 		{
 			SCOPED_TRACE(key);

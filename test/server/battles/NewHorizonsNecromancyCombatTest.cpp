@@ -19,6 +19,10 @@
 #include "../../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/GameLibrary.h"
+#include "../../../lib/combatScripts/IDamageCalculatorScript.h"
+#include "../../../lib/scripting/ScriptService.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 
@@ -53,10 +57,13 @@ class NewHorizonsNecromancyCombatTest : public HeroCommandFixture
 protected:
 	bool currentPolicy = true;
 	bool legacyMdr = false;
+	bool useGraveplate = false;
+	bool legacyPdr = false;
 	CStack * skeleton = nullptr;
 	CStack * warrior = nullptr;
 	CStack * ordinary = nullptr;
 	CStack * magicalShooter = nullptr;
+	CStack * physicalSource = nullptr;
 	std::shared_ptr<NecromancyEnvironment> environment;
 	std::shared_ptr<CBattleCallback> callback;
 
@@ -73,6 +80,8 @@ protected:
 		auto magic = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		if(legacyMdr)
 			magic["spells"].Struct().erase("new-horizons:holyArmor");
+		if(legacyPdr)
+			magic.Struct().erase("physicalDamageReductionCapPercent");
 		magic.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 	}
@@ -96,8 +105,10 @@ protected:
 		const auto skill = SecondarySkill(skillId);
 		defenderSideHero->setSecSkillLevel(skill, 3, ChangeValueMode::ABSOLUTE);
 		ASSERT_EQ(defenderSideHero->getNewHorizonsNecromancyRank(), 3);
+		const auto * advanced = useGraveplate ? newHorizonsNecromancy::DEATH_LORD_ID
+			: newHorizonsNecromancy::SOUL_HARVESTER_ID;
 		for(const auto * perk : {newHorizonsNecromancy::DARK_CONVERSION_ID,
-			newHorizonsNecromancy::SOUL_HARVESTER_ID, newHorizonsNecromancy::CORPSE_PRESERVATION_ID})
+			advanced, newHorizonsNecromancy::CORPSE_PRESERVATION_ID})
 		{
 			defenderSideHero->applyPerkSelection({newHorizonsNecromancy::SKILL_ID, perk});
 			ASSERT_TRUE(defenderSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID, perk));
@@ -121,6 +132,8 @@ protected:
 		ASSERT_NE(ordinary, nullptr);
 		ASSERT_NE(magicalShooter, nullptr);
 		forceMaximumDamage(magicalShooter);
+		if(useGraveplate)
+			physicalSource = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(7, 7), 2);
 		beginCombat();
 		callback = std::make_shared<CBattleCallback>(PlayerColor(1), nullptr);
 		callback->onBattleStarted(battle());
@@ -130,6 +143,29 @@ protected:
 	std::shared_ptr<HypotheticBattle> forecast()
 	{
 		return std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	}
+
+	// Calculator arithmetic witness; action legality is covered separately by the native melee test.
+	DamageEstimation physicalDamage(CStack * target, int cap = 80, int armorer = 0, int order = 0,
+		int intrinsic = -1, int output = 100, bool physical = true)
+	{
+		DamageAttackInfo info;
+		info.attacker = physicalSource;
+		info.defender = target;
+		info.attackerHex = physicalSource->getPosition();
+		info.defenderHex = target->getPosition();
+		info.physicalDamage = physical;
+		info.physicalDamageReductionCapPercent = cap;
+		info.intrinsicPhysicalDamageReductionPercent = intrinsic >= 0 ? intrinsic
+			: target->intrinsicPhysicalDamageReductionPercent();
+		info.newHorizonsArmorerReductionPercent = armorer;
+		info.heroOrderDamageReductionPercents = {order};
+		info.heroOrderDamageReductionPercent = order;
+		info.activationOutputPercent = output;
+		const auto * calculator = LIBRARY->scriptTypes()->getDamageCalculator();
+		if(!calculator)
+			throw std::runtime_error("Graveplate control requires the native damage calculator");
+		return calculator->calculate(*battle(), info);
 	}
 };
 
@@ -371,4 +407,107 @@ TEST_F(NewHorizonsNecromancyCombatTest, HistoricalMdrWithoutNewPassiveRetainsIts
 		BonusSource::OTHER, 20, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 	EXPECT_EQ(fireball->adjustRawDamage(nullptr, skeleton, 100, 0, 0, 100, false, false, false), 80);
 	EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustDamage(*battle(), *skeleton, 100), 100);
+}
+
+TEST_F(NewHorizonsNecromancyCombatTest, GraveplateIsLegalAlternativeToTombGuardAndIndependentCappedPhysicalSource)
+{
+	useGraveplate = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(defenderSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID, newHorizonsNecromancy::DEATH_LORD_ID));
+	ASSERT_FALSE(defenderSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID, newHorizonsNecromancy::SOUL_HARVESTER_ID));
+	for(auto * target : {skeleton, warrior})
+	{
+		ASSERT_EQ(target->intrinsicPhysicalDamageReductionPercent(), 20);
+		EXPECT_EQ(target->retaliations.available(), 1);
+		ASSERT_EQ(physicalDamage(target, 80, 0, 0, 0).damage.min, 100);
+		EXPECT_EQ(physicalDamage(target).damage.min, 80);
+		EXPECT_EQ(physicalDamage(target, 80, 25, 30).damage.min, 42);
+		EXPECT_EQ(physicalDamage(target, 80, 100).damage.min, 20)
+			<< "Graveplate belongs before the cap, never after the already capped result";
+		EXPECT_EQ(physicalDamage(target, 80, 0, 30, -1, 9).damage.min, 5)
+			<< "Independent sources and activation output reach one final floor";
+		EXPECT_EQ(physicalDamage(target, 80, 0, 0, -1, 100, false).damage.min, 100);
+		EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustDamage(*battle(), *target, 100), 70);
+	}
+	EXPECT_EQ(ordinary->intrinsicPhysicalDamageReductionPercent(), 0);
+	EXPECT_EQ(physicalDamage(ordinary).damage.min, 100);
+}
+
+TEST_F(NewHorizonsNecromancyCombatTest, GraveplateCoexistsWithHistoricalPhysicalRulesWithoutReinterpretingOldSources)
+{
+	useGraveplate = true;
+	legacyPdr = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(battle()->getMagicRules()), -1);
+	EXPECT_EQ(physicalDamage(skeleton, -1, 0, 0, 0).damage.min, 100);
+	EXPECT_EQ(physicalDamage(skeleton, -1).damage.min, 80);
+	EXPECT_EQ(physicalDamage(skeleton, -1, 25, 30).damage.min, 42);
+	EXPECT_EQ(physicalDamage(skeleton, -1, 25, 30, 0).damage.min, 52);
+}
+
+TEST_F(NewHorizonsNecromancyCombatTest, HistoricalNecromancyCaptureDoesNotAcquireGraveplate)
+{
+	useGraveplate = true;
+	currentPolicy = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	EXPECT_EQ(skeleton->intrinsicPhysicalDamageReductionPercent(), 0);
+	EXPECT_EQ(physicalDamage(skeleton).damage.min, 100);
+	EXPECT_EQ(physicalDamage(skeleton, 80, 25, 30).damage.min, 52);
+	EXPECT_EQ(physicalDamage(skeleton, -1, 25, 30).damage.min, 52);
+}
+
+TEST_F(NewHorizonsNecromancyCombatTest, GraveplateNativePhysicalHitMatchesDetachedForecast)
+{
+	useGraveplate = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:skeleton"), BattleHex(8, 7), 200);
+	ASSERT_NE(target, nullptr);
+	ASSERT_EQ(target->intrinsicPhysicalDamageReductionPercent(), 20);
+	BattleAttackInfo physical(physicalSource, target, 0, false);
+	const auto native = battle()->battleEstimateDamage(physical);
+	ASSERT_EQ(native.damage.min, native.damage.max);
+	auto projected = forecast();
+	const auto * from = projected->battleGetUnitByID(physicalSource->unitId());
+	const auto * to = projected->battleGetUnitByID(target->unitId());
+	const auto preview = projected->battleEstimateDamage(BattleAttackInfo(from, to, 0, false));
+	EXPECT_EQ(preview.damage.min, native.damage.min);
+	EXPECT_EQ(to->intrinsicPhysicalDamageReductionPercent(), 20);
+	BattleSetActiveStack active;
+	active.battleID = BattleID(0);
+	active.stack = physicalSource->unitId();
+	gameHandler->sendAndApply(active);
+	const auto health = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeMeleeAttack(physicalSource, target->getPosition(), physicalSource->getPosition())));
+	EXPECT_EQ(health - target->getAvailableHealth(), native.damage.min);
+}
+
+TEST_F(NewHorizonsNecromancyCombatTest, GraveplateSnapshotVisibilityAndCacheFollowControllerAndForm)
+{
+	useGraveplate = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto parent = forecast();
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto target = child->getForUpdate(skeleton->unitId());
+	ASSERT_EQ(target->intrinsicPhysicalDamageReductionPercent(), 20);
+	DamageCache baseline;
+	baseline.buildDamageCache(parent, BattleSide::DEFENDER);
+	DamageCache current(&baseline);
+	current.buildDamageCache(child, BattleSide::DEFENDER);
+	const auto * from = child->battleGetUnitByID(physicalSource->unitId());
+	target->beginBattleForm(creatureByName("core:zombie"), 2);
+	EXPECT_EQ(target->intrinsicPhysicalDamageReductionPercent(), 0);
+	EXPECT_EQ(current.getDamage(from, target.get(), child),
+		child->battleExpectedLuckDamage(BattleAttackInfo(from, target.get(), 0, false)));
+	target->endBattleForm();
+	EXPECT_EQ(target->intrinsicPhysicalDamageReductionPercent(), 20);
+	target->addUnitBonus(std::vector<Bonus>{*marker(BonusType::HYPNOTIZED)});
+	EXPECT_EQ(target->intrinsicPhysicalDamageReductionPercent(), 0);
+	EXPECT_EQ(sibling->getForUpdate(skeleton->unitId())->intrinsicPhysicalDamageReductionPercent(), 20);
+	EXPECT_EQ(skeleton->intrinsicPhysicalDamageReductionPercent(), 20);
+	auto observer = std::make_shared<CBattleCallback>(PlayerColor(0), nullptr);
+	observer->onBattleStarted(battle());
+	auto hidden = std::make_shared<HypotheticBattle>(environment.get(), observer->getBattle(BattleID(0)));
+	EXPECT_EQ(hidden->battleGetUnitByID(skeleton->unitId())->intrinsicPhysicalDamageReductionPercent(), 0);
 }

@@ -28,6 +28,8 @@ struct DLL_LINKAGE Policy
 	int deathMarchSpeed;
 	int bonewardMagicalReductionPercent;
 	int tombGuardAdditionalRetaliations;
+	int graveplatePhysicalReductionPercent;
+	int graveKnowledgeRecoveryPercent;
 
 	bool operator==(const Policy &) const = default;
 };
@@ -43,6 +45,9 @@ DLL_LINKAGE int skeletonLeadershipReductionPercent(const CGHeroInstance * hero, 
 DLL_LINKAGE int deathMarchSpeed(const CGHeroInstance * hero, CreatureID creature);
 DLL_LINKAGE int bonewardMagicalReductionPercent(const CGHeroInstance * hero, CreatureID creature);
 DLL_LINKAGE int tombGuardAdditionalRetaliations(const CGHeroInstance * hero, CreatureID creature);
+DLL_LINKAGE int graveplatePhysicalReductionPercent(const CGHeroInstance * hero, CreatureID creature);
+/// Own-army Skeleton recovery rate; the result resolver owns casualty eligibility.
+DLL_LINKAGE int graveKnowledgeRecoveryPercent(const CGHeroInstance * hero);
 /// Apply only to a validated hero slot projection after flat Leadership bonuses.
 /// This changes its effective price/maximum, never the hero rating or army.
 DLL_LINKAGE void applyLeadershipPolicy(newHorizonsHeroes::LeadershipSlotCapacity & capacity,

@@ -10,6 +10,8 @@
 #include <utility>
 class CArmedInstance;
 class CGameHandler;
+class CStack;
+namespace battle { class CUnitState; }
 class CGTownInstance;
 struct BattleResult;
 namespace newHorizonsNecromancy
@@ -44,6 +46,13 @@ std::optional<RaisedArmyPlan> planRaisedArmy(const CArmedInstance & army,
 std::optional<RaisedArmyDelivery> selectRaisedArmyDelivery(const CGHeroInstance & hero,
 	const PlayerState * ownerState, const PreparedBattleNecromancy & prepared);
 void applyRaisedArmy(CGameHandler & handler, const CArmedInstance & army, const RaisedArmyPlan & plan);
+
+/// Capture only original owned strategic losses; call in the new Grave Knowledge lane.
+void captureOwnSkeletonCasualties(const CStack & stack, const battle::CUnitState & state,
+	const CGHeroInstance & hero, int32_t eligibleCasualties, BattleResult & result);
+/// Own original-form losses restore before fresh raising and never feed Mana/Ossuary.
+void applyBattleSkeletonRecovery(CGameHandler & handler, const BattleResult & result,
+	const CGHeroInstance & hero, NecromancyResult & summary);
 PreparedBattleNecromancy prepareBattleNecromancy(const BattleResult & result,
 	const newHorizonsCreatures::CreatureCategoryRules & categoryRules,
 	int32_t initialMana, const CGHeroInstance & hero, const PlayerState * ownerState);

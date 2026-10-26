@@ -43,6 +43,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int physicalDamageReductionCapPercent = -1;
 	/// Percentage of the already-combined and capped physical damage reduction ignored by this attack.
 	int physicalDamageReductionIgnorePercent = 0;
+	/// Independent captured unit passive, separate from Armorer, Orders and bonus-source groups.
+	int intrinsicPhysicalDamageReductionPercent = 0;
 	/// Heavenly Gale's independent ranged physical reduction in basis points (10000 = 100%).
 	int heavenlyGaleDamageReductionBasisPoints = 0;
 	bool luckyStrike = false;
@@ -181,6 +183,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Combined independent physical reduction cap; -1 preserves legacy calculations.");
 		s("physicalDamageReductionIgnorePercent", physicalDamageReductionIgnorePercent,
 			"Attack-local percentage of combined capped physical damage reduction ignored.");
+		s("intrinsicPhysicalDamageReductionPercent", intrinsicPhysicalDamageReductionPercent,
+			"Independent intrinsic physical reduction before the shared cap and final floor.");
 		s("heavenlyGaleDamageReductionBasisPoints", heavenlyGaleDamageReductionBasisPoints,
 			"Heavenly Gale's independent ranged physical reduction in basis points.");
 		s("targetedRangedCommandPercent", targetedRangedCommandPercent, "Target-specific additive ranged premium.");

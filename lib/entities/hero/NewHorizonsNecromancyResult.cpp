@@ -8,6 +8,17 @@
 #include <algorithm>
 namespace newHorizonsNecromancy
 {
+
+void NecromancyResult::validateRecoverySerialization(bool supported) const
+{
+	if(recoveredSkeletons < 0 || recoveredSkeletonWarriors < 0
+		|| ((recoveredSkeletons > 0 || recoveredSkeletonWarriors > 0)
+			&& (!active || rank < 1 || rank > 3)))
+		throw std::runtime_error("Invalid Necromancy own-loss recovery summary");
+	if(!supported && (recoveredSkeletons != 0 || recoveredSkeletonWarriors != 0))
+		throw std::runtime_error("Cannot discard Necromancy own-loss recovery");
+}
+
 bool NecromancyResult::isReclaimerSummaryValid() const
 {
 	if(reclaimerZombiesRaised < 0)

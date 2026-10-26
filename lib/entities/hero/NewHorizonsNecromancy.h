@@ -81,6 +81,10 @@ struct DLL_LINKAGE NecromancyResult
 	int32_t boneDragonsRaised = 0;
 	/// Zombie subset funded by Vidomina's remaining Skeleton equivalents.
 	int32_t reclaimerZombiesRaised = 0;
+	/// Actual own-loss restoration, separate from fresh output, upgrades and Mana.
+	int32_t recoveredSkeletons = 0;
+	int32_t recoveredSkeletonWarriors = 0;
+	void validateRecoverySerialization(bool supported) const;
 	bool isReclaimerSummaryValid() const;
 	void validateReclaimerSerialization(bool supported) const;
 
@@ -112,6 +116,8 @@ struct DLL_LINKAGE NecromancyResult
 		if(h.saving && wightsRaised != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_WIGHTS))
 			throw std::runtime_error("Cannot write Necromancy Wights to an older format");
+		if(h.saving)
+			validateRecoverySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
 		if(h.saving)
 			validateReclaimerSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS));
 	}
@@ -196,6 +202,18 @@ struct DLL_LINKAGE NecromancyResult
 			reclaimerZombiesRaised = 0;
 		if(!h.saving)
 			validateReclaimerSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS));
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY))
+		{
+			h & recoveredSkeletons;
+			h & recoveredSkeletonWarriors;
+		}
+		else if(!h.saving)
+		{
+			recoveredSkeletons = 0;
+			recoveredSkeletonWarriors = 0;
+		}
+		if(!h.saving)
+			validateRecoverySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
 		if(!isLordOfDeadSummaryValid())
 			throw std::runtime_error("Invalid Necromancy Lord of the Dead summary");
 		if(!isOssuaryDestinationValid())
@@ -250,7 +268,7 @@ struct DLL_LINKAGE NecromancyResult
 			&& wightsRaised == 0 && manaRecovered == 0 && raisedCreature == CreatureID::NONE
 			&& skeletonCreature == CreatureID::NONE && !hasSpecialCasualtySummary()
 			&& ossuaryTown == ObjectInstanceID::NONE && !hasLordOfDeadSummary()
-			&& reclaimerZombiesRaised == 0;
+			&& reclaimerZombiesRaised == 0 && recoveredSkeletons == 0 && recoveredSkeletonWarriors == 0;
 	}
 };
 

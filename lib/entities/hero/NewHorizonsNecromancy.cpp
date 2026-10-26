@@ -235,6 +235,8 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 		darkConversionAvailable = false;
 		soulHarvester = false;
 		lordOfTheDead = false;
+		nonliving = {};
+		undead = {};
 	}
 	NecromancyResult result;
 	result.active = rank >= 1 && rank <= 3;

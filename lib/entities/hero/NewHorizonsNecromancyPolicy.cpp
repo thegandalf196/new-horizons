@@ -28,6 +28,8 @@ Policy readPolicy(const JsonNode & row)
 	result.deathMarchSpeed = static_cast<int>(row["deathMarchSpeed"].Integer());
 	result.bonewardMagicalReductionPercent = static_cast<int>(row["bonewardMagicalReductionPercent"].Integer());
 	result.tombGuardAdditionalRetaliations = static_cast<int>(row["tombGuardAdditionalRetaliations"].Integer());
+	result.graveplatePhysicalReductionPercent = static_cast<int>(row["graveplatePhysicalReductionPercent"].Integer());
+	result.graveKnowledgeRecoveryPercent = static_cast<int>(row["graveKnowledgeRecoveryPercent"].Integer());
 	return result;
 }
 }
@@ -41,7 +43,8 @@ std::optional<Policy> policy(const JsonNode & capturedPerkRules)
 	const auto & row = capturedPerkRules[POLICY_KEY];
 	fields(row, {"version", "skeletonLeadershipReductionPercent",
 		"lordOfTheDeadLeadershipReductionPercent", "deathMarchSpeed",
-		"bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations"});
+		"bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations",
+		"graveplatePhysicalReductionPercent", "graveKnowledgeRecoveryPercent"});
 	require(integer(row["version"], POLICY_VERSION, POLICY_VERSION), "Necromancy policy version");
 	const auto & reductions = row["skeletonLeadershipReductionPercent"];
 	require(reductions.isVector() && reductions.Vector().size() == 4,
@@ -59,6 +62,10 @@ std::optional<Policy> policy(const JsonNode & capturedPerkRules)
 		"Boneward magical reduction");
 	require(integer(row["tombGuardAdditionalRetaliations"], 0, 100),
 		"Tomb Guard additional retaliations");
+	require(integer(row["graveplatePhysicalReductionPercent"], 0, 100),
+		"Graveplate physical reduction");
+	require(integer(row["graveKnowledgeRecoveryPercent"], 0, 100),
+		"Grave Knowledge own Skeleton recovery");
 	return readPolicy(row);
 }
 
@@ -141,6 +148,20 @@ int tombGuardAdditionalRetaliations(const CGHeroInstance * hero, CreatureID crea
 	const auto captured = activePolicy(hero, creature);
 	return captured && hero->hasActivePerk(SKILL_ID, SOUL_HARVESTER_ID)
 		? captured->tombGuardAdditionalRetaliations : 0;
+}
+
+int graveplatePhysicalReductionPercent(const CGHeroInstance * hero, CreatureID creature)
+{
+	const auto captured = activePolicy(hero, creature);
+	return captured && hero->hasActivePerk(SKILL_ID, DEATH_LORD_ID)
+		? captured->graveplatePhysicalReductionPercent : 0;
+}
+
+int graveKnowledgeRecoveryPercent(const CGHeroInstance * hero)
+{
+	const auto captured = activePolicy(hero, CreatureID(CreatureID::SKELETON));
+	return captured && hero->hasActivePerk(SKILL_ID, GRAVE_KNOWLEDGE_ID)
+		? captured->graveKnowledgeRecoveryPercent : 0;
 }
 
 void applyLeadershipPolicy(newHorizonsHeroes::LeadershipSlotCapacity & capacity,

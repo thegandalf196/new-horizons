@@ -52,7 +52,7 @@
 			"type": "object",
 			"additionalProperties": false,
 			"description": "Captured Skeleton-focused Necromancy. Absence preserves historical perk meanings and conversions. Leadership requirements are discounted once, rounded upward and bounded below by one; Lord of the Dead replaces the rank reduction.",
-			"required": ["version", "skeletonLeadershipReductionPercent", "lordOfTheDeadLeadershipReductionPercent", "deathMarchSpeed", "bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations"],
+			"required": ["version", "skeletonLeadershipReductionPercent", "lordOfTheDeadLeadershipReductionPercent", "deathMarchSpeed", "bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations", "graveplatePhysicalReductionPercent", "graveKnowledgeRecoveryPercent"],
 			"properties": {
 				"version": {"type": "integer", "enum": [1]},
 				"skeletonLeadershipReductionPercent": {
@@ -68,7 +68,9 @@
 				"lordOfTheDeadLeadershipReductionPercent": {"type": "integer", "minimum": 0, "maximum": 99},
 				"deathMarchSpeed": {"type": "integer", "minimum": 0, "maximum": 100},
 				"bonewardMagicalReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
-				"tombGuardAdditionalRetaliations": {"type": "integer", "minimum": 0, "maximum": 100}
+				"tombGuardAdditionalRetaliations": {"type": "integer", "minimum": 0, "maximum": 100},
+				"graveplatePhysicalReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"graveKnowledgeRecoveryPercent": {"type": "integer", "minimum": 0, "maximum": 100}
 			}
 		},
 		"effect": {

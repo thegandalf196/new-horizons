@@ -568,10 +568,13 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	if(!winnerHero || !winnerHero->usesNewHorizonsNecromancy())
 		return false;
 	const auto * ownerState = gameHandler->gameInfo().getPlayerState(winnerHero->tempOwner);
-	const auto prepared = newHorizonsNecromancy::prepareBattleNecromancy(result, categoryRules,
+	auto prepared = newHorizonsNecromancy::prepareBattleNecromancy(result, categoryRules,
 		initialMana, *winnerHero, ownerState);
 	if(!prepared.ordinary.active)
 		return false;
+	newHorizonsNecromancy::applyBattleSkeletonRecovery(*gameHandler, result, *winnerHero, prepared.ordinary);
+	prepared.enhanced.recoveredSkeletons = prepared.ordinary.recoveredSkeletons;
+	prepared.enhanced.recoveredSkeletonWarriors = prepared.ordinary.recoveredSkeletonWarriors;
 	auto selected = newHorizonsNecromancy::selectRaisedArmyDelivery(*winnerHero, ownerState, prepared);
 	if(!selected)
 	{
@@ -1027,7 +1030,7 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 	const bool excludeMagicalCasualties = !skeletonPolicy && winnerHero && winnerHero->usesNewHorizonsNecromancy()
 		&& !winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 			newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
-	const bool deathLord = winnerHero && winnerHero->usesNewHorizonsNecromancy()
+	const bool deathLord = !skeletonPolicy && winnerHero && winnerHero->usesNewHorizonsNecromancy()
 		&& winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 			newHorizonsNecromancy::DEATH_LORD_ID);
 	const bool graveKnowledge = winnerHero && winnerHero->usesNewHorizonsNecromancy()
@@ -1093,7 +1096,10 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 				&& !resultCreatureType->hasBonusOfType(BonusType::MECHANICAL))
 				battleResult->necromancyNonlivingEligibleCasualties[st->unitSide()][resultCreature] += eligibleCasualties;
 
-			if(graveKnowledge && resultCreatureType->hasBonusOfType(BonusType::UNDEAD)
+			if(graveKnowledge && skeletonPolicy)
+				newHorizonsNecromancy::captureOwnSkeletonCasualties(*st, *resultState,
+					*winnerHero, eligibleCasualties, *battleResult);
+			else if(graveKnowledge && !skeletonPolicy && resultCreatureType->hasBonusOfType(BonusType::UNDEAD)
 				&& !resultCreatureType->hasBonusOfType(BonusType::MECHANICAL))
 				battleResult->necromancyUndeadEligibleCasualties[st->unitSide()][resultCreature] += eligibleCasualties;
 		}

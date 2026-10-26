@@ -11,6 +11,7 @@ set(vcmiservercommon_SRCS
 		battles/NewHorizonsRaisedArmy.cpp
 		battles/NewHorizonsNecromancyDelivery.cpp
 		battles/NewHorizonsNecromancyResolution.cpp
+		battles/NewHorizonsNecromancyRecovery.cpp
 		battles/PhysicalAfflictionEffectPreparation.cpp
 
 		queries/BattleQueries.cpp
