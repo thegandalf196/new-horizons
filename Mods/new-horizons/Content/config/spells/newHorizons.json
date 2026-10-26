@@ -2329,7 +2329,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Master Chain Lightning strikes up to four enemy stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
+				"description" : "Master Chain Lightning strikes up to four stacks. After the first target, jumps choose the nearest valid unstruck stack regardless of allegiance and can damage friendly stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
 				"cost" : 17,
 				"power" : 0,
 				"battleEffects" : {
@@ -2345,7 +2345,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Master Chain Lightning strikes up to four enemy stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
+				"description" : "Master Chain Lightning strikes up to four stacks. After the first target, jumps choose the nearest valid unstruck stack regardless of allegiance and can damage friendly stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
 				"cost" : 17,
 				"power" : 0,
 				"battleEffects" : {
@@ -2361,7 +2361,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Master Chain Lightning strikes up to five enemy stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
+				"description" : "Master Chain Lightning strikes up to five stacks. After the first target, jumps choose the nearest valid unstruck stack regardless of allegiance and can damage friendly stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
 				"cost" : 17,
 				"power" : 0,
 				"battleEffects" : {
@@ -2377,7 +2377,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Master Chain Lightning strikes up to five enemy stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
+				"description" : "Master Chain Lightning strikes up to five stacks. After the first target, jumps choose the nearest valid unstruck stack regardless of allegiance and can damage friendly stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
 				"cost" : 17,
 				"power" : 0,
 				"battleEffects" : {

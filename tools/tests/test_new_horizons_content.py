@@ -1171,6 +1171,14 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(master_levels['none']['battleEffects']['directDamage']['chainFactorMaximum'], 0.9)
         self.assertEqual(master_levels['none']['battleEffects']['directDamage']['chainLength'], 4)
         self.assertEqual(master_levels['advanced']['battleEffects']['directDamage']['chainLength'], 5)
+        for rank, targets in (('none', 'four'), ('basic', 'four'),
+                              ('advanced', 'five'), ('expert', 'five')):
+            with self.subTest(rank=rank):
+                description = master_levels[rank]['description']
+                self.assertIn(f'strikes up to {targets} stacks.', description)
+                self.assertIn('nearest valid unstruck stack regardless of allegiance', description)
+                self.assertIn('can damage friendly stacks.', description)
+                self.assertNotIn('enemy stacks', description)
         self.assertGreater(master_levels['none']['battleEffects']['directDamage']['chainFactor'],
                            0.5)
         self.assertEqual(0.75 + 0.01 * 1, 0.76)
