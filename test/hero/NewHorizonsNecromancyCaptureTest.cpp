@@ -3,6 +3,8 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../server/battles/FullGameSnapshotTypes.h"
+#include "../../lib/StartInfo.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
@@ -109,6 +111,7 @@ TEST(NewHorizonsNecromancyCapture, SettingsReaderRejectsBeforeReplacingExistingO
 TEST(NewHorizonsNecromancyCapture, HeroAndEnclosingMapWritersRefuseBeforeTheirPrefixes)
 {
 	auto hero = std::make_shared<CGHeroInstance>(nullptr);
+	hero->setHeroType(HeroTypeID(0));
 	// Explicit fixture capture; production continues to capture through its world.
 	const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).rules = capturedNecromancy();
 	rejectsBeforePrefix(*hero);
@@ -119,9 +122,12 @@ TEST(NewHorizonsNecromancyCapture, HeroAndEnclosingMapWritersRefuseBeforeTheirPr
 	map.objects.push_back(hero);
 	rejectsBeforePrefix(map);
 	map.objects.clear();
-	map.heroesPool.push_back(hero);
+	map.addToHeroPool(hero);
+	ASSERT_EQ(map.tryGetFromHeroPool(hero->getHeroTypeID()), hero.get());
 	rejectsBeforePrefix(map);
-	map.heroesPool.clear();
+	ASSERT_EQ(map.tryTakeFromHeroPool(hero->getHeroTypeID()), hero);
+	EXPECT_TRUE(map.getHeroesInPool().empty());
+	map.objects.clear(); // Remove the null ID reservation left by the pool API.
 	map.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, capturedNecromancy());
 	rejectsBeforePrefix(map);
 	CMemorySerializer wire;
