@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../SpellPointTestUtils.h"
+#include "../../lib/CBonusTypeHandler.h"
+#include "../../lib/CCreatureHandler.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/modding/CModHandler.h"
@@ -75,6 +77,52 @@ protected:
 			false, false, false);
 	}
 };
+}
+
+TEST_F(NewHorizonsIncomingElementDamageTest, ElementDescriptionsUseLoadedValuesAndBearerTotals)
+{
+	struct ElementCase
+	{
+		SpellDamageElement element;
+		const char * label;
+		int authoredValue;
+	};
+	const ElementCase cases[] = {
+		{SpellDamageElement::FIRE, "Fire", -50},
+		{SpellDamageElement::WATER, "Water/Frost", 25}
+	};
+	for(const char * creatureKey : {"core:gremlin", "core:masterGremlin"})
+	{
+		SCOPED_TRACE(creatureKey);
+		const auto * creature = CreatureID(CreatureID::decode(creatureKey)).toCreature();
+		ASSERT_NE(creature, nullptr);
+		for(const auto & element : cases)
+		{
+			SCOPED_TRACE(element.label);
+			const auto subtype = BonusSubtypeID(BonusCustomSubtype(static_cast<int32_t>(element.element)));
+			const auto authored = creature->getFirstBonus(
+				Selector::typeSubtype(BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED, subtype));
+			ASSERT_NE(authored, nullptr);
+			EXPECT_EQ(authored->val, element.authoredValue);
+			auto bonus = std::make_shared<Bonus>(*authored);
+			const auto expected = [&element](int value)
+			{
+				return std::string("Incoming ") + element.label + " spell damage modifier: "
+					+ std::to_string(value) + "%.";
+			};
+			EXPECT_EQ(LIBRARY->bth->bonusToString(bonus), expected(bonus->val));
+
+			CBonusSystemNode bearer(BonusNodeType::STACK_BATTLE);
+			bearer.addNewBonus(bonus);
+			EXPECT_EQ(LIBRARY->bth->bonusToString(bonus, &bearer), expected(bonus->val));
+			auto adjustment = incomingElementDamage(10, element.element);
+			bearer.addNewBonus(adjustment);
+			EXPECT_EQ(LIBRARY->bth->bonusToString(bonus, &bearer), expected(bonus->val + 10));
+			EXPECT_EQ(LIBRARY->bth->bonusToString(bonus), expected(bonus->val));
+			bearer.removeBonus(adjustment);
+			EXPECT_EQ(LIBRARY->bth->bonusToString(bonus, &bearer), expected(bonus->val));
+		}
+	}
 }
 
 TEST_F(NewHorizonsIncomingElementDamageTest, MatchingModifiersAddAndApplyOnceAfterOrdinaryReduction)

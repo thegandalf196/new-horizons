@@ -707,7 +707,11 @@
 		"description" : "Increases final magical damage for explicitly tagged spell elements, independently of Magic Schools"
 	},
 	"ELEMENTAL_SPELL_DAMAGE_RECEIVED" : {
-		"description" : "Modifies incoming magical damage for an explicitly tagged spell element, independently of Magic Schools"
+		"description" : "Modifies incoming magical damage for an explicitly tagged spell element, independently of Magic Schools",
+		"subtypeDescriptions" : {
+			"bonusSubtype.spellElementFire" : "Incoming Fire spell damage modifier: ${val}%.",
+			"bonusSubtype.spellElementWater" : "Incoming Water/Frost spell damage modifier: ${val}%."
+		}
 	},
 	"SPELL_DURATION" : {},
 	"SPELLS_OF_LEVEL" : {},
