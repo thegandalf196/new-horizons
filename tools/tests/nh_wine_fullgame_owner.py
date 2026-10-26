@@ -262,6 +262,14 @@ class Linux:
         before = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
         uid = proc.stat().st_uid
         after = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+        if before[19] == after[19] and before[1] != after[1]:
+            # One fresh acquisition only; never publish the mixed-parent sample.
+            refreshed = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+            refreshed_uid = proc.stat().st_uid
+            after = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+            if refreshed[19] != before[19] or refreshed_uid != uid:
+                raise Refusal(f'Process lifetime/UID changed during ancestry refresh: pid={int(pid)}')
+            before = refreshed
         if before[19] != after[19] or before[1] != after[1]:
             kind = ('both' if before[19] != after[19] and before[1] != after[1]
                     else 'lifetime' if before[19] != after[19] else 'ancestry')

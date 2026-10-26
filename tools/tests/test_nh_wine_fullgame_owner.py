@@ -57,7 +57,7 @@ class Tests(unittest.TestCase):
         self.factory = lambda: {'fresh': True}
         self.verify = mock.Mock(return_value={'verified': True})
 
-    def kernel_read(self, after_start, after_parent):
+    def kernel_read(self, after_start, after_parent, *, retry=(), uids=(1000,)):
         # Exercise the actual reader with synthetic stat contents, not /proc.
         def contents(start, parent):
             fields = ['0'] * 20
@@ -65,8 +65,9 @@ class Tests(unittest.TestCase):
             return '23 (private name) ' + ' '.join(fields)
         backend = object.__new__(owner.Linux)
         backend.boot = 'synthetic-boot'
-        with mock.patch.object(Path, 'read_text', side_effect=[contents(100, 7), contents(after_start, after_parent)]), \
-             mock.patch.object(Path, 'stat', return_value=mock.Mock(st_uid=1000)):
+        with mock.patch.object(Path, 'read_text', side_effect=[contents(100, 7), contents(after_start, after_parent),
+                                                               *(contents(*row) for row in retry)]), \
+             mock.patch.object(Path, 'stat', side_effect=[mock.Mock(st_uid=uid) for uid in uids]):
             return backend.kernel_snapshot(23)
 
     def test_kernel_identity_lifetime_change_remains_refused_with_numeric_diagnostic(self):
@@ -75,11 +76,11 @@ class Tests(unittest.TestCase):
         self.assertEqual(str(caught.exception), 'Process changed during kernel identity read: '
             'kind=lifetime pid=23 before_start_ticks=100 after_start_ticks=101 before_ppid=7 after_ppid=7')
 
-    def test_kernel_identity_ancestry_change_remains_refused_with_numeric_diagnostic(self):
+    def test_kernel_identity_unsettled_ancestry_remains_refused_with_numeric_diagnostic(self):
         with self.assertRaises(owner.Refusal) as caught:
-            self.kernel_read(100, 8)
+            self.kernel_read(100, 8, retry=((100, 8), (100, 9)), uids=(1000, 1000))
         self.assertEqual(str(caught.exception), 'Process changed during kernel identity read: '
-            'kind=ancestry pid=23 before_start_ticks=100 after_start_ticks=100 before_ppid=7 after_ppid=8')
+            'kind=ancestry pid=23 before_start_ticks=100 after_start_ticks=100 before_ppid=8 after_ppid=9')
 
     def test_kernel_identity_both_changes_remain_refused_with_numeric_diagnostic(self):
         with self.assertRaises(owner.Refusal) as caught:
@@ -90,6 +91,68 @@ class Tests(unittest.TestCase):
     def test_kernel_identity_unchanged_read_preserves_normal_result(self):
         self.assertEqual(self.kernel_read(100, 7), dict(pid=23, start_ticks=100, uid=1000,
             boot_id='synthetic-boot', state='S', ppid=7))
+
+    def test_kernel_identity_settled_reparent_returns_only_fresh_complete_sample(self):
+        row = self.kernel_read(100, 8, retry=((100, 8), (100, 8)), uids=(1000, 1000))
+        self.assertEqual(row, dict(pid=23, start_ticks=100, uid=1000,
+                                   boot_id='synthetic-boot', state='S', ppid=8))
+
+    def test_kernel_identity_refresh_cannot_cross_lifetime_or_uid(self):
+        for retry, uids in ((((101, 8), (101, 8)), (1000, 1000)),
+                            (((100, 8), (100, 8)), (1000, 2000))):
+            with self.subTest(retry=retry, uids=uids), self.assertRaisesRegex(owner.Refusal, 'lifetime/UID'):
+                self.kernel_read(100, 8, retry=retry, uids=uids)
+
+    def test_kernel_identity_second_bracket_lifetime_change_still_refused(self):
+        with self.assertRaisesRegex(owner.Refusal, 'kind=lifetime'):
+            self.kernel_read(100, 8, retry=((100, 8), (101, 8)), uids=(1000, 1000))
+
+    def test_kernel_identity_refresh_missing_or_permission_error_propagates(self):
+        for error in (FileNotFoundError(), PermissionError()):
+            with self.subTest(error=error), self.assertRaises(type(error)):
+                self._kernel_retry_error(error)
+
+    def _kernel_retry_error(self, error):
+        def contents(parent):
+            fields = ['0'] * 20
+            fields[0], fields[1], fields[19] = 'S', str(parent), '20'
+            return '2 (synthetic) ' + ' '.join(fields)
+        backend = object.__new__(owner.Linux)
+        backend.boot = 'synthetic-boot'
+        with mock.patch.object(Path, 'read_text', side_effect=[contents(3), contents(1), error]), \
+             mock.patch.object(Path, 'stat', return_value=mock.Mock(st_uid=1000)):
+            backend.kernel_snapshot(2)
+
+    def test_settled_reparent_still_requires_actual_current_parent_and_pidfd_proof(self):
+        original = self.backend.kernel_snapshot
+        for current_parent in (self.backend.pid, 999):
+            self.backend = Backend()
+            self.o = owner.Owner(self.backend, self.backend.env, self.guard, clock=lambda: self.now)
+            original = self.backend.kernel_snapshot
+            first = [True]
+            def acquired(pid):
+                if pid != 2 or not first[0]:
+                    return original(pid)
+                first[0] = False
+                def contents(parent):
+                    fields = ['0'] * 20
+                    fields[0], fields[1], fields[19] = 'S', str(parent), '20'
+                    return '2 (synthetic) ' + ' '.join(fields)
+                kernel = object.__new__(owner.Linux)
+                kernel.boot = self.backend.boot
+                with mock.patch.object(Path, 'read_text', side_effect=[contents(3), contents(current_parent),
+                        contents(current_parent), contents(current_parent)]), \
+                     mock.patch.object(Path, 'stat', return_value=mock.Mock(st_uid=1000)):
+                    return kernel.kernel_snapshot(2)
+            self.backend.kernel_snapshot = acquired
+            if current_parent == self.backend.pid:
+                self.o.adopt()
+                self.assertEqual(self.o.ledger[2]['identity']['ppid'], self.backend.pid)
+                self.assertEqual(self.o.ledger[2]['pidfd'], 102)
+            else:
+                with self.assertRaisesRegex(owner.Refusal, 'outside retained lineage'):
+                    self.o.adopt()
+                self.assertNotIn(2, self.o.ledger)
 
     def test_descendant_adopted_with_pidfd(self):
         self.assertEqual(self.o.adopt(), {2})
