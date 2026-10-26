@@ -403,9 +403,9 @@ void PerkState::validate() const
 				throw std::runtime_error("Invalid saved strict New Horizons perk progression");
 			strictPrefix.push_back(entry);
 		}
-		const auto definition = perkDefinition(rules, entry.skillId, entry.perkId);
+		const auto * definition = acquisitionDefinition(rules, entry.skillId, entry.perkId);
 		if(!definition || !identities.emplace(entry.skillId, entry.perkId).second
-			|| (!usesR2PerkOffers(rules) && !occupiedTiers.emplace(entry.skillId, perkRequiredRank(definition->requiredRank)).second)
+			|| (!usesR2PerkOffers(rules) && !occupiedTiers.emplace(entry.skillId, perkRequiredRank((*definition)["requires"].String())).second)
 			|| ++perSkill[entry.skillId] > cap)
 			throw std::runtime_error("Invalid saved New Horizons perk selection");
 	}

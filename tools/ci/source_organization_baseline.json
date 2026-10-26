@@ -22659,13 +22659,14 @@
       "review_status": "SOURCE_AND_METADATA_CLEAR"
     },
     "lib/entities/hero/NewHorizonsPerkState.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 723,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 723 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c9dedc18dea406c965ad187e047881affdf18f6915e1a155e748682e367c7968"
+      "rationale": "Exact two-expression selected-perk validation substitution uses the existing borrowed acquisitionDefinition only after unchanged fresh full catalog validation. File remains 723 lines and validate remains 31; no added responsibility, cache, API or codec change. Separating coupled offer/R2-weight generation in this patch would enlarge its acceptance risk. Independent source review approves this no-growth scope only; native and byte acceptance remain separate.",
+      "review": "perk-state-selected-validation-independent-source-review",
+      "review_scope": "exact-two-expression-no-growth-source-only",
+      "sha256": "21c23875f8238f67cee6258f7cadd3e5098712835b3aea77157fc60779da86f7",
+      "deferral": "gameplay_engineer owns extracting cohesive offer/R2-weight generation from saved-state/codec responsibilities before any further substantive expansion; retain maximum 723 file lines and 31-line validate for this exception. Future extraction must preserve byte/refusal/offer order and RNG contracts with focused characterization."
     },
     "lib/entities/hero/NewHorizonsPerkState.cpp::newHorizonsHeroes::std::vector<PerkOfferCandidate> PerkState::prepareOffer( const std::function<int(const std::string &)> & rankLookup, uint64_t seed, const OfferWeightContext & weightContext) const#1": {
       "kind": "legacy",

@@ -72,6 +72,30 @@ JsonNode & savedPerk(JsonNode & rules, const char * skill, const char * id)
 	throw std::runtime_error("Missing fixture perk");
 }
 
+void expectRefusalBeforeWrite(newHorizonsHeroes::PerkState & saved, const std::string & message)
+{
+	const auto rules = saved.rules;
+	const auto selected = saved.selected;
+	const auto expectMessage = [&](auto action)
+	{
+		try
+		{
+			action();
+			FAIL() << "Expected perk state refusal";
+		}
+		catch(const std::runtime_error & error)
+		{
+			EXPECT_EQ(error.what(), message);
+		}
+	};
+	expectMessage([&] { saved.validate(); });
+	CMemorySerializer fresh;
+	expectMessage([&] { fresh.oser & saved; });
+	EXPECT_TRUE(fresh.extractBuffer().empty());
+	EXPECT_EQ(saved.rules, rules);
+	EXPECT_EQ(saved.selected, selected);
+}
+
 newHorizonsHeroes::PerkState legacyHeroProcState()
 {
 	auto result = state();
@@ -384,6 +408,49 @@ TEST(NewHorizonsPerkState, JsonAndBinaryRoundTripsPreserveSavedRegistrySnapshot)
 	EXPECT_TRUE(fromBinary.hasSelection(SKILL, perk.id));
 	EXPECT_TRUE(fromJson.hasSelection(PLANNED_SKILL, legacyPlanned.id));
 	EXPECT_TRUE(fromBinary.hasSelection(PLANNED_SKILL, legacyPlanned.id));
+}
+
+TEST(NewHorizonsPerkState, BinaryWriterMatchesCapturedFieldsForZeroOneAndMultipleSelections)
+{
+	auto saved = state();
+	const auto options = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
+	for(size_t count = 0; count <= 3; ++count)
+	{
+		SCOPED_TRACE(count);
+		if(count != 0)
+			saved.select(SKILL, options.at((count - 1) * 4).id, 3);
+		ASSERT_NO_THROW(saved.validate());
+		CMemorySerializer actual;
+		CMemorySerializer fields;
+		// Characterize the unchanged wire layout, independently of PerkState's writer.
+		ASSERT_NO_THROW(actual.oser & saved);
+		fields.oser & saved.rules;
+		fields.oser & saved.selected;
+		EXPECT_EQ(actual.oser.version, fields.oser.version);
+		EXPECT_EQ(actual.extractBuffer(), fields.extractBuffer());
+	}
+}
+
+TEST(NewHorizonsPerkState, SuccessfulSaveDoesNotHideLaterCatalogOrSelectionCorruption)
+{
+	auto saved = state();
+	const auto perk = newHorizonsHeroes::perkOptions(saved.rules, SKILL).front();
+	saved.select(SKILL, perk.id, 3);
+	ASSERT_NO_THROW(saved.validate());
+	CMemorySerializer successful;
+	ASSERT_NO_THROW(successful.oser & saved);
+	ASSERT_FALSE(successful.extractBuffer().empty());
+	const auto validRules = saved.rules;
+
+	// An unrelated skill must still be validated after the selected row was saved.
+	saved.rules["skills"][PLANNED_SKILL]["ranks"]["basic"]["description"].String().clear();
+	const std::string catalogError = "Invalid New Horizons perk rules: "
+		"new-horizons:armorer rank basic description";
+	expectRefusalBeforeWrite(saved, catalogError);
+	saved.selected.front().perkId = "new-horizons:sorceryMagic.missing";
+	expectRefusalBeforeWrite(saved, catalogError); // Catalog error precedes selection error.
+	saved.rules = validRules;
+	expectRefusalBeforeWrite(saved, "Invalid saved New Horizons perk selection");
 }
 
 TEST(NewHorizonsPerkState, HistoricalRetiredSpellBufferMigratesToSpellEchoAcrossJsonAndBinaryLoads)
