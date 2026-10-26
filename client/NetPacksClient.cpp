@@ -217,12 +217,18 @@ void ApplyClientNetPackVisitor::visitSetMovePoints(SetMovePoints & pack)
 
 void ApplyClientNetPackVisitor::visitSetNewHorizonsSageGuildVisit(SetNewHorizonsSageGuildVisit & pack)
 {
+	if(settings["session"]["headless"].Bool())
+		return;
+
 	for(const auto & win : ENGINE->windows().findWindows<CMageGuildScreen>())
 		win->updateSpells(pack.town);
 }
 
 void ApplyClientNetPackVisitor::visitSetResearchedSpells(SetResearchedSpells & pack)
 {
+	if(settings["session"]["headless"].Bool())
+		return;
+
 	for(const auto & win : ENGINE->windows().findWindows<CMageGuildScreen>())
 		win->updateSpells(pack.tid);
 }

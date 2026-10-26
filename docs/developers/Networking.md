@@ -30,6 +30,17 @@ Following connections can be established during game lifetime:
 
 For gameplay, VCMI serializes data into a binary stream. See [Serialization](Serialization.md) for more information.
 
+### Headless client presentation
+
+`CClient::handlePack` applies shared game state before dispatching its
+post-application client visitor. Headless startup does not create `GameEngine`,
+so presentation-only visitors must return before accessing `ENGINE` or windows.
+Mage Guild visits, spell research and Adventure Spell unlocks still apply their
+authoritative receipts; only their window refresh is skipped. Keep state receipt
+handling independent of UI availability. The maintained
+`tools/tests/test_new_horizons_adventure_unlock_headless.py` check protects this
+guard ordering for all three Guild refresh visitors.
+
 ## Local startup lifecycle
 
 Start discovery only for explicit listening, after successful network startup.
