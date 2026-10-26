@@ -11,6 +11,8 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/CreatureSpellTiming.h"
+#include <bit>
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/BattleAction.h"
@@ -217,4 +219,41 @@ TEST_F(NewHorizonsBeneficialCreatureAITest, SchoolSpecificMasteryDoesNotReplaceC
 	ASSERT_EQ(effects->size(), 1u);
 	EXPECT_EQ(effects->front()->val, 6);
 	EXPECT_EQ(effects->front()->turnsRemain, 3);
+}
+
+TEST_F(NewHorizonsBeneficialCreatureAITest, OrdinaryCreatureTimingPreservesValueStateAndBothRng)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	gameHandler->randomizer->setSeed(seed);
+	const auto expectedServer = gameHandler->getRandomGenerator().nextInt();
+	gameHandler->randomizer->setSeed(seed);
+	CRandomGenerator::getDefault().setSeed(seed);
+	const auto expectedAI = CRandomGenerator::getDefault().nextInt();
+	CRandomGenerator::getDefault().setSeed(seed);
+	const auto before = gameState()->saveToMemory();
+	const auto plain = evaluator().findBestCreatureSpell(ogre);
+	creatureSpellTiming::Sample timing;
+	const auto measured = evaluator().findBestCreatureSpell(ogre, &timing);
+	ASSERT_TRUE(plain);
+	ASSERT_TRUE(measured);
+	EXPECT_EQ(plain->spell, measured->spell);
+	ASSERT_EQ(plain->dest.size(), 1u);
+	ASSERT_EQ(measured->dest.size(), 1u);
+	EXPECT_EQ(plain->dest.front().unitValue, measured->dest.front().unitValue);
+	EXPECT_EQ(plain->dest.front().hexValue, measured->dest.front().hexValue);
+	EXPECT_EQ(std::bit_cast<uint32_t>(plain->value), std::bit_cast<uint32_t>(measured->value));
+	EXPECT_EQ(timing.unit, ogre->unitId());
+	EXPECT_EQ(timing.creature, ogre->creatureId().getNum());
+	EXPECT_FALSE(timing.randomPool);
+	EXPECT_TRUE(timing.selected);
+	EXPECT_GT(timing.ordinaryTargets, 0u);
+	EXPECT_EQ(timing.ordinaryCast.calls, timing.ordinaryTargets);
+	EXPECT_GT(timing.baseline.total.calls, 0u);
+	EXPECT_EQ(timing.nonemptyPools, 0u);
+	EXPECT_EQ(timing.outcomes, 0u);
+	EXPECT_TRUE(creatureSpellTiming::accountingValid(timing));
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(gameHandler->getRandomGenerator().nextInt(), expectedServer);
+	EXPECT_EQ(CRandomGenerator::getDefault().nextInt(), expectedAI);
+	EXPECT_TRUE(callback->actions.empty());
 }

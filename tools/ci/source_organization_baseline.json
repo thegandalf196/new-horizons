@@ -18139,14 +18139,14 @@
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
       "kind": "exception",
-      "lines": 5525,
-      "sha256": "9b9cba6d63319d36dfc16d710b5a0d3ebbb8f60acccfb483f27c01626909afc4",
+      "lines": 5347,
+      "sha256": "a8c90d4198e5077589119ac9cf3f1c1c8c6043428612ac35dd8d40b9fcded9ca",
       "owner": "ai_engineer",
-      "review": "IR-REGENERATION-BASELINE-REUSE-R2-20261024",
-      "rationale": "Exact shrinking5711\u21925525 after cohesive Regeneration forecast/shared action extraction. Same remaining routing owner; no inherited growth allowance or runtime certification.",
-      "review_scope": "exact-completed-Regeneration-baseline-source-only-no-runtime-or-performance-acceptance",
+      "review": "IR-CREATURE-SELECTION-DIAGNOSTIC-SOURCE-20261025",
+      "rationale": "Exact shrinking5525\u21925347 through cohesive creature selection/pressure extraction; all167 retained central callables byte-identical. Diagnostic routing stays in focused creature component, with no regrowth allowance.",
+      "review_scope": "exact-creature-selection-extraction-and-diagnostic-source-only-no-runtime-acceptance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer must extract a cohesive remaining per-candidate admission/continuation owner before substantive expansion. Preserve canonical/historical selector policy, ordered conditions/early exits, FP grouping, callbacks, mandatory Orders, rejection/packet/state and both RNG parity. This exact shrinking cap is evaluator5525/attempt1195; no future growth credit. Runtime acceptance is separate."
+      "deferral": "AI engineer retains remaining oversized Hero admission/continuation responsibility; preserve candidate/pool order, FP grouping, callback visibility, state and both RNG before further bounded extraction."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -18233,14 +18233,16 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "b2b19d319afd875b96c3f5786f7c463941792c9293e7ede55aa8f819141d7098"
     },
-    "AI/BattleAI/BattleEvaluator.cpp::std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CStack * stack)#1": {
-      "kind": "legacy",
-      "lines": 105,
+    "AI/BattleAI/BattleEvaluatorCreaturePressure.cpp::std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CStack * stack, creatureSpellTiming::Sample * details)#1": {
+      "kind": "exception",
+      "lines": 109,
+      "sha256": "6005fa0a04a0b33b6c18a6dda27a4862290648e08f7a353c67550dd450b47436",
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 105 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f043cefb0401b42b72091851af90e07ee3d02c62497b7b1c1147c78bf262fab2"
+      "review": "IR-CREATURE-SELECTION-DIAGNOSTIC-SOURCE-20261025",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "review_scope": "exact-focused-creature-selection-boundary-source-only-no-runtime-or-clock-certification",
+      "rationale": "Retire relocated105-line legacy freeze; exact109-line focused selector routes optional fixed-size diagnostics and a separate complete random-pool helper. No function exceeds150; no pool/order/FP/choice change or future regrowth permission.",
+      "deferral": "Keep recipient admission/ordinary cast/pressure boundaries explicit. Any substantive selector growth requires renewed responsibility review; do not transfer remaining giant Hero action work here."
     },
     "AI/BattleAI/BattleEvaluator.cpp::std::pair<float, float> BattleEvaluator::evaluateCreatureCastBeforeCompletion(const CStack * stack, PossibleSpellcast & ps)#1": {
       "kind": "legacy",

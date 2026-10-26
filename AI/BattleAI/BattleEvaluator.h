@@ -18,6 +18,8 @@
 #include <utility>
 #include "HypotheticBattle.h"
 
+namespace creatureSpellTiming { struct Sample; struct Pressure; }
+
 class CSpell;
 class CBattleCallback;
 class BattleAction;
@@ -70,9 +72,11 @@ class DLL_EXPORT BattleEvaluator
 		const std::shared_ptr<HypotheticBattle> & state, const battle::Unit * unit,
 		battle::Units & remainingQueue, size_t queueIndex);
 	float beneficialCreaturePressure(const std::shared_ptr<HypotheticBattle> & state,
-		uint32_t spentCasterId, DamageCache & cache) const;
+		uint32_t spentCasterId, DamageCache & cache, creatureSpellTiming::Pressure * timing = nullptr) const;
 	float beneficialCreatureOutcomeValue(const CStack * caster, const battle::Unit * recipient,
-		const CSpell * spell, int spellLevel, float baselinePressure) const;
+		const CSpell * spell, int spellLevel, float baselinePressure, creatureSpellTiming::Sample * timing = nullptr) const;
+	std::optional<PossibleSpellcast> findBestRandomCreatureSpell(const CStack * stack,
+		int abilityLevel, creatureSpellTiming::Sample * timing);
 	/// Leaves cast-only admission/value in ps; returns HP and future-DPS completion values.
 	std::pair<float, float> evaluateCreatureCastBeforeCompletion(const CStack * stack, PossibleSpellcast & ps);
 
@@ -106,7 +110,7 @@ public:
 		LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse = nullptr,
 		RegenerationBaselineReuse::TestControl * regenerationReuse = nullptr);
 	bool canCastSpell();
-	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack);
+	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack, creatureSpellTiming::Sample * timing = nullptr);
 	/// Deterministic full-pool forecast; does not choose the eventual random spell.
 	float expectedBeneficialCreatureSpellValue(const CStack * caster, const battle::Unit * recipient) const;
 	/// One detached outcome in the same forecast scale, exposed for deterministic parity tests.

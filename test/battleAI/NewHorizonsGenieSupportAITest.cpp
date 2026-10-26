@@ -11,6 +11,7 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/CreatureSpellTiming.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/StartInfo.h"
@@ -699,4 +700,51 @@ TEST_F(NewHorizonsGenieSupportAITest, DISABLED_SyntheticSevenVsThreeForecastProf
 	RecordProperty("FirstSearchDamageLuckySecondCalls", std::to_string(damage.luckySecondCalls));
 	RecordProperty("FirstSearchDamageUnluckySecondCalls", std::to_string(damage.unluckySecondCalls));
 	RecordProperty("FirstSearchDamageSuppressedStages", std::to_string(damage.suppressedStages));
+}
+
+TEST_F(NewHorizonsGenieSupportAITest, CreatureTimingPreservesCompletePoolSelectionStateAndBothRng)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto before = gameState()->saveToMemory();
+	const auto serverBefore = serverRandomizerBytes();
+	const auto aiBefore = aiRandomBytes();
+	const auto plain = evaluator().findBestCreatureSpell(genie);
+	creatureSpellTiming::Sample timing;
+	const auto measured = evaluator().findBestCreatureSpell(genie, &timing);
+	ASSERT_TRUE(plain);
+	ASSERT_TRUE(measured);
+	EXPECT_EQ(plain->spell, measured->spell);
+	ASSERT_EQ(plain->dest.size(), 1u);
+	ASSERT_EQ(measured->dest.size(), 1u);
+	EXPECT_EQ(plain->dest.front().unitValue, measured->dest.front().unitValue);
+	EXPECT_EQ(plain->dest.front().hexValue, measured->dest.front().hexValue);
+	EXPECT_EQ(std::bit_cast<uint32_t>(plain->value), std::bit_cast<uint32_t>(measured->value));
+	EXPECT_EQ(timing.unit, genie->unitId());
+	EXPECT_EQ(timing.creature, genie->creatureId().getNum());
+	EXPECT_TRUE(timing.randomPool);
+	EXPECT_TRUE(timing.selected);
+	EXPECT_GT(timing.nonemptyPools, 0u);
+	EXPECT_GT(timing.outcomes, timing.nonemptyPools);
+	EXPECT_EQ(timing.baseline.total.calls, 1u);
+	EXPECT_EQ(timing.outcome.total.calls, timing.outcomes);
+	EXPECT_EQ(timing.outcomeCast.calls, timing.outcomes);
+	EXPECT_EQ(timing.ordinaryCast.calls, 0u);
+	EXPECT_TRUE(creatureSpellTiming::accountingValid(timing));
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(serverRandomizerBytes(), serverBefore);
+	EXPECT_EQ(aiRandomBytes(), aiBefore);
+	EXPECT_TRUE(callback->actions.empty());
+}
+
+TEST_F(NewHorizonsGenieSupportAITest, UnavailableCasterLeavesItsDiagnosticSinkUntouched)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	genie->casts.use(genie->casts.available());
+	ASSERT_FALSE(genie->canCast());
+	creatureSpellTiming::Sample timing;
+	EXPECT_FALSE(evaluator().findBestCreatureSpell(genie, &timing));
+	EXPECT_EQ(timing.unit, -1);
+	EXPECT_EQ(timing.total.calls, 0u);
+	EXPECT_EQ(timing.outcomes, 0u);
+	EXPECT_FALSE(timing.selected);
 }

@@ -127,6 +127,15 @@ diagnostic settings, before claiming a timing improvement.
 - WAIT completion uses `NH_WAIT_END_TIMING` under global/animation DEBUG: initial/order waits, activation, facing completion and UI remainder. It is not CPU or GPU time.
 - Hero-cue records use the child `animation.heroProc` DEBUG domain with their independent bounded budget, avoiding global animation DEBUG traffic.
 - BattleAI aggregates distinguish callback totals, movement search, ordinary/waited exchanges and nested probe/lifecycle work. Preserve legacy per-call microsecond truncation and additive fine-work nanoseconds; child sums are subsets, not additional body time.
+- `NH_CREATURE_SPELL_TIMING` uses the same opt-in and global/AI DEBUG gates,
+  with an independent bounded attempt counter. Each admitted row identifies the
+  battle, caster and random-pool or ordinary branch. Setup, casting, healing and
+  pressure phases partition the attempt; pressure cache and target-search fields
+  are nested subsets. Check `accounting_valid` before interpreting remainders.
+  A random-pool representative is an AI forecast, not the server's random outcome.
+  Native accounting/parity tests do not establish actual logger output, cap
+  admission, observer overhead or whole-battle performance; verify those with an
+  ordinary client file logger and a bounded saved-game workload.
 - `NH_HERO_ACTION_TIMING` additionally requires global and AI DEBUG logging. It
   uses the same opt-in environment and bounded limit, cached on first use. Its
   ordinal identifies a Hero Action attempt, not a creature callback. `loop_us`

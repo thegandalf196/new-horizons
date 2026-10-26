@@ -825,6 +825,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/VinesCandidateValueReuseTest.cpp
 		battleAI/LifeDrainCandidateValueReuseTest.cpp
 		battleAI/LifeDrainCandidateValueReuseAITest.cpp
+		battleAI/CreatureSpellTimingTest.cpp
 		battleAI/HeroActionTimingTest.cpp
 		battleAI/DamageCalculationTimingRoutingTest.cpp
 		battleAI/ProtectAttackPreviewTest.cpp

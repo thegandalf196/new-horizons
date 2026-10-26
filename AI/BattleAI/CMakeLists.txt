@@ -34,6 +34,7 @@ set(battleAI_SRCS
 		HeroActionUtility.cpp
 		HeroActionSelection.cpp
 		HeroActionContinuation.cpp
+		CreatureSpellTiming.cpp
 		HeroActionTiming.cpp
 		BracePreemptiveForecast.cpp
 		BraceStagePreparation.cpp
@@ -122,6 +123,7 @@ set(battleAI_HEADERS
 		HeroActionSelection.h
 		HeroActionSelectionIdentity.h
 		HeroActionContinuation.h
+		CreatureSpellTiming.h
 		HeroActionTiming.h
 		HypotheticBonusApplication.h
 		InitialExportBattleSubject.h
