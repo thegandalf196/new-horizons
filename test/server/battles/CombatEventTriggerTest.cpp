@@ -348,7 +348,7 @@ TEST_F(NewHorizonsFocusMagicTriggerTest, marksIgnoreOnlyTheirBeneficiarysRangedP
 	ASSERT_TRUE(newHorizonsMagic::rulesActive(battle()->getMagicRules()));
 
 	CStack * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:titan"), BattleHex(leftHex), stackCount);
-	CStack * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), stackCount);
+	CStack * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex + 1), stackCount);
 	CStack * wrongSideTarget = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex + 4), stackCount);
 	CStack * cappedTarget = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex + 8), stackCount);
 	ASSERT_NE(shooter, nullptr);
@@ -358,6 +358,11 @@ TEST_F(NewHorizonsFocusMagicTriggerTest, marksIgnoreOnlyTheirBeneficiarysRangedP
 	for(const auto * unit : {shooter, target, wrongSideTarget, cappedTarget})
 		ASSERT_TRUE(unit->getBonuses(Selector::sourceTypeSel(BonusSource::TERRAIN_NATIVE))->empty());
 	ASSERT_EQ(shooter->getAttack(true), 24);
+	// Full-strength ranged damage requires a nonadjacent target within range.
+	ASSERT_EQ(BattleHex::getDistance(shooter->getPosition(), target->getPosition()), 2);
+	for(const auto hex : target->getHexes())
+		ASSERT_FALSE(shooter->getSurroundingHexes().contains(hex));
+	ASSERT_FALSE(battle()->battleHasDistancePenalty(shooter, shooter->getPosition(), target->getPosition()));
 
 	const BattleAttackInfo ranged(shooter, target, 0, true);
 	const BattleAttackInfo melee(shooter, target, 0, false);
