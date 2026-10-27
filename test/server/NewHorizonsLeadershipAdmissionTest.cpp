@@ -419,7 +419,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, JoiningArmyClampsDuplicateStacksAndLe
         .townGarrison({{pikeman, 3}, {pikeman, 4}, {archer, 2}})
         .hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0))
         .heroGarrison({
-            {pikeman, 16}, {swordsman, 1}, {griffin, 1}, {monk, 1},
+            {pikeman, 1}, {swordsman, 1}, {griffin, 1}, {monk, 1},
             {cavalier, 1}, {angel, 1}, {centaur, 1}
         });
     startWithMap(std::move(builder));
@@ -431,7 +431,8 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, JoiningArmyClampsDuplicateStacksAndLe
 
     const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
     ASSERT_TRUE(pikemanCapacity);
-    ASSERT_EQ(pikemanCapacity->maximum, 17);
+    ASSERT_EQ(pikemanCapacity->maximum, 20);
+    hero->setStackCount(SlotID(0), pikemanCapacity->maximum - 1);
     ASSERT_EQ(hero->stacksCount(), GameConstants::ARMY_SIZE);
     ASSERT_EQ(source->stacksCount(), 3);
 
@@ -444,7 +445,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, JoiningArmyClampsDuplicateStacksAndLe
     // the unmatched archer for the garrison fallback.
     gameHandler.tryJoiningArmy(source, hero, false, true);
 
-    EXPECT_EQ(hero->getStackCount(SlotID(0)), 17);
+    EXPECT_EQ(hero->getStackCount(SlotID(0)), pikemanCapacity->maximum);
     EXPECT_EQ(source->getStackCount(SlotID(0)), 2);
     EXPECT_EQ(source->getStackCount(SlotID(1)), 4);
     EXPECT_EQ(source->getStackCount(SlotID(2)), 2);
@@ -1567,7 +1568,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, WizardMageSurplusTransferThenGarrison
 
 	const auto capacity = hero->getLeadershipSlotCapacity(mage);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->leadership, 650);
+	ASSERT_EQ(capacity->leadership, 780);
 	ASSERT_EQ(capacity->requirement, 300);
 	ASSERT_EQ(capacity->maximum, 2);
 	LeadershipRecordingServer server(gameState());
@@ -1667,7 +1668,7 @@ TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarri
 		EXPECT_EQ(currentHero.level, 1);
 		const auto capacity = currentHero.getLeadershipSlotCapacity(mage);
 		ASSERT_TRUE(capacity);
-		EXPECT_EQ(capacity->leadership, 650);
+		EXPECT_EQ(capacity->leadership, 780);
 		EXPECT_EQ(capacity->requirement, 300);
 		EXPECT_EQ(capacity->maximum, 2);
 		EXPECT_EQ(currentHero.getCapabilityRules(), capturedCapabilities);

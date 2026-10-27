@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "HistoricalNecromancy087Fixture.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/StartInfo.h"
 #include "../../../lib/campaign/CampaignState.h"
@@ -53,18 +54,22 @@ struct CampaignPolicyPoolWriter
 template<typename T>
 void refusesCampaignBeforePrefix(T & value)
 {
-	CMemorySerializer old;
-	old.oser.version = ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS;
-	try
+	for(const auto version : {ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS,
+		ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY})
 	{
-		value.serialize(old.oser);
-		FAIL() << "Expected captured Necromancy policy rejection";
+		CMemorySerializer old;
+		old.oser.version = version;
+		try
+		{
+			value.serialize(old.oser);
+			FAIL() << "Expected captured Necromancy policy rejection";
+		}
+		catch(const std::runtime_error & error)
+		{
+			EXPECT_STREQ(error.what(), "Cannot discard captured Necromancy policy");
+		}
+		EXPECT_TRUE(old.extractBuffer().empty());
 	}
-	catch(const std::runtime_error & error)
-	{
-		EXPECT_STREQ(error.what(), "Cannot discard captured Necromancy policy");
-	}
-	EXPECT_TRUE(old.extractBuffer().empty());
 }
 }
 
@@ -86,23 +91,24 @@ protected:
 		startGame();
 	}
 
-	JsonNode heroSnapshot(bool current) const
+	JsonNode heroSnapshot(bool current, bool publishedV1 = false) const
 	{
 		CampaignState empty;
 		auto hero = empty.crossoverSerialize(attackerSideHero);
 		if(current)
 		{
-			JsonNode installed(JsonPath::builtin("config/newHorizonsPerks"));
-			hero["perkState"]["rules"][newHorizonsNecromancy::POLICY_KEY] = installed[newHorizonsNecromancy::POLICY_KEY];
+			JsonNode installed = publishedV1 ? necromancy087Test::rules()
+				: JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+			hero["perkState"]["rules"] = installed;
 		}
 		return hero;
 	}
 
-	std::shared_ptr<CampaignState> capturedPool(bool global, bool current) const
+	std::shared_ptr<CampaignState> capturedPool(bool global, bool current, bool publishedV1 = false) const
 	{
 		CampaignState empty;
 		CMemorySerializer bytes;
-		CampaignPolicyPoolWriter writer{bytes, heroSnapshot(current), global};
+		CampaignPolicyPoolWriter writer{bytes, heroSnapshot(current, publishedV1), global};
 		empty.serialize(writer);
 		auto captured = std::make_shared<CampaignState>();
 		captured->serialize(bytes.iser);
@@ -115,7 +121,7 @@ TEST_F(NewHorizonsNecromancyCampaignCaptureTest, BothPoolsGuardDirectAndStartLob
 	for(const bool global : {false, true})
 	{
 		auto captured = capturedPool(global, true);
-		EXPECT_THROW(captured->validateNecromancyPolicySerialization(false), std::runtime_error);
+		EXPECT_THROW(captured->validateNecromancyPolicySerialization(false, false), std::runtime_error);
 		refusesCampaignBeforePrefix(*captured);
 		StartInfo start;
 		start.campState = captured;
@@ -129,20 +135,24 @@ TEST_F(NewHorizonsNecromancyCampaignCaptureTest, BothPoolsGuardDirectAndStartLob
 
 		// Forge only the writer envelope to prove the real older reader rejects
 		// the policy after loading both pools, before realizing any hero.
-		CampaignState empty;
-		CMemorySerializer forged;
-		forged.oser.version = forged.iser.version = ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS;
-		CampaignPolicyPoolWriter writer{forged, heroSnapshot(true), global};
-		empty.serialize(writer);
-		CampaignState refused;
-		try
+		for(const auto version : {ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS,
+			ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY})
 		{
-			refused.serialize(forged.iser);
-			FAIL() << "Expected captured Necromancy policy rejection";
-		}
-		catch(const std::runtime_error & error)
-		{
-			EXPECT_STREQ(error.what(), "Cannot discard captured Necromancy policy");
+			CampaignState empty;
+			CMemorySerializer forged;
+			forged.oser.version = forged.iser.version = version;
+			CampaignPolicyPoolWriter writer{forged, heroSnapshot(true), global};
+			empty.serialize(writer);
+			CampaignState refused;
+			try
+			{
+				refused.serialize(forged.iser);
+				FAIL() << "Expected captured Necromancy policy rejection";
+			}
+			catch(const std::runtime_error & error)
+			{
+				EXPECT_STREQ(error.what(), "Cannot discard captured Necromancy policy");
+			}
 		}
 
 		auto historical = capturedPool(global, false);
@@ -151,7 +161,7 @@ TEST_F(NewHorizonsNecromancyCampaignCaptureTest, BothPoolsGuardDirectAndStartLob
 		ASSERT_NO_THROW(historical->serialize(legacy.oser));
 		CampaignState restored;
 		ASSERT_NO_THROW(restored.serialize(legacy.iser));
-		EXPECT_NO_THROW(restored.validateNecromancyPolicySerialization(false));
+		EXPECT_NO_THROW(restored.validateNecromancyPolicySerialization(false, false));
 	}
 }
 
@@ -185,6 +195,22 @@ TEST_F(NewHorizonsNecromancyCampaignCaptureTest, LobbyPacketChecksCurrentWorldWi
 	refusesCampaignBeforePrefix(packet);
 	packet.initializedStartInfo = std::make_shared<StartInfo>();
 	packet.initializedStartInfo->campState = capturedPool(false, false);
-	ASSERT_NO_THROW(packet.initializedStartInfo->validateNecromancyPolicySerialization(false));
+	ASSERT_NO_THROW(packet.initializedStartInfo->validateNecromancyPolicySerialization(false, false));
 	refusesCampaignBeforePrefix(packet);
+}
+
+TEST_F(NewHorizonsNecromancyCampaignCaptureTest, PublishedV1PoolsRoundTripUnderTheirOriginalFormat)
+{
+	for(const bool global : {false, true})
+	{
+		auto captured = capturedPool(global, true, true);
+		ASSERT_NO_THROW(captured->validateNecromancyPolicySerialization(true, false));
+		CMemorySerializer wire;
+		wire.oser.version = wire.iser.version = ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY;
+		ASSERT_NO_THROW(captured->serialize(wire.oser));
+		CampaignState restored;
+		ASSERT_NO_THROW(restored.serialize(wire.iser));
+		EXPECT_NO_THROW(restored.validateNecromancyPolicySerialization(true, false));
+		EXPECT_THROW(restored.validateNecromancyPolicySerialization(false, false), std::runtime_error);
+	}
 }

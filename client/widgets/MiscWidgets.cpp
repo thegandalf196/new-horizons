@@ -901,7 +901,7 @@ void MoraleLuckBox::set(const AFactionMember * node)
 	image = std::make_shared<CAnimImage>(AnimationPath::builtin(imageName), std::clamp(*component.value + 3, 0, 6));
 	image->moveBy(Point(pos.w/2 - image->pos.w/2, pos.h/2 - image->pos.h/2)); //center icon
 	if(settings["general"]["enableUiEnhancements"].Bool())
-		label = std::make_shared<CLabel>((image->pos.topLeft() - pos.topLeft()).x + (small ? 28 : 40), (image->pos.topLeft() - pos.topLeft()).y + (small ? 20 : 38), EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(modifierList->totalValue()));
+		label = std::make_shared<CLabel>((image->pos.topLeft() - pos.topLeft()).x + (small ? 28 : 40), (image->pos.topLeft() - pos.topLeft()).y + (small ? 20 : 38), EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(morale ? modifierList->totalValue() : *component.value));
 }
 
 void MoraleLuckBox::set(const CStack * stack, const CBattleInfoCallback * battleCallback)
@@ -923,7 +923,8 @@ void MoraleLuckBox::set(const CStack * stack, const CBattleInfoCallback * battle
 		const auto * descriptionCallback = GAME->interface() ? GAME->interface()->cb.get() : nullptr;
 		if(descriptionCallback)
 		{
-			const auto bonuses = stack->getBonusesOfType(BonusType::LUCK);
+			TConstBonusListPtr bonuses;
+			stack->luckValAndBonusList(bonuses);
 			if(bonuses)
 			{
 				for(const auto & bonus : *bonuses)

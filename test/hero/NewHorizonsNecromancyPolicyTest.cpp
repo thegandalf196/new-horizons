@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../lib/json/JsonNode.h"
+#include "../../lib/serializer/CMemorySerializer.h"
 
 #include <limits>
 #include <stdexcept>
@@ -34,7 +35,7 @@ TEST(NewHorizonsNecromancyPolicy, AbsentCaptureDoesNotAdoptInstalledDefaults)
 	JsonNode historical;
 	historical["schemaVersion"].Integer() = 1;
 	EXPECT_FALSE(newHorizonsNecromancy::policy(historical));
-	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(historical, false));
+	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(historical, false, false));
 	const auto authored = capturedPolicy();
 	EXPECT_TRUE(newHorizonsNecromancy::policy(authored));
 	EXPECT_FALSE(newHorizonsNecromancy::policy(historical));
@@ -60,8 +61,8 @@ TEST(NewHorizonsNecromancyPolicy, CapturedCoefficientsOwnTheirValues)
 TEST(NewHorizonsNecromancyPolicy, RejectsUnsupportedSerializationWithoutDiscardingPolicy)
 {
 	const auto rules = capturedPolicy();
-	EXPECT_THROW(newHorizonsNecromancy::validatePolicySerialization(rules, false), std::runtime_error);
-	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(rules, true));
+	EXPECT_THROW(newHorizonsNecromancy::validatePolicySerialization(rules, false, false), std::runtime_error);
+	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(rules, true, false));
 	EXPECT_EQ(newHorizonsNecromancy::policy(rules)->deathMarchSpeed, 2);
 }
 
@@ -81,7 +82,7 @@ TEST(NewHorizonsNecromancyPolicy, RejectsMissingUnknownAndUnsupportedFields)
 	unknown[newHorizonsNecromancy::POLICY_KEY]["extra"].Integer() = 1;
 	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(unknown), std::runtime_error);
 	auto future = capturedPolicy();
-	future[newHorizonsNecromancy::POLICY_KEY]["version"].Integer() = 2;
+	future[newHorizonsNecromancy::POLICY_KEY]["version"].Integer() = 3;
 	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(future), std::runtime_error);
 	JsonNode nullPolicy;
 	nullPolicy[newHorizonsNecromancy::POLICY_KEY] = JsonNode();
@@ -153,4 +154,48 @@ TEST(NewHorizonsNecromancyPolicy, InvalidDiscountDoesNotProduceUncappedZeroRequi
 	EXPECT_THROW(discountedLeadershipRequirement(-1, 50), std::invalid_argument);
 	EXPECT_THROW(discountedLeadershipRequirement(45, -1), std::invalid_argument);
 	EXPECT_THROW(discountedLeadershipRequirement(45, 100), std::invalid_argument);
+}
+
+TEST(NewHorizonsNecromancyPolicy, VersionTwoFieldsAndSerializationRemainDistinctFromHistoricalPolicy)
+{
+	auto historical = capturedPolicy();
+	auto current = historical;
+	auto & row = current[newHorizonsNecromancy::POLICY_KEY];
+	row["version"].Integer() = 2;
+	row["bonewardMagicalReductionPercent"].Integer() = 0;
+	row["tombGuardAdditionalRetaliations"].Integer() = 0;
+	row["bonewardMagicResistancePercent"].Integer() = 50;
+	row["tombGuardDoubleStrike"].Bool() = true;
+	row["deadMansLuckBonus"].Integer() = 3;
+	row["boneCollectorRaiseBonusPercent"].Integer() = 50;
+	row["soulHarvesterManaPerRaisedCreature"].Integer() = 1;
+	row["soulHarvesterManaCap"].Integer() = 50;
+	ASSERT_TRUE(newHorizonsNecromancy::policy(current));
+	EXPECT_TRUE(newHorizonsNecromancy::policy(current)->tombGuardDoubleStrike);
+	EXPECT_EQ(newHorizonsNecromancy::policy(current)->version, 2);
+	EXPECT_FALSE(newHorizonsNecromancy::policy(historical)->tombGuardDoubleStrike);
+	EXPECT_EQ(newHorizonsNecromancy::policy(historical)->tombGuardAdditionalRetaliations, 1);
+	EXPECT_THROW(newHorizonsNecromancy::validatePolicySerialization(current, true, false), std::runtime_error);
+	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(current, true, true));
+	CMemorySerializer memory;
+	memory.oser & current;
+	JsonNode restored;
+	memory.iser & restored;
+	EXPECT_EQ(restored, current);
+	EXPECT_EQ(newHorizonsNecromancy::policy(restored), newHorizonsNecromancy::policy(current));
+	for(const auto * key : {"bonewardMagicResistancePercent", "tombGuardDoubleStrike", "deadMansLuckBonus",
+		"boneCollectorRaiseBonusPercent", "soulHarvesterManaPerRaisedCreature", "soulHarvesterManaCap"})
+	{
+		auto missing = current;
+		missing[newHorizonsNecromancy::POLICY_KEY].Struct().erase(key);
+		EXPECT_THROW(newHorizonsNecromancy::validatePolicy(missing), std::runtime_error);
+		auto oldWithNewField = historical;
+		oldWithNewField[newHorizonsNecromancy::POLICY_KEY][key] = row[key];
+		EXPECT_THROW(newHorizonsNecromancy::validatePolicy(oldWithNewField), std::runtime_error);
+	}
+	row["tombGuardAdditionalRetaliations"].Integer() = 1;
+	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(current), std::runtime_error);
+	row["tombGuardAdditionalRetaliations"].Integer() = 0;
+	row["bonewardMagicalReductionPercent"].Integer() = 30;
+	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(current), std::runtime_error);
 }

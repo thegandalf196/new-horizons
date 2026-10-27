@@ -9,6 +9,7 @@
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
 #include "Unit.h"
+#include "NewHorizonsNecromancyCombat.h"
 #include "../spells/NewHorizonsMagic.h"
 #include <algorithm>
 
@@ -40,6 +41,7 @@ int battle::UnitMagicResistanceQuery::query(const Unit * unit) const
 		return 0;
 	requireSubject(*unit);
 	int resistance = std::clamp(unit->valOfBonuses(BonusType::MAGIC_RESISTANCE), 0, 100);
+	resistance = std::clamp(resistance + unit->necromancyCombatPassives().magicResistancePercent, 0, 100);
 	int auraResistance = 0;
 	for(const auto * adjacent : adjacentUnits(*unit))
 	{

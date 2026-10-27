@@ -781,8 +781,8 @@ protected:
 		const auto skeleton = creature("core:skeleton");
 		const auto capacity = attackerSideHero->getLeadershipSlotCapacity(skeleton);
 		ASSERT_TRUE(capacity);
-		ASSERT_EQ(capacity->leadership, 725);
-		ASSERT_EQ(capacity->maximum, 16);
+		ASSERT_EQ(capacity->leadership, 870);
+		ASSERT_EQ(capacity->maximum, 19);
 		attackerSideHero->clearSlots();
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), skeleton, capacity->maximum));
 
@@ -1018,7 +1018,7 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, LegalDeathLordRaisesMixedCoreAndEli
 	EXPECT_TRUE(result.darkConversionChosen);
 	EXPECT_TRUE(result.applied);
 	EXPECT_FALSE(result.blockedByArmyCapacity);
-	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:skeleton")), 19);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:skeleton")), 22);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:zombie")), 1);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
@@ -1046,7 +1046,7 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, LegalGraveKnowledgeRaisesMixedCoreA
 	EXPECT_TRUE(result.darkConversionChosen);
 	EXPECT_TRUE(result.applied);
 	EXPECT_FALSE(result.blockedByArmyCapacity);
-	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:skeleton")), 22);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:skeleton")), 25);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:zombie")), 1);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
@@ -1073,7 +1073,7 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, NonlivingAndUndeadCasualtiesAreNotS
 	EXPECT_EQ(result.zombiesRaised, 0);
 	EXPECT_EQ(result.wightsRaised, 0);
 	EXPECT_FALSE(result.applied);
-	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:skeleton")), 16);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:skeleton")), 19);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
 
@@ -1169,8 +1169,8 @@ protected:
 		EXPECT_EQ(necromancyResult.zombiesRaised, 0);
 		EXPECT_EQ(necromancyResult.wightsRaised, 0);
 		EXPECT_EQ(necromancyResult.manaRecovered, 0);
-		EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
-		EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 16);
+		EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 19);
+		EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 19);
 		EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 0);
 		EXPECT_EQ(armyCreatureCount(*attackerSideHero, wight), 0);
 		EXPECT_EQ(recordingServer->systemMessages, 0);
@@ -1259,7 +1259,7 @@ protected:
 		const auto baseSkeleton = creature("core:skeleton");
 		const auto skeletonWarrior = creature("core:skeletonWarrior");
 		const auto pikeman = creature("core:pikeman");
-		ASSERT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+		ASSERT_EQ(attackerSideHero->getStackCount(SlotID(0)), 19);
 		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 10));
 
 		gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
@@ -1283,7 +1283,7 @@ protected:
 		EXPECT_EQ(result.raisedCreature, expectedForm == CreatureID::NONE ? baseSkeleton : expectedForm);
 		EXPECT_TRUE(result.applied);
 		EXPECT_FALSE(result.blockedByArmyCapacity);
-		EXPECT_EQ(armyCreatureCount(*attackerSideHero, baseSkeleton), 16 + (expectedForm == CreatureID::NONE ? 3 : 0));
+		EXPECT_EQ(armyCreatureCount(*attackerSideHero, baseSkeleton), 19 + (expectedForm == CreatureID::NONE ? 3 : 0));
 		EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeletonWarrior), expectedForm == CreatureID::NONE ? 0 : 3);
 		EXPECT_EQ(recordingServer->systemMessages, 0);
 	}
@@ -1625,7 +1625,7 @@ TEST_F(NewHorizonsNecromancyOssuaryOwnedTownAdmissionAITest,
 	const auto skeleton = creature("core:skeleton");
 	const auto capacity = attackerSideHero->getLeadershipSlotCapacity(skeleton);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 16);
+	ASSERT_EQ(capacity->maximum, 19);
 	attackerSideHero->clearSlots();
 	for(int i = 0; i < GameConstants::ARMY_SIZE - 1; ++i)
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(i), skeleton, capacity->maximum));
@@ -1683,8 +1683,8 @@ TEST_F(NewHorizonsNecromancyOssuaryAdmissionAITest,
 	EXPECT_EQ(result.manaRecovered, 0);
 	EXPECT_EQ(result.ossuaryTown, ObjectInstanceID::NONE);
 	EXPECT_EQ(snapshotArmy(*attackerSideHero), heroBefore);
-	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:skeleton")), 16);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:skeleton")), 19);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 19);
 	EXPECT_EQ(attackerSideHero->stacksCount(), GameConstants::ARMY_SIZE);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:zombie")), 0);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
@@ -1969,8 +1969,8 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, PostBattleRaisesSkeletonsInSpareSlo
 		ASSERT_TRUE(capacity);
 		EXPECT_LE(stack->getCount(), capacity->maximum) << "slot " << slot.getNum();
 	}
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
-	EXPECT_EQ(totalSkeletons, 16 + expected.skeletonsRaised);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 19);
+	EXPECT_EQ(totalSkeletons, 19 + expected.skeletonsRaised);
 	EXPECT_EQ(skeletonStacks, 2);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
@@ -2012,7 +2012,7 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, PostBattleNecromancyWithNoFreeSlotI
 		ASSERT_TRUE(capacity);
 		EXPECT_LE(stack->getCount(), capacity->maximum) << "slot " << slot.getNum();
 	}
-	EXPECT_EQ(totalSkeletons, 16);
+	EXPECT_EQ(totalSkeletons, 19);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
 
@@ -2052,8 +2052,8 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionAutomaticallyConverts
 	EXPECT_FALSE(necromancyResult.blockedByArmyCapacity);
 	EXPECT_EQ(necromancyResult.skeletonsRaised, 4);
 	EXPECT_EQ(necromancyResult.zombiesRaised, 2);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
-	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 20);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 19);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 23);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 2);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
@@ -2086,7 +2086,7 @@ TEST_F(NewHorizonsNecromancySoulHarvesterAdmissionAITest, PostBattleResolvesCore
 	EXPECT_EQ(necromancyResult.zombiesRaised, 4);
 	EXPECT_EQ(necromancyResult.wightsRaised, 2);
 	EXPECT_EQ(necromancyResult.skeletonsRaised, 0);
-	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 16);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 19);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 4);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, wight), 2);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
@@ -2119,7 +2119,7 @@ TEST_F(NewHorizonsNecromancySoulHarvesterAdmissionAITest, PostBattleAdmissionKee
 	EXPECT_EQ(necromancyResult.zombiesRaised, 4);
 	EXPECT_EQ(necromancyResult.wightsRaised, 2);
 	EXPECT_EQ(necromancyResult.skeletonsRaised, 2);
-	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 18);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 21);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 4);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, wight), 2);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
@@ -2196,7 +2196,7 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, EliteCasualtiesStaySkeletonsWithout
 	EXPECT_TRUE(necromancyResult.applied);
 	EXPECT_EQ(necromancyResult.skeletonsRaised, 12);
 	EXPECT_EQ(necromancyResult.wightsRaised, 0);
-	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 28);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 31);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, wight), 0);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
@@ -2238,8 +2238,8 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionRejectsMixedAutomatic
 	EXPECT_EQ(necromancyResult.zombiesRaised, 0);
 	EXPECT_EQ(necromancyResult.manaRecovered, 0);
 	EXPECT_EQ(recordingServer->battleResults.back().raisedStack.getCreature(), nullptr);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
-	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 16);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 19);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 19);
 	EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 0);
 	for(const auto & [slot, stack] : attackerSideHero->Slots())
 	{
@@ -2257,8 +2257,11 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, PostBattleFillsCapacityAcrossDuplic
 	prepareNecromancerArmy(false);
 
 	const auto skeleton = creature("core:skeleton");
-	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), skeleton, 11));
-	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(1), skeleton, 11));
+	const auto capacity = attackerSideHero->getLeadershipSlotCapacity(skeleton);
+	ASSERT_TRUE(capacity);
+	ASSERT_EQ(capacity->maximum, 19);
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), skeleton, capacity->maximum - 5));
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(1), skeleton, capacity->maximum - 5));
 	fillFillerSlots(2, GameConstants::ARMY_SIZE - 2);
 	ASSERT_EQ(attackerSideHero->stacksCount(), GameConstants::ARMY_SIZE);
 	ASSERT_TRUE(attackerSideHero->getFreeSlots().empty());
@@ -2292,9 +2295,9 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, PostBattleFillsCapacityAcrossDuplic
 		EXPECT_LE(stack->getCount(), capacity->maximum) << "slot " << slot.getNum();
 	}
 	EXPECT_EQ(skeletonStacks, 2);
-	EXPECT_EQ(totalSkeletons, 32);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 16);
+	EXPECT_EQ(totalSkeletons, 2 * capacity->maximum);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), capacity->maximum);
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
 

@@ -1319,16 +1319,16 @@ void CMap::validateNewHorizonsLighthouseSerialization(bool supported) const
 }
 
 
-void CMap::validateNewHorizonsNecromancyPolicySerialization(bool supported) const
+void CMap::validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const
 {
 	if(gameSettings)
-		gameSettings->validateNewHorizonsNecromancyPolicySerialization(supported);
+		gameSettings->validateNewHorizonsNecromancyPolicySerialization(supportsV1, supportsV2);
 	for(const auto & object : objects)
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			newHorizonsNecromancy::validatePolicySerialization(hero->getPerkState().rules, supported);
+			newHorizonsNecromancy::validatePolicySerialization(hero->getPerkState().rules, supportsV1, supportsV2);
 	for(const auto & hero : heroesPool)
 		if(hero)
-			newHorizonsNecromancy::validatePolicySerialization(hero->getPerkState().rules, supported);
+			newHorizonsNecromancy::validatePolicySerialization(hero->getPerkState().rules, supportsV1, supportsV2);
 }
 
 void CMap::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported) const

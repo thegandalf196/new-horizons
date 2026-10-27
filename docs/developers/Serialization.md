@@ -68,6 +68,21 @@ Ossuary delivery and Vidomina's independent conversion. `applied` and
 `blockedByArmyCapacity` describe fresh delivery; actual recovery counts remain
 visible even when fresh raising is empty or blocked.
 
+### Revised Necromancy policy
+
+`NEW_HORIZONS_NECROMANCY_POLICY_V2` separately protects revision 2 of the
+captured policy. Revision 1 retains its original perk tiers, retaliation and
+magical-damage mitigation; absence retains the earlier conversion rules.
+Revision 2 carries the revised passives, raising multiplier and Mana recovery
+coefficients. Stable perk identifiers do not authorize applying their new
+meanings to a historical capture.
+
+Direct and enclosing writers check both capabilities before their existing
+prefixes. A format supporting revision 1 alone rejects revision 2; readers
+likewise reject unsupported or malformed policy rows. The revision adds no
+serialized combat-passive cache or result fields. Hypothetical combat snapshots
+remain detached from authoritative hero state.
+
 ## Captured individual specialty riders
 
 `NEW_HORIZONS_INDIVIDUAL_SPECIALTY_RIDERS` protects the optional versioned

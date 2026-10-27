@@ -2101,9 +2101,10 @@ bool CUnitState::isTimeStopped() const
 
 int CUnitState::getTotalAttacks(bool ranged) const
 {
-	return 1 + (ranged ?
+	const int attacks = 1 + (ranged ?
 		bonusCache.getBonusValue(UnitBonusValuesProxy::TOTAL_ATTACKS_RANGED):
 		bonusCache.getBonusValue(UnitBonusValuesProxy::TOTAL_ATTACKS_MELEE));
+	return !ranged && necromancyCombatPassives().doubleStrike ? std::max(2, attacks) : attacks;
 }
 
 int CUnitState::getMinDamage(bool ranged) const

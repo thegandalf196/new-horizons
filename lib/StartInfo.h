@@ -131,7 +131,7 @@ enum class EStartMode : int32_t
 struct DLL_LINKAGE StartInfo : public Serializeable
 {
 	EStartMode mode;
-	void validateNecromancyPolicySerialization(bool supported) const;
+	void validateNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateDefaultCreatureLineSerialization(bool supported) const;
 	ui8 difficulty; //0=easy; 4=impossible
 
@@ -166,7 +166,8 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 	void serialize(Handler &h)
 	{
 		if(h.saving)
-			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(h.saving)
 			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		h & mode;
@@ -181,7 +182,8 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 		h & mapGenOptions;
 		h & campState;
 		if(!h.saving)
-			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(!h.saving)
 			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		if(h.hasFeature(Handler::Version::GAME_SESSION_DIRECTORY))
@@ -226,7 +228,8 @@ struct DLL_LINKAGE LobbyState
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving && si)
-			si->validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+			si->validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(h.saving && si)
 			si->validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		h & si;

@@ -77,13 +77,14 @@ int projectedCountAt(const std::vector<NK2AI::armyFormation::ProjectedArmyStack>
 TEST_F(NewHorizonsArmyFormationLeadershipTest, MergePreflightRejectsAnOversizedIncomingStack)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
-	startGame({{pikeman, 17}});
+	startGame({{pikeman, 1}});
 
-	const auto * destination = findHeroAt(HERO_POS);
+	auto * destination = findHeroAt(HERO_POS);
 	ASSERT_NE(destination, nullptr);
 	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 17);
+	ASSERT_EQ(capacity->maximum, 20);
+	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, capacity->maximum));
 
 	CGHeroInstance source(nullptr);
 	ASSERT_TRUE(source.setCreature(SlotID(0), pikeman, 1));
@@ -97,13 +98,14 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, MergePreflightRejectsAnOversizedI
 TEST_F(NewHorizonsArmyFormationLeadershipTest, WholeArmyMergePreflightRejectsAnOversizedGarrisonSwap)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
-	startGame({{pikeman, 17}});
+	startGame({{pikeman, 1}});
 
-	const auto * destination = findHeroAt(HERO_POS);
+	auto * destination = findHeroAt(HERO_POS);
 	ASSERT_NE(destination, nullptr);
 	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 17);
+	ASSERT_EQ(capacity->maximum, 20);
+	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, capacity->maximum));
 
 	CGHeroInstance source(nullptr);
 	ASSERT_TRUE(source.setCreature(SlotID(0), pikeman, 1));
@@ -185,7 +187,7 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, WizardMageGarrisonAdmissionPreser
 
 	const auto capacity = hero->getLeadershipSlotCapacity(mage);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->leadership, 650);
+	ASSERT_EQ(capacity->leadership, 780);
 	ASSERT_EQ(capacity->requirement, 300);
 	ASSERT_EQ(capacity->maximum, 2);
 	EXPECT_TRUE(hero->canBeMergedWith(*town)); // Slots alone miss this overflow.
@@ -217,12 +219,14 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, WizardMageGarrisonAdmissionPreser
 TEST_F(NewHorizonsArmyFormationLeadershipTest, SplitPreflightAllowsOnlyTheLegalFinalDestinationCount)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
-	startGame({{pikeman, 16}});
+	startGame({{pikeman, 1}});
 
-	const auto * destination = findHeroAt(HERO_POS);
+	auto * destination = findHeroAt(HERO_POS);
 	ASSERT_NE(destination, nullptr);
 	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
 	ASSERT_TRUE(capacity);
+	ASSERT_EQ(capacity->maximum, 20);
+	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, capacity->maximum - 1));
 
 	CGHeroInstance source(nullptr);
 	ASSERT_TRUE(source.setCreature(SlotID(0), pikeman, 4));
@@ -232,9 +236,9 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, SplitPreflightAllowsOnlyTheLegalF
 	EXPECT_EQ(NK2AI::armyFormation::maxLegalTransferCount(
 		&source, destination, SlotID(0), destinationSlot), 1);
 	EXPECT_TRUE(NK2AI::armyFormation::canSplitStack(
-		&source, destination, SlotID(0), destinationSlot, 17));
+		&source, destination, SlotID(0), destinationSlot, capacity->maximum));
 	EXPECT_FALSE(NK2AI::armyFormation::canSplitStack(
-		&source, destination, SlotID(0), destinationSlot, 18));
+		&source, destination, SlotID(0), destinationSlot, capacity->maximum + 1));
 }
 
 TEST_F(NewHorizonsArmyFormationLeadershipTest, LegacyHeroesRemainUnrestrictedByThePreflight)
@@ -489,8 +493,8 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, ReprojectingDuplicateResidualSlot
 	};
 	const CreatureID largerFiller(CreatureID::decode("core:magicElemental"));
 
-	// Coronius has 650 Leadership and Yog has 1100. Both can command one
-	// Angel/Phoenix, but Yog can receive two of each filler while Coronius can
+	// Coronius has 780 Leadership and Orrin has 1230. Both can command one
+	// Angel/Phoenix, but Orrin can receive two of each filler while Coronius can
 	// receive only one. The donor's full seven slots therefore cannot accept the
 	// second Angel after the first Angel is swapped out for the Phoenix.
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -498,7 +502,7 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, ReprojectingDuplicateResidualSlot
 		.size(36, false)
 		.playerActive(PLAYER)
 		.hero(HERO_POS, HeroTypeID(HeroTypeID::decode("core:coronius")), PLAYER)
-		.hero(SOURCE_HERO_POS, HeroTypeID(HeroTypeID::decode("core:yog")), PLAYER);
+		.hero(SOURCE_HERO_POS, HeroTypeID(HeroTypeID::decode("core:orrin")), PLAYER);
 	startWithMap(std::move(builder));
 
 	auto * receiver = findHeroAt(HERO_POS);

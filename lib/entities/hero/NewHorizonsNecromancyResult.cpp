@@ -5,6 +5,8 @@
 #include "StdInc.h"
 #include "NewHorizonsNecromancy.h"
 #include "NewHorizonsReclaimer.h"
+#include "NewHorizonsNecromancyPolicy.h"
+#include <limits>
 #include <algorithm>
 namespace newHorizonsNecromancy
 {
@@ -45,7 +47,8 @@ void blockRaisedResult(NecromancyResult & result)
 	result.manaRecovered = 0;
 	result.ossuaryTown = ObjectInstanceID::NONE;
 }
-void finalizeRaisedResult(NecromancyResult & result, int32_t currentMana, int32_t manaLimit)
+void finalizeRaisedResult(NecromancyResult & result, int32_t currentMana, int32_t manaLimit,
+	const Policy * capturedPolicy)
 {
 	result.darkConversionChosen = result.zombiesRaised > result.reclaimerZombiesRaised;
 	if(result.skeletonsRaised <= 0)
@@ -66,6 +69,13 @@ void finalizeRaisedResult(NecromancyResult & result, int32_t currentMana, int32_
 			result.raisedCreature = result.skeletonCreature.hasValue() ? result.skeletonCreature
 				: CreatureID(CreatureID::decode("core:skeleton"));
 	}
+	if(capturedPolicy && capturedPolicy->version >= 2)
+	{
+		result.manaRecovered = static_cast<int32_t>(std::min<int64_t>({capturedPolicy->soulHarvesterManaCap,
+			static_cast<int64_t>(result.skeletonsRaised) * capturedPolicy->soulHarvesterManaPerRaisedCreature,
+			std::max<int64_t>(0, static_cast<int64_t>(manaLimit) - currentMana)}));
+		return;
+	}
 	const int64_t total = static_cast<int64_t>(result.skeletonsRaised) + result.zombiesRaised
 		+ result.wightsRaised + result.boneDragonsRaised;
 	if(total >= 10)
@@ -73,7 +83,7 @@ void finalizeRaisedResult(NecromancyResult & result, int32_t currentMana, int32_
 			std::max<int64_t>(0, static_cast<int64_t>(manaLimit) - currentMana)}));
 }
 NecromancyResult reclaimResidualSkeletons(const NecromancyResult & ordinary,
-	int conversionPercent, int32_t currentMana, int32_t manaLimit)
+	int conversionPercent, int32_t currentMana, int32_t manaLimit, const Policy * capturedPolicy)
 {
 	if(conversionPercent < 0 || conversionPercent > 100 || ordinary.reclaimerZombiesRaised != 0)
 		throw std::invalid_argument("Invalid or repeated residual Necromancy conversion");
@@ -91,9 +101,43 @@ NecromancyResult reclaimResidualSkeletons(const NecromancyResult & ordinary,
 	result.skeletonsRaised -= converted * 3;
 	result.zombiesRaised += converted;
 	result.reclaimerZombiesRaised = converted;
-	finalizeRaisedResult(result, currentMana, manaLimit);
+	finalizeRaisedResult(result, currentMana, manaLimit, capturedPolicy);
 	if(!result.isReclaimerSummaryValid())
 		throw std::runtime_error("Invalid residual Necromancy result");
 	return result;
 }
+NecromancyResult resolveSkeletonRaising(int rank, int32_t eligibleCasualties,
+	bool boneCollector, bool skeletonSlotAvailable, int32_t currentMana, int32_t manaLimit,
+	CreatureID skeletonOutput, int32_t amplifierBonusPercent, int32_t baseSpecialtyPercentagePoints,
+	const Policy & capturedPolicy)
+{
+	NecromancyResult result;
+	result.active = rank >= 1 && rank <= 3;
+	if(!result.active)
+		return result;
+	result.rank = rank;
+	result.boneCollector = boneCollector;
+	result.eligibleCasualties = std::max(0, eligibleCasualties);
+	result.percentage = std::clamp(rank * 10 + std::clamp(amplifierBonusPercent, 0, 100)
+		+ std::clamp(baseSpecialtyPercentagePoints, 0, 100), 0, 100);
+	const int multiplier = 100 + (boneCollector ? capturedPolicy.boneCollectorRaiseBonusPercent : 0);
+	// Floor once after multiplying the complete base yield. Recovery is a
+	// separate result stage and never enters this fresh-casualty calculation.
+	result.skeletonsOffered = static_cast<int32_t>(std::min<int64_t>(std::numeric_limits<int32_t>::max(),
+		static_cast<int64_t>(result.eligibleCasualties) * result.percentage * multiplier / 10000));
+	if(result.skeletonsOffered == 0)
+		return result;
+	if(!skeletonSlotAvailable)
+	{
+		blockRaisedResult(result);
+		return result;
+	}
+	result.applied = true;
+	result.skeletonsRaised = result.skeletonsOffered;
+	if(skeletonOutput.hasValue() && skeletonOutput != CreatureID(CreatureID::SKELETON))
+		result.skeletonCreature = skeletonOutput;
+	finalizeRaisedResult(result, currentMana, manaLimit, &capturedPolicy);
+	return result;
+}
+
 }

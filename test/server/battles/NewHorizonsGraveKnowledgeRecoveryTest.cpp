@@ -4,6 +4,9 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "../../SpellPointTestUtils.h"
+#include "HistoricalNecromancy087Fixture.h"
+#include "HistoricalNecromancyFixture.h"
 #include "NewHorizonsReclaimerFixture.h"
 #include "../../../client/NewHorizonsNecromancyText.h"
 #include "../../../lib/CSkillHandler.h"
@@ -35,13 +38,24 @@ class NewHorizonsGraveKnowledgeRecoveryTest : public BattleTestFixture, public :
 {
 protected:
 	RecoveryRecordingServer recording;
+	virtual bool useVersionTwo() const { return false; }
 	static CreatureID id(const char * value) { return CreatureID(CreatureID::decode(value)); }
 	void mapLoaded(CMap * map) override
 	{
 		TinyMapGameTest::mapLoaded(map);
-		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-		if(!GetParam())
-			perks.Struct().erase(newHorizonsNecromancy::POLICY_KEY);
+		auto perks = useVersionTwo() ? JsonNode(JsonPath::builtin("config/newHorizonsPerks"))
+			: GetParam() ? necromancy087Test::rules() : necromancyTest::historicalRules();
+		const auto captured = newHorizonsNecromancy::policy(perks);
+		ASSERT_EQ(captured.has_value(), useVersionTwo() || GetParam());
+		if(captured)
+			ASSERT_EQ(captured->version, useVersionTwo() ? 2 : 1);
+		const auto & pool = perks["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
+		const auto knowledge = std::find_if(pool.begin(), pool.end(), [](const auto & row)
+		{
+			return row["id"].String() == newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID;
+		});
+		ASSERT_NE(knowledge, pool.end());
+		ASSERT_EQ((*knowledge)["requires"].String(), useVersionTwo() ? "basic" : "advanced");
 		perks.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
@@ -59,7 +73,8 @@ protected:
 		attackerSideHero->level = 20;
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID)),
 			MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->applyPerkSelection({newHorizonsNecromancy::SKILL_ID, newHorizonsNecromancy::BLACK_HARVEST_ID});
+		attackerSideHero->applyPerkSelection({newHorizonsNecromancy::SKILL_ID,
+			useVersionTwo() ? newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID : newHorizonsNecromancy::BLACK_HARVEST_ID});
 		attackerSideHero->clearSlots();
 		defenderSideHero->clearSlots();
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), id("core:skeleton"), 20));
@@ -375,4 +390,31 @@ TEST_F(NewHorizonsGraveKnowledgeAdmissionTest, CloneSummonedAndUnboundCandidates
 	candidate.base = nullptr;
 	newHorizonsNecromancy::captureOwnSkeletonCasualties(candidate, candidate, *attackerSideHero, 10, result);
 	EXPECT_TRUE(result.necromancyUndeadEligibleCasualties[BattleSide::ATTACKER].empty());
+}
+
+class NewHorizonsGraveKnowledgeV2RecoveryTest : public NewHorizonsGraveKnowledgeRecoveryTest
+{
+protected:
+	bool useVersionTwo() const override { return true; }
+};
+
+TEST_F(NewHorizonsGraveKnowledgeV2RecoveryTest, BasicKnowledgeRestoresHalfOfBothOwnFormsWithoutFreshRaisingOrMana)
+{
+	ASSERT_EQ(newHorizonsNecromancy::graveKnowledgeRecoveryPercent(attackerSideHero), 50);
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::BLACK_HARVEST_ID)); // Both are mutually exclusive Basic choices.
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 0);
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	damage(own(id("core:skeleton")), 9);
+	damage(own(id("core:skeletonWarrior")), 11);
+	finish();
+	const auto & summary = recording.applied.back().necromancy;
+	EXPECT_EQ(summary.recoveredSkeletons, 4);
+	EXPECT_EQ(summary.recoveredSkeletonWarriors, 5);
+	EXPECT_EQ(summary.skeletonsRaised, 0);
+	EXPECT_EQ(summary.manaRecovered, 0);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 15);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 14);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 0);
 }

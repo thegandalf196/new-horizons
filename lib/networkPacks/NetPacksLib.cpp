@@ -1183,12 +1183,12 @@ void LobbyStartGame::validateNavigationStartSerialization(bool supported) const
 	if(initializedGameState) initializedGameState->validateNavigationStartSerialization(supported);
 }
 
-void LobbyStartGame::validateNecromancyPolicySerialization(bool supported) const
+void LobbyStartGame::validateNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const
 {
 	if(initializedStartInfo)
-		initializedStartInfo->validateNecromancyPolicySerialization(supported);
+		initializedStartInfo->validateNecromancyPolicySerialization(supportsV1, supportsV2);
 	if(initializedGameState)
-		initializedGameState->validateNewHorizonsNecromancyPolicySerialization(supported);
+		initializedGameState->validateNewHorizonsNecromancyPolicySerialization(supportsV1, supportsV2);
 }
 
 void LobbyStartGame::validateDefaultCreatureLineSerialization(bool supported) const

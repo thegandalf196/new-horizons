@@ -817,7 +817,9 @@ int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, cons
 		return cap(maximum);
 	if(attacker->hasBonusOfType(BonusType::NO_LUCK))
 		return 0;
-	const int baseLuck = std::clamp(attacker->valOfBonuses(BonusType::LUCK), minimum, maximum);
+	const int baseLuck = static_cast<int>(std::clamp<int64_t>(
+		static_cast<int64_t>(attacker->valOfBonuses(BonusType::LUCK))
+			+ attacker->necromancyCombatPassives().luckBonus, minimum, maximum));
 	const auto side = playerToSide(battleGetOwner(attacker));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return cap(baseLuck);

@@ -20,6 +20,7 @@
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
+#include "../../lib/battle/NewHorizonsNecromancyCombat.h"
 #include "../../lib/battle/NewHorizonsRapidResponse.h"
 #include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/SideInBattle.h"
@@ -178,7 +179,8 @@ bool HypotheticBattle::unitHasVeteranCohesion(const battle::Unit * unit) const
 
 std::optional<int> HypotheticBattle::unitMagicResistance(const battle::Unit * unit) const
 {
-	if(!unit || !newHorizonsMagic::rulesActive(getMagicRules()))
+	if(!unit || (!newHorizonsMagic::rulesActive(getMagicRules())
+		&& unit->necromancyCombatPassives().magicResistancePercent == 0))
 		return std::nullopt;
 	return battleGetMagicResistance(unit);
 }

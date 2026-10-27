@@ -270,7 +270,7 @@ class DLL_LINKAGE CampaignState : public Campaign
 
 public:
 	CampaignState() = default;
-	void validateNecromancyPolicySerialization(bool supported) const;
+	void validateNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateDefaultCreatureLineSerialization(bool supported) const;
 
 	/// Copies persist-flagged script variables of the given map into the campaign state.
@@ -354,14 +354,16 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
-			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(h.saving)
 			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		h & static_cast<Campaign&>(*this);
 		h & scenarioHeroPool;
 		h & globalHeroPool;
 		if(!h.saving)
-			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(!h.saving)
 			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		h & mapPieces;

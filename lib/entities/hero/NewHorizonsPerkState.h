@@ -137,11 +137,13 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
 		if(h.saving)
 			newHorizonsNecromancy::validatePolicySerialization(capturedRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		h & rules;
 		if(!h.saving)
 			newHorizonsNecromancy::validatePolicySerialization(capturedRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(!h.saving)
 			validateWeightedPerkSerialization(capturedRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),

@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
+#include "../server/battles/HistoricalNecromancy087Fixture.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
@@ -28,10 +29,22 @@ JsonNode capturedNecromancy(bool current = true)
 template<typename Value>
 void rejectsBeforePrefix(Value & value)
 {
-	CMemorySerializer old;
-	old.oser.version = ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS;
-	EXPECT_THROW(value.serialize(old.oser), std::runtime_error);
-	EXPECT_TRUE(old.extractBuffer().empty());
+	for(const auto version : {ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS,
+		ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY})
+	{
+		CMemorySerializer old;
+		old.oser.version = version;
+		try
+		{
+			value.serialize(old.oser);
+			FAIL() << "Expected captured Necromancy policy rejection";
+		}
+		catch(const std::runtime_error & error)
+		{
+			EXPECT_STREQ(error.what(), "Cannot discard captured Necromancy policy");
+		}
+		EXPECT_TRUE(old.extractBuffer().empty());
+	}
 }
 }
 
@@ -46,11 +59,11 @@ TEST(NewHorizonsNecromancyCapture, RegistryRejectsMalformedPresentPolicyAndRetai
 		forged[newHorizonsNecromancy::POLICY_KEY] = invalid;
 		EXPECT_THROW(newHorizonsHeroes::validatePerkRules(forged), std::runtime_error);
 	}
-	current[newHorizonsNecromancy::POLICY_KEY]["version"].Integer() = 2;
+	current[newHorizonsNecromancy::POLICY_KEY]["version"].Integer() = 3;
 	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(current), std::runtime_error);
 	const auto historical = capturedNecromancy(false);
 	EXPECT_FALSE(newHorizonsNecromancy::policy(historical));
-	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(historical, false));
+	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(historical, false, false));
 }
 
 TEST(NewHorizonsNecromancyCapture, PerkStateRefusesLossyWriterAndRoundTripsBothPolicyEpochs)
@@ -74,10 +87,22 @@ TEST(NewHorizonsNecromancyCapture, PerkStateRefusesLossyWriterAndRoundTripsBothP
 	EXPECT_EQ(restored.rules, historical.rules);
 	EXPECT_FALSE(newHorizonsNecromancy::policy(restored.rules));
 
-	CMemorySerializer forged;
-	forged.iser.version = ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS;
-	forged.oser & current.rules;
-	EXPECT_THROW(restored.serialize(forged.iser), std::runtime_error);
+	for(const auto version : {ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS,
+		ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY})
+	{
+		CMemorySerializer forged;
+		forged.iser.version = version;
+		forged.oser & current.rules;
+		try
+		{
+			restored.serialize(forged.iser);
+			FAIL() << "Expected captured Necromancy policy rejection";
+		}
+		catch(const std::runtime_error & error)
+		{
+			EXPECT_STREQ(error.what(), "Cannot discard captured Necromancy policy");
+		}
+	}
 }
 
 TEST(NewHorizonsNecromancyCapture, SettingsReaderRejectsBeforeReplacingExistingOverrides)
@@ -97,11 +122,23 @@ TEST(NewHorizonsNecromancyCapture, SettingsReaderRejectsBeforeReplacingExistingO
 	target.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, historical);
 	JsonNode raw;
 	raw["heroes"]["newHorizonsPerks"] = rules;
-	CMemorySerializer forged;
-	forged.iser.version = ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS;
-	forged.oser & raw;
-	EXPECT_THROW(target.serialize(forged.iser), std::runtime_error);
-	EXPECT_EQ(target.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), historical);
+	for(const auto version : {ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS,
+		ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY})
+	{
+		CMemorySerializer forged;
+		forged.iser.version = version;
+		forged.oser & raw;
+		try
+		{
+			target.serialize(forged.iser);
+			FAIL() << "Expected captured Necromancy policy rejection";
+		}
+		catch(const std::runtime_error & error)
+		{
+			EXPECT_STREQ(error.what(), "Cannot discard captured Necromancy policy");
+		}
+		EXPECT_EQ(target.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), historical);
+	}
 	CMemorySerializer old;
 	old.oser.version = old.iser.version = ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS;
 	ASSERT_NO_THROW(target.serialize(old.oser));
@@ -143,4 +180,29 @@ TEST(NewHorizonsNecromancyCapture, WorldCaptureRejectsLossyWriterBeforePrefix)
 	CGameState world;
 	const_cast<JsonNode &>(world.getHeroPerkRules()) = capturedNecromancy();
 	rejectsBeforePrefix(world);
+}
+
+TEST(NewHorizonsNecromancyCapture, PublishedV1RulesRoundTripUnderTheirOriginalFormat)
+{
+	const auto published = necromancy087Test::rules();
+	ASSERT_EQ(published[newHorizonsNecromancy::POLICY_KEY]["version"].Integer(), 1);
+	ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(published));
+	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(published, true, false));
+	newHorizonsHeroes::PerkState state;
+	state.rules = published;
+	CMemorySerializer wire;
+	wire.oser.version = wire.iser.version = ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY;
+	ASSERT_NO_THROW(state.serialize(wire.oser));
+	newHorizonsHeroes::PerkState restored;
+	ASSERT_NO_THROW(restored.serialize(wire.iser));
+	EXPECT_EQ(restored.rules, published);
+
+	GameSettings settings;
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, published);
+	CMemorySerializer settingsWire;
+	settingsWire.oser.version = settingsWire.iser.version = ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY;
+	ASSERT_NO_THROW(settings.serialize(settingsWire.oser));
+	GameSettings restoredSettings;
+	ASSERT_NO_THROW(restoredSettings.serialize(settingsWire.iser));
+	EXPECT_EQ(restoredSettings.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), published);
 }

@@ -279,12 +279,17 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_SKELETON_NECROMANCY, // captured Skeleton-focused Necromancy perk policy
 
+	NEW_HORIZONS_NECROMANCY_POLICY_V2, // captured revised Necromancy passives and yield policy
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_SKELETON_NECROMANCY,
+	CURRENT = NEW_HORIZONS_NECROMANCY_POLICY_V2,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2
+	> ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY, "Necromancy v2 must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY
 	> ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS, "Necromancy policy must remain append-only");

@@ -473,15 +473,18 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         skill = self.rules['skills']['new-horizons:necromancy']
         perks = {p['id'].split('.', 1)[1]: p for p in skill['perks']}
         expected = (
-            ('masterOfBones', 'Bone and Steel', 'basic', 'upgraded form'),
-            ('corpsePreservation', 'Death March', 'expert', '+2 Speed. Initiative is unchanged.'),
-            ('darkConversion', 'Boneward', 'basic', '30% less magical damage'),
-            ('blackHarvest', 'Soul Harvester', 'basic', 'recover 1 Mana per 10 newly raised creatures'),
-            ('soulHarvester', 'Tomb Guard', 'advanced', '+1 retaliation per round'),
+            ('graveKnowledge', 'Grave Knowledge', 'basic', "restore 50% of this hero's own eligible fallen"),
+            ('darkConversion', 'Boneward', 'basic', '50% Magic Resistance'),
+            ('blackHarvest', 'Soul Harvester', 'basic', 'recover 1 Mana for each new Skeleton or Skeleton Warrior'),
+            ('corpsePreservation', 'Death March', 'basic', '+2 Speed. Initiative is unchanged.'),
+            ('masterOfBones', 'Bone and Steel', 'advanced', 'upgraded form'),
+            ('boneCollector', 'Bone Collector', 'advanced', '50% more new Skeletons and Skeleton Warriors'),
             ('deathLord', 'Graveplate', 'advanced', '20% less physical damage'),
-            ('graveKnowledge', 'Grave Knowledge', 'advanced', 'own eligible fallen Skeletons and Skeleton Warriors'),
+            ('ossuary', "Dead Man's Luck", 'advanced', '+3 Luck'),
+            ('soulHarvester', 'Tomb Guard', 'expert', 'strike twice'),
             ('lordOfTheDead', 'Lord of the Dead', 'expert', '90% less Leadership'),
         )
+        self.assertEqual(len(perks), len(expected))
         for identity, name, tier, effect in expected:
             with self.subTest(perk=identity):
                 perk = perks[identity]
@@ -489,9 +492,12 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 self.assertIn(effect, perk['description'])
                 self.assertEqual(perk['effect'], {
                     'status': 'active', 'description': perk['description']})
-        self.assertIn('Normal retaliation restrictions still apply', perks['soulHarvester']['description'])
-        self.assertIn('up to 10 Mana', perks['blackHarvest']['description'])
-        self.assertIn('Grave Knowledge recovery does not count', perks['blackHarvest']['description'])
+        self.assertIn('not damage reduction', perks['darkConversion']['description'])
+        self.assertIn('Retaliations are unchanged', perks['soulHarvester']['description'])
+        self.assertIn('Multiple Double Strike effects do not add more strikes', perks['soulHarvester']['description'])
+        self.assertIn('up to 50 Mana per battle', perks['blackHarvest']['description'])
+        self.assertIn('Zombies and Grave Knowledge recovery do not count', perks['blackHarvest']['description'])
+        self.assertIn('Grave Knowledge recovery is unchanged', perks['boneCollector']['description'])
         self.assertIn('rounded down separately for each form', perks['graveKnowledge']['description'])
         self.assertIn('Destroyed remains, summoned creatures and clones are excluded',
                       perks['graveKnowledge']['description'])
@@ -511,6 +517,26 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
     def test_necromancy_policy_is_optional_strict_and_configurable(self):
         policy = self.rules['necromancyPolicy']
         self.assertEqual(policy, {
+            'version': 2,
+            'skeletonLeadershipReductionPercent': [0, 50, 60, 70],
+            'lordOfTheDeadLeadershipReductionPercent': 90,
+            'deathMarchSpeed': 2,
+            'bonewardMagicalReductionPercent': 0,
+            'tombGuardAdditionalRetaliations': 0,
+            'graveplatePhysicalReductionPercent': 20,
+            'graveKnowledgeRecoveryPercent': 50,
+            'bonewardMagicResistancePercent': 50,
+            'tombGuardDoubleStrike': True,
+            'deadMansLuckBonus': 3,
+            'boneCollectorRaiseBonusPercent': 50,
+            'soulHarvesterManaPerRaisedCreature': 1,
+            'soulHarvesterManaCap': 50,
+        })
+        validator = Draft4Validator(self.schema)
+        absent = json.loads(json.dumps(self.rules))
+        del absent['necromancyPolicy']
+        validator.validate(absent)
+        version1 = {
             'version': 1,
             'skeletonLeadershipReductionPercent': [0, 50, 60, 70],
             'lordOfTheDeadLeadershipReductionPercent': 90,
@@ -519,34 +545,40 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             'tombGuardAdditionalRetaliations': 1,
             'graveplatePhysicalReductionPercent': 20,
             'graveKnowledgeRecoveryPercent': 20,
-        })
-        validator = Draft4Validator(self.schema)
-        historical = json.loads(json.dumps(self.rules))
-        del historical['necromancyPolicy']
-        validator.validate(historical)
+        }
+        validator.validate({**self.rules, 'necromancyPolicy': version1})
         configurable = json.loads(json.dumps(self.rules))
         configurable['necromancyPolicy'].update({
             'skeletonLeadershipReductionPercent': [0, 0, 1, 99],
             'lordOfTheDeadLeadershipReductionPercent': 99,
             'deathMarchSpeed': 0,
-            'bonewardMagicalReductionPercent': 100,
-            'tombGuardAdditionalRetaliations': 0,
             'graveplatePhysicalReductionPercent': 100,
             'graveKnowledgeRecoveryPercent': 0,
+            'bonewardMagicResistancePercent': 100,
+            'tombGuardDoubleStrike': False,
+            'deadMansLuckBonus': 10,
+            'boneCollectorRaiseBonusPercent': 100,
+            'soulHarvesterManaPerRaisedCreature': 100,
+            'soulHarvesterManaCap': 1000000,
         })
         validator.validate(configurable)
-        invalid = [None, {}, {**policy, 'unknown': 1}, {**policy, 'version': 2}]
+        invalid = [None, {}, {**policy, 'unknown': 1}, {**policy, 'version': 3},
+                   {**version1, 'tombGuardDoubleStrike': True}]
         invalid.extend({k: v for k, v in policy.items() if k != omitted} for omitted in policy)
         invalid.extend({**policy, 'skeletonLeadershipReductionPercent': value} for value in (
             [0, 50, 60], [0, 50, 60, 70, 80], [1, 50, 60, 70],
             [0, -1, 60, 70], [0, 50, 60, 100], [0, 50.5, 60, 70], '50'))
         invalid.extend({**policy, key: value} for key, value in (
             ('lordOfTheDeadLeadershipReductionPercent', 100),
-            ('deathMarchSpeed', -1), ('bonewardMagicalReductionPercent', 101),
-            ('tombGuardAdditionalRetaliations', -1),
+            ('deathMarchSpeed', -1), ('bonewardMagicalReductionPercent', 1),
+            ('tombGuardAdditionalRetaliations', 1),
             ('graveplatePhysicalReductionPercent', -1), ('graveplatePhysicalReductionPercent', 101),
             ('graveKnowledgeRecoveryPercent', -1), ('graveKnowledgeRecoveryPercent', 101),
-            ('graveKnowledgeRecoveryPercent', 20.5), ('version', True)))
+            ('graveKnowledgeRecoveryPercent', 20.5), ('bonewardMagicResistancePercent', 101),
+            ('tombGuardDoubleStrike', 1), ('deadMansLuckBonus', 11),
+            ('boneCollectorRaiseBonusPercent', -1), ('boneCollectorRaiseBonusPercent', 101),
+            ('soulHarvesterManaPerRaisedCreature', 101), ('soulHarvesterManaCap', 1000001),
+            ('version', True)))
         for value in invalid:
             with self.subTest(invalid=value):
                 candidate = {**self.rules, 'necromancyPolicy': value}

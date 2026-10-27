@@ -7,6 +7,22 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.87.1 — in development
+
+- Starting Leadership increases by 20% for every hero class; Leadership gained
+  per level and ordinary creature Leadership costs remain unchanged.
+- Necromancy's perk choices are revised: Death March and Grave Knowledge become
+  Basic, Bone and Steel becomes Advanced, and Tomb Guard becomes Expert and
+  grants Double Strike.
+- Dead Man's Luck replaces Ossuary, granting Skeletons and Skeleton Warriors
+  +3 Luck. Boneward grants a 50% chance to resist hostile spells.
+- Grave Knowledge recovers 50% of eligible own Skeleton losses. Bone Collector
+  raises 50% more Skeletons, while Soul Harvester restores 1 Mana per newly raised
+  Skeleton, up to 50 Mana per battle and the hero's Normal Mana capacity.
+- Fixes an AI turn failure after a hero exhausts movement during a visit.
+- Existing saves retain their captured Leadership values and perk rules. Start
+  a new scenario to use this revision.
+
 ## 0.87 Early Access
 
 - Feint! and Vanguard! replace Protect! and Flank!: army-wide retaliation

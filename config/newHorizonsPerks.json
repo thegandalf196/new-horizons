@@ -4,14 +4,20 @@
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 1,
 	"necromancyPolicy": {
-		"version": 1,
+		"version": 2,
 		"skeletonLeadershipReductionPercent": [0, 50, 60, 70],
 		"lordOfTheDeadLeadershipReductionPercent": 90,
 		"deathMarchSpeed": 2,
-		"bonewardMagicalReductionPercent": 30,
-		"tombGuardAdditionalRetaliations": 1,
+		"bonewardMagicalReductionPercent": 0,
+		"tombGuardAdditionalRetaliations": 0,
 		"graveplatePhysicalReductionPercent": 20,
-		"graveKnowledgeRecoveryPercent": 20
+		"graveKnowledgeRecoveryPercent": 50,
+		"bonewardMagicResistancePercent": 50,
+		"tombGuardDoubleStrike": true,
+		"deadMansLuckBonus": 3,
+		"boneCollectorRaiseBonusPercent": 50,
+		"soulHarvesterManaPerRaisedCreature": 1,
+		"soulHarvesterManaCap": 50
 	},
 	"perkOfferNormalization": {"maximumPreferenceRatio": 2.0, "mathVersion": 1},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
@@ -3615,19 +3621,49 @@
 			},
 			"perks": [
 				{
-					"id": "new-horizons:necromancy.boneCollector",
-					"name": "Bone Collector",
+					"id": "new-horizons:necromancy.graveKnowledge",
+					"name": "Grave Knowledge",
 					"requires": "basic",
-					"description": "Necromancy raises an additional +5 percentage points of eligible casualties as Skeletons.",
+					"description": "After victory, restore 50% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester.",
 					"effect": {
 						"status": "active",
-						"description": "Necromancy raises an additional +5 percentage points of eligible casualties as Skeletons."
+						"description": "After victory, restore 50% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester."
+					}
+				},
+				{
+					"id": "new-horizons:necromancy.darkConversion",
+					"name": "Boneward",
+					"requires": "basic",
+					"description": "Skeletons and Skeleton Warriors commanded by this hero gain 50% Magic Resistance against eligible hostile spells. This is a chance to resist the spell, not damage reduction.",
+					"effect": {
+						"status": "active",
+						"description": "Skeletons and Skeleton Warriors commanded by this hero gain 50% Magic Resistance against eligible hostile spells. This is a chance to resist the spell, not damage reduction."
+					}
+				},
+				{
+					"id": "new-horizons:necromancy.blackHarvest",
+					"name": "Soul Harvester",
+					"requires": "basic",
+					"description": "After victory, recover 1 Mana for each new Skeleton or Skeleton Warrior raised by Necromancy, up to 50 Mana per battle. Zombies and Grave Knowledge recovery do not count.",
+					"effect": {
+						"status": "active",
+						"description": "After victory, recover 1 Mana for each new Skeleton or Skeleton Warrior raised by Necromancy, up to 50 Mana per battle. Zombies and Grave Knowledge recovery do not count."
+					}
+				},
+				{
+					"id": "new-horizons:necromancy.corpsePreservation",
+					"name": "Death March",
+					"requires": "basic",
+					"description": "Skeletons and Skeleton Warriors commanded by this hero gain +2 Speed. Initiative is unchanged.",
+					"effect": {
+						"status": "active",
+						"description": "Skeletons and Skeleton Warriors commanded by this hero gain +2 Speed. Initiative is unchanged."
 					}
 				},
 				{
 					"id": "new-horizons:necromancy.masterOfBones",
 					"name": "Bone and Steel",
-					"requires": "basic",
+					"requires": "advanced",
 					"description": "Skeletons raised by Necromancy are raised as their upgraded form when the appropriate Necropolis upgrade is available to the player.",
 					"effect": {
 						"status": "active",
@@ -3635,33 +3671,13 @@
 					}
 				},
 				{
-					"id": "new-horizons:necromancy.darkConversion",
-					"name": "Boneward",
-					"requires": "basic",
-					"description": "Skeletons and Skeleton Warriors commanded by this hero take 30% less magical damage.",
-					"effect": {
-						"status": "active",
-						"description": "Skeletons and Skeleton Warriors commanded by this hero take 30% less magical damage."
-					}
-				},
-				{
-					"id": "new-horizons:necromancy.blackHarvest",
-					"name": "Soul Harvester",
-					"requires": "basic",
-					"description": "After Necromancy raises at least 10 new creatures, recover 1 Mana per 10 newly raised creatures, up to 10 Mana. Grave Knowledge recovery does not count.",
-					"effect": {
-						"status": "active",
-						"description": "After Necromancy raises at least 10 new creatures, recover 1 Mana per 10 newly raised creatures, up to 10 Mana. Grave Knowledge recovery does not count."
-					}
-				},
-				{
-					"id": "new-horizons:necromancy.soulHarvester",
-					"name": "Tomb Guard",
+					"id": "new-horizons:necromancy.boneCollector",
+					"name": "Bone Collector",
 					"requires": "advanced",
-					"description": "Skeletons and Skeleton Warriors commanded by this hero gain +1 retaliation per round. Normal retaliation restrictions still apply.",
+					"description": "Necromancy raises 50% more new Skeletons and Skeleton Warriors, rounded down. Grave Knowledge recovery is unchanged.",
 					"effect": {
 						"status": "active",
-						"description": "Skeletons and Skeleton Warriors commanded by this hero gain +1 retaliation per round. Normal retaliation restrictions still apply."
+						"description": "Necromancy raises 50% more new Skeletons and Skeleton Warriors, rounded down. Grave Knowledge recovery is unchanged."
 					}
 				},
 				{
@@ -3675,33 +3691,23 @@
 					}
 				},
 				{
-					"id": "new-horizons:necromancy.graveKnowledge",
-					"name": "Grave Knowledge",
-					"requires": "advanced",
-					"description": "After victory, restore 20% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester.",
-					"effect": {
-						"status": "active",
-						"description": "After victory, restore 20% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester."
-					}
-				},
-				{
 					"id": "new-horizons:necromancy.ossuary",
-					"name": "Ossuary",
+					"name": "Dead Man's Luck",
 					"requires": "advanced",
-					"description": "If the hero cannot accept the raised creatures because of unavailable army slots or Leadership limits, they are sent to the nearest owned Necropolis town instead of being lost.",
+					"description": "Skeletons and Skeleton Warriors commanded by this hero gain +3 Luck, subject to the normal Luck limit.",
 					"effect": {
 						"status": "active",
-						"description": "If the hero cannot accept the raised creatures because of unavailable army slots or Leadership limits, they are sent to the nearest owned Necropolis town instead of being lost."
+						"description": "Skeletons and Skeleton Warriors commanded by this hero gain +3 Luck, subject to the normal Luck limit."
 					}
 				},
 				{
-					"id": "new-horizons:necromancy.corpsePreservation",
-					"name": "Death March",
+					"id": "new-horizons:necromancy.soulHarvester",
+					"name": "Tomb Guard",
 					"requires": "expert",
-					"description": "Skeletons and Skeleton Warriors commanded by this hero gain +2 Speed. Initiative is unchanged.",
+					"description": "Skeletons and Skeleton Warriors commanded by this hero strike twice when making a normal melee attack. Retaliations are unchanged. Multiple Double Strike effects do not add more strikes.",
 					"effect": {
 						"status": "active",
-						"description": "Skeletons and Skeleton Warriors commanded by this hero gain +2 Speed. Initiative is unchanged."
+						"description": "Skeletons and Skeleton Warriors commanded by this hero strike twice when making a normal melee attack. Retaliations are unchanged. Multiple Double Strike effects do not add more strikes."
 					}
 				},
 				{

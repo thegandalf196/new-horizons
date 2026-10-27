@@ -1291,18 +1291,31 @@ TEST_F(NewHorizonsPerSlotLeadershipTest, AuthoritativeStackMutationsRejectOversi
 	const CreatureID halberdier = creatureByName("core:halberdier");
 	const auto capacity = attackerSideHero->getLeadershipSlotCapacity(pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 17);
+	ASSERT_EQ(capacity->maximum, 20);
 
-	EXPECT_FALSE(gameHandler->insertNewStack(StackLocation(attackerSideHero->id, SlotID(0)), pikeman.toCreature(), 18));
+	EXPECT_FALSE(gameHandler->insertNewStack(StackLocation(attackerSideHero->id, SlotID(0)), pikeman.toCreature(), capacity->maximum + 1));
 	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(0)));
-	ASSERT_TRUE(gameHandler->insertNewStack(StackLocation(attackerSideHero->id, SlotID(0)), pikeman.toCreature(), 17));
+	ASSERT_TRUE(gameHandler->insertNewStack(StackLocation(attackerSideHero->id, SlotID(0)), pikeman.toCreature(), capacity->maximum));
 	EXPECT_FALSE(gameHandler->changeStackCount(StackLocation(attackerSideHero->id, SlotID(0)),
 		1, ChangeValueMode::RELATIVE));
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 17);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), capacity->maximum);
 
-	// The upgraded requirement is 60 * 120% = 72, rounded to 70; 1025 / 70 = 14.
-	EXPECT_FALSE(gameHandler->changeStackType(StackLocation(attackerSideHero->id, SlotID(0)), halberdier.toCreature()));
+	// A more expensive creature still rejects the whole existing stack atomically.
+	const auto angel = creatureByName("core:angel");
+	const auto angelCapacity = attackerSideHero->getLeadershipSlotCapacity(angel);
+	ASSERT_TRUE(angelCapacity);
+	ASSERT_LT(angelCapacity->maximum, capacity->maximum);
+	EXPECT_FALSE(gameHandler->changeStackType(StackLocation(attackerSideHero->id, SlotID(0)), angel.toCreature()));
 	EXPECT_EQ(attackerSideHero->getCreature(SlotID(0)), pikeman.toCreature());
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), capacity->maximum);
+
+	// Captured upgrade parity gives Halberdiers the same requirement as Pikemen.
+	const auto upgradedCapacity = attackerSideHero->getLeadershipSlotCapacity(halberdier);
+	ASSERT_TRUE(upgradedCapacity);
+	ASSERT_EQ(upgradedCapacity->requirement, capacity->requirement);
+	EXPECT_TRUE(gameHandler->changeStackType(StackLocation(attackerSideHero->id, SlotID(0)), halberdier.toCreature()));
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(0)), halberdier.toCreature());
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), capacity->maximum);
 }
 
 TEST_F(NewHorizonsPerSlotLeadershipTest, WholeArmyPreflightCannotLoopOrPartiallyTransfer)
@@ -1311,13 +1324,15 @@ TEST_F(NewHorizonsPerSlotLeadershipTest, WholeArmyPreflightCannotLoopOrPartially
 	const CreatureID pikeman = creatureByName("core:pikeman");
 	const CreatureID archer = creatureByName("core:archer");
 	attackerSideHero->clearSlots();
+	const auto capacity = attackerSideHero->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
 	defenderSideHero->clearSlots();
-	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 18));
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, capacity->maximum + 1));
 	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), archer, 1));
 
 	EXPECT_FALSE(gameHandler->moveArmy(defenderSideHero, attackerSideHero, true));
 	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(0)));
-	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(0)), 18);
+	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(0)), capacity->maximum + 1);
 	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(1)), 1);
 }
 

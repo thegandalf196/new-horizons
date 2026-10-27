@@ -40,7 +40,8 @@ PreparedBattleNecromancy prepareBattleNecromancy(const BattleResult & result,
 		newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID);
 	const bool masterOfBones = hero.hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::MASTER_OF_BONES_ID);
-	const bool ossuary = hero.hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+	const bool ossuary = (!capturedPolicy || capturedPolicy->version < 2)
+		&& hero.hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::OSSUARY_ID);
 	const bool lordOfTheDead = hero.hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::LORD_OF_THE_DEAD_ID);
@@ -72,10 +73,10 @@ PreparedBattleNecromancy prepareBattleNecromancy(const BattleResult & result,
 		result.necromancyDefeatedArmyHadLivingChampion, true,
 		hero.getNewHorizonsNecromancyAmplifierBonusPercent(),
 		newHorizonsHeroes::graveReaperPercentagePoints(&hero),
-		capturedPolicy.has_value());
+		capturedPolicy.has_value(), capturedPolicy ? &*capturedPolicy : nullptr);
 	const auto enhanced = reclaimResidualSkeletons(summary,
 		newHorizonsHeroes::reclaimerConversionPercent(hero, ownerState), postBattleMana,
-		blackHarvest ? hero.manaLimit() : postBattleMana);
+		blackHarvest ? hero.manaLimit() : postBattleMana, capturedPolicy ? &*capturedPolicy : nullptr);
 	return {summary, enhanced, ossuary};
 }
 }

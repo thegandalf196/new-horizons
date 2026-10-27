@@ -49,6 +49,12 @@
 	},
 	"definitions": {
 		"necromancyPolicy": {
+			"oneOf": [
+				{"$ref": "#/definitions/necromancyPolicyV1"},
+				{"$ref": "#/definitions/necromancyPolicyV2"}
+			]
+		},
+		"necromancyPolicyV1": {
 			"type": "object",
 			"additionalProperties": false,
 			"description": "Captured Skeleton-focused Necromancy. Absence preserves historical perk meanings and conversions. Leadership requirements are discounted once, rounded upward and bounded below by one; Lord of the Dead replaces the rank reduction.",
@@ -71,6 +77,37 @@
 				"tombGuardAdditionalRetaliations": {"type": "integer", "minimum": 0, "maximum": 100},
 				"graveplatePhysicalReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
 				"graveKnowledgeRecoveryPercent": {"type": "integer", "minimum": 0, "maximum": 100}
+			}
+		},
+		"necromancyPolicyV2": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "Captured revised Skeleton-focused Necromancy. Version 1 and absence retain their historical perk meanings. Leadership requirements are discounted once, rounded upward and bounded below by one; Lord of the Dead replaces the rank reduction.",
+			"required": ["version", "skeletonLeadershipReductionPercent", "lordOfTheDeadLeadershipReductionPercent", "deathMarchSpeed", "bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations", "graveplatePhysicalReductionPercent", "graveKnowledgeRecoveryPercent", "bonewardMagicResistancePercent", "tombGuardDoubleStrike", "deadMansLuckBonus", "boneCollectorRaiseBonusPercent", "soulHarvesterManaPerRaisedCreature", "soulHarvesterManaCap"],
+			"properties": {
+				"version": {"type": "integer", "enum": [2]},
+				"skeletonLeadershipReductionPercent": {
+					"type": "array", "minItems": 4, "maxItems": 4, "additionalItems": false,
+					"description": "Reduction by Skill rank: no Skill, Basic, Advanced, Expert.",
+					"items": [
+						{"type": "integer", "enum": [0]},
+						{"type": "integer", "minimum": 0, "maximum": 99},
+						{"type": "integer", "minimum": 0, "maximum": 99},
+						{"type": "integer", "minimum": 0, "maximum": 99}
+					]
+				},
+				"lordOfTheDeadLeadershipReductionPercent": {"type": "integer", "minimum": 0, "maximum": 99},
+				"deathMarchSpeed": {"type": "integer", "minimum": 0, "maximum": 100},
+				"bonewardMagicalReductionPercent": {"type": "integer", "enum": [0]},
+				"tombGuardAdditionalRetaliations": {"type": "integer", "enum": [0]},
+				"graveplatePhysicalReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"graveKnowledgeRecoveryPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"bonewardMagicResistancePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"tombGuardDoubleStrike": {"type": "boolean"},
+				"deadMansLuckBonus": {"type": "integer", "minimum": 0, "maximum": 10},
+				"boneCollectorRaiseBonusPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"soulHarvesterManaPerRaisedCreature": {"type": "integer", "minimum": 0, "maximum": 100},
+				"soulHarvesterManaCap": {"type": "integer", "minimum": 0, "maximum": 1000000}
 			}
 		},
 		"effect": {

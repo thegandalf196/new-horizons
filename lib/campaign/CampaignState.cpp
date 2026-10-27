@@ -326,13 +326,13 @@ std::shared_ptr<CMapInfo> CampaignState::getMapInfo(CampaignScenarioID scenarioI
 	return mapInfo;
 }
 
-void CampaignState::validateNecromancyPolicySerialization(bool supported) const
+void CampaignState::validateNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const
 {
 	for(const auto & [scenario, pool] : scenarioHeroPool)
 		for(const auto & hero : pool)
-			newHorizonsNecromancy::validatePolicySerialization(hero["perkState"]["rules"], supported);
+			newHorizonsNecromancy::validatePolicySerialization(hero["perkState"]["rules"], supportsV1, supportsV2);
 	for(const auto & [id, hero] : globalHeroPool)
-		newHorizonsNecromancy::validatePolicySerialization(hero["perkState"]["rules"], supported);
+		newHorizonsNecromancy::validatePolicySerialization(hero["perkState"]["rules"], supportsV1, supportsV2);
 }
 
 void CampaignState::validateDefaultCreatureLineSerialization(bool supported) const

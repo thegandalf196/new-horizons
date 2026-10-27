@@ -726,7 +726,8 @@ public:
 	{
 		if(h.saving)
 			newHorizonsNecromancy::validatePolicySerialization(perkState.rules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(h.saving)
 			validateRecoverySpecialtyStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)

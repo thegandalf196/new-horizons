@@ -653,12 +653,16 @@ TEST_F(NewHorizonsDiplomacyTest, EnvoyDoesNotReportBeyondFiveTilesOrAtSquaredDis
 TEST_F(NewHorizonsDiplomacyTest, PaidOfferUsesSelectedAdvancedDiplomacyPerksAndSafeAdmission)
 {
 	const auto pikeman = creature("core:pikeman");
-	startGame(16, 20, CGCreature::Character::HOSTILE);
+	startGame(1, 20, CGCreature::Character::HOSTILE);
 	advanceToDiplomacyRank(MasteryLevel::ADVANCED,
 		newHorizonsDiplomacy::NEGOTIATOR_ID, newHorizonsDiplomacy::COMMON_CAUSE_ID);
 	ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, newHorizonsDiplomacy::NEGOTIATOR_ID));
 	ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, newHorizonsDiplomacy::COMMON_CAUSE_ID));
 	ASSERT_EQ(hero->getPerkSkillRank(DIPLOMACY_SKILL), MasteryLevel::ADVANCED);
+	const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(pikemanCapacity.has_value());
+	ASSERT_EQ(pikemanCapacity->maximum, 20);
+	hero->setStackCount(SlotID(0), pikemanCapacity->maximum - 1);
 
 	// HOSTILE is a disposition, not the explicit map-authored Diplomacy opt-out.
 	// A willing New Horizons offer must take precedence over legacy aggression.
@@ -677,9 +681,6 @@ TEST_F(NewHorizonsDiplomacyTest, PaidOfferUsesSelectedAdvancedDiplomacyPerksAndS
 	ASSERT_TRUE(forecast.normalGoldCostFitsAction);
 	EXPECT_EQ(forecast.normalGoldCost,
 		static_cast<int64_t>(pikeman.toCreature()->getRecruitCost(EGameResID::GOLD)) * 20);
-	const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
-	ASSERT_TRUE(pikemanCapacity.has_value());
-	ASSERT_EQ(pikemanCapacity->maximum, 17);
 
 	const auto neutralId = neutral->id;
 	grantResources(PLAYER, GameResID(EGameResID::GOLD), 10000);
@@ -700,14 +701,14 @@ TEST_F(NewHorizonsDiplomacyTest, PaidOfferUsesSelectedAdvancedDiplomacyPerksAndS
 	EXPECT_EQ(*offer.components[1].value, forecast.normalGoldCost);
 	const auto offerText = offer.text.toString(LIBRARY->generaltexth.get());
 	EXPECT_NE(offerText.find("dismissed permanently"), std::string::npos);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), 16);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), pikemanCapacity->maximum - 1);
 	EXPECT_EQ(neutral->getStackCount(SlotID(0)), 20);
 	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD], fundedGold)
 		<< "Visiting presents the offer; payment waits for acceptance";
 
 	ASSERT_NE(offer.queryID, QueryID::NONE);
 	ASSERT_TRUE(gameHandler->queryReply(offer.queryID, 1, PLAYER));
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), 17)
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), pikemanCapacity->maximum)
 		<< "Only the one Pikeman that fits the existing Leadership slot is transferred";
 	EXPECT_EQ(neutral->getStackCount(SlotID(0)), 19)
 		<< "The full-stack offer is admitted through the normal partial-transfer path";

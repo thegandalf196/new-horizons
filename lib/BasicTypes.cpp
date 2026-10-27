@@ -14,6 +14,7 @@
 #include "GameConstants.h"
 #include "IGameSettings.h"
 #include "bonuses/BonusList.h"
+#include "battle/NewHorizonsNecromancyCombat.h"
 #include "bonuses/Bonus.h"
 #include "bonuses/IBonusBearer.h"
 
@@ -132,9 +133,12 @@ int AFactionMember::luckValAndBonusList(TConstBonusListPtr & bonusList) const
 		return 0;
 	}
 
-	bonusList = getBonusBearer()->getBonusesOfType(BonusType::LUCK);
-
-	return std::clamp(bonusList->totalValue(), maxBadLuck, maxGoodLuck);
+	const auto ordinary = getBonusBearer()->getBonusesOfType(BonusType::LUCK);
+	const int ordinaryLuck = ordinary->totalValue();
+	int additionalLuck = 0;
+	bonusList = newHorizonsNecromancy::appendLuckBonuses(*this, ordinary, additionalLuck);
+	return static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(ordinaryLuck) + additionalLuck,
+		maxBadLuck, maxGoodLuck));
 }
 
 int AFactionMember::moraleVal() const

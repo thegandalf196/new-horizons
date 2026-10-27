@@ -512,6 +512,8 @@ set(test_SRCS
 		server/battles/NewHorizonsNecromancyTest.cpp
 		server/battles/HistoricalNecromancyFixture.h
 		server/battles/HistoricalNecromancyFixtureData.h
+		server/battles/HistoricalNecromancy087Fixture.h
+		server/battles/HistoricalNecromancy087FixtureData.h
 		server/battles/NewHorizonsBoneAndSteelTest.cpp
 		server/battles/NewHorizonsNecromancyHellfireTest.cpp
 		server/battles/NewHorizonsSkeletonNecromancyTest.cpp
@@ -720,6 +722,9 @@ set(test_SRCS
 		server/NewHorizonsLeadershipAdmissionTest.cpp
 		server/NewHorizonsUpgradeLeadershipParityTest.cpp
 		server/NewHorizonsBattleFormResultTest.cpp
+		server/battles/NewHorizonsTombGuardTest.cpp
+		server/battles/NewHorizonsNecromancyV2DeliveryTest.cpp
+		hero/NewHorizonsNecromancyV2YieldTest.cpp
 		server/NewHorizonsRecruitmentMusterTest.cpp
 		server/NewHorizonsDiplomacyTest.cpp
 		server/NewHorizonsLegendaryReputationTest.cpp

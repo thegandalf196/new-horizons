@@ -9,7 +9,7 @@ class JsonNode;
 class CHero;
 class CGHeroInstance;
 class PlayerState;
-namespace newHorizonsNecromancy { struct NecromancyResult; }
+namespace newHorizonsNecromancy { struct NecromancyResult; struct Policy; }
 namespace newHorizonsHeroes
 {
 struct SpecialtyPresentation;
@@ -29,8 +29,9 @@ namespace newHorizonsNecromancy
 {
 /// Pure residual conversion after the ordinary result; no new corpse eligibility.
 DLL_LINKAGE NecromancyResult reclaimResidualSkeletons(const NecromancyResult & ordinary,
-	int conversionPercent, int32_t currentMana, int32_t manaLimit);
+	int conversionPercent, int32_t currentMana, int32_t manaLimit, const Policy * capturedPolicy = nullptr);
 /// Recompute every output-derived field after choosing a complete batch.
-DLL_LINKAGE void finalizeRaisedResult(NecromancyResult & result, int32_t currentMana, int32_t manaLimit);
+DLL_LINKAGE void finalizeRaisedResult(NecromancyResult & result, int32_t currentMana, int32_t manaLimit,
+	const Policy * capturedPolicy = nullptr);
 DLL_LINKAGE void blockRaisedResult(NecromancyResult & result);
 }

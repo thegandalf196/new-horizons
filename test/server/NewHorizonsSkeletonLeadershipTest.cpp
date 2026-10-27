@@ -4,6 +4,8 @@
  */
 #include "StdInc.h"
 #include "../mock/TinyMapGameTest.h"
+#include "battles/HistoricalNecromancy087Fixture.h"
+#include "battles/HistoricalNecromancyFixture.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
@@ -12,6 +14,7 @@
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapping/CMap.h"
+#include <string_view>
 
 namespace
 {
@@ -29,9 +32,11 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
 			return;
 		}
-		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-		if(!GetParam())
-			perks.Struct().erase(newHorizonsNecromancy::POLICY_KEY);
+		auto perks = GetParam() ? necromancy087Test::rules() : necromancyTest::historicalRules();
+		const auto captured = newHorizonsNecromancy::policy(perks);
+		ASSERT_EQ(captured.has_value(), GetParam());
+		if(captured)
+			ASSERT_EQ(captured->version, 1);
 		perks.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
@@ -54,7 +59,11 @@ protected:
 	}
 	void select(const char * id)
 	{
-		hero->applyPerkSelection({newHorizonsNecromancy::SKILL_ID, id});
+		// These scenarios use Death March as their v1 Expert control. Its
+		// pre-policy identity is Basic, so choose the old Expert alternative.
+		const auto * selected = !GetParam() && std::string_view(id) == newHorizonsNecromancy::CORPSE_PRESERVATION_ID
+			? newHorizonsNecromancy::MASTER_OF_BONES_ID : id;
+		hero->applyPerkSelection({newHorizonsNecromancy::SKILL_ID, selected});
 	}
 	std::array<CreatureID, 2> skeletons() const
 	{

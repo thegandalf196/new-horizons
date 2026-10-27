@@ -129,10 +129,10 @@ public:
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
-	void validateNewHorizonsNecromancyPolicySerialization(bool supported) const
+	void validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const
 	{
 		newHorizonsNecromancy::validatePolicySerialization(
-			getAllOverrides()["heroes"]["newHorizonsPerks"], supported);
+			getAllOverrides()["heroes"]["newHorizonsPerks"], supportsV1, supportsV2);
 	}
 
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const
@@ -277,7 +277,8 @@ public:
 			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 			newHorizonsNecromancy::validatePolicySerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
@@ -342,7 +343,8 @@ public:
 			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 			newHorizonsNecromancy::validatePolicySerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));

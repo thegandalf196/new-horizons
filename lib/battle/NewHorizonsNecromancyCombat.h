@@ -5,8 +5,11 @@
  */
 #pragma once
 #include "../constants/EntityIdentifiers.h"
+#include <memory>
 
 class CGHeroInstance;
+class AFactionMember;
+class BonusList;
 namespace battle { class Unit; }
 struct BattleAttackInfo;
 struct DamageEstimation;
@@ -20,7 +23,15 @@ struct CombatPassives
 	int magicalReductionPercent = 0;
 	int additionalRetaliations = 0;
 	int physicalReductionPercent = 0;
+	int magicResistancePercent = 0;
+	bool doubleStrike = false;
+	int luckBonus = 0;
 };
+/// Return detached explanation contributions without mutating the bonus graph.
+/// The caller adds additionalLuck to its unmodified scalar with wide arithmetic;
+/// the explanation list is not an arithmetic replacement for that scalar.
+DLL_LINKAGE std::shared_ptr<const BonusList> appendLuckBonuses(const AFactionMember & member,
+	std::shared_ptr<const BonusList> ordinary, int & additionalLuck);
 DLL_LINKAGE CombatPassives captureCombatPassives(const CGHeroInstance * hero);
 DLL_LINKAGE CombatPassives passivesForCreature(const CombatPassives & captured, CreatureID creature);
 /// Construction-only query: old captures and zero-passive recipients retain lazy projection.

@@ -23,6 +23,7 @@ class CreatureCategoryRules;
 
 namespace newHorizonsNecromancy
 {
+struct Policy;
 /// Existing Master of Bones dwelling query, shared with result resolution.
 DLL_LINKAGE CreatureID availableNecropolisSkeletonUpgrade(const PlayerState * ownerState);
 /// Existing Normal-only Black Harvest input; legacy profiles keep the entry-Mana ceiling.
@@ -336,5 +337,11 @@ DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32
 	SpecialCasualtyCounts nonliving = {}, SpecialCasualtyCounts undead = {},
 	bool lordOfTheDead = false, bool defeatedArmyHadLivingChampion = false,
 	bool boneDragonSlotAvailable = true, int32_t amplifierBonusPercent = 0, int32_t baseSpecialtyPercentagePoints = 0,
-	bool skeletonPerkOutputsOnly = false);
+	bool skeletonPerkOutputsOnly = false, const Policy * capturedPolicy = nullptr);
+
+/// Version-two fresh Skeleton yield. Legacy callers retain the historical resolver.
+DLL_LINKAGE NecromancyResult resolveSkeletonRaising(int rank, int32_t eligibleCasualties,
+	bool boneCollector, bool skeletonSlotAvailable, int32_t currentMana, int32_t manaLimit,
+	CreatureID skeletonOutput, int32_t amplifierBonusPercent, int32_t baseSpecialtyPercentagePoints,
+	const Policy & capturedPolicy);
 }

@@ -6,6 +6,7 @@
 #include "StdInc.h"
 #include "NewHorizonsNecromancy.h"
 #include "NewHorizonsReclaimer.h"
+#include "NewHorizonsNecromancyPolicy.h"
 
 #include "../../CCreatureHandler.h"
 #include "../../GameLibrary.h"
@@ -227,8 +228,12 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead,
 	bool lordOfTheDead, bool defeatedArmyHadLivingChampion, bool boneDragonSlotAvailable,
 	int32_t amplifierBonusPercent, int32_t baseSpecialtyPercentagePoints,
-	bool skeletonPerkOutputsOnly)
+	bool skeletonPerkOutputsOnly, const Policy * capturedPolicy)
 {
+	if(capturedPolicy && capturedPolicy->version >= 2)
+		return resolveSkeletonRaising(rank, eligibleCasualties, boneCollector, skeletonSlotAvailable,
+			currentMana, manaLimit, skeletonOutput, amplifierBonusPercent,
+			baseSpecialtyPercentagePoints, *capturedPolicy);
 	if(skeletonPerkOutputsOnly)
 	{
 		corpsePreservation = false;

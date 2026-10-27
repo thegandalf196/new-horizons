@@ -22,6 +22,7 @@ namespace
 Policy readPolicy(const JsonNode & row)
 {
 	Policy result{};
+	result.version = static_cast<int>(row["version"].Integer());
 	for(size_t rank = 0; rank < result.skeletonLeadershipReductionPercent.size(); ++rank)
 		result.skeletonLeadershipReductionPercent[rank] = static_cast<int>(row["skeletonLeadershipReductionPercent"].Vector()[rank].Integer());
 	result.lordOfTheDeadLeadershipReductionPercent = static_cast<int>(row["lordOfTheDeadLeadershipReductionPercent"].Integer());
@@ -30,6 +31,15 @@ Policy readPolicy(const JsonNode & row)
 	result.tombGuardAdditionalRetaliations = static_cast<int>(row["tombGuardAdditionalRetaliations"].Integer());
 	result.graveplatePhysicalReductionPercent = static_cast<int>(row["graveplatePhysicalReductionPercent"].Integer());
 	result.graveKnowledgeRecoveryPercent = static_cast<int>(row["graveKnowledgeRecoveryPercent"].Integer());
+	if(result.version >= 2)
+	{
+		result.bonewardMagicResistancePercent = static_cast<int>(row["bonewardMagicResistancePercent"].Integer());
+		result.tombGuardDoubleStrike = row["tombGuardDoubleStrike"].Bool();
+		result.deadMansLuckBonus = static_cast<int>(row["deadMansLuckBonus"].Integer());
+		result.boneCollectorRaiseBonusPercent = static_cast<int>(row["boneCollectorRaiseBonusPercent"].Integer());
+		result.soulHarvesterManaPerRaisedCreature = static_cast<int>(row["soulHarvesterManaPerRaisedCreature"].Integer());
+		result.soulHarvesterManaCap = static_cast<int>(row["soulHarvesterManaCap"].Integer());
+	}
 	return result;
 }
 }
@@ -44,8 +54,27 @@ std::optional<Policy> policy(const JsonNode & capturedPerkRules)
 	fields(row, {"version", "skeletonLeadershipReductionPercent",
 		"lordOfTheDeadLeadershipReductionPercent", "deathMarchSpeed",
 		"bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations",
-		"graveplatePhysicalReductionPercent", "graveKnowledgeRecoveryPercent"});
-	require(integer(row["version"], POLICY_VERSION, POLICY_VERSION), "Necromancy policy version");
+		"graveplatePhysicalReductionPercent", "graveKnowledgeRecoveryPercent",
+		"bonewardMagicResistancePercent", "tombGuardDoubleStrike", "deadMansLuckBonus",
+		"boneCollectorRaiseBonusPercent", "soulHarvesterManaPerRaisedCreature", "soulHarvesterManaCap"});
+	require(integer(row["version"], 1, POLICY_VERSION), "Necromancy policy version");
+	if(row["version"].Integer() == 1)
+	{
+		for(const auto * key : {"bonewardMagicResistancePercent", "tombGuardDoubleStrike", "deadMansLuckBonus",
+			"boneCollectorRaiseBonusPercent", "soulHarvesterManaPerRaisedCreature", "soulHarvesterManaCap"})
+			require(!row.Struct().contains(key), "Historical Necromancy policy fields");
+	}
+	else
+	{
+		require(row["tombGuardDoubleStrike"].isBool(), "Tomb Guard Double Strike");
+		for(const auto * key : {"bonewardMagicResistancePercent", "boneCollectorRaiseBonusPercent",
+			"soulHarvesterManaPerRaisedCreature"})
+			require(integer(row[key], 0, 100), key);
+		require(integer(row["deadMansLuckBonus"], 0, 10), "Dead Man's Luck bonus");
+		require(integer(row["soulHarvesterManaCap"], 0, 1000000), "Soul Harvester Mana cap");
+		require(integer(row["bonewardMagicalReductionPercent"], 0, 0)
+			&& integer(row["tombGuardAdditionalRetaliations"], 0, 0), "Retired Necromancy passive coefficients");
+	}
 	const auto & reductions = row["skeletonLeadershipReductionPercent"];
 	require(reductions.isVector() && reductions.Vector().size() == 4,
 		"Necromancy requires four rank Leadership reductions");
@@ -74,9 +103,10 @@ void validatePolicy(const JsonNode & capturedPerkRules)
 	(void)policy(capturedPerkRules);
 }
 
-void validatePolicySerialization(const JsonNode & capturedPerkRules, bool supported)
+void validatePolicySerialization(const JsonNode & capturedPerkRules, bool supportsV1, bool supportsV2)
 {
-	if(policy(capturedPerkRules) && !supported)
+	const auto captured = policy(capturedPerkRules);
+	if(captured && (!supportsV1 || (captured->version >= 2 && !supportsV2)))
 		throw std::runtime_error("Cannot discard captured Necromancy policy");
 }
 
@@ -148,6 +178,27 @@ int tombGuardAdditionalRetaliations(const CGHeroInstance * hero, CreatureID crea
 	const auto captured = activePolicy(hero, creature);
 	return captured && hero->hasActivePerk(SKILL_ID, SOUL_HARVESTER_ID)
 		? captured->tombGuardAdditionalRetaliations : 0;
+}
+
+int bonewardMagicResistancePercent(const CGHeroInstance * hero, CreatureID creature)
+{
+	const auto captured = activePolicy(hero, creature);
+	return captured && hero->hasActivePerk(SKILL_ID, DARK_CONVERSION_ID)
+		? captured->bonewardMagicResistancePercent : 0;
+}
+
+bool tombGuardDoubleStrike(const CGHeroInstance * hero, CreatureID creature)
+{
+	const auto captured = activePolicy(hero, creature);
+	return captured && hero->hasActivePerk(SKILL_ID, SOUL_HARVESTER_ID)
+		? captured->tombGuardDoubleStrike : false;
+}
+
+int deadMansLuckBonus(const CGHeroInstance * hero, CreatureID creature)
+{
+	const auto captured = activePolicy(hero, creature);
+	return captured && hero->hasActivePerk(SKILL_ID, OSSUARY_ID)
+		? captured->deadMansLuckBonus : 0;
 }
 
 int graveplatePhysicalReductionPercent(const CGHeroInstance * hero, CreatureID creature)

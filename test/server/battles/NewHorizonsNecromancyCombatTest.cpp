@@ -5,6 +5,8 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "HistoricalNecromancy087Fixture.h"
+#include "HistoricalNecromancyFixture.h"
 #include "../../../AI/BattleAI/AttackPossibility.h"
 #include "../../../AI/BattleAI/HypotheticBattle.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
@@ -75,9 +77,11 @@ protected:
 			heroes["startingSkills"].Struct().erase("startingBookReplacements");
 		heroes.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
-		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
-		if(!currentPolicy)
-			perks.Struct().erase(newHorizonsNecromancy::POLICY_KEY);
+		auto perks = currentPolicy ? necromancy087Test::rules() : necromancyTest::historicalRules();
+		const auto captured = newHorizonsNecromancy::policy(perks);
+		ASSERT_EQ(captured.has_value(), currentPolicy);
+		if(captured)
+			ASSERT_EQ(captured->version, 1);
 		perks.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		auto magic = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
@@ -110,8 +114,11 @@ protected:
 		ASSERT_EQ(defenderSideHero->getNewHorizonsNecromancyRank(), 3);
 		const auto * advanced = useGraveplate ? newHorizonsNecromancy::DEATH_LORD_ID
 			: newHorizonsNecromancy::SOUL_HARVESTER_ID;
-		for(const auto * perk : {newHorizonsNecromancy::DARK_CONVERSION_ID,
-			advanced, newHorizonsNecromancy::CORPSE_PRESERVATION_ID})
+		// The old capture's Expert alternative is Master of Bones; the same
+		// Death March identity occupies Basic there and cannot be chosen twice.
+		const auto * expert = currentPolicy ? newHorizonsNecromancy::CORPSE_PRESERVATION_ID
+			: newHorizonsNecromancy::MASTER_OF_BONES_ID;
+		for(const auto * perk : {newHorizonsNecromancy::DARK_CONVERSION_ID, advanced, expert})
 		{
 			defenderSideHero->applyPerkSelection({newHorizonsNecromancy::SKILL_ID, perk});
 			ASSERT_TRUE(defenderSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID, perk));
