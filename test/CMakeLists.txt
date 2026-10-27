@@ -566,6 +566,7 @@ set(test_SRCS
 		server/battles/NewHorizonsMassRegenerationTest.cpp
 		battleAI/PurifyRuleFixtures.cpp
 		server/battles/NewHorizonsMassSlowTest.cpp
+		server/battles/NewHorizonsSlowResolvedStatsTest.cpp
 		server/battles/NewHorizonsLifeDrainTest.cpp
 		server/battles/NewHorizonsVampirismTest.cpp
 		server/battles/NewHorizonsReanimateTest.cpp
