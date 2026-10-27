@@ -120,7 +120,8 @@ protected:
 		attackerSideHero->clearSlots();
 		defenderSideHero->clearSlots();
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), CreatureID::SKELETON, 1));
-		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), CreatureID::PIKEMAN, 41));
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0),
+			CreatureID(CreatureID::decode("core:pikeman")), 41));
 		ASSERT_TRUE(attackerSideHero->usesNewHorizonsNecromancy());
 		ASSERT_FALSE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 			newHorizonsNecromancy::CORPSE_PRESERVATION_ID));
@@ -135,7 +136,8 @@ TEST_P(NewHorizonsSkeletonCorpseTest, OrdinaryMagicalKillsNeedNoPerkButDestroyed
 	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
 	CStack * target = nullptr;
 	for(const auto * stack : battle()->battleGetAllStacks())
-		if(stack->unitSide() == BattleSide::DEFENDER && stack->creatureId() == CreatureID::PIKEMAN)
+		if(stack->unitSide() == BattleSide::DEFENDER
+			&& stack->creatureId() == CreatureID(CreatureID::decode("core:pikeman")))
 			target = const_cast<CStack *>(stack);
 	ASSERT_NE(target, nullptr);
 	const auto damage = [&](int count, bool destroy)

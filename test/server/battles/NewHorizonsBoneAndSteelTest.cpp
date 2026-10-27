@@ -6,7 +6,9 @@
 #include "BattleTestFixture.h"
 #include "../../mock/TinyH3MBuilder.h"
 #include "../../../lib/CSkillHandler.h"
+#include "../../../lib/GameLibrary.h"
 #include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -21,6 +23,19 @@
 
 namespace
 {
+// Custom maps must create the actual Necropolis hero before rule capture.
+// Match the base fixture's neutral combat inputs through public hero APIs.
+void resetScenarioHero(CGHeroInstance * hero)
+{
+	for(const auto & bonus : hero->getHeroType()->specialty)
+		hero->removeBonus(bonus);
+	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
+		hero->setSecSkillLevel(SecondarySkill(index), 0, ChangeValueMode::ABSOLUTE);
+	for(const auto skill : {PrimarySkill::ATTACK, PrimarySkill::DEFENSE,
+		PrimarySkill::SPELL_POWER, PrimarySkill::KNOWLEDGE})
+		hero->setPrimarySkill(skill, 0, ChangeValueMode::ABSOLUTE);
+}
+
 // 0 absent, 1 owned but unbuilt, 2 owned and built, 3 foreign and built.
 class NewHorizonsBoneAndSteelTest : public BattleTestFixture,
 	public ::testing::WithParamInterface<int>
@@ -57,11 +72,14 @@ protected:
 		defenderSideHero = findHeroByOwner(PlayerColor(1));
 		ASSERT_NE(attackerSideHero, nullptr);
 		ASSERT_NE(defenderSideHero, nullptr);
-		makeNeutral(attackerSideHero);
-		makeNeutral(defenderSideHero);
+		ASSERT_EQ(attackerSideHero->getHeroTypeID(), HeroTypeID(72));
+		resetScenarioHero(attackerSideHero);
+		resetScenarioHero(defenderSideHero);
 		const auto towns = gameState()->getMap().getObjects<CGTownInstance>();
 		if(GetParam() == 0)
+		{
 			ASSERT_TRUE(towns.empty());
+		}
 		else
 		{
 			ASSERT_EQ(towns.size(), 1u);
@@ -121,7 +139,9 @@ TEST_P(NewHorizonsBoneAndSteelTest, BasicPerkRequiresAnActuallyOwnedBuiltUpgrade
 	{
 		const auto query = gameHandler->queries->topQuery(player);
 		if(query && query->getType() == QueryType::BattleDialog)
+		{
 			ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, player));
+		}
 	}
 	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
 	EXPECT_EQ(count(base), GetParam() == 2 ? 1 : 2);

@@ -10,6 +10,7 @@
 #include "../../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapping/CMap.h"
+#include "../../../lib/mapping/CMapInfo.h"
 #include "../../../lib/networkPacks/PacksForLobby.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 
