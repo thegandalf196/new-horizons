@@ -70,8 +70,11 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
-		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+		auto heroes = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(legacyMdr)
+			heroes["startingSkills"].Struct().erase("startingBookReplacements");
+		heroes.setOverrideFlag(true);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
 		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 		if(!currentPolicy)
 			perks.Struct().erase(newHorizonsNecromancy::POLICY_KEY);
@@ -99,11 +102,11 @@ protected:
 		startGame();
 		ASSERT_EQ(newHorizonsNecromancy::policy(defenderSideHero->getPerkState().rules).has_value(), currentPolicy);
 		defenderSideHero->setHeroType(HeroTypeID(72));
-		ASSERT_TRUE(defenderSideHero->usesNewHorizonsNecromancy());
 		const auto skillId = SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID);
 		ASSERT_GE(skillId, 0);
 		const auto skill = SecondarySkill(skillId);
 		defenderSideHero->setSecSkillLevel(skill, 3, ChangeValueMode::ABSOLUTE);
+		ASSERT_TRUE(defenderSideHero->usesNewHorizonsNecromancy());
 		ASSERT_EQ(defenderSideHero->getNewHorizonsNecromancyRank(), 3);
 		const auto * advanced = useGraveplate ? newHorizonsNecromancy::DEATH_LORD_ID
 			: newHorizonsNecromancy::SOUL_HARVESTER_ID;
