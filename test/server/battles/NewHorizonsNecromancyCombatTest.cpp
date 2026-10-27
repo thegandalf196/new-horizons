@@ -195,7 +195,7 @@ TEST_F(NewHorizonsNecromancyCombatTest, BothSkeletonFormsGainMovementOnlyAndOneN
 	EXPECT_EQ(ordinary->getMovementRange(), ordinary->getInitiative());
 }
 
-TEST_F(NewHorizonsNecromancyCombatTest, FrozenAndBindStillZeroMovementAndLegacyInitiativeFallbackDoesNotGainSpeed)
+TEST_F(NewHorizonsNecromancyCombatTest, ImmobilityAndFrozenActionLegalityPreserveDeathMarchAndLegacyInitiative)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	// A private provider has Speed but no explicit Initiative, exercising the legacy fallback.
@@ -210,8 +210,18 @@ TEST_F(NewHorizonsNecromancyCombatTest, FrozenAndBindStillZeroMovementAndLegacyI
 	skeleton->addNewBonus(marker(BonusType::BIND_EFFECT));
 	EXPECT_EQ(skeleton->getMovementRange(), 0u);
 	EXPECT_EQ(skeleton->getInitiative(), beforeInitiative);
+	const auto warriorRange = warrior->getMovementRange();
 	warrior->addNewBonus(std::make_shared<Bonus>(newHorizonsFrozen::makeFrozenMarker(BonusSourceID(), 0)));
-	EXPECT_EQ(warrior->getMovementRange(), 0u);
+	// NH Frozen vetoes movement legality without zeroing this range.
+	ASSERT_TRUE(newHorizonsFrozen::isFrozen(*warrior));
+	EXPECT_FALSE(warrior->canMove());
+	EXPECT_EQ(warrior->getMovementRange(), warriorRange);
+	const auto frozenForecast = forecast();
+	const auto * frozenWarrior = frozenForecast->battleGetUnitByID(warrior->unitId());
+	ASSERT_NE(frozenWarrior, nullptr);
+	ASSERT_TRUE(newHorizonsFrozen::isFrozen(*frozenWarrior));
+	EXPECT_FALSE(frozenWarrior->canMove());
+	EXPECT_EQ(frozenWarrior->getMovementRange(), warriorRange);
 }
 
 TEST_F(NewHorizonsNecromancyCombatTest, AbsentCapturedPolicyRetainsAllHistoricalCombatOutputs)
@@ -444,7 +454,8 @@ TEST_F(NewHorizonsNecromancyCombatTest, GraveplateCoexistsWithHistoricalPhysical
 	ASSERT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(battle()->getMagicRules()), -1);
 	EXPECT_EQ(physicalDamage(skeleton, -1, 0, 0, 0).damage.min, 100);
 	EXPECT_EQ(physicalDamage(skeleton, -1).damage.min, 80);
-	EXPECT_EQ(physicalDamage(skeleton, -1, 25, 30).damage.min, 42);
+	// The legacy path retains strict flooring: (0.7 * 0.75) * 0.8 * 100 is just below 42.
+	EXPECT_EQ(physicalDamage(skeleton, -1, 25, 30).damage.min, 41);
 	EXPECT_EQ(physicalDamage(skeleton, -1, 25, 30, 0).damage.min, 52);
 }
 
