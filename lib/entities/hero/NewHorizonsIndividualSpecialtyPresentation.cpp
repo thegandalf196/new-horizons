@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsNecromancyPolicy.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../spells/NewHorizonsMagic.h"
@@ -38,8 +39,10 @@ bool resolveIndividualRiderPresentation(const CHero & hero, const JsonNode & dev
 		result.description = "With Necromancy learned, its base raising rate gains +"
 			+ std::to_string(rule.percentagePointsPerLevel) + " percentage points per hero level, up to +"
 			+ std::to_string(rule.maximumPercentagePoints) + " points. Bone Collector and Amplifiers add separately; "
-			"the total still caps at 100%. Death Lord follows the enhanced rate; Grave Knowledge remains 20%. "
-			"This does not grant Necromancy or bypass army capacity.";
+			"the total still caps at 100%. ";
+		if(capturedHero && !newHorizonsNecromancy::policy(capturedHero->getPerkState().rules))
+			result.description += "Death Lord follows the enhanced rate; Grave Knowledge remains 20%. ";
+		result.description += "This does not grant Necromancy or bypass army capacity.";
 		if(capturedHero)
 			result.description += " Current base-rate bonus: +"
 				+ std::to_string(graveReaperPercentagePoints(capturedHero)) + " percentage points.";

@@ -4,8 +4,10 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "HistoricalNecromancyFixture.h"
 #include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -32,6 +34,7 @@ class NewHorizonsIndividualSpecialtyConsumerTest : public HeroCommandFixture
 {
 protected:
 	bool capturedPolicy = true;
+	bool historicalNecromancy = false;
 	std::unique_ptr<IndividualSpecialtyResultServer> resultServer;
 	void TearDown() override
 	{
@@ -55,6 +58,8 @@ protected:
 			row["warlocksFormula"]["maximumPercent"].Integer() = 100;
 		}
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		if(historicalNecromancy)
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, necromancyTest::historicalRules());
 	}
 
 	void prepare(const char * name, int level)
@@ -269,4 +274,47 @@ TEST_F(NewHorizonsIndividualSpecialtyConsumerTest, PresentationUsesValidOlderCap
 	const SpellID spell(SpellID::MAGIC_ARROW);
 	EXPECT_EQ(newHorizonsMagic::directDamageSpellPowerCoefficientBasisPoints(capturedMagic, attackerSideHero, spell),
 		newHorizonsMagic::spellPowerCoefficientBasisPoints(capturedMagic, attackerSideHero, spell));
+}
+
+TEST_F(NewHorizonsIndividualSpecialtyConsumerTest, IsraCurrentAndActorlessHelpOmitRetiredNecromancyClaims)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:isra", 10));
+	setRank("new-horizons:necromancy", MasteryLevel::BASIC);
+	ASSERT_TRUE(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().rules));
+	const auto rulesBefore = attackerSideHero->getPerkState().rules;
+	const auto preview = newHorizonsHeroes::resolveSpecialtyPresentation(*attackerSideHero->getHeroType(),
+		attackerSideHero->getPrimaryGrowthRules(), attackerSideHero->getMagicRules(), std::nullopt);
+	const auto live = attackerSideHero->getSpecialtyPresentation();
+	const std::string expected = "With Necromancy learned, its base raising rate gains +1 percentage points per hero level, "
+		"up to +20 points. Bone Collector and Amplifiers add separately; the total still caps at 100%. "
+		"This does not grant Necromancy or bypass army capacity.";
+	EXPECT_EQ(preview.description, expected);
+	EXPECT_EQ(live.description, expected + " Current base-rate bonus: +10 percentage points.");
+	EXPECT_EQ(live.name, "Grave Reaper");
+	EXPECT_EQ(live.artwork, std::optional<std::string>("newHorizons/heroSpecialties/IsraGraveReaper"));
+	EXPECT_EQ(newHorizonsHeroes::graveReaperPercentagePoints(attackerSideHero), 10);
+	EXPECT_EQ(attackerSideHero->getPerkState().rules, rulesBefore);
+}
+
+TEST_F(NewHorizonsIndividualSpecialtyConsumerTest, IsraHistoricalNecromancyHelpSurvivesWorldRoundtrip)
+{
+	historicalNecromancy = true;
+	ASSERT_NO_FATAL_FAILURE(prepare("core:isra", 10));
+	setRank("new-horizons:necromancy", MasteryLevel::BASIC);
+	ASSERT_FALSE(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().rules));
+	const auto before = attackerSideHero->getSpecialtyPresentation();
+	const std::string expected = "With Necromancy learned, its base raising rate gains +1 percentage points per hero level, "
+		"up to +20 points. Bone Collector and Amplifiers add separately; the total still caps at 100%. "
+		"Death Lord follows the enhanced rate; Grave Knowledge remains 20%. "
+		"This does not grant Necromancy or bypass army capacity. Current base-rate bonus: +10 percentage points.";
+	EXPECT_EQ(before.description, expected);
+	const auto heroID = attackerSideHero->id;
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(gameState()->saveToMemory());
+	const auto * loaded = restored.getHero(heroID);
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_FALSE(newHorizonsNecromancy::policy(loaded->getPerkState().rules));
+	EXPECT_EQ(loaded->getPerkState().rules, attackerSideHero->getPerkState().rules);
+	EXPECT_EQ(loaded->getSpecialtyPresentation().description, expected);
 }
