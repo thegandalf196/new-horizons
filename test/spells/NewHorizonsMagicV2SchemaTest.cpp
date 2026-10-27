@@ -12,13 +12,14 @@
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/constants/StringConstants.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "HistoricalCrusadeRules.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 
 namespace
 {
 JsonNode v1Rules()
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	JsonNode rules = historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")), 1);
 	rules["rulesetVersion"].Integer() = 1;
 	rules.Struct().erase("heroLuck");
 	rules.Struct().erase("heroMorale");
@@ -69,7 +70,7 @@ JsonNode v1Rules()
 
 JsonNode v2Rules()
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	JsonNode rules = historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")), 2);
 	rules["rulesetVersion"].Integer() = 2;
 	rules.Struct().erase("heroLuck");
 	rules.Struct().erase("heroMorale");

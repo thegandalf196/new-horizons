@@ -10,6 +10,7 @@
 
 #include "BattleStartSnapshotFixture.h"
 #include "HeroCommandFixture.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
 
@@ -94,6 +95,7 @@ protected:
 		}
 		if(useV2MagicRules)
 		{
+			magicRules = historicalCrusadeRules(std::move(magicRules), 2);
 			magicRules["spells"]["core:slow"].Struct().erase("slow");
 			magicRules["spells"].Struct().erase("new-horizons:summonLivingArmor");
 		}

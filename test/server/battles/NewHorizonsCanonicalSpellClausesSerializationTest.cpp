@@ -250,7 +250,9 @@ INSTANTIATE_TEST_SUITE_P(CapturedClauses, NewHorizonsCanonicalSpellClausesSerial
 
 TEST(NewHorizonsCanonicalSpellClausesCompatibilityTest, AbsentClausesAndEmptyBattleEnvelopeRemainOldWritable)
 {
-	const auto rules = absentRules();
+	auto rules = absentRules();
+	// This writer predates Fly's separately captured day-end policy.
+	rules["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
 	ASSERT_NO_THROW(newHorizonsMagic::validateCanonicalSpellClausesSerialization(rules, false));
 	GameSettings settings;
 	settings.loadOverrides(rawOverrides(rules));

@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "HistoricalCrusadeRules.h"
 #include "../../lib/entities/hero/NewHorizonsSchoolSpellcraft.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -27,7 +28,7 @@ JsonNode originalRules()
 
 JsonNode legacyRules()
 {
-	auto rules = originalRules();
+	auto rules = historicalCrusadeRules(originalRules(), 1);
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::RULESET_VERSION;
 	rules.Struct().erase("heroLuck");
 	rules.Struct().erase("heroMorale");
@@ -89,7 +90,7 @@ JsonNode legacyRules()
 
 JsonNode formulaRules()
 {
-	auto rules = originalRules();
+	auto rules = historicalCrusadeRules(originalRules(), 2);
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
