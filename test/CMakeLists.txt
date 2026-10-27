@@ -373,6 +373,7 @@ set(test_SRCS
 		server/battles/EnchantedTest.cpp
 		server/battles/FireShieldTest.cpp
 		server/battles/FocusMagicSpellTest.cpp
+		spells/NewHorizonsFocusParameterSchemaTest.cpp
 		server/battles/NewHorizonsHexOfPainTest.cpp
 		server/battles/NewHorizonsShadowGiftTest.cpp
 		server/battles/NewHorizonsPlagueTest.cpp

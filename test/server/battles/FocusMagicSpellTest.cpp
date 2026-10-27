@@ -13,8 +13,12 @@
 #include "../../spells/HistoricalCrusadeRules.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 #include "../../../lib/GameSettings.h"
+#include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/battle/ProjectedBattleWorldArena.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -22,6 +26,9 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/modding/IdentifierStorage.h"
 #include "../../../lib/modding/ModScope.h"
+#include "../../../lib/json/JsonBonus.h"
+#include "../../../lib/json/JsonValidator.h"
+#include "../../../lib/logging/CLogger.h"
 #include "../../../lib/scripting/ScriptService.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
@@ -30,6 +37,7 @@
 #include "../../../lib/spells/Problem.h"
 
 #include <array>
+#include <atomic>
 #include <utility>
 
 namespace
@@ -37,6 +45,43 @@ namespace
 constexpr auto sorcerySkillKey = "new-horizons:sorceryMagic";
 constexpr auto warcastingSkillKey = "new-horizons:warcasting";
 constexpr auto focusMagicEffectKey = "core:focusMagicEnchantment";
+
+class FocusParameterWarningTarget final : public ILogTarget
+{
+	std::weak_ptr<std::atomic_size_t> warnings;
+public:
+	explicit FocusParameterWarningTarget(std::weak_ptr<std::atomic_size_t> warnings)
+		: warnings(std::move(warnings)) {}
+	void write(const LogRecord & record) override
+	{
+		if(record.level >= ELogLevel::WARN && record.message.find("beneficiarySide") != std::string::npos)
+			if(const auto counter = warnings.lock()) counter->fetch_add(1);
+	}
+};
+
+class FocusParameterWarnings final
+{
+	CLogger * logger = CLogger::getGlobalLogger();
+	ELogLevel::ELogLevel previousLevel = logger->getLevel();
+public:
+	std::shared_ptr<std::atomic_size_t> count = std::make_shared<std::atomic_size_t>(0);
+	FocusParameterWarnings()
+	{
+		logger->setLevel(ELogLevel::WARN);
+		logger->addTarget(std::make_unique<FocusParameterWarningTarget>(count));
+	}
+	~FocusParameterWarnings() { logger->setLevel(previousLevel); }
+};
+
+class FocusEnvironment final : public Environment
+{
+	std::shared_ptr<CGameState> state;
+public:
+	explicit FocusEnvironment(std::shared_ptr<CGameState> state) : state(std::move(state)) {}
+	const Services * services() const override { return LIBRARY; }
+	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
+	const GameCb * game() const override { return state.get(); }
+};
 
 SpellID focusMagicSpell()
 {
@@ -237,6 +282,41 @@ protected:
 		action.aimToUnit(target);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
+
+	void expectSchemaValidCapture(const battle::Unit * unit, SpellID source, const std::string & scriptKey,
+		int rounds, size_t count = 1)
+	{
+		ASSERT_NE(unit, nullptr);
+		const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(source)));
+		ASSERT_EQ(bonuses->size(), count);
+		const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "script", scriptKey);
+		ASSERT_TRUE(id.has_value());
+		const auto & schema = LIBRARY->scriptTypes()->getById(ScriptID(*id)).parametersSchema;
+		for(const auto & bonus : *bonuses)
+		{
+			ASSERT_NE(bonus->parameters, nullptr);
+			const auto parameters = bonus->parameters->toCustom<JsonNode>();
+			EXPECT_TRUE(JsonValidator().check(schema, parameters).empty());
+			EXPECT_EQ(parameters["beneficiarySide"].Float(), static_cast<int>(BattleSide::ATTACKER));
+			EXPECT_EQ(bonus->turnsRemain, rounds);
+			// Re-enter the parser that validates scripted parameters on JSON reload.
+			const auto restored = JsonUtils::parseBonus(bonus->toJsonNode());
+			ASSERT_NE(restored, nullptr);
+			ASSERT_NE(restored->parameters, nullptr);
+			EXPECT_TRUE(JsonValidator().check(schema, restored->parameters->toCustom<JsonNode>()).empty());
+			EXPECT_EQ(restored->parameters->toCustom<JsonNode>(), parameters);
+			EXPECT_EQ(restored->turnsRemain, rounds);
+			const auto text = bonus->toJsonNode().toCompactString();
+			const JsonNode parsed(text.data(), text.size(), "Focus parameter round-trip");
+			const auto textRestored = JsonUtils::parseBonus(parsed);
+			ASSERT_NE(textRestored, nullptr);
+			ASSERT_NE(textRestored->parameters, nullptr);
+			const auto textParameters = textRestored->parameters->toCustom<JsonNode>();
+			EXPECT_TRUE(JsonValidator().check(schema, textParameters).empty());
+			EXPECT_EQ(textParameters["beneficiarySide"].Float(), parameters["beneficiarySide"].Float());
+			EXPECT_EQ(textRestored->turnsRemain, rounds);
+		}
+	}
 };
 }
 
@@ -251,6 +331,69 @@ TEST_F(FocusMagicSpellTest, RealCastTargetsFriendlyRangedCapableStackEvenWithout
 
 	ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
 	expectCapturedFocusMagic(friendlyShooter, 1145, BattleSide::ATTACKER);
+}
+
+TEST_F(FocusMagicSpellTest, LuaParametersRemainSchemaValidThroughReparseProjectionRefreshAndExpiry)
+{
+	useRevisedSorcery = true;
+	startGame();
+	ASSERT_TRUE(configureCaster(attackerSideHero, 20));
+	startBattle();
+	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 5), 10);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(12, 5), 1000);
+	ASSERT_NE(shooter, nullptr);
+	ASSERT_NE(target, nullptr);
+	beginCombat();
+	activate(shooter);
+	FocusParameterWarnings warnings;
+	ASSERT_TRUE(castAtUnit(shooter));
+	const SpellID marks(SpellID::decode(newHorizonsSorcery::ARCANE_BREACH_EFFECT));
+	const auto check = [&](const battle::Unit * unit, bool focus, int rounds, size_t count = 1)
+	{
+		expectSchemaValidCapture(unit, focus ? spell : marks,
+			focus ? "core:focusMagic" : "core:arcaneBreach", rounds, count);
+	};
+	check(shooter, true, 3);
+	ASSERT_EQ(focusMagicBonuses(shooter).size(), 1u);
+	EXPECT_EQ(focusMagicBonuses(shooter).front()->parameters->toCustom<JsonNode>()["beneficiarySide"].getType(),
+		JsonNode::JsonType::DATA_FLOAT);
+	ASSERT_TRUE(battle()->battleCanShoot(shooter, target->getPosition()));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeShotAttack(shooter, target)));
+	check(target, false, 2);
+	const auto originalShooter = shooter->save();
+	const auto originalTarget = target->save();
+	{
+		battle::ProjectedBattleWorldArena detached(*battle());
+		check(detached.findUnit(shooter->unitId()), true, 3);
+		check(detached.findUnit(target->unitId()), false, 2);
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		FocusEnvironment environment(gameState());
+		HypotheticBattle projected(&environment, callback);
+		projected.nextRound();
+		check(projected.battleGetUnitByID(shooter->unitId()), true, 2);
+		check(projected.battleGetUnitByID(target->unitId()), false, 1);
+		projected.nextRound();
+		check(projected.battleGetUnitByID(target->unitId()), false, 0, 0);
+		projected.nextRound();
+		check(projected.battleGetUnitByID(shooter->unitId()), true, 0, 0);
+	}
+	EXPECT_EQ(shooter->save(), originalShooter);
+	EXPECT_EQ(target->save(), originalTarget);
+	advanceRound();
+	check(shooter, true, 2);
+	check(target, false, 1);
+	activate(shooter);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeShotAttack(shooter, target)));
+	check(target, false, 2, 2);
+	advanceRound();
+	check(shooter, true, 1);
+	check(target, false, 1, 2);
+	advanceRound();
+	check(shooter, true, 0, 0);
+	check(target, false, 0, 0);
+	EXPECT_EQ(warnings.count->load(), 0u);
 }
 
 TEST_F(FocusMagicSpellTest, RealCastScalesSpellPowerBySorceryRankAtLowPower)
