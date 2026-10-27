@@ -162,7 +162,9 @@ TEST_P(NewHorizonsSkeletonCorpseTest, OrdinaryMagicalKillsNeedNoPerkButDestroyed
 	{
 		auto dialog = gameHandler->queries->topQuery(player);
 		if(dialog && dialog->getType() == QueryType::BattleDialog)
+		{
 			ASSERT_TRUE(gameHandler->queryReply(dialog->queryID, 0, player));
+		}
 	}
 	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
 	const auto slot = attackerSideHero->getSlotFor(CreatureID::SKELETON);

@@ -9,6 +9,7 @@
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../lib/gameState/CGameState.h"
+#include "../../lib/gameState/QuestInfo.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/serializer/CMemorySerializer.h"
