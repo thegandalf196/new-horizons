@@ -83,6 +83,14 @@ bool CStack::unitHasVeteranCohesion(const battle::Unit * unit) const
 	const battle::LiveUnitEnvironmentContext context(*battle);
 	return battle::UnitEnvironmentQueries(context).unitHasVeteranCohesion(unit);
 }
+bool CStack::unitSlowAffectsSpeed(const battle::Unit * unit) const
+{
+	if(!battle || !unit)
+		return false;
+	const battle::LiveUnitEnvironmentContext context(*battle);
+	return battle::UnitEnvironmentQueries(context).unitSlowAffectsSpeed(unit);
+}
+
 std::optional<std::pair<int32_t, int32_t>> CStack::unitMoraleLimits(const battle::Unit * unit) const
 {
 	if(!battle || !unit)

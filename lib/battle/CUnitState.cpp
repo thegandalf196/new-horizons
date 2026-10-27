@@ -1377,6 +1377,8 @@ CUnitState::CUnitState():
 	initiativePercentPerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE), BonusCacheMode::VALUE),
 	initiativeFlatPerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE_FLAT), BonusCacheMode::VALUE),
 	stackSpeedPerTurn(this, Selector::type()(BonusType::STACKS_SPEED), BonusCacheMode::VALUE),
+	initiativeSpeedWithoutSlowPerTurn(this, Selector::type()(BonusType::STACKS_SPEED)
+		.And(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SLOW))).Not()), BonusCacheMode::VALUE),
 	movementRangePerTurn(this, Selector::type()(BonusType::STACKS_MOVEMENT_RANGE), BonusCacheMode::VALUE),
 	immobilizedPerTurn(this, Selector::type()(BonusType::SIEGE_WEAPON).Or(Selector::type()(BonusType::BIND_EFFECT)), BonusCacheMode::PRESENCE),
 	bonusCache(this),
@@ -1920,9 +1922,15 @@ int32_t CUnitState::getInitiative(int turn) const
 	const int64_t speed = stackSpeedPerTurn.getValue(turn)
 		+ (turn == 0 && env ? env->unitFortuneSpeed(this) : 0)
 		+ (env ? env->unitSpeedBonus(this) : 0);
-	const int64_t baseInitiative = initiativeBasePresencePerTurn.getValue(turn)
-		? initiativeBasePerTurn.getValue(turn)
-		: speed;
+	const bool explicitBase = initiativeBasePresencePerTurn.getValue(turn);
+	int64_t baseInitiative = explicitBase ? initiativeBasePerTurn.getValue(turn) : speed;
+	if(!explicitBase && env)
+	{
+		// Revised Slow must not feed its Speed penalty into the separate Initiative percentage.
+		const int64_t slowSpeedDifference = static_cast<int64_t>(initiativeSpeedWithoutSlowPerTurn.getValue(turn)) - stackSpeedPerTurn.getValue(turn);
+		if(slowSpeedDifference && env->unitSlowAffectsSpeed(this))
+			baseInitiative += slowSpeedDifference;
+	}
 	const int64_t percent = std::max<int64_t>(0, 100 + initiativePercentPerTurn.getValue(turn));
 	return static_cast<int32_t>(baseInitiative * percent / 100 + initiativeFlatPerTurn.getValue(turn));
 }

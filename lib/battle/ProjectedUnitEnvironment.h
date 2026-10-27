@@ -64,6 +64,7 @@ public:
 	std::optional<int> unitMagicResistance(const Unit * unit) const override;
 	int unitFortuneSpeed(const Unit * unit) const override;
 	int unitSpeedBonus(const Unit * unit) const override;
+	bool unitSlowAffectsSpeed(const Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const Unit * unit) const override;
 	int unitAdditionalRetaliations(const Unit * unit) const override;
 	int unitBloodragePainIncrement(const Unit * unit) const override;

@@ -50,7 +50,8 @@ protected:
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 	}
 
-	void prepare(TerrainId terrain, const std::string & creature = "core:pikeman", bool withMass = false)
+	void prepare(TerrainId terrain, const std::string & creature = "core:pikeman", bool withMass = false,
+		bool withEnvironmentSpeed = false)
 	{
 		startGame();
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -69,6 +70,16 @@ protected:
 		}
 		else
 			attackerSideHero->setSecSkillLevel(skill, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+		if(withEnvironmentSpeed)
+		{
+			constexpr auto bloodrage = "new-horizons:bloodrage";
+			const SecondarySkill defenderSkill(SecondarySkill::decode(bloodrage));
+			defenderSideHero->setSecSkillLevel(defenderSkill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			defenderSideHero->applyPerkSelection({bloodrage, "new-horizons:bloodrage.warDrums"});
+			defenderSideHero->setSecSkillLevel(defenderSkill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+			defenderSideHero->applyPerkSelection({bloodrage, "new-horizons:bloodrage.unrelenting"});
+			ASSERT_TRUE(defenderSideHero->hasActivePerk(bloodrage, "new-horizons:bloodrage.unrelenting"));
+		}
 		startTerrainBattle(terrain);
 		BattleUnitsChanged remove;
 		remove.battleID = BattleID(0);
@@ -196,6 +207,33 @@ TEST_F(NewHorizonsSlowResolvedStatsTest, NativeExplicitInitiativeRetainsItsSepar
 	// Native terrain supplies +1 Speed; explicit Initiative already has its own base.
 	expectLiveAndDetached(6, 7);
 	projectAndCast(SpellID::SLOW, 4, 5);
+}
+
+TEST_F(NewHorizonsSlowResolvedStatsTest, IndependentEnvironmentSpeedKeepsItsExistingCompositionOrder)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(TerrainId::SAND, "core:pikeman", false, true));
+	independentSpeed(1);
+	auto & side = battle()->getSide(BattleSide::DEFENDER);
+	ASSERT_EQ(side.bloodrageRank, MasteryLevel::ADVANCED);
+	ASSERT_EQ(side.bloodrageCapPercent, 40);
+	ASSERT_EQ(side.bloodrageSpeedBonus, 1);
+	// Use the maintained Bloodrage threshold seam after setup casualties.
+	side.bloodrageDamagePercent = 20;
+	ASSERT_EQ(battle()->battleBloodrageSpeed(target), 1);
+	expectLiveAndDetached(6, 6);
+	// Movement: floor(5 * .8) + 1 = 5. Initiative: floor((5 + 1) * .8) = 4.
+	projectAndCast(SpellID::SLOW, 5, 4);
+}
+
+TEST_F(NewHorizonsSlowResolvedStatsTest, IndependentInitiativePercentRemainsAdditiveWithSlow)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(TerrainId::SAND));
+	independentSpeed(9);
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::STACKS_INITIATIVE, BonusSource::OTHER, 18, BonusSourceID()));
+	expectLiveAndDetached(13, 15);
+	// floor(13 * .8) = 10; floor(13 * (100 + 18 - 20) / 100) = 12.
+	projectAndCast(SpellID::SLOW, 10, 12);
 }
 
 TEST_F(NewHorizonsSlowResolvedStatsTest, OrdinaryMassOrdinaryRefreshReplacesBothResolvedComponents)

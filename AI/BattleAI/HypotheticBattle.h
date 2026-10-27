@@ -67,6 +67,7 @@ public:
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;
 	int unitFortuneSpeed(const battle::Unit * unit) const override { return battleFortuneSpeed(unit); }
 	int unitSpeedBonus(const battle::Unit * unit) const override { return battleBloodrageSpeed(unit); }
+	bool unitSlowAffectsSpeed(const battle::Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const battle::Unit * unit) const override;
 	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
 	bool unitHasVeteranCohesion(const battle::Unit * unit) const override;

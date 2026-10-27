@@ -29,6 +29,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSorceryRevision.h"
 #include "../../lib/spells/NewHorizonsCrossSchoolFormula.h"
 #include "../../lib/int3.h"
 
@@ -175,6 +176,11 @@ bool HypotheticBattle::unitHasVeteranCohesion(const battle::Unit * unit) const
 		if(getSidePlayer(side) == owner)
 			return newHorizonsDiscipline::hasVeteranCohesion(getSideHero(side));
 	return false;
+}
+
+bool HypotheticBattle::unitSlowAffectsSpeed(const battle::Unit * unit) const
+{
+	return unit && newHorizonsSorceryRevision::slowAffectsSpeed(getMagicRules());
 }
 
 std::optional<int> HypotheticBattle::unitMagicResistance(const battle::Unit * unit) const

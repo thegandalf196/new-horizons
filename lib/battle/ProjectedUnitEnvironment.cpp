@@ -63,6 +63,7 @@ PlayerColor battle::ProjectedUnitEnvironment::unitEffectiveOwner(const Unit * un
 std::optional<int> battle::ProjectedUnitEnvironment::unitMagicResistance(const Unit * unit) const { return queries.unitMagicResistance(unit); }
 int battle::ProjectedUnitEnvironment::unitFortuneSpeed(const Unit * unit) const { return queries.unitFortuneSpeed(unit); }
 int battle::ProjectedUnitEnvironment::unitSpeedBonus(const Unit * unit) const { return queries.unitSpeedBonus(unit); }
+bool battle::ProjectedUnitEnvironment::unitSlowAffectsSpeed(const Unit * unit) const { return queries.unitSlowAffectsSpeed(unit); }
 int battle::ProjectedUnitEnvironment::unitAdditionalRetaliations(const Unit * unit) const { return queries.unitAdditionalRetaliations(unit); }
 int battle::ProjectedUnitEnvironment::unitBloodragePainIncrement(const Unit * unit) const { return queries.unitBloodragePainIncrement(unit); }
 bool battle::ProjectedUnitEnvironment::unitHasVeteranCohesion(const Unit * unit) const { return queries.unitHasVeteranCohesion(unit); }

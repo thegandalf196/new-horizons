@@ -9692,7 +9692,7 @@
       ]
     },
     "lib/CStack.h": {
-      "sha256": "c2ffda61003f088b663714ff2a3578bcda1890eff113f928c941bc1d6313c5cd",
+      "sha256": "6a8a308f260c17454d44209320eec6e3df5a3ea03ea480803b30ad0ad187615d",
       "functions": [
         {
           "symbol": "CStack::void validateRapidResponseSerialization(Handler & h) const#1",
@@ -9726,67 +9726,67 @@
         },
         {
           "symbol": "CStack::PlayerColor getOwner() const override#1",
-          "start": 142,
-          "end": 145
+          "start": 143,
+          "end": 146
         },
         {
           "symbol": "CStack::void validateTimedSummonSerialization() const#1",
-          "start": 147,
-          "end": 151
+          "start": 148,
+          "end": 152
         },
         {
           "symbol": "CStack::void validateFrozenSerialization(Handler & h) const#1",
-          "start": 153,
-          "end": 162
+          "start": 154,
+          "end": 163
         },
         {
           "symbol": "CStack::void validateMoraleActivationSerialization(Handler & h) const#1",
-          "start": 164,
-          "end": 170
+          "start": 165,
+          "end": 171
         },
         {
           "symbol": "CStack::void validateHeroicSpiritSerialization(Handler & h) const#1",
-          "start": 172,
-          "end": 178
+          "start": 173,
+          "end": 179
         },
         {
           "symbol": "CStack::void validateSwiftRebirthSerialization(Handler & h) const#1",
-          "start": 180,
-          "end": 185
+          "start": 181,
+          "end": 186
         },
         {
           "symbol": "CStack::void validateVeteranDamageHistorySerialization(bool supported) const#1",
-          "start": 187,
-          "end": 193
+          "start": 188,
+          "end": 194
         },
         {
           "symbol": "CStack::void validateVeteranCohesionSerialization(Handler & h) const#1",
-          "start": 195,
-          "end": 199
+          "start": 196,
+          "end": 200
         },
         {
           "symbol": "CStack::void validatePlagueSerialization(Handler & h) const#1",
-          "start": 201,
-          "end": 205
+          "start": 202,
+          "end": 206
         },
         {
           "symbol": "CStack::void validateTrainingSerialization(Handler & h) const#1",
-          "start": 206,
-          "end": 216
+          "start": 207,
+          "end": 217
         },
         {
           "symbol": "CStack::void validateOpportunistSerialization(Handler & h) const#1",
-          "start": 218,
-          "end": 225
+          "start": 219,
+          "end": 226
         },
         {
           "symbol": "CStack::void serialize(Handler & h)#1",
-          "start": 227,
-          "end": 388
+          "start": 228,
+          "end": 389
         }
       ],
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. One new narrow compatibility validation body included. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed.",
+      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
+      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. One new narrow compatibility validation body included. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed. Exact Slow query/cache declaration renewal: all 18 retained callable identities and complete body text are unchanged; 12 spans shift by one declaration/member line. No callable added or removed. Prior exact-source review retained as historical authority: IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027. Source coverage only; no runtime/performance acceptance. Existing deferrals and limits remain unchanged.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "previous_review": "IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026"
     },
@@ -10640,7 +10640,7 @@
       "sha256": "f16b6dfd61b001dcf80880a9466faea4f575538b7d110d2ecc570e79bfab6a34"
     },
     "lib/battle/CUnitState.h": {
-      "sha256": "462fbfd1a75dab0f54922d83fb809e96bd7bed677ddb4a48ed3c595539dcdf16",
+      "sha256": "593751a93b169b2bb7bc2645c18ba9f83ce382934951bca8333d2eb2113681a8",
       "functions": [
         {
           "symbol": "battle::CUnitState::int32_t getActivationMovementBonus() const#1",
@@ -10668,8 +10668,8 @@
           "end": 399
         }
       ],
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. No new callable body introduced. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed.",
+      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
+      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. No new callable body introduced. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed. Exact Slow query/cache declaration renewal: all 5 retained callable identities and complete body text are unchanged; 0 spans shift by one declaration/member line. No callable added or removed. Prior exact-source review retained as historical authority: IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027. Source coverage only; no runtime/performance acceptance. Existing deferrals and limits remain unchanged.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "previous_review": "IR-NECROMANCY-ADVANCED-MANUAL-SOURCE-20261026"
     },
@@ -17727,220 +17727,220 @@
         },
         {
           "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
-          "start": 75,
-          "end": 78
+          "start": 76,
+          "end": 79
         },
         {
           "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
-          "start": 89,
-          "end": 89
+          "start": 90,
+          "end": 90
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
-          "start": 97,
-          "end": 101
+          "start": 98,
+          "end": 102
         },
         {
           "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
-          "start": 104,
-          "end": 104
+          "start": 105,
+          "end": 105
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-          "start": 125,
-          "end": 125
+          "start": 126,
+          "end": 126
         },
         {
           "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
-          "start": 126,
-          "end": 135
+          "start": 127,
+          "end": 136
         },
         {
           "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
-          "start": 136,
-          "end": 139
+          "start": 137,
+          "end": 140
         },
         {
           "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
-          "start": 140,
-          "end": 143
+          "start": 141,
+          "end": 144
         },
         {
           "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 145,
-          "end": 145
+          "start": 146,
+          "end": 146
         },
         {
           "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
-          "start": 147,
-          "end": 147
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
           "start": 148,
           "end": 148
         },
         {
-          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
           "start": 149,
           "end": 149
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
           "start": 150,
           "end": 150
         },
         {
-          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
           "start": 151,
           "end": 151
         },
         {
-          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
           "start": 152,
           "end": 152
         },
         {
-          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
           "start": 153,
-          "end": 156
+          "end": 153
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
+          "start": 154,
+          "end": 157
         },
         {
           "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
-          "start": 157,
-          "end": 160
+          "start": 158,
+          "end": 161
         },
         {
           "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
-          "start": 161,
-          "end": 164
+          "start": 162,
+          "end": 165
         },
         {
           "symbol": "HypotheticBattle::ProjectedActionReceipt::bool isHeroAction() const#1",
-          "start": 174,
-          "end": 177
+          "start": 175,
+          "end": 178
         },
         {
           "symbol": "HypotheticBattle::ui8 getProjectedPendingTimeStopHeroActionSides() const#1",
-          "start": 262,
-          "end": 262
+          "start": 263,
+          "end": 263
         },
         {
           "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 268,
-          "end": 268
-        },
-        {
-          "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
           "start": 269,
           "end": 269
         },
         {
+          "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
+          "start": 270,
+          "end": 270
+        },
+        {
           "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 276,
-          "end": 276
+          "start": 277,
+          "end": 277
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 296,
-          "end": 296
-        },
-        {
-          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
           "start": 297,
           "end": 297
         },
         {
-          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
           "start": 298,
           "end": 298
         },
         {
-          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
           "start": 299,
-          "end": 303
+          "end": 299
+        },
+        {
+          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "start": 300,
+          "end": 304
         },
         {
           "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-          "start": 304,
-          "end": 308
-        },
-        {
-          "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 309,
+          "start": 305,
           "end": 309
         },
         {
-          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
           "start": 310,
-          "end": 313
+          "end": 310
+        },
+        {
+          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
+          "start": 311,
+          "end": 314
         },
         {
           "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
-          "start": 314,
-          "end": 319
+          "start": 315,
+          "end": 320
         },
         {
           "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 320,
-          "end": 330
+          "start": 321,
+          "end": 331
         },
         {
           "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 333,
-          "end": 336
+          "start": 334,
+          "end": 337
         },
         {
           "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 337,
-          "end": 341
+          "start": 338,
+          "end": 342
         },
         {
           "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 346,
-          "end": 346
-        },
-        {
-          "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
           "start": 347,
           "end": 347
         },
         {
-          "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
-          "start": 411,
-          "end": 411
+          "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
+          "start": 348,
+          "end": 348
         },
         {
-          "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
+          "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
           "start": 412,
           "end": 412
         },
         {
-          "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
           "start": 413,
           "end": 413
         },
         {
-          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
+          "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
           "start": 414,
-          "end": 417
+          "end": 414
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
+          "start": 415,
+          "end": 418
         },
         {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 428,
-          "end": 431
+          "start": 429,
+          "end": 432
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 550,
-          "end": 550
+          "start": 551,
+          "end": 551
         }
       ],
-      "rationale": "Complete exact callable inventory independently checked: 179 bodies across eight headers, including 175 unchanged retained bodies, two serializers with captured-policy guards, and two new neutral Unit defaults. Declaration-only additions do not add callable bodies. Exact-source coverage only; no runtime certification.",
-      "review": "IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026",
-      "sha256": "de3b006d75672e80971262488d0a7b2a30e8fa854a5f6b3864c98846df1479f1",
+      "rationale": "Complete exact callable inventory independently checked: 179 bodies across eight headers, including 175 unchanged retained bodies, two serializers with captured-policy guards, and two new neutral Unit defaults. Declaration-only additions do not add callable bodies. Exact-source coverage only; no runtime certification. Exact Slow query/cache declaration renewal: all 47 retained callable identities and complete body text are unchanged; 42 spans shift by one declaration/member line. No callable added or removed. Prior exact-source review retained as historical authority: IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026. Source coverage only; no runtime/performance acceptance. Existing deferrals and limits remain unchanged.",
+      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
+      "sha256": "109301311b24e182a88a2c5cab865026472c4f49e99071aaccdaaace66b262fa",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "review_scope": "guarded-subject-RTTI-V2-exact-source-only-no-runtime-or-speedup",
+      "review_scope": "complete-manual-inventory-exact-slow-source-only-no-runtime-acceptance",
       "deferral": "AI owner: future header additions must extract projected action/allowance receipt types into existing HypotheticBattleTypes with nested API aliases and complete inventory; no further growth credit."
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
@@ -22200,12 +22200,12 @@
     },
     "lib/battle/CUnitState.cpp": {
       "kind": "exception",
-      "lines": 2870,
-      "sha256": "c08078883da82dac34f07b479e664c4f0b6aabc634d818867f351989240d1a75",
+      "lines": 2878,
+      "sha256": "d4b3bd1a3fe2509a7af244f9b370236fd4a4e3d3a04197472c30e123f4790198",
       "owner": "gameplay_engineer",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Bounded amendment: Shared unit attack-count query admits captured Tomb Guard double strike through existing attack-count semantics; historical and retaliation paths retain their owners. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 2865\u21922870; unchanged limits/coverage.",
-      "review_scope": "exact-bounded-source-review-no-native-or-rendered-acceptance",
+      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
+      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Bounded amendment: Shared unit attack-count query admits captured Tomb Guard double strike through existing attack-count semantics; historical and retaliation paths retain their owners. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 2865\u21922870; unchanged limits/coverage. Exact Slow correction renewal: Urgent resolved-Slow correctness fix: one existing per-turn filtered Speed cache and six-line fallback-Initiative correction preserve the existing environment additions and additive Initiative-percent/flat stages. Cached zero difference skips captured-policy validation. Explicit bases, absent/historical policy and the active form initiative snapshot keep existing paths. Function getInitiative 13->19 lines; constructor 50->52. No new serialized state, RNG or search policy. Prior exact-source review retained as historical authority: IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027. This urgent bounded correction does not raise any ceiling or grant future growth; all existing extraction deferrals remain in force.",
+      "review_scope": "exact-slow-resolved-initiative-source-only-no-runtime-or-performance-acceptance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Existing gameplay engineer ownership of state/lifecycle debt remains. Further substantive expansion requires bounded cohesive extraction; this reduction is not permission to regrow the file. Preserve borrowed providers, type-transition fallback, state-only assignment and no serialized dispatch data; runtime equivalence and performance acceptance remain separate. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
       "previous_review": "IR-NECROMANCY-V2-GAMEPLAY-BOUNDED-SOURCE-20261027"
@@ -22254,12 +22254,12 @@
     },
     "lib/battle/CUnitState.h": {
       "kind": "exception",
-      "lines": 597,
-      "sha256": "462fbfd1a75dab0f54922d83fb809e96bd7bed677ddb4a48ed3c595539dcdf16",
+      "lines": 598,
+      "sha256": "593751a93b169b2bb7bc2645c18ba9f83ce382934951bca8333d2eb2113681a8",
       "owner": "gameplay_engineer",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Single passive query declaration routes to the focused captured unit-environment owner; no new inline implementation or serialized unit state. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 595\u2192597; unchanged limits/coverage.",
-      "review_scope": "exact-acquire-only-private-provider-dispatch-interface",
+      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
+      "rationale": "Single passive query declaration routes to the focused captured unit-environment owner; no new inline implementation or serialized unit state. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 595\u2192597; unchanged limits/coverage. Exact Slow correction renewal: One process-local BonusCachePerTurn member declaration supports the exact resolved-Slow correction; no callable body or serialized field added. Rebuild all consumers together for object-layout/internal virtual-interface changes. Prior exact-source review retained as historical authority: IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027. This urgent bounded correction does not raise any ceiling or grant future growth; all existing extraction deferrals remain in force.",
+      "review_scope": "exact-slow-resolved-initiative-source-only-no-runtime-or-performance-acceptance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Engine engineer owns cohesive detached provider/binding header extraction before further substantive header expansion. This exact592-line interface allowance retains DLL linkage, existing borrowed lifetime/assignment and save-format contracts. Added process-local pointers change native object layout: rebuild all consumers before any playable delivery; compilation/source review is not runtime or performance acceptance. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: retain cohesive unit-environment ownership; further substantive header growth requires focused query-interface extraction preserving detached-provider and historical behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
       "previous_review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026"
@@ -26372,24 +26372,24 @@
     },
     "AI/BattleAI/HypotheticBattle.cpp": {
       "kind": "exception",
-      "lines": 830,
+      "lines": 836,
       "owner": "ai_engineer",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Bounded amendment: Mixed-capture resistance dispatch keeps the old no-magic nullopt path unless captured Necromancy contributes resistance, then queries the shared projected unit resistance owner.",
-      "review": "IR-NECROMANCY-V2-GAMEPLAY-BOUNDED-SOURCE-20261027",
-      "review_scope": "exact-bounded-source-review-no-native-or-rendered-acceptance",
-      "sha256": "17101c8f428407137a7e4768ded0d850b3044168ab3950973610b35fc99101ba",
+      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Bounded amendment: Mixed-capture resistance dispatch keeps the old no-magic nullopt path unless captured Necromancy contributes resistance, then queries the shared projected unit resistance owner. Exact Slow correction renewal: One five-line captured-policy forwarding query plus its include supplies the existing hypothetical unit environment; no live/default-rule fallback, new action policy, RNG or serialized state. Prior exact-source review retained as historical authority: IR-NECROMANCY-V2-GAMEPLAY-BOUNDED-SOURCE-20261027. This urgent bounded correction does not raise any ceiling or grant future growth; all existing extraction deferrals remain in force.",
+      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
+      "review_scope": "exact-slow-resolved-initiative-source-only-no-runtime-or-performance-acceptance",
+      "sha256": "5f8dc930833f6ff1afda72ba2aa30e7dd5150ab441b39dc91fd51ec9c52047b4",
       "deferral": "AI owner: keep ownership/query/history behavior in focused export components. No further centralfile growth approved; new source-binding behavior must preserve public base assignment, branch isolation and retained alias/control-block lifetime. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "previous_review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026"
     },
     "AI/BattleAI/HypotheticBattle.h": {
       "kind": "exception",
-      "lines": 602,
+      "lines": 603,
       "owner": "ai_engineer",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy.",
-      "review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
-      "review_scope": "guarded-subject-RTTI-V2-exact-source-only-no-runtime-or-speedup",
-      "sha256": "de3b006d75672e80971262488d0a7b2a30e8fa854a5f6b3864c98846df1479f1",
+      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Exact Slow correction renewal: One declaration forwards the exact resolved-Slow captured-policy query through the existing unit environment; no new inline body or serialized state. Rebuild all consumers together. Prior exact-source review retained as historical authority: IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026. This urgent bounded correction does not raise any ceiling or grant future growth; all existing extraction deferrals remain in force.",
+      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
+      "review_scope": "exact-slow-resolved-initiative-source-only-no-runtime-or-performance-acceptance",
+      "sha256": "109301311b24e182a88a2c5cab865026472c4f49e99071aaccdaaace66b262fa",
       "deferral": "AI owner: further header additions require cohesive projected action/allowance receipt-type extraction into existing HypotheticBattleTypes with nested API aliases, complete manual inventory and admission/finish/replay invariants. This exact+4 exception grants no future regrowth credit. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },

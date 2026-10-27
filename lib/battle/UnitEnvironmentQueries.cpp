@@ -10,6 +10,7 @@
 #include "Unit.h"
 #include "NewHorizonsBloodrage.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSorceryRevision.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -77,6 +78,14 @@ int battle::UnitEnvironmentQueries::bloodrageDamagePercent(const Unit * unit) co
 	const int globalDamage = std::max(0, context.bloodrageDamage(side));
 	const int personalIncrement = std::max(0, unit->getPersonalBloodrageIncrement());
 	return static_cast<int>(std::min<int64_t>(cap, static_cast<int64_t>(globalDamage) + personalIncrement));
+}
+
+bool battle::UnitEnvironmentQueries::unitSlowAffectsSpeed(const Unit * unit) const
+{
+	if(!context.available() || !unit)
+		return false;
+	context.requireSubject(*unit);
+	return newHorizonsSorceryRevision::slowAffectsSpeed(context.magicRules());
 }
 
 int battle::UnitEnvironmentQueries::unitSpeedBonus(const Unit * unit) const

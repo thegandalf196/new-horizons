@@ -529,6 +529,7 @@ private:
 	BonusCachePerTurn initiativePercentPerTurn;
 	BonusCachePerTurn initiativeFlatPerTurn;
 	BonusCachePerTurn stackSpeedPerTurn;
+	BonusCachePerTurn initiativeSpeedWithoutSlowPerTurn;
 	BonusCachePerTurn movementRangePerTurn;
 	BonusCachePerTurn immobilizedPerTurn;
 	UnitBonusValuesProxy bonusCache;
