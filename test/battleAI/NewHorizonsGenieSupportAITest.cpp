@@ -765,11 +765,12 @@ TEST_F(NewHorizonsGenieSupportAITest, DISABLED_SyntheticSevenVsThreeForecastProf
 	const auto aiRandomBefore = aiRandomBytes();
 	auto forecast = syntheticEvaluator();
 	damageCalculationTiming::Sample damage;
+	creatureSpellTiming::Sample creature;
 	const auto started = std::chrono::steady_clock::now();
 	const auto selected = [&]()
 	{
 		damageCalculationTiming::Binding measured(&damage);
-		return forecast.findBestCreatureSpell(genie);
+		return forecast.findBestCreatureSpell(genie, &creature);
 	}();
 	const auto forecastMicros = std::chrono::duration_cast<std::chrono::microseconds>(
 		std::chrono::steady_clock::now() - started).count();
@@ -777,12 +778,16 @@ TEST_F(NewHorizonsGenieSupportAITest, DISABLED_SyntheticSevenVsThreeForecastProf
 	BattleEvaluator::SelectionTiming timing;
 	const auto action = fresh.selectStackAction(genie, &timing);
 	ASSERT_TRUE(selected);
+	EXPECT_TRUE(creatureSpellTiming::accountingValid(creature));
+	EXPECT_EQ(creature.selectedValueBits, std::bit_cast<uint32_t>(selected->value));
+	EXPECT_EQ(creature.outcome.total.calls, creature.outcomes);
 	EXPECT_EQ(timing.creatureSpell.calls, 1u);
 	EXPECT_EQ(gameState()->saveToMemory(), before);
 	EXPECT_EQ(serverRandomizerBytes(), serverRandomBefore);
 	EXPECT_EQ(aiRandomBytes(), aiRandomBefore);
 	RecordProperty("Scenario", "synthetic seven-v-three; roster counts only; no war machines; seed 1337");
 	RecordProperty("StandaloneForecastMicros", std::to_string(forecastMicros));
+	RecordProperty("FirstSearchCreatureTiming", creatureSpellTiming::fields(creature));
 	RecordProperty("SelectionCreatureSpellMicros", std::to_string(timing.creatureSpell.totalMicroseconds));
 	RecordProperty("SelectedValueBits", std::to_string(std::bit_cast<uint32_t>(selected->value)));
 	RecordProperty("SelectedRecipient", std::to_string(selected->dest.front().unitValue->unitId()));
