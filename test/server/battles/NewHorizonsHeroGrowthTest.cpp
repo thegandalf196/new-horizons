@@ -877,6 +877,11 @@ protected:
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+		// Keep the whole pre-capability checkpoint context, not installed later
+		// magic clauses, mastery policies or creature-category snapshots.
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES, JsonNode());
+		loaded->overrideGameSetting(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES, JsonNode());
 		// The growth checkpoint also predates final Luck and reduced Morale damage.
 		// Installed modern scalar defaults must not enter this historical writer.
 		loaded->overrideGameSetting(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, JsonNode(false));
