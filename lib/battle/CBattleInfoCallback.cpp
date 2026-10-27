@@ -3365,6 +3365,36 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	if(!script)
 		throw std::runtime_error("No damage calculator script is loaded!");
 
+	// Successful allegiance reads belong only to this immutable native payload.
+	// Keep each getter's first-use site, including null heroes and thrown reads;
+	// nested helpers and the subsequent Lua calculation keep their own queries.
+	std::optional<const CGHeroInstance *> attackerHeroValue, defenderHeroValue;
+	std::optional<PlayerColor> attackerOwnerValue, defenderOwnerValue;
+	const auto readAttackerHero = [&]()
+	{
+		if(!attackerHeroValue.has_value())
+			attackerHeroValue = battleGetOwnerHero(info.attacker);
+		return *attackerHeroValue;
+	};
+	const auto readDefenderHero = [&]()
+	{
+		if(!defenderHeroValue.has_value())
+			defenderHeroValue = battleGetOwnerHero(info.defender);
+		return *defenderHeroValue;
+	};
+	const auto readAttackerOwner = [&]()
+	{
+		if(!attackerOwnerValue.has_value())
+			attackerOwnerValue = battleGetOwner(info.attacker);
+		return *attackerOwnerValue;
+	};
+	const auto readDefenderOwner = [&]()
+	{
+		if(!defenderOwnerValue.has_value())
+			defenderOwnerValue = battleGetOwner(info.defender);
+		return *defenderOwnerValue;
+	};
+
 	DamageAttackInfo payload;
 	HeroCommand attackerOrderCause = HeroCommand::NONE;
 	HeroCommand defenderOrderCause = HeroCommand::NONE;
@@ -3420,22 +3450,22 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			return adjacentHexes.contains(hex);
 		});
 		payload.archeryIgnoreAdjacentRangedPenalty = payload.archeryAdjacentRangedTarget
-			&& newHorizonsArchery::hasPointBlankShot(battleGetOwnerHero(info.attacker));
+			&& newHorizonsArchery::hasPointBlankShot(readAttackerHero());
 	}
 	if(payload.targetedRangedCommand && info.physicalDamage
 		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker)
-		&& newHorizonsArchery::hasTargetCaller(battleGetOwnerHero(info.attacker)))
+		&& newHorizonsArchery::hasTargetCaller(readAttackerHero()))
 	{
 		payload.targetedRangedCommandPercent += newHorizonsArchery::TARGET_CALLER_DAMAGE_PERCENT;
 		payload.archeryIgnoreObstaclePenalty = true;
 	}
-	const auto * archeryHero = info.attacker ? battleGetOwnerHero(info.attacker) : nullptr;
+	const auto * archeryHero = info.attacker ? readAttackerHero() : nullptr;
 	if(info.physicalDamage && info.shooting
 		&& battleIsCounterBatteryMachineTarget(info.attacker, info.defender))
 		payload.counterBatteryFinalDamageMultiplier = 150;
 	if(info.physicalDamage && info.shooting && info.attacker && info.attacker->isBallista() && info.defender)
 	{
-		const auto * controllerHero = battleGetOwnerHero(info.attacker);
+		const auto * controllerHero = readAttackerHero();
 		if(controllerHero && controllerHero->hasActivePerk(
 			"new-horizons:warMachines", "new-horizons:warMachines.piercingBolts"))
 			payload.warMachinesPiercingBoltsDefenseIgnorePercent = PIERCING_BOLTS_DEFENSE_IGNORE_PERCENT;
@@ -3462,7 +3492,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 
 		if(newHorizonsArchery::hasCrossfire(archeryHero) && info.defender)
 		{
-			const auto attackerSide = playerToSide(battleGetOwner(info.attacker));
+			const auto attackerSide = playerToSide(readAttackerOwner());
 			const auto defenderState = std::dynamic_pointer_cast<battle::CUnitState>(info.defender->acquireState());
 			if(defenderState && defenderState->archeryCrossfireAvailable(
 				attackerSide, info.attacker->unitId(), battleGetRound()))
@@ -3480,9 +3510,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	};
 	payloadTiming.nextNativeRegion(damageCalculationTiming::NativeRegion::PHYSICAL_MODIFIERS);
 	if(info.physicalDamage && !info.shooting && info.attacker && info.defender
-		&& battleGetOwner(info.attacker) != battleGetOwner(info.defender))
+		&& readAttackerOwner() != readDefenderOwner())
 	{
-		if(const auto * hero = battleGetOwnerHero(info.attacker))
+		if(const auto * hero = readAttackerHero())
 		{
 			const auto hasOffensePerk = [hero](const char * perk)
 			{
@@ -3517,10 +3547,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	if(info.physicalDamage)
 	{
 		if(info.defender && newHorizonsCombatSkills::isPhysicalCreatureAttack(info.attacker, info.physicalDamage)
-			&& battleGetOwner(info.attacker) != battleGetOwner(info.defender)
-			&& newHorizonsBloodrage::hasAvatarOfRage(battleGetOwnerHero(info.attacker)))
+			&& readAttackerOwner() != readDefenderOwner()
+			&& newHorizonsBloodrage::hasAvatarOfRage(readAttackerHero()))
 		{
-			const auto side = playerToSide(battleGetOwner(info.attacker));
+			const auto side = playerToSide(readAttackerOwner());
 			if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 				&& newHorizonsBloodrage::atMaximumForAttack(payload.bloodrageDamagePercent,
 					getBattle()->getBloodrageCapPercent(side)))
@@ -3536,37 +3566,37 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		const bool ordinaryCreatureAttack = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker);
 		if(info.shooting && ordinaryCreatureAttack)
 			payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(
-				battleGetOwnerHero(info.attacker));
+				readAttackerHero());
 		if(ordinaryCreatureAttack && info.attacker->battlecraftWaitBonusAvailable())
 			payload.battlecraftWaitDamagePercent = newHorizonsBattlecraft::waitDamagePercent(
-				battleGetOwnerHero(info.attacker), dynamic_cast<const battle::CUnitState *>(info.attacker));
+				readAttackerHero(), dynamic_cast<const battle::CUnitState *>(info.attacker));
 		if(ordinaryCreatureAttack)
 			payload.newHorizonsArmorerReductionPercent = newHorizonsCombatSkills::armorerReductionPercent(
-				battleGetOwnerHero(info.defender));
+				readDefenderHero());
 		if(info.defender && battleHasFormationFightingProtection(info.defender, info.defenderPos))
 			payload.formationFightingReductionPercent = newHorizonsCombatSkills::formationFightingReductionPercent(
-				battleGetOwnerHero(info.defender));
+				readDefenderHero());
 		if(ordinaryCreatureAttack && info.defender && defenderDefended())
 		{
 			payload.battlecraftDefendReductionPercent = newHorizonsBattlecraft::defendReductionPercent(
-				battleGetOwnerHero(info.defender), dynamic_cast<const battle::CUnitState *>(info.defender));
+				readDefenderHero(), dynamic_cast<const battle::CUnitState *>(info.defender));
 			if(info.shooting)
 				payload.paviseDamageReductionPercent = newHorizonsCombatSkills::paviseReductionPercent(
-					battleGetOwnerHero(info.defender));
+					readDefenderHero());
 		}
 		if(newHorizonsCombatSkills::isPhysicalCreatureAttack(info.attacker, info.physicalDamage)
 			&& battleHasBastionProtection(info.defender))
 			payload.armorerBastionFinalDamageMultiplier = newHorizonsCombatSkills::BASTION_FINAL_DAMAGE_MULTIPLIER;
 		if(battleIsShroudFlankingAttack(info))
 		{
-			const auto * attackerHero = battleGetOwnerHero(info.attacker);
+			const auto * attackerHero = readAttackerHero();
 			payload.shroudFlankingDamagePercent = newHorizonsShroud::flankingDamagePercent(
 				newHorizonsShroud::rank(attackerHero))
 				+ newHorizonsShroud::backstabDamagePercent(attackerHero)
 				+ newHorizonsShroud::ambusherDamagePercent(attackerHero, info.attacker);
 			payload.shroudFlankingDamagePercent += battleEncircledDoomDamagePercent(info);
 			payload.meleeDefenseIgnorePercent += newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
-				attackerHero, info.defender, playerToSide(battleGetOwner(info.attacker)));
+				attackerHero, info.defender, playerToSide(readAttackerOwner()));
 		}
 		if(info.defender && defenderDefended() && ordinaryCreatureAttack
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.defender)
@@ -3580,7 +3610,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				return newHorizonsBulwark::reductionBasisPoints(
 					newHorizonsBulwark::rank(hero), hero ? hero->getPrimSkillLevel(PrimarySkill::DEFENSE) : 0, mireTerrain);
 			};
-			const auto * hero = battleGetOwnerHero(info.defender);
+			const auto * hero = readDefenderHero();
 			const int baseReduction = reductionForHero(hero);
 			const auto defenderState = info.defender->acquireState();
 			if(newHorizonsBulwark::hasImmovable(hero) && defenderState
@@ -3612,10 +3642,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		&& info.attacker && info.defender && !info.attacker->isGhost() && !info.defender->isGhost())
 	{
 		const auto & rules = getBattle()->getHeroCommandRules()["commands"];
-		const auto attack = battleGetOwnerHero(info.attacker);
-		const auto defend = battleGetOwnerHero(info.defender);
-		const auto attackerSide = playerToSide(battleGetOwner(info.attacker));
-		const auto defenderSide = playerToSide(battleGetOwner(info.defender));
+		const auto attack = readAttackerHero();
+		const auto defend = readDefenderHero();
+		const auto attackerSide = playerToSide(readAttackerOwner());
+		const auto defenderSide = playerToSide(readDefenderOwner());
 		const auto attackerStates = battleGetHeroOrderStates(attackerSide);
 		const auto defenderStates = battleGetHeroOrderStates(defenderSide);
 		const auto eligibleOrderUnit = [](const battle::Unit * unit)
@@ -3646,7 +3676,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(eligibleOrderUnit(info.attacker) && info.attacker->isMeleeAttacker()
 					&& !info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
 					&& info.physicalDamage && !info.shooting && !info.secondaryAttack
-					&& info.defender->alive() && battleGetOwner(info.attacker) != battleGetOwner(info.defender)
+					&& info.defender->alive() && readAttackerOwner() != readDefenderOwner()
 					&& attackerState.primaryTargetUnitId == info.defender->unitId()
 					&& battleIsFocusFireTargetActive(attackerSide))
 				{
@@ -3678,7 +3708,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 					payload.heroOrderDamagePercent += orderDamagePercent;
 					if(orderDamagePercent > 0)
 						recordAttackerCause(HeroCommand::CHARGE);
-					if(info.physicalDamage && battleGetOwner(info.attacker) != battleGetOwner(info.defender)
+					if(info.physicalDamage && readAttackerOwner() != readDefenderOwner()
 						&& attack->hasActivePerk("new-horizons:offense", "new-horizons:offense.shockAssault"))
 						payload.chargeDefenseIgnorePercent = SHOCK_ASSAULT_DEFENSE_IGNORE_PERCENT;
 				}
@@ -3720,7 +3750,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 							recordAttackerCause(HeroCommand::FLANK);
 					}
 					else if(info.shooting && info.physicalDamage && info.defender->alive()
-						&& battleGetOwner(info.attacker) != battleGetOwner(info.defender)
+						&& readAttackerOwner() != readDefenderOwner()
 						&& newHorizonsArchery::isOrdinaryPhysicalShooter(info.attacker)
 						&& attackerState.flankFor(info.defender->unitId()))
 					{
@@ -3767,7 +3797,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::FEINT:
 				if(info.retaliation && !info.shooting && !info.secondaryAttack && !info.bracePreemptive
 					&& defenderState.revision
-					&& battleGetOwner(info.attacker) != battleGetOwner(info.defender))
+					&& readAttackerOwner() != readDefenderOwner())
 					orderDamageReductionPercent = heroCommands::revisedFeintReductionFor(defenderState, info.defender->unitId());
 				break;
 			case HeroCommand::RIPOSTE:
