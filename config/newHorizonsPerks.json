@@ -11,17 +11,17 @@
 		"bonewardMagicalReductionPercent": 0,
 		"tombGuardAdditionalRetaliations": 0,
 		"graveplatePhysicalReductionPercent": 20,
-		"graveKnowledgeRecoveryPercent": 50,
+		"graveKnowledgeRecoveryPercent": 35,
 		"bonewardMagicResistancePercent": 50,
 		"tombGuardDoubleStrike": true,
 		"deadMansLuckBonus": 3,
-		"boneCollectorRaiseBonusPercent": 50,
+		"boneCollectorRaiseBonusPercent": 25,
 		"soulHarvesterManaPerRaisedCreature": 1,
-		"soulHarvesterManaCap": 50
+		"soulHarvesterManaCap": 30
 	},
 	"perkOfferNormalization": {"maximumPreferenceRatio": 2.0, "mathVersion": 1},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
-	"sourceSha256": "05a5c09cdd4549af9749b73ba8144a182cdb6317171b6d1829c576c6325b6866",
+	"sourceSha256": "b5efb788a6a8645f6586b30ef571961a9ece2566429c6a47501e1ffc9d99f343",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -3624,10 +3624,10 @@
 					"id": "new-horizons:necromancy.graveKnowledge",
 					"name": "Grave Knowledge",
 					"requires": "basic",
-					"description": "After victory, restore 50% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester.",
+					"description": "After victory, restore 35% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, restore 50% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester."
+						"description": "After victory, restore 35% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester."
 					}
 				},
 				{
@@ -3644,10 +3644,10 @@
 					"id": "new-horizons:necromancy.blackHarvest",
 					"name": "Soul Harvester",
 					"requires": "basic",
-					"description": "After victory, recover 1 Mana for each new Skeleton or Skeleton Warrior raised by Necromancy, up to 50 Mana per battle. Zombies and Grave Knowledge recovery do not count.",
+					"description": "After victory, recover 1 Mana for each new Skeleton or Skeleton Warrior raised by Necromancy, up to 30 Mana per battle. Zombies and Grave Knowledge recovery do not count.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, recover 1 Mana for each new Skeleton or Skeleton Warrior raised by Necromancy, up to 50 Mana per battle. Zombies and Grave Knowledge recovery do not count."
+						"description": "After victory, recover 1 Mana for each new Skeleton or Skeleton Warrior raised by Necromancy, up to 30 Mana per battle. Zombies and Grave Knowledge recovery do not count."
 					}
 				},
 				{
@@ -3674,10 +3674,10 @@
 					"id": "new-horizons:necromancy.boneCollector",
 					"name": "Bone Collector",
 					"requires": "advanced",
-					"description": "Necromancy raises 50% more new Skeletons and Skeleton Warriors, rounded down. Grave Knowledge recovery is unchanged.",
+					"description": "Necromancy raises 25% more new Skeletons and Skeleton Warriors, rounded down. Grave Knowledge recovery is unchanged.",
 					"effect": {
 						"status": "active",
-						"description": "Necromancy raises 50% more new Skeletons and Skeleton Warriors, rounded down. Grave Knowledge recovery is unchanged."
+						"description": "Necromancy raises 25% more new Skeletons and Skeleton Warriors, rounded down. Grave Knowledge recovery is unchanged."
 					}
 				},
 				{

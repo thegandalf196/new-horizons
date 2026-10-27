@@ -473,12 +473,12 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         skill = self.rules['skills']['new-horizons:necromancy']
         perks = {p['id'].split('.', 1)[1]: p for p in skill['perks']}
         expected = (
-            ('graveKnowledge', 'Grave Knowledge', 'basic', "restore 50% of this hero's own eligible fallen"),
+            ('graveKnowledge', 'Grave Knowledge', 'basic', "restore 35% of this hero's own eligible fallen"),
             ('darkConversion', 'Boneward', 'basic', '50% Magic Resistance'),
             ('blackHarvest', 'Soul Harvester', 'basic', 'recover 1 Mana for each new Skeleton or Skeleton Warrior'),
             ('corpsePreservation', 'Death March', 'basic', '+2 Speed. Initiative is unchanged.'),
             ('masterOfBones', 'Bone and Steel', 'advanced', 'upgraded form'),
-            ('boneCollector', 'Bone Collector', 'advanced', '50% more new Skeletons and Skeleton Warriors'),
+            ('boneCollector', 'Bone Collector', 'advanced', '25% more new Skeletons and Skeleton Warriors'),
             ('deathLord', 'Graveplate', 'advanced', '20% less physical damage'),
             ('ossuary', "Dead Man's Luck", 'advanced', '+3 Luck'),
             ('soulHarvester', 'Tomb Guard', 'expert', 'strike twice'),
@@ -495,7 +495,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertIn('not damage reduction', perks['darkConversion']['description'])
         self.assertIn('Retaliations are unchanged', perks['soulHarvester']['description'])
         self.assertIn('Multiple Double Strike effects do not add more strikes', perks['soulHarvester']['description'])
-        self.assertIn('up to 50 Mana per battle', perks['blackHarvest']['description'])
+        self.assertIn('up to 30 Mana per battle', perks['blackHarvest']['description'])
         self.assertIn('Zombies and Grave Knowledge recovery do not count', perks['blackHarvest']['description'])
         self.assertIn('Grave Knowledge recovery is unchanged', perks['boneCollector']['description'])
         self.assertIn('rounded down separately for each form', perks['graveKnowledge']['description'])
@@ -524,13 +524,13 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             'bonewardMagicalReductionPercent': 0,
             'tombGuardAdditionalRetaliations': 0,
             'graveplatePhysicalReductionPercent': 20,
-            'graveKnowledgeRecoveryPercent': 50,
+            'graveKnowledgeRecoveryPercent': 35,
             'bonewardMagicResistancePercent': 50,
             'tombGuardDoubleStrike': True,
             'deadMansLuckBonus': 3,
-            'boneCollectorRaiseBonusPercent': 50,
+            'boneCollectorRaiseBonusPercent': 25,
             'soulHarvesterManaPerRaisedCreature': 1,
-            'soulHarvesterManaCap': 50,
+            'soulHarvesterManaCap': 30,
         })
         validator = Draft4Validator(self.schema)
         absent = json.loads(json.dumps(self.rules))

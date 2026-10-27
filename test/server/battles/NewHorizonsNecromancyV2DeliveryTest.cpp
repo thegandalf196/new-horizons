@@ -96,8 +96,13 @@ TEST_P(NewHorizonsNecromancyV2DeliveryTest, AcceptedFreshOutputAndFullArmyFallba
 	EXPECT_EQ(initial.ossuary, !GetParam());
 	if(GetParam())
 	{
+		const auto captured = newHorizonsNecromancy::policy(hero->getPerkState().rules);
+		ASSERT_TRUE(captured);
+		EXPECT_EQ(captured->boneCollectorRaiseBonusPercent, 25);
+		EXPECT_EQ(captured->soulHarvesterManaCap, 30);
 		EXPECT_TRUE(initial.ordinary.boneCollector);
-		EXPECT_EQ(initial.ordinary.manaRecovered, std::min(50, initial.ordinary.skeletonsRaised));
+		ASSERT_GT(initial.ordinary.skeletonsRaised, 30);
+		EXPECT_EQ(initial.ordinary.manaRecovered, 30);
 	}
 	const auto * owner = gameState()->getPlayerState(PlayerColor(0));
 	auto accepted = newHorizonsNecromancy::selectRaisedArmyDelivery(*hero, owner, initial);

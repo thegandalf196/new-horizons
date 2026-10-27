@@ -425,9 +425,9 @@ protected:
 	bool useVersionTwo() const override { return true; }
 };
 
-TEST_F(NewHorizonsGraveKnowledgeV2RecoveryTest, BasicKnowledgeRestoresHalfOfBothOwnFormsWithoutFreshRaisingOrMana)
+TEST_F(NewHorizonsGraveKnowledgeV2RecoveryTest, BasicKnowledgeUsesCurrentRecoveryWithoutFreshRaisingOrMana)
 {
-	ASSERT_EQ(newHorizonsNecromancy::graveKnowledgeRecoveryPercent(attackerSideHero), 50);
+	ASSERT_EQ(newHorizonsNecromancy::graveKnowledgeRecoveryPercent(attackerSideHero), 35);
 	ASSERT_FALSE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::BLACK_HARVEST_ID)); // Both are mutually exclusive Basic choices.
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
@@ -437,11 +437,11 @@ TEST_F(NewHorizonsGraveKnowledgeV2RecoveryTest, BasicKnowledgeRestoresHalfOfBoth
 	damage(own(id("core:skeletonWarrior")), 11);
 	finish();
 	const auto & summary = recording.applied.back().necromancy;
-	EXPECT_EQ(summary.recoveredSkeletons, 4);
-	EXPECT_EQ(summary.recoveredSkeletonWarriors, 5);
+	EXPECT_EQ(summary.recoveredSkeletons, 3);
+	EXPECT_EQ(summary.recoveredSkeletonWarriors, 3);
 	EXPECT_EQ(summary.skeletonsRaised, 0);
 	EXPECT_EQ(summary.manaRecovered, 0);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 15);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 14);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 14);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 12);
 	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 0);
 }
