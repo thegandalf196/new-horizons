@@ -28,7 +28,16 @@ protected:
 	{
 		NewHorizonsElementalTerrainFixture::mapLoaded(loaded);
 		if(useLegacyMagicRules)
+		{
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+			// Current starting books require current magic; retain the historical
+			// absence under test without adding that later, incompatible metadata.
+			auto heroes = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+			ASSERT_TRUE(heroes["startingSkills"].Struct().contains("startingBookReplacements"));
+			heroes["startingSkills"].Struct().erase("startingBookReplacements");
+			heroes.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
+		}
 	}
 	void prepare(bool breaker = false, bool legacyBattleRules = false)
 	{

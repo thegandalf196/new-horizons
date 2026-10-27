@@ -14,6 +14,8 @@
 #include "../../../lib/mapping/CMapInfo.h"
 #include "../../../lib/networkPacks/PacksForLobby.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSorceryRevision.h"
 
 #include <type_traits>
 
@@ -79,6 +81,16 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		TinyMapGameTest::mapLoaded(map);
+		// Isolate the Necromancy save boundary from the later Sorcery capture
+		// capability. Preserve every other spell row and captured world rule.
+		auto magic = map->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+		for(const auto & [spell, clause] : {std::pair{"new-horizons:focusMagic", "focusMagic"},
+			std::pair{"core:slow", "slow"}, std::pair{"new-horizons:summonLivingArmor", "livingArmor"}})
+			ASSERT_EQ(magic["spells"][spell].Struct().erase(clause), 1u);
+		ASSERT_NO_THROW(newHorizonsMagic::validateRules(magic));
+		ASSERT_NO_THROW(newHorizonsSorceryRevision::validateSerialization(magic, false));
+		magic.setOverrideFlag(true);
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 		JsonNode absent(JsonPath::builtin("config/newHorizonsPerks"));
 		absent.Struct().erase(newHorizonsNecromancy::POLICY_KEY);
 		absent.setOverrideFlag(true);

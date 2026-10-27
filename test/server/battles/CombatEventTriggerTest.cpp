@@ -12,6 +12,8 @@
 #include "BattleTestFixture.h"
 
 #include "../../../lib/GameSettings.h"
+#include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/mapping/CMap.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/combatScripts/ICombatEventScript.h"
 #include "../../../lib/bonuses/BonusParameters.h"
@@ -338,7 +340,11 @@ TEST_F(NewHorizonsFocusMagicTriggerTest, arcaneBreachMarkerDoesNotHandleCombatEv
 TEST_F(NewHorizonsFocusMagicTriggerTest, marksIgnoreOnlyTheirBeneficiarysRangedPhysicalCreatureDefense)
 {
 	startGame();
+	// Pin the real terrain, not the visual sand_shore battlefield. This damage
+	// oracle requires both Titans and Angels to lack native Attack/Defense.
+	gameState()->getMap().getTile(int3(4, 4, 0)).terrainType = TerrainId::DIRT;
 	startBattle();
+	ASSERT_EQ(battle()->getTerrainType(), TerrainId::DIRT);
 	ASSERT_TRUE(newHorizonsMagic::rulesActive(battle()->getMagicRules()));
 
 	CStack * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:titan"), BattleHex(leftHex), stackCount);
@@ -349,6 +355,9 @@ TEST_F(NewHorizonsFocusMagicTriggerTest, marksIgnoreOnlyTheirBeneficiarysRangedP
 	ASSERT_NE(target, nullptr);
 	ASSERT_NE(wrongSideTarget, nullptr);
 	ASSERT_NE(cappedTarget, nullptr);
+	for(const auto * unit : {shooter, target, wrongSideTarget, cappedTarget})
+		ASSERT_TRUE(unit->getBonuses(Selector::sourceTypeSel(BonusSource::TERRAIN_NATIVE))->empty());
+	ASSERT_EQ(shooter->getAttack(true), 24);
 
 	const BattleAttackInfo ranged(shooter, target, 0, true);
 	const BattleAttackInfo melee(shooter, target, 0, false);

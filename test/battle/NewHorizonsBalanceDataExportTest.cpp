@@ -11,6 +11,7 @@
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include <array>
 #include <cstdlib>
+#include <set>
 #include <string_view>
 
 class NewHorizonsBalanceDataExportTest : public TinyMapGameTest
@@ -33,7 +34,7 @@ TEST_F(NewHorizonsBalanceDataExportTest, DISABLED_ExportSelectedMergedCreatureFa
 	const auto & capabilities = gameState()->getHeroCapabilityRules();
 	const bool hasCapabilities = capabilities.isStruct() && !capabilities.Struct().empty();
 	const std::array<const char *, 42> keys{
-		"skeleton", "skeletonWarrior", "walkingDead", "zombie", "wight", "wraith", "vampire", "vampireLord",
+		"skeleton", "skeletonWarrior", "walkingDead", "zombieLord", "wight", "wraith", "vampire", "vampireLord",
 		"lich", "powerLich", "blackKnight", "dreadKnight", "boneDragon", "ghostDragon",
 		"pikeman", "halberdier", "archer", "marksman", "griffin", "royalGriffin", "swordsman", "crusader",
 		"monk", "zealot", "cavalier", "champion", "angel", "archangel",
@@ -45,12 +46,16 @@ TEST_F(NewHorizonsBalanceDataExportTest, DISABLED_ExportSelectedMergedCreatureFa
 	result["statsContext"].String() = "mergedCreatureBaseWithoutHeroTerrainOrTownModifiers";
 	result["categoryRulesetVersion"].Integer() = gameState()->getCreatureCategoryRules().getRulesetVersion();
 	result["leadershipRulesetVersion"].Integer() = hasCapabilities ? capabilities["rulesetVersion"].Integer() : 0;
+	std::set<CreatureID> resolvedIds;
+	std::set<std::string> resolvedKeys;
 	for(const auto * key : keys)
 	{
 		const CreatureID id(CreatureID::decode(std::string("core:") + key));
 		ASSERT_TRUE(id.hasValue()) << key;
 		const auto * creature = id.toCreature();
 		ASSERT_NE(creature, nullptr) << key;
+		ASSERT_TRUE(resolvedIds.insert(id).second) << key;
+		ASSERT_TRUE(resolvedKeys.insert(creature->getJsonKey()).second) << key;
 		JsonNode row;
 		row["key"].String() = creature->getJsonKey();
 		row["id"].Integer() = id.getNum();
