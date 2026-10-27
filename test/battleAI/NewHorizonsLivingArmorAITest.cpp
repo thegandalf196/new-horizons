@@ -240,7 +240,7 @@ TEST_F(NewHorizonsLivingArmorAITest, MagicDamageChoicePrefersVulnerableArmorOver
 	ASSERT_NE(protectedArmor, nullptr);
 	Bonus cancelVulnerability;
 	cancelVulnerability.type = BonusType::MORE_DAMAGE_FROM_SPELL;
-	cancelVulnerability.subtype = BonusSubtypeID(SpellID::NONE);
+	cancelVulnerability.subtype = BonusSubtypeID();
 	cancelVulnerability.val = -100;
 	cancelVulnerability.duration = BonusDuration::ONE_BATTLE;
 	protectedArmor->addNewBonus(std::make_shared<Bonus>(cancelVulnerability));

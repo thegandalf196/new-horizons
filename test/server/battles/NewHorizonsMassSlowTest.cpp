@@ -54,7 +54,7 @@ JsonNode olderV3MagicSnapshotWithoutMassSlow()
 	rules["spells"].Struct().erase(massSlowKey);
 	rules["spells"]["core:slow"].Struct().erase("slow");
 	rules["spells"]["core:slow"]["level"].Integer() = 1;
-	rules["spells"]["core:slow"]["costs"] = JsonNode(JsonVector{JsonNode(4), JsonNode(4), JsonNode(3), JsonNode(3)});
+	rules["spells"]["core:slow"]["costs"].Vector() = {JsonNode(4), JsonNode(4), JsonNode(3), JsonNode(3)};
 	return rules;
 }
 

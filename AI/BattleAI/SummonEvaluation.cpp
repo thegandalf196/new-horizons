@@ -7,6 +7,7 @@
 #include "SummonEvaluation.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/CCreatureHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/Problem.h"
 
