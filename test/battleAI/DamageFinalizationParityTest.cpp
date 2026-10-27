@@ -5,11 +5,14 @@
  */
 #include "StdInc.h"
 #include "ProjectedTargetHitFixture.h"
+#include "../../AI/BattleAI/InitialExportBattleSubject.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/ScopeGuard.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/combatScripts/IDamageCalculatorScript.h"
@@ -152,6 +155,35 @@ auto allEstimationFields(const DamageEstimation & value)
 		value.archeryDeadeye, value.archeryHighArc,
 		value.guardianSpiritAbsorbedDamage, value.guardianSpiritOverflowDamage);
 }
+
+// Portable old/new characterization: pointer identities become packet IDs and
+// floating fields retain their bits. Unordered bonus maps use sorted keys.
+template<typename T> std::string traceValue(const T & value)
+{
+	if constexpr(std::is_same_v<T, const battle::Unit *>)
+		return value ? std::to_string(value->unitId()) : "null";
+	else if constexpr(std::is_same_v<T, BattleHex>)
+		return std::to_string(value.toInt());
+	else if constexpr(std::is_same_v<T, std::unordered_map<std::string, bool>>)
+	{
+		std::string result;
+		for(const auto & [key, present] : std::map<std::string, bool>(value.begin(), value.end()))
+			result += key + ':' + (present ? "1;" : "0;");
+		return result;
+	}
+	else if constexpr(std::is_floating_point_v<T>)
+		return ::testing::PrintToString(std::bit_cast<std::array<std::byte, sizeof(T)>>(value));
+	else
+		return ::testing::PrintToString(value);
+}
+struct PayloadTrace
+{
+	std::string text;
+	template<typename T> void operator()(const char * name, T & value, const char *)
+	{
+		text += std::string(name) + '=' + traceValue(value) + '\n';
+	}
+};
 }
 
 class DamageFinalizationParityTest : public ProjectedTargetHitFixture
@@ -225,6 +257,9 @@ public:
 	LuckRollRules rules;
 	mutable int fullQueries = 0;
 	bool throwOnQuery = false;
+	bool suppressHeroes = false;
+	bool throwOnHeroQuery = false;
+	mutable int heroQueries = 0;
 	explicit FullLuckPolicyProxy(Subject subject) : BattleProxy(std::move(subject)) {}
 	LuckRollRules getLuckRollRules() const override
 	{
@@ -232,6 +267,13 @@ public:
 		if(throwOnQuery)
 			throw std::runtime_error("custom Luck rules query failed");
 		return rules;
+	}
+	const CGHeroInstance * getSideHero(BattleSide side) const override
+	{
+		++heroQueries;
+		if(throwOnHeroQuery)
+			throw std::runtime_error("custom hero query failed");
+		return suppressHeroes ? nullptr : BattleProxy::getSideHero(side);
 	}
 
 	// BattleProxy intentionally leaves mutation and a few read delegates
@@ -277,6 +319,105 @@ LuckRollRules rawLuckPolicy(bool finalMultiplier, int shape)
 	rules.diceSize = shape == 2 ? 100 : 0;
 	rules.affectsAllTargets = true;
 	return rules;
+}
+
+TEST_F(DamageFinalizationParityTest, OwnershipPayloadFollowsAllegianceAcrossLiveAndProjectedViews)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const SecondarySkill armorer(SecondarySkill::decode("new-horizons:armorer"));
+	attackerSideHero->setSecSkillLevel(armorer, 1, ChangeValueMode::ABSOLUTE);
+	defenderSideHero->setSecSkillLevel(armorer, 3, ChangeValueMode::ABSOLUTE);
+	const int originalReduction = newHorizonsCombatSkills::armorerReductionPercent(attackerSideHero);
+	const int transferredReduction = newHorizonsCombatSkills::armorerReductionPercent(defenderSideHero);
+	ASSERT_NE(originalReduction, transferredReduction);
+	ScopedCalculatorRegistry registry;
+	auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary());
+	registry.install(recorder);
+	std::string trace;
+	// Return to ordinary ownership too: successful call-local reads must not
+	// survive a later call after control/bonus changes.
+	for(int control : {0, 1, 2, 0})
+	{
+		std::shared_ptr<Bonus> marker;
+		if(control == 1)
+			marker = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED,
+				BonusSource::OTHER, 1, BonusSourceID());
+		else if(control == 2)
+			marker = std::make_shared<Bonus>(newHorizonsPuppetMaster::controlMarker(
+				SpellID(SpellID::decode(std::string(newHorizonsPuppetMaster::SPELL_ID))), PlayerColor(1)));
+		if(marker)
+			braced->addNewBonus(marker);
+		resetChild();
+		const auto authorized = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+		{
+			auto exported = InitialExportBattleSubject::capture(authorized, *battle());
+			auto projected = std::make_shared<HypotheticBattle>(environment.get(), exported);
+			const std::array<std::shared_ptr<CBattleInfoCallback>, 3> callbacks{live, child, projected};
+			for(size_t view = 0; view < callbacks.size(); ++view)
+			{
+				const auto & callback = *callbacks[view];
+				const auto * actor = callback.battleGetUnitByID(incoming->unitId());
+				const auto * target = callback.battleGetUnitByID(braced->unitId());
+				ASSERT_NE(actor, nullptr);
+				ASSERT_NE(target, nullptr);
+				EXPECT_EQ(callback.battleGetOwner(target), PlayerColor(control == 1 ? 1 : 0));
+				EXPECT_EQ(callback.battleGetActionController(target), PlayerColor(control ? 1 : 0));
+				// The player-scoped parent deliberately hides the opposing hero.
+				// Native and explicit full-information exports retain that hero.
+				const bool hiddenHero = view == 1 && control == 1;
+				EXPECT_EQ(callback.battleGetOwnerHero(target), hiddenHero ? nullptr
+					: control == 1 ? defenderSideHero : attackerSideHero);
+				const auto before = nativeSnapshot();
+				const auto branchBefore = projectedSnapshot();
+				const auto projectedActorBefore = actor->acquireState()->save();
+				const auto projectedTargetBefore = target->acquireState()->save();
+				const auto result = callback.calculateDmgRange(BattleAttackInfo(actor, target, 0, false));
+				auto payload = recorder->payloads.back();
+				EXPECT_EQ(payload.newHorizonsArmorerReductionPercent,
+					hiddenHero ? 0 : control == 1 ? transferredReduction : originalReduction);
+				PayloadTrace fields;
+				payload.serializeScript(fields);
+				trace += std::to_string(control) + '/' + std::to_string(view) + '\n' + fields.text;
+				std::apply([&](const auto &... values) { ((trace += traceValue(values) + '\n'), ...); },
+					allEstimationFields(result));
+				EXPECT_EQ(nativeSnapshot(), before);
+				EXPECT_EQ(projectedSnapshot(), branchBefore);
+				EXPECT_EQ(actor->acquireState()->save(), projectedActorBefore);
+				EXPECT_EQ(target->acquireState()->save(), projectedTargetBefore);
+			}
+		} // Retire the borrowed exported world before changing its native source.
+		if(marker)
+			braced->removeBonus(marker);
+	}
+	RecordProperty("ownershipPayloadTrace", trace);
+}
+
+TEST_F(DamageFinalizationParityTest, OwnershipQueriesRemainCallLocalIncludingNullHeroesAndFailures)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	FullLuckPolicyProxy proxy(live);
+	proxy.rules = live->getBattle()->getLuckRollRules();
+	const BattleAttackInfo attack(incoming, braced, 0, false);
+	const auto before = nativeSnapshot();
+	for(bool nullHeroes : {false, true, false})
+	{
+		proxy.suppressHeroes = nullHeroes;
+		proxy.heroQueries = 0;
+		const auto result = proxy.calculateDmgRange(attack);
+		EXPECT_GE(result.damage.min, 0);
+		EXPECT_GT(proxy.heroQueries, 0);
+		RecordProperty(nullHeroes ? "nullHeroQueries" : "ordinaryHeroQueries", proxy.heroQueries);
+	}
+	proxy.throwOnHeroQuery = true;
+	for(int attempt = 0; attempt < 2; ++attempt)
+	{
+		const int queries = proxy.heroQueries;
+		EXPECT_THROW(proxy.calculateDmgRange(attack), std::runtime_error);
+		EXPECT_EQ(proxy.heroQueries, queries + 1);
+	}
+	proxy.throwOnHeroQuery = false;
+	EXPECT_NO_THROW(proxy.calculateDmgRange(attack));
+	EXPECT_EQ(nativeSnapshot(), before);
 }
 }
 
