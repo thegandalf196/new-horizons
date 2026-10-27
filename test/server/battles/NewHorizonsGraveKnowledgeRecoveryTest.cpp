@@ -15,6 +15,7 @@
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../server/queries/BattleQueries.h"
 #include "../../../server/queries/QueriesProcessor.h"
+#include <string_view>
 
 namespace
 {
@@ -259,13 +260,37 @@ class NewHorizonsGraveKnowledgeAdmissionTest : public NewHorizonsReclaimerFixtur
 {
 protected:
 	virtual const char * basicPerk() const { return newHorizonsNecromancy::BLACK_HARVEST_ID; }
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsReclaimerFixture::mapLoaded(map);
+		// These admission/reclamation oracles describe published 0.87 v1.
+		// Keep Vidomina's independent hero policy, but capture the complete old perk registry.
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, necromancy087Test::rules());
+	}
 	void SetUp() override
 	{
 		NewHorizonsReclaimerFixture::SetUp();
+		const auto & rules = attackerSideHero->getPerkState().rules;
+		const auto captured = newHorizonsNecromancy::policy(rules);
+		ASSERT_TRUE(captured);
+		ASSERT_EQ(captured->version, 1);
+		ASSERT_EQ(captured->graveKnowledgeRecoveryPercent, 20);
+		const auto & pool = rules["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
+		for(const auto * perk : {basicPerk(), newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID})
+		{
+			const auto found = std::find_if(pool.begin(), pool.end(), [perk](const auto & row)
+			{
+				return row["id"].String() == perk;
+			});
+			ASSERT_NE(found, pool.end());
+			ASSERT_EQ((*found)["requires"].String(), std::string_view(perk) == basicPerk() ? "basic" : "advanced");
+		}
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID)),
 			MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->applyPerkSelection({newHorizonsNecromancy::SKILL_ID, basicPerk()});
 		attackerSideHero->applyPerkSelection({newHorizonsNecromancy::SKILL_ID, newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID, basicPerk()));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID, newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID));
 	}
 };
 
@@ -289,7 +314,9 @@ TEST_F(NewHorizonsGraveKnowledgeAdmissionTest, RecoveryGetsCapacityBeforeFreshRa
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), capacity);
 	newHorizonsNecromancy::PreparedBattleNecromancy prepared{summary, summary, false};
 	EXPECT_FALSE(newHorizonsNecromancy::selectRaisedArmyDelivery(*attackerSideHero, owner(), prepared));
-	// Delivery's independently tested Ossuary contract remains fresh-output-only.
+	// This detached delivery-helper contract toggles routing; it is not an
+	// authoritative co-perk configuration with both mutually exclusive Advanced perks.
+	// Genuine v1 Ossuary fallback is covered by NewHorizonsNecromancyV2DeliveryTest.
 	prepared.ossuary = true;
 	const auto delivery = newHorizonsNecromancy::selectRaisedArmyDelivery(*attackerSideHero, owner(), prepared);
 	ASSERT_TRUE(delivery);

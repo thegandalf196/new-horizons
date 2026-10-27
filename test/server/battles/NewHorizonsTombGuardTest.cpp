@@ -51,8 +51,13 @@ protected:
 		TinyMapGameTest::mapLoaded(map);
 		if(legacyMagic)
 			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
-		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+		auto heroes = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		// Starting-book replacements require the modern magic roster; their
+		// supported absence preserves all other hero and faction-skill rules.
+		if(legacyMagic)
+			heroes["startingSkills"].Struct().erase("startingBookReplacements");
+		heroes.setOverrideFlag(true);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
 		auto perks = necromancy087Test::rules();
 		if(captureVersion() == 2)
 		{

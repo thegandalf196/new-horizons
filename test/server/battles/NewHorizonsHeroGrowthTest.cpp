@@ -877,6 +877,10 @@ protected:
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+		// The growth checkpoint also predates final Luck and reduced Morale damage.
+		// Installed modern scalar defaults must not enter this historical writer.
+		loaded->overrideGameSetting(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, JsonNode(false));
+		loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT, JsonNode(100));
 		// The historical world save predates the generated-artifact-pool policy.
 		JsonNode emptyArtifactPool;
 		emptyArtifactPool.Vector();
