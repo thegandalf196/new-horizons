@@ -1,6 +1,6 @@
 # New Horizons
 
-[Download New Horizons Early Access for Windows and Linux](https://github.com/thegandalf196/new-horizons/releases), with installation instructions. Requires Heroes III Complete; original game assets are not included.
+[Download New Horizons 0.87 Early Access for Windows and Linux](https://github.com/thegandalf196/new-horizons/releases/tag/v0.87), with installation instructions. Requires Heroes III Complete; original game assets are not included.
 
 [What changes from Heroes III Complete? Read the gameplay and artwork changelog.](docs/NEW_HORIZONS_CHANGELOG.md)
 
@@ -58,7 +58,7 @@ That question matters just as much.
 
 Skills retain the familiar Basic, Advanced, and Expert ranks. Each also has a pool of 10 perks, of which a hero can learn at most 3. Under normal advancement, ranks and perks alternate, so developing a discipline involves choosing how to specialize along the way.
 
-An offensive commander might take Shock Assault, letting attacks under Charge! ignore part of the enemy’s Defense. Another might choose Encirclement to make attacks from additional sides more rewarding. Those choices give the same Orders different tactical weight.
+An offensive commander might take Shock Assault, letting attacks under Charge! ignore part of the enemy’s Defense. Another might choose Spearhead to strengthen Charge! further. Those choices give the same Orders different tactical weight.
 
 The perk system also gives some familiar skills a more useful home. Navigation, Pathfinding, and Scouting sit within Logistics. Scholar and Eagle Eye belong to Learning. Artillery, Ballistics, and First Aid come together under War Machines, with perks for the particular kind of military engineering you want to pursue.
 

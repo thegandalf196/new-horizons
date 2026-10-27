@@ -7,6 +7,23 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.87 Early Access
+
+- Feint! and Vanguard! replace Protect! and Flank!: army-wide retaliation
+  protection or temporary combat inspiration, without selecting a target.
+- The Chosen replaces Crusade! with a level 5 Light spell granting Double Strike,
+  unlimited retaliations, Flying and creature Charge to one friendly living,
+  non-mechanical stack. Only one stack per army may benefit at a time.
+- Necromancy reduces Skeleton Leadership costs. Revised perks develop Skeleton
+  protection, retaliation, recovery and Speed rather than alternate raised troops.
+- Related perks and hero specialties follow the revised Orders and Light spell.
+- Includes targeted combat AI cleanup and a repair for quitting a loaded game.
+
+Download the [Windows or Linux release](https://github.com/thegandalf196/new-horizons/releases/tag/v0.87).
+Start a new scenario to use the revised rules; existing saves retain their captured
+rules. Detailed effects and formulas are in the
+[player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
+
 ## Current development baseline — 24 October 2026
 
 This comparison describes the current development version, including changes after
