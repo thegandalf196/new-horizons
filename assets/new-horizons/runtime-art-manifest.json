@@ -53900,6 +53900,36 @@
       "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
       "selection": "provisionally-selected-under-authorized-draft-policy",
       "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_summon_living_armor_44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_summon_living_armor_44.png",
+      "size": 4185,
+      "sha256": "5330e303bf50380553b67271963b55afdf2fa3aedebf4d262fe491aa7c3477e4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_summon_living_armor_32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_summon_living_armor_32.png",
+      "size": 2509,
+      "sha256": "25e40cb24e1d781ede34596962bacdc6221e2de128f15af2308a1a4f2e70fb41",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_summon_living_armor_30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_summon_living_armor_30.png",
+      "size": 2255,
+      "sha256": "89f4e86d5a72299e7e84ccc78af6feddd5649d802b228f6d1b4f93ad36373819",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
     }
   ],
   "requiredFamilies": [
@@ -53914,7 +53944,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 3308,
+    "builtin-skills-perks-orders-and-ui": 3311,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

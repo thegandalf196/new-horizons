@@ -11,11 +11,11 @@
 		"gainChance": {},
 		"targetType": "LOCATION",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:67",
-			"iconScroll": "SPELLSCR.def:0:67",
-			"iconScenarioBonus": "SPELLBON.def:0:67",
-			"iconEffect": "SPELLINT.def:0:68",
-			"iconImmune": "SPELLINT.def:0:68"
+			"iconBook": "NH_spell_summon_living_armor_44.png",
+			"iconScroll": "NH_spell_summon_living_armor_32.png",
+			"iconScenarioBonus": "NH_spell_summon_living_armor_32.png",
+			"iconEffect": "NH_spell_summon_living_armor_30.png",
+			"iconImmune": "NH_spell_summon_living_armor_30.png"
 		},
 		"animation": {
 			"hit": [
