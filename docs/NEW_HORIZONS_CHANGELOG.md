@@ -7,7 +7,7 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## 0.87.1 — in development
+## 0.87.1 Early Access
 
 - Starting Leadership increases by 20% for every hero class; Leadership gained
   per level and ordinary creature Leadership costs remain unchanged.
