@@ -387,7 +387,9 @@ TEST_F(NewHorizonsMassSlowTest, ExpertOrdinarySlowRemainsFullStrengthAndSingleTa
 		<< "Expert Slow keeps its two-round base plus the earlier Temporalist perk";
 	EXPECT_EQ(slowEffect(secondEnemy), nullptr)
 		<< "Expert mastery and Temporal Field do not convert the ordinary Slow entry to Mass Slow";
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 3);
+	EXPECT_EQ(newHorizonsMagic::spellCost(battle()->getMagicRules(), SpellID(SpellID::SLOW),
+		MasteryLevel::EXPERT), 11);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 11);
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
 }
 

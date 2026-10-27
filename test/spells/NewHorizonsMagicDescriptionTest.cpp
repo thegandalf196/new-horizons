@@ -9,6 +9,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "HistoricalCrusadeRules.h"
 
 #include <array>
 #include <stdexcept>
@@ -26,7 +27,7 @@ public:
 // validator. No current definition is mutated and no installed fallback is used.
 JsonNode historicalDescriptionRules(int version)
 {
-	const JsonNode current(JsonPath::builtin("config/newHorizonsMagic"));
+	const JsonNode current = historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")), version);
 	JsonNode result;
 	for(const auto * field : {"schemaVersion", "schools", "schoolSkills", "skillReplacements", "adventureSpells"})
 		result[field] = current[field];
@@ -60,7 +61,7 @@ const CSpell * descriptionSpell(const char * key)
 	return id.toSpell();
 }
 
-constexpr auto spellcraftSuffix = "\n\nSpellcraft efficiency: 110% on Spell Power-derived terms, multiplying with School rank.";
+constexpr auto spellcraftSuffix = "\n\nBase Spellcraft efficiency: 110% on Spell Power-derived terms, multiplying with School rank.";
 }
 
 class NewHorizonsMagicDescriptionTest : public ::testing::Test
@@ -315,13 +316,21 @@ TEST_F(NewHorizonsMagicDescriptionTest, LivingArmorUsesCapturedPoolAndLifetimeAn
 	const auto * spell = descriptionSpell("new-horizons:summonLivingArmor");
 	hero.setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	rank(spell, 1, 1);
+	SCOPED_TRACE(describe(spell));
+	ASSERT_EQ(hero.getEffectPower(spell), 100);
+	ASSERT_EQ(hero.getEffectPowerDivisor(spell), 1);
+	ASSERT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(callback.rules, &hero, spell->getId()), 12650);
 	EXPECT_NE(describe(spell).find("Current pool: 166 HP before battle-only Warcasting. Lifetime: 3 rounds"), std::string::npos);
 	auto & profile = callback.rules["spells"]["new-horizons:summonLivingArmor"]["livingArmor"];
 	profile["baseHitPoints"].Integer() = 7;
 	profile["spellPowerCoefficient"].Integer() = 2;
 	profile["duration"].Integer() = 5;
 	ASSERT_NO_THROW(newHorizonsMagic::validateRules(callback.rules));
-	EXPECT_NE(describe(spell).find("Current pool: 260 HP before battle-only Warcasting. Lifetime: 5 rounds"), std::string::npos);
+	{
+		const auto actualReadout = describe(spell);
+		SCOPED_TRACE(actualReadout);
+		EXPECT_NE(actualReadout.find("Current pool: 260 HP before battle-only Warcasting. Lifetime: 5 rounds"), std::string::npos);
+	}
 	EXPECT_NE(describe(spell).find("Extend Spell and Echoed Duration each add one round"), std::string::npos);
 	profile["spellPowerCoefficient"].Integer() = 0;
 	EXPECT_NE(describe(spell).find("Current pool: 7 HP"), std::string::npos);

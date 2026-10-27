@@ -81,19 +81,28 @@ protected:
 TEST_F(NewHorizonsLivingArmorTest, SelectedSummonMatchesExactHealthPreviewAndThreeRoundLifetime)
 {
 	prepare();
+	const auto * definition = summonSpell().toSpell();
+	ASSERT_EQ(attackerSideHero->getEffectPower(definition), 21);
+	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(definition), 10);
+	ASSERT_EQ(battle()->getMagicRules()["spells"]["new-horizons:summonLivingArmor"]
+		["livingArmor"]["baseHitPoints"].Integer(), 40);
+	spells::BattleCast context(battle(), attackerSideHero, spells::Mode::HERO, definition);
+	const auto mechanics = definition->battleMechanics(&context);
+	ASSERT_EQ(mechanics->getSpellPowerCoefficientBasisPoints(), 10000);
+	// 40 + floor(21 displayed rating / 10 caster units) = 42 HP: five 10-HP units.
 	const auto preview = battle()->getSpellEffectValue(summonSpell().toSpell(), attackerSideHero,
 		spells::Mode::HERO, destination);
 	ASSERT_NE(preview, nullptr);
-	EXPECT_EQ(preview->hpDelta, 61);
-	EXPECT_EQ(preview->unitsDelta, 7);
+	EXPECT_EQ(preview->hpDelta, 42);
+	EXPECT_EQ(preview->unitsDelta, 5);
 	const auto mana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(cast(destination));
 	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 5);
 	auto * unit = summoned();
 	ASSERT_NE(unit, nullptr);
 	EXPECT_EQ(unit->getPosition(), destination);
-	EXPECT_EQ(unit->getAvailableHealth(), 61);
-	EXPECT_EQ(unit->getCount(), 7);
+	EXPECT_EQ(unit->getAvailableHealth(), 42);
+	EXPECT_EQ(unit->getCount(), 5);
 	EXPECT_EQ(unit->summonRoundsRemaining, 3);
 	EXPECT_FALSE(unit->natureSummoned);
 	EXPECT_FALSE(unit->isClone());
@@ -115,7 +124,17 @@ TEST_F(NewHorizonsLivingArmorTest, OccupiedHexRejectsWithoutManaOrActionSpendAnd
 	prepare();
 	const auto mana = attackerSideHero->getManaAvailable();
 	const auto count = battle()->stacks.size();
-	ASSERT_FALSE(cast(BattleHex(leftHex)));
+	const battle::Unit * occupant = nullptr;
+	for(const auto & stack : battle()->stacks)
+		if(stack->alive())
+		{
+			occupant = stack.get();
+			break;
+		}
+	ASSERT_NE(occupant, nullptr);
+	const auto occupiedHex = occupant->getPosition();
+	ASSERT_EQ(battle()->battleGetUnitByPos(occupiedHex), occupant);
+	ASSERT_FALSE(cast(occupiedHex));
 	EXPECT_EQ(mana, attackerSideHero->getManaAvailable());
 	EXPECT_EQ(count, battle()->stacks.size());
 	ASSERT_TRUE(cast(destination));
@@ -149,7 +168,7 @@ TEST_F(NewHorizonsLivingArmorTest, JsonAndDetachedProjectionPreserveLifetimeWith
 		EXPECT_EQ(projected->summonRoundsRemaining, 2);
 		EXPECT_EQ(unit->save(), snapshot);
 	}
-	auto copy = std::dynamic_pointer_cast<battle::CUnitState>(unit->acquireState()->acquire());
+	auto copy = unit->acquireState();
 	ASSERT_NE(copy, nullptr);
 	copy->load(snapshot);
 	EXPECT_EQ(copy->summonRoundsRemaining, 2);
