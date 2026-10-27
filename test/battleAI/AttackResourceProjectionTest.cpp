@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include <atomic>
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
@@ -62,6 +63,13 @@ protected:
 	std::shared_ptr<CPlayerBattleCallback> callback;
 	std::shared_ptr<HypotheticBattle> model;
 	DamageCache cache;
+
+	void mapLoaded(CMap * map) override
+	{
+		HeroCommandFixture::mapLoaded(map);
+		if(!useCommands)
+			captureLegacyPerkOfferPolicy(*map);
+	}
 
 	void prepareModel()
 	{
@@ -167,18 +175,25 @@ TEST_F(AttackResourceProjectionTest, MeleeExchangeCandidateScoringDoesNotSpendAm
 	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 	gameHandler->sendAndApply(activate);
 	prepareModel();
-	ASSERT_TRUE(model->battleCanShoot(opening));
-	ASSERT_TRUE(model->battleCanShoot(followup));
-	ASSERT_FALSE(model->battleCanShoot(enemyOgre));
+	const auto * projectedOpening = model->battleGetUnitByID(opening->unitId());
+	const auto * projectedFollowup = model->battleGetUnitByID(followup->unitId());
+	const auto * projectedEnemyOgre = model->battleGetUnitByID(enemyOgre->unitId());
+	ASSERT_NE(projectedOpening, nullptr);
+	ASSERT_NE(projectedFollowup, nullptr);
+	ASSERT_NE(projectedEnemyOgre, nullptr);
+	ASSERT_NE(projectedOpening, opening);
+	ASSERT_TRUE(model->battleCanShoot(projectedOpening));
+	ASSERT_TRUE(model->battleCanShoot(projectedFollowup));
+	ASSERT_FALSE(model->battleCanShoot(projectedEnemyOgre));
 
 	const auto openingShots = opening->shots.available();
 	const auto followupShots = followup->shots.available();
 	const auto enemyShots = enemyOgre->shots.available();
 	ASSERT_EQ(enemyShots, 0);
-	const auto attack = AttackPossibility::evaluate(BattleAttackInfo(opening, enemyOgre, 0, true),
-		opening->getPosition(), cache, model);
+	const auto attack = AttackPossibility::evaluate(BattleAttackInfo(projectedOpening, projectedEnemyOgre, 0, true),
+		projectedOpening->getPosition(), cache, model);
 	ASSERT_NE(attack.attackerState, nullptr);
-	PotentialTargets targets(opening, cache, model);
+	PotentialTargets targets(projectedOpening, cache, model);
 	BattleExchangeEvaluator evaluator(callback, environment, 1.0f, 1);
 	evaluator.updateReachabilityMap(model);
 	const auto units = evaluator.getExchangeUnits(attack, 0, targets, model);
@@ -189,13 +204,13 @@ TEST_F(AttackResourceProjectionTest, MeleeExchangeCandidateScoringDoesNotSpendAm
 			return vstd::contains(entry.second, unit);
 		});
 	};
-	ASSERT_TRUE(isScheduled(opening));
-	ASSERT_TRUE(isScheduled(followup));
-	ASSERT_TRUE(isScheduled(enemyOgre));
-	ASSERT_TRUE(vstd::contains(units.melleeAccessible, opening));
-	ASSERT_TRUE(vstd::contains(units.melleeAccessible, followup));
-	ASSERT_FALSE(vstd::contains(units.shooters, opening));
-	ASSERT_FALSE(vstd::contains(units.shooters, followup));
+	ASSERT_TRUE(isScheduled(projectedOpening));
+	ASSERT_TRUE(isScheduled(projectedFollowup));
+	ASSERT_TRUE(isScheduled(projectedEnemyOgre));
+	ASSERT_TRUE(vstd::contains(units.melleeAccessible, projectedOpening));
+	ASSERT_TRUE(vstd::contains(units.melleeAccessible, projectedFollowup));
+	ASSERT_FALSE(vstd::contains(units.shooters, projectedOpening));
+	ASSERT_FALSE(vstd::contains(units.shooters, projectedFollowup));
 
 	auto ammoOveruseWarnings = std::make_shared<std::atomic_size_t>(0);
 	CLogger::getGlobalLogger()->addTarget(std::make_unique<AmmoOveruseLogTarget>(ammoOveruseWarnings));
