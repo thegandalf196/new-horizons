@@ -176,19 +176,19 @@ TEST_F(NewHorizonsNecromancyCombatTest, BothSkeletonFormsGainMovementOnlyAndOneN
 	{
 		EXPECT_EQ(target->intrinsicMagicalDamageReductionPercent(), 30);
 		EXPECT_EQ(target->getMovementRange(), target->getInitiative() + 2);
-		EXPECT_EQ(target->retaliations.available(), 2);
-		target->retaliations.use();
-		EXPECT_EQ(target->retaliations.available(), 1);
-		target->retaliations.use();
+		EXPECT_EQ(target->counterAttacks.available(), 2);
+		target->counterAttacks.use();
+		EXPECT_EQ(target->counterAttacks.available(), 1);
+		target->counterAttacks.use();
 		EXPECT_FALSE(target->ableToRetaliate());
-		target->retaliations.reset();
-		EXPECT_EQ(target->retaliations.available(), 2);
+		target->counterAttacks.reset();
+		EXPECT_EQ(target->counterAttacks.available(), 2);
 		target->addNewBonus(marker(BonusType::NO_RETALIATION));
-		EXPECT_EQ(target->retaliations.available(), 0);
+		EXPECT_EQ(target->counterAttacks.available(), 0);
 		EXPECT_FALSE(target->ableToRetaliate());
 	}
 	EXPECT_EQ(ordinary->intrinsicMagicalDamageReductionPercent(), 0);
-	EXPECT_EQ(ordinary->retaliations.available(), 1);
+	EXPECT_EQ(ordinary->counterAttacks.available(), 1);
 	EXPECT_EQ(ordinary->getMovementRange(), ordinary->getInitiative());
 }
 
@@ -196,7 +196,7 @@ TEST_F(NewHorizonsNecromancyCombatTest, FrozenAndBindStillZeroMovementAndLegacyI
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	// A private provider has Speed but no explicit Initiative, exercising the legacy fallback.
-	CBonusSystemNode speedOnly;
+	CBonusSystemNode speedOnly(BonusNodeType::STACK_BATTLE, true);
 	speedOnly.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_SPEED,
 		BonusSource::OTHER, 5, BonusSourceID()));
 	battle::CUnitStateDetached fallback(skeleton, &speedOnly);
@@ -222,7 +222,7 @@ TEST_F(NewHorizonsNecromancyCombatTest, AbsentCapturedPolicyRetainsAllHistorical
 		EXPECT_EQ(target->intrinsicMagicalDamageReductionPercent(), 0);
 		EXPECT_FALSE(newHorizonsNecromancy::needsCombatPassiveSnapshot(*target));
 		EXPECT_EQ(target->getMovementRange(), target->getInitiative());
-		EXPECT_EQ(target->retaliations.available(), 1);
+		EXPECT_EQ(target->counterAttacks.available(), 1);
 		EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustDamage(*battle(), *target, 100), 100);
 		EXPECT_EQ(newHorizonsNecromancy::adjustUnmitigatedMagicalDamage(*target, 100), 100);
 	}
@@ -322,9 +322,9 @@ TEST_F(NewHorizonsNecromancyCombatTest, CapturedInputsAndCurrentControllerKeepPa
 	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	auto changed = child->getForUpdate(skeleton->unitId());
 	EXPECT_EQ(changed->intrinsicMagicalDamageReductionPercent(), 30);
-	EXPECT_EQ(changed->retaliations.available(), 2);
-	changed->retaliations.use();
-	EXPECT_EQ(first->retaliations.available(), 2);
+	EXPECT_EQ(changed->counterAttacks.available(), 2);
+	changed->counterAttacks.use();
+	EXPECT_EQ(first->counterAttacks.available(), 2);
 	DamageCache baseline;
 	baseline.buildDamageCache(parent, BattleSide::DEFENDER);
 	DamageCache current(&baseline);
@@ -340,7 +340,7 @@ TEST_F(NewHorizonsNecromancyCombatTest, CapturedInputsAndCurrentControllerKeepPa
 	EXPECT_EQ(changed->intrinsicMagicalDamageReductionPercent(), 30);
 	changed->addUnitBonus(std::vector<Bonus>{*marker(BonusType::HYPNOTIZED)});
 	EXPECT_EQ(changed->intrinsicMagicalDamageReductionPercent(), 0);
-	EXPECT_EQ(changed->retaliations.available(), 0);
+	EXPECT_EQ(changed->counterAttacks.available(), 0);
 	EXPECT_EQ(sibling->getForUpdate(skeleton->unitId())->intrinsicMagicalDamageReductionPercent(), 30);
 	const bool currentShot = child->battleCanShoot(shooter, changed->getPosition());
 	const auto expected = child->battleExpectedLuckDamage(BattleAttackInfo(shooter, changed.get(), 0, currentShot));
@@ -362,7 +362,7 @@ TEST_F(NewHorizonsNecromancyCombatTest, ObservingEnemyDoesNotImportHiddenPassive
 	ASSERT_NE(viewed, nullptr);
 	EXPECT_EQ(viewed->intrinsicMagicalDamageReductionPercent(), 0);
 	EXPECT_EQ(viewed->getMovementRange(), viewed->getInitiative());
-	EXPECT_EQ(viewed->acquireState()->retaliations.available(), 1);
+	EXPECT_EQ(viewed->acquireState()->counterAttacks.available(), 1);
 	EXPECT_EQ(skeleton->intrinsicMagicalDamageReductionPercent(), 30);
 }
 
@@ -418,7 +418,7 @@ TEST_F(NewHorizonsNecromancyCombatTest, GraveplateIsLegalAlternativeToTombGuardA
 	for(auto * target : {skeleton, warrior})
 	{
 		ASSERT_EQ(target->intrinsicPhysicalDamageReductionPercent(), 20);
-		EXPECT_EQ(target->retaliations.available(), 1);
+		EXPECT_EQ(target->counterAttacks.available(), 1);
 		ASSERT_EQ(physicalDamage(target, 80, 0, 0, 0).damage.min, 100);
 		EXPECT_EQ(physicalDamage(target).damage.min, 80);
 		EXPECT_EQ(physicalDamage(target, 80, 25, 30).damage.min, 42);
