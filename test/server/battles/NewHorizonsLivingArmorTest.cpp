@@ -292,6 +292,10 @@ TEST_F(NewHorizonsLivingArmorTest, MagicalCreatureShotUsesVulnerabilityOnceAndKe
 	auto * shooter = addStack(BattleSide::DEFENDER, creatureByName("core:lich"), BattleHex(12, 5), 1);
 	ASSERT_NE(control, nullptr);
 	ASSERT_NE(shooter, nullptr);
+	// Match the recipient defense while leaving vulnerability and physical reduction separate.
+	const int defenseDifference = target->getDefense(true) - control->getDefense(true);
+	control->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::PRIMARY_SKILL,
+		BonusSource::OTHER, defenseDifference, BonusSourceID(), BonusSubtypeID(PrimarySkill::DEFENSE)));
 	ASSERT_EQ(control->getDefense(true), target->getDefense(true));
 	const BattleAttackInfo magical(shooter, target, 0, true);
 	ASSERT_FALSE(magical.physicalDamage);

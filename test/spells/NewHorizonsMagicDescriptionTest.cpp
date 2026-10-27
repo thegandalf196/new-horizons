@@ -314,13 +314,14 @@ TEST_F(NewHorizonsMagicPerkDescriptionTest, BlessDurationBonusesBenedictionAndSp
 TEST_F(NewHorizonsMagicDescriptionTest, LivingArmorUsesCapturedPoolAndLifetimeAndKeepsMissingProfileFallback)
 {
 	const auto * spell = descriptionSpell("new-horizons:summonLivingArmor");
-	hero.setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	// This uninitialized legacy hero clamps primary ratings at 99; stay below that cap.
+	hero.setPrimarySkill(PrimarySkill::SPELL_POWER, 80, ChangeValueMode::ABSOLUTE);
 	rank(spell, 1, 1);
 	SCOPED_TRACE(describe(spell));
-	ASSERT_EQ(hero.getEffectPower(spell), 100);
+	ASSERT_EQ(hero.getEffectPower(spell), 80);
 	ASSERT_EQ(hero.getEffectPowerDivisor(spell), 1);
 	ASSERT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(callback.rules, &hero, spell->getId()), 12650);
-	EXPECT_NE(describe(spell).find("Current pool: 166 HP before battle-only Warcasting. Lifetime: 3 rounds"), std::string::npos);
+	EXPECT_NE(describe(spell).find("Current pool: 141 HP before battle-only Warcasting. Lifetime: 3 rounds"), std::string::npos);
 	auto & profile = callback.rules["spells"]["new-horizons:summonLivingArmor"]["livingArmor"];
 	profile["baseHitPoints"].Integer() = 7;
 	profile["spellPowerCoefficient"].Integer() = 2;
@@ -329,7 +330,7 @@ TEST_F(NewHorizonsMagicDescriptionTest, LivingArmorUsesCapturedPoolAndLifetimeAn
 	{
 		const auto actualReadout = describe(spell);
 		SCOPED_TRACE(actualReadout);
-		EXPECT_NE(actualReadout.find("Current pool: 260 HP before battle-only Warcasting. Lifetime: 5 rounds"), std::string::npos);
+		EXPECT_NE(actualReadout.find("Current pool: 209 HP before battle-only Warcasting. Lifetime: 5 rounds"), std::string::npos);
 	}
 	EXPECT_NE(describe(spell).find("Extend Spell and Echoed Duration each add one round"), std::string::npos);
 	profile["spellPowerCoefficient"].Integer() = 0;
