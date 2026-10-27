@@ -17053,8 +17053,8 @@
       "sha256": "0ddd0469bc1426151d011e634bb9d549b241c56191f0d8703c1be31b0cdcf20e"
     },
     "clientapp/EntryPoint.cpp": {
-      "sha256": "836b3fd18e3d266fc92f6de799cc0a419918bc4b0fac86ec056f0f4d1f8b0320",
-      "review": "IR-STAGE9-REALCALLBACK-e16092f0-20261018",
+      "sha256": "f52307829fd255c29355ea774650105a246bae8d197f40aa3863736845954d97",
+      "review": "IR-WINDOWS087-QUIT-CLEANUP-OWNERSHIP-FIX-20261027",
       "functions": [
         {
           "symbol": "static void init()#1",
@@ -17079,7 +17079,7 @@
         {
           "symbol": "conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1",
           "start": 145,
-          "end": 523
+          "end": 529
         },
         {
           "symbol": "[](std::string buffer, bool calledFromIngameConsole)#1",
@@ -17114,15 +17114,15 @@
         {
           "symbol": "[&logConfigurator]()#1",
           "start": 455,
-          "end": 509
+          "end": 515
         },
         {
           "symbol": "void handleFatalError(const std::string & message, bool terminate)#1",
-          "start": 527,
-          "end": 540
+          "start": 533,
+          "end": 546
         }
       ],
-      "rationale": "Complete afterimage read1to540, all conditional OS/SDL/thread branches and13 genuine callable bodies. Four static helpers and fatal handler, seven nested lambdas, one conservatively unified conditional entrypoint145to523. Eleven unchanged callable bodies independently mapped byte-exact to new spans; main and cleanup explicitly reviewed. Stable cleanup label [&logConfigurator]() identifies the shipping signature; physical455to509 includes its NH_CURE_CLIENT_INTEGRATION conditional &cureIntegration capture/detach, not a shortened preprocessed branch. Catch statements are not callables; object-like SDL macros/generated included entrypoints are not extra handwritten bodies. Source inventory only; new379-line function allowance is separately explicit above."
+      "rationale": "Complete exact546-line source inventory preserves all13 callable bodies and every conditional OS/SDL/thread/CURE alternative. Only cleanup ownership changed: its stable shipping label [&logConfigurator]() still covers full conditional capture/detach455to515 (61 lines). Unified conditional entrypoint145to529 is385 physical lines, never a shortened final-main parser branch; fatal handler moves to533to546 and all ten earlier spans remain unchanged. Existing catches/macros are not extra callables. Source guard rejects actual old scope and five negative wiring witnesses; no parser fallback, coverage gap or runtime acceptance claim."
     },
     "mapeditor/templateeditor/templateeditor.cpp": {
       "sha256": "c434bc9a615a8b5edc517dff2b3ad33d438ce0614c824ac6b85fdfd441bd2bba",
@@ -21264,13 +21264,13 @@
     },
     "clientapp/EntryPoint.cpp": {
       "kind": "exception",
-      "lines": 540,
-      "sha256": "836b3fd18e3d266fc92f6de799cc0a419918bc4b0fac86ec056f0f4d1f8b0320",
+      "lines": 546,
+      "sha256": "f52307829fd255c29355ea774650105a246bae8d197f40aa3863736845954d97",
       "owner": "engine_engineer",
-      "review": "IR-STAGE9-REALCALLBACK-e16092f0-20261018",
-      "review_scope": "compile-time-dedicated-client-test-hooks-only",
-      "rationale": "Exact517to540 bounded compile-time optional real-client callback test routing. Macro-absent shipping projection is whitespace-normalized exact; substantive scenario logic belongs to cohesive206-line dedicated driver and75-line asynchronous lease, not this bootstrap. This admits no shipping initialization/lifecycle policy growth and no graphical acceptance claim.",
-      "deferral": "Engine owner must extract characterized startup/configuration or cleanup lifecycle behind explicit ownership interfaces before any further entrypoint growth. Reduce this exact540-line baseline and379-line conditional entrypoint; preserve every OS/SDL/threaded-load alternative, GUI mutex, network waiters, joins, deferred repaint and normal shutdown order. No transferred allowance for another oversized helper; characterization and ordinary restart/menu-new-scenario rendered evidence required at extraction."
+      "review": "IR-WINDOWS087-QUIT-CLEANUP-OWNERSHIP-FIX-20261027",
+      "review_scope": "urgent-normal-quit-interface-mutex-ownership-only",
+      "rationale": "Exact540to546 urgent correctness repair after captured normal-Quit std::system_error: one existing teardown scope conditionally owns interfaceMutex across endNetwork, endGameplay and window clearing, releasing before GAME/ENGINE destruction and async drain. Headless handling, CURE detach and teardown ordering preserved. No new lifecycle abstraction, provider workaround, save/config/API change or broader growth allowance.",
+      "deferral": "Existing startup/configuration or cleanup lifecycle extraction remains required before further substantive entrypoint growth. This reviewed six-line urgent mutex-precondition correction only updates exact546-line file and385-line unified conditional entrypoint; no ceiling raise or transferred allowance. Preserve OS/SDL/thread variants, network waiter shutdown, GUI mutex release/reacquire, deferred repaint and normal exit; focused extraction still needs characterization and ordinary restart/menu-new-scenario rendered evidence."
     },
     "clientapp/PrivateWineStartupWitness.h::privateWineStartup::inline int verifyBeforeSDL()#1": {
       "kind": "legacy",
@@ -26209,13 +26209,13 @@
     },
     "clientapp/EntryPoint.cpp::conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1": {
       "kind": "exception",
-      "lines": 379,
-      "sha256": "c80b2577f1d018eab4f6e26517d7803229e29fb5f5f4321fa906813ada3fab11",
+      "lines": 385,
+      "sha256": "9b8bffdfd928863d66bb287aaa06c126c7255f5a459b7079bb1736d52dce39d1",
       "owner": "engine_engineer",
-      "review": "IR-STAGE9-REALCALLBACK-e16092f0-20261018",
-      "review_scope": "conditional-shared-entrypoint-test-hooks-only",
-      "rationale": "Conservative full shared conditional signature/body145to523,359to379 physical lines, not only the last platform main alternative. Added conditional driver setup, GUI-locked detach before network cleanup and test result; shipping macro-absent source projection exact. No initialization/thread/restart redesign or substantive testing policy inside bootstrap.",
-      "deferral": "Engine owner must characterize and extract coherent startup/configuration or lifecycle assembly before further shared-entrypoint growth; shrink379 together with its540-line file. Keep all platform alternatives, initialization order, GUI/network wait/cleanup ownership and ordinary rendered restart evidence. This exact test-only exception does not supersede that debt or authorize gameplay changes."
+      "review": "IR-WINDOWS087-QUIT-CLEANUP-OWNERSHIP-FIX-20261027",
+      "review_scope": "urgent-normal-quit-cleanup-lock-scope-only",
+      "rationale": "Conservative shared conditional entrypoint145to529 (379to385 physical lines) retains wmain/SDL_main/main alternatives. Only existing cleanup assembly gains continuous owned mutex scope across GUI network/gameplay/window teardown after frame-lock unwinding. Existing main-loop catch and all initialization alternatives remain unchanged. Exact old-source rejection/new-source sourceguard passes. Source ownership review does not establish runtime acceptance.",
+      "deferral": "Urgent correctness exception only; retain characterized extraction obligation before further substantive shared-entrypoint growth, shrinking this385-line entrypoint and546-line file together. Preserve every platform branch, initialization ordering, GUI/network temporary-unlock wait contracts, destruction/async ordering and rendered transition verification. No generic function ceiling increase or testing/gameplay expansion admitted."
     },
     "AI/BattleAI/HypotheticActivation.cpp::void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)#1": {
       "kind": "exception",

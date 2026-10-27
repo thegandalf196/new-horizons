@@ -461,27 +461,33 @@ int main(int argc, char * argv[])
 			if(settings["session"]["headless"].Bool() && GAME->server().client)
 				GAME->server().endGameplay();
 
-			if(ENGINE)
 			{
-				//aquire interfaceMutex to prevent undefined behavior on vstd::makeUnlockGuard(ENGINE->interfaceMutex)
-				std::scoped_lock interfaceLock(ENGINE->interfaceMutex);
+				// Both teardown paths temporarily unlock interfaceMutex while waiting.
+				// Keep ownership until gameplay and its windows have been removed.
+				std::unique_lock<std::mutex> interfaceLock;
+				if(ENGINE)
+					interfaceLock = std::unique_lock<std::mutex>(ENGINE->interfaceMutex);
+
+				if(ENGINE)
+				{
 #ifdef NH_CURE_CLIENT_INTEGRATION
-				cureIntegration->detach();
+					cureIntegration->detach();
 #endif
-				GAME->server().endNetwork();
-			}
-			else
-			{
-				GAME->server().endNetwork();
-			}
+					GAME->server().endNetwork();
+				}
+				else
+				{
+					GAME->server().endNetwork();
+				}
 
-			if(!settings["session"]["headless"].Bool())
-			{
-				if(GAME->server().client)
-					GAME->server().endGameplay();
+				if(!settings["session"]["headless"].Bool())
+				{
+					if(GAME->server().client)
+						GAME->server().endGameplay();
 
-				if (ENGINE)
-					ENGINE->windows().clear();
+					if (ENGINE)
+						ENGINE->windows().clear();
+				}
 			}
 
 			GAME.reset();

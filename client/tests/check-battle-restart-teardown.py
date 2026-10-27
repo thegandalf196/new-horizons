@@ -26,6 +26,58 @@ def body(source: str, signature: str) -> str:
 client = (ROOT / "client/Client.cpp").read_text(encoding="utf-8")
 server = (ROOT / "client/CServerHandler.cpp").read_text(encoding="utf-8")
 windows = (ROOT / "client/gui/WindowHandler.cpp").read_text(encoding="utf-8")
+entry = (ROOT / "clientapp/EntryPoint.cpp").read_text(encoding="utf-8")
+
+
+def check_quit_mutex_ownership(source: str) -> None:
+    cleanup = body(source[source.index("const auto & cleanupEngine"):], "()")
+    scope_start = cleanup.index("{")
+    locked = body(cleanup, "")
+    after_lock = cleanup[scope_start + len(locked) + 2:]
+    assert 'if(settings["session"]["headless"].Bool() && GAME->server().client)' in cleanup[:scope_start], \
+        "preserve the independent headless teardown before GUI locking"
+    assert "GAME->server().endGameplay();" in cleanup[:scope_start], \
+        "headless shutdown must still end gameplay without an engine"
+    acquisition = ("if(ENGINE)\n"
+                   "\t\t\t\t\tinterfaceLock = std::unique_lock<std::mutex>(ENGINE->interfaceMutex);")
+    assert "std::unique_lock<std::mutex> interfaceLock;" in locked and acquisition in locked, \
+        "GUI cleanup must own the mutex conditionally; ENGINE-null shutdown must not dereference it"
+    assert "interfaceLock.unlock()" not in locked and "interfaceLock.release()" not in locked, \
+        "do not release cleanup ownership before gameplay wait guards finish"
+    network = "GAME->server().endNetwork();"
+    gameplay = "GAME->server().endGameplay();"
+    clear_windows = "ENGINE->windows().clear();"
+    assert locked.count(network) == 2, "preserve both ENGINE and ENGINE-null network shutdown paths"
+    assert locked.count(gameplay) == 1 and locked.count(clear_windows) == 1, \
+        "gameplay and window teardown must remain inside the same owned lock scope"
+    assert locked.rfind(network) < locked.index(gameplay) < locked.index(clear_windows), \
+        "stop network waiters before gameplay and window destruction"
+    assert 'if(!settings["session"]["headless"].Bool())' in locked, \
+        "keep non-headless gameplay teardown conditional for menu/no-client shutdown"
+    assert "if(GAME->server().client)" in locked, "menu shutdown must not require a gameplay client"
+    assert locked.index("cureIntegration->detach();") < locked.find(network), \
+        "integration detach must keep its existing ordering before network shutdown"
+    assert all(step not in locked for step in ("GAME.reset();", "ENGINE->async().wait();", "ENGINE.reset();")), \
+        "release the interface mutex before owner destruction and asynchronous cleanup"
+    assert after_lock.index("GAME.reset();") < after_lock.index("ENGINE->async().wait();") < after_lock.index("ENGINE.reset();"), \
+        "preserve game destruction, asynchronous drain and engine destruction ordering"
+
+
+check_quit_mutex_ownership(entry)
+# Wiring witnesses only: they do not replace a real new-game/load/normal-Quit run.
+for broken in (
+    entry.replace("std::unique_lock<std::mutex> interfaceLock;", ""),
+    entry.replace("GAME->server().endGameplay();", ""),
+    entry.replace("ENGINE->windows().clear();", "interfaceLock.unlock();\nENGINE->windows().clear();"),
+    entry.replace("if(GAME->server().client)", "if(true)"),
+    entry.replace("GAME.reset();", ""),
+):
+    try:
+        check_quit_mutex_ownership(broken)
+    except (AssertionError, ValueError):
+        pass
+    else:
+        raise AssertionError("Quit source guard accepted missing ownership or teardown ordering")
 
 restart = body(server, "void CServerHandler::restartGameplay()")
 restart_steps = [
