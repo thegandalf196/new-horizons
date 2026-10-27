@@ -348,6 +348,12 @@ TEST_F(DamageFinalizationParityTest, OwnershipPayloadFollowsAllegianceAcrossLive
 		if(marker)
 			braced->addNewBonus(marker);
 		resetChild();
+		// Rule resolution deliberately uses both actual heroes, while the public
+		// player-facing getter still hides the opposing hero. Do not substitute it.
+		ASSERT_EQ(child->getPlayerID(), PlayerColor(0));
+		ASSERT_EQ(child->battleGetMySide(), BattleSide::ATTACKER);
+		ASSERT_EQ(child->getSideHero(BattleSide::DEFENDER), defenderSideHero);
+		ASSERT_EQ(child->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
 		const auto authorized = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
 		{
 			auto exported = InitialExportBattleSubject::capture(authorized, *battle());
@@ -362,11 +368,8 @@ TEST_F(DamageFinalizationParityTest, OwnershipPayloadFollowsAllegianceAcrossLive
 				ASSERT_NE(target, nullptr);
 				EXPECT_EQ(callback.battleGetOwner(target), PlayerColor(control == 1 ? 1 : 0));
 				EXPECT_EQ(callback.battleGetActionController(target), PlayerColor(control ? 1 : 0));
-				// The player-scoped parent deliberately hides the opposing hero.
-				// Native and explicit full-information exports retain that hero.
-				const bool hiddenHero = view == 1 && control == 1;
-				EXPECT_EQ(callback.battleGetOwnerHero(target), hiddenHero ? nullptr
-					: control == 1 ? defenderSideHero : attackerSideHero);
+				EXPECT_EQ(callback.battleGetOwnerHero(target),
+					control == 1 ? defenderSideHero : attackerSideHero);
 				const auto before = nativeSnapshot();
 				const auto branchBefore = projectedSnapshot();
 				const auto projectedActorBefore = actor->acquireState()->save();
@@ -374,7 +377,7 @@ TEST_F(DamageFinalizationParityTest, OwnershipPayloadFollowsAllegianceAcrossLive
 				const auto result = callback.calculateDmgRange(BattleAttackInfo(actor, target, 0, false));
 				auto payload = recorder->payloads.back();
 				EXPECT_EQ(payload.newHorizonsArmorerReductionPercent,
-					hiddenHero ? 0 : control == 1 ? transferredReduction : originalReduction);
+					control == 1 ? transferredReduction : originalReduction);
 				PayloadTrace fields;
 				payload.serializeScript(fields);
 				trace += std::to_string(control) + '/' + std::to_string(view) + '\n' + fields.text;

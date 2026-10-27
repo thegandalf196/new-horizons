@@ -962,6 +962,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsFrozenAITest.cpp
 		battleAI/FrozenPredicateCharacterizationTest.cpp
 		battle/NewHorizonsBattleAITimingTest.cpp
+		battle/NewHorizonsBalanceDataExportTest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticLifeDrainObservationTest.cpp
