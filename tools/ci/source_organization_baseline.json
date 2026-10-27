@@ -19431,15 +19431,16 @@
       "deferral": "Engine engineer, coordinated with UI ownership, must extract cohesive battle-interface admission/routing behind explicit CClient, battle-ID and receiver contracts before further substantive routing growth. Characterize admitted receiver identity/lifetime, primary/additional/side ordering, spectator gate, before/state/after packet order, restart and shutdown. Retain snapshot terminal ownership and reduce this file baseline below1276; do not move the whole visitor collection into another oversized helper or reuse this one-time +21 allowance. UI developer must separately extract cohesive Mage Guild packet-to-window refresh routing behind explicit headless-session and town-ID presentation inputs before substantive presentation growth. Characterize all three visitors, both AdventureSpellUnlock window types, no-engine headless skip and unchanged graphical refresh; preserve before/state/after application ordering and reduce the1282-line baseline. Keep authoritative state in the shared visitor and do not move the full packet visitor collection."
     },
     "client/UIHelper.cpp::std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNecromancy::NecromancyResult & result)#1": {
-      "kind": "review",
+      "kind": "exception",
       "lines": 82,
       "owner": "ui_developer",
-      "rationale": "Summary projection shrinks from 138 to 82 lines through focused fresh-delivery and own-recovery text stages while retaining appendConversions ownership and authoritative result fields; this original-body reduction is not a claim of overall implementation shrink.",
-      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "8e488881e3055e6e790af212841f849949abc123803f453a76bd2334e7f3358d",
-      "review_status": "SOURCE_AND_METADATA_CLEAR",
-      "deferral": "UI developer: before further substantive summary logic growth, extract cohesive remaining casualty-pool and delivery-format stages with explicit immutable NecromancyResult, selected creature-name and destination presentation inputs. Retain existing appendConversions ownership, packet-authoritative amounts, paragraph/conditional order, creature localization, blocked/zero output and historical/current text controls. Do not introduce empty wrappers or move the whole body to another oversized helper."
+      "rationale": "Summary projection shrinks from 138 to 82 lines through focused fresh-delivery and own-recovery text stages while retaining appendConversions ownership and authoritative result fields; this original-body reduction is not a claim of overall implementation shrink. Same-size blocked-result wording correction: report no legal destination without implying a missing Necropolis when the captured policy disables town fallback. No formula, result field, paragraph ordering or delivery logic changes.",
+      "review": "IR-NECROMANCY0871-BLOCKED-DESTINATION-TEXT-SOURCE-20261027",
+      "review_scope": "exact-same-size-blocked-destination-wording-source-only",
+      "sha256": "90c0d4c702413823f102a1918d631d7c7caad0d1637f3836fb78a195c80f3756",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "UI developer: before further substantive summary logic growth, extract cohesive remaining casualty-pool and delivery-format stages with explicit immutable NecromancyResult, selected creature-name and destination presentation inputs. Retain existing appendConversions ownership, packet-authoritative amounts, paragraph/conditional order, creature localization, blocked/zero output and historical/current text controls. Do not introduce empty wrappers or move the whole body to another oversized helper.",
+      "previous_review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026"
     },
     "client/adventureMap/AdventureMapInterface.cpp": {
       "kind": "legacy",

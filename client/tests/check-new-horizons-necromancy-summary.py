@@ -251,7 +251,7 @@ def main() -> None:
         )
     require(CONVERSIONS, '"Delivered to army: "', "delivered count")
     require(HELPER, '"Necromancy recovered +"', "mana recovery")
-    require(HELPER, '"No newly raised creatures were delivered: no legal army capacity or Necropolis destination was available',
+    require(HELPER, '"No newly raised creatures were delivered: no legal destination was available',
             "blocked capacity reason")
     require(HELPER, '"The eligible casualty count was below the current Necromancy raising threshold.',
             "rounded-zero threshold reason")

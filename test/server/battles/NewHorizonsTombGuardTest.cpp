@@ -21,6 +21,7 @@
 #include <limits>
 #if ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/HypotheticBattle.h"
+#include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/callback/CBattleCallback.h"
 #endif
 
@@ -287,7 +288,9 @@ TEST_P(NewHorizonsTombGuardTest, MixedLegacyMagicKeepsBonewardAndItsZeroSourceCo
 	EXPECT_EQ(actor->magicResistance(), 30 + granted);
 	EXPECT_EQ(target->magicResistance(), 0);
 	if(granted == 0)
+	{
 		EXPECT_FALSE(projected.unitMagicResistance(actor));
+	}
 #endif
 }
 

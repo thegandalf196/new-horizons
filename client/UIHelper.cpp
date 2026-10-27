@@ -161,7 +161,7 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 
 	if(result.blockedByArmyCapacity)
 	{
-		text.appendRawString("No newly raised creatures were delivered: no legal army capacity or Necropolis destination was available for the Necromancy result.");
+		text.appendRawString("No newly raised creatures were delivered: no legal destination was available for the Necromancy result.");
 	}
 	else if(result.eligibleCasualties == 0)
 	{
