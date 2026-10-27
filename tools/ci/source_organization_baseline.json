@@ -23015,11 +23015,11 @@
       "sha256": "aebf3e62ed5bcf798ff31c425cdd5c55768f44457bb8c036121a078c20537cff"
     },
     "lib/mapObjects/CGHeroInstance.cpp": {
-      "lines": 3592,
-      "sha256": "505b30807e7673457c1931db7b344bce472ada703b87f2d9f9d5e7f30cb27f95",
+      "lines": 3591,
+      "sha256": "265bbfa22e547f80e4abccc749bb68e627ef281f5039ded353d01cd458a92b08",
       "kind": "exception",
-      "review": "IR-NECROMANCY-CORE-POLICY-SOURCE-20261026",
-      "rationale": "Central per-slot Leadership calculation delegates captured Skeleton discount to the focused policy owner, shrinking the original hero implementation; no parallel recruitment formula.",
+      "review": "IR-PHASE2-NECROMANCY-FRESH-RANK-LOOKUP-20261027",
+      "rationale": "Central per-slot Leadership calculation delegates captured Skeleton discount to the focused policy owner, shrinking the original hero implementation; no parallel recruitment formula. Fresh Necromancy eligibility and clamped rank share one decode and skill-level scan; exact whole-file size shrinks by one line without new state or relaxed captured-rule gates.",
       "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. "
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {

@@ -22,23 +22,30 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		if(legacyHeroRules)
+		{
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+			return;
+		}
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 		if(!GetParam())
 			perks.Struct().erase(newHorizonsNecromancy::POLICY_KEY);
 		perks.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
-	void startScenario()
+	void startScenario(const char * heroId = "core:isra")
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 			.town({12, 12, 0}, FactionID::NECROPOLIS, PlayerColor(0))
-			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:isra")), PlayerColor(0))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(heroId)), PlayerColor(0))
 			.town({26, 26, 0}, FactionID::CASTLE, PlayerColor(1));
 		startWithMap(std::move(builder));
 		hero = findHeroByOwner(PlayerColor(0));
 		ASSERT_TRUE(hero);
-		ASSERT_EQ(newHorizonsNecromancy::policy(hero->getPerkState().rules).has_value(), GetParam());
+		ASSERT_EQ(newHorizonsNecromancy::policy(hero->getPerkState().rules).has_value(), GetParam() && !legacyHeroRules);
 	}
 	void rank(int value)
 	{
@@ -60,8 +67,50 @@ protected:
 		select(newHorizonsNecromancy::SOUL_HARVESTER_ID);
 		select(expert);
 	}
+	bool legacyHeroRules = false;
 	CGHeroInstance * hero = nullptr;
 };
+}
+
+TEST_P(NewHorizonsSkeletonLeadershipTest, NecromancyQueriesFollowCurrentCanonicalRankAndKeepLegacyAliasSeparate)
+{
+	ASSERT_NO_FATAL_FAILURE(startScenario());
+	ASSERT_EQ(hero->getFactionID(), FactionID::NECROPOLIS);
+	const auto & captured = hero->getPrimaryGrowthRules()["startingSkills"];
+	ASSERT_EQ(captured["factionSkills"]["core:necropolis"].String(), newHorizonsNecromancy::SKILL_ID);
+	ASSERT_EQ(captured["legacyAliases"]["core:necropolis"].String(), "core:necromancy");
+	for(const int value : {0, 1, 2, 3, 3, 0, 2})
+	{
+		rank(value);
+		EXPECT_EQ(hero->getNewHorizonsNecromancyRank(), value);
+		EXPECT_EQ(hero->usesNewHorizonsNecromancy(), value > 0);
+	}
+	rank(0);
+	hero->setSecSkillLevel(SecondarySkill(SecondarySkill::NECROMANCY), 3, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(hero->getSecSkillLevel(SecondarySkill(SecondarySkill::NECROMANCY)), 3);
+	EXPECT_EQ(hero->getNewHorizonsNecromancyRank(), 0);
+	EXPECT_FALSE(hero->usesNewHorizonsNecromancy());
+}
+
+TEST_P(NewHorizonsSkeletonLeadershipTest, NecromancyQueriesRejectWrongFactionDespiteCurrentSkillRank)
+{
+	ASSERT_NO_FATAL_FAILURE(startScenario("core:orrin"));
+	ASSERT_EQ(hero->getFactionID(), FactionID::CASTLE);
+	rank(3);
+	ASSERT_EQ(hero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID))), 3);
+	EXPECT_EQ(hero->getNewHorizonsNecromancyRank(), 0);
+	EXPECT_FALSE(hero->usesNewHorizonsNecromancy());
+}
+
+TEST_P(NewHorizonsSkeletonLeadershipTest, NecromancyQueriesRejectLegacyCapturedHeroRulesDespiteCurrentSkillRank)
+{
+	legacyHeroRules = true;
+	ASSERT_NO_FATAL_FAILURE(startScenario());
+	ASSERT_TRUE(hero->getPrimaryGrowthRules().isNull());
+	rank(3);
+	ASSERT_EQ(hero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID))), 3);
+	EXPECT_EQ(hero->getNewHorizonsNecromancyRank(), 0);
+	EXPECT_FALSE(hero->usesNewHorizonsNecromancy());
 }
 
 TEST_P(NewHorizonsSkeletonLeadershipTest, RankChangesOnlySkeletonFamilyRequirements)

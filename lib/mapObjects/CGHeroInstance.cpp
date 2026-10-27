@@ -2900,18 +2900,17 @@ bool CGHeroInstance::hasActivePerk(const std::string & skillId, const std::strin
 
 bool CGHeroInstance::usesNewHorizonsNecromancy() const
 {
-	const auto skill = SecondarySkill::decode("new-horizons:necromancy");
-	if(skill < 0 || !newHorizonsHeroes::usesRules(primaryGrowthRules))
-		return false;
-	return newHorizonsHeroes::isFactionSkillForFaction(primaryGrowthRules, getFactionID(), SecondarySkill(skill))
-		&& getSecSkillLevel(SecondarySkill(skill)) > 0;
+	return getNewHorizonsNecromancyRank() > 0;
 }
 
 int CGHeroInstance::getNewHorizonsNecromancyRank() const
 {
-	if(!usesNewHorizonsNecromancy())
+	const auto skill = SecondarySkill::decode("new-horizons:necromancy");
+	if(skill < 0 || !newHorizonsHeroes::usesRules(primaryGrowthRules))
 		return 0;
-	return std::clamp<int>(getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:necromancy"))), 0, 3);
+	if(!newHorizonsHeroes::isFactionSkillForFaction(primaryGrowthRules, getFactionID(), SecondarySkill(skill)))
+		return 0;
+	return std::clamp<int>(getSecSkillLevel(SecondarySkill(skill)), 0, 3);
 }
 
 int32_t CGHeroInstance::getNewHorizonsNecromancyAmplifierBonusPercent() const
