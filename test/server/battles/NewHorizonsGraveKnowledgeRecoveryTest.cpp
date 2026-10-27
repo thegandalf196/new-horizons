@@ -109,7 +109,9 @@ protected:
 		{
 			auto dialog = gameHandler->queries->topQuery(player);
 			if(dialog && dialog->getType() == QueryType::BattleDialog)
+			{
 				ASSERT_TRUE(gameHandler->queryReply(dialog->queryID, 0, player));
+			}
 		}
 		ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
 		ASSERT_EQ(recording.applied.size(), 1u);
@@ -164,7 +166,9 @@ TEST_P(NewHorizonsGraveKnowledgeRecoveryTest, DestroyedRemainsAndPermanentResurr
 	EXPECT_EQ(summary.recoveredSkeletons, GetParam() ? 1 : 0);
 	EXPECT_EQ(summary.recoveredSkeletonWarriors, 0);
 	if(GetParam())
+	{
 		EXPECT_EQ(recording.captured.back().necromancyUndeadEligibleCasualties[BattleSide::ATTACKER].at(id("core:skeleton")), 5);
+	}
 }
 
 TEST_P(NewHorizonsGraveKnowledgeRecoveryTest, TemporaryResurrectionDoesNotEraseOriginalLossesThatStillExpire)
@@ -188,7 +192,9 @@ TEST_P(NewHorizonsGraveKnowledgeRecoveryTest, TemporaryResurrectionDoesNotEraseO
 	finish();
 	EXPECT_EQ(recording.applied.back().necromancy.recoveredSkeletons, GetParam() ? 2 : 0);
 	if(GetParam())
+	{
 		EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 12);
+	}
 }
 
 TEST_P(NewHorizonsGraveKnowledgeRecoveryTest, TemporarySurplusDeathsDoNotCreateOriginalRosterLosses)
