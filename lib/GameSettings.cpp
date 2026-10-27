@@ -278,7 +278,11 @@ const JsonNode & GameSettings::getValue(EGameSettings option) const
 	assert(option == EGameSettings::MAGIC_NEW_HORIZONS
 		|| option == EGameSettings::COMBAT_HERO_COMMANDS
 		|| option == EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK
+		|| option == EGameSettings::HEROES_NEW_HORIZONS
+		|| option == EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES
+		|| option == EGameSettings::HEROES_NEW_HORIZONS_MASTERIES
 		|| option == EGameSettings::HEROES_NEW_HORIZONS_PERKS
+		|| option == EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES
 		|| option == EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS
 		|| !actualSettings.at(index).isNull());
 	return actualSettings.at(index);

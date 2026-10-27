@@ -10,6 +10,10 @@
 #include "StdInc.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/battle/HeroCommand.h"
+#include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
+#include "../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../lib/entities/hero/NewHorizonsMasteryRules.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 
 namespace
@@ -19,6 +23,33 @@ JsonNode baseSettings()
 	JsonNode result(JsonPath::builtin("config/newHorizonsCombat"));
 	result["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
 	return result;
+}
+
+JsonNode optionalCaptureSettings()
+{
+	auto result = baseSettings();
+	result["heroes"]["newHorizonsCapabilities"] = JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"));
+	result["heroes"]["newHorizonsMasteries"] = JsonNode(JsonPath::builtin("config/newHorizonsMasteries"));
+	result["creatures"]["newHorizonsCategories"] = JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories"));
+	return result;
+}
+
+void expectLegacyCaptureConsumers(const GameSettings & settings, JsonNode::JsonType expectedType)
+{
+	const auto heroClass = HeroClassID(HeroClassID::decode("core:knight"));
+	const auto & growth = settings.getValue(EGameSettings::HEROES_NEW_HORIZONS);
+	EXPECT_EQ(growth.getType(), expectedType);
+	EXPECT_TRUE(newHorizonsHeroes::resolveHeroRules(growth, heroClass).isNull());
+	const auto & capabilities = settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES);
+	EXPECT_EQ(capabilities.getType(), expectedType);
+	EXPECT_TRUE(newHorizonsHeroes::resolveCapabilityRules(capabilities, heroClass).isNull());
+	const auto & masteries = settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES);
+	EXPECT_EQ(masteries.getType(), expectedType);
+	EXPECT_FALSE(newHorizonsHeroes::masteryOptions(masteries, SecondarySkill::ARTILLERY));
+	const auto categories = newHorizonsCreatures::captureCreatureCategoryRules(
+		settings.getValue(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES));
+	EXPECT_EQ(categories.getRules().getType(), expectedType);
+	EXPECT_FALSE(categories.lookup("core:pikeman"));
 }
 
 JsonNode originalModeSettings()
@@ -40,7 +71,7 @@ TEST(GameSettings, VersionedHeroCommandOverrideReplacesCanonicalRulesAndRoundTri
 	const auto base = baseSettings();
 	const auto canonicalRules = base["combat"]["heroCommands"];
 	const auto authoredRules = targetedCommandRules();
-	ASSERT_EQ(canonicalRules["rulesetVersion"].Integer(), 3);
+	ASSERT_EQ(canonicalRules["rulesetVersion"].Integer(), heroCommands::CURRENT_RULESET_VERSION);
 	ASSERT_EQ(authoredRules["rulesetVersion"].Integer(), 2);
 
 	GameSettings source;
@@ -121,4 +152,44 @@ TEST(GameSettings, NonVersionedSettingsOverridesStillDeepMerge)
 	const auto & effective = settings.getValue(EGameSettings::HEROES_NEW_HORIZONS);
 	EXPECT_EQ(effective["maxPrimary"].Integer(), 9000);
 	EXPECT_EQ(effective["classProfiles"], originalHeroRules["classProfiles"]);
+}
+
+TEST(GameSettings, AbsentOptionalCapturesReachLegacyConsumers)
+{
+	auto base = baseSettings();
+	base["heroes"].Struct().erase("newHorizons");
+	GameSettings settings;
+	settings.loadBase(base);
+	expectLegacyCaptureConsumers(settings, JsonNode::JsonType::DATA_NULL);
+}
+
+TEST(GameSettings, WholeNullOverridesDisableLoadedOptionalCaptures)
+{
+	const auto base = optionalCaptureSettings();
+	GameSettings settings;
+	settings.loadBase(base);
+	EXPECT_EQ(settings.getValue(EGameSettings::HEROES_NEW_HORIZONS), base["heroes"]["newHorizons"]);
+	EXPECT_EQ(settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES), base["heroes"]["newHorizonsCapabilities"]);
+	EXPECT_EQ(settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES), base["heroes"]["newHorizonsMasteries"]);
+	EXPECT_EQ(settings.getValue(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES), base["creatures"]["newHorizonsCategories"]);
+	for(const auto option : {EGameSettings::HEROES_NEW_HORIZONS,
+		EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, EGameSettings::HEROES_NEW_HORIZONS_MASTERIES,
+		EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES})
+		settings.addOverride(option, JsonNode());
+	expectLegacyCaptureConsumers(settings, JsonNode::JsonType::DATA_NULL);
+	EXPECT_EQ(base, optionalCaptureSettings());
+}
+
+TEST(GameSettings, ExplicitEmptyCapturesKeepObjectIdentityAndLegacyConsumers)
+{
+	GameSettings settings;
+	settings.loadBase(optionalCaptureSettings());
+	JsonNode empty;
+	empty.Struct();
+	empty.setOverrideFlag(true);
+	for(const auto option : {EGameSettings::HEROES_NEW_HORIZONS,
+		EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, EGameSettings::HEROES_NEW_HORIZONS_MASTERIES,
+		EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES})
+		settings.addOverride(option, empty);
+	expectLegacyCaptureConsumers(settings, JsonNode::JsonType::DATA_STRUCT);
 }
