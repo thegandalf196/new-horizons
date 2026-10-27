@@ -1321,15 +1321,16 @@ void CStackWindow::initBonusesList()
 		abilityRules = &info->stackNode->cb->getMagicRules();
 	else if(GAME->interface() && GAME->interface()->cb)
 		abilityRules = &GAME->interface()->cb->getMagicRules();
-	const auto freezingTouch = newHorizonsCreatureAbilityHelp::freezingTouch(
+	const auto innateAbilities = newHorizonsCreatureAbilityHelp::innateAbilities(
 		info->creature->getJsonKey(), abilityRules,
 		LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.compact"),
-		LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.help"));
-	if(freezingTouch)
+		LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.help"),
+		info->stack && info->stack->alive() ? info->stack->summonRoundsRemaining : 0);
+	for(const auto & help : innateAbilities)
 	{
 		BonusInfo ability;
-		ability.description = freezingTouch->compact;
-		ability.tooltip = freezingTouch->details;
+		ability.description = help.compact;
+		ability.tooltip = help.details;
 		ability.bonusSource = BonusSource::CREATURE_ABILITY;
 		activeBonuses.push_back(std::move(ability));
 	}

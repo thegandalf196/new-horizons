@@ -53780,6 +53780,126 @@
       "origin": "selected-own-specialty-draft-native-export",
       "selection": "root-selected-provisional-final14-specialties-and-conditional-arcane-ballistics-2026-10-24",
       "approval": "Provisional; no Final approval; rendered acceptance pending; no blanket license claim"
+    },
+    {
+      "resource": "SPRITES/NH_feint_icon.png",
+      "source": "Mods/new-horizons/Images/NH_feint_icon.png",
+      "size": 5727,
+      "sha256": "9827786f07c8d56c08ac41cdc08b4c063b919c0b3d825cfe6670bd2dcda85cff",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_feint_button.json",
+      "source": "Mods/new-horizons/Images/NH_feint_button.json",
+      "size": 369,
+      "sha256": "cbbe6fb0ed25e507f5b30f8d2374796f016aa6967b88c23188d494962ff98de4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_feint_normal.png",
+      "source": "Mods/new-horizons/Images/NH_feint_normal.png",
+      "size": 5727,
+      "sha256": "9827786f07c8d56c08ac41cdc08b4c063b919c0b3d825cfe6670bd2dcda85cff",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_feint_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_feint_pressed.png",
+      "size": 5617,
+      "sha256": "bbcd944b99fc12ac77be92d286e2880e6a03bdd779c750005faefc44c7b0c0aa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_feint_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_feint_disabled.png",
+      "size": 5668,
+      "sha256": "a06b029bfcb7b9ef722227386af3c17baca46b25b7028386625ed2844101ce0e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_feint_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_feint_highlighted.png",
+      "size": 5743,
+      "sha256": "95b67b98ba9ebb98aecbad7f486e616796973c532a21b1f80e37474a76ae83c2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_vanguard_icon.png",
+      "source": "Mods/new-horizons/Images/NH_vanguard_icon.png",
+      "size": 4869,
+      "sha256": "d4c548339c40bdc8f45ded20a09b19949d00a944140968869d79efb89e8ce9a6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_vanguard_button.json",
+      "source": "Mods/new-horizons/Images/NH_vanguard_button.json",
+      "size": 381,
+      "sha256": "71a976183140fa31eae1e2e05e13ca1f0c9e7109fd6f07a83d9900369993a31a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_vanguard_normal.png",
+      "source": "Mods/new-horizons/Images/NH_vanguard_normal.png",
+      "size": 4869,
+      "sha256": "d4c548339c40bdc8f45ded20a09b19949d00a944140968869d79efb89e8ce9a6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_vanguard_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_vanguard_pressed.png",
+      "size": 4826,
+      "sha256": "dd7791a2a4357113179e7aac8a61bef34c6bf512c521079097d41d87726b2e8c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_vanguard_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_vanguard_disabled.png",
+      "size": 4946,
+      "sha256": "0699aa9d014712086470b7fc9f5849ed73266e7964d8cb0043506b784e3649f5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/NH_vanguard_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_vanguard_highlighted.png",
+      "size": 4848,
+      "sha256": "32611462eea8ba3abeefb008029fbd9212899171c7c89ef3aa79d049e5436356",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
+      "selection": "provisionally-selected-under-authorized-draft-policy",
+      "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
     }
   ],
   "requiredFamilies": [
@@ -53794,7 +53914,7 @@
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
-    "builtin-skills-perks-orders-and-ui": 3296,
+    "builtin-skills-perks-orders-and-ui": 3308,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "guild-room-composites-and-bindings": 10,

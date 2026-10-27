@@ -364,3 +364,10 @@ TEST_F(LegacyProjectedBattleWorldArenaTest, HistoricalDuplicateIdsRetainPhysical
 	EXPECT_EQ(arena->nextUnitId(), index + 1);
 }
 }
+
+TEST_F(ProjectedBattleWorldArenaTest, TimedSummonSpawnMatchesAuthoritativeWholeState)
+{
+	auto data = addition();
+	data["summonRoundsRemaining"].Integer() = 3;
+	expectScalarAddition(data);
+}

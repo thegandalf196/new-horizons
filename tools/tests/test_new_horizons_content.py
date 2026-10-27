@@ -31,6 +31,7 @@ ART = ArtPath("SPRITES")
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:summonLivingArmor',
     'new-horizons:shieldOfChaos',
     'new-horizons:blink',
     'new-horizons:hydrasVitality',
@@ -175,7 +176,7 @@ def legacy_rules(rules):
             spell.pop('heroAccess', None)
             spell.pop('restoration', None)
             for key in ('variant', 'propagationLimit', 'implosion', 'ignoreInterveningBarriers',
-                        'temporaryMagicalEffectsOnly', 'schoolRankDurations', 'burnGroundedFlyers'):
+                        'temporaryMagicalEffectsOnly', 'schoolRankDurations', 'burnGroundedFlyers', 'focusMagic', 'slow', 'livingArmor'):
                 spell.pop(key, None)
     return result
 
@@ -1541,7 +1542,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         Draft4Validator(load('config/schemas/spell.json')).validate(spell)
         self.assertEqual(spell['type'], 'combat')
         self.assertEqual(spell['school'], {'new-horizons:sorcery': True})
-        self.assertEqual(spell['level'], 3)
+        self.assertEqual(spell['level'], 1)
         self.assertEqual(spell['targetType'], 'CREATURE')
         self.assertTrue(spell['flags']['positive'])
         self.assertFalse(spell['flags'].get('negative', False))
@@ -1550,23 +1551,11 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(spell['gainChance'], {})
         self.assertEqual(set(spell['levels']), {'none', 'basic', 'advanced', 'expert'})
 
-        description = (
-            "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature "
-            "attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the "
-            "hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, "
-            "and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures "
-            "its caster's Spell Power-derived penetration when cast, and each mark copies that "
-            "value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved "
-            "v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and "
-            "145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. "
-            "Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged "
-            "creature attacks ignore that much Creature Defense; Creature Defense is not reduced, "
-            "and melee attacks gain no benefit."
-        )
+        description = "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit."
         for rank in ('none', 'basic', 'advanced', 'expert'):
             with self.subTest(rank=rank):
                 current = spell['levels'][rank]
-                self.assertEqual(current['cost'], 11)
+                self.assertEqual(current['cost'], 4)
                 self.assertEqual(current['power'], 0)
                 self.assertEqual(current['description'], description)
                 self.assertEqual(current['battleEffects'], {
@@ -1576,8 +1565,9 @@ class NewHorizonsContentTest(unittest.TestCase):
 
         self.assertEqual(self.rules['spells']['new-horizons:focusMagic'], {
             'schools': ['new-horizons:sorcery'],
-            'level': 3,
-            'costs': [11, 11, 11, 11],
+            'level': 1,
+            'costs': [4, 4, 4, 4],
+            'focusMagic': {'version': 1, 'baseBasisPoints': 500, 'powerBasisPoints': 3, 'capBasisPoints': 1200},
         })
         self.assertNotIn('new-horizons:focusMagic', self.rules['adventureSpells'])
         scripts = load('config/scriptsSpells.json')

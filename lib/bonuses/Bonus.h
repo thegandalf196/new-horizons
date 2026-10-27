@@ -189,10 +189,18 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			throw std::runtime_error("Cannot discard Swift Rebirth lifecycle in an older bonus format");
 	}
 
+	template <typename Handler> void validateAllMagicVulnerabilitySerialization(Handler & h) const
+	{
+		if(type == BonusType::MORE_DAMAGE_FROM_SPELL && subtype == BonusSubtypeID()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION))
+			throw std::runtime_error("Cannot discard all-magical damage vulnerability in an older format");
+	}
+
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
 		{
+			validateAllMagicVulnerabilitySerialization(h);
 			validateTrainingSerialization(h);
 			validatePlagueSerialization(h);
 		}
@@ -329,6 +337,7 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			BonusMigration::migrateCombatAbility(*this);
 		if(!h.saving)
 		{
+			validateAllMagicVulnerabilitySerialization(h);
 			validateFrozenSerialization(h);
 			validateSwiftRebirthSerialization(h);
 			validateTrainingSerialization(h);

@@ -18,6 +18,7 @@
 #include "../entities/hero/NewHorizonsAdditionalSpecialties.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsSorcery.h"
+#include "NewHorizonsSorceryRevision.h"
 #include "CSpell.h"
 #include "ISpellMechanics.h"
 #include "../bonuses/BonusEnum.h"
@@ -295,11 +296,19 @@ void appendFocusReadout(std::string & result, const CGHeroInstance * hero, const
 	}
 
 	const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
-	const int64_t scaledTerm = spellPower * newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS
-		* coefficientBasisPoints / SPELL_POWER_COEFFICIENT_BASIS_POINTS;
+	const auto profile = newHorizonsSorceryRevision::focusRules(hero->getMagicRules()).value_or(
+		newHorizonsSorceryRevision::FocusRules{newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS,
+			newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS, newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS});
+	result += "\nCaptured per-mark formula: min(" + percentFromBasisPoints(profile.capBasisPoints)
+		+ ", " + percentFromBasisPoints(profile.baseBasisPoints) + " + "
+		+ percentFromBasisPoints(profile.powerBasisPoints) + " x scaled Spell Power).";
+	const int specialty = hasSavedSchoolRankCoefficient
+		? hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId()) : 0;
+	const int64_t scaledTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		spellPower * profile.powerBasisPoints, 1, coefficientBasisPoints, 0,
+		empowerSpellBonusPercent(hero->getMagicRules(), hero, spell->getId()), specialty);
 	const int64_t penetrationBasisPoints = std::min<int64_t>(
-		newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS,
-		newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS + scaledTerm);
+		profile.capBasisPoints, profile.baseBasisPoints + scaledTerm);
 	const auto fraction = penetrationBasisPoints % 100;
 	result += "\nCurrent ordinary per-mark penetration at Spell Power " + std::to_string(spellPower)
 		+ ": " + std::to_string(penetrationBasisPoints / 100) + "."

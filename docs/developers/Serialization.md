@@ -636,6 +636,25 @@ save/resume: binary stack descriptors omit `CUnitState`, and ordinary game saves
 do not serialize ongoing battles. Descriptor roundtrip tests must not initialize
 fresh health and present that as restored combat state.
 
+## Sorcery revision and timed summons
+
+`NEW_HORIZONS_SORCERY_REVISION` protects the optional captured `focusMagic`,
+`slow` and `livingArmor` spell clauses and the new temporary-summon state.
+Absent clauses retain historical spell formulas, levels and Initiative-only
+Slow behavior. Direct and enclosing writers validate this capability before
+their payload prefixes; readers validate captured clauses before installing them.
+
+Unit JSON carries optional integer `summonRoundsRemaining`. Missing or zero
+means an ordinary combat-long stack; a positive value is an independently timed
+summon. Copies, detached state and authoritative/projected spawn paths preserve
+the same value. The casting round counts toward the lifetime, explicit spell
+duration extensions apply normally, and stasis pauses countdown. Expiry uses the
+ordinary ghost-removal path rather than Frozen or clone mechanics.
+
+This does not add binary midbattle save support: `CStack` descriptors still omit
+general unit health/state. Active timed-stack descriptors reject unsupported
+serialization instead of restoring a fresh stack with an invented lifetime.
+
 ## Bonus effect hostility
 
 `BONUS_EFFECT_HOSTILITY` appends `Bonus::appliedByEnemy`, a target-relative

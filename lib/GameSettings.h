@@ -198,9 +198,9 @@ public:
 		newHorizonsMagic::validateTravelDayEndSerialization(getAllOverrides()["magic"]["newHorizons"], waterWalkSupported, flySupported);
 	}
 
-	void validateCanonicalSpellClausesSerialization(bool supported) const
+	void validateCanonicalSpellClausesSerialization(bool supported, bool sorcerySupported = false) const
 	{
-		newHorizonsMagic::validateCanonicalSpellClausesSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
+		newHorizonsMagic::validateCanonicalSpellClausesSerialization(getAllOverrides()["magic"]["newHorizons"], supported, sorcerySupported);
 	}
 
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
@@ -236,7 +236,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 			newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
 			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
@@ -302,7 +303,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 			newHorizonsHeroes::validateCrisisCommandProfileSerialization(overrides["heroes"]["newHorizonsPerks"],

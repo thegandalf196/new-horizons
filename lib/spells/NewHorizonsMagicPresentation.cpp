@@ -11,6 +11,8 @@
 #include "NewHorizonsMagicPresentation.h"
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsSorceryRevision.h"
+#include "ISpellMechanics.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "CSpell.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -86,6 +88,30 @@ bool describeEarthquake(std::string & result, const CGHeroInstance * hero, const
 	return false;
 }
 
+bool describeLivingArmor(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
+{
+	if(!hero || spell->getJsonKey() != "new-horizons:summonLivingArmor"
+		|| !spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
+		return false;
+	const auto & rules = hero->getMagicRules();
+	const auto & profile = rules["spells"][spell->getJsonKey()]["livingArmor"];
+	if(!profile.isStruct())
+		return false;
+	const auto power = static_cast<int64_t>(std::max<int32_t>(0, hero->getEffectPower(spell)));
+	const int64_t pool = profile["baseHitPoints"].Integer()
+		+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+			power * profile["spellPowerCoefficient"].Integer(),
+			std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)),
+			spellPowerCoefficientBasisPoints(rules, hero, spell->getId()), 0,
+			empowerSpellBonusPercent(rules, hero, spell->getId()));
+	result = "Summon Living Armor on an empty hex. Current pool: " + std::to_string(pool)
+		+ " HP before battle-only Warcasting. Lifetime: " + std::to_string(profile["duration"].Integer())
+		+ " rounds, including this round. Eligible Extend Spell and Echoed Duration each add one round. "
+		"75% physical damage reduction; takes double magical damage. Time Stop pauses its lifetime. "
+		"Disappears after combat.";
+	return true;
+}
+
 bool describeSlow(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
 {
 	if(hero && spellVariantBase(hero->getMagicRules(), spell->getId()) == SpellID::SLOW
@@ -110,12 +136,15 @@ bool describeSlow(std::string & result, const CGHeroInstance * hero, const spell
 			static_cast<int>(MasteryLevel::NONE), static_cast<int>(MasteryLevel::EXPERT))));
 
 		result = std::string(variantPower == 60 ? "Affects every eligible enemy stack. " : "Target one enemy stack. ")
-			+ "Reduces Initiative only, not Speed or movement. Fixed base duration: "
+			+ (newHorizonsSorceryRevision::slowAffectsSpeed(rules)
+				? "Reduces Speed and Initiative equally. Fixed base duration: "
+				: "Reduces Initiative only, not Speed or movement. Fixed base duration: ")
 			+ std::to_string(SLOW_BASE_DURATION_ROUNDS) + " rounds before Temporalist, other Spell Duration bonuses, "
 			"and eligible cast-specific extensions. Current Sorcery rank: "
 			+ std::string(rankName) + " (School factor " + std::to_string(schoolCoefficientPercent)
 			+ "%, combined School and Spellcraft factor " + percentFromBasisPoints(combinedCoefficientBasisPoints)
-			+ "). Initiative reduction = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
+			+ "). " + (newHorizonsSorceryRevision::slowAffectsSpeed(rules) ? "Speed and Initiative reduction" : "Initiative reduction")
+			+ " = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
 			"current reduction before target-specific specialties at Spell Power "
 			+ std::to_string(spellPower) + ": " + std::to_string(displayedReduction)
 			+ "%. This estimate excludes battle-only Warcasting and the Inferno defender's Brimstone Stormclouds "
@@ -341,6 +370,8 @@ void applyBaseDescription(std::string & result, const CGHeroInstance * hero, con
 	if(describeTownPortal(result, hero, spell))
 		return;
 	if(describeEarthquake(result, hero, spell))
+		return;
+	if(describeLivingArmor(result, hero, spell))
 		return;
 	if(describeSlow(result, hero, spell))
 		return;

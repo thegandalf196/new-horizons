@@ -9,6 +9,26 @@ inline JsonNode historicalCrusadeRules(JsonNode rules, int version = 3)
 	// A loaded pre-revision game keeps Crusade and never acquires The Chosen.
 	rules["spells"].Struct().erase("new-horizons:theChosen");
 	rules["spells"]["new-horizons:crusade"].Struct().erase("active");
+	// This fixture represents a capture before the later Sorcery revision too.
+	// Restore its authored roster/costs, rather than retaining installed defaults.
+	auto & spells = rules["spells"].Struct();
+	spells.erase("new-horizons:summonLivingArmor");
+	if(auto haste = spells.find("core:haste"); haste != spells.end())
+		haste->second.Struct().erase("ordinaryAcquisition");
+	const auto restore = [&](const char * identity, int level, int lowCost, int highCost, const char * clause)
+	{
+		const auto found = spells.find(identity);
+		if(found == spells.end()) return;
+		auto & row = found->second;
+		if(clause) row.Struct().erase(clause);
+		row["level"].Integer() = level;
+		auto & costs = row["costs"].Vector();
+		costs.clear();
+		for(const int cost : {lowCost, lowCost, highCost, highCost}) costs.emplace_back(cost);
+	};
+	restore("new-horizons:focusMagic", 3, 11, 11, "focusMagic");
+	restore("core:slow", 1, 4, 3, "slow");
+	restore("new-horizons:massSlow", 1, 12, 9, nullptr);
 	rules["rulesetVersion"].Integer() = version;
 	if(version < 3)
 	{

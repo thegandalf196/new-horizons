@@ -11,6 +11,7 @@
 #include "../../lib/ScopeGuard.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "BattleEvaluator.h"
+#include "SummonEvaluation.h"
 #include "BattleEvaluatorProjection.h"
 #include "BattleEvaluatorSpellProjection.h"
 #include "HeroSpellExpectedValueProjection.h"
@@ -127,11 +128,6 @@ bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell
 bool isTransfigureMatter(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == "new-horizons:transfigureMatter";
-}
-
-bool isCanonicalSummonTrolls(const CSpell * spell)
-{
-	return spell && spell->getJsonKey() == "new-horizons:summonTrolls";
 }
 
 bool isCanonicalElementalConvergence(const CSpell * spell)
@@ -4856,7 +4852,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
 				const bool transfigureMatter = isTransfigureMatter(ps.spell);
 				const bool phantomArmy = isPhantomArmy(ps.spell);
-				const bool summonTrolls = isCanonicalSummonTrolls(ps.spell);
 				const auto convergenceElemental = isCanonicalElementalConvergence(ps.spell)
 					? newHorizonsElementalTerrain::primaryElemental(*state) : std::nullopt;
 				const bool verdantPrison = isCanonicalVerdantPrison(ps.spell);
@@ -5087,24 +5082,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							* static_cast<float>(unit->unitType()->getAIValue())
 							/ static_cast<float>(maxHealth);
 					}
-					if(!original && unit->unitType()
-						&& ((summonTrolls && unit->unitType()->getJsonKey() == "core:troll")
-							|| (convergenceElemental && unit->creatureId() == *convergenceElemental))
-						&& unit->isSummoned()
-						&& state->battleGetOwner(unit) == playerID && newHealth > 0)
-					{
-						const auto unitState = unit->acquireState();
-						if(unitState && unitState->natureSummoned)
-						{
-							// These Nature stacks are magical summons and skipped by the generic
-							// health-delta score below.  Value their exact projected HP here,
-							// including the partial final creature and its native template value.
-							const auto maxHealth = std::max<int64_t>(1, unit->getMaxHealth());
-							damageToHostilesScore += static_cast<float>(newHealth)
-								* static_cast<float>(unit->unitType()->getAIValue())
-								/ static_cast<float>(maxHealth);
-						}
-					}
+					if(!original && state->battleGetOwner(unit) == playerID)
+						damageToHostilesScore += summonEvaluation::createdStackValue(ps.spell, unit,
+							convergenceElemental && unit->creatureId() == *convergenceElemental);
 					if(verdantPrison && !original && unit->unitType()
 						&& unit->unitType()->getJsonKey() == "core:dendroidGuard"
 						&& unit->isSummoned()

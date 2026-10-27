@@ -502,21 +502,11 @@ void BattleStacksController::showStackAmountBox(Canvas & canvas, const CStack * 
 
 void BattleStacksController::showStack(Canvas & canvas, const CStack * stack)
 {
-	ColorRGBA effectColor = Colors::TRANSPARENCY;
-	uint8_t transparency = 255;
-	for(const auto & filter : stackFilterEffects)
-	{
-		if (filter.target == stack)
-		{
-			effectColor = filter.effectColor;
-			transparency = static_cast<int>(filter.transparency) * transparency / 255;
-		}
-	}
 	const bool physicallyFrozen = stack->alive() && newHorizonsFrozen::isFrozen(*stack);
-	if(physicallyFrozen)
-		effectColor = ColorRGBA(114, 186, 218, 140);
+	const auto appearance = battleStackColorPresentation::appearance(stack,
+		stack->unitType()->getJsonKey(), physicallyFrozen, stackFilterEffects);
 
-	stackAnimation[stack->unitId()]->nextFrame(canvas, effectColor, transparency, facingRight(stack)); // do actual blit
+	stackAnimation[stack->unitId()]->nextFrame(canvas, appearance.color, appearance.transparency, facingRight(stack));
 	const auto feedback = frozenShatterFeedback.find(stack->unitId());
 	if(feedback != frozenShatterFeedback.end())
 	{

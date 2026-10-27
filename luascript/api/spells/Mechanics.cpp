@@ -28,6 +28,7 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
+#include "../../../lib/spells/NewHorizonsSorceryRevision.h"
 #include "../../../lib/battle/Unit.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/spells/Problem.h"
@@ -149,11 +150,34 @@ int32_t MechanicsProxy::getArcaneBreachMarkBasisPoints(const spells::Mechanics &
 	const int specialty = hero && m.usesNewHorizonsMagicV3()
 		&& m.getSpellId().toSpell()->getJsonKey() == FOCUS_MAGIC_SPELL
 		? hero->getNonDamageSpellSpecialtyBonusPercent(m.getSpellId()) : 0;
+	// Only this enchantment opts into revised potency. Other mark producers
+	// and all historical captures continue to use the original formula.
+	const auto * state = m.battle() ? m.battle()->getBattle() : nullptr;
+	const auto revised = state && m.getSpellId().toSpell()->getJsonKey() == FOCUS_MAGIC_SPELL
+		? newHorizonsSorceryRevision::focusRules(state->getMagicRules()) : std::nullopt;
+	const auto profile = revised.value_or(newHorizonsSorceryRevision::FocusRules{
+		ARCANE_BREACH_BASE_BASIS_POINTS, ARCANE_BREACH_POWER_BASIS_POINTS, ARCANE_BREACH_CAP_BASIS_POINTS});
 	const auto component = m.scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
-		static_cast<int64_t>(effectPower) * ARCANE_BREACH_POWER_BASIS_POINTS,
+		static_cast<int64_t>(effectPower) * profile.powerBasisPoints,
 		1, m.getSpellPowerCoefficientBasisPoints(), specialty);
-	return static_cast<int32_t>(std::min<int64_t>(ARCANE_BREACH_CAP_BASIS_POINTS,
-		ARCANE_BREACH_BASE_BASIS_POINTS + component));
+	return static_cast<int32_t>(std::min<int64_t>(profile.capBasisPoints, profile.baseBasisPoints + component));
+}
+
+bool MechanicsProxy::slowAffectsSpeed(const spells::Mechanics & m)
+{
+	const auto * state = m.battle() ? m.battle()->getBattle() : nullptr;
+	return state && newHorizonsSorceryRevision::slowAffectsSpeed(state->getMagicRules());
+}
+
+int64_t MechanicsProxy::getLivingArmorParameter(const spells::Mechanics & m, const std::string & name)
+{
+	const auto * state = m.battle() ? m.battle()->getBattle() : nullptr;
+	if(!state || (name != "baseHitPoints" && name != "spellPowerCoefficient" && name != "duration"))
+		return 0;
+	const auto & config = state->getMagicRules()["spells"][m.getSpell()->getJsonKey()]["livingArmor"];
+	if(!config.isStruct() || config["version"].Integer() != 1)
+		return 0;
+	return config[name].Integer();
 }
 
 int32_t MechanicsProxy::getBattleRound(const spells::Mechanics & m)
@@ -234,6 +258,11 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the effective mastery level used for the spell's magnitude.");
 	R.method<&Mechanics::getRangeLevel>("getRangeLevel", {},
 		"Returns the effective mastery level used for the spell's range.");
+	R.function<&MechanicsProxy::slowAffectsSpeed>("slowAffectsSpeed", {},
+		"True only when the owning battle captured the revised dual-stat Slow profile.");
+	R.function<&MechanicsProxy::getLivingArmorParameter>("getLivingArmorParameter",
+		{{"name", "Captured summon parameter name."}}, {},
+		"Returns a captured Living Armor parameter, or zero when absent.");
 	R.function<&MechanicsProxy::getArcaneBreachMarkBasisPoints>("getArcaneBreachMarkBasisPoints", {},
 		"Returns one Arcane Breach mark's penetration in basis points, including the cast's Warcasting boost to its Spell Power component before the cap.");
 	R.method<&Mechanics::getEffectPower>("getEffectPower", {},

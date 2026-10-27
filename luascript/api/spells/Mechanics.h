@@ -38,6 +38,8 @@ namespace scripting::api
 		static std::string getPluralFormTextID(const ::spells::Mechanics & m, const std::string & baseTextID, int32_t count);
 		static std::string getCureAfflictionSource(const ::spells::Mechanics & m);
 		static bool isSelectedCurePhysicalAfflictionTarget(const ::spells::Mechanics & m, const battle::Unit & unit);
+		static bool slowAffectsSpeed(const ::spells::Mechanics & m);
+		static int64_t getLivingArmorParameter(const ::spells::Mechanics & m, const std::string & name);
 		static int32_t getArcaneBreachMarkBasisPoints(const ::spells::Mechanics & m);
 		static int32_t getBattleRound(const ::spells::Mechanics & m);
 		static int getVariantPowerPercent(const ::spells::Mechanics & m);

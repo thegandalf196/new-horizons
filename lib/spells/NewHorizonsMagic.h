@@ -521,5 +521,5 @@ DLL_LINKAGE bool dispelRemovesTemporaryMagicalEffectsOnly(const JsonNode & rules
 DLL_LINKAGE void validateTeleportBarrierSerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE void validateTemporaryMagicDispelSerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE void validateCurseDurationSerialization(const JsonNode & rules, bool supported);
-DLL_LINKAGE void validateCanonicalSpellClausesSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE void validateCanonicalSpellClausesSerialization(const JsonNode & rules, bool supported, bool sorcerySupported = false);
 }

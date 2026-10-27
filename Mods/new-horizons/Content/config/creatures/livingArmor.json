@@ -1,0 +1,58 @@
+{
+	"livingArmor": {
+		"name": {
+			"singular": "Living Armor",
+			"plural": "Living Armors"
+		},
+		"faction": "core:neutral",
+		"level": 1,
+		"special": true,
+		"excludeFromRandomization": true,
+		"cost": {
+			"gold": 100
+		},
+		"speed": 4,
+		"initiative": 4,
+		"hitPoints": 10,
+		"attack": 5,
+		"defense": 5,
+		"damage": {
+			"min": 1,
+			"max": 3
+		},
+		"fightValue": 120,
+		"aiValue": 120,
+		"abilities": {
+			"construct": {
+				"type": "NON_LIVING"
+			},
+			"physicalResistance": {
+				"type": "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS",
+				"val": 7500
+			},
+			"magicalVulnerability": {
+				"description": "Magical vulnerability: takes 100% more magical damage.",
+				"type": "MORE_DAMAGE_FROM_SPELL",
+				"val": 100
+			}
+		},
+		"graphics": {
+			"animation": "CWSKEL.DEF",
+			"iconSmall": "CPRSMALL.def:0:59",
+			"iconLarge": "TWCRPORT.def:0:59",
+			"animationTime": {
+				"attack": 1,
+				"walk": 1,
+				"idle": 1
+			},
+			"timeBetweenFidgets": 10
+		},
+		"sound": {
+			"attack": "SKLWATTK.wav",
+			"defend": "SKLWDFND.wav",
+			"killed": "SKLWKILL.wav",
+			"move": "SKLWMOVE.wav",
+			"wince": "SKLWWNCE.wav"
+		}
+	}
+}

@@ -198,10 +198,10 @@ TEST_F(NewHorizonsMagicDescriptionTest, SlowAndMassSlowRankReadoutsKeepCapsRound
 		{
 			rank(spell, level);
 			std::string expected = isMass ? "Affects every eligible enemy stack. " : "Target one enemy stack. ";
-			expected += "Reduces Initiative only, not Speed or movement. Fixed base duration: 2 rounds before Temporalist, "
+			expected += "Reduces Speed and Initiative equally. Fixed base duration: 2 rounds before Temporalist, "
 				"other Spell Duration bonuses, and eligible cast-specific extensions. Current Sorcery rank: " + names.at(level)
 				+ " (School factor " + coefficients.at(level) + "%, combined School and Spellcraft factor " + coefficients.at(level)
-				+ "%). Initiative reduction = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
+				+ "%). Speed and Initiative reduction = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
 				"current reduction before target-specific specialties at Spell Power 50: " + (isMass ? mass.at(level) : ordinary.at(level))
 				+ "%. This estimate excludes battle-only Warcasting and the Inferno defender's Brimstone Stormclouds "
 				"+20 Spell Power bonus, which can further affect the battle cast.";
@@ -231,11 +231,13 @@ TEST_F(NewHorizonsMagicDescriptionTest, FocusCurrentAndHistoricalEarlyReturnsKee
 	rank(focus, 1, 1);
 	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0) + spellcraftSuffix
 		+ "\n\nBasic Sorcery: 115% coefficient on the Spell Power term."
-		"\nCurrent ordinary per-mark penetration at Spell Power 17: 11.07% (before battle-only Warcasting).");
+		"\nCaptured per-mark formula: min(12%, 5% + 0.03% x scaled Spell Power)."
+		"\nCurrent ordinary per-mark penetration at Spell Power 17: 5.64% (before battle-only Warcasting).");
 	ASSERT_NO_THROW(callback.rules = historicalDescriptionRules(2));
 	rank(focus, 3);
 	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0)
 		+ "\n\nLegacy profile: 100% coefficient on the Spell Power term; Sorcery rank does not scale Focus Magic."
+		"\nCaptured per-mark formula: min(20%, 10% + 0.05% x scaled Spell Power)."
 		"\nCurrent ordinary per-mark penetration at Spell Power 17: 10.85% (before battle-only Warcasting).");
 }
 
@@ -306,4 +308,23 @@ TEST_F(NewHorizonsMagicPerkDescriptionTest, BlessDurationBonusesBenedictionAndSp
 		+ "\n\nCurrent ordinary duration: 2 rounds (combined Spell Power coefficient: 126.5%). "
 		"Current total before battle-only adjustments: 6 rounds. SPELL_DURATION modifier: 3. Benediction adds 1 round."
 		+ spellcraftSuffix);
+}
+
+TEST_F(NewHorizonsMagicDescriptionTest, LivingArmorUsesCapturedPoolAndLifetimeAndKeepsMissingProfileFallback)
+{
+	const auto * spell = descriptionSpell("new-horizons:summonLivingArmor");
+	hero.setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	rank(spell, 1, 1);
+	EXPECT_NE(describe(spell).find("Current pool: 166 HP before battle-only Warcasting. Lifetime: 3 rounds"), std::string::npos);
+	auto & profile = callback.rules["spells"]["new-horizons:summonLivingArmor"]["livingArmor"];
+	profile["baseHitPoints"].Integer() = 7;
+	profile["spellPowerCoefficient"].Integer() = 2;
+	profile["duration"].Integer() = 5;
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(callback.rules));
+	EXPECT_NE(describe(spell).find("Current pool: 260 HP before battle-only Warcasting. Lifetime: 5 rounds"), std::string::npos);
+	EXPECT_NE(describe(spell).find("Extend Spell and Echoed Duration each add one round"), std::string::npos);
+	profile["spellPowerCoefficient"].Integer() = 0;
+	EXPECT_NE(describe(spell).find("Current pool: 7 HP"), std::string::npos);
+	callback.rules["spells"]["new-horizons:summonLivingArmor"].Struct().erase("livingArmor");
+	EXPECT_EQ(describe(spell), spell->getDescriptionTranslated(0) + spellcraftSuffix);
 }

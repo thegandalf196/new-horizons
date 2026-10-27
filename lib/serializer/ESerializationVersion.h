@@ -281,11 +281,13 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_NECROMANCY_POLICY_V2, // captured revised Necromancy passives and yield policy
 
+	NEW_HORIZONS_SORCERY_REVISION, // timed summon state and all-magical incoming vulnerability
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_NECROMANCY_POLICY_V2,
+	CURRENT = NEW_HORIZONS_SORCERY_REVISION,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2

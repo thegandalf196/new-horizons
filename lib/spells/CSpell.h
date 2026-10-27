@@ -256,6 +256,7 @@ private:
 		bool useFractionalMagicalDamageReduction) const;
 	int64_t applyElementalDamageBonus(const spells::Caster * caster, int64_t damage) const;
 	int64_t applyIncomingElementalDamageBonus(const battle::Unit * affectedCreature, int64_t damage) const;
+	int64_t applyIncomingMagicalDamageBonus(const battle::Unit * affectedCreature, int64_t damage) const;
 	void setIsOffensive(const bool val);
 	void setIsRising(const bool val);
 

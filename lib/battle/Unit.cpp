@@ -10,6 +10,7 @@
 #include "StdInc.h"
 
 #include "Unit.h"
+#include "SummonLifetime.h"
 
 #include "../CCreatureHandler.h"
 #include "../GameLibrary.h"
@@ -303,6 +304,9 @@ void UnitInfo::serializeJson(JsonSerializeFormat & handler)
 	position = positionValue;
 	handler.serializeBool("summoned", summoned);
 	handler.serializeBool("natureSummoned", natureSummoned);
+	handler.serializeInt("summonRoundsRemaining", summonRoundsRemaining, 0);
+	if(summonRoundsRemaining < 0 || (summonRoundsRemaining > 0 && (!summoned || count <= 0)))
+		throw std::runtime_error("Invalid temporary summon lifetime");
 	handler.serializeInt("phantomIntegrity", phantomIntegrity, 0);
 	handler.serializeInt("phantomDuration", phantomDuration, 0);
 	handler.serializeInt("rebirthOriginalAggregateHP", rebirthOriginalAggregateHP, 0);
@@ -322,6 +326,7 @@ void UnitInfo::save(JsonNode & data)
 
 void UnitInfo::load(uint32_t id_, const JsonNode & data)
 {
+	summonLifetimeFromJson(data);
 	id = id_;
 	JsonDeserializer deser(nullptr, data);
 	serializeJson(deser);

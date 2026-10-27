@@ -16,6 +16,7 @@
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusSelector.h"
 #include "../spells/MagicalDamageReduction.h"
+#include "../spells/IncomingMagicalDamage.h"
 
 namespace newHorizonsMagicalAbilityDamage
 {
@@ -25,7 +26,7 @@ int64_t adjustDamage(const CBattleInfoCallback & battle, const battle::Unit & ta
 		return 0;
 
 	if(!battle.battleUsesNewHorizonsMultiplicativeMDR())
-		return newHorizonsNecromancy::adjustUnmitigatedMagicalDamage(target, rawDamage);
+		return spells::adjustUnmitigatedMagicalDamage(target, rawDamage);
 
 	std::vector<int> reductionSourcesBasisPoints;
 	const int intrinsicReduction = target.intrinsicMagicalDamageReductionPercent();
@@ -62,7 +63,8 @@ int64_t adjustDamage(const CBattleInfoCallback & battle, const battle::Unit & ta
 	if(perkReduction > 0)
 		reductionSourcesBasisPoints.push_back(perkReduction);
 
-	return spells::calculateMagicalDamageReductionBasisPoints(
+	const auto mitigated = spells::calculateMagicalDamageReductionBasisPoints(
 		rawDamage, reductionSourcesBasisPoints, 0).damageWithoutPenetration;
+	return spells::applyIncomingMagicalDamageModifier(target, mitigated);
 }
 }

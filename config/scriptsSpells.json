@@ -383,6 +383,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"timedSummon" : {
+		"implements" : "spellEffect",
+		"script" : "spells/timedSummon",
+		"patches" : [],
+		"schema" : {
+			"properties" : {
+				"type" : {}, "indirect" : {}, "optional" : {},
+				"id" : { "type" : "string" }
+			},
+			"required" : ["id"],
+			"additionalProperties" : false
+		}
+	},
 	"summonTrolls" : {
 		"implements" : "spellEffect",
 		"script" : "spells/summonTrolls",

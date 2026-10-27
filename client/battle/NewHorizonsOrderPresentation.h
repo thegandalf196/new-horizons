@@ -29,8 +29,8 @@ inline const std::array<CommandDisplay, 10> commandDisplays = {{
 	{HeroCommand::BRACE, "NH_brace_button", "Brace", "Friendly stacks pre-emptively attack enemies that moved at least 3 hexes before a melee attack."},
 	{HeroCommand::PROTECT, "NH_protect_button", "Protect", "Choose a Protector and adjacent Ward. The first qualifying melee attack is redirected; Shield Master allows the first two."},
 	{HeroCommand::FLANK, "NH_flank_button", "Flank", "Choose one enemy stack. Friendly melee damage increases from additional distinct attack sides."},
-	{HeroCommand::FEINT, "NH_orders_gauntlet_framed", "Feint", "Friendly troops take reduced physical retaliation damage through the end of this round."},
-	{HeroCommand::VANGUARD, "NH_orders_gauntlet_framed", "Vanguard", "Friendly troops gain Creature Attack, Defense, Morale and Initiative. Undead and mechanical troops are unaffected; Morale immunity remains. Refreshes without stacking; issuing round counts toward duration."},
+	{HeroCommand::FEINT, "NH_feint_button", "Feint", "Friendly troops take reduced physical retaliation damage through the end of this round."},
+	{HeroCommand::VANGUARD, "NH_vanguard_button", "Vanguard", "Friendly troops gain Creature Attack, Defense, Morale and Initiative. Undead and mechanical troops are unaffected; Morale immunity remains. Refreshes without stacking; issuing round counts toward duration."},
 	{HeroCommand::SECOND_WIND, "NH_secondWind_button", "Second Wind", "Choose a friendly stack that already completed its normal activation for an additional activation at reduced direct damage."}
 }};
 

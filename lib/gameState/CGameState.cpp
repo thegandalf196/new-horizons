@@ -2154,11 +2154,13 @@ void CGameState::validateNewHorizonsTravelDayEndSerialization(bool waterWalkSupp
 		map->validateNewHorizonsTravelDayEndSerialization(waterWalkSupported, flySupported);
 }
 
-void CGameState::validateCanonicalSpellClausesSerialization(bool supported) const
+void CGameState::validateCanonicalSpellClausesSerialization(bool supported, bool sorcerySupported) const
 {
-	newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules, supported);
+	newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules, supported, sorcerySupported);
+	for(const auto & battle : currentBattles)
+		if(battle) battle->validateTimedSummonSerialization();
 	if(map)
-		map->validateCanonicalSpellClausesSerialization(supported);
+		map->validateCanonicalSpellClausesSerialization(supported, sorcerySupported);
 }
 
 void CGameState::validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const

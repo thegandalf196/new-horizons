@@ -2577,7 +2577,7 @@
 		"school" : {
 			"new-horizons:sorcery" : true
 		},
-		"level" : 3,
+		"level" : 1,
 		"power" : 0,
 		"defaultGainChance" : 0,
 		"gainChance" : {},
@@ -2593,8 +2593,8 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
-				"cost" : 11,
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"cost" : 4,
 				"power" : 0,
 				"battleEffects" : {
 					"focusMagic" : {
@@ -2605,8 +2605,8 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
-				"cost" : 11,
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"cost" : 4,
 				"power" : 0,
 				"battleEffects" : {
 					"focusMagic" : {
@@ -2617,8 +2617,8 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
-				"cost" : 11,
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"cost" : 4,
 				"power" : 0,
 				"battleEffects" : {
 					"focusMagic" : {
@@ -2629,8 +2629,8 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
-				"cost" : 11,
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"cost" : 4,
 				"power" : 0,
 				"battleEffects" : {
 					"focusMagic" : {

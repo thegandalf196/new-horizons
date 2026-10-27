@@ -732,7 +732,8 @@ public:
 			validateRecoverySpecialtyStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(getMagicRules(),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 		if(h.saving)
 			newHorizonsHeroes::validateWeightedPerkSerialization(perkState.rules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),

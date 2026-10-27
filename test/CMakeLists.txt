@@ -28,6 +28,9 @@ add_executable(nhStackInfoPanelHoverStateTest ../client/tests/StackInfoPanelHove
 add_test(NAME nhStackInfoPanelHoverStateTest COMMAND nhStackInfoPanelHoverStateTest)
 add_executable(nhFrozenApplicationFeedbackTest ../client/tests/FrozenApplicationFeedbackTest.cpp)
 add_test(NAME nhFrozenApplicationFeedbackTest COMMAND nhFrozenApplicationFeedbackTest)
+add_executable(nhBattleStackColorPresentationTest ../client/tests/BattleStackColorPresentationTest.cpp)
+target_link_libraries(nhBattleStackColorPresentationTest PRIVATE vcmi)
+add_test(NAME nhBattleStackColorPresentationTest COMMAND nhBattleStackColorPresentationTest)
 
 # Reproduce the Academy built-town-icon load path with every scaling factor. The
 # SDL dummy backend keeps the renderer bootstrap isolated from the host display.
@@ -583,6 +586,7 @@ set(test_SRCS
 		server/battles/NewHorizonsTheChosenTest.cpp
 		server/battles/NewHorizonsEntangleTest.cpp
 		server/battles/NewHorizonsVengefulVinesTest.cpp
+		server/battles/NewHorizonsLivingArmorTest.cpp
 		server/battles/NewHorizonsSummonTrollsTest.cpp
 		server/battles/NewHorizonsVerdantPrisonTest.cpp
 		server/battles/SummonedCreatureHealthTerrainTest.cpp
@@ -931,6 +935,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsVengefulVinesAITest.cpp
 		battleAI/IndividualRiderDamageIntegrationTest.cpp
 		battleAI/NewHorizonsSummonTrollsAITest.cpp
+		battleAI/NewHorizonsLivingArmorAITest.cpp
 		battleAI/NewHorizonsVerdantPrisonAITest.cpp
 		battleAI/NewHorizonsHydrasVitalityAITest.cpp
 		battleAI/OptionalHydraForecastTest.cpp
@@ -1127,6 +1132,7 @@ add_test(NAME nhAnimationPhaseStartTest COMMAND nhAnimationPhaseStartTest)
 set_tests_properties(
 	nhHeroDevelopmentNavigationTest nhHeroMasteryDialogStateTest
 	nhExchangeSecondarySkillSlotsTest nhStackInfoPanelHoverStateTest nhFrozenApplicationFeedbackTest
+	nhBattleStackColorPresentationTest
 	nhProjectileFlightLifecycleTest nhWindowSceneRedrawTest nhMapTransitionSnapshotTest
 	nhBattleEndDispatchTest
 	nhHeroPositiveProcPresentationTest nhAnimationPhaseStartTest

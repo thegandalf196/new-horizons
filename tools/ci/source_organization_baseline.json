@@ -9692,7 +9692,7 @@
       ]
     },
     "lib/CStack.h": {
-      "sha256": "b14ef823907285547b2655f94799aa167547ecc0735ae645d8fa2cb59ada3b26",
+      "sha256": "c2ffda61003f088b663714ff2a3578bcda1890eff113f928c941bc1d6313c5cd",
       "functions": [
         {
           "symbol": "CStack::void validateRapidResponseSerialization(Handler & h) const#1",
@@ -9730,59 +9730,65 @@
           "end": 145
         },
         {
-          "symbol": "CStack::void validateFrozenSerialization(Handler & h) const#1",
+          "symbol": "CStack::void validateTimedSummonSerialization() const#1",
           "start": 147,
-          "end": 156
+          "end": 151
+        },
+        {
+          "symbol": "CStack::void validateFrozenSerialization(Handler & h) const#1",
+          "start": 153,
+          "end": 162
         },
         {
           "symbol": "CStack::void validateMoraleActivationSerialization(Handler & h) const#1",
-          "start": 158,
-          "end": 164
+          "start": 164,
+          "end": 170
         },
         {
           "symbol": "CStack::void validateHeroicSpiritSerialization(Handler & h) const#1",
-          "start": 166,
-          "end": 172
+          "start": 172,
+          "end": 178
         },
         {
           "symbol": "CStack::void validateSwiftRebirthSerialization(Handler & h) const#1",
-          "start": 174,
-          "end": 179
+          "start": 180,
+          "end": 185
         },
         {
           "symbol": "CStack::void validateVeteranDamageHistorySerialization(bool supported) const#1",
-          "start": 181,
-          "end": 187
-        },
-        {
-          "symbol": "CStack::void validateVeteranCohesionSerialization(Handler & h) const#1",
-          "start": 189,
+          "start": 187,
           "end": 193
         },
         {
-          "symbol": "CStack::void validatePlagueSerialization(Handler & h) const#1",
+          "symbol": "CStack::void validateVeteranCohesionSerialization(Handler & h) const#1",
           "start": 195,
           "end": 199
         },
         {
+          "symbol": "CStack::void validatePlagueSerialization(Handler & h) const#1",
+          "start": 201,
+          "end": 205
+        },
+        {
           "symbol": "CStack::void validateTrainingSerialization(Handler & h) const#1",
-          "start": 200,
-          "end": 210
+          "start": 206,
+          "end": 216
         },
         {
           "symbol": "CStack::void validateOpportunistSerialization(Handler & h) const#1",
-          "start": 212,
-          "end": 219
+          "start": 218,
+          "end": 225
         },
         {
           "symbol": "CStack::void serialize(Handler & h)#1",
-          "start": 221,
-          "end": 381
+          "start": 227,
+          "end": 388
         }
       ],
-      "review": "IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026",
-      "rationale": "Complete exact callable inventory independently checked: 179 bodies across eight headers, including 175 unchanged retained bodies, two serializers with captured-policy guards, and two new neutral Unit defaults. Declaration-only additions do not add callable bodies. Exact-source coverage only; no runtime certification.",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. One new narrow compatibility validation body included. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "previous_review": "IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026"
     },
     "lib/Color.h": {
       "functions": [
@@ -10634,37 +10640,38 @@
       "sha256": "f16b6dfd61b001dcf80880a9466faea4f575538b7d110d2ecc570e79bfab6a34"
     },
     "lib/battle/CUnitState.h": {
-      "sha256": "9d696d84ee5ec00b14200e81274df11fd1da02a552b310efc2d1ff981c63363c",
+      "sha256": "462fbfd1a75dab0f54922d83fb809e96bd7bed677ddb4a48ed3c595539dcdf16",
       "functions": [
         {
           "symbol": "battle::CUnitState::int32_t getActivationMovementBonus() const#1",
-          "start": 249,
-          "end": 249
+          "start": 251,
+          "end": 251
         },
         {
           "symbol": "battle::CUnitState::int32_t getPersonalBloodrageIncrement() const override#1",
-          "start": 371,
-          "end": 371
+          "start": 373,
+          "end": 373
         },
         {
           "symbol": "battle::CUnitState::int32_t getPhantomRoundsRemaining() const#1",
-          "start": 380,
-          "end": 380
+          "start": 382,
+          "end": 382
         },
         {
           "symbol": "battle::CUnitState::int32_t getBattleFormRoundsRemaining() const#1",
-          "start": 396,
-          "end": 396
+          "start": 398,
+          "end": 398
         },
         {
           "symbol": "battle::CUnitState::bool isBattleFormRestorationPending() const#1",
-          "start": 397,
-          "end": 397
+          "start": 399,
+          "end": 399
         }
       ],
-      "review": "IR-NECROMANCY-ADVANCED-MANUAL-SOURCE-20261026",
-      "rationale": "Complete independently checked exact four-header inventory: 43 callable bodies, comprising 39 unchanged retained bodies, three modified NecromancyResult validation/codec/empty bodies and one neutral Unit physical-reduction default. Declaration-only additions introduce no other bodies. Source-only coverage, not runtime certification.",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. No new callable body introduced. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "previous_review": "IR-NECROMANCY-ADVANCED-MANUAL-SOURCE-20261026"
     },
     "lib/battle/IBattleInfoCallback.h": {
       "functions": [
@@ -10691,9 +10698,9 @@
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/Unit.h": {
-      "sha256": "c2addeb2845b637d4f9971ec6005c91e892bacf635408f4680cb0e18105645d8",
-      "review": "IR-NECROMANCY-ADVANCED-MANUAL-SOURCE-20261026",
-      "rationale": "Complete independently checked exact four-header inventory: 43 callable bodies, comprising 39 unchanged retained bodies, three modified NecromancyResult validation/codec/empty bodies and one neutral Unit physical-reduction default. Declaration-only additions introduce no other bodies. Source-only coverage, not runtime certification.",
+      "sha256": "db76d8a84e859d14095b5a7aade4f6489df1caf925c6a1222d8daaa0a36defea",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. No new callable body introduced. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed.",
       "functions": [
         {
           "symbol": "battle::HealInfo::HealInfo(int64_t healedHP, int32_t resurrected) : healedHealthPoints(healedHP), resurrectedCount(resurrected)#1",
@@ -10812,16 +10819,17 @@
         },
         {
           "symbol": "battle::UnitInfo::void serializeScript(Serializer & s)#1",
-          "start": 284,
-          "end": 295
+          "start": 286,
+          "end": 298
         }
       ],
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "previous_review": "IR-NECROMANCY-ADVANCED-MANUAL-SOURCE-20261026"
     },
     "lib/bonuses/Bonus.h": {
-      "sha256": "808292b9505953bd60d16626953b02c8b4b9c03a3297fcc2be0a0e39b8c8ab53",
-      "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "Twenty-seven bodies: five metadata helpers96\u201399/100\u2013108/109\u2013112/113\u2013126/127\u2013131; four feature validators142\u2013147/149\u2013176/178\u2013183/185\u2013190; serialize192\u2013341150lines; fifteen duration predicates345\u2013419 in five-line spans; operators420\u2013423/424\u2013427. Complete version and legacy migration branches read. Serializer matches existing150-line numeric freeze. =default constructor140 and remaining APIs are bodyless; default customValue={}429 is initialization. No macros/lambdas.",
+      "sha256": "eac9ccaff21c5af86cb49a6f9ffda5e0ad308f0c82901c9c6840addfe03759e2",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. One new narrow compatibility validation body included. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed.",
       "functions": [
         {
           "symbol": "Bonus::static bool isValidStatusTag(BonusStatusTag tag)#1",
@@ -10869,96 +10877,103 @@
           "end": 190
         },
         {
-          "symbol": "Bonus::void serialize(Handler &h)#1",
+          "symbol": "Bonus::void validateAllMagicVulnerabilitySerialization(Handler & h) const#1",
           "start": 192,
-          "end": 341
+          "end": 197
+        },
+        {
+          "symbol": "Bonus::void serialize(Handler &h)#1",
+          "start": 199,
+          "end": 350
         },
         {
           "symbol": "Bonus::static bool NDays(const Bonus *hb)#1",
-          "start": 345,
-          "end": 349
+          "start": 354,
+          "end": 358
         },
         {
           "symbol": "Bonus::static bool NTurns(const Bonus *hb)#1",
-          "start": 350,
-          "end": 354
+          "start": 359,
+          "end": 363
         },
         {
           "symbol": "Bonus::static bool OneDay(const Bonus *hb)#1",
-          "start": 355,
-          "end": 359
+          "start": 364,
+          "end": 368
         },
         {
           "symbol": "Bonus::static bool OneWeek(const Bonus *hb)#1",
-          "start": 360,
-          "end": 364
+          "start": 369,
+          "end": 373
         },
         {
           "symbol": "Bonus::static bool OneBattle(const Bonus *hb)#1",
-          "start": 365,
-          "end": 369
+          "start": 374,
+          "end": 378
         },
         {
           "symbol": "Bonus::static bool Permanent(const Bonus *hb)#1",
-          "start": 370,
-          "end": 374
+          "start": 379,
+          "end": 383
         },
         {
           "symbol": "Bonus::static bool UntilGetsTurn(const Bonus *hb)#1",
-          "start": 375,
-          "end": 379
+          "start": 384,
+          "end": 388
         },
         {
           "symbol": "Bonus::static bool UntilActivationEnds(const Bonus *hb)#1",
-          "start": 380,
-          "end": 384
+          "start": 389,
+          "end": 393
         },
         {
           "symbol": "Bonus::static bool UntilNextCreatureActivation(const Bonus *hb)#1",
-          "start": 385,
-          "end": 389
+          "start": 394,
+          "end": 398
         },
         {
           "symbol": "Bonus::static bool UntilAttack(const Bonus *hb)#1",
-          "start": 390,
-          "end": 394
+          "start": 399,
+          "end": 403
         },
         {
           "symbol": "Bonus::static bool UntilTakingIndirectDamage(const Bonus *hb)#1",
-          "start": 395,
-          "end": 399
+          "start": 404,
+          "end": 408
         },
         {
           "symbol": "Bonus::static bool untilAfterAttackSequence(const Bonus *hb)#1",
-          "start": 400,
-          "end": 404
+          "start": 409,
+          "end": 413
         },
         {
           "symbol": "Bonus::static bool UntilBeingAttacked(const Bonus *hb)#1",
-          "start": 405,
-          "end": 409
+          "start": 414,
+          "end": 418
         },
         {
           "symbol": "Bonus::static bool UntilCommanderKilled(const Bonus *hb)#1",
-          "start": 410,
-          "end": 414
-        },
-        {
-          "symbol": "Bonus::static bool UntilOwnAttack(const Bonus *hb)#1",
-          "start": 415,
-          "end": 419
-        },
-        {
-          "symbol": "Bonus::inline bool operator == (const BonusType & cf) const#1",
-          "start": 420,
+          "start": 419,
           "end": 423
         },
         {
-          "symbol": "Bonus::inline void operator += (const ui32 Val) //no return#1",
+          "symbol": "Bonus::static bool UntilOwnAttack(const Bonus *hb)#1",
           "start": 424,
-          "end": 427
+          "end": 428
+        },
+        {
+          "symbol": "Bonus::inline bool operator == (const BonusType & cf) const#1",
+          "start": 429,
+          "end": 432
+        },
+        {
+          "symbol": "Bonus::inline void operator += (const ui32 Val) //no return#1",
+          "start": 433,
+          "end": 436
         }
-      ]
+      ],
+      "previous_review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/bonuses/BonusEnum.cpp": {
       "functions": [
@@ -12383,16 +12398,18 @@
       ]
     },
     "lib/spells/CSpell.h": {
-      "sha256": "efcab4bb196abe7409c96bc6135ff17dbb4a27b0057d1f529c10ec2eaee6d7ff",
-      "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "rationale": "One inline getDamageElement body139\u2013139. Other methods/constructors/destructors and nested AnimationInfo/TargetInfo APIs are prototypes, with data fields only. independentPenetrationsPercent={}240 is a default initializer. No lambda or function-like macro definitions.",
+      "sha256": "f88e6b6d529553ab5019933094077cb4fc5561866299681b0a80b08da45dac7e",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. No new callable body introduced. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed.",
       "functions": [
         {
           "symbol": "CSpell::SpellDamageElement getDamageElement() const#1",
           "start": 139,
           "end": 139
         }
-      ]
+      ],
+      "previous_review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/NewHorizonsElementalTerrain.h": {
       "functions": [],
@@ -12401,9 +12418,9 @@
       "sha256": "be7237545da45f7abbca02f8af83289c9add95f764bde3acd249c597bf6f6b2d"
     },
     "lib/spells/NewHorizonsMagic.h": {
-      "sha256": "c056fcfed31d378e55c8b4f0bbc0a03cfb768fe7730d24f565a933045af7670a",
-      "review": "recovery-verdish-current-rebase-source-v1",
-      "rationale": "Three pure rate-query declaration lines only; existing AdventureSpellState serializer body unchanged. One-body manual inventory retained; macro/default-argument parser recoveries remain declarations.",
+      "sha256": "9a0f4847e84f35f161607106b34060a8ac95b43c2938ac9d425d316d8e523349",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. No new callable body introduced. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed.",
       "functions": [
         {
           "symbol": "newHorizonsMagic::AdventureSpellState::void serialize(Handler & h)#1",
@@ -12411,7 +12428,8 @@
           "end": 164
         }
       ],
-      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "previous_review": "recovery-verdish-current-rebase-source-v1"
     },
     "lib/spells/adventure/TownRelatedAdventureSpellEffect.h": {
       "functions": [
@@ -15519,10 +15537,10 @@
       "sha256": "fbf65065698acc2ebd1c7b5e93d0e230c4bb667c3a9cefb8fde5a866a9b19961"
     },
     "lib/mapObjects/CGHeroInstance.h": {
-      "sha256": "7d86368b4b00df85f7c2dbcecdbf2d6ee4824fc9f4f622b57962b30735842872",
-      "review": "IR-NECROMANCY-V2-COMPLETE-CALLABLES-20261027",
+      "sha256": "3aa3371f5d502d8a4cecd58852d41b007dcfbc776f72f451dd321ffa39f692fe",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "rationale": "Complete exact callable inventory independently checked: 179 bodies across eight headers, including 175 unchanged retained bodies, two serializers with captured-policy guards, and two new neutral Unit defaults. Declaration-only additions do not add callable bodies. Exact-source coverage only; no runtime certification. Renewal proposal retains every existing callable identity and complete body span after v2 capability argument/declaration and focused fixture changes. Exact independent source review completed; no parser coverage discarded.",
+      "rationale": "Complete retained callable inventory renewed from exact HEAD bodies and source-reviewed Sorcery/Living Armor diff. All existing callable identities retained, full boundaries verified against actual bodies. No new callable body introduced. Declaration/default-initializer parser recovery remains covered explicitly; no parser gap exemption or runtime acceptance claimed.",
       "functions": [
         {
           "symbol": "CGHeroPlaceholder::void serialize(Handler &h)#1",
@@ -15862,10 +15880,10 @@
         {
           "symbol": "CGHeroInstance::void serialize(Handler &h)#1",
           "start": 725,
-          "end": 1191
+          "end": 1192
         }
       ],
-      "previous_review": "IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026",
+      "previous_review": "IR-NECROMANCY-V2-COMPLETE-CALLABLES-20261027",
       "review_scope": "exact-bounded-source-review-no-native-or-rendered-acceptance"
     },
     "lib/callback/CGameInfoCallback.cpp": {
@@ -18132,15 +18150,16 @@
       "deferral": "AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate."
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
-      "lines": 5356,
-      "sha256": "22c573b7f8f30454a66d26df3cb28c095da995011f85709772bbbb2e2e66a2c1",
+      "lines": 5336,
+      "sha256": "7b60b94b79ab3d0b2a5f6f74a69d3e812ccd6118fa9a98324cf727e069885105",
       "kind": "exception",
-      "review": "IR-COMBAT-AI-EXPECTED-VIEWS-SOURCE-20261026",
-      "rationale": "Independently source-reviewed two argument substitutions after removing redundant borrowed-float tagged variants in the focused expected-value owners. Main file5356 and attemptCastingSpell1203 are unchanged in size; aggregate affected production source shrinks37 lines. This narrow representation-only exception preserves separate canonical/positive gates, null/negation rejection, accepted-action ordering, late float reads and baseline-plus-value expression; no added responsibility or future growth credit.",
-      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Independently source-reviewed two argument substitutions after removing redundant borrowed-float tagged variants in the focused expected-value owners. Main file5356 and attemptCastingSpell1203 are unchanged in size; aggregate affected production source shrinks37 lines. This narrow representation-only exception preserves separate canonical/positive gates, null/negation rejection, accepted-action ordering, late float reads and baseline-plus-value expression; no added responsibility or future growth credit. Exact Sorcery/Living Armor renewal: Shared SummonEvaluation owns selected-summon placement/value; this legacy caller shrinks while ordered candidate dispatch remains here. Physical span 5356\u21925336; unchanged limits/coverage.",
+      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
-      "owner": "ai_engineer"
+      "owner": "ai_engineer",
+      "previous_review": "IR-COMBAT-AI-EXPECTED-VIEWS-SOURCE-20261026"
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -18332,14 +18351,15 @@
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp": {
       "kind": "exception",
-      "lines": 3190,
+      "lines": 3147,
       "owner": "ai_engineer",
-      "rationale": "Exact four-line null-safe callback/queryBattle preparation preserves the existing nullable two-argument Plague forecast API before the rules-aware marker query; no target/scoring/timing change or future growth.",
-      "review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022",
+      "rationale": "Exact four-line null-safe callback/queryBattle preparation preserves the existing nullable two-argument Plague forecast API before the rules-aware marker query; no target/scoring/timing change or future growth. Exact Sorcery/Living Armor renewal: Shared SummonEvaluation owns selected-summon placement/value; this legacy caller shrinks while ordered candidate dispatch remains here. Physical span 3190\u21923147; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "optional-plague-query-identity-only",
-      "sha256": "3b9a69393db981343bb03912a00ca835691a9941bc98b2de20be55e91149726d",
-      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum. This exception admits only the reviewed four-line nullable-context preparation, exact3190-line file and113-line Plague query; no further growth. AI engineer must extract cohesive Plague forecast admission/context handling before substantive expansion, preserving nullable two-argument and supplied-model APIs, marker selection, target/scoring order, native/branch state and both RNG domains.",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "sha256": "e93ba784e8a4fac019fa6eab7817d5d78d1bfca9369a30392f957ee998fe3b60",
+      "deferral": "ai_engineer retains the existing consumer-decomposition debt. Unrelated evaluator algorithm extraction is deferred from this header ownership migration to avoid coupling behavior changes. Before any further substantive edit, extract a bounded coherent affected responsibility with exact characterization and independent review; do not reuse this one-time include exception or restore an earlier larger maximum. This exception admits only the reviewed four-line nullable-context preparation, exact3190-line file and113-line Plague query; no further growth. AI engineer must extract cohesive Plague forecast admission/context handling before substantive expansion, preserving nullable two-argument and supplied-model APIs, marker selection, target/scoring order, native/branch state and both RNG domains. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "previous_review": "IR-OPTIONAL-PLAGUE-QUERY-IDENTITY-20261022"
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp::SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection( const Mechanics * spellMechanics, const Target & target)#1": {
       "kind": "legacy",
@@ -18398,13 +18418,16 @@
       "sha256": "9063844a166fe9c2c9ac385a12e43a31d7dc4c107a6b151d4f56e1c671ca241d"
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp::std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 143,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 143 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 143 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Shared SummonEvaluation owns selected-summon placement/value; this legacy caller shrinks while ordered candidate dispatch remains here. Physical span 143\u2192143; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "1e5ba49767bf0661ef1916f8c476a81a3f059b7a949d2a5d81dd4958ff95fbfb"
+      "sha256": "d5507d7b50c9145331b08dc42a3475465bba19b6c88e2c5d6080f79ec3134489",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "AI/BattleAI/SpellTargetsEvaluator.cpp::std::vector<Target> enumerateSoulChainTargets(Mechanics * spellMechanics)#1": {
       "kind": "legacy",
@@ -19346,12 +19369,14 @@
       "sha256": "1d18f6fb5bdce91f74fa6694c7bc6c5fd9cc728ea852542e0618fcc1a5db28b2"
     },
     "client/CMakeLists.txt": {
-      "lines": 604,
-      "sha256": "ec9d6741b2023cfe90ee4bcf80803c73e7413a754e62e66f4f46334f9180ea59",
+      "lines": 606,
+      "sha256": "984d626b3efa7639aea8d48971ca66c9372549eb539cfcc3bf17ea1723d45b81",
       "kind": "exception",
-      "review": "IR-NECROMANCY-MECHANICAL-REGISTRATION-SOURCE-20261026",
-      "rationale": "Mechanical registration of focused Necromancy owners or append-only captured-policy serialization feature; no gameplay implementation in the registry.",
-      "deferral": "Owner: UI developer. Interface/acceptance: Keep the coherent mechanical registry; any later module manifest split must preserve exact target membership and ordinary build without private assets. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine/UI owners retain coherent registries. Future decomposition must preserve exact target membership, append-only feature values and platform build parity."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Mechanical registration of focused Necromancy owners or append-only captured-policy serialization feature; no gameplay implementation in the registry. Exact Sorcery/Living Armor renewal: Explicit registration of reviewed shared source/header owners only. Physical span 604\u2192606; unchanged limits/coverage.",
+      "deferral": "Owner: UI developer. Interface/acceptance: Keep the coherent mechanical registry; any later module manifest split must preserve exact target membership and ordinary build without private assets. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine/UI owners retain coherent registries. Future decomposition must preserve exact target membership, append-only feature values and platform build parity. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-MECHANICAL-REGISTRATION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/CPlayerInterface.cpp": {
       "kind": "legacy",
@@ -19670,12 +19695,14 @@
       "sha256": "021a38c441418e8c0dfc0af9bceec755ae45d2048357b152996449c6423e7ad7"
     },
     "client/battle/BattleHeroActionWindow.cpp": {
-      "lines": 534,
-      "sha256": "1ebdca408bf2fdd9c7f4b2715c9b47da4af7bc734db833172cb44214c5921cd2",
+      "lines": 529,
+      "sha256": "1520b03b698ff10eb4cadb8f13a8b515cf908857a48d42abac2ed07cec9358d6",
       "kind": "exception",
-      "review": "IR-VANGUARD-FOOTER-SAVED-PROFILE-SOURCE-20261026",
-      "rationale": "Extracted read-only display/preview component shrinks chooser file and refresh method. Narrow follow-up grows the ratcheted530-line file by4 lines solely for an observed duration-wording correction: saved-v4 names Vanguard displayed duration; historical text and widget coordinates remain exact. All other19 callable bodies, including constructor and refresh, are byte-identical. Layout builder49 to53 remains below80.",
-      "deferral": "Owner: UI developer. Interface/acceptance: next substantive chooser change extracts cohesive layout/readback assembly into the existing focused Order presentation boundary; preserve receiving-window lifetime, redraw invalidation, disabled controls, target selection and native-resolution layout. This bounded four-line text correction is not permission for further hotspot growth."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Extracted read-only display/preview component shrinks chooser file and refresh method. Narrow follow-up grows the ratcheted530-line file by4 lines solely for an observed duration-wording correction: saved-v4 names Vanguard displayed duration; historical text and widget coordinates remain exact. All other19 callable bodies, including constructor and refresh, are byte-identical. Layout builder49 to53 remains below80. Exact Sorcery/Living Armor renewal: Thin lifetime/blue identity/innate ability presentation routing to focused presentation owners; no gameplay computation added to UI. Physical span 534\u2192529; unchanged limits/coverage.",
+      "deferral": "Owner: UI developer. Interface/acceptance: next substantive chooser change extracts cohesive layout/readback assembly into the existing focused Order presentation boundary; preserve receiving-window lifetime, redraw invalidation, disabled controls, target selection and native-resolution layout. This bounded four-line text correction is not permission for further hotspot growth. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-VANGUARD-FOOTER-SAVED-PROFILE-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/battle/BattleHeroActionWindow.cpp::void BattleHeroActionWindow::refresh()#1": {
       "lines": 202,
@@ -19795,14 +19822,16 @@
       "sha256": "8c25eadd8c6a8121203804b58c842fb8393e27c17824b4e642edc85f2ca34456"
     },
     "client/battle/BattleStacksController.cpp": {
-      "kind": "legacy",
-      "lines": 1225,
+      "kind": "exception",
+      "lines": 1215,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1236 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Independently reviewed Frozen presentation extraction and prism removal lowers this exact baseline; prior structural obligations remain. New cue ledger and shared icon/tooltip live in focused components; rendered and audio acceptance remain separate.",
-      "review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
+      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1236 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Independently reviewed Frozen presentation extraction and prism removal lowers this exact baseline; prior structural obligations remain. New cue ledger and shared icon/tooltip live in focused components; rendered and audio acceptance remain separate. Exact Sorcery/Living Armor renewal: Thin lifetime/blue identity/innate ability presentation routing to focused presentation owners; no gameplay computation added to UI. Physical span 1225\u21921215; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-physical-frozen-presentation-source-only",
-      "sha256": "0cd5133f34038e28d5b4dba558f3cef90c7a05d7b7919658e3ce1aa0579ccc0c",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "sha256": "6c08618ab7e2e8041a9eb67a06b9ca744f628072cc0231bc20c60b2717585ce0",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "previous_review": "IR-FROZEN-PRESENTATION-APPLICATION-EDGE-20261022",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "client/battle/BattleStacksController.cpp::void BattleStacksController::stackAttacking( const StackAttackInfo & info )#1": {
       "kind": "legacy",
@@ -19880,11 +19909,14 @@
       "sha256": "3e3f79e81670146348e1a8d972d123197d3b6045d8185d25ab77ec2ef4be94aa"
     },
     "client/battle/StackInfoBasicPanel.cpp": {
-      "lines": 1220,
-      "sha256": "7d8e3314add5e68a74f5c1521474f663a71680d070d17f917c45ffd0bd61697f",
-      "kind": "legacy",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Focused spell-status priority helper owns new Chosen behavior; existing initializer receives only bounded badge/readback routing."
+      "lines": 1228,
+      "sha256": "72d7f23ddbd5a9286e106d92a8b9a775fb21322df23a048ae2318a47b5646936",
+      "kind": "exception",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Focused spell-status priority helper owns new Chosen behavior; existing initializer receives only bounded badge/readback routing. Exact Sorcery/Living Armor renewal: Thin lifetime/blue identity/innate ability presentation routing to focused presentation owners; no gameplay computation added to UI. Physical span 1220\u21921228; unchanged limits/coverage.",
+      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "client/battle/StackInfoBasicPanel.cpp::newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus( const CStack * stack, const CPlayerBattleCallback * battleCallback, const newHorizonsBattleStatus::BattleLuckReadback & luckReadback)#1": {
       "kind": "legacy",
@@ -19896,12 +19928,14 @@
       "sha256": "7ac18b7dfadb2b69134863aee03a1adebd1c2920858af6eda500dfdca4a53133"
     },
     "client/battle/StackInfoBasicPanel.cpp::void StackInfoBasicPanel::initializeData(const CStack * stack)#1": {
-      "lines": 518,
-      "sha256": "89f66a11ae3ab038be847e0ae78fe9923c5779738ae7bde35a80bd662d21436a",
+      "lines": 524,
+      "sha256": "fb54f100aff5b545db0d5d0545167d997bdbe34c40fe906ce5e9e73e7eab3143",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Focused spell-status priority helper owns new Chosen behavior; existing initializer receives only bounded badge/readback routing.",
-      "deferral": "Owner: UI developer. Interface/acceptance: Extract status description and badge composition from initializeData behind an immutable status snapshot; preserve status priority, layout, cache invalidation and rendered refresh transitions."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Focused spell-status priority helper owns new Chosen behavior; existing initializer receives only bounded badge/readback routing. Exact Sorcery/Living Armor renewal: Thin lifetime/blue identity/innate ability presentation routing to focused presentation owners; no gameplay computation added to UI. Physical span 518\u2192524; unchanged limits/coverage.",
+      "deferral": "Owner: UI developer. Interface/acceptance: Extract status description and badge composition from initializeData behind an immutable status snapshot; preserve status priority, layout, cache invalidation and rendered refresh transitions. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "client/globalLobby/GlobalLobbyClient.cpp": {
       "kind": "legacy",
@@ -20631,11 +20665,14 @@
       "sha256": "079a1ca7c587fa5bda678bc8aeb36fb518e8a0cd0653728a6dd9c4d8cb44e695"
     },
     "client/windows/CCreatureWindow.cpp": {
-      "lines": 1694,
-      "sha256": "6b4bd4b99c61c4d5ce54b07869adc202d613f75224daae4e2fe1c4aa88816490",
-      "kind": "legacy",
-      "review": "IR-ROYAL-STANDARD-ENTITLEMENT-SOURCE-20261026",
-      "rationale": "Extracted read-only Order indicator builder shrinks oversized creature window. Same-length namespace qualification of extracted Order indicator lookup only."
+      "lines": 1695,
+      "sha256": "ea54ddb747626b2f110b3df52892fee35123ef1b792305281da78bb2c4f8a70b",
+      "kind": "exception",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Extracted read-only Order indicator builder shrinks oversized creature window. Same-length namespace qualification of extracted Order indicator lookup only. Exact Sorcery/Living Armor renewal: Thin lifetime/blue identity/innate ability presentation routing to focused presentation owners; no gameplay computation added to UI. Physical span 1694\u21921695; unchanged limits/coverage.",
+      "previous_review": "IR-ROYAL-STANDARD-ENTITLEMENT-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "client/windows/CCreatureWindow.cpp::CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset) : CWindowSection(owner, ImagePath::builtin(\"stackWindow/spell-effects\"), yOffset)#1": {
       "kind": "exception",
@@ -20676,13 +20713,16 @@
       "sha256": "6694036689b898c7b4ad41362b01c898805263799c7d84f23bd899966e4f7ff0"
     },
     "client/windows/CCreatureWindow.cpp::void CStackWindow::initBonusesList()#1": {
-      "kind": "legacy",
-      "lines": 182,
+      "kind": "exception",
+      "lines": 183,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 182 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 182 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Thin lifetime/blue identity/innate ability presentation routing to focused presentation owners; no gameplay computation added to UI. Physical span 182\u2192183; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "a69df94a6958962e739131b93a9f2edfaf2044e3837e7bbdeae3fc169e4bc225"
+      "sha256": "bee5b2aa9d90e93fda1166039158cf15a8789b523a92229f9bdbcbf867ce3fed",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "client/windows/CCreatureWindow.cpp::void CStackWindow::initSections()#1": {
       "kind": "exception",
@@ -21843,12 +21883,14 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "lines": 1372,
-      "sha256": "7497080fedb5b694edf0c186eed0a48c4ebfba7ef829bb72cd6582ccc764701f",
+      "lines": 1377,
+      "sha256": "88199aec5b29597dd041218b9ad4211f56c33286be578cd07f8fd915b80e2b18",
       "kind": "exception",
-      "review": "IR-NECROMANCY-MECHANICAL-REGISTRATION-SOURCE-20261026",
-      "rationale": "Mechanical registration of focused Necromancy owners or append-only captured-policy serialization feature; no gameplay implementation in the registry.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Keep registry coherent; future manifest decomposition requires exact target-membership checks and Linux/Windows build parity. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine/UI owners retain coherent registries. Future decomposition must preserve exact target membership, append-only feature values and platform build parity."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Mechanical registration of focused Necromancy owners or append-only captured-policy serialization feature; no gameplay implementation in the registry. Exact Sorcery/Living Armor renewal: Explicit registration of reviewed shared source/header owners only. Physical span 1372\u21921377; unchanged limits/coverage.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Keep registry coherent; future manifest decomposition requires exact target-membership checks and Linux/Windows build parity. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine/UI owners retain coherent registries. Future decomposition must preserve exact target membership, append-only feature values and platform build parity. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-MECHANICAL-REGISTRATION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21889,25 +21931,28 @@
       "sha256": "ba96b2f924cca01aac45fd7deaaa102a534776f01ae5bed193acd8c6a504b357"
     },
     "lib/CStack.h::CStack::void serialize(Handler & h)#1": {
-      "kind": "legacy",
-      "lines": 161,
+      "kind": "exception",
+      "lines": 162,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 161 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 161 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 161\u2192162; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f3a10440830654c8171dac494575bc4fbc82407130f7ee143d4c4366144e4b41"
+      "sha256": "28d3ead3526f40071f7bee82600203c0c90e76d7c065f77c9f30d3087092e933",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "lib/GameSettings.h::GameSettings::void serialize(Handler & h)#1": {
       "kind": "exception",
-      "lines": 135,
+      "lines": 137,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 135\u2192137; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "0b8971821d6dceffe0716315420a2cb182982b1e43131c8dc856ffcf23f7cda4",
+      "sha256": "9ddf023e828f73b7e5132ed4c39d82ec1d51d6cfffa747556582c7c4b2b2ad1a",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/LogicalExpression.h": {
       "kind": "legacy",
@@ -21946,11 +21991,14 @@
       "sha256": "073826fa014c7297f24e13221bd266a340709307fcbea0b49db3be9de946c500"
     },
     "lib/battle/BattleInfo.cpp": {
-      "lines": 2742,
-      "sha256": "f525d968d1be4aeb97bd3355b2373b896ad964b108a61255d68dfa0f41a7cb5d",
-      "kind": "legacy",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Extracted Order-state/context validation shrinks existing battle-state owner."
+      "lines": 2743,
+      "sha256": "6cb6a8fde6eeee78231c6abdbf82a74dbbfa5d0a9b51b3e96bb5b7f10334715b",
+      "kind": "exception",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Extracted Order-state/context validation shrinks existing battle-state owner. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 2742\u21922743; unchanged limits/coverage.",
+      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "lib/battle/BattleInfo.cpp::std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const int3 & tile, TerrainId terrain, const BattleField & battlefieldType, BattleSideArray<const CArmedInstance *> armies, BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance * town)#1": {
       "kind": "legacy",
@@ -21991,29 +22039,33 @@
       "deferral": "Further extraction requires preserving preparse ignore, load, root invalidation, Protect, damage, clone and completion order. No future growth or runtime acceptance."
     },
     "lib/battle/BattleInfo.h": {
-      "lines": 1532,
-      "sha256": "a4f4b3026fa8846e9b5003e5b3ed3c12e470f5611a54d7865ad150f455e3621d",
+      "lines": 1541,
+      "sha256": "b6814936e02d488b7b5dc787b598247c68a7cca86df60694b3414d485f1f0d72",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Existing serialization template receives fail-closed revised policy and captured specialty gates; no new runtime state ownership.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Existing serialization template receives fail-closed revised policy and captured specialty gates; no new runtime state ownership. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 1532\u21921541; unchanged limits/coverage.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/BattleInfo.h::BattleInfo::void serialize(Handler &h)#1": {
-      "lines": 717,
-      "sha256": "a53f0dbecc4b6628f62d07887c2be457d9e2835365fd6bd427661290bd24c33f",
+      "lines": 720,
+      "sha256": "e2dc271968b04b4bb6bdb374da41d1f68ea9416341929cbf2073510b13a6ef32",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Existing serialization template receives fail-closed revised policy and captured specialty gates; no new runtime state ownership.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Existing serialization template receives fail-closed revised policy and captured specialty gates; no new runtime state ownership. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 717\u2192720; unchanged limits/coverage.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/CBattleInfoCallback.cpp": {
-      "lines": 5562,
-      "sha256": "44d0d61417c251fc3013116c5aef8062143d7fdfb14623cbc86e9f84e982617f",
+      "lines": 5564,
+      "sha256": "26674a3e6b93b3836136df97ad5b3f1d8b11ef5026d704f49590a8d683ec1923",
       "kind": "exception",
-      "review": "IR-NECROMANCY-V2-GAMEPLAY-BOUNDED-SOURCE-20261027",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Bounded amendment: Shared authoritative attack Luck includes captured flat Skeleton-family Luck after ordinary modifiers, preserving cap and no-Luck precedence.",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence.",
-      "previous_review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Bounded amendment: Shared authoritative attack Luck includes captured flat Skeleton-family Luck after ordinary modifiers, preserving cap and no-Luck precedence. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 5562\u21925564; unchanged limits/coverage.",
+      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-GAMEPLAY-BOUNDED-SOURCE-20261027",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "review_scope": "exact-bounded-source-review-no-native-or-rendered-acceptance"
     },
@@ -22044,12 +22096,14 @@
       "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract canonical Order damage payload stage plus shared cost-stage composition from callback; preserve all per-hit cause/packet/RNG ordering, physical exclusions, stasis, side ownership, rejected actions and exact cost-breakdown parity."
     },
     "lib/battle/CBattleInfoCallback.cpp::DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) const#1": {
-      "lines": 455,
-      "sha256": "78a984537be3936ede17480c10626c657f7854ff2f2725c888430b14bf96c0e8",
+      "lines": 456,
+      "sha256": "425d60aa224f8d126fcfdb4e78c1dab0bfd0be6ecbb36d52bc83923789d7ab78",
       "kind": "exception",
-      "review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy.",
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract canonical Order damage payload stage plus shared cost-stage composition from callback; preserve all per-hit cause/packet/RNG ordering, physical exclusions, stasis, side ownership, rejected actions and exact cost-breakdown parity. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 455\u2192456; unchanged limits/coverage.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract canonical Order damage payload stage plus shared cost-stage composition from callback; preserve all per-hit cause/packet/RNG ordering, physical exclusions, stasis, side ownership, rejected actions and exact cost-breakdown parity. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/battle/CBattleInfoCallback.cpp::ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const#1": {
       "kind": "legacy",
@@ -22133,25 +22187,28 @@
       "deferral": "No future growth permission; actual recipient sequence/shared replay/common absolute horizon and native source/alias intervals remain required."
     },
     "lib/battle/UnitStateValueFields.h::battle::UnitStateValueFields::static auto references(State & unit) noexcept#1": {
-      "kind": "review",
-      "lines": 85,
-      "sha256": "9070a2df31e340c554aa60f108274d8d78e15c4a8ab5d4e28328cc6d1dc31715",
+      "kind": "exception",
+      "lines": 86,
+      "sha256": "15399be22a9704b36326f7e886119e2701bfa07d95964346fcb90985ae6a82aa",
       "owner": "gameplay_engineer",
-      "review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
-      "rationale": "One explicit ordered81-field value-reference inventory shared by legacy copy and prepared value exchange; not new gameplay logic or a second duplicated field list. Coherent mechanical inventory85 is below150 and independently reviewed. No future body growth or whole-world transaction approval.",
-      "review_scope": "exact-85-line-single-ordered-value-reference-inventory"
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "One explicit ordered81-field value-reference inventory shared by legacy copy and prepared value exchange; not new gameplay logic or a second duplicated field list. Coherent mechanical inventory85 is below150 and independently reviewed. No future body growth or whole-world transaction approval. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 85\u219286; unchanged limits/coverage.",
+      "review_scope": "exact-85-line-single-ordered-value-reference-inventory",
+      "previous_review": "IR-STAGE10-F08-VALUE-V2-40fd7c2a-20261016",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "lib/battle/CUnitState.cpp": {
       "kind": "exception",
-      "lines": 2865,
-      "sha256": "855a4fa27dbf0e884f2b14fa6cba820893db53a9e90318f75fbb6d8ff361c873",
+      "lines": 2870,
+      "sha256": "c08078883da82dac34f07b479e664c4f0b6aabc634d818867f351989240d1a75",
       "owner": "gameplay_engineer",
-      "review": "IR-NECROMANCY-V2-GAMEPLAY-BOUNDED-SOURCE-20261027",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Bounded amendment: Shared unit attack-count query admits captured Tomb Guard double strike through existing attack-count semantics; historical and retaliation paths retain their owners.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Bounded amendment: Shared unit attack-count query admits captured Tomb Guard double strike through existing attack-count semantics; historical and retaliation paths retain their owners. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 2865\u21922870; unchanged limits/coverage.",
       "review_scope": "exact-bounded-source-review-no-native-or-rendered-acceptance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Existing gameplay engineer ownership of state/lifecycle debt remains. Further substantive expansion requires bounded cohesive extraction; this reduction is not permission to regrow the file. Preserve borrowed providers, type-transition fallback, state-only assignment and no serialized dispatch data; runtime equivalence and performance acceptance remain separate. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence.",
-      "previous_review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026"
+      "deferral": "Existing gameplay engineer ownership of state/lifecycle debt remains. Further substantive expansion requires bounded cohesive extraction; this reduction is not permission to regrow the file. Preserve borrowed providers, type-transition fallback, state-only assignment and no serialized dispatch data; runtime equivalence and performance acceptance remain separate. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-GAMEPLAY-BOUNDED-SOURCE-20261027"
     },
     "lib/battle/CUnitState.cpp::battle::HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power, const bool trackCasualtyProvenance)#1": {
       "kind": "legacy",
@@ -22172,34 +22229,40 @@
       "sha256": "f40696c98392a8b0f46d19cdb319d66ece9cf4467e622fdc84920114b8c780d9"
     },
     "lib/battle/CUnitStateLifecycle.cpp::battle::void CUnitState::reset()#1": {
-      "kind": "review",
-      "lines": 85,
-      "sha256": "ca5b17cee35e6f32c7c532cd789020273f672165a4df2b4fefa0e3064869bc8c",
+      "kind": "exception",
+      "lines": 86,
+      "sha256": "a6c68ee6d08e69abd4688dbda03ab9423db3c3d267e7b8f1854852075a4341f2",
       "owner": "gameplay_engineer",
-      "review": "IR-STAGE12-CURRENT614-LIFECYCLE-SOURCE-20261016",
-      "review_status": "APPROVED_EXACT_SOURCE_SCOPE",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "review_scope": "exact-unchanged-ordered-reset-body-in-focused-lifecycle-owner",
-      "rationale": "Exact existing 85-line ordered reset of one state representation and its ammunition/health/form receipts, moved unchanged into the cohesive lifecycle owner. Review trigger80 considered: artificial family forwarding helpers would expand synchronization risk without separating an independent responsibility in this exact move. Below150 ceiling; no compression, inherited file allowance, future body growth or semantic certification."
+      "rationale": "Exact existing 85-line ordered reset of one state representation and its ammunition/health/form receipts, moved unchanged into the cohesive lifecycle owner. Review trigger80 considered: artificial family forwarding helpers would expand synchronization risk without separating an independent responsibility in this exact move. Below150 ceiling; no compression, inherited file allowance, future body growth or semantic certification. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 85\u219286; unchanged limits/coverage.",
+      "previous_review": "IR-STAGE12-CURRENT614-LIFECYCLE-SOURCE-20261016",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "lib/battle/CUnitState.cpp::battle::void CUnitState::serializeJson(JsonSerializeFormat & handler)#1": {
-      "kind": "legacy",
-      "lines": 169,
+      "kind": "exception",
+      "lines": 172,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 169 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 169 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 169\u2192172; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4fcbac9527f2abae0804deda8baee6b45201b027681d1b5719196fda45ef0de3"
+      "sha256": "ce4088464531f40dea010fe411dc3683ff1cc2d047a9d735d197de6a3e036191",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "lib/battle/CUnitState.h": {
       "kind": "exception",
-      "lines": 595,
-      "sha256": "9d696d84ee5ec00b14200e81274df11fd1da02a552b310efc2d1ff981c63363c",
+      "lines": 597,
+      "sha256": "462fbfd1a75dab0f54922d83fb809e96bd7bed677ddb4a48ed3c595539dcdf16",
       "owner": "gameplay_engineer",
-      "review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
-      "rationale": "Single passive query declaration routes to the focused captured unit-environment owner; no new inline implementation or serialized unit state.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Single passive query declaration routes to the focused captured unit-environment owner; no new inline implementation or serialized unit state. Exact Sorcery/Living Armor renewal: Shared magical-damage routing and timed-summon scalar copy/reset/JSON field integration retain current simulation lifecycle ownership. Physical span 595\u2192597; unchanged limits/coverage.",
       "review_scope": "exact-acquire-only-private-provider-dispatch-interface",
-      "review_status": "independently-reviewed-source-scope",
-      "deferral": "Engine engineer owns cohesive detached provider/binding header extraction before further substantive header expansion. This exact592-line interface allowance retains DLL linkage, existing borrowed lifetime/assignment and save-format contracts. Added process-local pointers change native object layout: rebuild all consumers before any playable delivery; compilation/source review is not runtime or performance acceptance. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: retain cohesive unit-environment ownership; further substantive header growth requires focused query-interface extraction preserving detached-provider and historical behavior."
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Engine engineer owns cohesive detached provider/binding header extraction before further substantive header expansion. This exact592-line interface allowance retains DLL linkage, existing borrowed lifetime/assignment and save-format contracts. Added process-local pointers change native object layout: rebuild all consumers before any playable delivery; compilation/source review is not runtime or performance acceptance. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: retain cohesive unit-environment ownership; further substantive header growth requires focused query-interface extraction preserving detached-provider and historical behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026"
     },
     "lib/battle/HeroActionAllowanceState.h": {
       "kind": "legacy",
@@ -22296,13 +22359,16 @@
       "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/bonuses/Bonus.h::Bonus::void serialize(Handler &h)#1": {
-      "kind": "legacy",
-      "lines": 150,
+      "kind": "exception",
+      "lines": 152,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 150 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 150 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 150\u2192152; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "5b992ac6bea1c82efca209e088eef005a672e2e55a57c895291ae1fcbca50012"
+      "sha256": "9a719e0cc8737fc7450c31ed866fd1321f20e3c3d806eacc3e6daba5422dd8df",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "lib/bonuses/BonusCustomTypes.cpp::EntityTypeEnum bonusSubtypeEntityType(BonusType type)#1": {
       "kind": "legacy",
@@ -22652,15 +22718,15 @@
     },
     "lib/gameState/CGameState.cpp": {
       "kind": "exception",
-      "lines": 2231,
+      "lines": 2233,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 2231\u21922233; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "6d52e93fa6e08eb7cc71e3b1940572ec9be529a74a47a053dcc6a517363b3060",
+      "sha256": "592ba420399cb7aace3bbfe8d68356addff70a528fc025ce667ad7838a4235c5",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact2227-line shrinking bound only. Before future substantive growth, extract the next touched coherent captured-policy/preflight family with prefix-rejection and historical-absence coverage. Existing unrelated oversized routines receive no growth credit. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact2227-line shrinking bound only. Before future substantive growth, extract the next touched coherent captured-policy/preflight family with prefix-rejection and historical-absence coverage. Existing unrelated oversized routines receive no growth credit. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/gameState/CGameState.cpp::bool CGameState::checkForVictory(const PlayerColor & player, const EventCondition & condition) const#1": {
       "kind": "legacy",
@@ -22699,23 +22765,23 @@
       "sha256": "d0c1c6cc9d2112f2efbad2e25274cbccc51977d106fa726abcfaa7442ffd27ea"
     },
     "lib/gameState/CGameState.h": {
-      "lines": 653,
-      "sha256": "43be126ec12ccb03c3397734a526c005ad10ac39578811f265c0c27c09e85e1f",
+      "lines": 655,
+      "sha256": "72e94ee1f1696a167c761213f749e520435c7583e1d55749e738f2cec8d4ccc6",
       "kind": "exception",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract captured-rules serialization preflight with explicit feature flags; protect world current/historical roundtrips and reject unsupported loss without default substitution. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 653\u2192655; unchanged limits/coverage.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract captured-rules serialization preflight with explicit feature flags; protect world current/historical roundtrips and reject unsupported loss without default substitution. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/gameState/CGameState.h::CGameState::void serialize(Handler &h)#1": {
-      "lines": 303,
-      "sha256": "95a7b63e0fce7c8c77301b821305def3f19b4da471236ca32434b027035a6fc0",
+      "lines": 305,
+      "sha256": "06e58d4b19edd13eecf907c3a99001449b02941df090b643f70d1e4cf0ab292c",
       "kind": "exception",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract captured-rules serialization preflight with explicit feature flags; protect world current/historical roundtrips and reject unsupported loss without default substitution. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 303\u2192305; unchanged limits/coverage.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract captured-rules serialization preflight with explicit feature flags; protect world current/historical roundtrips and reject unsupported loss without default substitution. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/gameState/CGameStateCampaign.cpp": {
@@ -23091,27 +23157,27 @@
     },
     "lib/mapObjects/CGHeroInstance.h": {
       "kind": "exception",
-      "lines": 1192,
+      "lines": 1193,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 1192\u21921193; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "7d86368b4b00df85f7c2dbcecdbf2d6ee4824fc9f4f622b57962b30735842872",
+      "sha256": "3aa3371f5d502d8a4cecd58852d41b007dcfbc776f72f451dd321ffa39f692fe",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact getter only. Further executable header growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity; no general growth allowance. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact getter only. Further executable header growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity; no general growth allowance. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/mapObjects/CGHeroInstance.h::CGHeroInstance::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 467,
+      "lines": 468,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 467\u2192468; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "d19fa0e4774a678da9116779476792ef75257a4e502a74051c35be7d5c15c9f3",
+      "sha256": "44c6f95dc6411b3b37225159bfcff258587e85c6af60351179cef7b7859aeb23",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact header/serializer scope only. Preserve original field order and historical captured boundary; further executable growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity. No general header growth allowance. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact header/serializer scope only. Preserve original field order and historical captured boundary; further executable growth requires cohesive serializer/creation validation extraction with prefix, intent and inventory parity. No general header growth allowance. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/mapObjects/CGPandoraBox.cpp::void CGPandoraBox::grantRewardWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * h, int index, bool markAsVisit) const#1": {
       "kind": "legacy",
@@ -23270,13 +23336,13 @@
       "kind": "exception",
       "lines": 1645,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 1645\u21921645; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "32aa40761100e6b5f2a4a323a09c0475622ce3141807455fa308291db9b83f3d",
+      "sha256": "0042a92267d9d86997843c608da4a7723596224adb82602f19ada9cb5fa94547",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/mapping/CMap.cpp::CMap::checkForObjectives()::[&](EventCondition cond) -> EventExpression::Variant#1": {
       "kind": "legacy",
@@ -23298,27 +23364,27 @@
     },
     "lib/mapping/CMap.h": {
       "kind": "exception",
-      "lines": 511,
+      "lines": 512,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 511\u2192512; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "3333a7027917ff0c63a623efb1050cedad847970305afe5619dfc3899eaf6a7d",
+      "sha256": "ea673d48b63851138742382d9c5ec51fc470d6fd1c23389998de35f9968792c9",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/mapping/CMap.h::CMap::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 131,
+      "lines": 132,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 131\u2192132; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "94a0c66ed4748b624ea382f4b7e21013ed31324c5cb69686845580dfa8e069b3",
+      "sha256": "2dbec83c2b4bc067eab2bc29dd4cfaf8755382f1324c08e51f36c038a1f2484b",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/mapping/CMapOperation.cpp": {
       "kind": "legacy",
@@ -23595,13 +23661,13 @@
       "kind": "exception",
       "lines": 1359,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 1359\u21921359; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "a5974bc07ac1824cf523aa8ab49cda919a7e265c494b209e29dd28c3444f042c",
+      "sha256": "0534392eb95232afacbcb1d2749967470d29b9cee923aaec19fc7a8add37886b",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched captured-policy preflight traversal into a focused non-writing owner accepting the existing world/map/lobby context, preserving enclosing-prefix and historical-absence validation before further wrapper growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/networkPacks/PacksForClient.h": {
       "kind": "legacy",
@@ -23614,14 +23680,15 @@
     },
     "lib/networkPacks/PacksForClientBattle.h": {
       "kind": "exception",
-      "lines": 2253,
-      "sha256": "e110703660691fe80dc653874a73ac8728cd292628740af69f350f4e58428d23",
+      "lines": 2256,
+      "sha256": "928f7a41182dd1e8efbbcff07f4a3877d763647e96911e9c21be46efbe32aed6",
       "owner": "engine_engineer",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "rationale": "BattleResultsApplied uses canonical result writer preflight before prefix, retaining Training and base-Necromancy guard. Packet wire fields unchanged, duplicated checks removed. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth.",
-      "review_status": "SOURCE_AND_METADATA_CLEAR"
+      "rationale": "BattleResultsApplied uses canonical result writer preflight before prefix, retaining Training and base-Necromancy guard. Packet wire fields unchanged, duplicated checks removed. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 2253\u21922256; unchanged limits/coverage.",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "previous_review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024"
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleAttack::void validateSerializationPrefix(Handler & h)#1": {
       "kind": "review",
@@ -23652,38 +23719,39 @@
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleStart::void serialize(Handler & h)#1": {
       "kind": "exception",
-      "lines": 179,
+      "lines": 182,
       "owner": "engine_engineer",
-      "rationale": "Three entry packet pre-prefix side validation lines only; protected actual receipt layout remains in existing Side owner. File2276/serialize179 exact bounds.",
-      "review": "recovery-verdish-current-rebase-source-v1",
+      "rationale": "Three entry packet pre-prefix side validation lines only; protected actual receipt layout remains in existing Side owner. File2276/serialize179 exact bounds. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 179\u2192182; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "477a402072df043daba73146cafeaac51c491c4e39461e0d5a20f85781ad1085",
-      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth."
+      "sha256": "a6e849adbeb446fc5d9777589ca6815abe8c89eabf1613ba1e7692cc755bc216",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "recovery-verdish-current-rebase-source-v1"
     },
     "lib/networkPacks/PacksForLobby.h": {
       "kind": "exception",
-      "lines": 574,
+      "lines": 576,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 574\u2192576; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "938d53b07be7a7964c730f4f9ae41764fbdfd665f473a2b23eed3d9203f85e07",
+      "sha256": "aac1ed78208119db91f3073cbf9564b16b167bc5cc9acd2d6e40619c76951381",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/networkPacks/PacksForLobby.h::LobbyStartGame::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 91,
+      "lines": 93,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
+      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 91\u219293; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "4bfd2de706d7bed23ba3c052e522ef808b821328a1b67671806bf6cb54e946cd",
+      "sha256": "5f4ac7043d51da60ce03466be6bcc1dcca712e120642187710134e8e1fcf3b52",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests.",
-      "previous_review": "IR-NECROMANCY-CAPTURE-CAMPAIGN-SOURCE-20261026"
+      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/networkPacks/PacksForServer.h": {
       "kind": "legacy",
@@ -23695,13 +23763,16 @@
       "sha256": "f2dc9cf8e39cbc9e0057a2fa1c52cc1674640d4b127c4a655eee1a2fa330c3e4"
     },
     "lib/networkPacks/SetStackEffect.h::SetStackEffect::void serialize(Handler & h)#1": {
-      "kind": "legacy",
-      "lines": 141,
+      "kind": "exception",
+      "lines": 144,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 141 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 141 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 141\u2192144; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "0dc7fcedd764564b19d21b4b6034b649794187b533ecf5f163d355edc5ed6457"
+      "sha256": "72800e9626ce21d6f658af56d82109061119560b3a2374bc02db8e6c066a0d31",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "lib/pathfinder/CPathfinder.cpp": {
       "kind": "legacy",
@@ -24243,13 +24314,13 @@
       "sha256": "cf553e17beb1f81fce90fee209b9fd0f3c9e6a508a4ad5b332d6709d6462fa74"
     },
     "lib/serializer/ESerializationVersion.h": {
-      "lines": 579,
-      "sha256": "9b0efa6f1923c2c6100e54ed0b52f3d6061b97d94cc5d04ce5490ebb3e675f1c",
+      "lines": 581,
+      "sha256": "07c6dfe61f4aab4573ea5321c46d339b2f4e8f7b6492a6e8fbb2ad3be83330fa",
       "kind": "exception",
-      "review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
-      "rationale": "Mechanical registration of focused Necromancy owners or append-only captured-policy serialization feature; no gameplay implementation in the registry. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Keep coherent append-only version registry; require exact value/history compatibility checks before future version changes. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine/UI owners retain coherent registries. Future decomposition must preserve exact target membership, append-only feature values and platform build parity.",
-      "previous_review": "IR-NECROMANCY-MECHANICAL-REGISTRATION-SOURCE-20261026",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Mechanical registration of focused Necromancy owners or append-only captured-policy serialization feature; no gameplay implementation in the registry. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: One append-only Sorcery/Living Armor capability identifier; published format identities retained. Physical span 579\u2192581; unchanged limits/coverage.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Keep coherent append-only version registry; require exact value/history compatibility checks before future version changes. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine/UI owners retain coherent registries. Future decomposition must preserve exact target membership, append-only feature values and platform build parity. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/serializer/JsonSerializeFormat.h": {
@@ -24343,24 +24414,27 @@
     },
     "lib/spells/CSpell.cpp": {
       "kind": "exception",
-      "lines": 817,
+      "lines": 774,
       "owner": "gameplay_engineer",
-      "rationale": "Narrow captured Boneward source stage in the legacy magical-damage branch preserves existing legacy reduction/floor order and delegates only the new intrinsic source with relative penetration to the established exact helper. Modern source gathering retains the previously reviewed addition; no old-policy behavior is substituted.",
-      "review": "IR-NECROMANCY-MIXED-CAPTURE-MDR-SOURCE-20261026",
+      "rationale": "Narrow captured Boneward source stage in the legacy magical-damage branch preserves existing legacy reduction/floor order and delegates only the new intrinsic source with relative penetration to the established exact helper. Modern source gathering retains the previously reviewed addition; no old-policy behavior is substituted. Exact Sorcery/Living Armor renewal: Focused incoming damage/revision owners replace duplicated clauses; canonical rules validator delegates captured profile validation. Physical span 817\u2192774; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "captured-individual-specialty-component-routing-and-shrinking-ratchets-only",
-      "sha256": "94a3e861a1da3737582d6afa2e7b0744957b37daff934c52adb982fac8f1c27f",
+      "sha256": "c9d0277d360e721a8d45e000a4f8485bfd9a95e0a4e8ebbd23f0aa6b102f364b",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Gameplay owner must extract a cohesive damage-component evaluation boundary before further substantive expansion of this file, preserving fixed/power separation, hero and indirect modes, saved context, modifiers and preview/AI/native agreement. Exact805-line no-growth exception only. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact mixed-capture correction grants no future growth. Gameplay engineer: before further affected expansion, extract the legacy recipient magical-reduction stage with explicit magical classification and penetration inputs; require native legacy/current rounding and floor parity tests."
+      "deferral": "Gameplay owner must extract a cohesive damage-component evaluation boundary before further substantive expansion of this file, preserving fixed/power separation, hero and indirect modes, saved context, modifiers and preview/AI/native agreement. Exact805-line no-growth exception only. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact mixed-capture correction grants no future growth. Gameplay engineer: before further affected expansion, extract the legacy recipient magical-reduction stage with explicit magical classification and penetration inputs; require native legacy/current rounding and floor parity tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-MIXED-CAPTURE-MDR-SOURCE-20261026"
     },
     "lib/spells/CSpell.cpp::int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage, int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints, int finalDamageMultiplierPercent, bool useIndependentMagicalDamageReduction, bool useFractionalMagicalDamageReduction, bool applyCasterBonuses, int perkMagicalDamageReductionBasisPoints, const std::vector<int> & independentPenetrationsPercent) const#1": {
       "kind": "exception",
-      "lines": 116,
+      "lines": 117,
       "owner": "gameplay_engineer",
-      "rationale": "Narrow captured Boneward source stage in the legacy magical-damage branch preserves existing legacy reduction/floor order and delegates only the new intrinsic source with relative penetration to the established exact helper. Modern source gathering retains the previously reviewed addition; no old-policy behavior is substituted.",
-      "review": "IR-NECROMANCY-MIXED-CAPTURE-MDR-SOURCE-20261026",
+      "rationale": "Narrow captured Boneward source stage in the legacy magical-damage branch preserves existing legacy reduction/floor order and delegates only the new intrinsic source with relative penetration to the established exact helper. Modern source gathering retains the previously reviewed addition; no old-policy behavior is substituted. Exact Sorcery/Living Armor renewal: Focused incoming damage/revision owners replace duplicated clauses; canonical rules validator delegates captured profile validation. Physical span 116\u2192117; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "0ffc0d875b62f1dae5204f267c01164cdec82b188f06fb2c85ae8107310f8483",
-      "deferral": " This exact mixed-capture correction grants no future growth. Gameplay engineer: before further affected expansion, extract the legacy recipient magical-reduction stage with explicit magical classification and penetration inputs; require native legacy/current rounding and floor parity tests."
+      "sha256": "c43b4b03d039acdf8060733a6a28bd9b2fdaa86357661dd842cf2301477f7443",
+      "deferral": " This exact mixed-capture correction grants no future growth. Gameplay engineer: before further affected expansion, extract the legacy recipient magical-reduction stage with explicit magical classification and penetration inputs; require native legacy/current rounding and floor parity tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-MIXED-CAPTURE-MDR-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/CSpellHandler.cpp": {
       "kind": "legacy",
@@ -24431,31 +24505,36 @@
       "deferral": "Owner: Gameplay engineer. Interface/acceptance: Group mechanic-specific query declarations behind cohesive query interfaces only with Lua/API/shared-library linkage parity and historical spell regression coverage."
     },
     "lib/spells/NewHorizonsMagic.cpp": {
-      "lines": 2087,
-      "sha256": "ea5896988b549b8c947520abe70fd74d06ea9b28a41ecab0dce58f09dbe0d440",
+      "lines": 2090,
+      "sha256": "49f83200fa759e6824c24982bd375ffe53be14b439f039a4401972fc32562041",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "One focused Chosen validator dispatch/include and allowed field; no substantive Chosen rules in legacy validator.",
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured spell-clause dispatch into a dedicated validator preserving accepted rows, validation errors and historical profile behavior."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "One focused Chosen validator dispatch/include and allowed field; no substantive Chosen rules in legacy validator. Exact Sorcery/Living Armor renewal: Focused incoming damage/revision owners replace duplicated clauses; canonical rules validator delegates captured profile validation. Physical span 2087\u21922090; unchanged limits/coverage.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured spell-clause dispatch into a dedicated validator preserving accepted rows, validation errors and historical profile behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/NewHorizonsMagic.cpp::newHorizonsMagic::void validateRules(const JsonNode & rules)#1": {
-      "lines": 342,
-      "sha256": "1c8ffd39de28b896bbb776d007f89503141193246ffd2b7bccc3830f8986b1fa",
+      "lines": 343,
+      "sha256": "affa2d374b9f39f2dea6266598e9cf5c7fd2720810244784f6760a7f94b9fac2",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "One focused Chosen validator dispatch/include and allowed field; no substantive Chosen rules in legacy validator.",
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured spell-clause dispatch into a dedicated validator preserving accepted rows, validation errors and historical profile behavior."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "One focused Chosen validator dispatch/include and allowed field; no substantive Chosen rules in legacy validator. Exact Sorcery/Living Armor renewal: Focused incoming damage/revision owners replace duplicated clauses; canonical rules validator delegates captured profile validation. Physical span 342\u2192343; unchanged limits/coverage.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured spell-clause dispatch into a dedicated validator preserving accepted rows, validation errors and historical profile behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "lib/spells/NewHorizonsMagic.h": {
       "kind": "exception",
       "lines": 525,
       "owner": "gameplay_engineer",
-      "rationale": "Three pure rate-query declaration lines only; existing AdventureSpellState serializer body unchanged. One-body manual inventory retained; macro/default-argument parser recoveries remain declarations.",
-      "review": "recovery-verdish-current-rebase-source-v1",
+      "rationale": "Three pure rate-query declaration lines only; existing AdventureSpellState serializer body unchanged. One-body manual inventory retained; macro/default-argument parser recoveries remain declarations. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 525\u2192525; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "c056fcfed31d378e55c8b4f0bbc0a03cfb768fe7730d24f565a933045af7670a",
-      "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Gameplay owner keeps exact522-line declaration registry bound; before substantive interface expansion, split a cohesive capability API without duplicating saved-rule identity or exposing mutable state. Preserve generic callers and conservative defaults."
+      "sha256": "9a0f4847e84f35f161607106b34060a8ac95b43c2938ac9d425d316d8e523349",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Gameplay owner keeps exact522-line declaration registry bound; before substantive interface expansion, split a cohesive capability API without duplicating saved-rule identity or exposing mutable state. Preserve generic callers and conservative defaults. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "recovery-verdish-current-rebase-source-v1"
     },
     "lib/spells/NewHorizonsRealityWarp.cpp::newHorizonsRealityWarp::PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t first, uint32_t second)#1": {
       "lines": 141,
@@ -24650,12 +24729,14 @@
       "sha256": "81986bb9f472717345601c335fa8c7fc6c028a99cce2051c8e8e5895272d6d4a"
     },
     "luascript/api/spells/Mechanics.cpp::scripting::api::void MechanicsProxy::registerMethods(MethodRegistrar & R)#1": {
-      "lines": 285,
-      "sha256": "558a1bf8b5c2621102dba614b1d2c0243be437154920d4a3fe82e4eddcebe0b9",
+      "lines": 290,
+      "sha256": "942f50c5c6bd1485ee2cc463f3cc09e55cb4ed4b63251ab58b352101194d1682",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Mechanical registrations route to focused native Chosen queries without Lua-side formula copies.",
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Keep coherent API registry; any category extraction must preserve registered names, signatures, docs and Lua5.4/LuaJIT binding behavior."
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Mechanical registrations route to focused native Chosen queries without Lua-side formula copies. Exact Sorcery/Living Armor renewal: Thin captured Focus/Slow/Living Armor queries and explicit Lua method registrations; scalar rules live with shared revision owner. Physical span 285\u2192290; unchanged limits/coverage.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Keep coherent API registry; any category extraction must preserve registered names, signatures, docs and Lua5.4/LuaJIT binding behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "mapeditor/Animation.cpp": {
       "kind": "legacy",
@@ -25111,30 +25192,37 @@
     },
     "scripts/spells/timed.lua": {
       "kind": "legacy",
-      "lines": 683,
+      "lines": 668,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 683 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 683 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Shared SorceryRevision Lua owner absorbs Slow scaling/refresh, preserving timed spell execution and ordering. Physical span 683\u2192668; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "683dfcc8e294087de5b252592d4a2bd002298547fef78d1609afa76060aaa086"
+      "sha256": "94f218fd97f2aa160b27cc06db5d1bc767d46f505b8c17d6faf83b9bf2cbebb4",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "scripts/spells/timed.lua::function Script:apply(mechanics, server, target)#1": {
       "kind": "legacy",
-      "lines": 112,
+      "lines": 109,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 112 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 112 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Shared SorceryRevision Lua owner absorbs Slow scaling/refresh, preserving timed spell execution and ordering. Physical span 112\u2192109; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "0f032a809abea503f480c50af6dcc21e644d56dc7fa19876853f87d316b373d5"
+      "sha256": "531e186b4c0d1863317cd5ae3c688125974ba5316507dd283e1540b5930a00e5",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "scripts/spells/timed.lua::function Script:convertBonuses(mechanics)#1": {
-      "kind": "legacy",
-      "lines": 169,
+      "kind": "exception",
+      "lines": 170,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 169 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 169 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Shared SorceryRevision Lua owner absorbs Slow scaling/refresh, preserving timed spell execution and ordering. Physical span 169\u2192170; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ebfd0a865aac53ac14bfbd7c4727ab6a7775551bbf4bc4f837be8af66c4e9fcc"
+      "sha256": "41dec9703556c61455cab03b6538a6939bcdab060693ba40395ec4ca1f1beb3a",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "server/CGameHandler.cpp": {
       "kind": "exception",
@@ -25514,14 +25602,15 @@
     },
     "server/battles/BattleFlowProcessor.cpp": {
       "kind": "exception",
-      "lines": 3150,
+      "lines": 3151,
       "owner": "engine_engineer",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy.",
-      "review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
+      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Exact Sorcery/Living Armor renewal: Demonic-gate magical damage dispatch now uses the common magical-damage adjustment owner exactly once; existing authoritative attack/removal transaction retained. Physical span 3150\u21923151; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "optional-hydra-identity-only-no-runtime-or-future-growth",
-      "sha256": "69a482a0871a569ff0c768374e09e771d111ff2d56ea31fb98f708bfbe65aaeb",
-      "deferral": "Engine owner must keep this exact3149-line ceiling and six-line macro-isolated route. Before any further flow growth, extract a cohesive activation/publication preflight with ordering and retirement characterization; retain restart/teardown regression and actual integration versus ordinary symbol exclusion proof. This exception does not waive existing oversized-flow debt. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence.",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "sha256": "aea678d8f516ac14fcd0d67e3d35c5996d138c4959e8fd8099a26aa3e65f39a3",
+      "deferral": "Engine owner must keep this exact3149-line ceiling and six-line macro-isolated route. Before any further flow growth, extract a cohesive activation/publication preflight with ordering and retirement characterization; retain restart/teardown regression and actual integration versus ordinary symbol exclusion proof. This exception does not waive existing oversized-flow debt. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "previous_review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026"
     },
     "server/battles/BattleFlowProcessor.cpp::bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & battle, const CStack * next)#1": {
       "kind": "legacy",
@@ -25600,11 +25689,13 @@
       "kind": "exception",
       "lines": 229,
       "owner": "engine_engineer",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy.",
-      "review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
+      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Exact Sorcery/Living Armor renewal: Demonic-gate magical damage dispatch now uses the common magical-damage adjustment owner exactly once; existing authoritative attack/removal transaction retained. Physical span 229\u2192229; unchanged limits/coverage.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6756e0a5171764ff125bddbc48f8ddd0406d92b137d53e081f2fefab734de9da",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence."
+      "sha256": "6eaadecdda30577798e88c100a74f3b2b347afe3783d9c1e6cc60760426679a5",
+      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "previous_review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "server/battles/BattleFlowProcessor.cpp::void BattleFlowProcessor::resolveDivineRetribution(const CBattleInfoCallback & battle)#1": {
       "kind": "legacy",
@@ -26400,15 +26491,16 @@
       "rationale": "Cohesive extracted skill/study reward query, preserving prior choices and adding only captured Tiva study projection. Existing engine preview primitive avoids duplicated primary cap arithmetic; no authoritative mutation. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged."
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse, LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse, RegenerationBaselineReuse::TestControl * regenerationReuse)#1": {
-      "lines": 1203,
-      "sha256": "f72eb4671a9b38ed693bc3f11c7793d9e8d3c8c5d5f1984b553486d4ba461114",
+      "lines": 1187,
+      "sha256": "6a92820121eeb82050d8c52eb420306e01207a0b4bed2ecb71f9f5d79f115e0e",
       "kind": "exception",
-      "review": "IR-COMBAT-AI-EXPECTED-VIEWS-SOURCE-20261026",
-      "rationale": "Independently source-reviewed two argument substitutions after removing redundant borrowed-float tagged variants in the focused expected-value owners. Main file5356 and attemptCastingSpell1203 are unchanged in size; aggregate affected production source shrinks37 lines. This narrow representation-only exception preserves separate canonical/positive gates, null/negation rejection, accepted-action ordering, late float reads and baseline-plus-value expression; no added responsibility or future growth credit.",
-      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "rationale": "Independently source-reviewed two argument substitutions after removing redundant borrowed-float tagged variants in the focused expected-value owners. Main file5356 and attemptCastingSpell1203 are unchanged in size; aggregate affected production source shrinks37 lines. This narrow representation-only exception preserves separate canonical/positive gates, null/negation rejection, accepted-action ordering, late float reads and baseline-plus-value expression; no added responsibility or future growth credit. Exact Sorcery/Living Armor renewal: Shared SummonEvaluation owns selected-summon placement/value; this legacy caller shrinks while ordered candidate dispatch remains here. Physical span 1203\u21921187; unchanged limits/coverage.",
+      "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
-      "owner": "ai_engineer"
+      "owner": "ai_engineer",
+      "previous_review": "IR-COMBAT-AI-EXPECTED-VIEWS-SOURCE-20261026"
     },
     "AI/BattleAI/RegenerationForecast.cpp::float projectedRegenerationValue( const Environment * environment, const std::shared_ptr<CBattleInfoCallback> & beforeCast, const std::shared_ptr<HypotheticBattle> & afterCast, const std::vector<battle::Units> & turnOrder, SpellID spell, DamageCache & damageCache, BattleSide ourSide, PlayerColor ourPlayer, float positiveEffectMultiplier, RegenerationBaselineReuse * reuse)#1": {
       "kind": "review",
@@ -26527,6 +26619,15 @@
       "previous_review": "IR-NECROMANCY-ADVANCED-AMENDMENT-SOURCE-20261026",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "review_scope": "exact-bounded-source-review-no-native-or-rendered-acceptance"
+    },
+    "luascript/api/spells/Mechanics.cpp": {
+      "lines": 529,
+      "sha256": "c40608021d4e5f3be51ab7316b3edeb1ef5717a0b735cf076bfaf3a923f5ed53",
+      "previous_review": null,
+      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "kind": "review",
+      "rationale": " Exact Sorcery/Living Armor renewal: Thin captured Focus/Slow/Living Armor queries and explicit Lua method registrations; scalar rules live with shared revision owner. Physical span 500\u2192529; unchanged limits/coverage."
     }
   }
 }

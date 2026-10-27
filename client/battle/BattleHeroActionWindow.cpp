@@ -110,11 +110,7 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 
 void BattleHeroActionWindow::createOrdersLayout()
 {
-	// Feint and Vanguard use the provisional neutral Orders control until their
-	// dedicated art is selected. Historical Orders retain their painted icons. The golden gauntlet
-	// remains the shared Orders entry button in the battle bar. The window's
-	// generated H3 dialog texture supplies the frame and parchment-like depth;
-	// do not cover it with the old flat grey rectangle.
+	// Orders share the native 64px four-state button contract.
 	labels.push_back(std::make_shared<CLabel>(320, 27, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Orders"));
 	labels.push_back(std::make_shared<CLabel>(320, 53, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "One shared hero action: Spell or Order"));
 	state = std::make_shared<CLabel>(320, 78, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
@@ -133,8 +129,7 @@ void BattleHeroActionWindow::createOrdersLayout()
 		const Rect card(left, top, orderWidth, orderHeight);
 		labels.push_back(std::make_shared<TransparentFilledRectangle>(card, ColorRGBA(35, 46, 56, 255), ColorRGBA(99, 111, 122, 255)));
 		labels.push_back(std::make_shared<CLabel>(left + orderWidth / 2, top + 10, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, display.name));
-		const bool neutralIcon = command == HeroCommand::FEINT || command == HeroCommand::VANGUARD;
-		const Point icon(left + (orderWidth - (neutralIcon ? 48 : 64)) / 2, top + 27 + (neutralIcon ? 14 : 0));
+		const Point icon(left + (orderWidth - 64) / 2, top + 27);
 		auto button = std::make_shared<CButton>(icon, AnimationPath::builtin(display.image),
 			CButton::tooltip(display.name, display.description), [this, command]
 			{

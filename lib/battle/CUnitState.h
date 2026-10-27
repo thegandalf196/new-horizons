@@ -231,6 +231,8 @@ public:
 	/// Fixed-point HP marked for Regeneration, preserving fractions across hits.
 	int64_t regenerationPendingMicroHealth;
 	bool summoned;
+	/// Remaining round boundaries for a timed summon; zero is combat-long.
+	int32_t summonRoundsRemaining = 0;
 	bool natureSummoned;
 	bool waiting;
 	bool waitedThisTurn; //"waited()" that stays true for full turn after wait - needed as UI button hackfix

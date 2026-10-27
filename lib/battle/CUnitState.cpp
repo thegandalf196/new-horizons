@@ -10,6 +10,7 @@
 #include "StdInc.h"
 
 #include "CUnitState.h"
+#include "SummonLifetime.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsDiscipline.h"
 #include "NewHorizonsCreatureAbilitySuppression.h"
@@ -2273,6 +2274,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	if(guardianSpiritHitPoints < 0 || guardianSpiritRoundsRemaining < 0
 		|| ((guardianSpiritHitPoints == 0) != (guardianSpiritRoundsRemaining == 0)))
 		throw std::runtime_error("Invalid Guardian Spirit state");
+	handler.serializeInt("summonRoundsRemaining", summonRoundsRemaining, 0);
+	if(summonRoundsRemaining < 0 || (summonRoundsRemaining > 0 && (!summoned || cloned)))
+		throw std::runtime_error("Invalid saved temporary summon lifetime");
 	handler.serializeInt("phantomInitialIntegrity", phantomInitialIntegrity, 0);
 	handler.serializeInt("phantomIntegrity", phantomIntegrity, 0);
 	handler.serializeInt("phantomRoundsRemaining", phantomRoundsRemaining, 0);
@@ -2392,6 +2396,7 @@ JsonNode CUnitState::save()
 
 void CUnitState::load(const JsonNode & data)
 {
+	summonLifetimeFromJson(data["state"]);
 	// Validate before reset/conversion, and never erase an already earned receipt
 	// when rebinding from a partial/legacy state update.
 	const bool incomingVeteranCohesion = hasVeteranCohesionState(data);

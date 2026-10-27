@@ -10,6 +10,11 @@
 #include "StdInc.h"
 
 #include "../../lib/spells/NewHorizonsSorcery.h"
+#include "../../lib/spells/NewHorizonsSorceryRevision.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/json/JsonUtils.h"
+#include "HistoricalCrusadeRules.h"
+#include "../../lib/serializer/CMemorySerializer.h"
 
 #include <limits>
 
@@ -146,4 +151,85 @@ TEST(NewHorizonsSorceryTest, SpellLockSchoolCoefficientScalesPowerBeforeFloorAnd
 	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 100001), std::invalid_argument);
 	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 10000, 0, 1001),
 		std::invalid_argument);
+}
+
+TEST(NewHorizonsSorceryRevisionTest, CapturedProfilesPassRealSchemaAndRoundTripWithoutInstalledFallback)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsMagicV3", "Sorcery revision schema"));
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	ASSERT_TRUE(newHorizonsSorceryRevision::focusRules(rules));
+	EXPECT_EQ(newHorizonsSorceryRevision::focusRules(rules)->baseBasisPoints, 500);
+	EXPECT_TRUE(newHorizonsSorceryRevision::slowAffectsSpeed(rules));
+	EXPECT_THROW(newHorizonsSorceryRevision::validateSerialization(rules, false), std::runtime_error);
+	EXPECT_NO_THROW(newHorizonsSorceryRevision::validateSerialization(rules, true));
+	CMemorySerializer memory;
+	memory.oser & rules;
+	JsonNode restored;
+	memory.iser & restored;
+	EXPECT_EQ(restored, rules);
+	EXPECT_EQ(newHorizonsSorceryRevision::focusRules(restored)->capBasisPoints, 1200);
+	// A pre-revision v3 capture stays absent through the same JSON serialization.
+	rules["spells"]["new-horizons:focusMagic"].Struct().erase("focusMagic");
+	rules["spells"]["core:slow"].Struct().erase("slow");
+	rules["spells"].Struct().erase("new-horizons:summonLivingArmor");
+	CMemorySerializer historical;
+	historical.oser & rules;
+	historical.iser & restored;
+	EXPECT_FALSE(newHorizonsSorceryRevision::focusRules(restored));
+	EXPECT_FALSE(newHorizonsSorceryRevision::slowAffectsSpeed(restored));
+	EXPECT_NO_THROW(newHorizonsSorceryRevision::validateSerialization(restored, false));
+}
+
+TEST(NewHorizonsSorceryRevisionTest, RejectsMalformedMisplacedAndUnsupportedRevisionClauses)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	for(const auto * clause : {"focusMagic", "slow", "livingArmor"})
+	{
+		auto malformed = rules;
+		malformed["spells"]["core:haste"][clause] = JsonNode(JsonMap{});
+		EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	}
+	for(const auto * identity : {"new-horizons:focusMagic", "core:slow", "new-horizons:summonLivingArmor"})
+	{
+		const char * clause = std::string(identity) == "core:slow" ? "slow"
+			: std::string(identity) == "new-horizons:focusMagic" ? "focusMagic" : "livingArmor";
+		for(const auto invalid : {JsonNode(), JsonNode(false), JsonNode(1)})
+		{
+			auto malformed = rules;
+			malformed["spells"][identity][clause] = invalid;
+			EXPECT_FALSE(JsonUtils::validate(malformed, "vcmi:newHorizonsMagicV3", "invalid Sorcery profile"));
+			EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+		}
+		auto unsupported = rules;
+		unsupported["spells"][identity][clause]["version"].Integer() = 2;
+		EXPECT_THROW(newHorizonsMagic::validateRules(unsupported), std::runtime_error);
+	}
+	auto inverted = rules;
+	inverted["spells"]["new-horizons:focusMagic"]["focusMagic"]["baseBasisPoints"].Integer() = 1201;
+	EXPECT_THROW(newHorizonsMagic::validateRules(inverted), std::runtime_error);
+}
+
+TEST(NewHorizonsSorceryRevisionTest, HistoricalCrusadeFixtureRestoresPreSorceryRosterWithoutMutatingInput)
+{
+	const JsonNode current(JsonPath::builtin("config/newHorizonsMagic"));
+	for(const int version : {2, 3})
+	{
+		const auto historical = historicalCrusadeRules(current, version);
+		ASSERT_NO_THROW(newHorizonsMagic::validateRules(historical));
+		EXPECT_FALSE(historical["spells"].Struct().contains("new-horizons:theChosen"));
+		EXPECT_FALSE(historical["spells"].Struct().contains("new-horizons:summonLivingArmor"));
+		EXPECT_FALSE(newHorizonsSorceryRevision::focusRules(historical));
+		EXPECT_FALSE(newHorizonsSorceryRevision::slowAffectsSpeed(historical));
+		EXPECT_FALSE(historical["spells"]["core:haste"].Struct().contains("ordinaryAcquisition"));
+		EXPECT_EQ(historical["spells"]["new-horizons:focusMagic"]["level"].Integer(), 3);
+		EXPECT_EQ(historical["spells"]["new-horizons:focusMagic"]["costs"].Vector()[3].Integer(), 11);
+		EXPECT_EQ(historical["spells"]["core:slow"]["level"].Integer(), 1);
+		EXPECT_EQ(historical["spells"]["core:slow"]["costs"].Vector()[3].Integer(), 3);
+		EXPECT_EQ(historical["spells"]["new-horizons:massSlow"]["level"].Integer(), 1);
+		EXPECT_EQ(historical["spells"]["new-horizons:massSlow"]["costs"].Vector()[3].Integer(), 9);
+	}
+	EXPECT_TRUE(newHorizonsSorceryRevision::focusRules(current));
+	EXPECT_TRUE(newHorizonsSorceryRevision::slowAffectsSpeed(current));
+	EXPECT_TRUE(current["spells"].Struct().contains("new-horizons:summonLivingArmor"));
 }

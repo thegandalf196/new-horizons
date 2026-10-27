@@ -283,7 +283,7 @@ public:
 	void validateNewHorizonsStartingBookSerialization(bool supported) const;
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
 	void validateNewHorizonsTravelDayEndSerialization(bool waterWalkSupported, bool flySupported) const;
-	void validateCanonicalSpellClausesSerialization(bool supported) const;
+	void validateCanonicalSpellClausesSerialization(bool supported, bool sorcerySupported = false) const;
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateTimeStopSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
@@ -299,7 +299,8 @@ public:
 			validateCombatScalarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
 		if(h.saving)
-			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 		if(h.saving) validatePlagueRulesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 		if(h.saving) validateCrisisCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		if(h.saving)
@@ -445,7 +446,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 			if(!h.saving)
 				newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules,
-					h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+					h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 			if(!h.saving)
 			{
 				newHorizonsMagic::validateTravelDayEndSerialization(magicRules,

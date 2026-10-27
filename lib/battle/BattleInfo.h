@@ -514,6 +514,12 @@ public:
 		validateOpportunistSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_OPPORTUNIST));
 	}
 
+	void validateTimedSummonSerialization() const
+	{
+		for(const auto & stack : stacks)
+			if(stack) stack->validateTimedSummonSerialization();
+	}
+
 	template <typename Handler> void validateFrozenSerialization(Handler & h) const
 	{
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN)
@@ -615,7 +621,8 @@ public:
 			throw std::runtime_error("Cannot discard captured final physical Luck policy");
 		if(h.saving)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 		validateCrisisCommandSerialization(h);
 		if(h.saving)
 			validateSeizeInitiativeSerialization(h);
@@ -648,6 +655,7 @@ public:
 		if(h.saving) validatePlagueSerialization(h);
 		if(h.saving)
 			validateOpportunistSerialization(h);
+		if(h.saving) validateTimedSummonSerialization();
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN)
@@ -1012,7 +1020,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 			if(!h.saving)
 				newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules,
-					h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+					h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 			if(!h.saving)
 				validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
 			if(!h.saving)

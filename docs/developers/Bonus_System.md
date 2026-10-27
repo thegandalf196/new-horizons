@@ -33,6 +33,21 @@ It applies once after ordinary magical defenses and outgoing damage bonuses,
 but before the per-creature damage cap. Untagged, nonmagical and nondamage spells
 (including healing) are unchanged. No Magic School supplies an implicit element.
 
+## Incoming magical vulnerability
+
+`MORE_DAMAGE_FROM_SPELL` with an omitted subtype is the explicit all-magical
+incoming increase. Its values add, with a zero lower bound on the summed
+percentage. A value of 100 doubles otherwise mitigated magical damage. This
+applies once to direct spells, magical abilities and magical creature attacks;
+physical damage is excluded. The creature-attack stage reapplies the ordinary
+damage cap and updates the casualty estimate after amplification.
+
+An explicit spell-ID subtype retains its historical signed formula and earlier
+ordering. It is not included in the all-magical sum. The omitted-subtype modifier
+does not introduce a general negative magical-resistance mechanism. Use
+`PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS` for physical-only intrinsic resistance;
+legacy `GENERAL_DAMAGE_REDUCTION` selectors are not interchangeable with it.
+
 ## Canonical builtin identifiers
 
 Builtin bonus identifiers come from `BONUS_LIST` and are initialized before

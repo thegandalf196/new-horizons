@@ -78,6 +78,7 @@ set(battleAI_SRCS
 		HypotheticLifeDrainObservation.cpp
 		HypotheticStrikeProjection.cpp
 		HypotheticSpellServer.cpp
+		SummonEvaluation.cpp
 		SpellTargetsEvaluator.cpp
 		TacticsHandler.cpp
 		ThreatMap.cpp
@@ -150,6 +151,7 @@ set(battleAI_HEADERS
 		HypotheticLifecycleTimingScope.h
 		HypotheticBattle.h
 		HypotheticBattleTypes.h
+		SummonEvaluation.h
 		SpellTargetsEvaluator.h
 		TacticsHandler.h
 		ThreatMap.h

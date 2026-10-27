@@ -1,0 +1,51 @@
+{
+	"summonLivingArmor": {
+		"name": "Summon Living Armor",
+		"type": "combat",
+		"school": {
+			"new-horizons:sorcery": true
+		},
+		"level": 1,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "LOCATION",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:67",
+			"iconScroll": "SPELLSCR.def:0:67",
+			"iconScenarioBonus": "SPELLBON.def:0:67",
+			"iconEffect": "SPELLINT.def:0:68",
+			"iconImmune": "SPELLINT.def:0:68"
+		},
+		"animation": {
+			"hit": [
+				"C18SPW0"
+			]
+		},
+		"sounds": {
+			"cast": "SUMNELM"
+		},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Choose a legal empty hex to summon Living Armor with 40 + Spell Power total HP. Sorcery rank strengthens the Spell Power term. Each cast creates an independent construct for 3 rounds, including this round. It has 75% physical damage reduction and takes double magical damage. The final creature starts wounded when necessary. Its blue appearance is visual only. Eligible duration extensions apply; Time Stop pauses its remaining lifetime. It disappears after combat and cannot become permanent troops.",
+				"cost": 5,
+				"power": 0,
+				"battleEffects": {
+					"summonLivingArmor": {
+						"type": "core:timedSummon",
+						"id": "new-horizons:livingArmor"
+					}
+				}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {
+			"indifferent": true
+		},
+		"targetCondition": {}
+	}
+}

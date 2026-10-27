@@ -29,6 +29,7 @@ template <typename Handler, typename FrozenFeedback>
 void validateForEnvelope(const UnitChanges & change, Handler & h,
 	const FrozenFeedback & validateFrozenFeedback)
 {
+	change.validateTimedSummonSerialization(h);
 	change.validateOverwatchSerialization(h);
 	change.validateVeteranCohesionSerialization(h);
 	change.validateTrainingSerialization(h);

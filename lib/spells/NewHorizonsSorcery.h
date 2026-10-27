@@ -38,7 +38,7 @@ inline constexpr const char * FOCUS_MAGIC_TRIGGER = "core:focusMagic";
 inline constexpr const char * ARCANE_BREACH_TRIGGER = "core:arcaneBreach";
 inline constexpr const char * ARCANE_BALLISTICS_PERK = "new-horizons:sorceryMagic.countermage";
 
-constexpr int FOCUS_MAGIC_MANA = 11;
+constexpr int FOCUS_MAGIC_MANA = 4;
 constexpr int FOCUS_MAGIC_DURATION_ROUNDS = 3;
 constexpr int ARCANE_BREACH_DURATION_ROUNDS = 2;
 constexpr int ARCANE_BREACH_MAX_MARKS = 3;

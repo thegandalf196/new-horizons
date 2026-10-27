@@ -50,6 +50,7 @@ void CUnitState::reset()
 	noQuarterMoraleActivationsRemaining = 0;
 	capacityRegenerationRemainderTenths = 0;
 	summoned = false;
+	summonRoundsRemaining = 0;
 	natureSummoned = false;
 	waiting = false;
 	waitedThisTurn = false;
@@ -159,6 +160,10 @@ void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoratio
 		}
 	}
 
+	if(!isFirstRound && summonRoundsRemaining > 0 && !isTimeStopped()
+		&& --summonRoundsRemaining == 0)
+		makeGhost();
+
 	if(!isFirstRound && phantomInitialIntegrity > 0 && phantomIntegrity > 0
 		&& phantomRoundsRemaining > 0 && !isTimeStopped())
 	{
@@ -222,6 +227,7 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 
 void CUnitState::makeGhost()
 {
+	summonRoundsRemaining = 0;
 	moraleExtraActivation = false;
 	heroicSpiritRetaliation = false;
 	heroicSpiritMoralePending = false;
@@ -249,6 +255,7 @@ void CUnitState::makeGhost()
 
 void CUnitState::onRemoved()
 {
+	summonRoundsRemaining = 0;
 	heroicSpiritRetaliation = false;
 	heroicSpiritMoralePending = false;
 	endBattleForm();

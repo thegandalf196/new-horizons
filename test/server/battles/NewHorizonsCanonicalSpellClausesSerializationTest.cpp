@@ -26,17 +26,22 @@ struct Clause
 	const char * spell;
 	const char * field;
 };
-constexpr std::array<Clause, 5> CLAUSES{{
+constexpr std::array<Clause, 8> CLAUSES{{
 	{"core:implosion", "implosion"},
 	{"core:teleport", "ignoreInterveningBarriers"},
 	{"core:dispel", "temporaryMagicalEffectsOnly"},
 	{"core:curse", "schoolRankDurations"},
-	{"core:fireWall", "burnGroundedFlyers"}
+	{"core:fireWall", "burnGroundedFlyers"},
+	{"new-horizons:focusMagic", "focusMagic"},
+	{"core:slow", "slow"},
+	{"new-horizons:summonLivingArmor", "livingArmor"}
 }};
 
-ESerializationVersion previousVersion()
+ESerializationVersion previousVersion(size_t clause = 0)
 {
-	return static_cast<ESerializationVersion>(static_cast<int>(ESerializationVersion::NEW_HORIZONS_IMPLOSION) - 1);
+	return static_cast<ESerializationVersion>(static_cast<int>(clause >= 5
+		? ESerializationVersion::NEW_HORIZONS_SORCERY_REVISION
+		: ESerializationVersion::NEW_HORIZONS_IMPLOSION) - 1);
 }
 
 JsonNode absentRules()
@@ -50,7 +55,7 @@ JsonNode absentRules()
 JsonNode validValue(size_t index)
 {
 	const auto & clause = CLAUSES.at(index);
-	if(index == 0)
+	if(index == 0 || index >= 5)
 		return JsonNode(JsonPath::builtin("config/newHorizonsMagic"))["spells"][clause.spell][clause.field];
 	if(index == 3)
 	{
@@ -70,10 +75,10 @@ JsonNode rawOverrides(const JsonNode & rules)
 }
 
 template<typename T>
-void rejectsBeforePrefix(const T & value)
+void rejectsBeforePrefix(const T & value, ESerializationVersion version = previousVersion())
 {
 	CMemorySerializer bytes;
-	bytes.oser.version = previousVersion();
+	bytes.oser.version = version;
 	EXPECT_THROW(bytes.oser & value, std::runtime_error);
 	EXPECT_TRUE(bytes.extractBuffer().empty());
 }
@@ -93,7 +98,7 @@ protected:
 		capturedRules = absentRules();
 		const auto & clause = CLAUSES.at(GetParam());
 		capturedRules["spells"][clause.spell][clause.field] = validValue(GetParam());
-		ASSERT_NO_THROW(newHorizonsMagic::validateCanonicalSpellClausesSerialization(capturedRules, true));
+		ASSERT_NO_THROW(newHorizonsMagic::validateCanonicalSpellClausesSerialization(capturedRules, true, true));
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 			.hero({8, 8, 0}, HeroTypeID(0), PlayerColor(0))
@@ -133,11 +138,11 @@ TEST_P(NewHorizonsCanonicalSpellClausesSerializationTest, EveryKeyPresenceReject
 		rules["spells"][clause.spell][clause.field] = value;
 		GameSettings settings;
 		settings.loadOverrides(rawOverrides(rules));
-		rejectsBeforePrefix(settings);
+		rejectsBeforePrefix(settings, previousVersion(GetParam()));
 		// Write raw JSON, not GameSettings, to exercise the old reader guard.
 		CMemorySerializer raw;
 		raw.oser & rawOverrides(rules);
-		raw.iser.version = previousVersion();
+		raw.iser.version = previousVersion(GetParam());
 		GameSettings restored;
 		EXPECT_THROW(raw.iser & restored, std::runtime_error);
 	}
@@ -175,17 +180,17 @@ TEST_P(NewHorizonsCanonicalSpellClausesSerializationTest, CurrentValidRoundTripA
 TEST_P(NewHorizonsCanonicalSpellClausesSerializationTest, CapturedOwnersAndAuthoritativeEnvelopesRejectBeforePrefix)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	rejectsBeforePrefix(*hero);
-	rejectsBeforePrefix(*map());
-	rejectsBeforePrefix(*gameState());
+	rejectsBeforePrefix(*hero, previousVersion(GetParam()));
+	rejectsBeforePrefix(*map(), previousVersion(GetParam()));
+	rejectsBeforePrefix(*gameState(), previousVersion(GetParam()));
 	auto battle = initializedBattle();
 	ASSERT_NE(battle, nullptr);
 	ASSERT_EQ(battle->getMagicRules(), capturedRules);
-	rejectsBeforePrefix(*battle);
+	rejectsBeforePrefix(*battle, previousVersion(GetParam()));
 	BattleStart start;
 	start.battleID = BattleID(0);
 	start.info = initializedBattle();
-	rejectsBeforePrefix(start);
+	rejectsBeforePrefix(start, previousVersion(GetParam()));
 	CMemorySerializer current;
 	ASSERT_NO_THROW(current.oser & start);
 	current.iser.cb = gameState().get();
@@ -194,19 +199,27 @@ TEST_P(NewHorizonsCanonicalSpellClausesSerializationTest, CapturedOwnersAndAutho
 	ASSERT_NE(restored.info, nullptr);
 	EXPECT_EQ(restored.info->getMagicRules(), capturedRules);
 	EXPECT_EQ(restored.battleID, start.battleID);
+	if(GetParam() >= 5)
+	{
+		CMemorySerializer forged(current.extractBuffer());
+		forged.iser.version = previousVersion(GetParam());
+		forged.iser.cb = gameState().get();
+		BattleStart rejected;
+		EXPECT_THROW(forged.iser & rejected, std::runtime_error);
+	}
 	// Actual object and off-map pool ownership, without a raw map override.
 	CMap delegated(gameState().get());
 	ASSERT_FALSE(dynamic_cast<const GameSettings &>(delegated.getSettings()).getMagicOverride().has_value());
 	auto sharedHero = std::dynamic_pointer_cast<CGHeroInstance>(map()->objects.at(hero->id.getNum()));
 	ASSERT_NE(sharedHero, nullptr);
 	delegated.objects.push_back(sharedHero);
-	rejectsBeforePrefix(delegated);
+	rejectsBeforePrefix(delegated, previousVersion(GetParam()));
 	delegated.objects.clear();
 	delegated.addToHeroPool(sharedHero);
-	rejectsBeforePrefix(delegated);
+	rejectsBeforePrefix(delegated, previousVersion(GetParam()));
 	LobbyStartGame lobby;
 	lobby.initializedGameState = gameState();
-	rejectsBeforePrefix(lobby);
+	rejectsBeforePrefix(lobby, previousVersion(GetParam()));
 	// Follow the maintained actual-world replay harness, including callback
 	// rebinding during decode; no standalone fabricated world is introduced.
 	CMemorySerializer worldBytes;
@@ -219,9 +232,20 @@ TEST_P(NewHorizonsCanonicalSpellClausesSerializationTest, CapturedOwnersAndAutho
 	const auto * restoredHero = restoredWorld.getHero(hero->id);
 	ASSERT_NE(restoredHero, nullptr);
 	EXPECT_EQ(restoredHero->getMagicRules(), capturedRules);
+	// One representative new-clause world read exercises the outer callback
+	// binding without multiplying every malformed profile across all owners.
+	if(GetParam() == 7)
+	{
+		CMemorySerializer forged(worldBytes.extractBuffer());
+		forged.iser.version = previousVersion(GetParam());
+		CGameState rejected;
+		forged.iser.cb = &rejected;
+		forged.iser.loadingGamestate = true;
+		EXPECT_THROW(forged.iser & rejected, std::runtime_error);
+	}
 }
 
-INSTANTIATE_TEST_SUITE_P(FiveCapturedClauses, NewHorizonsCanonicalSpellClausesSerializationTest,
+INSTANTIATE_TEST_SUITE_P(CapturedClauses, NewHorizonsCanonicalSpellClausesSerializationTest,
 	::testing::Range<size_t>(0, CLAUSES.size()));
 
 TEST(NewHorizonsCanonicalSpellClausesCompatibilityTest, AbsentClausesAndEmptyBattleEnvelopeRemainOldWritable)

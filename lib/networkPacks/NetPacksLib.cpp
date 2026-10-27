@@ -1149,10 +1149,10 @@ void LobbyStartGame::validateNewHorizonsTravelDayEndSerialization(bool waterWalk
 		initializedGameState->validateNewHorizonsTravelDayEndSerialization(waterWalkSupported, flySupported);
 }
 
-void LobbyStartGame::validateCanonicalSpellClausesSerialization(bool supported) const
+void LobbyStartGame::validateCanonicalSpellClausesSerialization(bool supported, bool sorcerySupported) const
 {
 	if(initializedGameState)
-		initializedGameState->validateCanonicalSpellClausesSerialization(supported);
+		initializedGameState->validateCanonicalSpellClausesSerialization(supported, sorcerySupported);
 }
 
 void LobbyStartGame::validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const

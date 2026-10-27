@@ -67,7 +67,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			throw std::runtime_error("Cannot discard captured final physical Luck policy from BattleStart");
 		if(h.saving && info)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(info->getMagicRules(),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 		if(h.saving && info)
 			newHorizonsMagic::validateTravelDayEndSerialization(info->getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
@@ -104,6 +105,7 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validatePhoenixSparkSerialization(h);
 		if(h.saving && info)
 			info->validateBloodrageDeathPerksSerialization(h);
+		if(h.saving && info) info->validateTimedSummonSerialization();
 		if(h.saving && info)
 			info->validateFrozenSerialization(h);
 		if(h.saving && info)
@@ -223,7 +225,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(!h.saving && info) info->validateMoraleActivationSerialization(h);
 		if(!h.saving && info)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(info->getMagicRules(),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 		h & trainingEntry;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING))
 			h & trainingReplay;

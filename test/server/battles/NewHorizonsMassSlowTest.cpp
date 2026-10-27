@@ -52,6 +52,9 @@ JsonNode olderV3MagicSnapshotWithoutMassSlow()
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::CURRENT_RULESET_VERSION;
 	rules["spells"].Struct().erase(massSlowKey);
+	rules["spells"]["core:slow"].Struct().erase("slow");
+	rules["spells"]["core:slow"]["level"].Integer() = 1;
+	rules["spells"]["core:slow"]["costs"] = JsonNode(JsonVector{JsonNode(4), JsonNode(4), JsonNode(3), JsonNode(3)});
 	return rules;
 }
 
@@ -267,6 +270,19 @@ protected:
 		return bonuses ? bonuses->size() : 0;
 	}
 
+	size_t slowSpeedCount(const battle::Unit * unit, int expectedValue) const
+	{
+		const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(SpellID(SpellID::SLOW))).And(Selector::type()(BonusType::STACKS_SPEED)));
+		for(const auto & bonus : *bonuses)
+		{
+			EXPECT_EQ(bonus->val, expectedValue);
+			EXPECT_EQ(bonus->valType, BonusValueType::PERCENT_TO_ALL);
+			EXPECT_EQ(bonus->turnsRemain, slowEffect(unit)->turnsRemain);
+		}
+		return bonuses->size();
+	}
+
 	std::set<uint32_t> affectedIds(const spells::Mechanics & mechanics, const spells::Target & aim) const
 	{
 		std::set<uint32_t> result;
@@ -398,7 +414,7 @@ TEST_F(NewHorizonsMassSlowTest, MassSlowScalesTheFinalCappedSpecializedSlowAndMa
 			<< "Mass Slow's listed Mana cost is triple Slow before Wisdom at rank " << mastery;
 	}
 	const int listedCost = newHorizonsMagic::spellCost(rules, variant, MasteryLevel::EXPERT);
-	EXPECT_EQ(listedCost, 9);
+	EXPECT_EQ(listedCost, 33);
 	const int expectedManaCost = newHorizonsMagic::wisdomAdjustedCost(
 		listedCost, 1, MasteryLevel::EXPERT);
 	EXPECT_EQ(battle()->battleGetSpellCost(definition, attackerSideHero), expectedManaCost)
@@ -421,6 +437,10 @@ TEST_F(NewHorizonsMassSlowTest, MassSlowScalesTheFinalCappedSpecializedSlowAndMa
 	priorSlow.turnsRemain = 1;
 	firstEnemy->addNewBonus(std::make_shared<Bonus>(priorSlow));
 	projected.addUnitBonus(firstEnemy->unitId(), {priorSlow});
+	priorSlow.type = BonusType::STACKS_SPEED;
+	priorSlow.valType = BonusValueType::PERCENT_TO_ALL;
+	firstEnemy->addNewBonus(std::make_shared<Bonus>(priorSlow));
+	projected.addUnitBonus(firstEnemy->unitId(), {priorSlow});
 	const int realManaBefore = attackerSideHero->getManaAvailable();
 	spells::BattleCast projectedCast(&projected, attackerSideHero, spells::Mode::HERO, definition);
 	const auto projectedMechanics = definition->battleMechanics(&projectedCast);
@@ -440,6 +460,7 @@ TEST_F(NewHorizonsMassSlowTest, MassSlowScalesTheFinalCappedSpecializedSlowAndMa
 	EXPECT_EQ(slowEffect(projectedFirst)->val, -36)
 		<< "Ordinary Slow is capped at -50, specialty makes -60, then the variant applies 60%";
 	EXPECT_EQ(slowEffect(projectedSecond)->val, -36);
+	EXPECT_EQ(slowSpeedCount(projectedSecond, -36), 1u);
 	EXPECT_EQ(slowEffect(projectedFirst)->turnsRemain, 3);
 	EXPECT_EQ(slowEffect(projectedSecond)->turnsRemain, 3);
 	EXPECT_EQ(slowEffect(projectedFriendly), nullptr);
@@ -455,6 +476,7 @@ TEST_F(NewHorizonsMassSlowTest, MassSlowScalesTheFinalCappedSpecializedSlowAndMa
 	{
 		ASSERT_NE(slowEffect(unit), nullptr);
 		EXPECT_EQ(slowEffect(unit)->val, -36);
+		EXPECT_EQ(slowSpeedCount(unit, -36), 1u);
 		EXPECT_EQ(slowEffect(unit)->turnsRemain, 3);
 	}
 	EXPECT_EQ(slowEffectCount(firstEnemy), 1u)
@@ -506,7 +528,7 @@ TEST_F(NewHorizonsMassSlowTest, OrdinarySlowRefreshAfterMassRestoresFullSpeciali
 	ASSERT_NE(slowEffect(firstEnemy), nullptr);
 	EXPECT_EQ(slowEffect(firstEnemy)->val, -36);
 	EXPECT_EQ(slowEffectCount(firstEnemy), 1u);
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeMass - 9);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeMass - 33);
 
 	ASSERT_NO_FATAL_FAILURE(advanceRoundForAttackerAction());
 
@@ -534,14 +556,16 @@ TEST_F(NewHorizonsMassSlowTest, OrdinarySlowRefreshAfterMassRestoresFullSpeciali
 	EXPECT_EQ(slowEffect(projectedFirstAfterCast)->val, -60)
 		<< "Detached ordinary Slow restores the capped 50% plus the -10 specialty";
 	EXPECT_EQ(slowEffect(projectedFirstAfterCast)->turnsRemain, 3);
+	EXPECT_EQ(slowSpeedCount(projectedFirstAfterCast, -60), 1u);
 	EXPECT_EQ(slowEffect(projectedSecondAfterCast)->val, -36)
 		<< "The single-target refresh leaves Mass Slow on the other enemy unchanged";
 
 	const int manaBeforeOrdinary = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(castSpell(SpellID::SLOW, firstEnemy));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeOrdinary - 3);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeOrdinary - 11);
 	ASSERT_EQ(slowEffectCount(firstEnemy), 1u);
 	EXPECT_EQ(slowEffect(firstEnemy)->val, -60);
+	EXPECT_EQ(slowSpeedCount(firstEnemy, -60), 1u);
 	EXPECT_EQ(slowEffect(firstEnemy)->turnsRemain, 3);
 	ASSERT_NE(slowEffect(secondEnemy), nullptr);
 	EXPECT_EQ(slowEffect(secondEnemy)->val, -36)
@@ -585,6 +609,7 @@ TEST_F(NewHorizonsMassSlowTest, OlderV3SnapshotWithoutTheVariantRowRetainsTheOnc
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
 	ASSERT_NE(slowEffect(firstEnemy), nullptr);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 9);
+	EXPECT_EQ(slowSpeedCount(firstEnemy, 0), 0u);
 
 	ASSERT_NO_FATAL_FAILURE(advanceRoundForAttackerAction());
 	const int manaAfterFirstCast = attackerSideHero->getManaAvailable();
@@ -592,4 +617,33 @@ TEST_F(NewHorizonsMassSlowTest, OlderV3SnapshotWithoutTheVariantRowRetainsTheOnc
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaAfterFirstCast);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
 	EXPECT_EQ(slowEffectCount(firstEnemy), 1u);
+}
+
+TEST_F(NewHorizonsMassSlowTest, RevisedSlowKeepsInscribedAccessAndBothStatsExpireTogether)
+{
+	prepareHero(false, MasteryLevel::NONE, 100);
+	prepareBattle();
+	const SpellID slow(SpellID::SLOW);
+	EXPECT_EQ(newHorizonsMagic::spellLevel(battle()->getMagicRules(), slow), 3);
+	EXPECT_FALSE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, slow));
+	EXPECT_TRUE(attackerSideHero->canCastThisSpell(slow.toSpell()))
+		<< "An authored starting inscription remains castable without ordinary learning proficiency";
+	const auto movementBefore = firstEnemy->getMovementRange();
+	const auto initiativeBefore = firstEnemy->getInitiative();
+	const int manaBefore = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(castSpell(slow, firstEnemy));
+	ASSERT_NE(slowEffect(firstEnemy), nullptr);
+	EXPECT_EQ(slowEffect(firstEnemy)->val, -40);
+	EXPECT_EQ(slowSpeedCount(firstEnemy, -40), 1u);
+	EXPECT_EQ(slowEffect(firstEnemy)->turnsRemain, 2);
+	EXPECT_LT(firstEnemy->getMovementRange(), movementBefore);
+	EXPECT_LT(firstEnemy->getInitiative(), initiativeBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 11);
+	ASSERT_NO_FATAL_FAILURE(advanceRoundForAttackerAction());
+	EXPECT_EQ(slowSpeedCount(firstEnemy, -40), 1u);
+	ASSERT_NO_FATAL_FAILURE(advanceRoundForAttackerAction());
+	EXPECT_EQ(slowEffectCount(firstEnemy), 0u);
+	EXPECT_EQ(slowSpeedCount(firstEnemy, 0), 0u);
+	EXPECT_EQ(firstEnemy->getMovementRange(), movementBefore);
+	EXPECT_EQ(firstEnemy->getInitiative(), initiativeBefore);
 }

@@ -469,7 +469,7 @@
 		"school": {
 			"new-horizons:sorcery": true
 		},
-		"level": 1,
+		"level": 3,
 		"power": 0,
 		"defaultGainChance": 0,
 		"gainChance": {},
@@ -495,9 +495,9 @@
 		"levels": {
 			"none": {
 				"range": "X",
-				"cost": 12,
+				"cost": 33,
 				"power": 0,
-				"description": "Reduce all eligible enemy stacks' Initiative by 60% of the final Initiative reduction ordinary Slow produces after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
+				"description": "Apply 60% of the final ordinary Slow reduction to Initiative and, under the revised captured profile, Speed to all eligible enemy stacks after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
 				"targetModifier": {
 					"smart": true
 				},
@@ -514,9 +514,9 @@
 			},
 			"basic": {
 				"range": "X",
-				"cost": 12,
+				"cost": 33,
 				"power": 0,
-				"description": "Reduce all eligible enemy stacks' Initiative by 60% of the final Initiative reduction ordinary Slow produces after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
+				"description": "Apply 60% of the final ordinary Slow reduction to Initiative and, under the revised captured profile, Speed to all eligible enemy stacks after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
 				"targetModifier": {
 					"smart": true
 				},
@@ -533,9 +533,9 @@
 			},
 			"advanced": {
 				"range": "X",
-				"cost": 9,
+				"cost": 33,
 				"power": 0,
-				"description": "Reduce all eligible enemy stacks' Initiative by 60% of the final Initiative reduction ordinary Slow produces after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
+				"description": "Apply 60% of the final ordinary Slow reduction to Initiative and, under the revised captured profile, Speed to all eligible enemy stacks after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
 				"targetModifier": {
 					"smart": true
 				},
@@ -552,9 +552,9 @@
 			},
 			"expert": {
 				"range": "X",
-				"cost": 9,
+				"cost": 33,
 				"power": 0,
-				"description": "Reduce all eligible enemy stacks' Initiative by 60% of the final Initiative reduction ordinary Slow produces after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
+				"description": "Apply 60% of the final ordinary Slow reduction to Initiative and, under the revised captured profile, Speed to all eligible enemy stacks after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
 				"targetModifier": {
 					"smart": true
 				},

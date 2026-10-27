@@ -1859,6 +1859,7 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 	// Restore the authoritative packet values before any subsequent bonus query.
 	stacks.back()->summoned = info.summoned;
 	stacks.back()->natureSummoned = info.natureSummoned;
+	stacks.back()->summonRoundsRemaining = info.summonRoundsRemaining;
 	stacks.back()->initializeRebirthOriginalAggregateHP(info.rebirthOriginalAggregateHP);
 	if(info.phantomIntegrity > 0)
 		stacks.back()->initializePhantomProfile(info.phantomIntegrity, info.phantomDuration);

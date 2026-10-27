@@ -505,6 +505,7 @@ set(lib_MAIN_SRCS
 	spells/BattleSpellMechanics.cpp
 	spells/BattleSpellMirror.cpp
 	spells/BonusCaster.cpp
+	spells/IncomingSpellDamage.cpp
 	spells/CSpell.cpp
 	spells/CSpellHandler.cpp
 	spells/NewHorizonsBlink.cpp
@@ -535,6 +536,7 @@ set(lib_MAIN_SRCS
 	spells/BattleSpellProjectionTargets.cpp
 	spells/OrientedSpellPattern.cpp
 	spells/MagicalDamageReduction.cpp
+	spells/NewHorizonsSorceryRevision.cpp
 	spells/NewHorizonsSorcery.cpp
 	spells/HydrasVitalityIdentity.cpp
 	spells/NewHorizonsSpellAvailability.cpp
@@ -812,6 +814,7 @@ set(lib_MAIN_HEADERS
 	battle/PreparedBattleWorldCommit.h
 	battle/PreparedBattleWorldCommitState.h
 	battle/UnitStateValueFields.h
+	battle/SummonLifetime.h
 	battle/Destination.h
 	battle/IBattleInfoCallback.h
 	battle/IBattleState.h
@@ -1227,6 +1230,8 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsLifeDrainProjection.h
 	spells/OrientedSpellPattern.h
 	spells/MagicalDamageReduction.h
+	spells/IncomingMagicalDamage.h
+	spells/NewHorizonsSorceryRevision.h
 	spells/NewHorizonsSorcery.h
 	spells/HydrasVitalityIdentity.h
 	spells/NewHorizonsSpellAvailability.h

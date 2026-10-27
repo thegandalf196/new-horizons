@@ -49,6 +49,7 @@ protected:
 	ScriptID focusMagicTrigger;
 	ScriptID focusMagicEffect;
 	bool useV2MagicRules = false;
+	bool useRevisedSorcery = false;
 	CStack * friendlyShooter = nullptr;
 	CStack * friendlyNonShooter = nullptr;
 	CStack * hostileShooter = nullptr;
@@ -85,11 +86,34 @@ protected:
 
 		auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		ASSERT_FALSE(magicRules["spells"][newHorizonsSorcery::FOCUS_MAGIC_SPELL].isNull());
+		if(!useRevisedSorcery)
+		{
+			magicRules["spells"][newHorizonsSorcery::FOCUS_MAGIC_SPELL].Struct().erase("focusMagic");
+			magicRules["spells"][newHorizonsSorcery::FOCUS_MAGIC_SPELL]["level"].Integer() = 3;
+			for(auto & cost : magicRules["spells"][newHorizonsSorcery::FOCUS_MAGIC_SPELL]["costs"].Vector()) cost.Integer() = 11;
+		}
+		if(useV2MagicRules)
+		{
+			magicRules["spells"]["core:slow"].Struct().erase("slow");
+			magicRules["spells"].Struct().erase("new-horizons:summonLivingArmor");
+		}
 		if(useV2MagicRules)
 		{
 			magicRules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 			magicRules.Struct().erase("schoolRankPowerCoefficientPercent");
 			magicRules.Struct().erase("spellcraftEfficiencyPercent");
+			for(const auto * key : {"heroLuck", "heroMorale", "morale", "creatureAbilities", "protectedAdventureBarriers"})
+				magicRules.Struct().erase(key);
+			magicRules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
+			magicRules["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
+			for(auto & [key, row] : magicRules["spells"].Struct())
+			{
+				(void)key;
+				for(const auto * clause : {"selectedPlacement", "rawSpellPowerPerPatch", "earthquake", "structures",
+					"heroAccess", "theChosen", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers",
+					"temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"}) row.Struct().erase(clause);
+				if(row.Struct().erase("variant")) row["active"].Bool() = false;
+			}
 		}
 		newHorizonsMagic::validateRules(magicRules);
 		// Exercise installed roster eligibility, not a test-only spell entry.
@@ -311,7 +335,7 @@ TEST_F(FocusMagicSpellTest, ContextualHelpShowsSavedSorceryRankAndOrdinaryMarkVa
 			attackerSideHero, spell.toSpell(), 0);
 		EXPECT_NE(description.find("Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, "
 			"130% at Advanced, and 145% at Expert; it scales only the Spell Power term, "
-			"leaving the 10% base unchanged."), std::string::npos);
+			"leaving the captured fixed base unchanged."), std::string::npos);
 		EXPECT_NE(description.find("Saved v1/v2 profiles use 100% at every Sorcery rank."), std::string::npos);
 		EXPECT_NE(description.find(std::string(expected.rankName) + ": "
 			+ std::to_string(expected.coefficientPercent) + "% coefficient on the Spell Power term."),
@@ -419,7 +443,7 @@ TEST_F(FocusMagicSpellTest, WarcastingCastBoostsTheCapturedSpellPowerComponent)
 	const auto manaBefore = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(canCastOnWithDiagnostics(attackerSideHero, shooter));
 	ASSERT_TRUE(castAtUnit(shooter));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - newHorizonsSorcery::FOCUS_MAGIC_MANA);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 11);
 	// Basic Sorcery (115%) and the saved Basic Warcasting readiness (110%) act
 	// on 5*Spell Power before one final floor: floor(5 * 1.15 * 1.10) = 6.
 	expectCapturedFocusMagic(shooter, 1006, BattleSide::ATTACKER);
@@ -586,4 +610,29 @@ TEST_F(FocusMagicSpellTest, ArcaneAcquisitionSnapshotsMetamagicAndRechecksMarksB
 	// Grand Elf resolves two shots separately: this unmarked target receives two
 	// marks on the first hit and one more after the second hit is rechecked.
 	EXPECT_EQ(secondTargetMarks->size(), 3u);
+}
+
+TEST_F(FocusMagicSpellTest, RevisedLevelOneNoRankCastCapturesLowerPenetrationAndFourManaCost)
+{
+	useRevisedSorcery = true;
+	ASSERT_TRUE(prepare(100));
+	const auto sorcery = SecondarySkill::decode(sorcerySkillKey);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(newHorizonsMagic::spellLevel(battle()->getMagicRules(), spell), 1);
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
+	expectCapturedFocusMagic(friendlyShooter, 800, BattleSide::ATTACKER);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 4);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 1000, ChangeValueMode::ABSOLUTE);
+	expectCapturedFocusMagic(friendlyShooter, 800, BattleSide::ATTACKER);
+}
+
+TEST_F(FocusMagicSpellTest, RevisedCastCapsAtTwelvePercentWithExpertAndSpellcraft)
+{
+	useRevisedSorcery = true;
+	ASSERT_TRUE(prepare(1000));
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
+	expectCapturedFocusMagic(friendlyShooter, 1200, BattleSide::ATTACKER);
 }

@@ -72,11 +72,12 @@ class MagicV2DataTest(unittest.TestCase):
         self.rules['spells']['core:earthquake'].pop('earthquake')
         for row in self.rules['spells'].values():
             row.pop('structures', None)
+            row.pop('selectedPlacement', None)
             row.pop('heroAccess', None)
             row.pop('restoration', None)
             for key in ('propagationLimit', 'implosion', 'ignoreInterveningBarriers',
                         'temporaryMagicalEffectsOnly', 'schoolRankDurations',
-                        'burnGroundedFlyers'):
+                        'burnGroundedFlyers', 'theChosen', 'focusMagic', 'slow', 'livingArmor'):
                 row.pop(key, None)
         self.rules['spells'] = {key: row for key, row in self.rules['spells'].items()
                                 if 'variant' not in row}
@@ -187,7 +188,7 @@ class MagicV2DataTest(unittest.TestCase):
         self.assertEqual(
             non_ordinary_acquisition,
             HERO_INACCESSIBLE_NONCANONICAL_CORE_SPELLS
-            | NEW_HORIZONS_NON_ORDINARY_ACQUISITION_SPELLS,
+            | NEW_HORIZONS_NON_ORDINARY_ACQUISITION_SPELLS | {'core:haste'},
         )
 
         for identity in sorted(HERO_INACCESSIBLE_NONCANONICAL_CORE_SPELLS):
@@ -201,6 +202,7 @@ class MagicV2DataTest(unittest.TestCase):
     def test_canonical_and_current_new_horizons_spell_rows_remain_unchanged(self):
         expected = {
             'core:haste': {
+                'ordinaryAcquisition': False,
                 'schools': ['new-horizons:sorcery'],
                 'level': 1,
                 'costs': [4, 4, 3, 3],
@@ -341,8 +343,8 @@ class MagicV2DataTest(unittest.TestCase):
         self.assertEqual(mass_slow['targetCondition'], slow['targetCondition'])
 
         for rank, source_rank, cost in (
-                ('none', 'base', 12), ('basic', 'base', 12),
-                ('advanced', 'advanced', 9), ('expert', 'expert', 9)):
+                ('none', 'base', 33), ('basic', 'base', 33),
+                ('advanced', 'advanced', 33), ('expert', 'expert', 33)):
             with self.subTest(rank=rank):
                 level = mass_slow['levels'][rank]
                 expected_effects = copy.deepcopy(slow['levels']['base']['effects'])
@@ -352,7 +354,7 @@ class MagicV2DataTest(unittest.TestCase):
                 self.assertEqual(level['cost'], cost)
                 self.assertEqual(level['effects'], expected_effects)
                 self.assertEqual(level['targetModifier'], {'smart': True})
-                self.assertIn('60% of the final Initiative reduction ordinary Slow produces',
+                self.assertIn('60% of the final ordinary Slow reduction to Initiative',
                               level['description'])
                 self.assertIn('after rank, caps, and specialties', level['description'])
                 self.assertIn('duration is unchanged', level['description'])

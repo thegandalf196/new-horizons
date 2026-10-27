@@ -56,6 +56,7 @@ private:
 			unit.regenerationPendingMicroHealth,
 			unit.summoned,
 			unit.natureSummoned,
+			unit.summonRoundsRemaining,
 			unit.waiting,
 			unit.waitedThisTurn,
 			unit.battlecraftWaitBonusUsed,

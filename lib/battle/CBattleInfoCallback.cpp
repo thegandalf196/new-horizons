@@ -11,6 +11,7 @@
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "CBattleInfoCallback.h"
+#include "../spells/IncomingMagicalDamage.h"
 #include "HeroCommandAdjacency.h"
 #include "HeroCommandRoyalStandard.h"
 #include "DamageCalculationTiming.h"
@@ -3800,6 +3801,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payloadTiming.finish();
 	auto result = script->calculate(*this, payload);
 	newHorizonsNecromancy::adjustCreatureDamage(info, result);
+	spells::applyIncomingMagicalCreatureDamage(info, result);
 	result.attackerOrderCause = attackerOrderCause;
 	result.defenderOrderCause = defenderOrderCause;
 	result.attackerOrderCauses = std::move(attackerOrderCauses);

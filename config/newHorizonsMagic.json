@@ -278,10 +278,38 @@
 			"level": 2,
 			"costs": [8, 8, 8, 8]
 		},
+		"new-horizons:summonLivingArmor": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 1,
+			"costs": [
+				5,
+				5,
+				5,
+				5
+			],
+			"active": true,
+			"selectedPlacement": true,
+			"livingArmor": {
+				"version": 1,
+				"baseHitPoints": 40,
+				"spellPowerCoefficient": 1,
+				"duration": 3
+			}
+		},
 		"new-horizons:focusMagic": {
-			"schools": ["new-horizons:sorcery"],
-			"level": 3,
-			"costs": [11, 11, 11, 11]
+			"focusMagic": {"version": 1, "baseBasisPoints": 500, "powerBasisPoints": 3, "capBasisPoints": 1200},
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				4,
+				4
+			]
 		},
 		"new-horizons:hexOfPain": {
 			"schools": ["new-horizons:shadow"],
@@ -790,6 +818,7 @@
 			}
 		},
 		"core:haste": {
+			"ordinaryAcquisition": false,
 			"schools": [
 				"new-horizons:sorcery"
 			],
@@ -1098,21 +1127,29 @@
 			"heroAccess": false
 		},
 		"core:slow": {
+			"slow": {"version": 1, "affectsSpeed": true},
 			"schools": [
 				"new-horizons:sorcery"
 			],
-			"level": 1,
+			"level": 3,
 			"costs": [
-				4,
-				4,
-				3,
-				3
+				11,
+				11,
+				11,
+				11
 			]
 		},
 		"new-horizons:massSlow": {
-			"schools": ["new-horizons:sorcery"],
-			"level": 1,
-			"costs": [12, 12, 9, 9],
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 3,
+			"costs": [
+				33,
+				33,
+				33,
+				33
+			],
 			"active": true,
 			"ordinaryAcquisition": false,
 			"variant": {

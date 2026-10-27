@@ -12,6 +12,7 @@
 
 #include "../json/JsonNode.h"
 #include "../battle/CUnitState.h"
+#include "../battle/SummonLifetime.h"
 #include "../battle/NewHorizonsPlague.h"
 #include <limits>
 
@@ -179,8 +180,16 @@ public:
 			|| data["state"]["armorerLastStandDefending"].Bool();
 	}
 
+	template <typename Handler> void validateTimedSummonSerialization(Handler & h) const
+	{
+		const auto remaining = battle::summonLifetimeFromJson(operation == EOperation::ADD ? data : data["state"]);
+		if(remaining > 0 && !h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION))
+			throw std::runtime_error("Cannot discard temporary summon lifetime in an older format");
+	}
+
 	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
+		if(h.saving) validateTimedSummonSerialization(h);
 		if(h.saving) validateMoraleActivationSerialization(h);
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
@@ -234,6 +243,7 @@ public:
 		if(!h.saving) validateMoraleActivationSerialization(h);
 		if(!h.saving) validatePlagueSerialization(h);
 		h & operation;
+		if(!h.saving) validateTimedSummonSerialization(h);
 		if(!h.saving)
 			validateVeteranCohesionSerialization(h);
 		if(!h.saving)

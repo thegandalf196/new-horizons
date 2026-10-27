@@ -28,6 +28,8 @@ battle::UnitInfo battle::decodeUnitAddition(uint32_t id, const JsonNode & data,
 	info.load(id, data);
 	if(info.rebirthOriginalAggregateHP < 0)
 		throw std::runtime_error("Invalid Rebirth output original HP");
+	if(info.summonRoundsRemaining > 0 && info.phantomIntegrity > 0)
+		throw std::runtime_error("Timed summons cannot carry a Phantom profile");
 	if(info.phantomIntegrity < 0 || info.phantomDuration < 0
 		|| ((info.phantomIntegrity == 0) != (info.phantomDuration == 0)))
 		throw std::runtime_error("Invalid Phantom Army spawn profile");

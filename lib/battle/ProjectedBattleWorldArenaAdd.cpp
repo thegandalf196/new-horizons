@@ -77,6 +77,7 @@ void battle::ProjectedBattleWorldArena::Data::initializeAdded(Slot & slot, const
 	receipts.initialize(*slot.state, environment.get(), slot.original->initialPosition);
 	slot.state->summoned = info.summoned;
 	slot.state->natureSummoned = info.natureSummoned;
+	slot.state->summonRoundsRemaining = info.summonRoundsRemaining;
 	slot.original->initializeRebirthOriginalAggregateHP(info.rebirthOriginalAggregateHP);
 	if(info.phantomIntegrity > 0)
 		slot.state->initializePhantomProfile(info.phantomIntegrity, info.phantomDuration);

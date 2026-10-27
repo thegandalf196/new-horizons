@@ -294,6 +294,8 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleSidePanel.h
 	battle/BattleSiegeController.h
 	battle/BattleStacksController.h
+	battle/BattleStackColorPresentation.h
+	battle/SummonLifetimePresentation.h
 	battle/BattleTargetSelectionPanel.h
 	battle/BattleWindow.h
 	battle/NewHorizonsRealityWarpPreview.h

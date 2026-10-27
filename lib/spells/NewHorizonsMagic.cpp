@@ -13,6 +13,7 @@
 #include "NewHorizonsMagicPresentation.h"
 #include "NewHorizonsImplosion.h"
 #include "NewHorizonsTheChosen.h"
+#include "NewHorizonsSorceryRevision.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "ISpellMechanics.h"
 
@@ -885,8 +886,9 @@ void validateCurseDurationSerialization(const JsonNode & rules, bool supported)
 	}
 }
 
-void validateCanonicalSpellClausesSerialization(const JsonNode & rules, bool supported)
+void validateCanonicalSpellClausesSerialization(const JsonNode & rules, bool supported, bool sorcerySupported)
 {
+	newHorizonsSorceryRevision::validateSerialization(rules, sorcerySupported);
 	if(rules["spells"].isStruct())
 		for(const auto & [name, row] : rules["spells"].Struct())
 		{
@@ -1052,7 +1054,7 @@ void validateRules(const JsonNode & rules)
 		}
 	}
 	require(rules["spells"].isStruct(), "spell mappings required");
-	validateCanonicalSpellClausesSerialization(rules, true);
+	validateCanonicalSpellClausesSerialization(rules, true, true);
 	std::set<int> mapped;
 	for(const auto & [name, data] : rules["spells"].Struct())
 	{
@@ -1061,8 +1063,9 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "rawSpellPowerPerPatch", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers", "theChosen"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "rawSpellPowerPerPatch", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers", "theChosen", "focusMagic", "slow", "livingArmor"});
 		newHorizonsTheChosen::validateSpellRow(rules, name, data);
+		newHorizonsSorceryRevision::validateSpellRow(rules, name, data);
 		if(data.Struct().contains("implosion"))
 		{
 			require(name == "core:implosion", "Implosion profile requires its canonical spell row");

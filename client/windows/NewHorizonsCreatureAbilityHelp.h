@@ -5,10 +5,12 @@
 #pragma once
 
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../battle/SummonLifetimePresentation.h"
 #include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace newHorizonsCreatureAbilityHelp
 {
@@ -45,5 +47,16 @@ inline std::optional<FreezingTouchHelp> freezingTouch(std::string_view creatureK
 		return replace(replace(std::move(text), "%chance%", chance), "%bonus%", shatter);
 	};
 	return FreezingTouchHelp{format(std::move(compactText)), format(std::move(detailsText))};
+}
+
+inline std::vector<FreezingTouchHelp> innateAbilities(std::string_view creatureKey,
+	const JsonNode * capturedRules, std::string compactText, std::string detailsText, int32_t summonRounds)
+{
+	std::vector<FreezingTouchHelp> result;
+	if(auto freezing = freezingTouch(creatureKey, capturedRules, std::move(compactText), std::move(detailsText)))
+		result.push_back(std::move(*freezing));
+	if(summonRounds > 0)
+		result.push_back({summonLifetimePresentation::compact(summonRounds), summonLifetimePresentation::tooltip(summonRounds)});
+	return result;
 }
 }

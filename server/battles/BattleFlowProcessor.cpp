@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleFlowProcessor.h"
+#include "../../lib/spells/IncomingMagicalDamage.h"
 #ifdef NH_CURE_SIMULATION_FIXTURE
 #include "../tests/CureFixture.h"
 #endif
@@ -1035,7 +1036,7 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 				BattleStackAttacked hit;
 				hit.attackerID = sourceId;
 				hit.stackAttacked = enemy->unitId();
-				hit.damageAmount = newHorizonsNecromancy::adjustUnmitigatedMagicalDamage(*enemy, damagePerEnemy);
+				hit.damageAmount = spells::adjustUnmitigatedMagicalDamage(*enemy, damagePerEnemy);
 				hit.flags |= BattleStackAttacked::SPELL_EFFECT;
 				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), enemy->acquireState(),
 					false, false, battle::DamageProvenance::SPELL);

@@ -269,6 +269,8 @@ public:
 	bool summoned = false;
 	/// True only for a temporary stack created by a Nature spell.
 	bool natureSummoned = false;
+	/// Zero means combat-long; otherwise counts remaining round boundaries.
+	int32_t summonRoundsRemaining = 0;
 	/// Initial Phantom Army durability pool. Zero means this is an ordinary unit.
 	int64_t phantomIntegrity = 0;
 	/// Number of battle rounds the Phantom Army profile lasts.
@@ -290,6 +292,7 @@ public:
 		s("position", position, "Position of the stack on the battlefield. For double-wide units this is their front hex");
 		s("summoned", summoned, "True if the stack was summoned mid-battle and was not part of the initial army.");
 		s("natureSummoned", natureSummoned, "True if this temporary stack was created by a Nature spell.");
+		s("summonRoundsRemaining", summonRoundsRemaining, "Temporary summon lifetime in rounds; zero means combat-long.");
 		s("phantomIntegrity", phantomIntegrity, "Initial separate durability pool for a Phantom Army stack; zero for other stacks.");
 		s("phantomDuration", phantomDuration, "Number of battle rounds the Phantom Army profile lasts.");
 	}

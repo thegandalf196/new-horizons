@@ -102,6 +102,7 @@ def content_patch_files():
         'config/creatures/castle.json',
         'config/creatures/special.json',
         'config/creatures/tower.json',
+        'config/creatures/livingArmor.json',
         'config/creatures/conflux.json',
         'config/creatures/experimentalValues.json',
     ]
@@ -160,6 +161,7 @@ def base_metadata(settings, schools, skills, module_version):
         'scripts': ['config/scripts/cabirRepair.json'],
         'spells': [
             'config/spells/newHorizons.json',
+            'config/spells/summonLivingArmor.json',
             'config/spells/iceBolt.json',
             'config/spells/massVariants.json',
             'config/spells/elementalDamageTags.json',

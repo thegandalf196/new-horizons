@@ -144,6 +144,12 @@ public:
 		return this->owner;
 	}
 
+	void validateTimedSummonSerialization() const
+	{
+		if(summonRoundsRemaining > 0)
+			throw std::runtime_error("Cannot save a timed summon without its unit health state");
+	}
+
 	template <typename Handler> void validateFrozenSerialization(Handler & h) const
 	{
 		if(frozenLastAppliedRound() < -1)
@@ -235,6 +241,7 @@ public:
 			validateRapidResponseSerialization(h);
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
+		if(h.saving) validateTimedSummonSerialization();
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
 		if(h.saving)

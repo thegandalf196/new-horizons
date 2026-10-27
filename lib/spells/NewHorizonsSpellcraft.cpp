@@ -47,7 +47,7 @@ bool roundTemporary(const CSpell & spell, int32_t effectLevel)
 				if(bonus["duration"].String() == "N_TURNS")
 					return true;
 		}
-		if(type == "core:battleForm" || type == "core:phantomArmy" || type == "core:spellLock"
+		if(type == "core:timedSummon" || type == "core:battleForm" || type == "core:phantomArmy" || type == "core:spellLock"
 			|| type == "core:focusMagicEnchantment" || type == "core:hexOfPainEffect"
 			|| type == "core:plagueEffect" || type == "core:soulChainEffect"
 			|| type == "core:doomEffect" || type == "core:shadowGiftEffect"

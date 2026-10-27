@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "StackInfoBasicPanel.h"
+#include "SummonLifetimePresentation.h"
 #include "FrozenStatusPresentation.h"
 #include "StackSpellStatusPresentation.h"
 
@@ -658,6 +659,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 {
 	OBJECT_CONSTRUCTION;
 	refreshBonusDescriptionCache(stack);
+	displayedSummonRounds = stack->alive() ? stack->summonRoundsRemaining : 0;
+	if(displayedSummonRounds > 0)
+	{
+		const auto help = summonLifetimePresentation::tooltip(displayedSummonRounds);
+		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(10, 6, 58, 64), help, help));
+	}
 
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("TWCRPORT"), stack->creatureId().getNum() + 2, 0, 10, 6));
 	labels.push_back(std::make_shared<CLabel>(10 + 58, 6 + 64, FONT_MEDIUM, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, TextOperations::formatMetric(stack->getCount(), 4)));
@@ -1206,6 +1213,7 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 	else
 		currentMorale = updatedInfo->moraleVal();
 	if(current == displayedStatus && currentLuckReadback == displayedLuckReadback
+		&& displayedSummonRounds == (updatedInfo->alive() ? updatedInfo->summonRoundsRemaining : 0)
 		&& soulChainSignature == displayedSoulChainSignature
 		&& currentMorale == displayedMorale && currentMoraleReadback == displayedMoraleReadback)
 		return;

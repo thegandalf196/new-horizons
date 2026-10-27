@@ -10,7 +10,7 @@
 #pragma once
 #include "../../lib/Rect.h"
 
-#include "../../lib/Color.h"
+#include "BattleStackColorPresentation.h"
 #include "StackInfoPanelHoverState.h"
 #include "FrozenApplicationFeedback.h"
 
@@ -40,15 +40,6 @@ class CreatureAnimation;
 class BattleAnimation;
 class BattleRenderer;
 class IImage;
-
-struct BattleStackFilterEffect
-{
-	const CStack * target;
-	const CSpell * source;
-	ColorRGBA effectColor;
-	uint8_t transparency;
-	bool persistent;
-};
 
 /// Class responsible for handling stacks in battle
 /// Handles ordering of stacks animation

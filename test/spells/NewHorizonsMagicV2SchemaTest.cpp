@@ -47,6 +47,17 @@ JsonNode v1Rules()
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
 		spell.Struct().erase("heroAccess");
+		spell.Struct().erase("focusMagic");
+		spell.Struct().erase("slow");
+		spell.Struct().erase("livingArmor");
+		spell.Struct().erase("theChosen");
+		spell.Struct().erase("restoration");
+		spell.Struct().erase("propagationLimit");
+		spell.Struct().erase("implosion");
+		spell.Struct().erase("ignoreInterveningBarriers");
+		spell.Struct().erase("temporaryMagicalEffectsOnly");
+		spell.Struct().erase("schoolRankDurations");
+		spell.Struct().erase("burnGroundedFlyers");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");
@@ -72,6 +83,17 @@ JsonNode v2Rules()
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
 		spell.Struct().erase("heroAccess");
+		spell.Struct().erase("focusMagic");
+		spell.Struct().erase("slow");
+		spell.Struct().erase("livingArmor");
+		spell.Struct().erase("theChosen");
+		spell.Struct().erase("restoration");
+		spell.Struct().erase("propagationLimit");
+		spell.Struct().erase("implosion");
+		spell.Struct().erase("ignoreInterveningBarriers");
+		spell.Struct().erase("temporaryMagicalEffectsOnly");
+		spell.Struct().erase("schoolRankDurations");
+		spell.Struct().erase("burnGroundedFlyers");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");

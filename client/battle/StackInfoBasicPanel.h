@@ -43,6 +43,7 @@ private:
 	newHorizonsBattleStatus::BattleLuckReadback displayedLuckReadback;
 	std::string displayedSoulChainSignature;
 	int displayedMorale = 0;
+	int32_t displayedSummonRounds = 0;
 	std::optional<newHorizonsBattleStatus::BattleBonusDescriptionCacheKey> bonusDescriptionCacheKey;
 	std::vector<std::string> cachedLuckBonusDescriptions;
 	std::vector<std::string> cachedMoraleBonusDescriptions;

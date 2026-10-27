@@ -17,6 +17,7 @@
 		}
 	},
 	"creatures": {
+		"new-horizons:livingArmor": "core",
 		"core:pikeman": "core",
 		"core:halberdier": "core",
 		"core:archer": "core",

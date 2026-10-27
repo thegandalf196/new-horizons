@@ -71,7 +71,7 @@ class NewHorizonsInitiativeContentTest(unittest.TestCase):
 
     def test_slow_is_converted_to_initiative_by_new_horizons_timed_script(self):
         script = (ROOT / "scripts/spells/timed.lua").read_text(encoding="utf-8")
-        self.assertIn('spellKey == "core:slow" and mechanics:usesNewHorizonsMagic()', script)
+        self.assertIn('spellKey == SLOW_SPELL and mechanics:usesNewHorizonsMagic()', script)
         self.assertIn('nb.type = "STACKS_INITIATIVE"', script)
         self.assertIn('nb.valueType = "ADDITIVE_VALUE"', script)
 
@@ -321,7 +321,7 @@ class NewHorizonsInitiativeContentTest(unittest.TestCase):
 
     def test_generated_module_mounts_tower_and_spell_patches(self):
         manifest = load("Mods/new-horizons/mod.json")
-        self.assertEqual(manifest["version"], "0.14.0")
+        self.assertEqual(manifest["version"], load("config/newHorizonsVersion.json")["version"])
         self.assertIn("config/creatures/tower.json", manifest["creatures"])
         self.assertIn("config/factions/towerCreatureRanks.json", manifest["factions"])
         self.assertIn("config/spells/iceBolt.json", manifest["spells"])

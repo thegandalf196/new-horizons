@@ -187,6 +187,7 @@
 					}
 				},
 				"creatures": {
+					"new-horizons:livingArmor": "core",
 					"core:pikeman": "core",
 					"core:halberdier": "core",
 					"core:archer": "core",
@@ -809,16 +810,42 @@
 							8
 						]
 					},
-					"new-horizons:focusMagic": {
+					"new-horizons:summonLivingArmor": {
 						"schools": [
 							"new-horizons:sorcery"
 						],
-						"level": 3,
+						"level": 1,
 						"costs": [
-							11,
-							11,
-							11,
-							11
+							5,
+							5,
+							5,
+							5
+						],
+						"active": true,
+						"selectedPlacement": true,
+						"livingArmor": {
+							"version": 1,
+							"baseHitPoints": 40,
+							"spellPowerCoefficient": 1,
+							"duration": 3
+						}
+					},
+					"new-horizons:focusMagic": {
+						"focusMagic": {
+							"version": 1,
+							"baseBasisPoints": 500,
+							"powerBasisPoints": 3,
+							"capBasisPoints": 1200
+						},
+						"schools": [
+							"new-horizons:sorcery"
+						],
+						"level": 1,
+						"costs": [
+							4,
+							4,
+							4,
+							4
 						]
 					},
 					"new-horizons:hexOfPain": {
@@ -1599,6 +1626,7 @@
 						}
 					},
 					"core:haste": {
+						"ordinaryAcquisition": false,
 						"schools": [
 							"new-horizons:sorcery"
 						],
@@ -1907,27 +1935,31 @@
 						"heroAccess": false
 					},
 					"core:slow": {
+						"slow": {
+							"version": 1,
+							"affectsSpeed": true
+						},
 						"schools": [
 							"new-horizons:sorcery"
 						],
-						"level": 1,
+						"level": 3,
 						"costs": [
-							4,
-							4,
-							3,
-							3
+							11,
+							11,
+							11,
+							11
 						]
 					},
 					"new-horizons:massSlow": {
 						"schools": [
 							"new-horizons:sorcery"
 						],
-						"level": 1,
+						"level": 3,
 						"costs": [
-							12,
-							12,
-							9,
-							9
+							33,
+							33,
+							33,
+							33
 						],
 						"active": true,
 						"ordinaryAcquisition": false,
@@ -10471,6 +10503,7 @@
 		"config/creatures/castle.json",
 		"config/creatures/special.json",
 		"config/creatures/tower.json",
+		"config/creatures/livingArmor.json",
 		"config/creatures/conflux.json",
 		"config/creatures/experimentalValues.json"
 	],
@@ -10508,6 +10541,7 @@
 	],
 	"spells": [
 		"config/spells/newHorizons.json",
+		"config/spells/summonLivingArmor.json",
 		"config/spells/iceBolt.json",
 		"config/spells/massVariants.json",
 		"config/spells/elementalDamageTags.json",
