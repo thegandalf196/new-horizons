@@ -273,6 +273,13 @@ Special actions on future-day chain nodes must wait for that day; earlier legal
 current-day approach nodes may still execute. Preserve the future route rather
 than spending its spell opportunity prematurely.
 
+A visit can consume all remaining movement after a same-day route was planned.
+An exhausted actor that has not reached its node must use the existing hero lock
+and parent-index blocking to defer dependent actions, including exchanges. An
+already reached node remains complete; an unexplained mismatch with movement
+remaining retains its failure handling. The Swan Pond cases in
+`HeroChainSourceAnchorTest` exercise the native reward and dependency blocking.
+
 An exchange chain can retain a receiver-readiness entry before its donor arrives,
 even when the receiver already occupies the meeting tile. `exportAIPathNode`
 certifies that native dependency; coordinates alone do not establish intent.

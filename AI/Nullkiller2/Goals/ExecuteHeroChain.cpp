@@ -383,7 +383,7 @@ void ExecuteHeroChain::accept(AIGateway * aiGw)
 			if(node->coord == hero->visitablePos())
 				continue;
 
-			if(node->turns == 0)
+			if(node->turns == 0 && hero->movementPointsRemaining() > 0)
 			{
 				logAi->error(
 					"Unable to complete chain. Expected hero %s to arrive to %s but he is at %s",

@@ -13,6 +13,7 @@
 #include "lib/callback/IClient.h"
 #include "lib/logging/CLogger.h"
 #include "lib/mapObjects/CGHeroInstance.h"
+#include "lib/mapObjects/CRewardableObject.h"
 #include "lib/mapObjects/MiscObjects.h"
 #include "lib/networkPacks/PacksForClient.h"
 #include "lib/networkPacks/PacksForServer.h"
@@ -377,6 +378,32 @@ protected:
 		}
 		return std::nullopt;
 	}
+	CRewardableObject * movementEndingPond()
+	{
+		auto object = handler->createNewObject(hero->anchorPos() + int3(2, 3, 0), Obj::SWAN_POND, MapObjectSubID(0));
+		if(!object)
+			return nullptr;
+		handler->newObject(object, PLAYER);
+		gateway->invalidatePaths();
+		return dynamic_cast<CRewardableObject *>(gameState()->getObjInstance(object->id));
+	}
+	NK2AI::AIPath meetingWithDependentAction(const int3 & target, int & calls, uint8_t turns = 0)
+	{
+		auto path = stationaryIntent();
+		path.exchangeCount = 2;
+		path.nodes.front().coord = donor->visitablePos();
+		path.nodes.front().targetHero = donor;
+		path.nodes.front().specialAction = std::make_shared<SourceAction>(calls);
+		NK2AI::AIPathNodeInfo meeting{};
+		meeting.coord = target;
+		meeting.targetHero = hero;
+		meeting.chainMask = path.chainMask;
+		meeting.parentIndex = 0;
+		meeting.layer = EPathfindingLayer::LAND;
+		meeting.turns = turns;
+		path.nodes.push_back(meeting);
+		return path;
+	}
 	NK2AI::TaskExecutionResult execute(const NK2AI::AIPath & path)
 	{
 		std::shared_lock lock(CGameState::mutex);
@@ -674,4 +701,105 @@ TEST_F(HeroChainSourceAnchorTest, NativeVisitBattleTransportAndSpecialEntriesRem
 	candidate = original;
 	candidate.theNodeBefore = &original;
 	EXPECT_EQ(NK2AI::exportAIPathNode(candidate, 0, gateway->nullkiller.get()).exchangeReadinessDonor, nullptr);
+}
+
+TEST_F(HeroChainSourceAnchorTest, NativeSwanPondExhaustionDefersStaleSameDayMeetingAndDependentAction)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	hero->setMovementPoints(hero->movementPointsLimit());
+	auto * pond = movementEndingPond();
+	ASSERT_NE(pond, nullptr);
+	const auto rewards = pond->getAvailableRewards(hero, Rewardable::EEventType::EVENT_FIRST_VISIT);
+	ASSERT_EQ(rewards.size(), 1u);
+	const auto & reward = pond->configuration.info.at(rewards.front()).reward;
+	ASSERT_EQ(reward.movePercentage, 0);
+	ASSERT_EQ(reward.movePoints, 0);
+	const auto pondTile = pond->visitablePos();
+	const auto meetingTile = donor->visitablePos();
+	ASSERT_NE(pondTile, hero->visitablePos());
+	ASSERT_NE(pondTile, meetingTile);
+	CGPath approach;
+	ASSERT_TRUE(gateway->nullkiller->getPathsInfo(hero)->getPath(approach, pondTile));
+	ASSERT_FALSE(approach.nodes.empty());
+	ASSERT_EQ(approach.nodes.front().turns, 0);
+	ASSERT_GT(approach.nodes.front().moveRemains, 0);
+	int dependentCalls = 0;
+	auto path = meetingWithDependentAction(meetingTile, dependentCalls);
+	NK2AI::AIPathNodeInfo visit{};
+	visit.coord = pondTile;
+	visit.targetHero = hero;
+	visit.chainMask = path.chainMask;
+	visit.parentIndex = 1;
+	visit.layer = EPathfindingLayer::LAND;
+	path.nodes.push_back(visit); // Stale executor input, not a claim about native chain generation.
+	const auto donorBefore = std::tuple(donor->visitablePos(), donor->movementPointsRemaining(),
+		donor->getManaAvailable(), donor->getArmyStrength());
+	const auto resources = gateway->cc->getResourceAmount();
+	const auto luck = hero->valOfBonuses(BonusType::LUCK);
+	ASSERT_FALSE(gateway->nullkiller->isHeroLocked(hero));
+	ASSERT_FALSE(gateway->nullkiller->isHeroLocked(donor));
+	const auto rng = rngState();
+	EXPECT_TRUE(execute(path).success); // Existing future-node outcome: deferred, not physically completed.
+	EXPECT_EQ(hero->visitablePos(), pondTile);
+	EXPECT_EQ(hero->movementPointsRemaining(), 0);
+	EXPECT_EQ(hero->valOfBonuses(BonusType::LUCK), luck + 2);
+	EXPECT_TRUE(gateway->nullkiller->isHeroLocked(hero));
+	EXPECT_EQ(gateway->nullkiller->getHeroLockedReason(hero), NK2AI::HeroLockedReason::HERO_CHAIN);
+	EXPECT_TRUE(gateway->nullkiller->isHeroLocked(donor));
+	EXPECT_EQ(gateway->nullkiller->getHeroLockedReason(donor), NK2AI::HeroLockedReason::HERO_CHAIN);
+	EXPECT_EQ(dependentCalls, 0);
+	EXPECT_NE(hero->visitablePos(), meetingTile);
+	ASSERT_FALSE(client->moves.empty());
+	for(const auto & move : client->moves)
+	{
+		EXPECT_EQ(move.hid, hero->id);
+		EXPECT_FALSE(vstd::contains(move.path, hero->convertFromVisitablePos(meetingTile)));
+	}
+	EXPECT_TRUE(std::ranges::all_of(server->accepted, [](bool accepted) { return accepted; }));
+	EXPECT_EQ(client->arrangements, 0);
+	EXPECT_EQ(client->queryReplies, 0);
+	EXPECT_EQ(client->unexpectedCommands, 0);
+	EXPECT_TRUE(server->pendingExchanges.empty());
+	EXPECT_FALSE(handler->queries->topQuery(PLAYER));
+	EXPECT_TRUE(server->endedPlayers.empty());
+	EXPECT_EQ(std::tuple(donor->visitablePos(), donor->movementPointsRemaining(),
+		donor->getManaAvailable(), donor->getArmyStrength()), donorBefore);
+	EXPECT_EQ(gateway->cc->getResourceAmount(), resources);
+	EXPECT_EQ(rngState(), rng);
+	std::lock_guard lock(diagnostics->mutex);
+	EXPECT_EQ(diagnostics->records.find("Unable to complete chain."), std::string::npos);
+	RecordProperty("StructuredWarningsAndErrors", diagnostics->records);
+	RecordProperty("AcceptedMovementRequests", client->requests.str());
+}
+
+TEST_F(HeroChainSourceAnchorTest, ExhaustedAlreadyReachedNodeStillCompletesWithoutLockOrRequest)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	hero->setMovementPoints(0);
+	const auto before = gameState()->saveToMemory();
+	const auto rng = rngState();
+	EXPECT_TRUE(execute(stationaryIntent()).success);
+	EXPECT_FALSE(gateway->nullkiller->isHeroLocked(hero));
+	EXPECT_TRUE(client->moves.empty());
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(rngState(), rng);
+}
+
+TEST_F(HeroChainSourceAnchorTest, ExhaustedFutureNodeRetainsParentIndexDeferral)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	hero->setMovementPoints(0);
+	int dependentCalls = 0;
+	const auto path = meetingWithDependentAction(donor->visitablePos(), dependentCalls, 1);
+	const auto before = gameState()->saveToMemory();
+	const auto rng = rngState();
+	EXPECT_TRUE(execute(path).success);
+	EXPECT_TRUE(gateway->nullkiller->isHeroLocked(hero));
+	EXPECT_EQ(gateway->nullkiller->getHeroLockedReason(hero), NK2AI::HeroLockedReason::HERO_CHAIN);
+	EXPECT_TRUE(gateway->nullkiller->isHeroLocked(donor));
+	EXPECT_EQ(gateway->nullkiller->getHeroLockedReason(donor), NK2AI::HeroLockedReason::HERO_CHAIN);
+	EXPECT_EQ(dependentCalls, 0);
+	EXPECT_TRUE(client->moves.empty());
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(rngState(), rng);
 }
