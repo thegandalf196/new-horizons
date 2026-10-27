@@ -1,6 +1,6 @@
 # New Horizons
 
-[Download New Horizons 0.87 Early Access for Windows and Linux](https://github.com/thegandalf196/new-horizons/releases/tag/v0.87), with installation instructions. Requires Heroes III Complete; original game assets are not included.
+[Download the latest New Horizons Early Access for Windows and Linux](https://github.com/thegandalf196/new-horizons/releases/latest), with installation instructions. Requires Heroes III Complete; original game assets are not included.
 
 [What changes from Heroes III Complete? Read the gameplay and artwork changelog.](docs/NEW_HORIZONS_CHANGELOG.md)
 

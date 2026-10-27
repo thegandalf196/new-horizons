@@ -7,6 +7,22 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.88 — in development
+
+- Focus Magic moves to Level 1 and replaces Haste in ordinary Sorcery spell
+  availability. Slow moves to Level 3 and reduces both Speed and Initiative.
+- Summon Living Armor is a new Level 1 Sorcery spell: a temporary blue armored
+  Skeleton summon with strong physical protection and increased vulnerability
+  to magical damage. Its base duration is three rounds.
+- Adds dedicated Feint!, Vanguard! and Summon Living Armor icons.
+- Grave Knowledge recovers 35% of eligible own Skeleton losses; Bone Collector
+  raises 25% more Skeletons. Soul Harvester retains 1 Mana per newly raised
+  Skeleton, with a reduced maximum of 30 Mana per battle.
+- Corrects Slow applying twice to creatures whose Initiative falls back to
+  Speed, and Focus Magic parameter validation warnings.
+- Existing saves retain their captured rules and balance values. Start a new
+  scenario to use the revised spell roster and Necromancy values.
+
 ## 0.87.1 Early Access
 
 - Starting Leadership increases by 20% for every hero class; Leadership gained

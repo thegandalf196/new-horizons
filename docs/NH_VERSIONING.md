@@ -1,6 +1,6 @@
 # New Horizons version policy
 
-The single product/module authoring value is [config/newHorizonsVersion.json](../config/newHorizonsVersion.json); current authoring value is `0.85.0`, published as [New Horizons 0.85 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.85). Menu and generated module read it. The version alone does not establish release publication or playable acceptance.
+The single product/module authoring value is [config/newHorizonsVersion.json](../config/newHorizonsVersion.json). Menu and generated module read it; development versions may be ahead of the published releases. The version alone does not establish release publication or playable acceptance.
 
 Product version, VCMI engine revision, save-schema version and Git commit are separate identities. Save epochs change only for actual compatibility boundaries. Source-matched Windows/Linux packages must record the same full source revision; selected playable promotion is a separate validated operation.
 
