@@ -668,6 +668,19 @@ class MagicV2DataTest(unittest.TestCase):
         self.assertNotIn('manaBuffer', schema['definitions']['limiter']['properties'])
 
 
+    def test_selected_placement_is_authored_only_for_quicksand_in_effective_rows(self):
+        module_rules = load('Mods/new-horizons/mod.json')['settings']['magic']['newHorizons']
+        # The JSON schema admits this per-row flag, but native semantic validation
+        # reserves it for Quicksand. Inspect effective shipped captures as well as
+        # the canonical input so unrelated location-target spells cannot acquire it.
+        for label, rules in (('canonical', self.v3_rules), ('module', module_rules)):
+            with self.subTest(source=label):
+                owners = {identity: row['selectedPlacement']
+                          for identity, row in rules['spells'].items()
+                          if 'selectedPlacement' in row}
+                self.assertEqual(set(owners), {'core:quicksand'})
+                self.assertIs(owners['core:quicksand'], True)
+
     def test_quicksand_raw_step_is_optional_strict_and_confined_to_its_v3_row(self):
         validator = Draft4Validator(self.v3, registry=self.registry)
         self.assertEqual(self.v3_rules['spells']['core:quicksand']['rawSpellPowerPerPatch'], 60)

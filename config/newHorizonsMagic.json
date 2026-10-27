@@ -290,7 +290,6 @@
 				5
 			],
 			"active": true,
-			"selectedPlacement": true,
 			"livingArmor": {
 				"version": 1,
 				"baseHitPoints": 40,
