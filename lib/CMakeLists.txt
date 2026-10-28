@@ -329,6 +329,7 @@ set(lib_MAIN_SRCS
 
 	gameState/CGameStateSpecialtyPreflight.cpp
 	gameState/CGameState.cpp
+	gameState/MapObjectInitialization.cpp
 	gameState/CGameStateCampaign.cpp
 	gameState/GameStatePackVisitor.cpp
 	gameState/NewHorizonsBattleSpellPoints.cpp
@@ -362,6 +363,8 @@ set(lib_MAIN_SRCS
 	mapObjects/CGCreature.cpp
 	mapObjects/CGCreaturePopupText.cpp
 	mapObjects/CGDwelling.cpp
+	mapObjects/DwellingGuards.cpp
+	mapObjects/NewHorizonsNeutralArmies.cpp
 	mapObjects/CGHeroInstance.cpp
 	mapObjects/HeroManaRegeneration.cpp
 	mapObjects/HeroScholar.cpp
@@ -1032,6 +1035,7 @@ set(lib_MAIN_HEADERS
 
 	mapObjects/CGCreature.h
 	mapObjects/CGDwelling.h
+	mapObjects/NewHorizonsNeutralArmies.h
 	mapObjects/CGHeroInstance.h
 	mapObjects/NewHorizonsGlyphsOfFear.h
 	mapObjects/CGMarket.h

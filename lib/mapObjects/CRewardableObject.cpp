@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "CRewardableObject.h"
+#include "NewHorizonsNeutralArmies.h"
 
 #include "../CPlayerState.h"
 #include "../IGameSettings.h"
@@ -368,6 +369,7 @@ void CRewardableObject::newTurn(IGameEventCallback & gameEvents, IGameRandomizer
 		{
 			auto handler = std::dynamic_pointer_cast<const CRewardableConstructor>(getObjectHandler());
 			auto newConfiguration = handler->generateConfiguration(cb, gameRandomizer, ID, configuration.variables.preset);
+			newHorizonsNeutralArmies::scaleGeneratedGuards(*this, newConfiguration);
 			gameEvents.setRewardableObjectConfiguration(id, newConfiguration);
 		}
 		if (configuration.resetParameters.visitors)

@@ -427,51 +427,6 @@ std::vector<Component> CGDwelling::getPopupComponents(PlayerColor player) const
 	return result;
 }
 
-void CGDwelling::updateGuards(IGameEventCallback & gameEvents) const
-{
-	//TODO: store custom guard config and use it
-	//TODO: store boolean flag for guards
-
-	bool guarded = false;
-	//default condition - creatures are of level 5 or higher
-	for (auto creatureEntry : creatures)
-	{
-		if (LIBRARY->creatures()->getById(creatureEntry.second.at(0))->getLevel() >= 5 && ID != Obj::REFUGEE_CAMP)
-		{
-			guarded = true;
-			break;
-		}
-	}
-
-	if (guarded)
-	{
-		for (auto creatureEntry : creatures)
-		{
-			const CCreature * crea = creatureEntry.second.at(0).toCreature();
-			SlotID slot = getSlotFor(crea->getId());
-
-			if (hasStackAtSlot(slot)) //stack already exists, overwrite it
-			{
-				ChangeStackCount csc;
-				csc.army = this->id;
-				csc.slot = slot;
-				csc.count = cb->getCreatureBaseGrowth(crea->getId()) * 3;
-				csc.mode = ChangeValueMode::ABSOLUTE;
-				gameEvents.sendAndApply(csc);
-			}
-			else //slot is empty, create whole new stack
-			{
-				InsertNewStack ns;
-				ns.army = this->id;
-				ns.slot = slot;
-				ns.type = crea->getId();
-				ns.count = cb->getCreatureBaseGrowth(crea->getId()) * 3;
-				gameEvents.sendAndApply(ns);
-			}
-		}
-	}
-}
-
 void CGDwelling::heroAcceptsCreatures(IGameEventCallback & gameEvents, const CGHeroInstance *h) const
 {
 	CreatureID crid = creatures[0].second[0];

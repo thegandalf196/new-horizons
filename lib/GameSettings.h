@@ -10,6 +10,7 @@
 #pragma once
 
 #include "IGameSettings.h"
+#include "mapObjects/NewHorizonsNeutralArmies.h"
 #include "pathfinder/NewHorizonsLighthouse.h"
 #include "json/JsonNode.h"
 #include "entities/hero/NewHorizonsHeroRules.h"
@@ -232,6 +233,7 @@ public:
 		if (h.saving)
 		{
 			JsonNode overrides = getAllOverrides();
+			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 			validateCombatScalarOverrides(overrides,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
@@ -360,6 +362,7 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SPELLWARD));
 			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
+			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 			loadSavedOverrides(overrides);
 		}
 	}

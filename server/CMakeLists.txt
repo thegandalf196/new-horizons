@@ -23,10 +23,12 @@ set(vcmiservercommon_SRCS
 
 		processors/HeroPoolProcessor.cpp
 		processors/NewTurnProcessor.cpp
+		processors/NeutralTownGarrison.cpp
 		processors/PlayerMessageProcessor.cpp
 		processors/TurnOrderProcessor.cpp
 
 		CGameHandler.cpp
+		NeutralMonsterPopulation.cpp
 		NewHorizonsLearningMentor.cpp
 		NewHorizonsScholar.cpp
 		GlobalLobbyProcessor.cpp

@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "../mapObjects/NewHorizonsNeutralArmies.h"
+
 #include "../entities/hero/NewHorizonsSpecialtySerialization.h"
 #include "CMapEvent.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
@@ -359,6 +361,8 @@ public:
 	template <typename Handler>
 	void serialize(Handler &h)
 	{
+		if(h.saving)
+			newHorizonsNeutralArmies::validateSerialization(getSettings(), h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 		if(h.saving)
 			validateCombatScalarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));

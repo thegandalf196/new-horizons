@@ -196,6 +196,8 @@ set(test_SRCS
 		game/BattleSpellCastTest.cpp
 		game/GameSettingsTest.cpp
 		game/NewHorizonsCombatScalarCaptureTest.cpp
+		game/NewHorizonsNeutralArmySizeTest.cpp
+		game/NewHorizonsNeutralArmyWorldTest.cpp
 		game/HeroRecruitmentTest.cpp
 		game/HeroSecondarySkillsTest.cpp
 		creatures/NewHorizonsCreatureCategoryRulesTest.cpp

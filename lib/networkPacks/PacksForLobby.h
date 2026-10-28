@@ -177,11 +177,14 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateNewHorizonsTravelDayEndSerialization(bool waterWalkSupported, bool flySupported) const;
 	void validateCanonicalSpellClausesSerialization(bool supported, bool sorcerySupported = false) const;
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
+	void validateNeutralArmySizeSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNeutralArmySizeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 		if(h.saving)
 			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));

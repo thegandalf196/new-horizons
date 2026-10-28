@@ -2002,11 +2002,26 @@
           "end": 4131,
           "start": 4075,
           "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheAdjacentSingletonRetainsAdmissionWithoutTargetComparisons)#1"
+        },
+        {
+          "end": 4243,
+          "start": 4135,
+          "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, DISABLED_NullAndDefaultSelectionTimingProfile)#1"
+        },
+        {
+          "end": 4151,
+          "start": 4146,
+          "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, DISABLED_NullAndDefaultSelectionTimingProfile)::[](const auto & value)#1"
+        },
+        {
+          "end": 4175,
+          "start": 4168,
+          "symbol": "TEST_F(NewHorizonsExchangeReadParityTest, DISABLED_NullAndDefaultSelectionTimingProfile)::[&]#1"
         }
       ],
-      "rationale": "Complete 203-callable exact-source inventory renewed from the previous 196 records. Four bounded ShippingHeroSelectionTrace methods, two paired TEST_F bodies and a local PairedAILifetime destructor account for seven additional bodies; the changed harness signature also renames its three existing nested lambda scopes. Reviewed the entire delta and unchanged symbol continuity. The known recovery at line2438 is the empty std::function default argument in measureNaturalRound, not an omitted body. File4025-to-4127 and harness330-to-366; this test inventory is not production size approval or native/runtime acceptance. Final compiler-warning repair adds only four brace lines around two assertion-macro conditional bodies; reversing those exact braces recovers the prior reviewed6735b064 bytes. Complete203 callable identities retained; file4127-to-4131 and harness366-to-370, explicit recovery2438 unchanged. No assertion or execution-order change; compilation/runtime acceptance remains separate.",
-      "review": "IR-VINES-TIMING-BRACES-SOURCE-20261021",
-      "sha256": "9278e78360d308cf566a1c8a442e0baf21d9b16cc73c9e54b1a80f184b3e77c3"
+      "rationale": "Complete 206-callable exact-source inventory: the unchanged 4,131-line prefix retains its 203 reviewed bodies, followed by one disabled diagnostic test and its two local lambdas. The appended diagnostic compares fresh null/default timing consumers with state, RNG and action parity outside measured intervals. The existing empty std::function default-argument parser recovery omits no body. Manual coverage is not a production-size exception, compilation result or performance claim.",
+      "review": "IR-SELECTION-TIMING-NULL-DEFAULT-MANUAL-COVERAGE-20261028",
+      "sha256": "1435c063292f9f0bc495f6bdabd4e260ec1454061a2680335873eea423f0d1b3"
     },
     "test/battle/NewHorizonsBattleFormHealthTest.cpp": {
       "functions": [
@@ -21883,14 +21898,15 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "lines": 1377,
-      "sha256": "88199aec5b29597dd041218b9ad4211f56c33286be578cd07f8fd915b80e2b18",
+      "deferral": "Keep exact target membership and Linux/Windows parity when decomposing this mechanical registry; no additional implementation belongs here.",
       "kind": "exception",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Mechanical registration of focused Necromancy owners or append-only captured-policy serialization feature; no gameplay implementation in the registry. Exact Sorcery/Living Armor renewal: Explicit registration of reviewed shared source/header owners only. Physical span 1372\u21921377; unchanged limits/coverage.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Keep registry coherent; future manifest decomposition requires exact target-membership checks and Linux/Windows build parity. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine/UI owners retain coherent registries. Future decomposition must preserve exact target membership, append-only feature values and platform build parity. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-MECHANICAL-REGISTRATION-SOURCE-20261026",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "lines": 1381,
+      "owner": "engine_engineer",
+      "rationale": "Register the focused initialization, neutral-army rules and dwelling-guard compilation units and shared header. The mechanical target registry contains no gameplay implementation.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "c1df7696633ada2a72265c69f959220219edc1b2cae745090993f04db48ed4b3"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21943,16 +21959,15 @@
       "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "lib/GameSettings.h::GameSettings::void serialize(Handler & h)#1": {
+      "deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance.",
       "kind": "exception",
-      "lines": 137,
+      "lines": 139,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 135\u2192137; unchanged limits/coverage.",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "9ddf023e828f73b7e5132ed4c39d82ec1d51d6cfffa747556582c7c4b2b2ad1a",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
+      "rationale": "Validate the captured neutral-army percentage before direct settings output and before replacing loaded overrides. Existing serialized fields and validation order remain intact.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "2f9ce485b34bcef2b8f7337812acf759c08f0117bb49c183b94077c119d3ebdd"
     },
     "lib/LogicalExpression.h": {
       "kind": "legacy",
@@ -22717,16 +22732,15 @@
       "sha256": "f39bf12e7e6b2cc8b3cad45fb2b7a5ab05203cc1d80aa659d068f32bcfaafe87"
     },
     "lib/gameState/CGameState.cpp": {
-      "kind": "exception",
-      "lines": 2233,
+      "deferral": "Before expanding another touched world-initialization or preflight responsibility, extract it behind explicit inputs and retain initialization, RNG and save-boundary tests.",
+      "kind": "legacy",
+      "lines": 2212,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 2231\u21922233; unchanged limits/coverage.",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "592ba420399cb7aace3bbfe8d68356addff70a528fc025ce667ad7838a4235c5",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact2227-line shrinking bound only. Before future substantive growth, extract the next touched coherent captured-policy/preflight family with prefix-rejection and historical-absence coverage. Existing unrelated oversized routines receive no growth credit. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
+      "rationale": "Map-object initialization moves to its focused compilation unit; the existing world initialization call order is unchanged. The reduced file remains legacy orchestration debt.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "24e3eb18ff9fd8a885bdfa491f55e07187cc1b65f95fdf28c18fd6ee54de569b"
     },
     "lib/gameState/CGameState.cpp::bool CGameState::checkForVictory(const PlayerColor & player, const EventCondition & condition) const#1": {
       "kind": "legacy",
@@ -22765,24 +22779,26 @@
       "sha256": "d0c1c6cc9d2112f2efbad2e25274cbccc51977d106fa726abcfaa7442ffd27ea"
     },
     "lib/gameState/CGameState.h": {
-      "lines": 655,
-      "sha256": "72e94ee1f1696a167c761213f749e520435c7583e1d55749e738f2cec8d4ccc6",
+      "deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance.",
       "kind": "exception",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 653\u2192655; unchanged limits/coverage.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract captured-rules serialization preflight with explicit feature flags; protect world current/historical roundtrips and reject unsupported loss without default substitution. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "lines": 658,
+      "owner": "engine_engineer",
+      "rationale": "Declare and invoke the null-safe neutral-army serialization preflight; rules stay in the focused neutral-army owner, with no added serialized world field.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "20a2e3007fe4d453afae0cb08922b61a1a86cbf91840d75cf3b50bc4953e4081"
     },
     "lib/gameState/CGameState.h::CGameState::void serialize(Handler &h)#1": {
-      "lines": 305,
-      "sha256": "06e58d4b19edd13eecf907c3a99001449b02941df090b643f70d1e4cf0ab292c",
+      "deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance.",
       "kind": "exception",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 303\u2192305; unchanged limits/coverage.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract captured-rules serialization preflight with explicit feature flags; protect world current/historical roundtrips and reject unsupported loss without default substitution. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "lines": 307,
+      "owner": "engine_engineer",
+      "rationale": "The two-line saving-only delegate rejects unsupported reduced captures before any world prefix. Its member guards absent maps; no serialized field order or wire layout changes. The exact 305-to-307-line exception is limited to this delegate.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "c4cf833b7242c6b39b9d5699f979a7c54284ec1b7be3c3254e724fae443a3769"
     },
     "lib/gameState/CGameStateCampaign.cpp": {
       "kind": "legacy",
@@ -23085,13 +23101,15 @@
       "sha256": "213a10b21db6f769bca7e7fbdcc478b71ae7a7910021ec5d060132626bf92731"
     },
     "lib/mapObjects/CGDwelling.cpp": {
+      "deferral": "Keep this reduced legacy-file ceiling; isolate the next touched dwelling-visit or recruitment responsibility before expansion, preserving guard ownership and recruit-stock behavior.",
       "kind": "legacy",
-      "lines": 699,
+      "lines": 654,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 699 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "911da3d9ebe706189e28620ca8aa2b7c2f0234e1ed899c45a478d327e7f52c42"
+      "rationale": "Extract the intact dwelling guard-rebuild routine to DwellingGuards.cpp, where raw generated guards receive the shared percentage. Recruitment and visit responsibilities retain their prior behavior.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "9d020088355949acbf6f33326f0e65895ee0a03750a842f2335b09cf433e57de"
     },
     "lib/mapObjects/CGDwelling.cpp::void CGDwelling::heroAcceptsCreatures(IGameEventCallback & gameEvents, const CGHeroInstance *h) const#1": {
       "kind": "legacy",
@@ -23363,28 +23381,26 @@
       "sha256": "be5173d1832be2a4c47a65f66a91f325a01508e4eb0382acc94c04140bacd2f7"
     },
     "lib/mapping/CMap.h": {
+      "deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance.",
       "kind": "exception",
-      "lines": 512,
+      "lines": 516,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 511\u2192512; unchanged limits/coverage.",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "ea673d48b63851138742382d9c5ec51fc470d6fd1c23389998de35f9968792c9",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
+      "rationale": "Invoke captured neutral-army compatibility validation before map output; the existing settings field remains the persistence owner.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "09e6f6464477894a4da5203f6882f9cd95d5e9fe2e8504a28b09cbf9d2cc7e4b"
     },
     "lib/mapping/CMap.h::CMap::void serialize(Handler &h)#1": {
+      "deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance.",
       "kind": "exception",
-      "lines": 132,
+      "lines": 134,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 131\u2192132; unchanged limits/coverage.",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "2dbec83c2b4bc067eab2bc29dd4cfaf8755382f1324c08e51f36c038a1f2484b",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
+      "rationale": "Reject unsupported reduced neutral-army captures before the map prefix through the focused rules helper. Existing map fields and their order are unchanged.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "ae65f74cbdadfe59ba458051b33116100b73055689915ef08a834f0cc1d429e8"
     },
     "lib/mapping/CMapOperation.cpp": {
       "kind": "legacy",
@@ -23730,28 +23746,26 @@
       "previous_review": "recovery-verdish-current-rebase-source-v1"
     },
     "lib/networkPacks/PacksForLobby.h": {
+      "deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance.",
       "kind": "exception",
-      "lines": 576,
+      "lines": 579,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 574\u2192576; unchanged limits/coverage.",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "aac1ed78208119db91f3073cbf9564b16b167bc5cc9acd2d6e40619c76951381",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
+      "rationale": "Declare and invoke a neutral-army preflight that tolerates absent or uninitialized worlds and rejects unsupported captures before lobby output.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "84e103b1ad6ce24b27178b53730632904680e21dc602b64441638702c784de31"
     },
     "lib/networkPacks/PacksForLobby.h::LobbyStartGame::void serialize(Handler &h)#1": {
+      "deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance.",
       "kind": "exception",
-      "lines": 93,
+      "lines": 95,
       "owner": "engine_engineer",
-      "rationale": "Narrow captured-policy validation and direct/enclosing save-envelope preflights protect unsupported writers before output prefixes and historical readers before state replacement. No wire-field reordering or generic serialization framework. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 91\u219293; unchanged limits/coverage.",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "5f4ac7043d51da60ce03466be6bcc1dcca712e120642187710134e8e1fcf3b52",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine engineer: before further affected growth extract cohesive non-writing captured-policy preflight traversal with explicit feature support and existing map/world/campaign/lobby inputs; preserve before-prefix rejection, historical absence and exact field order with direct/enclosing codec tests. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
+      "rationale": "A saving-only null-safe member delegate validates the initialized world before lobby output; existing packet fields, ownership and ordering remain unchanged.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "84a41230a56b3efc3cdba6e421465e9684768fb92e3b4412cf0f7d072b3f88b1"
     },
     "lib/networkPacks/PacksForServer.h": {
       "kind": "legacy",
@@ -24314,14 +24328,15 @@
       "sha256": "cf553e17beb1f81fce90fee209b9fd0f3c9e6a508a4ad5b332d6709d6462fa74"
     },
     "lib/serializer/ESerializationVersion.h": {
-      "lines": 581,
-      "sha256": "07c6dfe61f4aab4573ea5321c46d339b2f4e8f7b6492a6e8fbb2ad3be83330fa",
+      "deferral": "Preserve append-only feature values, historical aliases and explicit read/write capability tests; do not place runtime mechanics in this registry.",
       "kind": "exception",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Mechanical registration of focused Necromancy owners or append-only captured-policy serialization feature; no gameplay implementation in the registry. Bounded amendment: Explicit v1/v2 serialization capability propagation retains preflight/read order and adds no data fields. Exact Sorcery/Living Armor renewal: One append-only Sorcery/Living Armor capability identifier; published format identities retained. Physical span 579\u2192581; unchanged limits/coverage.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Keep coherent append-only version registry; require exact value/history compatibility checks before future version changes. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Engine/UI owners retain coherent registries. Future decomposition must preserve exact target membership, append-only feature values and platform build parity. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "lines": 583,
+      "owner": "engine_engineer",
+      "rationale": "Append one neutral-army capture capability and update CURRENT without renumbering historical features. This is a mechanical compatibility registry.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "3a925ec2a384c46450e556f1c7566f45978759a270f0ed27e8f628068b4d7a1e"
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -25225,15 +25240,15 @@
       "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split."
     },
     "server/CGameHandler.cpp": {
-      "kind": "exception",
-      "lines": 6958,
+      "deferral": "Retain this reduced legacy-file ceiling. Extract the next touched cohesive authoritative responsibility before expansion; preserve packet order, command validation and RNG consumption.",
+      "kind": "legacy",
+      "lines": 6938,
       "owner": "engine_engineer",
-      "rationale": "Scholar authoritative branch extracted with same admission/week/query boundaries and pure directed spell plan; existing API wrapper retained. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged.",
-      "review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024",
-      "review_scope": "additional-specialty-capture-healing-entry-and-learning-only",
-      "sha256": "e3466e887e688648a3d9dc58b04d6e7e3bb4ac4f7b51516672bf41262244d7f0",
-      "deferral": "Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay owner retains the extracted Mentor award owner. Next touched Scholar meeting planning should move into a focused pre-meeting immutable exchange plan, preserving award, learning and weekly receipt order before further central-file growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth.",
-      "review_status": "SOURCE_AND_METADATA_CLEAR"
+      "rationale": "Move the natural wandering-population producer to NeutralMonsterPopulation.cpp with its existing tile shuffle and RNG sequence. The producer alone scales raw generated counts before the unchanged explicit creation API.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "a6c3f977c5725899a754c07274794894634a0ae4134240acd7f24550a504d55b"
     },
     "server/CGameHandler.cpp::bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8 what, SlotID p1, SlotID p2, si32 val, PlayerColor player)#1": {
       "kind": "legacy",
@@ -25831,13 +25846,15 @@
       "sha256": "271de9a4fe6a4453ef9c393c962f783da3f2896c7b1ad53636700a9c46ff94e1"
     },
     "server/processors/NewTurnProcessor.cpp": {
+      "deferral": "Keep this reduced legacy-file ceiling; extract the next touched turn-processing responsibility before expansion and retain deterministic calendar, ownership and RNG comparisons.",
       "kind": "legacy",
-      "lines": 1109,
+      "lines": 1002,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1109 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "5b6a26e2ba05f7c57941fa13fac45758d68822233a7697fdbcc8ec9b5d3d0c37"
+      "rationale": "Extract neutral-town reinforcement into NeutralTownGarrison.cpp while preserving turn ordering and the existing chance, tier, upgrade and recruitment bookkeeping.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "30263bf5f5f7dbb6e35258eaae8163647ad04df4c57edba44aab67f08b9ba4af"
     },
     "server/processors/NewTurnProcessor.cpp::NewTurn NewTurnProcessor::generateNewTurnPack()#1": {
       "kind": "legacy",
@@ -25865,15 +25882,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "7ffecb143220b22cb94d27735c76f90a30db60c2cd35f4ed5d3254812b0418e0"
-    },
-    "server/processors/NewTurnProcessor.cpp::void NewTurnProcessor::updateNeutralTownGarrison(const CGTownInstance * t, int currentWeek) const#1": {
-      "kind": "legacy",
-      "lines": 106,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 106 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "fc2e5aabce74e4aeca93250bb102d2124f535972952fb7b0e07839c0d946e332"
     },
     "server/processors/PlayerMessageProcessor.cpp": {
       "kind": "legacy",
@@ -26628,6 +26636,17 @@
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "kind": "review",
       "rationale": " Exact Sorcery/Living Armor renewal: Thin captured Focus/Slow/Living Armor queries and explicit Lua method registrations; scalar rules live with shared revision owner. Physical span 500\u2192529; unchanged limits/coverage."
+    },
+    "server/processors/NeutralTownGarrison.cpp::void NewTurnProcessor::updateNeutralTownGarrison(const CGTownInstance * t, int currentWeek) const#1": {
+      "deferral": "Before enlarging this decision, separate recruitment-stock bookkeeping from reinforcement selection with explicit inputs and deterministic parity; do not introduce new town policy in a generic helper.",
+      "kind": "review",
+      "lines": 106,
+      "owner": "engine_engineer",
+      "rationale": "The focused routine owns one neutral-town reinforcement decision. Only raw newly generated quantities use shared scaling; chance, tier, upgrade, recruitment bookkeeping and RNG order are retained. Its 106-line span remains below the function ceiling.",
+      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
+      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
+      "sha256": "a33ea49f881ae7fa2d30db5908b57868bd85ecdce3ce51eeb25c20a91777f205"
     }
   }
 }

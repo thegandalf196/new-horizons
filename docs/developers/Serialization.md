@@ -1,5 +1,16 @@
 # Serialization
 
+## Captured neutral-army size trial
+
+`NEW_HORIZONS_NEUTRAL_ARMY_SIZE` protects a reduced captured
+`creatures.neutralArmySizePercent`. Historical absence becomes 100 on binary
+load; fresh map overrides inherit defaults until initialization captures them.
+Save/load never reapplies initial count scaling. Direct settings, map, world
+and initialized-lobby writers reject unsupported reduced captures before their
+prefixes; readers reject unsupported reduced overrides before mutation. See the
+[neutral army runtime contract](NewHorizonsNeutralArmies.md) for generation,
+renewal, exclusions and rounding.
+
 ## Captured contexts and detached descriptors
 
 Append serialization features before the CURRENT/MINIMAL aliases and keep version

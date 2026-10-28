@@ -4129,3 +4129,115 @@ TEST_F(NewHorizonsExchangeReadParityTest, ProbeCacheAdjacentSingletonRetainsAdmi
 	EXPECT_TRUE(callback->actions.empty());
 	EXPECT_TRUE(callback->heroActions.empty());
 }
+
+// Explicit profiling only: A is the null sink, B is default selection timing.
+// This measures selection instrumentation, not a full callback or quick combat.
+TEST_F(NewHorizonsExchangeReadParityTest, DISABLED_NullAndDefaultSelectionTimingProfile)
+{
+	dynamic_cast<CRandomGenerator &>(*getRNG()).setSeed(1337);
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	CRandomGenerator::getDefault().setSeed(1337);
+	addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 50);
+	addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 5), 50);
+	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 7), 50);
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 3), 50);
+	gameState()->getStartInfo()->difficulty = static_cast<ui8>(EMapDifficulty::NORMAL);
+	ASSERT_TRUE(battle()->battleUsesHeroCommands());
+	const auto wireBytes = [](const auto & value)
+	{
+		CMemorySerializer wire;
+		wire.oser & value;
+		return wire.extractBuffer();
+	};
+	// Full serialized game/battle state, server randomizer, and both available
+	// game/AI generators are compared outside all measured consumer intervals.
+	const auto before = gameState()->saveToMemory();
+	const auto serverRngBefore = wireBytes(*gameHandler->randomizer);
+	const auto gameRngBefore = wireBytes(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto aiRngBefore = wireBytes(CRandomGenerator::getDefault());
+	ASSERT_EQ(gameState()->saveToMemory(), before);
+	std::optional<BattleAction> expected;
+	std::vector<std::pair<int, int64_t>> expectedTargets;
+	const bool measuredModes[] = {false, true, true, false, true, false, false, true};
+	for(size_t index = 0; index < std::size(measuredModes); ++index)
+	{
+		const bool measured = measuredModes[index];
+		SCOPED_TRACE(std::to_string(index) + (measured ? ":default-sink" : ":null-sink"));
+		BattleEvaluator::SelectionTiming timing;
+		const auto started = std::chrono::steady_clock::now();
+		const auto action = [&]
+		{
+			// The ordinary constructor creates a fresh HypotheticBattle, damage
+			// cache and targets. Destruction is included symmetrically in both modes.
+			BattleEvaluator evaluator(environment, callback, ordinary, PlayerColor(0), BattleID(0),
+				BattleSide::ATTACKER, 1.0f, 2);
+			return evaluator.selectStackAction(ordinary, measured ? &timing : nullptr);
+		}();
+		const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+			std::chrono::steady_clock::now() - started).count();
+		EXPECT_EQ(gameState()->saveToMemory(), before);
+		EXPECT_EQ(wireBytes(*gameHandler->randomizer), serverRngBefore);
+		EXPECT_EQ(wireBytes(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRngBefore);
+		EXPECT_EQ(wireBytes(CRandomGenerator::getDefault()), aiRngBefore);
+		EXPECT_TRUE(callback->actions.empty());
+		EXPECT_TRUE(callback->heroActions.empty());
+		std::vector<std::pair<int, int64_t>> targets;
+		for(const auto & target : action.getTarget(battle()))
+			targets.emplace_back(target.hexValue.toInt(), target.unitValue
+				? static_cast<int64_t>(target.unitValue->unitId()) : -1);
+		if(!expected)
+		{
+			expected = action;
+			expectedTargets = targets;
+		}
+		ASSERT_TRUE(expected);
+		EXPECT_EQ(wireBytes(action), wireBytes(*expected));
+		EXPECT_EQ(action.toString(), expected->toString());
+		EXPECT_EQ(action.perfectMoment, expected->perfectMoment);
+		EXPECT_EQ(action.archerySkirmisherAttack, expected->archerySkirmisherAttack);
+		EXPECT_EQ(targets, expectedTargets);
+		uint64_t exchanges = 0;
+		uint64_t effectScopes = 0;
+		for(const auto * exchange : {&timing.movementDetails.findMoveExchangeDetails,
+			&timing.bestTargetDetails.waitedDetails, &timing.bestTargetDetails.normalDetails})
+		{
+			exchanges += exchange->body.calls;
+			EXPECT_FALSE(exchange->collectProbeDamageCache);
+			const auto & cache = exchange->targetProbeDamageCache;
+			EXPECT_EQ(cache.body.calls, 0u);
+			EXPECT_EQ(cache.getDamageCalls, 0u);
+			EXPECT_EQ(cache.getOriginalDamageCalls, 0u);
+			EXPECT_EQ(cache.dynamicBypasses, 0u);
+			EXPECT_EQ(cache.calculation.initialCalls, 0u);
+			EXPECT_EQ(cache.calculation.nativePayload.calls, 0u);
+			EXPECT_EQ(cache.calculation.bonusPreparation.calls, 0u);
+			EXPECT_EQ(cache.calculation.luaCall.calls, 0u);
+			expectProbeCacheClosure(cache);
+			for(const auto * work : {&exchange->lifecycleSubsets.activationExpiryWork,
+				&exchange->lifecycleSubsets.activationGamblerWork, &exchange->lifecycleSubsets.roundTimedWork})
+				for(const auto * stage : {&work->stackedQuery, &work->rawQuery, &work->snapshotMaterialization,
+					&work->selectiveRemovalQuery, &work->removalMutation, &work->roundAging})
+					effectScopes += stage->calls;
+		}
+		if(measured)
+		{
+			EXPECT_GT(timing.movementDetails.findMove.calls, 0u);
+			EXPECT_GT(exchanges, 0u);
+			EXPECT_GT(effectScopes, 0u);
+		}
+		else
+		{
+			EXPECT_EQ(timing.movementDetails.findMove.calls, 0u);
+			EXPECT_EQ(exchanges, 0u);
+			EXPECT_EQ(effectScopes, 0u);
+		}
+		const auto prefix = "selectionProfile" + std::to_string(index);
+		RecordProperty(prefix + "Mode", measured ? "default-sink" : "null-sink");
+		RecordProperty(prefix + "WallNs", std::to_string(elapsed));
+		RecordProperty(prefix + "ExchangeCalls", std::to_string(exchanges));
+		RecordProperty(prefix + "EffectScopeCalls", std::to_string(effectScopes));
+		RecordProperty(prefix + "Action", action.toString());
+	}
+	RecordProperty("selectionProfileOrder", "ABBA BAAB; A=null sink, B=default sink; seed1337; Normal2-round forecast");
+	RecordProperty("selectionProfileScope", "Eight construction/selection/destruction wall observations; no timing threshold, Hero search, submission or whole-combat claim");
+}

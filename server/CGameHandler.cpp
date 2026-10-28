@@ -6506,26 +6506,6 @@ bool CGameHandler::giveHeroNewScroll(const CGHeroInstance * h, const SpellID & s
 	return giveHeroNewArtifact(h, ArtifactID(ArtifactID::SPELL_SCROLL).toArtifact(), spellId, pos);
 }
 
-void CGameHandler::spawnWanderingMonsters(CreatureID creatureID)
-{
-	std::vector<int3>::iterator tile;
-	std::vector<int3> tiles;
-	gameState().getFreeTiles(tiles, true);
-	ui32 amount = tiles.size() / 200; //Chance is 0.5% for each tile
-
-	RandomGeneratorUtil::randomShuffle(tiles, getRandomGenerator());
-	logGlobal->trace("Spawning wandering monsters. Found %d free tiles. Creature type: %d", tiles.size(), creatureID.num);
-	const CCreature *cre = creatureID.toCreature();
-	for (int i = 0; i < amount; ++i)
-	{
-		tile = tiles.begin();
-		logGlobal->trace("\tSpawning monster at %s", tile->toString());
-		auto count = cre->getRandomAmount(getRandomGenerator());
-		createWanderingMonster(*tile, creatureID, count);
-		tiles.erase(tile); //not use it again
-	}
-}
-
 bool CGameHandler::isBlockedByQueries(const CPackForServer *pack, PlayerColor player)
 {
 	if(!player.isValidPlayer())

@@ -283,11 +283,13 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_SORCERY_REVISION, // timed summon state and all-magical incoming vulnerability
 
+	NEW_HORIZONS_NEUTRAL_ARMY_SIZE, // captured initial and natural-regeneration army-size trial
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_SORCERY_REVISION,
+	CURRENT = NEW_HORIZONS_NEUTRAL_ARMY_SIZE,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2

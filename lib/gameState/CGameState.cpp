@@ -1182,27 +1182,6 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 	}
 }
 
-void CGameState::initMapObjects(IGameRandomizer & gameRandomizer)
-{
-	logGlobal->debug("\tObject initialization");
-
-	for(auto & obj : map->getObjects())
-		obj->initObj(gameRandomizer);
-
-	logGlobal->debug("\tObject initialization done");
-
-	// getObjects<CGMonolith>() also yields CGSubterraneanGate, paired separately below instead
-	for(auto & obj : map->getObjects<CGMonolith>())
-		obj->assignTeleportChannel();
-
-	// getObjects<SeerHut>() already yields exactly seer huts + quest guards
-	for(auto & q : map->getObjects<SeerHut>())
-		q->setObjToKill();
-	CGSubterraneanGate::postInit(this); //pairing subterranean gates
-
-	map->calculateGuardingGreaturePositions(); //calculate once again when all the guards are placed and initialized
-}
-
 void CGameState::placeHeroesInTowns()
 {
 	for(auto & player : players)
