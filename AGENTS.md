@@ -95,6 +95,16 @@ queue so a role can be restored when a thread is closed, capacity is reclaimed,
 or a new main session starts. A role definition alone does not launch a session
 or provide tools; report unavailable image-generation or graphical-test tools.
 
+At session start, after context compaction, and at each substantive task handoff,
+read the private task queue and reconcile actual specialist states. Proactively
+assign ready, independent, authorized work to the appropriate specialists within
+the configured capacity, without waiting for the user to request delegation.
+Keep independent work progressing alongside the highest-priority task. Serialize
+shared-file edits, compilation, graphical ownership, and work that would interfere
+with timed measurements; these constraints must not idle specialists whose ready
+tasks can proceed independently. Restore assignments from private handoffs when
+recovering context, and route completed tasks to their next eligible handoff.
+
 Give each assignment a bounded objective, file ownership, constraints, expected
 result, and acceptance criteria. Avoid concurrent edits to the same files;
 use isolated worktrees or private patches where appropriate. Keep frozen test
