@@ -234,15 +234,21 @@ TEST_F(NewHorizonsNeutralArmyWorldTest, FirstTwoGrowthBoundariesUseScaledFractio
 TEST_F(NewHorizonsNeutralArmyWorldTest, DwellingWeeklyGuardRebuildDoesNotCompoundOrAlterRecruitStock)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto * dwelling = findFirst<CGDwelling>();
-	ASSERT_NE(dwelling, nullptr);
+	const auto dwellings = map()->getObjects<CGDwelling>();
+	const auto found = std::find_if(dwellings.begin(), dwellings.end(), [](const auto * candidate)
+	{
+		return candidate->ID == Obj::CREATURE_GENERATOR1;
+	});
+	ASSERT_NE(found, dwellings.end());
+	auto * dwelling = *found;
+	ASSERT_EQ(dwelling->ID, Obj::CREATURE_GENERATOR1);
 	const CreatureID guard(CreatureID::decode("core:angel"));
 	dwelling->creatures = {{17, {guard}}};
 	dwelling->clearSlots();
 	GameHandlerTestServer server(gameState());
 	CGameHandler handler(server, gameState());
 	const int raw = gameState()->getCreatureBaseGrowth(guard) * 3;
-	const int scaled = newHorizonsNeutralArmies::scaleCount(raw, 50);
+	const int scaled = (raw + 1) / 2;
 	gameState()->day = 8;
 	static_cast<const IObjectInterface *>(dwelling)->newTurn(handler, *handler.randomizer);
 	EXPECT_EQ(dwelling->getStackCount(SlotID(0)), scaled);
@@ -281,6 +287,7 @@ TEST_F(NewHorizonsNeutralArmyWorldTest, RegeneratedBankGuardsScaleRawConfigurati
 	handler.newObject(object, PlayerColor(0));
 	auto * bank = dynamic_cast<CRewardableObject *>(object.get());
 	ASSERT_NE(bank, nullptr);
+	ASSERT_EQ(bank->getOwner(), PlayerColor::UNFLAGGABLE);
 	const auto constructor = std::dynamic_pointer_cast<const CRewardableConstructor>(bank->getObjectHandler());
 	ASSERT_NE(constructor, nullptr);
 	for(int round = 0; round < 2; ++round)
@@ -288,9 +295,12 @@ TEST_F(NewHorizonsNeutralArmyWorldTest, RegeneratedBankGuardsScaleRawConfigurati
 		bank->configuration.resetParameters.days = 1;
 		bank->configuration.resetParameters.rewards = true;
 		gameState()->day = round + 2;
-		GameRandomizer reference(*gameState());
-		reference.setSeed(1337 + round);
 		handler.randomizer->setSeed(1337 + round);
+		GameRandomizer reference(*gameState());
+		// A seed alone omits prior artifact allocations and independent streams.
+		CMemorySerializer randomizerCopy(bytes(*handler.randomizer));
+		randomizerCopy.iser & reference;
+		ASSERT_EQ(bytes(reference), bytes(*handler.randomizer));
 		auto expected = constructor->generateConfiguration(bank->cb, reference, bank->ID, bank->configuration.variables.preset);
 		for(auto & visit : expected.info)
 			for(auto & guard : visit.reward.guards)
