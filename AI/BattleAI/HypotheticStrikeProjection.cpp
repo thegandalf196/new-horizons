@@ -472,6 +472,9 @@ int64_t HypotheticBattle::projectHexOfPainStrike(const BattleAttackInfo & attack
 		return 0;
 
 	const auto attacker = getForUpdate(attack.attacker->unitId());
+	const auto triggers = attacker->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	if(triggers->empty())
+		return 0;
 	const auto healthBefore = attacker->getAvailableHealth();
 	const auto rebirthSource = attacker->alive()
 		? captureElementalRebirthSource(*attacker) : std::nullopt;
@@ -498,7 +501,6 @@ int64_t HypotheticBattle::projectHexOfPainStrike(const BattleAttackInfo & attack
 	if(payload.targets.empty())
 		return 0;
 
-	const auto triggers = attacker->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
 	for(const auto & bonus : *triggers)
 	{
 		if(!bonus || !isHexOfPainBonus(*bonus))

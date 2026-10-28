@@ -26421,12 +26421,12 @@
     },
     "AI/BattleAI/HypotheticStrikeProjection.cpp": {
       "kind": "exception",
-      "lines": 523,
+      "lines": 525,
       "owner": "ai_engineer",
-      "rationale": "Exact523-line no-growth correction changes only the source-owner argument in the10-line Elemental Rebirth capture method to existing internal getSideHero, matching authoritative damage capture. Public player-filtered hero visibility remains unchanged; shared eligibility, native-rebirth, clone, chain quota, original-HP basis and placement validation are preserved. Coupling broader extraction to this demonstrated producer correction would increase risk; source-only review, native acceptance pending.",
-      "review": "life-drain-rebirth-native-owner-independent-source-review",
-      "review_scope": "single-internal-Rebirth-source-owner-correction",
-      "sha256": "88086d98901b66d947247e1dfe4af555e598d6a1fc680300fb2e29517c5fb273",
+      "rationale": "Bounded exception for exactly two net added lines in this existing 523-line hotspot. The guard moves the existing COMBAT_EVENT_TRIGGER query immediately after getForUpdate and returns zero only for an empty list, avoiding read-only health/Rebirth eligibility and local payload preparation that cannot produce an event. Branch materialization and Life Drain observation invalidation remain before the guard; nonempty event execution order, state mutations and RNG behavior are preserved. This local work-avoidance boundary adds no responsibility, state, interface or helper hierarchy. Existing Elemental Rebirth capture retains internal getSideHero ownership and its public-view distinction, original HP, native Phoenix precedence, recursive exclusions, quotas and placement validation. The two-line exception does not waive a file/function ceiling, authorize further growth or replace the existing extraction deferral.",
+      "review": "empty-combat-event-trigger-fast-path",
+      "review_scope": "exact-523-to-525-two-line-growth-exception-no-ceiling-waiver",
+      "sha256": "d44679bcdf1b80c14e9beb66863292c6c92bb44ed6bd9de809fa1a7bba014713",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "deferral": "Before substantive Rebirth/Primal Burst expansion, ai_engineer must extract cohesive typed death-capture/projection/aftermath ownership from this mixed strike owner. Preserve source identity and original HP, native Phoenix precedence, recursive exclusions, legal placement, chain/Spark quotas, side-owner versus public-view boundary and exact live/parent/sibling/RNG tests; no future growth allowance."
     },
