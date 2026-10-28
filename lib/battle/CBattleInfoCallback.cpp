@@ -468,7 +468,8 @@ bool CBattleInfoCallback::battleCanUseHeroCommand(BattleSide side, HeroCommand c
 	for(const auto * unit : battleGetAllStacks())
 	{
 		if(unit->alive() && battleGetOwner(unit) == sideToPlayer(side)
-			&& !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
+			&& !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& (command != HeroCommand::VANGUARD || heroCommands::isVanguardCreature(unit)))
 			return true;
 	}
 	return false;

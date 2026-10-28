@@ -38,7 +38,8 @@ void appendVanguardGrants(IssuedOrderGrants & result, const CBattleInfoCallback 
 			if(!unit || unit->isTimeStopped() || battle.battleGetOwner(unit) != battle.sideToPlayer(side))
 				continue;
 			std::vector<Bonus> obsolete;
-			for(const auto & bonus : *unit->getBonuses(CSelector(isVanguardBonus)))
+			const auto oldBonuses = unit->getBonuses(CSelector(isVanguardBonus));
+			for(const auto & bonus : *oldBonuses)
 				obsolete.push_back(*bonus);
 			if(!obsolete.empty())
 				removals.emplace_back(unit->unitId(), std::move(obsolete));

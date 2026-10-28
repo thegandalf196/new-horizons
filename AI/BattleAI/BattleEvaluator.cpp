@@ -4502,6 +4502,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		}
 		float score(const heroOrderCandidates::ValuationRequest & request) const override
 		{
+			// These two revised Orders are finally scored after accepted projection.
+			// Do not enter legacy perk forecasts or combat search during admission.
+			if(heroOrderValue::usesRevisedArmyHeuristic(*request.battle, request.command))
+				return 1.0f;
 			return canonicalOrderHeuristic(*request.battle, request.side, request.command,
 				request.targets, request.focusFirePercent, environment, cache, request.battle);
 		}
@@ -4826,9 +4830,20 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							ps.value = std::numeric_limits<float>::lowest();
 							continue;
 						}
-						orderContinuation = state->projectOrderContinuation(side, *orderAllowance,
-							*admission.orderEffects);
+						if(!heroOrderValue::usesRevisedArmyHeuristic(*battleCallback, ps.command))
+							orderContinuation = state->projectOrderContinuation(side, *orderAllowance,
+								*admission.orderEffects);
 					}
+				}
+
+				if(heroOrderValue::usesRevisedArmyHeuristic(*battleCallback, ps.command))
+				{
+					const float marginal = heroOrderValue::revisedArmyUtility(
+						battleCallback, state, side, ps.command);
+					ps.value = baseline + marginal * (marginal >= 0.0f
+						? scoreEvaluator.getPositiveEffectMultiplier()
+						: scoreEvaluator.getNegativeEffectMultiplier());
+					continue;
 				}
 
 				// Removed sacrifice victims must remain in the health accounting below.

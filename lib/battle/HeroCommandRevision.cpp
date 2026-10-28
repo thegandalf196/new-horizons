@@ -264,7 +264,8 @@ std::optional<ActiveVanguardBonuses> activeVanguardBonuses(const battle::Unit * 
 	if(!unit)
 		return {};
 	ActiveVanguardBonuses result;
-	for(const auto & bonus : *unit->getBonuses(CSelector(isVanguardBonus)))
+	const auto bonuses = unit->getBonuses(CSelector(isVanguardBonus));
+	for(const auto & bonus : *bonuses)
 	{
 		if(bonus->type == BonusType::NONE)
 			continue; // Entitlement metadata is not a standalone stat benefit.

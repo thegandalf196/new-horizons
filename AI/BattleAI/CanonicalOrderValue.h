@@ -15,9 +15,16 @@
 #include <memory>
 
 class Environment;
+class HypotheticBattle;
 
 namespace heroOrderValue
 {
+/// Revised Feint/Vanguard only. Accepted projection is valued with finite stat
+/// estimates on a fixed DPS-reduction reference; never searches combat actions.
+bool usesRevisedArmyHeuristic(const CBattleInfoCallback & battle, HeroCommand command);
+float revisedArmyUtility(std::shared_ptr<CBattleInfoCallback> before,
+	const std::shared_ptr<HypotheticBattle> & projected, BattleSide side, HeroCommand command);
+
 struct DirectOrderValue
 {
 	std::optional<float> direct;

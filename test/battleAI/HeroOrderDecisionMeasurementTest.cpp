@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "HeroQueueSelectorFixture.h"
+#include "HeroActionTimingCapture.h"
 #include "../../AI/BattleAI/HeroActionSelection.h"
 #include "../../AI/BattleAI/HeroOrderCandidateRules.h"
 #include "../../lib/GameLibrary.h"
@@ -12,6 +13,7 @@
 #include "../../lib/modding/CModHandler.h"
 #include <boost/algorithm/hex.hpp>
 #include <array>
+#include <set>
 #include <bit>
 #include <chrono>
 #include <locale>
@@ -22,6 +24,50 @@ namespace heroQueueTest
 namespace
 {
 struct Trial { int pair; bool revised; };
+// Existing bounded log-sink ownership. Type rows distinguish the revised Orders
+// from the six retained candidates evaluated in the same real selector call.
+class OrderTypeTarget final : public ILogTarget
+{
+	std::weak_ptr<heroTimingTest::Messages> messages;
+public:
+	explicit OrderTypeTarget(std::weak_ptr<heroTimingTest::Messages> value) : messages(value) {}
+	void write(const LogRecord & record) override
+	{
+		if(!record.message.starts_with("NH_HERO_ACTION_TYPE_TIMING ")) return;
+		if(const auto output = messages.lock())
+		{
+			std::lock_guard lock(output->mutex);
+			if(output->rows.size() < 32) output->rows.push_back(record.message);
+			else output->truncated = true;
+		}
+	}
+};
+
+void expectNoRevisedSearch(const std::shared_ptr<heroTimingTest::Messages> & messages)
+{
+	std::lock_guard lock(messages->mutex);
+	ASSERT_FALSE(messages->truncated);
+	std::set<int> checked;
+	for(const auto & row : messages->rows)
+	{
+		std::map<std::string, int64_t> fields;
+		std::istringstream input(row);
+		std::string word;
+		while(input >> word)
+		{
+			const auto equal = word.find('=');
+			if(equal != std::string::npos) fields.emplace(word.substr(0, equal), std::stoll(word.substr(equal + 1)));
+		}
+		const int command = fields.at("command");
+		if(command != static_cast<int>(HeroCommand::FEINT) && command != static_cast<int>(HeroCommand::VANGUARD)) continue;
+		checked.insert(command);
+		EXPECT_EQ(fields.at("evaluations"), 1);
+		for(const auto * stage : {"full_calls", "cached_calls", "movement_sum_us", "best_target_sum_us"})
+			EXPECT_EQ(fields.at(stage), 0) << row;
+	}
+	EXPECT_EQ(checked, (std::set<int>{static_cast<int>(HeroCommand::FEINT), static_cast<int>(HeroCommand::VANGUARD)}));
+}
+
 class Counts final : public heroActionSelection::Observer
 {
 public:
@@ -189,11 +235,18 @@ TEST_P(HeroOrderDecisionMeasurementTest, MeasuresOneExistingProductionOrderDecis
 		BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active); // Ordinary baseline setup is outside timing.
 	ASSERT_TRUE(evaluator.canCastSpell());
+	heroTimingTest::Capture timingCapture;
+	auto orderTypes = std::make_shared<heroTimingTest::Messages>();
+	CLogger::getGlobalLogger()->addTarget(std::make_unique<OrderTypeTarget>(orderTypes));
 	Counts counts;
+	std::unique_ptr<heroTimingTest::Capture> capture;
+	if(GetParam().pair == 0 && GetParam().revised && heroTimingTest::optedIn())
+		capture = std::make_unique<heroTimingTest::Capture>();
 	const auto started = std::chrono::steady_clock::now();
 	const bool submitted = evaluator.attemptCastingSpell(active, true, &counts);
 	const auto elapsed = std::chrono::steady_clock::now() - started;
 	const auto after = observation();
+	if(GetParam().revised && heroTimingTest::optedIn()) expectNoRevisedSearch(orderTypes);
 	RecordProperty("selectionTrace", counts.trace());
 	RecordProperty("observationBeforeHex", asciiHex(before));
 	RecordProperty("observationAfterHex", asciiHex(after));
@@ -204,6 +257,13 @@ TEST_P(HeroOrderDecisionMeasurementTest, MeasuresOneExistingProductionOrderDecis
 	RecordProperty("unitRequestWires", wire(callback->unitRequests));
 	RecordProperty("decisionNanoseconds", std::to_string(
 		std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count()));
+	if(capture)
+	{
+		capture->expectSubmission(battle()->getRound(), active->unitId(), true);
+		const auto rows = capture->rows();
+		ASSERT_EQ(rows.size(), 1u);
+		RecordProperty("heroActionTimingAggregate", rows.front());
+	}
 	RecordProperty("candidateEvaluations", std::to_string(counts.candidates));
 	RecordProperty("choices", std::to_string(counts.choices));
 	for(auto command : {HeroCommand::PROTECT, HeroCommand::FLANK, HeroCommand::FEINT, HeroCommand::VANGUARD})

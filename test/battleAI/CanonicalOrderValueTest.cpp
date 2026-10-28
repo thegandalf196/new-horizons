@@ -10,6 +10,11 @@
 #include "StdInc.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/CanonicalOrderValue.h"
+#include "../../AI/BattleAI/AttackPossibility.h"
+#include "../../AI/BattleAI/HeroActionAdmission.h"
+#include "HeroQueueSelectorFixture.h"
+#include "../../lib/battle/HeroCommandRevision.h"
+#include "../../lib/bonuses/BonusParameters.h"
 #include "../../AI/BattleAI/BattleDamageValue.h"
 #include "../../AI/BattleAI/HeroOrderCandidateRules.h"
 #include <tuple>
@@ -382,4 +387,222 @@ TEST_F(CanonicalOrderValueTest, RevisedVanguardAdmissionUsesCapturedEligibleReci
 	EXPECT_GT(*actual, 0.0f);
 	EXPECT_FLOAT_EQ(*actual, static_cast<float>(prepared->revision->recipientUnitIds.size()
 		* prepared->revision->vanguardStatBonus));
+}
+
+// Revised-only final utility is a finite stat forecast, not the historical raw
+// Order admission prior. Existing direct-value and historical tests stay above.
+class RevisedArmyOrderValueTest : public heroQueueTest::HeroQueueSelectorTest
+{
+protected:
+	static constexpr auto side = BattleSide::ATTACKER;
+	void prepare(const char * ownKey = "core:pikeman")
+	{
+		useRevisedOrders = true;
+		ASSERT_NO_FATAL_FAILURE(world());
+		for(auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			hero->removeAllSpells();
+			if(hero->hasSpellbook()) hero->removeArtifact(ArtifactPosition::SPELLBOOK);
+		}
+		const auto capacity = attackerSideHero->getLeadershipCapacity();
+		ASSERT_TRUE(capacity);
+		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+			BonusType::LEADERSHIP, BonusSource::OTHER, static_cast<int>(2250 - capacity->capacity), BonusSourceID()));
+		ASSERT_NO_FATAL_FAILURE(startBattle());
+		BattleUnitsChanged clear;
+		clear.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			clear.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(clear);
+		active = addStack(side, creatureByName(ownKey), BattleHex(7, 5), 30);
+		enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(8, 5), 30);
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(enemy, nullptr);
+		ASSERT_NO_FATAL_FAILURE(beginCombat());
+		ASSERT_NO_FATAL_FAILURE(activate(active));
+		effect(active, Bonus(BonusDuration::ONE_BATTLE, BonusType::STACKS_INITIATIVE_BASE,
+			BonusSource::OTHER, 100, BonusSourceID(), BonusSubtypeID(), BonusValueType::BASE_NUMBER));
+		callback = std::make_shared<heroQueueTest::QueueCallback>();
+		callback->onBattleStarted(battle());
+		live = callback->getBattle(BattleID(0));
+		environment = std::make_shared<heroQueueTest::QueueEnvironment>(gameState());
+	}
+
+	void expectVanguardUnavailableWithoutMutation()
+	{
+		const auto before = state(*live);
+		const auto rng = heroQueueTest::wire(*gameHandler->randomizer);
+		EXPECT_FALSE(live->battlePrepareHeroOrderState(side, HeroCommand::VANGUARD, {}));
+		EXPECT_FALSE(live->battleCanUseHeroCommand(side, HeroCommand::VANGUARD));
+		EXPECT_FALSE(issue(HeroCommand::VANGUARD));
+		EXPECT_EQ(state(*live), before);
+		EXPECT_EQ(heroQueueTest::wire(*gameHandler->randomizer), rng);
+	}
+
+	std::shared_ptr<HypotheticBattle> project(const std::shared_ptr<CBattleInfoCallback> & source,
+		HeroCommand command)
+	{
+		auto result = std::make_shared<HypotheticBattle>(environment.get(), source);
+		PossibleSpellcast candidate;
+		candidate.command = command;
+		const auto admission = heroActionProjection::admitCandidate(*result, side, candidate);
+		EXPECT_TRUE(admission.admitted);
+		if(!admission.admitted || !admission.orderEffects || !admission.orderAllowance)
+			return {};
+		EXPECT_TRUE(result->projectAcceptedHeroOrder(side, *admission.orderEffects, *admission.orderAllowance));
+		return result;
+	}
+};
+
+TEST_F(RevisedArmyOrderValueTest, FeintPricesActualRetaliationAndPreservesNativeStateAndRng)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto coldEnemy = enemy->acquireState()->save();
+	ASSERT_FALSE(coldEnemy["state"]["counterAttacks"].Struct().contains("totalCache"));
+	const auto source = state(*live);
+	const auto rng = heroQueueTest::wire(*gameHandler->randomizer);
+	auto projected = project(live, HeroCommand::FEINT);
+	ASSERT_TRUE(projected);
+	auto reference = std::make_shared<HypotheticBattle>(environment.get(), live);
+	for(const auto * unit : live->battleGetAllUnits(false))
+	{
+		reference->getForUpdate(unit->unitId());
+		projected->getForUpdate(unit->unitId());
+	}
+	DamageEstimation beforeCounter, afterCounter;
+	reference->battleEstimateDamage(BattleAttackInfo(reference->battleGetUnitByID(active->unitId()),
+		reference->battleGetUnitByID(enemy->unitId()), 0, false), &beforeCounter);
+	projected->battleEstimateDamage(BattleAttackInfo(projected->battleGetUnitByID(active->unitId()),
+		projected->battleGetUnitByID(enemy->unitId()), 0, false), &afterCounter);
+	ASSERT_GT(battleDamageValue::averageOrderDamage(beforeCounter), battleDamageValue::averageOrderDamage(afterCounter));
+	DamageCache fixed;
+	const float expected = AttackPossibility::calculateDamageReduce(reference->battleGetUnitByID(enemy->unitId()),
+		reference->battleGetUnitByID(active->unitId()), battleDamageValue::averageOrderDamage(beforeCounter), fixed, reference)
+		- AttackPossibility::calculateDamageReduce(reference->battleGetUnitByID(enemy->unitId()),
+			reference->battleGetUnitByID(active->unitId()), battleDamageValue::averageOrderDamage(afterCounter), fixed, reference);
+	ASSERT_GT(expected, 0.0f);
+	EXPECT_FLOAT_EQ(heroOrderValue::revisedArmyUtility(live, projected, side, HeroCommand::FEINT), expected);
+	EXPECT_EQ(state(*live), source);
+	EXPECT_EQ(enemy->acquireState()->save(), coldEnemy);
+	EXPECT_EQ(heroQueueTest::wire(*gameHandler->randomizer), rng);
+}
+
+TEST_F(RevisedArmyOrderValueTest, FeintIsWorthZeroWhenTheVisibleEnemyCannotRetaliate)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	effect(enemy, Bonus(BonusDuration::ONE_BATTLE, BonusType::NO_RETALIATION, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_FALSE(enemy->ableToRetaliate());
+	auto projected = project(live, HeroCommand::FEINT);
+	ASSERT_TRUE(projected);
+	EXPECT_FLOAT_EQ(heroOrderValue::revisedArmyUtility(live, projected, side, HeroCommand::FEINT), 0.0f);
+}
+
+TEST_F(RevisedArmyOrderValueTest, VanguardValuesEveryComponentAndExcludesUndeadRecipients)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto * undead = addStack(side, creatureByName("core:skeleton"), BattleHex(4, 5), 1);
+	ASSERT_NE(undead, nullptr);
+	auto projected = project(live, HeroCommand::VANGUARD);
+	ASSERT_TRUE(projected);
+	ASSERT_FALSE(heroCommands::activeVanguardBonuses(projected->battleGetUnitByID(undead->unitId())));
+	const auto * grant = projected->battleGetUnitByID(active->unitId());
+	ASSERT_TRUE(heroCommands::activeVanguardBonuses(grant));
+	ASSERT_GT(projected->battleGetMorale(grant), live->battleGetMorale(active));
+	ASSERT_GT(grant->getInitiative(), active->getInitiative());
+	const auto full = heroOrderValue::revisedArmyUtility(live, projected, side, HeroCommand::VANGUARD);
+	ASSERT_GT(full, 0.0f);
+	for(const auto & component : std::vector<CSelector>{
+		Selector::typeSubtype(BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::ATTACK)),
+		Selector::typeSubtype(BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::DEFENSE)),
+		Selector::type()(BonusType::MORALE), Selector::type()(BonusType::STACKS_INITIATIVE)})
+	{
+		auto partial = std::make_shared<HypotheticBattle>(environment.get(), projected);
+		partial->getForUpdate(active->unitId())->removeUnitBonus(
+			CSelector(heroCommands::isVanguardBonus).And(component));
+		EXPECT_LT(heroOrderValue::revisedArmyUtility(live, partial, side, HeroCommand::VANGUARD), full);
+	}
+}
+
+TEST_F(RevisedArmyOrderValueTest, VanguardIdenticalRefreshHasZeroValueAndShorterGrantHasOnlyAddedLifetime)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto first = project(live, HeroCommand::VANGUARD);
+	ASSERT_TRUE(first);
+	const auto fullGrant = heroCommands::activeVanguardBonuses(first->battleGetUnitByID(active->unitId()));
+	ASSERT_TRUE(fullGrant);
+	ASSERT_EQ(fullGrant->roundsRemaining, 3);
+	auto existing = std::make_shared<HypotheticBattle>(environment.get(), live);
+	std::vector<Bonus> bonuses;
+	const auto grantedBonuses = first->battleGetUnitByID(active->unitId())->getBonuses(CSelector(heroCommands::isVanguardBonus));
+	for(const auto & bonus : *grantedBonuses)
+		bonuses.push_back(*bonus);
+	existing->getForUpdate(active->unitId())->addUnitBonus(bonuses);
+	auto same = project(existing, HeroCommand::VANGUARD);
+	ASSERT_TRUE(same);
+	EXPECT_NEAR(heroOrderValue::revisedArmyUtility(existing, same, side, HeroCommand::VANGUARD), 0.0f, 0.0001f);
+	for(auto & bonus : bonuses) bonus.turnsRemain = 1;
+	// HERO_COMMAND updates do not shorten captured snapshots: replace this
+	// query fixture's old grant explicitly, retaining the native grant payload.
+	existing->getForUpdate(active->unitId())->removeUnitBonus(CSelector(heroCommands::isVanguardBonus));
+	existing->getForUpdate(active->unitId())->addUnitBonus(bonuses);
+	const auto remaining = heroCommands::activeVanguardBonuses(existing->battleGetUnitByID(active->unitId()));
+	ASSERT_TRUE(remaining);
+	ASSERT_EQ(remaining->roundsRemaining, 1);
+	auto renewed = project(existing, HeroCommand::VANGUARD);
+	ASSERT_TRUE(renewed);
+	const auto refreshed = heroCommands::activeVanguardBonuses(renewed->battleGetUnitByID(active->unitId()));
+	ASSERT_TRUE(refreshed);
+	ASSERT_EQ(refreshed->roundsRemaining, 3);
+	const auto freshValue = heroOrderValue::revisedArmyUtility(live, first, side, HeroCommand::VANGUARD);
+	EXPECT_NEAR(heroOrderValue::revisedArmyUtility(existing, renewed, side, HeroCommand::VANGUARD),
+		freshValue * 2.0f / 3.0f, std::max(0.0001f, freshValue * 0.0001f));
+}
+
+TEST_F(RevisedArmyOrderValueTest, HistoricalAndRetainedOrdersCannotEnterRevisedFinalScoring)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	for(const auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::FOCUS_FIRE,
+		HeroCommand::RIPOSTE, HeroCommand::BRACE, HeroCommand::SECOND_WIND, HeroCommand::PROTECT, HeroCommand::FLANK})
+		EXPECT_FALSE(heroOrderValue::usesRevisedArmyHeuristic(*live, command));
+	EXPECT_TRUE(heroOrderValue::usesRevisedArmyHeuristic(*live, HeroCommand::FEINT));
+	EXPECT_TRUE(heroOrderValue::usesRevisedArmyHeuristic(*live, HeroCommand::VANGUARD));
+}
+
+TEST_F(CanonicalOrderValueTest, HistoricalCapturedRulesRejectTheModernFinalUtilityPath)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_FALSE(heroCommands::isRevisedRules(battle()->getHeroCommandRules()));
+	EXPECT_FALSE(heroOrderValue::usesRevisedArmyHeuristic(*battle(), HeroCommand::FEINT));
+	EXPECT_FALSE(heroOrderValue::usesRevisedArmyHeuristic(*battle(), HeroCommand::VANGUARD));
+}
+
+TEST_F(RevisedArmyOrderValueTest, VanguardCannotBeIssuedForAnAllUndeadArmy)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:skeleton"));
+	ASSERT_TRUE(active->hasBonusOfType(BonusType::UNDEAD));
+	ASSERT_NO_FATAL_FAILURE(expectVanguardUnavailableWithoutMutation());
+}
+
+TEST_F(RevisedArmyOrderValueTest, VanguardCannotBeIssuedForAnAllMechanicalArmy)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	effect(active, Bonus(BonusDuration::ONE_BATTLE, BonusType::MECHANICAL, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_TRUE(active->hasBonusOfType(BonusType::MECHANICAL));
+	ASSERT_NO_FATAL_FAILURE(expectVanguardUnavailableWithoutMutation());
+}
+
+TEST_F(RevisedArmyOrderValueTest, VanguardCannotTargetStoppedLivingUnitsWhileAnUndeadAllyIsActive)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto * control = addStack(side, creatureByName("core:skeleton"), BattleHex(6, 5), 1);
+	ASSERT_NE(control, nullptr);
+	ASSERT_NO_FATAL_FAILURE(activate(control));
+	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
+	stopped.parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(side));
+	battle()->addOrUpdateUnitBonus(active, stopped, true);
+	ASSERT_TRUE(active->isTimeStopped());
+	ASSERT_FALSE(control->isTimeStopped());
+	ASSERT_FALSE(heroCommands::isVanguardCreature(active));
+	ASSERT_FALSE(heroCommands::isVanguardCreature(control));
+	ASSERT_NO_FATAL_FAILURE(expectVanguardUnavailableWithoutMutation());
 }
