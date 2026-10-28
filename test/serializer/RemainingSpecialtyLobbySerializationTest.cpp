@@ -10,11 +10,14 @@
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForLobby.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSorceryRevision.h"
 
 class RemainingSpecialtyLobbySerializationTest : public HeroCommandFixture
 {
 protected:
 	int families = 0;
+	bool historicalRecoveryMagic = false;
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
@@ -47,6 +50,26 @@ protected:
 			row["conversionMaximumPercent"].Integer() = 0;
 		}
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		if(historicalRecoveryMagic)
+		{
+			// This historical writer tests specialty absence, not later Sorcery captures.
+			auto magic = map->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+			for(const auto & [spell, clause] : {std::pair{"new-horizons:focusMagic", "focusMagic"},
+				std::pair{"core:slow", "slow"}, std::pair{"new-horizons:summonLivingArmor", "livingArmor"}})
+				ASSERT_EQ(magic["spells"][spell].Struct().erase(clause), 1u);
+			ASSERT_NO_THROW(newHorizonsMagic::validateRules(magic));
+			ASSERT_NO_THROW(newHorizonsSorceryRevision::validateSerialization(magic, false));
+			magic.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+		}
+	}
+	void expectRecoveryMagic(const CGameState & world)
+	{
+		const auto & magic = world.getMagicRules();
+		for(const auto & [spell, clause] : {std::pair{"new-horizons:focusMagic", "focusMagic"},
+			std::pair{"core:slow", "slow"}, std::pair{"new-horizons:summonLivingArmor", "livingArmor"}})
+			EXPECT_FALSE(magic["spells"][spell].Struct().contains(clause));
+		EXPECT_NO_THROW(newHorizonsSorceryRevision::validateSerialization(magic, false));
 	}
 	LobbyStartGame packet()
 	{
@@ -57,6 +80,8 @@ protected:
 	}
 	void samePolicies(const CGameState & decoded)
 	{
+		if(historicalRecoveryMagic)
+			expectRecoveryMagic(decoded);
 		const auto * hero = decoded.getHero(attackerSideHero->id);
 		ASSERT_NE(hero, nullptr);
 		for(const auto key : {"learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
@@ -121,7 +146,9 @@ TEST_F(RemainingSpecialtyLobbySerializationTest, AllFamiliesCurrentWorldAndLobby
 }
 TEST_F(RemainingSpecialtyLobbySerializationTest, AbsentFamiliesAllowActualRecoveryWorldAndLobbyRoundtrip)
 {
+	historicalRecoveryMagic = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
+	expectRecoveryMagic(*gameState());
 	auto source = packet();
 	CMemorySerializer old;
 	old.oser.version = old.iser.version = ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES;
