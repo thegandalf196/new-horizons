@@ -12,6 +12,7 @@ import shutil
 import subprocess
 
 from binary_privacy import inspect_bytes, require_clean
+from client_features import client_feature_files
 from stage_runtime_libraries import admit_runtime_libraries, relocate_runtime_evidence, runtime_records
 
 
@@ -38,6 +39,8 @@ def verify_candidate(root):
     for name, digest in expected.items():
         if sha256(root / name) != digest:
             raise RuntimeError('Candidate checksum mismatch')
+    if (root / 'new-horizons').is_file():
+        client_feature_files(root / 'new-horizons')
     require_clean(root)
     return json.loads((root / 'BUILD-IDENTITY.json').read_text())
 

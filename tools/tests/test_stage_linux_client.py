@@ -10,6 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
 from stage_linux_client import main, public_evidence, verify_candidate
 from binary_privacy import inspect_bytes
+from client_features import FILENAME as CLIENT_FEATURES, feature_payload
 from stage_runtime_fixture import StageFixture, QUARTET, elf_bytes, tree_bytes
 
 
@@ -33,6 +34,31 @@ class LinuxStageTest(unittest.TestCase):
             self.assertEqual(staged['scope'], 'Ubuntu26.04 system-dependent Linux preview; acceptance evidence is separate')
             self.assertEqual(len(staged['source_archives']), 3)
             self.assertEqual((self.root / 'BUILD-IDENTITY.json').read_bytes(), data)
+
+    def test_staging_preserves_exact_binary_bound_optional_feature_marker(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = StageFixture(Path(temporary), self.root, providers=())
+            client = self.root / 'new-horizons'
+            marker = self.root / CLIENT_FEATURES
+            marker.write_bytes(feature_payload(hashlib.sha256(client.read_bytes()).hexdigest()))
+            with (self.root / 'SHA256SUMS').open('a') as stream:
+                stream.write(hashlib.sha256(marker.read_bytes()).hexdigest() + '  ' + marker.name + '\n')
+            fixture.run(main)
+            package = fixture.arguments['output'] / 'New-Horizons-Linux-x64'
+            self.assertEqual((package / CLIENT_FEATURES).read_bytes(), marker.read_bytes())
+            self.assertEqual(verify_candidate(package)['source_commit'], fixture.identity['source_commit'])
+
+    def test_checksum_valid_but_wrong_client_feature_declaration_is_rejected(self):
+        client = self.root / 'new-horizons'
+        client.write_bytes(b'synthetic client, never executed')
+        marker = self.root / CLIENT_FEATURES
+        marker.write_bytes(feature_payload('0' * 64))
+        sums = self.root / 'SHA256SUMS'
+        with sums.open('a') as stream:
+            for file in (client, marker):
+                stream.write(hashlib.sha256(file.read_bytes()).hexdigest() + '  ' + file.name + '\n')
+        with self.assertRaisesRegex(RuntimeError, 'differs from the selected client'):
+            verify_candidate(self.root)
 
     def test_exact_candidate(self):
         self.assertEqual(verify_candidate(self.root)['source_commit'], 'test')

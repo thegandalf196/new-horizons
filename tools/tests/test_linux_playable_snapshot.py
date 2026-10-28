@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ci"))
 from linux_playable_snapshot import (freeze, make_removable, package_files, promote,
                                      resolve, verify_snapshot, write_metadata, snapshot_client)
 import linux_playable_snapshot as snapshot_tools
+from client_features import FILENAME as CLIENT_FEATURES, feature_payload
 
 
 class LinuxPlayableSnapshotTest(unittest.TestCase):
@@ -76,6 +77,43 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
         header[20:24] = (1).to_bytes(4, 'little')
         path.write_bytes(header + b'synthetic provider')
         return path
+
+    def test_optional_build_features_are_copied_bound_and_readonly(self):
+        marker = self.bin / CLIENT_FEATURES
+        marker.write_bytes(feature_payload(hashlib.sha256(self.client.read_bytes()).hexdigest()))
+        candidate = self.freeze_candidate()
+        self.assertEqual((candidate / CLIENT_FEATURES).read_bytes(), marker.read_bytes())
+        self.assertEqual((candidate / CLIENT_FEATURES).stat().st_mode & 0o222, 0)
+        self.assertIn(CLIENT_FEATURES, verify_snapshot(candidate)['files'])
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_feature_declaration_for_another_client_refuses_freeze(self):
+        (self.bin / CLIENT_FEATURES).write_bytes(feature_payload('0' * 64))
+        with self.assertRaisesRegex(RuntimeError, 'differs from the selected client'):
+            self.freeze_candidate()
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_semantically_wrong_marker_refuses_even_with_matching_snapshot_checksums(self):
+        marker = self.bin / CLIENT_FEATURES
+        marker.write_bytes(feature_payload(hashlib.sha256(self.client.read_bytes()).hexdigest()))
+        candidate = self.freeze_candidate()
+        make_removable(candidate)
+        (candidate / CLIENT_FEATURES).write_bytes(feature_payload('0' * 64))
+        digest = write_metadata(candidate, package_files(candidate))
+        renamed = self.store / ('snapshot-' + digest)
+        candidate.rename(renamed)
+        with self.assertRaisesRegex(RuntimeError, 'differs from the selected client'):
+            verify_snapshot(renamed)
+
+    def test_linked_feature_declaration_refuses_freeze(self):
+        (self.bin / CLIENT_FEATURES).symlink_to(self.client)
+        with self.assertRaisesRegex(RuntimeError, 'regular non-symlink'):
+            self.freeze_candidate()
+
+    def test_markerless_legacy_snapshot_remains_valid(self):
+        candidate = self.freeze_candidate()
+        self.assertNotIn(CLIENT_FEATURES, verify_snapshot(candidate)['files'])
+        self.assertFalse((candidate / CLIENT_FEATURES).exists())
 
     def test_four_explicit_runtime_providers_are_hashed_readonly_and_unselected(self):
         providers = [self.runtime_library(name) for name in (

@@ -21,6 +21,7 @@ from verify_new_horizons_art_install import verify_install
 from linux_playable_snapshot import checked_tree_files, REQUIRED_FILES
 from binary_privacy import require_clean
 from stage_linux_client import verify_candidate
+from client_features import client_feature_files, FILENAME as CLIENT_FEATURES
 
 
 TREES = ('config', 'scripts', 'Mods/vcmi', 'Mods/new-horizons')
@@ -69,6 +70,22 @@ def elf(path):
         raise RuntimeError('Expected Linux ELF64 x86-64 binary: ' + path.name)
 
 
+def installed_client_payload(install, source_commit):
+    """Admit installed engine images and their binary-bound delivery metadata."""
+    client, library = install / 'bin/new-horizons', install / 'lib/libvcmi.so'
+    if (install / 'bin/vcmiclient').exists():
+        raise RuntimeError('Ambiguous or obsolete installed Linux client')
+    elf(client)
+    elf(library)
+    if not os.access(client, os.X_OK):
+        raise RuntimeError('Client is not executable')
+    if source_commit.encode() not in library.read_bytes():
+        raise RuntimeError('Facade does not contain supplied source revision')
+    files = {'new-horizons': client, 'libvcmi.so': library}
+    files.update(client_feature_files(client))
+    return files
+
+
 def assemble(install, engine_source, source_commit, source_repository, manifest, output):
     if not re.fullmatch('[0-9a-f]{40}', source_commit):
         raise RuntimeError('Source commit must be an exact full lowercase SHA')
@@ -85,16 +102,7 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
             raise RuntimeError('Output overlaps protected input')
     resources = install / 'share/vcmi'
     art = verify_install(resources, manifest)
-    client, library = install / 'bin/new-horizons', install / 'lib/libvcmi.so'
-    if (install / 'bin/vcmiclient').exists():
-        raise RuntimeError('Ambiguous or obsolete installed Linux client')
-    elf(client)
-    elf(library)
-    if not os.access(client, os.X_OK):
-        raise RuntimeError('Client is not executable')
-    if source_commit.encode() not in library.read_bytes():
-        raise RuntimeError('Facade does not contain supplied source revision')
-    files = {'new-horizons': client, 'libvcmi.so': library}
+    files = installed_client_payload(install, source_commit)
     for tree in TREES:
         files.update(checked_tree_files(resources / tree, tree))
     # OS application icons are the documented pre-NHART platform exception.
@@ -139,10 +147,10 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
                     if member.isfile() and any(name.startswith(tree + '/') for tree in TREES)
                     and name != 'config/newHorizonsMagicAssets.json'
                     and not re.match(r'Mods/new-horizons/(Images|Content/(sprites|data))(/|$)', name)}
-        if set(files) - {'new-horizons', 'libvcmi.so'} != expected | NOTICES.keys() | PLATFORM_FILES.keys():
+        if set(files) - {'new-horizons', 'libvcmi.so', CLIENT_FEATURES} != expected | NOTICES.keys() | PLATFORM_FILES.keys():
             raise RuntimeError('Installed curated inventory differs from source/CMake notice mapping')
         for name, path in files.items():
-            if name in ('new-horizons', 'libvcmi.so'):
+            if name in ('new-horizons', 'libvcmi.so', CLIENT_FEATURES):
                 continue
             origin = NOTICES.get(name, PLATFORM_FILES.get(name, name))
             # Current source exporters include NHART_* (not excluded NH_*).

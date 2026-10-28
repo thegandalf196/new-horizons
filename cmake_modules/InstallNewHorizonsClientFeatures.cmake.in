@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# This script is registered only by a reporter-capable Linux client target.
+set(client_directory "@BIN_DIR@")
+if(NOT IS_ABSOLUTE "${client_directory}")
+    set(client_directory "${CMAKE_INSTALL_PREFIX}/${client_directory}")
+endif()
+set(NH_CLIENT "$ENV{DESTDIR}${client_directory}/new-horizons")
+set(NH_BUG_REPORTER_TARGET vcmiclient)
+include("@CMAKE_SOURCE_DIR@/cmake_modules/WriteNewHorizonsClientFeatures.cmake")

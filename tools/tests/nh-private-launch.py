@@ -16,6 +16,11 @@ Example (the profile is a dedicated writable path):
   python3 tools/tests/nh-private-launch.py --guard /tmp/private/display-guard.json \
     --snapshot /tmp/snapshot --profile '/tmp/PRIVATE profile' --assets /mnt/complete
 
+Report-only mode: --report-session manual (passes an empty session argv),
+--report-session pending, or an exact run directory under the private profile.
+Report mode accepts no trailing client arguments and requires an existing owned
+mode-0700 managed profile. It does not grant browser-opening or promotion authority.
+
 Only these optional client arguments are accepted after --:
   --disable-video
   --savefrequency 0
@@ -28,6 +33,7 @@ import importlib.util
 import json
 import ntpath
 import os
+import re
 from pathlib import Path
 import stat
 import signal
@@ -508,6 +514,55 @@ def validate_client_args(client_args):
         raise Refusal(f"Client argument is not allowlisted: {option!r}")
 
 
+def report_client_args(args, client_args):
+    """Translate one typed report request; caller still verifies display/snapshot.
+
+    Existing private managed profiles only. Path checks are admission checks,
+    not a filesystem sandbox; the managed launcher retains its profile lock.
+    """
+    if args.report_session is None:
+        return client_args
+    if (len(args.report_session) != 1 or client_args or args.debugger_log is not None
+            or any(key in os.environ for key in ("NH_CURE_BOOTSTRAP", "NH_CURE_FROZEN_FIXTURE", "NH_CURE_CALLBACK_CASE"))
+            or any(value is not None and value is not False
+                   for key, value in vars(args).items() if key.startswith("wine_"))):
+        raise Refusal("Report mode requires one session and no gameplay, debugger or Wine options")
+    if args.profile is None:
+        raise Refusal("Report mode requires an existing private managed profile")
+    profile = args.profile
+    if (not profile.is_absolute() or profile != Path(os.path.normpath(str(profile)))
+            or profile in (Path("/"), Path.home())):
+        raise Refusal("Report profile must be an absolute canonical private path")
+    for path in (profile, *profile.parents):
+        if path.is_symlink():
+            raise Refusal("Report profile has a symlink ancestor")
+    info = profile.stat()
+    if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) != 0o700):
+        raise Refusal("Report profile must be an owned mode-0700 directory")
+    marker = profile / ".nh-profile"
+    if (marker.is_symlink() or not marker.is_file() or marker.stat().st_uid != os.getuid()
+            or marker.stat().st_size != 33
+            or marker.read_bytes() != b"New Horizons launcher profile v1\n"):
+        raise Refusal("Report profile must have the managed profile marker")
+    selected = args.report_session[0]
+    logs = profile / "cache" / "vcmi"
+    paths = [profile / "cache", logs, logs / "crash-reports"]
+    if selected not in ("manual", "pending"):
+        session = Path(selected)
+        if (not session.is_absolute() or session.parent != paths[-1]
+                or not re.fullmatch(r"run-[0-9a-f]{16,32}", session.name)
+                or selected != str(session)):
+            raise Refusal("Report session must be an exact run directory in this profile")
+        paths.append(session)
+    for path in paths:
+        info = path.lstat()
+        if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+                or stat.S_IMODE(info.st_mode) & 0o077):
+            raise Refusal("Report log/session directories must be owned private ordinary directories")
+    return ["--report-bug", "" if selected == "manual" else selected]
+
+
 def _parser():
     class SingleFixtureMap(argparse.Action):
         def __call__(self, parser, namespace, value, option_string=None):
@@ -526,6 +581,8 @@ def _parser():
                         help="purchaser-supplied Heroes III Complete asset directory")
     parser.add_argument("--verify-only", "--dry-run", dest="verify_only", action="store_true",
                         help="validate via the managed launcher without executing the game")
+    parser.add_argument("--report-session", action="append", metavar="manual|pending|DIRECTORY",
+                        help="report-only UI for a private managed profile; never arbitrary client arguments")
     parser.add_argument("--debugger-log", type=Path,
                         help="new exclusive gdb log inside the managed private profile")
     parser.add_argument("--wine-surface-test", type=Path,
@@ -762,6 +819,7 @@ def main(argv=None):
     args = parser.parse_args(option_argv)
     try:
         # Refuse before creating any child process, even the managed wrapper.
+        report_args = report_client_args(args, client_args)
         verify_owned_xvfb(args.guard)
         if args.wine_fullgame is not None:
             plan = wine_fullgame_plan(args, client_args)
@@ -834,8 +892,8 @@ def main(argv=None):
             command.append("--verify-only")
         if args.debugger_log is not None:
             command.extend(["--debugger-log", str(args.debugger_log.expanduser())])
-        if client_args:
-            command.extend(["--", *client_args])
+        if report_args:
+            command.extend(["--", *report_args])
 
         child_env = os.environ.copy()
         child_env["DISPLAY"] = PRIVATE_DISPLAY

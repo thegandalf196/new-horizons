@@ -293,6 +293,38 @@ fi
 # GTK/GdkPixbuf needs system MIME and icon data for native dialogs. Engine data
 # isolation is provided by EntryPoint's runtime cwd and VCMIDirs development mode,
 # not by hiding desktop resources through XDG_DATA_DIRS. Do not inherit custom roots.
+# A retained report must not send a new option to a historical rollback client.
+# This bounded build declaration is optional and tied to the exact executable.
+supports_bug_report() {
+	local directory="$(dirname -- "$1")" advertised actual expected
+	[[ $2 == "$directory" ]] || return 1
+	local marker="$directory/new-horizons.features"
+	[[ -f $marker && ! -L $marker ]] || return 1
+	advertised=''
+	IFS= read -r -N 128 advertised < "$marker" || true
+	actual=$(sha256sum -- "$1") || return 1
+	actual=${actual%% *}
+	expected=$'NH_CLIENT_FEATURES_V1\nBUG_REPORT_V1_SHA256='"$actual"$'\n'
+	[[ $actual =~ ^[0-9a-f]{64}$ && $(stat -c %s -- "$marker") == ${#expected} && $advertised == "$expected" ]]
+}
+reporter_supported=false
+if supports_bug_report "$client" "$resources"; then reporter_supported=true; fi
+# This exact launch owns a unique evidence path; reporter never guesses latest.
+crash_token=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
+crash_session="$profile/cache/vcmi/crash-reports/run-$crash_token"
+# An explicit reporter request owns its single process. Do not prepend a
+# fallback form or supervise that form as a new game crash.
+report_only_requested=false
+for client_arg in "${client_args[@]}"; do
+	option_name=${client_arg%%=*}
+	option_name=${option_name,,}
+	# Match client case-insensitive long-option prefixes without consuming any
+	# values. Bare -- is a separator, never a reporter request.
+	if [[ $option_name == --?* && '--report-bug' == "$option_name"* ]]; then
+		report_only_requested=true
+		break
+	fi
+done
 launch_command=("$runtime/new-horizons" --nointro "${client_args[@]}")
 if [[ -n $debugger_log ]]; then
 	# Do not source host/profile .gdbinit. Preserve inferior exit status; a
@@ -302,11 +334,33 @@ if [[ -n $debugger_log ]]; then
 fi
 launch_managed_client() {
 	exec env --default-signal=INT -u LD_PRELOAD -u LD_AUDIT \
-	LD_LIBRARY_PATH="$(dirname -- "$client")" \
+	LD_LIBRARY_PATH="$(dirname -- "$client")" NH_CRASH_SESSION_DIR="$crash_session" \
 	XDG_DATA_HOME="$profile/data" XDG_CONFIG_HOME="$profile/config" \
 	XDG_CACHE_HOME="$profile/cache" XDG_DATA_DIRS=/usr/local/share:/usr/share \
 	"${launch_command[@]}"
 }
+# Next-launch fallback offers one retained unclean session before starting play.
+# Its exact directory remains fixed throughout this reporter invocation.
+if $reporter_supported && ! $report_only_requested && [[ -z $debugger_log ]]; then
+	for pending_marker in "$profile/cache/vcmi/crash-reports"/run-*/pending; do
+		[[ -f $pending_marker && ! -L $pending_marker ]] || continue
+		saved_launch_command=("${launch_command[@]}")
+		launch_command=("$runtime/new-horizons" --nointro --report-bug pending)
+		launch_managed_client &
+		client_pid=$!
+		while true; do
+			signal_count_before_wait=$received_signal_count
+			wait "$client_pid" && reporter_status=0 || reporter_status=$?
+			(( received_signal_count == signal_count_before_wait )) && break
+		done
+		client_pid=''
+		launch_command=("${saved_launch_command[@]}")
+		break
+	done
+fi
+if [[ -n $received_signal ]]; then
+	case $received_signal in HUP) exit 129;; INT) exit 130;; TERM) exit 143;; esac
+fi
 if [[ -n $debugger_log ]]; then
 	launch_managed_client >&8 2>&1 &
 else
@@ -338,4 +392,22 @@ while true; do
 	fi
 done
 client_pid=''
+# Preserve diagnostics, original status, runtime and lock through reporter exit.
+# Cancellation/kill is not classified as a crash, and debugger mode retains its
+# existing semantics. A report process is never recursively supervised here.
+if $reporter_supported && ! $report_only_requested && [[ -z $received_signal && -z $debugger_log && -f $crash_session/pending ]]; then
+	case $client_status in
+		132|134|135|136|139|159)
+			launch_command=("$runtime/new-horizons" --nointro --report-bug "$crash_session")
+			launch_managed_client &
+			client_pid=$!
+			while true; do
+				signal_count_before_wait=$received_signal_count
+				wait "$client_pid" && reporter_status=0 || reporter_status=$?
+				(( received_signal_count == signal_count_before_wait )) && break
+			done
+			client_pid=''
+			;;
+	esac
+fi
 exit "$client_status"

@@ -28,6 +28,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from verify_new_horizons_art_install import verify_install, read_jsonc, nhart, RUNTIME_ART_PACK
+from client_features import client_feature_files, sha256_file
 
 
 FORMAT_VERSION = 1
@@ -58,14 +59,6 @@ def uses_nhart(files):
 
 def fail(message):
     raise RuntimeError(message)
-
-
-def sha256_file(path):
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def canonical_bytes(value):
@@ -111,6 +104,7 @@ def source_payload(client, resources, runtime_libraries=()):
     if library.is_symlink() or not library.is_file():
         fail("Matching libvcmi.so must be a regular file beside the client")
     files = {CLIENT_NAME: client, "libvcmi.so": library}
+    files.update(client_feature_files(client))
     for value in runtime_libraries:
         extra = Path(value)
         if extra.is_symlink() or not extra.is_file():
@@ -248,6 +242,7 @@ def verify_snapshot(root, expected_digest=None):
     actual = package_files(root)
     if actual != files:
         fail("Snapshot inventory or checksum mismatch")
+    client_feature_files(root / (CLIENT_NAME if CLIENT_NAME in files else LEGACY_CLIENT_NAME))
     digest = payload_digest(files)
     if metadata.get("snapshot_sha256") != digest:
         fail("Snapshot identity mismatch")

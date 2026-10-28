@@ -59,6 +59,33 @@ cat > "$engine/new-horizons" <<'STUB'
 set -euo pipefail
 [[ $# -ge 1 && $1 == --nointro ]]
 shift
+if [[ -n ${REPORT_FIXTURE_RECEIPT:-} ]]; then
+	case ${1:-} in
+		--report-bug|--REPORT-BUG|--report-b)
+			[[ $# == 2 ]]
+			report_session=$2;;
+		--report-bug=*|--REPORT-BUG=*|--report-b=*)
+			[[ $# == 1 ]]
+			report_session=${1#*=};;
+		''|--)
+			[[ $# == 0 || ( $# == 1 && $1 == -- ) ]]
+			printf 'play\n' >> "$REPORT_FIXTURE_RECEIPT"
+			if [[ ${REPORT_FIXTURE_GAME_PENDING:-0} == 1 ]]; then
+				mkdir -p -- "$NH_CRASH_SESSION_DIR"
+				: > "$NH_CRASH_SESSION_DIR/pending"
+			fi
+			exit "${REPORT_FIXTURE_GAME_EXIT:-0}";;
+	esac
+	printf 'report:%s\n' "$report_session" >> "$REPORT_FIXTURE_RECEIPT"
+	if [[ ${REPORT_FIXTURE_REPORT_PENDING:-0} == 1 ]]; then
+		mkdir -p -- "$NH_CRASH_SESSION_DIR"
+		: > "$NH_CRASH_SESSION_DIR/pending"
+	fi
+	if [[ ${REPORT_FIXTURE_DISMISS:-0} == 1 ]]; then
+		rm -f -- "$REPORT_FIXTURE_PENDING/pending"
+	fi
+	exit "${REPORT_FIXTURE_REPORT_EXIT:-0}"
+fi
 if [[ -n ${EXPECTED_TESTMAP:-} ]]; then
 	[[ $# == 3 && $1 == --testmap && $2 == "$EXPECTED_TESTMAP" && $3 == --disable-video ]]
 else
@@ -137,6 +164,126 @@ expect_fail() {
 		printf 'Expected rejection: %s\n' "$*" >&2; exit 1
 	fi
 }
+exercise_reporter_launches() {
+	local store="$profile/cache/vcmi/crash-reports" pending receipt status client_hash
+	client_hash=$(sha256sum -- "$engine/new-horizons")
+	client_hash=${client_hash%% *}
+	printf 'NH_CLIENT_FEATURES_V1\nBUG_REPORT_V1_SHA256=%s\n' "$client_hash" > "$engine/new-horizons.features"
+	pending="$store/run-1111111111111111"
+	receipt="$tmp/report-invocations"
+	mkdir -p -- "$pending"
+	: > "$pending/pending"
+	: > "$receipt"
+	REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" -- --report-bug pending > "$tmp/output"
+	[[ $(< "$receipt") == 'report:pending' ]]
+	[[ $(wc -l < "$receipt") == 1 ]]
+
+	# Both explicit CLI spellings preserve an exact directory with spaces.
+	: > "$receipt"
+	REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" -- --report-bug "$pending" > "$tmp/output"
+	[[ $(< "$receipt") == "report:$pending" ]]
+	: > "$receipt"
+	REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" -- "--report-bug=$pending" > "$tmp/output"
+	[[ $(< "$receipt") == "report:$pending" ]]
+
+	# Boost accepts case-insensitive names and unique long-option prefixes.
+	# The fake client enumerates those spellings, while receipt count catches
+	# any extra auto-fallback that ran before the explicit request.
+	for spelling in --REPORT-BUG --report-b; do
+		: > "$receipt"
+		REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" -- "$spelling" pending > "$tmp/output"
+		[[ $(< "$receipt") == 'report:pending' ]]
+		: > "$receipt"
+		REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" -- "$spelling=$pending" > "$tmp/output"
+		[[ $(< "$receipt") == "report:$pending" ]]
+	done
+
+	# Bare -- is a client separator, not a reporter option prefix.
+	: > "$receipt"
+	REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" -- -- > "$tmp/output"
+	[[ $(< "$receipt") == $'report:pending\nplay' ]]
+
+	# A normal Cancel is one form, with no extra play or reporting process.
+	: > "$receipt"
+	REPORT_FIXTURE_RECEIPT="$receipt" REPORT_FIXTURE_PENDING="$pending" REPORT_FIXTURE_DISMISS=1 \
+		bash "$launcher" "${args[@]}" -- --report-bug pending > "$tmp/output"
+	[[ $(< "$receipt") == 'report:pending' && ! -e $pending/pending ]]
+
+	# A failed explicitly requested form preserves its status even if a stale
+	# marker is present for the launch token; never recursively open a form.
+	: > "$pending/pending"
+	: > "$receipt"
+	status=0
+	REPORT_FIXTURE_RECEIPT="$receipt" REPORT_FIXTURE_REPORT_EXIT=134 REPORT_FIXTURE_REPORT_PENDING=1 \
+		bash "$launcher" "${args[@]}" -- --report-bug pending > "$tmp/output" || status=$?
+	[[ $status == 134 && $(< "$receipt") == 'report:pending' ]]
+
+	# Ordinary play still receives its one pending fallback followed by play,
+	# even when the fallback itself fails. Its own status never replaces play.
+	: > "$receipt"
+	REPORT_FIXTURE_RECEIPT="$receipt" REPORT_FIXTURE_REPORT_EXIT=134 REPORT_FIXTURE_GAME_EXIT=17 \
+		bash "$launcher" "${args[@]}" > "$tmp/output" && status=0 || status=$?
+	[[ $status == 17 && $(< "$receipt") == $'report:pending\nplay' ]]
+
+	# A genuine game crash keeps its immediate exact-session form and original
+	# exit, while failure of that form cannot request a third invocation.
+	rm -rf -- "$store"
+	: > "$receipt"
+	status=0
+	REPORT_FIXTURE_RECEIPT="$receipt" REPORT_FIXTURE_GAME_EXIT=139 REPORT_FIXTURE_GAME_PENDING=1 \
+		REPORT_FIXTURE_REPORT_EXIT=134 bash "$launcher" "${args[@]}" > "$tmp/output" || status=$?
+	[[ $status == 139 && $(wc -l < "$receipt") == 2 ]]
+	[[ $(sed -n '1p' "$receipt") == play ]]
+	[[ $(sed -n '2p' "$receipt") == "report:$store/run-"* ]]
+	[[ $(sed -n '2p' "$receipt") != 'report:pending' ]]
+	rm -rf -- "$store"
+	mkdir -p -- "$pending"
+	: > "$pending/pending"
+	# Historical rollback clients have no declaration: leave pending evidence
+	# untouched, run play once, and never send an unsupported report option.
+	rm -- "$engine/new-horizons.features"
+	: > "$receipt"
+	REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" > "$tmp/output"
+	[[ $(< "$receipt") == play && -f $pending/pending ]]
+	# Explicit report requests remain a user's request, including legacy clients.
+	: > "$receipt"
+	REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" -- --report-bug pending > "$tmp/output"
+	[[ $(< "$receipt") == report:pending ]]
+	for declaration in mismatch oversized nul symlink mixed mixedresources; do
+		printf 'NH_CLIENT_FEATURES_V1\nBUG_REPORT_V1_SHA256=%s\n' "$client_hash" > "$engine/new-horizons.features"
+		case $declaration in
+			mismatch) printf 'NH_CLIENT_FEATURES_V1\nBUG_REPORT_V1_SHA256=%064d\n' 0 > "$engine/new-horizons.features";;
+			nul) printf '\0' >> "$engine/new-horizons.features";;
+			oversized) printf '%0130d' 0 >> "$engine/new-horizons.features";;
+			symlink)
+				mv -- "$engine/new-horizons.features" "$tmp/features-target"
+				ln -s -- "$tmp/features-target" "$engine/new-horizons.features";;
+			mixedresources)
+				mkdir -- "$tmp/historical-resources"
+				cp -a -- "$engine/config" "$engine/scripts" "$engine/Mods" "$tmp/historical-resources/";;
+			mixed)
+				printf 'NH_CLIENT_FEATURES_V1\nBUG_REPORT_V1_SHA256=%s\n' "$client_hash" > "$engine/new-horizons.features"
+				mkdir -- "$tmp/old-client"
+				cp -- "$engine/new-horizons" "$tmp/old-client/new-horizons"
+				printf '\n# Older compiled client fixture\n' >> "$tmp/old-client/new-horizons"
+				cp -- "$engine/libvcmi.so" "$tmp/old-client/libvcmi.so"
+				cp -- "$engine/new-horizons.features" "$tmp/old-client/new-horizons.features";;
+		esac
+		: > "$receipt"
+		if [[ $declaration == mixed ]]; then
+			REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" --client "$tmp/old-client/new-horizons" --resources "$engine" > "$tmp/output"
+		elif [[ $declaration == mixedresources ]]; then
+			REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" --resources "$tmp/historical-resources" > "$tmp/output"
+		else
+			REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" > "$tmp/output"
+		fi
+		[[ $(< "$receipt") == play && -f $pending/pending ]]
+		rm -- "$engine/new-horizons.features"
+	done
+	rm -rf -- "$store"
+	[[ -z $(find "$profile" -maxdepth 1 -name 'runtime.*' -print) ]]
+}
+
 exercise_signal_lifecycle() {
 	local signal=$1 exitOnSignal=${2:-0} expectedExit=${3:-23} label ready release seen readFile launchPid
 	local childRuntime childPid status
@@ -188,6 +335,12 @@ exercise_signal_lifecycle() {
 	[[ $(< "$readFile") == 'child read Data after signal' ]]
 	[[ ! -e $childRuntime ]]
 }
+if [[ ${NH_LAUNCHER_REPORT_TESTS_ONLY:-0} == 1 ]]; then
+	bash "$launcher" "${args[@]}" > "$tmp/output"
+	exercise_reporter_launches
+	printf '%s\n' 'PASS: explicit reporter, fallback, Cancel, reporter failure and exact crash status; shell stubs only.'
+	exit 0
+fi
 bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
 [[ ! -e $profile && ! -e $STUB_RECEIPT ]]
 expect_fail --verify-only
@@ -385,6 +538,7 @@ PATH=$debug_path STUB_EXIT=23 bash "$launcher" "${args[@]}" --debugger-log "$pro
 mkdir -- "$profile/data/vcmi/Mods"
 expect_fail "${args[@]}" --verify-only
 rmdir -- "$profile/data/vcmi/Mods"
+exercise_reporter_launches
 mv -- "$profile/config" "$profile/config-real"
 ln -s -- "$profile/config-real" "$profile/config"
 expect_fail "${args[@]}" --verify-only

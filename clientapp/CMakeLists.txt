@@ -151,6 +151,17 @@ endif()
 vcmi_set_output_dir(vcmiclient "")
 enable_pch(vcmiclient)
 
+# Advertise only a target that actually compiles the report entry point.
+# Markerless historical clients remain usable by the managed Linux launcher.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND "BugReportBootstrap.cpp" IN_LIST clientapp_SRCS)
+	add_custom_command(TARGET vcmiclient POST_BUILD
+		COMMAND ${CMAKE_COMMAND} "-DNH_CLIENT=$<TARGET_FILE:vcmiclient>"
+			-DNH_BUG_REPORTER_TARGET=vcmiclient
+			-P "${CMAKE_SOURCE_DIR}/cmake_modules/WriteNewHorizonsClientFeatures.cmake"
+		VERBATIM
+	)
+endif()
+
 if(IOS)
 	add_custom_command(TARGET vcmiclient POST_BUILD
 		COMMAND ios/set_build_version.sh "$<TARGET_BUNDLE_CONTENT_DIR:vcmiclient>"
@@ -175,6 +186,13 @@ elseif(ANDROID)
 	add_dependencies(android_deploy vcmiclient)
 else()
 	install(TARGETS vcmiclient DESTINATION ${BIN_DIR})
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND "BugReportBootstrap.cpp" IN_LIST clientapp_SRCS)
+	# Install may change ELF RPATH or strip bytes. Bind the installed image last.
+	configure_file("${CMAKE_SOURCE_DIR}/cmake_modules/InstallNewHorizonsClientFeatures.cmake.in"
+		"${CMAKE_CURRENT_BINARY_DIR}/InstallNewHorizonsClientFeatures.cmake" @ONLY)
+	install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InstallNewHorizonsClientFeatures.cmake")
 endif()
 
 #install icons and desktop file on Linux

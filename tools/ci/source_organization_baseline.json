@@ -25991,21 +25991,21 @@
     },
     "tools/ci/assemble_linux_candidate.py::assemble#1": {
       "kind": "legacy",
-      "lines": 128,
+      "lines": 119,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 128 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Independently reviewed client-bound delivery marker integration; cohesive checksum and installed-binary admission owners preserve validation order and legacy markerless snapshots. Exact file/function reductions verified with pinned parser; pure fixture coverage remains distinct from linked and rendered acceptance.",
+      "review": "IR-CLIENT-FEATURES-DELIVERY-MAIN-20261028-V2",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "37bff322502a0e5af6f1b049cf47168f8fb0a3dd2b7977cd850523473058c495"
+      "sha256": "4e03e8be174432664f6b4efd49f13b0901c099f25685a8e3056d0b132552a997"
     },
     "tools/ci/linux_playable_snapshot.py": {
       "kind": "legacy",
-      "lines": 669,
+      "lines": 664,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 669 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Independently reviewed client-bound delivery marker integration; cohesive checksum and installed-binary admission owners preserve validation order and legacy markerless snapshots. Exact file/function reductions verified with pinned parser; pure fixture coverage remains distinct from linked and rendered acceptance.",
+      "review": "IR-CLIENT-FEATURES-DELIVERY-MAIN-20261028-V2",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e867a2ac7882141682cde1d2cb2d18383b115cd6f70dc9e5526415c40b89efbf"
+      "sha256": "726b04ac7b633ec5b8963b22613b7694fad6811a1a5d9e6d9bb59a600a57b603"
     },
     "tools/ci/package_mingw_client.py::main#1": {
       "kind": "legacy",

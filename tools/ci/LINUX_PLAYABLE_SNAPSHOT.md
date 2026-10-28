@@ -45,6 +45,26 @@ Private settings/cache paths and exclusion of inherited custom data roots remain
 unchanged. A native image-decoding check is not full-game startup acceptance;
 an error dialog may also be reporting an earlier startup failure.
 
+Reporter-capable Linux client targets produce `new-horizons.features` beside
+`new-horizons` after linking, and regenerate it after Linux installation so
+RPATH or stripping changes bind the final installed bytes. This delivery-only
+sidecar contains protocol
+`NH_CLIENT_FEATURES_V1` and `BUG_REPORT_V1_SHA256=<lowercase client SHA-256>` on
+separate LF-terminated lines. It contains no paths or user identity. Only the
+client target that compiles `BugReportBootstrap.cpp` advertises this feature.
+
+Freeze, snapshot verification and Linux packaging preserve and validate the
+optional declaration against the actual client. Missing declarations retain
+historical snapshot compatibility; malformed or mismatched declarations refuse
+candidate assembly. The launcher skips automatic reporting when the sidecar is
+missing, malformed, linked or bound to another executable, leaving retained
+reports untouched. Automatic reporting also requires the canonical resource root
+to equal the client directory, explicitly pairing a flat snapshot/package;
+separate development/install resource roots retain play and explicit reporting.
+This prevents a rollback client from receiving an unsupported
+report option. An explicitly requested report command remains explicit. This is
+a build/delivery contract, not runtime proof that the reporter renders correctly.
+
 After a successful build, create a candidate without changing the default:
 
 For NHART candidates, `--resources` must point to a detached, verified resource

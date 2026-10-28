@@ -13,6 +13,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
 import assemble_linux_candidate as assembler
 from stage_linux_client import verify_candidate
+from client_features import FILENAME as CLIENT_FEATURES, feature_payload
 from verify_new_horizons_art_install import nhart, RUNTIME_ART_PACK
 
 
@@ -121,6 +122,18 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, message):
             self.assemble()
         self.assertFalse(self.output.exists())
+
+    def test_binary_derived_feature_marker_is_preserved_without_source_byte_claim(self):
+        client = self.install / 'bin/new-horizons'
+        marker = client.parent / CLIENT_FEATURES
+        marker.write_bytes(feature_payload(assembler.digest(client)))
+        result = self.assemble()
+        self.assertEqual((self.output / CLIENT_FEATURES).read_bytes(), marker.read_bytes())
+        self.assertEqual(verify_candidate(self.output), result)
+
+    def test_mismatched_installed_feature_marker_rejects_assembly(self):
+        (self.install / 'bin' / CLIENT_FEATURES).write_bytes(feature_payload('0' * 64))
+        self.rejected('differs from the selected client')
 
     def test_complete_candidate_is_stage_contract_compatible_and_inputs_unchanged(self):
         result = self.assemble()
