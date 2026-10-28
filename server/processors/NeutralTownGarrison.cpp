@@ -9,6 +9,7 @@
 #include "NewTurnProcessor.h"
 #include "../CGameHandler.h"
 #include "../../lib/CRandomGenerator.h"
+#include "../../lib/GameLibrary.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/NewHorizonsNeutralArmies.h"
@@ -16,6 +17,7 @@
 #include "../../lib/callback/IGameInfoCallback.h"
 #include "../../lib/callback/CGameInfoCallback.h"
 #include "../../lib/networkPacks/PacksForClient.h"
+#include "../../lib/networkPacks/StackLocation.h"
 
 
 void NewTurnProcessor::updateNeutralTownGarrison(const CGTownInstance * t, int currentWeek) const

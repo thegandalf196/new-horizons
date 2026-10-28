@@ -8,6 +8,7 @@
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/gameState/QuestInfo.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGDwelling.h"
