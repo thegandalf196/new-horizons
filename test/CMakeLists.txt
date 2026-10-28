@@ -77,6 +77,9 @@ set(test_SRCS
  		CMemoryBufferTest.cpp
 		serializer/JsonUpdaterTest.cpp
 		serializer/SaveParityTest.cpp
+		serializer/BattleActionExportTest.cpp
+		../tools/native/BattleActionExport.cpp
+		../tools/native/BattleActionExportPackets.cpp
 		../tools/native/SaveParityInput.cpp
 		../tools/native/SaveParityEvidence.cpp
 		../tools/native/SaveParityCoverage.cpp

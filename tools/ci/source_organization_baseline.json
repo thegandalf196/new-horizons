@@ -10,6 +10,12 @@
   },
   "coverage_pending": {},
   "manual_functions": {
+    "tools/native/BattleActionExport.h": {
+      "sha256": "f6987322ee62bf9b40dec018d1c7d7051fa97f2e20a8eef0d127f86ffa091057",
+      "review": "IR-BATTLE-ACTION-EXPORT-20261028-FINAL-HEADER-COVERAGE",
+      "rationale": "Complete 29-line header manually inspected: Limits contains only default data members; inspect and describe are declarations without bodies. No handwritten callable definitions, inline methods, lambdas or function-like macros. Parser missing:type_identifier at line 26 is the default const Limits reference argument = {}, not a callable body. Exact-hash empty callable inventory repairs recovery coverage only; no exclusion, size allowance or native/gameplay certification.",
+      "functions": []
+    },
     "AI/BattleAI/DamageCacheTimingScope.h": {
       "sha256": "e401c807b727987fdb8141f8c61900a1babb1c13a4c4f4d79df5ee14108bad8c",
       "review": "IR-DYNAMIC-DAMAGE-TIMING-CALLABLES-20261022",
@@ -18045,6 +18051,20 @@
   },
   "schema": 1,
   "units": {
+    "tools/native/BattleActionExport.cpp::battleActionExport::JsonNode inspect(const ReplayLog & replay, CGameState * historicalContext, std::optional<size_t> selected, const Limits & limits)#1": {
+      "lines": 144,
+      "sha256": "0ee0bd4d1fc48782efceed23dfcc755d2765db213b1c8e5b39e05c52673cd4c2",
+      "kind": "review",
+      "review": "IR-BATTLE-ACTION-EXPORT-20261028-FINAL",
+      "rationale": "Bounded ordered retained-stream inspection; historical loading/application and detailed packet summaries have separate owners. Interval bookkeeping remains adjacent to decode-before-apply ordering. Exact source-only review, below 150-line ceiling; no gameplay or runtime certification."
+    },
+    "tools/native/BattleActionExportPackets.cpp::battleActionExport::JsonNode describe(const CPack & packet)#1": {
+      "lines": 88,
+      "sha256": "7308b773c64b1fb2b727f2bff9f81dfc3d82991bd2df663b50077cb0097d851a",
+      "kind": "review",
+      "review": "IR-BATTLE-ACTION-EXPORT-20261028-FINAL",
+      "rationale": "Bounded type-to-summary dispatch with substantive start/action/spell/damage and ownership extraction in focused helpers. Unknown ownership is explicit; no authoritative mechanics or serialization mutation. Exact source-only review, below 150-line ceiling; no gameplay or runtime certification."
+    },
     "AI/BattleAI/HypotheticOrderActions.cpp::bool HypotheticBattle::commitProjectedHeroOrder(BattleSide side, const heroCommands::PreparedOrderEffects * effects, const ProjectedOrderAllowance & prepared, HeroCommand legacyCommand)#1": {
       "kind": "exception",
       "lines": 143,
