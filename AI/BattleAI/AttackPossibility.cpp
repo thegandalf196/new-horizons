@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "AttackPossibility.h"
+#include "../../lib/battle/NewHorizonsManaLeeches.h"
 #include "AttackPreviewArcheryAdmission.h"
 #include "DamageCacheAdmission.h"
 #include "DamageCacheMarks.h"
@@ -587,6 +588,14 @@ AttackPossibility AttackPossibility::evaluate(
 			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
 			&& attackInfo.physicalDamage && state->battleCanTriggerCleave(attacker);
+	const auto manaLeechAttack = newHorizonsManaLeeches::entitlement(*state, attacker, defender,
+		attackInfo.shooting, attackInfo.physicalDamage,
+		attackInfo.secondaryAttack || attackInfo.bracePreemptive || attackInfo.preemptiveDamagePercent > 0
+			|| attackInfo.cleaveDamagePercent > 0);
+	const auto manaLeechCounter = newHorizonsManaLeeches::entitlement(*state, defender, attacker,
+		attackInfo.shooting, attackInfo.physicalDamage, false);
+	const bool projectsManaLeeches = manaLeechAttack.amount > 0 || manaLeechCounter.amount > 0;
+	bool manaLeechSequenceSpent = false;
 	const bool projectsMarks = attackInfo.shooting
 		&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
 	const bool projectsHexOfPain = newHorizonsHexOfPainAI::hasEffect(attacker)
@@ -720,14 +729,14 @@ AttackPossibility AttackPossibility::evaluate(
 			&& state->getBattle()->getHeroOrderState(state->playerToSide(state->battleGetOwner(defender)), HeroCommand::BRACE).has_value();
 		const bool projectsOpportunist = ap.attack.physicalDamage && !ap.attack.retaliation
 			&& newHorizonsOpportunist::hasPerk(*state, attacker);
-		if(ap.perfectMoment || projectsOpportunist || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+		if(ap.perfectMoment || projectsOpportunist || projectsManaLeeches || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
 				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen || projectsLuckyRecovery || projectsBrace)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+	if(projectsManaLeeches || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 			|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
@@ -1028,6 +1037,12 @@ AttackPossibility AttackPossibility::evaluate(
 			strike.perfectFortuneSide = luckState.playerToSide(luckState.battleGetActionController(perfectFortuneAttack.attacker));
 		strike.attackerId = ap.attackerState->unitId();
 		strike.defenderId = strikeDefender->unitId();
+		const auto strikeManaLeech = fortunePreview
+			? newHorizonsManaLeeches::entitlement(*fortunePreview, ap.attackerState.get(),
+				strikeDefenderState->second.get(), attackInfo.shooting, attackInfo.physicalDamage,
+				attackInfo.secondaryAttack || attackInfo.bracePreemptive || attackInfo.preemptiveDamagePercent > 0
+					|| attackInfo.cleaveDamagePercent > 0)
+			: newHorizonsManaLeeches::Entitlement{};
 		strike.shooting = attackInfo.shooting;
 		strike.retaliation = attackInfo.retaliation;
 		strike.damageProvenance = battleAIDamageProvenance(ap.attackerState.get(), attackInfo.physicalDamage);
@@ -1422,6 +1437,13 @@ AttackPossibility AttackPossibility::evaluate(
 					projectedAttack, strike.resolvedHits, strike.attackIndex);
 				scoreHexPain(preHexState.get(), painDamage);
 			}
+			if(strikeManaLeech.amount > 0 && fortunePreview)
+			{
+				const auto hit = std::ranges::find(strike.resolvedHits, strike.defenderId,
+					&std::pair<uint32_t, int64_t>::first);
+				fortunePreview->projectManaLeech(strikeManaLeech,
+					hit == strike.resolvedHits.end() ? 0 : hit->second, manaLeechSequenceSpent);
+			}
 			// Counterfire answers physical shots and current ordinary elemental primary
 			// ranged damage. Include it in the exchange value so the AI does not price
 			// a shot as if the marked shooter could not return fire.
@@ -1774,6 +1796,11 @@ AttackPossibility AttackPossibility::evaluate(
 					defenderStates.at(defender->unitId()).get(), 0, true);
 				ap.effectPreview->projectRangedMarkStrike(projectedAttack, strike.resolvedHits);
 			}
+			const auto counterManaLeech = retaliation && fortunePreview
+				? newHorizonsManaLeeches::entitlement(*fortunePreview,
+					defenderStates.at(retaliation->attackerId).get(),
+					fortunePreview->battleGetUnitByID(retaliation->defenderId), false, attackInfo.physicalDamage, false)
+				: newHorizonsManaLeeches::Entitlement{};
 			int64_t retaliationActualDamage = 0;
 			std::vector<std::pair<uint32_t, int64_t>> retaliationActualHits;
 			for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
@@ -1881,6 +1908,14 @@ AttackPossibility AttackPossibility::evaluate(
 						retaliationAttack, retaliationActualHits, retaliation->attackIndex);
 					scoreHexPain(preHexState.get(), painDamage);
 				}
+			}
+			if(retaliation && counterManaLeech.amount > 0 && fortunePreview)
+			{
+				const auto hit = std::ranges::find(retaliationActualHits, retaliation->defenderId,
+					&std::pair<uint32_t, int64_t>::first);
+				bool counterSpent = false;
+				fortunePreview->projectManaLeech(counterManaLeech,
+					hit == retaliationActualHits.end() ? 0 : hit->second, counterSpent);
 			}
 			if(retaliation && retaliationActualDamage > 0)
 			{

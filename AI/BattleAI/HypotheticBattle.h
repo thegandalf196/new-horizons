@@ -30,6 +30,8 @@
 #include "../../lib/battle/SpellResponseState.h"
 #include "../../lib/battle/OverwhelmingFormulaState.h"
 #include "../../lib/battle/PerfectFortuneState.h"
+#include "../../lib/entities/hero/SpellPointState.h"
+#include "../../lib/battle/NewHorizonsManaLeeches.h"
 
 class CSpell;
 class InitialExportBattleSubject;
@@ -42,6 +44,14 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	std::weak_ptr<CBattleInfoCallback> boundSubjectOwner;
 	InitialExportBattleSubject * initialExportView;
 	SeizeInitiativeState seizeInitiative;
+	struct ProjectedMana
+	{
+		newHorizonsHeroes::SpellPointState pools;
+		int32_t temporaryBufferRemaining = 0;
+	};
+	BattleSideArray<std::optional<ProjectedMana>> projectedMana;
+	BattleSideArray<std::optional<ProjectedMana>> manaLeechStartingPools;
+	bool manaLeechApplied = false;
 	BattleSideArray<newHorizonsNecromancy::CombatPassives> necromancyPassives;
 	void captureNecromancyPassives(const CBattleInfoCallback & source);
 	battle::Units ownedExportUnitsIf(const battle::UnitFilter & predicate) const;
@@ -49,6 +59,26 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 public:
+	/// Visible detached pools; unknown sides stay unknown instead of inventing Mana.
+	std::optional<int64_t> getProjectedManaAvailable(BattleSide side) const;
+	std::optional<newHorizonsHeroes::SpellPointState> getProjectedMana(BattleSide side) const;
+	int32_t getTemporaryBufferRemaining(BattleSide side) const override;
+	class ManaLeechReplay
+	{
+		friend class HypotheticBattle;
+		BattleSideArray<std::optional<ProjectedMana>> pools;
+		bool changed = false;
+	};
+	bool hasProjectedManaLeech() const noexcept { return manaLeechApplied; }
+	/// Reject a stale whole-candidate resource base before selected replay mutates units.
+	std::optional<ManaLeechReplay> prepareManaLeechReplay(const HypotheticBattle & preview) const;
+	/// Commit a prepared receipt after the synchronous, Mana-free selected strike replay.
+	void applyManaLeechReplay(const ManaLeechReplay & receipt) noexcept;
+	void projectManaLeech(const newHorizonsManaLeeches::Entitlement & rule,
+		int64_t primaryDamage, bool & sequenceSpent);
+	/// Null means a single-blow action; multi-blow callers share their own receipt.
+	void projectManaLeech(const newHorizonsManaLeeches::Entitlement & rule,
+		int64_t primaryDamage, bool * sequenceSpent);
 	const SeizeInitiativeState & getSeizeInitiativeState() const override { return seizeInitiative; }
 	void setSeizeInitiativeState(const SeizeInitiativeState & state) override
 	{

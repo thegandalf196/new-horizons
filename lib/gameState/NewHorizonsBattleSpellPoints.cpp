@@ -6,6 +6,7 @@
 #include "NewHorizonsBattleSpellPoints.h"
 #include "CGameState.h"
 #include "../entities/hero/NewHorizonsRecoverySpecialties.h"
+#include "../entities/hero/NewHorizonsManaLeeches.h"
 #include "../battle/BattleInfo.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -13,6 +14,23 @@
 #include <limits>
 namespace newHorizonsHeroes
 {
+void applyManaLeechRecovery(CGHeroInstance & hero, SideInBattle * side, int32_t amount)
+{
+	const auto policy = hasManaLeeches(&hero) ? manaLeechesAmount(hero.getPrimaryGrowthRules()).value_or(0) : 0;
+	if(!side || side->heroID != hero.id || policy <= 0 || amount < 0 || amount > policy)
+		throw std::runtime_error("Mana Leeches recovery requires an entitled active battle hero");
+	side->validateManaLeechesSerialization(true);
+	const auto before = hero.getNormalSpellPoints();
+	const auto room = std::max<int64_t>(0, static_cast<int64_t>(hero.manaLimit()) - before);
+	const auto actual = static_cast<int32_t>(std::min<int64_t>(amount, room));
+	// A zero grant must not clamp unrelated over-cap Normal Mana.
+	if(actual > 0 && !hero.restoreNormalSpellPoints(actual))
+		throw std::runtime_error("Invalid Mana Leeches Normal restoration");
+	side->manaLeechesRecoveredNormal = static_cast<int32_t>(std::min<int64_t>(
+		std::numeric_limits<int32_t>::max(), static_cast<int64_t>(side->manaLeechesRecoveredNormal)
+			+ std::max<int32_t>(0, hero.getNormalSpellPoints() - before)));
+}
+
 BattleSpellPointEntry validateBattleSpellPointEntry(const CGameState & state, const BattleInfo & battle)
 {
 	const auto attacker = battle.getSide(BattleSide::ATTACKER).heroID;
@@ -26,6 +44,9 @@ BattleSpellPointEntry validateBattleSpellPointEntry(const CGameState & state, co
 	{
 		const auto & side = battle.getSide(sideID);
 		side.validateManaFurnaceSerialization(true);
+		side.validateManaLeechesSerialization(true);
+		if(side.manaLeechesRecoveredNormal != 0)
+			throw std::runtime_error("BattleStart contains already-applied Mana Leeches recovery");
 		side.validateRecoverySpecialtySerialization(true);
 		if(side.deepTranceConsumed || side.initialAcceptedCombatDay != -1 || side.deepTranceRecoveredNormal != 0)
 			throw std::runtime_error("BattleStart contains already-applied Deep Trance recovery");

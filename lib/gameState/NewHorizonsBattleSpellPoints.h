@@ -9,6 +9,8 @@
 #include "../entities/hero/NewHorizonsAdditionalSpecialties.h"
 class CGameState;
 class BattleInfo;
+class CGHeroInstance;
+struct SideInBattle;
 namespace newHorizonsHeroes
 {
 struct DLL_LINKAGE BattleSpellPointEntry
@@ -17,6 +19,8 @@ struct DLL_LINKAGE BattleSpellPointEntry
 	BattleSideArray<bool> deepTrance{};
 	int64_t acceptedDay = -1;
 };
+/// Typed authoritative specialty grant, preserving only actual Normal recovery.
+DLL_LINKAGE void applyManaLeechRecovery(CGHeroInstance & hero, SideInBattle * side, int32_t amount);
 /// Validate both sides before attaching a battle or mutating either hero.
 DLL_LINKAGE BattleSpellPointEntry validateBattleSpellPointEntry(const CGameState & state, const BattleInfo & battle);
 /// Accepted visitor seam only: after validation/localInit and defender-town attachment.

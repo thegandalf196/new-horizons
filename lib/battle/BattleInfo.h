@@ -606,6 +606,9 @@ public:
 						h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 		if(h.saving)
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				getSide(side).validateManaLeechesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES));
+		if(h.saving)
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 				getSide(side).validateRecoverySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})

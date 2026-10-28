@@ -106,6 +106,7 @@
 	},
 	"additionalSpecialties": {
 		"version": 1,
+		"manaLeeches": {"manaPerDamagingAttackSequence": 1},
 		"fieldPhysician": {"healingPercentPerLevel": 5, "healingMaximumPercent": 100},
 		"manaFurnace": {"restorePointsPerLevel": 2, "maximumRestorePoints": 40},
 		"graveArchivist": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalEagleEyeSpells": 1},

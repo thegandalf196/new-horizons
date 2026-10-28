@@ -122,6 +122,7 @@ set(test_SRCS
 		battle/BattleRootCommitAdmissionTest.cpp
 		battle/PreparedReplayAppendTest.cpp
 		serializer/NewHorizonsSpecialtySerializationTest.cpp
+	serializer/NewHorizonsManaLeechesSerializationTest.cpp
 		serializer/NewHorizonsSwampSeerSerializationTest.cpp
 		serializer/NewHorizonsReclaimerSerializationTest.cpp
 		serializer/NewHorizonsSkeletonRecoverySerializationTest.cpp
@@ -562,6 +563,7 @@ set(test_SRCS
 	server/battles/NewHorizonsFieldPhysicianTest.cpp
 	server/battles/NewHorizonsDeepTranceTest.cpp
 	server/battles/NewHorizonsManaFurnaceTest.cpp
+	server/battles/NewHorizonsManaLeechesTest.cpp
 	server/battles/NewHorizonsMysticismRecoveryTest.cpp
 		server/battles/NewHorizonsCanonicalSpellClausesSerializationTest.cpp
 		server/battles/NewHorizonsImplosionTest.cpp

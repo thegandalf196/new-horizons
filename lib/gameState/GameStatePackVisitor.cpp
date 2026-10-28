@@ -288,6 +288,9 @@ void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMa
 		case Operation::SET_NORMAL:
 			hero.setNormalSpellPoints(static_cast<int32_t>(amount));
 			break;
+		case Operation::RESTORE_NORMAL_MANA_LEECHES:
+			newHorizonsHeroes::applyManaLeechRecovery(hero, findBattleSide(gs, hero.id), static_cast<int32_t>(amount));
+			break;
 		case Operation::RESTORE_NORMAL:
 			if(!hero.restoreNormalSpellPoints(static_cast<int32_t>(amount)))
 				throw std::runtime_error("Invalid Normal Spell Point restoration");

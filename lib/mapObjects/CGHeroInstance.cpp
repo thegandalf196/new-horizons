@@ -14,6 +14,7 @@
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
 #include "CGHeroInstance.h"
+#include "../entities/hero/NewHorizonsManaLeeches.h"
 #include "../entities/hero/NewHorizonsLearningSpecialties.h"
 #include "../entities/hero/HeroStartingProjection.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
@@ -981,7 +982,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 
 	//copy active (probably growing) bonuses from hero prototype to hero object
-	const bool convertsCreatureLineSpecialty = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules).has_value()
+	const bool convertsCreatureLineSpecialty = (newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules).has_value()
+		|| newHorizonsHeroes::hasManaLeeches(this))
 		&& heroType->creatureLineSpecialtyAlias.has_value();
 	const bool convertsDamageSpellSpecialty = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules).has_value();
 	const auto nonDamageSpellSpecialtyRules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules);
@@ -3114,6 +3116,9 @@ void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)
 	{
 		return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
 	}));
+
+	if(newHorizonsHeroes::hasManaLeeches(this))
+		return;
 
 	const TLimiterPtr lineLimiter = std::make_shared<CCreatureTypeLimiter>(*specCreature, true);
 	auto makeBonus = [heroType, creature](BonusType type, std::string_view stat)

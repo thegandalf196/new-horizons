@@ -108,7 +108,9 @@ public:
 		std::optional<bool> * readyOverwatch = nullptr,
 		const BattleTargetProbeTiming * probeTiming = nullptr,
 		DamageCacheAdmission * mainProbeAdmission = nullptr,
-		BattleExchangeAttackResult * actionResult = nullptr);
+		BattleExchangeAttackResult * actionResult = nullptr,
+		// One caller-owned receipt across the ordinary blows of one action.
+		bool * manaLeechSequenceSpent = nullptr);
 
 	const BattleScore & getScore() const { return dpsScore; }
 	/// Complete an already applied action and score only its newly finalized Plague injury.

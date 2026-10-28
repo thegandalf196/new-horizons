@@ -17,6 +17,7 @@
 void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town)
 {
 	manaFurnaceRecoveredNormal = 0;
+	manaLeechesRecoveredNormal = 0;
 	initialAcceptedCombatDay = -1;
 	deepTranceConsumed = false;
 	deepTranceRecoveredNormal = 0;
@@ -88,10 +89,17 @@ void SideInBattle::validateRecoverySpecialtySerialization(bool supported) const
 		throw std::runtime_error("Cannot discard Deep Trance entry provenance");
 }
 
+void SideInBattle::validateManaLeechesSerialization(bool supported) const
+{
+	if(manaLeechesRecoveredNormal < 0 || (!supported && manaLeechesRecoveredNormal != 0))
+		throw std::runtime_error("Invalid or unrepresentable Mana Leeches recovery");
+}
+
 int32_t SideInBattle::legacySpellPointCompletionCeiling() const
 {
 	validateManaFurnaceSerialization(true);
 	validateRecoverySpecialtySerialization(true);
-	return static_cast<int32_t>(std::clamp<int64_t>(static_cast<int64_t>(initialMana) + manaFurnaceRecoveredNormal + deepTranceRecoveredNormal,
+	validateManaLeechesSerialization(true);
+	return static_cast<int32_t>(std::clamp<int64_t>(static_cast<int64_t>(initialMana) + manaFurnaceRecoveredNormal + deepTranceRecoveredNormal + manaLeechesRecoveredNormal,
 		0, std::numeric_limits<int32_t>::max()));
 }

@@ -11,6 +11,7 @@
 #include "NewHorizonsRecoverySpecialties.h"
 #include "NewHorizonsHerbalSurgeon.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsManaLeeches.h"
 #include "NewHorizonsReclaimer.h"
 #include "NewHorizonsSpecialtyArtwork.h"
 #include "NewHorizonsRetainedSpecialtyArtwork.h"
@@ -227,6 +228,15 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 		|| capturedHero->getPrimaryGrowthRules() != development || capturedHero->getMagicRules() != magic))
 		throw std::invalid_argument("Specialty presentation requires the matching captured context");
 
+	if(hero.getJsonKey() == "core:ignatius")
+		if(const auto amount = manaLeechesAmount(development))
+		{
+			result.name = "Mana Leeches";
+			result.creature = CreatureID(CreatureID::IMP);
+			result.description = "Imp and Familiar damaging primary melee attack sequences steal up to "
+				+ std::to_string(*amount) + " enemy hero Mana, including retaliation. Familiars also restore the actual stolen amount to their hero's Normal Mana, up to capacity. Familiar spell channeling is unchanged.";
+			return result;
+		}
 	if(resolveChosenSpecialtyPresentation(hero, development, magic, result)
 		|| resolveIndividualPresentation(hero, development, magic, capturedHero, result))
 		return result;

@@ -404,7 +404,8 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 		SPEND,
 		GRANT_BUFFER,
 		RESTORE_SNAPSHOT,
-		REFUND_HERO_LUCK
+		REFUND_HERO_LUCK,
+		RESTORE_NORMAL_MANA_LEECHES
 	};
 
 	void visitTyped(ICPackVisitor & visitor) override;
@@ -437,6 +438,7 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 				val = static_cast<si32>(std::clamp<int64_t>(amount, 0, std::numeric_limits<si32>::max()));
 				break;
 			case Operation::RESTORE_NORMAL:
+			case Operation::RESTORE_NORMAL_MANA_LEECHES:
 				val = static_cast<si32>(std::clamp<int64_t>(amount, 0, std::numeric_limits<si32>::max()));
 				break;
 			case Operation::SPEND:
@@ -458,14 +460,14 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 
 	void validateOperationPayload() const
 	{
-		if(operation < Operation::LEGACY || operation > Operation::REFUND_HERO_LUCK
+		if(operation < Operation::LEGACY || operation > Operation::RESTORE_NORMAL_MANA_LEECHES
 			|| amount < 0 || bufferAmount < 0 || temporaryBufferAmount < 0)
 			throw std::runtime_error("Invalid Spell Point mutation payload");
 		if((operation == Operation::LEGACY && amount != 0)
 			|| (operation != Operation::RESTORE_SNAPSHOT && operation != Operation::REFUND_HERO_LUCK && bufferAmount != 0)
 			|| (operation != Operation::REFUND_HERO_LUCK && temporaryBufferAmount != 0))
 			throw std::runtime_error("Invalid Buffer payload for Spell Point mutation");
-		if((operation == Operation::SET_NORMAL || operation == Operation::RESTORE_NORMAL
+		if((operation == Operation::SET_NORMAL || operation == Operation::RESTORE_NORMAL_MANA_LEECHES || operation == Operation::RESTORE_NORMAL
 			|| operation == Operation::GRANT_BUFFER || operation == Operation::RESTORE_SNAPSHOT
 			|| operation == Operation::REFUND_HERO_LUCK)
 			&& amount > std::numeric_limits<int32_t>::max())
@@ -484,6 +486,12 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && operation == Operation::RESTORE_NORMAL_MANA_LEECHES)
+		{
+			validateOperationPayload();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES))
+				throw std::runtime_error("Cannot discard Mana Leeches recovery provenance");
+		}
 		if(h.saving && operation == Operation::REFUND_HERO_LUCK)
 		{
 			validateOperationPayload();
@@ -504,8 +512,9 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 			h & operation;
 			h & amount;
 			h & bufferAmount;
-			if(!h.saving && (operation < Operation::LEGACY || operation > Operation::REFUND_HERO_LUCK
-				|| (operation == Operation::REFUND_HERO_LUCK && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))))
+			if(!h.saving && (operation < Operation::LEGACY || operation > Operation::RESTORE_NORMAL_MANA_LEECHES
+				|| (operation == Operation::REFUND_HERO_LUCK && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
+				|| (operation == Operation::RESTORE_NORMAL_MANA_LEECHES && !h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES))))
 				throw std::runtime_error("Invalid Spell Point mutation operation");
 		}
 		else if(!h.saving)

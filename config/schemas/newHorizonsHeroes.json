@@ -138,10 +138,15 @@
 		"additionalSpecialties": {
 			"description": "Optional captured additional individual specialties. Absent rows preserve prior behavior; coefficients are provisional balance values.",
 			"type": "object", "additionalProperties": false, "not": {"type": "null"},
-			"minProperties": 1, "maxProperties": 5,
+			"minProperties": 1, "maxProperties": 6,
 			"required": ["version"],
 			"properties": {
 				"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
+				"manaLeeches": {
+					"type": "object", "additionalProperties": false,
+					"required": ["manaPerDamagingAttackSequence"],
+					"properties": {"manaPerDamagingAttackSequence": {"type": "integer", "minimum": 0, "maximum": 1000}}
+				},
 				"fieldPhysician": {
 					"type": "object", "additionalProperties": false, "not": {"type": "null"},
 					"minProperties": 2, "maxProperties": 2,

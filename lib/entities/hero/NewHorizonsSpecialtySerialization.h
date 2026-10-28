@@ -19,6 +19,7 @@ struct SpecialtySerializationContext
 	bool recovery = false;
 	bool remainingRiders = false;
 	bool chosenSpecialties = false;
+	bool manaLeeches = false;
 
 	template<class Handler>
 	static SpecialtySerializationContext fromHandler(const Handler & h)
@@ -31,6 +32,7 @@ struct SpecialtySerializationContext
 		result.recovery = h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES);
 		result.remainingRiders = h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS);
 		result.chosenSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS);
+		result.manaLeeches = h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES);
 		return result;
 	}
 };

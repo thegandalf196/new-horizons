@@ -13,6 +13,7 @@
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "../../lib/battle/OrderActionTransition.h"
 #include "BattleActionProcessor.h"
+#include "NewHorizonsManaLeeches.h"
 #include "HeroOrderLog.h"
 #include "FrozenAttackResolution.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
@@ -1804,6 +1805,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	bool vanishKill = false;
 	RelentlessAssaultActionContext relentlessAssault;
 	int32_t defenderInitialQuantity = destinationStack->getCount();
+	bool manaLeechSequenceSpent = false;
 
 	BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);	//they need to be gathered here since bonuses with this duration added during attack (like blind) should not be removed
 	BonusList defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
@@ -1852,7 +1854,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			// Pass the originally selected Ward to makeAttack so Protect can
 			// consume its first interception atomically; attackTarget is only the
 			// resolved recipient used for local retaliation checks below.
-			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, &destroyedEnemy, &relentlessAssault, nullptr, &vanishKill);
+			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE, .manaLeechSequenceSpent = &manaLeechSequenceSpent}, &destroyedEnemy, &relentlessAssault, nullptr, &vanishKill);
 			if(armorerLastStandEndedActivation(stack))
 				break;
 
@@ -4895,7 +4897,13 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	}
 	const FrozenAttackContext frozenContext{battle, attacker, defender, attack.distance, attack.ranged, counterAttack};
 	auto frozenResolution = prepareFrozenAttack(frozenContext, bat);
+	const auto manaLeech = newHorizonsManaLeeches::prepare(battle, attacker, defender, attack.ranged,
+		!bat.spellLike(), attack.cleaveFollowup || attack.brace || attack.bulwarkPreemptive
+			|| attack.preemptiveDamagePercent > 0,
+		bat.bsa,
+		attack.manaLeechSequenceSpent && *attack.manaLeechSequenceSpent);
 	gameHandler->sendAndApply(bat);
+	newHorizonsManaLeeches::apply(*gameHandler, manaLeech, attack.manaLeechSequenceSpent);
 	resolveFrozenAttack(*gameHandler, frozenContext, frozenResolution);
 	for(const BattleStackAttacked & hit : bat.bsa)
 	{

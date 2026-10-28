@@ -285,11 +285,13 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_NEUTRAL_ARMY_SIZE, // captured initial and natural-regeneration army-size trial
 
+	NEW_HORIZONS_MANA_LEECHES, // optional captured Ignatius attack theft policy
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_NEUTRAL_ARMY_SIZE,
+	CURRENT = NEW_HORIZONS_MANA_LEECHES,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2

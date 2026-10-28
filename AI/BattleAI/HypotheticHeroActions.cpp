@@ -387,7 +387,8 @@ HypotheticBattle::ProjectedCounterspellOutcome HypotheticBattle::resolveProjecte
 		wardingHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage"),
 		countersequenceArmedStates.at(wardSide));
 	result.manaCost = manaCost;
-	result.negated = wardingHero->getManaAvailable() >= manaCost;
+	const auto & pools = projectedMana.at(wardSide);
+	result.negated = (pools ? pools->pools.getTotal() : wardingHero->getManaAvailable()) >= manaCost;
 	result.resolutionKnown = true;
 	return result;
 }

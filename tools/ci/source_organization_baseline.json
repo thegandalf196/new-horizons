@@ -6694,9 +6694,10 @@
       "review_scope": "whole-exact-callable-inventory-no-parser-waiver-no-runtime-claim"
     },
     "AI/BattleAI/BattleExchangeVariant.h": {
-      "sha256": "ff75586c83f9bdc237477402c75f74d6bad078e2492fbb7292401aeeec582c66",
-      "review": "IR-COMBAT-AI-EXCHANGE-HEADER-INVENTORY-20261026",
-      "rationale": "Complete297-line header independently inspected after removal of unused AttackerValue and unread map. All ten retained callable bodies byte-identical versus the prior snapshot at adjusted spans32-35/37/39-42/44-52/75-78/90-91/113/250-256/295/296. Existing parser recovery at default arguments244/282 does not hide bodies. This complete inventory replaces prior exact-hash coverage; no exclusions, aliases, size limits or coverage rules changed.",
+      "sha256": "b60aeab7c6d54bffbd3dcf7bbd531808732fc6c810ed1b1df603b1b73466545d",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "rationale": "Complete callable inventory of frozen56fe candidate. Prior exact inventory retained with text-proven span shifts; 0 existing bodies changed only by reviewed Mana Leeches routing. Existing parser recovery remains visible and covered by the complete callable inventory. No exclusion, parser waiver, ceiling change or runtime certification.",
       "functions": [
         {
           "symbol": "BattleScore::BattleScore(float enemyDamageReduce, float ourDamageReduce) :enemyDamageReduce(enemyDamageReduce), ourDamageReduce(ourDamageReduce)#1",
@@ -6730,27 +6731,26 @@
         },
         {
           "symbol": "BattleExchangeVariant::const BattleScore & getScore() const#1",
-          "start": 113,
-          "end": 113
+          "start": 115,
+          "end": 115
         },
         {
           "symbol": "BattleExchangeEvaluator::BattleExchangeEvaluator( std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, float strengthRatio, int simulationTurnsCount): cb(cb), env(env), simulationTurnsCount(simulationTurnsCount)#1",
-          "start": 250,
-          "end": 256
+          "start": 252,
+          "end": 258
         },
         {
           "symbol": "BattleExchangeEvaluator::float getPositiveEffectMultiplier() const#1",
-          "start": 295,
-          "end": 295
+          "start": 297,
+          "end": 297
         },
         {
           "symbol": "BattleExchangeEvaluator::float getNegativeEffectMultiplier() const#1",
-          "start": 296,
-          "end": 296
+          "start": 298,
+          "end": 298
         }
       ],
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "review_scope": "complete-exact-ten-callable-header-inventory-no-parser-waiver-no-runtime-certification"
+      "review_scope": "complete-exact-10-callable-current-ignatius-inventory-no-parser-waiver-no-runtime-certification"
     },
     "AI/BattleAI/SpellTargetsEvaluator.h": {
       "sha256": "59d9bce6b64956bf0875b88c7423daeb303fce7e527477a3314377141038f81b",
@@ -14528,692 +14528,693 @@
       "sha256": "886d53e54b076fc7f423cb7f51bbd83537d8446aafe1eb102c4f6fac99e13b23"
     },
     "server/battles/BattleActionProcessor.cpp": {
-      "sha256": "da1b8d51e720728aa8095f9edac96113044a7fcc3f0f2dc04cb5ef30dd6cc92f",
-      "review": "IR-ORDER-LOG-EXTRACTION-AND-FEEDBACK-SOURCE-20261026",
+      "sha256": "8730400f6ebd7330bb96743573c589ba29718c07f5691124511b4d60fd24cd47",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "rationale": "Complete136-callable exact inventory after extracting three Order feedback functions. Every retained callable body is byte-identical to the previously reviewed139-callable source, with shifted spans only. Existing operator[] parser recovery at5488 remains covered by the complete getSpellsForAttackCasting body. Moved formatting lives in focused HeroOrderLog; no native/runtime certification.",
+      "rationale": "Complete callable inventory of frozen56fe candidate. Prior exact inventory retained with text-proven span shifts; 2 existing bodies changed only by reviewed Mana Leeches routing. Existing parser recovery remains visible and covered by the complete callable inventory. No exclusion, parser waiver, ceiling change or runtime certification.",
       "functions": [
         {
           "symbol": "bool armorerLastStandEndedActivation(const CStack * stack)#1",
-          "start": 73,
-          "end": 79
+          "start": 74,
+          "end": 80
         },
         {
           "symbol": "bool consumeDefiant(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause)#1",
-          "start": 81,
-          "end": 98
+          "start": 82,
+          "end": 99
         },
         {
           "symbol": "bool isLongReachAttack(const CBattleInfoCallback & battle, const battle::Unit * attacker, const battle::Unit * defender)#1",
-          "start": 100,
-          "end": 108
+          "start": 101,
+          "end": 109
         },
         {
           "symbol": "void awardBattlefieldMasteryIfEligible(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const CStack * stack, BattlecraftMasteryAction action)#1",
-          "start": 110,
-          "end": 132
+          "start": 111,
+          "end": 133
         },
         {
           "symbol": "BattleSide activeDeploymentSide(const CBattleInfoCallback & battle)#1",
-          "start": 134,
-          "end": 149
+          "start": 135,
+          "end": 150
         },
         {
           "symbol": "bool isDeploymentPositionLegal(const CBattleInfoCallback & battle, const battle::Unit & unit, const BattleHex & position, BattleSide side)#1",
-          "start": 151,
-          "end": 185
+          "start": 152,
+          "end": 186
         },
         {
           "symbol": "isDeploymentPositionLegal(const CBattleInfoCallback & battle, const battle::Unit & unit, const BattleHex & position, BattleSide side)::[side, distance](const BattleHex & hex)#1",
-          "start": 167,
-          "end": 180
+          "start": 168,
+          "end": 181
         },
         {
           "symbol": "BattleHex resolveMovementDestination(const CBattleInfoCallback & battle, const battle::Unit & unit, const BattleHex & requested)#1",
-          "start": 187,
-          "end": 204
+          "start": 188,
+          "end": 205
         },
         {
           "symbol": "bool hasLegalHostileBallistaShot(const CBattleInfoCallback & battle, const battle::Unit * shooter)#1",
-          "start": 206,
-          "end": 222
+          "start": 207,
+          "end": 223
         },
         {
           "symbol": "void publishRangedFollowUpState(const CBattleInfoCallback & battle, CGameHandler & gameHandler, const battle::Unit * unit, int percent)#1",
-          "start": 224,
-          "end": 240
+          "start": 225,
+          "end": 241
         },
         {
           "symbol": "void logRangedFollowUp(const CBattleInfoCallback & battle, CGameHandler & gameHandler, const battle::Unit * unit, std::string text)#1",
-          "start": 242,
-          "end": 254
+          "start": 243,
+          "end": 255
         },
         {
           "symbol": "bool isCreatureActionAllowedDuringForgetfulness(const CBattleInfoCallback & battle, const BattleAction & action)#1",
-          "start": 256,
-          "end": 281
+          "start": 257,
+          "end": 282
         },
         {
           "symbol": "static AttackedTarget unitAboutToBeAttacked(const battle::Unit * unit)#1",
-          "start": 286,
-          "end": 292
+          "start": 287,
+          "end": 293
         },
         {
           "symbol": "static SpellID divineRetributionSpellID()#1",
-          "start": 294,
-          "end": 298
+          "start": 295,
+          "end": 299
         },
         {
           "symbol": "static void recordDivineRetributionDamage(const CBattleInfoCallback & battle, CGameHandler & gameHandler, const battle::Unit * attacker, const battle::Unit * protectedUnit, int64_t actualHpDamage)#1",
-          "start": 300,
-          "end": 395
+          "start": 301,
+          "end": 396
         },
         {
           "symbol": "static bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle, const AccessibilityInfo & accessibility, const BattleHex & hex)#1",
-          "start": 397,
-          "end": 420
+          "start": 398,
+          "end": 421
         },
         {
           "symbol": "static bool isTimeStopHeroAction(const BattleAction & action)#1",
-          "start": 422,
-          "end": 428
+          "start": 423,
+          "end": 429
         },
         {
           "symbol": "static bool shouldActivateGrandMetamagic(const CBattleInfoCallback & battle, BattleSide side, const CGHeroInstance * hero, bool metamagicFollowup)#1",
-          "start": 430,
-          "end": 441
+          "start": 431,
+          "end": 442
         },
         {
           "symbol": "static bool isSanctifiedHostileTarget(const CBattleInfoCallback & battle, const battle::Unit * attacker, const battle::Unit * target)#1",
-          "start": 443,
-          "end": 448
+          "start": 444,
+          "end": 449
         },
         {
           "symbol": "static bool creatureSpellDirectlyTargetsSanctified(const CBattleInfoCallback & battle, const CStack * caster, SpellID spellID, const battle::Target & target, BonusType abilityType)#1",
-          "start": 450,
-          "end": 481
+          "start": 451,
+          "end": 482
         },
         {
           "symbol": "static bool actionDirectlyTargetsSanctified(const CBattleInfoCallback & battle, const BattleAction & action, const CStack * stack)#1",
-          "start": 483,
-          "end": 511
+          "start": 484,
+          "end": 512
         },
         {
           "symbol": "static void appendHeroOrderCauseName(MetaString & line, const CBattleInfoCallback & battle, const battle::Unit * unit, HeroCommand command)#1",
-          "start": 513,
-          "end": 526
+          "start": 514,
+          "end": 527
         },
         {
           "symbol": "static void appendHeroOrderCauseNames(MetaString & line, const CBattleInfoCallback & battle, const battle::Unit * unit, const std::vector<HeroCommand> & commands)#1",
-          "start": 528,
-          "end": 537
+          "start": 529,
+          "end": 538
         },
         {
           "symbol": "static std::vector<HeroCommand> damageOrderCauses(const DamageEstimation & estimation, bool attacker)#1",
-          "start": 539,
-          "end": 546
+          "start": 540,
+          "end": 547
         },
         {
           "symbol": "static MetaString orderDamageLogLine(const CBattleInfoCallback & battle, const CStack * attacker, const battle::Unit * target, const BattleStackAttacked & hit, const std::vector<HeroCommand> & attackerOrderCauses, const std::vector<HeroCommand> & defenderOrderCauses)#1",
-          "start": 548,
-          "end": 599
+          "start": 549,
+          "end": 600
         },
         {
           "symbol": "static bool validateCanonicalLandMineTargets(const CBattleInfoCallback & battle, const spells::Mechanics & mechanics, const battle::Target & target)#1",
-          "start": 601,
-          "end": 618
+          "start": 602,
+          "end": 619
         },
         {
           "symbol": "static bool validateCanonicalQuicksandTargets(const CBattleInfoCallback & battle, const spells::Mechanics & mechanics, const battle::Target & target)#1",
-          "start": 620,
-          "end": 636
+          "start": 621,
+          "end": 637
         },
         {
           "symbol": "static bool validateShadowGiftAction(const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const CSpell * spell, const battle::Target & target)#1",
-          "start": 638,
-          "end": 664
+          "start": 639,
+          "end": 665
         },
         {
           "symbol": "static void applyShadowGiftSacrifice(CGameHandler & handler, const CBattleInfoCallback & battle, const BattleAction & action, const CStack & recipient, const int32_t costBasisPoints)#1",
-          "start": 666,
-          "end": 691
+          "start": 667,
+          "end": 692
         },
         {
           "symbol": "static std::vector<std::shared_ptr<Bonus>> activeShadowGiftStatusBonuses( const CStack & recipient, const SpellID spell)#1",
-          "start": 693,
-          "end": 706
+          "start": 694,
+          "end": 707
         },
         {
           "symbol": "activeShadowGiftStatusBonuses( const CStack & recipient, const SpellID spell)::[](const auto & bonus)#1",
-          "start": 701,
-          "end": 704
+          "start": 702,
+          "end": 705
         },
         {
           "symbol": "static bool hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell, const std::vector<std::shared_ptr<Bonus>> & previous)#1",
-          "start": 708,
-          "end": 719
+          "start": 709,
+          "end": 720
         },
         {
           "symbol": "hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell, const std::vector<std::shared_ptr<Bonus>> & previous)::[&](const auto & bonus)#1",
-          "start": 712,
-          "end": 718
+          "start": 713,
+          "end": 719
         },
         {
           "symbol": "hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell, const std::vector<std::shared_ptr<Bonus>> & previous)::(const auto & bonus)::[&](const auto & oldBonus)#1",
-          "start": 714,
-          "end": 717
+          "start": 715,
+          "end": 718
         },
         {
           "symbol": "static bool canonicalFireWallDirection(BattleHex::EDir direction)#1",
-          "start": 721,
-          "end": 724
+          "start": 722,
+          "end": 725
         },
         {
           "symbol": "static bool chainGateKillQualifies(const CBattleInfoCallback & battle, const CStack * attacker, const std::vector<BattleStackAttacked> & hits)#1",
-          "start": 726,
-          "end": 750
+          "start": 727,
+          "end": 751
         },
         {
           "symbol": "chainGateKillQualifies(const CBattleInfoCallback & battle, const CStack * attacker, const std::vector<BattleStackAttacked> & hits)::[&battle, attacker, rewardSide](const auto & hit)#1",
-          "start": 743,
-          "end": 749
+          "start": 744,
+          "end": 750
         },
         {
           "symbol": "static bool demonicGateFootprintHasObstacle(const CBattleInfoCallback & battle, const BattleHex & position, bool doubleWide, BattleSide side)#1",
-          "start": 752,
-          "end": 761
+          "start": 753,
+          "end": 762
         },
         {
           "symbol": "static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)#1",
-          "start": 763,
-          "end": 814
+          "start": 764,
+          "end": 815
         },
         {
           "symbol": "validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)::[](const auto & destination)#1",
-          "start": 767,
-          "end": 770
+          "start": 768,
+          "end": 771
         },
         {
           "symbol": "static bool validateCanonicalFireWallAction(const CBattleInfoCallback & battle, const BattleAction & action, battle::Target & expandedTarget)#1",
-          "start": 816,
-          "end": 839
+          "start": 817,
+          "end": 840
         },
         {
           "symbol": "BattleActionProcessor::BattleActionProcessor(BattleProcessor * owner, CGameHandler * newGameHandler) : owner(owner) , gameHandler(newGameHandler)#1",
-          "start": 841,
-          "end": 845
+          "start": 842,
+          "end": 846
         },
         {
           "symbol": "void BattleActionProcessor::publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const#1",
-          "start": 847,
-          "end": 859
+          "start": 848,
+          "end": 860
         },
         {
           "symbol": "bool BattleActionProcessor::doEmptyAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 861,
-          "end": 888
+          "start": 862,
+          "end": 889
         },
         {
           "symbol": "bool BattleActionProcessor::doEndTacticsAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 890,
-          "end": 893
+          "start": 891,
+          "end": 894
         },
         {
           "symbol": "bool BattleActionProcessor::doWaitAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 895,
-          "end": 919
+          "start": 896,
+          "end": 920
         },
         {
           "symbol": "bool BattleActionProcessor::doRetreatAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 921,
-          "end": 931
+          "start": 922,
+          "end": 932
         },
         {
           "symbol": "bool BattleActionProcessor::doSurrenderAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 933,
-          "end": 952
+          "start": 934,
+          "end": 953
         },
         {
           "symbol": "static bool validatePurifyAction(const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const battle::Target & target)#1",
-          "start": 954,
-          "end": 1004
+          "start": 955,
+          "end": 1005
         },
         {
           "symbol": "validatePurifyAction(const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const battle::Target & target)::[](const auto & stack)#1",
-          "start": 999,
-          "end": 1002
+          "start": 1000,
+          "end": 1003
         },
         {
           "symbol": "static std::vector<uint32_t> applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle, const BattleAction & action, const CGHeroInstance * hero, const bool purifyingMandate)#1",
-          "start": 1006,
-          "end": 1177
+          "start": 1007,
+          "end": 1178
         },
         {
           "symbol": "bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1179,
-          "end": 1235
+          "start": 1180,
+          "end": 1236
         },
         {
           "symbol": "bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1237,
-          "end": 1490
+          "start": 1238,
+          "end": 1491
         },
         {
           "symbol": "BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[&spellAllowance](const auto & entry)#1",
-          "start": 1386,
-          "end": 1389
+          "start": 1387,
+          "end": 1390
         },
         {
           "symbol": "BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[](const auto & entry)#1",
-          "start": 1412,
-          "end": 1416
+          "start": 1413,
+          "end": 1417
         },
         {
           "symbol": "bool BattleActionProcessor::doWalkAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1492,
-          "end": 1543
+          "start": 1493,
+          "end": 1544
         },
         {
           "symbol": "bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 1545,
-          "end": 1552
+          "start": 1546,
+          "end": 1553
         },
         {
           "symbol": "bool BattleActionProcessor::applyDefendStance(const CBattleInfoCallback & battle, const CStack * stack, bool voluntary)#1",
-          "start": 1554,
-          "end": 1627
+          "start": 1555,
+          "end": 1628
         },
         {
           "symbol": "bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1",
-          "start": 1629,
-          "end": 1970
+          "start": 1630,
+          "end": 1972
         },
         {
           "symbol": "BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)::[&]() -> const CStack *#1",
-          "start": 1810,
-          "end": 1813
+          "start": 1812,
+          "end": 1815
         },
         {
           "symbol": "BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)::[&](const BattleHex & hex)#1",
-          "start": 1912,
-          "end": 1916
+          "start": 1914,
+          "end": 1918
         },
         {
           "symbol": "void BattleActionProcessor::finalizeOpportunistSequence(const CBattleInfoCallback & battle, const CStack * stack, int remainingMovement, bool allowMovement) const#1",
-          "start": 1972,
-          "end": 1988
+          "start": 1974,
+          "end": 1990
         },
         {
           "symbol": "void BattleActionProcessor::setPursuitMovementRemaining(const CBattleInfoCallback & battle, const CStack * stack, int32_t remaining) const#1",
-          "start": 1990,
-          "end": 2003
+          "start": 1992,
+          "end": 2005
         },
         {
           "symbol": "void BattleActionProcessor::setCleaveUsed(const CBattleInfoCallback & battle, const CStack * stack) const#1",
-          "start": 2005,
-          "end": 2017
+          "start": 2007,
+          "end": 2019
         },
         {
           "symbol": "void BattleActionProcessor::removeBonuses(const CBattleInfoCallback & battle, const battle::Unit * stack, BonusList bonuses)#1",
-          "start": 2019,
-          "end": 2038
+          "start": 2021,
+          "end": 2040
         },
         {
           "symbol": "BattleActionProcessor::RainOfArrowsAction BattleActionProcessor::beginRainOfArrows( const CBattleInfoCallback & battle, const CStack * attacker, const CStack * primaryTarget) const#1",
-          "start": 2040,
-          "end": 2062
+          "start": 2042,
+          "end": 2064
         },
         {
           "symbol": "void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)#1",
-          "start": 2064,
-          "end": 2169
+          "start": 2066,
+          "end": 2171
         },
         {
           "symbol": "BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)::[&action](const battle::Unit * candidate)#1",
-          "start": 2070,
-          "end": 2081
+          "start": 2072,
+          "end": 2083
         },
         {
           "symbol": "BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)::[](const battle::Unit * unit)#1",
-          "start": 2082,
-          "end": 2089
+          "start": 2084,
+          "end": 2091
         },
         {
           "symbol": "BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)::[](const battle::Unit * unit)#2",
-          "start": 2091,
-          "end": 2092
+          "start": 2093,
+          "end": 2094
         },
         {
           "symbol": "bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1",
-          "start": 2171,
-          "end": 2326
+          "start": 2173,
+          "end": 2328
         },
         {
           "symbol": "bool BattleActionProcessor::doCatapultAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2328,
-          "end": 2350
+          "start": 2330,
+          "end": 2352
         },
         {
           "symbol": "bool BattleActionProcessor::prepareUnitSpellAction(const CBattleInfoCallback & battle, BattleAction & ba)#1",
-          "start": 2352,
-          "end": 2430
+          "start": 2354,
+          "end": 2432
         },
         {
           "symbol": "bool BattleActionProcessor::doUnitSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2432,
-          "end": 2458
+          "start": 2434,
+          "end": 2460
         },
         {
           "symbol": "bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2460,
-          "end": 2626
+          "start": 2462,
+          "end": 2628
         },
         {
           "symbol": "bool BattleActionProcessor::doWalkAndSpellcastAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2628,
-          "end": 2697
+          "start": 2630,
+          "end": 2699
         },
         {
           "symbol": "bool BattleActionProcessor::canStackAct(const CBattleInfoCallback & battle, const CStack * stack)#1",
-          "start": 2699,
-          "end": 2739
+          "start": 2701,
+          "end": 2741
         },
         {
           "symbol": "bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1",
-          "start": 2741,
-          "end": 2793
+          "start": 2743,
+          "end": 2795
         },
         {
           "symbol": "bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2795,
-          "end": 2908
+          "start": 2797,
+          "end": 2910
         },
         {
           "symbol": "BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[&ba](const auto & gate)#1",
-          "start": 2857,
-          "end": 2860
+          "start": 2859,
+          "end": 2862
         },
         {
           "symbol": "BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)::[&ba](const auto & gate)#2",
-          "start": 2886,
-          "end": 2889
+          "start": 2888,
+          "end": 2891
         },
         {
           "symbol": "bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 2910,
-          "end": 2970
+          "start": 2912,
+          "end": 2972
         },
         {
           "symbol": "bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba, bool * masterGateActivationContinuationOut, bool voluntary)#1",
-          "start": 2972,
-          "end": 3453
+          "start": 2974,
+          "end": 3455
         },
         {
           "symbol": "BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba, bool * masterGateActivationContinuationOut, bool voluntary)::MovementProvenanceGuard::~MovementProvenanceGuard()#1",
-          "start": 2979,
-          "end": 2979
+          "start": 2981,
+          "end": 2981
         },
         {
           "symbol": "void BattleActionProcessor::breakSanctuary(const CBattleInfoCallback & battle, const battle::Unit * stack)#1",
-          "start": 3455,
-          "end": 3494
+          "start": 3457,
+          "end": 3496
         },
         {
           "symbol": "void BattleActionProcessor::resolveOverwatch(const CBattleInfoCallback & battle, const CStack * mover, const BattleHex & from, const BattleHex & to)#1",
-          "start": 3496,
-          "end": 3529
+          "start": 3498,
+          "end": 3531
         },
         {
           "symbol": "BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1",
-          "start": 3531,
-          "end": 4078
+          "start": 3533,
+          "end": 4080
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[](const std::shared_ptr<const CObstacleInstance> & obst)#1",
-          "start": 3623,
-          "end": 3626
+          "start": 3625,
+          "end": 3628
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & hex) -> bool#1",
-          "start": 3628,
-          "end": 3638
+          "start": 3630,
+          "end": 3640
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & hex) -> bool#2",
-          "start": 3640,
-          "end": 3653
+          "start": 3642,
+          "end": 3655
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[hasWideMoat, i, unitPath = unitPath](const BattleHex & hex) -> bool#1",
-          "start": 3701,
-          "end": 3711
+          "start": 3703,
+          "end": 3713
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&]() -> int#1",
-          "start": 3752,
-          "end": 3785
+          "start": 3754,
+          "end": 3787
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#1",
-          "start": 3806,
-          "end": 3810
+          "start": 3808,
+          "end": 3812
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#2",
-          "start": 3812,
-          "end": 3818
+          "start": 3814,
+          "end": 3820
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#3",
-          "start": 3821,
-          "end": 3825
+          "start": 3823,
+          "end": 3827
         },
         {
           "symbol": "BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)::[&](const BattleHex & occupiedHex)#4",
-          "start": 3853,
-          "end": 3856
+          "start": 3855,
+          "end": 3858
         },
         {
           "symbol": "void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const#1",
-          "start": 4080,
-          "end": 4180
+          "start": 4082,
+          "end": 4182
         },
         {
           "symbol": "BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const::[this, ownerArmy, attackerLuck]()#1",
-          "start": 4108,
-          "end": 4111
+          "start": 4110,
+          "end": 4113
         },
         {
           "symbol": "BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const::[this, ownerArmy, deathBlowChance]()#1",
-          "start": 4154,
-          "end": 4157
+          "start": 4156,
+          "end": 4159
         },
         {
           "symbol": "BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const::[this, ownerArmy, chance]()#1",
-          "start": 4169,
-          "end": 4172
+          "start": 4171,
+          "end": 4174
         },
         {
           "symbol": "void BattleActionProcessor::describeUpcomingAttack(CombatEventPayload & payload, const CStack * defender, const battle::Units & secondaryTargets) const#1",
-          "start": 4182,
-          "end": 4189
+          "start": 4184,
+          "end": 4191
         },
         {
           "symbol": "battle::Units BattleActionProcessor::collectSecondaryTargets(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, BattleAttack & bat) const#1",
-          "start": 4191,
-          "end": 4235
+          "start": 4193,
+          "end": 4237
         },
         {
           "symbol": "BattleActionProcessor::collectSecondaryTargets(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, BattleAttack & bat) const::[&result, defender](const battle::Unit * unit)#1",
-          "start": 4195,
-          "end": 4199
+          "start": 4197,
+          "end": 4201
         },
         {
           "symbol": "void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleAttack & bat) const#1",
-          "start": 4237,
-          "end": 4252
+          "start": 4239,
+          "end": 4254
         },
         {
           "symbol": "void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)#1",
-          "start": 4254,
-          "end": 5397
+          "start": 4256,
+          "end": 5405
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const DamageEstimation & estimation, const battle::Unit * target)#1",
-          "start": 4399,
-          "end": 4428
+          "start": 4401,
+          "end": 4430
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const DamageEstimation & estimation, const battle::Unit * target)#2",
-          "start": 4429,
-          "end": 4447
+          "start": 4431,
+          "end": 4449
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[defender](const auto & hit)#1",
-          "start": 4573,
-          "end": 4576
+          "start": 4575,
+          "end": 4578
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&battle](const BattleStackAttacked & hit)#1",
-          "start": 4659,
-          "end": 4668
+          "start": 4661,
+          "end": 4670
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const BattleStackAttacked & hit)#1",
-          "start": 4675,
-          "end": 4678
+          "start": 4677,
+          "end": 4680
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&target](const auto & hit)#1",
-          "start": 4694,
-          "end": 4694
+          "start": 4696,
+          "end": 4696
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[defender](const BattleStackAttacked & hit)#1",
-          "start": 4866,
-          "end": 4869
+          "start": 4868,
+          "end": 4871
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const Bonus * bonus)#1",
-          "start": 4948,
-          "end": 4951
+          "start": 4956,
+          "end": 4959
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const Bonus * bonus)#2",
-          "start": 4979,
-          "end": 4982
+          "start": 4987,
+          "end": 4990
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const Bonus * bonus)#3",
-          "start": 5090,
-          "end": 5093
+          "start": 5098,
+          "end": 5101
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const auto & target)#1",
-          "start": 5132,
-          "end": 5135
+          "start": 5140,
+          "end": 5143
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[defender](const battle::Unit * unit)#1",
-          "start": 5248,
-          "end": 5249
+          "start": 5256,
+          "end": 5257
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[](const battle::Unit * unit)#1",
-          "start": 5355,
-          "end": 5361
+          "start": 5363,
+          "end": 5369
         },
         {
           "symbol": "BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)::[&](const battle::Unit * left, const battle::Unit * right)#1",
-          "start": 5362,
-          "end": 5368
+          "start": 5370,
+          "end": 5376
         },
         {
           "symbol": "void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender)#1",
-          "start": 5399,
-          "end": 5477
+          "start": 5407,
+          "end": 5485
         },
         {
           "symbol": "BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender)::[this, ownerArmy, effectiveChance]()#1",
-          "start": 5455,
-          "end": 5458
+          "start": 5463,
+          "end": 5466
         },
         {
           "symbol": "std::set<SpellID> BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)#1",
-          "start": 5479,
-          "end": 5530
+          "start": 5487,
+          "end": 5538
         },
         {
           "symbol": "BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)::[&](int layer) -> void#1",
-          "start": 5494,
-          "end": 5505
+          "start": 5502,
+          "end": 5513
         },
         {
           "symbol": "BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)::[&](const std::shared_ptr<Bonus> spell)#1",
-          "start": 5516,
-          "end": 5520
+          "start": 5524,
+          "end": 5528
         },
         {
           "symbol": "void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload)#1",
-          "start": 5534,
-          "end": 5541
+          "start": 5542,
+          "end": 5549
         },
         {
           "symbol": "DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted, int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent, bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack) const#1",
-          "start": 5543,
-          "end": 5689
+          "start": 5551,
+          "end": 5697
         },
         {
           "symbol": "void BattleActionProcessor::addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const#1",
-          "start": 5691,
-          "end": 5717
+          "start": 5699,
+          "end": 5725
         },
         {
           "symbol": "void BattleActionProcessor::addGenericDamageLog(BattleLogMessage& blm, const std::shared_ptr<battle::CUnitState> &attackerState, int64_t damageDealt) const#1",
-          "start": 5719,
-          "end": 5726
+          "start": 5727,
+          "end": 5734
         },
         {
           "symbol": "bool BattleActionProcessor::makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1",
-          "start": 5728,
-          "end": 5731
+          "start": 5736,
+          "end": 5739
         },
         {
           "symbol": "bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction &ba, BattleAction * effectiveActionOut, bool * masterGateActivationContinuationOut)#1",
-          "start": 5733,
-          "end": 5897
+          "start": 5741,
+          "end": 5905
         },
         {
           "symbol": "void BattleActionProcessor::runPredefinedReaction(const CBattleInfoCallback & battle, const Bonus & bonus, const battle::Unit * self, const battle::Unit * other)#1",
-          "start": 5899,
-          "end": 5938
+          "start": 5907,
+          "end": 5946
         },
         {
           "symbol": "void BattleActionProcessor::collectEventTriggers(const CBattleInfoCallback & battle, std::vector<PendingTrigger> & pending, CombatEventType event, const battle::Unit * self, const battle::Unit * other) const#1",
-          "start": 5940,
-          "end": 5988
+          "start": 5948,
+          "end": 5996
         },
         {
           "symbol": "BattleActionProcessor::collectEventTriggers(const CBattleInfoCallback & battle, std::vector<PendingTrigger> & pending, CombatEventType event, const battle::Unit * self, const battle::Unit * other) const::[&pending, event, self, other](const std::shared_ptr<const Bonus> & bonus, int priority, const ICombatEventScript * script)#1",
-          "start": 5942,
-          "end": 5952
+          "start": 5950,
+          "end": 5960
         },
         {
           "symbol": "void BattleActionProcessor::runEventTriggers(const CBattleInfoCallback & battle, std::vector<PendingTrigger> & pending, const CombatEventPayload & payload)#1",
-          "start": 5990,
-          "end": 6025
+          "start": 5998,
+          "end": 6033
         },
         {
           "symbol": "void BattleActionProcessor::processBattleEventTriggers(const CBattleInfoCallback & battle, CombatEventType event, const battle::Unit * target, const battle::Unit * secondary, const CombatEventPayload & payload)#1",
-          "start": 6027,
-          "end": 6032
+          "start": 6035,
+          "end": 6040
         },
         {
           "symbol": "void BattleActionProcessor::processAttackTriggers(const CBattleInfoCallback & battle, CombatEventType attackerEvent, CombatEventType targetEvent, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload)#1",
-          "start": 6034,
-          "end": 6043
+          "start": 6042,
+          "end": 6051
         }
-      ]
+      ],
+      "review_scope": "complete-exact-136-callable-current-ignatius-inventory-no-parser-waiver-no-runtime-certification"
     },
     "lib/battle/HeroActionAllowanceState.h": {
       "functions": [
@@ -17720,249 +17721,254 @@
       ]
     },
     "AI/BattleAI/HypotheticBattle.h": {
+      "sha256": "65713c9437d6e32fe800b9e263ea3c3343a19004699f01102732d7075eb0c674",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "rationale": "Complete callable inventory of frozen56fe candidate. Prior exact inventory retained with text-proven span shifts; 0 existing bodies changed only by reviewed Mana Leeches routing. One new one-line hasProjectedManaLeech query included; nested resource/receipt structs add no explicit callable bodies. Existing parser recovery remains visible and covered by the complete callable inventory. No exclusion, parser waiver, ceiling change or runtime certification.",
       "functions": [
         {
+          "symbol": "HypotheticBattle::bool hasProjectedManaLeech() const noexcept#1",
+          "start": 72,
+          "end": 72
+        },
+        {
           "symbol": "HypotheticBattle::const SeizeInitiativeState & getSeizeInitiativeState() const override#1",
-          "start": 52,
-          "end": 52
+          "start": 82,
+          "end": 82
         },
         {
           "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
-          "start": 53,
-          "end": 57
+          "start": 83,
+          "end": 87
         },
         {
           "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
-          "start": 58,
-          "end": 58
+          "start": 88,
+          "end": 88
         },
         {
           "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
-          "start": 68,
-          "end": 68
+          "start": 98,
+          "end": 98
         },
         {
           "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
-          "start": 69,
-          "end": 69
+          "start": 99,
+          "end": 99
         },
         {
           "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
-          "start": 76,
-          "end": 79
+          "start": 106,
+          "end": 109
         },
         {
           "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
-          "start": 90,
-          "end": 90
+          "start": 120,
+          "end": 120
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
-          "start": 98,
-          "end": 102
+          "start": 128,
+          "end": 132
         },
         {
           "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
-          "start": 105,
-          "end": 105
+          "start": 135,
+          "end": 135
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-          "start": 126,
-          "end": 126
+          "start": 156,
+          "end": 156
         },
         {
           "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
-          "start": 127,
-          "end": 136
+          "start": 157,
+          "end": 166
         },
         {
           "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
-          "start": 137,
-          "end": 140
+          "start": 167,
+          "end": 170
         },
         {
           "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
-          "start": 141,
-          "end": 144
+          "start": 171,
+          "end": 174
         },
         {
           "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 146,
-          "end": 146
+          "start": 176,
+          "end": 176
         },
         {
           "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
-          "start": 148,
-          "end": 148
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
-          "start": 149,
-          "end": 149
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
-          "start": 150,
-          "end": 150
-        },
-        {
-          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
-          "start": 151,
-          "end": 151
-        },
-        {
-          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
-          "start": 152,
-          "end": 152
-        },
-        {
-          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
-          "start": 153,
-          "end": 153
-        },
-        {
-          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
-          "start": 154,
-          "end": 157
-        },
-        {
-          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
-          "start": 158,
-          "end": 161
-        },
-        {
-          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
-          "start": 162,
-          "end": 165
-        },
-        {
-          "symbol": "HypotheticBattle::ProjectedActionReceipt::bool isHeroAction() const#1",
-          "start": 175,
+          "start": 178,
           "end": 178
         },
         {
+          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
+          "start": 179,
+          "end": 179
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
+          "start": 180,
+          "end": 180
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
+          "start": 181,
+          "end": 181
+        },
+        {
+          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
+          "start": 182,
+          "end": 182
+        },
+        {
+          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "start": 183,
+          "end": 183
+        },
+        {
+          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
+          "start": 184,
+          "end": 187
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
+          "start": 188,
+          "end": 191
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
+          "start": 192,
+          "end": 195
+        },
+        {
+          "symbol": "HypotheticBattle::ProjectedActionReceipt::bool isHeroAction() const#1",
+          "start": 205,
+          "end": 208
+        },
+        {
           "symbol": "HypotheticBattle::ui8 getProjectedPendingTimeStopHeroActionSides() const#1",
-          "start": 263,
-          "end": 263
+          "start": 293,
+          "end": 293
         },
         {
           "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 269,
-          "end": 269
-        },
-        {
-          "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
-          "start": 270,
-          "end": 270
-        },
-        {
-          "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 277,
-          "end": 277
-        },
-        {
-          "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 297,
-          "end": 297
-        },
-        {
-          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
-          "start": 298,
-          "end": 298
-        },
-        {
-          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
           "start": 299,
           "end": 299
         },
         {
-          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
           "start": 300,
-          "end": 304
+          "end": 300
+        },
+        {
+          "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
+          "start": 307,
+          "end": 307
+        },
+        {
+          "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
+          "start": 327,
+          "end": 327
+        },
+        {
+          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
+          "start": 328,
+          "end": 328
+        },
+        {
+          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
+          "start": 329,
+          "end": 329
+        },
+        {
+          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "start": 330,
+          "end": 334
         },
         {
           "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-          "start": 305,
-          "end": 309
+          "start": 335,
+          "end": 339
         },
         {
           "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 310,
-          "end": 310
+          "start": 340,
+          "end": 340
         },
         {
           "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
-          "start": 311,
-          "end": 314
+          "start": 341,
+          "end": 344
         },
         {
           "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
-          "start": 315,
-          "end": 320
+          "start": 345,
+          "end": 350
         },
         {
           "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 321,
-          "end": 331
+          "start": 351,
+          "end": 361
         },
         {
           "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 334,
-          "end": 337
+          "start": 364,
+          "end": 367
         },
         {
           "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 338,
-          "end": 342
+          "start": 368,
+          "end": 372
         },
         {
           "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 347,
-          "end": 347
+          "start": 377,
+          "end": 377
         },
         {
           "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
-          "start": 348,
-          "end": 348
+          "start": 378,
+          "end": 378
         },
         {
           "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
-          "start": 412,
-          "end": 412
+          "start": 442,
+          "end": 442
         },
         {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-          "start": 413,
-          "end": 413
+          "start": 443,
+          "end": 443
         },
         {
           "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
-          "start": 414,
-          "end": 414
+          "start": 444,
+          "end": 444
         },
         {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
-          "start": 415,
-          "end": 418
+          "start": 445,
+          "end": 448
         },
         {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 429,
-          "end": 432
+          "start": 459,
+          "end": 462
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 551,
-          "end": 551
+          "start": 581,
+          "end": 581
         }
       ],
-      "rationale": "Complete exact callable inventory independently checked: 179 bodies across eight headers, including 175 unchanged retained bodies, two serializers with captured-policy guards, and two new neutral Unit defaults. Declaration-only additions do not add callable bodies. Exact-source coverage only; no runtime certification. Exact Slow query/cache declaration renewal: all 47 retained callable identities and complete body text are unchanged; 42 spans shift by one declaration/member line. No callable added or removed. Prior exact-source review retained as historical authority: IR-NECROMANCY-MANUAL-CALLABLES-SOURCE-20261026. Source coverage only; no runtime/performance acceptance. Existing deferrals and limits remain unchanged.",
-      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
-      "sha256": "109301311b24e182a88a2c5cab865026472c4f49e99071aaccdaaace66b262fa",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "review_scope": "complete-manual-inventory-exact-slow-source-only-no-runtime-acceptance",
-      "deferral": "AI owner: future header additions must extract projected action/allowance receipt types into existing HypotheticBattleTypes with nested API aliases and complete inventory; no further growth credit."
+      "deferral": "AI owner: future header additions must extract projected action/allowance receipt types into existing HypotheticBattleTypes with nested API aliases and complete inventory; no further growth credit. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
+      "review_scope": "complete-exact-48-callable-current-ignatius-inventory-no-parser-waiver-no-runtime-certification"
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
       "sha256": "b7713bdd3beefb2d448056f2a1d12023e682e222b9f176c057e07f830eda7875",
@@ -18077,13 +18083,13 @@
     },
     "AI/BattleAI/HypotheticBattle.cpp::HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle) : BattleProxy(InitialExportBattleSubject::forkForBranch(realBattle)), boundSubjectPointer(subject.get()), boundSubjectOwner(subject), initialExportView(dynamic_cast<InitialExportBattleSubject *>(subject.get())), env(ENV), bonusTreeVersion(1)#1": {
       "kind": "exception",
-      "lines": 110,
+      "lines": 112,
       "owner": "ai_engineer",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy.",
-      "review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026",
-      "review_scope": "guarded-subject-RTTI-V2-exact-source-only-no-runtime-or-speedup",
-      "sha256": "d0e7383c4f5a2c8fe019db8c2f898079782ac89f2227df10db288fe59e3e2564",
-      "deferral": "AI owner: no further constructor/header routing growth credit. Keep further query/history/lifecycle behavior in focused export components; future header debt extraction retains action/allowance API aliases and branch/finish/replay guards. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence.",
+      "rationale": "Bounded projected Mana admission/transfer, detached resource values and whole-selected replay routing; substantive Mana arithmetic/receipt work lives in focused HypotheticManaLeeches/shared rule owners. No new search, utility weight or generic SetMana acceptance. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "7623fb3f96ab95a39487c4c1409a8638d9dd2a66d385461134e219453659745b",
+      "deferral": "AI owner: no further constructor/header routing growth credit. Keep further query/history/lifecycle behavior in focused export components; future header debt extraction retains action/allowance API aliases and branch/finish/replay guards. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     ".github/workflows/github.yml": {
@@ -18106,25 +18112,25 @@
     },
     "AI/BattleAI/AttackPossibility.cpp": {
       "kind": "exception",
-      "lines": 2065,
+      "lines": 2100,
       "owner": "ai_engineer",
-      "rationale": "Independently source-reviewed reuse of the existing BattleShroudStrike query owner, replacing duplicated read-only eligibility lambdas while retaining primary, cleave and retaliation call boundaries. File2091-to2065; evaluate1727-to1700. Exact shrinking ratchet only; no action, score, ordering or RNG policy expansion.",
-      "review": "IR-COMBAT-AI-SHROUD-DEDUP-SOURCE-20261026",
+      "rationale": "Bounded projected Mana admission/transfer, detached resource values and whole-selected replay routing; substantive Mana arithmetic/receipt work lives in focused HypotheticManaLeeches/shared rule owners. No new search, utility weight or generic SetMana acceptance. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
       "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
-      "sha256": "1258ee44059db996538a55061d6b8c8cdd5377cf9fc8cab7623ec589e2a0e305",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
+      "sha256": "dcdd5248c7165f05347dd5dbac43c4cd3fdf2bfca8197a9b5fbb0ab66571c952",
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/AttackPossibility.cpp::AttackPossibility AttackPossibility::evaluate( const BattleAttackInfo & attackInfo, BattleHex hex, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)#1": {
       "kind": "exception",
-      "lines": 1700,
+      "lines": 1734,
       "owner": "ai_engineer",
-      "rationale": "Independently source-reviewed reuse of the existing BattleShroudStrike query owner, replacing duplicated read-only eligibility lambdas while retaining primary, cleave and retaliation call boundaries. File2091-to2065; evaluate1727-to1700. Exact shrinking ratchet only; no action, score, ordering or RNG policy expansion.",
-      "review": "IR-COMBAT-AI-SHROUD-DEDUP-SOURCE-20261026",
+      "rationale": "Bounded projected Mana admission/transfer, detached resource values and whole-selected replay routing; substantive Mana arithmetic/receipt work lives in focused HypotheticManaLeeches/shared rule owners. No new search, utility weight or generic SetMana acceptance. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
       "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
-      "sha256": "b5602573b57efe6a6ddfe034a3aef667f981589982f2b4c1955cd57f558298f7",
+      "sha256": "a1dbf4bdc8580acb066820fea0c5cc2b01f25d6911c48979665906ad9f9a25c9",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2567/1727 ceilings only; no regrowth allowance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit."
+      "deferral": "AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance."
     },
     "AI/BattleAI/AttackPossibility.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1": {
       "kind": "legacy",
@@ -18302,26 +18308,26 @@
       "sha256": "cfef4a8b887c5bfc9111edcac72cca0042a817cb76f26ffd557f2f2491d5118d"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp": {
-      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2186/340 ratchet only. Separately, before further movement-cache expansion, ai_engineer must extract ReachabilityMapCache update/getOneTurnReachableUnits/computeOneTurnReachableUnits into one focused component after defining a single shared controller-predicate owner for cache, movement and blocking/bypass consumers. Preserve exact membership pointer/order/multiplicity, turn wrapping, branch/state/RNG and whole-exchange score/action parity; do not duplicate controller rules. This exact four-net-line local-lifetime exception does not permit any unrelated growth. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance. Before further substantive affected-area expansion, ai_engineer owns a cohesive typed prehit snapshot and applied aftermath stage with requested/resolved identities and damage boundary explicit. Preserve unknown-Lua query/order failures, Night Prowler/Bastion/Frozen producer behavior, branch/native/RNG isolation and exact145 score/action parity. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
+      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Separately, before further movement-cache expansion, ai_engineer must extract ReachabilityMapCache update/getOneTurnReachableUnits/computeOneTurnReachableUnits into one focused component after defining a single shared controller-predicate owner for cache, movement and blocking/bypass consumers. Preserve exact membership pointer/order/multiplicity, turn wrapping, branch/state/RNG and whole-exchange score/action parity; do not duplicate controller rules. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. Before further substantive affected-area expansion, ai_engineer owns a cohesive typed prehit snapshot and applied aftermath stage with requested/resolved identities and damage boundary explicit. Preserve unknown-Lua query/order failures, Night Prowler/Bastion/Frozen producer behavior, branch/native/RNG isolation and exact145 score/action parity. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "kind": "exception",
-      "lines": 2171,
+      "lines": 2191,
       "owner": "ai_engineer",
-      "rationale": "Independently source-reviewed removal of the unread AttackerValue bookkeeping, its constructor, an unused local exchange object and an unused include. File2186-to2171; AP-track340-to339; direct-track439-to434; movement180-to178. Existing score arithmetic and ordered projected execution remain. Exact shrinking ratchet only; runtime acceptance is separate.",
-      "review": "IR-COMBAT-AI-DEAD-EXCHANGE-SOURCE-20261026",
+      "rationale": "Bounded projected Mana admission/transfer, detached resource values and whole-selected replay routing; substantive Mana arithmetic/receipt work lives in focused HypotheticManaLeeches/shared rule owners. No new search, utility weight or generic SetMana acceptance. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
       "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
-      "sha256": "0d4bec74c32735d1ce96cee253d6c24524d6f1a14c10647c0673a28e7761f2f3",
+      "sha256": "d493076e7634a99510b6c80d1ad384f2d4eea5a5026726ea6f43d41d549528ae",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::BattleScore BattleExchangeEvaluator::calculateExchange( const AttackPossibility & ap, uint8_t turn, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, const battle::Units & additionalUnits, BattleMovementTiming::ExchangeTiming * timing) const#1": {
       "kind": "exception",
-      "lines": 363,
+      "lines": 364,
       "owner": "ai_engineer",
-      "rationale": "Exact independently source-reviewed361-to363 urgent correctness routing exception: consume the explicit complete-action result only after full AP replay so the existing future-actor outer loop cannot duplicate extra own hits. No queue, membership, horizon or score policy expansion. The cohesive future dispatch/timing extraction remains a prerequisite to further affected-area expansion; all prior deferrals remain.",
-      "review": "IR-FUTURE-BRACE-REPAIR-SOURCE-20261020-D54E6B98",
-      "review_scope": "exact-two-net-line-full-action-completion-routing-exception-only",
-      "sha256": "2978b96fae359e118d38729f8fe7d53de86c844136df218c5431607dc488f8bc",
+      "rationale": "Bounded projected Mana admission/transfer, detached resource values and whole-selected replay routing; substantive Mana arithmetic/receipt work lives in focused HypotheticManaLeeches/shared rule owners. No new search, utility weight or generic SetMana acceptance. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "377d335295d96c26c6bbc34d0ea0992a83d8ddd5092b8ea5eb18a25f5c3d5c9e",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance."
+      "deferral": "Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance."
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::EvaluationResult BattleExchangeEvaluator::findBestTarget( const battle::Unit * activeStack, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool siegeDefense, BattleBestTargetTiming * timing)#1": {
       "kind": "legacy",
@@ -18352,26 +18358,15 @@
       "sha256": "d28f9b054a8e6959acb70776c6d9db8b6e123b0a82d1aff937f0c304623b9da2"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttack( const AttackPossibility & ap, std::shared_ptr<HypotheticBattle> hb, DamageCache & damageCache)#1": {
-      "kind": "legacy",
-      "lines": 339,
-      "owner": "ai_engineer",
-      "rationale": "Independently source-reviewed removal of the unread AttackerValue bookkeeping, its constructor, an unused local exchange object and an unused include. File2186-to2171; AP-track340-to339; direct-track439-to434; movement180-to178. Existing score arithmetic and ordered projected execution remain. Exact shrinking ratchet only; runtime acceptance is separate.",
-      "review": "IR-COMBAT-AI-DEAD-EXCHANGE-SOURCE-20261026",
-      "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
-      "sha256": "145e4a67bc23efe60f70784076cd0bb94b80bb748cd95e72b5ef71d127532369",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Exact2237/340 ratchet only. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit."
-    },
-    "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttack( std::shared_ptr<StackWithBonuses> attacker, std::shared_ptr<StackWithBonuses> defender, bool shooting, bool isOurAttack, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool evaluateOnly, bool allowRetaliation, std::optional<bool> * readyOverwatch, const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission, BattleExchangeAttackResult * actionResult)#1": {
       "kind": "exception",
-      "lines": 434,
+      "lines": 348,
       "owner": "ai_engineer",
-      "rationale": "Independently source-reviewed removal of the unread AttackerValue bookkeeping, its constructor, an unused local exchange object and an unused include. File2186-to2171; AP-track340-to339; direct-track439-to434; movement180-to178. Existing score arithmetic and ordered projected execution remain. Exact shrinking ratchet only; runtime acceptance is separate.",
-      "review": "IR-COMBAT-AI-DEAD-EXCHANGE-SOURCE-20261026",
+      "rationale": "Bounded projected Mana admission/transfer, detached resource values and whole-selected replay routing; substantive Mana arithmetic/receipt work lives in focused HypotheticManaLeeches/shared rule owners. No new search, utility weight or generic SetMana acceptance. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
       "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
-      "sha256": "c783710d098c681e6f8d90ee92097c02f55a8cebcc7466ae6544a046e7265095",
+      "sha256": "74670aed6ced9f665f3927d93fbf4838fb49a9aceead5acfa6bac6fde331d3fa",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. This reviewed +2 calculateExchange routing exception is exact and grants no future or unrelated growth allowance. Before further substantive affected-area expansion, ai_engineer owns a cohesive typed prehit snapshot and applied aftermath stage with requested/resolved identities and damage boundary explicit. Preserve unknown-Lua query/order failures, Night Prowler/Bastion/Frozen producer behavior, branch/native/RNG isolation and exact145 score/action parity. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit."
+      "deferral": "AI engineer owns further cohesive per-strike replay extraction before substantive trackAttack expansion. Its interface must retain branch/unit IDs and ordered FortuneStrikeProjection inputs, preserving resource expiry, recipient injury, LastStand, Defiant and post-hit order. Require selected receipt, native sequence, sibling isolation and no-native-RNG assertions. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance."
     },
     "AI/BattleAI/PotentialTargets.cpp::PotentialTargets::PotentialTargets( const battle::Unit * attacker, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> state)#1": {
       "kind": "exception",
@@ -21920,13 +21915,13 @@
     "lib/CMakeLists.txt": {
       "deferral": "Keep exact target membership and Linux/Windows parity when decomposing this mechanical registry; no additional implementation belongs here.",
       "kind": "exception",
-      "lines": 1381,
+      "lines": 1385,
       "owner": "engine_engineer",
-      "rationale": "Register the focused initialization, neutral-army rules and dwelling-guard compilation units and shared header. The mechanical target registry contains no gameplay implementation.",
-      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
-      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "rationale": "Four mechanical registrations for two focused shared Mana Leeches cpp/header owners; unchanged target/link/dependency responsibilities. Exact56fe registry bytes; no ceiling/exclusion change or runtime certification.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
       "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
-      "sha256": "c1df7696633ada2a72265c69f959220219edc1b2cae745090993f04db48ed4b3"
+      "sha256": "248f24bd4d839fb0e58a1f063f4dd54701f9d5604bb4badb41d26d0a91ac9d1c"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -22074,24 +22069,26 @@
       "deferral": "Further extraction requires preserving preparse ignore, load, root invalidation, Protect, damage, clone and completion order. No future growth or runtime acceptance."
     },
     "lib/battle/BattleInfo.h": {
-      "lines": 1541,
-      "sha256": "b6814936e02d488b7b5dc787b598247c68a7cca86df60694b3414d485f1f0d72",
+      "lines": 1544,
+      "sha256": "3e67655862c32a113ba33dd79cfd0b7ad72b335b6afbf86a8b483e4206909439",
       "kind": "exception",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Existing serialization template receives fail-closed revised policy and captured specialty gates; no new runtime state ownership. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 1532\u21921541; unchanged limits/coverage.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "rationale": "Mechanical typed operation/scalar serialization and earliest-prefix guards under one appended private capability; existing enum/field order and historical absence retained. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "owner": "engine_engineer"
     },
     "lib/battle/BattleInfo.h::BattleInfo::void serialize(Handler &h)#1": {
-      "lines": 720,
-      "sha256": "e2dc271968b04b4bb6bdb374da41d1f68ea9416341929cbf2073510b13a6ef32",
+      "lines": 723,
+      "sha256": "b96e47771855d2246604c793764b2ac071e137adfe340340a87a59b8f748390c",
       "kind": "exception",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "rationale": "Existing serialization template receives fail-closed revised policy and captured specialty gates; no new runtime state ownership. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 717\u2192720; unchanged limits/coverage.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "rationale": "Mechanical typed operation/scalar serialization and earliest-prefix guards under one appended private capability; existing enum/field order and historical absence retained. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
+      "owner": "engine_engineer"
     },
     "lib/battle/CBattleInfoCallback.cpp": {
       "lines": 5594,
@@ -22373,24 +22370,24 @@
     },
     "lib/battle/SideInBattle.h": {
       "kind": "exception",
-      "lines": 851,
-      "owner": "gameplay_engineer",
-      "rationale": "Typed day/consumed/actual-recovery receipt state, old-read false/-1/zero defaults and pre-prefix validation only. File851 and serialize428 bounds; arithmetic remains in focused source owner.",
-      "review": "recovery-verdish-current-rebase-source-v1",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "03020225b15764d88df8ff8cf68ac0f65ae9eaf9375d22348633b2b73d93ba45",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth.",
+      "lines": 862,
+      "owner": "engine_engineer",
+      "rationale": "Mechanical typed operation/scalar serialization and earliest-prefix guards under one appended private capability; existing enum/field order and historical absence retained. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "6c46d7b6ce7f11068d9c6c3caf4881f9eb379aa22a1a46132a3d1a27bda5158e",
+      "deferral": "Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/battle/SideInBattle.h::SideInBattle::void serialize(Handler &h)#1": {
       "kind": "exception",
-      "lines": 428,
-      "owner": "gameplay_engineer",
-      "rationale": "Typed day/consumed/actual-recovery receipt state, old-read false/-1/zero defaults and pre-prefix validation only. File851 and serialize428 bounds; arithmetic remains in focused source owner.",
-      "review": "recovery-verdish-current-rebase-source-v1",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "135a643a620167064abdfbaaff17b5e9da27cc9d1b4ea237b420231ab56d94fd",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth.",
+      "lines": 436,
+      "owner": "engine_engineer",
+      "rationale": "Mechanical typed operation/scalar serialization and earliest-prefix guards under one appended private capability; existing enum/field order and historical absence retained. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "a147b38a5a21fb1a212ab8b981708ca28a9caf3827f644b73ab4ac4a2df5c0a9",
+      "deferral": "Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "review_status": "SOURCE_CLEAR_PENDING_METADATA_REVIEW"
     },
     "lib/bonuses/Bonus.h::Bonus::void serialize(Handler &h)#1": {
@@ -22705,12 +22702,13 @@
       "sha256": "d77772a1ede34de3884cee9989bc9a66c05a23ec458bb92090e6bb5a78bf9ef8"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target, const CGHeroInstance * capturedHero)#1": {
-      "lines": 134,
-      "sha256": "2833106fb604099d5c1ce1bb563b80241807f16f19b7a81a5226a7fb98483d6a",
+      "lines": 143,
+      "sha256": "53d0c76f2cc07b4f98fe8472087c6defc79bad2aa62de3b0ac30fde481bea056",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "One focused specialty presentation dispatch plus include.",
-      "deferral": "Owner: UI developer. Interface/acceptance: Extract specialty-category dispatch into cohesive resolvers returning the same presentation contract; preserve captured identity, icons, text and unavailable-roster fallback."
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "rationale": "Bounded captured Ignatius presentation dispatch; historical absence and existing presentation contract retained. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "deferral": "Owner: ui_developer. Before further individual-specialty dispatch growth, move hero-family presentation into cohesive captured-policy resolvers returning the existing presentation contract; preserve historical icon/text/identity and fallback behavior.",
+      "owner": "ui_developer"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "kind": "exception",
@@ -22857,12 +22855,13 @@
       "sha256": "5b49a7ff2d4b8ae1750fecda2dd74cc753f8c985600187dc543e3d50f8d8368b"
     },
     "lib/gameState/GameStatePackVisitor.cpp": {
-      "lines": 4339,
-      "sha256": "dff2e4ce8371dd540da68a8931ba5394b1d05f4665ca99c3be76e8cf7d3413c0",
+      "lines": 4342,
+      "sha256": "f8746040aeb7712274bfc1d026e7e98545c750d7e70e2eae63e5784da603f269",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Two-line shared finalizer call after captured Luck/Morale validation and before equality; authority validation order preserved.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract canonical Order StartAction validation into a focused validated transition contract; preserve pre-cleanup capture, draw context, idempotence, equality, allowance spending and packet/RNG order."
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "rationale": "Three-line typed restoration dispatch only; policy/headroom validation and actual saturated receipt mutation are delegated to existing NewHorizonsBattleSpellPoints resource owner. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract canonical Order StartAction validation into a focused validated transition contract; preserve pre-cleanup capture, draw context, idempotence, equality, allowance spending and packet/RNG order. Owner: engine_engineer. Before further typed Spell Point mutation growth, extract cohesive validated dispatch preserving pre-mutation rejection, Buffer/provenance accounting, packet order and cancellation/settlement behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
+      "owner": "engine_engineer"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)#1": {
       "kind": "legacy",
@@ -22959,13 +22958,14 @@
       "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance."
     },
     "lib/gameState/GameStatePackVisitor.cpp::void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMana & pack)#1": {
-      "kind": "legacy",
-      "lines": 93,
+      "kind": "exception",
+      "lines": 96,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 93 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "a9f726f8270dc09e7da259cec84b671a2c4cf8cb09a5992c1f30858359fdd2a3"
+      "rationale": "Three-line typed restoration dispatch only; policy/headroom validation and actual saturated receipt mutation are delegated to existing NewHorizonsBattleSpellPoints resource owner. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "4d1feac54cb262564a53096feaba842568c4a5a243678197f4ff9eed9eb98715",
+      "deferral": "Owner: engine_engineer. Before further typed Spell Point mutation growth, extract cohesive validated dispatch into the existing focused resource owner, preserving pre-mutation payload/policy rejection, actual Normal recovery receipts, Buffer/temporary provenance, packet order and cancellation/settlement behavior."
     },
     "lib/gameState/GameStatistics.cpp::std::string StatisticDataSet::toCsv(const std::string & sep, const ITranslator * translator) const#1": {
       "kind": "legacy",
@@ -23150,12 +23150,13 @@
       "sha256": "aebf3e62ed5bcf798ff31c425cdd5c55768f44457bb8c036121a078c20537cff"
     },
     "lib/mapObjects/CGHeroInstance.cpp": {
-      "lines": 3591,
-      "sha256": "265bbfa22e547f80e4abccc749bb68e627ef281f5039ded353d01cd458a92b08",
+      "lines": 3596,
+      "sha256": "1e4d9ded6eaa2683b3c1e668326568de345b72124e62c2528b6afbce7a230fcf",
       "kind": "exception",
-      "review": "IR-PHASE2-NECROMANCY-FRESH-RANK-LOOKUP-20261027",
-      "rationale": "Central per-slot Leadership calculation delegates captured Skeleton discount to the focused policy owner, shrinking the original hero implementation; no parallel recruitment formula. Fresh Necromancy eligibility and clamped rank share one decode and skill-level scan; exact whole-file size shrinks by one line without new state or relaxed captured-rule gates.",
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. "
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "rationale": "Bounded captured Ignatius replacement admission and old generic producer suppression; new policy rules live in their focused owner. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
+      "owner": "gameplay_engineer"
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",
@@ -23176,12 +23177,13 @@
       "sha256": "708894003cfd0904955f9276d3f509eb89c1ea2fb5141cc43bf61b487b2ea937"
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)#1": {
-      "lines": 370,
-      "sha256": "8a0a41a75a2e637017860f1736df0e2e74a5a98137bf916703c8d38b4c0ef9d8",
+      "lines": 371,
+      "sha256": "a179743f3a455e69cde58b626bb512ab11a68f4f839239619ec339fc16b8000f",
       "kind": "exception",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Bounded fresh producer suppression and shared specialty cost routing; actual captured policy lives in focused Chosen helper.",
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity."
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "rationale": "Bounded captured Ignatius replacement admission and old generic producer suppression; new policy rules live in their focused owner. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
+      "owner": "gameplay_engineer"
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)#1": {
       "kind": "exception",
@@ -23706,23 +23708,24 @@
       "previous_review": "IR-NECROMANCY-V2-ENVELOPE-GUARDS-SOURCE-20261027"
     },
     "lib/networkPacks/PacksForClient.h": {
-      "kind": "legacy",
-      "lines": 2489,
+      "kind": "exception",
+      "lines": 2498,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 2489 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "5e0b71f8188c851a69e16b94025f2820c68798db9a648b26800469f7e5b5c3d9"
+      "rationale": "Mechanical typed operation/scalar serialization and earliest-prefix guards under one appended private capability; existing enum/field order and historical absence retained. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "0dc6e45d322fb451bc39379d1f78fc4d0128bce44b6c5c49ef3441f4dee65011",
+      "deferral": "Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection."
     },
     "lib/networkPacks/PacksForClientBattle.h": {
       "kind": "exception",
-      "lines": 2256,
-      "sha256": "928f7a41182dd1e8efbbcff07f4a3877d763647e96911e9c21be46efbe32aed6",
+      "lines": 2259,
+      "sha256": "7886dff321c602108677890f7e56b3f1e08bf689d640de4c14ab06e01ef60be1",
       "owner": "engine_engineer",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "rationale": "BattleResultsApplied uses canonical result writer preflight before prefix, retaining Training and base-Necromancy guard. Packet wire fields unchanged, duplicated checks removed. Exact spans/hash independently verified in the composed review; unrelated ratchets unchanged. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 2253\u21922256; unchanged limits/coverage.",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "rationale": "Mechanical typed operation/scalar serialization and earliest-prefix guards under one appended private capability; existing enum/field order and historical absence retained. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "deferral": "Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Preserve the inherited finite registry/admission/template extraction obligation. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "previous_review": "IR-NH-REMAINING-FOUR-COMPOSED-20261024"
     },
@@ -23755,14 +23758,14 @@
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleStart::void serialize(Handler & h)#1": {
       "kind": "exception",
-      "lines": 182,
+      "lines": 185,
       "owner": "engine_engineer",
-      "rationale": "Three entry packet pre-prefix side validation lines only; protected actual receipt layout remains in existing Side owner. File2276/serialize179 exact bounds. Exact Sorcery/Living Armor renewal: Mechanical captured Sorcery capability forwarding or exact timed-summon compatibility validation remains at its existing authoritative serialization boundary before output prefixes. Physical span 179\u2192182; unchanged limits/coverage.",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "review_scope": "exact-reviewed-recovery-verdish-routing-codecs-and-shrinking-owners-only",
-      "sha256": "a6e849adbeb446fc5d9777589ca6815abe8c89eabf1613ba1e7692cc755bc216",
+      "rationale": "Mechanical typed operation/scalar serialization and earliest-prefix guards under one appended private capability; existing enum/field order and historical absence retained. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "7c3ea30bba497aefdb1fe58b91eed565c18ec2cca8c26f63c350b2becfb0fb59",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "deferral": "Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "previous_review": "recovery-verdish-current-rebase-source-v1"
     },
     "lib/networkPacks/PacksForLobby.h": {
@@ -24348,15 +24351,15 @@
       "sha256": "cf553e17beb1f81fce90fee209b9fd0f3c9e6a508a4ad5b332d6709d6462fa74"
     },
     "lib/serializer/ESerializationVersion.h": {
-      "deferral": "Preserve append-only feature values, historical aliases and explicit read/write capability tests; do not place runtime mechanics in this registry.",
+      "deferral": "Preserve append-only feature values, historical aliases and explicit read/write capability tests; do not place runtime mechanics in this registry. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "kind": "exception",
-      "lines": 583,
+      "lines": 585,
       "owner": "engine_engineer",
-      "rationale": "Append one neutral-army capture capability and update CURRENT without renumbering historical features. This is a mechanical compatibility registry.",
-      "review": "IR-NEUTRAL-ARMY-CAPTURE-AND-EXTRACTION-20261028",
-      "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
+      "rationale": "Mechanical typed operation/scalar serialization and earliest-prefix guards under one appended private capability; existing enum/field order and historical absence retained. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
       "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
-      "sha256": "3a925ec2a384c46450e556f1c7566f45978759a270f0ed27e8f628068b4d7a1e"
+      "sha256": "85b3856e81242c37975a30de752744cad08d58eb831e51062bbb920b166c071c"
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -25501,12 +25504,13 @@
       "sha256": "86424b16bdbdb1f8d1cead11d9372dbf6bf3a7c0c7f3d47ed7dbf6d368d2002e"
     },
     "server/battles/BattleActionProcessor.cpp": {
-      "lines": 6043,
-      "sha256": "da1b8d51e720728aa8095f9edac96113044a7fcc3f0f2dc04cb5ef30dd6cc92f",
+      "lines": 6051,
+      "sha256": "8730400f6ebd7330bb96743573c589ba29718c07f5691124511b4d60fd24cd47",
       "kind": "exception",
-      "review": "IR-ORDER-LOG-EXTRACTION-AND-FEEDBACK-SOURCE-20261026",
-      "rationale": "Seven removal-before-add packet lines and three shared finalization lines after existing Luck/Morale receipts, before immutable StartAction. Follow-up extracts Order name/target/log formatting into a194-line cohesive component, ratcheting this owner down by125 lines; all retained callable bodies are unchanged.",
-      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract prepared Order effect packet installation and Order StartAction preparation into focused transition helpers; preserve remove/add/log/action/RNG order, rejected-command atomicity and immutable snapshot equality."
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "rationale": "Only local sequence receipt plus prepare/apply routing at existing physical attack aftermath; substantive ownership/transfer/log rules live in focused Mana Leeches owners. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "deferral": "Owner: Engine engineer. Interface/acceptance: Extract prepared Order effect packet installation and Order StartAction preparation into focused transition helpers; preserve remove/add/log/action/RNG order, rejected-command atomicity and immutable snapshot equality. Owner: gameplay_engineer. Before further physical attack aftermath growth, extract ordered aftermath coordinator with captured pre-hit entitlements and post-packet resource application; preserve preemptive exclusions, ordinary retaliation, RNG/packet order and both hero pools. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
+      "owner": "gameplay_engineer"
     },
     "server/battles/BattleActionProcessor.cpp::BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1": {
       "kind": "legacy",
@@ -25527,13 +25531,14 @@
       "sha256": "512b7d7d1cd0063bc15046168d0a3118ca02076a3b8039ba2e4260dd0804aa1f"
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation)#1": {
-      "kind": "legacy",
-      "lines": 342,
-      "owner": "engine_engineer",
-      "rationale": "Exact shrinking ordinary-melee retaliation predicate extraction; native short-circuit query/event order and unrelated bodies retained. Remaining legacy action processing is not a growth allowance.",
-      "review": "IR-OWNED-EXPORT-LIFECYCLE-CURRENT-UNION-20261017",
-      "review_scope": "exact-owned-export-lifecycle-source-union-only-no-runtime-or-future-growth",
-      "sha256": "85e668e0e8942d80f6e48a00f8f15133746ab659c6aa126d7af790eb2243262d"
+      "kind": "exception",
+      "lines": 343,
+      "owner": "gameplay_engineer",
+      "rationale": "Only local sequence receipt plus prepare/apply routing at existing physical attack aftermath; substantive ownership/transfer/log rules live in focused Mana Leeches owners. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "db426c04128ea86897cad180802f238bd590e4322d1d0b4832eba8c16559dfc6",
+      "deferral": "Owner: gameplay_engineer. Before further physical attack aftermath growth, extract ordered aftermath coordinator with captured pre-hit entitlements and post-packet resource application; preserve preemptive exclusions, ordinary retaliation, RNG/packet order and both hero pools."
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1": {
       "kind": "legacy",
@@ -25607,15 +25612,15 @@
       "sha256": "3f47254b59fac6cec203217e42ac20fd934ad5e2ee2a2672bcacc67006069117"
     },
     "server/battles/BattleActionProcessor.cpp::void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut)#1": {
-      "kind": "legacy",
-      "lines": 1144,
-      "owner": "engine_engineer",
-      "rationale": "Existing1184-line attack orchestrator shrinks by40 through the independently reviewed Frozen prepare/publish/resolve boundary. Exact combined span4369-5512, original conditional draw and Shatter order retained. Approval freezes shrinking legacy debt; it does not treat1144 as an acceptable new function size.",
-      "review": "IR-COMMON-FINAL-BAP-COMPOSITION-20261017",
-      "review_scope": "exact-common-plus-stage11-union-only",
-      "sha256": "71ba4d17ed92b6cfce3734d6f6298392f6c6c0363bfb80f904f956d32c64c8a1",
+      "kind": "exception",
+      "lines": 1150,
+      "owner": "gameplay_engineer",
+      "rationale": "Only local sequence receipt plus prepare/apply routing at existing physical attack aftermath; substantive ownership/transfer/log rules live in focused Mana Leeches owners. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "882d07c1cf99ea45562511ced2a6226a6f3f985599e80a1b0a5087a26a514c0c",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "deferral": "Engine engineer owns the further ordered-reaction extraction described by the file record before substantive expansion. Characterization must compare native hit packets, RNG, status/resource state and fixed attack-loop behavior, including already-Frozen and LastStand cases."
+      "deferral": "Engine engineer owns the further ordered-reaction extraction described by the file record before substantive expansion. Characterization must compare native hit packets, RNG, status/resource state and fixed attack-loop behavior, including already-Frozen and LastStand cases. Owner: gameplay_engineer. Before further physical attack aftermath growth, extract ordered aftermath coordinator with captured pre-hit entitlements and post-packet resource application; preserve preemptive exclusions, ordinary retaliation, RNG/packet order and both hero pools. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance."
     },
     "server/battles/BattleActionProcessor.cpp::void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)#1": {
       "kind": "legacy",
@@ -26400,25 +26405,25 @@
     },
     "AI/BattleAI/HypotheticBattle.cpp": {
       "kind": "exception",
-      "lines": 836,
+      "lines": 838,
       "owner": "ai_engineer",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Bounded amendment: Mixed-capture resistance dispatch keeps the old no-magic nullopt path unless captured Necromancy contributes resistance, then queries the shared projected unit resistance owner. Exact Slow correction renewal: One five-line captured-policy forwarding query plus its include supplies the existing hypothetical unit environment; no live/default-rule fallback, new action policy, RNG or serialized state. Prior exact-source review retained as historical authority: IR-NECROMANCY-V2-GAMEPLAY-BOUNDED-SOURCE-20261027. This urgent bounded correction does not raise any ceiling or grant future growth; all existing extraction deferrals remain in force.",
-      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
-      "review_scope": "exact-slow-resolved-initiative-source-only-no-runtime-or-performance-acceptance",
-      "sha256": "5f8dc930833f6ff1afda72ba2aa30e7dd5150ab441b39dc91fd51ec9c52047b4",
-      "deferral": "AI owner: keep ownership/query/history behavior in focused export components. No further centralfile growth approved; new source-binding behavior must preserve public base assignment, branch isolation and retained alias/control-block lifetime. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence.",
+      "rationale": "Bounded projected Mana admission/transfer, detached resource values and whole-selected replay routing; substantive Mana arithmetic/receipt work lives in focused HypotheticManaLeeches/shared rule owners. No new search, utility weight or generic SetMana acceptance. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "32394d72f0c0ec7cfd3413464237fefa165b9ec11d7b4bcc5923559838f2bc5f",
+      "deferral": "AI owner: keep ownership/query/history behavior in focused export components. No further centralfile growth approved; new source-binding behavior must preserve public base assignment, branch isolation and retained alias/control-block lifetime. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
       "previous_review": "IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026"
     },
     "AI/BattleAI/HypotheticBattle.h": {
       "kind": "exception",
-      "lines": 603,
+      "lines": 633,
       "owner": "ai_engineer",
-      "rationale": "Bounded passive environment/cache routing delegates substantive Skeleton combat rules to the focused Necromancy combat owner. Existing damage/activation execution order is preserved; no new serialized passive cache or evaluation policy. Exact Slow correction renewal: One declaration forwards the exact resolved-Slow captured-policy query through the existing unit environment; no new inline body or serialized state. Rebuild all consumers together. Prior exact-source review retained as historical authority: IR-NECROMANCY-COMBAT-ENVIRONMENT-SOURCE-20261026. This urgent bounded correction does not raise any ceiling or grant future growth; all existing extraction deferrals remain in force.",
-      "review": "IR-SLOW-RESOLVED-INITIATIVE-FINAL-GUARD-SOURCE-20261027",
-      "review_scope": "exact-slow-resolved-initiative-source-only-no-runtime-or-performance-acceptance",
-      "sha256": "109301311b24e182a88a2c5cab865026472c4f49e99071aaccdaaace66b262fa",
-      "deferral": "AI owner: further header additions require cohesive projected action/allowance receipt-type extraction into existing HypotheticBattleTypes with nested API aliases, complete manual inventory and admission/finish/replay invariants. This exact+4 exception grants no future regrowth credit. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence.",
+      "rationale": "Bounded projected Mana admission/transfer, detached resource values and whole-selected replay routing; substantive Mana arithmetic/receipt work lives in focused HypotheticManaLeeches/shared rule owners. No new search, utility weight or generic SetMana acceptance. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification",
+      "sha256": "65713c9437d6e32fe800b9e263ea3c3343a19004699f01102732d7075eb0c674",
+      "deferral": "AI owner: further header additions require cohesive projected action/allowance receipt-type extraction into existing HypotheticBattleTypes with nested API aliases, complete manual inventory and admission/finish/replay invariants. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "AI/BattleAI/HypotheticHeroActions.cpp::bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target, bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated, const ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & affectedRecipients)#1": {
@@ -26667,6 +26672,16 @@
       "review_scope": "exact-neutral-army-capture-preflight-and-cohesive-extractions",
       "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
       "sha256": "a33ea49f881ae7fa2d30db5908b57868bd85ecdce3ce51eeb25c20a91777f205"
+    },
+    "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttack( std::shared_ptr<StackWithBonuses> attacker, std::shared_ptr<StackWithBonuses> defender, bool shooting, bool isOurAttack, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool evaluateOnly, bool allowRetaliation, std::optional<bool> * readyOverwatch, const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission, BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent)#1": {
+      "lines": 443,
+      "sha256": "6a991e08c4900e914183d2a802c9b57f0a538191786e4140c91c24facb3ba7fe",
+      "kind": "exception",
+      "review": "IR-IGNATIUS-MANA-LEECHES-56FE-SOURCE-20261028",
+      "rationale": "Bounded projected Mana admission/transfer, detached resource values and whole-selected replay routing; substantive Mana arithmetic/receipt work lives in focused HypotheticManaLeeches/shared rule owners. No new search, utility weight or generic SetMana acceptance. Exact frozen56fe source only; no ceiling/exclusion change or native/rendered/performance acceptance.",
+      "owner": "ai_engineer",
+      "deferral": "Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. Before further substantive affected-area expansion, ai_engineer owns a cohesive typed prehit snapshot and applied aftermath stage with requested/resolved identities and damage boundary explicit. Preserve unknown-Lua query/order failures, Night Prowler/Bastion/Frozen producer behavior, branch/native/RNG isolation and exact145 score/action parity. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
+      "review_scope": "exact-ignatius-mana-leeches-current-integrated-source-only-no-future-growth-or-runtime-certification"
     }
   }
 }

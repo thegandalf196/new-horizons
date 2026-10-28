@@ -9,6 +9,7 @@
 #include "NewHorizonsLearningExchangeSpecialties.h"
 #include "NewHorizonsSwampSeer.h"
 #include "NewHorizonsReclaimer.h"
+#include "NewHorizonsManaLeeches.h"
 
 namespace newHorizonsHeroes
 {
@@ -21,6 +22,7 @@ void validateCapturedSpecialtiesSerialization(const JsonNode & development,
 	validateSwampSeerSerialization(development, context.remainingRiders);
 	validateReclamationSpecialtySerialization(development, context.remainingRiders);
 	validateChosenSpecialtiesSerialization(development, context.chosenSpecialties);
+	validateManaLeechesSerialization(development, context.manaLeeches);
 }
 
 void validateCurrentSpecialtyRules(const JsonNode & development)
@@ -33,6 +35,7 @@ void validateCurrentSpecialtyRules(const JsonNode & development)
 	current.recovery = true;
 	current.remainingRiders = true;
 	current.chosenSpecialties = true;
+	current.manaLeeches = true;
 	validateCapturedSpecialtiesSerialization(development, current);
 }
 

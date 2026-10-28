@@ -221,6 +221,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int64_t initialAcceptedCombatDay = -1;
 	bool deepTranceConsumed = false;
 	int32_t deepTranceRecoveredNormal = 0;
+	// Only actual Familiar Normal recovery may raise the legacy completion ceiling.
+	int32_t manaLeechesRecoveredNormal = 0;
+	void validateManaLeechesSerialization(bool supported) const;
 	void validateRecoverySpecialtySerialization(bool supported) const;
 	void validateManaFurnaceSerialization(bool supported) const;
 	int32_t legacySpellPointCompletionCeiling() const;
@@ -408,6 +411,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateManaLeechesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES));
 		if(h.saving)
 			validateRecoverySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)
@@ -833,6 +838,12 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		}
 		if(!h.saving)
 			validateRecoverySpecialtySerialization(true);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES))
+			h & manaLeechesRecoveredNormal;
+		else if(!h.saving)
+			manaLeechesRecoveredNormal = 0;
+		if(!h.saving)
+			validateManaLeechesSerialization(true);
 	}
 
 	void clearMetamagicSequence()

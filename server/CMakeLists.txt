@@ -4,6 +4,7 @@ set(vcmiservercommon_SRCS
 		battles/BattleActionProcessor.cpp
 		battles/HeroOrderLog.cpp
 		battles/FrozenAttackResolution.cpp
+		battles/NewHorizonsManaLeeches.cpp
 		battles/BattleFlowProcessor.cpp
 		battles/BattleProcessor.cpp
 		battles/BattleResultProcessor.cpp
@@ -51,6 +52,7 @@ set(vcmiservercommon_HEADERS
 		battles/BattleActionProcessor.h
 		battles/HeroOrderLog.h
 		battles/FrozenAttackResolution.h
+		battles/NewHorizonsManaLeeches.h
 		battles/BattleFlowProcessor.h
 		battles/BattleProcessor.h
 		battles/BattleResultProcessor.h

@@ -123,6 +123,7 @@ class BattleActionProcessor : boost::noncopyable
 		int cleaveDamagePercent = 0;
 		bool protectIntercepted = false;
 		BattleSide perfectMomentSide = BattleSide::NONE;
+		bool * manaLeechSequenceSpent = nullptr;
 	};
 
 	/// Action-local accounting for Rain of Arrows. The original primary footprint

@@ -78,6 +78,7 @@ set(lib_MAIN_SRCS
 	battle/HeroCommandCoefficientMath.cpp
 	battle/HeroCommandCoefficientQueries.cpp
 	battle/BattleInfo.cpp
+	battle/NewHorizonsManaLeeches.cpp
 	battle/BattleInfoUnitUpdate.cpp
 	battle/PhysicalAffliction.cpp
 	battle/NewHorizonsFrozen.cpp
@@ -276,6 +277,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsIndividualSpecialties.cpp
 	entities/hero/NewHorizonsChosenSpecialties.cpp
 	entities/hero/NewHorizonsAdditionalSpecialties.cpp
+	entities/hero/NewHorizonsManaLeeches.cpp
 	entities/hero/NewHorizonsRecoverySpecialtyRules.cpp
 	entities/hero/NewHorizonsHerbalSurgeon.cpp
 	entities/hero/NewHorizonsHerbalSurgeonPresentation.cpp
@@ -763,6 +765,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsOverwhelmingFormula.h
 	spells/NewHorizonsOverwhelmingFormula.cpp
 	battle/BattleInfo.h
+	battle/NewHorizonsManaLeeches.h
 	battle/BattleDeploymentState.h
 	battle/PhysicalAffliction.h
 	battle/NewHorizonsBloodrage.h
@@ -963,6 +966,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsIndividualSpecialties.h
 	entities/hero/NewHorizonsChosenSpecialties.h
 	entities/hero/NewHorizonsAdditionalSpecialties.h
+	entities/hero/NewHorizonsManaLeeches.h
 	entities/hero/NewHorizonsRecoverySpecialties.h
 	entities/hero/NewHorizonsHerbalSurgeon.h
 	entities/hero/NewHorizonsLearningSpecialties.h

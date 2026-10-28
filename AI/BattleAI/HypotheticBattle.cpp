@@ -48,6 +48,8 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	crisisCommand = realBattle->getBattle()->getCrisisCommandState();
 	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get()))
 	{
+		projectedMana = parent->projectedMana;
+		manaLeechStartingPools = projectedMana;
 		elementalRebirthSpawnUnitIds = parent->elementalRebirthSpawnUnitIds;
 		projectedPrimalBurstHits = parent->projectedPrimalBurstHits;
 		projectedPlagueHits = parent->projectedPlagueHits;

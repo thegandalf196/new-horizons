@@ -77,6 +77,7 @@ set(battleAI_SRCS
 		HypotheticUnitUpdates.cpp
 		HypotheticLifeDrainObservation.cpp
 		HypotheticStrikeProjection.cpp
+		HypotheticManaLeeches.cpp
 		HypotheticSpellServer.cpp
 		SummonEvaluation.cpp
 		SpellTargetsEvaluator.cpp

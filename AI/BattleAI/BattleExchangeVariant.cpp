@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BracePrimaryState.h"
 #include "BattleExchangeVariant.h"
+#include "../../lib/battle/NewHorizonsManaLeeches.h"
 #include "BattleShroudStrike.h"
 #include "PrimaryFortuneReceipt.h"
 #include "DamageCacheAdmission.h"
@@ -402,6 +403,13 @@ float BattleExchangeVariant::trackAttack(
 		logAi->trace("Skipping fake ap attack");
 		return 0;
 	}
+	std::optional<HypotheticBattle::ManaLeechReplay> manaLeechReplay;
+	if(ap.effectPreview && ap.effectPreview->hasProjectedManaLeech())
+	{
+		manaLeechReplay = hb->prepareManaLeechReplay(*ap.effectPreview);
+		if(!manaLeechReplay)
+			return 0; // Same pre-mutation skip contract as an unavailable actor.
+	}
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
 
@@ -726,6 +734,8 @@ float BattleExchangeVariant::trackAttack(
 		ap.collateralDamageReduce,
 		ap.shootersBlockedDmg);
 #endif
+	if(manaLeechReplay)
+		hb->applyManaLeechReplay(*manaLeechReplay);
 	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, attacker.get(), true, damageCache, hb);
 	accountForNewPrimalBurstHits(primalBurstFirstNewHit, referenceController, true, damageCache, hb);
 
@@ -744,7 +754,7 @@ float BattleExchangeVariant::trackAttack(
 	std::optional<bool> * readyOverwatch,
 	const BattleTargetProbeTiming * probeTiming,
 	DamageCacheAdmission * mainProbeAdmission,
-	BattleExchangeAttackResult * actionResult)
+	BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent)
 {
 	if(actionResult)
 		*actionResult = {};
@@ -789,6 +799,9 @@ float BattleExchangeVariant::trackAttack(
 	}
 	BattleAttackInfo projectedAttack(attacker.get(), defender.get(), 0, shooting);
 	projectedAttack.protectIntercepted = protectIntercepted;
+	const auto manaLeech = !evaluateOnly && (!manaLeechSequenceSpent || !*manaLeechSequenceSpent)
+		? newHorizonsManaLeeches::entitlement(*hb, attacker.get(), defender.get(), shooting,
+			projectedAttack.physicalDamage, false) : newHorizonsManaLeeches::Entitlement{};
 	const auto primaryFortune = captureAppliedFortuneReceipt(*hb, projectedAttack, evaluateOnly);
 	const auto shroud = !evaluateOnly ? evaluateBattleShroudStrike(*hb, projectedAttack) : BattleShroudStrike{};
 	const bool triggersEvasiveShroud = shroud.evasiveShroud;
@@ -889,6 +902,8 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
 		defender->damage(attackDamage, false, attackDamageProvenance);
+		if(manaLeech.amount > 0)
+			hb->projectManaLeech(manaLeech, actualDamage, manaLeechSequenceSpent);
 		applyLastStandDefend(defender.get(), attackLastStand.first, attackLastStand.second,
 			projectedAttack.retaliation);
 		if(nightProwlerPending)
@@ -1071,6 +1086,8 @@ float BattleExchangeVariant::trackAttack(
 	{
 		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
 		retaliationAttack.retaliation = true;
+		const auto counterManaLeech = newHorizonsManaLeeches::entitlement(*hb,
+			defender.get(), attacker.get(), false, retaliationAttack.physicalDamage, false);
 		const bool retaliationPerfectFortune = hb->battleCanTriggerPerfectFortune(retaliationAttack);
 		const auto retaliationPerfectFortuneSide = hb->playerToSide(hb->battleGetActionController(retaliationAttack.attacker));
 		const bool retaliationSerendipityOrdinaryAttack = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(
@@ -1119,6 +1136,8 @@ float BattleExchangeVariant::trackAttack(
 			? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
 		const bool attackerMayRebirth = hb->hasReadyNativeRebirth(attacker.get());
 		attacker->damage(retaliationDamage, false, retaliationProvenance);
+		if(counterManaLeech.amount > 0)
+			hb->projectManaLeech(counterManaLeech, actualDamage, nullptr);
 		applyLastStandDefend(attacker.get(), retaliationLastStand.first,
 			retaliationLastStand.second, retaliationAttack.retaliation);
 		if(retaliationNightProwlerPending)
@@ -1891,13 +1910,14 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			}
 			else
 			{
+				bool manaLeechSequenceSpent = false;
 				for(int i = 0; i < totalAttacks; i++)
 				{
 					BattleExchangeAttackResult actionResult;
 					measurement.measure(&BattleMovementTiming::ExchangeTiming::appliedAttacks, [&]()
 					{
 						return v.trackAttack(attacker, defender, shooting, isOur, damageCache, exchangeBattle,
-							false, i == 0, nullptr, nullptr, nullptr, &actionResult);
+							false, i == 0, nullptr, nullptr, nullptr, &actionResult, &manaLeechSequenceSpent);
 					});
 
 					if(actionResult.completedAction || !attacker->alive() || !defender->alive())
