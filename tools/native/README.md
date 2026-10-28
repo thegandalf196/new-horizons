@@ -60,7 +60,6 @@ repeated captures must be stable. The tool compares saved representation and
 recorded effects, not every internal AI choice, unrecorded decision or turn cost.
 Representative gameplay parity and performance require separately matched runs.
 
-
 ## Offline battle-action inspection
 
 The same optional build also provides `nhBattleActions` (no install rule). It
