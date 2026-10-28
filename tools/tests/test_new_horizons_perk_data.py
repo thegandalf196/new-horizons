@@ -475,7 +475,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         expected = (
             ('graveKnowledge', 'Grave Knowledge', 'basic', "restore 35% of this hero's own eligible fallen"),
             ('darkConversion', 'Boneward', 'basic', '50% Magic Resistance'),
-            ('blackHarvest', 'Soul Harvester', 'basic', 'recover 1 Mana for each new Skeleton or Skeleton Warrior'),
+            ('blackHarvest', 'Soul Drinker', 'basic', 'recover 1 Mana for each new Skeleton or Skeleton Warrior'),
             ('corpsePreservation', 'Death March', 'basic', '+2 Speed. Initiative is unchanged.'),
             ('masterOfBones', 'Bone and Steel', 'advanced', 'upgraded form'),
             ('boneCollector', 'Bone Collector', 'advanced', '25% more new Skeletons and Skeleton Warriors'),

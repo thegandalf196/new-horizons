@@ -3624,10 +3624,10 @@
 					"id": "new-horizons:necromancy.graveKnowledge",
 					"name": "Grave Knowledge",
 					"requires": "basic",
-					"description": "After victory, restore 35% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester.",
+					"description": "After victory, restore 35% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Drinker.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, restore 35% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Harvester."
+						"description": "After victory, restore 35% of this hero's own eligible fallen Skeletons and Skeleton Warriors in their original forms, rounded down separately for each form. Destroyed remains, summoned creatures and clones are excluded. This recovery does not count as newly raised creatures for Soul Drinker."
 					}
 				},
 				{
@@ -3642,7 +3642,7 @@
 				},
 				{
 					"id": "new-horizons:necromancy.blackHarvest",
-					"name": "Soul Harvester",
+					"name": "Soul Drinker",
 					"requires": "basic",
 					"description": "After victory, recover 1 Mana for each new Skeleton or Skeleton Warrior raised by Necromancy, up to 30 Mana per battle. Zombies and Grave Knowledge recovery do not count.",
 					"effect": {
