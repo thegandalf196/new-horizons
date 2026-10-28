@@ -26,6 +26,13 @@
 #include <memory>
 #include <string_view>
 #include "../../AI/BattleAI/HypotheticBattle.h"
+#include "../../lib/CRandomGenerator.h"
+#include "../../lib/bonuses/Bonus.h"
+#include "../../lib/battle/BattleAttackInfo.h"
+#include "../../lib/callback/GameRandomizer.h"
+#include "../../lib/serializer/CMemorySerializer.h"
+#include <tuple>
+
 
 namespace
 {
@@ -207,6 +214,64 @@ protected:
 		environment = std::make_shared<ElementalRebirthEnvironment>(gameState());
 	}
 };
+
+
+TEST_F(NewHorizonsElementalRebirthAITest, EmptyHexReplayPreservesEligibleBrissaSourceAndInvalidatesLifeDrain)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto actor = child->getForUpdate(source->unitId());
+	const auto * target = child->battleGetUnitByID(opposingPikemen->unitId());
+	ASSERT_NE(target, nullptr);
+	ASSERT_TRUE(child->captureElementalRebirthSource(*actor).has_value());
+	const auto triggers = actor->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	ASSERT_TRUE(triggers->empty());
+	const auto bonuses = [](const battle::Unit & unit)
+	{
+		std::vector<JsonNode> result;
+		const auto owner = unit.getUnstackedBonuses(Selector::all);
+		for(const auto & bonus : *owner)
+			result.push_back(bonus->toJsonNode());
+		return result;
+	};
+	const auto savedBranch = [&](const HypotheticBattle & model)
+	{
+		const auto * a = model.battleGetUnitByID(source->unitId());
+		const auto * b = model.battleGetUnitByID(opposingPikemen->unitId());
+		return std::tuple{a->acquireState()->save(), b->acquireState()->save(),
+			a->getAvailableHealth(), b->getAvailableHealth(), bonuses(*a), bonuses(*b),
+			model.getRebirthChainUsed(BattleSide::ATTACKER), model.getRebirthChainUsed(BattleSide::DEFENDER),
+			model.getPhoenixSparkUsed(BattleSide::ATTACKER), model.getPhoenixSparkUsed(BattleSide::DEFENDER),
+			model.getElementalRebirthSpawnUnitIds()};
+	};
+	const auto liveState = std::tuple{source->acquireState()->save(), opposingPikemen->acquireState()->save(),
+		bonuses(*source), bonuses(*opposingPikemen)};
+	const auto parentBefore = savedBranch(*parent);
+	const auto siblingBefore = savedBranch(*sibling);
+	const auto childBefore = savedBranch(*child);
+	const auto rngBytes = [&]()
+	{
+		CMemorySerializer server, fixture, defaults;
+		server.oser & *gameHandler->randomizer;
+		fixture.oser & dynamic_cast<CRandomGenerator &>(*getRNG());
+		defaults.oser & CRandomGenerator::getDefault();
+		return std::tuple{server.extractBuffer(), fixture.extractBuffer(), defaults.extractBuffer()};
+	};
+	const auto rngBefore = rngBytes();
+	BattleAttackInfo attack(actor.get(), target, 0, false);
+	ASSERT_TRUE(child->beginLifeDrainFriendlyObservation(actor->unitId()));
+	EXPECT_EQ(child->projectHexOfPainStrike(attack, {{target->unitId(), 1}}, 0), 0);
+	EXPECT_FALSE(child->finishLifeDrainFriendlyObservation());
+	EXPECT_EQ(savedBranch(*child), childBefore);
+	EXPECT_EQ(savedBranch(*parent), parentBefore);
+	EXPECT_EQ(savedBranch(*sibling), siblingBefore);
+	EXPECT_EQ((std::tuple{source->acquireState()->save(), opposingPikemen->acquireState()->save(),
+		bonuses(*source), bonuses(*opposingPikemen)}), liveState);
+	EXPECT_EQ(rngBytes(), rngBefore);
+	EXPECT_TRUE(child->captureElementalRebirthSource(*actor).has_value());
+}
 
 TEST_F(NewHorizonsElementalRebirthAITest, ProjectsSpellKilledSourceAsTemporaryStackAtExactBattleStartFraction)
 {

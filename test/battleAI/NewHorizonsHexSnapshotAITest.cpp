@@ -484,7 +484,20 @@ protected:
 		const auto victimState = victim->save();
 		const auto collateralState = collateral->save();
 		const auto charges = victim->casts.available();
+		// Use the native Phoenix as the replay actor, with its real ready/depleted
+		// charge ledger. Empty triggers cannot spend Rebirth or certify Life Drain.
+		const auto triggers = victim->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+		ASSERT_TRUE(triggers->empty());
+		BattleAttackInfo emptyReplay(victim.get(), source.get(), 0, false);
+		ASSERT_TRUE(branch->beginLifeDrainFriendlyObservation(victim->unitId()));
+		EXPECT_EQ(branch->projectHexOfPainStrike(emptyReplay, {{source->unitId(), 1}}, 0), 0);
+		EXPECT_FALSE(branch->finishLifeDrainFriendlyObservation());
+		EXPECT_EQ(victim->save(), victimState);
+		EXPECT_EQ(victim->casts.available(), charges);
+		EXPECT_EQ(branch->hasReadyNativeRebirth(victim.get()), ready);
+		EXPECT_TRUE(branch->getElementalRebirthSpawnUnitIds().empty());
 		DamageCache cache;
+
 		cache.buildDamageCache(branch, BattleSide::ATTACKER);
 		const auto damage = cache.getDamage(source.get(), victim.get(), branch);
 		ASSERT_GE(damage, victim->getAvailableHealth());
@@ -680,6 +693,9 @@ protected:
 		CMemorySerializer gameRng;
 		gameRng.oser & dynamic_cast<CRandomGenerator &>(*getRNG());
 		const auto gameBefore = gameRng.extractBuffer();
+		CMemorySerializer defaultRng;
+		defaultRng.oser & CRandomGenerator::getDefault();
+		const auto defaultBefore = defaultRng.extractBuffer();
 		const auto serverBefore = randomizerSnapshot();
 		const auto sourceBonuses = bonusSnapshot(*source);
 		const auto actorBonuses = bonusSnapshot(*actor);
@@ -703,11 +719,26 @@ protected:
 			EXPECT_EQ(bonusSnapshot(*source), sourceBonuses);
 			EXPECT_EQ(bonusSnapshot(*actor), actorBonuses);
 		}
+		// Applied empty-trigger replay and the real Hex positive control must
+		// preserve all live RNG domains and the unconsumed trigger bonuses.
+		CMemorySerializer gameAfter, defaultAfter;
+		gameAfter.oser & dynamic_cast<CRandomGenerator &>(*getRNG());
+		defaultAfter.oser & CRandomGenerator::getDefault();
+		EXPECT_EQ(gameAfter.extractBuffer(), gameBefore);
+		EXPECT_EQ(defaultAfter.extractBuffer(), defaultBefore);
+		EXPECT_EQ(randomizerSnapshot(), serverBefore);
+		EXPECT_EQ(bonusSnapshot(*source), sourceBonuses);
+		EXPECT_EQ(bonusSnapshot(*actor), actorBonuses);
 		EXPECT_FLOAT_EQ(exchange.getScore().ourDamageReduce, ownValue);
+
 		EXPECT_FLOAT_EQ(exchange.getScore().enemyDamageReduce, evaluateOnly ? 0 : enemyValue);
 		EXPECT_EQ(source->getAvailableHealth(), actorHP - (evaluateOnly ? 0 : hexDamage));
 		EXPECT_EQ(victim->getAvailableHealth(), targetHP - (evaluateOnly ? 0 : damage));
+		RecordProperty("StrikeScoreBits", std::to_string(std::bit_cast<uint32_t>(score)));
+		RecordProperty("ProjectedActorHP", std::to_string(source->getAvailableHealth()));
+		RecordProperty("ProjectedTargetHP", std::to_string(victim->getAvailableHealth()));
 		EXPECT_EQ(source->castSpellThisTurn, casts);
+
 		if(evaluateOnly)
 		{
 			EXPECT_EQ(source->getTotalAttacks(false), attacks);
@@ -915,4 +946,58 @@ TEST_F(NewHorizonsHexSnapshotAITest, ProbePreservesStateWhileUnblockedAppliedHit
 TEST_F(NewHorizonsHexSnapshotAITest, ProbePreservesStateWhileBlockedAppliedHitSuppressesRetaliationAndRecordsAssault)
 {
 	checkAppliedOnlyBookkeeping(true);
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, EmptyTriggerReplayInvalidatesLifeDrainWithoutChangingAnyBranch)
+{
+	CStack * actor = nullptr;
+	CStack * target = nullptr;
+	CStack * secondary = nullptr;
+	ASSERT_NO_FATAL_FAILURE(prepareAdditionalScene(false, false, actor, target, secondary));
+	HexSnapshotEnvironment environment(gameState());
+	auto parent = std::make_shared<HypotheticBattle>(&environment,
+		std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
+	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
+	auto source = child->getForUpdate(actor->unitId());
+	auto victim = child->getForUpdate(target->unitId());
+	const auto triggers = source->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	ASSERT_TRUE(triggers->empty());
+	const auto sourceState = source->save();
+	const auto targetState = victim->save();
+	const auto sourceBonuses = bonusSnapshot(*source);
+	const auto targetBonuses = bonusSnapshot(*victim);
+	const auto rngBefore = randomizerSnapshot();
+	CMemorySerializer gameBefore, defaultBefore;
+	gameBefore.oser & dynamic_cast<CRandomGenerator &>(*getRNG());
+	defaultBefore.oser & CRandomGenerator::getDefault();
+	BattleAttackInfo attack(source.get(), victim.get(), 0, false);
+	for(const auto targetId : {victim->unitId(), std::numeric_limits<uint32_t>::max()})
+	{
+		SCOPED_TRACE(targetId);
+		ASSERT_TRUE(child->beginLifeDrainFriendlyObservation(source->unitId()));
+		EXPECT_EQ(child->projectHexOfPainStrike(attack, {{targetId, 1}}, 0), 0);
+		EXPECT_FALSE(child->finishLifeDrainFriendlyObservation());
+		EXPECT_EQ(source->save(), sourceState);
+		EXPECT_EQ(victim->save(), targetState);
+		EXPECT_EQ(bonusSnapshot(*source), sourceBonuses);
+		EXPECT_EQ(bonusSnapshot(*victim), targetBonuses);
+	}
+	for(const auto & untouched : {parent, sibling})
+	{
+		EXPECT_EQ(untouched->battleGetUnitByID(actor->unitId())->acquireState()->save(), sourceState);
+		EXPECT_EQ(untouched->battleGetUnitByID(target->unitId())->acquireState()->save(), targetState);
+		EXPECT_EQ(bonusSnapshot(*untouched->battleGetUnitByID(actor->unitId())), sourceBonuses);
+		EXPECT_EQ(bonusSnapshot(*untouched->battleGetUnitByID(target->unitId())), targetBonuses);
+	}
+	EXPECT_EQ(actor->acquireState()->save(), sourceState);
+	EXPECT_EQ(target->acquireState()->save(), targetState);
+	EXPECT_EQ(bonusSnapshot(*actor), sourceBonuses);
+	EXPECT_EQ(bonusSnapshot(*target), targetBonuses);
+	CMemorySerializer gameAfter, defaultAfter;
+	gameAfter.oser & dynamic_cast<CRandomGenerator &>(*getRNG());
+	defaultAfter.oser & CRandomGenerator::getDefault();
+	EXPECT_EQ(gameAfter.extractBuffer(), gameBefore.extractBuffer());
+	EXPECT_EQ(defaultAfter.extractBuffer(), defaultBefore.extractBuffer());
+	EXPECT_EQ(randomizerSnapshot(), rngBefore);
 }
