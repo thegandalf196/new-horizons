@@ -62,6 +62,27 @@ class TestInventoryTest(unittest.TestCase):
         self.assertEqual(row['missingPureTargets'], ['Missing'])
         self.assertFalse(row['executionEstablished'])
 
+    def test_pure_contract_rejects_label_or_build_membership_drift(self):
+        policy = dict(pureCTestLabel='nh-pure', pureTargets=['Reviewed'])
+        label_error = 'Pure CMake label membership differs from reviewed targets'
+        build_error = 'Pure build preset must contain exactly reviewed standalone targets'
+        for labeled, built, expected in [
+                ('Reviewed', 'Reviewed', []),
+                ('Reviewed Extra', 'Reviewed', [label_error]),
+                ('', 'Reviewed', [label_error]),
+                ('Reviewed', 'Reviewed Extra', [build_error]),
+                ('Reviewed', '', [build_error])]:
+            with self.subTest(labeled=labeled, built=built):
+                (self.root / 'test/CMakeLists.txt').write_text(
+                    f'set_tests_properties({labeled} PROPERTIES LABELS "nh-pure;state")')
+                presets = dict(
+                    buildPresets=[dict(name='new-horizons-linux-test', targets=built.split())],
+                    testPresets=[dict(name='new-horizons-linux-test',
+                                      filter=dict(include=dict(label='^nh-pure$')),
+                                      execution=dict(noTestsAction='error'))])
+                (self.root / 'CMakePresets.json').write_text(json.dumps(presets))
+                self.assertEqual(INVENTORY.pure_contract(self.root, policy), expected)
+
     def test_actual_inventory_and_pure_contract(self):
         policy = json.loads((ROOT / 'tools/ci/test_inventory.json').read_text())
         self.assertFalse(INVENTORY.inventory(ROOT, policy)[1])
