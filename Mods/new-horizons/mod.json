@@ -3169,7 +3169,9 @@
 				},
 				"additionalSpecialties": {
 					"version": 1,
-					"manaLeeches": {"manaPerDamagingAttackSequence": 1},
+					"manaLeeches": {
+						"manaPerDamagingAttackSequence": 1
+					},
 					"fieldPhysician": {
 						"healingPercentPerLevel": 5,
 						"healingMaximumPercent": 100

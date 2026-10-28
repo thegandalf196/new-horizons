@@ -153,7 +153,7 @@ acceptance criteria belong to the driver, not a fabricated wrapper certificate.
 A separately reviewed endpoint with its own fixed exact-PID graphical protocol
 can use the same selection transaction without being wrapped by `validate`:
 
-```python
+```text
 ticket = begin_validation(store, exact_managed_candidate)  # Before any launch.
 # The reviewed endpoint performs/owns its existing acceptance and full postchecks.
 selected = finish_validation(ticket, accepted=reviewed_acceptance_passed)
