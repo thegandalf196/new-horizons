@@ -20,6 +20,7 @@ constexpr unsigned UNIT_EFFECT = 1;
 constexpr unsigned BATTLE_LOG = 2;
 constexpr unsigned COMBAT_SCRIPT = 4;
 constexpr unsigned DAMAGE_MODULE = 8;
+constexpr unsigned SORCERY_REVISION = 16;
 // require executes dependencies afresh; this is the exact reviewed transitive order.
 constexpr std::array<unsigned, 5> LIFE_DRAIN_MODULES = {
 	UNIT_EFFECT, DAMAGE_MODULE, UNIT_EFFECT, BATTLE_LOG, BATTLE_LOG};
@@ -28,7 +29,8 @@ constexpr std::array<unsigned, 5> LIFE_DRAIN_MODULES = {
 // A source change must fail closed until its forecast equivalence is reviewed.
 constexpr std::string_view DAMAGE_SHA256 = "370d909ae20343bdd1eebb6ba34638ac46e10ced627a4bfd26e148f209addb11";
 constexpr std::string_view LIFE_DRAIN_SHA256 = "86b50ae5e382e1c1b9631a8e569ded27dc81ed73995d34eb277c6789b29b0917";
-constexpr std::string_view TIMED_SHA256 = "683dfcc8e294087de5b252592d4a2bd002298547fef78d1609afa76060aaa086";
+constexpr std::string_view TIMED_SHA256 = "94f218fd97f2aa160b27cc06db5d1bc767d46f505b8c17d6faf83b9bf2cbebb4";
+constexpr std::string_view SORCERY_REVISION_SHA256 = "c38ab2528f067ffb24d77a0c5fa8d084869c719ef97eda9cc00d298803910e81";
 constexpr std::string_view UNIT_EFFECT_SHA256 = "cba59fd9ea526e021104813ec9602fd4d9eb1e232e46a263d894e9417d3e39a0";
 constexpr std::string_view BATTLE_LOG_SHA256 = "a05fb3578afcabce40c2f60bcac17623c7ca3b30a6ae530be2a528b0e4cb8ce7";
 constexpr std::string_view FOCUS_MAGIC_SHA256 = "16ec8a55a950e5668c65ac76b2755e82217a911c4270f044121606a38c97340e";
@@ -85,6 +87,8 @@ bool matchesReviewedLayers(const LuaScriptInstance & script, std::span<const Rev
 
 unsigned moduleFlag(std::string_view name)
 {
+	if(name == "spells/sorceryRevision")
+		return SORCERY_REVISION;
 	if(name == "spells/unitEffect")
 		return UNIT_EFFECT;
 	if(name == "battleLog")
@@ -135,7 +139,7 @@ unsigned LuaImplementationIdentity::expectedModules() const
 	if(implementation == Implementation::CANONICAL_DAMAGE)
 		return UNIT_EFFECT | BATTLE_LOG;
 	if(implementation == Implementation::CANONICAL_TIMED)
-		return UNIT_EFFECT;
+		return UNIT_EFFECT | SORCERY_REVISION;
 	if(implementation == Implementation::CANONICAL_LIFE_DRAIN)
 		return UNIT_EFFECT | BATTLE_LOG | DAMAGE_MODULE;
 	if(combatEventImplementation == CombatEventForecastImplementation::CANONICAL_FOCUS_MAGIC)
@@ -197,7 +201,8 @@ void LuaImplementationIdentity::moduleLoaded(std::string_view name, std::string_
 		return;
 	}
 	const auto expected = flag == UNIT_EFFECT ? UNIT_EFFECT_SHA256
-		: flag == COMBAT_SCRIPT ? COMBAT_SCRIPT_SHA256 : BATTLE_LOG_SHA256;
+		: flag == COMBAT_SCRIPT ? COMBAT_SCRIPT_SHA256
+		: flag == SORCERY_REVISION ? SORCERY_REVISION_SHA256 : BATTLE_LOG_SHA256;
 	if(digest(source) != expected)
 		invalidate();
 	loaded |= flag;

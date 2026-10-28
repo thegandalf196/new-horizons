@@ -37,6 +37,12 @@ void completeDamage(Identity & identity)
 	load(identity, "battleLog", source("battleLog"));
 }
 
+void completeTimed(Identity & identity)
+{
+	load(identity, "spells/unitEffect", source("spells/unitEffect"));
+	load(identity, "spells/sorceryRevision", source("spells/sorceryRevision"));
+}
+
 class EmptyEnvironment final : public Environment
 {
 public:
@@ -61,7 +67,7 @@ std::unique_ptr<scripting::LuaScriptInstance> timedScript(scripting::LuaModule &
 Implementation attestTimed(const scripting::LuaScriptInstance & script)
 {
 	auto identity = Identity::fromScript(script);
-	load(identity, "spells/unitEffect", source("spells/unitEffect"));
+	completeTimed(identity);
 	identity.finish(true);
 	return identity.get();
 }
@@ -80,9 +86,57 @@ TEST(LuaImplementationIdentity, RequiresCompleteDamageClosureAndSuccessfulInitia
 TEST(LuaImplementationIdentity, RecognizesTimedWithoutBattleLog)
 {
 	Identity identity(source("spells/timed"), false);
-	load(identity, "spells/unitEffect", source("spells/unitEffect"));
+	completeTimed(identity);
 	identity.finish(true);
 	EXPECT_EQ(identity.get(), Implementation::CANONICAL_TIMED);
+}
+
+TEST(LuaImplementationIdentity, TimedRequiresBothReviewedImportsWithExactSourceBytes)
+{
+	for(const auto & changed : {"spells/unitEffect", "spells/sorceryRevision"})
+	{
+		Identity modified(source("spells/timed"), false);
+		Identity omitted(source("spells/timed"), false);
+		Identity failedLoad(source("spells/timed"), false);
+		for(const auto & name : {"spells/unitEffect", "spells/sorceryRevision"})
+		{
+			load(modified, name, source(name) + (std::string(name) == changed ? "\n" : ""));
+			if(std::string(name) != changed)
+			{
+				load(omitted, name, source(name));
+				load(failedLoad, name, source(name));
+			}
+			else
+				failedLoad.moduleRequested(name);
+		}
+		modified.finish(true);
+		omitted.finish(true);
+		failedLoad.finish(true);
+		EXPECT_EQ(modified.get(), Implementation::UNKNOWN) << changed;
+		EXPECT_EQ(omitted.get(), Implementation::UNKNOWN) << changed;
+		EXPECT_EQ(failedLoad.get(), Implementation::UNKNOWN) << changed;
+	}
+}
+
+TEST(LuaImplementationIdentity, SorceryImportDoesNotBroadenOtherOrTimedClosures)
+{
+	Identity damage(source("spells/damage"), false);
+	completeDamage(damage);
+	load(damage, "spells/sorceryRevision", source("spells/sorceryRevision"));
+	damage.finish(true);
+	EXPECT_EQ(damage.get(), Implementation::UNKNOWN);
+
+	Identity duplicate(source("spells/timed"), false);
+	completeTimed(duplicate);
+	load(duplicate, "spells/sorceryRevision", source("spells/sorceryRevision"));
+	duplicate.finish(true);
+	EXPECT_EQ(duplicate.get(), Implementation::UNKNOWN);
+
+	Identity unrequested(source("spells/timed"), false);
+	unrequested.moduleLoaded("spells/sorceryRevision", source("spells/sorceryRevision"));
+	completeTimed(unrequested);
+	unrequested.finish(true);
+	EXPECT_EQ(unrequested.get(), Implementation::UNKNOWN);
 }
 
 TEST(LuaImplementationIdentity, RootWhitespaceOrCustomCodeFailsClosed)
@@ -353,10 +407,11 @@ TEST(LuaImplementationIdentity, ShippedTimedChainRequiresActualImportAndSuccessf
 	EXPECT_EQ(missing.get(), Implementation::UNKNOWN);
 	auto changed = Identity::fromScript(*script);
 	load(changed, "spells/unitEffect", source("spells/unitEffect") + "\n");
+	load(changed, "spells/sorceryRevision", source("spells/sorceryRevision"));
 	changed.finish(true);
 	EXPECT_EQ(changed.get(), Implementation::UNKNOWN);
 	auto failed = Identity::fromScript(*script);
-	load(failed, "spells/unitEffect", source("spells/unitEffect"));
+	completeTimed(failed);
 	failed.executionFailed();
 	failed.finish(true);
 	EXPECT_EQ(failed.get(), Implementation::UNKNOWN);
@@ -369,11 +424,11 @@ TEST(LuaImplementationIdentity, ShippedTimedChainRejectsUnexpectedLaterImportsAn
 	const auto script = timedScript(host, timedPatches());
 	auto unknown = Identity::fromScript(*script);
 	unknown.moduleRequested("unknown");
-	load(unknown, "spells/unitEffect", source("spells/unitEffect"));
+	completeTimed(unknown);
 	unknown.finish(true);
 	EXPECT_EQ(unknown.get(), Implementation::UNKNOWN);
 	auto later = Identity::fromScript(*script);
-	load(later, "spells/unitEffect", source("spells/unitEffect"));
+	completeTimed(later);
 	later.finish(true);
 	ASSERT_EQ(later.get(), Implementation::CANONICAL_TIMED);
 	later.moduleRequested("spells/unitEffect");
