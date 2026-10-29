@@ -9,6 +9,7 @@
  */
 
 #pragma once
+#include "battle/NewHorizonsAerialSupremacy.h"
 #include "bonuses/Bonus.h"
 #include "bonuses/BonusList.h"
 #include "bonuses/CBonusSystemNode.h"
@@ -151,6 +152,24 @@ public:
 			throw std::runtime_error("Cannot save a timed summon without its unit health state");
 	}
 
+	template <typename Handler> void validateParalyzingGazeSerialization(Handler & h) const
+	{
+		for(const auto & bonus : getExportedBonusList())
+			if(bonus) bonus->validateParalyzingGazeSerialization(h);
+	}
+
+	template <typename Handler> void validateSerpentsEmbraceSerialization(Handler & h) const
+	{
+		for(const auto & bonus : getExportedBonusList())
+			if(bonus) bonus->validateSerpentsEmbraceSerialization(h);
+	}
+
+	template <typename Handler> void validatePetrifyingBloodSerialization(Handler & h) const
+	{
+		if(petrifyingBloodRound < -1
+			|| (petrifyingBloodRound != -1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_PETRIFYING_BLOOD)))
+			throw std::runtime_error("Cannot serialize Petrifying Blood round receipt");
+	}
 	template <typename Handler> void validateFrozenSerialization(Handler & h) const
 	{
 		if(frozenLastAppliedRound() < -1)
@@ -225,8 +244,47 @@ public:
 			throw std::runtime_error("Cannot discard an earned own lucky attack sequence");
 	}
 
-	template <typename Handler> void serialize(Handler & h)
+	template<typename Handler> void validateWaitActionSerialization(const Handler & h) const
 	{
+		forestAmbush.validateSerialization(h);
+		if(forestAmbush.concealed && (!waiting || !waitedThisTurn))
+			throw std::runtime_error("Concealed Forest Ambush requires accepted Wait queue state");
+		if((battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1))
+			throw std::runtime_error("Invalid Overwatch round marker");
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH)
+			&& (battlecraftOverwatchReadyRound != -1 || battlecraftOverwatchUsedRound != -1))
+			throw std::runtime_error("Cannot discard Overwatch state in an older format");
+	}
+
+	template<typename Handler> void serializeOverwatchState(Handler & h)
+	{
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH))
+		{
+			h & battlecraftOverwatchReadyRound;
+			h & battlecraftOverwatchUsedRound;
+			if(battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1)
+				throw std::runtime_error("Invalid saved Overwatch round marker");
+		}
+		else if(!h.saving)
+		{
+			battlecraftOverwatchReadyRound = -1;
+			battlecraftOverwatchUsedRound = -1;
+		}
+		if(!h.saving) validateWaitActionSerialization(h);
+	}
+
+	template <typename Handler> void validateAerialSupremacySerialization(Handler & h) const
+	{
+		if(aerialRetaliationRound < -1)
+			throw std::runtime_error("Invalid Aerial Supremacy round marker");
+		if(aerialRetaliationRound >= 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY))
+			throw std::runtime_error("Cannot discard Aerial Supremacy round state");
+	}
+
+	template <typename Handler> void validateSerializationPrefix(Handler & h)
+	{
+		if(h.saving) validatePetrifyingBloodSerialization(h);
 		if(h.saving)
 			validateVeteranDamageHistorySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));
 		if(h.saving)
@@ -245,17 +303,18 @@ public:
 		if(h.saving) validateTimedSummonSerialization();
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
+		if(h.saving) validateParalyzingGazeSerialization(h);
+		if(h.saving) validateAerialSupremacySerialization(h);
+		if(h.saving) validateSerpentsEmbraceSerialization(h);
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving)
 			validateSwiftRebirthSerialization(h);
-		if(h.saving && (battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1))
-			throw std::runtime_error("Invalid Overwatch round marker");
-		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH)
-			&& (battlecraftOverwatchReadyRound != -1 || battlecraftOverwatchUsedRound != -1))
-			throw std::runtime_error("Cannot discard Overwatch state in an older format");
+		if(h.saving) validateWaitActionSerialization(h);
 		if(h.saving)
 			confusionState.validateSerialization(h);
+		if(h.saving)
+			dreadCavalryState.validateSerialization(h);
 		if(h.saving && getPhantomRoundsRemaining() > 3)
 			throw std::runtime_error("Binary stack descriptors cannot preserve extended Phantom lifetime");
 		if(h.saving && hasCasualtyProvenanceState())
@@ -271,6 +330,11 @@ public:
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP)
 			&& rebirthOriginalAggregateHP != 0)
 			throw std::runtime_error("Cannot discard Rebirth output original HP in an older format");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		validateSerializationPrefix(h);
 		assert(isIndependentNode());
 		h & static_cast<CBonusSystemNode&>(*this);
 		h & typeID;
@@ -333,19 +397,18 @@ public:
 		}
 		else if(!h.saving)
 			rebirthOriginalAggregateHP = 0;
+		h & forestAmbush;
 		h & confusionState;
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH))
+		h & dreadCavalryState;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY))
 		{
-			h & battlecraftOverwatchReadyRound;
-			h & battlecraftOverwatchUsedRound;
-			if(battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1)
-				throw std::runtime_error("Invalid saved Overwatch round marker");
+			h & aerialRetaliationRound;
+			if(aerialRetaliationRound < -1)
+				throw std::runtime_error("Invalid saved Aerial Supremacy round marker");
 		}
 		else if(!h.saving)
-		{
-			battlecraftOverwatchReadyRound = -1;
-			battlecraftOverwatchUsedRound = -1;
-		}
+			aerialRetaliationRound = -1;
+		serializeOverwatchState(h);
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
 		{
 			int32_t restoredRound = frozenLastAppliedRound();
@@ -386,6 +449,12 @@ public:
 			veteranPhysicalDamageSinceActivation = 0;
 		if(!h.saving)
 			validateVeteranDamageHistorySerialization(true);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PETRIFYING_BLOOD))
+			h & petrifyingBloodRound;
+		else if(!h.saving)
+			petrifyingBloodRound = -1;
+		if(petrifyingBloodRound < -1)
+			throw std::runtime_error("Invalid saved Petrifying Blood round receipt");
 	}
 
 private:

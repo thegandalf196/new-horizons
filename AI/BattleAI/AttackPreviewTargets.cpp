@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "AttackPreviewTargets.h"
+#include "HypotheticBattle.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/Unit.h"
 
@@ -65,4 +66,24 @@ Targets targets(const CBattleInfoCallback & battle, const battle::Unit * attacke
 	primaryFirst(result.counter, attacker, true);
 	return result;
 }
+}
+
+void attackPreview::consumeProtect(const std::shared_ptr<HypotheticBattle> & model,
+	const CBattleInfoCallback & source, BattleSide side, const battle::Unit * requested, const battle::Unit * actual,
+	const std::optional<HeroOrderState> & captured, uint8_t & legacyConsumed)
+{
+	if(model)
+	{
+		auto order = model->battleGetHeroOrderState(side, HeroCommand::PROTECT);
+		if(order && order->secondaryTargetUnitId == requested->unitId() && order->primaryTargetUnitId == actual->unitId()
+			&& order->protectInterceptionsConsumed < model->battleHeroOrderProtectInterceptionLimit(side)
+			&& !order->protectBroken)
+		{
+			++order->protectInterceptionsConsumed;
+			model->setHeroOrderState(side, order);
+		}
+	}
+	else if(captured && !captured->protectBroken
+		&& legacyConsumed < source.battleHeroOrderProtectInterceptionLimit(side))
+		++legacyConsumed;
 }

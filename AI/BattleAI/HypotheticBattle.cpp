@@ -46,8 +46,10 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 {
 	captureNecromancyPassives(*realBattle);
 	crisisCommand = realBattle->getBattle()->getCrisisCommandState();
-	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get()))
+	const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get());
+	if(parent)
 	{
+		mayContainSerpentBindings = parent->mayContainSerpentBindings;
 		projectedMana = parent->projectedMana;
 		manaLeechStartingPools = projectedMana;
 		elementalRebirthSpawnUnitIds = parent->elementalRebirthSpawnUnitIds;
@@ -55,8 +57,11 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		projectedPlagueHits = parent->projectedPlagueHits;
 		bloodrageFirstBloodUsed = parent->bloodrageFirstBloodUsed;
 	}
-	else if(const auto * concrete = dynamic_cast<const BattleInfo *>(realBattle->getBattle()))
-		bloodrageFirstBloodUsed = concrete->bloodrageFirstBloodUsed;
+	else
+	{
+		if(const auto * concrete = dynamic_cast<const BattleInfo *>(realBattle->getBattle()))
+			bloodrageFirstBloodUsed = concrete->bloodrageFirstBloodUsed;
+	}
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
@@ -139,6 +144,15 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	// after a parent Shatter/thaw cannot import that later parent's mutation.
 	// Likewise, capture current Morale origin before the parent can advance.
 	for(const auto * unit : realBattle->battleGetAllUnits(false))
+	{
+		// Fold root status admission into the existing visible-unit snapshot pass.
+		// Descendants copied the bit above and perform no marker-admission scan.
+		if(!parent && !mayContainSerpentBindings && unit->hasBonusOfType(BonusType::BIND_EFFECT))
+		{
+			const auto bindings = unit->getBonuses(Selector::type()(BonusType::BIND_EFFECT));
+			for(const auto & bonus : *bindings)
+				if(bonus) noteSerpentBindingAdmission(*bonus);
+		}
 		if(unit->unitId() == static_cast<uint32_t>(activeUnitId)
 			|| hasTimedMagicalSpellEffects(*unit)
 			|| hasSnapshotHeroSpecialEffects(*unit)
@@ -147,6 +161,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 			|| (dynamic_cast<const battle::CUnitState *>(unit)
 				&& dynamic_cast<const battle::CUnitState *>(unit)->moraleExtraActivation))
 			getForUpdate(unit->unitId());
+	}
 }
 
 bool HypotheticBattle::hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const

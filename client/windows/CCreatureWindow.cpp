@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "NewHorizonsOrderIndicators.h"
 #include "CCreatureWindow.h"
+#include "CreatureUpgradeConfirmation.h"
 #include "../../lib/battle/BattleDisplacementCause.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "wiki/WikiWindow.h"
@@ -521,9 +522,9 @@ CStackWindow::ButtonsSection::ButtonsSection(CStackWindow * owner, int yOffset)
 	OBJECT_CONSTRUCTION;
 
 	// Persistent creature windows can open a reference page. Right-click
-	// popups remain ephemeral; special/Commander entries are not normal Wiki rows.
-	if(!parent->info->popupWindow && !parent->info->commander && parent->info->creature
-		&& !parent->info->creature->special)
+	// popups remain ephemeral; Commander windows keep their own controls.
+	if(!parent->info->popupWindow && !parent->info->commander
+		&& isWikiCreatureVisible(parent->info->creature))
 	{
 		const auto key = WikiEntryKey{WikiCategory::CREATURE, parent->info->creature->getJsonKey()};
 		encyclopedia = std::make_shared<CButton>(Point(104, 5), AnimationPath::builtin("stackWindow/upgradeButton"),
@@ -566,22 +567,10 @@ CStackWindow::ButtonsSection::ButtonsSection(CStackWindow * owner, int yOffset)
 				upgradeInfo.callback(upgradeInfo.info.getAvailableUpgrades().at(buttonIndex));
 				parent->close();
 			};
-			auto onClick = [totalCost, onUpgrade]()
+			const auto target = upgradeInfo.info.getAvailableUpgrades().at(buttonIndex);
+			auto onClick = [totalCost, onUpgrade, target, count = parent->info->creatureCount]()
 			{
-				std::vector<std::shared_ptr<CComponent>> resComps;
-				for(TResources::nziterator i(totalCost); i.valid(); i++)
-				{
-					resComps.push_back(std::make_shared<CComponent>(ComponentType::RESOURCE, i->resType, i->resVal));
-				}
-
-				if(GAME->interface()->cb->getResourceAmount().canAfford(totalCost))
-				{
-					GAME->interface()->showYesNoDialog(LIBRARY->generaltexth->allTexts[207], onUpgrade, nullptr, resComps);
-				}
-				else
-				{
-					GAME->interface()->showInfoDialog(LIBRARY->generaltexth->allTexts[314], resComps);
-				}
+				creatureUpgradeConfirmation::show(totalCost, target, count, onUpgrade);
 			};
 			auto upgradeBtn = std::make_shared<CButton>(Point(221 + (int)buttonIndex * 40, 5), AnimationPath::builtin("stackWindow/upgradeButton"), LIBRARY->generaltexth->zelp[446], onClick);
 
@@ -792,9 +781,9 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 	}
 	{
 		const CCreature * cre = parent->info->creature;
-		animationArea = std::make_shared<LRClickableArea>(Rect(5, 41, 100, 130), [cre]()
+		animationArea = std::make_shared<LRClickableArea>(Rect(5, 41, 100, 130), [cre, commander = parent->info->commander]()
 		{
-			if(cre)
+			if(!commander && isWikiCreatureVisible(cre))
 				ENGINE->windows().createAndPushWindow<WikiWindow>(
 					WikiWindow::Style::BROWN,
 					WikiEntryKey{WikiCategory::CREATURE, cre->getJsonKey()});
@@ -1301,7 +1290,7 @@ void CStackWindow::init()
 
 void CStackWindow::keyPressed(EShortcut key)
 {
-	if(key == EShortcut::ADVENTURE_OPEN_WIKI && info->creature)
+	if(key == EShortcut::ADVENTURE_OPEN_WIKI && !info->commander && isWikiCreatureVisible(info->creature))
 		ENGINE->windows().createAndPushWindow<WikiWindow>(
 			WikiWindow::Style::BROWN,
 			WikiEntryKey{WikiCategory::CREATURE, info->creature->getJsonKey()});
@@ -1321,16 +1310,15 @@ void CStackWindow::initBonusesList()
 		abilityRules = &info->stackNode->cb->getMagicRules();
 	else if(GAME->interface() && GAME->interface()->cb)
 		abilityRules = &GAME->interface()->cb->getMagicRules();
-	const auto innateAbilities = newHorizonsCreatureAbilityHelp::innateAbilities(
+	const auto innateAbilities = newHorizonsCreatureAbilityHelp::translatedInnateAbilities(
 		info->creature->getJsonKey(), abilityRules,
-		LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.compact"),
-		LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.help"),
 		info->stack && info->stack->alive() ? info->stack->summonRoundsRemaining : 0);
 	for(const auto & help : innateAbilities)
 	{
 		BonusInfo ability;
 		ability.description = help.compact;
 		ability.tooltip = help.details;
+		ability.imagePath = help.iconPath.empty() ? ImagePath{} : ImagePath::builtin(help.iconPath);
 		ability.bonusSource = BonusSource::CREATURE_ABILITY;
 		activeBonuses.push_back(std::move(ability));
 	}

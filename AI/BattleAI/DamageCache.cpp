@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "DreadCavalryProjection.h"
 #include "AttackPossibility.h"
 #include "DamageCacheAdmission.h"
 #include "DamageCacheTimingScope.h"
@@ -91,7 +92,7 @@ void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battl
 	// A continuation allowance is per-action state, not part of the ID-keyed
 	// baseline damage cache. Its shared callback forecast is intentionally
 	// recomputed for the independently selected follow-up target.
-	if(hasPendingRangedFollowUp(attacker))
+	if(hasPendingRangedFollowUp(attacker) || dreadCavalryAI::hasActivationState(attacker))
 		return;
 
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
@@ -284,6 +285,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| admission.supportsFocusFire()
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
 		|| hasRangedFollowUp
+		|| dreadCavalryAI::hasActivationState(attacker)
 		|| hasReducedExtraActivation
 		|| hasRelentlessAssault
 		|| hasBastion

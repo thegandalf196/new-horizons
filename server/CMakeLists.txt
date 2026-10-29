@@ -2,9 +2,22 @@ set(vcmiservercommon_SRCS
 		StdInc.cpp
 
 		battles/BattleActionProcessor.cpp
+		battles/BattleAttackCasting.cpp
+		battles/BattlePetrifyingBlood.cpp
+		battles/BattleCreatureKillRewards.cpp
+		battles/BattleWaitState.cpp
+		battles/DreadCavalryAction.cpp
+		battles/MeleeMovementContinuation.cpp
+		battles/MeleeContinuationRequest.cpp
 		battles/HeroOrderLog.cpp
 		battles/FrozenAttackResolution.cpp
 		battles/NewHorizonsManaLeeches.cpp
+		battles/NewHorizonsSerpentsEmbrace.cpp
+	battles/NewHorizonsParalyzingGaze.cpp
+	battles/NewHorizonsAerialSupremacy.cpp
+		battles/DefiantDenial.cpp
+		battles/NoQuarterAftermath.cpp
+		battles/NewHorizonsLivingInferno.cpp
 		battles/BattleFlowProcessor.cpp
 		battles/BattleProcessor.cpp
 		battles/BattleResultProcessor.cpp
@@ -24,6 +37,8 @@ set(vcmiservercommon_SRCS
 
 		processors/HeroPoolProcessor.cpp
 		processors/NewTurnProcessor.cpp
+		processors/TownRecruitmentGrowth.cpp
+		processors/DwellingRecruitmentGrowth.cpp
 		processors/NeutralTownGarrison.cpp
 		processors/PlayerMessageProcessor.cpp
 		processors/TurnOrderProcessor.cpp
@@ -50,9 +65,19 @@ set(vcmiservercommon_HEADERS
 		StdInc.h
 
 		battles/BattleActionProcessor.h
+		battles/BattlePetrifyingBlood.h
+		battles/GateDrawbridgeFootprint.h
+		battles/BattleCreatureKillRewards.h
+		battles/BattleWaitState.h
+		battles/DreadCavalryAction.h
 		battles/HeroOrderLog.h
 		battles/FrozenAttackResolution.h
 		battles/NewHorizonsManaLeeches.h
+		battles/NewHorizonsSerpentsEmbrace.h
+	battles/NewHorizonsParalyzingGaze.h
+		battles/DefiantDenial.h
+		battles/NoQuarterAftermath.h
+		battles/NewHorizonsLivingInferno.h
 		battles/BattleFlowProcessor.h
 		battles/BattleProcessor.h
 		battles/BattleResultProcessor.h

@@ -11,6 +11,7 @@
 #include "AdventureMapWidget.h"
 
 #include "AdventureMapShortcuts.h"
+#include "../windows/BugReportWindow.h"
 #include "CInfoBar.h"
 #include "CList.h"
 #include "CMinimap.h"
@@ -61,6 +62,8 @@ AdventureMapWidget::AdventureMapWidget( std::shared_ptr<AdventureMapShortcuts> s
 	REGISTER_BUILDER("adventureStatusBar",          &AdventureMapWidget::buildStatusBar           );
 	REGISTER_BUILDER("adventurePlayerTexture",      &AdventureMapWidget::buildTexturePlayerColored);
 	REGISTER_BUILDER("adventureResourceAdditional", &AdventureMapWidget::buildResourceAdditional  );
+
+	addCallback("reportBug", [](int) { BugReportWindow::openSession(""); });
 
 	for (const auto & entry : shortcuts->getShortcuts())
 		addShortcut(entry.shortcut, entry.callback);
@@ -167,35 +170,6 @@ std::shared_ptr<CIntObject> AdventureMapWidget::buildMapImage(const JsonNode & i
 		return std::make_shared<FilledTexturePlayerIndexed>(path, targetArea, sourceArea);
 	else
 		return std::make_shared<CFilledTexture>(path, targetArea, sourceArea);
-}
-
-std::shared_ptr<CIntObject> AdventureMapWidget::buildMapButton(const JsonNode & input)
-{
-	auto position = readTargetArea(input["area"]);
-	auto image = AnimationPath::fromJson(input["image"]);
-	auto help = readHintText(input["help"]);
-	bool playerColored = input["playerColored"].Bool();
-	// Store default image path for buttonLayerOther (used to restore when no custom icon is set)
-	if (input["name"].String() == "buttonLayerOther")
-	{
-		defaultLayerOtherImage = input["image"].String();
-		defaultLayerOtherGenerateSmall = input["generateSmall"].Bool();
-	}
-	if(!input["generateFromBaseImage"].isNull())
-	{
-		bool small = input["generateSmall"].Bool();
-		auto assetGenerator = ENGINE->renderHandler().getAssetGenerator();
-		auto layout = assetGenerator->createAdventureMapButton(ImagePath::fromJson(input["generateFromBaseImage"]), small);
-		assetGenerator->addAnimationFile(AnimationPath::builtin("SPRITES/" + input["image"].String()), layout);
-		ENGINE->renderHandler().updateGeneratedAssets();
-	}
-
-	auto button = std::make_shared<CButton>(position.topLeft(), image, help, 0, EShortcut::NONE, playerColored);
-
-	loadButtonBorderColor(button, input["borderColor"]);
-	loadButtonHotkey(button, input["hotkey"]);
-
-	return button;
 }
 
 std::shared_ptr<CIntObject> AdventureMapWidget::buildMapContainer(const JsonNode & input)

@@ -107,6 +107,10 @@
 	"additionalSpecialties": {
 		"version": 1,
 		"manaLeeches": {"manaPerDamagingAttackSequence": 1},
+		"serpentsEmbrace": {"enabled": true},
+		"paralyzingGaze": {"enabled": true},
+		"forestAmbush": {"enabled": true},
+		"aerialSupremacy": {"enabled": true},
 		"fieldPhysician": {"healingPercentPerLevel": 5, "healingMaximumPercent": 100},
 		"manaFurnace": {"restorePointsPerLevel": 2, "maximumRestorePoints": 40},
 		"graveArchivist": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalEagleEyeSpells": 1},
@@ -125,7 +129,10 @@
 		"occultScholar": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalSpellsReceived": 1}
 	},
 	"swampSeerSpecialty": {"version": 1, "learningPercentPerLevel": 5, "learningMaximumPercent": 100, "studyExperiencePerMagicPrimaryPoint": 250},
-	"reclamationSpecialty": {"version": 1, "conversionPercentPerLevel": 5, "conversionMaximumPercent": 100},
+	"ghostSpecialty": {"version": 1},
+	"petrifyingBloodSpecialty": {"version": 1},
+	"livingInfernoSpecialty": {"version": 1, "damagePerCreature": 1, "durationRounds": 1},
+	"dreadCavalrySpecialty": {"version": 1, "followupDamagePercent": 50},
 	"individualSpecialties": {
 		"version": 1,
 		"graveReaper": {"percentagePointsPerLevel": 1, "maximumPercentagePoints": 20},

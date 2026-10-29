@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsDreadCavalry.h"
+#include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "PotentialTargets.h"
 #include "VisibleCandidateWorld.h"
 #include "SpellTargetsEvaluator.h"
@@ -62,9 +64,10 @@ PotentialTargets::PotentialTargets(
 
 	for(auto defender : aliveUnits)
 	{
+		if(!newHorizonsDreadCavalry::permitsTarget(*evaluationState, attackerInfo, defender)) continue;
 		// Sanctuary bars this unit only as a deliberately selected enemy primary.
 		// Attacks whose primary is another stack may still include it as collateral.
-		const bool sanctuaryEnemy = defender->hasBonusOfType(BonusType::SANCTIFIED)
+		const bool sanctuaryEnemy = newHorizonsForestAmbush::protectsDirectTarget(defender)
 			&& evaluationState->battleMatchActionController(attackerInfo, defender);
 		if(sanctuaryEnemy && !evaluationState->battleCanTargetEmptyHex(attackerInfo))
 			continue;
@@ -101,11 +104,12 @@ PotentialTargets::PotentialTargets(
 		}
 		else
 		{
-			const bool canShootFromCurrentPosition = evaluationState->battleCanShootAction(attackerInfo, defender->getPosition());
+			const bool canShootFromCurrentPosition = !newHorizonsDreadCavalry::hasRawPending(attackerInfo)
+				&& evaluationState->battleCanShootAction(attackerInfo, defender->getPosition());
 			if(canShootFromCurrentPosition)
 				possibleAttacks.push_back(GenerateAttackInfo(true, BattleHex::INVALID));
 
-			if(!sanctuaryEnemy && newHorizonsArchery::canUseSkirmisher(candidateWorld->heroPolicy(attackerInfo->unitSide()).legacyHero(), attackerInfo))
+			if(!newHorizonsDreadCavalry::hasRawPending(attackerInfo) && !sanctuaryEnemy && newHorizonsArchery::canUseSkirmisher(candidateWorld->heroPolicy(attackerInfo->unitSide()).legacyHero(), attackerInfo))
 			{
 				// Score every legal destination so the AI can trade movement, firing line,
 				// range, and Counterfire exposure instead of always choosing one nearest hex.

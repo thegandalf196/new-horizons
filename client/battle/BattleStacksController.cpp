@@ -828,6 +828,7 @@ bool BattleStacksController::shouldAttackFacingRight(const CStack * attacker, co
 void BattleStacksController::stackAttacking( const StackAttackInfo & info )
 {
 	owner.checkForAnimations();
+	stageAerialExcursion(info);
 
 	auto attacker    = info.attacker;
 	auto defender    = info.defender;
@@ -848,7 +849,7 @@ void BattleStacksController::stackAttacking( const StackAttackInfo & info )
 		needsReverse = shouldAttackFacingRight(attacker, defender) != facingRight(attacker);
 	}
 
-	if (needsReverse)
+	if (needsReverse && !info.aerialExcursion)
 	{
 		owner.addToAnimationStage(EAnimationEvents::MOVEMENT, [this, attacker]()
 		{
@@ -898,7 +899,8 @@ void BattleStacksController::stackAttacking( const StackAttackInfo & info )
 		}
 		else
 		{
-			addNewAnim(new MeleeAttackAnimation(owner, attacker, tile, defender, info.playCustomAnimation));
+			addNewAnim(new MeleeAttackAnimation(owner, attacker, tile, defender, info.playCustomAnimation,
+				info.aerialExcursion ? info.aerialExcursion->landing : BattleHex::INVALID));
 		}
 	});
 

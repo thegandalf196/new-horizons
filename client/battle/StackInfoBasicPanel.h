@@ -48,6 +48,7 @@ private:
 	std::vector<std::string> cachedLuckBonusDescriptions;
 	std::vector<std::string> cachedMoraleBonusDescriptions;
 	void refreshBonusDescriptionCache(const CStack * stack);
+	void appendActionStatus();
 
 public:
 	StackInfoBasicPanel(

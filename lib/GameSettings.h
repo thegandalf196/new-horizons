@@ -11,6 +11,7 @@
 
 #include "IGameSettings.h"
 #include "mapObjects/NewHorizonsNeutralArmies.h"
+#include "mapObjects/NewHorizonsRecruitmentGrowth.h"
 #include "pathfinder/NewHorizonsLighthouse.h"
 #include "json/JsonNode.h"
 #include "entities/hero/NewHorizonsHeroRules.h"
@@ -234,6 +235,7 @@ public:
 		{
 			JsonNode overrides = getAllOverrides();
 			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+			newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 			validateCombatScalarOverrides(overrides,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
@@ -363,6 +365,7 @@ public:
 			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+			newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 			loadSavedOverrides(overrides);
 		}
 	}

@@ -22,9 +22,28 @@
 
 #include "../../../lib/filesystem/ResourcePath.h"
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/CCreatureHandler.h"
+#include "../../../lib/entities/hero/CHeroClassHandler.h"
 #include "../../../lib/texts/CGeneralTextHandler.h"
 #include "../../../lib/TerrainHandler.h"
 #include "../../../lib/mapping/MapEditUtils.h"
+
+bool isWikiCreatureVisible(const CCreature * creature)
+{
+	if(!creature)
+		return false;
+	// Keep ordinary entries and the existing registered war-machine exception.
+	if(!creature->special || creature->warMachine.hasValue())
+		return true;
+	// Special also marks unused placeholders and internal level-zero units.
+	if(creature->getLevel() <= 0 || creature->animDefName.empty())
+		return false;
+	const auto & classes = LIBRARY->heroclassesh->objects;
+	return std::none_of(classes.begin(), classes.end(), [creature](const auto & heroClass)
+	{
+		return heroClass && heroClass->commander == creature->getId();
+	});
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WikiClickable

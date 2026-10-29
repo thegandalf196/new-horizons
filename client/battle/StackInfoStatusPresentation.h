@@ -12,9 +12,48 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include <string>
+#include <utility>
 
 namespace newHorizonsBattleStatus
 {
+struct BattleFormStatus
+{
+	bool transformed = false;
+	int32_t currentCreature = -1;
+	int32_t originalCreature = -1;
+	int32_t remainingRounds = 0;
+	int64_t aggregateCreatureHealth = 0;
+	std::string currentCreatureName;
+	std::string originalCreatureName;
+	bool restorationPending = false;
+
+	bool active() const
+	{
+		return transformed && (remainingRounds > 0 || restorationPending);
+	}
+
+	bool operator==(const BattleFormStatus &) const = default;
+};
+
+inline BattleFormStatus makeBattleFormStatus(bool transformed, int32_t currentCreature,
+	int32_t originalCreature, int32_t remainingRounds, int64_t aggregateCreatureHealth,
+	std::string currentCreatureName, std::string originalCreatureName, bool restorationPending = false)
+{
+	if(!transformed || (remainingRounds <= 0 && !restorationPending))
+		return {};
+
+	return {true, currentCreature, originalCreature, remainingRounds, aggregateCreatureHealth,
+		std::move(currentCreatureName), std::move(originalCreatureName), restorationPending};
+}
+
+inline std::string battleFormDurationLabel(const BattleFormStatus & status)
+{
+	if(!status.active())
+		return {};
+	return status.restorationPending ? "..." : std::to_string(status.remainingRounds);
+}
+
 struct PhysicalPoisonStatus
 {
 	int64_t baseDamage = 0;

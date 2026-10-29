@@ -12,6 +12,7 @@
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/NewHorizonsEnchantedCommand.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 
@@ -65,6 +66,11 @@ void replacePhysicalAfflictionMarker(StackWithBonuses & unit, Bonus marker)
 }
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus)
+	{
+		newHorizonsSerpentsEmbrace::validateApplication(*owner, id, entry);
+		owner->noteSerpentBindingAdmission(entry);
+	}
 	if(const auto subject = owner->initialExportSubject())
 	{
 		subject->addSequenceBonus(*owner, id, bonus, true);
@@ -124,6 +130,11 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus)
+	{
+		newHorizonsSerpentsEmbrace::validateApplication(*owner, id, entry);
+		owner->noteSerpentBindingAdmission(entry);
+	}
 	if(const auto subject = owner->initialExportSubject())
 	{
 		subject->addSequenceBonus(*owner, id, bonus, false);

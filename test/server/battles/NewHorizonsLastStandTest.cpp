@@ -300,6 +300,10 @@ TEST_F(NewHorizonsLastStandTest, GuardianAbsorptionDoesNotSpendAllowanceBeforeLe
 	auto * weakAttacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), adjacent[0], 1);
 	auto * strongAttacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), adjacent[1], 100);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), targetPosition, 2);
+	// Keep the target before its next activation: Veteran heals at that boundary
+	// and ordinary activation clears Defend. Match the sister lethal-hit fixture.
+	auto * fasterDefender = addStack(BattleSide::DEFENDER, creatureByName("core:griffin"), BattleHex(11, 8), 1);
+	ASSERT_NE(fasterDefender, nullptr);
 	ASSERT_NE(weakAttacker, nullptr);
 	ASSERT_NE(strongAttacker, nullptr);
 	ASSERT_NE(target, nullptr);
@@ -321,9 +325,15 @@ TEST_F(NewHorizonsLastStandTest, GuardianAbsorptionDoesNotSpendAllowanceBeforeLe
 		BattleAttackInfo(strongAttacker, target, 0, false)).damage.max,
 		target->getAvailableHealth() + target->guardianSpiritHitPoints);
 
+	const auto targetActivationsBefore = queueActivations(target);
 	ASSERT_TRUE(attackWith(strongAttacker, target));
+	EXPECT_EQ(queueActivations(target), targetActivationsBefore);
 	ASSERT_NE(findHit(strongAttacker, target), nullptr);
 	EXPECT_EQ(findHit(strongAttacker, target)->armorerLastStandSide, BattleSide::DEFENDER);
+	const auto * acceptedHit = findHit(strongAttacker, target);
+	EXPECT_EQ(acceptedHit->newState.data["state"]["health"]["firstHPleft"].Integer(), 1);
+	EXPECT_EQ(acceptedHit->newState.data["state"]["health"]["fullUnits"].Integer(), 0);
+	EXPECT_TRUE(acceptedHit->newState.data["state"]["armorerLastStandDefending"].Bool());
 	EXPECT_EQ(target->guardianSpiritHitPoints, 0);
 	EXPECT_TRUE(target->alive());
 	EXPECT_EQ(target->getCount(), 1);

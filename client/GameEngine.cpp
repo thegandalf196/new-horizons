@@ -161,7 +161,7 @@ void GameEngine::updateFrame()
 
 	windows().simpleRedraw();
 
-	if (settings["video"]["performanceOverlay"]["show"].Bool())
+	if (!settings["session"]["reportOnly"].Bool() && settings["video"]["performanceOverlay"]["show"].Bool())
 		drawPerformanceOverlay();
 
 	screenHandlerInstance->updateScreenTexture();

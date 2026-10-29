@@ -49,6 +49,11 @@ BattleHexArray CObstacleInstance::getAffectedTiles() const
 	}
 }
 
+BattleHexArray CObstacleInstance::getRenderTiles() const
+{
+	return BattleHexArray{pos};
+}
+
 bool CObstacleInstance::visibleForSide(BattleSide side, bool hasNativeStack) const
 {
 	//by default obstacle is visible for everyone
@@ -219,6 +224,7 @@ void SpellCreatedObstacle::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("removeOnTrigger", removeOnTrigger);
 	handler.serializeBool("nativeVisible", nativeVisible);
 	handler.serializeBool("damageSnapshot", damageSnapshot, false);
+	handler.serializeBool("renderAtEachHex", renderAtEachHex, false);
 	handler.serializeInt("lastTriggerUnit", lastTriggerUnit, -1);
 	handler.serializeInt("lastTriggerActivation", lastTriggerActivation, -1);
 
@@ -243,6 +249,11 @@ void SpellCreatedObstacle::serializeJson(JsonSerializeFormat & handler)
 BattleHexArray SpellCreatedObstacle::getAffectedTiles() const
 {
 	return customSize;
+}
+
+BattleHexArray SpellCreatedObstacle::getRenderTiles() const
+{
+	return renderAtEachHex ? customSize : BattleHexArray{pos};
 }
 
 void SpellCreatedObstacle::battleTurnPassed()

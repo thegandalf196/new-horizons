@@ -14,7 +14,10 @@ battle::StackInitializationReceipts::StackInitializationReceipts(const CUnitStat
 		state.defending, state.hadMorale, state.battlecraftWaitBonusUsed, state.battlecraftWaitMasteryDoubled);
 	restoredVeteranCohesion = state.veteranCohesionEarned;
 	restoredConfusionState = state.confusionState;
+	restoredForestAmbush = state.forestAmbush;
+	restoredDreadCavalry = state.dreadCavalryState;
 	restoredOverwatchReadyRound = state.battlecraftOverwatchReadyRound;
+	restoredPetrifyingBloodRound = state.petrifyingBloodRound;
 	restoredOverwatchUsedRound = state.battlecraftOverwatchUsedRound;
 	restoredMoraleExtraActivation = state.moraleExtraActivation;
 	restoredHeroicSpirit = state.heroicSpiritRetaliation;
@@ -41,7 +44,10 @@ void battle::StackInitializationReceipts::initialize(CUnitState & state,
 	// Binary stack descriptors carry pending Confusion and target history too;
 	// rebinding the stack to the battle must not consume either value.
 	state.confusionState = restoredConfusionState;
+	state.forestAmbush = restoredForestAmbush;
+	state.dreadCavalryState = restoredDreadCavalry;
 	state.battlecraftOverwatchReadyRound = restoredOverwatchReadyRound;
+	state.petrifyingBloodRound = restoredPetrifyingBloodRound;
 	state.battlecraftOverwatchUsedRound = restoredOverwatchUsedRound;
 	state.moraleExtraActivation = restoredMoraleExtraActivation;
 	state.heroicSpiritRetaliation = restoredHeroicSpirit;

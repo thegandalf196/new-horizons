@@ -46,6 +46,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		rules.Struct().erase("ghostSpecialty");
+		rules.setOverrideFlag(true); // This fixture deliberately captures historical Vidomina.
 		if(capturedPolicy)
 		{
 			auto & row = rules["reclamationSpecialty"];

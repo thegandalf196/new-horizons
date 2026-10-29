@@ -9,6 +9,7 @@
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 
 namespace
@@ -36,6 +37,12 @@ protected:
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		// The captured current curve takes precedence over legacy combat settings.
+		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		magicRules["morale"]["goodChance"] = certainMorale();
+		magicRules.setOverrideFlag(true);
+		newHorizonsMagic::validateRules(magicRules);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_MORALE_CHANCE, certainMorale());
 		loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_DICE_SIZE, JsonNode(100));
 	}
@@ -45,6 +52,7 @@ protected:
 		startGame();
 		ASSERT_EQ(gameState()->getSettings().getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE).front(), 100);
 		ASSERT_EQ(gameState()->getSettings().getInteger(EGameSettings::COMBAT_MORALE_DICE_SIZE), 100);
+		ASSERT_EQ(gameState()->getMagicRules()["morale"]["goodChance"], certainMorale());
 		const auto decoded = SecondarySkill::decode("new-horizons:discipline");
 		ASSERT_GE(decoded, 0);
 		const SecondarySkill discipline(decoded);
@@ -99,7 +107,14 @@ TEST_F(NewHorizonsDisciplineTest, InspirationalLeaderAddsDamageAfterPositiveMora
 	EXPECT_EQ(attacker->valOfBonuses(
 		BonusType::PERCENTAGE_DAMAGE_BOOST,
 		BonusSubtypeID(BonusCustomSubtype::damageTypeRanged)), 10);
-	EXPECT_GT(battle()->calculateDmgRange(attackInfo).damage.min, baseDamage);
+	// Inspirational Leader modifies the reduced Morale activation, not the
+	// preceding normal activation. Canonical output is 75%, then the +10%
+	// modifier shares the damage pipeline's final floor: 100 * 1.10 * .75 = 82.
+	ASSERT_EQ(battle()->getMoraleExtraDamagePercent(), 75);
+	const auto moraleBaseline = baseDamage * 75 / 100;
+	const auto followupDamage = battle()->calculateDmgRange(attackInfo).damage.min;
+	EXPECT_GT(followupDamage, moraleBaseline);
+	EXPECT_EQ(followupDamage, baseDamage * 110 * 75 / 10000);
 
 	// The bonus is scoped to the morale follow-up activation. Once that
 	// activation's accepted action completes, the authoritative expiry path

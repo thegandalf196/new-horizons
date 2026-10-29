@@ -10,9 +10,13 @@
 #include <vector>
 
 class AttackPossibility;
+class DamageCache;
 class HypotheticBattle;
 class StackWithBonuses;
 class VisibleCandidateWorld;
+struct BattleAttackInfo;
+struct FortuneStrikeProjection;
+namespace battle { class Unit; }
 namespace battle { class CUnitState; }
 
 /// Selected ordinary-preview transfer, NOT an authoritative action, an owned
@@ -36,6 +40,7 @@ private:
 	std::vector<std::shared_ptr<battle::CUnitState>> recipients;
 	std::vector<RecipientObservation> observations;
 	std::map<uint32_t, int64_t> finalDamage;
+	int64_t soulHarvestHealthGained = 0;
 public:
 	explicit SelectedAttackReceipt(const AttackPossibility & preview);
 	/// Existing replay collection point: append actor AFTER collateral victims,
@@ -50,6 +55,18 @@ public:
 
 namespace selectedAttackReceipt
 {
+/// Reconstruct the same native damage context at authoritative source/target origins.
+BattleAttackInfo attackForStrike(const FortuneStrikeProjection & strike,
+	const battle::Unit * actor, const battle::Unit * target);
+/// Revalue this same selected geometry only when its actor's Forest Ambush
+/// lifecycle differs from the branch. No target/path enumeration or new RNG.
+std::unique_ptr<AttackPossibility> refreshForestAmbush(const AttackPossibility & preview,
+	const std::shared_ptr<HypotheticBattle> & branch, DamageCache & damageCache);
+/// Return actual growth repeated by selected replay, for gross-loss accounting.
+int64_t grantSoulHarvest(battle::CUnitState & actor, int64_t killedCreatures);
+/// Apply captured pre-attack or residual damage at the caller's ordered stage.
+void applyCapturedDamage(HypotheticBattle & branch,
+	const std::shared_ptr<StackWithBonuses> & recipient, int64_t damage);
 /// Restore an ordinary melee endpoint or a currently legal Skirmisher
 /// endpoint before replayed damage; other shooting from-fields grant no movement.
 void restorePosition(const AttackPossibility & preview, battle::CUnitState & actor,

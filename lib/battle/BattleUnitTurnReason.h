@@ -40,5 +40,7 @@ enum class BattleUnitTurnReason : int8_t
 	/// Input-only anchor for an off-turn Crisis Order, not a creature activation.
 	CRISIS_ORDER,
 	/// Restores a completed action's actor without input or activation lifecycles.
-	CRISIS_RESUME
+	CRISIS_RESUME,
+	/// Optional Dread Cavalry charge within the same Creature Activation.
+	DREAD_CAVALRY_CONTINUATION
 };

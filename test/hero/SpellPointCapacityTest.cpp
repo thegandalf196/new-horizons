@@ -9,6 +9,9 @@
 
 #include "../server/battles/BattleTestFixture.h"
 #include "../server/battles/BattleStartSnapshotFixture.h"
+#include "HistoricalHeroEpochFixture.h"
+#include "../spells/HistoricalCrusadeRules.h"
+#include "../server/battles/HistoricalNecromancyFixture.h"
 
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameSettings.h"
@@ -21,6 +24,7 @@
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/battle/CObstacleInstance.h"
+#include "../../lib/battle/HeroCommand.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/gameState/GameStatePackVisitor.h"
 #include "../../lib/gameState/TavernHeroesPool.h"
@@ -76,13 +80,18 @@ const std::array<KnowledgeArtifact, 4> & knowledgeArtifacts()
 	return artifacts;
 }
 
-// Both historical world codecs predate only Fly's newer day-end clause.
-void capturePreFlyDayEndMagic(CMap & map)
+// Both declared world codecs retain V3 Orders and predate The Chosen,
+// revised Sorcery and Fly day-end. Reuse their existing authored captures.
+void captureHistoricalWorldRules(CMap & map)
 {
-	auto magic = map.getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+	auto magic = historicalCrusadeRules(map.getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS));
 	magic["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
 	magic.setOverrideFlag(true);
 	map.overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+	const JsonNode combat(JsonPath::builtin("config/newHorizonsCombatV3"));
+	const auto orders = combat["combat"]["heroCommands"];
+	heroCommands::validateRules(orders);
+	map.overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, orders);
 }
 
 class SpellPointCapacityTest : public BattleTestFixture
@@ -365,14 +374,11 @@ protected:
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(!captureBottomlessMind())
 		{
-			development.Struct().erase("bottomlessMindSpecialty");
-			development.Struct().erase("masterSpellwardSpecialty"); // Explicit pre-Bottomless capture.
-			capturePreFlyDayEndMagic(*loaded);
-			// These optional tables were introduced after the declared historical codec.
-			for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
-				development.Struct().erase(key);
+			development = historicalHeroFixture::rules(
+				ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION);
+			captureHistoricalWorldRules(*loaded);
 			// This historical world predates R2 but retains captured policy1.
-			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			auto perks = necromancyTest::historicalRules();
 			perks["offerWeightPolicyVersion"].Integer() = 1;
 			perks.Struct().erase("perkOfferNormalization");
 			perks.Struct().erase("perkProgressionPolicyVersion");
@@ -450,11 +456,12 @@ protected:
 		development.Struct().erase("bottomlessMindSpecialty");
 		development.Struct().erase("masterSpellwardSpecialty");
 		// These optional tables were introduced after the declared historical codec.
-		for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+		for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty"})
 			development.Struct().erase(key);
 		// Isolate Druid admission/codec guards from the same-epoch weighted
 		// offer feature; the existing fixture uses its historical offer helper.
-		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		JsonNode perks = captureHighLore() ? JsonNode(JsonPath::builtin("config/newHorizonsPerks"))
+			: necromancyTest::historicalRules();
 		perks.Struct().erase("offerWeightPolicyVersion");
 		perks.Struct().erase("perkOfferNormalization");
 		perks.Struct().erase("perkProgressionPolicyVersion");
@@ -462,8 +469,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		if(!captureHighLore())
 		{
-			development.Struct().erase("druidSpecialties");
-			capturePreFlyDayEndMagic(*loaded);
+			development = historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_HERO_LUCK);
+			captureHistoricalWorldRules(*loaded);
 		}
 		development.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);

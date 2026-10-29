@@ -65,7 +65,7 @@ BattleHex currentApproach(const std::shared_ptr<HypotheticBattle> & battle,
 }
 }
 
-std::optional<float> BattleExchangeVariant::trackFutureReaction(
+std::optional<float> BattleExchangeVariant::trackFutureMovementReaction(
 	const std::shared_ptr<StackWithBonuses> & attacker,
 	const std::shared_ptr<StackWithBonuses> & defender,
 	bool shooting, bool isOurAttack, DamageCache & damageCache,
@@ -122,4 +122,21 @@ std::optional<float> BattleExchangeVariant::trackFutureReaction(
 		dpsScore.enemyDamageReduce += isOurAttack ? score.enemyDamageReduce : score.ourDamageReduce;
 	}
 	return value;
+}
+
+std::optional<float> BattleExchangeVariant::trackFutureReaction(
+	const std::shared_ptr<StackWithBonuses> & attacker,
+	const std::shared_ptr<StackWithBonuses> & defender,
+	bool shooting, bool isOurAttack, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & hb, bool evaluateOnly,
+	bool allowRetaliation, std::optional<bool> * readyOverwatch)
+{
+	if(const auto movement = trackFutureMovementReaction(attacker, defender, shooting,
+		isOurAttack, damageCache, hb, evaluateOnly, allowRetaliation, readyOverwatch))
+		return movement;
+	if(const auto dread = trackDreadAction(attacker, defender, shooting, isOurAttack,
+		damageCache, hb, evaluateOnly, allowRetaliation))
+		return dread;
+	return trackAerialExchange(attacker, defender, shooting, isOurAttack,
+		damageCache, hb, evaluateOnly, allowRetaliation);
 }

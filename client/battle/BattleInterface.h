@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "../../lib/battle/NewHorizonsAerialSupremacy.h"
 #include "BattleConstants.h"
 
 #include "../gui/CIntObject.h"
@@ -39,6 +40,7 @@ class CPlayerBattleCallback;
 class MetaString;
 
 class BattleHero;
+class BattleAnimation;
 class Canvas;
 class BattleResultWindow;
 class StackQueue;
@@ -78,6 +80,7 @@ struct StackAttackedInfo
 
 struct StackAttackInfo
 {
+	std::optional<newHorizonsAerialSupremacy::Excursion> aerialExcursion;
 	const CStack *attacker;
 	const CStack *defender;
 	std::vector< const CStack *> secondaryDefender;
@@ -127,6 +130,8 @@ class BattleInterface
 	// Armed by the pre-apply StartAction callback, consumed only after acceptance.
 	std::unique_ptr<BattleAction> pendingHeroOrderPresentation;
 	int32_t pendingHeroOrderRound = -1;
+	std::vector<uint32_t> pendingHeroOrderGrantIds;
+	std::unique_ptr<BattleAnimation> heroOrderGesture;
 	long long heroCueTraceScene = 0;
 	uint64_t heroCueTraceOrdinal = 0;
 	void presentAcceptedHeroOrder(const BattleAction & action);

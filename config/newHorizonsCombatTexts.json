@@ -1,4 +1,9 @@
 {
+	"new-horizons.combat.dreadCavalry.skip": "Skip charge",
+	"new-horizons.combat.dreadCavalry.skip.help": "Decline the optional Dread Cavalry charge without defending. Any existing Pursuit movement remains.",
+	"new-horizons.combat.dreadCavalry.preview": "Dread Cavalry: %d% damage (already included above); up to %d movement remaining. An adjacent enemy can be attacked with no movement left.",
+	"new-horizons.creature.soulHarvest.compact": "Soul Harvest (innate)\n+%count% Ghost per creature killed",
+	"new-horizons.creature.soulHarvest.help": "Soul Harvest (innate): Each eligible enemy creature killed by this stack's physical attack or retaliation adds %count% temporary Ghost. Partial casualties count; destroying the whole enemy stack is not required. Growth lasts only for this battle. Clones and summoned stacks cannot gain or provide growth. Suppressed creature abilities and temporary battle forms prevent growth. Killing resurrected creatures can grant growth again. Extra Ghosts never join the army after battle.",
 	"new-horizons.creature.freezingTouch.compact": "Freezing Touch %chance%%\nShatter +%bonus%%",
 	"new-horizons.creature.freezingTouch.help": "Freezing Touch: each successful melee attack or retaliation has a %chance%% chance, rolled once after damage, to inflict physical Frozen. Frozen prevents retaliation and forfeits the next normal Creature Activation, then thaws. Extra activations cannot thaw it. A subsequent ordinary physical creature attack deals +%bonus%% final damage and Shatters the ice, without retaliation. Direct magical damage breaks the ice without this bonus. Cure clears Frozen; ordinary Dispel does not. Cannot stack or refresh; at most one successful application per recipient per round, even after cleansing.",
 	"new-horizons.combat.frozen.label": "Frozen",
@@ -119,5 +124,8 @@
 	"new-horizons.combat.leadership.transferExcess": "; %EXCESS% over this slot's capacity",
 	"new-horizons.combat.queueExtraMorale": "Extra activation: positive Morale.",
 	"new-horizons.combat.queueExtraQuartermaster": "Extra activation: Quartermaster. Reduced activation output applies.",
-	"new-horizons.combat.queueExtraSecondWind": "Extra activation: Second Wind."
+	"new-horizons.combat.queueExtraSecondWind": "Extra activation: Second Wind.",
+	"new-horizons.heroSpecialty.petrifyingBlood.name": "Petrifying Blood",
+	"new-horizons.heroSpecialty.petrifyingBlood.tooltip": "The first damaging enemy melee hit each round triggers an ordinary petrification attempt on the attacker.",
+	"new-horizons.heroSpecialty.petrifyingBlood.description": "Once per round for each Basilisk or Greater Basilisk stack, the first enemy physical melee hit that deals damage triggers an ordinary petrification attempt on the attacker. The attempt is spent even if the roll fails or the attacker is immune."
 }

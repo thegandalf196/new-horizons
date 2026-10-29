@@ -11,6 +11,7 @@
 #include "Unit.h"
 #include "CUnitState.h"
 #include "NewHorizonsOffense.h"
+#include "NewHorizonsSerpentsEmbrace.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusSelector.h"
 #include "../GameLibrary.h"
@@ -169,7 +170,9 @@ StatusSnapshot snapshot(const battle::Unit & unit)
 				throw std::invalid_argument("Invalid authored status metadata");
 			if(tagged(*bonus) && !bonus->statusIdentity.empty())
 			{
-				distinct.insert(bonus->statusIdentity);
+				// Independent Naga sources have separate lifetimes, but one debuff kind.
+				distinct.insert(newHorizonsSerpentsEmbrace::sourceId(*bonus)
+					? "serpentsEmbrace" : bonus->statusIdentity);
 				continue;
 			}
 			if(newHorizonsOffense::isNoQuarterBonus(bonus.get()))

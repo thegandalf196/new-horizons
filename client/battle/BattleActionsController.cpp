@@ -14,6 +14,7 @@
 #include "BattleFieldController.h"
 #include "BattleHero.h"
 #include "BattleInterface.h"
+#include "CreatureContinuationUI.h"
 #include "MagicArrowOverchargeWindow.h"
 #include "NewHorizonsBattleStatus.h"
 #include "NewHorizonsRealityWarpPreview.h"
@@ -3021,24 +3022,14 @@ std::vector<PossiblePlayerBattleAction> BattleActionsController::getPossibleActi
 	allActions.push_back(PossiblePlayerBattleAction::HERO_INFO);
 	allActions.push_back(PossiblePlayerBattleAction::CREATURE_INFO);
 
-	// A pending ranged continuation cannot be replaced with movement, Wait,
-	// or a creature action. Keep Shoot only when the authority recognizes the
-	// saved allowance; target-specific legality remains in actionIsLegal.
-	// Information actions remain available, and Defend is the existing safe
-	// NO_ACTION close control.
-	const auto battle = owner.getBattle();
-	const auto unitState = stack ? stack->acquireState() : nullptr;
-	if(battle && unitState && unitState->rangedFollowUpDamagePercent > 0)
-	{
-		const bool pendingFollowUp = battle->battleHasPendingRangedFollowUp(stack);
-		vstd::erase_if(allActions, [pendingFollowUp](const PossiblePlayerBattleAction & action)
-			{
-				if(action.get() == PossiblePlayerBattleAction::HERO_INFO
-					|| action.get() == PossiblePlayerBattleAction::CREATURE_INFO)
-					return false;
-				return !pendingFollowUp || action.get() != PossiblePlayerBattleAction::SHOOT;
-			});
-	}
+	// Pending continuation actions share one read-only control policy. Target
+	// legality and movement still come from the authoritative battle callback.
+	const auto continuation = creatureContinuationUI::read(*owner.getBattle(), stack);
+	if(continuation.pending())
+		vstd::erase_if(allActions, [continuation](const PossiblePlayerBattleAction & action)
+		{
+			return !continuation.allows(action.get());
+		});
 
 	return std::vector<PossiblePlayerBattleAction>(allActions);
 }
@@ -3829,6 +3820,57 @@ void BattleActionsController::actionSetCursorBlocked(PossiblePlayerBattleAction 
 	assert(0);
 }
 
+static std::string meleeAttackStatusMessage(BattleInterface & owner, PossiblePlayerBattleAction action,
+	const BattleHex & targetHex, const CStack * targetStack)
+{
+	const auto * attacker = owner.stacksController->getActiveStack();
+	bool allowLongWeapon = action.get() == PossiblePlayerBattleAction::LONG_WEAPON_ATTACK;
+	BattleHex attackFromHex = findAttackFromHex(owner, attacker, targetHex, allowLongWeapon);
+	assert(attackFromHex.isValid());
+	if(!attackFromHex.isValid())
+		return "";
+	int distance = attacker->position.isValid() ? owner.getBattle()->battleGetDistances(attacker, attacker->getPosition())[attackFromHex.toInt()] : 0;
+	DamageEstimation retaliation;
+	BattleAttackInfo attackInfo(attacker, targetStack, distance, false);
+	attackInfo.attackerPos = attackFromHex;
+	DamageEstimation estimation = owner.getBattle()->battleEstimateDamage(attackInfo, &retaliation);
+	estimation.kills.max = std::min<int64_t>(estimation.kills.max, targetStack->getCount());
+	estimation.kills.min = std::min<int64_t>(estimation.kills.min, targetStack->getCount());
+	bool enemyMayBeKilled = estimation.kills.max == targetStack->getCount();
+
+	// breath and other multi-hex attacks also strike extra units - add their kills to the prediction
+	// (getAttackedBattleUnits excludes the directly-attacked hex, so the main target is handled above)
+	for(const auto * splashTarget : owner.getBattle()->getAttackedCreatures(attacker, targetHex, false, attackFromHex).first)
+	{
+		if(splashTarget == targetStack || splashTarget == attacker)
+			continue;
+		BattleAttackInfo splashInfo(attacker, splashTarget, distance, false);
+		splashInfo.attackerPos = attackFromHex;
+		DamageEstimation splash = owner.getBattle()->battleEstimateDamage(splashInfo, nullptr);
+		estimation.kills.min += std::min<int64_t>(splash.kills.min, splashTarget->getCount());
+		estimation.kills.max += std::min<int64_t>(splash.kills.max, splashTarget->getCount());
+	}
+
+	std::string flankPrefix;
+	const auto battle = owner.getBattle();
+	const auto side = battle->battleGetMySide();
+	const auto activeFlank = battle->battleGetHeroOrderState(side, HeroCommand::FLANK);
+	if(activeFlank && attacker && battle->battleOrderBenefitAppliesTo(*activeFlank, side, attacker)
+		&& activeFlank->primaryTargetUnitId == targetStack->unitId()
+		&& attacker && attacker->alive() && !attacker->isGhost()
+		&& battle->playerToSide(battle->battleGetOwner(attacker)) == side
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
+		&& targetStack->alive() && !targetStack->isGhost())
+	{
+		const int flankPercent = owner.getBattle()->battleHeroOrderFlankMeleeDamagePercent(attackInfo);
+		flankPrefix = "Flank +" + std::to_string(flankPercent) + "% here (included): ";
+	}
+	return flankPrefix + formatMeleeAttack(estimation, targetStack->getName())
+		+ "\n" + formatRetaliation(retaliation, enemyMayBeKilled)
+		+ creatureContinuationUI::attackPreview(creatureContinuationUI::read(*owner.getBattle(), attacker), &GAME->translator())
+		+ battleMovementPreview::overwatchWarning(*owner.getBattle(), attacker, attackFromHex);
+}
+
 std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattleAction action, const BattleHex & targetHex)
 {
 	const CStack * targetStack = getStackForHex(targetHex);
@@ -3854,53 +3896,7 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 		case PossiblePlayerBattleAction::LONG_WEAPON_ATTACK:
 		case PossiblePlayerBattleAction::WALK_AND_ATTACK:
 		case PossiblePlayerBattleAction::ATTACK_AND_RETURN: //TODO: allow to disable return
-			{
-				const auto * attacker = owner.stacksController->getActiveStack();
-				bool allowLongWeapon = action.get() == PossiblePlayerBattleAction::LONG_WEAPON_ATTACK;
-				BattleHex attackFromHex = findAttackFromHex(owner, attacker, targetHex, allowLongWeapon);
-				assert(attackFromHex.isValid());
-				if(!attackFromHex.isValid())
-					return "";
-				int distance = attacker->position.isValid() ? owner.getBattle()->battleGetDistances(attacker, attacker->getPosition())[attackFromHex.toInt()] : 0;
-				DamageEstimation retaliation;
-				BattleAttackInfo attackInfo(attacker, targetStack, distance, false);
-				attackInfo.attackerPos = attackFromHex;
-				DamageEstimation estimation = owner.getBattle()->battleEstimateDamage(attackInfo, &retaliation);
-				estimation.kills.max = std::min<int64_t>(estimation.kills.max, targetStack->getCount());
-				estimation.kills.min = std::min<int64_t>(estimation.kills.min, targetStack->getCount());
-				bool enemyMayBeKilled = estimation.kills.max == targetStack->getCount();
-
-				// breath and other multi-hex attacks also strike extra units - add their kills to the prediction
-				// (getAttackedBattleUnits excludes the directly-attacked hex, so the main target is handled above)
-				for(const auto * splashTarget : owner.getBattle()->getAttackedCreatures(attacker, targetHex, false, attackFromHex).first)
-				{
-					if(splashTarget == targetStack || splashTarget == attacker)
-						continue;
-					BattleAttackInfo splashInfo(attacker, splashTarget, distance, false);
-					splashInfo.attackerPos = attackFromHex;
-					DamageEstimation splash = owner.getBattle()->battleEstimateDamage(splashInfo, nullptr);
-					estimation.kills.min += std::min<int64_t>(splash.kills.min, splashTarget->getCount());
-					estimation.kills.max += std::min<int64_t>(splash.kills.max, splashTarget->getCount());
-				}
-
-				std::string flankPrefix;
-				const auto battle = owner.getBattle();
-				const auto side = battle->battleGetMySide();
-				const auto activeFlank = battle->battleGetHeroOrderState(side, HeroCommand::FLANK);
-				if(activeFlank && attacker && battle->battleOrderBenefitAppliesTo(*activeFlank, side, attacker)
-					&& activeFlank->primaryTargetUnitId == targetStack->unitId()
-					&& attacker && attacker->alive() && !attacker->isGhost()
-					&& battle->playerToSide(battle->battleGetOwner(attacker)) == side
-					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
-					&& targetStack->alive() && !targetStack->isGhost())
-				{
-					const int flankPercent = owner.getBattle()->battleHeroOrderFlankMeleeDamagePercent(attackInfo);
-					flankPrefix = "Flank +" + std::to_string(flankPercent) + "% here (included): ";
-				}
-				return flankPrefix + formatMeleeAttack(estimation, targetStack->getName())
-					+ "\n" + formatRetaliation(retaliation, enemyMayBeKilled)
-					+ battleMovementPreview::overwatchWarning(*owner.getBattle(), attacker, attackFromHex);
-			}
+			return meleeAttackStatusMessage(owner, action, targetHex, targetStack);
 
 		case PossiblePlayerBattleAction::SHOOT:
 		{

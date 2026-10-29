@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Pure ownership/gesture controls: no fork, prctl, Wine, Xvfb or XTest."""
 import copy
+import errno
 import importlib.util
 import json
 import os
@@ -153,6 +154,116 @@ class Tests(unittest.TestCase):
                 with self.assertRaisesRegex(owner.Refusal, 'outside retained lineage'):
                     self.o.adopt()
                 self.assertNotIn(2, self.o.ledger)
+
+    def test_proc_stat_esrch_only_is_missing_metadata(self):
+        error = ProcessLookupError(errno.ESRCH, 'vanished stat')
+        with mock.patch.object(Path, 'read_text', side_effect=error), self.assertRaises(FileNotFoundError) as caught:
+            owner._proc_stat(Path('/proc/42'))
+        self.assertEqual(caught.exception.errno, errno.ENOENT)
+        self.assertIs(caught.exception.__cause__, error)
+        self.assertEqual(caught.exception.filename, '/proc/42/stat')
+        for error in (PermissionError(errno.EACCES, 'denied'), OSError(errno.EIO, 'io'),
+                      ProcessLookupError(errno.EACCES, 'wrong typed errno')):
+            with self.subTest(error=error), mock.patch.object(Path, 'read_text', side_effect=error), \
+                 self.assertRaises(type(error)) as caught:
+                owner._proc_stat(Path('/proc/42'))
+            self.assertIs(caught.exception, error)
+
+    def test_uid_metadata_and_pidfd_esrch_remain_fatal(self):
+        backend = object.__new__(owner.Linux)
+        fields = ['S', '1'] + ['0'] * 17 + ['20']
+        with mock.patch.object(Path, 'read_text', return_value='2 (synthetic) ' + ' '.join(fields)), \
+             mock.patch.object(Path, 'stat', side_effect=ProcessLookupError(errno.ESRCH, 'uid stat')), \
+             self.assertRaises(ProcessLookupError):
+            backend.kernel_snapshot(2)
+        with mock.patch.object(owner.os, 'pidfd_open', side_effect=ProcessLookupError(errno.ESRCH, 'pidfd')), \
+             self.assertRaises(ProcessLookupError):
+            backend.pidfd(2)
+        self.backend.pidfd = mock.Mock(side_effect=ProcessLookupError(errno.ESRCH, 'unknown pidfd'))
+        with self.assertRaises(ProcessLookupError):
+            self.o.adopt()
+        self.assertNotIn(2, self.o.ledger)
+        self.assertEqual(self.o.ledger, {})
+
+    def test_retained_fd_survives_proc_stat_disappearance_without_retirement(self):
+        self.o.adopt()
+        entry = self.o.ledger[2]
+        original = self.backend.kernel_snapshot
+        def acquired(pid):
+            if pid != 2:
+                return original(pid)
+            kernel = object.__new__(owner.Linux)
+            with mock.patch.object(Path, 'read_text', side_effect=ProcessLookupError(errno.ESRCH, 'gone stat')):
+                return kernel.kernel_snapshot(pid)
+        self.backend.kernel_snapshot = acquired
+        self.o.adopt()
+        self.o.reap()
+        self.assertIs(self.o.ledger[2], entry)
+        self.assertNotIn(2, self.o.reaped)
+        self.assertNotIn(2, self.o.parent_reaped)
+        self.assertIn(entry['pidfd'], self.o.signal_fds)
+        self.assertNotIn(entry['pidfd'], self.backend.closed)
+        self.assertFalse(self.o.graph_drained())
+
+    def test_failure_diagnostic_is_bounded_path_free_and_has_phase(self):
+        try:
+            exec(compile("raise OSError(5, 'secret/runtime/path')", r'C:\secret\SDK\probe.py', 'exec'))
+        except OSError as error:
+            diagnostic = owner.exception_diagnostic(error, 'owned_run')
+        self.assertEqual(diagnostic['phase'], 'owned_run')
+        self.assertEqual(diagnostic['type'], 'OSError')
+        self.assertEqual(diagnostic['errno'], 5)
+        self.assertEqual(diagnostic['frames'][-1]['basename'], 'probe.py')
+        self.assertNotIn('secret', json.dumps(diagnostic))
+        self.assertNotIn('SDK', json.dumps(diagnostic))
+        self.assertTrue(all(set(row) == {'basename', 'function', 'line'} for row in diagnostic['frames']))
+        def deep(n):
+            if n:
+                return deep(n - 1)
+            raise ValueError('private message')
+        try:
+            deep(30)
+        except ValueError as error:
+            diagnostic = owner.exception_diagnostic(error, 'prefix_cleanup')
+        self.assertEqual(len(diagnostic['frames']), 16)
+        self.assertTrue(diagnostic['frames_truncated'])
+        self.assertIsNone(diagnostic['errno'])
+
+    def test_owner_receipt_preserves_first_caught_phase_and_diagnostic(self):
+        with tempfile.TemporaryDirectory() as name:
+            base = Path(name); root = base/'private'; root.mkdir(mode=0o700)
+            pe = base/'new-horizons.exe'
+            pe.write_bytes('NH_WINE_PRE_SDL_V1 NH_PRIVATE_WINE_NONCE'.encode('utf-16-le'))
+            names = ('VCMI_lib.dll', 'SDL3.dll', 'SDL3_image.dll', 'SDL3_mixer.dll', 'SDL3_ttf.dll')
+            for item in names: (base/item).write_bytes(b'pure fixture')
+            wine = base/'wine'; wine.write_bytes(b'wine fixture')
+            server = base/'server'; server.write_bytes(b'server fixture')
+            program = Path(owner.__file__).with_name('nh-private-input.py').resolve()
+            plan = {'executable': str(pe), 'root': str(root), 'content': {}, 'input_program': str(program),
+                    'input_sha256': owner.file_proof(program)['sha256'], 'executable_sha256': owner.file_proof(pe)['sha256'],
+                    'dlls': {item: owner.file_proof(base/item)['sha256'] for item in names},
+                    'wine': str(wine), 'wine_sha256': owner.file_proof(wine)['sha256'],
+                    'server': str(server), 'server_sha256': owner.file_proof(server)['sha256']}
+            runtime = mock.Mock(errors=[], reaped={}, parent_reaped={}, ledger={}, history=[])
+            runtime.age.return_value = 1
+            runtime.armed.wait.return_value = True
+            runtime.graph_drained.return_value = False
+            runtime.verify_xvfb.side_effect = OSError(errno.EIO, 'first runtime refusal')
+            state = {}
+            with mock.patch.object(owner, 'Linux', return_value=mock.Mock(pid=1, boot='synthetic')), \
+                 mock.patch.object(owner, 'Owner', return_value=runtime), \
+                 mock.patch.object(owner.threading, 'Thread'), mock.patch.object(owner, 'finish_owner'), \
+                 mock.patch.object(owner.subprocess, 'Popen') as popen:
+                with self.assertRaises(owner.Refusal):
+                    owner.run_staged_fullgame(plan, mock.Mock(), state, verify_xvfb=lambda _: None, verify_runtime=lambda _: None)
+                popen.assert_not_called()
+            self.addCleanup(state['mapping'].close)
+            receipt = json.loads((root/'owner-receipt.json').read_text())
+            self.assertEqual(receipt['failure_diagnostic']['phase'], 'owned_run')
+            self.assertEqual(receipt['failure_diagnostic']['errno'], errno.EIO)
+            self.assertIn('first runtime refusal', receipt['errors'][0])
+            self.assertTrue(any('No Wine child launched' in row for row in receipt['errors']))
+            self.assertFalse(receipt['owned_graph_drained'])
 
     def test_descendant_adopted_with_pidfd(self):
         self.assertEqual(self.o.adopt(), {2})

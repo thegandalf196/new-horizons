@@ -9,6 +9,7 @@
 #include "../../../lib/StartInfo.h"
 #include "../../../lib/campaign/CampaignState.h"
 #include "../../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
+#include "../../../lib/entities/hero/NewHorizonsSpecialtySerialization.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapping/CMap.h"
 #include "../../../lib/mapping/CMapInfo.h"
@@ -81,6 +82,22 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		TinyMapGameTest::mapLoaded(map);
+		// Keep later army-size and recruitment policies outside this codec boundary.
+		map->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
+		map->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
+		// Both tested writer formats predate the creature-specialist captures.
+		// Keep supported individual/recovery/remaining/Chosen rules unchanged.
+		auto heroes = map->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+		for(const auto key : {"manaLeeches", "serpentsEmbrace", "paralyzingGaze", "forestAmbush", "aerialSupremacy"})
+			heroes["additionalSpecialties"].Struct().erase(key);
+		for(const auto key : {"ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty"})
+			heroes.Struct().erase(key);
+		CMemorySerializer oldest;
+		oldest.oser.version = ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS;
+		ASSERT_NO_THROW(newHorizonsHeroes::validateCapturedSpecialtiesSerialization(heroes,
+			newHorizonsHeroes::SpecialtySerializationContext::fromHandler(oldest.oser)));
+		heroes.setOverrideFlag(true);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
 		// Isolate the Necromancy save boundary from the later Sorcery capture
 		// capability. Preserve every other spell row and captured world rule.
 		auto magic = map->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);

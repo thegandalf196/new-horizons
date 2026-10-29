@@ -8,8 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsForestAmbush.h"
 
 #include "BattleSpellMechanics.h"
+#include "../battle/NewHorizonsSerpentsEmbrace.h"
 #include "NewHorizonsSpellcraft.h"
 
 #include "Problem.h"
@@ -940,36 +942,6 @@ namespace SRSLPraserHelpers
 	}
 }
 
-bool targetsSanctifiedStackDirectly(const Mechanics & mechanics, const Target & target)
-{
-	if(target.size() != 1 || mechanics.isMassive())
-		return false;
-	const auto * spell = mechanics.getSpell();
-	if(!spell || !(spell->isOffensive() || spell->isNegative() || spell->isDamage()))
-		return false;
-
-	const auto targetTypes = mechanics.getTargetTypes();
-	if(targetTypes != std::vector<AimType>{AimType::CREATURE})
-		return false;
-	if(mechanics.getSpellId() == SpellID::CHAIN_LIGHTNING || mechanics.isNewHorizonsStormOfDaggers())
-		return false;
-
-	const auto affectedStacks = mechanics.getAffectedStacks(target);
-	if(affectedStacks.size() != 1)
-		return false;
-
-	const auto * battle = mechanics.battle();
-	if(!battle)
-		return false;
-
-	const auto & destination = target.front();
-	const auto * unit = destination.unitValue;
-	if(!unit && destination.hexValue.isValid())
-		unit = battle->battleGetUnitByPos(destination.hexValue, true);
-
-	return unit && unit->hasBonusOfType(BonusType::SANCTIFIED) && mechanics.ownerMatches(unit, false);
-}
-
 BattleSpellMechanics::BattleSpellMechanics(const IBattleCast * event,
 										   std::shared_ptr<effects::Effects> effects_,
 										   std::shared_ptr<IReceptiveCheck> targetCondition_):
@@ -1422,6 +1394,14 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	const bool vengefulVinesEnabled = isNewHorizonsVengefulVinesSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	Target spellTarget = transformSpellTarget(target);
+	if(owner->getId() == SpellID::TELEPORT && !target.empty())
+	{
+		const auto * traveler = target.front().unitValue;
+		if(!traveler && target.front().hexValue.isAvailable())
+			traveler = battle()->battleGetUnitByPos(target.front().hexValue, true);
+		if(traveler && newHorizonsSerpentsEmbrace::blocksVoluntaryMovement(*traveler))
+			return false;
+	}
 	if(naturesWrath)
 	{
 		if(target.size() != 1 || spellTarget.size() != 1)

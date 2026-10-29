@@ -8,12 +8,25 @@
  *
  */
 #include "StdInc.h"
+#include "DreadCavalryProjection.h"
+#include "../../lib/battle/NewHorizonsDreadCavalry.h"
+#include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "AerialRetaliationProjection.h"
 #include "AttackPossibility.h"
+#include "PetrifyingBloodValue.h"
+#include "SerpentBindingDeathPreview.h"
+#include "AttackHealthAftermath.h"
+#include "../../lib/battle/NewHorizonsSoulHarvest.h"
 #include "../../lib/battle/NewHorizonsManaLeeches.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
+#include "../../lib/battle/NewHorizonsParalyzingGaze.h"
+#include "ParalyzingGazeProjection.h"
+#include "DefiantDenialProjection.h"
 #include "AttackPreviewArcheryAdmission.h"
 #include "DamageCacheAdmission.h"
 #include "DamageCacheMarks.h"
 #include "AttackPreviewHitContext.h"
+#include "SelectedAttackReceipt.h"
 #include "BattleShroudStrike.h"
 #include "AttackPreviewTargets.h"
 #include "PreemptiveAttackRequest.h"
@@ -60,22 +73,6 @@ namespace
 using damageCacheDetail::hasRangedMarkEffect;
 using damageCacheDetail::hasNightProwlerBonus;
 
-bool projectDefiant(HypotheticBattle & battle, const BattleAttackInfo & attack,
-	newHorizonsArmorer::DefiantDenialCause cause, FortuneStrikeProjection & strike)
-{
-	if(!battle.battleCanUseDefiant(attack, cause))
-		return false;
-	const auto side = battle.playerToSide(battle.battleGetActionController(attack.defender));
-	const auto round = battle.battleGetRound();
-	auto state = battle.getArmorerDefiantState(side);
-	if(!state.consumeAt(round))
-		return false;
-	battle.setArmorerDefiantState(side, state);
-	strike.defiantDenials.push_back({side, cause, attack.defender->unitId(), round,
-		DefiantDenialProjection::Phase::AFTER_TARGET_HIT});
-	return true;
-}
-
 int bulwarkPreemptivePercent(const battle::Unit * defender, const CBattleInfoCallback & state)
 {
 	if(!defender || !defender->defended()
@@ -118,49 +115,7 @@ int64_t projectedPhysicalPoisonDamage(const battle::CUnitState * state)
 	return base * 2;
 }
 
-int32_t vampirismHealBasisPoints(const battle::Unit * unit)
-{
-	if(!unit)
-		return 0;
 
-	const auto triggers = unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
-	int32_t result = 0;
-	for(const auto & bonus : *triggers)
-	{
-		if(!bonus || bonus->source != BonusSource::SPELL_EFFECT
-			|| bonus->sid.toString() != newHorizonsMagic::SHADOW_VAMPIRISM_SPELL
-			|| bonus->subtype.toString() != newHorizonsMagic::SHADOW_VAMPIRISM_STATUS
-			|| !Bonus::NTurns(bonus.get()) || bonus->turnsRemain <= 0)
-			continue;
-
-		result = std::max(result, std::clamp(bonus->val, 0,
-			newHorizonsMagic::VAMPIRISM_MAX_HEAL_BASIS_POINTS));
-	}
-	return result;
-}
-
-void projectVampirismHealing(battle::CUnitState * attacker, int64_t actualDamage,
-	std::vector<std::pair<uint32_t, int64_t>> & healingByUnit)
-{
-	if(!attacker || !attacker->alive() || actualDamage <= 0)
-		return;
-
-	const auto basisPoints = vampirismHealBasisPoints(attacker);
-	if(basisPoints <= 0)
-		return;
-
-	// Split before multiplying so a large multi-target attack cannot overflow.
-	const auto healingRequest = (actualDamage / 10'000) * basisPoints
-		+ ((actualDamage % 10'000) * basisPoints) / 10'000;
-	if(healingRequest <= 0)
-		return;
-
-	auto remainingHealing = healingRequest;
-	const auto healed = attacker->heal(remainingHealing, EHealLevel::HEAL,
-		EHealPower::PERMANENT).healedHealthPoints;
-	if(healed > 0)
-		healingByUnit.emplace_back(attacker->unitId(), healed);
-}
 }
 
 AttackPossibility::AttackPossibility(const BattleHex & from, const BattleHex & dest, const BattleAttackInfo & attack)
@@ -168,22 +123,6 @@ AttackPossibility::AttackPossibility(const BattleHex & from, const BattleHex & d
 {
 	this->attack.attackerPos = from;
 	this->attack.defenderPos = dest;
-}
-
-float AttackPossibility::damageDiff() const
-{
-	return defenderDamageReduce - attackerDamageReduce - collateralDamageReduce + shootersBlockedDmg + frozenControlValue;
-}
-
-float AttackPossibility::damageDiff(float positiveEffectMultiplier, float negativeEffectMultiplier) const
-{
-	return positiveEffectMultiplier * (defenderDamageReduce + shootersBlockedDmg + std::max(0.0f, frozenControlValue))
-		- negativeEffectMultiplier * (attackerDamageReduce + collateralDamageReduce + std::max(0.0f, -frozenControlValue));
-}
-
-float AttackPossibility::attackValue() const
-{
-	return damageDiff();
 }
 
 float hpFunction(uint64_t unitHealthStart, uint64_t unitHealthEnd, uint64_t maxHealth)
@@ -365,14 +304,20 @@ int64_t AttackPossibility::evaluateBlockedShootersDmg(
 }
 
 AttackPossibility AttackPossibility::evaluate(
-	const BattleAttackInfo & attackInfo,
+	const BattleAttackInfo & inputAttack,
 	BattleHex hex,
 	DamageCache & damageCache,
-	std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)
+	std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment,
+	std::optional<newHorizonsAerialSupremacy::Excursion> aerial,
+	const dreadCavalryAI::Action * acceptedDreadAction)
 {
 	// Retained for source compatibility with cached evaluations. Perfect Moment
 	// is now automatic and cannot be opted out of or forced by this hint.
 	(void)perfectMoment;
+	auto attackInfo = inputAttack;
+	dreadCavalryAI::captureOutput(*state, attackInfo);
+	const auto dreadAction = acceptedDreadAction ? *acceptedDreadAction : dreadCavalryAI::begin(*state, attackInfo, hex);
+	aerialRetaliationAI::validateContext(*state, attackInfo, hex, aerial);
 	auto attacker = attackInfo.attacker;
 	// Ordinary movement is projected before the attack, not as a post-attack
 	// penalty: a lethal reaction must prevent the intended strike entirely.
@@ -394,7 +339,7 @@ AttackPossibility AttackPossibility::evaluate(
 				following.attacker = moved.get();
 				following.defender = projected->battleGetUnitByID(attackInfo.defender->unitId());
 				auto result = moved->alive()
-					? evaluate(following, hex, damageCache, projected, perfectMoment)
+					? evaluate(following, hex, damageCache, projected, perfectMoment, aerial, &dreadAction)
 					: AttackPossibility(hex, BattleHex::INVALID, following);
 				if(!result.effectPreview)
 					result.effectPreview = projected;
@@ -427,7 +372,7 @@ AttackPossibility AttackPossibility::evaluate(
 
 	BattleHexArray defenderHex;
 	bool longReachAttack = false;
-	if(attackInfo.shooting)
+	if(attackInfo.shooting || aerial)
 		defenderHex.insert(requestedDefender->getPosition());
 	else
 	{
@@ -444,12 +389,17 @@ AttackPossibility AttackPossibility::evaluate(
 		}
 	}
 
+	const auto * serpentParent = dynamic_cast<const HypotheticBattle *>(state.get());
+	const bool rootMayHaveSerpents = serpentParent && serpentParent->mayHaveSerpentBindings();
 	for(const BattleHex & defHex : defenderHex)
 	{
 		if(defHex == hex) // should be impossible but check anyway
 			continue;
 
 		AttackPossibility ap(hex, defHex, attackInfo);
+		std::vector<petrifyingBloodAI::Pending> petrifyingBloodPending;
+		std::vector<uint32_t> serpentSourceDeaths;
+		auto dreadCandidate = dreadAction;
 		std::map<uint32_t, float> freezeRemainingProbability;
 		const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
 			? state->battleGetFightingHero(attackerSide) : nullptr;
@@ -534,19 +484,21 @@ AttackPossibility AttackPossibility::evaluate(
 		{
 			ap.attack.relentlessAssaultDamagePercent = state->battleGetRelentlessAssaultDamagePercent(attacker, raPrimaryTarget);
 		}
+		const bool projectsAerial = aerial || (attackInfo.shooting
+			&& !attackInfo.retaliation && aerialRetaliationAI::active(*state, defender));
 		std::shared_ptr<HypotheticBattle> fortunePreview;
+		const auto mayReleaseSerpents = [&]()
+		{
+			return rootMayHaveSerpents || (fortunePreview && fortunePreview->mayHaveSerpentBindings());
+		};
 		BattleAttackInfo potentialRetaliation(defender, attacker, 0, false);
 		potentialRetaliation.retaliation = true;
-		const bool projectsGambler = state->getBattle()
-			&& (state->getBattle()->getSylvanLuckState(BattleSide::ATTACKER).gamblerAttackAvailable()
-				|| state->getBattle()->getSylvanLuckState(BattleSide::DEFENDER).gamblerAttackAvailable());
+		const bool projectsGambler = AttackPreviewHitContext::hasGambler(*state);
 		// Keep the branch snapshot even after the current gift or round trigger is spent.
 		const bool projectsChainOfFortune = state->getBattle()
 			&& (state->getBattle()->getSylvanLuckState(BattleSide::ATTACKER).chainOfFortune
 				|| state->getBattle()->getSylvanLuckState(BattleSide::DEFENDER).chainOfFortune);
-		const bool projectsPerfectFortune = state->getBattle()
-			&& (state->getBattle()->getPerfectFortuneState(BattleSide::ATTACKER).enabled
-				|| state->getBattle()->getPerfectFortuneState(BattleSide::DEFENDER).enabled);
+		const bool projectsPerfectFortune = AttackPreviewHitContext::hasPerfectFortune(*state);
 		const bool projectsLuckyRecovery = newHorizonsCombatSkills::hasLuckyRecovery(
 			state->battleGetOwnerHero(attacker))
 			|| newHorizonsCombatSkills::hasLuckyRecovery(state->battleGetOwnerHero(defender));
@@ -558,32 +510,13 @@ AttackPossibility AttackPossibility::evaluate(
 			&& (defenderSide == BattleSide::ATTACKER || defenderSide == BattleSide::DEFENDER)
 			&& battleInfo->getBloodragePainIncrement(defenderSide) > 0;
 		const bool projectsBloodragePain = attackerSideHasBloodragePain || defenderSideHasBloodragePain;
-		const auto hasSecondChanceFor = [&state](const battle::Unit * unit, bool physicalDamage)
-		{
-			if(!unit || !state->getBattle()
-				|| !newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(unit, physicalDamage))
-				return false;
-			const auto side = state->playerToSide(state->battleGetOwner(unit));
-			return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
-				&& state->getBattle()->getSylvanLuckState(side).secondChance;
-		};
-		const bool projectsSecondChance = hasSecondChanceFor(attacker, attackInfo.physicalDamage)
-			|| hasSecondChanceFor(defender, potentialRetaliation.physicalDamage);
+		const bool projectsSecondChance = AttackPreviewHitContext::hasSecondChance(*state, attacker, attackInfo.physicalDamage)
+			|| AttackPreviewHitContext::hasSecondChance(*state, defender, potentialRetaliation.physicalDamage);
 		const bool projectsNoQuarter = !attackInfo.shooting && attackInfo.physicalDamage
 			&& (state->battleCanTriggerNoQuarter(attackInfo)
 				|| state->battleCanTriggerNoQuarter(potentialRetaliation));
-		const bool projectsDefiant = !attackInfo.shooting && attackInfo.physicalDamage
-			&& std::ranges::any_of(std::array{BattleSide::ATTACKER, BattleSide::DEFENDER}, [&state](BattleSide side)
-			{
-				const auto * hero = state->getBattle()->getSideHero(side);
-				return hero && hero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.defiant")
-					&& state->getBattle()->getArmorerDefiantState(side).availableAt(state->battleGetRound());
-			});
-		const bool projectsLuckSerendipity = std::ranges::any_of(
-			std::array{BattleSide::ATTACKER, BattleSide::DEFENDER}, [&state](BattleSide side)
-			{
-				return state->getBattle()->getLuckSerendipityState(side).enabled;
-			});
+		const bool projectsDefiant = battleDefiantAI::needsProjection(*state, attackInfo);
+		const bool projectsLuckSerendipity = AttackPreviewHitContext::hasLuckSerendipity(*state);
 		const bool projectsCleave = !attackInfo.shooting && !attackInfo.retaliation
 			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
@@ -595,6 +528,14 @@ AttackPossibility AttackPossibility::evaluate(
 	const auto manaLeechCounter = newHorizonsManaLeeches::entitlement(*state, defender, attacker,
 		attackInfo.shooting, attackInfo.physicalDamage, false);
 	const bool projectsManaLeeches = manaLeechAttack.amount > 0 || manaLeechCounter.amount > 0;
+	const bool projectsSerpentBinding = newHorizonsSerpentsEmbrace::qualifiesAttack(*state, attacker, defender,
+		attackInfo.shooting, attackInfo.physicalDamage, attackInfo.secondaryAttack || attackInfo.bracePreemptive
+			|| attackInfo.preemptiveDamagePercent > 0 || attackInfo.cleaveDamagePercent > 0)
+		|| newHorizonsSerpentsEmbrace::qualifiesAttack(*state, defender, attacker, attackInfo.shooting,
+			attackInfo.physicalDamage, false);
+	const bool projectsSoulHarvest = newHorizonsSoulHarvest::qualifies(*state, *attacker, *defender, attackInfo.physicalDamage)
+		|| newHorizonsSoulHarvest::qualifies(*state, *defender, *attacker, attackInfo.physicalDamage);
+	const bool projectsGaze = paralyzingGazeAI::needsProjection(*state, attackInfo);
 	bool manaLeechSequenceSpent = false;
 	const bool projectsMarks = attackInfo.shooting
 		&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
@@ -602,21 +543,18 @@ AttackPossibility AttackPossibility::evaluate(
 		|| (!attackInfo.shooting && newHorizonsHexOfPainAI::hasEffect(defender));
 		const bool projectsProtect = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
-		auto targets = attackPreview::targets(*state, attacker, requestedDefender,
-			defender, hex, defHex, attackInfo.shooting, longReachAttack);
+		auto targets = aerial ? aerialRetaliationAI::targets(*state, attacker, requestedDefender, defender, *aerial)
+			: attackPreview::targets(*state, attacker, requestedDefender,
+				defender, hex, defHex, attackInfo.shooting, longReachAttack);
 		auto & defenderUnits = targets.resolved;
 		auto & requestedDefenderUnits = targets.requested;
 		auto & retaliatedUnits = targets.counter;
-		const auto hasNightProwlerBonusIn = [](const battle::Units & units)
-		{
-			return std::ranges::any_of(units, [](const battle::Unit * unit)
-				{ return hasNightProwlerBonus(unit); });
-		};
+
 		const bool projectsNightProwler = crossesNightProwlerEnemy || hasNightProwlerEffect
 			|| hasNightProwlerBonus(defender) || hasNightProwlerBonus(requestedDefender)
-			|| hasNightProwlerBonusIn(defenderUnits)
-			|| hasNightProwlerBonusIn(requestedDefenderUnits)
-			|| hasNightProwlerBonusIn(retaliatedUnits);
+			|| AttackPreviewHitContext::anyNightProwler(defenderUnits)
+			|| AttackPreviewHitContext::anyNightProwler(requestedDefenderUnits)
+			|| AttackPreviewHitContext::anyNightProwler(retaliatedUnits);
 		const auto hasBastionTarget = [&state](const battle::Units & targets)
 		{
 			return std::ranges::any_of(targets, [&state](const battle::Unit * target)
@@ -684,27 +622,11 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool projectsSwampRenewal = attackInfo.physicalDamage && ordinaryAttacker
 			&& defender->defended() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
 			&& newHorizonsBulwark::hasSwampRenewal(defendedHero);
-		const auto qualifiesForMireGrip = [&state](const battle::Unit * target)
-		{
-			return target && target->defended()
-				&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(target)
-				&& newHorizonsBulwark::hasMireGrip(state->battleGetOwnerHero(target));
-		};
-		const auto canBeHitByMireGripAttack = [&](const battle::Unit * primaryTarget)
-		{
-			if(!primaryTarget)
-				return false;
-			if(qualifiesForMireGrip(primaryTarget))
-				return true;
-			if(longReachAttack)
-				return false;
-			const auto & possibleVictims = primaryTarget->unitId() == defender->unitId()
-				? defenderUnits : requestedDefenderUnits;
-			return std::ranges::any_of(possibleVictims, qualifiesForMireGrip);
-		};
 		const bool mireGripTargetCanBeHit = !attackInfo.shooting
-			&& (canBeHitByMireGripAttack(defender)
-				|| (projectsProtect && canBeHitByMireGripAttack(requestedDefender)));
+			&& (AttackPreviewHitContext::canMireGripBeHit(*state, defender, longReachAttack, defenderUnits)
+				|| (projectsProtect && AttackPreviewHitContext::canMireGripBeHit(*state,
+					requestedDefender, longReachAttack, requestedDefender->unitId() == defender->unitId()
+						? defenderUnits : requestedDefenderUnits)));
 		const auto attackerInitialState = attackInfo.physicalDamage && !attackInfo.shooting
 			&& ordinaryAttacker && mireGripTargetCanBeHit ? attacker->acquireState() : nullptr;
 		const bool projectsMireGrip = attackerInitialState
@@ -713,30 +635,20 @@ AttackPossibility AttackPossibility::evaluate(
 			|| projectsBastionOnCounterfire;
 		const bool projectsBulwarkEffects = mayReceiveBattlecraftReaction || mayReceiveBulwarkReaction || mayReflectBulwarkDamage
 			|| projectsImmovable || projectsSwampRenewal || projectsMireGrip;
-		const auto canPotentiallyTriggerLastStand = [&state](const battle::Unit * target)
-		{
-			if(!target)
-				return false;
-			const auto side = state->playerToSide(state->battleGetOwner(target));
-			return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
-				&& !state->getBattle()->armorerLastStandUsed(side)
-				&& newHorizonsArmorer::canTriggerLastStand(
-					state->battleGetOwnerHero(target), target);
-		};
 		const bool projectsLastStand = (eligibleForLastStandMainAttack || eligibleForLastStandRetaliation)
-			&& std::ranges::any_of(state->battleAliveUnits(), canPotentiallyTriggerLastStand);
+			&& AttackPreviewHitContext::hasReadyLastStand(*state);
 		const bool projectsBrace = !attackInfo.shooting
 			&& state->getBattle()->getHeroOrderState(state->playerToSide(state->battleGetOwner(defender)), HeroCommand::BRACE).has_value();
 		const bool projectsOpportunist = ap.attack.physicalDamage && !ap.attack.retaliation
 			&& newHorizonsOpportunist::hasPerk(*state, attacker);
-		if(ap.perfectMoment || projectsOpportunist || projectsManaLeeches || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+		if(dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || ap.perfectMoment || projectsOpportunist || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
 				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen || projectsLuckyRecovery || projectsBrace)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-	if(projectsManaLeeches || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+	if(dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 			|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
@@ -800,14 +712,14 @@ AttackPossibility AttackPossibility::evaluate(
 	ap.shootersBlockedDmg = bestAp.shootersBlockedDmg;
 	bool vanishKill = false;
 
-		const int totalAttacks = getAttackCount(*ap.attackerState, attackInfo.shooting, *state);
+		const int totalAttacks = aerial ? 1 : getAttackCount(*ap.attackerState, attackInfo.shooting, *state);
 
-		if(!attackInfo.shooting || projectsSkirmisher)
+		if(!aerial && (!attackInfo.shooting || projectsSkirmisher))
 			ap.attackerState->setPosition(hex);
 
 		battle::Units affectedUnits;
 
-		if(!attackInfo.shooting)
+		if(!attackInfo.shooting && !aerial)
 		{
 			auto obstacleDamage = damageCache.getObstacleDamage(hex, attacker);
 
@@ -815,7 +727,10 @@ AttackPossibility AttackPossibility::evaluate(
 			{
 				ap.attackerDamageReduce += calculateDamageReduce(nullptr, attacker, obstacleDamage, damageCache, state);
 
+				const bool serpentWasAlive = mayReleaseSerpents() && ap.attackerState->alive();
 				ap.attackerState->damage(obstacleDamage);
+				serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *ap.attackerState,
+					serpentWasAlive, serpentSourceDeaths);
 				ap.preAttackDamage += obstacleDamage;
 			}
 		}
@@ -853,6 +768,10 @@ AttackPossibility AttackPossibility::evaluate(
 		bool projectedSuppressionSpent = false;
 		bool perfectMomentStrikeRecorded = false;
 
+		const bool aerialFirst = projectsAerial && !aerial && !rangedFollowUp
+			&& aerialRetaliationAI::firstStrike(*defender);
+		if(aerialFirst)
+			aerialRetaliationAI::project(ap, fortunePreview, attacker->unitId(), defender->unitId(), damageCache);
 		for(int i = 0; i < totalAttacks; i++)
 		{
 			// Resolve Protect against the projected count before every blow. This
@@ -913,27 +832,22 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.attackerDamageReduce += calculateDamageReduce(
 					strikeDefenderState->second.get(), ap.attackerState.get(),
 					projectedPreemptiveDamage.healthLoss, damageCache, state);
-				ap.attackerState->damage(appliedPreemptiveDamage, false, preemptiveProvenance);
+				const auto preemptiveHarvest = AttackPreviewHitContext::prepareSoulHarvest(
+					*state, *strikeDefenderState->second, *ap.attackerState, preemptive.physicalDamage);
+				const bool serpentWasAlive = mayReleaseSerpents() && ap.attackerState->alive();
+				newHorizonsForestAmbush::damageFromAttack(*state, *ap.attackerState, appliedPreemptiveDamage,
+					preemptiveProvenance);
+				serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *ap.attackerState,
+					serpentWasAlive, serpentSourceDeaths);
+				AttackPreviewHitContext::finishSoulHarvest(preemptiveHarvest,
+					*strikeDefenderState->second, *ap.attackerState);
 				if(lastStand.triggered && !request->brace)
 					hitContext.applyLastStandDefend(ap.attackerState.get(), request->reactiveForLastStand);
 				if(fortunePreview)
 				{
-					FortuneStrikeProjection preemptiveStrike;
-					preemptiveStrike.perfectFortune = preemptivePerfectFortune;
-					preemptiveStrike.perfectFortuneSide = preemptivePerfectFortuneSide;
-					preemptiveStrike.attackerId = strikeDefenderState->second->unitId();
-					preemptiveStrike.defenderId = ap.attackerState->unitId();
-					preemptiveStrike.retaliation = preemptive.retaliation;
-					preemptiveStrike.bracePreemptive = request->brace;
-					preemptiveStrike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
-						preemptive.attacker, preemptive.physicalDamage,
-						preemptive.shooting && preemptive.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
-					preemptiveStrike.damageProvenance = preemptiveProvenance;
-					preemptiveStrike.hits.emplace_back(ap.attackerState->unitId(), requestedPreemptiveDamage);
-					preemptiveStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), appliedPreemptiveDamage);
-					hitContext.captureAndProjectFortuneStrike(preemptive, preemptiveStrike.hits,
-						strikeDefenderState->second.get(), preemptiveStrike);
-					ap.fortuneStrikes.push_back(std::move(preemptiveStrike));
+					ap.fortuneStrikes.push_back(hitContext.capturePreemptiveStrike(preemptive, *strikeDefenderState->second,
+						requestedPreemptiveDamage, appliedPreemptiveDamage,
+						preemptivePerfectFortune, preemptivePerfectFortuneSide, request->brace, preemptiveProvenance));
 				}
 				if(request->brace && fortunePreview)
 				{
@@ -985,8 +899,15 @@ AttackPossibility AttackPossibility::evaluate(
 						ap.attackerState.get(), appliedPreemptiveDamage, preemptiveProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(strikeDefenderState->second.get(),
 						ap.attackerState.get(), projectedPreemptiveDamage.healthLoss, damageCache, state);
-					ap.attackerState->damage(appliedPreemptiveDamage, false,
-						preemptiveProvenance);
+					const auto preemptiveHarvest = AttackPreviewHitContext::prepareSoulHarvest(
+						*state, *strikeDefenderState->second, *ap.attackerState, preemptive.physicalDamage);
+					const bool serpentWasAlive = mayReleaseSerpents() && ap.attackerState->alive();
+					newHorizonsForestAmbush::damageFromAttack(*state, *ap.attackerState, appliedPreemptiveDamage,
+					preemptiveProvenance);
+					serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *ap.attackerState,
+						serpentWasAlive, serpentSourceDeaths);
+					AttackPreviewHitContext::finishSoulHarvest(preemptiveHarvest,
+						*strikeDefenderState->second, *ap.attackerState);
 					if(lastStand.triggered)
 						hitContext.applyLastStandDefend(ap.attackerState.get(), preemptive.retaliation);
 					if(fortunePreview && hasNightProwlerBonus(strikeDefenderState->second.get()))
@@ -1002,27 +923,19 @@ AttackPossibility AttackPossibility::evaluate(
 						ap.attackerState->armorerBastionRound = currentRound;
 					if(fortunePreview)
 					{
-						FortuneStrikeProjection preemptiveStrike;
-						preemptiveStrike.perfectFortune = preemptivePerfectFortune;
-						preemptiveStrike.perfectFortuneSide = preemptivePerfectFortuneSide;
-						preemptiveStrike.attackerId = strikeDefenderState->second->unitId();
-						preemptiveStrike.defenderId = ap.attackerState->unitId();
-						preemptiveStrike.retaliation = true;
-						preemptiveStrike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
-							preemptive.attacker, preemptive.physicalDamage,
-							preemptive.shooting && preemptive.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
-						preemptiveStrike.damageProvenance = preemptiveProvenance;
-						preemptiveStrike.hits.emplace_back(ap.attackerState->unitId(), requestedPreemptiveDamage);
-						preemptiveStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), appliedPreemptiveDamage);
-						hitContext.captureAndProjectFortuneStrike(preemptive, preemptiveStrike.hits,
-							strikeDefenderState->second.get(), preemptiveStrike);
-						// Preserve the reaction's position in the resolved sequence for the
-						// detached branch replay, including a zero-damage Luck result.
-						ap.fortuneStrikes.push_back(std::move(preemptiveStrike));
+						// Preserve this reaction's position, including a zero-damage Luck result.
+						ap.fortuneStrikes.push_back(hitContext.capturePreemptiveStrike(preemptive, *strikeDefenderState->second,
+							requestedPreemptiveDamage, appliedPreemptiveDamage,
+							preemptivePerfectFortune, preemptivePerfectFortuneSide, false, preemptiveProvenance));
 					}
 				}
 			}
 			if(!ap.attackerState->alive() || ap.attackerState->armorerLastStandEndedActivation)
+				break;
+			if(aerial && !newHorizonsAerialSupremacy::matches(*fortunePreview, *aerial))
+				break;
+			if(!dreadCavalryAI::acceptsBlow(fortunePreview, dreadCandidate,
+				ap.attackerState.get(), strikeDefenderState->second.get()))
 				break;
 			const int relentlessAssaultDamagePercent = ordinaryRelentlessAssaultAttack
 				? luckState.battleGetRelentlessAssaultDamagePercent(
@@ -1033,52 +946,31 @@ AttackPossibility AttackPossibility::evaluate(
 			BattleAttackInfo perfectFortuneAttack = attackInfo;
 			perfectFortuneAttack.attacker = ap.attackerState.get();
 			perfectFortuneAttack.defender = strikeDefenderState->second.get();
-			strike.perfectFortune = luckState.battleCanTriggerPerfectFortune(perfectFortuneAttack);
-			strike.perfectFortuneSide = luckState.playerToSide(luckState.battleGetActionController(perfectFortuneAttack.attacker));
-		strike.attackerId = ap.attackerState->unitId();
-		strike.defenderId = strikeDefender->unitId();
+			AttackPreviewHitContext::capturePrimaryFortune(strike, luckState, perfectFortuneAttack, *strikeDefender);
+		const bool strikeGaze = fortunePreview && paralyzingGazeAI::qualifies(*fortunePreview, perfectFortuneAttack);
+		strike.paralyzingGazeAdmitted = strikeGaze;
+		const bool strikeSerpentBinding = fortunePreview
+			&& newHorizonsSerpentsEmbrace::qualifiesAttack(*fortunePreview, ap.attackerState.get(),
+				strikeDefenderState->second.get(), attackInfo.shooting, attackInfo.physicalDamage,
+				attackInfo.secondaryAttack || attackInfo.bracePreemptive || attackInfo.preemptiveDamagePercent > 0
+					|| attackInfo.cleaveDamagePercent > 0);
 		const auto strikeManaLeech = fortunePreview
 			? newHorizonsManaLeeches::entitlement(*fortunePreview, ap.attackerState.get(),
 				strikeDefenderState->second.get(), attackInfo.shooting, attackInfo.physicalDamage,
 				attackInfo.secondaryAttack || attackInfo.bracePreemptive || attackInfo.preemptiveDamagePercent > 0
 					|| attackInfo.cleaveDamagePercent > 0)
 			: newHorizonsManaLeeches::Entitlement{};
-		strike.shooting = attackInfo.shooting;
-		strike.retaliation = attackInfo.retaliation;
-		strike.damageProvenance = battleAIDamageProvenance(ap.attackerState.get(), attackInfo.physicalDamage);
-		strike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
-			ap.attackerState.get(), attackInfo.physicalDamage,
-			attackInfo.shooting && ap.attackerState->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
-		strike.perfectMoment = !rangedFollowUp && ap.perfectMoment && i == 0;
-		// The selectable Master Gunner continuation is a second shot inside the
-		// same activation. Keep per-activation strike histories (e.g. Hex of Pain)
-		// from treating it as a fresh first attack.
-		strike.attackIndex = rangedFollowUp ? 1 : (attackInfo.retaliation ? 0 : i);
+		AttackPreviewHitContext::classifyPrimaryStrike(strike, perfectFortuneAttack,
+			!rangedFollowUp && ap.perfectMoment && i == 0,
+			rangedFollowUp ? 1 : (attackInfo.retaliation ? 0 : i), aerial);
 		strike.protectIntercepted = projectsProtect
 				&& strikeDefender->unitId() != requestedDefender->unitId();
 			// The authoritative server consumes immediately after resolving the
 			// redirected recipient, before reactions or damage. Mirror that timing
 			// even if this projected blow later produces no damage events.
 			if(strike.protectIntercepted)
-			{
-				if(fortunePreview)
-				{
-					auto order = fortunePreview->battleGetHeroOrderState(protectSide, HeroCommand::PROTECT);
-					if(order && order->secondaryTargetUnitId == requestedDefender->unitId()
-						&& order->primaryTargetUnitId == strikeDefender->unitId()
-						&& order->protectInterceptionsConsumed
-							< fortunePreview->battleHeroOrderProtectInterceptionLimit(protectSide)
-						&& !order->protectBroken)
-					{
-						++order->protectInterceptionsConsumed;
-						fortunePreview->setHeroOrderState(protectSide, order);
-					}
-				}
-				else if(protectOrder && !protectOrder->protectBroken
-					&& projectedProtectInterceptionsConsumed
-						< state->battleHeroOrderProtectInterceptionLimit(protectSide))
-					++projectedProtectInterceptionsConsumed;
-			}
+				attackPreview::consumeProtect(fortunePreview, *state, protectSide,
+					requestedDefender, strikeDefender, protectOrder, projectedProtectInterceptionsConsumed);
 			strike.relentlessAssaultEligible = ordinaryRelentlessAssaultAttack
 				&& !strikeDefender->isGhost() && !strikeDefender->isTurret()
 				&& !strikeDefender->hasBonusOfType(BonusType::SIEGE_WEAPON)
@@ -1092,6 +984,7 @@ AttackPossibility AttackPossibility::evaluate(
 			std::vector<std::pair<std::shared_ptr<battle::CUnitState>, int64_t>> pendingRetaliationDamage;
 			std::set<uint32_t> pendingLastStandDefends;
 			std::vector<const battle::Unit *> destroyedEnemyUnits;
+			int64_t harvestCasualties = 0;
 
 			for(auto u : *strikeDefenderUnits)
 			{
@@ -1188,11 +1081,23 @@ AttackPossibility AttackPossibility::evaluate(
 				const int32_t moraleActivations = appliesNoQuarter
 					? noQuarterMoraleActivations(*state, u->unitId()) : 0;
 
+				const bool harvestEligible = newHorizonsSoulHarvest::qualifies(*state,
+					*ap.attackerState, *defenderState, victimAttack.physicalDamage);
 				const bool wasAlive = defenderState->alive();
+				const int32_t harvestCountBefore = harvestEligible ? defenderState->getCount() : 0;
 				strike.hits.emplace_back(u->unitId(), incomingDamage);
-				defenderState->damage(damageToApply, false,
+				newHorizonsForestAmbush::damageFromAttack(*state, *defenderState, damageToApply,
 					damageProvenance);
 				strike.resolvedHits.emplace_back(u->unitId(), damageToApply);
+				petrifyingBloodAI::capture(state, *ap.attackerState, *defenderState, damageToApply,
+					victimAttack.shooting, victimAttack.physicalDamage, petrifyingBloodPending);
+				serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *defenderState,
+					wasAlive, serpentSourceDeaths);
+				if(fortunePreview && u->unitId() == strike.defenderId)
+					fortunePreview->projectSerpentBinding(strike.attackerId, strike.defenderId,
+						damageToApply, strikeSerpentBinding);
+				if(fortunePreview && u->unitId() == strikeDefender->unitId())
+					paralyzingGazeAI::apply(*fortunePreview, strike.attackerId, strike.defenderId, damageToApply, strikeGaze);
 				// Keep damage and probabilistic control separate. A forecast never
 				// installs a guaranteed Freeze or spends its application-round stamp.
 				if(defenderState->alive() && (freezeCanApply || shattersFrozen))
@@ -1243,26 +1148,15 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 				if(appliesNoQuarter && defenderState->alive())
 				{
-					if(!projectDefiant(*fortunePreview, victimAttack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER, strike))
-					{
-						fortunePreview->getForUpdate(u->unitId())->applyNoQuarter(moraleActivations, true);
-						strike.noQuarterTargets.emplace_back(u->unitId(), moraleActivations);
-					}
+					battleDefiantAI::applyNoQuarterOrDefiant(*fortunePreview, victimAttack,
+						u->unitId(), moraleActivations, strike);
 				}
-				bool ignoredInnate = false;
-				bool ignoredShroud = false;
-				if(!frozenBeforeHit && fortunePreview && i == 0 && !attackInfo.shooting && !longReachAttack
-					&& u->unitId() == strikeDefender->unitId())
-				{
-					if(counterAttacksBlocked)
-						ignoredInnate = projectDefiant(*fortunePreview, victimAttack,
-							newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK, strike);
-					if(!defenderState->hasBonus(firstStrikeSelector) && fortunePreview->battleShroudDeniesRetaliation(victimAttack))
-						ignoredShroud = projectDefiant(*fortunePreview, victimAttack,
-							newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD, strike);
-				}
+				const auto [ignoredInnate, ignoredShroud] = battleDefiantAI::projectMeleeDenials(
+					fortunePreview.get(), victimAttack, counterAttacksBlocked,
+					!aerial && !frozenBeforeHit && fortunePreview && i == 0 && !attackInfo.shooting && !longReachAttack
+						&& u->unitId() == strikeDefender->unitId(), firstStrikeSelector, strike);
 
-				if(!frozenBeforeHit && i == 0 && !attackInfo.shooting && !longReachAttack && u->unitId() == strikeDefender->unitId()
+				if(!aerial && !frozenBeforeHit && i == 0 && !attackInfo.shooting && !longReachAttack && u->unitId() == strikeDefender->unitId()
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate()
 					&& (!counterAttacksBlocked || (ignoredInnate && !fortunePreview->battleHasMagicalRetaliationBlock(ap.attackerState.get())))
 					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector) || ignoredShroud)
@@ -1316,6 +1210,9 @@ AttackPossibility AttackPossibility::evaluate(
 				const bool mayRebirth = !defenderState->isClone()
 					&& defenderState->valOfBonuses(BonusType::REBIRTH) > 0
 					&& defenderState->canCast() && defenderState->getPhantomInitialIntegrity() == 0;
+				if(harvestEligible)
+					harvestCasualties += newHorizonsSoulHarvest::casualtiesAfterHit(*defenderState, harvestCountBefore, mayRebirth);
+				dreadCavalryAI::observeDeath(fortunePreview ? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state, dreadCandidate, *ap.attackerState, *defenderState, wasAlive, mayRebirth);
 				if(wasAlive && !defenderState->alive()
 					&& !mayRebirth
 					&& state->battleMatchOwner(ap.attackerState.get(), u))
@@ -1328,6 +1225,8 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.defenderDead = !defenderState->alive();
 				}
 			}
+			ap.soulHarvestHealthGained += selectedAttackReceipt::grantSoulHarvest(
+				*ap.attackerState, harvestCasualties);
 			// The pair applies to this complete BattleAttackInfo, including all
 			// collateral targets, then expires before the next own strike.
 			if(i == 0 && hasNightProwlerBonus(ap.attackerState.get())
@@ -1361,13 +1260,21 @@ AttackPossibility AttackPossibility::evaluate(
 				{
 					auto actualReflectedDamage = reflectedDamage;
 					auto * reflectedFrom = defenderStates.at(strikeDefender->unitId()).get();
-					const auto reflectedProvenance = battleAIDamageProvenance(reflectedFrom, true);
+					if(aerial)
+					{
+						strike.aerialReflectionDamage = reflectedDamage;
+					}
+					const auto reflectedProvenance = aerial ? battle::DamageProvenance::PHYSICAL_CREATURE
+						: battleAIDamageProvenance(reflectedFrom, true);
 					const auto projectedReflection = battleAIProjectDamage(
 						ap.attackerState.get(), actualReflectedDamage, reflectedProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(reflectedFrom,
 						ap.attackerState.get(), projectedReflection.healthLoss, damageCache, state);
+					const bool serpentWasAlive = mayReleaseSerpents() && ap.attackerState->alive();
 					ap.attackerState->damage(actualReflectedDamage, false,
 						reflectedProvenance);
+					serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *ap.attackerState,
+						serpentWasAlive, serpentSourceDeaths);
 					const auto * bulwarkHero = state->battleGetOwnerHero(reflectedFrom);
 					if(!attackInfo.shooting && newHorizonsBulwark::hasToxicSpines(bulwarkHero)
 						&& reflectedFrom->bulwarkToxicSpinesRound != currentRound
@@ -1421,7 +1328,7 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.attackerState->archeryRainOfArrowsActivationSerial = currentActivationSerial;
 			// The trigger runs after the attacker commits this blow's updated
 			// resource state, before responses and follow-up attacks.
-			ap.attackerState->afterAttack(attackInfo.shooting, false, attackInfo.physicalDamage);
+			ap.attackerState->afterAttack(attackInfo.shooting, aerial.has_value(), attackInfo.physicalDamage);
 			int64_t actualStrikeDamage = 0;
 			for(const auto & hit : strike.resolvedHits)
 				actualStrikeDamage += std::max<int64_t>(0, hit.second);
@@ -1489,8 +1396,11 @@ AttackPossibility AttackPossibility::evaluate(
 						ap.attackerState.get(), counterfireDamage, counterfireProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(counterShooter.get(), ap.attackerState.get(),
 						projectedCounterfireDamage.healthLoss, damageCache, state);
-					ap.attackerState->damage(counterfireDamage, false,
-						counterfireProvenance);
+					const bool serpentWasAlive = mayReleaseSerpents() && ap.attackerState->alive();
+					newHorizonsForestAmbush::damageFromAttack(*state, *ap.attackerState, counterfireDamage,
+					counterfireProvenance);
+					serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *ap.attackerState,
+						serpentWasAlive, serpentSourceDeaths);
 					if(lastStand.triggered)
 						hitContext.applyLastStandDefend(ap.attackerState.get(), counterfire.retaliation);
 					if(consumesBastion)
@@ -1617,8 +1527,12 @@ AttackPossibility AttackPossibility::evaluate(
 					cleaveAttack.attackerPos = ap.attackerState->getPosition();
 					cleaveAttack.defenderPos = targetState->getPosition();
 					cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+					cleaveAttack.dreadCavalryDamagePercent = attackInfo.dreadCavalryDamagePercent;
 					const bool cleaveTriggersVanish = projectsVanish
 						&& luckState.battleIsShroudFlankingAttack(cleaveAttack);
+					const bool cleaveHarvestEligible = newHorizonsSoulHarvest::qualifies(*state,
+						*ap.attackerState, *targetState, cleaveAttack.physicalDamage);
+					const int32_t cleaveHarvestCountBefore = cleaveHarvestEligible ? targetState->getCount() : 0;
 					const bool cleaveMayRebirth = !targetState->isClone() && targetState->canCast()
 						&& targetState->valOfBonuses(BonusType::REBIRTH) > 0
 						&& targetState->getPhantomInitialIntegrity() == 0;
@@ -1655,8 +1569,17 @@ AttackPossibility AttackPossibility::evaluate(
 					cleave->damageProvenance = cleaveProvenance;
 					cleave->attackIndex = 0;
 					cleave->cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+					cleave->dreadCavalryDamagePercent = attackInfo.dreadCavalryDamagePercent;
 					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
-					targetState->damage(cleaveDamageToApply, false, cleave->damageProvenance);
+					const bool cleaveWasAlive = targetState->alive();
+					const bool serpentWasAlive = mayReleaseSerpents() && cleaveWasAlive;
+					newHorizonsForestAmbush::damageFromAttack(*state, *targetState, cleaveDamageToApply,
+						cleave->damageProvenance);
+					petrifyingBloodAI::capture(state, *ap.attackerState, *targetState, cleaveDamageToApply,
+						false, cleaveAttack.physicalDamage, petrifyingBloodPending);
+					dreadCavalryAI::observeDeath(*fortunePreview, dreadCandidate, *ap.attackerState, *targetState, cleaveWasAlive, cleaveMayRebirth);
+					serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *targetState,
+						serpentWasAlive, serpentSourceDeaths);
 					if(cleaveTriggersVanish && !targetState->alive() && !cleaveMayRebirth)
 						vanishKill = true;
 					if(lastStand.triggered)
@@ -1669,6 +1592,10 @@ AttackPossibility AttackPossibility::evaluate(
 						refreshEvasiveShroud(ap.attackerState->unitId());
 					if(consumesBastion)
 						targetState->armorerBastionRound = currentRound;
+					if(cleaveHarvestEligible)
+						ap.soulHarvestHealthGained += selectedAttackReceipt::grantSoulHarvest(
+							*ap.attackerState, newHorizonsSoulHarvest::casualtiesAfterHit(
+								*targetState, cleaveHarvestCountBefore, cleaveMayRebirth));
 					cleave->resolvedHits.emplace_back(targetState->unitId(), cleaveDamageToApply);
 					hitContext.captureAndProjectFortuneStrike(cleaveAttack, cleave->hits,
 						ap.attackerState.get(), *cleave);
@@ -1679,11 +1606,8 @@ AttackPossibility AttackPossibility::evaluate(
 							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
 					{
 						const int32_t moraleActivations = noQuarterMoraleActivations(*state, targetState->unitId());
-						if(!projectDefiant(*fortunePreview, cleaveAttack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER, *cleave))
-						{
-							fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations, true);
-							cleave->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
-						}
+						battleDefiantAI::applyNoQuarterOrDefiant(*fortunePreview, cleaveAttack,
+							targetState->unitId(), moraleActivations, *cleave);
 					}
 					if(targetState->unitId() == defender->unitId())
 						ap.defenderDead = !targetState->alive();
@@ -1701,6 +1625,15 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 			}
 
+			if(retaliation && fortunePreview && ap.attackerState->alive()
+				&& defenderStates.at(retaliation->attackerId)->alive()
+				&& paralyzingGazeAI::cancel(*fortunePreview, attacker->unitId(), retaliation->attackerId,
+					false, strike.gazeConsumption))
+			{
+				retaliation.reset();
+				pendingRetaliationDamage.clear();
+				pendingLastStandDefends.clear();
+			}
 			// The outer counterattack occurs only if its original defender survives
 			// the primary attack's Cleave follow-up. Drop its damage, score and strike
 			// metadata together when Cleave destroys that stack.
@@ -1796,6 +1729,10 @@ AttackPossibility AttackPossibility::evaluate(
 					defenderStates.at(defender->unitId()).get(), 0, true);
 				ap.effectPreview->projectRangedMarkStrike(projectedAttack, strike.resolvedHits);
 			}
+			const bool counterSerpentBinding = retaliation && fortunePreview
+				&& newHorizonsSerpentsEmbrace::qualifiesAttack(*fortunePreview,
+					defenderStates.at(retaliation->attackerId).get(),
+					fortunePreview->battleGetUnitByID(retaliation->defenderId), false, attackInfo.physicalDamage, false);
 			const auto counterManaLeech = retaliation && fortunePreview
 				? newHorizonsManaLeeches::entitlement(*fortunePreview,
 					defenderStates.at(retaliation->attackerId).get(),
@@ -1803,8 +1740,14 @@ AttackPossibility AttackPossibility::evaluate(
 				: newHorizonsManaLeeches::Entitlement{};
 			int64_t retaliationActualDamage = 0;
 			std::vector<std::pair<uint32_t, int64_t>> retaliationActualHits;
+			int64_t counterHarvestCasualties = 0;
 			for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
 			{
+				const bool counterHarvestEligible = retaliation
+					&& newHorizonsSoulHarvest::qualifies(*state, *defenderStates.at(retaliation->attackerId),
+						*targetState, attackInfo.physicalDamage);
+				const bool counterMayRebirth = counterHarvestEligible && targetState->valOfBonuses(BonusType::REBIRTH) > 0 && targetState->canCast();
+				const int32_t counterHarvestCountBefore = counterHarvestEligible ? targetState->getCount() : 0;
 				const bool counterCanFreeze = retaliation && targetState->unitId() == retaliation->defenderId
 					&& newHorizonsFrozen::isFreezingTouchAttacker(*defenderStates.at(retaliation->attackerId), state->getBattle()->getMagicRules())
 					&& newHorizonsFrozen::canApply(*targetState, currentRound);
@@ -1832,8 +1775,18 @@ AttackPossibility AttackPossibility::evaluate(
 						retaliationAttack.attacker, retaliationAttack.physicalDamage)
 						&& luckState.battleHasBastionProtection(targetState.get());
 				}
-				targetState->damage(actualDamage, false,
+				const bool targetWasAlive = mayReleaseSerpents() && targetState->alive();
+				newHorizonsForestAmbush::damageFromAttack(*state, *targetState, actualDamage,
 					retaliation ? retaliation->damageProvenance : battle::DamageProvenance::OTHER);
+				if(retaliation)
+					petrifyingBloodAI::capture(state, *defenderStates.at(retaliation->attackerId), *targetState,
+						actualDamage, false, retaliation->damageProvenance == battle::DamageProvenance::PHYSICAL_CREATURE,
+						petrifyingBloodPending);
+				serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *targetState,
+					targetWasAlive, serpentSourceDeaths);
+				if(retaliation && fortunePreview && targetState->unitId() == retaliation->defenderId)
+					fortunePreview->projectSerpentBinding(retaliation->attackerId, retaliation->defenderId,
+						actualDamage, counterSerpentBinding);
 				if(retaliation && fortunePreview)
 				{
 					const auto retaliatorState = defenderStates.at(retaliation->attackerId);
@@ -1857,6 +1810,8 @@ AttackPossibility AttackPossibility::evaluate(
 					refreshEvasiveShroud(retaliation->attackerId);
 				if(consumesBastion)
 					targetState->armorerBastionRound = currentRound;
+				if(counterHarvestEligible)
+					counterHarvestCasualties += newHorizonsSoulHarvest::casualtiesAfterHit(*targetState, counterHarvestCountBefore, counterMayRebirth);
 				retaliationActualHits.emplace_back(targetState->unitId(), actualDamage);
 				if(retaliation)
 					retaliation->resolvedHits.emplace_back(targetState->unitId(), actualDamage);
@@ -1872,17 +1827,16 @@ AttackPossibility AttackPossibility::evaluate(
 							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
 					{
 						const int32_t moraleActivations = noQuarterMoraleActivations(*state, targetState->unitId());
-						if(!projectDefiant(*fortunePreview, retaliationAttack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER, *retaliation))
-						{
-							fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations, true);
-							retaliation->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
-						}
+						battleDefiantAI::applyNoQuarterOrDefiant(*fortunePreview, retaliationAttack,
+							targetState->unitId(), moraleActivations, *retaliation);
 					}
 				}
 				if(retaliation && (targetState->unitId() == retaliation->defenderId
 					|| state->getBattle()->getLuckRollRules().affectsAllTargets))
 					retaliationActualDamage += actualDamage;
 			}
+			if(retaliation)
+				newHorizonsSoulHarvest::grant(*defenderStates.at(retaliation->attackerId), counterHarvestCasualties);
 			if(retaliation && !retaliation->hits.empty())
 			{
 				auto retaliatorState = defenderStates.at(retaliation->attackerId);
@@ -1965,6 +1919,8 @@ AttackPossibility AttackPossibility::evaluate(
 					fortune.recordStrike(attacker->unitId(), true, false);
 				fortunePreview->setSylvanLuckState(attackerSide, fortune);
 			}
+			if(projectsAerial && !aerial && !aerialFirst && i == 0)
+				aerialRetaliationAI::project(ap, fortunePreview, attacker->unitId(), defender->unitId(), damageCache);
 			if(endedActiveActivationByLastStand)
 				break;
 		}
@@ -2016,6 +1972,7 @@ AttackPossibility AttackPossibility::evaluate(
 			ap.attackerState->pursuitMovementRemaining = std::max(ap.attackerState->pursuitMovementRemaining,
 				newHorizonsShroud::vanishMovementAllowance(ap.attackerState->getMovementRange(0)));
 		}
+		dreadCavalryAI::finish(ap, dreadCandidate, vanishKill);
 		if(projectsRainOfArrows && projectedRainPrimaryDamage > 0 && fortunePreview)
 		{
 			const auto adjacentToPrimary = [&rainPrimaryFootprint](const battle::Unit * candidate)
@@ -2064,8 +2021,11 @@ AttackPossibility AttackPossibility::evaluate(
 					secondaryState.get(), actualDamage, rainProvenance);
 				ap.defenderDamageReduce += calculateDamageReduce(ap.attackerState.get(), secondaryState.get(),
 					projectedRainDamage.healthLoss, damageCache, state);
-				secondaryState->damage(actualDamage, false,
+				const bool serpentWasAlive = mayReleaseSerpents() && secondaryState->alive();
+				newHorizonsForestAmbush::damageFromAttack(*state, *secondaryState, actualDamage,
 					rainProvenance);
+				serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *secondaryState,
+					serpentWasAlive, serpentSourceDeaths);
 				if(!vstd::contains_if(ap.affectedUnits, [secondaryState](const auto & affected)
 					{ return affected->unitId() == secondaryState->unitId(); }))
 					ap.affectedUnits.push_back(std::move(secondaryState));
@@ -2079,6 +2039,11 @@ AttackPossibility AttackPossibility::evaluate(
 			ap.dest.toInt(), ap.from.toInt(), (int)ap.affectedUnits.size(),
 			ap.defenderDamageReduce, ap.attackerDamageReduce, ap.collateralDamageReduce, ap.shootersBlockedDmg);
 #endif
+
+		if(serpentParent && !serpentSourceDeaths.empty())
+			serpentBindingAI::completeDeathPreview(state, *serpentParent, ap, serpentSourceDeaths, fortunePreview);
+
+		petrifyingBloodAI::complete(ap, state, petrifyingBloodPending, aerial.has_value(), damageCache);
 
 		if(!bestAp.dest.isValid() || ap.attackValue() > bestAp.attackValue())
 			bestAp = std::move(ap);

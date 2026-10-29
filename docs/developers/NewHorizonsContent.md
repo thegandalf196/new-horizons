@@ -19,6 +19,19 @@ hand-editing generated metadata. Confirm actual tool options before invocation.
 Canonical source identity and regeneration consistency are content gates, not
 gameplay certification.
 
+### Initial Leadership and generated recruitment
+
+Fresh `config/newHorizonsCapabilities.json` captures restore all eighteen class
+`classProfiles.base` values from before the 0.87.1 starting-Leadership increase.
+`classProfiles.perLevel`, the global Leadership scale, creature requirements and
+upgrade parity are unchanged. Existing hero captures retain their actual stored
+profiles; do not rewrite them from the installed registry during load.
+
+The independent neutral-army and recruitment-growth settings, including initial
+recruitment supply, use the [army generation runtime contract](NewHorizonsNeutralArmies.md).
+Regenerate module metadata after changing authored captures; a generated copy must
+agree with its registry rather than silently overriding it with stale settings.
+
 ### Perk-offer policy2
 
 `offerWeightPolicyVersion: 2` selects the compressed parent-first lottery.

@@ -730,5 +730,8 @@
 	"MINIMUM_MORALE" : {},
 	"SPELL_DAMAGE_REDUCTION_BASIS_POINTS" : {
 		"description" : "Independent magical damage reduction in basis points (100 = 1%)"
+	},
+	"PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS" : {
+		"description" : "Physical resistance: ${val.basisPoints} less physical damage."
 	}
 }

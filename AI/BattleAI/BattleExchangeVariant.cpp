@@ -8,9 +8,19 @@
  *
  */
 #include "StdInc.h"
+#include "DreadCavalryProjection.h"
+#include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "AerialRetaliationProjection.h"
 #include "BracePrimaryState.h"
 #include "BattleExchangeVariant.h"
+#include "PetrifyingBloodValue.h"
+#include "AttackPreviewHitContext.h"
+#include "../../lib/battle/NewHorizonsSoulHarvest.h"
 #include "../../lib/battle/NewHorizonsManaLeeches.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
+#include "../../lib/battle/NewHorizonsParalyzingGaze.h"
+#include "ParalyzingGazeProjection.h"
+#include "DefiantDenialProjection.h"
 #include "BattleShroudStrike.h"
 #include "PrimaryFortuneReceipt.h"
 #include "DamageCacheAdmission.h"
@@ -160,30 +170,6 @@ decltype(auto) measureMovementExchange(BattleMovementTiming * timing, Callable &
 	return std::forward<Callable>(action)();
 }
 
-bool projectDefiant(HypotheticBattle & battle, const BattleAttackInfo & attack,
-	newHorizonsArmorer::DefiantDenialCause cause)
-{
-	if(!battle.battleCanUseDefiant(attack, cause))
-		return false;
-	const auto side = battle.playerToSide(battle.battleGetActionController(attack.defender));
-	auto state = battle.getArmorerDefiantState(side);
-	if(!state.consumeAt(battle.battleGetRound()))
-		return false;
-	battle.setArmorerDefiantState(side, state);
-	return true;
-}
-
-void replayDefiant(HypotheticBattle & battle, const DefiantDenialProjection & receipt)
-{
-	if(receipt.round != battle.battleGetRound()
-		|| (receipt.side != BattleSide::ATTACKER && receipt.side != BattleSide::DEFENDER))
-		throw std::runtime_error("Invalid projected Defiant consumption receipt");
-	auto state = battle.getArmorerDefiantState(receipt.side);
-	if(!state.consumeAt(receipt.round))
-		throw std::runtime_error("Projected Defiant allowance was already consumed");
-	battle.setArmorerDefiantState(receipt.side, state);
-}
-
 bool hasNightProwlerBonus(const battle::Unit * unit)
 {
 	return unit && unit->hasBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
@@ -197,7 +183,7 @@ bool projectNoQuarterAfterHit(HypotheticBattle & battle, const BattleAttackInfo 
 		|| !newHorizonsOffense::belowNoQuarterThreshold(
 			target.getAvailableHealth(), battle::getMaximumHealth(target)))
 		return false;
-	if(projectDefiant(battle, attack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER))
+	if(battleDefiantAI::project(battle, attack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER))
 		return false;
 
 	const int32_t moraleActivations = battle.getBattle()->getActiveStackID()
@@ -296,101 +282,18 @@ void spendShadowAssault(HypotheticBattle & battle, uint32_t targetUnitId, Battle
 }
 }
 
-void BattleExchangeVariant::accountForNewElementalRebirthSpawns(
-	const std::set<uint32_t> & idsBefore, const battle::Unit * referenceActor,
-	const bool referenceActorIsOurs, DamageCache & damageCache,
-	const std::shared_ptr<HypotheticBattle> & hb)
-{
-	if(!referenceActor)
-		return;
-
-	for(const auto unitId : hb->getElementalRebirthSpawnUnitIds())
-	{
-		if(idsBefore.contains(unitId) || !scoredElementalRebirthSpawnUnitIds.insert(unitId).second)
-			continue;
-
-		const auto * spawned = hb->battleGetUnitByID(unitId);
-		if(!spawned || !spawned->alive() || !spawned->unitType() || spawned->getAvailableHealth() <= 0)
-			continue;
-
-		const auto enemies = hb->battleGetUnitsIf([&](const battle::Unit * candidate)
-		{
-			return candidate && candidate->alive() && candidate->unitType()
-				&& candidate->getPosition().isValid()
-				&& !hb->battleMatchOwner(spawned, candidate);
-		});
-		if(enemies.empty())
-			continue;
-
-		const auto fullHealth = static_cast<int64_t>(spawned->getCount()) * spawned->getMaxHealth();
-		if(fullHealth <= 0)
-			continue;
-
-		// Keep this in the exchange's damage-reduction/DPS units: scale one ordinary
-		// projected attack by the exact surviving HP fraction. This is a bounded
-		// representative-target approximation, not a full initiative-branch forecast.
-		const auto projectedDamage = std::max<int64_t>(0,
-			damageCache.getOriginalDamage(spawned, enemies.front(), hb));
-		const float spawnValue = static_cast<float>(projectedDamage)
-			* static_cast<float>(spawned->getAvailableHealth()) / static_cast<float>(fullHealth);
-		const bool sameSideAsReference = spawned->unitSide() == referenceActor->unitSide();
-		const bool spawnIsOurs = referenceActorIsOurs ? sameSideAsReference : !sameSideAsReference;
-		if(spawnIsOurs)
-			dpsScore.enemyDamageReduce += spawnValue;
-		else
-			dpsScore.ourDamageReduce += spawnValue;
-	}
-}
-
-void BattleExchangeVariant::accountForNewPrimalBurstHits(const size_t firstNewHit,
-	const PlayerColor referenceController, const bool referenceActorIsOurs,
-	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb)
-{
-	const auto & hits = hb->getProjectedPrimalBurstHits();
-	for(size_t index = firstNewHit; index < hits.size(); ++index)
-	{
-		const auto & hit = hits[index];
-		if(!hit.preHitTarget || hit.actualDamage <= 0)
-			continue;
-		const auto value = AttackPossibility::calculateDamageReduce(nullptr, hit.preHitTarget.get(),
-			static_cast<uint64_t>(hit.actualDamage), damageCache, hb);
-		const bool targetSharesReferenceController = hit.targetController == referenceController;
-		const bool targetIsOurs = targetSharesReferenceController == referenceActorIsOurs;
-		if(targetIsOurs)
-			dpsScore.ourDamageReduce += value;
-		else
-			dpsScore.enemyDamageReduce += value;
-	}
-}
-
 MoveTarget::MoveTarget()
 	: positions(), cachedAttack(), score(EvaluationResult::INEFFECTIVE_SCORE)
 {
 	turnsToReach = 1;
 }
 
-void BattleExchangeVariant::completePlagueActivation(uint32_t unitId, PlayerColor referenceController,
-	bool referenceActorIsOurs, DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb)
+void BattleExchangeVariant::trackDreadContinuation(const std::shared_ptr<HypotheticBattle> & battle,
+	uint32_t actorId, DamageCache & damageCache, bool isOur)
 {
-	const auto firstHit = hb->getProjectedPlagueHits().size();
-	const auto rebirthBefore = hb->getElementalRebirthSpawnUnitIds();
-	const auto firstPrimalBurstHit = hb->getProjectedPrimalBurstHits().size();
-	const auto actor = hb->getForUpdate(unitId);
-	newHorizonsPlague::completeActivation(*hb, *hb->getServerCallback(), unitId);
-	const auto & hits = hb->getProjectedPlagueHits();
-	for(size_t index = firstHit; index < hits.size(); ++index)
-	{
-		const auto & hit = hits[index];
-		const auto value = AttackPossibility::calculateDamageReduce(nullptr, hit.preHitTarget.get(),
-			static_cast<uint64_t>(hit.finalizedDamage), damageCache, hb);
-		const bool targetIsOurs = (hit.targetController == referenceController) == referenceActorIsOurs;
-		if(targetIsOurs)
-			dpsScore.ourDamageReduce += value;
-		else
-			dpsScore.enemyDamageReduce += value;
-	}
-	accountForNewElementalRebirthSpawns(rebirthBefore, actor.get(), referenceActorIsOurs, damageCache, hb);
-	accountForNewPrimalBurstHits(firstPrimalBurstHit, referenceController, referenceActorIsOurs, damageCache, hb);
+	const auto dreadExtra = dreadCavalryAI::projectPending(battle, actorId, damageCache);
+	dpsScore.ourDamageReduce += isOur ? dreadExtra.ownDamage : dreadExtra.enemyDamage;
+	dpsScore.enemyDamageReduce += isOur ? dreadExtra.enemyDamage : dreadExtra.ownDamage;
 }
 
 float BattleExchangeVariant::trackAttack(
@@ -403,6 +306,12 @@ float BattleExchangeVariant::trackAttack(
 		logAi->trace("Skipping fake ap attack");
 		return 0;
 	}
+	const auto * ambushTarget = hb->battleGetUnitByID(ap.attack.defender->unitId());
+	if(newHorizonsForestAmbush::concealed(ambushTarget)
+		&& hb->battleMatchOwner(ap.attack.attacker, ambushTarget))
+		return 0;
+	if(const auto refreshed = selectedAttackReceipt::refreshForestAmbush(ap, hb, damageCache))
+		return trackAttack(*refreshed, hb, damageCache);
 	std::optional<HypotheticBattle::ManaLeechReplay> manaLeechReplay;
 	if(ap.effectPreview && ap.effectPreview->hasProjectedManaLeech())
 	{
@@ -419,21 +328,7 @@ float BattleExchangeVariant::trackAttack(
 
 	const auto referenceController = hb->battleGetOwner(attacker.get());
 	const auto originalPosition = attacker->getPosition();
-	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker.get()));
-	const auto * attackerHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
-		? hb->battleGetFightingHero(attackerSide) : nullptr;
-	const bool canCheckNightProwlerPath = ap.from.isValid()
-		&& ap.from != originalPosition
-		&& !attacker->hasBonusOfType(BonusType::FLYING)
-		&& attackerHero && newHorizonsShroud::rank(attackerHero) > 0
-		&& newHorizonsShroud::hasNightProwler(attackerHero);
-	BattleHexArray nightProwlerPath;
-	if(canCheckNightProwlerPath)
-		nightProwlerPath = hb->getPath(originalPosition, ap.from, attacker.get()).first;
-	const bool crossesNightProwlerEnemy = !nightProwlerPath.empty()
-		&& hb->battleNightProwlerCrossesEnemy(attacker.get(), nightProwlerPath);
-	if(crossesNightProwlerEnemy)
-		attacker->addUnitBonus(newHorizonsShroud::nightProwlerDamageBonuses());
+	applySelectedNightProwler(*hb, *attacker, originalPosition, ap.from);
 	if(!ap.overwatchHits.empty())
 		hb->projectVoluntaryMovement(attacker->unitId(), ap.from);
 	selectedAttackReceipt::restorePosition(ap, *attacker, *hb);
@@ -443,6 +338,8 @@ float BattleExchangeVariant::trackAttack(
 
 	dpsScore.ourDamageReduce += ap.attackerDamageReduce + ap.collateralDamageReduce;
 	dpsScore.enemyDamageReduce += ap.defenderDamageReduce + ap.shootersBlockedDmg;
+	dpsScore.enemyDamageReduce += std::max(0.0f, ap.petrifyingBloodControlValue);
+	dpsScore.ourDamageReduce += std::max(0.0f, -ap.petrifyingBloodControlValue);
 
 	selected.captureDamage(*hb);
 	const auto & affectedUnits = selected.affectedUnits();
@@ -456,32 +353,15 @@ float BattleExchangeVariant::trackAttack(
 		int64_t projectedAttackerDamage = 0;
 		const auto attackerDamage = finalDamage[attacker->unitId()];
 		if(ap.preAttackDamage > 0)
-		{
-			const bool wasAlive = attacker->alive();
-			const auto rebirthSource = wasAlive ? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
-			const bool nativeRebirth = hb->hasReadyNativeRebirth(attacker.get());
-			auto preAttackDamage = ap.preAttackDamage;
-			attacker->damage(preAttackDamage);
-			hb->recordBloodrageTransition(attacker, wasAlive);
-			if(rebirthSource)
-				hb->projectElementalRebirth(attacker.get(), *rebirthSource,
-					wasAlive && !attacker->alive(), attacker->isClone(), nativeRebirth);
-		}
+			selectedAttackReceipt::applyCapturedDamage(*hb, attacker, ap.preAttackDamage);
 
 		for(const auto & strike : ap.fortuneStrikes)
 		{
+			if(!aerialRetaliationAI::replayAdmission(*hb, strike)) continue;
 			auto projectedAttacker = hb->getForUpdate(strike.attackerId);
 			auto projectedDefender = hb->getForUpdate(strike.defenderId);
-			BattleAttackInfo projectedAttack(projectedAttacker.get(), projectedDefender.get(), 0, strike.shooting);
-			// The projection records the resolved physical-creature provenance;
-			// preserve that explicit context for attack-classified post-hit effects.
-			projectedAttack.physicalDamage = strike.damageProvenance
-				== battle::DamageProvenance::PHYSICAL_CREATURE;
-			projectedAttack.retaliation = strike.retaliation;
-			projectedAttack.bracePreemptive = strike.bracePreemptive;
-			projectedAttack.cleaveDamagePercent = strike.cleaveDamagePercent;
-			projectedAttack.attackerPos = projectedAttacker->getPosition();
-			projectedAttack.defenderPos = projectedDefender->getPosition();
+			auto projectedAttack = selectedAttackReceipt::attackForStrike(strike,
+				projectedAttacker.get(), projectedDefender.get());
 			const bool hasPrimaryHit = std::ranges::any_of(strike.hits, [&strike](const auto & hit)
 			{
 				return hit.first == strike.defenderId;
@@ -502,7 +382,12 @@ float BattleExchangeVariant::trackAttack(
 				hb->consumeHeroOrderProtectInterception(ap.attack.defender->unitId(), strike.defenderId);
 			for(const auto & receipt : strike.defiantDenials)
 				if(receipt.phase == DefiantDenialProjection::Phase::BEFORE_HITS)
-					replayDefiant(*hb, receipt);
+					battleDefiantAI::replay(*hb, receipt);
+			const bool gazeAdmitted = strike.paralyzingGazeAdmitted;
+			const bool serpentBinding = newHorizonsSerpentsEmbrace::qualifiesAttack(*hb,
+				projectedAttacker.get(), projectedDefender.get(), strike.shooting,
+				strike.damageProvenance == battle::DamageProvenance::PHYSICAL_CREATURE,
+				strike.bracePreemptive || strike.cleaveDamagePercent > 0 || ap.attack.preemptiveDamagePercent > 0);
 			std::vector<std::pair<uint32_t, int64_t>> actualHits;
 			actualHits.reserve(strike.hits.size());
 			struct PendingRebirth
@@ -514,6 +399,7 @@ float BattleExchangeVariant::trackAttack(
 			std::map<uint32_t, PendingRebirth> pendingRebirths;
 			bool enemyStackKilled = false;
 			bool endedActiveActivationThisStrike = false;
+			int64_t harvestCasualties = 0;
 			for(const auto & [unitId, damage] : strike.hits)
 			{
 				auto target = hb->getForUpdate(unitId);
@@ -523,6 +409,10 @@ float BattleExchangeVariant::trackAttack(
 				const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 					projectedAttacker.get(), strike.damageProvenance == battle::DamageProvenance::PHYSICAL_CREATURE)
 					&& hb->battleHasBastionProtection(target.get());
+				const bool harvestEligible = newHorizonsSoulHarvest::qualifies(*hb, *projectedAttacker,
+					*target, strike.damageProvenance == battle::DamageProvenance::PHYSICAL_CREATURE);
+				const bool harvestMayRebirth = harvestEligible && hb->hasReadyNativeRebirth(target.get());
+				const int32_t harvestCountBefore = harvestEligible ? target->getCount() : 0;
 				const auto wasAlive = target->alive();
 				if(wasAlive && !pendingRebirths.contains(unitId))
 				{
@@ -533,12 +423,17 @@ float BattleExchangeVariant::trackAttack(
 				const auto healthBefore = target->getAvailableHealth();
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
-				target->damage(appliedDamage, false, strike.damageProvenance);
+				newHorizonsForestAmbush::damageFromAttack(*hb, *target, appliedDamage,
+				strike.damageProvenance);
+				if(wasAlive && !target->alive())
+					hb->releaseSerpentBindingsForDeath(*target);
+				if(harvestEligible)
+					harvestCasualties += newHorizonsSoulHarvest::casualtiesAfterHit(*target, harvestCountBefore, harvestMayRebirth);
 				if(strike.bracePreemptive && unitId == strike.defenderId)
 					attackPreview::finishBracePrimaryState(*hb, strike.attackerId, unitId, healthBefore);
 				for(const auto & receipt : strike.defiantDenials)
 					if(receipt.phase == DefiantDenialProjection::Phase::AFTER_TARGET_HIT && receipt.targetId == unitId)
-						replayDefiant(*hb, receipt);
+						battleDefiantAI::replay(*hb, receipt);
 				if(projectedTargetHit::finishAfterDefiant(*hb, *target, preparedHit))
 					endedActiveActivationThisStrike = true;
 				if(consumesBastion)
@@ -561,6 +456,7 @@ float BattleExchangeVariant::trackAttack(
 						enemyStackKilled = true;
 				}
 			}
+			newHorizonsSoulHarvest::grant(*projectedAttacker, harvestCasualties);
 			// Each projected striker spends its one-attack reward after its full hit set.
 			// The movement bonus belongs to the moved stack, so an enemy preemptive
 			// strike cannot consume it.
@@ -587,6 +483,12 @@ float BattleExchangeVariant::trackAttack(
 				projectedAttack.luckyStrike = fortune.consumePerfectMoment();
 				hb->setSylvanLuckState(side, fortune);
 			}
+			const auto primaryHit = std::ranges::find(actualHits, strike.defenderId,
+				&std::pair<uint32_t, int64_t>::first);
+			hb->projectSerpentBinding(strike.attackerId, strike.defenderId,
+				primaryHit == actualHits.end() ? 0 : primaryHit->second, serpentBinding);
+			paralyzingGazeAI::apply(*hb, strike.attackerId, strike.defenderId,
+				primaryHit == actualHits.end() ? 0 : primaryHit->second, gazeAdmitted);
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
 				strike.resolvedLuck, true, strike.perfectFortune, strike.perfectFortuneSide,
 				strike.luckSerendipitySide, strike.luckSerendipityOrdinaryAttack);
@@ -597,6 +499,8 @@ float BattleExchangeVariant::trackAttack(
 				hb->projectElementalRebirth(target.get(), pending.snapshot,
 					!target->alive(), pending.cloneKilled, pending.nativeRebirth);
 			}
+			const auto aerialReflectionLoss = aerialRetaliationAI::replaySourceAftermath(*hb, strike);
+			if(projectedAttacker->unitId() == attacker->unitId()) projectedAttackerDamage += aerialReflectionLoss;
 			const auto healthBeforeHexOfPain = projectedAttacker->getAvailableHealth();
 			hb->projectHexOfPainStrike(projectedAttack, actualHits, strike.attackIndex);
 			if(projectedAttacker->unitId() == attacker->unitId())
@@ -614,6 +518,8 @@ float BattleExchangeVariant::trackAttack(
 					? std::optional<uint32_t>(strike.defenderId) : std::nullopt;
 				projectRelentlessAssaultAttack(*hb, projectedHeroOrderAttack, primaryTarget);
 			}
+			if(strike.gazeConsumption && !strike.aerialExcursion)
+				paralyzingGazeAI::replay(*hb, *strike.gazeConsumption);
 			if(endedActiveActivationThisStrike)
 				break;
 		}
@@ -623,17 +529,8 @@ float BattleExchangeVariant::trackAttack(
 		// after replaying the known strikes so it cannot move a defender's
 		// Fortune activation boundary or kill a retaliation attacker early.
 		if(attackerDamage > projectedAttackerDamage + ap.preAttackDamage)
-		{
-			const bool wasAlive = attacker->alive();
-			const auto rebirthSource = wasAlive ? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
-			const bool nativeRebirth = hb->hasReadyNativeRebirth(attacker.get());
-			auto residual = attackerDamage - projectedAttackerDamage - ap.preAttackDamage;
-			attacker->damage(residual);
-			hb->recordBloodrageTransition(attacker, wasAlive);
-			if(rebirthSource)
-				hb->projectElementalRebirth(attacker.get(), *rebirthSource,
-					wasAlive && !attacker->alive(), attacker->isClone(), nativeRebirth);
-		}
+			selectedAttackReceipt::applyCapturedDamage(*hb, attacker,
+				attackerDamage - projectedAttackerDamage - ap.preAttackDamage);
 	}
 	else
 	{
@@ -650,6 +547,8 @@ float BattleExchangeVariant::trackAttack(
 					? hb->captureElementalRebirthSource(*unitToUpdate) : std::nullopt;
 				const bool nativeRebirth = hb->hasReadyNativeRebirth(unitToUpdate.get());
 				unitToUpdate->damage(damageDealt);
+				if(wasAlive && !unitToUpdate->alive())
+					hb->releaseSerpentBindingsForDeath(*unitToUpdate);
 				hb->recordBloodrageTransition(unitToUpdate, wasAlive);
 				if(rebirthSource)
 					hb->projectElementalRebirth(unitToUpdate.get(), *rebirthSource,
@@ -754,11 +653,14 @@ float BattleExchangeVariant::trackAttack(
 	std::optional<bool> * readyOverwatch,
 	const BattleTargetProbeTiming * probeTiming,
 	DamageCacheAdmission * mainProbeAdmission,
-	BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent)
+	BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent,
+	std::vector<petrifyingBloodAI::Pending> * bloodSequence)
 {
 	if(actionResult)
 		*actionResult = {};
-	if(!attacker || attacker->armorerLastStandEndedActivation)
+	if(!attacker || attacker->armorerLastStandEndedActivation
+		|| (newHorizonsForestAmbush::concealed(defender.get())
+			&& hb->battleMatchOwner(attacker.get(), defender.get())))
 		return 0;
 
 	// A nonadditive target-probe prefix. Early reaction returns finalize by RAII;
@@ -777,7 +679,7 @@ float BattleExchangeVariant::trackAttack(
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
 	const auto referenceController = hb->battleGetOwner(attacker.get());
-	const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
+	static const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
 	static const auto selectorBlocksRetaliation = Selector::type()(BonusType::BLOCKS_RETALIATION);
 	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
 		.Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
@@ -802,6 +704,10 @@ float BattleExchangeVariant::trackAttack(
 	const auto manaLeech = !evaluateOnly && (!manaLeechSequenceSpent || !*manaLeechSequenceSpent)
 		? newHorizonsManaLeeches::entitlement(*hb, attacker.get(), defender.get(), shooting,
 			projectedAttack.physicalDamage, false) : newHorizonsManaLeeches::Entitlement{};
+	const bool serpentBinding = !evaluateOnly && newHorizonsSerpentsEmbrace::qualifiesAttack(*hb,
+		attacker.get(), defender.get(), shooting, projectedAttack.physicalDamage, false);
+	const bool gazeAdmitted = !evaluateOnly && newHorizonsParalyzingGaze::qualifiesAttack(*hb,
+		attacker.get(), defender.get(), shooting, projectedAttack.physicalDamage, false);
 	const auto primaryFortune = captureAppliedFortuneReceipt(*hb, projectedAttack, evaluateOnly);
 	const auto shroud = !evaluateOnly ? evaluateBattleShroudStrike(*hb, projectedAttack) : BattleShroudStrike{};
 	const bool triggersEvasiveShroud = shroud.evasiveShroud;
@@ -809,36 +715,6 @@ float BattleExchangeVariant::trackAttack(
 	const auto shadowAssaultSide = shroud.shadowAssaultSide;
 	const bool nightProwlerPending = !evaluateOnly && hasNightProwlerBonus(attacker.get());
 	const bool frozenBeforeHit = !evaluateOnly && newHorizonsFrozen::isFrozen(*defender);
-	const auto resolveLastStand = [&hb](const BattleAttackInfo & attack,
-		const battle::Unit * target, int64_t incomingDamage)
-	{
-		const auto side = target ? hb->playerToSide(hb->battleGetOwner(target)) : BattleSide::NONE;
-		const bool validSide = side == BattleSide::ATTACKER || side == BattleSide::DEFENDER;
-		if(!validSide)
-			return std::pair{newHorizonsArmorer::ArmorerLastStandDamageResult{incomingDamage, false}, side};
-
-		const bool eligible = newHorizonsArmorer::isEligiblePhysicalAttack(attack.attacker,
-			attack.physicalDamage, attack.shooting && attack.attacker
-				&& attack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))
-			&& newHorizonsArmorer::canTriggerLastStand(hb->battleGetOwnerHero(target), target);
-		const auto result = newHorizonsArmorer::resolveLastStandDamage(incomingDamage,
-			target->getGuardianSpiritHitPoints(), target->getGuardianSpiritRoundsRemaining(),
-			target->getAvailableHealth(), eligible, hb->armorerLastStandUsed(side));
-		return std::pair{result, side};
-	};
-	const auto applyLastStandDefend = [&hb, evaluateOnly](StackWithBonuses * target,
-		const newHorizonsArmorer::ArmorerLastStandDamageResult & lastStand,
-		BattleSide side, bool retaliation)
-	{
-		if(evaluateOnly || !lastStand.triggered || !target)
-			return;
-		hb->consumeArmorerLastStand(side);
-		hb->applyArmorerLastStandDefend(target->unitId());
-		const auto activeStackId = hb->getActiveStackID();
-		if(retaliation && activeStackId >= 0
-			&& target->unitId() == static_cast<uint32_t>(activeStackId))
-			target->armorerLastStandEndedActivation = true;
-	};
 
 	preparationMeasurement.finish();
 	int64_t attackDamage;
@@ -848,7 +724,7 @@ float BattleExchangeVariant::trackAttack(
 			evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr,
 			evaluateOnly ? mainProbeAdmission : nullptr);
 	}
-	const auto attackLastStand = resolveLastStand(projectedAttack, defender.get(), attackDamage);
+	const auto attackLastStand = AttackPreviewHitContext::resolveUnspentLastStand(*hb, projectedAttack, defender.get(), attackDamage);
 	attackDamage = attackLastStand.first.damageToApply;
 	const auto attackDamageProvenance = battleAIDamageProvenance(
 		attacker.get(), projectedAttack.physicalDamage);
@@ -866,7 +742,12 @@ float BattleExchangeVariant::trackAttack(
 			evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr);
 	}
 	float attackerDamageReduce = 0;
+	std::vector<petrifyingBloodAI::Pending> localBloodSequence;
+	auto & petrifyingBloodPending = bloodSequence ? *bloodSequence : localBloodSequence;
+	const bool harvestEligible = !evaluateOnly && newHorizonsSoulHarvest::qualifies(*hb,
+		*attacker, *defender, projectedAttack.physicalDamage);
 	const bool defenderWasAlive = defender->alive();
+	const int32_t defenderHarvestCountBefore = harvestEligible ? defender->getCount() : 0;
 	const int64_t defenderHealthBeforeAttack = defender->getAvailableHealth();
 	const auto defenderRebirthSource = !evaluateOnly && defenderWasAlive
 		? hb->captureElementalRebirthSource(*defender) : std::nullopt;
@@ -901,11 +782,21 @@ float BattleExchangeVariant::trackAttack(
 		else
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
-		defender->damage(attackDamage, false, attackDamageProvenance);
+		newHorizonsForestAmbush::damageFromAttack(*hb, *defender, attackDamage,
+				attackDamageProvenance);
+		petrifyingBloodAI::capture(hb, *attacker, *defender, actualDamage,
+			shooting, projectedAttack.physicalDamage, petrifyingBloodPending);
+		if(defenderWasAlive && !defender->alive())
+			hb->releaseSerpentBindingsForDeath(*defender);
+		hb->projectSerpentBinding(attacker->unitId(), defender->unitId(), actualDamage, serpentBinding);
+		if(harvestEligible)
+			newHorizonsSoulHarvest::grant(*attacker, newHorizonsSoulHarvest::casualtiesAfterHit(
+				*defender, defenderHarvestCountBefore, defenderMayRebirth));
+		paralyzingGazeAI::apply(*hb, attacker->unitId(), defender->unitId(), actualDamage, gazeAdmitted);
 		if(manaLeech.amount > 0)
 			hb->projectManaLeech(manaLeech, actualDamage, manaLeechSequenceSpent);
-		applyLastStandDefend(defender.get(), attackLastStand.first, attackLastStand.second,
-			projectedAttack.retaliation);
+		AttackPreviewHitContext::applyUnspentLastStand(*hb, defender.get(), attackLastStand.first, attackLastStand.second,
+			projectedAttack.retaliation, !evaluateOnly);
 		if(nightProwlerPending)
 			attacker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 		if(triggersAmbusher)
@@ -1013,7 +904,7 @@ float BattleExchangeVariant::trackAttack(
 				&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(cleaveAttack.attacker, cleaveAttack.physicalDamage);
 			const auto cleaveResolvedLuck = hb->captureFortuneStrikeOutcome(cleaveAttack);
 			int64_t cleaveDamage = hb->battleExpectedLuckDamage(cleaveAttack);
-			const auto cleaveLastStand = resolveLastStand(cleaveAttack, targetUnit, cleaveDamage);
+			const auto cleaveLastStand = AttackPreviewHitContext::resolveUnspentLastStand(*hb, cleaveAttack, targetUnit, cleaveDamage);
 			cleaveDamage = cleaveLastStand.first.damageToApply;
 			const auto projectedCleaveDamage = battleAIProjectDamage(
 				targetUnit, cleaveDamage, cleaveProvenance);
@@ -1031,13 +922,24 @@ float BattleExchangeVariant::trackAttack(
 				else
 					dpsScore.ourDamageReduce += cleaveDamageReduce;
 
+				const bool cleaveHarvestEligible = newHorizonsSoulHarvest::qualifies(*hb,
+					*projectedAttacker, *target, cleaveAttack.physicalDamage);
 				const bool targetWasAlive = target->alive();
+				const int32_t targetHarvestCountBefore = cleaveHarvestEligible ? target->getCount() : 0;
 				const auto targetRebirthSource = targetWasAlive
 					? hb->captureElementalRebirthSource(*target) : std::nullopt;
 				const bool targetMayRebirth = hb->hasReadyNativeRebirth(target.get());
-				target->damage(cleaveDamage, false, cleaveProvenance);
-				applyLastStandDefend(target.get(), cleaveLastStand.first,
-					cleaveLastStand.second, cleaveAttack.retaliation);
+				newHorizonsForestAmbush::damageFromAttack(*hb, *target, cleaveDamage,
+				cleaveProvenance);
+				petrifyingBloodAI::capture(hb, *projectedAttacker, *target, resolvedCleaveDamage,
+					false, cleaveAttack.physicalDamage, petrifyingBloodPending);
+				if(targetWasAlive && !target->alive())
+					hb->releaseSerpentBindingsForDeath(*target);
+				if(cleaveHarvestEligible)
+					newHorizonsSoulHarvest::grant(*projectedAttacker, newHorizonsSoulHarvest::casualtiesAfterHit(
+						*target, targetHarvestCountBefore, targetMayRebirth));
+				AttackPreviewHitContext::applyUnspentLastStand(*hb, target.get(), cleaveLastStand.first,
+					cleaveLastStand.second, cleaveAttack.retaliation, !evaluateOnly);
 				if(triggersCleaveAmbusher)
 					spendAmbusher(*hb, projectedAttacker->unitId());
 				if(cleaveShadowAssaultSide)
@@ -1070,22 +972,19 @@ float BattleExchangeVariant::trackAttack(
 			}
 	}
 
-	bool ignoredInnate = false;
-	bool ignoredShroud = false;
-	if(!frozenBeforeHit && !evaluateOnly && allowRetaliation && !shooting)
-	{
-		if(counterAttacksBlocked)
-			ignoredInnate = projectDefiant(*hb, projectedAttack, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK);
-		if(!defender->hasBonus(firstStrikeSelector) && hb->battleShroudDeniesRetaliation(projectedAttack))
-			ignoredShroud = projectDefiant(*hb, projectedAttack, newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD);
-	}
+	const auto [ignoredInnate, ignoredShroud] = battleDefiantAI::projectMeleeDenials(
+		hb.get(), projectedAttack, counterAttacksBlocked,
+		!frozenBeforeHit && !evaluateOnly && allowRetaliation && !shooting, firstStrikeSelector);
 	if(!frozenBeforeHit && !evaluateOnly && allowRetaliation && attacker->alive() && defender->alive()
 		&& defender->ableToRetaliate() && !shooting
 		&& (!counterAttacksBlocked || (ignoredInnate && !hb->battleHasMagicalRetaliationBlock(attacker.get())))
-		&& (!hb->battleShroudDeniesRetaliation(projectedAttack) || defender->hasBonus(firstStrikeSelector) || ignoredShroud))
+		&& (!hb->battleShroudDeniesRetaliation(projectedAttack) || defender->hasBonus(firstStrikeSelector) || ignoredShroud)
+		&& paralyzingGazeAI::consumeAndAllowCounter(*hb, attacker->unitId(), defender->unitId(), false))
 	{
 		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
 		retaliationAttack.retaliation = true;
+		const bool counterSerpentBinding = newHorizonsSerpentsEmbrace::qualifiesAttack(*hb,
+			defender.get(), attacker.get(), false, retaliationAttack.physicalDamage, false);
 		const auto counterManaLeech = newHorizonsManaLeeches::entitlement(*hb,
 			defender.get(), attacker.get(), false, retaliationAttack.physicalDamage, false);
 		const bool retaliationPerfectFortune = hb->battleCanTriggerPerfectFortune(retaliationAttack);
@@ -1099,8 +998,8 @@ float BattleExchangeVariant::trackAttack(
 		const auto retaliationShadowAssaultSide = retaliationShroud.shadowAssaultSide;
 		const bool retaliationNightProwlerPending = hasNightProwlerBonus(defender.get());
 		auto retaliationDamage = hb->battleExpectedLuckDamage(retaliationAttack);
-		const auto retaliationLastStand = resolveLastStand(
-			retaliationAttack, attacker.get(), retaliationDamage);
+		const auto retaliationLastStand = AttackPreviewHitContext::resolveUnspentLastStand(
+			*hb, retaliationAttack, attacker.get(), retaliationDamage);
 		retaliationDamage = retaliationLastStand.first.damageToApply;
 		const bool consumesRetaliationBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			retaliationAttack.attacker, retaliationAttack.physicalDamage)
@@ -1131,15 +1030,27 @@ float BattleExchangeVariant::trackAttack(
 		}
 
 		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
+		const bool counterHarvestEligible = newHorizonsSoulHarvest::qualifies(*hb,
+			*defender, *attacker, retaliationAttack.physicalDamage);
 		const bool attackerWasAlive = attacker->alive();
+		const int32_t attackerHarvestCountBefore = counterHarvestEligible ? attacker->getCount() : 0;
 		const auto attackerRebirthSource = attackerWasAlive
 			? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
 		const bool attackerMayRebirth = hb->hasReadyNativeRebirth(attacker.get());
-		attacker->damage(retaliationDamage, false, retaliationProvenance);
+		newHorizonsForestAmbush::damageFromAttack(*hb, *attacker, retaliationDamage,
+				retaliationProvenance);
+		petrifyingBloodAI::capture(hb, *defender, *attacker, actualDamage,
+			false, retaliationAttack.physicalDamage, petrifyingBloodPending);
+		if(attackerWasAlive && !attacker->alive())
+			hb->releaseSerpentBindingsForDeath(*attacker);
+		hb->projectSerpentBinding(defender->unitId(), attacker->unitId(), actualDamage, counterSerpentBinding);
+		if(counterHarvestEligible)
+			newHorizonsSoulHarvest::grant(*defender, newHorizonsSoulHarvest::casualtiesAfterHit(
+				*attacker, attackerHarvestCountBefore, attackerMayRebirth));
 		if(counterManaLeech.amount > 0)
 			hb->projectManaLeech(counterManaLeech, actualDamage, nullptr);
-		applyLastStandDefend(attacker.get(), retaliationLastStand.first,
-			retaliationLastStand.second, retaliationAttack.retaliation);
+		AttackPreviewHitContext::applyUnspentLastStand(*hb, attacker.get(), retaliationLastStand.first,
+			retaliationLastStand.second, retaliationAttack.retaliation, !evaluateOnly);
 		if(retaliationNightProwlerPending)
 			defender->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 		if(triggersRetaliationAmbusher)
@@ -1172,7 +1083,9 @@ float BattleExchangeVariant::trackAttack(
 	if(!evaluateOnly && hb->getActiveStackID() == static_cast<int32_t>(attacker->unitId()))
 		attacker->consumeNoQuarterActivation();
 
-	auto score = defenderDamageReduce - attackerDamageReduce;
+	const float petrifyingBloodControl = !evaluateOnly && !bloodSequence
+		? finishPetrifyingBlood(hb, *attacker, petrifyingBloodPending, isOurAttack, damageCache) : 0;
+	auto score = defenderDamageReduce - attackerDamageReduce + petrifyingBloodControl;
 
 #if BATTLE_TRACE_LEVEL>=1
 	if(!score)
@@ -1707,6 +1620,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 
 			auto attacker = exchangeBattle->getForUpdate(activeUnit->unitId());
 			auto shooting = exchangeBattle->battleCanShoot(attacker.get())
+				&& !attacker->dreadCavalryState.pending
 				&& !vstd::contains(blockedShooters, attacker->unitId());
 
 			if(!attacker->alive())
@@ -1723,7 +1637,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			// Every later queue entry is a genuine activation and may consume a
 			// pending Cascade gift.
 			const bool initialChosenUnit = canUseAp
-				&& activeUnit->unitId() == ap.attack.attacker->unitId();
+				&& activeUnit->unitId() == ap.attack.attacker->unitId()
+				&& !(attacker->waiting && attacker->forestAmbush.concealed);
 			const bool frozenForfeits = !initialChosenUnit
 				&& newHorizonsFrozen::forfeitsNormalActivation(*attacker, BattleUnitTurnReason::TURN_QUEUE);
 			if(!initialChosenUnit)
@@ -1750,18 +1665,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			if(frozenForfeits)
 			{
 				MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationEnd));
-				const auto frozen = newHorizonsFrozen::removalPlan(*attacker);
-				attacker->removeUnitBonus(CSelector([](const Bonus * bonus)
-				{
-					return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
-				}));
-				attacker->consumeNoQuarterActivation();
-				v.completePlagueActivation(attacker->unitId(), exchangeBattle->battleGetOwner(attacker.get()),
-					isOur, damageCache, exchangeBattle);
-				const auto current = exchangeBattle->getForUpdate(attacker->unitId());
-				if(current->alive() && !current->isGhost() && !current->isTimeStopped()
-					&& newHorizonsFrozen::isFrozen(*current))
-					current->removeUnitBonus(frozen);
+				v.completeFrozenActivation(attacker, isOur, damageCache, exchangeBattle);
 				activationMeasurement.finish();
 				finishFortuneActivation();
 				continue;
@@ -1911,20 +1815,23 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			else
 			{
 				bool manaLeechSequenceSpent = false;
+				std::vector<petrifyingBloodAI::Pending> bloodSequence;
 				for(int i = 0; i < totalAttacks; i++)
 				{
 					BattleExchangeAttackResult actionResult;
 					measurement.measure(&BattleMovementTiming::ExchangeTiming::appliedAttacks, [&]()
 					{
 						return v.trackAttack(attacker, defender, shooting, isOur, damageCache, exchangeBattle,
-							false, i == 0, nullptr, nullptr, nullptr, &actionResult, &manaLeechSequenceSpent);
+							false, i == 0, nullptr, nullptr, nullptr, &actionResult, &manaLeechSequenceSpent, &bloodSequence);
 					});
 
 					if(actionResult.completedAction || !attacker->alive() || !defender->alive())
 						break;
 				}
+				v.finishPetrifyingBlood(exchangeBattle, *attacker, bloodSequence, isOur, damageCache);
 			}
 
+			v.trackDreadContinuation(exchangeBattle, attacker->unitId(), damageCache, isOur);
 			if(!shooting)
 				blockedShooters.insert(defender->unitId());
 			// Only the applied attack is a completed action; speculative

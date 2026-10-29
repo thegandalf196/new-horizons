@@ -209,7 +209,7 @@ public:
 
 	//////////////////////////////////////////////////////////////////////////
 	void useScholarSkill(ObjectInstanceID hero1, ObjectInstanceID hero2);
-	void setPortalDwelling(const CGTownInstance * town, bool forced, bool clear);
+	void setPortalDwelling(const CGTownInstance * town, bool forced = false, bool clear = false);
 	void visitObjectOnTile(const TerrainTile &t, const CGHeroInstance * h);
 	bool teleportHero(ObjectInstanceID hid, ObjectInstanceID dstid, ui8 source, PlayerColor asker = PlayerColor::NEUTRAL);
 	void visitCastleObjects(const CGTownInstance * obj, const CGHeroInstance * hero) override;
@@ -343,6 +343,7 @@ public:
 
 	friend class CVCMIServer;
 private:
+	void initializeRecruitmentForBuilding(const CGTownInstance * town, BuildingID buildingID);
 	void stampPhysicalAfflictionEffects(SetStackEffect & effects);
 
 	struct LearningMentorAward

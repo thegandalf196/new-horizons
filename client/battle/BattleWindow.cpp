@@ -15,6 +15,7 @@
 #include "BattleConsole.h"
 #include "BattleFieldController.h"
 #include "BattleInterface.h"
+#include "CreatureContinuationUI.h"
 #include "BattleStacksController.h"
 #include "HeroInfoWindow.h"
 #include "QuickSpellPanel.h"
@@ -1364,9 +1365,8 @@ void BattleWindow::blockUI(bool on)
 
 	bool canWait = owner.stacksController->getActiveStack() ? !owner.stacksController->getActiveStack()->waitedThisTurn : false;
 	const auto * activeStack = owner.stacksController->getActiveStack();
-	const auto activeStackState = activeStack ? activeStack->acquireState() : nullptr;
-	const bool rangedFollowUpPending = activeStackState
-		&& activeStackState->rangedFollowUpDamagePercent > 0;
+	const auto continuation = creatureContinuationUI::read(*owner.getBattle(), activeStack);
+	const bool continuationPending = continuation.pending();
 	const bool deploymentPhase = owner.isDeploymentPhase();
 	const bool localTacticsMode = owner.isInTacticsMode();
 
@@ -1376,7 +1376,7 @@ void BattleWindow::blockUI(bool on)
 	setShortcutBlocked(EShortcut::BATTLE_RETREAT, on || deploymentPhase || !owner.getBattle()->battleCanFlee());
 	setShortcutBlocked(EShortcut::BATTLE_SURRENDER, on || deploymentPhase || owner.getBattle()->battleGetSurrenderCost() < 0);
 	setShortcutBlocked(EShortcut::BATTLE_CAST_SPELL, on || deploymentPhase || !canCastSpells);
-	setShortcutBlocked(EShortcut::BATTLE_WAIT, on || deploymentPhase || !canWait || rangedFollowUpPending);
+	setShortcutBlocked(EShortcut::BATTLE_WAIT, on || deploymentPhase || !canWait || continuationPending);
 	setShortcutBlocked(EShortcut::BATTLE_DEFEND, on || deploymentPhase);
 	const bool autoCombatShortcutDisabled = settings["battle"]["endWithAutocombat"].Bool() && onlyOnePlayerHuman;
 	setShortcutBlocked(EShortcut::BATTLE_AUTOCOMBAT, deploymentPhase
@@ -1414,15 +1414,14 @@ void BattleWindow::updateBattleTargetSelectionControls()
 		&& !owner.actionsController->soulChainSelectedTargetIds().empty();
 	const bool soulChainCanUndo = soulChainCanConfirm;
 	const auto * activeStack = owner.stacksController->getActiveStack();
-	const auto activeStackState = activeStack ? activeStack->acquireState() : nullptr;
-	const bool rangedFollowUpPending = activeStackState
-		&& activeStackState->rangedFollowUpDamagePercent > 0;
+	const auto continuation = creatureContinuationUI::read(*owner.getBattle(), activeStack);
+	const bool continuationPending = continuation.pending();
 	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT,
 		!ready && !stormCanConfirm && !soulChainCanConfirm);
 	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE,
 		!canUndo && !vengefulVinesCanUndo && !stormCanUndo && !soulChainCanUndo
 			&& !(owner.actionsController && owner.actionsController->realityWarpTargetSelectionModeActive()));
-	widget<CButton>("wait")->setEnabled(!rangedFollowUpPending
+	widget<CButton>("wait")->setEnabled(!continuationPending
 		&& !active && !vengefulVinesActive && !stormActive && !soulChainActive);
 	const auto * overwatchStack = owner.stacksController->getActiveStack();
 	if(overwatchStack && overwatchStack->isShooter()
@@ -1433,9 +1432,10 @@ void BattleWindow::updateBattleTargetSelectionControls()
 			+ " before the delayed activation. Uses one shot; once per round."));
 	else
 		widget<CButton>("wait")->setHelp(CButton::tooltipLocalized("core.help.386"));
-	if(rangedFollowUpPending)
+	if(continuationPending)
 		widget<CButton>("defence")->setHelp(CButton::tooltip(
-			"End activation", "Decline the pending Master Gunner second shot and end this activation."));
+			creatureContinuationUI::closeTitle(continuation, &GAME->translator()),
+			creatureContinuationUI::closeHelp(continuation, &GAME->translator())));
 	else
 		widget<CButton>("defence")->setHelp(CButton::tooltipLocalized("core.help.387"));
 	if(battleTargetSelectionPanel)

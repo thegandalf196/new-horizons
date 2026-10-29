@@ -6,6 +6,7 @@
 #include "StdInc.h"
 
 #include "../../../lib/GameConstants.h"
+#include "../../../lib/StartInfo.h"
 #include "../../../lib/bonuses/BonusEnum.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/bonuses/Propagators.h"
@@ -44,6 +45,8 @@ protected:
 	std::vector<SpellID> obligatoryTownSpells;
 	bool enableSpellResearch = false;
 	bool useLegacySpellResearchRules = false;
+	bool useCurrentStartingBooks = true;
+	bool fixedKnowledgeBaseline = false;
 
 	void SetUp() override
 	{
@@ -52,11 +55,24 @@ protected:
 			GTEST_SKIP() << "Requires the New Horizons module";
 	}
 
+	void configurePlayer(PlayerSettings & settings) const override
+	{
+		// Fixed primary-stat scenarios must not receive a random starting artifact.
+		if(fixedKnowledgeBaseline)
+			settings.bonus = PlayerStartingBonus::GOLD;
+	}
+
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+		// This fixture characterizes its original unscaled growth/context.
+		loaded->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
+		auto heroRules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		// These authored legacy/synthetic rosters do not admit current starting books.
+		if(useLegacySpellResearchRules || !useCurrentStartingBooks)
+			heroRules["startingSkills"].Struct().erase("startingBookReplacements");
+		heroRules.setOverrideFlag(true); // Preserve authored absence instead of re-merging installed books.
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroRules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 		auto magicRules = magicRulesOverride.value_or(JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
@@ -72,6 +88,7 @@ protected:
 				faction.Struct().erase("preferredB");
 			}
 		}
+		magicRules.setOverrideFlag(true); // Legacy/synthetic rosters deliberately remove current clauses.
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		if(enableSpellResearch)
 			loaded->overrideGameSetting(EGameSettings::TOWNS_SPELL_RESEARCH, JsonNode(true));
@@ -213,11 +230,16 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, TrainingPersistsAndAstralNexusAlwa
 	ASSERT_EQ(hero->getManaAvailable(), manaLimitBeforeVisit - 3);
 	visit(dungeonTown, BuildingID::SPECIAL_2);
 	EXPECT_EQ(hero->getManaAvailable(), hero->manaLimit());
-	gameHandler.setManaPoints(hero->id, manaLimitBeforeVisit + 11);
+	// Permitted excess belongs to Buffer; Normal setters cannot create excess Normal.
+	gameHandler.setManaPoints(hero->id, manaLimitBeforeVisit);
+	gameHandler.grantBufferSpellPoints(hero->id, 11);
+	ASSERT_EQ(hero->getNormalSpellPoints(), manaLimitBeforeVisit);
+	ASSERT_EQ(hero->getBufferSpellPoints(), 11);
 	ASSERT_EQ(hero->getManaAvailable(), manaLimitBeforeVisit + 11);
 	visit(dungeonTown, BuildingID::SPECIAL_2);
-	EXPECT_EQ(hero->getManaAvailable(), hero->manaLimit());
-	EXPECT_EQ(hero->getManaAvailable(), manaLimitBeforeVisit);
+	EXPECT_EQ(hero->getNormalSpellPoints(), manaLimitBeforeVisit);
+	EXPECT_EQ(hero->getBufferSpellPoints(), 11);
+	EXPECT_EQ(hero->getManaAvailable(), manaLimitBeforeVisit + 11);
 	visit(strongholdTown, BuildingID::SPECIAL_4);
 	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::ATTACK), attackBefore + 5);
 
@@ -238,7 +260,9 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, TrainingPersistsAndAstralNexusAlwa
 	ASSERT_NE(restoredHero, nullptr);
 	EXPECT_EQ(restoredHero->valOfBonuses(BonusType::LEADERSHIP), leadershipBefore + 200);
 	EXPECT_EQ(restoredHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), spellPowerBefore + 5);
-	EXPECT_EQ(restoredHero->getManaAvailable(), restoredHero->manaLimit());
+	EXPECT_EQ(restoredHero->getNormalSpellPoints(), restoredHero->manaLimit());
+	EXPECT_EQ(restoredHero->getBufferSpellPoints(), 11);
+	EXPECT_EQ(restoredHero->getManaAvailable(), restoredHero->manaLimit() + 11);
 	EXPECT_EQ(restoredHero->getPrimSkillLevel(PrimarySkill::ATTACK), attackBefore + 5);
 
 	EXPECT_TRUE(restored.getTown(castleOneID)->rewardableBuildings.at(BuildingID::SPECIAL_3)->wasVisited(restoredHero));
@@ -347,6 +371,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 
 TEST_F(NewHorizonsUniqueBuildingTrainingTest, AstralNexusStatusPreviewsOnlyNormalSpellPointRestoration)
 {
+	fixedKnowledgeBaseline = true;
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(48, false).playerActive(PlayerColor(0))
 		.town({20, 20, 0}, faction("core:dungeon"), PlayerColor(0))
@@ -358,6 +383,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, AstralNexusStatusPreviewsOnlyNorma
 	ASSERT_NE(town, nullptr);
 	ASSERT_NE(hero, nullptr);
 	hero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 50, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 50);
 	town->addBuilding(BuildingID::SPECIAL_2);
 	ASSERT_TRUE(town->rewardableBuildings.contains(BuildingID::SPECIAL_2));
 	const auto & nexus = *town->rewardableBuildings.at(BuildingID::SPECIAL_2);
@@ -882,6 +908,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, HistoricalMageGuildSnapshotWithout
 
 TEST_F(NewHorizonsUniqueBuildingTrainingTest, HouseOfWisdomScrollGenerationExcludesOrdinaryIneligibleSpells)
 {
+	useCurrentStartingBooks = false;
 	const SpellID masterChainLightning(SpellID::decode("new-horizons:masterChainLightning"));
 	const SpellID counterspell(SpellID::decode("new-horizons:counterspell"));
 	ASSERT_TRUE(masterChainLightning.hasValue());

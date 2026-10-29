@@ -81,7 +81,7 @@ std::vector<WikiEntry> collectModEntries()
 		for(const auto & h : LIBRARY->heroh->objects)
 			if(h && !h->special) out.insert(h->getModScope());
 		for(const auto & c : LIBRARY->creh->objects)
-			if(c && !c->special) out.insert(c->getModScope());
+			if(isWikiCreatureVisible(c.get())) out.insert(c->getModScope());
 		for(const auto & a : LIBRARY->arth->objects)
 			if(a && a->aClass != EArtifactClass::ART_SPECIAL) out.insert(a->getModScope());
 		for(const auto & s : LIBRARY->spellh->objects)
@@ -266,7 +266,7 @@ std::vector<std::shared_ptr<CIntObject>> buildModContent(
 	{
 		std::vector<const CCreature *> entries;
 		for(const auto & obj : LIBRARY->creh->objects)
-			if(obj && !obj->special && isEntityOfMod(obj->getModScope(), modId))
+			if(isWikiCreatureVisible(obj.get()) && isEntityOfMod(obj->getModScope(), modId))
 				entries.push_back(obj.get());
 
 		if(!entries.empty())

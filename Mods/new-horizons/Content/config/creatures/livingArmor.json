@@ -24,15 +24,18 @@
 		"aiValue": 120,
 		"abilities": {
 			"construct": {
-				"type": "NON_LIVING"
+				"type": "NON_LIVING",
+				"icon": "newHorizons/heroSpecialties/JosephineGolemLine/icon-44.png"
 			},
 			"physicalResistance": {
 				"type": "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS",
-				"val": 7500
+				"val": 7500,
+				"icon": "NH_spell_holy_armor_44.png"
 			},
 			"magicalVulnerability": {
 				"description": "Magical vulnerability: takes 100% more magical damage.",
 				"type": "MORE_DAMAGE_FROM_SPELL",
+				"icon": "NH_spell_disintegrate-44.png",
 				"val": 100
 			}
 		},

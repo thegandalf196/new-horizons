@@ -9,12 +9,14 @@
  */
 
 #pragma once
+#include "NewHorizonsForestAmbushState.h"
 
 #include <typeinfo>
 
 #include "BattleUnitTurnReason.h"
 #include "CUnitAmmo.h"
 #include "NewHorizonsConfusionState.h"
+#include "DreadCavalryState.h"
 #include "Unit.h"
 #include "../bonuses/BonusCache.h"
 
@@ -38,6 +40,8 @@ class PreparedStackStateTransfer;
 class PreparedBattleUnitRoots;
 /// Validate the typed JSON receipt, including absent legacy state.
 DLL_LINKAGE bool hasVeteranCohesionState(const JsonNode & unitSnapshot);
+/// Validates before mutation; missing legacy/partial JSON retains the supplied receipt.
+DLL_LINKAGE int32_t petrifyingBloodRoundFromJson(const JsonNode & unitSnapshot, int32_t absent = -1);
 
 class DLL_LINKAGE CHealth final
 {
@@ -182,6 +186,7 @@ public:
 	/// Pending forced activation and battle-long Confusion result history.
 	/// Ordinary round/activation boundaries do not clear this value implicitly.
 	ConfusionState confusionState;
+	DreadCavalryState dreadCavalryState;
 	/// Movement still available during a Pursuit/Vanish movement-only continuation.
 	/// A positive value means this unit is in the movement-only tail of its
 	/// current activation; it must never grant another attack.
@@ -197,8 +202,11 @@ public:
 	bool luckyOwnAttackSequence = false;
 	/// Round in which this stack last used Archery's once-per-round Counterfire.
 	int32_t archeryCounterfireRound = -1;
+	/// Last consumed regular-Griffin aerial counter; ordinary melee allowance is unchanged.
+	int32_t aerialRetaliationRound = -1;
 	/// Accepted Wait arms Overwatch until the next genuine activation. Usage is
 	/// independent of Counterfire and survives readiness expiry within a round.
+	ForestAmbushState forestAmbush;
 	int32_t battlecraftOverwatchReadyRound = -1;
 	int32_t battlecraftOverwatchUsedRound = -1;
 	/// Nonstacking derived retaliation: excludes the granting Morale activation.
@@ -245,6 +253,7 @@ public:
 	/// Round in which this stack received Battlecraft's Pre-emptive Strike.
 	/// Unlike Bulwark's Defend-scoped marker, this is not reset by Defend.
 	int32_t battlecraftPreemptiveStrikeRound = -1;
+	int32_t petrifyingBloodRound = -1;
 	/// Temporary Speed granted only for this unit's delayed activation after Waiting.
 	/// Cleared when the authoritative Creature Activation ends; unlike a timed bonus,
 	/// it does not affect initiative or later activations.
@@ -455,6 +464,8 @@ public:
 	/// Bind copied/prepared state to its environment without resetting values.
 	void bindStateEnvironment(const IUnitEnvironment * env_) noexcept;
 	void serializeJson(JsonSerializeFormat & handler);
+	void serializeWaitActionState(JsonSerializeFormat & handler);
+	void serializeJsonRoundReceipts(JsonSerializeFormat & handler);
 
 	FactionID getFactionID() const override;
 
@@ -500,6 +511,7 @@ public:
 	void onRemoved();
 
 private:
+	void clearDeadUnitTransientState();
 	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
 		DamageProvenance provenance = DamageProvenance::OTHER);
 	std::pair<int32_t, int32_t> getMoraleLimits() const override;

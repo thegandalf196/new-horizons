@@ -8,10 +8,18 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsPetrifyingBlood.h"
+#include "NewHorizonsDreadCavalry.h"
 #include "NewHorizonsRecoverySpecialties.h"
 #include "NewHorizonsHerbalSurgeon.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsManaLeeches.h"
+#include "NewHorizonsSerpentsEmbrace.h"
+#include "NewHorizonsGhostSpecialty.h"
+#include "NewHorizonsAerialSupremacy.h"
+#include "NewHorizonsParalyzingGaze.h"
+#include "NewHorizonsForestAmbush.h"
+#include "NewHorizonsLivingInferno.h"
 #include "NewHorizonsReclaimer.h"
 #include "NewHorizonsSpecialtyArtwork.h"
 #include "NewHorizonsRetainedSpecialtyArtwork.h"
@@ -34,7 +42,23 @@ bool resolveIndividualPresentation(const CHero & hero,
 	const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero,
 	SpecialtyPresentation & result)
 {
-	if(resolveHerbalSurgeonPresentation(hero, development, magic, capturedHero, result)
+	if(resolveParalyzingGazePresentation(hero, development, result))
+		return true;
+	if(hero.getJsonKey() == "core:fafner")
+		if(const auto enabled = serpentsEmbracePolicy(development))
+		{
+			result.name = "Serpent’s Embrace";
+			result.creature = CreatureID(CreatureID::decode("core:naga"));
+			result.description = *enabled ? "Damaging primary melee attacks by Nagas and Naga Queens bind their targets, including retaliation. Each source prevents voluntary movement and Teleport until its next activation or death. Other Naga holds remain independent. Cure and Dispel do not remove this physical restraint."
+				: "Serpent’s Embrace is disabled for this game.";
+			return true;
+		}
+	if(resolveForestAmbushPresentation(hero, development, result)
+		|| resolvePetrifyingBloodPresentation(hero, development, result)
+		|| resolveLivingInfernoPresentation(hero, development, result)
+		|| resolveDreadCavalryPresentation(hero, development, result)
+		|| resolveGhostSpecialtyPresentation(hero, development, result)
+		|| resolveHerbalSurgeonPresentation(hero, development, magic, capturedHero, result)
 		|| resolveRecoverySpecialtyPresentation(hero, development, capturedHero, result)
 		|| resolveReclaimerPresentation(hero, development, capturedHero, result)
 		|| resolveAdditionalSpecialtyPresentation(hero, development, magic, capturedHero, result)
@@ -237,7 +261,8 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 				+ std::to_string(*amount) + " enemy hero Mana, including retaliation. Familiars also restore the actual stolen amount to their hero's Normal Mana, up to capacity. Familiar spell channeling is unchanged.";
 			return result;
 		}
-	if(resolveChosenSpecialtyPresentation(hero, development, magic, result)
+	if(resolveAerialSupremacyPresentation(hero, development, result)
+		|| resolveChosenSpecialtyPresentation(hero, development, magic, result)
 		|| resolveIndividualPresentation(hero, development, magic, capturedHero, result))
 		return result;
 	if(resolveCreatureLinePresentation(hero, development, target, capturedHero, result))

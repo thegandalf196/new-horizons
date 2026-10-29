@@ -1,0 +1,369 @@
+/*
+ * HistoricalHeroEpochFixture.h, part of VCMI engine
+ * License: GNU General Public License v2.0 or later; see license.txt.
+ * Test-only authored captures. Common capture: 09bbf77b4da3326ef2434e41221b717347640049.
+ * Fortune preparation delta: 03888c2df4672f1b5fe3a8816cdb3f8f6dc014ca.
+ * Recovery delta: c343ac60b9c092a1898e8af3ebf3ee972d595b5a.
+ * Deltas replace exact authored values plus Serena's changed starting profile;
+ * nothing inherits installed defaults.
+ */
+#pragma once
+#include "../../lib/json/JsonNode.h"
+#include "../../lib/serializer/ESerializationVersion.h"
+#include <stdexcept>
+namespace historicalHeroFixture
+{
+inline constexpr char heroLuckCapture[] = R"NH_CAPTURE({
+	"schemaVersion": 1,
+	"lighthouseDeparture": {"enabled": true, "seaMovementPercent": 20},
+	"defaultCreatureLineReplacements": {
+		"core:pasis": "new-horizons:wisp",
+		"core:monere": "new-horizons:wisp"
+	},
+	"rulesetVersion": 1,
+	"powerDivisor": 10,
+	"maxPrimary": 10000,
+	"classProfiles": {
+		"core:knight": {"progressionVersion": 3, "starting": [30, 45, 10, 15], "growth": [6, 9, 2, 3]},
+		"core:cleric": {"progressionVersion": 3, "starting": [10, 15, 30, 45], "growth": [2, 3, 6, 9]},
+		"core:ranger": {"progressionVersion": 3, "starting": [35, 35, 15, 15], "growth": [7, 7, 3, 3]},
+		"core:druid": {"progressionVersion": 3, "starting": [5, 10, 30, 55], "growth": [1, 2, 6, 11]},
+		"core:alchemist": {"progressionVersion": 3, "starting": [30, 20, 20, 30], "growth": [6, 4, 4, 6]},
+		"core:wizard": {"progressionVersion": 3, "starting": [5, 5, 45, 45], "growth": [1, 1, 9, 9]},
+		"core:demoniac": {"progressionVersion": 3, "starting": [55, 20, 20, 5], "growth": [11, 4, 4, 1]},
+		"core:heretic": {"progressionVersion": 3, "starting": [20, 5, 50, 25], "growth": [4, 1, 10, 5]},
+		"core:deathknight": {"progressionVersion": 3, "starting": [45, 20, 30, 5], "growth": [9, 4, 6, 1]},
+		"core:necromancer": {"progressionVersion": 3, "starting": [5, 20, 50, 25], "growth": [1, 4, 10, 5]},
+		"core:overlord": {"progressionVersion": 3, "starting": [50, 25, 20, 5], "growth": [10, 5, 4, 1]},
+		"core:warlock": {"progressionVersion": 3, "starting": [15, 5, 60, 20], "growth": [3, 1, 12, 4]},
+		"core:barbarian": {"progressionVersion": 3, "starting": [55, 35, 5, 5], "growth": [11, 7, 1, 1]},
+		"core:battlemage": {"progressionVersion": 3, "starting": [45, 5, 30, 20], "growth": [9, 1, 6, 4]},
+		"core:beastmaster": {"progressionVersion": 3, "starting": [35, 55, 5, 5], "growth": [7, 11, 1, 1]},
+		"core:witch": {"progressionVersion": 3, "starting": [5, 15, 20, 60], "growth": [1, 3, 4, 12]},
+		"core:planeswalker": {"progressionVersion": 3, "starting": [35, 20, 30, 15], "growth": [7, 4, 6, 3]},
+		"core:elementalist": {"progressionVersion": 3, "starting": [5, 5, 60, 30], "growth": [1, 1, 12, 6]}
+	},
+	"skillOfferWeights": {
+		"core:knight": {"new-horizons:offense": 4, "new-horizons:armorer": 6, "new-horizons:archery": 3, "new-horizons:battlecraft": 5, "new-horizons:warMachines": 3, "new-horizons:discipline": 5, "new-horizons:recruitment": 4, "new-horizons:command": 5, "new-horizons:warcasting": 4, "new-horizons:spellcraft": 2, "new-horizons:wisdom": 0, "new-horizons:lightMagic": 5, "new-horizons:shadowMagic": 1, "new-horizons:natureMagic": 1, "new-horizons:havocMagic": 1, "new-horizons:sorceryMagic": 4, "new-horizons:chaosMagic": 1, "new-horizons:logistics": 6, "new-horizons:diplomacy": 8, "new-horizons:estates": 7, "new-horizons:learning": 3, "new-horizons:luck": 5, "new-horizons:divineMandate": 10, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:cleric": {"new-horizons:offense": 1, "new-horizons:armorer": 3, "new-horizons:archery": 1, "new-horizons:battlecraft": 2, "new-horizons:warMachines": 2, "new-horizons:discipline": 4, "new-horizons:recruitment": 2, "new-horizons:command": 0, "new-horizons:warcasting": 4, "new-horizons:spellcraft": 6, "new-horizons:wisdom": 7, "new-horizons:lightMagic": 8, "new-horizons:shadowMagic": 2, "new-horizons:natureMagic": 2, "new-horizons:havocMagic": 2, "new-horizons:sorceryMagic": 6, "new-horizons:chaosMagic": 2, "new-horizons:logistics": 4, "new-horizons:diplomacy": 8, "new-horizons:estates": 6, "new-horizons:learning": 7, "new-horizons:luck": 5, "new-horizons:divineMandate": 10, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:ranger": {"new-horizons:offense": 4, "new-horizons:armorer": 4, "new-horizons:archery": 6, "new-horizons:battlecraft": 5, "new-horizons:warMachines": 2, "new-horizons:discipline": 3, "new-horizons:recruitment": 2, "new-horizons:command": 4, "new-horizons:warcasting": 7, "new-horizons:spellcraft": 3, "new-horizons:wisdom": 0, "new-horizons:lightMagic": 5, "new-horizons:shadowMagic": 1, "new-horizons:natureMagic": 7, "new-horizons:havocMagic": 2, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 1, "new-horizons:logistics": 9, "new-horizons:diplomacy": 5, "new-horizons:estates": 3, "new-horizons:learning": 4, "new-horizons:luck": 8, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 10, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:druid": {"new-horizons:offense": 1, "new-horizons:armorer": 1, "new-horizons:archery": 2, "new-horizons:battlecraft": 1, "new-horizons:warMachines": 1, "new-horizons:discipline": 2, "new-horizons:recruitment": 2, "new-horizons:command": 0, "new-horizons:warcasting": 1, "new-horizons:spellcraft": 7, "new-horizons:wisdom": 8, "new-horizons:lightMagic": 7, "new-horizons:shadowMagic": 2, "new-horizons:natureMagic": 10, "new-horizons:havocMagic": 2, "new-horizons:sorceryMagic": 2, "new-horizons:chaosMagic": 2, "new-horizons:logistics": 5, "new-horizons:diplomacy": 5, "new-horizons:estates": 3, "new-horizons:learning": 8, "new-horizons:luck": 10, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 10, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:alchemist": {"new-horizons:offense": 3, "new-horizons:armorer": 2, "new-horizons:archery": 3, "new-horizons:battlecraft": 4, "new-horizons:warMachines": 5, "new-horizons:discipline": 2, "new-horizons:recruitment": 1, "new-horizons:command": 5, "new-horizons:warcasting": 10, "new-horizons:spellcraft": 7, "new-horizons:wisdom": 0, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 1, "new-horizons:natureMagic": 1, "new-horizons:havocMagic": 7, "new-horizons:sorceryMagic": 7, "new-horizons:chaosMagic": 1, "new-horizons:logistics": 5, "new-horizons:diplomacy": 4, "new-horizons:estates": 6, "new-horizons:learning": 7, "new-horizons:luck": 3, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 10, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:wizard": {"new-horizons:offense": 1, "new-horizons:armorer": 1, "new-horizons:archery": 1, "new-horizons:battlecraft": 1, "new-horizons:warMachines": 3, "new-horizons:discipline": 2, "new-horizons:recruitment": 1, "new-horizons:command": 0, "new-horizons:warcasting": 1, "new-horizons:spellcraft": 9, "new-horizons:wisdom": 9, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 1, "new-horizons:natureMagic": 1, "new-horizons:havocMagic": 8, "new-horizons:sorceryMagic": 10, "new-horizons:chaosMagic": 1, "new-horizons:logistics": 3, "new-horizons:diplomacy": 4, "new-horizons:estates": 7, "new-horizons:learning": 10, "new-horizons:luck": 2, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 10, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:demoniac": {"new-horizons:offense": 8, "new-horizons:armorer": 3, "new-horizons:archery": 2, "new-horizons:battlecraft": 6, "new-horizons:warMachines": 2, "new-horizons:discipline": 3, "new-horizons:recruitment": 5, "new-horizons:command": 6, "new-horizons:warcasting": 4, "new-horizons:spellcraft": 2, "new-horizons:wisdom": 0, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 1, "new-horizons:natureMagic": 1, "new-horizons:havocMagic": 5, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 4, "new-horizons:logistics": 7, "new-horizons:diplomacy": 1, "new-horizons:estates": 5, "new-horizons:learning": 2, "new-horizons:luck": 4, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 10, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:heretic": {"new-horizons:offense": 3, "new-horizons:armorer": 1, "new-horizons:archery": 2, "new-horizons:battlecraft": 3, "new-horizons:warMachines": 2, "new-horizons:discipline": 2, "new-horizons:recruitment": 2, "new-horizons:command": 0, "new-horizons:warcasting": 4, "new-horizons:spellcraft": 6, "new-horizons:wisdom": 7, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 2, "new-horizons:natureMagic": 1, "new-horizons:havocMagic": 8, "new-horizons:sorceryMagic": 2, "new-horizons:chaosMagic": 8, "new-horizons:logistics": 4, "new-horizons:diplomacy": 2, "new-horizons:estates": 4, "new-horizons:learning": 7, "new-horizons:luck": 4, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 10, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:deathknight": {"new-horizons:offense": 6, "new-horizons:armorer": 4, "new-horizons:archery": 2, "new-horizons:battlecraft": 5, "new-horizons:warMachines": 2, "new-horizons:discipline": 4, "new-horizons:recruitment": 2, "new-horizons:command": 5, "new-horizons:warcasting": 7, "new-horizons:spellcraft": 4, "new-horizons:wisdom": 0, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 6, "new-horizons:natureMagic": 1, "new-horizons:havocMagic": 2, "new-horizons:sorceryMagic": 3, "new-horizons:chaosMagic": 3, "new-horizons:logistics": 6, "new-horizons:diplomacy": 2, "new-horizons:estates": 4, "new-horizons:learning": 4, "new-horizons:luck": 2, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 10, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:necromancer": {"new-horizons:offense": 1, "new-horizons:armorer": 3, "new-horizons:archery": 1, "new-horizons:battlecraft": 2, "new-horizons:warMachines": 3, "new-horizons:discipline": 2, "new-horizons:recruitment": 3, "new-horizons:command": 0, "new-horizons:warcasting": 4, "new-horizons:spellcraft": 6, "new-horizons:wisdom": 7, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 9, "new-horizons:natureMagic": 1, "new-horizons:havocMagic": 2, "new-horizons:sorceryMagic": 6, "new-horizons:chaosMagic": 3, "new-horizons:logistics": 4, "new-horizons:diplomacy": 1, "new-horizons:estates": 6, "new-horizons:learning": 9, "new-horizons:luck": 1, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 10, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:overlord": {"new-horizons:offense": 6, "new-horizons:armorer": 5, "new-horizons:archery": 3, "new-horizons:battlecraft": 6, "new-horizons:warMachines": 3, "new-horizons:discipline": 3, "new-horizons:recruitment": 3, "new-horizons:command": 6, "new-horizons:warcasting": 4, "new-horizons:spellcraft": 2, "new-horizons:wisdom": 0, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 4, "new-horizons:natureMagic": 1, "new-horizons:havocMagic": 5, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 1, "new-horizons:logistics": 8, "new-horizons:diplomacy": 2, "new-horizons:estates": 5, "new-horizons:learning": 3, "new-horizons:luck": 5, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 10, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:warlock": {"new-horizons:offense": 3, "new-horizons:armorer": 1, "new-horizons:archery": 2, "new-horizons:battlecraft": 3, "new-horizons:warMachines": 2, "new-horizons:discipline": 1, "new-horizons:recruitment": 3, "new-horizons:command": 0, "new-horizons:warcasting": 4, "new-horizons:spellcraft": 7, "new-horizons:wisdom": 7, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 7, "new-horizons:natureMagic": 1, "new-horizons:havocMagic": 10, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 1, "new-horizons:logistics": 5, "new-horizons:diplomacy": 1, "new-horizons:estates": 5, "new-horizons:learning": 8, "new-horizons:luck": 4, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 10, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:barbarian": {"new-horizons:offense": 8, "new-horizons:armorer": 4, "new-horizons:archery": 5, "new-horizons:battlecraft": 8, "new-horizons:warMachines": 2, "new-horizons:discipline": 3, "new-horizons:recruitment": 5, "new-horizons:command": 5, "new-horizons:warcasting": 1, "new-horizons:spellcraft": 1, "new-horizons:wisdom": 0, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 1, "new-horizons:natureMagic": 2, "new-horizons:havocMagic": 1, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 3, "new-horizons:logistics": 9, "new-horizons:diplomacy": 1, "new-horizons:estates": 2, "new-horizons:learning": 2, "new-horizons:luck": 6, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 10, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:battlemage": {"new-horizons:offense": 6, "new-horizons:armorer": 1, "new-horizons:archery": 4, "new-horizons:battlecraft": 6, "new-horizons:warMachines": 1, "new-horizons:discipline": 3, "new-horizons:recruitment": 4, "new-horizons:command": 0, "new-horizons:warcasting": 10, "new-horizons:spellcraft": 4, "new-horizons:wisdom": 5, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 1, "new-horizons:natureMagic": 6, "new-horizons:havocMagic": 1, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 6, "new-horizons:logistics": 7, "new-horizons:diplomacy": 3, "new-horizons:estates": 2, "new-horizons:learning": 6, "new-horizons:luck": 8, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 10, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 0},
+		"core:beastmaster": {"new-horizons:offense": 4, "new-horizons:armorer": 8, "new-horizons:archery": 5, "new-horizons:battlecraft": 7, "new-horizons:warMachines": 2, "new-horizons:discipline": 6, "new-horizons:recruitment": 4, "new-horizons:command": 4, "new-horizons:warcasting": 1, "new-horizons:spellcraft": 1, "new-horizons:wisdom": 0, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 2, "new-horizons:natureMagic": 3, "new-horizons:havocMagic": 1, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 1, "new-horizons:logistics": 6, "new-horizons:diplomacy": 2, "new-horizons:estates": 3, "new-horizons:learning": 2, "new-horizons:luck": 5, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 10, "new-horizons:elementalRebirth": 0},
+		"core:witch": {"new-horizons:offense": 1, "new-horizons:armorer": 4, "new-horizons:archery": 2, "new-horizons:battlecraft": 2, "new-horizons:warMachines": 1, "new-horizons:discipline": 3, "new-horizons:recruitment": 2, "new-horizons:command": 0, "new-horizons:warcasting": 4, "new-horizons:spellcraft": 6, "new-horizons:wisdom": 8, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 8, "new-horizons:natureMagic": 8, "new-horizons:havocMagic": 1, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 2, "new-horizons:logistics": 5, "new-horizons:diplomacy": 3, "new-horizons:estates": 4, "new-horizons:learning": 8, "new-horizons:luck": 7, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 10, "new-horizons:elementalRebirth": 0},
+		"core:planeswalker": {"new-horizons:offense": 4, "new-horizons:armorer": 2, "new-horizons:archery": 4, "new-horizons:battlecraft": 6, "new-horizons:warMachines": 2, "new-horizons:discipline": 2, "new-horizons:recruitment": 1, "new-horizons:command": 4, "new-horizons:warcasting": 10, "new-horizons:spellcraft": 7, "new-horizons:wisdom": 0, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 1, "new-horizons:natureMagic": 7, "new-horizons:havocMagic": 7, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 1, "new-horizons:logistics": 10, "new-horizons:diplomacy": 4, "new-horizons:estates": 3, "new-horizons:learning": 6, "new-horizons:luck": 9, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 10},
+		"core:elementalist": {"new-horizons:offense": 1, "new-horizons:armorer": 1, "new-horizons:archery": 1, "new-horizons:battlecraft": 1, "new-horizons:warMachines": 2, "new-horizons:discipline": 2, "new-horizons:recruitment": 2, "new-horizons:command": 0, "new-horizons:warcasting": 1, "new-horizons:spellcraft": 9, "new-horizons:wisdom": 9, "new-horizons:lightMagic": 1, "new-horizons:shadowMagic": 1, "new-horizons:natureMagic": 8, "new-horizons:havocMagic": 10, "new-horizons:sorceryMagic": 1, "new-horizons:chaosMagic": 1, "new-horizons:logistics": 5, "new-horizons:diplomacy": 4, "new-horizons:estates": 4, "new-horizons:learning": 9, "new-horizons:luck": 8, "new-horizons:divineMandate": 0, "new-horizons:sylvanLuck": 0, "new-horizons:metamagic": 0, "new-horizons:demonicGating": 0, "new-horizons:necromancy": 0, "new-horizons:shroudOfMalassa": 0, "new-horizons:bloodrage": 0, "new-horizons:bulwarkOfTheMire": 0, "new-horizons:elementalRebirth": 10}
+	},
+	"excludedSkills": [
+		"core:airMagic", "core:earthMagic", "core:fireMagic", "core:waterMagic",
+		"core:artillery", "core:ballistics", "core:firstAid", "core:eagleEye",
+		"core:intelligence", "core:leadership", "core:mysticism", "core:navigation",
+		"core:necromancy", "core:pathfinding", "core:resistance", "core:scholar",
+		"core:scouting", "core:sorcery", "core:tactics", "core:wisdom"
+	],
+	"extraGrowth": [
+		{"skill": "new-horizons:offense", "primary": 0, "chances": [0, 10, 20, 30]},
+		{"skill": "new-horizons:armorer", "primary": 1, "chances": [0, 10, 20, 30]},
+		{"skill": "new-horizons:archery", "primary": 0, "chances": [0, 10, 20, 30]},
+		{"skill": "new-horizons:spellcraft", "primary": 2, "chances": [0, 10, 20, 30]},
+		{"skill": "new-horizons:wisdom", "primary": 3, "chances": [0, 10, 20, 30]}
+	],
+	"creatureLineSpecialties": {
+		"version": 1,
+		"speed": 1,
+		"initiative": 1,
+		"attributePerStep": 1,
+		"levelStep": 5,
+		"attributeMaximum": 6
+	},
+	"damageSpellSpecialties": {
+		"version": 1,
+		"coroniusHolyWrathReplacement": true,
+		"componentPercent": 15
+	},
+	"remainingSpellSpecialtyReplacements": true,
+	"nonDamageSpellSpecialties": {
+		"version": 1,
+		"aenainFrailtyReplacement": true,
+		"defensiveStartReplacements": true,
+		"offensiveStartReplacements": true,
+		"remainingStartReplacements": true,
+		"componentPercent": 20,
+		"spells": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty", "new-horizons:hydrasVitality", "new-horizons:guardianSpirit", "new-horizons:crusade", "new-horizons:focusMagic", "new-horizons:phantomArmy"]
+	},
+	"skillSpecialties": {
+		"navigationStartReplacements": true,
+		"version": 1,
+		"coreBonusPercent": 20,
+		"skills": ["core:logistics", "core:armorer", "core:offence", "core:archery", "core:estates"]
+	},
+	"startingSkills": {
+		"startingBookReplacements": {
+			"core:rion": {"from": "core:stoneSkin", "to": "new-horizons:guardianSpirit"},
+			"core:aeris": {"from": "core:protectAir", "to": "new-horizons:holyArmor"},
+			"core:piquedram": {"from": "core:shield", "to": "core:slow"},
+			"core:neela": {"from": "core:shield", "to": "core:slow"},
+			"core:theodorus": {"from": "core:shield", "to": "core:slow"},
+			"core:ayden": {"from": "core:viewEarth", "to": "new-horizons:confusion"},
+			"core:axsis": {"from": "core:protectAir", "to": "core:forgetfulness"},
+			"core:zydar": {"from": "core:stoneSkin", "to": "new-horizons:blink"},
+			"core:vokial": {"from": "core:stoneSkin", "to": "new-horizons:lifeDrain"},
+			"core:galthran": {"from": "core:shield", "to": "core:slow"},
+			"core:nimbus": {"from": "core:shield", "to": "core:dispel"},
+			"core:nagash": {"from": "core:protectAir", "to": "core:dispel"},
+			"core:jaegar": {"from": "core:shield", "to": "core:curse"},
+			"core:malekith": {"from": "core:bloodlust", "to": "new-horizons:shadowGift"},
+			"core:sephinroth": {"from": "core:protectAir", "to": "core:curse"},
+			"core:gird": {"from": "core:bloodlust", "to": "new-horizons:vengefulVines"},
+			"core:dessa": {"from": "core:stoneSkin", "to": "new-horizons:regeneration"},
+			"core:oris": {"from": "core:protectAir", "to": "core:forgetfulness"},
+			"core:saurug": {"from": "core:bloodlust", "to": "new-horizons:vengefulVines"},
+			"core:verdish": {"from": "core:protectFire", "to": "new-horizons:regeneration"},
+			"core:styg": {"from": "core:shield", "to": "new-horizons:entangle"},
+			"core:tiva": {"from": "core:stoneSkin", "to": "new-horizons:regeneration"}
+		},
+		"startingDevelopmentProfiles": {
+			"core:sylvia": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:divineMandate", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.navigation"}]},
+			"core:voy": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:bulwarkOfTheMire", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.navigation"}]},
+		"core:terek": {"skills": [{"skill": "new-horizons:battlecraft", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
+		"core:oris": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
+		"core:saurug": {"skills": [{"skill": "new-horizons:estates", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]},
+		"core:alamar": {"skills": [{"skill": "new-horizons:shadowMagic", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:shadowMagic", "perk": "new-horizons:shadowMagic.bloodDrinker"}]},
+		"core:jaegar": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.mysticism"}]},
+		"core:jeddite": {"skills": [{"skill": "new-horizons:spellcraft", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 2}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.concentration"}]},
+		"core:geon": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
+		"core:deemer": {"skills": [{"skill": "new-horizons:logistics", "rank": 2}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+		"core:sephinroth": {"skills": [{"skill": "new-horizons:estates", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]},
+		"core:straker": {"skills": [{"skill": "new-horizons:warcasting", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.spellward"}]},
+		"core:charna": {"skills": [{"skill": "new-horizons:battlecraft", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
+		"core:isra": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 2}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.historian"}]},
+		"core:septienna": {"skills": [{"skill": "new-horizons:spellcraft", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.arcaneFocus"}]},
+		"core:nimbus": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
+		"core:thant": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.mysticism"}]},
+		"core:vidomina": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 2}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.scholar"}]},
+		"core:nagash": {"skills": [{"skill": "new-horizons:estates", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.taxCollector"}]},
+		"core:ayden": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:demonicGating", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.intelligence"}]},
+		"core:xyron": {"skills": [{"skill": "new-horizons:havocMagic", "rank": 1}, {"skill": "new-horizons:demonicGating", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.pyromancer"}]},
+		"core:axsis": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:demonicGating", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.mysticism"}]},
+		"core:ash": {"skills": [{"skill": "new-horizons:chaosMagic", "rank": 1}, {"skill": "new-horizons:demonicGating", "rank": 1}], "startingPerks": [{"skill": "new-horizons:chaosMagic", "perk": "new-horizons:chaosMagic.frenziedCurse"}]},
+		"core:astral": {"skills": [{"skill": "new-horizons:spellcraft", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 2}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.concentration"}]},
+		"core:serena": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
+		"core:daremyth": {"skills": [{"skill": "new-horizons:luck", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:luck", "perk": "new-horizons:luck.secondChance"}]},
+		"core:aine": {"skills": [{"skill": "new-horizons:estates", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.taxCollector"}]},
+		"core:thorgrim": {"skills": [{"skill": "new-horizons:warcasting", "rank": 2}, {"skill": "new-horizons:sylvanLuck", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.spellward"}]},
+		"core:coronius": {"skills": [{"skill": "new-horizons:spellcraft", "rank": 1}, {"skill": "new-horizons:sylvanLuck", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.concentration"}]},
+		"core:elleshar": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:sylvanLuck", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.intelligence"}]},
+		"core:malcom": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:sylvanLuck", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
+		"core:aeris": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:sylvanLuck", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+		"core:adelaide": {"skills": [{"skill": "new-horizons:havocMagic", "rank": 1}, {"skill": "new-horizons:divineMandate", "rank": 2}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.cryomancer"}]},
+		"core:ingham": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:divineMandate", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.mysticism"}]},
+		"core:sanya": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:divineMandate", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
+		"core:caitlin": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:divineMandate", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.intelligence"}]},
+		"core:mirlanda": {"skills": [{"skill": "new-horizons:shadowMagic", "rank": 1}, {"skill": "new-horizons:bulwarkOfTheMire", "rank": 2}], "startingPerks": [{"skill": "new-horizons:shadowMagic", "perk": "new-horizons:shadowMagic.witheringTouch"}]},
+		"core:rosic": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:bulwarkOfTheMire", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.mysticism"}]},
+		"core:andra": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:bulwarkOfTheMire", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.intelligence"}]},
+		"core:tiva": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:bulwarkOfTheMire", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
+		"core:clancy": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:sylvanLuck", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.pathfinding"}]},
+		"core:piquedram": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+		"core:thane": {"skills": [{"skill": "new-horizons:learning", "rank": 2}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.scholar"}]},
+		"core:torosar": {"skills": [{"skill": "new-horizons:warMachines", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.masterGunner"}]},
+		"core:iona": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.scholar"}]},
+		"core:fiona": {"skills": [{"skill": "new-horizons:logistics", "rank": 2}, {"skill": "new-horizons:demonicGating", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+		"core:ignatius": {"skills": [{"skill": "new-horizons:battlecraft", "rank": 1}, {"skill": "new-horizons:demonicGating", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
+		"core:lacus": {"skills": [{"skill": "new-horizons:battlecraft", "rank": 2}, {"skill": "new-horizons:elementalRebirth", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
+			"core:orrin": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:archery", "rank": 1}], "startingPerks": [{"skill": "new-horizons:archery", "perk": "new-horizons:archery.targetCaller"}]},
+			"core:valeska": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:archery", "rank": 1}], "startingPerks": [{"skill": "new-horizons:archery", "perk": "new-horizons:archery.pointBlankShot"}]},
+			"core:edric": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.countercharge"}]},
+			"core:lordHaart": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.taxCollector"}]},
+			"core:sorsha": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
+			"core:christian": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.masterGunner"}]},
+			"core:tyris": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:battlecraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
+			"core:adela": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:lightMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:lightMagic", "perk": "new-horizons:lightMagic.benediction"}]},
+			"core:cuthbert": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.spellPenetration"}]},
+			"core:loynis": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:lightMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:lightMagic", "perk": "new-horizons:lightMagic.benediction"}]},
+			"core:rion": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.surgeon"}]},
+			"core:mephala": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.pavise"}]},
+			"core:ufretin": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:warcasting", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.spellward"}]},
+			"core:jenova": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.landSurveyor"}]},
+			"core:ryland": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:diplomacy", "rank": 1}], "startingPerks": [{"skill": "new-horizons:diplomacy", "perk": "new-horizons:diplomacy.negotiator"}]},
+			"core:ivor": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:archery", "rank": 1}], "startingPerks": [{"skill": "new-horizons:archery", "perk": "new-horizons:archery.targetCaller"}]},
+			"core:kyrre": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+			"core:uland": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:lightMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:lightMagic", "perk": "new-horizons:lightMagic.healer"}]},
+			"core:gem": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.surgeon"}]},
+			"core:melodia": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:luck", "rank": 1}], "startingPerks": [{"skill": "new-horizons:luck", "perk": "new-horizons:luck.fortuneSFavor"}]},
+			"core:alagar": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.cryomancer"}]},
+			"core:josephine": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.pavise"}]},
+			"core:neela": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.ironDiscipline"}]},
+			"core:fafner": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:warcasting", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.spellward"}]},
+			"core:halon": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:warcasting", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.battleMeditation"}]},
+			"core:rissa": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]},
+			"core:theodorus": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:learning", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.mentor"}]},
+			"core:solmyr": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.stormcaller"}]},
+			"core:cyra": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:sorceryMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:sorceryMagic", "perk": "new-horizons:sorceryMagic.temporalist"}]},
+			"core:rashka": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.shockAssault"}]},
+			"core:marius": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.ironDiscipline"}]},
+			"core:octavia": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.taxCollector"}]},
+			"core:calh": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:archery", "rank": 1}], "startingPerks": [{"skill": "new-horizons:archery", "perk": "new-horizons:archery.targetCaller"}]},
+			"core:pyre": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.masterGunner"}]},
+			"core:nymus": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
+			"core:olema": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.concentration"}]},
+			"core:calid": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]},
+			"core:xarfax": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.pyromancer"}]},
+			"core:zydar": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.spellPenetration"}]},
+			"core:vokial": {"skills": [{"skill": "new-horizons:necromancy", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
+			"core:moandor": {"skills": [{"skill": "new-horizons:necromancy", "rank": 1},{"skill": "new-horizons:archery", "rank": 1}], "startingPerks": [{"skill": "new-horizons:archery", "perk": "new-horizons:archery.targetCaller"}]},
+			"core:tamika": {"skills": [{"skill": "new-horizons:necromancy", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.shockAssault"}]},
+			"core:clavius": {"skills": [{"skill": "new-horizons:necromancy", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.taxCollector"}]},
+			"core:galthran": {"skills": [{"skill": "new-horizons:necromancy", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
+			"core:aislinn": {"skills": [{"skill": "new-horizons:necromancy", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.concentration"}]},
+			"core:sandro": {"skills": [{"skill": "new-horizons:necromancy", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.spellPenetration"}]},
+			"core:xsi": {"skills": [{"skill": "new-horizons:necromancy", "rank": 1},{"skill": "new-horizons:shadowMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:shadowMagic", "perk": "new-horizons:shadowMagic.witheringTouch"}]},
+			"core:lorelei": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+			"core:arlach": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.masterGunner"}]},
+			"core:dace": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.shockAssault"}]},
+			"core:ajit": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:warcasting", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.spellward"}]},
+			"core:damacon": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.taxCollector"}]},
+			"core:gunnar": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+			"core:synca": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:recruitment", "rank": 1}], "startingPerks": [{"skill": "new-horizons:recruitment", "perk": "new-horizons:recruitment.drillSergeant"}]},
+			"core:shakti": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
+			"core:malekith": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.spellPenetration"}]},
+			"core:darkstorn": {"skills": [{"skill": "new-horizons:shroudOfMalassa", "rank": 1},{"skill": "new-horizons:wisdom", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.intelligence"}]},
+			"core:yog": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.precisionBombardment"}]},
+			"core:gurnisson": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.masterGunner"}]},
+			"core:jabarkas": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:archery", "rank": 1}], "startingPerks": [{"skill": "new-horizons:archery", "perk": "new-horizons:archery.targetCaller"}]},
+			"core:shiva": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+			"core:gretchin": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.pathfinding"}]},
+			"core:krellion": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:discipline", "rank": 1}], "startingPerks": [{"skill": "new-horizons:discipline", "perk": "new-horizons:discipline.steadfast"}]},
+			"core:cragHack": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.shockAssault"}]},
+			"core:tyraxor": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:battlecraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
+			"core:gird": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.arcaneFocus"}]},
+			"core:vey": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:discipline", "rank": 1}], "startingPerks": [{"skill": "new-horizons:discipline", "perk": "new-horizons:discipline.inspirationalLeader"}]},
+			"core:dessa": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.pathfinding"}]},
+			"core:zubin": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:archery", "rank": 1}], "startingPerks": [{"skill": "new-horizons:archery", "perk": "new-horizons:archery.targetCaller"}]},
+			"core:gundula": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
+			"core:bron": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.countercharge"}]},
+			"core:drakon": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:discipline", "rank": 1}], "startingPerks": [{"skill": "new-horizons:discipline", "perk": "new-horizons:discipline.steadfast"}]},
+			"core:wystan": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:archery", "rank": 1}], "startingPerks": [{"skill": "new-horizons:archery", "perk": "new-horizons:archery.targetCaller"}]},
+			"core:tazar": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.pavise"}]},
+			"core:alkin": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
+			"core:korbac": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.pathfinding"}]},
+			"core:gerwulf": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.masterGunner"}]},
+			"core:broghild": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+			"core:verdish": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.surgeon"}]},
+			"core:merist": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:natureMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:natureMagic", "perk": "new-horizons:natureMagic.herbalist"}]},
+			"core:styg": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.spellPenetration"}]},
+			"core:pasis": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
+			"core:thunar": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.pavise"}]},
+			"core:ignissa": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.shockAssault"}]},
+			"core:monere": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+			"core:erdamon": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.countercharge"}]},
+			"core:fiur": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
+			"core:kalt": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:discipline", "rank": 1}], "startingPerks": [{"skill": "new-horizons:discipline", "perk": "new-horizons:discipline.steadfast"}]},
+			"core:luna": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.pyromancer"}]},
+			"core:brissa": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:natureMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:natureMagic", "perk": "new-horizons:natureMagic.rootcaller"}]},
+			"core:ciele": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.stormcaller"}]},
+			"core:labetha": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:natureMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:natureMagic", "perk": "new-horizons:natureMagic.rootcaller"}]},
+			"core:inteus": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.pyromancer"}]},
+			"core:aenain": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:natureMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:natureMagic", "perk": "new-horizons:natureMagic.rootcaller"}]},
+			"core:gelare": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.merchantPrince"}]},
+			"core:grindan": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]}
+		},
+		"factionSkills": {
+			"core:castle": "new-horizons:divineMandate",
+			"core:rampart": "new-horizons:sylvanLuck",
+			"core:tower": "new-horizons:metamagic",
+			"core:inferno": "new-horizons:demonicGating",
+			"core:necropolis": "new-horizons:necromancy",
+			"core:dungeon": "new-horizons:shroudOfMalassa",
+			"core:stronghold": "new-horizons:bloodrage",
+			"core:fortress": "new-horizons:bulwarkOfTheMire",
+			"core:conflux": "new-horizons:elementalRebirth"
+		},
+		"legacyAliases": {
+			"core:necropolis": "core:necromancy"
+		},
+		"legacySkillMigrations": {
+			"core:archery": {"kind": "skill", "target": "new-horizons:archery"},
+			"core:armorer": {"kind": "skill", "target": "new-horizons:armorer"},
+			"core:artillery": {"kind": "skill", "target": "new-horizons:warMachines"},
+			"core:ballistics": {"kind": "skill", "target": "new-horizons:warMachines"},
+			"core:diplomacy": {"kind": "skill", "target": "new-horizons:diplomacy"},
+			"core:eagleEye": {"kind": "perk", "target": "new-horizons:learning.eagleEye", "fallback": "remove"},
+			"core:estates": {"kind": "skill", "target": "new-horizons:estates"},
+			"core:firstAid": {"kind": "skill", "target": "new-horizons:warMachines"},
+			"core:intelligence": {"kind": "perk", "target": "new-horizons:wisdom.intelligence", "fallback": "remove"},
+			"core:leadership": {"kind": "skill", "target": "new-horizons:discipline"},
+			"core:learning": {"kind": "skill", "target": "new-horizons:learning"},
+			"core:logistics": {"kind": "skill", "target": "new-horizons:logistics"},
+			"core:luck": {"kind": "skill", "target": "new-horizons:luck"},
+			"core:mysticism": {"kind": "perk", "target": "new-horizons:wisdom.mysticism", "fallback": "remove"},
+			"core:navigation": {"kind": "perk", "target": "new-horizons:logistics.navigation", "fallback": "remove"},
+			"core:necromancy": {"kind": "factionSkill", "target": "new-horizons:necromancy"},
+			"core:offence": {"kind": "skill", "target": "new-horizons:offense"},
+			"core:pathfinding": {"kind": "perk", "target": "new-horizons:logistics.pathfinding", "fallback": "remove"},
+			"core:resistance": {"kind": "perk", "target": "new-horizons:warcasting.spellward", "fallback": "remove"},
+			"core:scholar": {"kind": "perk", "target": "new-horizons:learning.scholar", "fallback": "remove"},
+			"core:scouting": {"kind": "perk", "target": "new-horizons:logistics.scouting", "fallback": "remove"},
+			"core:sorcery": {"kind": "skill", "target": "new-horizons:spellcraft"},
+			"core:tactics": {"kind": "perk", "target": "new-horizons:battlecraft.tactics", "fallback": "remove"},
+			"core:wisdom": {"kind": "skill", "target": "new-horizons:wisdom"}
+		},
+		"magic": {
+			"replace": "new-horizons:wisdom"
+		},
+		"might": {
+			"replacePosition": "second",
+			"singleSkillFallback": "append"
+		}
+	}
+}
+)NH_CAPTURE";
+inline constexpr char fortunePreparationDelta[] = R"NH_CAPTURE({
+"fortuneChildSpecialty": {"version":1,"luckPerStep":1,"levelStep":5},
+"arcanePreparationSpecialty": {"version":1,"initialPercent":25,"percentPerLevel":5,"maximumPercent":100},
+"druidSpecialties": {"version":1,"highLore":{"percentPerLevel":10,"maximumPercent":100},"restorativeSorceress":{"percentPerLevel":5,"maximumPercent":100},"naturalPhilosopher":{"percentPerLevel":5,"maximumPercent":100,"knowledgeObjectExperiencePercent":25}}
+})NH_CAPTURE";
+inline constexpr char recoveryDelta[] = R"NH_CAPTURE({
+"fortuneChildSpecialty": {"version":1,"luckPerStep":1,"levelStep":5},
+"arcanePreparationSpecialty": {"version":1,"initialPercent":25,"percentPerLevel":5,"maximumPercent":100},
+"bottomlessMindSpecialty": {"version":1,"pointsPerLevel":2},
+"masterSpellwardSpecialty": {"version":1,"percentPerLevel":5,"maximumExtraPercent":100},
+"schoolSpellcraftSpecialties": {"version":1,"overcaster":{"percentPerLevel":5,"maximumPercent":100},"darkSavant":{"percentPerLevel":5,"maximumPercent":100},"primalFormula":{"percentPerLevel":5,"maximumPercent":100},"mireHexer":{"percentPerLevel":5,"maximumPercent":100}},
+"additionalSpecialties": {"version":1,"fieldPhysician":{"healingPercentPerLevel":5,"healingMaximumPercent":100},"manaFurnace":{"restorePointsPerLevel":2,"maximumRestorePoints":40},"graveArchivist":{"learningPercentPerLevel":5,"learningMaximumPercent":100,"additionalEagleEyeSpells":1},"spiritTeacher":{"learningPercentPerLevel":5,"learningMaximumPercent":100,"mentorExperiencePercent":25}},
+"recoverySpecialties": {"version":1,"infernalWellspring":{"dailyPercentPerLevel":5,"dailyMaximumPercent":100,"victoryPercent":25},"ritualReserve":{"dailyPercentPerLevel":5,"dailyMaximumPercent":100,"lowNormalPercent":50},"deepTrance":{"dailyPercentPerLevel":5,"dailyMaximumPercent":100,"firstCombatPercent":50},"herbalSurgeon":{"tentPercentPerLevel":5,"tentMaximumPercent":100,"regenerationPercentPerLevel":5,"regenerationMaximumPercent":100}},
+"individualSpecialties": {"version":1,"graveReaper":{"percentagePointsPerLevel":1,"maximumPercentagePoints":20},"warlocksFormula":{"percentPerLevel":5,"maximumPercent":100}},
+"druidSpecialties": {"version":1,"highLore":{"percentPerLevel":10,"maximumPercent":100},"restorativeSorceress":{"percentPerLevel":5,"maximumPercent":100},"naturalPhilosopher":{"percentPerLevel":5,"maximumPercent":100,"knowledgeObjectExperiencePercent":25}}
+})NH_CAPTURE";
+
+inline constexpr char serenaStartingProfile[] = R"NH_CAPTURE({"skills":[{"skill":"new-horizons:wisdom","rank":1},{"skill":"new-horizons:metamagic","rank":1}],"startingPerks":[{"skill":"new-horizons:wisdom","perk":"new-horizons:wisdom.intelligence"}]})NH_CAPTURE";
+
+inline JsonNode rules(ESerializationVersion epoch)
+{
+	JsonNode result(heroLuckCapture, sizeof(heroLuckCapture) - 1, "HistoricalHeroEpochFixture");
+	JsonNode delta;
+	if(epoch == ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION)
+		delta = JsonNode(fortunePreparationDelta, sizeof(fortunePreparationDelta) - 1, "HistoricalFortuneHeroFixture");
+	else if(epoch == ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES)
+		delta = JsonNode(recoveryDelta, sizeof(recoveryDelta) - 1, "HistoricalRecoveryHeroFixture");
+	else if(epoch != ESerializationVersion::NEW_HORIZONS_HERO_LUCK)
+		throw std::invalid_argument("Unsupported historical hero fixture epoch");
+	if(!delta.isNull())
+	{
+		for(const auto & [key, value] : delta.Struct())
+			result[key] = value;
+		result["startingSkills"]["startingDevelopmentProfiles"]["core:serena"] =
+			JsonNode(serenaStartingProfile, sizeof(serenaStartingProfile) - 1, "HistoricalSerenaStartingProfile");
+	}
+	result.setOverrideFlag(true);
+	return result;
+}
+}

@@ -16,6 +16,7 @@
 #include "HypotheticBattleTypes.h"
 
 struct DLL_LINKAGE BattleTargetProbeTiming;
+namespace petrifyingBloodAI { struct Pending; }
 
 /// A full reaction preview may already have replayed every hit in this action.
 /// The future-actor caller must not then repeat its ordinary extra-hit loop.
@@ -110,16 +111,39 @@ public:
 		DamageCacheAdmission * mainProbeAdmission = nullptr,
 		BattleExchangeAttackResult * actionResult = nullptr,
 		// One caller-owned receipt across the ordinary blows of one action.
-		bool * manaLeechSequenceSpent = nullptr);
+		bool * manaLeechSequenceSpent = nullptr,
+		std::vector<petrifyingBloodAI::Pending> * bloodSequence = nullptr);
+
+	float finishPetrifyingBlood(const std::shared_ptr<HypotheticBattle> & hb, const battle::CUnitState & actor,
+		const std::vector<petrifyingBloodAI::Pending> & pending, bool isOurAttack, DamageCache & damageCache);
+
+	void trackDreadContinuation(const std::shared_ptr<HypotheticBattle> & battle,
+		uint32_t actorId, DamageCache & damageCache, bool isOur);
 
 	const BattleScore & getScore() const { return dpsScore; }
 	/// Complete an already applied action and score only its newly finalized Plague injury.
+	void completeFrozenActivation(const std::shared_ptr<StackWithBonuses> & attacker, bool referenceActorIsOurs,
+		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & battle);
 	void completePlagueActivation(uint32_t unitId, PlayerColor referenceController, bool referenceActorIsOurs,
 		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb);
 
 private:
-	/// Resolve only an existing future actor's move-before-hit reactions. A probe
-	/// owns a sibling branch; an applied call replays solely into its given branch.
+	std::optional<float> trackAerialExchange(const std::shared_ptr<StackWithBonuses> & attacker,
+		const std::shared_ptr<StackWithBonuses> & defender, bool shooting, bool isOurAttack,
+		DamageCache & cache, const std::shared_ptr<HypotheticBattle> & battle,
+		bool evaluateOnly, bool allowRetaliation);
+	std::optional<float> trackDreadAction(const std::shared_ptr<StackWithBonuses> & attacker,
+		const std::shared_ptr<StackWithBonuses> & defender, bool shooting, bool isOurAttack,
+		DamageCache & cache, const std::shared_ptr<HypotheticBattle> & battle,
+		bool evaluateOnly, bool allowRetaliation);
+	/// Full-action preview/replay keeps movement reactions first, then captured
+	/// Dread/Aerial actions. Probes own children; applied calls use their branch.
+	std::optional<float> trackFutureMovementReaction(
+		const std::shared_ptr<StackWithBonuses> & attacker,
+		const std::shared_ptr<StackWithBonuses> & defender,
+		bool shooting, bool isOurAttack, DamageCache & damageCache,
+		const std::shared_ptr<HypotheticBattle> & hb, bool evaluateOnly,
+		bool allowRetaliation, std::optional<bool> * readyOverwatch);
 	std::optional<float> trackFutureReaction(
 		const std::shared_ptr<StackWithBonuses> & attacker,
 		const std::shared_ptr<StackWithBonuses> & defender,

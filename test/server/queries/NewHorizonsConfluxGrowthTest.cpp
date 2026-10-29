@@ -62,8 +62,17 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		// This fixture characterizes its original unscaled growth/context.
+		loaded->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
 		if(!useNewHorizonsMagicRules)
+		{
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+			// Keep class rules while authoring a roster without current starting books.
+			auto heroRules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+			heroRules["startingSkills"].Struct().erase("startingBookReplacements");
+			heroRules.setOverrideFlag(true); // Null magic must not regain installed starting-book rules.
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroRules);
+		}
 		loaded->overrideGameSetting(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories")));
 
@@ -552,6 +561,9 @@ TEST_F(NewHorizonsConfluxGrowthTest, VaultOfAshesAddsFireLineGrowthAtTheWeeklyBo
 
 	const auto energyDwelling = BuildingID::getDwellingFromLevel(3, 1);
 	ASSERT_TRUE(town->getTown()->buildings.contains(energyDwelling));
+	ASSERT_EQ(gameState()->canBuildStructure(town, energyDwelling), EBuildingState::PREREQUIRES);
+	ASSERT_TRUE(gameHandler.buildStructure(town->id, BuildingID::MAGES_GUILD_2));
+	ASSERT_EQ(gameState()->canBuildStructure(town, energyDwelling), EBuildingState::ALLOWED);
 	ASSERT_TRUE(gameHandler.buildStructure(town->id, energyDwelling));
 	ASSERT_EQ(town->creatures.at(fireRow).second,
 		(std::vector<CreatureID>{fireElemental, energyElemental}));

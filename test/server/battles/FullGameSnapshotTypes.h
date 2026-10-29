@@ -17,6 +17,7 @@
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/gameState/CGameStateCampaign.h"
 #include "../../../lib/gameState/TavernHeroesPool.h"
+#include "../../../lib/gameState/QuestInfo.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/mapObjects/MiscObjects.h"
 #include "../../../lib/mapObjects/ObjectTemplate.h"

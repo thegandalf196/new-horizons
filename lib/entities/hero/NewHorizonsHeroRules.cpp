@@ -504,7 +504,7 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "chosenSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "chosenSpecialties"});
 	validateCurrentSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
@@ -547,7 +547,7 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "chosenSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "chosenSpecialties"});
 	validateCurrentSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
@@ -589,16 +589,6 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	if(rules.Struct().contains("skillSpecialties"))
 		result["skillSpecialties"] = rules["skillSpecialties"];
 	copyCapturedIndividualSpecialties(result, rules);
-	if(rules.Struct().contains("chosenSpecialties"))
-		result["chosenSpecialties"] = rules["chosenSpecialties"];
-	if(rules.Struct().contains("recoverySpecialties"))
-		result["recoverySpecialties"] = rules["recoverySpecialties"];
-	if(rules.Struct().contains("learningExchangeSpecialties"))
-		result["learningExchangeSpecialties"] = rules["learningExchangeSpecialties"];
-	if(rules.Struct().contains("swampSeerSpecialty"))
-		result["swampSeerSpecialty"] = rules["swampSeerSpecialty"];
-	if(rules.Struct().contains("reclamationSpecialty"))
-		result["reclamationSpecialty"] = rules["reclamationSpecialty"];
 	if(rules.Struct().contains("druidSpecialties"))
 		result["druidSpecialties"] = rules["druidSpecialties"];
 	if(rules.Struct().contains("fortuneChildSpecialty"))

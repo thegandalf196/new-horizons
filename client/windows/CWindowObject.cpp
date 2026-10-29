@@ -84,7 +84,7 @@ std::shared_ptr<CPicture> CWindowObject::createBg(const ImagePath & imageName, i
 		return nullptr;
 
 	auto image = std::make_shared<CPicture>(imageName, Point(0,0), EImageBlitMode::OPAQUE);
-	PlayerColor playerColor = GAME->interface() ? GAME->interface()->playerID : PlayerColor(1);
+	PlayerColor playerColor = GAME && GAME->interface() ? GAME->interface()->playerID : PlayerColor(1);
 
 	if(windowOptions & PLAYER_COLORED_BORDERED_STATUSBAR)
 	{
@@ -251,7 +251,7 @@ void CWindowObject::setShadow(bool on)
 
 void CWindowObject::showAll(Canvas & to)
 {
-	auto color = GAME->interface() ? GAME->interface()->playerID : PlayerColor(1);
+	auto color = GAME && GAME->interface() ? GAME->interface()->playerID : PlayerColor(1);
 	if(settings["session"]["spectate"].Bool())
 		color = PlayerColor(1); // TODO: Spectator shouldn't need special code for UI colors
 

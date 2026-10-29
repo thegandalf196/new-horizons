@@ -539,26 +539,18 @@ WikiWindow::WikiWindow(WikiWindow::Style style_, std::optional<WikiEntryKey> ini
 		          [](const WikiEntry & a, const WikiEntry & b){ return a.name < b.name; });
 	}
 
-	// Build war-machine creature set so we can include them under Creatures
-	std::set<CreatureID> warMachineCreatures;
-	for(const auto & art : LIBRARY->arth->objects)
-		if(art && art->getWarMachine() != CreatureID::NONE)
-			warMachineCreatures.insert(art->getWarMachine());
-
 	// Build faction name lookup for creature subtitles
 	std::map<FactionID, std::string> factionNameById;
 	for(const auto & faction : LIBRARY->townh->objects)
 		if(faction)
 			factionNameById[faction->getId()] = faction->getNameTranslated();
 
-	// Creatures – normal creatures plus war machines (always show war machines)
+	// Creatures – one visibility rule shared with ordinary reference links.
 	{
 		const int iCreature = static_cast<int>(WikiCategory::CREATURE);
 		for(const auto & creature : LIBRARY->creh->objects)
 		{
-			if(!creature) continue;
-			const bool isWM = warMachineCreatures.count(CreatureID(creature->getIndex())) > 0;
-			if(!creature->special || isWM)
+			if(isWikiCreatureVisible(creature.get()))
 			{
 				const auto it = factionNameById.find(creature->getFactionID());
 				const std::string factionName = (it != factionNameById.end()) ? it->second : "";

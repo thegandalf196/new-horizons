@@ -8,7 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "../../lib/battle/NewHorizonsLivingInferno.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/BattleEffectExchange.h"
 #include "../../lib/battle/BattleForm.h"
@@ -43,6 +46,9 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 	info.load(id, data);
 	auto newUnit = std::make_shared<StackWithBonuses>(this, info);
 	stackStates[newUnit->unitId()] = newUnit;
+	const auto bindings = newUnit->getBonuses(Selector::type()(BonusType::BIND_EFFECT));
+	for(const auto & bonus : *bindings)
+		if(bonus) noteSerpentBindingAdmission(*bonus);
 	const auto orderState = getHeroOrderState(info.side, HeroCommand::RIPOSTE);
 	const auto * hero = battleGetFightingHero(info.side);
 	if(orderState && orderState->issuedRound == projectedRound
@@ -118,6 +124,7 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 	if(!mover || !mover->alive() || destination == mover->getPosition() || !destination.isAvailable())
 		return result;
 	const auto start = mover->getPosition();
+	auto livingInferno = newHorizonsLivingInferno::capture(*this, mover.get(), true);
 	auto path = mover->hasBonusOfType(BonusType::FLYING)
 		? BattleHexArray{destination} : getPath(start, destination, mover.get()).first;
 	// getPath stores destination first; traverse the same committed endpoints
@@ -127,6 +134,7 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 		const auto from = mover->getPosition();
 		const auto to = path[index - 1];
 		moveUnit(id, to);
+		livingInferno.traverse(from, BattleHexArray{to}, mover->hasBonusOfType(BonusType::FLYING));
 		for(const auto shooterId : battleGetOverwatchReactors(mover.get(), from, to))
 		{
 			auto shooter = getForUpdate(shooterId);
@@ -144,7 +152,10 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 			const auto source = captureElementalRebirthSource(*mover);
 			const bool nativeRebirth = hasReadyNativeRebirth(mover.get());
 			const auto healthBefore = mover->getAvailableHealth();
-			mover->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+			newHorizonsForestAmbush::damageFromAttack(*this, *mover, damage,
+				battle::DamageProvenance::PHYSICAL_CREATURE);
+			if(!mover->alive())
+				releaseSerpentBindingsForDeath(*mover);
 			const auto healthLoss = std::max<int64_t>(0, healthBefore - mover->getAvailableHealth());
 			if(healthLoss > 0)
 				mover->removeUnitBonus(Bonus::UntilBeingAttacked);
@@ -154,6 +165,12 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 				projectElementalRebirth(mover.get(), *source, !mover->alive(), mover->isClone(), nativeRebirth);
 		}
 	}
+	if(auto wall = newHorizonsLivingInferno::obstacle(*this, livingInferno, mover->getPosition()))
+	{
+		ObstacleChanges changes;
+		wall->toInfo(changes, BattleChanges::EOperation::ADD);
+		addObstacle(changes);
+	}
 	return result;
 }
 
@@ -161,6 +178,7 @@ void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t he
 {
 	std::shared_ptr<StackWithBonuses> changed = getForUpdateImpl(id);
 	const bool wasAlive = changed->alive();
+	const bool sourceKilled = wasAlive && healthDelta <= -changed->getAvailableHealth();
 	const bool observing = lifeDrainFriendlyObservation && lifeDrainFriendlyObservation->id == id;
 	std::optional<JsonNode> before;
 	const auto revision = changed->getBattleFormViewRevision();
@@ -182,6 +200,8 @@ void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t he
 	}
 
 	changed->load(data);
+	if(sourceKilled || (wasAlive && !changed->alive()))
+		releaseSerpentBindingsForDeath(*changed);
 	recordBloodrageTransition(changed, wasAlive);
 	if(healthDelta < 0)
 		changed->removeUnitBonus(Bonus::UntilBeingAttacked);
@@ -216,6 +236,7 @@ void HypotheticBattle::removeUnit(uint32_t id)
 		auto toRemove = getForUpdate(toRemoveId);
 		const bool wasAlive = toRemove->alive();
 
+		releaseSerpentBindingsForDeath(*toRemove);
 		if(!toRemove->ghost)
 		{
 			toRemove->onRemoved();

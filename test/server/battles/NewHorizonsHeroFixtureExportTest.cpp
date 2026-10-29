@@ -10,6 +10,11 @@
 #include "StdInc.h"
 #include "BattleTestFixture.h"
 #include "../../../lib/CPlayerState.h"
+#include "../../../lib/CRandomGenerator.h"
+#include "../../../lib/mapObjects/CGCreature.h"
+#include "../../../lib/entities/hero/NewHorizonsCapabilityRules.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/CSpell.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/VCMIDirs.h"
@@ -18,6 +23,7 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/networkPacks/PacksForServer.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include <algorithm>
 #include <cstdlib>
 #include <zlib.h>
 #include <filesystem>
@@ -709,4 +715,248 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryKnightWithNearbyExperienc
 	ASSERT_EQ(actual, expected);
 	MapServiceTinyH3M exported(actual, nullptr);
 	ASSERT_NE(exported.loadMap(ResourcePath(name), gameState().get()), nullptr);
+}
+
+// Authored initial eligibility only. This path never searches offers or draws a
+// hero proc, and is separate from the ordinary-acquisition exporter contract.
+class NewHorizonsAuthoredHeroCueFixtureExportTest : public NewHorizonsHeroProcFixtureExportTest
+{
+protected:
+	void configurePlayer(PlayerSettings & player) const override
+	{
+		player.bonus = PlayerStartingBonus::GOLD;
+		player.connectedPlayerIDs = player.color == PlayerColor(0)
+			? std::set<PlayerConnectionID>{PlayerConnectionID::FIRST_HUMAN} : std::set<PlayerConnectionID>{};
+		player.compOnly = player.color != PlayerColor(0);
+	}
+
+	std::filesystem::path checkedRoot()
+	{
+		namespace fs = std::filesystem;
+		const auto directory = [](const char * variable)
+		{
+			const auto * value = std::getenv(variable);
+			if(!value || !*value) throw std::runtime_error("Authored cue directory required");
+			const fs::path path(value);
+			if(!path.is_absolute() || !fs::is_directory(path) || path.lexically_normal() != path)
+				throw std::runtime_error("Authored cue directory must be absolute, existing and normalized");
+			for(auto parent = path; !parent.empty(); parent = parent.parent_path())
+			{
+				if(fs::is_symlink(fs::symlink_status(parent))) throw std::runtime_error("Authored cue symlink rejected");
+				if(parent == parent.root_path()) break;
+			}
+			return fs::canonical(path);
+		};
+		const auto inside = [](const fs::path & a, const fs::path & b)
+			{ return std::mismatch(a.begin(), a.end(), b.begin(), b.end()).first == a.end(); };
+		const auto privateRoot = directory("NH_EXPORT_HERO_CUE_AUTHORED_PRIVATE_ROOT");
+		const auto root = directory("NH_EXPORT_HERO_CUE_AUTHORED_SAVE_ROOT");
+		const auto source = directory("NH_EXPORT_HERO_CUE_AUTHORED_SOURCE_ROOT");
+		if(root == privateRoot || !inside(privateRoot, root)
+			|| root != fs::canonical(fs::path(VCMIDirs::get().userSavePath().string()))
+			|| !fs::is_regular_file(source / "AGENTS.md") || !fs::is_regular_file(source / "CMakeLists.txt"))
+			throw std::runtime_error("Authored cue requires its isolated private save mount and source root");
+		auto protectedRoots = VCMIDirs::get().dataPaths();
+		const auto reject = [&](const fs::path & other)
+		{
+			const auto path = fs::weakly_canonical(other);
+			if(inside(privateRoot, path) || inside(path, privateRoot))
+				throw std::runtime_error("Authored cue private root overlaps source/resources/runtime");
+		};
+		reject(source); reject(fs::current_path()); reject(fs::path(VCMIDirs::get().binaryPath().string()));
+		for(const auto & resource : protectedRoots) reject(fs::path(resource.string()));
+		const fs::path cache = fs::path(VCMIDirs::get().userCachePath().string()) / "testMaps";
+		if(!inside(privateRoot, fs::weakly_canonical(cache))) throw std::runtime_error("Authored cue cache must be private");
+		for(const auto & path : {root / "authored-hero-cue-pending.vsgm1", root / "authored-hero-cue.vsgm1",
+			cache / "NewHorizonsAuthoredHeroCueFixtureExportTest_ExportAuthoredEligibleAdventureSave.h3m"})
+			if(fs::symlink_status(path).type() != fs::file_type::not_found)
+				throw std::runtime_error("Authored cue refuses an existing output");
+		return root;
+	}
+
+	std::vector<std::byte> randomState()
+	{
+		CMemorySerializer memory;
+		memory.oser & *handler->randomizer;
+		memory.oser & CRandomGenerator::getDefault();
+		return memory.extractBuffer();
+	}
+
+	void fitAuthoredArmy(CGHeroInstance & hero, bool luck)
+	{
+		const std::string identity = luck ? "core:daremyth" : "core:vey";
+		const std::string category = luck ? "core:stoneGolem" : "core:ogre";
+		SCOPED_TRACE(::testing::Message() << "hero=" << identity << " creature=" << category);
+		const auto creature = CreatureID(CreatureID::decode(category));
+		const auto capacity = hero.getLeadershipSlotCapacity(creature);
+		ASSERT_TRUE(capacity);
+		SCOPED_TRACE(::testing::Message() << "Leadership=" << capacity->leadership
+			<< " requirement=" << capacity->requirement << " per-slot maximum=" << capacity->maximum);
+		ASSERT_EQ(hero.stacksCount(), luck ? 7u : 1u);
+		const int luckBefore = hero.luckVal();
+		const int moraleBefore = hero.moraleVal();
+		std::string counts;
+		for(const auto & [slot, stack] : hero.Slots())
+		{
+			SCOPED_TRACE(::testing::Message() << "slot=" << slot.getNum());
+			ASSERT_EQ(stack->getCreatureID(), creature);
+			const int requested = luck ? (slot == SlotID(0) ? 2 : 1) : 8;
+			ASSERT_EQ(stack->getCount(), requested);
+			const int selected = std::min(requested, capacity->maximum);
+			ASSERT_GE(selected, 1);
+			ASSERT_TRUE(capacity->accepts(selected));
+			// Initial scenario authoring only: reduce counts, never capacity/stats.
+			hero.setStackCount(slot, selected);
+			EXPECT_EQ(hero.getStackCount(slot), selected);
+			counts += (counts.empty() ? "" : ",") + std::to_string(selected);
+		}
+		EXPECT_EQ(hero.luckVal(), luckBefore);
+		EXPECT_EQ(hero.moraleVal(), moraleBefore);
+		const std::string prefix = luck ? "daremyth" : "vey";
+		RecordProperty(prefix + "Leadership", capacity->leadership);
+		RecordProperty(prefix + "CreatureRequirement", capacity->requirement);
+		RecordProperty(prefix + "PerSlotMaximum", capacity->maximum);
+		RecordProperty(prefix + "ArmyCounts", counts);
+	}
+
+	void authorLoadout(CGHeroInstance & hero, bool luck)
+	{
+		ASSERT_EQ(hero.getHeroTypeID(), HeroTypeID(HeroTypeID::decode(luck ? "core:daremyth" : "core:vey")));
+		ASSERT_EQ(hero.getOwner(), PlayerColor(0));
+		ASSERT_EQ(hero.level, 8u);
+		ASSERT_FALSE(hero.gainsLevel());
+		ASSERT_TRUE(hero.getPrimaryGrowthView());
+		const auto primary = hero.getPrimaryGrowthView()->base;
+		const auto mana = hero.getManaAvailable();
+		const auto rng = randomState();
+		ASSERT_EQ(hero.getPerkState().selected.size(), 1u);
+		const std::string skill = luck ? "new-horizons:luck" : "new-horizons:discipline";
+		ASSERT_TRUE(hero.hasActivePerk(skill, skill + (luck ? ".secondChance" : ".inspirationalLeader")));
+		// Explicit authored initial loadout BEFORE start(false), never a runtime
+		// acquisition claim. Each prefix passes the real strict selection API.
+		const int decoded = SecondarySkill::decode(skill);
+		ASSERT_GE(decoded, 0);
+		hero.setSecSkillLevel(SecondarySkill(decoded),
+			luck ? MasteryLevel::ADVANCED : MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		if(!luck) hero.applyPerkSelection({skill, "new-horizons:discipline.fearless"});
+		hero.applyPerkSelection({skill, skill + (luck ? ".gambler" : ".heroicSpirit")});
+		ASSERT_NO_THROW(hero.getPerkState().validate());
+		ASSERT_EQ(hero.getPerkState().rules, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		ASSERT_EQ(hero.getPerkState().selected.size(), luck ? 2u : 3u);
+		ASSERT_NO_FATAL_FAILURE(fitAuthoredArmy(hero, luck));
+		EXPECT_EQ(hero.getPrimaryGrowthView()->base, primary);
+		EXPECT_EQ(hero.getManaAvailable(), mana);
+		EXPECT_EQ(randomState(), rng);
+		EXPECT_GT(luck ? hero.luckVal() : hero.moraleVal(), 0);
+		if(luck)
+		{
+			const auto * haste = SpellID(SpellID::HASTE).toSpell();
+			ASSERT_TRUE(hero.hasSpellbook());
+			ASSERT_TRUE(hero.spellbookContainsSpell(haste->getId()));
+			ASSERT_TRUE(hero.canCastThisSpell(haste));
+			ASSERT_GE(hero.getSpellCost(haste), 2);
+			ASSERT_GE(hero.getManaAvailable(), 12 * hero.getSpellCost(haste));
+		}
+	}
+
+	void createInput()
+	{
+		using Builder = TinyH3M::TinyH3MBuilder;
+		Builder builder(EMapFormat::SOD);
+		builder.size(36, false).name("NHAuthoredNaturalHeroCue")
+			.description("Authored level8 eligibility, NOT ordinary perk acquisition. Natural unmodified proc draws only. "
+				"Red Daremyth: up to7 paid Haste casts on distinct unhasted allies/Erratic Mana. Red Vey: Hold the Line/Heroic Spirit. "
+				"Friendly stacks Defend; single Archer guards allow bounded rounds. Pursue normally if offered. "
+				"No grants, reload/reroll, chance/stat override or forced proc during play.")
+			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.town({8,8,0}, FactionID::TOWER, PlayerColor(0)).townGarrison({})
+			.town({30,30,0}, FactionID::STRONGHOLD, PlayerColor(1)).townGarrison({})
+			.hero({17,10,0}, HeroTypeID(HeroTypeID::decode("core:daremyth")), PlayerColor(0)).heroExperience(10000)
+			.heroGarrison({{CreatureID(CreatureID::decode("core:stoneGolem")),2},
+				{CreatureID(CreatureID::decode("core:stoneGolem")),1}, {CreatureID(CreatureID::decode("core:stoneGolem")),1},
+				{CreatureID(CreatureID::decode("core:stoneGolem")),1}, {CreatureID(CreatureID::decode("core:stoneGolem")),1},
+				{CreatureID(CreatureID::decode("core:stoneGolem")),1}, {CreatureID(CreatureID::decode("core:stoneGolem")),1}})
+			.hero({21,10,0}, HeroTypeID(HeroTypeID::decode("core:vey")), PlayerColor(0)).heroExperience(10000)
+			.heroGarrison({{CreatureID(CreatureID::decode("core:ogre")),8}})
+			.hero({28,28,0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(1)).heroExperience(0);
+		for(const int x : {18,22})
+			builder.monster({x,14,0}, CreatureID(CreatureID::decode("core:archer")),1,
+				static_cast<int8_t>(CGCreature::Character::SAVAGE));
+		startWithMap(builder, EMapDifficulty::NORMAL);
+		server.gameState = gameState();
+		handler = std::make_shared<CGameHandler>(server, gameState());
+		for(const auto & player : gameState()->players) handler->turnOrder->addPlayer(player.first);
+		const auto heroes = gameState()->getHeroes(PlayerColor(0));
+		ASSERT_EQ(heroes.size(), 2u);
+		for(const auto * subject : heroes)
+		{
+			auto * hero = const_cast<CGHeroInstance *>(subject);
+			ASSERT_NO_FATAL_FAILURE(authorLoadout(*hero, hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:daremyth"))));
+		}
+		ASSERT_EQ(gameState()->getMagicRules(), JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		ASSERT_TRUE(gameState()->currentBattles.empty());
+		ASSERT_TRUE(server.startedActions.empty());
+		ASSERT_TRUE(gameState()->getPlayerState(PlayerColor(0))->isHuman());
+		ASSERT_FALSE(gameState()->getPlayerState(PlayerColor(1))->isHuman());
+		handler->start(false);
+	}
+};
+
+TEST_F(NewHorizonsAuthoredHeroCueFixtureExportTest, ExportAuthoredEligibleAdventureSave)
+{
+	const auto * flag = std::getenv("NH_EXPORT_HERO_CUE_AUTHORED_BOOTSTRAP");
+	if(!flag) GTEST_SKIP() << "Requires exact isolated authored-input invocation";
+	ASSERT_EQ(std::string_view(flag), "1");
+	const auto root = checkedRoot();
+	ASSERT_NO_FATAL_FAILURE(createInput());
+	const auto heroes = handler->gameState().getHeroes(PlayerColor(0));
+	std::vector<HeroTypeID> identities;
+	std::vector<std::vector<newHorizonsHeroes::PerkSelection>> before;
+	std::vector<std::vector<int>> armyCounts;
+	for(const auto * hero : heroes)
+	{
+		identities.push_back(hero->getHeroTypeID());
+		before.push_back(hero->getPerkState().selected);
+		armyCounts.emplace_back();
+		for(const auto & [slot, stack] : hero->Slots())
+			armyCounts.back().push_back(stack->getCount());
+	}
+	const auto filename = "Saves/authored-hero-cue-pending";
+	handler->save(filename, PlayerColor::NEUTRAL);
+	const auto pending = root / "authored-hero-cue-pending.vsgm1";
+	ASSERT_TRUE(std::filesystem::is_regular_file(pending));
+	ASSERT_LT(std::filesystem::file_size(pending), 64u*1024u*1024u);
+	StartInfo loadInfo = *handler->gameState().getStartInfo();
+	loadInfo.mode = EStartMode::LOAD_GAME;
+	loadInfo.mapname = filename;
+	handler->load(loadInfo);
+	server.gameState = handler->gs;
+	const auto restored = handler->gameState().getHeroes(PlayerColor(0));
+	ASSERT_EQ(restored.size(), before.size());
+	for(size_t i = 0; i < restored.size(); ++i)
+	{
+		const auto * hero = restored[i];
+		EXPECT_EQ(hero->getHeroTypeID(), identities[i]);
+		EXPECT_EQ(hero->getPerkState().selected, before[i]);
+		std::vector<int> restoredCounts;
+		for(const auto & [slot, stack] : hero->Slots())
+			restoredCounts.push_back(stack->getCount());
+		EXPECT_EQ(restoredCounts, armyCounts[i]);
+		const bool luck = identities[i] == HeroTypeID(HeroTypeID::decode("core:daremyth"));
+		const std::string skill = luck ? "new-horizons:luck" : "new-horizons:discipline";
+		EXPECT_EQ(hero->getPerkSkillRank(skill), luck ? MasteryLevel::ADVANCED : MasteryLevel::EXPERT);
+		EXPECT_TRUE(hero->hasActivePerk(skill, skill + (luck ? ".gambler" : ".heroicSpirit")));
+		EXPECT_GT(luck ? hero->luckVal() : hero->moraleVal(), 0);
+	}
+	ASSERT_TRUE(handler->gameState().currentBattles.empty());
+	ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(PlayerColor(0)));
+	ASSERT_TRUE(server.startedActions.empty());
+	if(HasFailure()) return;
+	const auto final = root / "authored-hero-cue.vsgm1";
+	std::filesystem::create_hard_link(pending, final);
+	ASSERT_TRUE(std::filesystem::remove(pending));
+	ASSERT_EQ(std::filesystem::hard_link_count(final), 1u);
+	RecordProperty("fixtureIdentity", "authored-eligibility-not-natural-acquisition");
+	RecordProperty("combatActionsBeforeExport", 0);
+	RecordProperty("naturalProcClaimed", 0);
 }

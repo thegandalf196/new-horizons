@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsSoulHarvest.h"
 #include "../battle/SummonLifetimePresentation.h"
 #include <optional>
 #include <string>
@@ -14,10 +15,11 @@
 
 namespace newHorizonsCreatureAbilityHelp
 {
-struct FreezingTouchHelp
+struct InnateAbilityHelp
 {
 	std::string compact;
 	std::string details;
+	std::string iconPath;
 };
 
 inline std::string replace(std::string text, std::string_view token, int value)
@@ -33,7 +35,7 @@ inline std::string replace(std::string text, std::string_view token, int value)
 
 /// Innate ability help, not the stack's current permission to attack. No saved
 /// context means no numerical claim (including out-of-game Wiki browsing).
-inline std::optional<FreezingTouchHelp> freezingTouch(std::string_view creatureKey,
+inline std::optional<InnateAbilityHelp> freezingTouch(std::string_view creatureKey,
 	const JsonNode * capturedRules, std::string compactText, std::string detailsText)
 {
 	if(creatureKey != "core:iceElemental" || !capturedRules)
@@ -46,17 +48,37 @@ inline std::optional<FreezingTouchHelp> freezingTouch(std::string_view creatureK
 	{
 		return replace(replace(std::move(text), "%chance%", chance), "%bonus%", shatter);
 	};
-	return FreezingTouchHelp{format(std::move(compactText)), format(std::move(detailsText))};
+	return InnateAbilityHelp{format(std::move(compactText)), format(std::move(detailsText)), {}};
 }
 
-inline std::vector<FreezingTouchHelp> innateAbilities(std::string_view creatureKey,
-	const JsonNode * capturedRules, std::string compactText, std::string detailsText, int32_t summonRounds)
+/// Describes intrinsic identity, not whether this stack may currently harvest.
+inline std::optional<InnateAbilityHelp> soulHarvest(std::string_view creatureKey,
+	std::string compactText, std::string detailsText)
 {
-	std::vector<FreezingTouchHelp> result;
+	if(creatureKey != "new-horizons:ghost")
+		return std::nullopt;
+	return InnateAbilityHelp{
+		replace(std::move(compactText), "%count%", newHorizonsSoulHarvest::GHOSTS_PER_CREATURE_KILLED),
+		replace(std::move(detailsText), "%count%", newHorizonsSoulHarvest::GHOSTS_PER_CREATURE_KILLED),
+		"newHorizons/heroSpecialties/VidominaSoulHarvest/icon-44.png"};
+}
+
+inline std::vector<InnateAbilityHelp> innateAbilities(std::string_view creatureKey,
+	const JsonNode * capturedRules, std::string compactText, std::string detailsText, int32_t summonRounds,
+	std::string soulHarvestCompact, std::string soulHarvestDetails)
+{
+	std::vector<InnateAbilityHelp> result;
 	if(auto freezing = freezingTouch(creatureKey, capturedRules, std::move(compactText), std::move(detailsText)))
 		result.push_back(std::move(*freezing));
+	if(auto harvest = soulHarvest(creatureKey, std::move(soulHarvestCompact), std::move(soulHarvestDetails)))
+		result.push_back(std::move(*harvest));
 	if(summonRounds > 0)
-		result.push_back({summonLifetimePresentation::compact(summonRounds), summonLifetimePresentation::tooltip(summonRounds)});
+		result.push_back({summonLifetimePresentation::compact(summonRounds), summonLifetimePresentation::tooltip(summonRounds), "NH_spell_time_stop-44.png"});
 	return result;
 }
+
+/// Bind shared localized text for the creature window and encyclopedia.
+std::vector<InnateAbilityHelp> translatedInnateAbilities(std::string_view creatureKey,
+	const JsonNode * capturedRules, int32_t summonRounds);
+
 }

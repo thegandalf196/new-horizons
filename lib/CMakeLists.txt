@@ -78,7 +78,22 @@ set(lib_MAIN_SRCS
 	battle/HeroCommandCoefficientMath.cpp
 	battle/HeroCommandCoefficientQueries.cpp
 	battle/BattleInfo.cpp
+	battle/BattleActivation.cpp
+	battle/BattleLuckQueries.cpp
 	battle/NewHorizonsManaLeeches.cpp
+	battle/NewHorizonsSerpentsEmbrace.cpp
+	battle/NewHorizonsForestAmbush.cpp
+	battle/NewHorizonsForestAmbushState.cpp
+	battle/NewHorizonsPetrifyingBlood.cpp
+	battle/NewHorizonsLivingInferno.cpp
+		battle/DreadCavalryState.cpp
+		battle/NewHorizonsDreadCavalry.cpp
+		battle/DreadCavalryQueries.cpp
+		battle/BattleActivationActionState.cpp
+		entities/hero/NewHorizonsDreadCavalry.cpp
+	battle/NewHorizonsSoulHarvest.cpp
+	battle/NewHorizonsParalyzingGaze.cpp
+	battle/NewHorizonsAerialSupremacy.cpp
 	battle/BattleInfoUnitUpdate.cpp
 	battle/PhysicalAffliction.cpp
 	battle/NewHorizonsFrozen.cpp
@@ -120,6 +135,7 @@ set(lib_MAIN_SRCS
 	battle/BattleProxy.cpp
 	battle/BattleStateInfoForRetreat.cpp
 	battle/CBattleInfoCallback.cpp
+	battle/BattleMeleeContactGeometry.cpp
 	battle/NewHorizonsFirstAid.cpp
 	battle/VisibleHeroBonusQueries.cpp
 	battle/FocusFireQueries.cpp
@@ -128,7 +144,9 @@ set(lib_MAIN_SRCS
 	battle/CObstacleInstance.cpp
 	battle/CPlayerBattleCallback.cpp
 	battle/CUnitState.cpp
+	battle/CUnitStateRoundReceipts.cpp
 	battle/CUnitStateLifecycle.cpp
+	battle/CUnitWaitActionState.cpp
 	battle/CUnitStateDetachedBonuses.cpp
 	battle/CUnitStateValues.cpp
 	battle/PreparedStackStateTransfer.cpp
@@ -278,6 +296,13 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsChosenSpecialties.cpp
 	entities/hero/NewHorizonsAdditionalSpecialties.cpp
 	entities/hero/NewHorizonsManaLeeches.cpp
+	entities/hero/NewHorizonsSerpentsEmbrace.cpp
+	entities/hero/NewHorizonsForestAmbush.cpp
+	entities/hero/NewHorizonsGhostSpecialty.cpp
+	entities/hero/NewHorizonsParalyzingGaze.cpp
+	entities/hero/NewHorizonsPetrifyingBlood.cpp
+	entities/hero/NewHorizonsLivingInferno.cpp
+	entities/hero/NewHorizonsAerialSupremacy.cpp
 	entities/hero/NewHorizonsRecoverySpecialtyRules.cpp
 	entities/hero/NewHorizonsHerbalSurgeon.cpp
 	entities/hero/NewHorizonsHerbalSurgeonPresentation.cpp
@@ -334,6 +359,7 @@ set(lib_MAIN_SRCS
 	gameState/MapObjectInitialization.cpp
 	gameState/CGameStateCampaign.cpp
 	gameState/GameStatePackVisitor.cpp
+	gameState/GameStateBattleActivationVisitor.cpp
 	gameState/NewHorizonsBattleSpellPoints.cpp
 	gameState/HighScore.cpp
 	gameState/InfoAboutArmy.cpp
@@ -365,9 +391,12 @@ set(lib_MAIN_SRCS
 	mapObjects/CGCreature.cpp
 	mapObjects/CGCreaturePopupText.cpp
 	mapObjects/CGDwelling.cpp
+	mapObjects/DwellingWeeklyGrowth.cpp
 	mapObjects/DwellingGuards.cpp
 	mapObjects/NewHorizonsNeutralArmies.cpp
+	mapObjects/NewHorizonsRecruitmentGrowth.cpp
 	mapObjects/CGHeroInstance.cpp
+	mapObjects/NewHorizonsHeroUpgrade.cpp
 	mapObjects/HeroManaRegeneration.cpp
 	mapObjects/HeroScholar.cpp
 	mapObjects/HeroPrimarySkill.cpp
@@ -381,6 +410,8 @@ set(lib_MAIN_SRCS
 	mapObjects/CGResource.cpp
 	mapObjects/TownBuildingInstance.cpp
 	mapObjects/CGTownInstance.cpp
+	mapObjects/TownSiegeArmy.cpp
+	mapObjects/TownGrowthInfo.cpp
 	mapObjects/NewHorizonsAcademicStudy.cpp
 	mapObjects/NewHorizonsSage.cpp
 	mapObjects/NewHorizonsRecruitersContacts.cpp
@@ -508,6 +539,7 @@ set(lib_MAIN_SRCS
 
 	spells/AbilityCaster.cpp
 	spells/BattleSpellMechanics.cpp
+	spells/BattleSpellTargetProtection.cpp
 	spells/BattleSpellMirror.cpp
 	spells/BonusCaster.cpp
 	spells/IncomingSpellDamage.cpp
@@ -673,6 +705,7 @@ set(lib_HEADERS
 	network/NetworkServer.h
 
 	texts/TextOperations.h
+	texts/PercentageFormatting.h
 
 	CConfigHandler.h
 	CConsoleHandler.h
@@ -766,6 +799,17 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsOverwhelmingFormula.cpp
 	battle/BattleInfo.h
 	battle/NewHorizonsManaLeeches.h
+	battle/NewHorizonsSerpentsEmbrace.h
+	battle/NewHorizonsForestAmbush.h
+	battle/NewHorizonsForestAmbushState.h
+	battle/NewHorizonsPetrifyingBlood.h
+	battle/NewHorizonsLivingInferno.h
+		battle/DreadCavalryState.h
+		battle/NewHorizonsDreadCavalry.h
+		entities/hero/NewHorizonsDreadCavalry.h
+	battle/NewHorizonsSoulHarvest.h
+	battle/NewHorizonsParalyzingGaze.h
+	battle/NewHorizonsAerialSupremacy.h
 	battle/BattleDeploymentState.h
 	battle/PhysicalAffliction.h
 	battle/NewHorizonsBloodrage.h
@@ -967,6 +1011,13 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsChosenSpecialties.h
 	entities/hero/NewHorizonsAdditionalSpecialties.h
 	entities/hero/NewHorizonsManaLeeches.h
+	entities/hero/NewHorizonsSerpentsEmbrace.h
+	entities/hero/NewHorizonsForestAmbush.h
+	entities/hero/NewHorizonsGhostSpecialty.h
+	entities/hero/NewHorizonsParalyzingGaze.h
+	entities/hero/NewHorizonsPetrifyingBlood.h
+	entities/hero/NewHorizonsLivingInferno.h
+	entities/hero/NewHorizonsAerialSupremacy.h
 	entities/hero/NewHorizonsRecoverySpecialties.h
 	entities/hero/NewHorizonsHerbalSurgeon.h
 	entities/hero/NewHorizonsLearningSpecialties.h
@@ -1040,6 +1091,7 @@ set(lib_MAIN_HEADERS
 	mapObjects/CGCreature.h
 	mapObjects/CGDwelling.h
 	mapObjects/NewHorizonsNeutralArmies.h
+	mapObjects/NewHorizonsRecruitmentGrowth.h
 	mapObjects/CGHeroInstance.h
 	mapObjects/NewHorizonsGlyphsOfFear.h
 	mapObjects/CGMarket.h

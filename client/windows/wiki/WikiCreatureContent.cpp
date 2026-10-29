@@ -356,12 +356,10 @@ std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (compl
 		}
 		else if(callback)
 			abilityRules = &callback->getMagicRules();
-		const auto freezingTouch = newHorizonsCreatureAbilityHelp::freezingTouch(
-			creature->getJsonKey(), abilityRules,
-			LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.compact"),
-			LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.help"));
-		if(freezingTouch)
-			abilityRows.push_back(AbilityRow{freezingTouch->details, {}});
+		const auto innateAbilities = newHorizonsCreatureAbilityHelp::translatedInnateAbilities(
+			creature->getJsonKey(), abilityRules, 0);
+		for(const auto & help : innateAbilities)
+			abilityRows.push_back(AbilityRow{help.details, help.iconPath.empty() ? ImagePath{} : ImagePath::builtin(help.iconPath)});
 
 		auto bonusList = creature->getBonuses(Selector::all);
 		for(const auto & b : *bonusList)

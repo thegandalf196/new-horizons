@@ -10,6 +10,9 @@
 #include "StdInc.h"
 
 #include "../../lib/texts/TextOperations.h"
+#include "../../lib/texts/PercentageFormatting.h"
+#include "../../lib/texts/MetaString.h"
+#include "../../lib/texts/ITranslator.h"
 
 namespace test
 {
@@ -72,6 +75,34 @@ TEST_F(TextOperationsTest, LegacyFontProbeSkipsUndefinedCodepointWithoutPoisonin
 {
 	EXPECT_EQ(TextOperations::getUnicodeCodepoint(static_cast<char>(0x81), "CP1252"), 0);
 	EXPECT_EQ(TextOperations::getUnicodeCodepoint(static_cast<char>(0xC4), "CP1252"), 0x00C4);
+}
+
+TEST_F(TextOperationsTest, MetaStringNumberReplacementPreservesOneLiteralPercent)
+{
+	class UnusedTranslator final : public ITranslator
+	{
+		const std::string & translateString(const TextIdentifier &) const override
+		{
+			ADD_FAILURE() << "Raw percentage text must not resolve translation identifiers";
+			static const std::string empty;
+			return empty;
+		}
+	} translator;
+	for(const int percentage : {0, 50, 100, 150})
+	{
+		auto text = MetaString::createFromRawString("Growth modifier: %d%");
+		text.replaceNumber(percentage);
+		EXPECT_EQ(text.toString(&translator), "Growth modifier: " + std::to_string(percentage) + "%");
+	}
+}
+
+TEST_F(TextOperationsTest, BasisPointPercentFormattingPreservesExactFractions)
+{
+	EXPECT_EQ(TextOperations::formatBasisPoints(0), "0%");
+	EXPECT_EQ(TextOperations::formatBasisPoints(7500), "75%");
+	EXPECT_EQ(TextOperations::formatBasisPoints(1250), "12.5%");
+	EXPECT_EQ(TextOperations::formatBasisPoints(25), "0.25%");
+	EXPECT_EQ(TextOperations::formatBasisPoints(-1250), "-12.5%");
 }
 
 }

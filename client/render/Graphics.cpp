@@ -118,10 +118,11 @@ void Graphics::initializeBattleGraphics()
 		}
 	}
 }
-Graphics::Graphics()
+Graphics::Graphics(bool loadBattleGraphics)
 {
 	loadPaletteAndColors();
-	initializeBattleGraphics();
+	if(loadBattleGraphics)
+		initializeBattleGraphics();
 
 	//(!) do not load any CAnimation here
 }

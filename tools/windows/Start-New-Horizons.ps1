@@ -14,6 +14,17 @@ $profileRoot = $null
 $stage = $null
 $lock = $null
 
+function Test-ReportableGameExit {
+    param([int]$ExitCode, [bool]$ForwardedStop = $false)
+    if ($ForwardedStop) { return $false }
+    # Keep the signed Process.ExitCode and the actual child handling unchanged.
+    $status = [BitConverter]::ToUInt32([BitConverter]::GetBytes($ExitCode), 0)
+    # CRT abort/terminate commonly exits 3. This is unexpected/unclean exit
+    # evidence, not proof of a crash; no ordinary client path currently uses 3.
+    $reportable = @(3L, 3221225477L, 3221225501L, 3221225620L, 3221225621L, 3221225725L, 3221226505L, 1073741845L)
+    return $reportable -contains [long]$status
+}
+
 function Assert-PlainPath([string]$Path) {
     # Reject existing junctions/symlinks, including ancestors. Never traverse them.
     $cursor = [IO.Path]::GetFullPath($Path)
@@ -318,8 +329,40 @@ try {
     }
     Write-Host "Starting New Horizons. Saves: $savePath; logs: $profileRoot\logs"
     # No shell-evaluated selected path and no administrator verb. Hold profile lock until exit.
-    $game = Start-Process -FilePath $client -WorkingDirectory $packageRoot -PassThru -Wait
+    $reportRoot = Join-Path $profileRoot 'logs\crash-reports'
+    if (Test-Path -LiteralPath $reportRoot) {
+        $retained = Get-ChildItem -LiteralPath $reportRoot -Directory | Where-Object {
+            $_.Name -match '^run-[0-9a-f]{32}$' -and
+            (Test-Path -LiteralPath (Join-Path $_.FullName 'pending'))
+        } | Select-Object -First 1
+        if ($retained) {
+            try {
+                $reportArguments = '--nointro --report-bug pending'
+                $reporter = Start-Process -FilePath $client -ArgumentList $reportArguments -WorkingDirectory $packageRoot -PassThru -Wait
+            } catch {
+                [Console]::Error.WriteLine('A retained report could not open; evidence remains in the logs folder.')
+            }
+        }
+    }
+    $crashSession = Join-Path $profileRoot ('logs\crash-reports\run-' + [Guid]::NewGuid().ToString('N'))
+    $previousCrashSession = $env:NH_CRASH_SESSION_DIR
+    $env:NH_CRASH_SESSION_DIR = $crashSession
+    try {
+        $game = Start-Process -FilePath $client -WorkingDirectory $packageRoot -PassThru -Wait
+    } finally {
+        $env:NH_CRASH_SESSION_DIR = $previousCrashSession
+    }
     $game.Refresh()
+    if ((Test-ReportableGameExit -ExitCode $game.ExitCode) -and (Test-Path -LiteralPath (Join-Path $crashSession 'pending'))) {
+        try {
+            # Keep the profile lock and matching package alive until form closes.
+            # The session path is quoted as one argument; no shell evaluation.
+            $reportArguments = '--nointro --report-bug "' + $crashSession + '"'
+            $reporter = Start-Process -FilePath $client -ArgumentList $reportArguments -WorkingDirectory $packageRoot -PassThru -Wait
+        } catch {
+            [Console]::Error.WriteLine('The report form could not open; crash evidence remains in the logs folder.')
+        }
+    }
     if ($game.ExitCode -ne 0) {
         throw "$clientName exited with code $($game.ExitCode). Check $profileRoot\logs. If a DLL is missing, re-extract the full matching Windows package."
     }

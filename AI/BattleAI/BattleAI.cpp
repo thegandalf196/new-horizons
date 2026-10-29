@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "DreadCavalryProjection.h"
 #include "BattleAI.h"
 #include "BattleAITiming.h"
 #include "BattleEvaluator.h"
@@ -438,6 +439,11 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	};
 
+	if(stack->dreadCavalryState.pending)
+	{
+		timing.submitUnitAction(cb, battleID, dreadCavalryAI::chooseContinuation(env.get(), battleCallback, stack));
+		return;
+	}
 	BattleAction result = BattleAction::makeDefend(stack);
 
 	auto start = std::chrono::high_resolution_clock::now();

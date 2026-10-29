@@ -11,7 +11,8 @@
 #include "BattleAttackInfo.h"
 #include "CUnitState.h"
 
-BattleAttackInfo::BattleAttackInfo(const battle::Unit * Attacker, const battle::Unit * Defender, int chargeDistance, bool Shooting)
+BattleAttackInfo::BattleAttackInfo(const battle::Unit * Attacker, const battle::Unit * Defender, int chargeDistance, bool Shooting,
+	int dreadCavalryPercent)
 	: attacker(Attacker),
 	defender(Defender),
 	shooting(Shooting),
@@ -19,6 +20,7 @@ BattleAttackInfo::BattleAttackInfo(const battle::Unit * Attacker, const battle::
 	defenderPos(BattleHex::INVALID),
 	chargeDistance(chargeDistance)
 {
+	dreadCavalryDamagePercent = dreadCavalryPercent;
 	// Spell-like creature shots (Liches, Magogs, and modded equivalents) are
 	// magical attacks even when AI and preview callers construct the attack
 	// directly rather than going through the authoritative packet path.

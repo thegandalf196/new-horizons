@@ -1,5 +1,14 @@
 set(battleAI_SRCS
 		AttackPossibility.cpp
+		AttackValue.cpp
+		AerialRetaliationProjection.cpp
+		BattleExchangeAerialAttack.cpp
+		DreadCavalryProjection.cpp
+		BattleExchangeDreadAttack.cpp
+		BattleExchangeAftermath.cpp
+		AttackHealthAftermath.cpp
+	ParalyzingGazeProjection.cpp
+	DefiantDenialProjection.cpp
 		AttackPreviewArcheryAdmission.cpp
 		DamageCache.cpp
 		DamageCacheSnapshot.cpp
@@ -51,6 +60,7 @@ set(battleAI_SRCS
 		AttackCount.cpp
 		VisibleCandidateWorld.cpp
 		SelectedAttackReceipt.cpp
+		PetrifyingBloodValue.cpp
 		LegacyOriginalMeleeSequence.cpp
 		MeleeSequenceSupport.cpp
 		MovementBonusProvenance.cpp
@@ -78,12 +88,16 @@ set(battleAI_SRCS
 		HypotheticLifeDrainObservation.cpp
 		HypotheticStrikeProjection.cpp
 		HypotheticManaLeeches.cpp
+		HypotheticSerpentsEmbrace.cpp
+		SerpentBindingDeathPreview.cpp
+		SerpentBindingDeathPreview.h
 		HypotheticSpellServer.cpp
 		SummonEvaluation.cpp
 		SpellTargetsEvaluator.cpp
 		TacticsHandler.cpp
 		ThreatMap.cpp
 		BattleExchangeVariant.cpp
+		BattleExchangeBloodValue.cpp
 		EnemyBypassReachability.cpp
 		BattleExchangeFutureAttack.cpp
 		BattleShroudStrike.cpp
@@ -94,6 +108,11 @@ set(battleAI_HEADERS
 		StdInc.h
 
 		AttackPossibility.h
+		AerialRetaliationProjection.h
+		DreadCavalryProjection.h
+		AttackHealthAftermath.h
+	ParalyzingGazeProjection.h
+	DefiantDenialProjection.h
 		DamageCacheTimingScope.h
 		AttackPreviewArcheryAdmission.h
 		DamageCacheMarks.h
@@ -138,6 +157,7 @@ set(battleAI_HEADERS
 		AttackCount.h
 		VisibleCandidateWorld.h
 		SelectedAttackReceipt.h
+		PetrifyingBloodValue.h
 		MeleeSequenceSupport.h
 		MovementBonusProvenance.h
 		OriginalMeleeSequence.h

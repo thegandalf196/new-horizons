@@ -65,7 +65,18 @@ void CVcmiTestConfig::SetUp()
 			|| std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT"))
 			throw std::runtime_error("Ordinary hero progression export bootstrap requires its exact isolated export invocation");
 	}
-	const bool useOrdinaryBootstrap = useOrdinaryExport || useSkirmisherExport || usePositiveCueExport;
+	const auto * authoredCue = std::getenv("NH_EXPORT_HERO_CUE_AUTHORED_BOOTSTRAP");
+	const auto * authoredRoot = std::getenv("NH_EXPORT_HERO_CUE_AUTHORED_SAVE_ROOT");
+	const auto * authoredPrivate = std::getenv("NH_EXPORT_HERO_CUE_AUTHORED_PRIVATE_ROOT");
+	const auto * authoredSource = std::getenv("NH_EXPORT_HERO_CUE_AUTHORED_SOURCE_ROOT");
+	const bool useAuthoredCue = authoredCue || authoredRoot || authoredPrivate || authoredSource;
+	if(useAuthoredCue && (!authoredCue || std::string_view(authoredCue) != "1"
+		|| ::testing::GTEST_FLAG(filter) != "NewHorizonsAuthoredHeroCueFixtureExportTest.ExportAuthoredEligibleAdventureSave"
+		|| !authoredRoot || !*authoredRoot || !authoredPrivate || !*authoredPrivate || !authoredSource || !*authoredSource
+		|| useOrdinaryExport || useSkirmisherExport || usePositiveCueExport
+		|| std::getenv("NH_EXPORT_HERO_PROC_FAMILY") || std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT")))
+		throw std::runtime_error("Authored hero cue export requires its exact isolated invocation");
+	const bool useOrdinaryBootstrap = useOrdinaryExport || useSkirmisherExport || usePositiveCueExport || useAuthoredCue;
 	LIBRARY = new GameLibrary;
 	// Default tests retain their independent TEST preset and fixture mod. Only
 	// the explicitly selected player-save exporter uses the ordinary preset.
@@ -78,7 +89,7 @@ void CVcmiTestConfig::SetUp()
 			|| std::any_of(mods.begin(), mods.end(), [](const auto & mod)
 			{ return mod != "core" && mod != "vcmi" && mod != "new-horizons"; }))
 			throw std::runtime_error("Ordinary hero export bootstrap requires only the shipping mods");
-		if((useSkirmisherExport || usePositiveCueExport) && std::find(mods.begin(), mods.end(), "core") == mods.end())
+		if((useSkirmisherExport || usePositiveCueExport || useAuthoredCue) && std::find(mods.begin(), mods.end(), "core") == mods.end())
 			throw std::runtime_error("Ordinary Skirmisher export bootstrap requires the shipping core mod");
 	}
 	LIBRARY->initializeLibrary();

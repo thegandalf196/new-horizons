@@ -1,34 +1,39 @@
-# Bug Reporting Guidelines
+# Reporting New Horizons bugs
 
-First of all, thanks for your support! If you report a bug we can fix it. But keep in mind that reporting your bugs appropriately makes our (developers') lives easier. Here are a few guidelines that will help you write good bug reports.
+Report crashes, hangs, incorrect mechanics, graphical glitches and substantial
+performance problems in the [New Horizons issue tracker](https://github.com/thegandalf196/new-horizons/issues).
+A GitHub account is required to submit an issue.
 
-## Github bugtracker
+## In-game report
 
-The main place for managing and reporting bugs is [our bugtracker](https://github.com/vcmi/vcmi/issues). When you are not logged in, you can only browse already reported bugs. To be able to report bugs you need to make an account there.
+Use the beetle button on the Adventure Map or **Report a bug** in settings.
+Describe what happened, how to reproduce it, what you expected and what occurred.
+Include the game version, map and relevant hero or creature names.
 
-## What should be reported
+The optional **Include a sanitized log** checkbox opens an editable preview.
+Automatic sanitization can miss private information: read the preview and remove
+anything you do not want to publish. Choose **Use log**, then **Add log to issue
+description**. Only that reviewed text enters the report. Unchecking log inclusion
+removes it from the draft.
 
-Certainly the most important bugs we would like to know about are crashes and game hangs. Game should not crash nor hang under any conditions. But bugs are not restricted to those extreme cases. Graphical glitches, significant differences in game mechanics and serious performance drops should be reported too.
+**Continue** opens a GitHub issue draft; it does not submit the issue. Short
+reports, including the reviewed log, are filled in automatically. If the complete
+report exceeds the browser-link limit, choose **Copy full report**, then
+**Continue**, and paste it into GitHub's issue description. The game does not
+silently shorten the report. Review the public draft before submitting it.
 
-## What to focus on while testing
+An unexpected-exit report uses the same review and consent steps. An unexpected
+exit alone does not establish the cause of a crash.
 
-There are no specific guidelines on this. Every part of the game needs some attention while testing. Usually newly added features should be tested more. Sometimes bugs occur only when loading from savegame, so you shouldn't always begin a new game.
+## Useful evidence
 
-## General guidelines
+A small map or save with precise reproduction steps is especially helpful.
+For example, identify the map, player, hero, enemy stack and action immediately
+before the problem. Mention whether it also happens after loading the save.
+For a performance report, identify the battle or turn and approximately how long
+it took. Screenshots can help explain visual problems.
 
-First of all, if you encounter a crash, don't re-run VCMI immediately to see if you can reproduce it. Firstly take a screenshot or copy console output (those mostly green letters on black background). Then back up following files (if you won't be able to reproduce the issue you should upload them with issue report):
-
-- VCMI_Client_log.txt
-- VCMI_Server_log.txt
-
-By default, log files are written to:
-
-- Windows: Documents\My Games\vcmi\\
-- Linux: ~/.cache/vcmi/
-- Android: Android/data/is.xyz.vcmi/files/vcmi-data/cache/
-
-Now you should try to reproduce encountered issue. It's best when you write how to reproduce the issue by starting a new game and taking some steps (e.g. start Arrogance map as red player and attack monster Y with hero X). If you have troubles with reproducing it this way but you can do it from a savegame - that's good too. Finally, when you are not able to reproduce the issue at all, just upload the files mentioned above. To sum up, this is a list of what's the most desired for a developer:
-
-1. (most desired) a map with list of steps needed to reproduce the bug
-2. savegame with list of steps to reproduce the bug
-3. (least desired) VCMI_Client_log.txt and VCMI_Server_log.txt (but then remember to back logs up before trying to reproduce it).
+Preserve the original client log before another run replaces it; its location is
+printed during startup. Attach saves, screenshots or additional files yourself
+on GitHub after checking them for private information. Do not upload your
+original game archives, credentials or unrelated personal files.

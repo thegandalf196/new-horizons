@@ -7,6 +7,6 @@
 struct Bonus;
 namespace battle
 {
-/// Legacy SetStackEffect removal identity, not full Bonus equality.
+/// Legacy removal fields, with typed source-bound restraints kept independent.
 DLL_LINKAGE bool matchesStackEffectRemoval(const Bonus & selected, const Bonus & candidate);
 }

@@ -55,6 +55,10 @@ optional presentation metadata. A missing icon or description must not erase a
 bonus type’s identity. Bonus and dependency-limiter JSON retain distinct canonical
 names even when their other fields are identical.
 
+Display descriptions use `${val}` for the raw value or `${val.basisPoints}`
+for an exact percentage, including its percent sign: `7500` becomes `75%`,
+and `1250` becomes `12.5%`. Display metadata does not change damage rules.
+
 Binary bonus types continue to serialize their existing enum values. The typed
 `NONE` encoder sentinel and invalid-index rejection are unchanged.
 

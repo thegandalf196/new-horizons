@@ -4,11 +4,15 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "DamageCacheMarks.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
 #include "AttackPreviewHitContext.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
+#include "../../lib/battle/NewHorizonsSoulHarvest.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 
@@ -93,4 +97,178 @@ bool AttackPreviewHitContext::captureAndProjectFortuneStrike(const BattleAttackI
 		receipt.resolvedLuck, false, receipt.perfectFortune, receipt.perfectFortuneSide,
 		receipt.luckSerendipitySide, receipt.luckSerendipityOrdinaryAttack);
 	return true;
+}
+
+bool AttackPreviewHitContext::hasSecondChance(const CBattleInfoCallback & state, const battle::Unit * unit, bool physicalDamage)
+{
+	if(!unit || !state.getBattle()
+		|| !newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(unit, physicalDamage))
+		return false;
+	const auto side = state.playerToSide(state.battleGetOwner(unit));
+	return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		&& state.getBattle()->getSylvanLuckState(side).secondChance;
+}
+
+bool AttackPreviewHitContext::hasDefiant(const CBattleInfoCallback & state)
+{
+	return std::ranges::any_of(std::array{BattleSide::ATTACKER, BattleSide::DEFENDER}, [&state](BattleSide side)
+	{
+		const auto * hero = state.getBattle()->getSideHero(side);
+		return hero && hero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.defiant")
+			&& state.getBattle()->getArmorerDefiantState(side).availableAt(state.battleGetRound());
+	});
+}
+bool AttackPreviewHitContext::hasLuckSerendipity(const CBattleInfoCallback & state)
+{
+	return std::ranges::any_of(std::array{BattleSide::ATTACKER, BattleSide::DEFENDER}, [&state](BattleSide side)
+	{
+		return state.getBattle()->getLuckSerendipityState(side).enabled;
+	});
+}
+
+bool AttackPreviewHitContext::hasReadyLastStand(const CBattleInfoCallback & state)
+{
+	return std::ranges::any_of(state.battleAliveUnits(), [&state](const battle::Unit * target)
+	{
+		if(!target)
+			return false;
+		const auto side = state.playerToSide(state.battleGetOwner(target));
+		return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+			&& !state.getBattle()->armorerLastStandUsed(side)
+			&& newHorizonsArmorer::canTriggerLastStand(state.battleGetOwnerHero(target), target);
+	});
+}
+
+std::pair<newHorizonsArmorer::ArmorerLastStandDamageResult, BattleSide>
+AttackPreviewHitContext::resolveUnspentLastStand(const CBattleInfoCallback & state,
+	const BattleAttackInfo & attack, const battle::Unit * target, int64_t incomingDamage)
+{
+	const auto side = target ? state.playerToSide(state.battleGetOwner(target)) : BattleSide::NONE;
+	const bool validSide = side == BattleSide::ATTACKER || side == BattleSide::DEFENDER;
+	if(!validSide)
+		return std::pair{newHorizonsArmorer::ArmorerLastStandDamageResult{incomingDamage, false}, side};
+
+	const bool eligible = newHorizonsArmorer::isEligiblePhysicalAttack(attack.attacker,
+		attack.physicalDamage, attack.shooting && attack.attacker
+			&& attack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))
+		&& newHorizonsArmorer::canTriggerLastStand(state.battleGetOwnerHero(target), target);
+	const auto result = newHorizonsArmorer::resolveLastStandDamage(incomingDamage,
+		target->getGuardianSpiritHitPoints(), target->getGuardianSpiritRoundsRemaining(),
+		target->getAvailableHealth(), eligible, state.getBattle()->armorerLastStandUsed(side));
+	return std::pair{result, side};
+}
+void AttackPreviewHitContext::applyUnspentLastStand(HypotheticBattle & state, battle::CUnitState * target,
+	const newHorizonsArmorer::ArmorerLastStandDamageResult & lastStand, BattleSide side, bool retaliation, bool apply)
+{
+	if(!apply || !lastStand.triggered || !target)
+		return;
+	state.consumeArmorerLastStand(side);
+	state.applyArmorerLastStandDefend(target->unitId());
+	const auto activeStackId = state.getActiveStackID();
+	if(retaliation && activeStackId >= 0
+		&& target->unitId() == static_cast<uint32_t>(activeStackId))
+		target->armorerLastStandEndedActivation = true;
+}
+
+bool AttackPreviewHitContext::hasGambler(const CBattleInfoCallback & state)
+{
+	return state.getBattle()
+			&& (state.getBattle()->getSylvanLuckState(BattleSide::ATTACKER).gamblerAttackAvailable()
+				|| state.getBattle()->getSylvanLuckState(BattleSide::DEFENDER).gamblerAttackAvailable());
+}
+
+bool AttackPreviewHitContext::hasPerfectFortune(const CBattleInfoCallback & state)
+{
+	return state.getBattle()
+			&& (state.getBattle()->getPerfectFortuneState(BattleSide::ATTACKER).enabled
+				|| state.getBattle()->getPerfectFortuneState(BattleSide::DEFENDER).enabled);
+}
+
+AttackPreviewHitContext::SoulHarvestHit AttackPreviewHitContext::prepareSoulHarvest(const CBattleInfoCallback & state,
+	const battle::Unit & actor, const battle::Unit & victim, bool physical)
+{
+	return {newHorizonsSoulHarvest::qualifies(state, actor, victim, physical),
+		victim.canCast() && victim.valOfBonuses(BonusType::REBIRTH) > 0, victim.getCount()};
+}
+
+void AttackPreviewHitContext::finishSoulHarvest(const SoulHarvestHit & eligibility,
+	battle::CUnitState & actor, const battle::CUnitState & victim)
+{
+	if(eligibility.eligible)
+		newHorizonsSoulHarvest::grant(actor, newHorizonsSoulHarvest::casualtiesAfterHit(
+			victim, eligibility.countBefore, eligibility.willRebirth));
+}
+
+FortuneStrikeProjection AttackPreviewHitContext::capturePreemptiveStrike(const BattleAttackInfo & attack,
+	battle::CUnitState & actor, int64_t requestedDamage, int64_t appliedDamage, bool perfectFortune,
+	BattleSide perfectFortuneSide, bool brace, battle::DamageProvenance provenance) const
+{
+	FortuneStrikeProjection strike;
+	strike.perfectFortune = perfectFortune;
+	strike.perfectFortuneSide = perfectFortuneSide;
+	strike.attackerId = attack.attacker->unitId();
+	strike.defenderId = attack.defender->unitId();
+	strike.retaliation = attack.retaliation;
+	strike.bracePreemptive = brace;
+	strike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
+		attack.attacker, attack.physicalDamage,
+		attack.shooting && attack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+	strike.damageProvenance = provenance;
+	strike.hits.emplace_back(strike.defenderId, requestedDamage);
+	strike.resolvedHits.emplace_back(strike.defenderId, appliedDamage);
+	captureAndProjectFortuneStrike(attack, strike.hits,
+		&actor, strike);
+	return strike;
+}
+
+bool AttackPreviewHitContext::canMireGripBeHit(const CBattleInfoCallback & state,
+	const battle::Unit * primary, bool longReachAttack,
+	const battle::Units & possibleVictims)
+{
+	const auto qualifies = [&state](const battle::Unit * target)
+	{
+		return target && target->defended()
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(target)
+			&& newHorizonsBulwark::hasMireGrip(state.battleGetOwnerHero(target));
+	};
+	if(!primary)
+		return false;
+	if(qualifies(primary))
+		return true;
+	if(longReachAttack)
+		return false;
+	return std::ranges::any_of(possibleVictims, qualifies);
+}
+
+void AttackPreviewHitContext::capturePrimaryFortune(FortuneStrikeProjection & receipt,
+	const CBattleInfoCallback & state, const BattleAttackInfo & attack, const battle::Unit & primary)
+{
+	receipt.perfectFortune = state.battleCanTriggerPerfectFortune(attack);
+	receipt.perfectFortuneSide = state.playerToSide(state.battleGetActionController(attack.attacker));
+	receipt.attackerId = attack.attacker->unitId();
+	receipt.defenderId = primary.unitId();
+}
+void AttackPreviewHitContext::classifyPrimaryStrike(FortuneStrikeProjection & receipt,
+	const BattleAttackInfo & attack, bool perfectMoment, int attackIndex,
+	const std::optional<newHorizonsAerialSupremacy::Excursion> & aerial)
+{
+	receipt.shooting = attack.shooting;
+	receipt.retaliation = attack.retaliation;
+	receipt.aerialExcursion = aerial;
+	receipt.dreadCavalryDamagePercent = attack.dreadCavalryDamagePercent;
+	receipt.damageProvenance = battleAIDamageProvenance(attack.attacker, attack.physicalDamage);
+	receipt.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
+		attack.attacker, attack.physicalDamage,
+		attack.shooting && attack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+	receipt.perfectMoment = perfectMoment;
+	// A Master Gunner continuation remains the second shot in its activation.
+	receipt.attackIndex = attackIndex;
+}
+
+bool AttackPreviewHitContext::anyNightProwler(const battle::Units & units)
+{
+	return std::ranges::any_of(units, [](const battle::Unit * unit)
+	{
+		return damageCacheDetail::hasNightProwlerBonus(unit);
+	});
 }

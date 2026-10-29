@@ -8,7 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsAerialSupremacy.h"
 #include "../battle/NewHorizonsHeroicSpirit.h"
+#include "../battle/NewHorizonsSerpentsEmbrace.h"
 #include "../battle/OrderActionTransition.h"
 #include "../battle/NewHorizonsHeroLuck.h"
 #include "../mapObjects/CGCreature.h"
@@ -2312,11 +2314,6 @@ void GameStatePackVisitor::visitBattleDeploymentPhaseChanged(BattleDeploymentPha
 	battle->setDeploymentState(pack.state);
 }
 
-void GameStatePackVisitor::visitBattleSetActiveStack(BattleSetActiveStack & pack)
-{
-	gs.getBattle(pack.battleID)->nextTurn(pack.stack, pack.reason);
-}
-
 void GameStatePackVisitor::visitBattleCrisisCommandChanged(BattleCrisisCommandChanged & pack)
 {
 	pack.validateShape();
@@ -2438,6 +2435,9 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	auto * battle = gs.getBattle(pack.battleID);
 	if(!battle)
 		throw std::runtime_error("BattleAttack references a missing battle");
+	pack.validateAerialExcursionMarker();
+	if(pack.aerialExcursion)
+		newHorizonsAerialSupremacy::validate(*battle, *pack.aerialExcursion);
 	battle->validateCapturedGamblerPolicy(pack.fortuneState ? &*pack.fortuneState : nullptr);
 	pack.validatePerfectFortuneMarker();
 	pack.validateLuckSerendipityMarker();
@@ -2574,31 +2574,6 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 
 	if(!pack.counter() && !attacker->isTimeStopped())
 		attacker->removeBonusesRecursive(Bonus::UntilOwnAttack);
-}
-
-void GameStatePackVisitor::visitEndAction(EndAction & pack)
-{
-	if(pack.endsFortuneActivation)
-	{
-		auto * battle = gs.getBattle(pack.battleID);
-		if(!battle)
-			throw std::runtime_error("EndAction references a missing battle");
-		if(auto * activeStack = battle->getStack(battle->activeStack, false))
-			activeStack->setActivationMovementBonus(0);
-		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-			battle->getSide(side).sylvanLuck.endActivation();
-	}
-}
-
-void GameStatePackVisitor::visitBattleNormalActivationCompleted(BattleNormalActivationCompleted & pack)
-{
-	auto * battle = gs.getBattle(pack.battleID);
-	if(!battle || !pack.expected.enabled() || pack.expected.active != pack.unitId
-		|| battle->getSeizeInitiativeState() != pack.expected)
-		throw std::runtime_error("Stale normal activation completion receipt");
-	auto next = pack.expected;
-	next.complete(pack.unitId);
-	battle->setSeizeInitiativeState(next);
 }
 
 void GameStatePackVisitor::visitStartAction(StartAction & pack)
@@ -3876,7 +3851,10 @@ void GameStatePackVisitor::visitBattleSetStackProperty(BattleSetStackProperty & 
 		}
 		case BattleSetStackProperty::UNBIND:
 		{
-			stack->removeBonusesRecursive(Selector::type()(BonusType::BIND_EFFECT));
+			stack->removeBonusesRecursive(Selector::type()(BonusType::BIND_EFFECT).And(CSelector([](const Bonus * bonus)
+			{
+				return bonus && !newHorizonsSerpentsEmbrace::isMarker(*bonus);
+			})));
 			break;
 		}
 		case BattleSetStackProperty::CLONED:
@@ -4234,6 +4212,12 @@ void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 		return;
 	}
 	pack.validateConfusionMarkers();
+	pack.validateGazeApplication(battleState);
+	// Validate the entire new-restraint batch before any removal or update.
+	for(const auto * changes : {&pack.toAdd, &pack.toUpdate})
+		for(const auto & [target, bonuses] : *changes)
+			for(const auto & bonus : bonuses)
+				newHorizonsSerpentsEmbrace::validateApplication(battleState, target, bonus);
 	const auto hydrasVitalitySource = newHorizonsMagic::hydrasVitalitySource(battleState.getMagicRules());
 	std::set<uint32_t> capacityAffectedStacks;
 	auto collectCapacityChanges = [&capacityAffectedStacks, &hydrasVitalitySource](const auto & changes)

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsAerialSupremacy.h"
 
 #include "CUnitState.h"
 #include "SummonLifetime.h"
@@ -2179,6 +2180,13 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 {
 	if(heroicSpiritMoralePending && !heroicSpiritRetaliation)
 		throw std::runtime_error("Invalid pending Heroic Spirit receipt");
+	JsonNode dreadCavalry;
+	if(handler.saving)
+		dreadCavalry = dreadCavalryState.toJson();
+	if(!handler.saving || dreadCavalryState.hasState())
+		handler.serializeRaw("dreadCavalry", dreadCavalry, std::nullopt);
+	if(!handler.saving)
+		dreadCavalryState = DreadCavalryState::fromJson(dreadCavalry);
 	JsonNode confusion;
 	if(handler.saving)
 		confusion = confusionState.toJson();
@@ -2206,6 +2214,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	if(rangedFollowUpDamagePercent < 0 || rangedFollowUpDamagePercent > 100)
 		throw std::runtime_error("Invalid saved ranged follow-up state");
 	handler.serializeInt("archeryCounterfireRound", archeryCounterfireRound, -1);
+	handler.serializeInt("aerialRetaliationRound", aerialRetaliationRound, -1);
+	if(aerialRetaliationRound < -1)
+		throw std::runtime_error("Invalid Aerial Supremacy round marker");
 	handler.serializeInt("archeryDeadeyeRound", archeryDeadeyeRound, -1);
 	handler.serializeInt("archerySuppressionActivationSerial", archerySuppressionActivationSerial, -1);
 	handler.serializeInt("archeryRainOfArrowsActivationSerial", archeryRainOfArrowsActivationSerial, -1);
@@ -2231,17 +2242,8 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 		throw std::runtime_error("Invalid saved Regeneration state");
 	handler.serializeBool("summoned", summoned);
 	handler.serializeBool("natureSummoned", natureSummoned);
-	handler.serializeBool("waiting", waiting);
-	handler.serializeBool("waitedThisTurn", waitedThisTurn);
-	handler.serializeBool("battlecraftWaitBonusUsed", battlecraftWaitBonusUsed);
-	handler.serializeInt("battlecraftOverwatchReadyRound", battlecraftOverwatchReadyRound, -1);
-	handler.serializeInt("battlecraftOverwatchUsedRound", battlecraftOverwatchUsedRound, -1);
-	if(battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1)
-		throw std::runtime_error("Invalid Overwatch round marker");
-	handler.serializeBool("battlecraftWaitMasteryDoubled", battlecraftWaitMasteryDoubled);
-	handler.serializeInt("battlecraftPreemptiveStrikeRound", battlecraftPreemptiveStrikeRound, -1);
-	if(battlecraftPreemptiveStrikeRound < -1)
-		throw std::runtime_error("Invalid Battlecraft Pre-emptive Strike round marker");
+	serializeWaitActionState(handler);
+	serializeJsonRoundReceipts(handler);
 	handler.serializeInt("activationMovementBonus", activationMovementBonus, 0);
 	handler.serializeInt("frozenAppliedRound", frozenAppliedRound, -1);
 	if(frozenAppliedRound < -1)
@@ -2402,8 +2404,36 @@ JsonNode CUnitState::save()
 	return data;
 }
 
+namespace
+{
+struct IncomingActivationReceipts
+{
+	ConfusionState confusion;
+	DreadCavalryState dreadCavalry;
+};
+IncomingActivationReceipts parseIncomingActivationReceipts(const JsonNode & data)
+{
+	const auto confusion = confusionStateFromUnitJson(data);
+	const auto dreadCavalry = dreadCavalryStateFromUnitJson(data);
+	//TODO: use instance resolver
+	const auto & savedPainIncrement = data["state"]["personalBloodrageIncrement"];
+	if(!savedPainIncrement.isNull())
+	{
+		if(savedPainIncrement.getType() != JsonNode::JsonType::DATA_INTEGER)
+			throw std::runtime_error("Personal Bloodrage increment must be an integer");
+		const int64_t rawIncrement = savedPainIncrement.Integer();
+		if(rawIncrement != 0 && rawIncrement != newHorizonsBloodrage::BASIC_INCREMENT
+			&& rawIncrement != newHorizonsBloodrage::ADVANCED_INCREMENT
+			&& rawIncrement != newHorizonsBloodrage::EXPERT_INCREMENT)
+			throw std::runtime_error("Invalid personal Bloodrage increment");
+	}
+	return {confusion, dreadCavalry};
+}
+}
+
 void CUnitState::load(const JsonNode & data)
 {
+	const int32_t incomingBloodRound = petrifyingBloodRoundFromJson(data, petrifyingBloodRound);
 	summonLifetimeFromJson(data["state"]);
 	// Validate before reset/conversion, and never erase an already earned receipt
 	// when rebinding from a partial/legacy state update.
@@ -2435,30 +2465,22 @@ void CUnitState::load(const JsonNode & data)
 				throw std::runtime_error("Pending battle-form restoration requires a valid creature form");
 		}
 	}
+	forestAmbushStateFromUnitJson(data);
 	hasOverwatchState(data);
+	newHorizonsAerialSupremacy::hasRoundState(data);
 	hasHeroicSpiritState(data);
 	hasMoraleActivationState(data);
-	const auto incomingConfusion = confusionStateFromUnitJson(data);
-	//TODO: use instance resolver
-	const auto & savedPainIncrement = data["state"]["personalBloodrageIncrement"];
-	if(!savedPainIncrement.isNull())
-	{
-		if(savedPainIncrement.getType() != JsonNode::JsonType::DATA_INTEGER)
-			throw std::runtime_error("Personal Bloodrage increment must be an integer");
-		const int64_t rawIncrement = savedPainIncrement.Integer();
-		if(rawIncrement != 0 && rawIncrement != newHorizonsBloodrage::BASIC_INCREMENT
-			&& rawIncrement != newHorizonsBloodrage::ADVANCED_INCREMENT
-			&& rawIncrement != newHorizonsBloodrage::EXPERT_INCREMENT)
-			throw std::runtime_error("Invalid personal Bloodrage increment");
-	}
+	const auto incomingActivation = parseIncomingActivationReceipts(data);
 	const bool previousBattleFormState = hasBattleFormState();
 	reset();
 	if(previousBattleFormState)
 		onBattleFormChanged();
 	JsonDeserializer deser(nullptr, data);
 	deser.serializeStruct("state", *this);
+	petrifyingBloodRound = incomingBloodRound;
 	veteranCohesionEarned = retainedVeteranCohesion;
-	confusionState = incomingConfusion;
+	confusionState = incomingActivation.confusion;
+	dreadCavalryState = incomingActivation.dreadCavalry;
 	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
 		|| !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement)
 		|| guardianSpiritHitPoints < 0 || guardianSpiritRoundsRemaining < 0
@@ -2612,17 +2634,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 
 	if(!alive())
 	{
-		rangedFollowUpDamagePercent = 0;
-		heroicSpiritRetaliation = false;
-		heroicSpiritMoralePending = false;
-		luckyOwnAttackSequence = false;
-		pursuitMovementRemaining = 0;
-		veteranPhysicalDamageSinceActivation = 0;
-		guardianSpiritHitPoints = 0;
-		guardianSpiritRoundsRemaining = 0;
-		// Marks belong to surviving wounds only and must never carry through death.
-		regenerationRateMillionths = 0;
-		regenerationPendingMicroHealth = 0;
+		clearDeadUnitTransientState();
 		return;
 	}
 	const bool previousTopCreatureDied = health.getCount() < countBefore;

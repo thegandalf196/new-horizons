@@ -388,9 +388,11 @@ void MeleeAttackAnimation::tick(uint32_t msPassed)
 	AttackAnimation::tick(msPassed);
 }
 
-MeleeAttackAnimation::MeleeAttackAnimation(BattleInterface & owner, const CStack * attacker, BattleHex _dest, const CStack * _attacked, bool multiAttack)
+MeleeAttackAnimation::MeleeAttackAnimation(BattleInterface & owner, const CStack * attacker, BattleHex _dest, const CStack * _attacked, bool multiAttack, BattleHex visualOrigin)
 	: AttackAnimation(owner, attacker, _dest, _attacked)
 {
+	if(visualOrigin.isValid())
+		attackingStackPosBeforeReturn = visualOrigin.toInt();
 	logAnim->debug("Created MeleeAttackAnimation for %s", attacker->getName());
 	setSound(getCreature()->sounds.attack);
 	setGroup(selectGroup(multiAttack));
@@ -497,8 +499,8 @@ MovementAnimation::~MovementAnimation()
 		ENGINE->sound().stopSound(moveSoundHandler);
 }
 
-MovementAnimation::MovementAnimation(BattleInterface & owner, const CStack *stack, const BattleHexArray & _destTiles, int _distance)
-	: StackMoveAnimation(owner, stack, stack->getPosition(), _destTiles.front()),
+MovementAnimation::MovementAnimation(BattleInterface & owner, const CStack *stack, const BattleHexArray & _destTiles, int _distance, BattleHex visualOrigin)
+	: StackMoveAnimation(owner, stack, visualOrigin.isValid() ? visualOrigin : stack->getPosition(), _destTiles.front()),
 	  destTiles(_destTiles),
 	  currentMoveIndex(0),
 	  begX(0), begY(0),

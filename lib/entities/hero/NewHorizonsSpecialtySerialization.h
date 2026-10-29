@@ -20,6 +20,14 @@ struct SpecialtySerializationContext
 	bool remainingRiders = false;
 	bool chosenSpecialties = false;
 	bool manaLeeches = false;
+	bool serpentsEmbrace = false;
+	bool ghostSpecialty = false;
+	bool paralyzingGaze = false;
+	bool forestAmbush = false;
+	bool petrifyingBlood = false;
+	bool livingInferno = false;
+	bool aerialSupremacy = false;
+	bool dreadCavalry = false;
 
 	template<class Handler>
 	static SpecialtySerializationContext fromHandler(const Handler & h)
@@ -33,6 +41,14 @@ struct SpecialtySerializationContext
 		result.remainingRiders = h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS);
 		result.chosenSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS);
 		result.manaLeeches = h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES);
+		result.serpentsEmbrace = h.hasFeature(Handler::Version::NEW_HORIZONS_SERPENTS_EMBRACE);
+		result.ghostSpecialty = h.hasFeature(Handler::Version::NEW_HORIZONS_GHOST_UPGRADE);
+		result.paralyzingGaze = h.hasFeature(Handler::Version::NEW_HORIZONS_PARALYZING_GAZE);
+		result.forestAmbush = h.hasFeature(Handler::Version::NEW_HORIZONS_FOREST_AMBUSH);
+		result.petrifyingBlood = h.hasFeature(Handler::Version::NEW_HORIZONS_PETRIFYING_BLOOD);
+		result.livingInferno = h.hasFeature(Handler::Version::NEW_HORIZONS_LIVING_INFERNO);
+		result.aerialSupremacy = h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY);
+		result.dreadCavalry = h.hasFeature(Handler::Version::NEW_HORIZONS_DREAD_CAVALRY);
 		return result;
 	}
 };
@@ -44,4 +60,7 @@ DLL_LINKAGE void validateCurrentSpecialtyRules(const JsonNode & development);
 /// resolving installed defaults, changing the snapshot or consuming wire bytes.
 DLL_LINKAGE void validateCapturedSpecialtiesSerialization(const JsonNode & development,
 	const SpecialtySerializationContext & context);
+/// Copy present specialty families in their existing deterministic resolution order.
+DLL_LINKAGE void copyCapturedIndividualSpecialties(JsonNode & target, const JsonNode & source);
+
 }

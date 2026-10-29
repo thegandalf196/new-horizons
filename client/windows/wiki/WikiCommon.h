@@ -17,6 +17,10 @@
 #include "../../../lib/TerrainHandler.h"
 
 class Canvas;
+class CCreature;
+
+/// Reference visibility, independent of recruitment/random-map eligibility.
+bool isWikiCreatureVisible(const CCreature * creature);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WikiIconInfo – optional icon descriptor for a wiki list row

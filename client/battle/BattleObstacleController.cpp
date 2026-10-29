@@ -83,9 +83,17 @@ void BattleObstacleController::obstacleRemoved(const ObstacleChanges & oi)
 			auto first = animation->getImage(0, 0);
 			if(first)
 			{
-				Point whereTo = getObstaclePosition(first, obstacle);
-				//AFAIK, in H3 there is no sound of obstacle removal
-				owner.stacksController->addNewAnim(new EffectAnimation(owner, animationPath, whereTo, obstacle["position"].Integer(), 0, true));
+				BattleHexArray positions{BattleHex(static_cast<si16>(obstacle["position"].Integer()))};
+				if(obstacle["renderAtEachHex"].Bool())
+				{
+					positions.clear();
+					for(const auto & hex : obstacle["customSize"].Vector())
+						positions.insert(BattleHex(static_cast<si16>(hex.Integer())));
+				}
+				// One logical obstacle expires once; every marked footprint flame fades together.
+				for(const auto hex : positions)
+					owner.stacksController->addNewAnim(new EffectAnimation(owner, animationPath,
+						getObstaclePosition(first, obstacle, hex), hex, 0, true));
 				obstacleAnimations.erase(oi.id);
 				obstacleImages.erase(oi.id);
 				obstaclePositions.erase(oi.id);
@@ -164,18 +172,28 @@ void BattleObstacleController::placeNextObstacle()
 		return;
 	}
 
-	Point whereTo = getObstaclePosition(first, *oi);
-	ENGINE->sound().playSound( oi->getAppearSound() );
-
-	placingObstacle = true;
-	auto effect = new EffectAnimation(owner, oi->getAppearAnimation(), whereTo, oi->pos);
-	effect->onFinished = [this, oi]()
+	const auto positions = oi->getRenderTiles();
+	if(positions.empty())
 	{
-		loadObstacleImage(*oi);
-		placingObstacle = false;
 		placeNextObstacle();
-	};
-	owner.stacksController->addNewAnim(effect);
+		return;
+	}
+	ENGINE->sound().playSound( oi->getAppearSound() );
+	placingObstacle = true;
+	auto remaining = std::make_shared<size_t>(positions.size());
+	for(const auto hex : positions)
+	{
+		auto effect = new EffectAnimation(owner, oi->getAppearAnimation(), getObstaclePosition(first, *oi, hex), hex);
+		effect->onFinished = [this, oi, remaining]()
+		{
+			if(--*remaining != 0)
+				return;
+			loadObstacleImage(*oi);
+			placingObstacle = false;
+			placeNextObstacle();
+		};
+		owner.stacksController->addNewAnim(effect);
+	}
 }
 
 void BattleObstacleController::showAbsoluteObstacles(Canvas & canvas)
@@ -222,14 +240,12 @@ void BattleObstacleController::collectRenderableObjects(BattleRenderer & rendere
 		// creature and must draw below it; blocking obstacles stay above via row ordering
 		auto layer = obstacle->blocksTiles() ? EBattleFieldLayer::OBSTACLES : EBattleFieldLayer::GROUND_OBSTACLES;
 
-		renderer.insert(layer, obstacle->pos, [this, obstacle]( BattleRenderer::RendererRef canvas ){
-			auto img = getObstacleImage(*obstacle);
-			if(img)
-			{
-				Point p = getObstaclePosition(img, *obstacle);
-				canvas.draw(img, p);
-			}
-		});
+		for(const auto hex : obstacle->getRenderTiles())
+			renderer.insert(layer, hex, [this, obstacle, hex]( BattleRenderer::RendererRef canvas ){
+				auto img = getObstacleImage(*obstacle);
+				if(img)
+					canvas.draw(img, getObstaclePosition(img, *obstacle, hex));
+			});
 	}
 
 	for(const auto & fade : fadingObstacles)
@@ -270,14 +286,14 @@ std::shared_ptr<IImage> BattleObstacleController::getObstacleImage(const CObstac
 	return obstacleImages[oi.uniqueID];
 }
 
-Point BattleObstacleController::getObstaclePosition(std::shared_ptr<IImage> image, const CObstacleInstance & obstacle)
+Point BattleObstacleController::getObstaclePosition(std::shared_ptr<IImage> image, const CObstacleInstance & obstacle, BattleHex renderHex)
 {
-	Rect r = owner.fieldController->hexPositionLocal(obstacle.pos);
+	Rect r = owner.fieldController->hexPositionLocal(renderHex.isValid() ? renderHex : obstacle.pos);
 	return r.bottomLeft() - Point(0, obstacle.getAnimationYOffset(image->height()));
 }
 
-Point BattleObstacleController::getObstaclePosition(std::shared_ptr<IImage> image, const JsonNode & obstacle)
+Point BattleObstacleController::getObstaclePosition(std::shared_ptr<IImage> image, const JsonNode & obstacle, BattleHex renderHex)
 {
-	Rect r = owner.fieldController->hexPositionLocal(obstacle["position"].Integer());
+	Rect r = owner.fieldController->hexPositionLocal(renderHex.isValid() ? renderHex : BattleHex(static_cast<si16>(obstacle["position"].Integer())));
 	return r.bottomLeft() - Point(0, image->height());
 }

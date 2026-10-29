@@ -7,8 +7,12 @@
 #include "../../lib/spells/NewHorizonsTheChosen.h"
 #include "../../lib/spells/CSpell.h"
 
+class CStack;
+
 namespace newHorizonsStackSpellPresentation
 {
+newHorizonsBattleStatus::BattleFormStatus battleFormStatus(const CStack & stack);
+
 struct ChosenStatus
 {
 	int remainingRounds = 0;

@@ -83,7 +83,7 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, MergePreflightRejectsAnOversizedI
 	ASSERT_NE(destination, nullptr);
 	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 20);
+	ASSERT_EQ(capacity->maximum, 17);
 	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, capacity->maximum));
 
 	CGHeroInstance source(nullptr);
@@ -104,7 +104,7 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, WholeArmyMergePreflightRejectsAnO
 	ASSERT_NE(destination, nullptr);
 	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 20);
+	ASSERT_EQ(capacity->maximum, 17);
 	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, capacity->maximum));
 
 	CGHeroInstance source(nullptr);
@@ -187,7 +187,7 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, WizardMageGarrisonAdmissionPreser
 
 	const auto capacity = hero->getLeadershipSlotCapacity(mage);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->leadership, 780);
+	ASSERT_EQ(capacity->leadership, 650);
 	ASSERT_EQ(capacity->requirement, 300);
 	ASSERT_EQ(capacity->maximum, 2);
 	EXPECT_TRUE(hero->canBeMergedWith(*town)); // Slots alone miss this overflow.
@@ -225,7 +225,7 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, SplitPreflightAllowsOnlyTheLegalF
 	ASSERT_NE(destination, nullptr);
 	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 20);
+	ASSERT_EQ(capacity->maximum, 17);
 	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, capacity->maximum - 1));
 
 	CGHeroInstance source(nullptr);
@@ -493,7 +493,7 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, ReprojectingDuplicateResidualSlot
 	};
 	const CreatureID largerFiller(CreatureID::decode("core:magicElemental"));
 
-	// Coronius has 780 Leadership and Orrin has 1230. Both can command one
+	// Coronius has 650 Leadership and Orrin has 1025. Both can command one
 	// Angel/Phoenix, but Orrin can receive two of each filler while Coronius can
 	// receive only one. The donor's full seven slots therefore cannot accept the
 	// second Angel after the first Angel is swapped out for the Phoenix.

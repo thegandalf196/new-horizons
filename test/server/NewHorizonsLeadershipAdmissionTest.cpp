@@ -190,6 +190,8 @@ protected:
     void mapLoaded(CMap * loaded) override
     {
         TinyMapGameTest::mapLoaded(loaded);
+        // Preserve the authored follower counts in these admission regressions.
+        loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
         loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
             JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
         auto capabilities = JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"));
@@ -431,7 +433,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, JoiningArmyClampsDuplicateStacksAndLe
 
     const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
     ASSERT_TRUE(pikemanCapacity);
-    ASSERT_EQ(pikemanCapacity->maximum, 20);
+    ASSERT_EQ(pikemanCapacity->maximum, 17);
     hero->setStackCount(SlotID(0), pikemanCapacity->maximum - 1);
     ASSERT_EQ(hero->stacksCount(), GameConstants::ARMY_SIZE);
     ASSERT_EQ(source->stacksCount(), 3);
@@ -1568,7 +1570,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, WizardMageSurplusTransferThenGarrison
 
 	const auto capacity = hero->getLeadershipSlotCapacity(mage);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->leadership, 780);
+	ASSERT_EQ(capacity->leadership, 650);
 	ASSERT_EQ(capacity->requirement, 300);
 	ASSERT_EQ(capacity->maximum, 2);
 	LeadershipRecordingServer server(gameState());
@@ -1668,7 +1670,7 @@ TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarri
 		EXPECT_EQ(currentHero.level, 1);
 		const auto capacity = currentHero.getLeadershipSlotCapacity(mage);
 		ASSERT_TRUE(capacity);
-		EXPECT_EQ(capacity->leadership, 780);
+		EXPECT_EQ(capacity->leadership, 650);
 		EXPECT_EQ(capacity->requirement, 300);
 		EXPECT_EQ(capacity->maximum, 2);
 		EXPECT_EQ(currentHero.getCapabilityRules(), capturedCapabilities);

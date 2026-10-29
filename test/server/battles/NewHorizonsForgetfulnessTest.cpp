@@ -30,6 +30,8 @@
 #include "../../../lib/serializer/ESerializationVersion.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/Problem.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -226,14 +228,21 @@ protected:
 
 	bool castCounterstrike()
 	{
-		if(!activate(afflicted))
+		// Reuse the deterministic creature-effect application path maintained by
+		// NewHorizonsHeroSpellAccessTest. This is not a hero spell or random-wish
+		// request: the test needs a real SPELL_EFFECT producer at its base level.
+		auto * caster = addStack(BattleSide::DEFENDER, creatureByName("core:masterGenie"), BattleHex(10, 2), 1);
+		const auto * definition = SpellID(SpellID::COUNTERSTRIKE).toSpell();
+		if(!caster || !definition)
 			return false;
-		BattleAction action;
-		action.actionType = EActionType::HERO_SPELL;
-		action.side = BattleSide::DEFENDER;
-		action.spell = SpellID(SpellID::COUNTERSTRIKE);
-		action.aimToUnit(afflicted);
-		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), action);
+		spells::BattleCast cast(battle(), caster, spells::Mode::CREATURE_ACTIVE, definition);
+		const spells::Target target{spells::Destination(afflicted)};
+		const auto mechanics = definition->battleMechanics(&cast);
+		spells::detail::ProblemImpl problem;
+		if(!mechanics || !mechanics->canBeCast(problem) || !mechanics->canBeCastAt(target, problem))
+			return false;
+		cast.cast(gameHandler->spellEnv.get(), target);
+		return true;
 	}
 
 	void expectRealSuppressionMarker(const int expectedLevel, const int expectedTurns = 3)
@@ -483,6 +492,7 @@ TEST_F(NewHorizonsForgetfulnessTest, MindbreakerSuppressesNativeUnlimitedRetalia
 	prepare("core:royalGriffin", true, false);
 	ASSERT_TRUE(afflicted->hasBonusOfType(BonusType::UNLIMITED_RETALIATIONS));
 	defenderSideHero->addSpellToSpellbook(SpellID(SpellID::COUNTERSTRIKE));
+	EXPECT_FALSE(defenderSideHero->canCastThisSpell(SpellID(SpellID::COUNTERSTRIKE).toSpell()));
 
 	ASSERT_TRUE(castCounterstrike());
 	const auto spellRetaliation = afflicted->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,

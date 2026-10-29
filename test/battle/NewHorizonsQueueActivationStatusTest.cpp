@@ -42,7 +42,8 @@ TEST(NewHorizonsQueueActivationStatusTest, SameActivationReturnsPreserveCurrentO
 		Reason::HERO_COMMAND,
 		Reason::MASTER_GATE_CONTINUATION,
 		Reason::PURSUIT_CONTINUATION,
-		Reason::RANGED_ATTACK_CONTINUATION};
+		Reason::RANGED_ATTACK_CONTINUATION,
+		Reason::DREAD_CAVALRY_CONTINUATION};
 
 	Status status;
 	update(status, activeUnit, currentRound, Reason::MORALE, false);
@@ -101,4 +102,23 @@ TEST(NewHorizonsQueueActivationStatusTest, MarksOnlyTheMatchingCurrentQueueEntry
 
 	status = Status{};
 	EXPECT_FALSE(marksCurrentEntry(status, activeUnit, 0));
+}
+
+TEST(NewHorizonsQueueActivationStatusTest, DreadCavalryPreservesOnlyTheCurrentExtraActivationOrigin)
+{
+	for(const auto origin : {Origin::QUARTERMASTER, Origin::SECOND_WIND})
+	{
+		Status status{activeUnit, currentRound, origin};
+		update(status, activeUnit, currentRound, Reason::DREAD_CAVALRY_CONTINUATION, false);
+		EXPECT_EQ(status.origin, origin);
+		EXPECT_TRUE(marksCurrentEntry(status, activeUnit, 0));
+
+		update(status, activeUnit + 1, currentRound, Reason::DREAD_CAVALRY_CONTINUATION, false);
+		EXPECT_EQ(status.origin, Origin::NORMAL);
+		EXPECT_FALSE(marksCurrentEntry(status, activeUnit + 1, 0));
+
+		status = {activeUnit, currentRound, origin};
+		update(status, activeUnit, currentRound + 1, Reason::DREAD_CAVALRY_CONTINUATION, false);
+		EXPECT_EQ(status.origin, Origin::NORMAL);
+	}
 }

@@ -23,6 +23,7 @@ set(Nullkiller2_SRCS
 		Pathfinding/ObjectGraphCalculator.cpp
 		AIUtility.cpp
 		Analyzers/ArmyManager.cpp
+		Analyzers/ArmyRecruitmentForecast.cpp
 		Analyzers/HeroManager.cpp
 		Engine/Settings.cpp
 		Engine/FuzzyHelper.cpp
@@ -57,6 +58,7 @@ set(Nullkiller2_SRCS
 		Engine/ResourceTrader.cpp
 		Analyzers/DangerHitMapAnalyzer.cpp
 		Analyzers/BuildAnalyzer.cpp
+		Analyzers/BuildingInfo.cpp
 		Analyzers/ObjectClusterizer.cpp
 		Behaviors/CaptureObjectsBehavior.cpp
 		Behaviors/RecruitHeroBehavior.cpp
@@ -79,7 +81,10 @@ set(Nullkiller2_SRCS
 		Helpers/NewHorizonsMuster.cpp
 		Helpers/NewHorizonsTravelLanding.cpp
 		Helpers/ExplorationHelper.cpp
+		Helpers/DwellingGrowthValue.cpp
 		AIGateway.cpp
+		Helpers/ArmyUpgradeSelection.cpp
+		Helpers/ArmyUpgradeExecution.cpp
 )
 
 set(Nullkiller2_HEADERS
@@ -163,6 +168,7 @@ set(Nullkiller2_HEADERS
 		Behaviors/StayAtTownBehavior.h
 		Behaviors/ExplorationBehavior.h
 		Helpers/ArmyFormation.h
+		Helpers/ArmyUpgradeSelection.h
 		Helpers/ArmyExchangeExecution.h
 		Helpers/RouteActorObservation.h
 		Helpers/RouteMovement.h
@@ -170,6 +176,7 @@ set(Nullkiller2_HEADERS
 		Helpers/NewHorizonsMuster.h
 		Helpers/NewHorizonsTravelLanding.h
 		Helpers/ExplorationHelper.h
+		Helpers/DwellingGrowthValue.h
 		AIGateway.h
 )
 

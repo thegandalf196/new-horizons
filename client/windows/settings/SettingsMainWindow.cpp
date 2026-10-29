@@ -10,6 +10,8 @@
 
 #include "StdInc.h"
 #include "SettingsMainWindow.h"
+#include "../BugReportWindow.h"
+#include "../../render/Colors.h"
 
 #include "AdventureOptionsTab.h"
 #include "BattleOptionsTab.h"
@@ -44,7 +46,11 @@ SettingsMainWindow::SettingsMainWindow(BattleInterface * parentBattleUi) : Inter
 	addCallback("quitGame", [this](int) { quitGameButtonCallback(); });
 	addCallback("returnToMainMenu", [this](int) { mainMenuButtonCallback(); });
 	addCallback("closeWindow", [this](int) { backButtonCallback(); });
+	addCallback("reportBug", [](int) { BugReportWindow::openSession(""); });
 	build(config);
+	auto reportButton = widget<CButton>("bugReportButton");
+	reportButton->setTextOverlay("Report a bug", FONT_SMALL, Colors::YELLOW);
+	reportButton->setHelp(CButton::tooltip("Report a bug", "Open a public GitHub report draft. Diagnostic logs are optional and reviewed first."));
 
 	addUsedEvents(INPUT_MODE_CHANGE);
 

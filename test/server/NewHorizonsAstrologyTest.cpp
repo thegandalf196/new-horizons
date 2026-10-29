@@ -69,6 +69,8 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		// This fixture characterizes its original unscaled growth/context.
+		loaded->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 

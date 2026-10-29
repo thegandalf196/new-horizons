@@ -65,6 +65,7 @@ public:
 	~RenderHandler();
 
 	// IRenderHandler implementation
+	void initializeInterfaceResources() override;
 	void onLibraryLoadingFinished(const Services * services) override;
 
 	std::shared_ptr<IImage> loadImage(const ImageLocator & locator) override;

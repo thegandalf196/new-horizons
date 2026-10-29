@@ -6,75 +6,75 @@
 	},
 	"classProfiles": {
 		"core:knight": {
-			"base": 1230,
+			"base": 1025,
 			"perLevel": 55
 		},
 		"core:cleric": {
-			"base": 870,
+			"base": 725,
 			"perLevel": 35
 		},
 		"core:ranger": {
-			"base": 1140,
+			"base": 950,
 			"perLevel": 50
 		},
 		"core:druid": {
-			"base": 780,
+			"base": 650,
 			"perLevel": 30
 		},
 		"core:alchemist": {
-			"base": 1050,
+			"base": 875,
 			"perLevel": 45
 		},
 		"core:wizard": {
-			"base": 780,
+			"base": 650,
 			"perLevel": 30
 		},
 		"core:demoniac": {
-			"base": 1230,
+			"base": 1025,
 			"perLevel": 55
 		},
 		"core:heretic": {
-			"base": 870,
+			"base": 725,
 			"perLevel": 35
 		},
 		"core:deathknight": {
-			"base": 1140,
+			"base": 950,
 			"perLevel": 50
 		},
 		"core:necromancer": {
-			"base": 870,
+			"base": 725,
 			"perLevel": 35
 		},
 		"core:overlord": {
-			"base": 1230,
+			"base": 1025,
 			"perLevel": 55
 		},
 		"core:warlock": {
-			"base": 870,
+			"base": 725,
 			"perLevel": 35
 		},
 		"core:barbarian": {
-			"base": 1320,
+			"base": 1100,
 			"perLevel": 60
 		},
 		"core:battlemage": {
-			"base": 1050,
+			"base": 875,
 			"perLevel": 45
 		},
 		"core:beastmaster": {
-			"base": 1320,
+			"base": 1100,
 			"perLevel": 60
 		},
 		"core:witch": {
-			"base": 870,
+			"base": 725,
 			"perLevel": 35
 		},
 		"core:planeswalker": {
-			"base": 1050,
+			"base": 875,
 			"perLevel": 45
 		},
 		"core:elementalist": {
-			"base": 780,
+			"base": 650,
 			"perLevel": 30
 		}
 	},
@@ -114,6 +114,7 @@
 			"core:skeleton": 45,
 			"core:walkingDead": 80,
 			"core:wight": 130,
+			"new-horizons:ghost": 130,
 			"core:vampire": 230,
 			"core:lich": 330,
 			"core:blackKnight": 470,

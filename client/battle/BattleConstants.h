@@ -44,6 +44,10 @@ enum class EAnimationEvents
 	HIT,         // hit & death animations are playing
 	AFTER_HIT,   // post-attack effect, e.g. phoenix rebirth
 
+	AERIAL_RETURN_START,
+	AERIAL_RETURN_MOVE,
+	AERIAL_RETURN_END,
+
 	COUNT
 };
 

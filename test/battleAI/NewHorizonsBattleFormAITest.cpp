@@ -8,6 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "ProjectedTargetHitFixture.h"
+#include "../../lib/logging/CLogger.h"
+#include "../../lib/bonuses/BonusList.h"
+#include "../../lib/bonuses/BonusSelector.h"
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "../SpellPointTestUtils.h"
@@ -237,9 +241,11 @@ protected:
 			for(auto & command : commandRules["commands"].Struct())
 				for(auto & effect : command.second["effects"].Struct())
 				{
-					effect.second["base"].Float() = 0;
-					effect.second["attack"].Float() = 0;
-					effect.second["defense"].Float() = 0;
+					// Preserve each formula's fields and positive divisor; zero caps
+					// also suppress Vanguard's rating-derived potency.
+					for(auto & [coefficientName, coefficient] : effect.second.Struct())
+						if(coefficientName != "ratingStep")
+							coefficient = JsonNode(0);
 				}
 		}
 		heroCommands::validateRules(commandRules);
@@ -791,4 +797,122 @@ TEST_F(NewHorizonsBattleFormAITest, DetachedNoSpaceExpiryAndDispelKeepMarkerUnti
 	EXPECT_FALSE(unit->hasBonus(CSelector(battle::isPolymorphMarker)));
 	EXPECT_EQ(unit->getAvailableHealth(), hp);
 	EXPECT_EQ(stack->save(), liveState);
+}
+
+namespace
+{
+struct DenialCount { size_t value = 0, invalid = 0; };
+class ArmyBoundaryLog final : public ILogTarget
+{
+	std::weak_ptr<DenialCount> count;
+public:
+	explicit ArmyBoundaryLog(std::weak_ptr<DenialCount> value) : count(std::move(value)) {}
+	void write(const LogRecord & record) override
+	{
+		if(const auto held = count.lock())
+		{
+			if(record.message == "FIXME: battleGetArmyObject access check!") ++held->value;
+			if(record.message == "FIXME: battleGetArmyObject wrong argument!") ++held->invalid;
+		}
+	}
+};
+class ArmyBoundaryCapture
+{
+	CLogger * logger = CLogger::getGlobalLogger();
+	ELogLevel::ELogLevel previous = logger->getLevel();
+	std::shared_ptr<DenialCount> count = std::make_shared<DenialCount>();
+public:
+	ArmyBoundaryCapture()
+	{
+		logger->setLevel(ELogLevel::ERROR);
+		logger->addTarget(std::make_unique<ArmyBoundaryLog>(count));
+	}
+	~ArmyBoundaryCapture() { count.reset(); logger->setLevel(previous); }
+	size_t size() const { return count->value; }
+	size_t invalid() const { return count->invalid; }
+};
+std::vector<std::string> bonusValues(const BonusList & bonuses)
+{
+	std::vector<std::string> result;
+	for(const auto & bonus : bonuses) result.push_back(bonus->toJsonNode().toString());
+	std::sort(result.begin(), result.end());
+	return result;
+}
+}
+
+class EnemyBattleFormArmyBoundaryTest : public ProjectedTargetHitFixture {};
+
+TEST_F(EnemyBattleFormArmyBoundaryTest, CanonicalVisibilityPreservesKnownPointersAndExplicitDenials)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	for(const auto observer : {battle()->getSidePlayer(BattleSide::ATTACKER),
+		battle()->getSidePlayer(BattleSide::DEFENDER), PlayerColor::SPECTATOR})
+	{
+		auto view = std::make_shared<CPlayerBattleCallback>(battle(), observer);
+		HypotheticBattle proxy(environment.get(), view);
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			ArmyBoundaryCapture calls;
+			const auto perspective = view->battleGetMySide();
+			const bool known = perspective == BattleSide::ALL_KNOWING || perspective == side;
+			const auto * expected = view->battleGetArmyObject(side);
+			EXPECT_EQ(calls.size(), known ? 0u : 1u);
+			const auto before = calls.size();
+			EXPECT_EQ(proxy.getSideArmy(side), expected);
+			EXPECT_EQ(calls.size(), before);
+		}
+		// Invalid arguments retain the exact core diagnostic/delegation path.
+		ArmyBoundaryCapture invalid;
+		EXPECT_EQ(proxy.getSideArmy(BattleSide::NONE), nullptr);
+		EXPECT_EQ(invalid.invalid(), 1u);
+		EXPECT_EQ(view->battleGetArmyObject(BattleSide::NONE), nullptr);
+		EXPECT_EQ(invalid.invalid(), 2u);
+	}
+	// Construct the concrete projection from a real battle, then detach its
+	// ordinary callback using the public concrete callback assignment operator.
+	auto detached = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle noBattle(environment.get(), detached);
+	*detached = CPlayerBattleCallback(nullptr, PlayerColor(0));
+	ASSERT_EQ(detached->getBattle(), nullptr);
+	EXPECT_EQ(noBattle.getSideArmy(BattleSide::ATTACKER), nullptr);
+	*detached = CPlayerBattleCallback(battle(), PlayerColor(0));
+}
+
+
+// A real player-scoped form projection; not an inference about the exact
+// Day98 producer. Explicit private army queries must still be rejected.
+TEST_F(EnemyBattleFormArmyBoundaryTest, VisibleEnemyFormUsesNativeContextWithoutRequestingHiddenArmy)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_EQ(live->battleGetMySide(), BattleSide::ATTACKER);
+	ASSERT_NE(incoming->getBattle(), nullptr);
+	ArmyBoundaryCapture calls;
+	EXPECT_EQ(live->battleGetArmyObject(BattleSide::DEFENDER), nullptr);
+	EXPECT_EQ(calls.size(), 1u); // Explicit negative control: restriction remains intact.
+	const auto parentBefore = projectedHitTest::serialized(child->getForUpdate(incoming->unitId())->save());
+	const auto nativeBefore = projectedHitTest::serialized(incoming->save());
+	const auto worldBefore = gameState()->saveToMemory();
+	const auto randomizerBefore = projectedHitTest::serialized(*gameHandler->randomizer);
+	const auto fixtureRngBefore = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto defaultRngBefore = projectedHitTest::serialized(CRandomGenerator::getDefault());
+	auto branch = std::make_shared<HypotheticBattle>(environment.get(), child);
+	auto target = branch->getForUpdate(incoming->unitId());
+	const auto form = creatureByName("core:woodElf");
+	const auto beforeForm = calls.size();
+	target->beginBattleForm(form, 2);
+	const CSelector nativeForm([form](const Bonus * bonus) { return isBattleFormNativeBonus(bonus, form); });
+	const auto projected = target->getUnstackedBonuses(nativeForm);
+	EXPECT_EQ(calls.size(), beforeForm); // Nullable projection avoids the prohibited query.
+	const auto beforeVisibleSource = calls.size();
+	// Existing PUBLIC visible unit context, not hidden army/hero access. The
+	// helper uses incoming's established native context and ignores fallbackArmy.
+	const auto fromVisibleSource = getBattleFormNativeBonuses(*target, incoming, nullptr, Selector::all, true);
+	EXPECT_EQ(calls.size(), beforeVisibleSource);
+	EXPECT_EQ(bonusValues(*projected), bonusValues(*fromVisibleSource));
+	EXPECT_EQ(projectedHitTest::serialized(child->getForUpdate(incoming->unitId())->save()), parentBefore);
+	EXPECT_EQ(projectedHitTest::serialized(incoming->save()), nativeBefore);
+	EXPECT_EQ(gameState()->saveToMemory(), worldBefore);
+	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), randomizerBefore);
+	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRngBefore);
+	EXPECT_EQ(projectedHitTest::serialized(CRandomGenerator::getDefault()), defaultRngBefore);
 }

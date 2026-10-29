@@ -9,24 +9,24 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 
 CANONICAL_CLASS_PROFILES = {
-    'core:knight': {'base': 1230, 'perLevel': 55},
-    'core:cleric': {'base': 870, 'perLevel': 35},
-    'core:ranger': {'base': 1140, 'perLevel': 50},
-    'core:druid': {'base': 780, 'perLevel': 30},
-    'core:alchemist': {'base': 1050, 'perLevel': 45},
-    'core:wizard': {'base': 780, 'perLevel': 30},
-    'core:demoniac': {'base': 1230, 'perLevel': 55},
-    'core:heretic': {'base': 870, 'perLevel': 35},
-    'core:deathknight': {'base': 1140, 'perLevel': 50},
-    'core:necromancer': {'base': 870, 'perLevel': 35},
-    'core:overlord': {'base': 1230, 'perLevel': 55},
-    'core:warlock': {'base': 870, 'perLevel': 35},
-    'core:barbarian': {'base': 1320, 'perLevel': 60},
-    'core:battlemage': {'base': 1050, 'perLevel': 45},
-    'core:beastmaster': {'base': 1320, 'perLevel': 60},
-    'core:witch': {'base': 870, 'perLevel': 35},
-    'core:planeswalker': {'base': 1050, 'perLevel': 45},
-    'core:elementalist': {'base': 780, 'perLevel': 30},
+    'core:knight': {'base': 1025, 'perLevel': 55},
+    'core:cleric': {'base': 725, 'perLevel': 35},
+    'core:ranger': {'base': 950, 'perLevel': 50},
+    'core:druid': {'base': 650, 'perLevel': 30},
+    'core:alchemist': {'base': 875, 'perLevel': 45},
+    'core:wizard': {'base': 650, 'perLevel': 30},
+    'core:demoniac': {'base': 1025, 'perLevel': 55},
+    'core:heretic': {'base': 725, 'perLevel': 35},
+    'core:deathknight': {'base': 950, 'perLevel': 50},
+    'core:necromancer': {'base': 725, 'perLevel': 35},
+    'core:overlord': {'base': 1025, 'perLevel': 55},
+    'core:warlock': {'base': 725, 'perLevel': 35},
+    'core:barbarian': {'base': 1100, 'perLevel': 60},
+    'core:battlemage': {'base': 875, 'perLevel': 45},
+    'core:beastmaster': {'base': 1100, 'perLevel': 60},
+    'core:witch': {'base': 725, 'perLevel': 35},
+    'core:planeswalker': {'base': 875, 'perLevel': 45},
+    'core:elementalist': {'base': 650, 'perLevel': 30},
 }
 
 CANONICAL_LEADERSHIP_REQUIREMENTS = {
@@ -100,6 +100,7 @@ CANONICAL_LEADERSHIP_REQUIREMENTS = {
     'core:sharpshooter': 170,
     'new-horizons:wisp': 140,
     'new-horizons:wispUpgrade': 140,
+    'new-horizons:ghost': 130,
 }
 
 

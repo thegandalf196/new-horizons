@@ -80,6 +80,7 @@
 		"core:zombieLord": "core",
 		"core:wight": "core",
 		"core:wraith": "core",
+		"new-horizons:ghost": "core",
 		"core:vampire": "elite",
 		"core:vampireLord": "elite",
 		"core:lich": "elite",

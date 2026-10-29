@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "DreadCavalryProjection.h"
+#include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "BattleEvaluator.h"
 #include "BattleEvaluatorProjection.h"
 #include "HypotheticBattle.h"
@@ -138,30 +140,38 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 	{
 		AttackPossibility attackPossibility = potentialTargets.bestAction();
 
-		auto stackWithBonuses = state->getForUpdate(unit->unitId());
-		const bool attackerWasAlive = stackWithBonuses->alive();
-		*stackWithBonuses = *attackPossibility.attackerState;
-		state->recordBloodrageTransition(stackWithBonuses, attackerWasAlive);
-
-		if(attackPossibility.defenderDamageReduce > 0)
+		if(newHorizonsDreadCavalry::entitlement(*state, unit) || newHorizonsDreadCavalry::hasRawPending(unit))
 		{
-			stackWithBonuses->removeUnitBonus(Bonus::UntilAttack);
-			stackWithBonuses->removeUnitBonus(Bonus::UntilOwnAttack);
+			BattleExchangeVariant exchange;
+			exchange.trackAttack(attackPossibility, state, damageCache);
 		}
-		if(attackPossibility.attackerDamageReduce > 0)
-			stackWithBonuses->removeUnitBonus(Bonus::UntilBeingAttacked);
-
-		for(auto affected : attackPossibility.affectedUnits)
+		else
 		{
-			stackWithBonuses = state->getForUpdate(affected->unitId());
-			const bool affectedWasAlive = stackWithBonuses->alive();
-			*stackWithBonuses = *affected;
-			state->recordBloodrageTransition(stackWithBonuses, affectedWasAlive);
+			auto stackWithBonuses = state->getForUpdate(unit->unitId());
+			const bool attackerWasAlive = stackWithBonuses->alive();
+			*stackWithBonuses = *attackPossibility.attackerState;
+			state->recordBloodrageTransition(stackWithBonuses, attackerWasAlive);
 
 			if(attackPossibility.defenderDamageReduce > 0)
-				stackWithBonuses->removeUnitBonus(Bonus::UntilBeingAttacked);
-			if(attackPossibility.attackerDamageReduce > 0 && attackPossibility.attack.defender->unitId() == affected->unitId())
+			{
 				stackWithBonuses->removeUnitBonus(Bonus::UntilAttack);
+				stackWithBonuses->removeUnitBonus(Bonus::UntilOwnAttack);
+			}
+			if(attackPossibility.attackerDamageReduce > 0)
+				stackWithBonuses->removeUnitBonus(Bonus::UntilBeingAttacked);
+
+			for(auto affected : attackPossibility.affectedUnits)
+			{
+				stackWithBonuses = state->getForUpdate(affected->unitId());
+				const bool affectedWasAlive = stackWithBonuses->alive();
+				*stackWithBonuses = *affected;
+				state->recordBloodrageTransition(stackWithBonuses, affectedWasAlive);
+
+				if(attackPossibility.defenderDamageReduce > 0)
+					stackWithBonuses->removeUnitBonus(Bonus::UntilBeingAttacked);
+				if(attackPossibility.attackerDamageReduce > 0 && attackPossibility.attack.defender->unitId() == affected->unitId())
+					stackWithBonuses->removeUnitBonus(Bonus::UntilAttack);
+			}
 		}
 	}
 
@@ -169,6 +179,7 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 		? potentialTargets.expectedBerserkActionValue()
 		: static_cast<float>(potentialTargets.bestActionValue());
 
+	bav += dreadCavalryAI::projectPending(state, unit->unitId(), damageCache).value;
 	//best action is from effective owner`s point if view, we need to convert to our point if view
 	if(state->battleGetActionController(unit) != playerID)
 		bav = -bav;
@@ -184,7 +195,7 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 	// No-target movement is not a modeled completed action here.
 	const auto completed = state->getForUpdate(unit->unitId());
 	if(!potentialTargets.possibleAttacks.empty() && !syntheticStoppedSlot
-		&& !completed->isTimeStopped() && completed->pursuitMovementRemaining == 0
+		&& !completed->isTimeStopped() && completed->pursuitMovementRemaining == 0 && !completed->dreadCavalryState.pending
 		&& !state->battleHasPendingRangedFollowUp(completed.get()))
 		newHorizonsPlague::completeActivation(*state, *state->getServerCallback(), unit->unitId());
 	state->completeSwiftNormalActivation(unit->unitId());

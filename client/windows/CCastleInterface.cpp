@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CCastleInterface.h"
+#include "TownGrowthPresentation.h"
 
 #include "CHeroWindow.h"
 #include "CMarketWindow.h"
@@ -2279,19 +2280,7 @@ void CCreaInfo::clickPressed(const Point & cursorPosition)
 
 std::string CCreaInfo::genGrowthText()
 {
-	GrowthInfo gi = town->getGrowthInfo(level);
-	MetaString descr;
-	descr.appendTextID("core.genrltxt.589");
-	descr.replaceNameSingular(creature);
-	descr.replaceNumber(gi.totalGrowth());
-
-	for(const GrowthInfo::Entry & entry : gi.entries)
-	{
-		descr.appendEOL();
-		descr.appendRawString(entry.description);
-	}
-
-	return descr.toString(&GAME->translator());
+	return townGrowthPresentation::description(town->getGrowthInfo(level), creature, &GAME->translator());
 }
 
 void CCreaInfo::showPopupWindow(const Point & cursorPosition)
@@ -3439,7 +3428,7 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 			LIBRARY->generaltexth->translate("core.castinfo.4"),
 			LIBRARY->generaltexth->translate("new-horizons.fort.stat.initiative.description"),
 			LIBRARY->generaltexth->translate("new-horizons.fort.stat.leadershipCost.description"),
-			LIBRARY->generaltexth->translate("core.castinfo.5")
+			townGrowthPresentation::description(town->getGrowthInfo(level), getMyCreature()->getId(), &GAME->translator())
 		};
 		const int rowHeight = rankedLayout ? rankedFortStatRowHeight(cardHeight, compactStatGrid, compactPortraitHeight) : 20;
 		if(rankedLayout)
@@ -3552,7 +3541,7 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 			sizes.y+=21;
 			values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[193], LIBRARY->generaltexth->translate("core.castinfo.4"), getMyCreature()->valOfBonuses(BonusType::STACKS_SPEED)));
 			sizes.y+=20;
-			values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[194], LIBRARY->generaltexth->translate("core.castinfo.5"), town->creatureGrowth(level)));
+			values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[194], townGrowthPresentation::description(town->getGrowthInfo(level), getMyCreature()->getId(), &GAME->translator()), town->creatureGrowth(level)));
 		}
 	}
 }

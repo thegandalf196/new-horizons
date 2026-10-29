@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "../../SpellPointTestUtils.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 
 #include "BattleTestFixture.h"
 #include "../../../server/CGameHandler.h"
@@ -16,9 +17,11 @@
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/spells/effects/Effect.h"
 
@@ -32,12 +35,18 @@ SpellID phantomArmySpell()
 JsonNode magicRulesForVersion(int version)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	if(version == newHorizonsMagic::CURRENT_RULESET_VERSION)
+		return rules;
 	rules["rulesetVersion"].Integer() = version;
-	if(version < newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	if(version != newHorizonsMagic::RULESET_VERSION
+		&& version != newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION)
 	{
-		rules.Struct().erase("schoolRankPowerCoefficientPercent");
-		rules.Struct().erase("spellcraftEfficiencyPercent");
+		newHorizonsMagic::validateRules(rules); // Never sanitize an unknown version.
+		return rules;
 	}
+	// Share the captured pre-v3 roster projection: retain Crusade, exclude The
+	// Chosen, and restore historical spell clauses instead of relabeling v3 data.
+	rules = historicalCrusadeRules(std::move(rules), version);
 	if(version == newHorizonsMagic::RULESET_VERSION)
 	{
 		rules.Struct().erase("warcasting");
@@ -52,7 +61,14 @@ JsonNode magicRulesForVersion(int version)
 			faction.Struct().erase("preferredA");
 			faction.Struct().erase("preferredB");
 		}
-		for(auto & [name, spell] : rules["spells"].Struct())
+		// Version 1 predates all New Horizons common spells, including Phantom Army.
+		auto & spells = rules["spells"].Struct();
+		for(auto it = spells.begin(); it != spells.end();)
+			if(it->first.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
+				it = spells.erase(it);
+			else
+				++it;
+		for(auto & [name, spell] : spells)
 		{
 			(void)name;
 			spell.Struct().erase("active");
@@ -61,6 +77,7 @@ JsonNode magicRulesForVersion(int version)
 		}
 	}
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	newHorizonsMagic::validateRules(rules);
 	return rules;
 }
 
@@ -127,6 +144,9 @@ protected:
 		if(selectIllusionist)
 		{
 			attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+			// Magic Arrow's Overcharger is inert for the Phantom Integrity formula.
+			attackerSideHero->applyPerkSelection({
+				"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.overcharger"});
 			attackerSideHero->applyPerkSelection({
 				"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.illusionist"});
 			if(!attackerSideHero->hasActivePerk(
@@ -143,6 +163,9 @@ protected:
 				ChangeValueMode::ABSOLUTE);
 			const auto skillId = std::string(newHorizonsMagic::METAMAGIC_SKILL);
 			const auto perkId = std::string(newHorizonsMagic::METAMAGIC_ECHOED_DURATION);
+			// Focused Pairing changes only hostile same-target casts; Haste and
+			// Phantom Army are friendly casts, so this Basic prefix is inert here.
+			attackerSideHero->applyPerkSelection({skillId, "new-horizons:metamagic.focusedPairing"});
 			attackerSideHero->applyPerkSelection({skillId, perkId});
 			if(!attackerSideHero->hasActivePerk(skillId, perkId))
 				return false;
@@ -363,6 +386,13 @@ TEST_F(NewHorizonsPhantomArmyTest, SchoolRankScalesOnlySpellPowerIntegrityAndPre
 	ASSERT_EQ(attackerSideHero->getEffectPower(definition), spellPower);
 	for(size_t index = 0; index < ranks.size(); ++index)
 	{
+		if(index > 0)
+		{
+			// A new real round grants a new Hero Action; never erase its spent receipt.
+			BattleNextRound next;
+			next.battleID = BattleID(0);
+			gameHandler->sendAndApply(next);
+		}
 		attackerSideHero->setSecSkillLevel(sorcery, ranks[index], ChangeValueMode::ABSOLUTE);
 		EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(
 			battle()->getMagicRules(), attackerSideHero, spell), coefficients[index]);
@@ -421,18 +451,48 @@ TEST_F(NewHorizonsPhantomArmyTest, BasicRankPreservesFractionalBasisPointsUntilF
 	EXPECT_EQ(phantom->getPhantomIntegrity(), preview->hpDelta);
 }
 
-TEST_F(NewHorizonsPhantomArmyTest, VersionOneSnapshotKeepsSchoolRankUnapplied)
+TEST_F(NewHorizonsPhantomArmyTest, VersionOneRejectsPhantomArmyAndKeepsCoreSchoolRankUnapplied)
 {
-	magicRulesVersion = newHorizonsMagic::RULESET_VERSION;
-	CStack * source = nullptr;
-	CStack * phantom = nullptr;
-	ASSERT_TRUE(startPhantomBattle(source, phantom, 100, false, false, 40, 0, false, MasteryLevel::EXPERT));
-	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), newHorizonsMagic::RULESET_VERSION);
-	EXPECT_EQ(phantom->getPhantomIntegrity(), 260);
-	const auto preview = battle()->getSpellEffectValue(phantomArmySpell().toSpell(), attackerSideHero,
-		spells::Mode::HERO, source->getPosition());
-	ASSERT_NE(preview, nullptr);
-	EXPECT_EQ(preview->hpDelta, 260);
+	// This is a profile query, not a new game pairing v1 magic with today's
+	// starting-book rules. Keep both explicit profiles independent of a world.
+	const auto rules = magicRulesForVersion(newHorizonsMagic::RULESET_VERSION);
+	ASSERT_EQ(rules["rulesetVersion"].Integer(), newHorizonsMagic::RULESET_VERSION);
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	EXPECT_FALSE(rules.Struct().contains("schoolRankPowerCoefficientPercent"));
+
+	// The maintained historical projection contains core Haste, but cannot
+	// represent a Phantom Army cast: NH common spells start at magic version 2.
+	const auto phantom = phantomArmySpell();
+	ASSERT_TRUE(phantom.hasValue());
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedBySavedRoster(rules, phantom));
+	const JsonNode current(JsonPath::builtin("config/newHorizonsMagic"));
+	auto invalid = rules;
+	invalid["spells"][std::string(newHorizonsSorcery::PHANTOM_ARMY_SPELL)] =
+		current["spells"][std::string(newHorizonsSorcery::PHANTOM_ARMY_SPELL)];
+	try
+	{
+		newHorizonsMagic::validateRules(invalid);
+		FAIL() << "Version 1 must reject the Phantom Army spell row";
+	}
+	catch(const std::runtime_error & error)
+	{
+		EXPECT_STREQ(error.what(), "Unsupported New Horizons magic rules: NH common spells require ruleset version 2 or later");
+	}
+
+	// Preserve meaningful v1 coefficient coverage with a valid established
+	// core spell/profile. The current-profile control proves Expert rank is live.
+	const SpellID haste(SpellID::HASTE);
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(rules, haste));
+	const auto decoded = SecondarySkill::decode("new-horizons:sorceryMagic");
+	ASSERT_GE(decoded, 0);
+	// Reuse NewHorizonsMagicV2RulesTest's standalone real-hero construction.
+	// Only the coefficient API's rank lookup is under test; no initHero or callback.
+	CGHeroInstance hero(nullptr);
+	hero.secSkills.clear();
+	hero.secSkills.emplace_back(SecondarySkill(decoded), MasteryLevel::EXPERT);
+	EXPECT_EQ(hero.getSecSkillLevel(SecondarySkill(decoded)), MasteryLevel::EXPERT);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(rules, &hero, haste), 100);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(current, &hero, haste), 145);
 }
 
 TEST_F(NewHorizonsPhantomArmyTest, VersionTwoSnapshotKeepsSchoolRankUnapplied)
@@ -442,6 +502,10 @@ TEST_F(NewHorizonsPhantomArmyTest, VersionTwoSnapshotKeepsSchoolRankUnapplied)
 	CStack * phantom = nullptr;
 	ASSERT_TRUE(startPhantomBattle(source, phantom, 100, false, false, 40, 0, false, MasteryLevel::EXPERT));
 	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+	EXPECT_FALSE(battle()->getMagicRules()["spells"].Struct().contains("new-horizons:theChosen"));
+	EXPECT_FALSE(battle()->getMagicRules().Struct().contains("schoolRankPowerCoefficientPercent"));
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(
+		battle()->getMagicRules(), attackerSideHero, phantomArmySpell()), 100);
 	EXPECT_EQ(phantom->getPhantomIntegrity(), 260);
 	const auto preview = battle()->getSpellEffectValue(phantomArmySpell().toSpell(), attackerSideHero,
 		spells::Mode::HERO, source->getPosition());
@@ -513,15 +577,19 @@ TEST_F(NewHorizonsPhantomArmyTest, EchoedDurationExtendsARealMetamagicFollowupAn
 		std::string(newHorizonsMagic::METAMAGIC_ECHOED_DURATION)));
 	ASSERT_EQ(battle()->getRound(), 1);
 
+	// This caster has Echoed Duration, not Extend Spell: base two rounds plus
+	// one. The serialization maximum also permits the separate two-perk case.
+	constexpr int expectedDuration = newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS + 1;
+	static_assert(expectedDuration <= newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS);
 	const auto initialState = phantom->acquireState()->save();
 	ASSERT_TRUE(initialState["state"]["phantomRoundsRemaining"].isNumber());
 	EXPECT_EQ(initialState["state"]["phantomRoundsRemaining"].Integer(),
-		newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS);
+		expectedDuration);
 
 	auto restored = phantom->acquireState();
 	restored->load(initialState);
 	EXPECT_EQ(restored->save()["state"]["phantomRoundsRemaining"].Integer(),
-		newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS);
+		expectedDuration);
 
 	auto invalidSavedState = initialState;
 	invalidSavedState["state"]["phantomRoundsRemaining"].Integer() =

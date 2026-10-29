@@ -18,6 +18,7 @@
 			"default" : {},
 			"additionalProperties" : false,
 			"required" : [
+				"updateChecks",
 				"playerName",
 				"multiPlayerNames",
 				"music",

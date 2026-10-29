@@ -348,7 +348,9 @@ TEST_F(TimedTest, ConvertBonusBindSetsCasterUnitId)
 	unitsFake.setDefaultBonusExpectations();
 
 	EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(&spellStub));
+	EXPECT_CALL(spellStub, getId()).WillRepeatedly(Return(SpellID(SpellID::BIND)));
 	EXPECT_CALL(spellStub, getJsonKey()).WillRepeatedly(Return(SpellID::encode(SpellID(SpellID::BIND).getNum())));
+	EXPECT_CALL(mechanicsMock, usesNewHorizonsMagicV3()).WillRepeatedly(Return(false));
 	EXPECT_CALL(mechanicsMock, getEffectDuration()).WillRepeatedly(Return(1));
 	EXPECT_CALL(serverMock, describeChanges()).WillRepeatedly(Return(false));
 

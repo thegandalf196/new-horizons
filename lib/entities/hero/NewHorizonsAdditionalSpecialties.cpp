@@ -4,6 +4,14 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsAdditionalSpecialties.h"
+#include "NewHorizonsForestAmbush.h"
+#include "NewHorizonsAerialSupremacy.h"
+#include "NewHorizonsDreadCavalry.h"
+#include "NewHorizonsPetrifyingBlood.h"
+#include "NewHorizonsLivingInferno.h"
+#include "NewHorizonsParalyzingGaze.h"
+#include "NewHorizonsSerpentsEmbrace.h"
+#include "NewHorizonsManaLeeches.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsLearningSpecialties.h"
 #include "NewHorizonsRuleValidation.h"
@@ -13,6 +21,18 @@
 #include <limits>
 namespace newHorizonsHeroes
 {
+bool usesConvertedCreatureSpecialty(const CGHeroInstance * hero)
+{
+	return hero && (creatureLineSpecialtyRules(hero->getPrimaryGrowthRules()).has_value()
+		|| replacesGenericCreatureSpecialty(hero));
+}
+
+bool replacesGenericCreatureSpecialty(const CGHeroInstance * hero)
+{
+	return hasManaLeeches(hero) || hasSerpentsEmbrace(hero)
+		|| hasParalyzingGaze(hero) || hasForestAmbush(hero) || hasPetrifyingBlood(hero) || hasLivingInferno(hero) || hasAerialSupremacy(hero) || hasDreadCavalry(hero);
+}
+
 void validateAdditionalSpecialtiesSerialization(const JsonNode & development, bool supported)
 {
 	if(!development.isStruct() || !development.Struct().contains("additionalSpecialties"))
@@ -20,9 +40,33 @@ void validateAdditionalSpecialtiesSerialization(const JsonNode & development, bo
 	if(!supported)
 		throw std::runtime_error("Additional individual specialties require the new save format");
 	const auto & table = development["additionalSpecialties"];
-	detail::fields(table, {"version", "fieldPhysician", "manaFurnace", "graveArchivist", "spiritTeacher", "manaLeeches"});
+	detail::fields(table, {"version", "fieldPhysician", "manaFurnace", "graveArchivist", "spiritTeacher", "manaLeeches", "serpentsEmbrace", "paralyzingGaze", "forestAmbush", "aerialSupremacy"});
 	detail::require(detail::integer(table["version"], 1, 1), "additional specialty version");
 	validateLearningSpecialtyRows(table);
+	if(table.Struct().contains("aerialSupremacy"))
+	{
+		const auto & row = table["aerialSupremacy"];
+		detail::fields(row, {"enabled"});
+		detail::require(row["enabled"].isBool(), "Aerial Supremacy enable policy");
+	}
+	if(table.Struct().contains("paralyzingGaze"))
+	{
+		const auto & row = table["paralyzingGaze"];
+		detail::fields(row, {"enabled"});
+		detail::require(row["enabled"].isBool(), "Paralyzing Gaze enable policy");
+	}
+	if(table.Struct().contains("forestAmbush"))
+	{
+		const auto & row = table["forestAmbush"];
+		detail::fields(row, {"enabled"});
+		detail::require(row["enabled"].isBool(), "Forest Ambush enable policy");
+	}
+	if(table.Struct().contains("serpentsEmbrace"))
+	{
+		const auto & row = table["serpentsEmbrace"];
+		detail::fields(row, {"enabled"});
+		detail::require(row["enabled"].isBool(), "Serpent’s Embrace enable policy");
+	}
 	if(table.Struct().contains("manaLeeches"))
 	{
 		const auto & row = table["manaLeeches"];

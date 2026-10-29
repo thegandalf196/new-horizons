@@ -11,6 +11,7 @@
 #include "../mapObjects/MiscObjects.h"
 #include "../mapObjects/Quest.h"
 #include "../mapObjects/NewHorizonsNeutralArmies.h"
+#include "../mapObjects/NewHorizonsRecruitmentGrowth.h"
 
 void CGameState::initMapObjects(IGameRandomizer & gameRandomizer)
 {
@@ -20,6 +21,7 @@ void CGameState::initMapObjects(IGameRandomizer & gameRandomizer)
 		obj->initObj(gameRandomizer);
 
 	newHorizonsNeutralArmies::initializeWorld(*map);
+	newHorizonsRecruitmentGrowth::initializeWorld(*map);
 
 	logGlobal->debug("\tObject initialization done");
 

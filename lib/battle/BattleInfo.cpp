@@ -14,6 +14,8 @@
 #include "NewHorizonsDivineMandate.h"
 #include "NewHorizonsIronWill.h"
 #include "BattleInfo.h"
+#include "NewHorizonsSerpentsEmbrace.h"
+#include "NewHorizonsParalyzingGaze.h"
 #include "RoundBonusDuration.h"
 #include "StackEffectRemoval.h"
 #include "FocusFireQueries.h"
@@ -648,6 +650,8 @@ void BattleInfo::generateNewStack(uint32_t id, const CStackBasicDescriptor & bas
 
 void BattleInfo::localInit()
 {
+	validateLoadedSerpentBindings();
+	validateLoadedGazeTokens();
 	for(BattleSide i : { BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto * armyObj = battleGetArmyObject(i);
@@ -1522,7 +1526,10 @@ void BattleInfo::nextRound()
 			s->reduceBonusDurations(battle::roundTimedBonusesFor(*s, roundTimedEffects));
 		}
 
+		const bool serpentSourceWasAlive = s->alive();
 		s->afterNewRound(isFirstRound, true, formPaused);
+		if(serpentSourceWasAlive && !s->alive())
+			newHorizonsSerpentsEmbrace::releaseDeathBindings(*this, *s);
 	}
 	for(auto & obst : obstacles)
 		obst->battleTurnPassed();
@@ -1545,112 +1552,6 @@ void BattleInfo::validateCrisisCommandProfiles(bool supported) const
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		if(const auto * hero = getSideHero(side))
 			newHorizonsCrisisCommand::validateProfileSerialization(hero->getPerkState().rules, supported);
-}
-
-void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
-{
-	activeStack = unitId;
-	if(reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
-		return;
-	if(reason == BattleUnitTurnReason::ACTION_REJECTED
-		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
-		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
-		|| reason == BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION)
-		return;
-
-	CStack * st = getStack(activeStack);
-	if(battleBeginsActivation(st, reason))
-	{
-		st->moraleExtraActivation = moraleExtraDamagePercent != 100 && reason == BattleUnitTurnReason::MORALE;
-		newHorizonsHeroicSpirit::beginActivation(*st, reason);
-		st->removeBonusesRecursive(CSelector(Bonus::UntilNextCreatureActivation));
-
-		// Second Wind is a genuine activation too, but must not broaden the
-		// lifetime of unrelated legacy STACK_GETS_TURN bonuses.
-		st->removeBonusesRecursive(CSelector([](const Bonus * bonus)
-		{
-			return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
-		}));
-		const auto owner = playerToSide(battleGetOwner(st));
-		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-			sides.at(side).sylvanLuck.beginActivation(unitId, side == owner);
-	}
-	if(st->isTimeStopped() && reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
-	{
-		// A stopped unit receives a synthetic queue activation solely so the
-		// authoritative flow can reach a Hero Action window. Mark that queue
-		// slot consumed without changing movement/action permission; the flag is
-		// reset by afterNewRound and is used only by turn ordering.
-		st->timeStopTurnConsumedFlag = true;
-	}
-
-	// A hero/creature spell that does not consume the active unit's turn is a
-	// continuation of the same activation.  Keep the Fire Wall activation token
-	// stable across those transitions, otherwise a repeated movement callback
-	// could deal the same wall damage twice.  HERO_COMMAND is normally another
-	// continuation, except for the explicit Second Wind activation whose state
-	// is armed before the transition is published.
-	bool newActivation = reason != BattleUnitTurnReason::HERO_SPELLCAST
-		&& reason != BattleUnitTurnReason::UNIT_SPELLCAST;
-	if(reason == BattleUnitTurnReason::HERO_COMMAND)
-	{
-		newActivation = false;
-		if(st)
-		{
-			const auto controllerSide = playerToSide(battleGetOwner(st));
-			if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
-			{
-				const auto * orderState = sides.at(controllerSide).findOrder(HeroCommand::SECOND_WIND);
-				newActivation = orderState
-					&& orderState->secondWindActive
-					&& orderState->primaryTargetUnitId == unitId;
-			}
-		}
-	}
-	if(newActivation)
-	{
-		if(reason == BattleUnitTurnReason::HERO_COMMAND)
-			st->castSpellThisTurn = false; // Only the armed Second Wind target begins a new activation here.
-		seizeInitiative.begin(unitId, reason == BattleUnitTurnReason::TURN_QUEUE
-			|| reason == BattleUnitTurnReason::AUTOMATIC_ACTION);
-		// Last Stand ends the current activation without removing the surviving
-		// stack. Keep the marker through all continuations, and clear it only
-		// when the stack actually receives a new activation.
-		st->armorerLastStandEndedActivation = false;
-		st->armorerLastStandDefending = false;
-		st->pursuitMovementRemaining = 0;
-		st->cleaveUsedThisActivation = false;
-		st->luckyOwnAttackSequence = false;
-		st->setRangedFollowUpDamagePercent(0);
-		const auto side = playerToSide(battleGetOwner(st));
-		const bool ordinaryCreature = st->alive() && !st->isGhost() && !st->isTurret()
-			&& !st->hasBonusOfType(BonusType::SIEGE_WEAPON)
-			&& st->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
-		const auto * hero = side == BattleSide::ATTACKER || side == BattleSide::DEFENDER
-			? battleGetFightingHero(side) : nullptr;
-		if(ordinaryCreature && hero
-			&& hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
-			sides.at(side).relentlessAssault.beginActivation();
-	}
-	if(newActivation && activationSerial < std::numeric_limits<si32>::max())
-		++activationSerial;
-
-	if (reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
-	{
-		//remove bonuses that last until when stack gets new turn
-		if(!st->isTimeStopped())
-			st->removeBonusesRecursive(CSelector([](const Bonus * bonus)
-			{
-				return Bonus::UntilGetsTurn(bonus)
-					&& !newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
-			}));
-	}
-
-	if(battleBeginsActivation(st, reason))
-		st->setActivationMovementBonus(newHorizonsBattlecraft::delayedActivationMovementBonus(
-			battleGetOwnerHero(st), st, reason));
-
-	st->afterGetsTurn(reason);
 }
 
 bool BattleInfo::hasPursuitState() const
@@ -1930,6 +1831,7 @@ void BattleInfo::removeUnit(uint32_t id)
 			return;
 		}
 
+		newHorizonsSerpentsEmbrace::releaseDeathBindings(*this, *toRemove);
 		if(!toRemove->ghost)
 		{
 			toRemove->onRemoved();
@@ -2039,6 +1941,8 @@ void BattleInfo::exchangeBattleEffects(const battle::BattleEffectExchange & exch
 
 void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus) newHorizonsSerpentsEmbrace::validateApplication(*this, id, entry);
+	for(const auto & entry : bonus) newHorizonsParalyzingGaze::validateApplication(*this, id, entry);
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
 			newHorizonsConfusionControl::validateMarker(entry);
@@ -2068,6 +1972,8 @@ void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 void BattleInfo::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus) newHorizonsSerpentsEmbrace::validateApplication(*this, id, entry);
+	for(const auto & entry : bonus) newHorizonsParalyzingGaze::validateApplication(*this, id, entry);
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
 			newHorizonsConfusionControl::validateMarker(entry);
@@ -2111,7 +2017,8 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 	for(const Bonus & one : bonus)
 	{
 		if(sta->isTimeStopped() && !timeStopState::isStateBonus(one)
-			&& !newHorizonsOffense::isNoQuarterBonus(&one))
+			&& !newHorizonsOffense::isNoQuarterBonus(&one)
+			&& !newHorizonsSerpentsEmbrace::isMarker(one))
 		{
 			logNetwork->warn("Ignoring effect removal from Time Stop unit %d", id);
 			continue;
@@ -2548,6 +2455,7 @@ void BattleInfo::postDeserialize()
 				|| getActiveStackID() < 0 || unit->unitId() != static_cast<uint32_t>(getActiveStackID())))
 			throw std::runtime_error("Held lucky attack requires its active pending ranged sequence");
 
+	validateDreadCavalryStateSerialization(true);
 	validateOpportunistSerialization(true);
 	uint32_t pendingFollowUps = 0;
 	for(const auto & unit : stacks)

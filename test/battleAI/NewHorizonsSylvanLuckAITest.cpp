@@ -3,6 +3,8 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "ProjectedTargetHitFixture.h"
+#include "../../lib/CRandomGenerator.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
@@ -28,6 +30,22 @@ JsonNode noGoodLuck()
 		result.Vector().emplace_back(0);
 	return result;
 }
+
+// Count the exact virtual query performed by the shared ordinary-creature
+// classifier. Other ownership/Luck queries retain their real implementation.
+class EligibilityCountingStack final : public StackWithBonuses
+{
+public:
+	mutable unsigned eligibilityQueries = 0;
+	EligibilityCountingStack(const HypotheticBattle * battle, const battle::Unit * source)
+		: StackWithBonuses(battle, source) {}
+	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & key = "") const override
+	{
+		if(key == "type_" + std::to_string(static_cast<int>(BonusType::SIEGE_WEAPON)))
+			++eligibilityQueries;
+		return StackWithBonuses::getAllBonuses(selector, key);
+	}
+};
 
 class SylvanEnvironment final : public Environment
 {
@@ -538,4 +556,91 @@ TEST_F(NewHorizonsSylvanLuckAITest, AttackPreviewReplaysDefenderRetaliationFortu
 	EXPECT_EQ(model->getSylvanLuckState(BattleSide::DEFENDER).speedBonus(target->unitId()), 2);
 	EXPECT_EQ(model->getForUpdate(source->unitId())->getAvailableHealth(), sourceBefore - 10);
 	EXPECT_EQ(model->getForUpdate(target->unitId())->getAvailableHealth(), targetBefore - 10);
+}
+
+// The reference performs the former eager public classification, then supplies
+// that result (or the captured override) to the real projection. No copied
+// aftermath, Luck probability or score formula is used as the oracle.
+class CapturedFortuneEligibilityTest : public NewHorizonsGenericLuckyRecoveryAITest
+{
+protected:
+	void verify(std::optional<bool> captured, bool secondary = false, bool siege = false)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepareRecovery(false, true));
+		SylvanEnvironment environment(gameState());
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+		auto observed = std::make_shared<HypotheticBattle>(&environment, parent);
+		auto reference = std::make_shared<HypotheticBattle>(&environment, parent);
+		EligibilityCountingStack actor(observed.get(), victim), oracle(reference.get(), victim);
+		if(siege)
+		{
+			const Bonus machine(BonusDuration::PERMANENT, BonusType::SIEGE_WEAPON,
+				BonusSource::OTHER, 1, BonusSourceID());
+			actor.addUnitBonus({machine});
+			oracle.addUnitBonus({machine});
+		}
+		BattleAttackInfo attack(&actor, observed->getForUpdate(source->unitId()).get(), 0, false);
+		BattleAttackInfo oracleAttack(&oracle, reference->getForUpdate(source->unitId()).get(), 0, false);
+		attack.secondaryAttack = oracleAttack.secondaryAttack = secondary;
+		const auto side = BattleSide::DEFENDER;
+		ASSERT_TRUE(observed->getLuckSerendipityState(side).enabled);
+		const auto before = observed->getLuckSerendipityState(side);
+		ASSERT_FALSE(before.firstAttackUsed);
+		const auto actorBefore = projectedHitTest::serialized(actor.save());
+		const auto parentBefore = projectedHitTest::serialized(parent->getForUpdate(victim->unitId())->save());
+		const auto nativeBefore = gameState()->saveToMemory();
+		const auto randomizerBefore = projectedHitTest::serialized(*gameHandler->randomizer);
+		const auto rngBefore = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+		const auto defaultBefore = projectedHitTest::serialized(CRandomGenerator::getDefault());
+		actor.eligibilityQueries = oracle.eligibilityQueries = 0;
+
+		const bool live = !secondary && newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(&oracle, true);
+		const bool expected = captured ? *captured : live;
+		reference->projectFortuneStrike(oracleAttack, {}, nullptr, false,
+			ProjectedLuckOutcome::NEUTRAL, false, false, side, side, expected);
+		observed->projectFortuneStrike(attack, {}, nullptr, false,
+			ProjectedLuckOutcome::NEUTRAL, false, false, side, side, captured);
+		EXPECT_EQ(actor.eligibilityQueries, !captured && !secondary ? 1u : 0u);
+		EXPECT_EQ(oracle.eligibilityQueries, secondary ? 0u : 1u);
+		const auto actual = observed->getLuckSerendipityState(side);
+		EXPECT_EQ(actual, reference->getLuckSerendipityState(side));
+		EXPECT_EQ(actual.firstAttackUsed, before.firstAttackUsed || expected);
+		EXPECT_EQ(actual.currentRoundPositiveLuck, before.currentRoundPositiveLuck);
+		EXPECT_EQ(projectedHitTest::serialized(actor.save()), actorBefore);
+		EXPECT_EQ(projectedHitTest::serialized(oracle.save()), actorBefore);
+		EXPECT_EQ(projectedHitTest::serialized(parent->getForUpdate(victim->unitId())->save()), parentBefore);
+		for(const auto battleSide : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			EXPECT_EQ(observed->getSylvanLuckState(battleSide), reference->getSylvanLuckState(battleSide));
+			EXPECT_EQ(observed->getPerfectFortuneState(battleSide), reference->getPerfectFortuneState(battleSide));
+			for(const auto * unit : observed->battleGetAllUnits(false))
+				EXPECT_EQ(projectedHitTest::serialized(observed->getForUpdate(unit->unitId())->save()),
+					projectedHitTest::serialized(reference->getForUpdate(unit->unitId())->save()));
+		}
+		EXPECT_EQ(gameState()->saveToMemory(), nativeBefore);
+		EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), randomizerBefore);
+		EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), rngBefore);
+		EXPECT_EQ(projectedHitTest::serialized(CRandomGenerator::getDefault()), defaultBefore);
+	}
+};
+
+TEST_F(CapturedFortuneEligibilityTest, CapturedTrueOverridesNowIneligibleActorWithoutRequery)
+{
+	ASSERT_NO_FATAL_FAILURE(verify(true, false, true));
+}
+
+TEST_F(CapturedFortuneEligibilityTest, CapturedFalseOverridesCurrentlyOrdinaryActorWithoutRequery)
+{
+	ASSERT_NO_FATAL_FAILURE(verify(false));
+}
+
+TEST_F(CapturedFortuneEligibilityTest, AbsentSnapshotUsesOneRealOrdinaryCreatureQuery)
+{
+	ASSERT_NO_FATAL_FAILURE(verify(std::nullopt));
+}
+
+TEST_F(CapturedFortuneEligibilityTest, AbsentSecondarySnapshotRetainsShortCircuitAndNoQuery)
+{
+	ASSERT_NO_FATAL_FAILURE(verify(std::nullopt, true));
 }

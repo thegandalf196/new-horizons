@@ -8,8 +8,10 @@
  *
  */
 #pragma once
+#include "../../lib/battle/NewHorizonsForestAmbushState.h"
 
 #include "../../lib/battle/BattleSide.h"
+#include "../../lib/texts/PercentageFormatting.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../lib/battle/NewHorizonsConfusionState.h"
@@ -775,20 +777,7 @@ inline std::optional<int32_t> beneficiarySide(const Bonus & bonus)
 
 inline std::string formatBasisPoints(int64_t basisPoints)
 {
-	const bool negative = basisPoints < 0;
-	const auto absolute = negative ? -basisPoints : basisPoints;
-	const auto wholePercent = absolute / 100;
-	const auto fractionalPercent = absolute % 100;
-
-	std::string result = (negative ? "-" : "") + std::to_string(wholePercent);
-	if(fractionalPercent != 0)
-	{
-		std::string fraction = std::to_string(fractionalPercent + 100).substr(1);
-		if(fraction.back() == '0')
-			fraction.pop_back();
-		result += "." + fraction;
-	}
-	return result + "%";
+	return TextOperations::formatBasisPoints(basisPoints);
 }
 
 inline std::string formatPercentagePoints(int64_t basisPoints)
@@ -921,43 +910,6 @@ struct DefendStatus
 
 	bool operator==(const DefendStatus &) const = default;
 };
-
-struct BattleFormStatus
-{
-	bool transformed = false;
-	int32_t currentCreature = -1;
-	int32_t originalCreature = -1;
-	int32_t remainingRounds = 0;
-	int64_t aggregateCreatureHealth = 0;
-	std::string currentCreatureName;
-	std::string originalCreatureName;
-	bool restorationPending = false;
-
-	bool active() const
-	{
-		return transformed && (remainingRounds > 0 || restorationPending);
-	}
-
-	bool operator==(const BattleFormStatus &) const = default;
-};
-
-inline BattleFormStatus makeBattleFormStatus(bool transformed, int32_t currentCreature,
-	int32_t originalCreature, int32_t remainingRounds, int64_t aggregateCreatureHealth,
-	std::string currentCreatureName, std::string originalCreatureName, bool restorationPending = false)
-{
-	if(!transformed || (remainingRounds <= 0 && !restorationPending))
-		return {};
-
-	return {true, currentCreature, originalCreature, remainingRounds, aggregateCreatureHealth,
-		std::move(currentCreatureName), std::move(originalCreatureName), restorationPending};
-}
-
-inline std::string battleFormDurationLabel(const BattleFormStatus & status)
-{
-	if(!status.active())
-		return {};
-	return status.restorationPending ? "..." : std::to_string(status.remainingRounds);
-}
 
 inline std::string battleFormTooltip(const BattleFormStatus & status)
 {
@@ -1151,6 +1103,7 @@ struct StackInfoStatusSnapshot
 	DefendStatus defend;
 	std::optional<BattlecraftWaitStatus> battlecraftWait;
 	int overwatchRange = 0;
+	battle::ForestAmbushState forestAmbush;
 	SylvanLuckStackStatus sylvanLuck;
 	BattleFormStatus battleForm;
 	PhysicalPoisonStatus physicalPoison;

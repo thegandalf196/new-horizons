@@ -8,6 +8,9 @@
 #include <optional>
 
 class CBattleInfoCallback;
+class HypotheticBattle;
+class BattleHex;
+namespace battle { class CUnitState; }
 struct BattleAttackInfo;
 
 /// Value-only facts for one strike, before damage or bonus mutations. Never retain across strikes.
@@ -26,3 +29,7 @@ BattleShroudStrike evaluateBattleShroudStrike(
 /// Selected replay retains its original single-purpose query and evaluation order.
 std::optional<BattleSide> qualifyingShadowAssaultSide(
 	const CBattleInfoCallback & battle, const BattleAttackInfo & attack);
+
+/// Original selected-replay path stage, before movement and attack restoration.
+void applySelectedNightProwler(HypotheticBattle & battle, battle::CUnitState & actor,
+	const BattleHex & originalPosition, const BattleHex & destination);

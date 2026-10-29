@@ -32,6 +32,9 @@ add_executable(nhBattleStackColorPresentationTest ../client/tests/BattleStackCol
 target_link_libraries(nhBattleStackColorPresentationTest PRIVATE vcmi)
 add_test(NAME nhBattleStackColorPresentationTest COMMAND nhBattleStackColorPresentationTest)
 
+add_executable(nhAerialSupremacyPresentationTest ../client/tests/AerialSupremacyPresentationTest.cpp)
+add_test(NAME nhAerialSupremacyPresentationTest COMMAND nhAerialSupremacyPresentationTest)
+
 # Reproduce the Academy built-town-icon load path with every scaling factor. The
 # SDL dummy backend keeps the renderer bootstrap isolated from the host display.
 if(TARGET vcmisdl2 AND UNIX AND NOT APPLE AND NOT ENABLE_SDL3)
@@ -123,6 +126,9 @@ set(test_SRCS
 		battle/PreparedReplayAppendTest.cpp
 		serializer/NewHorizonsSpecialtySerializationTest.cpp
 	serializer/NewHorizonsManaLeechesSerializationTest.cpp
+	serializer/NewHorizonsGhostUpgradeSerializationTest.cpp
+	serializer/NewHorizonsPetrifyingBloodSerializationTest.cpp
+	serializer/NewHorizonsLivingInfernoSerializationTest.cpp
 		serializer/NewHorizonsSwampSeerSerializationTest.cpp
 		serializer/NewHorizonsReclaimerSerializationTest.cpp
 		serializer/NewHorizonsSkeletonRecoverySerializationTest.cpp
@@ -136,6 +142,9 @@ set(test_SRCS
 		server/battles/PhysicalAfflictionStampingTest.cpp
 		battle/NewHorizonsDebuffStatusesTest.cpp
 		battle/NewHorizonsFrozenTest.cpp
+		battle/NewHorizonsSerpentsEmbraceTest.cpp
+	battle/NewHorizonsParalyzingGazeTest.cpp
+		battle/NewHorizonsLivingInfernoTest.cpp
 		battle/FocusFireStateTest.cpp
 		battle/RelentlessAssaultStateTest.cpp
 		battle/HeroCommandFocusFireRulesTest.cpp
@@ -201,6 +210,8 @@ set(test_SRCS
 		game/GameSettingsTest.cpp
 		game/NewHorizonsCombatScalarCaptureTest.cpp
 		game/NewHorizonsNeutralArmySizeTest.cpp
+		game/NewHorizonsRecruitmentGrowthTest.cpp
+		game/NewHorizonsRecruitmentGrowthWorldTest.cpp
 		game/NewHorizonsNeutralArmyWorldTest.cpp
 		game/HeroRecruitmentTest.cpp
 		game/HeroSecondarySkillsTest.cpp
@@ -239,6 +250,7 @@ set(test_SRCS
 		hero/NewHorizonsLogisticsMasteryStateTest.cpp
 		hero/NewHorizonsLogisticsLevelWireTest.cpp
 		hero/NewHorizonsHeroRulesTest.cpp
+	hero/NewHorizonsCreatureSpecialtyDefaultsTest.cpp
 		hero/NewHorizonsIndividualSpecialtiesTest.cpp
 		hero/NewHorizonsReclaimerRulesTest.cpp
 		../client/NewHorizonsNecromancyText.cpp
@@ -256,6 +268,7 @@ set(test_SRCS
 		hero/NewHorizonsSkillSpecialtyQueryTest.cpp
 		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroBiographyTest.cpp
+		hero/HistoricalHeroEpochFixture.h
 		hero/NewHorizonsHeroRulesFixture.h
 		game/MovementCostTest.cpp
 		game/NewHorizonsLogisticsMovementPerksTest.cpp
@@ -504,6 +517,9 @@ set(test_SRCS
 		battle/NewHorizonsConfusionChoicesTest.cpp
 		battle/NewHorizonsConfusionResolutionTest.cpp
 		battle/NewHorizonsConfusionStateTest.cpp
+		battle/NewHorizonsForestAmbushStateTest.cpp
+		server/battles/NewHorizonsForestAmbushTest.cpp
+		battle/DreadCavalryStateTest.cpp
 		server/battles/NewHorizonsConfusionApplicationTest.cpp
 		battle/NewHorizonsCounterspellActionTest.cpp
 		server/battles/NewHorizonsSpellRosterContextTest.cpp
@@ -564,6 +580,19 @@ set(test_SRCS
 	server/battles/NewHorizonsDeepTranceTest.cpp
 	server/battles/NewHorizonsManaFurnaceTest.cpp
 	server/battles/NewHorizonsManaLeechesTest.cpp
+	server/battles/NewHorizonsSerpentsEmbraceTest.cpp
+	server/battles/NewHorizonsPetrifyingBloodTest.cpp
+	server/battles/GateDrawbridgeFootprintTest.cpp
+	server/battles/NewHorizonsLivingInfernoTest.cpp
+	server/battles/NewHorizonsDreadCavalryTest.cpp
+	server/battles/NewHorizonsSoulHarvestTest.cpp
+	server/battles/NewHorizonsParalyzingGazeTest.cpp
+	server/battles/NewHorizonsAerialSupremacyTest.cpp
+	server/battles/NewHorizonsBloodAerialTest.cpp
+	server/battles/NewHorizonsAerialSupremacyContactTest.cpp
+	server/battles/NewHorizonsAerialSupremacyGazeTest.cpp
+	server/battles/NewHorizonsAerialSupremacyFixture.h
+	serializer/NewHorizonsAerialSupremacySerializationTest.cpp
 	server/battles/NewHorizonsMysticismRecoveryTest.cpp
 		server/battles/NewHorizonsCanonicalSpellClausesSerializationTest.cpp
 		server/battles/NewHorizonsImplosionTest.cpp
@@ -733,6 +762,7 @@ set(test_SRCS
 		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsCastleGateTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp
+		server/NewHorizonsTownSiegeLeadershipTest.cpp
 		server/NewHorizonsUpgradeLeadershipParityTest.cpp
 		server/NewHorizonsBattleFormResultTest.cpp
 		server/battles/NewHorizonsTombGuardTest.cpp
@@ -748,6 +778,7 @@ set(test_SRCS
 		server/RandomArtifactPoolConsumersTest.cpp
 
 		texts/TextOperationsTest.cpp
+		battle/CreatureContinuationUITest.cpp
 
 		mock/BattleFake.cpp
 		mock/GameHandlerTestServer.cpp
@@ -793,6 +824,7 @@ set(test_HEADERS
 		spells/targetConditions/TargetConditionItemFixture.h
 
 		server/battles/BattleTestFixture.h
+		server/battles/NewHorizonsPetrifyingBloodFixture.h
 		server/battles/VerdantPrisonScriptErrorCapture.h
 		server/battles/FrozenAttackStageFixture.h
 		server/battles/HeroCommandFixture.h
@@ -887,6 +919,9 @@ if(ENABLE_BATTLE_AI)
 		battleAI/StackWithBonusesQueryTest.cpp
 		battleAI/OrdinaryMeleeRetaliationTest.cpp
 		battleAI/OriginalMeleeSequenceTest.cpp
+		battleAI/NewHorizonsSerpentsEmbraceAITest.cpp
+		battleAI/NewHorizonsParalyzingGazeAITest.cpp
+		battleAI/NewHorizonsPetrifyingBloodAITest.cpp
 		battleAI/OwnedExportBranchQueryTest.cpp
 		battleAI/OwnedExportLifecycleTest.cpp
 		battleAI/OwnedExportMeleeTest.cpp
@@ -990,6 +1025,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsArmorerVeteranAITest.cpp
 		battleAI/NewHorizonsPaviseAITest.cpp
 		battleAI/NewHorizonsArcheryAITest.cpp
+		battleAI/NewHorizonsAerialSupremacyAITest.cpp
+		battleAI/NewHorizonsDreadCavalryAITest.cpp
 	)
 endif()
 
@@ -997,6 +1034,8 @@ if(ENABLE_NULLKILLER2_AI)
 	list(APPEND test_SRCS
 		server/NewHorizonsMerchantPrinceTest.cpp
 		nullkiller2/NewHorizonsProspectorAITest.cpp
+		nullkiller2/NewHorizonsGhostUpgradeAITest.cpp
+		nullkiller2/NewHorizonsRecruitmentGrowthAITest.cpp
 		nullkiller2/NewHorizonsAcademicStudyAITest.cpp
 		nullkiller2/NewHorizonsSageAITest.cpp
 		nullkiller2/NewHorizonsRecruitersContactsAITest.cpp
@@ -1225,3 +1264,27 @@ foreach(resource ${testdata})
 	set(output "${CMAKE_BINARY_DIR}/bin/test/testdata/${output}/${filename}")
 	configure_file(${resource} ${output} COPYONLY)
 endforeach()
+
+option(ENABLE_NH_BUG_REPORT_REGRESSION "Build bug report privacy regressions" ON)
+if(ENABLE_NH_BUG_REPORT_REGRESSION)
+	if(TARGET nhCrashReportCaptureTest)
+		add_test(NAME nhCrashReportCaptureTest COMMAND nhCrashReportCaptureTest)
+		set_tests_properties(nhCrashReportCaptureTest PROPERTIES TIMEOUT 30 LABELS "privacy;process")
+	endif()
+	add_executable(nhBugReportDraftTest
+		../client/tests/BugReportDraftTest.cpp
+		../client/bugreport/BugReportDraft.cpp)
+	target_link_libraries(nhBugReportDraftTest PRIVATE vcmi)
+	set_target_properties(nhBugReportDraftTest PROPERTIES
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+	add_test(NAME nhBugReportDraftTest COMMAND nhBugReportDraftTest)
+	add_executable(nhBugReportDataTest
+		../client/tests/BugReportDataTest.cpp
+		../client/bugreport/BugReportData.cpp)
+	target_link_libraries(nhBugReportDataTest PRIVATE vcmi)
+	set_target_properties(nhBugReportDataTest PROPERTIES
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+	add_test(NAME nhBugReportDataTest COMMAND nhBugReportDataTest)
+	set_tests_properties(nhBugReportDraftTest nhBugReportDataTest PROPERTIES
+		LABELS "nh-pure;ui;privacy" TIMEOUT 10)
+endif()

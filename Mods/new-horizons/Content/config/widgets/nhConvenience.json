@@ -1,3 +1,90 @@
 {
-	"items": []
+	"items": [
+		{
+			"type": "adventureMapContainer",
+			"name": "bugReportAccessSmall",
+			"hideWhen": "worldViewMode",
+			"exists": {
+				"heightMin": 631,
+				"heightMax": 664
+			},
+			"area": {
+				"top": 388,
+				"right": 57,
+				"width": 64,
+				"height": 32
+			},
+			"items": [
+				{
+					"type": "adventureMapButton",
+					"name": "bugReportButton",
+					"image": "nhBugReportButton",
+					"callback": "reportBug",
+					"area": {
+						"top": 0,
+						"left": 0,
+						"width": 64,
+						"height": 32
+					}
+				}
+			]
+		},
+		{
+			"type": "adventureMapContainer",
+			"name": "bugReportAccessMedium",
+			"hideWhen": "worldViewMode",
+			"exists": {
+				"heightMin": 664,
+				"heightMax": 899
+			},
+			"area": {
+				"top": 420,
+				"right": 57,
+				"width": 64,
+				"height": 32
+			},
+			"items": [
+				{
+					"type": "adventureMapButton",
+					"name": "bugReportButton",
+					"image": "nhBugReportButton",
+					"callback": "reportBug",
+					"area": {
+						"top": 0,
+						"left": 0,
+						"width": 64,
+						"height": 32
+					}
+				}
+			]
+		},
+		{
+			"type": "adventureMapContainer",
+			"name": "bugReportAccessLarge",
+			"hideWhen": "worldViewMode",
+			"exists": {
+				"heightMin": 899
+			},
+			"area": {
+				"top": 644,
+				"right": 57,
+				"width": 64,
+				"height": 32
+			},
+			"items": [
+				{
+					"type": "adventureMapButton",
+					"name": "bugReportButton",
+					"image": "nhBugReportButton",
+					"callback": "reportBug",
+					"area": {
+						"top": 0,
+						"left": 0,
+						"width": 64,
+						"height": 32
+					}
+				}
+			]
+		}
+	]
 }

@@ -353,3 +353,59 @@ TEST(JsonTest, floatsWithMoreDigitsThanADoubleHoldsDoNotOverflow)
 	EXPECT_NEAR(json["a"].Float() / 0.12345678901234567890123456789, 1.0, 1e-15);
 	EXPECT_NEAR(json["b"].Float() / 9007199254740993.5, 1.0, 1e-15);
 }
+
+TEST(SettingsNormalizationTest, MaximizePreservesExplicitUpdaterOptOut)
+{
+	JsonNode config;
+	config["general"]["updateChecks"].Bool() = false;
+	config["general"]["music"].Integer() = 17;
+
+	JsonUtils::maximize(config, "vcmi:settings");
+	const JsonNode & loaded = config;
+	ASSERT_TRUE(loaded["general"]["updateChecks"].isBool());
+	EXPECT_FALSE(loaded["general"]["updateChecks"].Bool());
+	EXPECT_EQ(loaded["general"]["music"].Integer(), 17);
+}
+
+TEST(SettingsNormalizationTest, UpdaterOptOutSurvivesMinimizeSerializationAndReload)
+{
+	JsonNode config;
+	JsonUtils::maximize(config, "vcmi:settings");
+	// Model an explicit user setting written after ordinary settings load too.
+	config["general"]["updateChecks"].Bool() = false;
+	JsonUtils::minimize(config, "vcmi:settings");
+	const JsonNode & saved = config;
+	ASSERT_TRUE(saved["general"]["updateChecks"].isBool());
+	EXPECT_FALSE(saved["general"]["updateChecks"].Bool());
+
+	const auto text = config.toCompactString();
+	JsonNode reloaded(text.data(), text.size(), "Settings normalization round trip");
+	JsonUtils::maximize(reloaded, "vcmi:settings");
+	const JsonNode & loaded = reloaded;
+	ASSERT_TRUE(loaded["general"]["updateChecks"].isBool());
+	EXPECT_FALSE(loaded["general"]["updateChecks"].Bool());
+}
+
+TEST(SettingsNormalizationTest, AbsentAndEnabledUpdaterValuesRetainTrueDefault)
+{
+	for(const bool explicitEnabled : {false, true})
+	{
+		SCOPED_TRACE(explicitEnabled);
+		JsonNode config;
+		if(explicitEnabled)
+			config["general"]["updateChecks"].Bool() = true;
+		JsonUtils::maximize(config, "vcmi:settings");
+		const JsonNode & loaded = config;
+		ASSERT_TRUE(loaded["general"]["updateChecks"].isBool());
+		EXPECT_TRUE(loaded["general"]["updateChecks"].Bool());
+		JsonUtils::minimize(config, "vcmi:settings");
+		const JsonNode & saved = config;
+		EXPECT_TRUE(saved["general"]["updateChecks"].isNull());
+		const auto text = config.toCompactString();
+		JsonNode reloaded(text.data(), text.size(), "Default updater normalization round trip");
+		JsonUtils::maximize(reloaded, "vcmi:settings");
+		const JsonNode & restored = reloaded;
+		ASSERT_TRUE(restored["general"]["updateChecks"].isBool());
+		EXPECT_TRUE(restored["general"]["updateChecks"].Bool());
+	}
+}

@@ -12,6 +12,7 @@ No reusable input lease or per-XTest-packet proof claim.
 Caller owns display/capture cleanup and the independent640s outer deadline.
 """
 import ctypes
+import errno
 import copy
 import hashlib
 import importlib.util
@@ -242,6 +243,30 @@ def file_proof(path):
         os.close(fd)
 
 
+def _proc_stat(proc):
+    try:
+        raw = (proc / 'stat').read_text()
+    except ProcessLookupError as error:
+        if error.errno != errno.ESRCH:
+            raise
+        raise FileNotFoundError(errno.ENOENT, 'Process metadata disappeared', str(proc / 'stat')) from error
+    return raw.rsplit(')', 1)[1].split()
+
+
+def exception_diagnostic(error, phase):
+    """Bounded first caught failure; no locals, source lookup, message or paths."""
+    frames, current = [], error.__traceback__
+    while current is not None and len(frames) < 16:
+        code = current.tb_frame.f_code
+        frames.append({'basename': Path(code.co_filename.replace('\\', '/')).name[:128],
+                       'function': code.co_name[:128], 'line': current.tb_lineno})
+        current = current.tb_next
+    number = getattr(error, 'errno', None)
+    return {'phase': phase, 'type': type(error).__name__[:128],
+            'errno': number if type(number) is int else None,
+            'frames': frames, 'frames_truncated': current is not None}
+
+
 class Linux:
     def __init__(self):
         self.pid = os.getpid()
@@ -259,14 +284,14 @@ class Linux:
     def kernel_snapshot(self, pid):
         """Cleanup identity does not require dumpable exe/environ visibility."""
         proc = Path('/proc') / str(pid)
-        before = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+        before = _proc_stat(proc)
         uid = proc.stat().st_uid
-        after = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+        after = _proc_stat(proc)
         if before[19] == after[19] and before[1] != after[1]:
             # One fresh acquisition only; never publish the mixed-parent sample.
-            refreshed = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+            refreshed = _proc_stat(proc)
             refreshed_uid = proc.stat().st_uid
-            after = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+            after = _proc_stat(proc)
             if refreshed[19] != before[19] or refreshed_uid != uid:
                 raise Refusal(f'Process lifetime/UID changed during ancestry refresh: pid={int(pid)}')
             before = refreshed
@@ -282,13 +307,13 @@ class Linux:
 
     def snapshot(self, pid):
         proc = Path('/proc') / str(pid)
-        fields = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+        fields = _proc_stat(proc)
         if fields[0] == 'Z':
             return {"pid": pid, "start_ticks": int(fields[19]), "uid": proc.stat().st_uid,
                     "boot_id": self.boot, "state": 'Z', "exe": '', "sha256": '', "argv": []}
         exe = (proc / 'exe').resolve(strict=True)
         proof = file_proof(exe)
-        current = (proc / 'stat').read_text().rsplit(')', 1)[1].split()
+        current = _proc_stat(proc)
         if fields[19] != current[19] or fields[1] != current[1]:
             raise Refusal("Process changed during identity read")
         return {"pid": pid, "start_ticks": int(current[19]), "uid": proc.stat().st_uid,
@@ -942,6 +967,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
     stopped = None
     status = 1
     terminal_input = None
+    failure_diagnostic = None
     try:
         owner.verify_xvfb()
         mapping.verify()
@@ -1061,6 +1087,7 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
                 else:
                     time.sleep(.02)
     except Exception as error:
+        failure_diagnostic = exception_diagnostic(error, 'owned_run')
         owner.errors.append(str(error))
     finally:
         # Only this explicit private prefix. Never wineserver -k without WINEPREFIX.
@@ -1078,14 +1105,19 @@ def run_staged_fullgame(plan, profile, content_state, *, verify_xvfb, verify_run
             if owner.reaped.get(cleanup.pid) != 0:
                 raise Refusal('Prefix wineserver cleanup failed or timed out')
         except Exception as error:
+            if failure_diagnostic is None:
+                failure_diagnostic = exception_diagnostic(error, 'prefix_cleanup')
             owner.errors.append(str(error))
         finish_owner(owner, supervisor)
         try:
             mapping.verify()
-        except Exception:
+        except Exception as error:
+            if failure_diagnostic is None:
+                failure_diagnostic = exception_diagnostic(error, 'mapping_postcheck')
             owner.errors.append('Post-cleanup Wine root mapping verification failed')
         (root / 'owner-receipt.json').write_text(json.dumps({'owner_pid': backend.pid, 'boot_id': backend.boot,
             'age': owner.age(), 'status': status, 'errors': owner.errors, 'reaped': owner.reaped,
+            'failure_diagnostic': failure_diagnostic,
             'parent_reaped': owner.parent_reaped, 'owned_graph_drained': owner.graph_drained(),
             'runtime_refusals': runtime_refusals, 'terminal_input': terminal_input,
             'ledger': {str(pid): row['identity'] for pid, row in owner.ledger.items()},

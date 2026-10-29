@@ -110,6 +110,51 @@ class HeroPositiveCueBootstrapDenialTest(unittest.TestCase):
                     self.assertNotIn("Initializing content handler", output)
                     self.assertFalse(any(save.iterdir()))
 
+    def test_authored_input_partial_mixed_and_wrong_filter_denied_early(self):
+        binary = Path(os.environ["NH_NATIVE_TEST_BINARY"])
+        self.assertTrue(binary.is_absolute() and binary.is_file())
+        prefix = "NH_EXPORT_HERO_CUE_AUTHORED_"
+        selected = "NewHorizonsAuthoredHeroCueFixtureExportTest.ExportAuthoredEligibleAdventureSave"
+        with tempfile.TemporaryDirectory(prefix="nh-authored-cue-denial-") as temporary:
+            root = Path(temporary)
+            private = root / "private"
+            save = private / "Saves"
+            save.mkdir(parents=True)
+            base = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "LANG": "C.UTF-8",
+                    "HOME": str(root / "home"), "XDG_CONFIG_HOME": str(root / "config"),
+                    "XDG_CACHE_HOME": str(root / "cache"), "XDG_DATA_HOME": str(root / "data"),
+                    "XDG_STATE_HOME": str(root / "state"), "XDG_RUNTIME_DIR": str(root / "runtime"),
+                    "SDL_AUDIODRIVER": "dummy", "SDL_AUDIO_DRIVER": "dummy",
+                    "SDL_VIDEODRIVER": "dummy", "SDL_VIDEO_DRIVER": "dummy",
+                    prefix + "BOOTSTRAP": "1", prefix + "SAVE_ROOT": str(save),
+                    prefix + "PRIVATE_ROOT": str(private), prefix + "SOURCE_ROOT": str(ROOT)}
+            cases = []
+            for suffix in ("BOOTSTRAP", "SAVE_ROOT", "PRIVATE_ROOT", "SOURCE_ROOT"):
+                changed = dict(base)
+                changed.pop(prefix + suffix)
+                cases.append(("missing_" + suffix, changed, selected))
+            for value in ("", "0", "true"):
+                cases.append(("flag_" + value, {**base, prefix + "BOOTSTRAP": value}, selected))
+            for suffix in ("SAVE_ROOT", "PRIVATE_ROOT", "SOURCE_ROOT"):
+                cases.append(("empty_" + suffix, {**base, prefix + suffix: ""}, selected))
+            for pattern in ("*", selected + ":Other.*", FILTER):
+                cases.append(("filter_" + pattern, dict(base), pattern))
+            for variable in ("NH_EXPORT_HERO_PROC_ORDINARY_BOOTSTRAP", "NH_EXPORT_HERO_PROC_FAMILY",
+                             "NH_EXPORT_HERO_PROC_SAVE_ROOT", PREFIX + "ORDINARY_BOOTSTRAP"):
+                cases.append(("mixed_" + variable, {**base, variable: "1"}, selected))
+            for label, environment, pattern in cases:
+                with self.subTest(label=label):
+                    result = subprocess.run([str(binary), "--gtest_filter=" + pattern], cwd=root,
+                                            env=environment, capture_output=True, text=True, timeout=10)
+                    output = result.stdout + result.stderr
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertTrue(any(message in output for message in (
+                        "Authored hero cue export requires its exact isolated invocation",
+                        "Ordinary hero export bootstrap requires its exact isolated export invocation",
+                        "Ordinary hero progression export bootstrap requires its exact isolated export invocation")), output)
+                    self.assertNotIn("Initializing content handler", output)
+                    self.assertFalse(any(save.iterdir()))
+
 
 if __name__ == "__main__":
     unittest.main()

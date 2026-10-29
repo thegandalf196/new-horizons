@@ -1,6 +1,6 @@
 # Serialization
 
-## Captured neutral-army size trial
+## Captured army generation settings
 
 `NEW_HORIZONS_NEUTRAL_ARMY_SIZE` protects a reduced captured
 `creatures.neutralArmySizePercent`. Historical absence becomes 100 on binary
@@ -8,14 +8,24 @@ load; fresh map overrides inherit defaults until initialization captures them.
 Save/load never reapplies initial count scaling. Direct settings, map, world
 and initialized-lobby writers reject unsupported reduced captures before their
 prefixes; readers reject unsupported reduced overrides before mutation. See the
-[neutral army runtime contract](NewHorizonsNeutralArmies.md) for generation,
-renewal, exclusions and rounding.
+[army-size and recruitment-growth runtime contract](NewHorizonsNeutralArmies.md)
+for current defaults, generation, renewal, exclusions and rounding.
+
+`NEW_HORIZONS_RECRUITMENT_GROWTH` similarly protects any captured
+`creatures.recruitmentGrowthPercent` other than the identity value 100, including
+zero and values above 100. Binary absence becomes 100; fresh-world initialization
+captures the effective installed or overridden value without rescaling stock.
+Direct settings and enclosing map/world/initialized-lobby writers reject
+unsupported captures before their prefixes; readers reject unsupported overrides
+before mutation. Loading retains old stock, armies and explicit captured values.
 
 ## Captured contexts and detached descriptors
 
-Append serialization features before the CURRENT/MINIMAL aliases and keep version
-progression monotonic; a new enumerator must not lower the advertised current
-format. Preserve full counter width and explicit domain limits rather than
+Append each serialization feature after the last actual feature and before
+**every** release, MINIMAL and CURRENT alias. Keep progression monotonic; an
+implicit enumerator after an alias can reuse or lower a feature value and must
+not lower the advertised current format. Preserve full counter width and explicit
+domain limits rather than
 narrowing a value to bypass an unsupported-type guard.
 
 New-game registry completeness and loaded-snapshot validity are separate checks.

@@ -9,12 +9,16 @@
  */
 
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsPetrifyingBlood.h"
+#include "../entities/hero/NewHorizonsDreadCavalry.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
 #include "CGHeroInstance.h"
-#include "../entities/hero/NewHorizonsManaLeeches.h"
+#include "../entities/hero/NewHorizonsGhostSpecialty.h"
+#include "../entities/hero/NewHorizonsLivingInferno.h"
+#include "../entities/hero/NewHorizonsAerialSupremacy.h"
 #include "../entities/hero/NewHorizonsLearningSpecialties.h"
 #include "../entities/hero/HeroStartingProjection.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
@@ -982,8 +986,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 
 	//copy active (probably growing) bonuses from hero prototype to hero object
-	const bool convertsCreatureLineSpecialty = (newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules).has_value()
-		|| newHorizonsHeroes::hasManaLeeches(this))
+	const bool convertsCreatureLineSpecialty = newHorizonsHeroes::usesConvertedCreatureSpecialty(this)
 		&& heroType->creatureLineSpecialtyAlias.has_value();
 	const bool convertsDamageSpellSpecialty = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules).has_value();
 	const auto nonDamageSpellSpecialtyRules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules);
@@ -3117,7 +3120,7 @@ void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)
 		return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
 	}));
 
-	if(newHorizonsHeroes::hasManaLeeches(this))
+	if(newHorizonsHeroes::replacesGenericCreatureSpecialty(this))
 		return;
 
 	const TLimiterPtr lineLimiter = std::make_shared<CCreatureTypeLimiter>(*specCreature, true);
@@ -3482,19 +3485,6 @@ bool CGHeroInstance::isMissionCritical() const
 	return false;
 }
 
-void CGHeroInstance::fillUpgradeInfo(UpgradeInfo & info, const CStackInstance & stack) const
-{
-	TConstBonusListPtr lista = stack.getBonusesOfType(BonusType::SPECIAL_UPGRADE, BonusSubtypeID(stack.getId()));
-	for(const auto & it : *lista)
-	{
-		if (it->parameters)
-		{
-			auto nid = it->parameters->toCreature();
-			if (nid != stack.getId()) //in very specific case the upgrade is available by default (?)
-				info.addUpgrade(nid, stack.getType());
-		}
-	}
-}
 
 bool CGHeroInstance::isCampaignYog() const
 {

@@ -8,7 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "DreadCavalryProjection.h"
+#include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "InitialExportBattleSubject.h"
 #include "../../lib/battle/RoundBonusDuration.h"
 #include "../../lib/spells/HydrasVitalityIdentity.h"
@@ -221,6 +224,8 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 		const auto rebirthSource = wasAlive ? captureElementalRebirthSource(*unit) : std::nullopt;
 		const bool nativeRebirth = hasReadyNativeRebirth(unit.get());
 		unit->damage(poisonDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+		if(wasAlive && !unit->alive())
+			releaseSerpentBindingsForDeath(*unit);
 		if(rebirthSource)
 			projectElementalRebirth(unit.get(), *rebirthSource,
 				wasAlive && !unit->alive(), unit->isClone(), nativeRebirth);
@@ -246,6 +251,7 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 {
 	if(reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
 	{
+		dreadCavalryAI::retireForActorHandoff(*this, unitId, reason);
 		activeUnitId = static_cast<int32_t>(unitId);
 		return;
 	}
@@ -279,6 +285,7 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 			else if(getRapidResponseState(side).pending() && !newHorizonsRapidResponse::pendingWaiter(*this, side))
 				setRapidResponseState(side, newHorizonsRapidResponse::resolve(*this, side, false));
 		}
+	dreadCavalryAI::retireForActorHandoff(*this, unitId, reason);
 	activeUnitId = unitId;
 	if(extra)
 		seizeInitiative.begin(unitId, false);
@@ -297,10 +304,14 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 	if(reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
 		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
+		|| reason == BattleUnitTurnReason::DREAD_CAVALRY_CONTINUATION
 		|| reason == BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
+	{
+		releaseSerpentBindings(unitId);
 		applyProjectedActivationStartEffects(unitId, unit, reason, timing);
+	}
 	bool newActivation = reason != BattleUnitTurnReason::HERO_SPELLCAST
 		&& reason != BattleUnitTurnReason::UNIT_SPELLCAST;
 	if(reason == BattleUnitTurnReason::HERO_COMMAND)
@@ -320,6 +331,7 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 	}
 	if(newActivation)
 	{
+		unit->forestAmbush.beginActivation(reason == BattleUnitTurnReason::TURN_QUEUE && unit->waiting);
 		if(reason == BattleUnitTurnReason::HERO_COMMAND)
 			unit->castSpellThisTurn = false; // Match the actual armed Second Wind activation, not ordinary Orders.
 		// Match the authoritative activation boundary: a rescued unit stops only
@@ -329,6 +341,7 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 		unit->armorerLastStandDefending = false;
 		unit->pursuitMovementRemaining = 0;
 		unit->cleaveUsedThisActivation = false;
+		unit->dreadCavalryState = {};
 		unit->luckyOwnAttackSequence = false;
 		const auto side = playerToSide(battleGetOwner(unit.get()));
 		const bool ordinaryCreature = unit->alive() && !unit->isGhost() && !unit->isTurret()
@@ -370,6 +383,7 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 		updateUnitBonus(unit->unitId(), {*next});
 
 	resetActiveUnit();
+	newHorizonsForestAmbush::acceptWait(*this, *unit);
 	unit->afterWait();
 	if(newHorizonsBattlecraft::hasOverwatch(battleGetOwnerHero(unit.get()))
 		&& unit->isShooter() && unit->battlecraftOverwatchUsedRound != getRound())
@@ -391,6 +405,7 @@ void HypotheticBattle::completeSwiftNormalActivation(uint32_t unitId)
 	// never for Wait/continuations; stasis passes use the separate nextTurn path.
 	newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId);
 	const auto unit = getForUpdate(unitId);
+	unit->forestAmbush.finishActivation();
 	if(const auto next = newHorizonsSwiftRebirth::completeNormalActivationPlan(*unit, getRound()))
 		updateUnitBonus(unitId, {*next});
 }

@@ -33,12 +33,28 @@ Generated user Maps must remain refreshable after initialization and resolve thr
 
 ## Gameplay and forecast integrity
 
+- Detached death-source and Rebirth forecasts must use visibility-guarded Hero
+  queries. Internal full-rule Hero access must not turn an opposing player's
+  hidden policy into a known perk rank or a predicted spawn. Preserve own-side
+  and spectator knowledge, unknown neutral/opposing policies, source/branch
+  state and RNG isolation in `ElementalRebirthVisibilityAITest`. Nullable army
+  context uses the same canonical knowledge check; explicit forbidden queries
+  must still be rejected. `EnemyBattleFormArmyBoundaryTest` covers known, hidden,
+  spectator, invalid and detached contexts without importing private army data.
 - Creature upgrade requests must name an actually available upgrade before
   Leadership checks or cost lookup. Having some upgrade does not admit a
   self-upgrade or unrelated creature ID. Retain
   `UnofferedUpgradeRequestsRejectAtomicallyBeforeCostLookup` under current and
   historical captured rules: rejected requests change neither army nor resources,
   stock or spending statistics, and a subsequent valid upgrade still succeeds.
+- Automatic town siege assembly must respect the defending Hero's captured
+  per-slot Leadership limits before requesting transfers. A blocked strongest
+  source must not be retried unchanged or starve legal lower-priority sources.
+  Use canonical admission for partial transfers, alternate slots and whole legal
+  swaps; conserve both armies during assembly and preserve uncapped historical
+  ordering. Keep `NewHorizonsTownSiegeLeadershipTest` with admission and upgrade
+  parity controls. Assembly conservation does not change the existing conquest
+  callback that clears the defeated town's remaining garrison.
 - A range-for over a dereferenced temporary shared BonusList owner can dangle. Retain the owning list through iteration. Keep distinct equal bonus identities, ordered/raw aliases, child ADD/removal/UPDATE and branch aging isolation controls.
 - Use authoritative action/activation/controller APIs and legally earned perk/Metamagic allowances in fixtures. Do not forge state to bypass admission. Damage must be meaningful and survivable where later assertions require a living stack.
 - Protect redirects the primary victim, not the original melee contact geometry.

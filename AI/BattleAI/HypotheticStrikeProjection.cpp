@@ -146,8 +146,9 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	if(serendipitySide == BattleSide::ATTACKER || serendipitySide == BattleSide::DEFENDER)
 	{
 		auto token = luckSerendipityStates.at(serendipitySide);
-		token.recordStrike(capturedLuckSerendipityOrdinaryAttack.value_or(!attack.secondaryAttack
-			&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage)),
+		token.recordStrike(capturedLuckSerendipityOrdinaryAttack ? *capturedLuckSerendipityOrdinaryAttack
+			: !attack.secondaryAttack
+				&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage),
 			serendipityOutcome == ProjectedLuckOutcome::POSITIVE);
 		setLuckSerendipityState(serendipitySide, token);
 	}
@@ -243,7 +244,7 @@ std::optional<newHorizonsElementalRebirth::DeathSnapshot> HypotheticBattle::capt
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return {};
 	return newHorizonsElementalRebirth::captureDeathSource(
-		unit, getSideHero(side), getRebirthChainUsed(side),
+		unit, battleGetFightingHero(side), getRebirthChainUsed(side),
 		&getCreatureCategoryRules(), getPhoenixSparkUsed(side));
 }
 
@@ -302,6 +303,8 @@ void HypotheticBattle::projectPrimalBurst(const std::shared_ptr<StackWithBonuses
 				continue;
 			auto appliedDamage = hit.adjustedDamage;
 			target->damage(appliedDamage, false, battle::DamageProvenance::SPELL);
+			if(!target->alive())
+				releaseSerpentBindingsForDeath(*target);
 			const auto actualDamage = std::max<int64_t>(0,
 				hit.healthBefore - target->getAvailableHealth());
 			if(actualDamage <= 0)

@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../mapObjects/NewHorizonsNeutralArmies.h"
+#include "../mapObjects/NewHorizonsRecruitmentGrowth.h"
 
 #include "../entities/hero/NewHorizonsSpecialtySerialization.h"
 #include "CMapEvent.h"
@@ -363,6 +364,8 @@ public:
 	{
 		if(h.saving)
 			newHorizonsNeutralArmies::validateSerialization(getSettings(), h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+		if(h.saving)
+			newHorizonsRecruitmentGrowth::validateSerialization(getSettings(), h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 		if(h.saving)
 			validateCombatScalarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));

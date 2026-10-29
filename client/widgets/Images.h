@@ -12,6 +12,7 @@
 #include "../gui/CIntObject.h"
 #include "../battle/BattleConstants.h"
 #include "../../lib/filesystem/ResourcePath.h"
+#include "../../lib/Color.h"
 
 class Rect;
 
@@ -179,6 +180,7 @@ protected:
 	int xOffset, yOffset;
 
 	ui8 alpha;
+	ColorRGBA effectColor{0, 0, 0, 0};
 
 public:
 	//called when next animation sequence is required
@@ -186,6 +188,7 @@ public:
 
 	//Set per-surface alpha, 0 = transparent, 255 = opaque
 	void setAlpha(ui32 alphaValue);
+	void setEffectColor(const ColorRGBA & color) { effectColor = color; }
 
 	CShowableAnim(int x, int y, const AnimationPath & name, ui8 flags, ui32 frameTime, size_t Group=0, uint8_t alpha = UINT8_MAX);
 

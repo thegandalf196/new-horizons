@@ -5,12 +5,13 @@
  */
 #include "StdInc.h"
 #include "StackEffectRemoval.h"
+#include "NewHorizonsSerpentsEmbrace.h"
 #include "../bonuses/Bonus.h"
 namespace battle
 {
 bool matchesStackEffectRemoval(const Bonus & selected, const Bonus & candidate)
 {
-	return selected.duration == candidate.duration
+	const bool legacyMatch = selected.duration == candidate.duration
 		&& selected.type == candidate.type
 		&& selected.subtype == candidate.subtype
 		&& selected.source == candidate.source
@@ -19,5 +20,10 @@ bool matchesStackEffectRemoval(const Bonus & selected, const Bonus & candidate)
 		&& selected.valType == candidate.valType
 		&& selected.effectRange == candidate.effectRange
 		&& (selected.type != BonusType::CONFUSION_PENDING || selected.spellCasterOwner == candidate.spellCasterOwner);
+	if(!legacyMatch || selected.type != BonusType::BIND_EFFECT)
+		return legacyMatch;
+	if(!newHorizonsSerpentsEmbrace::isMarker(selected) && !newHorizonsSerpentsEmbrace::isMarker(candidate))
+		return true;
+	return newHorizonsSerpentsEmbrace::sourceId(selected) == newHorizonsSerpentsEmbrace::sourceId(candidate);
 }
 }

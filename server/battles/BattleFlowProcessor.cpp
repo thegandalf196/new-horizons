@@ -8,7 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "BattleFlowProcessor.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "../../lib/spells/IncomingMagicalDamage.h"
 #ifdef NH_CURE_SIMULATION_FIXTURE
 #include "../tests/CureFixture.h"
@@ -2029,7 +2031,7 @@ void BattleFlowProcessor::onAutomaticUnitActionCompleted(const BattleID & battle
 	// consumer. A real attack that freezes its actor is still a completion.
 	if(action.actionType == EActionType::NO_ACTION && newHorizonsFrozen::isFrozen(*stack))
 		return;
-	if(stack->pursuitMovementRemaining > 0 || battle->battleHasPendingRangedFollowUp(stack))
+	if(stack->pursuitMovementRemaining > 0 || stack->dreadCavalryState.pending || battle->battleHasPendingRangedFollowUp(stack))
 		return;
 	if(action.actionType == EActionType::MONSTER_SPELL
 		&& (!action.spell.hasValue() || action.spell.toSpell()->canCastWithoutSkip()))
@@ -2454,8 +2456,8 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	if(pursuitActivationContinuation)
 	{
 		if(actedStack && activeStack == actedStack && actedStack->alive()
-			&& !actedStack->isTimeStopped() && actedStack->pursuitMovementRemaining > 0)
-			setActiveStack(battle, actedStack, BattleUnitTurnReason::PURSUIT_CONTINUATION);
+			&& !actedStack->isTimeStopped() && (actedStack->pursuitMovementRemaining > 0 || actedStack->dreadCavalryState.pending))
+			setActiveStack(battle, actedStack, newHorizonsDreadCavalry::continuationReason(actedStack));
 		else
 		{
 			if(!(ba.isUnitAction() && completeAcceptedActivation(actedStack)))
@@ -2702,11 +2704,15 @@ void BattleFlowProcessor::stackTurnTrigger(const CBattleInfoCallback & battle, c
 		if (st->hasBonusOfType(BonusType::BIND_EFFECT))
 		{
 			bool unbind = true;
+			bool hasLegacyBind = false;
 			BonusList bl = *(st->getBonusesOfType(BonusType::BIND_EFFECT));
 			auto adjacent = battle.battleAdjacentUnits(st);
 
 			for (const auto & b : bl)
 			{
+				if(b && newHorizonsSerpentsEmbrace::isMarker(*b))
+					continue; // Source activation, not native adjacency, owns this restraint.
+				hasLegacyBind = true;
 				if(b->parameters)
 				{
 					const CStack * stack = battle.battleGetStackByID(b->parameters->toNumber()); //binding stack must be alive and adjacent
@@ -2718,7 +2724,7 @@ void BattleFlowProcessor::stackTurnTrigger(const CBattleInfoCallback & battle, c
 					unbind = false;
 				}
 			}
-			if (unbind)
+			if (unbind && hasLegacyBind)
 			{
 				BattleSetStackProperty ssp;
 				ssp.battleID = battle.getBattle()->getBattleID();

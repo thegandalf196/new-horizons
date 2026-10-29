@@ -1,10 +1,17 @@
 set(clientapp_SRCS
 		StdInc.cpp
 		EntryPoint.cpp
+		BugReportBootstrap.cpp
+		BugReportRuntime.cpp
+		CrashReportSession.cpp
+		CrashReportLogTarget.cpp
 )
 
 set(clientapp_HEADERS
 		StdInc.h
+		BugReportBootstrap.h
+		CrashReportSession.h
+		CrashReportLogTarget.h
 		PrivateWinePathPolicy.h
 		PrivateWineStartupWitness.h
 )
@@ -14,6 +21,15 @@ if(ENABLE_NH_ART_CACHE_REGRESSION)
 	add_executable(nhArtStartupRuntimeTest ../client/tests/NhArtStartupRuntimeTest.cpp)
 	target_link_libraries(nhArtStartupRuntimeTest PRIVATE vcmi)
 	vcmi_set_output_dir(nhArtStartupRuntimeTest "")
+endif()
+
+
+option(ENABLE_NH_BUG_REPORT_REGRESSION "Build bounded bug-report capture regression" OFF)
+if(ENABLE_NH_BUG_REPORT_REGRESSION)
+	add_executable(nhCrashReportCaptureTest tests/CrashReportCaptureTest.cpp CrashReportSession.cpp CrashReportLogTarget.cpp)
+	target_link_libraries(nhCrashReportCaptureTest PRIVATE vcmi)
+	target_include_directories(nhCrashReportCaptureTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+	vcmi_set_output_dir(nhCrashReportCaptureTest "")
 endif()
 
 if(IOS)

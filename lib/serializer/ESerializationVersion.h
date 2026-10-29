@@ -286,12 +286,24 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_NEUTRAL_ARMY_SIZE, // captured initial and natural-regeneration army-size trial
 
 	NEW_HORIZONS_MANA_LEECHES, // optional captured Ignatius attack theft policy
+	NEW_HORIZONS_SERPENTS_EMBRACE, // captured Fafner source-activation restraint
+
+	NEW_HORIZONS_GHOST_UPGRADE, // captured Vidomina Wraith-to-Ghost upgrade identity
+	NEW_HORIZONS_RECRUITMENT_GROWTH, // captured final recruitment growth percentage
+	NEW_HORIZONS_PARALYZING_GAZE, // captured Ajit pending normal-retaliation cancellation
+	NEW_HORIZONS_FOREST_AMBUSH = 1136, // captured Ivor nonmagical Wait/first-shot rules
+	NEW_HORIZONS_PETRIFYING_BLOOD = 1137, // captured Bron identity and per-stack round receipt
+
+	NEW_HORIZONS_LIVING_INFERNO = 1138, // captured Fiur burning movement trail
+	NEW_HORIZONS_AERIAL_SUPREMACY = 1139, // captured Edric aerial counters, round-use and typed strike excursion
+
+	NEW_HORIZONS_DREAD_CAVALRY = 1140, // captured Tamika continuation/state, after real Edric1139
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_MANA_LEECHES,
+	CURRENT = NEW_HORIZONS_DREAD_CAVALRY,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2
@@ -583,3 +595,19 @@ static_assert(ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES
 
 static_assert(ESerializationVersion::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS
 	> ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES);
+
+static_assert(ESerializationVersion::NEW_HORIZONS_RECRUITMENT_GROWTH > ESerializationVersion::NEW_HORIZONS_GHOST_UPGRADE,
+	"Recruitment growth capture must remain append-only");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_PARALYZING_GAZE > ESerializationVersion::NEW_HORIZONS_RECRUITMENT_GROWTH,
+	"Paralyzing Gaze capture must remain append-only after recruitment growth");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_FOREST_AMBUSH
+	> ESerializationVersion::NEW_HORIZONS_PARALYZING_GAZE, "Forest Ambush must remain append-only");
+static_assert(static_cast<int>(ESerializationVersion::NEW_HORIZONS_GHOST_UPGRADE) == 1133);
+static_assert(static_cast<int>(ESerializationVersion::NEW_HORIZONS_RECRUITMENT_GROWTH) == 1134);
+static_assert(static_cast<int>(ESerializationVersion::NEW_HORIZONS_PETRIFYING_BLOOD) == 1137);
+static_assert(ESerializationVersion::NEW_HORIZONS_LIVING_INFERNO > ESerializationVersion::NEW_HORIZONS_RECRUITMENT_GROWTH,
+	"Living Inferno must remain append-only after published captures");
+static_assert(ESerializationVersion::NEW_HORIZONS_AERIAL_SUPREMACY > ESerializationVersion::NEW_HORIZONS_LIVING_INFERNO,
+	"Aerial Supremacy must remain append-only before release aliases");

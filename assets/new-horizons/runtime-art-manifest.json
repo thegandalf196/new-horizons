@@ -53930,6 +53930,406 @@
       "origin": "independently-generated-original-subject; built-in-image-generation; native-RGBA-derivative",
       "selection": "provisionally-selected-under-authorized-draft-policy",
       "approval": "selected-provisional-draft; not-Final; rendered-integration-pending"
+    },
+    {
+      "resource": "SPRITES/ADVMAP/NHBUGREPORTBEETLE.PNG",
+      "source": "Mods/new-horizons/Content/sprites/ADVMAP/NHBUGREPORTBEETLE.png",
+      "size": 1438,
+      "sha256": "2e6c4af36837d9d4b7985bdd738ddfa253db917d7e9001eef75e413514c72be8",
+      "family": "bug-report-interface-icon",
+      "origin": "Original model-generated transparent golden beetle; native 32x32 contain export; no reference input",
+      "selection": "selected-provisional-original-golden-beetle-bug-report-button-2026-10-28",
+      "approval": "Provisional draft selected for integration; no Final visual approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_GHOST.DEF",
+      "source": "Mods/new-horizons/Content/sprites/NH_GHOST.DEF",
+      "size": 177221,
+      "sha256": "5a82c6ce44b3833c4cf5b7556d278610b0634ca676523a923217f95ea0ae950a",
+      "family": "ghost-creature-animation",
+      "origin": "Original Heroes III Wraith palette modification; original poses, RLE geometry and ground shadows preserved; original-game asset dependency and rights remain applicable",
+      "selection": "provisional-white-linen-Ghost-and-Vidomina-Soul-Harvest-integration-candidate-2026-10-28",
+      "approval": "Provisional candidate; pending integration review; no Final visual approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/creatures/GhostSmall.png",
+      "source": "Mods/new-horizons/Content/sprites/newHorizons/creatures/GhostSmall.png",
+      "size": 2180,
+      "sha256": "9a5f07bae79106112591bcb7532a23a5db0c487909d9c17f933252b658e229a6",
+      "family": "ghost-creature-portraits",
+      "origin": "Approved generated white-linen Wraith portrait foreground based on original Heroes III subject/style reference; no staff or held accessory; native transparent32x32 cutout. Original-based rights and attribution retained.",
+      "selection": "Provisional Ghost portrait revision 2026-10-29: approved no-staff white Wraith close-up over existing native Necropolis portrait background for58x64; transparent32x32 portrait retained.",
+      "approval": "Selected provisional portrait revision; no-staff foreground direction approved; reuse of original Necropolis portrait background selected. Final visual approval and rendered delivery verification remain separate."
+    },
+    {
+      "resource": "SPRITES/newHorizons/creatures/GhostLarge.png",
+      "source": "Mods/new-horizons/Content/sprites/newHorizons/creatures/GhostLarge.png",
+      "size": 7955,
+      "sha256": "0a6ab11c884ce61a82187b26d813814a6080fc040e91c1a6d2a438c355c45326",
+      "family": "ghost-creature-portraits",
+      "origin": "Approved generated white-linen Wraith portrait foreground, based on original Heroes III subject/style reference, composited over original Necropolis portrait-background pixels at unchanged native coordinates from TWCRPORT; no new scenery. Original-based rights and attribution retained.",
+      "selection": "Provisional Ghost portrait revision 2026-10-29: approved no-staff white Wraith close-up over existing native Necropolis portrait background for58x64; transparent32x32 portrait retained.",
+      "approval": "Selected provisional portrait revision; no-staff foreground direction approved; reuse of original Necropolis portrait background selected. Final visual approval and rendered delivery verification remain separate."
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VidominaSoulHarvest/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VidominaSoulHarvest/icon-44.png",
+      "size": 2834,
+      "sha256": "30c50f239dec9372332c1b0cdd5a06e1bb4539215b82722dee0015ececad1c63",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made model-generated Soul Harvest foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "provisional-white-linen-Ghost-and-Vidomina-Soul-Harvest-integration-candidate-2026-10-28",
+      "approval": "Provisional candidate; pending integration review; no Final visual approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VidominaSoulHarvest/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VidominaSoulHarvest/44.json",
+      "size": 104,
+      "sha256": "a191ee777a49fb4339f0b55afe6a3182b15522ad4b8ea1df4d34da3463699a5d",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected Soul Harvest icon",
+      "selection": "provisional-white-linen-Ghost-and-Vidomina-Soul-Harvest-integration-candidate-2026-10-28",
+      "approval": "Provisional candidate; pending integration review; no Final visual approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VidominaSoulHarvest/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VidominaSoulHarvest/icon-32.png",
+      "size": 1722,
+      "sha256": "94817992221755462416d0cc8008e1f45ab65b1311f58991969dd3f0d8c8b296",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made model-generated Soul Harvest foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "provisional-white-linen-Ghost-and-Vidomina-Soul-Harvest-integration-candidate-2026-10-28",
+      "approval": "Provisional candidate; pending integration review; no Final visual approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/VidominaSoulHarvest/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/VidominaSoulHarvest/32.json",
+      "size": 104,
+      "sha256": "d7f3e65d8fcf5859b52b6114d10d4dfaa91477f8b5efeb1c003f24cb2af9c4ce",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected Soul Harvest icon",
+      "selection": "provisional-white-linen-Ghost-and-Vidomina-Soul-Harvest-integration-candidate-2026-10-28",
+      "approval": "Provisional candidate; pending integration review; no Final visual approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AjitParalyzingGaze/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AjitParalyzingGaze/32.json",
+      "size": 130,
+      "sha256": "c7e18f04dea19482ca52f5f95d7b68097a9b1b028e8dd4d85a7e5cdaaa6b9332",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ajit; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AjitParalyzingGaze/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AjitParalyzingGaze/44.json",
+      "size": 130,
+      "sha256": "ef22561f5b27d4a1439da661d2bb1e2db76aa874f148c79537d5ecce73962b07",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ajit; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AjitParalyzingGaze/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AjitParalyzingGaze/icon-32.png",
+      "size": 2040,
+      "sha256": "7e0944f1265f301f85d01b4948c00d5b4a17f8d871f78febb77eef9aafe1c583",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Paralyzing Gaze foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ajit; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/AjitParalyzingGaze/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/AjitParalyzingGaze/icon-44.png",
+      "size": 3562,
+      "sha256": "fef5e3c32af396b4829677b2131217673da80d3e330bae936c605e915536b799",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Paralyzing Gaze foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ajit; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/BronPetrifyingBlood/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/BronPetrifyingBlood/32.json",
+      "size": 131,
+      "sha256": "1d669720cd5ec278487546ce9dc2509c07c5bb9c718926a98a4010933fc1f6e7",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Bron; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/BronPetrifyingBlood/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/BronPetrifyingBlood/44.json",
+      "size": 131,
+      "sha256": "79b2684ddae9beca5472876b98ee5f4900e9224aff10c2722757a7cc13d62cfd",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Bron; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/BronPetrifyingBlood/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/BronPetrifyingBlood/icon-32.png",
+      "size": 1788,
+      "sha256": "fc7d28da0082a1e36ce89057fcb8284e03fc8f0462de7e8e3a861fb7efa88d60",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Petrifying Blood foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Bron; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/BronPetrifyingBlood/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/BronPetrifyingBlood/icon-44.png",
+      "size": 3062,
+      "sha256": "ba8c967cf97b48a251ae6e099fff8e2724a12397756866791c8f05075dee4213",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Petrifying Blood foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Bron; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/EdricAerialSupremacy/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/EdricAerialSupremacy/32.json",
+      "size": 132,
+      "sha256": "3749273c19e20bd929b74c07758f46412e847cb7742c64f9de62a49ee68fe8d0",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Edric; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/EdricAerialSupremacy/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/EdricAerialSupremacy/44.json",
+      "size": 132,
+      "sha256": "2d45768d61b84063fca6b1a36e77ccbd60bdbcdc0161aae6653e7318ca2d6dec",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Edric; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/EdricAerialSupremacy/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/EdricAerialSupremacy/icon-32.png",
+      "size": 2220,
+      "sha256": "15d9c4145e2ccfdbc565b82cf28ff6d003942e53df14fa1bd33070185a82a3e8",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Aerial Supremacy foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Edric; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/EdricAerialSupremacy/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/EdricAerialSupremacy/icon-44.png",
+      "size": 3894,
+      "sha256": "4923ea1408a2d6c282eda0ef80b2aa5917acdd4ba18f2016d0095b739ed8b91e",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Aerial Supremacy foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Edric; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FafnerSerpentsEmbrace/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FafnerSerpentsEmbrace/32.json",
+      "size": 133,
+      "sha256": "26b2b6bbd4431c1c2cf360eb5838388d9af6b6fcfbe57adb8d5f3837ce97eaa0",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Fafner; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FafnerSerpentsEmbrace/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FafnerSerpentsEmbrace/44.json",
+      "size": 133,
+      "sha256": "d47fac6708f25247f1bcf107700b228758bf7319299167d2ae088ad1c853155d",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Fafner; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FafnerSerpentsEmbrace/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FafnerSerpentsEmbrace/icon-32.png",
+      "size": 1847,
+      "sha256": "9a7c9ef195956e474b87d2c16afa865dcabd354786cb4ddf6e1a0b753788dfe7",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Serpent's Embrace foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Fafner; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FafnerSerpentsEmbrace/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FafnerSerpentsEmbrace/icon-44.png",
+      "size": 3148,
+      "sha256": "8c55361bd849189c64a05717aa60913d28c38ddaa9b27466d540d8bfdfb1f1f3",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Serpent's Embrace foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Fafner; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FiurLivingInferno/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FiurLivingInferno/32.json",
+      "size": 129,
+      "sha256": "6e290e800c4328965543c04e14acdf96658b150f8a072a52547f80e529d4bf48",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Fiur; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FiurLivingInferno/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FiurLivingInferno/44.json",
+      "size": 129,
+      "sha256": "eb8b85abcaf3bf5fdb01edac623679ef0a6eed18ab3a96a9ffdecfd98ddaac17",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Fiur; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FiurLivingInferno/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FiurLivingInferno/icon-32.png",
+      "size": 1626,
+      "sha256": "5f469157f1cddbc3324c3fcd923f5399bfc440f5ba32b64b2cc185c423b28183",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Living Inferno foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Fiur; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/FiurLivingInferno/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/FiurLivingInferno/icon-44.png",
+      "size": 2786,
+      "sha256": "24697aa1f469ddef2588246fbd29d51180d2e10bb578fe1b66a4f70fd55336d8",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Living Inferno foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Fiur; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IgnatiusManaLeeches/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IgnatiusManaLeeches/32.json",
+      "size": 131,
+      "sha256": "84896e64d0912fa1199cc4383b7761c1c353250454cb23702490effd60b3c9f4",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ignatius; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IgnatiusManaLeeches/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IgnatiusManaLeeches/44.json",
+      "size": 131,
+      "sha256": "18a777dc71663bb36aa8dba703b6a6a3567a01e124705bd719282bdfbe9b31a3",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ignatius; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IgnatiusManaLeeches/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IgnatiusManaLeeches/icon-32.png",
+      "size": 1720,
+      "sha256": "1e0c6f9fd78f9a28f3493be2f30d87b1d7ace06e7d38f87c6dde83d9311e0c58",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Mana Leeches foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ignatius; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IgnatiusManaLeeches/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IgnatiusManaLeeches/icon-44.png",
+      "size": 2873,
+      "sha256": "f1aba0d304a6333f82844289796af22b1e039a1872af8c830e1850da5f3507a4",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Mana Leeches foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ignatius; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IvorForestAmbush/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IvorForestAmbush/32.json",
+      "size": 128,
+      "sha256": "5d0a57a149646c8a3f391ce61059ed6ef44bbafc2f4c8219422a70a5fa673adc",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ivor; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IvorForestAmbush/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IvorForestAmbush/44.json",
+      "size": 128,
+      "sha256": "5c30cb94ca286e5ec9db5bc227021f509daceb7fd822603feab7de2060cfbfad",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ivor; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IvorForestAmbush/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IvorForestAmbush/icon-32.png",
+      "size": 1916,
+      "sha256": "26c8f4b41920167e804d83dbd4365e880e98542854f6952e18f830adb0ccb6bb",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Forest Ambush foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ivor; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/IvorForestAmbush/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/IvorForestAmbush/icon-44.png",
+      "size": 3370,
+      "sha256": "5db5dc22c084b40e235952e97ffdecd5ea197fed1b7684b359f35143b78d7dd9",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Forest Ambush foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Ivor; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TamikaDreadCavalry/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TamikaDreadCavalry/32.json",
+      "size": 130,
+      "sha256": "f08fa9d1317281772104bc2d3acc2e7858b0abd45a6d95dde887656d2203c0ba",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Tamika; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TamikaDreadCavalry/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TamikaDreadCavalry/44.json",
+      "size": 130,
+      "sha256": "e6d74de3a8a1240a539d07e1343b81cd74edd36ce6c36785eaa92c8c5eac4467",
+      "family": "hero-specialty-icons",
+      "origin": "Native single-frame animation descriptor for matching selected specialty icon",
+      "selection": "Provisionally selected creature-specialist specialty draft for Tamika; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TamikaDreadCavalry/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TamikaDreadCavalry/icon-32.png",
+      "size": 1988,
+      "sha256": "7598bac782764612ce14c553c2f82b1dc6c1b818beba7ee7ee59fa578c04f30b",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Dread Cavalry foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Tamika; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TamikaDreadCavalry/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TamikaDreadCavalry/icon-44.png",
+      "size": 3488,
+      "sha256": "8bc7cea69f3d30d4f04c72c03214bd2b6e70c165a410236488fc84baac5397ea",
+      "family": "hero-specialty-icons",
+      "origin": "Purpose-made generated Dread Cavalry foreground; exact selected native transparent export; no selected-reference pixel reuse",
+      "selection": "Provisionally selected creature-specialist specialty draft for Tamika; 2026-10-28",
+      "approval": "Provisional selection under draft-use authorization; root visual review recorded; no Final owner approval; rendered acceptance pending"
     }
   ],
   "requiredFamilies": [
@@ -53940,7 +54340,11 @@
     "guild-room-composites-and-bindings",
     "mage-guild-town-art-and-ui",
     "magi-and-archmagi",
-    "wisps-and-projectiles"
+    "wisps-and-projectiles",
+    "bug-report-interface-icon",
+    "ghost-creature-animation",
+    "ghost-creature-portraits",
+    "hero-specialty-icons"
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
@@ -53950,6 +54354,10 @@
     "guild-room-composites-and-bindings": 10,
     "mage-guild-town-art-and-ui": 81,
     "magi-and-archmagi": 348,
-    "wisps-and-projectiles": 208
+    "wisps-and-projectiles": 208,
+    "bug-report-interface-icon": 1,
+    "ghost-creature-animation": 1,
+    "ghost-creature-portraits": 2,
+    "hero-specialty-icons": 36
   }
 }

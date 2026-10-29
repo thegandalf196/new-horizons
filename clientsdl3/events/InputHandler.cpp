@@ -221,9 +221,9 @@ bool InputHandler::inputModeUsesGestures() const
 	return currentInputMode == InputMode::TOUCH || currentInputMode == InputMode::PEN;
 }
 
-void InputHandler::copyToClipBoard(const std::string & text)
+bool InputHandler::copyToClipBoard(const std::string & text)
 {
-	SDL_SetClipboardText(text.c_str());
+	return SDL_SetClipboardText(text.c_str());
 }
 
 void InputHandler::updatePowerState()

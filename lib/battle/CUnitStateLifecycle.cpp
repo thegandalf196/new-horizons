@@ -23,9 +23,11 @@ void CUnitState::localInit(const IUnitEnvironment * env_)
 
 void CUnitState::reset()
 {
+	forestAmbush = {};
 	heroicSpiritRetaliation = false;
 	heroicSpiritMoralePending = false;
 	confusionState = {};
+	dreadCavalryState = {};
 	frozenAppliedRound = -1;
 	battlecraftOverwatchReadyRound = -1;
 	battlecraftOverwatchUsedRound = -1;
@@ -57,6 +59,7 @@ void CUnitState::reset()
 	battlecraftWaitBonusUsed = false;
 	battlecraftWaitMasteryDoubled = false;
 	battlecraftPreemptiveStrikeRound = -1;
+	petrifyingBloodRound = -1;
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
 	battlecraftDefendMasteryDoubled = false;
@@ -110,6 +113,7 @@ void CUnitState::reset()
 
 void CUnitState::afterAttack(bool ranged, bool counter, bool physical)
 {
+	forestAmbush.finishStrike(ranged, physical);
 	if(counter)
 		counterAttacks.use();
 
@@ -140,6 +144,7 @@ void CUnitState::afterWait()
 
 void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration, bool pauseBattleForm)
 {
+	forestAmbush = {};
 	moraleExtraActivation = false;
 	battlecraftOverwatchReadyRound = -1;
 	battlecraftOverwatchUsedRound = -1;
@@ -227,6 +232,8 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 
 void CUnitState::makeGhost()
 {
+	forestAmbush.retire();
+	dreadCavalryState.retirePending();
 	summonRoundsRemaining = 0;
 	moraleExtraActivation = false;
 	heroicSpiritRetaliation = false;
@@ -255,6 +262,7 @@ void CUnitState::makeGhost()
 
 void CUnitState::onRemoved()
 {
+	dreadCavalryState.retirePending();
 	summonRoundsRemaining = 0;
 	heroicSpiritRetaliation = false;
 	heroicSpiritMoralePending = false;
@@ -280,4 +288,20 @@ void CUnitState::onRemoved()
 	ghostPending = false;
 	ghost = true;
 }
+void CUnitState::clearDeadUnitTransientState()
+{
+	dreadCavalryState.retirePending();
+	rangedFollowUpDamagePercent = 0;
+	heroicSpiritRetaliation = false;
+	heroicSpiritMoralePending = false;
+	luckyOwnAttackSequence = false;
+	pursuitMovementRemaining = 0;
+	veteranPhysicalDamageSinceActivation = 0;
+	guardianSpiritHitPoints = 0;
+	guardianSpiritRoundsRemaining = 0;
+	// Marks belong to surviving wounds only and must never carry through death.
+	regenerationRateMillionths = 0;
+	regenerationPendingMicroHealth = 0;
+}
+
 }

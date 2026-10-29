@@ -149,6 +149,6 @@ public:
 	bool inputModeSupportsHover() const;
 	bool inputModeUsesGestures() const;
 
-	void copyToClipBoard(const std::string & text);
+	bool copyToClipBoard(const std::string & text);
 	PowerState getPowerState();
 };

@@ -25,6 +25,8 @@ DLL_LINKAGE std::optional<ManaFurnaceRules> manaFurnaceRules(const JsonNode & de
 DLL_LINKAGE int32_t manaFurnaceRestoration(const CGHeroInstance * hero, const ManaFurnaceRules & rules);
 DLL_LINKAGE bool resolveManaFurnacePresentation(const CHero & hero, const JsonNode & development,
 	const CGHeroInstance * capturedHero, SpecialtyPresentation & result);
+DLL_LINKAGE bool usesConvertedCreatureSpecialty(const CGHeroInstance * hero);
+DLL_LINKAGE bool replacesGenericCreatureSpecialty(const CGHeroInstance * hero);
 DLL_LINKAGE void validateAdditionalSpecialtiesSerialization(const JsonNode & development, bool supported);
 DLL_LINKAGE std::optional<FieldPhysicianRules> fieldPhysicianRules(const JsonNode & development);
 DLL_LINKAGE int fieldPhysicianHealingPercent(const CGHeroInstance * hero);

@@ -4,6 +4,9 @@
  */
 #include "StdInc.h"
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/HistoricalHeroEpochFixture.h"
+#include "../spells/HistoricalCrusadeRules.h"
+#include "../server/battles/HistoricalNecromancyFixture.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/GameSettings.h"
@@ -24,9 +27,11 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
-		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		JsonNode rules = historicalRecoveryFormat
+			? historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES)
+			: JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
 		rules.setOverrideFlag(true);
-		for(const auto key : {"learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+		for(const auto key : {"learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty"})
 			rules.Struct().erase(key);
 		if(families & 1)
 		{
@@ -53,27 +58,25 @@ protected:
 			row["conversionMaximumPercent"].Integer() = 0;
 		}
 		if(historicalRecoveryFormat)
-			ASSERT_EQ(rules.Struct().erase("chosenSpecialties"), 1u);
+			ASSERT_FALSE(rules.Struct().contains("chosenSpecialties"));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		if(historicalRecoveryFormat)
 		{
 			// Recovery predates Revised Orders/Chosen, Skeleton Necromancy and Sorcery.
-			auto magic = map->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
-			for(const auto & [spell, clause] : {std::pair{"new-horizons:focusMagic", "focusMagic"},
-				std::pair{"core:slow", "slow"}, std::pair{"new-horizons:summonLivingArmor", "livingArmor"}})
-				ASSERT_EQ(magic["spells"][spell].Struct().erase(clause), 1u);
-			ASSERT_EQ(magic["spells"].Struct().erase("new-horizons:theChosen"), 1u);
+			auto magic = historicalCrusadeRules(
+				map->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS));
 			ASSERT_NO_THROW(newHorizonsTheChosen::validateSerialization(magic, false));
 			ASSERT_NO_THROW(newHorizonsMagic::validateRules(magic));
 			ASSERT_NO_THROW(newHorizonsSorceryRevision::validateSerialization(magic, false));
 			magic.setOverrideFlag(true);
 			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
-			auto perks = map->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
-			ASSERT_EQ(perks.Struct().erase(newHorizonsNecromancy::POLICY_KEY), 1u);
+			auto perks = necromancyTest::historicalRules();
+			ASSERT_FALSE(perks.Struct().contains(newHorizonsNecromancy::POLICY_KEY));
 			ASSERT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(perks, false, false));
 			perks.setOverrideFlag(true);
 			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 			map->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
+			map->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
 		}
 	}
 	void expectRecoveryFormat(const CGameState & world)
@@ -93,6 +96,7 @@ protected:
 		EXPECT_NO_THROW(world.validateNewHorizonsNecromancyPolicySerialization(false, false));
 		EXPECT_NO_THROW(world.validateCanonicalSpellClausesSerialization(true, false));
 		EXPECT_NO_THROW(world.validateNeutralArmySizeSerialization(false));
+		EXPECT_NO_THROW(world.validateRecruitmentGrowthSerialization(false));
 		EXPECT_TRUE(world.currentBattles.empty());
 	}
 	LobbyStartGame packet()
@@ -108,7 +112,7 @@ protected:
 			expectRecoveryFormat(decoded);
 		const auto * hero = decoded.getHero(attackerSideHero->id);
 		ASSERT_NE(hero, nullptr);
-		for(const auto key : {"learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
+		for(const auto key : {"learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty"})
 		{
 			const auto & expected = gameState()->getHeroDevelopmentRules()[key];
 			EXPECT_EQ(decoded.getHeroDevelopmentRules()[key], expected);

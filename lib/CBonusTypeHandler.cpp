@@ -25,6 +25,7 @@
 #include "modding/ModScope.h"
 #include "modding/IdentifierStorage.h"
 #include "texts/CGeneralTextHandler.h"
+#include "texts/PercentageFormatting.h"
 #include "json/JsonUtils.h"
 #include "spells/CSpellHandler.h"
 
@@ -152,6 +153,9 @@ std::string CBonusTypeHandler::bonusToString(const std::shared_ptr<Bonus> & bonu
 		std::string fullTextID = textID + '.' + bt.valueDescriptions.at(bonusValue);
 		text = LIBRARY->generaltexth->translate(fullTextID);
 	}
+
+	if(text.find("${val.basisPoints}") != std::string::npos)
+		boost::algorithm::replace_all(text, "${val.basisPoints}", TextOperations::formatBasisPoints(bonusValue));
 
 	if (text.find("${val}") != std::string::npos)
 		boost::algorithm::replace_all(text, "${val}", std::to_string(bonusValue));

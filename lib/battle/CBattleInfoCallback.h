@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "NewHorizonsAerialSupremacy.h"
 #include <vcmi/spells/Magic.h>
 
 #include <cstdint>
@@ -36,6 +37,8 @@ struct CObstacleInstance;
 class IBonusBearer;
 class PossiblePlayerBattleAction;
 struct DamageAttackInfo;
+
+namespace battle { struct MeleeContactFootprint; }
 
 namespace vstd
 {
@@ -136,6 +139,9 @@ public:
 	/// Snapshot of one side's once-per-combat reduced activation allowance.
 	ReducedExtraActivationState battleGetReducedExtraActivationState(BattleSide side) const;
 	/// Output percentage for the unit currently carrying a reduced activation identity.
+	bool battleHasPendingDreadCavalry(const battle::Unit * unit) const;
+	int battleGetDreadCavalryDamagePercent(const battle::Unit * unit) const;
+	int battleGetDreadCavalryMovementRemaining(const battle::Unit * unit) const;
 	int32_t battleGetActivationOutputPercent(const battle::Unit * unit) const;
 	bool battleIsMoraleExtraActivation(const battle::Unit * unit) const;
 	int32_t battleGetDirectActivationOutputPercent(const BattleAttackInfo & info) const;
@@ -248,6 +254,9 @@ public:
 	/// Expert Shroud flanks deny the defender's normal retaliation.
 	bool battleShroudDeniesRetaliation(const BattleAttackInfo & attack) const;
 	bool battleCanUseDefiant(const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause) const;
+	/// Current otherwise-eligible ordinary counter; no inferred triggering-hit history.
+	bool battleCanUseGazeDefiant(const battle::Unit * opponent, const battle::Unit * retaliator, bool ranged,
+		const newHorizonsAerialSupremacy::Excursion * aerial = nullptr) const;
 	bool battleHasMagicalRetaliationBlock(const battle::Unit * attacker) const;
 	/// Validates target coverage and snapshots all transient state for a canonical Order.
 	std::optional<HeroOrderState> battlePrepareHeroOrderState(BattleSide side, HeroCommand command,
@@ -457,6 +466,10 @@ public:
 
 	AttackableTiles getPotentiallyShootableHexes(const  battle::Unit* attacker, const BattleHex & destinationTile, const BattleHex & attackerPos) const;
 
+	/// Validated contact geometry only; authoritative positions and damage anchors stay unchanged.
+	std::pair<battle::Units, bool> getAerialAttackedBattleUnits(
+		const newHorizonsAerialSupremacy::Excursion & excursion) const;
+
 	battle::Units getAttackedBattleUnits(
 		const battle::Unit* attacker,
 		const  battle::Unit * defender,
@@ -486,7 +499,14 @@ public:
 
 	/// find free hex suitable to place new unit. If no initial position was provided, hex located on left size (attacker) or right side (defender) will be selected
 	BattleHex getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos = {}) const override;
+private:
+	AttackableTiles getPotentiallyAttackableHexes(const battle::Unit * attacker,
+		const battle::Unit * defender, BattleHex destinationTile, BattleHex attackerPos,
+		BattleHex defenderPos, const battle::MeleeContactFootprint * contact) const;
+
 protected:
+	bool appendCreatureContinuationActions(const CStack * stack,
+		std::vector<PossiblePlayerBattleAction> & actions) const;
 	void finalizeDamagePayload(const BattleAttackInfo & info, DamageAttackInfo & payload, const IBattleInfo * currentBattle) const;
 	/// Internal damage-calculation authority, preserving the caller's EXISTING
 	/// supplied-owner decision. Does not expose concealed hero lists/policy.

@@ -2977,7 +2977,7 @@ std::pair<float, float> completeProjectedPlagueValue(HypotheticBattle & battle, 
 	const auto * active = battle.battleActiveUnit();
 	auto actor = battle.getForUpdate(unitId);
 	if(!active || active->unitId() != unitId || !actor || actor->isTimeStopped() || battle.battleIsFinished()
-		|| actor->pursuitMovementRemaining > 0 || battle.battleHasPendingRangedFollowUp(actor.get()))
+		|| actor->pursuitMovementRemaining > 0 || actor->dreadCavalryState.pending || battle.battleHasPendingRangedFollowUp(actor.get()))
 		return {};
 	if(actor->hasBonusOfType(BonusType::PUPPET_MASTER_CONTROL))
 	{
@@ -3806,7 +3806,7 @@ BattleEvaluator::MovementCompletionProjection BattleEvaluator::projectOrdinaryMo
 	const auto * active = parent->battleActiveUnit();
 	if(!actor || !active || active->unitId() != actor->unitId() || !actor->canMove()
 		|| parent->battleTacticDist() != 0
-		|| actor->isTimeStopped() || actor->acquireState()->pursuitMovementRemaining > 0
+		|| actor->isTimeStopped() || actor->acquireState()->pursuitMovementRemaining > 0 || actor->acquireState()->dreadCavalryState.pending
 		|| parent->battleHasPendingRangedFollowUp(actor) || parent->battleIsFinished())
 		return result;
 	const auto destination = action.getTarget(parent.get());

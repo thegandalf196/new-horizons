@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "NewHorizonsRecruitmentGrowth.h"
 #include "../callback/Calendar.h"
 #include "CGTownInstance.h"
 
@@ -271,6 +272,7 @@ GrowthInfo CGTownInstance::getGrowthInfo(int level) const
 	if(hasBuilt(BuildingID::GRAIL)) //grail - +50% to ALL (so far added) growth
 		ret.entries.emplace_back(subID, BuildingID::GRAIL, ret.totalGrowth() / 2);
 
+	ret.recruitmentGrowthPercentage = newHorizonsRecruitmentGrowth::percentage(cb->getSettings());
 	return ret;
 }
 
@@ -785,49 +787,6 @@ CGTownInstance::EGeneratorState CGTownInstance::shipyardStatus() const
 const IObjectInterface * CGTownInstance::getObject() const
 {
 	return this;
-}
-
-void CGTownInstance::mergeGarrisonOnSiege(IGameEventCallback & gameEvents) const
-{
-	auto getWeakestStackSlot = [&](ui64 powerLimit)
-	{
-		SlotID weakestSlot;
-
-		for ( const auto & pair : getVisitingHero()->stacks)
-		{
-			if(powerLimit > pair.second->getPower() &&
-			   (weakestSlot == SlotID() || pair.second->getPower() < getVisitingHero()->getStack(weakestSlot).getPower()))
-			{
-				weakestSlot = pair.first;
-			}
-		}
-
-		return weakestSlot;
-	};
-
-	auto count = static_cast<int>(stacks.size());
-
-	for(int i = 0; i < count; i++)
-	{
-		const auto & pair = *vstd::maxElementByFun(stacks, [&](const auto & elem)
-		{
-			ui64 power = elem.second->getPower();
-			auto dst = getVisitingHero()->getSlotFor(elem.second->getCreatureID());
-			if(dst.validSlot() && getVisitingHero()->hasStackAtSlot(dst))
-				power += getVisitingHero()->getStack(dst).getPower();
-
-			return power;
-		});
-		auto dst = getVisitingHero()->getSlotFor(pair.second->getCreatureID());
-		if(dst.validSlot())
-			gameEvents.moveStack(StackLocation(id, pair.first), StackLocation(getVisitingHero()->id, dst), -1);
-		else
-		{
-			dst = getWeakestStackSlot(static_cast<int>(pair.second->getPower()));
-			if(dst.validSlot())
-				gameEvents.swapStacks(StackLocation(id, pair.first), StackLocation(getVisitingHero()->id, dst));
-		}
-	}
 }
 
 void CGTownInstance::removeCapitols(IGameEventCallback & gameEvents, const PlayerColor & owner) const
@@ -1567,42 +1526,6 @@ void CGTownInstance::grantBallistaYardSiegeBonus(IGameEventCallback & gameEvents
 	grant.bonus = Bonus(BonusDuration::ONE_WEEK, BonusType::SIEGE_RATING,
 		BonusSource::TOWN_STRUCTURE, 20, source);
 	gameEvents.giveHeroBonus(&grant);
-}
-
-GrowthInfo::Entry::Entry(const std::string &format, int _count)
-	: count(_count)
-{
-	MetaString formatter;
-	formatter.appendRawString(format);
-	formatter.replacePositiveNumber(count);
-
-	description = formatter.toString(LIBRARY->staticTexts());
-}
-
-GrowthInfo::Entry::Entry(int subID, const BuildingID & building, int _count): count(_count)
-{
-	MetaString formatter;
-	formatter.appendRawString("%s %+d");
-	formatter.replaceTextID(FactionID(subID).toFaction()->town->buildings.at(building)->getNameTextID());
-	formatter.replacePositiveNumber(count);
-
-	description = formatter.toString(LIBRARY->staticTexts());
-}
-
-GrowthInfo::Entry::Entry(int _count, std::string fullDescription):
-	count(_count),
-	description(std::move(fullDescription))
-{
-}
-
-int GrowthInfo::totalGrowth() const
-{
-	int ret = 0;
-	for(const Entry &entry : entries)
-		ret += entry.count;
-
-	// always round up income - we don't want buildings to always produce zero if handicap in use
-	return vstd::divideAndCeil(ret * handicapPercentage, 100);
 }
 
 void CGTownInstance::fillUpgradeInfo(UpgradeInfo & info, const CStackInstance &stack) const

@@ -30,6 +30,9 @@ class IRenderHandler : public boost::noncopyable
 public:
 	virtual ~IRenderHandler() = default;
 
+	/// Initialize native interface images without gameplay services.
+	virtual void initializeInterfaceResources() = 0;
+
 	/// Must be called once LIBRARY loading is over to initialize icons
 	virtual void onLibraryLoadingFinished(const Services * services) = 0;
 

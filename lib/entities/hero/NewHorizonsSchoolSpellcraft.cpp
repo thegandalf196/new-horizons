@@ -125,10 +125,5 @@ int composeSpellcraftCoefficient(const SpellcraftSpecialtyFactors & captured, Sp
 	return static_cast<int>(captured.schoolPercent * efficiency * (100 + additionalSpellPowerComponentPercent) / 10000);
 }
 
-void copyCapturedIndividualSpecialties(JsonNode & target, const JsonNode & source)
-{
-	for(const auto key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties"})
-		if(source.Struct().contains(key))
-			target[key] = source[key];
-}
+
 }

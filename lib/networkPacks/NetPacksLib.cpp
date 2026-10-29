@@ -583,6 +583,14 @@ void SetArmorerDefiantState::validateAgainst(const CBattleInfoCallback & battle)
 	const auto * target = battle.battleGetUnitByID(targetId);
 	if(!attacker || !target)
 		throw std::runtime_error("Defiant consumption references a missing unit");
+	if(cause == newHorizonsArmorer::DefiantDenialCause::PARALYZING_GAZE)
+	{
+		if(battle.playerToSide(battle.battleGetActionController(target)) != side
+			|| (!battle.battleCanUseGazeDefiant(attacker, target, false, aerialExcursion ? &*aerialExcursion : nullptr)
+				&& !battle.battleCanUseGazeDefiant(attacker, target, true, aerialExcursion ? &*aerialExcursion : nullptr)))
+			throw std::runtime_error("Defiant Gaze consumption has no eligible ordinary counter denial");
+		return;
+	}
 	BattleAttackInfo attack(attacker, target, 0, false);
 	if(battle.playerToSide(battle.battleGetActionController(target)) != side
 		|| !battle.battleCanUseDefiant(attack, cause))

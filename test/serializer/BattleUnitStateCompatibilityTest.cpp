@@ -326,11 +326,11 @@ struct TraceHandler
 	using Version = ESerializationVersion;
 	static constexpr bool saving = Saving;
 	Version version = Version::CURRENT;
-	std::vector<int> queries;
+	mutable std::vector<int> queries;
 	std::vector<size_t> unitStarts;
 	std::optional<size_t> firstField;
 
-	bool hasFeature(Version value)
+	bool hasFeature(Version value) const
 	{
 		queries.push_back(static_cast<int>(value));
 		return version >= value;

@@ -71,6 +71,8 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		// This fixture characterizes its original unscaled growth/context.
+		loaded->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
 		loaded->overrideGameSetting(option, JsonNode(percent));
 		for(auto * pile : loaded->getObjects<CGResource>())
 			for(int slot = 0; slot < 7; ++slot)

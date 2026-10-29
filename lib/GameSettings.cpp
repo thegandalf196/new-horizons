@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "GameSettings.h"
 #include "mapObjects/NewHorizonsNeutralArmies.h"
+#include "mapObjects/NewHorizonsRecruitmentGrowth.h"
 #include "json/JsonUtils.h"
 
 bool IGameSettings::getBoolean(EGameSettings option) const
@@ -42,6 +43,9 @@ GameSettings::GameSettings()
 	const auto index = static_cast<size_t>(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT);
 	baseSettings[index].Integer() = 100;
 	actualSettings[index] = baseSettings[index];
+	const auto recruitment = static_cast<size_t>(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT);
+	baseSettings[recruitment].Integer() = 100;
+	actualSettings[recruitment] = baseSettings[recruitment];
 }
 GameSettings::~GameSettings() = default;
 
@@ -87,6 +91,7 @@ const std::vector<GameSettings::SettingOption> GameSettings::settingProperties =
 		{EGameSettings::CREATURES_JOINING_PERCENTAGE,                     "creatures", "joiningPercentage"                    },
 		{EGameSettings::CREATURES_WEEKLY_GROWTH_CAP,                      "creatures", "weeklyGrowthCap"                      },
 		{EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT,               "creatures", "neutralArmySizePercent"               },
+		{EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT,           "creatures", "recruitmentGrowthPercent"              },
 		{EGameSettings::CREATURES_WEEKLY_GROWTH_PERCENT,                  "creatures", "weeklyGrowthPercent"                  },
 		{EGameSettings::CREATURES_ADDITIONAL_WEEKLY_GROWTH_SPECIAL_WEEK,  "creatures", "additionalWeeklyGrowthSpecialWeek"    },
 		{EGameSettings::CREATURES_MONTH_DOUBLE_GROWTH_PROBABILITY,        "creatures", "monthDoubleGrowthProbability"         },
@@ -171,6 +176,7 @@ void GameSettings::loadBase(const JsonNode & input)
 	}
 	JsonUtils::validate(input, "vcmi:gameSettings", input.getModScope());
 	newHorizonsNeutralArmies::validateOverrides(input, true);
+	newHorizonsRecruitmentGrowth::validateOverrides(input, true);
 
 	for(const auto & option : settingProperties)
 	{
@@ -228,6 +234,8 @@ void GameSettings::loadSavedOverrides(const JsonNode & input)
 		saved["combat"]["moraleExtraDamagePercent"].Integer() = 100;
 	if(!saved["creatures"].Struct().contains(newHorizonsNeutralArmies::SETTING_KEY))
 		saved["creatures"][newHorizonsNeutralArmies::SETTING_KEY].Integer() = 100;
+	if(!saved["creatures"].Struct().contains(newHorizonsRecruitmentGrowth::SETTING_KEY))
+		saved["creatures"][newHorizonsRecruitmentGrowth::SETTING_KEY].Integer() = 100;
 	loadOverrides(saved);
 }
 
@@ -237,6 +245,7 @@ void GameSettings::loadOverrides(const JsonNode & input)
 	// This is admission only; absence normalization remains binary-load-only.
 	validateCombatScalarOverrides(input, true, true);
 	newHorizonsNeutralArmies::validateOverrides(input, true);
+	newHorizonsRecruitmentGrowth::validateOverrides(input, true);
 	for(const auto & option : settingProperties)
 	{
 		const JsonNode & optionValue = input[option.group][option.key];
@@ -263,6 +272,12 @@ void GameSettings::addOverride(EGameSettings option, const JsonNode & input)
 		JsonNode scalar;
 		scalar["creatures"][newHorizonsNeutralArmies::SETTING_KEY] = input;
 		newHorizonsNeutralArmies::validateOverrides(scalar, true);
+	}
+	if(option == EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT)
+	{
+		JsonNode scalar;
+		scalar["creatures"][newHorizonsRecruitmentGrowth::SETTING_KEY] = input;
+		newHorizonsRecruitmentGrowth::validateOverrides(scalar, true);
 	}
 	size_t index = static_cast<size_t>(option);
 

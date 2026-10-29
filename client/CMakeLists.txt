@@ -4,6 +4,7 @@ set(vcmiclientcommon_SRCS
 	adventureMap/AdventureMapInterface.cpp
 	adventureMap/AdventureMapShortcuts.cpp
 	adventureMap/AdventureMapWidget.cpp
+	adventureMap/AdventureMapButtons.cpp
 	adventureMap/AdventureOptions.cpp
 	adventureMap/CInGameConsole.cpp
 	adventureMap/CInfoBar.cpp
@@ -27,7 +28,9 @@ set(vcmiclientcommon_SRCS
 	battle/SelectiveDispelWindow.cpp
 	battle/TemporalFieldWindow.cpp
 	battle/FocusFireTargetWindow.cpp
+	battle/BattleOrderPresentation.cpp
 	battle/BattleInterface.cpp
+	battle/CreatureContinuationUI.cpp
 	battle/BattleCureAfflictionUI.cpp
 	battle/BattleObstacleController.cpp
 	battle/BattleOverlayLogVisualizer.cpp
@@ -35,6 +38,7 @@ set(vcmiclientcommon_SRCS
 	battle/BattleRenderer.cpp
 	battle/BattleResultWindow.cpp
 	battle/BattleSiegeController.cpp
+	battle/AerialSupremacyPresentation.cpp
 	battle/BattleStacksController.cpp
 	battle/BattleTargetSelectionPanel.cpp
 	battle/BattleWindow.cpp
@@ -43,6 +47,8 @@ set(vcmiclientcommon_SRCS
 	battle/QuickSpellPanel.cpp
 	battle/FrozenStatusPresentation.cpp
 	battle/StackInfoBasicPanel.cpp
+	battle/StackInfoActionStatus.cpp
+	battle/StackSpellStatusPresentation.cpp
 	battle/StackQueue.cpp
 	battle/UnitActionPanel.cpp
 
@@ -145,6 +151,8 @@ set(vcmiclientcommon_SRCS
 	widgets/GraphicalPrimitiveCanvas.cpp
 	widgets/Images.cpp
 	widgets/MiscWidgets.cpp
+	widgets/CreaturePic.cpp
+	widgets/CreaturePreviewAnimation.cpp
 	widgets/CViewport.cpp
 	widgets/ObjectLists.cpp
 	widgets/TextControls.cpp
@@ -169,7 +177,9 @@ set(vcmiclientcommon_SRCS
 	widgets/markets/TradePanels.cpp
 
 	windows/CCastleInterface.cpp
+	windows/TownGrowthPresentation.cpp
 	windows/CCreatureWindow.cpp
+	windows/CreatureUpgradeConfirmation.cpp
 	windows/CStackExperienceDetailsWindow.cpp
 	windows/CExchangeWindow.cpp
 	windows/CHeroOverview.cpp
@@ -200,8 +210,15 @@ set(vcmiclientcommon_SRCS
 	windows/wiki/WikiArtifactContent.cpp
 	windows/wiki/WikiModContent.cpp
 	windows/wiki/WikiTownContent.cpp
+	bugreport/BugReportData.cpp
+	bugreport/BugReportDraft.cpp
+	windows/BugReportWindow.cpp
+	windows/BugReportNoticeWindow.cpp
+	windows/BugReportLogWindow.cpp
+	windows/BugReportTextInput.cpp
 	windows/CWindowObject.cpp
 	windows/CreaturePurchaseCard.cpp
+	windows/NewHorizonsCreatureAbilityHelp.cpp
 	windows/GUIClasses.cpp
 	windows/NewHorizonsMusterUI.cpp
 	windows/InfoWindows.cpp
@@ -281,6 +298,7 @@ set(vcmiclientcommon_HEADERS
 	battle/FrozenApplicationFeedback.h
 	battle/StackInfoStatusPresentation.h
 	battle/BattleInterface.h
+	battle/CreatureContinuationUI.h
 	battle/CureAfflictionSession.h
 	battle/CureAfflictionPresenter.h
 	battle/BattleObstacleController.h
@@ -294,6 +312,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleSidePanel.h
 	battle/BattleSiegeController.h
 	battle/BattleStacksController.h
+	battle/AerialSupremacyReturnPresentation.h
 	battle/BattleStackColorPresentation.h
 	battle/SummonLifetimePresentation.h
 	battle/BattleTargetSelectionPanel.h
@@ -445,7 +464,9 @@ set(vcmiclientcommon_HEADERS
 	widgets/markets/TradePanels.h
 
 	windows/CCastleInterface.h
+	windows/TownGrowthPresentation.h
 	windows/CCreatureWindow.h
+	windows/CreatureUpgradeConfirmation.h
 	windows/CStackExperienceDetailsWindow.h
 	windows/CExchangeWindow.h
 	windows/ExchangeSecondarySkillSlots.h
@@ -490,6 +511,12 @@ set(vcmiclientcommon_HEADERS
 	windows/wiki/WikiArtifactContent.h
 	windows/wiki/WikiModContent.h
 	windows/wiki/WikiTownContent.h
+	bugreport/BugReportData.h
+	bugreport/BugReportDraft.h
+	windows/BugReportWindow.h
+	windows/BugReportNoticeWindow.h
+	windows/BugReportLogWindow.h
+	windows/BugReportTextInput.h
 	windows/CWindowObject.h
 	windows/CreaturePurchaseCard.h
 	windows/GUIClasses.h

@@ -13,6 +13,7 @@
 #include "StdInc.h"
 #include "../Global.h"
 #include "PrivateWineStartupWitness.h"
+#include "BugReportBootstrap.h"
 #ifdef NH_CURE_CLIENT_INTEGRATION
 #include "../client/tests/CureIntegrationDriver.h"
 #endif
@@ -179,12 +180,12 @@ int main(int argc, char * argv[])
 	std::unique_ptr<CureIntegrationDriver> cureIntegration;
 #endif
 
+	BugReportBootstrap::addOptions(opts);
 	opts.add_options()
 		("help,h", "display help and exit")
 		("version,v", "display version information and exit")
 		("testmap", po::value<std::string>(), "")
 		("testsave", po::value<std::string>(), "")
-		("logLocation", po::value<std::string>(), "new location for log files")
 		("spectate,s", "enable spectator interface for AI-only games")
 		("spectate-ignore-hero", "wont follow heroes on adventure map")
 		("spectate-hero-speed", po::value<int>(), "hero movement speed on adventure map")
@@ -240,27 +241,12 @@ int main(int argc, char * argv[])
 	std::cout.flags(std::ios::unitbuf);
 
 	setThreadNameLoggingOnly("MainGUI");
-	boost::filesystem::path logPath = VCMIDirs::get().userLogsPath() / "VCMI_Client_log.txt";
-	if(vm.count("logLocation"))
-		logPath = vm["logLocation"].as<std::string>() + "/VCMI_Client_log.txt";
+	BugReportBootstrap reports(vm);
+	const auto & logPath = reports.logPath();
 
-#ifndef VCMI_IOS
-
-	auto callbackFunction = [](std::string buffer, bool calledFromIngameConsole)
-	{
-		ClientCommandManager commandController;
-		commandController.processCommand(buffer, calledFromIngameConsole);
-	};
-
-	CConsoleHandler console(callbackFunction);
-	console.start();
-
-	CBasicLogConfigurator logConfigurator(logPath, &console);
-#else
-	CBasicLogConfigurator logConfigurator(logPath, nullptr);
-#endif
-
-	logConfigurator.configureDefault();
+	reports.configureDefault();
+	if(reports.isReporter())
+		return reports.runReporter();
 	logGlobal->info("Starting client of '%s'", GameConstants::VCMI_PROJECT_NAME_VERSIONED);
 	logGlobal->info("Creating console and configuring logger: %d ms", pomtime.getDiff());
 	logGlobal->info("The log file will be saved to %s", logPath);
@@ -270,6 +256,7 @@ int main(int argc, char * argv[])
 	{
 		LIBRARY = new GameLibrary;
 		LIBRARY->initializeFilesystem(false);
+		reports.captureProductIdentity();
 	}
 	catch (const DataLoadingException & e)
 	{
@@ -318,7 +305,7 @@ int main(int argc, char * argv[])
 	setSettingInteger("general/saveFrequency", "savefrequency", 1);
 
 	// Initialize logging based on settings
-	logConfigurator.configure();
+	reports.configure();
 	logGlobal->debug("settings = %s", settings.toJsonNode().toString());
 
 	try
@@ -452,7 +439,7 @@ int main(int argc, char * argv[])
 			}
 		};
 
-		const auto & cleanupEngine = [&logConfigurator
+		const auto & cleanupEngine = [&reports
 #ifdef NH_CURE_CLIENT_INTEGRATION
 			, &cureIntegration
 #endif
@@ -509,7 +496,7 @@ int main(int argc, char * argv[])
 
 			delete LIBRARY;
 			LIBRARY = nullptr;
-			logConfigurator.deconfigure();
+			reports.deconfigure();
 
 			std::cout << "Ending...\n";
 		};
@@ -521,6 +508,7 @@ int main(int argc, char * argv[])
 	{
 		logGlobal->info("Shutdown requested during initialization");
 	}
+	reports.finishCleanly();
 #ifdef NH_CURE_CLIENT_INTEGRATION
 	return cureIntegration ? cureIntegration->result() : 1;
 #else

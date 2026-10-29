@@ -20,7 +20,8 @@ enum class DefiantDenialCause : uint8_t
 {
 	INNATE_BLOCK,
 	NO_QUARTER,
-	EXPERT_SHROUD
+	EXPERT_SHROUD,
+	PARALYZING_GAZE
 };
 }
 

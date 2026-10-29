@@ -55,13 +55,13 @@ TEST(NewHorizonsCapabilityRules, ActualCanonicalDataHasFullDeclaredMightAndMagic
 		int perLevel;
 	};
 	const std::array<ExpectedProfile, 18> profiles{{
-		{"barbarian", 1320, 60}, {"beastmaster", 1320, 60},
-		{"knight", 1230, 55}, {"demoniac", 1230, 55}, {"overlord", 1230, 55},
-		{"ranger", 1140, 50}, {"deathknight", 1140, 50},
-		{"alchemist", 1050, 45}, {"battlemage", 1050, 45}, {"planeswalker", 1050, 45},
-		{"cleric", 870, 35}, {"heretic", 870, 35}, {"necromancer", 870, 35},
-		{"warlock", 870, 35}, {"witch", 870, 35},
-		{"druid", 780, 30}, {"wizard", 780, 30}, {"elementalist", 780, 30}}};
+		{"barbarian", 1100, 60}, {"beastmaster", 1100, 60},
+		{"knight", 1025, 55}, {"demoniac", 1025, 55}, {"overlord", 1025, 55},
+		{"ranger", 950, 50}, {"deathknight", 950, 50},
+		{"alchemist", 875, 45}, {"battlemage", 875, 45}, {"planeswalker", 875, 45},
+		{"cleric", 725, 35}, {"heretic", 725, 35}, {"necromancer", 725, 35},
+		{"warlock", 725, 35}, {"witch", 725, 35},
+		{"druid", 650, 30}, {"wizard", 650, 30}, {"elementalist", 650, 30}}};
 	for(const auto & expected : profiles)
 	{
 		SCOPED_TRACE(expected.name);
@@ -75,7 +75,7 @@ TEST(NewHorizonsCapabilityRules, ActualCanonicalDataHasFullDeclaredMightAndMagic
 	}
 	const auto knight = newHorizonsHeroes::resolveCapabilityRules(rules,
 		HeroClassID(HeroClassID::decode("core:knight")));
-	EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipRating(knight, 2), 1285);
+	EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipRating(knight, 2), 1080);
 	for(int rank = 0; rank < 4; ++rank)
 		EXPECT_EQ(newHorizonsHeroes::capabilityBallistaMultiplier(knight, rank), rank + 1);
 }
@@ -118,13 +118,13 @@ TEST(NewHorizonsCapabilityRules, CanonicalLeadershipUsesIndependentPerSlotLimits
 	const auto halberdierSlot = newHorizonsHeroes::capabilityLeadershipSlot(knight, 1, halberdier);
 	ASSERT_TRUE(pikemanSlot);
 	ASSERT_TRUE(halberdierSlot);
-	EXPECT_EQ(pikemanSlot->leadership, 1230);
-	EXPECT_EQ(pikemanSlot->maximum, 20);
-	EXPECT_TRUE(pikemanSlot->accepts(20));
-	EXPECT_FALSE(pikemanSlot->accepts(21));
-	EXPECT_EQ(halberdierSlot->maximum, 20);
+	EXPECT_EQ(pikemanSlot->leadership, 1025);
+	EXPECT_EQ(pikemanSlot->maximum, 17);
+	EXPECT_TRUE(pikemanSlot->accepts(17));
+	EXPECT_FALSE(pikemanSlot->accepts(18));
+	EXPECT_EQ(halberdierSlot->maximum, 17);
 	// A second slot is evaluated from the full hero rating again; there is no shared budget.
-	EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipSlot(knight, 1, pikeman)->maximum, 20);
+	EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipSlot(knight, 1, pikeman)->maximum, 17);
 }
 
 TEST(NewHorizonsCapabilityRules, EveryLoadedUpgradePreservesRequirementUsageAndPerSlotCapacity)
@@ -334,6 +334,8 @@ TEST(NewHorizonsCapabilityRules, WorldCoverageAndResolvedSnapshotsDoNotFollowNew
 	unknown["classProfiles"]["missing-mod:unknownClass"] = original["classProfiles"].Struct().begin()->second;
 	EXPECT_THROW(newHorizonsHeroes::validateCapabilityRules(unknown, false), std::runtime_error);
 	auto mutableDefaults = original;
+	// A historical +20% class capture must survive the restored fresh defaults.
+	mutableDefaults["classProfiles"]["core:knight"]["base"].Integer() = 1230;
 	const auto saved = newHorizonsHeroes::resolveCapabilityRules(mutableDefaults,
 		HeroClassID(HeroClassID::decode("core:knight")));
 	mutableDefaults["classProfiles"].Struct().clear();

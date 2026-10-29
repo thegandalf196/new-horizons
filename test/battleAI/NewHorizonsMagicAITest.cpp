@@ -432,7 +432,7 @@ protected:
 			heroCommands::validateRules(rules);
 			loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
 		}
-		if(useRealHeroScale || (!useCommands && savedMagicRulesVersion > 0))
+		if(useRealHeroScale || !useCommands)
 			captureLegacyPerkOfferPolicy(*loaded);
 	}
 

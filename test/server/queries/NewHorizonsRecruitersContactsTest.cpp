@@ -61,6 +61,9 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		TinyMapGameTest::mapLoaded(map);
+		// This fixture characterizes its original unscaled growth/context.
+		map->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
+		map->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
@@ -339,7 +342,22 @@ TEST_F(NewHorizonsRecruitersContactsTest, HeroWorldLobbyAndActualOffMapPoolSaveG
 	const auto previous = static_cast<ESerializationVersion>(static_cast<int>(ESerializationVersion::NEW_HORIZONS_RECRUITERS_CONTACTS) - 1);
 	CMemorySerializer unused;
 	unused.oser.version = previous;
-	EXPECT_NO_THROW(unused.oser & *gameState());
+	// Only the Contacts guard is compatible before use; today's unrelated
+	// captured rules do not make this entire world writable at the old epoch.
+	EXPECT_NO_THROW(hero->validateNewHorizonsRecruitersContactsSerialization(false));
+	EXPECT_NO_THROW(map()->validateNewHorizonsRecruitersContactsSerialization(false));
+	EXPECT_NO_THROW(gameState()->validateNewHorizonsRecruitersContactsSerialization(false));
+	EXPECT_NO_THROW(lobby.validateNewHorizonsRecruitersContactsSerialization(false));
+	try
+	{
+		unused.oser & *gameState();
+		FAIL() << "Current Final Luck capture must reject the historical world writer";
+	}
+	catch(const std::runtime_error & error)
+	{
+		EXPECT_STREQ(error.what(), "Final Luck policy requires the new save format");
+	}
+	EXPECT_TRUE(unused.extractBuffer().empty());
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
@@ -350,6 +368,16 @@ TEST_F(NewHorizonsRecruitersContactsTest, HeroWorldLobbyAndActualOffMapPoolSaveG
 	EXPECT_EQ(restored.getHero(hero->id)->getNewHorizonsRecruitersContactsLastWeek(), 0);
 	const auto reject = [&](auto & value)
 	{
+		// Name the Contacts-specific cause independently of other captured rules.
+		try
+		{
+			value.validateNewHorizonsRecruitersContactsSerialization(false);
+			FAIL() << "Expected the used Contacts receipt to require its format";
+		}
+		catch(const std::runtime_error & error)
+		{
+			EXPECT_STREQ(error.what(), "Cannot discard New Horizons Recruiter's Contacts use");
+		}
 		CMemorySerializer writer;
 		writer.oser.version = previous;
 		EXPECT_THROW(writer.oser & value, std::runtime_error);

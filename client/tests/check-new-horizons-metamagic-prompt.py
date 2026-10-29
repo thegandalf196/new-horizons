@@ -50,7 +50,7 @@ assert "actionsController->activateStack();" in activate
 assert "openSpellbook" not in activate
 
 end_action = interface.split("void BattleInterface::endAction", 1)[1].split(
-    "void BattleInterface::presentAcceptedHeroOrder", 1
+    "void BattleInterface::presentHeroPositiveProcs", 1
 )[0]
 assert "windowObject->updateCounterspellStatus();" in end_action
 

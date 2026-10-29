@@ -15,6 +15,7 @@
 #include <limits>
 
 #include "Nullkiller.h"
+#include "../Helpers/DwellingGrowthValue.h"
 #include "../../../lib/entities/artifact/CArtifact.h"
 #include "../../../lib/entities/ResourceTypeHandler.h"
 #include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
@@ -199,32 +200,6 @@ uint64_t getDwellingArmyValue(CCallback * cb, const CGObjectInstance * target, b
 	return score;
 }
 
-uint64_t getDwellingArmyGrowth(CCallback * cb, const CGObjectInstance * target, PlayerColor myColor)
-{
-	auto dwelling = dynamic_cast<const CGDwelling *>(target);
-	uint64_t score = 0;
-
-	if(dwelling->getOwner() == myColor)
-		return 0;
-
-	for(auto & creLevel : dwelling->creatures)
-	{
-		if(creLevel.second.size())
-		{
-			auto creature = creLevel.second.back().toCreature();
-			score += creature->getAIValue() * cb->getCreatureBaseGrowth(creature->getId());
-
-			// Increase priority towards the end of the week if units are lost afterwards
-			if(!cb->getSettings().getBoolean(EGameSettings::DWELLINGS_ACCUMULATE_WHEN_OWNED))
-			{
-				const auto dayOfWeek = cb->getCalendar().getDayOfWeek();
-				score *= dayOfWeek;
-			}
-		}
-	}
-
-	return score;
-}
 
 int getDwellingArmyCost(const CGObjectInstance * target)
 {

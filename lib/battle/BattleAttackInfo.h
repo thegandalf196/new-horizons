@@ -37,6 +37,8 @@ struct DLL_LINKAGE BattleAttackInfo
 	bool bracePreemptive = false; // The blow is Brace's one pre-emptive strike.
 	int preemptiveDamagePercent = 0; // Explicit final multiplier for a pre-emptive reaction.
 	int cleaveDamagePercent = 0; // Independent final multiplier for an automatic Cleave strike.
+	/// Accepted ordinary Dread Cavalry action output; ephemeral, not a save field.
+	int dreadCavalryDamagePercent = 100;
 	int relentlessAssaultDamagePercent = 0; // Side-chain additive bonus for this physical attack action.
 	/// Separate damage coefficient for an explicitly reduced-strength ranged
 	/// attack (Skirmisher, Counterfire or Battlecraft Overwatch).
@@ -46,6 +48,7 @@ struct DLL_LINKAGE BattleAttackInfo
 	bool deathBlow     = false;
 	bool doubleDamage  = false;
 
-	BattleAttackInfo(const battle::Unit * Attacker, const battle::Unit * Defender, int chargeDistance, bool Shooting);
+	BattleAttackInfo(const battle::Unit * Attacker, const battle::Unit * Defender, int chargeDistance, bool Shooting,
+		int dreadCavalryPercent = 100);
 	BattleAttackInfo reverse() const;
 };

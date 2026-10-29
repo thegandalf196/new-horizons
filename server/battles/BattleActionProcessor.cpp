@@ -8,12 +8,23 @@
  *
  */
 #include "StdInc.h"
+#include "BattleWaitState.h"
+#include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "../../lib/battle/OrdinaryMeleeRetaliation.h"
 #include "../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "../../lib/battle/OrderActionTransition.h"
 #include "BattleActionProcessor.h"
+#include "BattleCreatureKillRewards.h"
+#include "GateDrawbridgeFootprint.h"
+#include "DreadCavalryAction.h"
+#include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "NewHorizonsManaLeeches.h"
+#include "NewHorizonsSerpentsEmbrace.h"
+#include "NewHorizonsParalyzingGaze.h"
+#include "DefiantDenial.h"
+#include "NoQuarterAftermath.h"
+#include "NewHorizonsLivingInferno.h"
 #include "HeroOrderLog.h"
 #include "FrozenAttackResolution.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
@@ -77,25 +88,6 @@ bool armorerLastStandEndedActivation(const CStack * stack)
 		return false;
 	const auto state = stack->acquireState();
 	return state && state->armorerLastStandEndedActivation;
-}
-
-bool consumeDefiant(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
-	const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause)
-{
-	if(!battle.battleCanUseDefiant(attack, cause))
-		return false;
-	const auto side = battle.playerToSide(battle.battleGetActionController(attack.defender));
-	SetArmorerDefiantState update;
-	update.battleID = battle.getBattle()->getBattleID();
-	update.side = side;
-	update.attackerId = attack.attacker->unitId();
-	update.targetId = attack.defender->unitId();
-	update.cause = cause;
-	update.state = battle.getBattle()->getArmorerDefiantState(side);
-	if(!update.state.consumeAt(battle.getBattle()->getRound()))
-		return false;
-	gameHandler.sendAndApply(update);
-	return true;
 }
 
 bool isLongReachAttack(const CBattleInfoCallback & battle, const battle::Unit * attacker,
@@ -444,7 +436,7 @@ static bool shouldActivateGrandMetamagic(const CBattleInfoCallback & battle, Bat
 static bool isSanctifiedHostileTarget(const CBattleInfoCallback & battle,
 	const battle::Unit * attacker, const battle::Unit * target)
 {
-	return attacker && target && target->hasBonusOfType(BonusType::SANCTIFIED)
+	return attacker && target && newHorizonsForestAmbush::protectsDirectTarget(target)
 		&& battle.battleMatchActionController(attacker, target, false);
 }
 
@@ -724,32 +716,6 @@ static bool canonicalFireWallDirection(BattleHex::EDir direction)
 	return direction >= BattleHex::TOP_LEFT && direction <= BattleHex::LEFT;
 }
 
-static bool chainGateKillQualifies(const CBattleInfoCallback & battle,
-	const CStack * attacker, const std::vector<BattleStackAttacked> & hits)
-{
-	if(!attacker)
-		return false;
-	const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle());
-	if(!concrete)
-		return false;
-	const auto rewardSide = concrete->gatedDemonicStackSide(attacker->unitId());
-	if((rewardSide != BattleSide::ATTACKER && rewardSide != BattleSide::DEFENDER)
-		|| attacker->unitId() == std::numeric_limits<uint32_t>::max())
-		return false;
-	const auto * hero = battle.battleGetFightingHero(rewardSide);
-	if(!hero || !hero->hasActivePerk(
-		"new-horizons:demonicGating", "new-horizons:demonicGating.chainGate"))
-		return false;
-
-	return std::ranges::any_of(hits, [&battle, attacker, rewardSide](const auto & hit)
-	{
-		if(hit.attackerID != attacker->unitId() || !hit.killed() || hit.cloneKilled() || hit.willRebirth())
-			return false;
-		const auto * victim = battle.battleGetUnitByID(hit.stackAttacked);
-		return victim && victim != attacker && victim->unitSide() != rewardSide;
-	});
-}
-
 static bool demonicGateFootprintHasObstacle(const CBattleInfoCallback & battle,
 	const BattleHex & position, bool doubleWide, BattleSide side)
 {
@@ -864,6 +830,11 @@ bool BattleActionProcessor::doEmptyAction(const CBattleInfoCallback & battle, co
 	if(ba.actionType == EActionType::NO_ACTION)
 	{
 		const auto * stack = battle.battleGetStackByID(ba.stackNumber, false);
+		if(stack && stack->dreadCavalryState.pending)
+		{
+			dreadCavalryAction::decline(*gameHandler, battle, stack);
+			return true;
+		}
 		if(battle.battleHasPendingRangedFollowUp(stack))
 		{
 			publishRangedFollowUpState(battle, *gameHandler, stack, 0);
@@ -901,19 +872,7 @@ bool BattleActionProcessor::doWaitAction(const CBattleInfoCallback & battle, con
 		return false;
 
 	awardBattlefieldMasteryIfEligible(*gameHandler, battle, stack, BattlecraftMasteryAction::WAIT);
-	if(newHorizonsBattlecraft::hasOverwatch(battle.battleGetOwnerHero(stack))
-		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack) && stack->isShooter()
-		&& stack->battlecraftOverwatchUsedRound != battle.battleGetRound())
-	{
-		auto state = stack->acquireState();
-		state->battlecraftOverwatchReadyRound = battle.battleGetRound();
-		BattleUnitsChanged changed;
-		changed.battleID = battle.getBattle()->getBattleID();
-		UnitChanges update(stack->unitId(), UnitChanges::EOperation::UPDATE);
-		update.data = state->save();
-		changed.changedStacks.push_back(std::move(update));
-		gameHandler->sendAndApply(changed);
-	}
+	battleWaitState::accept(*gameHandler, battle, *stack);
 
 	processBattleEventTriggers(battle, CombatEventType::WAIT, stack, nullptr);
 	return true;
@@ -1628,7 +1587,7 @@ bool BattleActionProcessor::applyDefendStance(const CBattleInfoCallback & battle
 }
 
 bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba,
-	bool allowPursuitContinuation)
+	bool allowPursuitContinuation, dreadCavalryAction::Context & dreadCavalry)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
 	battle::Target target = ba.getTarget(&battle);
@@ -1638,8 +1597,9 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	// Perfect Moment is automatic on the first eligible primary strike. Keep the
 	// side in the existing result context; the shared eligibility predicate
 	// decides at the actual target/attack boundary whether this strike qualifies.
+	PetrifyingBloodSequence bloodSequence(activePetrifyingBlood, battle.battleGetRound());
 	const auto perfectMomentSide = battle.playerToSide(battle.battleGetOwner(stack));
-	if(stack->pursuitMovementRemaining > 0)
+	if(stack->pursuitMovementRemaining > 0 && !dreadCavalry.before.pending)
 	{
 		gameHandler->complain("Post-attack movement does not grant another attack");
 		return false;
@@ -1674,12 +1634,15 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	}
 	if(isSanctifiedHostileTarget(battle, stack, destinationStack))
 	{
-		gameHandler->complain("A Sanctified stack cannot be selected for a direct attack.");
+		gameHandler->complain("A protected stack cannot be selected for a direct attack.");
 		return false;
 	}
 
+	if(dreadCavalry.before.pending && (!battle.battleHasPendingDreadCavalry(stack)
+		|| !newHorizonsDreadCavalry::permitsTarget(battle, stack, destinationStack)))
+		return false;
 	BattleHex startingPos = stack->getPosition();
-	int beforeAttackSpeed = stack->getMovementRange(0);
+	int beforeAttackSpeed = dreadCavalry.movementBudget;
 	const auto * skirmisherHero = battle.battleGetFightingHero(stack->unitSide());
 	const bool skirmisherAvailable = newHorizonsArchery::canUseSkirmisher(skirmisherHero, stack);
 	const bool requestedSkirmisherPosition = ba.archerySkirmisherAttack
@@ -1704,6 +1667,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	}
 	const auto movementResult = moveStack(battle, ba.stackNumber, attackPos, voluntaryMovementAction);
 	int movementSpent = movementResult.movementCost;
+	dreadCavalry.movementSpent = movementSpent;
 
 	logGlobal->trace("%s will attack %s", stack->nodeName(), destinationStack->nodeName());
 
@@ -1760,14 +1724,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 				.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT,
 				.perfectMomentSide = perfectMomentSide}, nullptr, nullptr, &rainOfArrows);
 
-		if(destinationStack->alive()
-			&& destinationStack->hasBonusOfType(BonusType::RANGED_RETALIATION)
-			&& !stack->hasBonusOfType(BonusType::BLOCKS_RANGED_RETALIATION)
-			&& destinationStack->ableToRetaliate()
-			&& battle.battleCanShoot(destinationStack, stack->getPosition())
-			&& stack->alive())
-			makeAttack(battle, destinationStack, stack, {.targetHex = stack->getPosition(), .first = true,
-				.ranged = true, .counter = true, .retaliation = true});
+		performOrdinaryRangedRetaliation(battle, destinationStack, stack);
 
 		int totalRangedAttacks = stack->getTotalAttacks(true);
 		const auto * attackingHero = battle.battleGetFightingHero(ba.side);
@@ -1834,7 +1791,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			&& !stack->isInvincible() && !longWeaponAttack && !longReachAttack)
 		{
 			const BattleAttackInfo denial(stack, openingAttackTarget, movementResult.distance, false);
-			if(consumeDefiant(*gameHandler, battle, denial, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK))
+			if(battleDefiant::consume(*gameHandler, battle, denial, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK))
 				firstStrikeBlocked = battle.battleHasMagicalRetaliationBlock(stack);
 		}
 		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate() && !firstStrikeBlocked
@@ -1854,7 +1811,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			// Pass the originally selected Ward to makeAttack so Protect can
 			// consume its first interception atomically; attackTarget is only the
 			// resolved recipient used for local retaliation checks below.
-			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE, .manaLeechSequenceSpent = &manaLeechSequenceSpent}, &destroyedEnemy, &relentlessAssault, nullptr, &vanishKill);
+			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE, .manaLeechSequenceSpent = &manaLeechSequenceSpent, .dreadCavalryDamagePercent = dreadCavalry.percent}, &destroyedEnemy, &relentlessAssault, nullptr, &vanishKill, &dreadCavalry);
 			if(armorerLastStandEndedActivation(stack))
 				break;
 
@@ -1880,9 +1837,9 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			&& !frozenBeforeHit && i == 0 && !firstStrike && attackTarget->ableToRetaliate())
 		{
 			const BattleAttackInfo denial(stack, attackTarget, movementResult.distance, false);
-			if(consumeDefiant(*gameHandler, battle, denial, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK))
+			if(battleDefiant::consume(*gameHandler, battle, denial, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK))
 				counterBlocked = battle.battleHasMagicalRetaliationBlock(stack);
-			if(shroudBlocked && consumeDefiant(*gameHandler, battle, denial,
+			if(shroudBlocked && battleDefiant::consume(*gameHandler, battle, denial,
 				newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD))
 				shroudBlocked = false;
 		}
@@ -1907,7 +1864,9 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		&& stack->alive())
 	{
 		assert(stack->unitId() == ba.stackNumber);
-		int afterAttackSpeed = stack->getMovementRange(0);
+		int afterAttackSpeed = dreadCavalry.before.pending
+			? std::min(stack->getMovementRange(0), static_cast<uint32_t>(std::max(0, beforeAttackSpeed - movementSpent)))
+			: stack->getMovementRange(0);
 		std::pair<BattleHexArray, int> path = battle.getPath(stack->getPosition(), startingPos, stack);
 		const auto returnReachability = battle.getReachability(stack);
 		const auto returnDestination = std::find_if(path.first.begin(), path.first.end(),
@@ -1932,41 +1891,10 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	if(movementResult.distance == 0)
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 
-	const auto * resolvedAttacker = battle.battleGetStackByID(ba.stackNumber, false);
-	const auto * ownerHero = resolvedAttacker ? battle.battleGetOwnerHero(resolvedAttacker) : nullptr;
-	const int remainingMovement = std::max(0, beforeAttackSpeed - movementSpent);
-	const int pursuitAllowance = destroyedEnemy && ownerHero
-		&& ownerHero->hasActivePerk("new-horizons:offense", "new-horizons:offense.pursuit")
-		? remainingMovement : 0;
-	const int vanishAllowance = vanishKill && resolvedAttacker && !newHorizonsFrozen::isFrozen(*resolvedAttacker)
-		&& !armorerLastStandEndedActivation(resolvedAttacker)
-		? newHorizonsShroud::vanishMovementAllowance(resolvedAttacker->getMovementRange(0)) : 0;
-	const int opportunistAllowance = allowPursuitContinuation && resolvedAttacker
-		? newHorizonsOpportunist::movementAllowance(battle, resolvedAttacker, remainingMovement) : 0;
-	const int movementAllowance = std::max({pursuitAllowance, vanishAllowance, opportunistAllowance});
-	if(resolvedAttacker && resolvedAttacker->luckyOwnAttackSequence)
-		finalizeOpportunistSequence(battle, resolvedAttacker, remainingMovement, allowPursuitContinuation);
-	if(allowPursuitContinuation && movementAllowance > 0
-		&& resolvedAttacker && resolvedAttacker->alive()
-		&& resolvedAttacker->canMove() && !resolvedAttacker->isTimeStopped()
-		&& !armorerLastStandEndedActivation(resolvedAttacker)
-		&& !newHorizonsFrozen::isFrozen(*resolvedAttacker))
-	{
-		setPursuitMovementRemaining(battle, resolvedAttacker, movementAllowance);
+	resolvePetrifyingBlood(battle, bloodSequence.result());
 
-		BattleLogMessage message;
-		message.battleID = battle.getBattle()->getBattleID();
-		MetaString line;
-		line.appendRawString(opportunistAllowance > 0 ? "%s trigger post-attack movement and may move up to " : vanishAllowance > 0
-			? (pursuitAllowance > 0 ? "%s trigger Pursuit and Vanish and may move up to "
-				: "%s trigger Vanish and may move up to ")
-			: "%s trigger Pursuit and may move up to ");
-		resolvedAttacker->addNameReplacement(line, resolvedAttacker->getCount());
-		line.appendNumber(movementAllowance);
-		line.appendRawString(movementAllowance == 1 ? " hex." : " hexes.");
-		message.lines.push_back(std::move(line));
-		gameHandler->sendAndApply(message);
-	}
+	finishMeleeMovement(battle, ba, beforeAttackSpeed, movementSpent, destroyedEnemy, vanishKill,
+		allowPursuitContinuation, dreadCavalry);
 
 	return true;
 }
@@ -2170,7 +2098,7 @@ void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & batt
 	gameHandler->sendAndApply(message);
 }
 
-bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba,
+bool BattleActionProcessor::doShootActionCore(const CBattleInfoCallback & battle, const BattleAction & ba,
 	bool allowPursuitContinuation)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
@@ -2234,14 +2162,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 
 		BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);
 		BonusList defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
-		if(destinationStack->alive()
-			&& destinationStack->hasBonusOfType(BonusType::RANGED_RETALIATION)
-			&& !stack->hasBonusOfType(BonusType::BLOCKS_RANGED_RETALIATION)
-			&& destinationStack->ableToRetaliate()
-			&& battle.battleCanShoot(destinationStack, stack->getPosition())
-			&& stack->alive())
-			makeAttack(battle, destinationStack, stack,
-				{.targetHex = stack->getPosition(), .first = true, .ranged = true, .counter = true, .retaliation = true});
+		performOrdinaryRangedRetaliation(battle, destinationStack, stack);
 		removeBonuses(battle, stack, attackerBonusesToRemove);
 		removeBonuses(battle, destinationStack, defenderBonusesToRemove);
 		resolveRainOfArrows(battle, stack, rainOfArrows);
@@ -2269,15 +2190,8 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
 
 	//ranged counterattack
-	if (!emptyTileAreaAttack
-		&& destinationStack->hasBonusOfType(BonusType::RANGED_RETALIATION)
-		&& !stack->hasBonusOfType(BonusType::BLOCKS_RANGED_RETALIATION)
-		&& destinationStack->ableToRetaliate()
-		&& battle.battleCanShoot(destinationStack, stack->getPosition())
-		&& stack->alive()) //attacker may have died (fire shield)
-	{
-		makeAttack(battle, destinationStack, stack, {.targetHex = stack->getPosition(), .first = true, .ranged = true, .counter = true, .retaliation = true});
-	}
+	if(!emptyTileAreaAttack)
+		performOrdinaryRangedRetaliation(battle, destinationStack, stack);
 	//allow more than one additional attack
 
 	int totalRangedAttacks = stack->getTotalAttacks(true);
@@ -2423,7 +2337,7 @@ bool BattleActionProcessor::prepareUnitSpellAction(const CBattleInfoCallback & b
 	}
 	if(spells::targetsSanctifiedStackDirectly(*mechanics, target))
 	{
-		gameHandler->complain("A Sanctified stack cannot be selected by a hostile single-target spell.");
+		gameHandler->complain("A protected stack cannot be selected by a hostile single-target spell.");
 		return false;
 	}
 	// Resolve random spellcasters exactly once, before publishing StartAction.
@@ -2663,7 +2577,7 @@ bool BattleActionProcessor::doWalkAndSpellcastAction(const CBattleInfoCallback &
 	if(creatureSpellDirectlyTargetsSanctified(battle, stack, spellID, spellTarget,
 		BonusType::ADJACENT_SPELLCASTER))
 	{
-		gameHandler->complain("A Sanctified stack cannot be selected by a hostile single-target spell.");
+		gameHandler->complain("A protected stack cannot be selected by a hostile single-target spell.");
 		return false;
 	}
 
@@ -2776,7 +2690,7 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 		case EActionType::DEFEND:
 			return doDefendAction(battle, ba);
 		case EActionType::WALK_AND_ATTACK:
-			return doAttackAction(battle, ba, allowPursuitContinuation);
+			return doMeleeActionWithContinuation(battle, ba, allowPursuitContinuation);
 		case EActionType::WALK_AND_CAST:
 			return doWalkAndSpellcastAction(battle, ba);
 		case EActionType::SHOOT:
@@ -3318,9 +3232,15 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		return false;
 	}
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
+	if(voluntary && deploymentSide == BattleSide::NONE && battle.battleTacticDist() == 0
+		&& newHorizonsSerpentsEmbrace::rejectsVoluntaryMovement(battle, ba, stack))
+	{
+		gameHandler->complain("Serpent's Embrace prevents voluntary movement until its source next activates or dies.");
+		return false;
+	}
 	if(stack && actionDirectlyTargetsSanctified(battle, ba, stack))
 	{
-		gameHandler->complain("A Sanctified stack cannot be selected by a direct attack or hostile single-target spell.");
+		gameHandler->complain("A protected stack cannot be selected by a direct attack or hostile single-target spell.");
 		return false;
 	}
 	// WAIT provenance is published by StartAction. Validate a repeated request
@@ -3434,7 +3354,8 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		const bool pursuitContinuation = masterGateActivationContinuationOut && result
 			&& (effectiveAction.actionType == EActionType::WALK_AND_ATTACK
 				|| effectiveAction.actionType == EActionType::SHOOT || effectiveAction.actionType == EActionType::NO_ACTION)
-			&& updatedStack && !activationEndedByLastStand && updatedStack->pursuitMovementRemaining > 0;
+			&& updatedStack && !activationEndedByLastStand
+			&& (updatedStack->pursuitMovementRemaining > 0 || updatedStack->dreadCavalryState.pending);
 		EndAction endAction;
 		endAction.battleID = battle.getBattle()->getBattleID();
 		endAction.endsFortuneActivation = result && effectiveAction.isUnitAction() && !battle.battleTacticDist()
@@ -3610,7 +3531,9 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	bool movementSuccess = true;
 
 	int unitMovementRange = currentUnit->getMovementRange(0);
-	if(currentUnit->pursuitMovementRemaining > 0)
+	if(currentUnit->dreadCavalryState.pending)
+		unitMovementRange = std::min(unitMovementRange, battle.battleGetDreadCavalryMovementRemaining(currentUnit));
+	else if(currentUnit->pursuitMovementRemaining > 0)
 		unitMovementRange = std::min(unitMovementRange, currentUnit->pursuitMovementRemaining);
 
 	if (deploymentSide != BattleSide::NONE && unitMovementRange > 0)
@@ -3622,44 +3545,19 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 		return { 0, 0, false, true };
 	}
 
+	auto livingInferno = newHorizonsLivingInferno::capture(battle, currentUnit, voluntary);
 	bool hasWideMoat = vstd::contains_if(battle.battleGetAllObstaclesOnPos(BattleHex(BattleHex::GATE_BRIDGE), false), [](const std::shared_ptr<const CObstacleInstance> & obst)
 	{
 		return obst->obstacleType == CObstacleInstance::MOAT;
 	});
 
-	auto isGateDrawbridgeHex = [&](const BattleHex & hex) -> bool
-	{
-		if (hasWideMoat && hex == BattleHex::GATE_BRIDGE)
-			return true;
-		if (hex == BattleHex::GATE_OUTER)
-			return true;
-		if (hex == BattleHex::GATE_INNER)
-			return true;
-
-		return false;
-	};
-
-	auto occupyGateDrawbridgeHex = [&](const BattleHex & hex) -> bool
-	{
-		if (isGateDrawbridgeHex(hex))
-			return true;
-
-		if (currentUnit->doubleWide())
-		{
-			BattleHex otherHex = currentUnit->occupiedHex(hex);
-			if (otherHex.isValid() && isGateDrawbridgeHex(otherHex))
-				return true;
-		}
-
-		return false;
-	};
 
 	if (currentUnit->hasBonusOfType(BonusType::FLYING))
 	{
 		if (pathDistance <= unitMovementRange && !unitPath.empty())
 		{
 			if (canUseGate && dbState != EGateState::OPENED &&
-				occupyGateDrawbridgeHex(dest))
+				gateDrawbridgeFootprintContains(*currentUnit, dest, hasWideMoat))
 			{
 				BattleUpdateGateState db;
 				db.battleID = battle.getBattle()->getBattleID();
@@ -3678,6 +3576,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 			sm.teleporting = false;
 			breakSanctuary(battle, currentUnit);
 			gameHandler->sendAndApply(sm);
+			livingInferno.traverse(start, sm.tilesToMove, true);
 			result.distance = pathDistance;
 			result.movementCost = pathDistance;
 			if(voluntary)
@@ -3933,6 +3832,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 						&& battle.battleNightProwlerCrossesEnemy(currentUnit, sm.tilesToMove);
 					breakSanctuary(battle, currentUnit);
 					gameHandler->sendAndApply(sm);
+					livingInferno.traverse(previousSegmentPosition, sm.tilesToMove, false);
 					if(nightProwlerTriggered)
 					{
 						SetStackEffect effect;
@@ -4075,6 +3975,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	if(orderStatesBeforeDefender != battle.getBattle()->getHeroOrderStates(BattleSide::DEFENDER))
 		publishHeroOrderState(battle, BattleSide::DEFENDER);
 
+	newHorizonsLivingInferno::publish(*gameHandler, battle, livingInferno, currentUnit->getPosition());
 	result.obstacleHit = !movementSuccess;
 	return result;
 }
@@ -4201,7 +4102,9 @@ battle::Units BattleActionProcessor::collectSecondaryTargets(const CBattleInfoCa
 	};
 
 	//multiple-hex normal attack
-	const auto & [attackedCreatures, useCustomAnimation] = battle.getAttackedCreatures(attacker, attack.targetHex, attack.ranged);
+	const auto & [attackedCreatures, useCustomAnimation] = attack.aerialExcursion
+		? battle.getAerialAttackedBattleUnits(*attack.aerialExcursion)
+		: battle.getAttackedCreatures(attacker, attack.targetHex, attack.ranged);
 
 	for(const auto * unit : attackedCreatures)
 		addOnce(unit);
@@ -4256,10 +4159,11 @@ void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleA
 void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker,
 	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut,
 	RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows,
-	bool * vanishKillOut)
+	bool * vanishKillOut, dreadCavalryAction::Context * dreadCavalry)
 {
-	if(!attacker || !attacker->alive() || newHorizonsFrozen::isFrozen(*attacker) || armorerLastStandEndedActivation(attacker)
-		|| (defender && !defender->alive()))
+	if(!admitAttack(battle, attacker, defender, attack))
+		return;
+	if(dreadCavalry && !dreadCavalryAction::acceptedBlowStillLegal(battle, attacker, defender, *dreadCavalry))
 		return;
 	std::array<bool, 2> lastStandUsedThisAttack{};
 	std::vector<HeroOrderState> orderStatesBeforeAttacker = battle.getBattle()->getHeroOrderStates(BattleSide::ATTACKER);
@@ -4455,6 +4359,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	blm.battleID = battle.getBattle()->getBattleID();
 	bat.battleID = battle.getBattle()->getBattleID();
 	bat.attackerChanges.battleID = battle.getBattle()->getBattleID();
+	if(attack.aerialExcursion)
+		if(!newHorizonsAerialSupremacy::matches(battle, *attack.aerialExcursion))
+			return;
+	bat.aerialExcursion = attack.aerialExcursion;
 	bat.stackAttacking = attacker->unitId();
 	bat.tile = attack.targetHex;
 
@@ -4476,10 +4384,12 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	describeUpcomingAttack(upcoming, defender, secondaryTargets);
 
 	processAttackTriggers(battle, CombatEventType::BEFORE_ATTACK, CombatEventType::BEFORE_ATTACKED, attacker, defender, upcoming);
+	if(dreadCavalry && !dreadCavalryAction::acceptedBlowStillLegal(battle, attacker, defender, *dreadCavalry))
+		return;
 
 	// a reaction to the upcoming attack may have killed either side of it - a unit that died before
 	// striking does not strike, and one that died before being hit is not hit again
-	if((!attacker->alive()) || newHorizonsFrozen::isFrozen(*attacker) || (defender && !defender->alive()))
+	if(!canResolveAttack(battle, attacker, defender, attack))
 		return;
 
 	if(relentlessAssault && defender && !attack.counter && !attack.brace && !attack.cleaveFollowup
@@ -4567,7 +4477,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			attack.distance, false, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, protectIntercepted,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
-			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack);
+			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack, attack.dreadCavalryDamagePercent);
 		appendArcheryFeedback(estimation, defender);
 		appendGuardianSpiritFeedback(estimation, defender);
 		if(relentlessAssault && relentlessAssault->eligible
@@ -4620,7 +4530,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			attack.distance, true, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, false,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
-			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack);
+			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack, attack.dreadCavalryDamagePercent);
 		appendArcheryFeedback(estimation, unit);
 		appendGuardianSpiritFeedback(estimation, unit);
 		const auto attackerOrderCauses = damageOrderCauses(estimation, true);
@@ -4720,7 +4630,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// spell-like attacks still spend ordinary attack resources but do not spend
 	// this physical-damage state.  Retaliations use this same path, so their
 	// consumption is authoritative and is included in attackerChanges below.
-	attackerState->afterAttack(attack.ranged, normalCounter, !bat.spellLike());
+	battleCreatureKillRewards::finishStrike(battle, *attackerState, bat.bsa, attack.ranged, normalCounter, !bat.spellLike());
+	if(attack.aerialExcursion && attackerState->creatureId() == CreatureID(CreatureID::decode("core:griffin")))
+		attackerState->aerialRetaliationRound = battle.battleGetRound();
 
 	{
 		UnitChanges info(attackerState->unitId(), UnitChanges::EOperation::UPDATE);
@@ -4739,7 +4651,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// The packet carries the server-authored trigger so receivers can converge
 	// on the same capped token without inferring gameplay state from animation
 	// or client-side damage estimates.
-	bat.chainGateTriggered = chainGateKillQualifies(battle, attacker, bat.bsa);
+	bat.chainGateTriggered = battleCreatureKillRewards::chainGateKillQualifies(battle, attacker, bat.bsa);
 	MetaString braceLogLine;
 	std::vector<MetaString> bulwarkPreemptiveLogLines;
 	if(attack.brace)
@@ -4814,18 +4726,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			orderDamageLogLines.push_back(std::move(line));
 		}
 	}
-	if(destroyedEnemyOut)
-	{
-		for(const auto & hit : bat.bsa)
-		{
-			const auto * victim = battle.battleGetUnitByID(hit.stackAttacked);
-			if(victim && hit.killed() && !hit.willRebirth() && battle.battleMatchOwner(attacker, victim))
-			{
-				*destroyedEnemyOut = true;
-				break;
-			}
-		}
-	}
+	battleCreatureKillRewards::recordPredictedEnemyDestruction(battle, attacker, bat.bsa, destroyedEnemyOut);
 	std::vector<const battle::Unit *> immovableTriggered;
 	if(!bat.spellLike() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker))
 	{
@@ -4902,7 +4803,21 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			|| attack.preemptiveDamagePercent > 0,
 		bat.bsa,
 		attack.manaLeechSequenceSpent && *attack.manaLeechSequenceSpent);
+	const bool gazeAdmitted = newHorizonsParalyzingGaze::qualifiesAttack(battle, attacker, defender, attack.ranged,
+		!bat.spellLike(), attack.cleaveFollowup || attack.brace || attack.bulwarkPreemptive
+			|| attack.preemptiveDamagePercent > 0 || attack.archeryCounterfire || attack.battlecraftOverwatch)
+		&& std::ranges::any_of(bat.bsa, [defender](const BattleStackAttacked & hit)
+			{ return hit.stackAttacked == defender->unitId() && hit.damageAmount > 0; });
+	const auto serpentBinding = newHorizonsSerpentsEmbrace::prepareBinding(battle, attacker, defender, attack.ranged,
+		!bat.spellLike(), attack.cleaveFollowup || attack.brace || attack.bulwarkPreemptive
+			|| attack.preemptiveDamagePercent > 0, bat.bsa);
 	gameHandler->sendAndApply(bat);
+	handlePetrifyingBlood(battle, attacker, bat);
+	if(dreadCavalry && !bat.spellLike())
+		dreadCavalryAction::observeKilled(battle, attacker, bat, *dreadCavalry);
+	newHorizonsSerpentsEmbrace::applyBinding(*gameHandler, battle, serpentBinding);
+	if(gazeAdmitted)
+		newHorizonsParalyzingGaze::applyAfterShot(*gameHandler, battle, attacker->unitId(), defender->unitId(), true);
 	newHorizonsManaLeeches::apply(*gameHandler, manaLeech, attack.manaLeechSequenceSpent);
 	resolveFrozenAttack(*gameHandler, frozenContext, frozenResolution);
 	for(const BattleStackAttacked & hit : bat.bsa)
@@ -5072,65 +4987,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	noQuarterAttack.preemptiveDamagePercent = attack.preemptiveDamagePercent;
 	noQuarterAttack.cleaveDamagePercent = attack.cleaveDamagePercent;
 	noQuarterAttack.physicalDamage = !bat.spellLike();
-	if(battle.battleCanTriggerNoQuarter(noQuarterAttack))
-	{
-		std::set<uint32_t> checkedTargets;
-		for(const auto & hit : bat.bsa)
-		{
-			if(!checkedTargets.insert(hit.stackAttacked).second)
-				continue;
-			const auto * target = battle.battleGetUnitByID(hit.stackAttacked);
-			if(!target || !target->alive() || target->isTimeStopped()
-				|| !battle.battleMatchOwner(attacker, target)
-				|| !newHorizonsOffense::belowNoQuarterThreshold(
-					target->getAvailableHealth(), battle::getMaximumHealth(*target)))
-				continue;
-
-			// Ignore this complete application, not an earlier package or an unrelated denial.
-			auto defiantApplication = noQuarterAttack;
-			defiantApplication.defender = target;
-			if(consumeDefiant(*gameHandler, battle, defiantApplication,
-				newHorizonsArmorer::DefiantDenialCause::NO_QUARTER))
-				continue;
-
-			SetStackEffect effects;
-			effects.battleID = battle.getBattle()->getBattleID();
-			const auto existing = target->getAllBonuses(CSelector([](const Bonus * bonus)
-			{
-				return newHorizonsOffense::isNoQuarterBonus(bonus);
-			}));
-			if(existing && !existing->empty())
-			{
-				std::vector<Bonus> toReplace;
-				toReplace.reserve(existing->size());
-				for(const auto & bonus : *existing)
-					toReplace.push_back(*bonus);
-				effects.toRemove.emplace_back(target->unitId(), std::move(toReplace));
-			}
-			effects.toAdd.emplace_back(target->unitId(), std::vector<Bonus>{
-				newHorizonsOffense::noQuarterRetaliationBonus(),
-				newHorizonsOffense::noQuarterMoralePenalty(true)});
-			gameHandler->sendAndApply(effects);
-
-			auto state = target->acquireState();
-			state->noQuarterMoraleActivationsRemaining = battle.getBattle()->getActiveStackID()
-				== static_cast<int32_t>(target->unitId()) ? 2 : 1;
-			BattleUnitsChanged stateChange;
-			stateChange.battleID = battle.getBattle()->getBattleID();
-			UnitChanges update(target->unitId(), UnitChanges::EOperation::UPDATE);
-			update.data = state->save();
-			stateChange.changedStacks.push_back(std::move(update));
-			gameHandler->sendAndApply(stateChange);
-
-			BattleLogMessage message;
-			message.battleID = battle.getBattle()->getBattleID();
-			MetaString line;
-			line.appendRawString("No Quarter affects %s: all remaining retaliations are lost this round, and Morale is reduced by 2 until the end of the stack's next activation.");
-			target->addNameReplacement(line, target->getCount());
-			message.lines.push_back(std::move(line));
-			gameHandler->sendAndApply(message);
-		}
-	}
+	noQuarterAftermath::apply(*gameHandler, battle, noQuarterAttack, bat.bsa);
 
 	// Bulwark reflects a share of the physical health loss that actually landed,
 	// after all reductions. It is direct retaliation damage, not another attack,
@@ -5396,156 +5253,13 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 				makeAttack(battle, resolvedAttacker, cleaveTarget,
 					{.targetHex = cleaveTarget->getPosition(), .cleaveFollowup = true,
-						.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT},
-					nullptr, nullptr, nullptr, vanishKillOut);
+						.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT,
+						.dreadCavalryDamagePercent = attack.dreadCavalryDamagePercent},
+					nullptr, nullptr, nullptr, vanishKillOut, dreadCavalry);
 				break;
 			}
 		}
 	}
-}
-
-void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender)
-{
-	ObjectInstanceID ownerArmy = battle.getBattle()->getSideArmy(attacker->unitSide())->id;
-
-	if(attacker->hasBonusOfType(attackMode))
-	{
-		TConstBonusListPtr spells = attacker->getBonuses(Selector::type()(attackMode));
-		std::set<SpellID> spellsToCast = getSpellsForAttackCasting(spells, defender);
-
-		for(SpellID spellID : spellsToCast)
-		{
-			bool castMe = false;
-			if(!defender->alive())
-			{
-				logGlobal->debug("attackCasting: all attacked creatures have been killed");
-				return;
-			}
-			int32_t spellLevel = 0;
-			TConstBonusListPtr spellsByType = attacker->getBonuses(Selector::typeSubtype(attackMode, BonusSubtypeID(spellID)));
-			for(const auto & sf : *spellsByType)
-			{
-				int meleeRanged = -1;
-				if (sf->parameters)
-				{
-					vstd::amax(spellLevel, sf->parameters->toVector()[0]);
-					meleeRanged = sf->parameters->toVector()[1];
-				}
-
-				if (meleeRanged == -1 || meleeRanged == 0 || (meleeRanged == 1 && ranged) || (meleeRanged == 2 && !ranged))
-					castMe = true;
-			}
-			int chance = attacker->valOfBonuses(Selector::typeSubtype(attackMode, BonusSubtypeID(spellID)));
-			vstd::amin(chance, 100);
-
-			const CSpell * spell = SpellID(spellID).toSpell();
-			spells::AbilityCaster caster(attacker, spellLevel);
-
-			spells::Target target;
-			target.emplace_back(defender);
-
-			spells::BattleCast parameters(&battle, &caster, spells::Mode::PASSIVE, spell);
-
-			auto m = spell->battleMechanics(&parameters);
-
-			if(!m->canBeCastAt(target))
-				continue;
-
-			const auto attackerSide = battle.playerToSide(battle.battleGetOwner(attacker));
-			const auto defenderSide = battle.playerToSide(battle.battleGetOwner(defender));
-			const bool hostileTarget = (attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER)
-				&& (defenderSide == BattleSide::ATTACKER || defenderSide == BattleSide::DEFENDER)
-				&& defenderSide != attackerSide;
-			bool procSucceeded = false;
-			if(castMe && spell->isNegative() && hostileTarget)
-			{
-				const int effectiveChance = gameHandler->randomizer->prepareFavorableCreatureAbilityChance(*attacker, chance);
-				const auto drawHostileSpell = [this, ownerArmy, effectiveChance]()
-				{
-					return gameHandler->randomizer->rollCombatAbility(ownerArmy, effectiveChance);
-				};
-				procSucceeded = owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), defenderSide,
-					effectiveChance > 0 && effectiveChance < 100, true, drawHostileSpell);
-			}
-			else
-			{
-				// Keep the original draw for positive, neutral, ineligible, or friendly-target spells.
-				procSucceeded = gameHandler->randomizer->rollFavorableCreatureAbility(ownerArmy, *attacker, chance);
-			}
-			if(!procSucceeded)
-				continue;
-
-			//casting
-			if(castMe)
-			{
-				parameters.cast(gameHandler->spellcastEnvironment(), target);
-			}
-		}
-	}
-}
-
-std::set<SpellID> BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)
-{
-	std::set<SpellID> spellsToCast;
-	constexpr int unlayeredItemsInternalLayer = -1;
-
-	std::map<int, std::vector<std::shared_ptr<Bonus>>> spellsWithBackupLayers;
-
-	for(int i = 0; i < spells->size(); i++)
-	{
-		std::shared_ptr<Bonus> bonus = spells->operator[](i);
-		int layer = bonus->parameters ? bonus->parameters->toVector()[2] : -1;
-		vstd::amax(layer, -1);
-		spellsWithBackupLayers[layer].push_back(bonus);
-	}
-
-	auto addSpellsFromLayer = [&](int layer) -> void
-	{
-		assert(spellsWithBackupLayers.find(layer) != spellsWithBackupLayers.end());
-
-		for(const auto & spell : spellsWithBackupLayers[layer])
-		{
-			if (spell->subtype.as<SpellID>() != SpellID())
-				spellsToCast.insert(spell->subtype.as<SpellID>());
-			else
-				logGlobal->error("Invalid spell to cast during attack!");
-		}
-	};
-
-	if(spellsWithBackupLayers.find(unlayeredItemsInternalLayer) != spellsWithBackupLayers.end())
-	{
-		addSpellsFromLayer(unlayeredItemsInternalLayer);
-		spellsWithBackupLayers.erase(unlayeredItemsInternalLayer);
-	}
-
-	for(auto item : spellsWithBackupLayers)
-	{
-		bool areCurrentLayerSpellsApplied = std::all_of(item.second.begin(), item.second.end(),
-			[&](const std::shared_ptr<Bonus> spell)
-			{
-				std::vector<SpellID> activeSpells = defender->activeSpells();
-				return vstd::find(activeSpells, spell->subtype.as<SpellID>()) != activeSpells.end();
-			});
-
-		if(!areCurrentLayerSpellsApplied || item.first == spellsWithBackupLayers.rbegin()->first)
-		{
-			addSpellsFromLayer(item.first);
-			break;
-		}
-	}
-
-	return spellsToCast;
-}
-
-/// Legacy spell-casting abilities only - combat event reactions run from makeAttack instead, and
-/// deliberately without these gates.
-void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload)
-{
-	if(!attacker->alive()) // can be already dead, e.g. from retaliation
-		return;
-
-	if(defender->alive())
-		attackCasting(battle, payload.ranged, BonusType::SPELL_AFTER_ATTACK, attacker, defender);
 }
 
 DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat,
@@ -5553,7 +5267,7 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
 	int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
 	int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent,
-	bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack) const
+	bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent) const
 {
 	BattleStackAttacked bsa;
 	if(secondary)
@@ -5562,7 +5276,7 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	bsa.attackerID = attackerState->unitId();
 	bsa.stackAttacked = def->unitId();
 
-	BattleAttackInfo bai(attackerState.get(), def, distance, bat.shot());
+	BattleAttackInfo bai(attackerState.get(), def, distance, bat.shot(), dreadCavalryDamagePercent);
 	bai.secondaryAttack = secondary;
 	// Brace travels through the counterattack path for ordering, but its
 	// pre-emptive blow is not a normal retaliation for Riposte or retaliation
@@ -5587,6 +5301,7 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	{
 		bsa.damageAmount = battle.getBattle()->getActualDamage(range.damage, attackerState->getCount(), gameHandler->getRandomGenerator());
 		auto defenderState = bai.defender->acquireState();
+		newHorizonsForestAmbush::receiveAttack(battle, *defenderState);
 		const int64_t incomingDamage = bsa.damageAmount;
 		const int64_t guardianSpiritBefore = defenderState->guardianSpiritHitPoints;
 		const int64_t healthBeforeAttack = def->getAvailableHealth();
@@ -5637,10 +5352,8 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 			|| (!secondary && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attackerState.get()));
 		if(retributionAttack && attackerState->unitSide() != def->unitSide())
 			recordDivineRetributionDamage(battle, *gameHandler, attackerState.get(), def, bsa.damageAmount);
-		range.guardianSpiritAbsorbedDamage = std::max<int64_t>(
-			0, guardianSpiritBefore - defenderState->guardianSpiritHitPoints);
-		range.guardianSpiritOverflowDamage = range.guardianSpiritAbsorbedDamage > 0
-			? std::max<int64_t>(0, incomingDamage - range.guardianSpiritAbsorbedDamage) : 0;
+		range.recordGuardianSpiritAbsorption(guardianSpiritBefore,
+			defenderState->guardianSpiritHitPoints, incomingDamage);
 		const bool ordinaryPhysicalCreatureAttack = !bat.spellLike()
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attackerState.get());
 		if(ordinaryPhysicalCreatureAttack && def->defended()
@@ -5878,25 +5591,9 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			return false;
 		}
 
-		const auto * activeStack = battle.battleGetStackByID(active->unitId(), false);
-		if(activeStack && activeStack->pursuitMovementRemaining > 0)
-		{
-			if(ba.actionType == EActionType::DEFEND || ba.actionType == EActionType::NO_ACTION)
-			{
-				// Defend is the existing visible close-turn control. During Pursuit it
-				// declines the optional movement without granting a defensive stance.
-				BattleAction pass = BattleAction::makeNoAction(active);
-				pass.side = controllingSide;
-				if(effectiveActionOut)
-					*effectiveActionOut = pass;
-				return makeBattleActionImpl(battle, pass, masterGateActivationContinuationOut);
-			}
-			if(ba.isUnitAction() && ba.actionType != EActionType::WALK)
-			{
-				gameHandler->complain("Post-attack continuation permits only movement or ending the creature activation");
-				return false;
-			}
-		}
+		if(const auto handled = handleMeleeContinuationRequest(battle, ba, active, controllingSide,
+			effectiveActionOut, masterGateActivationContinuationOut))
+			return *handled;
 	}
 
 	if(effectiveActionOut)

@@ -69,7 +69,7 @@ class ConvenienceDataTest(unittest.TestCase):
     def test_adaptive_layout_owns_two_namespaced_existing_actions_per_visible_branch(self):
         fragment = load('Mods/new-horizons/Content/config/widgets/nhConvenience.json')
         self.assertEqual(set(fragment), {'items'})
-        self.assertEqual(fragment['items'], [])
+        self.assertEqual(len(fragment['items']), 3)
 
         layout = load('Mods/new-horizons/Content/config/widgets/adventureMap.json')
         containers = [container for container in layout['items']
@@ -105,6 +105,50 @@ class ConvenienceDataTest(unittest.TestCase):
             self.assertEqual([button['help'] for button in buttons],
                              ['vcmi.adventureMap.quickSave', 'vcmi.adventureMap.quickLoad'])
             self.assertTrue(all(not button['playerColored'] for button in buttons))
+
+    def test_reporter_does_not_cover_end_turn_or_other_native_controls(self):
+        layout = load('Mods/new-horizons/Content/config/widgets/adventureMap.json')
+        fragment = load('Mods/new-horizons/Content/config/widgets/nhConvenience.json')
+
+        def visible(item, height):
+            gates = item.get('exists', {})
+            return (height > gates.get('heightMin', -1)
+                    and height <= gates.get('heightMax', 10000))
+
+        def bounds(area, parent):
+            x, y, w, h = parent
+            width = area.get('width', w - area.get('left', 0) - area.get('right', 0))
+            height = area.get('height', h - area.get('top', 0) - area.get('bottom', 0))
+            return (x + area.get('left', w - area.get('right', 0) - width),
+                    y + area.get('top', h - area.get('bottom', 0) - height), width, height)
+
+        def controls(items, parent, height):
+            result = []
+            for item in items:
+                if not visible(item, height):
+                    continue
+                rect = bounds(item.get('area', {}), parent)
+                if item['type'] == 'adventureMapButton':
+                    result.append((item, rect))
+                elif item['type'] == 'adventureMapContainer':
+                    result.extend(controls(item['items'], rect, height))
+            return result
+
+        for height in range(600, 1201):
+            with self.subTest(height=height):
+                base = controls(layout['items'], (0, 0, 1280, height), height)
+                reporters = controls(fragment['items'], (0, 0, 1280, height), height)
+                self.assertEqual(len(reporters), int(height > 631))
+                end_turn = [(item, rect) for item, rect in base if item.get('name') == 'buttonEndTurn']
+                self.assertEqual(len(end_turn), 1)
+                self.assertEqual(end_turn[0][0]['hotkey'], 'adventureEndTurn')
+                for item, (x, y, w, h) in reporters:
+                    self.assertEqual(item['callback'], 'reportBug')
+                    self.assertNotIn('hotkey', item)
+                    self.assertLessEqual(y + h, height - 210)  # Do not cover the info panel either.
+                    for other, (ox, oy, ow, oh) in base:
+                        overlaps = x < ox + ow and ox < x + w and y < oy + oh and oy < y + h
+                        self.assertFalse(overlaps, (height, other.get('name')))
 
     def test_bonus_patches_change_only_icons_and_explicit_siege_text(self):
         patches = load('config/newHorizonsConvenienceBonuses.json')

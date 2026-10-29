@@ -8,9 +8,12 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsForestAmbush.h"
+#include "NewHorizonsDreadCavalry.h"
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "CBattleInfoCallback.h"
+#include "NewHorizonsParalyzingGaze.h"
 #include "../spells/IncomingMagicalDamage.h"
 #include "HeroCommandAdjacency.h"
 #include "HeroCommandRoyalStandard.h"
@@ -78,6 +81,20 @@ constexpr auto SPELLWARD_PERK_ID = "new-horizons:warcasting.spellward";
 constexpr int SPELLWARD_REDUCTION_BASIS_POINTS = 1000;
 constexpr int RANDOM_CREATURE_HOSTILE_ENCHANTMENTS_POLICY = 1;
 
+bool admitsBerserkTarget(const CBattleInfoCallback & callback, const battle::Unit * berserker,
+	const battle::Unit * u, bool canonicalBerserk)
+{
+	if(!u->isValidTarget(false) || u->unitId() == berserker->unitId())
+		return false;
+	if(!canonicalBerserk)
+		return true;
+
+	// V3 forces a melee attack. Exclude only targets rejected by the same
+	// authoritative melee legality checks; Berserk still includes allies.
+	return !u->isInvincible()
+		&& !(newHorizonsForestAmbush::protectsDirectTarget(u) && callback.battleMatchOwner(berserker, u));
+}
+
 int64_t scaledBattleOutput(int64_t base, int32_t outputPercent)
 {
 	if(base <= 0 || outputPercent <= 0)
@@ -85,20 +102,6 @@ int64_t scaledBattleOutput(int64_t base, int32_t outputPercent)
 	return (base / 100) * outputPercent + ((base % 100) * outputPercent) / 100;
 }
 
-
-LuckRollRules battleLuckRules(const IBattleInfo & battle)
-{
-	auto rules = battle.getLuckRollRules();
-	if(rules.diceSize == 0)
-	{
-		const auto & settings = *LIBRARY->engineSettings();
-		rules.goodChance = settings.getVector(EGameSettings::COMBAT_GOOD_LUCK_CHANCE);
-		rules.badChance = settings.getVector(EGameSettings::COMBAT_BAD_LUCK_CHANCE);
-		rules.diceSize = settings.getInteger(EGameSettings::COMBAT_LUCK_DICE_SIZE);
-		rules.affectsAllTargets = settings.getBoolean(EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS);
-	}
-	return rules;
-}
 
 /// Order targeting is based on occupied hexes, not a unit's primary position.
 /// This matters for double-wide stacks: their rear hex may be the one actually
@@ -198,7 +201,13 @@ bool CBattleInfoCallback::battleIsMoraleExtraActivation(const battle::Unit * uni
 
 int32_t CBattleInfoCallback::battleGetDirectActivationOutputPercent(const BattleAttackInfo & info) const
 {
-	const int ordinaryOutput = battleGetActivationOutputPercent(info.attacker);
+	int ordinaryOutput = battleGetActivationOutputPercent(info.attacker);
+	if(!info.shooting && !info.retaliation && !info.bracePreemptive)
+	{
+		const int dreadOutput = info.dreadCavalryDamagePercent != 100
+			? info.dreadCavalryDamagePercent : battleGetDreadCavalryDamagePercent(info.attacker);
+		ordinaryOutput = ordinaryOutput * dreadOutput / 100;
+	}
 	// Spell-like creature shots are magical, but still ordinary direct attacks.
 	// This attack-only payload is not used for healing or generic spell damage.
 	if(info.retaliation || info.bracePreemptive
@@ -626,6 +635,7 @@ bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, Batt
 	if(!unit || unit->isTimeStopped() || reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
 		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
+		|| reason == BattleUnitTurnReason::DREAD_CAVALRY_CONTINUATION
 		|| reason == BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION
 		|| reason == BattleUnitTurnReason::HERO_SPELLCAST || reason == BattleUnitTurnReason::UNIT_SPELLCAST)
 		return false;
@@ -796,97 +806,6 @@ const battle::Unit * CBattleInfoCallback::battleSelectCleaveTarget(const battle:
 		return leftHex != rightHex ? leftHex < rightHex : left->unitId() < right->unitId();
 	});
 	return candidates.empty() ? nullptr : candidates.front();
-}
-
-int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target,
-	bool shooting, bool includeChanceOnlySerendipity) const
-{
-	if(!attacker || !getBattle())
-		return 0;
-	if(getBattle()->getRawFinalDirectPhysicalLuckPolicy()
-		&& !newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker,
-			!(shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))))
-		return 0;
-	const auto rules = battleLuckRules(*getBattle());
-	const int maximum = static_cast<int>(rules.goodChance.size());
-	const int minimum = -static_cast<int>(rules.badChance.size());
-	const auto cap = [attacker](int luck)
-	{
-		return attacker->hasBonusOfType(BonusType::MAXIMUM_LUCK)
-			? std::min(luck, attacker->valOfBonuses(BonusType::MAXIMUM_LUCK)) : luck;
-	};
-	if(attacker->hasBonusOfType(BonusType::MAX_LUCK))
-		return cap(maximum);
-	if(attacker->hasBonusOfType(BonusType::NO_LUCK))
-		return 0;
-	const int baseLuck = static_cast<int>(std::clamp<int64_t>(
-		static_cast<int64_t>(attacker->valOfBonuses(BonusType::LUCK))
-			+ attacker->necromancyCombatPassives().luckBonus, minimum, maximum));
-	const auto side = playerToSide(battleGetOwner(attacker));
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return cap(baseLuck);
-	const auto mark = battleGetFocusFireState(side);
-	const bool focused = shooting && target && battleIsFocusFireRecipient(attacker, side)
-		&& battleIsFocusFireTargetActive(side) && mark && mark->targetUnitId == target->unitId();
-	const auto & fortune = getBattle()->getSylvanLuckState(side);
-	int luck = fortune.chanceLuck(baseLuck, attacker->unitId(), focused);
-	const auto controllerSide = playerToSide(battleGetActionController(attacker));
-	if((controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
-		&& getBattle()->getLuckSerendipityState(controllerSide).availableAt(battleGetRound())
-		&& !battleTacticDist() && attacker->alive() && !attacker->isTimeStopped()
-		&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker,
-			!(shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))))
-		luck += 2;
-	if(!includeChanceOnlySerendipity && fortune.serendipity
-		&& !fortune.positiveLuckUnits.contains(attacker->unitId()))
-		--luck;
-	return cap(std::clamp(luck, minimum, maximum));
-}
-
-int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & attack) const
-{
-	const auto average = [](const DamageRange & range) { return range.min + (range.max - range.min) / 2; };
-	damageCalculationTiming::noteCalculation(damageCalculationTiming::Calculation::INITIAL);
-	const auto normal = average(calculateDmgRange(attack).damage);
-	const auto side = playerToSide(battleGetOwner(attack.attacker));
-	if(attack.luckyStrike || attack.unluckyStrike)
-		return normal;
-	if(battleCanTriggerPerfectFortune(attack))
-	{
-		auto guaranteed = attack;
-		guaranteed.luckyStrike = true;
-		guaranteed.unluckyStrike = false;
-		damageCalculationTiming::noteCalculation(damageCalculationTiming::Calculation::LUCKY_SECOND);
-		return average(calculateDmgRange(guaranteed).damage);
-	}
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return normal;
-	const auto fortune = getBattle()->getSylvanLuckState(side);
-	const int luck = battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);
-	if(luck == 0)
-		return normal;
-	if(luck < 0 && fortune.canIgnoreNegativeLuck(
-		newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage)))
-		return normal;
-	const auto rules = battleLuckRules(*getBattle());
-	if(luck > 0 && attack.secondaryAttack && !rules.affectsAllTargets)
-		return normal;
-	const auto & chances = luck > 0 ? rules.goodChance : rules.badChance;
-	const auto dice = rules.diceSize;
-	if(chances.empty() || dice <= 0)
-		return normal;
-	double chance = std::clamp(static_cast<double>(chances[std::min<size_t>(std::abs(luck), chances.size()) - 1]) / dice, 0.0, 1.0);
-	// Forecast this attack's first adverse result. Deterministic outcomes do not
-	// spend an allowance; positive Luck is not an adverse result for this army.
-	if(luck < 0 && chance > 0.0 && chance < 1.0
-		&& getBattle()->getAdverseCombatRerollState(side).available())
-		chance *= chance;
-	auto rolled = attack;
-	rolled.luckyStrike = luck > 0;
-	rolled.unluckyStrike = luck < 0;
-	damageCalculationTiming::noteCalculation(luck > 0 ? damageCalculationTiming::Calculation::LUCKY_SECOND
-		: damageCalculationTiming::Calculation::UNLUCKY_SECOND);
-	return static_cast<int64_t>(normal * (1.0 - chance) + average(calculateDmgRange(rolled).damage) * chance);
 }
 
 std::vector<HeroOrderState> CBattleInfoCallback::battleGetHeroOrderStates(BattleSide side) const
@@ -1421,6 +1340,10 @@ bool CBattleInfoCallback::battleCanUseDefiant(
 	const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause) const
 {
 	using Cause = newHorizonsArmorer::DefiantDenialCause;
+	if(cause == Cause::PARALYZING_GAZE)
+		return !attack.retaliation && !attack.secondaryAttack && !attack.bracePreemptive
+			&& attack.preemptiveDamagePercent <= 0 && attack.cleaveDamagePercent <= 0
+			&& battleCanUseGazeDefiant(attack.attacker, attack.defender, attack.shooting);
 	const auto * current = getBattle();
 	const auto * attacker = attack.attacker;
 	const auto * target = attack.defender;
@@ -1942,12 +1865,8 @@ std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsFor
 		// Pursuit is the movement-only tail of an activation. Keep information
 		// actions client-side, but never advertise another attack, creature spell,
 		// Gate, Wait, or other creature action while its allowance is pending.
-		if(stack->pursuitMovementRemaining > 0)
-		{
-			if(stack->canMove())
-				allowedActionList.push_back(PossiblePlayerBattleAction::MOVE_STACK);
+		if(appendCreatureContinuationActions(stack, allowedActionList))
 			return allowedActionList;
-		}
 		if(newHorizonsCreatureAbilitySuppression::suppressionLevel(*stack) > 0)
 		{
 			if(stack->isMeleeAttacker())
@@ -2452,7 +2371,9 @@ BattleHexArray CBattleInfoCallback::battleGetAvailableHexes(const ReachabilityIn
 		return ret;
 
 	auto unitSpeed = unit->getMovementRange(0);
-	if(const auto * state = dynamic_cast<const CUnitState *>(unit);
+	if(newHorizonsDreadCavalry::hasRawPending(unit))
+		unitSpeed = std::min<int32_t>(unitSpeed, battleGetDreadCavalryMovementRemaining(unit));
+	else if(const auto * state = dynamic_cast<const CUnitState *>(unit);
 		state && state->pursuitMovementRemaining > 0)
 		unitSpeed = std::min<int32_t>(unitSpeed, state->pursuitMovementRemaining);
 
@@ -2885,7 +2806,7 @@ bool CBattleInfoCallback::battleCanAttackUnit(const battle::Unit * attacker, con
 		throw std::runtime_error("Undefined attacker in battleCanAttackUnit!");
 
 	if(!target || target->isInvincible()
-		|| (target->hasBonusOfType(BonusType::SANCTIFIED) && battleMatchOwner(attacker, target)))
+		|| (newHorizonsForestAmbush::protectsDirectTarget(target) && battleMatchOwner(attacker, target)))
 		return false;
 
 	if(attacker == target || !battleMatchOwner(attacker, target))
@@ -2904,8 +2825,10 @@ bool CBattleInfoCallback::battleCanAttackUnitAction(const battle::Unit * attacke
 		return false;
 	if(!attacker)
 		throw std::runtime_error("Undefined attacker in battleCanAttackUnitAction!");
+	if(!newHorizonsDreadCavalry::permitsTarget(*this, attacker, target))
+		return false;
 	if(!target || target->isInvincible()
-		|| (target->hasBonusOfType(BonusType::SANCTIFIED)
+		|| (newHorizonsForestAmbush::protectsDirectTarget(target)
 			&& battleMatchActionController(attacker, target, false)))
 		return false;
 	if(attacker == target || !battleMatchActionController(attacker, target, false))
@@ -3122,7 +3045,7 @@ bool CBattleInfoCallback::battleCanOverwatch(const battle::Unit * shooter, const
 	if(!shooter || !mover || shooter->unitId() == mover->unitId() || !from.isAvailable() || !to.isAvailable()
 		|| from == to || !battleOverwatchReady(shooter) || !mover->alive() || mover->isGhost()
 		|| !battleMatchOwner(shooter, mover) || mover->isInvincible()
-		|| (mover->hasBonusOfType(BonusType::SANCTIFIED) && battleMatchOwner(shooter, mover)))
+		|| (newHorizonsForestAmbush::protectsDirectTarget(mover) && battleMatchOwner(shooter, mover)))
 		return false;
 	// Ghost Walk is supplied by the mover's current controller. Veiled
 	// Movement suppresses movement reactions, not ordinary ranged attacks.
@@ -3185,7 +3108,7 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, const Ba
 			return false;
 
 		if(defender->isInvincible()
-			|| (defender->hasBonusOfType(BonusType::SANCTIFIED) && battleMatchOwner(attacker, defender)))
+			|| (newHorizonsForestAmbush::protectsDirectTarget(defender) && battleMatchOwner(attacker, defender)))
 			return false;
 	}
 
@@ -3247,7 +3170,7 @@ bool CBattleInfoCallback::battleCanShootActionWithoutCounterBatteryRestriction(
 	if(!emptyHexAreaAttack)
 	{
 		if(!defender || defender->isInvincible()
-			|| (defender->hasBonusOfType(BonusType::SANCTIFIED)
+			|| (newHorizonsForestAmbush::protectsDirectTarget(defender)
 				&& battleMatchActionController(attacker, defender, false)))
 			return false;
 	}
@@ -3973,6 +3896,10 @@ DamageEstimation CBattleInfoCallback::battleEstimateDamage(const BattleAttackInf
 		&& (ignoreInnate || !battleCanUseDefiant(bai, newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD)))
 		return ret;
 
+	if(newHorizonsParalyzingGaze::canConsume(*bai.defender)
+		&& !battleCanUseDefiant(bai, newHorizonsArmorer::DefiantDenialCause::PARALYZING_GAZE))
+		return ret;
+
 	//TODO: rewire once more using interval-based fuzzy arithmetic
 
 	const auto & estimateRetaliation = [&](int64_t damage)
@@ -4397,15 +4324,7 @@ std::vector<ForcedAction> CBattleInfoCallback::getBerserkForcedActions(const bat
 	const bool canonicalBerserk = newHorizonsMagic::berserkUsesSingleCreatureTarget(getBattle()->getMagicRules());
 	auto targets = battleGetUnitsIf([this, berserker, canonicalBerserk](const battle::Unit * u)
 	{
-		if(!u->isValidTarget(false) || u->unitId() == berserker->unitId())
-			return false;
-		if(!canonicalBerserk)
-			return true;
-
-		// V3 forces a melee attack. Exclude only targets rejected by the same
-		// authoritative melee legality checks; Berserk still includes allies.
-		return !u->isInvincible()
-			&& !(u->hasBonusOfType(BonusType::SANCTIFIED) && battleMatchOwner(berserker, u));
+		return admitsBerserkTarget(*this, berserker, u, canonicalBerserk);
 	});
 	if(targets.empty())
 		return {};
@@ -4703,94 +4622,10 @@ AttackableTiles CBattleInfoCallback::getPotentiallyAttackableHexes(
 }
 
 AttackableTiles CBattleInfoCallback::getPotentiallyAttackableHexes(
-	const battle::Unit* attacker,
-	const battle::Unit * defender,
-	BattleHex destinationTile,
-	BattleHex attackerPos,
-	BattleHex defenderPos) const
+	const battle::Unit * attacker, const battle::Unit * defender, BattleHex destinationTile,
+	BattleHex attackerPos, BattleHex defenderPos) const
 {
-	//does not return hex attacked directly
-	AttackableTiles at;
-	RETURN_IF_NOT_BATTLE(at);
-
-	BattleHex attackOriginHex = (attackerPos.toInt() != BattleHex::INVALID) ? attackerPos : attacker->getPosition(); //real or hypothetical (cursor) position
-	
-	defenderPos = (defenderPos.toInt() != BattleHex::INVALID) ? defenderPos : defender->getPosition(); //real or hypothetical (cursor) position
-	
-	if(attacker->hasBonusOfType(BonusType::ATTACKS_ALL_ADJACENT))
-		at.hostileCreaturePositions.insert(attacker->getSurroundingHexes(attackerPos));
-
-	// If attacker is double-wide and its head is not adjacent to enemy we need to turn around
-	if(attacker->doubleWide() && !vstd::contains(defender->getSurroundingHexes(defenderPos), attackOriginHex))
-		attackOriginHex = attacker->occupiedHex(attackOriginHex);
-
-	auto attackDirection = BattleHex::mutualPosition(attackOriginHex, defenderPos);
-
-	// If defender is double-wide, attacker always prefers targeting its 'tail', if it is reachable
-	if(defender->doubleWide() && BattleHex::mutualPosition(attackOriginHex, defender->occupiedHex(defenderPos)) != BattleHex::NONE)
-		attackDirection = BattleHex::mutualPosition(attackOriginHex, defender->occupiedHex(defenderPos));
-
-	if(attackDirection == BattleHex::NONE)
-		throw std::runtime_error("!!!");
-
-	const auto & processTargets = [&](const std::vector<int> & additionalTargets) -> BattleHexArray
-	{
-		BattleHexArray output;
-
-		for (int targetPath : additionalTargets)
-		{
-			BattleHex target = attackOriginHex;
-			std::vector<BattleHex::EDir> path;
-
-			for (int targetPathLeft = targetPath; targetPathLeft != 0; targetPathLeft /= 10)
-				path.push_back(static_cast<BattleHex::EDir>((attackDirection + targetPathLeft % 10 - 1) % 6));
-
-			try
-			{
-				if(attacker->doubleWide() && attacker->coversPos(target.cloneInDirection(path.front())))
-					target.moveInDirection(attackDirection);
-
-				for(BattleHex::EDir nextDirection : path)
-					target.moveInDirection(nextDirection);
-			}
-			catch(const std::out_of_range &)
-			{
-				// Hex out of range, for example outside of battlefield. This is valid situation, so skip this hex
-				continue;
-			}
-
-			if (target.isValid() && !attacker->coversPos(target))
-				output.insert(target);
-		}
-		return output;
-	};
-
-	const auto multihexUnit = attacker->getBonusesOfType(BonusType::MULTIHEX_UNIT_ATTACK);
-	const auto multihexEnemy = attacker->getBonusesOfType(BonusType::MULTIHEX_ENEMY_ATTACK);
-	const auto multihexAnimation = attacker->getBonusesOfType(BonusType::MULTIHEX_ANIMATION);
-
-	for (const auto & bonus : *multihexUnit)
-		at.friendlyCreaturePositions.insert(processTargets(bonus->parameters->toVector()));
-
-	for (const auto & bonus : *multihexEnemy)
-		at.hostileCreaturePositions.insert(processTargets(bonus->parameters->toVector()));
-
-	for (const auto & bonus : *multihexAnimation)
-		at.overrideAnimationPositions.insert(processTargets(bonus->parameters->toVector()));
-
-	if(attacker->hasBonusOfType(BonusType::THREE_HEADED_ATTACK))
-		at.hostileCreaturePositions.insert(processTargets({2,6}));
-
-	if(attacker->hasBonusOfType(BonusType::WIDE_BREATH))
-		at.friendlyCreaturePositions.insert(processTargets({ 11, 111, 2, 12, 6, 16 }));
-
-	if(attacker->hasBonusOfType(BonusType::TWO_HEX_ATTACK_BREATH))
-		at.friendlyCreaturePositions.insert(processTargets({ 11 }));
-
-	if (attacker->hasBonusOfType(BonusType::PRISM_HEX_ATTACK_BREATH))
-		at.friendlyCreaturePositions.insert(processTargets({ 11, 12, 16 }));
-
-	return at;
+	return getPotentiallyAttackableHexes(attacker, defender, destinationTile, attackerPos, defenderPos, nullptr);
 }
 
 AttackableTiles CBattleInfoCallback::getPotentiallyShootableHexes(const battle::Unit * attacker, const BattleHex & destinationTile, const BattleHex & attackerPos) const

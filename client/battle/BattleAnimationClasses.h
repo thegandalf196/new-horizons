@@ -161,7 +161,7 @@ public:
 	bool init() override;
 	void tick(uint32_t msPassed) override;
 
-	MovementAnimation(BattleInterface & owner, const CStack *_stack, const BattleHexArray & _destTiles, int _distance);
+	MovementAnimation(BattleInterface & owner, const CStack *_stack, const BattleHexArray & _destTiles, int _distance, BattleHex visualOrigin = BattleHex::INVALID);
 	~MovementAnimation();
 };
 
@@ -220,7 +220,7 @@ class MeleeAttackAnimation : public AttackAnimation
 	ECreatureAnimType selectGroup(bool multiAttack);
 
 public:
-	MeleeAttackAnimation(BattleInterface & owner, const CStack * attacker, BattleHex _dest, const CStack * _attacked, bool multiAttack);
+	MeleeAttackAnimation(BattleInterface & owner, const CStack * attacker, BattleHex _dest, const CStack * _attacked, bool multiAttack, BattleHex visualOrigin = BattleHex::INVALID);
 
 	void tick(uint32_t msPassed) override;
 };

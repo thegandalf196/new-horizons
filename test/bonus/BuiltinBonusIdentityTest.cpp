@@ -107,3 +107,12 @@ TEST(BuiltinBonusIdentityTest, NoneEncodingAndOutOfRangeRefusalRemainUnchanged)
 	EXPECT_EQ(BonusTypeID::decode(""), static_cast<int32_t>(BonusType::NONE));
 	EXPECT_THROW(BonusTypeID::encode(std::numeric_limits<int32_t>::max()), std::out_of_range);
 }
+
+TEST(BuiltinBonusIdentityTest, PhysicalResistanceDisplayUsesActualBasisPointValue)
+{
+	auto bonus = std::make_shared<Bonus>(input(BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS));
+	bonus->val = 7500;
+	EXPECT_EQ(LIBRARY->bth->bonusToString(bonus), "Physical resistance: 75% less physical damage.");
+	bonus->val = 1250;
+	EXPECT_EQ(LIBRARY->bth->bonusToString(bonus), "Physical resistance: 12.5% less physical damage.");
+}

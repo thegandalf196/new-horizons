@@ -4,7 +4,9 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "ProjectedMeleeHit.h"
+#include "../../lib/battle/NewHorizonsSoulHarvest.h"
 #include "ProjectedMeleeExpiry.h"
 #include "ProjectedTargetHit.h"
 #include "HypotheticBattle.h"
@@ -60,7 +62,14 @@ std::optional<heroOrderValue::MeleeHitReceipt> apply(HypotheticBattle & battle, 
 	const auto prepared = projectedTargetHit::prepare(battle, *victim, requested, context);
 	const bool bastion = battle.battleHasBastionProtection(victim.get());
 	auto damage = prepared.damageToApply;
-	victim->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+	const bool harvestEligible = newHorizonsSoulHarvest::qualifies(battle, *actor, *victim, strike.physicalDamage);
+	const bool victimMayRebirth = battle.hasReadyNativeRebirth(victim.get());
+	const int32_t victimCountBefore = harvestEligible ? victim->getCount() : 0;
+	newHorizonsForestAmbush::damageFromAttack(battle, *victim, damage,
+				battle::DamageProvenance::PHYSICAL_CREATURE);
+	if(harvestEligible)
+		newHorizonsSoulHarvest::grant(*actor, newHorizonsSoulHarvest::casualtiesAfterHit(
+			*victim, victimCountBefore, victimMayRebirth));
 	battle.projectFortuneStrike(strike, {{victim->unitId(), damage}}, actor.get(), !victim->alive(),
 		outcome, true, perfect, side, side, newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(actor.get(), true));
 	actor->afterAttack(false, retaliation, true); // Brace is reactive but never ordinary retaliation consumption.

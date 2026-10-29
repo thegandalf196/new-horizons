@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class HeroPositiveProcPresentationTest(unittest.TestCase):
     def test_order_only_opportunity_names_heroic_spirit(self):
-        window = (ROOT/'client/battle/BattleHeroActionWindow.cpp').read_text()
+        window = (ROOT/'client/battle/NewHorizonsOrderPresentation.h').read_text()
         method = window.split('std::string orderAllowanceSourceName', 1)[1].split('\nstd::string ', 1)[0]
         self.assertIn('case HeroActionAllowanceState::GrantSource::HEROIC_SPIRIT: return "Heroic Spirit";', method)
 
@@ -39,7 +39,7 @@ class HeroPositiveProcPresentationTest(unittest.TestCase):
     def test_authoritative_original_spell_and_consumed_order_only(self):
         interface = (ROOT/'client/battle/BattleInterface.cpp').read_text()
         self.assertIn('sc->activeCast && sc->castByHero && sc->casterStack < 0 && sc->heroLuck', interface)
-        order = interface.split('void BattleInterface::presentAcceptedHeroOrder', 1)[1].split('\nvoid ', 1)[0]
+        order = (ROOT/'client/battle/BattleOrderPresentation.cpp').read_text().split('void BattleInterface::presentAcceptedHeroOrder', 1)[1]
         self.assertLess(order.index('std::move(pendingHeroOrderPresentation)'), order.index('presentHeroPositiveProcs('))
         self.assertIn('state->heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay)', order)
         self.assertIn('state->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit)', order)

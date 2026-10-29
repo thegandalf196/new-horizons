@@ -70,6 +70,11 @@ PlayerColor BattleProxy::getSidePlayer(BattleSide side) const
 
 const CArmedInstance * BattleProxy::getSideArmy(BattleSide side) const
 {
+	// Army source context is nullable for a hidden side. Keep the callback's
+	// direct access guard for explicit queries and invalid side arguments.
+	if(subject->getBattle() && (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		&& !battleDoWeKnowAbout(side))
+		return nullptr;
 	return subject->battleGetArmyObject(side);
 }
 

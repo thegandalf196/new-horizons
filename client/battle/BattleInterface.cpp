@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleHeroActionWindow.h"
 #include "BattleInterface.h"
+#include "CreatureContinuationUI.h"
 
 #include "BattleActionsController.h"
 #include "BattleAnimationClasses.h"
@@ -916,6 +917,9 @@ void BattleInterface::openingEnd()
 
 BattleInterface::~BattleInterface()
 {
+	// The ordinary animation list holds borrowed raw pointers. Release this
+	// owned gesture while its controller and hero callback target still exist.
+	heroOrderGesture.reset();
 	if(heroCueTraceScene && heroPositiveProcPresentation::traceEnabled())
 	{
 		heroPositiveProcPresentation::TraceContext trace;
@@ -1095,24 +1099,8 @@ void BattleInterface::giveCommand(EActionType action, const BattleHex & tile, Sp
 void BattleInterface::giveCommand(EActionType action, const std::vector<BattleHex> & tiles,  SpellID spell)
 {
 	const CStack * activeStack = stacksController->getActiveStack();
-	const auto activeStackState = activeStack ? activeStack->acquireState() : nullptr;
-	if(activeStackState && activeStackState->rangedFollowUpDamagePercent > 0)
-	{
-		// Defend is the existing human-facing close control and safely declines
-		// the continuation as NO_ACTION. Wait is not a decline action, so block it.
-		// No other creature action may replace the selected follow-up shot.
-		if(action == EActionType::WAIT)
-			return;
-		else if(action == EActionType::DEFEND)
-			action = EActionType::NO_ACTION;
-		else if(action != EActionType::SHOOT && action != EActionType::NO_ACTION
-			&& action != EActionType::HERO_SPELL && action != EActionType::HERO_COMMAND
-			&& action != EActionType::RETREAT && action != EActionType::SURRENDER)
-			return;
-		else if(action == EActionType::SHOOT
-			&& !getBattle()->battleHasPendingRangedFollowUp(activeStack))
-			return;
-	}
+	if(!creatureContinuationUI::read(*getBattle(), activeStack).normalizeCommand(action))
+		return;
 
 	const CStack * actor = nullptr;
 	if(action != EActionType::HERO_SPELL && action != EActionType::RETREAT && action != EActionType::SURRENDER)
@@ -1150,6 +1138,10 @@ void BattleInterface::giveCommand(EActionType action, const std::vector<BattleHe
 
 void BattleInterface::sendCommand(BattleAction command, const CStack * actor)
 {
+	// Melee clicks submit directly here; re-read pending state before clearing controls.
+	if(!creatureContinuationUI::read(*getBattle(), actor).normalizeCommand(command.actionType))
+		return;
+
 	const auto & crisis = getBattle()->getBattle()->getCrisisCommandState();
 	if(crisis.choice() && command.actionType != EActionType::HERO_COMMAND
 		&& command.actionType != EActionType::NO_ACTION) return;
@@ -1659,86 +1651,6 @@ void BattleInterface::endAction(const BattleAction &action)
 	}
 }
 
-void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
-{
-	// Consume before playback: both-side/hotseat callbacks and duplicate
-	// EndAction delivery must not replay the same presentation.
-	const auto pending = std::move(pendingHeroOrderPresentation);
-	if(!pending || action.actionType != EActionType::HERO_COMMAND || action.metamagicDecline
-		|| pending->side != action.side || pending->command != action.command
-		|| pendingHeroOrderRound != getBattle()->battleGetRound()
-		|| !getBattle()->getBattle()->getHeroCommandUsed(action.side)
-		|| (getBattle()->getBattle()->getActiveOrder(action.side) != action.command
-			&& !getBattle()->battleGetHeroOrderState(action.side, action.command)))
-		return;
-
-	const auto state = getBattle()->battleGetHeroOrderState(action.side, action.command);
-	if(heroCommands::isCanonicalRules(getBattle()->getBattle()->getHeroCommandRules())
-		&& (!state || state->command != action.command || state->issuedRound != pendingHeroOrderRound))
-		return;
-
-	// The pending action was consumed above, so repeated EndAction cannot
-	// replay either proc. Successful Luck and Morale have separate receipts.
-	if(state)
-		presentHeroPositiveProcs(action.side,
-			state->heroLuck && state->heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay), false, false,
-			state->heroMorale && state->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit),
-			false, static_cast<int>(action.command),
-			state->heroLuck ? &*state->heroLuck : nullptr,
-			state->heroMorale ? &*state->heroMorale : nullptr, state->heroMoraleActionGrantId);
-
-	// Reuse presentation resources only, never spell definitions/mechanics.
-	// Each Order has a distinct troop effect; Second Wind uses retired Mirth.
-	const char * animation = nullptr;
-	const char * sound = nullptr;
-	float transparency = 1.f;
-	switch(action.command)
-	{
-		case HeroCommand::CHARGE: animation = "C15SPA0"; sound = "TAILWIND"; break; // Haste
-		case HeroCommand::HOLD_THE_LINE: animation = "C16SPE"; sound = "TUFFSKIN"; break; // Stone Skin
-		case HeroCommand::RIPOSTE: animation = "C04SPA0"; sound = "CNTRSTRK"; break;
-		case HeroCommand::BRACE: animation = "C13SPE0"; sound = "SHIELD"; break;
-		case HeroCommand::PROTECT: animation = "C01SPA0"; sound = "AIRSHELD"; break;
-		case HeroCommand::FOCUS_FIRE: animation = "C12SPA0"; sound = "PRECISON"; break;
-		case HeroCommand::FLANK: animation = "C07SPA1"; sound = "DISRUPTR"; transparency = 0.5f; break;
-		case HeroCommand::SECOND_WIND: animation = "C09SPW0"; sound = "MIRTH"; break;
-		default: return;
-	}
-
-	BattleHexArray targets;
-	const auto addTarget = [this, &targets](uint32_t unitId)
-	{
-		const auto * unit = getBattle()->battleGetUnitByID(unitId);
-		if(unit && unit->alive() && !unit->isGhost() && unit->getPosition().isValid())
-			targets.insert(unit->getPosition());
-	};
-	if(state && state->primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID)
-	{
-		addTarget(state->primaryTargetUnitId);
-		if(state->secondaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID)
-			addTarget(state->secondaryTargetUnitId);
-	}
-	else if(!action.target.empty())
-	{
-		for(const auto & target : action.target)
-			if(target.unitValue >= 0)
-				addTarget(static_cast<uint32_t>(target.unitValue));
-	}
-	else
-	{
-		for(const auto * unit : getBattle()->battleAliveUnits())
-			if(getBattle()->battleGetOwner(unit) == getBattle()->sideToPlayer(action.side)
-				&& !unit->isGhost() && !unit->isTurret()
-				&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-				&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER)
-				addTarget(unit->unitId());
-	}
-
-	setHeroAnimation(action.side, EHeroAnimType::VICTORY);
-	if(!targets.empty())
-		effectsController->displayAnimation(AnimationPath::builtin(animation), AudioPath::builtin(sound), targets, transparency);
-}
-
 void BattleInterface::presentHeroPositiveProcs(BattleSide side, bool luckyDay, bool erraticMana,
 	bool druidicLuck, bool heroicSpirit, bool spell, int source,
 	const newHorizonsHeroLuck::Receipt * luckReceipt,
@@ -1806,14 +1718,24 @@ void BattleInterface::startAction(const BattleAction & action)
 {
 	// This callback precedes authoritative StartAction application. Merely
 	// clicking an Order, or receiving a rejected request, never reaches this
-	// transition. A replay of an already applied Order cannot arm it again.
+	// transition. Capture the selected receipt, including typed follow-ups.
 	pendingHeroOrderPresentation.reset();
+	pendingHeroOrderGrantIds.clear();
 	if(action.actionType == EActionType::HERO_COMMAND && !action.metamagicDecline
-		&& (action.side == BattleSide::ATTACKER || action.side == BattleSide::DEFENDER)
-		&& !getBattle()->getBattle()->getHeroCommandUsed(action.side))
+		&& (action.side == BattleSide::ATTACKER || action.side == BattleSide::DEFENDER))
 	{
-		pendingHeroOrderPresentation = std::make_unique<BattleAction>(action);
-		pendingHeroOrderRound = getBattle()->battleGetRound();
+		const bool usesLedger = heroCommands::supportedByRules(
+			getBattle()->getBattle()->getHeroCommandRules(), HeroCommand::CHARGE);
+		const auto & ledger = getBattle()->getBattle()->getHeroActionAllowances(action.side);
+		if((usesLedger && ledger.currentRound == getBattle()->battleGetRound() && !ledger.grants.empty())
+			|| (!usesLedger && !getBattle()->getBattle()->getHeroCommandUsed(action.side)))
+		{
+			pendingHeroOrderPresentation = std::make_unique<BattleAction>(action);
+			pendingHeroOrderRound = getBattle()->battleGetRound();
+			if(usesLedger)
+				for(const auto & grant : ledger.grants)
+					pendingHeroOrderGrantIds.push_back(grant.id);
+		}
 	}
 
 	if(action.actionType == EActionType::END_TACTIC_PHASE)

@@ -178,6 +178,7 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateCanonicalSpellClausesSerialization(bool supported, bool sorcerySupported = false) const;
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateNeutralArmySizeSerialization(bool supported) const;
+	void validateRecruitmentGrowthSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
 
@@ -185,6 +186,8 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	{
 		if(h.saving)
 			validateNeutralArmySizeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+		if(h.saving)
+			validateRecruitmentGrowthSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 		if(h.saving)
 			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));

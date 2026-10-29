@@ -1,0 +1,63 @@
+{
+	"ghost": {
+		"name": {
+			"singular": "Ghost",
+			"plural": "Ghosts"
+		},
+		"description": "Soul Harvest: gains one temporary Ghost for each enemy creature this stack kills. Growth lasts only for this battle.",
+		"faction": "core:necropolis",
+		"level": 3,
+		"special": true,
+		"excludeFromRandomization": true,
+		"cost": {
+			"gold": 230
+		},
+		"speed": 7,
+		"initiative": 7,
+		"hitPoints": 18,
+		"attack": 7,
+		"defense": 7,
+		"damage": {
+			"min": 3,
+			"max": 5
+		},
+		"fightValue": 252,
+		"aiValue": 315,
+		"growth": 7,
+		"horde": 0,
+		"abilities": {
+			"undead": {
+				"type": "UNDEAD"
+			},
+			"canFly": {
+				"type": "FLYING"
+			},
+			"regenerate": {
+				"type": "HP_REGENERATION",
+				"val": 50
+			},
+			"drainsMana": {
+				"type": "MANA_DRAIN",
+				"val": 2
+			}
+		},
+		"graphics": {
+			"animation": "NH_GHOST.DEF",
+			"iconSmall": "newHorizons/creatures/GhostSmall",
+			"iconLarge": "newHorizons/creatures/GhostLarge",
+			"animationTime": {
+				"attack": 1,
+				"walk": 1,
+				"idle": 1
+			},
+			"timeBetweenFidgets": 1
+		},
+		"sound": {
+			"attack": "WRTHATTK.wav",
+			"defend": "WRTHDFND.wav",
+			"killed": "WRTHKILL.wav",
+			"move": "WRTHMOVE.wav",
+			"wince": "WRTHWNCE.wav"
+		}
+	}
+}

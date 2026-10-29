@@ -9,6 +9,7 @@
  */
 
 #pragma once
+#include <algorithm>
 
 #include "GameConstants.h"
 #include "BattleHexArray.h"
@@ -69,6 +70,14 @@ struct DLL_LINKAGE DamageEstimation
 	int64_t guardianSpiritAbsorbedDamage = 0;
 	/// Incoming portion left after Guardian Spirit absorption, before Health caps it.
 	int64_t guardianSpiritOverflowDamage = 0;
+
+	void recordGuardianSpiritAbsorption(int64_t before, int64_t after, int64_t incoming)
+	{
+		guardianSpiritAbsorbedDamage = std::max<int64_t>(0, before - after);
+		guardianSpiritOverflowDamage = guardianSpiritAbsorbedDamage > 0
+			? std::max<int64_t>(0, incoming - guardianSpiritAbsorbedDamage) : 0;
+	}
+
 };
 
 class DLL_LINKAGE IBattleInfoCallback : public IConstBonusProvider, public scripting::ApiRawPointer<IBattleInfoCallback>

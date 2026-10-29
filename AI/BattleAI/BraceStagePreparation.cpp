@@ -87,7 +87,7 @@ bool prefixSupported(const HypotheticBattle & battle, const battle::Unit & actor
 	const auto side = battle.playerToSide(battle.battleGetActionController(&actor));
 	if(!active || active->unitId() != actor.unitId() || !actor.willMove(0)
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) || battle.battleTacticDist()
-		|| actorState->pursuitMovementRemaining > 0 || actorState->rangedFollowUpDamagePercent > 0
+		|| actorState->pursuitMovementRemaining > 0 || actorState->dreadCavalryState.pending || actorState->rangedFollowUpDamagePercent > 0
 		|| actorState->armorerLastStandEndedActivation
 		|| battle.battleHasPendingDoubleCommand(side) || battle.battleHasPendingPreCombatOrder(side)
 		|| battle.battleGetActionController(&actor) != battle.battleGetOwner(&actor))

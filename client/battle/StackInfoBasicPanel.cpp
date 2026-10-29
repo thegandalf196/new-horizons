@@ -378,21 +378,13 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	result.sylvanLuck = currentSylvanLuckStatus(stack, battleCallback, luckReadback);
 	if(stack)
 	{
+		result.forestAmbush = stack->forestAmbush;
 		result.frozen = stack->alive() && newHorizonsFrozen::isFrozen(*stack);
 		if(result.frozen && battleCallback && battleCallback->getBattle())
 			result.frozenShatterBonusPercent = newHorizonsFrozen::shatterBonusPercent(battleCallback->getBattle()->getMagicRules());
 		const auto confusionMarkers = stack->getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
 		result.confusion = newHorizonsBattleStatus::confusionStatus(*confusionMarkers, stack->confusionState);
-		if(stack->hasBattleForm())
-		{
-			const auto currentCreature = stack->battleFormCreature();
-			const auto originalCreature = stack->battleFormOriginalCreature();
-			result.battleForm = newHorizonsBattleStatus::makeBattleFormStatus(true,
-				currentCreature.getNum(), originalCreature.getNum(), stack->getBattleFormRoundsRemaining(),
-				stack->health.getCreatureHealthAvailable(),
-				currentCreature.toCreature()->getNamePluralTranslated(),
-				originalCreature.toCreature()->getNamePluralTranslated(), stack->isBattleFormRestorationPending());
-		}
+		result.battleForm = newHorizonsStackSpellPresentation::battleFormStatus(*stack);
 		result.temporaryCreatures = newHorizonsBattleStatus::makeTemporaryCreatureStatus(
 			stack->health.getResurrected());
 		const auto retributionProtectionBonuses = stack->getBonuses(
@@ -750,26 +742,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	if(!luckTooltip.empty())
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 141, 67, 14), luckTooltip, luckTooltip));
 	displayedSoulChainSignature = soulChainStatusSignature(stack, battleCallback.get());
-	if(displayedStatus.defend.defending)
-	{
-		const auto badge = displayedStatus.defend.bulwark ? "BULWARK" : "DEFEND";
-		auto tooltip = newHorizonsBattleStatus::defendStatusTooltip(displayedStatus.defend);
-		if(displayedStatus.battlecraftWait)
-			tooltip += "\n\n" + newHorizonsBattleStatus::battlecraftWaitTooltip(*displayedStatus.battlecraftWait);
-		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW, badge));
-		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
-	}
-	else if(displayedStatus.battlecraftWait || displayedStatus.overwatchRange > 0)
-	{
-		auto tooltip = displayedStatus.battlecraftWait
-			? newHorizonsBattleStatus::battlecraftWaitTooltip(*displayedStatus.battlecraftWait) : std::string();
-		if(displayedStatus.overwatchRange > 0)
-			tooltip += "\n\nOverwatch ready: one 50%-damage ranged reaction when a legal enemy voluntarily enters range "
-				+ std::to_string(displayedStatus.overwatchRange) + ". Ends at the delayed activation; once per round.";
-		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
-			Colors::YELLOW, displayedStatus.overwatchRange > 0 ? "WATCH" : "WAIT"));
-		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
-	}
+	appendActionStatus();
 	const auto incomingSoulChain = soulChainIncomingLinks(stack, battleCallback.get());
 	if(!incomingSoulChain.empty())
 	{

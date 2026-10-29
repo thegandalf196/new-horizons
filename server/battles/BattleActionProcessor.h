@@ -8,7 +8,11 @@
  *
  */
 #pragma once
+#include "battle/NewHorizonsAerialSupremacy.h"
 #include <array>
+#include "BattlePetrifyingBlood.h"
+#include "DreadCavalryAction.h"
+#include <optional>
 
 #include "battle/IBattleInfoCallback.h"
 #include "battle/RelentlessAssaultState.h"
@@ -65,6 +69,7 @@ class BattleActionProcessor : boost::noncopyable
 	/// Scoped dispatch provenance, never gameplay/save state. Automatic forced
 	/// actions cannot be mistaken for voluntary movement by shared moveStack.
 	bool voluntaryMovementAction = false;
+	PendingPetrifyingBlood * activePetrifyingBlood = nullptr;
 
 	/// One reaction to a combat event that is about to run. Which script it is and how it is ordered
 	/// are decided when it is collected, so that running it is nothing but a dispatch. Units are kept
@@ -124,6 +129,8 @@ class BattleActionProcessor : boost::noncopyable
 		bool protectIntercepted = false;
 		BattleSide perfectMomentSide = BattleSide::NONE;
 		bool * manaLeechSequenceSpent = nullptr;
+		std::optional<newHorizonsAerialSupremacy::Excursion> aerialExcursion;
+		int dreadCavalryDamagePercent = 100;
 	};
 
 	/// Action-local accounting for Rain of Arrows. The original primary footprint
@@ -136,6 +143,13 @@ class BattleActionProcessor : boost::noncopyable
 		int64_t actualPrimaryDamage = 0;
 	};
 
+	bool canResolveAttack(const CBattleInfoCallback & battle, const CStack * attacker,
+		const CStack * defender, const AttackDescriptor & attack) const;
+	bool admitAttack(const CBattleInfoCallback & battle, const CStack * attacker,
+		const CStack * defender, const AttackDescriptor & attack);
+	void performOrdinaryRangedRetaliation(const CBattleInfoCallback & battle,
+		const CStack * retaliator, const CStack * shooter);
+	bool tryAerialRetaliation(const CBattleInfoCallback & battle, const CStack * griffin, const CStack * shooter);
 	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary = false);
 	void resolveOverwatch(const CBattleInfoCallback & battle, const CStack * mover,
 		const BattleHex & from, const BattleHex & to);
@@ -143,7 +157,8 @@ class BattleActionProcessor : boost::noncopyable
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
 		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr,
 		RelentlessAssaultActionContext * relentlessAssault = nullptr,
-		RainOfArrowsAction * rainOfArrows = nullptr, bool * vanishKillOut = nullptr);
+		RainOfArrowsAction * rainOfArrows = nullptr, bool * vanishKillOut = nullptr,
+		dreadCavalryAction::Context * dreadCavalry = nullptr);
 	RainOfArrowsAction beginRainOfArrows(const CBattleInfoCallback & battle,
 		const CStack * attacker, const CStack * primaryTarget) const;
 	void resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker,
@@ -166,8 +181,10 @@ class BattleActionProcessor : boost::noncopyable
 	void markSpellLikeAttack(const CStack * attacker, BattleAttack & bat) const;
 
 	void handleAfterAttackCasting(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload);
-	void attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender);
+	void attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender, SpellID onlySpell = SpellID());
 
+	void handlePetrifyingBlood(const CBattleInfoCallback & battle, const CStack * attacker, const BattleAttack & attack);
+	void resolvePetrifyingBlood(const CBattleInfoCallback & battle, const PendingPetrifyingBlood & pending);
 	std::set<SpellID> getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender);
 
 	/// Rolls the damage one attacked unit takes and appends what scripts need to know about it to the payload
@@ -176,13 +193,17 @@ class BattleActionProcessor : boost::noncopyable
 		const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
 		int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
 		int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent,
-		bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack) const;
+		bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent) const;
 	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 
 	void addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const;
 	void addGenericDamageLog(BattleLogMessage& blm, const std::shared_ptr<battle::CUnitState> &attackerState, int64_t damageDealt) const;
 
 	bool canStackAct(const CBattleInfoCallback & battle, const CStack * stack);
+	std::optional<bool> handleMeleeContinuationRequest(const CBattleInfoCallback & battle,
+		const BattleAction & ba, const battle::Unit * active, BattleSide controllingSide,
+		BattleAction * effectiveActionOut, bool * masterGateActivationContinuationOut);
+
 
 	bool doEmptyAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doEndTacticsAction(const CBattleInfoCallback & battle, const BattleAction & ba);
@@ -197,9 +218,15 @@ class BattleActionProcessor : boost::noncopyable
 	bool doWaitAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doDefendAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool applyDefendStance(const CBattleInfoCallback & battle, const CStack * stack, bool voluntary);
-	bool doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
+	bool doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation,
+		dreadCavalryAction::Context & dreadCavalry);
+	bool doMeleeActionWithContinuation(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
+	void finishMeleeMovement(const CBattleInfoCallback & battle, const BattleAction & ba,
+		int beforeAttackSpeed, int movementSpent, bool destroyedEnemy, bool vanishKill,
+		bool allowPursuitContinuation, dreadCavalryAction::Context & dreadCavalry);
 	bool doWalkAndSpellcastAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
+	bool doShootActionCore(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
 	bool doCatapultAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doUnitSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doHealAction(const CBattleInfoCallback & battle, const BattleAction & ba);

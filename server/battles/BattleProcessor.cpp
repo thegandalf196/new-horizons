@@ -485,7 +485,7 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 	const bool pursuitActivationContinuation = result
 		&& (effectiveAction.actionType == EActionType::WALK_AND_ATTACK
 			|| effectiveAction.actionType == EActionType::SHOOT || effectiveAction.actionType == EActionType::NO_ACTION)
-		&& updatedStack && updatedStack->pursuitMovementRemaining > 0;
+		&& updatedStack && (updatedStack->pursuitMovementRemaining > 0 || updatedStack->dreadCavalryState.pending);
 	if(!masterGateActivationContinuation && !pursuitActivationContinuation && !rangedAttackContinuation)
 		expireStackActivationBonuses(battleID, effectiveAction);
 	if (gameHandler->gameState().getBattle(battleID) != nullptr && !resultProcessor->battleIsEnding(*battle))

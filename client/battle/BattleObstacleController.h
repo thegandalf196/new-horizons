@@ -65,8 +65,8 @@ class BattleObstacleController
 	void placeNextObstacle();
 
 	std::shared_ptr<IImage> getObstacleImage(const CObstacleInstance & oi);
-	Point getObstaclePosition(std::shared_ptr<IImage> image, const CObstacleInstance & obstacle);
-	Point getObstaclePosition(std::shared_ptr<IImage> image, const JsonNode & obstacle);
+	Point getObstaclePosition(std::shared_ptr<IImage> image, const CObstacleInstance & obstacle, BattleHex renderHex = BattleHex());
+	Point getObstaclePosition(std::shared_ptr<IImage> image, const JsonNode & obstacle, BattleHex renderHex = BattleHex());
 
 public:
 	BattleObstacleController(BattleInterface & owner);

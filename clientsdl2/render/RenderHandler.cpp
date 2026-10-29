@@ -620,9 +620,14 @@ static void detectOverlappingBuildings(RenderHandler * renderHandler, const Fact
 	}
 };
 
+void RenderHandler::initializeInterfaceResources()
+{
+	hdImageLoader = std::make_unique<HdImageLoader>();
+}
+
 void RenderHandler::onLibraryLoadingFinished(const Services * services)
 {
-	hdImageLoader = std::make_unique<HdImageLoader>(); // needs to initialize after class construction because we need loaded screenHandler for getScalingFactor()
+	initializeInterfaceResources();
 
 	assert(animationLayouts.empty());
 	assetGenerator->initialize();

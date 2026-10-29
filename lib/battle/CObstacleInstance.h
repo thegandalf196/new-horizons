@@ -51,6 +51,8 @@ struct DLL_LINKAGE CObstacleInstance : public Serializeable, public scripting::A
 	virtual SpellID getTrigger() const;
 
 	virtual BattleHexArray getAffectedTiles() const;
+	/// Presentation only: legacy obstacles use their anchor, Fiur trails draw each footprint hex.
+	virtual BattleHexArray getRenderTiles() const;
 	virtual bool visibleForSide(BattleSide side, bool hasNativeStack) const; //0 attacker
 
 	virtual void battleTurnPassed(){};
@@ -100,6 +102,7 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	bool revealed;
 	bool nativeVisible; //Should native terrain creatures reveal obstacle
 	bool damageSnapshot; //minimalDamage is an exact cast-time raw value, not a legacy floor
+	bool renderAtEachHex = false;
 	/// Canonical New Horizons Fire Wall consumes a ground unit once per
 	/// activation, even when movement invokes the obstacle callback repeatedly.
 	/// These fields are authoritative battle state and are intentionally kept on
@@ -117,6 +120,7 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	SpellCreatedObstacle();
 
 	BattleHexArray getAffectedTiles() const override;
+	BattleHexArray getRenderTiles() const override;
 	bool visibleForSide(BattleSide side, bool hasNativeStack) const override;
 
 	bool blocksTiles() const override;
@@ -138,6 +142,8 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_LIVING_INFERNO) && renderAtEachHex)
+			throw std::runtime_error("Cannot discard per-hex obstacle presentation in an older protocol");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA)
 			&& !capturedMdrPenetration.isNull()
 			&& !(capturedMdrPenetration.isStruct() && capturedMdrPenetration.Struct().empty()))
@@ -206,5 +212,9 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 			h & capturedMdrPenetration;
 		else if(!h.saving)
 			capturedMdrPenetration = JsonNode();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LIVING_INFERNO))
+			h & renderAtEachHex;
+		else if(!h.saving)
+			renderAtEachHex = false;
 	}
 };

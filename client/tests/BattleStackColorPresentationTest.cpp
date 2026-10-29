@@ -56,7 +56,7 @@ int main()
 
 	const auto help = [](int rounds)
 	{
-		return newHorizonsCreatureAbilityHelp::innateAbilities("new-horizons:livingArmor", nullptr, "", "", rounds);
+		return newHorizonsCreatureAbilityHelp::innateAbilities("new-horizons:livingArmor", nullptr, "", "", rounds, "", "");
 	};
 	require(help(0).empty(), "Combat-long zero lifetime must not create a creature ability row");
 	const auto one = help(1);
@@ -67,5 +67,12 @@ int main()
 		"Three remaining rounds use plural wording");
 	require(one[0].details.starts_with(one[0].compact) && three[0].details.starts_with(three[0].compact),
 		"Expanded ability help includes the actual remaining lifetime");
+	const auto harvest = newHorizonsCreatureAbilityHelp::innateAbilities(
+		"new-horizons:ghost", nullptr, "", "", 0, "Soul Harvest +%count%", "Gains %count% Ghost");
+	require(harvest.size() == 1 && harvest[0].compact == "Soul Harvest +1"
+		&& harvest[0].details == "Gains 1 Ghost" && !harvest[0].iconPath.empty(),
+		"Static Ghost help uses the intrinsic growth constant without a hero or captured profile");
+	require(!newHorizonsCreatureAbilityHelp::soulHarvest("core:wraith", "", ""),
+		"Ordinary Wraiths do not claim Soul Harvest");
 	std::cout << "Battle stack color and summon lifetime presentation PASS\n";
 }

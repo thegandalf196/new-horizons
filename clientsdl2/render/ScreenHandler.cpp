@@ -753,6 +753,6 @@ void ScreenHandler::screenShot() const
 	MetaString txt;
 	txt.appendTextID("vcmi.client.screenShot");
 	txt.replaceRawString(filePath.string());
-	if(GAME->interface())
+	if(GAME && GAME->interface())
 		GAME->server().getGameChat().sendMessageGameplay(txt.toString(&GAME->translator()));
 }

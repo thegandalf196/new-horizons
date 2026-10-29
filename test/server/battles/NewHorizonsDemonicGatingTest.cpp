@@ -9,6 +9,7 @@
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/mapping/CMap.h"
 #include "../../../lib/modding/IdentifierStorage.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/modding/ModScope.h"
@@ -48,6 +49,13 @@ public:
 class NewHorizonsDemonicGatingTest : public BattleTestFixture
 {
 protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		BattleTestFixture::mapLoaded(loaded);
+		for(const auto & object : loaded->objects)
+			if(auto * hero = dynamic_cast<CGHeroInstance *>(object.get()); hero && hero->getOwner() == PlayerColor(0))
+				hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:calh")));
+	}
 	void SetUp() override
 	{
 		BattleTestFixture::SetUp();
@@ -375,18 +383,38 @@ protected:
 		gameHandler->sendAndApply(effect);
 	}
 
+	void acceptGatingPerk(const std::string & perk, MasteryLevel::Type rank)
+	{
+		const auto ranks = [this](const std::string & skill) { return attackerSideHero->getPerkSkillRank(skill); };
+		for(uint64_t seed = 0; seed < 4096; ++seed)
+		{
+			const auto offers = attackerSideHero->getPerkState().prepareOffer(
+				ranks, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto found = std::ranges::find_if(offers, [&](const auto & offer)
+			{
+				return offer.selection.skillId == "new-horizons:demonicGating"
+					&& offer.selection.perkId == perk && offer.requiredRank == rank;
+			});
+			if(found == offers.end())
+				continue;
+			gameHandler->levelUpHero(attackerSideHero, offers,
+				static_cast<size_t>(std::distance(offers.begin(), found)), seed, false);
+			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:demonicGating", perk));
+			return;
+		}
+		FAIL() << "No legal Demonic Gating offer contained " << perk;
+	}
+
 	void grantChainGate(bool swift = false)
 	{
-		grantGatingPerk("new-horizons:demonicGating.chainGate", MasteryLevel::ADVANCED);
-		if(swift)
-		{
-			auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-			state.select("new-horizons:demonicGating",
-				"new-horizons:demonicGating.swiftGate", MasteryLevel::ADVANCED);
-			ASSERT_TRUE(attackerSideHero->hasActivePerk(
-				"new-horizons:demonicGating", "new-horizons:demonicGating.swiftGate"));
-		}
+		const SecondarySkill gating(SecondarySkill::decode("new-horizons:demonicGating"));
+		attackerSideHero->setSecSkillLevel(gating, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		ASSERT_NO_FATAL_FAILURE(acceptGatingPerk(swift ? "new-horizons:demonicGating.swiftGate"
+			: "new-horizons:demonicGating.wideGate", MasteryLevel::BASIC));
+		attackerSideHero->setSecSkillLevel(gating, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		ASSERT_NO_FATAL_FAILURE(acceptGatingPerk("new-horizons:demonicGating.chainGate", MasteryLevel::ADVANCED));
 	}
+
 
 	void attachCombatScript(CStack * unit, const std::string & scriptName, int value)
 	{

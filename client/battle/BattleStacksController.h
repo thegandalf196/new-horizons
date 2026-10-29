@@ -132,6 +132,8 @@ class BattleStacksController
 	bool shouldAttackFacingRight(const CStack * attacker, const CStack * defender);
 	void applyStackCreatureFormRefresh(const CStack * stack);
 
+	void stageAerialExcursion(const StackAttackInfo & info);
+
 public:
 	BattleStacksController(BattleInterface & owner);
 

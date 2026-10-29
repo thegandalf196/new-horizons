@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "../battle/NewHorizonsAerialSupremacy.h"
 #include <algorithm>
 #include <limits>
 #include <optional>
@@ -55,14 +56,7 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && info)
-			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-				info->getSide(side).validateManaLeechesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES));
-		if(h.saving && info)
-			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-				info->getSide(side).validateRecoverySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
-		if(h.saving && info)
-			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-				info->getSide(side).validateManaFurnaceSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
+			info->validateCapturedSideSpecialtiesSerialization(h);
 		if(h.saving && info)
 			info->validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving && info && info->getLuckRollRules().finalDirectPhysicalMultiplier
@@ -108,7 +102,13 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validatePhoenixSparkSerialization(h);
 		if(h.saving && info)
 			info->validateBloodrageDeathPerksSerialization(h);
+		if(h.saving && info) info->validatePetrifyingBloodSerialization(h);
 		if(h.saving && info) info->validateTimedSummonSerialization();
+		if(h.saving && info) info->validateParalyzingGazeSerialization(h);
+		if(h.saving && info) info->validateAerialSupremacySerialization(h);
+		if(h.saving && info)
+			info->validateDreadCavalryStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DREAD_CAVALRY));
+		if(h.saving && info) info->validateSerpentsEmbraceSerialization(h);
 		if(h.saving && info)
 			info->validateFrozenSerialization(h);
 		if(h.saving && info)
@@ -499,6 +499,7 @@ struct DLL_LINKAGE SetArmorerDefiantState : public CPackForClient
 	uint32_t targetId = std::numeric_limits<uint32_t>::max();
 	newHorizonsArmorer::DefiantDenialCause cause = newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK;
 	ArmorerDefiantState state;
+	std::optional<newHorizonsAerialSupremacy::Excursion> aerialExcursion;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 	void validateAgainst(const CBattleInfoCallback & battle) const;
@@ -508,9 +509,17 @@ struct DLL_LINKAGE SetArmorerDefiantState : public CPackForClient
 		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 			|| attackerId == std::numeric_limits<uint32_t>::max() || targetId == std::numeric_limits<uint32_t>::max()
 			|| attackerId == targetId || state.lastConsumedRound < 0
-			|| (cause != Cause::INNATE_BLOCK && cause != Cause::NO_QUARTER && cause != Cause::EXPERT_SHROUD))
+			|| (cause != Cause::INNATE_BLOCK && cause != Cause::NO_QUARTER && cause != Cause::EXPERT_SHROUD
+				&& cause != Cause::PARALYZING_GAZE))
 			throw std::runtime_error("Invalid Defiant consumption packet");
 		state.validate();
+		if(aerialExcursion)
+		{
+			aerialExcursion->validateShape();
+			if(cause != Cause::PARALYZING_GAZE || aerialExcursion->actor != targetId
+				|| aerialExcursion->opponent != attackerId)
+				throw std::runtime_error("Invalid aerial Defiant opportunity");
+		}
 	}
 	void validateTransitionFrom(const ArmorerDefiantState & previous, int32_t currentRound) const
 	{
@@ -525,13 +534,27 @@ struct DLL_LINKAGE SetArmorerDefiantState : public CPackForClient
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_DEFIANT))
 			throw std::runtime_error("Defiant consumption packet requires the Defiant serialization feature");
 		if(h.saving)
+		{
 			validateShape();
+			if(aerialExcursion && !h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY))
+				throw std::runtime_error("Aerial Defiant requires its captured capability");
+			if(cause == newHorizonsArmorer::DefiantDenialCause::PARALYZING_GAZE
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PARALYZING_GAZE))
+				throw std::runtime_error("Gaze Defiant cause requires its captured capability");
+		}
 		h & battleID;
 		h & side;
 		h & attackerId;
 		h & targetId;
 		h & cause;
+		if(cause == newHorizonsArmorer::DefiantDenialCause::PARALYZING_GAZE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PARALYZING_GAZE))
+			throw std::runtime_error("Unsupported Gaze Defiant cause");
 		h & state;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY))
+			h & aerialExcursion;
+		else if(!h.saving)
+			aerialExcursion.reset();
 		validateShape();
 	}
 };
@@ -757,6 +780,9 @@ struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 		if(h.saving && (reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
 			throw std::runtime_error("Crisis Command anchor requires its protocol");
+		if(h.saving && reason == BattleUnitTurnReason::DREAD_CAVALRY_CONTINUATION
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DREAD_CAVALRY))
+			throw std::runtime_error("Dread Cavalry continuation requires its protocol");
 		if(h.saving && reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT))
 			throw std::runtime_error("Can not serialize a Pursuit continuation to an older format");
@@ -772,6 +798,9 @@ struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 		if((reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
 			throw std::runtime_error("Old-format raw activation contains Crisis Command");
+		if(reason == BattleUnitTurnReason::DREAD_CAVALRY_CONTINUATION
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DREAD_CAVALRY))
+			throw std::runtime_error("Old-format raw activation contains Dread Cavalry");
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -1227,6 +1256,7 @@ struct BattleStackAttacked
 
 struct DLL_LINKAGE BattleAttack : public CPackForClient
 {
+	std::optional<newHorizonsAerialSupremacy::Excursion> aerialExcursion;
 	BattleUnitsChanged attackerChanges;
 	/// Server-authored post-roll snapshot, shared by every target of the strike.
 	BattleSide fortuneSide = BattleSide::NONE;
@@ -1289,6 +1319,15 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 	{
 		return flags & LAST_STAND_RETALIATION;
 	}
+	void validateAerialExcursionMarker() const
+	{
+		if(!aerialExcursion)
+			return;
+		aerialExcursion->validateShape();
+		if(shot() || !counter() || spellLike() || bsa.empty()
+			|| aerialExcursion->actor != stackAttacking || aerialExcursion->target != tile)
+			throw std::runtime_error("Aerial Supremacy requires its physical ordinary counter");
+	}
 	void validateLuckSerendipityMarker() const
 	{
 		const bool validSide = luckSerendipitySide == BattleSide::ATTACKER || luckSerendipitySide == BattleSide::DEFENDER;
@@ -1327,6 +1366,12 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 
 	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
+		if(h.saving && aerialExcursion)
+		{
+			validateAerialExcursionMarker();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY))
+				throw std::runtime_error("Cannot discard Aerial Supremacy attack excursion");
+		}
 		if(h.saving)
 		{
 			validatePerfectFortuneMarker();
@@ -1487,6 +1532,12 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			validatePerfectFortuneMarker();
 		}
 		assert(battleID != BattleID::NONE);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY))
+			h & aerialExcursion;
+		else if(!h.saving)
+			aerialExcursion.reset();
+		if(!h.saving)
+			validateAerialExcursionMarker();
 	}
 };
 
@@ -2064,6 +2115,8 @@ struct DLL_LINKAGE BattleObstaclesChanged : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			change.validatePresentationSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LIVING_INFERNO));
 		h & battleID;
 		h & change;
 		assert(battleID != BattleID::NONE);

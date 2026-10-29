@@ -223,6 +223,8 @@ public:
 		std::optional<si64> availableGold = std::nullopt);
 	void performObjectInteraction(const CGObjectInstance * obj, HeroPtr heroPtr);
 	bool makePossibleUpgrades(const CArmedInstance * obj);
+	/// Free intrinsic-benefit specialty conversion before ordinary turn planning.
+	void upgradeGhosts();
 
 	bool moveHeroToTile(int3 dst, const HeroPtr & heroPtr);
 	void buildStructure(const CGTownInstance * t, BuildingID building);

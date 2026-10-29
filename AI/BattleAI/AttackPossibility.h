@@ -14,6 +14,10 @@
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/DamageCalculationTiming.h"
 #include "StackWithBonuses.h"
+#include "../../lib/battle/NewHorizonsAerialSupremacy.h"
+#include "DreadCavalryProjection.h"
+#include "PetrifyingBloodValue.h"
+#include "ParalyzingGazeProjection.h"
 #include "HypotheticBattle.h"
 #include "HypotheticBattleTypes.h"
 
@@ -91,6 +95,15 @@ struct FortuneStrikeProjection
 	bool luckSerendipityOrdinaryAttack = false;
 	uint32_t attackerId = 0;
 	uint32_t defenderId = 0;
+	/// Explicit primary-shot admission; counter flag/coefficient do not identify reaction families.
+	bool paralyzingGazeAdmitted = false;
+	std::optional<paralyzingGazeAI::Consumption> gazeConsumption;
+	/// Only a typed aerial counter replays these otherwise unrepresented source effects.
+	int64_t aerialReflectionDamage = 0;
+	int64_t aerialVampirismHealing = 0;
+	std::optional<newHorizonsAerialSupremacy::Excursion> aerialAdmission;
+	std::optional<newHorizonsAerialSupremacy::Excursion> aerialExcursion;
+	int dreadCavalryDamagePercent = 100;
 	bool shooting = false;
 	bool retaliation = false;
 	/// Brace is reactive for Last Stand, but not damage/ordinary retaliation.
@@ -247,6 +260,9 @@ public:
 	/// this exchange, grouped by the living stack that received the healing.
 	std::vector<std::pair<uint32_t, int64_t>> vampirismHealingByUnit;
 	int64_t preAttackDamage = 0;
+	/// Gross temporary HP added to the original attacker by successful Soul Harvest.
+	/// Selected replay repeats that gain; it must not mask unclassified reflected loss.
+	int64_t soulHarvestHealthGained = 0;
 	bool bulwarkMireGripTriggered = false;
 
 	float defenderDamageReduce = 0;
@@ -254,6 +270,8 @@ public:
 	float collateralDamageReduce = 0; // friendly fire (usually by two-hex attacks)
 	/// Expected lost/gained control, separate from deterministic injury/state.
 	float frozenControlValue = 0;
+	float petrifyingBloodControlValue = 0;
+	std::vector<petrifyingBloodAI::AttemptIds> deferredBloodAttempts;
 	int64_t shootersBlockedDmg = 0;
 	bool defenderDead = false;
 
@@ -271,7 +289,9 @@ public:
 		const BattleAttackInfo & attackInfo,
 		BattleHex hex,
 		DamageCache & damageCache,
-		std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment = false);
+		std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment = false,
+		std::optional<newHorizonsAerialSupremacy::Excursion> aerial = std::nullopt,
+		const dreadCavalryAI::Action * acceptedDreadAction = nullptr);
 
 	static float calculateDamageReduce(
 		const battle::Unit * attacker,

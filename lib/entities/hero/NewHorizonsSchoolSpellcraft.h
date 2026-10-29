@@ -44,7 +44,6 @@ DLL_LINKAGE SpellcraftCastContext captureSpellcraftContext(const JsonNode & magi
 DLL_LINKAGE SpellcraftCastContext resolveSpellcraftContext(const spells::IBattleCast * event);
 DLL_LINKAGE int composeSpellcraftCoefficient(const SpellcraftSpecialtyFactors & captured,
 	SpellcraftComponent component, int additionalSpellPowerComponentPercent);
-DLL_LINKAGE void copyCapturedIndividualSpecialties(JsonNode & target, const JsonNode & source);
 DLL_LINKAGE bool resolveSchoolSpellcraftPresentation(const CHero & hero, const JsonNode & development,
 	const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result);
 }

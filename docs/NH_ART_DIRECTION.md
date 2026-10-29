@@ -75,6 +75,9 @@ Use distinctive anatomy, face, costume, armor, fabric, and hair under controlled
 fantasy lighting. Preserve the selected identity during edits. Match the actual
 portrait crop and aspect ratio; do not force every portrait into a skill square.
 Portrait acceptance does not establish creature animation or map/battle sprites.
+Use the faction's established creature-portrait background, referencing existing
+portraits rather than substituting town-screen scenery. For background-only
+edits, preserve the selected creature foreground and composition.
 
 ### UI, in-game bookmarks, and school headers
 

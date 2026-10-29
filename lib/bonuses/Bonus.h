@@ -34,6 +34,14 @@ namespace newHorizonsPlague
 {
 DLL_LINKAGE int32_t capturedPropagationLimit(const Bonus & marker);
 }
+namespace newHorizonsParalyzingGaze
+{
+DLL_LINKAGE bool validateMarker(const Bonus & bonus);
+}
+namespace newHorizonsSerpentsEmbrace
+{
+DLL_LINKAGE std::optional<uint32_t> sourceId(const Bonus & bonus);
+}
 namespace newHorizonsFrozen
 {
 DLL_LINKAGE std::optional<int32_t> markerApplicationRound(const Bonus & bonus);
@@ -139,6 +147,20 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	Bonus(const Bonus & inst, const BonusSourceID & sourceId);
 	Bonus() = default;
 
+	template <typename Handler> void validateParalyzingGazeSerialization(Handler & h) const
+	{
+		if(newHorizonsParalyzingGaze::validateMarker(*this)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PARALYZING_GAZE))
+			throw std::runtime_error("Cannot discard pending Gaze in an older bonus format");
+	}
+
+	template <typename Handler> void validateSerpentsEmbraceSerialization(Handler & h) const
+	{
+		if(newHorizonsSerpentsEmbrace::sourceId(*this)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SERPENTS_EMBRACE))
+			throw std::runtime_error("Cannot discard source-activation restraint in an older bonus format");
+	}
+
 	template <typename Handler> void validateFrozenSerialization(Handler & h) const
 	{
 		if(newHorizonsFrozen::markerApplicationRound(*this)
@@ -198,6 +220,8 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving) validateParalyzingGazeSerialization(h);
+		if(h.saving) validateSerpentsEmbraceSerialization(h);
 		if(h.saving)
 		{
 			validateAllMagicVulnerabilitySerialization(h);
@@ -337,6 +361,8 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			BonusMigration::migrateCombatAbility(*this);
 		if(!h.saving)
 		{
+			validateSerpentsEmbraceSerialization(h);
+			validateParalyzingGazeSerialization(h);
 			validateAllMagicVulnerabilitySerialization(h);
 			validateFrozenSerialization(h);
 			validateSwiftRebirthSerialization(h);

@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "BattleInfo.h"
+#include "NewHorizonsSerpentsEmbrace.h"
 #include "AccessibilityInfo.h"
 #include "UnitUpdateAdmission.h"
 #include "UnitTransitionSidecars.h"
@@ -44,6 +45,7 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 		}
 	}
 
+	const bool serpentSourceWasAlive = changedStack->alive();
 	bool killed = (-healthDelta) >= changedStack->getAvailableHealth();//todo: check using alive state once rebirth will be handled separately
 
 	bool resurrected = !changedStack->alive() && healthDelta > 0;
@@ -51,6 +53,10 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 	//applying changes
 	const auto previousPosition = changedStack->getPosition();
 	changedStack->load(data);
+	const bool serpentSourceRetired = (killed && healthDelta < 0)
+		|| (serpentSourceWasAlive && !changedStack->alive());
+	if(serpentSourceRetired)
+		newHorizonsSerpentsEmbrace::releaseDeathBindings(*this, *changedStack);
 	// Placement limiters can depend on this unit from any battle recipient.
 	if(changedStack->getPosition() != previousPosition)
 		nodeHasChanged();
@@ -76,7 +82,11 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 			//remove clone as well
 			CStack * clone = getStack(changedStack->cloneID);
 			if(clone)
+			{
+				if(!serpentSourceRetired)
+					newHorizonsSerpentsEmbrace::releaseBindings(*this, clone->unitId());
 				clone->makeGhost();
+			}
 
 			changedStack->cloneID = -1;
 		}

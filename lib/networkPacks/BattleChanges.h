@@ -8,6 +8,8 @@
  *
  */
 #pragma once
+#include "../battle/NewHorizonsAerialSupremacy.h"
+#include "../battle/DreadCavalryState.h"
 #include "../entities/creature/NewHorizonsRecruitmentTraining.h"
 
 #include "../json/JsonNode.h"
@@ -61,6 +63,12 @@ public:
 			throw std::runtime_error("Cannot discard current Morale activation provenance");
 	}
 
+	template <typename Handler> void validatePetrifyingBloodSerialization(Handler & h) const
+	{
+		if(battle::petrifyingBloodRoundFromJson(data) != -1
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PETRIFYING_BLOOD))
+			throw std::runtime_error("Cannot discard Petrifying Blood receipt in an older unit update");
+	}
 	template <typename Handler> void validateOpportunistSerialization(Handler & h) const
 	{
 		const auto & marker = data["state"]["luckyOwnAttackSequence"];
@@ -68,6 +76,11 @@ public:
 			throw std::runtime_error("Own lucky attack sequence must be a boolean");
 		if(marker.isBool() && marker.Bool() && !h.hasFeature(Handler::Version::NEW_HORIZONS_OPPORTUNIST))
 			throw std::runtime_error("Cannot discard an earned own lucky attack sequence");
+	}
+
+	template <typename Handler> void validateDreadCavalrySerialization(Handler & h) const
+	{
+		battle::dreadCavalryStateFromUnitJson(data).validateSerialization(h);
 	}
 
 	template <typename Handler> void validateConfusionSerialization(Handler & h) const
@@ -83,8 +96,12 @@ public:
 
 	template <typename Handler> void validateOverwatchSerialization(Handler & h) const
 	{
+		battle::forestAmbushStateFromUnitJson(data).validateSerialization(h);
 		if(battle::hasHeroicSpiritState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))
 			throw std::runtime_error("Cannot discard Heroic Spirit receipt in an older unit update");
+		if(newHorizonsAerialSupremacy::hasRoundState(data)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY))
+			throw std::runtime_error("Cannot discard Aerial Supremacy round state");
 		if(battle::hasOverwatchState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH))
 			throw std::runtime_error("Cannot discard Overwatch state in an older unit update format");
 	}
@@ -189,6 +206,7 @@ public:
 
 	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
+		if(h.saving) validatePetrifyingBloodSerialization(h);
 		if(h.saving) validateTimedSummonSerialization(h);
 		if(h.saving) validateMoraleActivationSerialization(h);
 		if(h.saving)
@@ -204,6 +222,8 @@ public:
 			validateBattleFormSerialization(h);
 		if(h.saving)
 			validateConfusionSerialization(h);
+		if(h.saving)
+			validateDreadCavalrySerialization(h);
 		if(h.saving)
 			validateOpportunistSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
@@ -240,6 +260,7 @@ public:
 		h & id;
 		h & healthDelta;
 		h & data;
+		if(!h.saving) validatePetrifyingBloodSerialization(h);
 		if(!h.saving) validateMoraleActivationSerialization(h);
 		if(!h.saving) validatePlagueSerialization(h);
 		h & operation;
@@ -254,6 +275,8 @@ public:
 			validateBattleFormSerialization(h);
 		if(!h.saving)
 			validateConfusionSerialization(h);
+		if(!h.saving)
+			validateDreadCavalrySerialization(h);
 		if(!h.saving)
 			validateOpportunistSerialization(h);
 	}
@@ -272,10 +295,23 @@ public:
 	{
 	}
 
+	void validatePresentationSerialization(bool supported) const
+	{
+		const auto & obstacle = data["obstacle"];
+		const auto & flag = obstacle["renderAtEachHex"];
+		if(obstacle.isStruct() && obstacle.Struct().contains("renderAtEachHex") && !flag.isBool())
+			throw std::runtime_error("Per-hex obstacle presentation must be boolean");
+		if(flag.isBool() && flag.Bool() && !supported)
+			throw std::runtime_error("Per-hex obstacle presentation requires its save capability");
+	}
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validatePresentationSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LIVING_INFERNO));
 		h & id;
 		h & data;
 		h & operation;
+		if(!h.saving)
+			validatePresentationSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LIVING_INFERNO));
 	}
 };

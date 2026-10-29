@@ -19,6 +19,7 @@
 #include "../battle/BattleEffectExchange.h"
 
 class IBattleState;
+class IBattleInfo;
 
 struct DLL_LINKAGE SetStackEffect : public CPackForClient
 {
@@ -38,6 +39,7 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
+	void validateGazeApplication(const IBattleInfo & battle) const;
 	void validateConfusionMarkers() const
 	{
 		for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
@@ -73,6 +75,8 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 					{
 						bonus.validateAllMagicVulnerabilitySerialization(h);
 						bonus.validateFrozenSerialization(h);
+						bonus.validateSerpentsEmbraceSerialization(h);
+						bonus.validateParalyzingGazeSerialization(h);
 					}
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_REALITY_WARP_EXCHANGE))
 				for(const auto * changes : {&toAdd, &toUpdate, &toRemove})

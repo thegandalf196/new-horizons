@@ -1180,60 +1180,6 @@ void AIGateway::showMapObjectSelectDialog(QueryID askID, const Component & icon,
 	executeActionAsync("showMapObjectSelectDialog", [this, askID](){ answerQuery(askID, selectedObject.getNum()); });
 }
 
-bool AIGateway::makePossibleUpgrades(const CArmedInstance * obj)
-{
-	if(!obj)
-		return false;
-
-	bool upgraded = false;
-
-	for(int i = 0; i < GameConstants::ARMY_SIZE; i++)
-	{
-		if(const CStackInstance * s = obj->getStackPtr(SlotID(i)))
-		{
-			UpgradeInfo upgradeInfo(s->getId());
-			do
-			{
-				cc->fillUpgradeInfo(obj, SlotID(i), upgradeInfo);
-
-				if(upgradeInfo.hasUpgrades())
-				{
-					std::vector<CreatureID> viableUpgrades;
-					for(const auto upgrade : upgradeInfo.getAvailableUpgrades())
-					{
-						const auto * hero = dynamic_cast<const CGHeroInstance *>(obj);
-						const auto capacity = hero ? hero->getLeadershipSlotCapacity(upgrade) : std::nullopt;
-						if(!capacity || capacity->accepts(s->getCount()))
-							viableUpgrades.push_back(upgrade);
-					}
-					if(viableUpgrades.empty())
-						break;
-					// creature at given slot might have alternative upgrades, pick best one
-					CreatureID upgID = *vstd::maxElementByFun(viableUpgrades, [](const CreatureID & id)
-						{
-							return id.toCreature()->getAIValue();
-						});
-
-					int oldValue = s->getCreature()->getAIValue();
-					int newValue = upgID.toCreature()->getAIValue();
-
-					if(newValue > oldValue && nullkiller->getFreeResources().canAfford(upgradeInfo.getUpgradeCostsFor(upgID) * s->getCount()))
-					{
-						cc->upgradeCreature(obj, SlotID(i), upgID);
-						upgraded = true;
-						logAi->debug("Upgraded %d %s to %s", s->getCount(), upgradeInfo.oldID.toCreature()->getNamePluralTranslated(),
-							upgradeInfo.getUpgrade().toCreature()->getNamePluralTranslated());
-					}
-					else
-						break;
-				}
-			}
-			while(upgradeInfo.hasUpgrades());
-		}
-	}
-
-	return upgraded;
-}
 
 void AIGateway::makeTurn()
 {
@@ -1253,6 +1199,7 @@ void AIGateway::makeTurn()
 		memorizeRevisitableObjs(nullkiller->memory, playerID, cc);
 
 		const auto start = std::chrono::high_resolution_clock::now();
+		upgradeGhosts();
 		nullkiller->makeTurn();
 		const auto timeElapsedMs = timeElapsed(start);
 		if(timeElapsedMs > 5000)

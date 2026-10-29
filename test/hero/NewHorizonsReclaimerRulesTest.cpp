@@ -13,6 +13,7 @@ namespace
 JsonNode configured()
 {
 	JsonNode value(JsonPath::builtin("config/newHorizonsHeroes"));
+	value.Struct().erase("ghostSpecialty");
 	auto & row = value["reclamationSpecialty"];
 	row["version"].Integer() = 1;
 	row["conversionPercentPerLevel"].Integer() = 5;

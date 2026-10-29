@@ -9,7 +9,7 @@
 			"name": "background",
 			"type": "texture",
 			"image": "DiBoxBck",
-			"rect": {"w": 600, "h": 480}
+			"rect": {"w": 600, "h": 518}
 		},
 		{
 			"name": "lineTabs",
@@ -155,6 +155,13 @@
 			"help": "core.help.325",
 			"callback": "closeWindow",
 			"hotkey": "globalReturn"
+		},
+		{
+			"name": "bugReportButton",
+			"type": "button",
+			"position": {"x": 380, "y": 480},
+			"image": "settingsWindow/button190",
+			"callback": "reportBug"
 		}
 	]
 }

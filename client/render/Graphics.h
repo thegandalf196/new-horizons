@@ -35,7 +35,7 @@ public:
 	std::map< int, std::vector < std::string > > battleACToDef; //maps AC format to vector of appropriate def names
 
 	//functions
-	Graphics();
+	explicit Graphics(bool loadBattleGraphics = true);
 
 	void setPlayerPalette(SDL_Palette * sur, PlayerColor player);
 	void setPlayerFlagColor(SDL_Palette * sur, PlayerColor player);

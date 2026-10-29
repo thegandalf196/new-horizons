@@ -66,6 +66,16 @@ public:
 		newHorizonsSeizeInitiative::validateReferences(*this, state);
 		seizeInitiative = state;
 	}
+	template <typename Handler> void validateCapturedSideSpecialtiesSerialization(Handler & h) const
+	{
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			getSide(side).validateManaLeechesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES));
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			getSide(side).validateRecoverySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			getSide(side).validateManaFurnaceSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
+	}
+
 	template <typename Handler> void validateSeizeInitiativeSerialization(Handler & h) const
 	{
 		seizeInitiative.validateSerialization(h);
@@ -344,6 +354,9 @@ public:
 			|| sides[BattleSide::DEFENDER].hasChainGateState();
 	}
 	bool hasPursuitState() const;
+	void validateDreadCavalryStateSerialization(bool supported) const;
+	void retireRelinquishedDreadCavalry(uint32_t nextActor, BattleUnitTurnReason reason);
+	void beginActivationActionState(CStack & stack, uint32_t unitId, BattleUnitTurnReason reason);
 	bool hasRangedFollowUpState() const;
 	bool hasBattleFormState() const;
 	bool hasVeteranDamageHistory() const;
@@ -520,6 +533,38 @@ public:
 			if(stack) stack->validateTimedSummonSerialization();
 	}
 
+	void validateStoredSerpentBindings() const;
+	void validateLoadedSerpentBindings() const;
+	void validateLoadedGazeTokens() const;
+	template <typename Handler> void validateAerialSupremacySerialization(Handler & h) const
+	{
+		for(const auto & stack : stacks)
+			if(stack) stack->validateAerialSupremacySerialization(h);
+	}
+
+	template <typename Handler> void validateParalyzingGazeSerialization(Handler & h) const
+	{
+		for(const auto & stack : stacks)
+			if(stack) stack->validateParalyzingGazeSerialization(h);
+		if(h.saving) validateLoadedGazeTokens();
+	}
+
+	template <typename Handler> void validateSerpentsEmbraceSerialization(Handler & h) const
+	{
+		for(const auto & stack : stacks)
+			if(stack)
+			{
+				stack->validateWaitActionSerialization(h);
+				stack->validateSerpentsEmbraceSerialization(h);
+			}
+		validateStoredSerpentBindings();
+	}
+
+	template <typename Handler> void validatePetrifyingBloodSerialization(Handler & h) const
+	{
+		for(const auto & stack : stacks)
+			if(stack) stack->validatePetrifyingBloodSerialization(h);
+	}
 	template <typename Handler> void validateFrozenSerialization(Handler & h) const
 	{
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN)
@@ -658,7 +703,11 @@ public:
 		if(h.saving) validatePlagueSerialization(h);
 		if(h.saving)
 			validateOpportunistSerialization(h);
+		if(h.saving) validatePetrifyingBloodSerialization(h);
 		if(h.saving) validateTimedSummonSerialization();
+		if(h.saving) validateParalyzingGazeSerialization(h);
+		if(h.saving) validateAerialSupremacySerialization(h);
+		if(h.saving) validateSerpentsEmbraceSerialization(h);
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN)
@@ -802,6 +851,7 @@ public:
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_GATE)
 				&& (sides[BattleSide::ATTACKER].masterGateUsed || sides[BattleSide::DEFENDER].masterGateUsed))
 				throw std::runtime_error("Cannot discard Master Gate battle state");
+			validateDreadCavalryStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DREAD_CAVALRY));
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT) && hasPursuitState())
 				throw std::runtime_error("Cannot discard Pursuit battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP) && hasRangedFollowUpState())
@@ -968,6 +1018,7 @@ public:
 		h & townID;
 		h & tile;
 		h & stacks;
+		if(!h.saving) validateStoredSerpentBindings();
 		h & obstacles;
 		h & si;
 		h & battlefieldType;

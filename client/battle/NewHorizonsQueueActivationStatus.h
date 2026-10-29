@@ -64,6 +64,7 @@ inline bool isSameActivationContinuation(BattleUnitTurnReason reason)
 		case BattleUnitTurnReason::MASTER_GATE_CONTINUATION:
 		case BattleUnitTurnReason::PURSUIT_CONTINUATION:
 		case BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION:
+		case BattleUnitTurnReason::DREAD_CAVALRY_CONTINUATION:
 			return true;
 		default:
 			return false;

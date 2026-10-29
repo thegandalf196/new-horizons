@@ -8,12 +8,19 @@
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/CStack.h"
+#include "../../lib/CCreatureHandler.h"
+#include "../../lib/CRandomGenerator.h"
+#include "../../lib/logging/CLogger.h"
+#include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/battle/VisibleHeroPolicy.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../lib/battle/NewHorizonsElementalRebirth.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
+#include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -125,6 +132,8 @@ protected:
 	static constexpr auto PRIMAL_BURST = "new-horizons:elementalRebirth.primalBurst";
 	static constexpr auto GREATER_ESSENCE = "new-horizons:elementalRebirth.greaterEssence";
 	static constexpr auto ELEMENTAL_WARD = "new-horizons:elementalRebirth.elementalWard";
+	bool neutralObserver = false;
+	int armyHealthBonus = 0;
 	CGHeroInstance * confluxHero = nullptr;
 	const battle::Unit * source = nullptr;
 	const battle::Unit * survivingAlly = nullptr;
@@ -198,6 +207,10 @@ protected:
 		confluxHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(confluxHero, 100);
 
+		if(neutralObserver) attackerSideHero->setOwner(PlayerColor::NEUTRAL);
+		if(armyHealthBonus)
+			confluxHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+				BonusType::STACK_HEALTH, BonusSource::OTHER, armyHealthBonus, BonusSourceID()));
 		startBattle();
 		source = unitAt(*battle(), BattleSide::DEFENDER, SlotID(0));
 		survivingAlly = unitAt(*battle(), BattleSide::DEFENDER, SlotID(1));
@@ -206,7 +219,19 @@ protected:
 		ASSERT_NE(survivingAlly, nullptr);
 		ASSERT_NE(opposingPikemen, nullptr);
 		ASSERT_GT(source->getBattleStartMaximumAggregateHP(), 0);
-		beginCombat();
+		if(neutralObserver)
+		{
+			// The shared helper submits as red; this real neutral attacker must
+			// end deployment through the same validated action as its actual owner.
+			battle()->tacticDistance = 1;
+			battle()->tacticsSide = BattleSide::ATTACKER;
+			const auto action = BattleAction::makeEndOFTacticPhase(BattleSide::ATTACKER);
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+				battle()->getSidePlayer(BattleSide::ATTACKER), action));
+			ASSERT_EQ(battle()->tacticDistance, 0);
+		}
+		else
+			beginCombat();
 
 		callback = std::make_shared<ElementalRebirthCallback>(battle()->getSidePlayer(BattleSide::DEFENDER));
 		callback->onBattleStarted(battle());
@@ -668,4 +693,274 @@ TEST_F(NewHorizonsElementalRebirthAITest, PrimalBurstCollateralIsIncludedInPhysi
 		<< "The detached exchange values both the temporary replacement and its magical collateral";
 	EXPECT_EQ(source->getAvailableHealth(), liveSourceHealth);
 	EXPECT_EQ(opposingPikemen->getAvailableHealth(), liveAttackerHealth);
+}
+
+namespace
+{
+struct ArmyDenialCount { size_t count = 0; };
+class ArmyDenialTarget final : public ILogTarget
+{
+	std::weak_ptr<ArmyDenialCount> count;
+public:
+	explicit ArmyDenialTarget(std::weak_ptr<ArmyDenialCount> value) : count(std::move(value)) {}
+	void write(const LogRecord & record) override
+	{
+		if(record.message == "FIXME: battleGetArmyObject access check!")
+			if(const auto value = count.lock()) ++value->count;
+	}
+};
+class ArmyDenialCapture
+{
+	CLogger * logger = CLogger::getGlobalLogger();
+	ELogLevel::ELogLevel previous = logger->getLevel();
+	std::shared_ptr<ArmyDenialCount> count = std::make_shared<ArmyDenialCount>();
+public:
+	ArmyDenialCapture()
+	{
+		logger->setLevel(ELogLevel::ERROR);
+		logger->addTarget(std::make_unique<ArmyDenialTarget>(count));
+	}
+	~ArmyDenialCapture() { count.reset(); logger->setLevel(previous); }
+	size_t denials() const { return count->count; }
+};
+template<class Value> std::vector<std::byte> rebirthVisibilityWire(const Value & value)
+{
+	CMemorySerializer writer;
+	writer.oser & value;
+	return writer.extractBuffer();
+}
+std::string rebirthVisibilityState(const CBattleInfoCallback & view)
+{
+	JsonNode result;
+	for(const auto * unit : view.battleGetAllUnits(false))
+	{
+		auto & row = result[std::to_string(unit->unitId())];
+		row["state"] = unit->acquireState()->save();
+		const auto bonuses = unit->getUnstackedBonuses(Selector::all);
+		for(const auto & bonus : *bonuses)
+			row["bonuses"].Vector().push_back(bonus->toJsonNode());
+	}
+	return result.toString();
+}
+}
+
+class ElementalRebirthVisibilityAITest : public NewHorizonsElementalRebirthAITest
+{
+protected:
+	std::shared_ptr<HypotheticBattle> visibleParent, changed, untouched;
+	std::optional<newHorizonsElementalRebirth::DeathSnapshot> visibleSnapshot;
+	void SetUp() override
+	{
+		NewHorizonsElementalRebirthAITest::SetUp();
+		useRevisedOrders = true;
+	}
+	void exchangeFrom(PlayerColor observer, bool lethal, bool known)
+	{
+		auto liveView = std::make_shared<CPlayerBattleCallback>(battle(), observer);
+		ASSERT_EQ(liveView->battleGetMySide(), known ? BattleSide::DEFENDER : BattleSide::ATTACKER);
+		ASSERT_TRUE(heroCommands::isRevisedRules(liveView->getBattle()->getHeroCommandRules()));
+		const auto policy = liveView->battleGetVisibleHeroPolicy(BattleSide::DEFENDER);
+		ASSERT_EQ(policy.kind(), known ? VisibleHeroPolicy::Knowledge::VISIBLE_HERO
+			: VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+		if(!known)
+		{
+			ASSERT_EQ(liveView->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+			ArmyDenialCapture guard;
+			EXPECT_EQ(liveView->battleGetArmyObject(BattleSide::DEFENDER), nullptr);
+			EXPECT_EQ(guard.denials(), 1u); // The guard must remain active and diagnostic.
+		}
+		for(const auto * unit : battle()->battleGetAllUnits(false)) (void)unit->ableToRetaliate();
+		visibleParent = std::make_shared<HypotheticBattle>(environment.get(), liveView);
+		changed = std::make_shared<HypotheticBattle>(environment.get(), visibleParent);
+		untouched = std::make_shared<HypotheticBattle>(environment.get(), visibleParent);
+		EXPECT_EQ(visibleParent->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), policy.kind());
+		EXPECT_EQ(changed->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), policy.kind());
+		EXPECT_EQ(visibleParent->captureElementalRebirthSource(*source).has_value(), known);
+		const auto parentBefore = rebirthVisibilityState(*visibleParent);
+		const auto siblingBefore = rebirthVisibilityState(*untouched);
+		const auto worldBefore = gameState()->saveToMemory();
+		const auto authorityRng = rebirthVisibilityWire(*gameHandler->randomizer);
+		const auto fixtureRng = rebirthVisibilityWire(dynamic_cast<CRandomGenerator &>(*getRNG()));
+		const auto defaultRng = rebirthVisibilityWire(CRandomGenerator::getDefault());
+		auto actor = changed->getForUpdate(opposingPikemen->unitId());
+		auto victim = changed->getForUpdate(source->unitId());
+		ArmyDenialCapture calls;
+		visibleSnapshot = changed->captureElementalRebirthSource(*victim);
+		RecordProperty("capturedDeathPolicy", visibleSnapshot ? "1" : "0");
+		if(!known && lethal) EXPECT_FALSE(visibleSnapshot) << "Hidden is unknown, never a revealed private Rebirth rank";
+		DamageCache cache;
+		const auto damage = cache.getDamage(actor.get(), victim.get(), changed);
+		if(lethal) ASSERT_GE(damage, victim->getAvailableHealth());
+		else ASSERT_LT(damage, victim->getAvailableHealth());
+		BattleExchangeVariant exchange;
+		// Same ordinary applied future-exchange path as the retained Rebirth AI test.
+		exchange.trackAttack(actor, victim, false, false, cache, changed, false, false);
+		RecordProperty("deniedArmyQueriesDuringExchange", std::to_string(calls.denials()));
+		RecordProperty("projectedRebirthSpawns", std::to_string(changed->getElementalRebirthSpawnUnitIds().size()));
+		EXPECT_EQ(calls.denials(), 0u);
+		EXPECT_EQ(victim->alive(), !lethal);
+		EXPECT_EQ(changed->getElementalRebirthSpawnUnitIds().size(), known && lethal ? 1u : 0u);
+		EXPECT_EQ(liveView->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), policy.kind());
+		EXPECT_EQ(rebirthVisibilityState(*visibleParent), parentBefore);
+		EXPECT_EQ(rebirthVisibilityState(*untouched), siblingBefore);
+		EXPECT_EQ(gameState()->saveToMemory(), worldBefore);
+		EXPECT_EQ(rebirthVisibilityWire(*gameHandler->randomizer), authorityRng);
+		EXPECT_EQ(rebirthVisibilityWire(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
+		EXPECT_EQ(rebirthVisibilityWire(CRandomGenerator::getDefault()), defaultRng);
+	}
+};
+
+TEST_F(ElementalRebirthVisibilityAITest, OpposingPlayerLethalExchangeDoesNotInferHiddenRebirth)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(exchangeFrom(battle()->getSidePlayer(BattleSide::ATTACKER), true, false));
+}
+
+TEST_F(ElementalRebirthVisibilityAITest, NeutralSideLethalExchangeRetainsUnknownPolicyAndArmyDenial)
+{
+	neutralObserver = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_EQ(battle()->getSidePlayer(BattleSide::ATTACKER), PlayerColor::NEUTRAL);
+	// A real neutral side binding, not an invalid-player callback or full treasury replay.
+	ASSERT_NO_FATAL_FAILURE(exchangeFrom(PlayerColor::NEUTRAL, true, false));
+}
+
+TEST_F(ElementalRebirthVisibilityAITest, NonlethalOpposingExchangeCannotTriggerRebirth)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 1000));
+	ASSERT_NO_FATAL_FAILURE(exchangeFrom(battle()->getSidePlayer(BattleSide::ATTACKER), false, false));
+}
+
+TEST_F(ElementalRebirthVisibilityAITest, HiddenHeroWithoutRebirthKeepsOrdinaryLethalExchange)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	confluxHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(REBIRTH_SKILL)), 0, ChangeValueMode::ABSOLUTE);
+	ASSERT_NO_FATAL_FAILURE(exchangeFrom(battle()->getSidePlayer(BattleSide::ATTACKER), true, false));
+}
+
+TEST_F(ElementalRebirthVisibilityAITest, KnownSideProjectionAndNativeSpawnRetainArmyHealth)
+{
+	armyHealthBonus = 17;
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 17, nullptr, false, 1000));
+	ASSERT_NO_FATAL_FAILURE(exchangeFrom(battle()->getSidePlayer(BattleSide::DEFENDER), true, true));
+	ASSERT_TRUE(visibleSnapshot);
+	const auto projected = rebirthSpawns(*changed);
+	ASSERT_EQ(projected.size(), 1u);
+	const auto * predicted = projected.front();
+	const auto expectedMax = newHorizonsElementalRebirth::effectiveSummonMaxHP(confluxHero,
+		predicted->creatureId(), confluxHero->getOwner(), BattleSide::DEFENDER);
+	ASSERT_GT(expectedMax, predicted->unitType()->getMaxHealth());
+	EXPECT_EQ(predicted->getMaxHealth(), expectedMax);
+	const auto targetHP = newHorizonsElementalRebirth::targetHP(*visibleSnapshot, predicted->creatureId(), *changed);
+	EXPECT_EQ(predicted->getAvailableHealth(), targetHP);
+	// Only this legally known-policy case executes native authority for HP parity.
+	BattleStackAttacked hit;
+	hit.attackerID = opposingPikemen->unitId();
+	hit.stackAttacked = source->unitId();
+	hit.damageAmount = source->getAvailableHealth();
+	CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), source->acquireState());
+	ASSERT_TRUE(hit.killed());
+	StacksInjured packet;
+	packet.battleID = BattleID(0);
+	packet.stacks.push_back(std::move(hit));
+	gameHandler->sendAndApply(packet);
+	const auto outputs = battle()->battleGetUnitsIf([](const battle::Unit * unit)
+		{ return unit->alive() && unit->isSummoned(); });
+	ASSERT_EQ(outputs.size(), 1u);
+	const auto * actual = outputs.front();
+	EXPECT_EQ(actual->getAvailableHealth(), predicted->getAvailableHealth());
+	EXPECT_EQ(actual->getRebirthOriginalAggregateHP(), predicted->getRebirthOriginalAggregateHP());
+	EXPECT_EQ(actual->getMaxHealth(), newHorizonsElementalRebirth::effectiveSummonMaxHP(confluxHero,
+		actual->creatureId(), confluxHero->getOwner(), BattleSide::DEFENDER));
+	// Native and deterministic projection may choose different legal elemental types.
+	EXPECT_EQ(actual->getAvailableHealth(), newHorizonsElementalRebirth::targetHP(
+		*visibleSnapshot, actual->creatureId(), *battle()));
+}
+
+TEST_F(NewHorizonsElementalRebirthAITest, PrimalBurstLethalBinderReleasesOnlyItsHoldAndIsolatesBranchesAndRng)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 12000, nullptr, true, 1));
+	attackerSideHero->setHeroType(heroType("core:fafner"));
+	const auto freeNagaAnchor = [&](bool adjacent)
+	{
+		const auto accessibility = battle()->getAccessibility();
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			const BattleHex anchor(index);
+			if(!accessibility.accessibleForMovementEndpoint(anchor, true, BattleSide::ATTACKER))
+				continue;
+			const auto & footprint = battle::Unit::getHexes(anchor, true, BattleSide::ATTACKER);
+			const bool touchesSource = std::ranges::any_of(footprint, [&](const auto hex)
+				{ return vstd::contains(source->getSurroundingHexes(), hex); });
+			if(touchesSource == adjacent)
+				return anchor;
+		}
+		return BattleHex(BattleHex::INVALID);
+	};
+	const auto near = freeNagaAnchor(true);
+	ASSERT_TRUE(near.isValid());
+	auto * binder = addStack(BattleSide::ATTACKER, creature("core:naga"), near, 1);
+	const auto far = freeNagaAnchor(false);
+	ASSERT_TRUE(far.isValid());
+	auto * otherBinder = addStack(BattleSide::ATTACKER, creature("core:nagaQueen"), far, 1);
+	ASSERT_TRUE(battle()->isMeleeAttackPossible(binder, source));
+	const auto hostileIds = newHorizonsElementalRebirth::adjacentHostileUnitIds(*battle(), *source);
+	ASSERT_TRUE(vstd::contains(hostileIds, binder->unitId()));
+	ASSERT_FALSE(vstd::contains(hostileIds, otherBinder->unitId()));
+	SetStackEffect holds;
+	holds.battleID = BattleID(0);
+	for(const auto * naga : {binder, otherBinder})
+		holds.toAdd.emplace_back(survivingAlly->unitId(), std::vector<Bonus>{
+			newHorizonsSerpentsEmbrace::marker(naga->unitId(), naga->creatureId())});
+	gameHandler->sendAndApply(holds);
+	const auto liveBefore = std::tuple{source->acquireState()->save(), binder->save(),
+		otherBinder->save(), survivingAlly->acquireState()->save()};
+	const auto rngBytes = [&]()
+	{
+		CMemorySerializer authority, fixture, defaults;
+		authority.oser & *gameHandler->randomizer;
+		fixture.oser & dynamic_cast<CRandomGenerator &>(*getRNG());
+		defaults.oser & CRandomGenerator::getDefault();
+		return std::tuple{authority.extractBuffer(), fixture.extractBuffer(), defaults.extractBuffer()};
+	};
+	const auto rngBefore = rngBytes();
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto branchState = [&](const HypotheticBattle & branch)
+	{
+		const auto * victim = branch.battleGetUnitByID(survivingAlly->unitId());
+		return std::tuple{branch.battleGetUnitByID(source->unitId())->acquireState()->save(),
+			branch.battleGetUnitByID(binder->unitId())->acquireState()->save(),
+			branch.battleGetUnitByID(otherBinder->unitId())->acquireState()->save(), victim->acquireState()->save(),
+			newHorizonsSerpentsEmbrace::releasePlan(*victim, binder->unitId()).size(),
+			newHorizonsSerpentsEmbrace::releasePlan(*victim, otherBinder->unitId()).size(),
+			branch.getElementalRebirthSpawnUnitIds(), branch.getProjectedPrimalBurstHits().size()};
+	};
+	const auto parentBefore = branchState(*parent);
+	const auto siblingBefore = branchState(*sibling);
+	const auto snapshot = captureAndKillSource(*child, source->unitId());
+	ASSERT_TRUE(snapshot.has_value());
+	ASSERT_TRUE(snapshot->profile.primalBurst);
+	ASSERT_GE(newHorizonsElementalRebirth::primalBurstDamageBudget(
+		newHorizonsElementalRebirth::targetHP(*snapshot)), binder->getAvailableHealth());
+	ASSERT_TRUE(child->projectElementalRebirth(child->battleGetUnitByID(source->unitId()),
+		*snapshot, true, false, false));
+	ASSERT_EQ(child->getProjectedPrimalBurstHits().size(), 1u);
+	const auto & hit = child->getProjectedPrimalBurstHits().front();
+	ASSERT_EQ(hit.preHitTarget->unitId(), binder->unitId());
+	ASSERT_GT(hit.actualDamage, 0);
+	EXPECT_EQ(hit.actualDamage, hit.preHitTarget->getAvailableHealth());
+	EXPECT_FALSE(child->battleGetUnitByID(binder->unitId())->alive());
+	const auto * victim = child->battleGetUnitByID(survivingAlly->unitId());
+	EXPECT_TRUE(newHorizonsSerpentsEmbrace::releasePlan(*victim, binder->unitId()).empty());
+	EXPECT_EQ(newHorizonsSerpentsEmbrace::releasePlan(*victim, otherBinder->unitId()).size(), 1u);
+	EXPECT_TRUE(child->battleGetUnitByID(otherBinder->unitId())->alive());
+	EXPECT_EQ(branchState(*parent), parentBefore);
+	EXPECT_EQ(branchState(*sibling), siblingBefore);
+	EXPECT_EQ((std::tuple{source->acquireState()->save(), binder->save(),
+		otherBinder->save(), survivingAlly->acquireState()->save()}), liveBefore);
+	EXPECT_EQ(newHorizonsSerpentsEmbrace::releasePlan(*survivingAlly, binder->unitId()).size(), 1u);
+	EXPECT_EQ(newHorizonsSerpentsEmbrace::releasePlan(*survivingAlly, otherBinder->unitId()).size(), 1u);
+	EXPECT_EQ(rngBytes(), rngBefore);
 }

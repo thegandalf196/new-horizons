@@ -103,6 +103,7 @@ def content_patch_files():
         'config/creatures/special.json',
         'config/creatures/tower.json',
         'config/creatures/livingArmor.json',
+        'config/creatures/ghost.json',
         'config/creatures/conflux.json',
         'config/creatures/experimentalValues.json',
     ]

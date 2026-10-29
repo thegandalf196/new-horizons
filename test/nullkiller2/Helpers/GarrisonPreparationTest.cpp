@@ -674,12 +674,12 @@ TEST_F(GarrisonPreparationTest, ArrivingNeelaKeepsLegalVisitorDefenceWhenWholeGa
 	const CreatureID archer(CreatureID::decode("core:archer"));
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	ASSERT_NO_FATAL_FAILURE(prepare("core:neela", 1,
-		{{cabir, 21}, {naga, 2}, {naga, 2}, {genie, 4}, {genie, 4}, {genie, 4}, {genie, 4}},
+		{{cabir, 17}, {naga, 1}, {naga, 1}, {genie, 3}, {genie, 3}, {genie, 3}, {genie, 3}},
 		{{archer, 56}, {pikeman, 58}}, false, FactionID::CASTLE, false));
 	const auto capacity = hero->getLeadershipSlotCapacity(genie);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->leadership, 1050);
-	ASSERT_EQ(capacity->maximum, 4);
+	ASSERT_EQ(capacity->leadership, 875);
+	ASSERT_EQ(capacity->maximum, 3);
 	const auto initial = totals();
 	int requiredSlots = 0;
 	for(const auto & [creature, count] : initial)
@@ -720,18 +720,18 @@ TEST_F(GarrisonPreparationTest, ArrivingNeelaConsolidatesAndSplitsLegalResidualB
 	const CreatureID naga(CreatureID::decode("core:naga"));
 	const CreatureID genie(CreatureID::decode("core:genie"));
 	ASSERT_NO_FATAL_FAILURE(prepare("core:neela", 1,
-		{{cabir, 21}, {naga, 2}, {naga, 2}, {genie, 4}, {genie, 4}, {genie, 1}, {genie, 1}},
+		{{cabir, 17}, {naga, 1}, {naga, 1}, {genie, 3}, {genie, 3}, {genie, 1}, {genie, 1}},
 		{{cabir, 1}}, false, FactionID::CASTLE, false));
 	const auto capacity = hero->getLeadershipSlotCapacity(cabir);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->leadership, 1050);
-	ASSERT_EQ(capacity->maximum, 21);
+	ASSERT_EQ(capacity->leadership, 875);
+	ASSERT_EQ(capacity->maximum, 17);
 	const auto initial = totals();
 	ASSERT_EQ(initial.at(cabir), capacity->maximum + 1);
-	ASSERT_EQ(initial.at(naga), 4);
-	ASSERT_EQ(initial.at(genie), 10);
-	ASSERT_EQ(hero->getLeadershipSlotCapacity(naga)->maximum, 2);
-	ASSERT_EQ(hero->getLeadershipSlotCapacity(genie)->maximum, 4);
+	ASSERT_EQ(initial.at(naga), 2);
+	ASSERT_EQ(initial.at(genie), 8);
+	ASSERT_EQ(hero->getLeadershipSlotCapacity(naga)->maximum, 1);
+	ASSERT_EQ(hero->getLeadershipSlotCapacity(genie)->maximum, 3);
 	int requiredSlots = 0;
 	for(const auto & [creature, count] : initial)
 	{
@@ -739,7 +739,7 @@ TEST_F(GarrisonPreparationTest, ArrivingNeelaConsolidatesAndSplitsLegalResidualB
 		ASSERT_TRUE(cap && cap->maximum > 0);
 		requiredSlots += (count + cap->maximum - 1) / cap->maximum;
 	}
-	ASSERT_EQ(requiredSlots, 7); // Genie1+1 can consolidate; Naga2+2 cannot.
+	ASSERT_EQ(requiredSlots, 7); // Genie1+1 can consolidate; Naga1+1 cannot.
 	ASSERT_FALSE(newHorizonsHeroes::canMergeArmies(town, hero));
 	std::vector<NK2AI::AIPath> paths;
 	ASSERT_NO_FATAL_FAILURE(ordinaryArrivalPaths(paths));
@@ -846,12 +846,12 @@ TEST_F(GarrisonPreparationTest, ArrivingForecastUsesExplicitArmyAndRealHeroSaved
 	const CreatureID naga(CreatureID::decode("core:naga"));
 	const CreatureID genie(CreatureID::decode("core:genie"));
 	ASSERT_NO_FATAL_FAILURE(prepare("core:neela", 1,
-		{{cabir, 21}, {naga, 2}, {naga, 2}, {genie, 4}, {genie, 4}, {genie, 4}, {genie, 4}},
+		{{cabir, 17}, {naga, 1}, {naga, 1}, {genie, 3}, {genie, 3}, {genie, 3}, {genie, 3}},
 		{{cabir, 1}}, false, FactionID::CASTLE, false));
 	const auto cap = hero->getLeadershipSlotCapacity(cabir);
 	ASSERT_TRUE(cap);
-	ASSERT_EQ(cap->leadership, 1050);
-	ASSERT_EQ(cap->maximum, 21);
+	ASSERT_EQ(cap->leadership, 875);
+	ASSERT_EQ(cap->maximum, 17);
 	// A standalone hypothetical army is an explicit pure helper argument.
 	// It is NOT injected into an AIPath or claimed as an actual hero exchange.
 	CCreatureSet projected;

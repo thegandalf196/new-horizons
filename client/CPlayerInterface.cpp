@@ -1028,6 +1028,7 @@ void CPlayerInterface::battleAttack(const BattleID & battleID, const BattleAttac
 	info.attacker = cb->getBattle(battleID)->battleGetStackByID(ba->stackAttacking);
 	info.defender = nullptr;
 	info.indirectAttack = ba->shot();
+	info.aerialExcursion = ba->aerialExcursion;
 	info.lucky = ba->lucky();
 	info.unlucky = ba->unlucky();
 	info.deathBlow = ba->deathBlow();

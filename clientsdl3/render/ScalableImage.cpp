@@ -229,7 +229,7 @@ void ScalableImageParameters::adjustPalette(const SDL_Palette * originalPalette,
 		// SDL_SetPaletteColors, not a direct write to colors[] - it bumps SDL_Palette::version,
 		// which is how a cached GPU texture notices this palette changed under it
 		SDL_Color shiftedColor = CSDL_Ext::toSDL(shifter.shiftColor(CSDL_Ext::fromSDL(originalPalette->colors[i])));
-		SDL_SetPaletteColors(palette, &shiftedColor, i, 1);
+		paletteUpdate::setColorIfChanged(palette, i, shiftedColor);
 	}
 }
 

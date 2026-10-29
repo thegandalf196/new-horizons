@@ -250,6 +250,7 @@
 					"core:zombieLord": "core",
 					"core:wight": "core",
 					"core:wraith": "core",
+					"new-horizons:ghost": "core",
 					"core:vampire": "elite",
 					"core:vampireLord": "elite",
 					"core:lich": "elite",
@@ -3172,6 +3173,18 @@
 					"manaLeeches": {
 						"manaPerDamagingAttackSequence": 1
 					},
+					"serpentsEmbrace": {
+						"enabled": true
+					},
+					"paralyzingGaze": {
+						"enabled": true
+					},
+					"forestAmbush": {
+						"enabled": true
+					},
+					"aerialSupremacy": {
+						"enabled": true
+					},
 					"fieldPhysician": {
 						"healingPercentPerLevel": 5,
 						"healingMaximumPercent": 100
@@ -3234,10 +3247,20 @@
 					"learningMaximumPercent": 100,
 					"studyExperiencePerMagicPrimaryPoint": 250
 				},
-				"reclamationSpecialty": {
+				"ghostSpecialty": {
+					"version": 1
+				},
+				"petrifyingBloodSpecialty": {
+					"version": 1
+				},
+				"livingInfernoSpecialty": {
 					"version": 1,
-					"conversionPercentPerLevel": 5,
-					"conversionMaximumPercent": 100
+					"damagePerCreature": 1,
+					"durationRounds": 1
+				},
+				"dreadCavalrySpecialty": {
+					"version": 1,
+					"followupDamagePercent": 50
 				},
 				"individualSpecialties": {
 					"version": 1,
@@ -6101,75 +6124,75 @@
 				},
 				"classProfiles": {
 					"core:knight": {
-						"base": 1230,
+						"base": 1025,
 						"perLevel": 55
 					},
 					"core:cleric": {
-						"base": 870,
+						"base": 725,
 						"perLevel": 35
 					},
 					"core:ranger": {
-						"base": 1140,
+						"base": 950,
 						"perLevel": 50
 					},
 					"core:druid": {
-						"base": 780,
+						"base": 650,
 						"perLevel": 30
 					},
 					"core:alchemist": {
-						"base": 1050,
+						"base": 875,
 						"perLevel": 45
 					},
 					"core:wizard": {
-						"base": 780,
+						"base": 650,
 						"perLevel": 30
 					},
 					"core:demoniac": {
-						"base": 1230,
+						"base": 1025,
 						"perLevel": 55
 					},
 					"core:heretic": {
-						"base": 870,
+						"base": 725,
 						"perLevel": 35
 					},
 					"core:deathknight": {
-						"base": 1140,
+						"base": 950,
 						"perLevel": 50
 					},
 					"core:necromancer": {
-						"base": 870,
+						"base": 725,
 						"perLevel": 35
 					},
 					"core:overlord": {
-						"base": 1230,
+						"base": 1025,
 						"perLevel": 55
 					},
 					"core:warlock": {
-						"base": 870,
+						"base": 725,
 						"perLevel": 35
 					},
 					"core:barbarian": {
-						"base": 1320,
+						"base": 1100,
 						"perLevel": 60
 					},
 					"core:battlemage": {
-						"base": 1050,
+						"base": 875,
 						"perLevel": 45
 					},
 					"core:beastmaster": {
-						"base": 1320,
+						"base": 1100,
 						"perLevel": 60
 					},
 					"core:witch": {
-						"base": 870,
+						"base": 725,
 						"perLevel": 35
 					},
 					"core:planeswalker": {
-						"base": 1050,
+						"base": 875,
 						"perLevel": 45
 					},
 					"core:elementalist": {
-						"base": 780,
+						"base": 650,
 						"perLevel": 30
 					}
 				},
@@ -6209,6 +6232,7 @@
 						"core:skeleton": 45,
 						"core:walkingDead": 80,
 						"core:wight": 130,
+						"new-horizons:ghost": 130,
 						"core:vampire": 230,
 						"core:lich": 330,
 						"core:blackKnight": 470,
@@ -10506,6 +10530,7 @@
 		"config/creatures/special.json",
 		"config/creatures/tower.json",
 		"config/creatures/livingArmor.json",
+		"config/creatures/ghost.json",
 		"config/creatures/conflux.json",
 		"config/creatures/experimentalValues.json"
 	],
@@ -12528,6 +12553,11 @@
 		"new-horizons.muster.externalTargetUsed": "Muster already used at this dwelling",
 		"new-horizons.muster.externalRecruiterNote": "Choose one owned external Core dwelling to reinforce.",
 		"new-horizons.muster.noExternalTargets": "No legal Core recruit is available in this external dwelling.",
+		"new-horizons.combat.dreadCavalry.skip": "Skip charge",
+		"new-horizons.combat.dreadCavalry.skip.help": "Decline the optional Dread Cavalry charge without defending. Any existing Pursuit movement remains.",
+		"new-horizons.combat.dreadCavalry.preview": "Dread Cavalry: %d% damage (already included above); up to %d movement remaining. An adjacent enemy can be attacked with no movement left.",
+		"new-horizons.creature.soulHarvest.compact": "Soul Harvest (innate)\n+%count% Ghost per creature killed",
+		"new-horizons.creature.soulHarvest.help": "Soul Harvest (innate): Each eligible enemy creature killed by this stack's physical attack or retaliation adds %count% temporary Ghost. Partial casualties count; destroying the whole enemy stack is not required. Growth lasts only for this battle. Clones and summoned stacks cannot gain or provide growth. Suppressed creature abilities and temporary battle forms prevent growth. Killing resurrected creatures can grant growth again. Extra Ghosts never join the army after battle.",
 		"new-horizons.creature.freezingTouch.compact": "Freezing Touch %chance%%\nShatter +%bonus%%",
 		"new-horizons.creature.freezingTouch.help": "Freezing Touch: each successful melee attack or retaliation has a %chance%% chance, rolled once after damage, to inflict physical Frozen. Frozen prevents retaliation and forfeits the next normal Creature Activation, then thaws. Extra activations cannot thaw it. A subsequent ordinary physical creature attack deals +%bonus%% final damage and Shatters the ice, without retaliation. Direct magical damage breaks the ice without this bonus. Cure clears Frozen; ordinary Dispel does not. Cannot stack or refresh; at most one successful application per recipient per round, even after cleansing.",
 		"new-horizons.combat.frozen.label": "Frozen",
@@ -12649,6 +12679,9 @@
 		"new-horizons.combat.queueExtraMorale": "Extra activation: positive Morale.",
 		"new-horizons.combat.queueExtraQuartermaster": "Extra activation: Quartermaster. Reduced activation output applies.",
 		"new-horizons.combat.queueExtraSecondWind": "Extra activation: Second Wind.",
+		"new-horizons.heroSpecialty.petrifyingBlood.name": "Petrifying Blood",
+		"new-horizons.heroSpecialty.petrifyingBlood.tooltip": "The first damaging enemy melee hit each round triggers an ordinary petrification attempt on the attacker.",
+		"new-horizons.heroSpecialty.petrifyingBlood.description": "Once per round for each Basilisk or Greater Basilisk stack, the first enemy physical melee hit that deals damage triggers an ordinary petrification attempt on the attacker. The attempt is spent even if the roll fails or the attacker is immune.",
 		"new-horizons.adventure.townPortal.targetingHint": "Town Portal returns to the nearest controlled town; the destination cannot be chosen. Casting spends all remaining Movement.",
 		"new-horizons.adventure.dimensionDoor.targetingHint": "Choose a destination. Casting Dimension Door spends all remaining Movement.",
 		"new-horizons.adventure.spellbook.dailyAvailable": "Adventure Spell: available today",
@@ -12657,6 +12690,7 @@
 		"new-horizons.adventure.spellLearning.requires": "Requires ",
 		"new-horizons.adventure.spellLearning.proficiencyIn": " proficiency in ",
 		"new-horizons.adventure.spellLearning.or": " or ",
+		"new-horizons.growth.recruitmentModifier": "Before recruitment modifier: %d\nRecruitment growth: %d% (rounded up)\nFinal weekly growth: %d",
 		"new-horizons.lighthouse.departure.help": "Embarking from this owned Castle's port costs no embarkation movement penalty. The departing hero gains +%PERCENT%% sea movement for that day only.",
 		"new-horizons.sage.guildSpells": "Sage — revealed spells",
 		"new-horizons.economy.investor.header": "Investor — this week's daily Gold bonus (before income handicap)",

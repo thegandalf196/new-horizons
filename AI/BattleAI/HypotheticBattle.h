@@ -52,6 +52,8 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	BattleSideArray<std::optional<ProjectedMana>> projectedMana;
 	BattleSideArray<std::optional<ProjectedMana>> manaLeechStartingPools;
 	bool manaLeechApplied = false;
+	// Conservative, nonserialized admission metadata; source markers own expiry.
+	mutable bool mayContainSerpentBindings = false;
 	BattleSideArray<newHorizonsNecromancy::CombatPassives> necromancyPassives;
 	void captureNecromancyPassives(const CBattleInfoCallback & source);
 	battle::Units ownedExportUnitsIf(const battle::UnitFilter & predicate) const;
@@ -59,6 +61,11 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 public:
+	bool mayHaveSerpentBindings() const noexcept { return mayContainSerpentBindings; }
+	void noteSerpentBindingAdmission(const Bonus & bonus) const;
+	void releaseSerpentBindings(uint32_t sourceId);
+	void releaseSerpentBindingsForDeath(const battle::CUnitState & source);
+	void projectSerpentBinding(uint32_t sourceId, uint32_t targetId, int64_t primaryDamage, bool admitted);
 	/// Visible detached pools; unknown sides stay unknown instead of inventing Mana.
 	std::optional<int64_t> getProjectedManaAvailable(BattleSide side) const;
 	std::optional<newHorizonsHeroes::SpellPointState> getProjectedMana(BattleSide side) const;
