@@ -44,6 +44,7 @@ set(vcmiservercommon_SRCS
 		processors/TurnOrderProcessor.cpp
 
 		CGameHandler.cpp
+		CreatureRewardTransfer.cpp
 		NeutralMonsterPopulation.cpp
 		NewHorizonsLearningMentor.cpp
 		NewHorizonsScholar.cpp

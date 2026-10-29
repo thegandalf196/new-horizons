@@ -25,6 +25,7 @@
 #include "../../lib/bonuses/Updaters.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/NewHorizonsDiplomacy.h"
+#include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
@@ -102,6 +103,9 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		// These scenarios author exact encounter/remainder counts, independently
+		// of the current opening-pacing default and its separate scaling tests.
+		loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
@@ -135,6 +139,7 @@ protected:
 		neutral = findFirst<CGCreature>();
 		ASSERT_NE(hero, nullptr);
 		ASSERT_NE(neutral, nullptr);
+		ASSERT_EQ(neutral->getStackCount(SlotID(0)), neutralPikemen);
 		if(addSecondHero)
 			ASSERT_NE(otherHero, nullptr);
 
@@ -165,6 +170,8 @@ protected:
 		ASSERT_NE(hero, nullptr);
 		ASSERT_NE(neutral, nullptr);
 		ASSERT_NE(secondNeutral, nullptr);
+		ASSERT_EQ(neutral->getStackCount(SlotID(0)), firstNeutralPikemen);
+		ASSERT_EQ(secondNeutral->getStackCount(SlotID(0)), secondNeutralPikemen);
 
 		server = std::make_unique<DiplomacyRecordingServer>(gameState(), PLAYER);
 		gameHandler = std::make_unique<CGameHandler>(*server, gameState());
@@ -661,7 +668,12 @@ TEST_F(NewHorizonsDiplomacyTest, PaidOfferUsesSelectedAdvancedDiplomacyPerksAndS
 	ASSERT_EQ(hero->getPerkSkillRank(DIPLOMACY_SKILL), MasteryLevel::ADVANCED);
 	const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
 	ASSERT_TRUE(pikemanCapacity.has_value());
-	ASSERT_EQ(pikemanCapacity->maximum, 20);
+	ASSERT_EQ(pikemanCapacity->requirement, 60);
+	ASSERT_EQ(pikemanCapacity->leadership,
+		newHorizonsHeroes::capabilityLeadershipRating(hero->getCapabilityRules(), hero->level)
+			+ std::max(0, hero->valOfBonuses(BonusType::LEADERSHIP)));
+	ASSERT_EQ(pikemanCapacity->maximum, pikemanCapacity->leadership / 60);
+	ASSERT_GT(pikemanCapacity->maximum, 1);
 	hero->setStackCount(SlotID(0), pikemanCapacity->maximum - 1);
 
 	// HOSTILE is a disposition, not the explicit map-authored Diplomacy opt-out.
@@ -1238,17 +1250,29 @@ TEST_F(NewHorizonsDiplomacyTest, WeeklyPeacemakerAndTributeStateIsVersionedAndVa
 	EXPECT_TRUE(currentHeroCopy.hasUsedNewHorizonsPeacemaker(4));
 	EXPECT_TRUE(currentHeroCopy.hasUsedNewHorizonsTribute(4));
 
+	// Isolate the historical Diplomacy boundary from later captured policies.
+	// The modern hero's current-format roundtrip above remains unchanged.
+	CGHeroInstance historicalHero(nullptr);
+	historicalHero.id = hero->id;
+	historicalHero.subID = hero->subID;
+	historicalHero.tempOwner = PLAYER;
+	historicalHero.setNewHorizonsDiplomacyState(4, neutralId, 4);
+	ASSERT_TRUE(historicalHero.getMagicRules().isNull());
+	ASSERT_TRUE(historicalHero.getPrimaryGrowthRules().isNull());
+	ASSERT_TRUE(historicalHero.getPerkState().rules.isNull());
+
 	CMemorySerializer oldHeroWriter;
 	oldHeroWriter.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
-	EXPECT_THROW(oldHeroWriter.oser & *hero, std::runtime_error);
+	EXPECT_THROW(oldHeroWriter.oser & historicalHero, std::runtime_error);
 	EXPECT_TRUE(oldHeroWriter.extractBuffer().empty())
 		<< "An older hero writer must reject populated weekly Diplomacy state before writing bytes";
 
 	hero->setNewHorizonsDiplomacyState(-1, ObjectInstanceID::NONE, -1);
+	historicalHero.setNewHorizonsDiplomacyState(-1, ObjectInstanceID::NONE, -1);
 	CMemorySerializer oldHeroSnapshot;
 	oldHeroSnapshot.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
 	oldHeroSnapshot.iser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
-	oldHeroSnapshot.oser & *hero;
+	oldHeroSnapshot.oser & historicalHero;
 	CGHeroInstance legacyHeroCopy(gameState().get());
 	legacyHeroCopy.setNewHorizonsDiplomacyState(8, neutralId, 9);
 	oldHeroSnapshot.iser.cb = gameState().get();
@@ -1343,17 +1367,29 @@ TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactStateRoundTripsAndDefaultsInTheP
 	EXPECT_EQ(currentHeroCopy.getNewHorizonsTributeLastWeek(), 4);
 	EXPECT_EQ(currentHeroCopy.getNewHorizonsRecruitmentPactExpiryDay(), pactExpiryDay);
 
+	// Isolate the historical Diplomacy boundary from later captured policies.
+	// The modern hero's current-format roundtrip above remains unchanged.
+	CGHeroInstance historicalHero(nullptr);
+	historicalHero.id = hero->id;
+	historicalHero.subID = hero->subID;
+	historicalHero.tempOwner = PLAYER;
+	historicalHero.setNewHorizonsDiplomacyState(4, neutralId, 4, pactExpiryDay);
+	ASSERT_TRUE(historicalHero.getMagicRules().isNull());
+	ASSERT_TRUE(historicalHero.getPrimaryGrowthRules().isNull());
+	ASSERT_TRUE(historicalHero.getPerkState().rules.isNull());
+
 	CMemorySerializer oldWeeklyHeroWriter;
 	oldWeeklyHeroWriter.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;
-	EXPECT_THROW(oldWeeklyHeroWriter.oser & *hero, std::runtime_error);
+	EXPECT_THROW(oldWeeklyHeroWriter.oser & historicalHero, std::runtime_error);
 	EXPECT_TRUE(oldWeeklyHeroWriter.extractBuffer().empty())
 		<< "A weekly-format hero writer must reject active Pact state before writing bytes";
 
 	hero->setNewHorizonsDiplomacyState(4, neutralId, 4, -1);
+	historicalHero.setNewHorizonsDiplomacyState(4, neutralId, 4, -1);
 	CMemorySerializer oldWeeklyHeroSnapshot;
 	oldWeeklyHeroSnapshot.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;
 	oldWeeklyHeroSnapshot.iser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;
-	oldWeeklyHeroSnapshot.oser & *hero;
+	oldWeeklyHeroSnapshot.oser & historicalHero;
 	CGHeroInstance oldWeeklyHeroCopy(gameState().get());
 	oldWeeklyHeroCopy.setNewHorizonsDiplomacyState(8, neutralId, 9, pactExpiryDay);
 	oldWeeklyHeroSnapshot.iser.cb = gameState().get();

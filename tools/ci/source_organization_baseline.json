@@ -3613,257 +3613,257 @@
     "test/server/NewHorizonsDiplomacyTest.cpp": {
       "functions": [
         {
-          "end": 61,
-          "start": 58,
+          "end": 62,
+          "start": 59,
           "symbol": "CreatureID creature(const char * id)#1"
         },
         {
-          "end": 66,
-          "start": 63,
+          "end": 67,
+          "start": 64,
           "symbol": "HeroTypeID heroType(const char * id)#1"
         },
         {
-          "end": 84,
-          "start": 73,
+          "end": 85,
+          "start": 74,
           "symbol": "DiplomacyRecordingServer::void applyPack(CPackForClient & pack) override#1"
         },
         {
-          "end": 100,
-          "start": 95,
+          "end": 101,
+          "start": 96,
           "symbol": "NewHorizonsDiplomacyTest::void SetUp() override#1"
         },
         {
-          "end": 117,
-          "start": 102,
+          "end": 121,
+          "start": 103,
           "symbol": "NewHorizonsDiplomacyTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 144,
-          "start": 119,
+          "end": 149,
+          "start": 123,
           "symbol": "NewHorizonsDiplomacyTest::void startGame(int32_t heroPikemen, int32_t neutralPikemen, CGCreature::Character character, int3 neutralPosition = {12, 12, 0}, bool addSecondHero = false)#1"
         },
         {
-          "end": 172,
-          "start": 146,
+          "end": 179,
+          "start": 151,
           "symbol": "NewHorizonsDiplomacyTest::void startGameWithTwoNeutralStacks(int32_t heroPikemen, int32_t firstNeutralPikemen, int32_t secondNeutralPikemen, CGCreature::Character character)#1"
         },
         {
-          "end": 180,
-          "start": 174,
+          "end": 187,
+          "start": 181,
           "symbol": "NewHorizonsDiplomacyTest::void selectRecruitmentPact()#1"
         },
         {
-          "end": 214,
-          "start": 182,
+          "end": 221,
+          "start": 189,
           "symbol": "NewHorizonsDiplomacyTest::void acceptFirstNeutralAndArmRecruitmentPact(int32_t & triggerDay)#1"
         },
         {
-          "end": 234,
-          "start": 216,
+          "end": 241,
+          "start": 223,
           "symbol": "NewHorizonsDiplomacyTest::int32_t findPactOnlyWillingStackCount(CGCreature * contactedNeutral, int32_t pactExpiryDay)#1"
         },
         {
-          "end": 246,
-          "start": 236,
+          "end": 253,
+          "start": 243,
           "symbol": "NewHorizonsDiplomacyTest::void revealNeutralForPlayer()#1"
         },
         {
-          "end": 251,
-          "start": 248,
+          "end": 258,
+          "start": 255,
           "symbol": "NewHorizonsDiplomacyTest::std::string neutralPopupText() const#1"
         },
         {
-          "end": 257,
-          "start": 253,
+          "end": 264,
+          "start": 260,
           "symbol": "NewHorizonsDiplomacyTest::void selectBasicEnvoy()#1"
         },
         {
-          "end": 281,
-          "start": 259,
+          "end": 288,
+          "start": 266,
           "symbol": "NewHorizonsDiplomacyTest::static bool selectOfferedPerk(CGameHandler & handler, CGHeroInstance * candidate, std::string_view perkId, MasteryLevel::Type requiredRank)#1"
         },
         {
-          "end": 265,
-          "start": 262,
+          "end": 272,
+          "start": 269,
           "symbol": "NewHorizonsDiplomacyTest::selectOfferedPerk(CGameHandler & handler, CGHeroInstance * candidate, std::string_view perkId, MasteryLevel::Type requiredRank)::[candidate](const std::string & skillId)#1"
         },
         {
-          "end": 299,
-          "start": 283,
+          "end": 306,
+          "start": 290,
           "symbol": "NewHorizonsDiplomacyTest::void advanceToDiplomacyRank(MasteryLevel::Type targetRank, std::string_view basicPerk = {}, std::string_view advancedPerk = {}, std::string_view expertPerk = {})#1"
         },
         {
-          "end": 305,
-          "start": 301,
+          "end": 312,
+          "start": 308,
           "symbol": "NewHorizonsDiplomacyTest::int32_t currentAbsoluteWeek() const#1"
         },
         {
-          "end": 323,
-          "start": 307,
+          "end": 330,
+          "start": 314,
           "symbol": "NewHorizonsDiplomacyTest::std::optional<int3> neutralGuardApproachFor(const CGHeroInstance * movingHero) const#1"
         },
         {
-          "end": 342,
-          "start": 336,
+          "end": 349,
+          "start": 343,
           "symbol": "NewHorizonsDiplomacyLegacyGateTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 356,
-          "start": 345,
+          "end": 363,
+          "start": 352,
           "symbol": "ForecastInput eligibleInput()#1"
         },
         {
-          "end": 414,
-          "start": 359,
+          "end": 421,
+          "start": 366,
           "symbol": "TEST(NewHorizonsDiplomacy, UsesExactRankAndPerkThresholdBoundaries)#1"
         },
         {
-          "end": 451,
-          "start": 416,
+          "end": 458,
+          "start": 423,
           "symbol": "TEST(NewHorizonsDiplomacy, RecruitmentPactUsesExactFifteenPercentDiscount)#1"
         },
         {
-          "end": 486,
-          "start": 453,
+          "end": 493,
+          "start": 460,
           "symbol": "TEST(NewHorizonsDiplomacy, KeepsEligibilityAndAuthoredFreeExceptionsSeparateFromRank)#1"
         },
         {
-          "end": 505,
-          "start": 488,
+          "end": 512,
+          "start": 495,
           "symbol": "TEST(NewHorizonsDiplomacy, RejectsUnrepresentableFullStackGoldCosts)#1"
         },
         {
-          "end": 518,
-          "start": 507,
+          "end": 525,
+          "start": 514,
           "symbol": "TEST(NewHorizonsDiplomacy, UsesTheCapturedPerkRegistryForRulesetGating)#1"
         },
         {
-          "end": 531,
-          "start": 520,
+          "end": 538,
+          "start": 527,
           "symbol": "TEST_F(NewHorizonsDiplomacyLegacyGateTest, MapWithoutCapturedNewHorizonsPerksStaysOnTheLegacyPath)#1"
         },
         {
-          "end": 545,
-          "start": 533,
+          "end": 552,
+          "start": 540,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, UnselectedEnvoyDoesNotChangeTheVisibleNeutralPopup)#1"
         },
         {
-          "end": 597,
-          "start": 547,
+          "end": 604,
+          "start": 554,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, EnvoyReportsWillingPaidStackAtInclusiveFiveTileRangeWithoutChangingVisibility)#1"
         },
         {
-          "end": 614,
-          "start": 599,
+          "end": 621,
+          "start": 606,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, EnvoyReportsAuthoredFreeJoinWithoutThresholdOrGold)#1"
         },
         {
-          "end": 631,
-          "start": 616,
+          "end": 638,
+          "start": 623,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, EnvoyReportsThresholdFailureAndGoldAtFiveTiles)#1"
         },
         {
-          "end": 651,
-          "start": 633,
+          "end": 658,
+          "start": 640,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, EnvoyDoesNotReportBeyondFiveTilesOrAtSquaredDistanceTwentySix)#1"
         },
         {
-          "end": 728,
-          "start": 653,
+          "end": 740,
+          "start": 660,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, PaidOfferUsesSelectedAdvancedDiplomacyPerksAndSafeAdmission)#1"
         },
         {
-          "end": 722,
-          "start": 719,
+          "end": 734,
+          "start": 731,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, PaidOfferUsesSelectedAdvancedDiplomacyPerksAndSafeAdmission)::[](const std::string & text)#1"
         },
         {
-          "end": 746,
-          "start": 730,
+          "end": 758,
+          "start": 742,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, ExpertGrandDiplomatIsSelectedThroughNormalOffers)#1"
         },
         {
-          "end": 790,
-          "start": 748,
+          "end": 802,
+          "start": 760,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, RankZeroCanAcceptOnlyAnAuthoredCompliantFreeStack)#1"
         },
         {
-          "end": 812,
-          "start": 792,
+          "end": 824,
+          "start": 804,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, DecliningAnOfferCanStillResolveTheFollowupFleeChoice)#1"
         },
         {
-          "end": 865,
-          "start": 814,
+          "end": 877,
+          "start": 826,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, ExplicitMapOptOutAndEligibilitySerializationRemainDistinct)#1"
         },
         {
-          "end": 923,
-          "start": 867,
+          "end": 935,
+          "start": 879,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, PeacemakerProtectsOnlyItsHeroAndExpiresAtTheNextWeek)#1"
         },
         {
-          "end": 947,
-          "start": 925,
+          "end": 959,
+          "start": 937,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, DeliberateAttackClearsPeacemakerTargetButKeepsWeeklyUse)#1"
         },
         {
-          "end": 989,
-          "start": 949,
+          "end": 1001,
+          "start": 961,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, TributePaysAndRemovesAnUnwillingStackOnTheMovementPath)#1"
         },
         {
-          "end": 1022,
-          "start": 991,
+          "end": 1034,
+          "start": 1003,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, InsufficientTributeGoldFallsThroughToCombatWithoutUsingTheQuota)#1"
         },
         {
-          "end": 1063,
-          "start": 1024,
+          "end": 1075,
+          "start": 1036,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, WillingPaidOfferDoesNotConsumeTribute)#1"
         },
         {
-          "end": 1108,
-          "start": 1065,
+          "end": 1120,
+          "start": 1077,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactSelectsNormallyArmsOnRecruitmentAndDiscountsTheNextContact)#1"
         },
         {
-          "end": 1132,
-          "start": 1110,
+          "end": 1144,
+          "start": 1122,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactIsConsumedByAnUnwillingNextContact)#1"
         },
         {
-          "end": 1157,
-          "start": 1134,
+          "end": 1169,
+          "start": 1146,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, AcceptedOfferWithoutAnyAdmittedTroopsDoesNotRearmRecruitmentPact)#1"
         },
         {
-          "end": 1220,
-          "start": 1159,
+          "end": 1232,
+          "start": 1171,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, AcceptedDiscountedOfferRearmsRecruitmentPactOnItsInclusiveExpiryDay)#1"
         },
         {
-          "end": 1219,
-          "start": 1216,
+          "end": 1231,
+          "start": 1228,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, AcceptedDiscountedOfferRearmsRecruitmentPactOnItsInclusiveExpiryDay)::[](const std::string & text)#1"
         },
         {
-          "end": 1325,
-          "start": 1222,
+          "end": 1349,
+          "start": 1234,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, WeeklyPeacemakerAndTributeStateIsVersionedAndValidated)#1"
         },
         {
-          "end": 1419,
-          "start": 1327,
+          "end": 1455,
+          "start": 1351,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactStateRoundTripsAndDefaultsInThePreviousWeeklyFormat)#1"
         }
       ],
-      "rationale": "Complete 1418-line source review covers identity helpers, server override, all fixture and legacy-gate methods, eligibleInput, all TEST/TEST_F bodies and three lambdas. Braced position/string_view default arguments at lines 120,284-285 cause recovery in measured signatures. No handwritten macro definitions. Renewal proposal retains every existing callable identity and complete body span after v2 capability argument/declaration and focused fixture changes. Exact independent source review completed; no parser coverage discarded.",
-      "review": "IR-NECROMANCY-V2-COMPLETE-CALLABLES-20261027",
-      "sha256": "c458c3a809ebbdf6d01067639b87520dd720b3a2a440a40111611c381c8a5708",
-      "previous_review": "test-function-inventory-complete-32",
+      "rationale": "Complete existing callable inventory retained after bounded test-only fixture corrections: explicit neutral count capture and setup assertions, captured Leadership arithmetic, detached historical Diplomacy snapshots. Every existing signature and closing-body boundary is mapped through exact unchanged source lines. No new callable definitions or excluded source. Independent exact-source review required before applying this renewal; native77 actual pass is a separate execution result.",
+      "review": "IR-BANK-RELATED-FIXTURE-CALLABLES-20261029",
+      "sha256": "e65930db9f31a65984e9fd29ce4e50d63f459b99f07b4e99769634968d9ef032",
+      "previous_review": "IR-NECROMANCY-V2-COMPLETE-CALLABLES-20261027",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "review_scope": "exact-bounded-source-review-no-native-or-rendered-acceptance"
+      "review_scope": "exact-test-fixture-callable-inventory-only-no-production-growth-allowance"
     },
     "test/server/NewHorizonsMercenaryAdmissionTest.cpp": {
       "functions": [
@@ -23799,14 +23799,14 @@
     "lib/serializer/ESerializationVersion.h": {
       "deferral": "Preserve append-only feature values, historical aliases and explicit read/write capability tests; do not place runtime mechanics in this registry. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Keep append-only feature values/aliases and direct/enclosing capability tests; do not add runtime mechanics to the feature registry.",
       "kind": "exception",
-      "lines": 613,
+      "lines": 615,
       "owner": "engine_engineer",
-      "rationale": "Exact independent final Tamika source review, physical lines 611 to 613. Rules, grant state, controller/victim admission, read-only continuation UI and per-action output stay in focused typed owners; existing boundaries route snapshots, validated actions and capability checks. Whole actual activation inverse preserves Forest and prior reset order; decoded receipts and enclosing packet guards remain source-protected. Retain inherited kind/owner and concrete deferrals except the exact separately authorized seams. Authored native cases remain unrun; no future growth or ceiling increase.",
-      "review": "IR-TAMIKA-FINAL-ORDERED-CODEC-20261029",
-      "review_scope": "Exact final Tamika c4a1 native/UI/codec composition after Edric and Living Armor; current df99 baseline. No final AI, native execution, rendered or delivery acceptance.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_AI_RENDER_PENDING",
-      "sha256": "849c2ee6cd167d832262b3fb5c1876d577348c1d6c9a47befefa3b2ae77ca03a",
-      "previous_review": "IR-EDRIC-ORDERED-SERIALIZATION-SOURCE-20261028"
+      "rationale": "Append-only feature 1141 identifies persistent unclaimed creature-bank troops and advances CURRENT. Earlier feature values and historical aliases remain unchanged. The direct rewardable-object writer guard does not establish enclosing world-stream atomicity; native compatibility checks remain required.",
+      "review": "IR-BANK-REMAINDER-SOURCE-20261029",
+      "review_scope": "exact-bank-remainder-staging-and-legacy-preservation-only-no-future-growth",
+      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
+      "sha256": "b9a1396371f98f5cd2d3aa9e5ebc1c4ecfc46364019bb36b543833f0c581cdc2",
+      "previous_review": "IR-TAMIKA-FINAL-ORDERED-CODEC-20261029"
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -24713,22 +24713,26 @@
     "server/CGameHandler.cpp": {
       "deferral": "Retain this reduced legacy-file ceiling. Extract the next touched cohesive authoritative responsibility before expansion; preserve packet order, command validation and RNG consumption.",
       "kind": "legacy",
-      "lines": 6867,
+      "lines": 6850,
       "owner": "engine_engineer",
-      "rationale": "Independently reviewed final recruitment-growth owner and bounded routing/extractions. Final integer ceiling is applied to new output once; captured absence100 and explicit0 remain distinct; old-stock/calendar and existing stage order preserved. Exact source-size/hash renewal only, with inherited kind/owner/deferral unchanged; compilation/native/rendered checks pending.",
-      "review": "IR-RECRUITMENT-GROWTH-ENGINE-V2-20261028",
-      "review_scope": "exact-fc8847-current-d10-engine-source-no-future-growth-or-runtime-certification",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_RUNTIME_PENDING",
-      "sha256": "239d38a0cfabeb925a605903f89dc6e847e7824b9824c279cb8352db858442e7"
+      "rationale": "Object-backed creature reward staging is extracted into a focused owner. The only added exchange behavior is validated pending-bank numeric-split admission. The file shrinks from 6867 to 6850 lines; recruitment ceiling, captured-stock, calendar and existing packet-order invariants remain unchanged. This exact source review does not certify native or rendered behavior.",
+      "review": "IR-BANK-REMAINDER-SOURCE-20261029",
+      "review_scope": "exact-bank-remainder-staging-and-legacy-preservation-only-no-future-growth",
+      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
+      "sha256": "3553aa71dc5bc3af4ab90aa857c4a8af5b473f5ec91f1d5186bdcda9c55f8097",
+      "previous_review": "IR-RECRUITMENT-GROWTH-ENGINE-V2-20261028"
     },
     "server/CGameHandler.cpp::bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8 what, SlotID p1, SlotID p2, si32 val, PlayerColor player)#1": {
-      "kind": "legacy",
-      "lines": 205,
+      "kind": "exception",
+      "lines": 208,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 205 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "8d18f4d97c04b03e38163707c3670897211707e0ffd8f42541bfe61589b623b4"
+      "rationale": "Urgent reward-loss correction: add only pending-bank numeric-split admission after the existing exact exchange query gate; destination ownership and canonical moveStack Leadership validation remain enforced. Function 205 to 208 lines while owning file shrinks 6867 to 6850; no general ceiling increase or future growth.",
+      "review": "IR-BANK-REMAINDER-ARRANGE-SPLIT-20261029",
+      "review_scope": "urgent-three-line-pending-bank-to-requester-hero-split-admission-only",
+      "sha256": "d28cc1d416c25207c0d46d87b86de33b819796e80279605e81c20acb82379255",
+      "deferral": "Owner: gameplay_engineer with engine_engineer review. Before further growth, extract cohesive ArmyExchange orchestration from arrangeStacks: explicit swap/merge/split inputs, exact query/packet order, source/destination ownership, last-stack and Leadership validation. Characterize legal bank splits and rejected hostile/oversized transfers before changing the boundary.",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING"
     },
     "server/CGameHandler.cpp::bool CGameHandler::buildStructure(ObjectInstanceID tid, BuildingID requestedID, bool force)#1": {
       "kind": "legacy",

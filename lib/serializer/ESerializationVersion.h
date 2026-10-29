@@ -299,11 +299,13 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_DREAD_CAVALRY = 1140, // captured Tamika continuation/state, after real Edric1139
 
+	NEW_HORIZONS_BANK_CREATURE_REMAINDER = 1141, // unclaimed bank troops are loot, not renewed guards
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_DREAD_CAVALRY,
+	CURRENT = NEW_HORIZONS_BANK_CREATURE_REMAINDER,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2

@@ -81,6 +81,7 @@
 #include "../lib/mapping/HotaScriptConverter.h"
 
 #include "../lib/mapObjects/CGCreature.h"
+#include "../lib/mapObjects/CRewardableObject.h"
 #include "../lib/mapObjects/CGMarket.h"
 #include "../lib/mapObjects/CGPandoraBox.h"
 #include "../lib/mapObjects/Quest.h"
@@ -1672,27 +1673,6 @@ void CGameHandler::giveCreatures(const CGHeroInstance * hero, const CCreatureSet
 		else
 			insertNewStack(StackLocation(hero->id, pos), unit.second->getCreature(), unit.second->getCount());
 	}
-}
-
-void CGameHandler::giveCreatures(const CArmedInstance *obj, const CGHeroInstance * h, const CCreatureSet &creatures, bool remove)
-{
-	COMPLAIN_RET_IF(!creatures.stacksCount(), "Strange, giveCreatures called without args!");
-	COMPLAIN_RET_IF(obj->stacksCount(), "Cannot give creatures from not-cleared object!");
-	COMPLAIN_RET_IF(creatures.stacksCount() > GameConstants::ARMY_SIZE, "Too many stacks to give!");
-	// A full army with no mergeable slot must still reach tryJoiningArmy so the
-	// player can choose an exchange. Individual transfers from that dialog are
-	// validated authoritatively by moveStack. Preflight only when the complete
-	// reward can be inserted without player intervention.
-	if(h->canBeMergedWith(creatures, true) && !validateLeadershipArmyAddition(h, creatures))
-		return;
-
-	//first we move creatures to give to make them army of object-source
-	for (const auto & elem : creatures.Slots())
-	{
-		addToSlot(StackLocation(obj->id, obj->getSlotFor(elem.second->getCreature())), elem.second->getCreature(), elem.second->getCount());
-	}
-
-	tryJoiningArmy(obj, h, remove, true);
 }
 
 void CGameHandler::takeCreatures(ObjectInstanceID objid, const std::vector<CStackBasicDescriptor> &creatures, bool forceRemoval)
@@ -3441,7 +3421,10 @@ bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8
 		}
 		const int64_t countLeftOnSrc = sourceCount - countToMove;
 
-		if (  (s1->tempOwner != player && countLeftOnSrc < s1->getStackCount(p1))
+		const auto * bank = dynamic_cast<const CRewardableObject *>(s1);
+		const bool takingBankLoot = bank && bank->hasPendingBankCreatureReward()
+			&& id1 != id2 && s2->tempOwner == player;
+		if (  (s1->tempOwner != player && !takingBankLoot && countLeftOnSrc < s1->getStackCount(p1))
 			|| (s2->tempOwner != player && val < s2->getStackCount(p2)))
 		{
 			complain("Can't move troops of another player!");

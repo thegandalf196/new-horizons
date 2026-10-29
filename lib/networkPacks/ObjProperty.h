@@ -50,7 +50,10 @@ enum class ObjProperty : int8_t
 
 	//hero-specific, authoritative weekly economic allowance
 	NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK,
-	NEW_HORIZONS_PROSPECTOR_LAST_WEEK
+	NEW_HORIZONS_PROSPECTOR_LAST_WEEK,
+
+	// Explicit identity for unclaimed creature-bank loot; never inferred from stacks.
+	BANK_PENDING_CREATURE_REWARD
 };
 
 class NumericID : public StaticIdentifier<NumericID>

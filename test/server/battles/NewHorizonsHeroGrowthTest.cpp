@@ -1300,7 +1300,12 @@ TEST_F(NewHorizonsPerSlotLeadershipTest, AuthoritativeStackMutationsRejectOversi
 	const CreatureID halberdier = creatureByName("core:halberdier");
 	const auto capacity = attackerSideHero->getLeadershipSlotCapacity(pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 20);
+	ASSERT_EQ(capacity->requirement, 60);
+	ASSERT_EQ(capacity->leadership,
+		newHorizonsHeroes::capabilityLeadershipRating(attackerSideHero->getCapabilityRules(), attackerSideHero->level)
+			+ std::max(0, attackerSideHero->valOfBonuses(BonusType::LEADERSHIP)));
+	ASSERT_EQ(capacity->maximum, capacity->leadership / 60);
+	ASSERT_GT(capacity->maximum, 1);
 
 	EXPECT_FALSE(gameHandler->insertNewStack(StackLocation(attackerSideHero->id, SlotID(0)), pikeman.toCreature(), capacity->maximum + 1));
 	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(0)));

@@ -15,5 +15,6 @@
 	"new-horizons.economy.magnate.contribution": "Magnate: +%d Gold/day before income handicap. Already included in the total.",
 	"new-horizons.economy.magnate.beneficiary": "Current beneficiary: %s, through day %d inclusive.",
 	"new-horizons.economy.magnate.none": "This town is not currently receiving a Magnate award.",
-	"new-horizons.economy.magnate.help": "At week start, each selected Magnate awards the most recently visited owned town from the previous week +500 Gold/day for seven days. Two holders may award the same town. The town must still be owned at week start; later visits do not redirect this fixed award."
+	"new-horizons.economy.magnate.help": "At week start, each selected Magnate awards the most recently visited owned town from the previous week +500 Gold/day for seven days. Two holders may award the same town. The town must still be owned at week start; later visits do not redirect this fixed award.",
+	"new-horizons.bank.pendingCreatures": "Troops remaining. Visit to collect:"
 }

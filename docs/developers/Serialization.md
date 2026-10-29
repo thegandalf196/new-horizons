@@ -19,6 +19,20 @@ Direct settings and enclosing map/world/initialized-lobby writers reject
 unsupported captures before their prefixes; readers reject unsupported overrides
 before mutation. Loading retains old stock, armies and explicit captured values.
 
+## Unclaimed creature-bank troops
+
+`NEW_HORIZONS_BANK_CREATURE_REMAINDER` appends an explicit pending-creature
+reward marker to rewardable objects. New bank rewards use it only when an incoming
+creature has a per-slot limit in the visiting hero's saved Leadership rules; legacy
+contexts keep their original lifecycle. The existing bank army owns the exact
+unclaimed troops; the marker is replicated by `BANK_PENDING_CREATURE_REWARD`.
+Pending troops are loot rather than guards. Closing an exchange preserves them,
+a revisit offers the stored army without repeating other rewards, and periodic
+reward/visitor renewal waits until the army is collected and the marker clears.
+Historical loads default the marker to false, including reused objects; a cleared
+flag and surviving army never synthesize reward identity. Writers targeting an
+older format reject a pending marker before the rewardable object's prefix.
+
 ## Captured contexts and detached descriptors
 
 Append each serialization feature after the last actual feature and before

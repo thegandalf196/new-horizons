@@ -39,9 +39,14 @@ void CRewardableObject::markAsScouted(IGameEventCallback & gameEvents, const CGH
 	gameEvents.sendAndApply(cov);
 }
 
+bool CRewardableObject::hasPendingBankCreatureReward() const
+{
+	return ID == Obj::CREATURE_BANK && pendingBankCreatureReward;
+}
+
 bool CRewardableObject::isGuarded() const
 {
-	return stacksCount() > 0;
+	return !hasPendingBankCreatureReward() && stacksCount() > 0;
 }
 
 void CRewardableObject::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstance *hero) const
@@ -50,6 +55,16 @@ void CRewardableObject::onHeroVisit(IGameEventCallback & gameEvents, const CGHer
 	{
 		ChangeObjectVisitors cov(ChangeObjectVisitors::VISITOR_SCOUTED, id, hero->id);
 		gameEvents.sendAndApply(cov);
+	}
+
+	if(hasPendingBankCreatureReward())
+	{
+		// Retry only the stored troops. Resources, artifacts and other rewards
+		// were already granted on the original visit. Any visiting hero may collect.
+		gameEvents.tryJoiningArmy(this, hero, false, true);
+		if(stacksCount() == 0)
+			gameEvents.setObjPropertyValue(id, ObjProperty::BANK_PENDING_CREATURE_REWARD, false);
+		return;
 	}
 
 	if (!isGuarded())
@@ -96,6 +111,13 @@ void CRewardableObject::battleFinished(IGameEventCallback & gameEvents, const CG
 
 void CRewardableObject::garrisonDialogClosed(IGameEventCallback & gameEvents, const CGHeroInstance *hero) const
 {
+	if(hasPendingBankCreatureReward())
+	{
+		if(stacksCount() == 0)
+			gameEvents.setObjPropertyValue(id, ObjProperty::BANK_PENDING_CREATURE_REWARD, false);
+		return;
+	}
+
 	// if visitor received creatures as rewards, but does not have free slots, he will leave some units
 	// inside rewardable object, which might get treated as guards later
 	while(!stacks.empty())
@@ -206,6 +228,19 @@ bool CRewardableObject::wasVisited(const CGHeroInstance * h) const
 MetaString CRewardableObject::getDisplayTextImpl(PlayerColor player, const CGHeroInstance * hero, bool includeDescription) const
 {
 	MetaString result = getObjectName();
+	if(hasPendingBankCreatureReward() && wasScouted(player))
+	{
+		result.appendEOL();
+		result.appendTextID("new-horizons.bank.pendingCreatures");
+		for(const auto & [slot, stack] : Slots())
+		{
+			result.appendEOL();
+			result.appendNumber(stack->getCount());
+			result.appendRawString(" ");
+			result.appendName(stack->getCreatureID(), stack->getCount());
+		}
+		return result;
+	}
 
 	auto appendOnNewLine = [&result](const MetaString & text)
 	{
@@ -295,6 +330,14 @@ std::vector<Component> CRewardableObject::getPopupComponentsImpl(PlayerColor pla
 	if (!wasScouted(player))
 		return {};
 
+	if(hasPendingBankCreatureReward())
+	{
+		std::vector<Component> result;
+		for(const auto & [slot, stack] : Slots())
+			result.emplace_back(ComponentType::CREATURE, stack->getCreatureID(), stack->getCount());
+		return result;
+	}
+
 	if (isGuarded())
 	{
 		if (!cb->getSettings().getBoolean(EGameSettings::BANKS_SHOW_GUARDS_COMPOSITION))
@@ -349,6 +392,10 @@ void CRewardableObject::setPropertyDer(ObjProperty what, ObjPropertyID identifie
 {
 	switch (what)
 	{
+		case ObjProperty::BANK_PENDING_CREATURE_REWARD:
+			if(ID == Obj::CREATURE_BANK)
+				pendingBankCreatureReward = identifier.getNum() != 0;
+			break;
 		case ObjProperty::REWARD_SELECT:
 			selectedReward = identifier.getNum();
 			break;
@@ -360,6 +407,10 @@ void CRewardableObject::setPropertyDer(ObjProperty what, ObjPropertyID identifie
 
 void CRewardableObject::newTurn(IGameEventCallback & gameEvents, IGameRandomizer & gameRandomizer) const
 {
+	// A refill must never overwrite unclaimed loot or regenerate the other rewards.
+	if(hasPendingBankCreatureReward())
+		return;
+
 	auto calendar = cb->getCalendar();
 	int currentDay = calendar.getCurrentDay();
 	ui32 resetDuration = configuration.getResetDuration(calendar);

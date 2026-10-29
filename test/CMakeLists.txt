@@ -528,6 +528,7 @@ set(test_SRCS
 		server/battles/SpellTargetIdentityTest.cpp
 		server/battles/NewHorizonsSkillRewardApplicationTest.cpp
 		server/battles/NewHorizonsHeroGrowthTest.cpp
+		server/battles/NewHorizonsBankCreatureRewardTest.cpp
 		server/battles/NewHorizonsStartingSkillMigrationTest.cpp
 		server/battles/NewHorizonsCreatureCategoryStateTest.cpp
 		server/battles/NewHorizonsCreaturePopupTextTest.cpp

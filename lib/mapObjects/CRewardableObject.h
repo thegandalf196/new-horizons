@@ -20,6 +20,7 @@ class DLL_LINKAGE CRewardableObject : public CArmedInstance, public Rewardable::
 protected:
 
 	bool onceVisitableObjectCleared = false;
+	bool pendingBankCreatureReward = false;
 	
 	/// reward selected by player, no serialize
 	ui16 selectedReward = 0;
@@ -47,6 +48,8 @@ protected:
 	/// Returns true if this object is currently guarded
 	bool isGuarded() const;
 public:
+
+	bool hasPendingBankCreatureReward() const;
 
 	/// Visitability checks. Note that hero check includes check for hero owner (returns true if object was visited by player)
 	bool wasVisited(PlayerColor player) const override;
@@ -91,9 +94,17 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if constexpr(Handler::saving)
+			if(pendingBankCreatureReward && !h.hasFeature(Handler::Version::NEW_HORIZONS_BANK_CREATURE_REMAINDER))
+				throw std::runtime_error("Unclaimed bank troops require the bank remainder save format");
+
 		h & static_cast<CArmedInstance&>(*this);
 		h & static_cast<Rewardable::Interface&>(*this);
 		h & onceVisitableObjectCleared;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BANK_CREATURE_REMAINDER))
+			h & pendingBankCreatureReward;
+		else if constexpr(!Handler::saving)
+			pendingBankCreatureReward = false;
 	}
 };
 
