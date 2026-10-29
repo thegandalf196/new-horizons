@@ -47,7 +47,8 @@
             "cacheVariables": {
                 "ENABLE_TEST": "ON",
                 "ENABLE_NEW_HORIZONS_MANAGED_TESTS": "OFF",
-                "ENABLE_NH_PERF_EXPERIMENTS": "OFF"
+                "ENABLE_NH_PERF_EXPERIMENTS": "OFF",
+                "ENABLE_NH_BUG_REPORT_REGRESSION": "ON"
             }
         },
         {
@@ -478,7 +479,7 @@
         {
             "name": "new-horizons-linux-test",
             "configurePreset": "new-horizons-linux-test",
-            "targets": ["nhHeroDevelopmentNavigationTest", "nhHeroMasteryDialogStateTest", "nhExchangeSecondarySkillSlotsTest", "nhStackInfoPanelHoverStateTest", "nhFrozenApplicationFeedbackTest", "nhBattleStackColorPresentationTest", "nhProjectileFlightLifecycleTest", "nhWindowSceneRedrawTest", "nhMapTransitionSnapshotTest", "nhBattleEndDispatchTest", "nhHeroPositiveProcPresentationTest", "nhAnimationPhaseStartTest", "nhCureAfflictionSessionTest"],
+            "targets": ["nhHeroDevelopmentNavigationTest", "nhHeroMasteryDialogStateTest", "nhExchangeSecondarySkillSlotsTest", "nhStackInfoPanelHoverStateTest", "nhFrozenApplicationFeedbackTest", "nhBattleStackColorPresentationTest", "nhProjectileFlightLifecycleTest", "nhWindowSceneRedrawTest", "nhMapTransitionSnapshotTest", "nhBattleEndDispatchTest", "nhHeroPositiveProcPresentationTest", "nhAnimationPhaseStartTest", "nhCureAfflictionSessionTest", "nhBugReportDraftTest", "nhBugReportDataTest"],
             "jobs": 10
         },
         {
