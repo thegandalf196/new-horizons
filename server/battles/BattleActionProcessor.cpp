@@ -80,6 +80,7 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsDivineRetribution.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/Problem.h"
@@ -236,19 +237,13 @@ static AttackedTarget unitAboutToBeAttacked(const battle::Unit * unit)
 	return target;
 }
 
-static SpellID divineRetributionSpellID()
-{
-	static const SpellID id(SpellID::decode("new-horizons:divineRetribution"));
-	return id;
-}
-
 static void recordDivineRetributionDamage(const CBattleInfoCallback & battle, CGameHandler & gameHandler,
 	const battle::Unit * attacker, const battle::Unit * protectedUnit, int64_t actualHpDamage)
 {
 	if(actualHpDamage <= 0 || !attacker || !protectedUnit || attacker->unitSide() == protectedUnit->unitSide())
 		return;
 
-	const SpellID spell = divineRetributionSpellID();
+	const SpellID spell = newHorizonsDivineRetribution::spellId(battle.getBattle()->getMagicRules());
 	if(!spell.hasValue())
 		return;
 

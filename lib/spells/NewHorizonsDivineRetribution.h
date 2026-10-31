@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include "../constants/EntityIdentifiers.h"
+#include "../json/JsonNode.h"
 #include <cstdint>
 
 class CBattleInfoCallback;
@@ -13,6 +15,10 @@ namespace battle { class Unit; }
 
 namespace newHorizonsDivineRetribution
 {
+/// Absent content is optional only for an empty legacy profile without the module.
+/// Installed identities retain historical behavior; required missing content throws.
+DLL_LINKAGE SpellID spellId(const JsonNode & savedRules);
+
 /// The caller has already applied the raw judgment cap and Retributionist.
 /// Applies current recipient defenses once, without caster bonuses or RNG.
 /// Captured pre-v3 contexts retain their existing raw payout.

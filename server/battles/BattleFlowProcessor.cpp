@@ -339,12 +339,6 @@ namespace
 		return false;
 	}
 
-	SpellID divineRetributionSpellID()
-	{
-		static const SpellID id(SpellID::decode("new-horizons:divineRetribution"));
-		return id;
-	}
-
 	std::optional<BattleSide> quartermasterActiveSide(const CBattleInfoCallback & battle, uint32_t unitId)
 	{
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -737,7 +731,7 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 void BattleFlowProcessor::resolveDivineRetribution(const CBattleInfoCallback & battle)
 {
 	const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle());
-	const SpellID spell = divineRetributionSpellID();
+	const SpellID spell = newHorizonsDivineRetribution::spellId(battle.getBattle()->getMagicRules());
 	if(!concrete || !spell.hasValue())
 		return;
 

@@ -11,6 +11,7 @@
 #include "../../../lib/modding/IdentifierStorage.h"
 #include "../../../lib/modding/ModScope.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
+#include "../../../lib/spells/NewHorizonsDivineRetribution.h"
 #include "../../../AI/BattleAI/HypotheticBattle.h"
 #include "../../../lib/battle/NewHorizonsPlague.h"
 #include "../../../lib/battle/NewHorizonsSoulChain.h"
@@ -288,4 +289,47 @@ TEST(OptionalSoulChainIdentity, InstalledHistoricalAndInactivePassiveReadsRetain
 		EXPECT_EQ(actual->mdrPenetration, strict->mdrPenetration);
 		EXPECT_EQ(actual->damageMultiplierPercent, strict->damageMultiplierPercent);
 	}
+}
+
+TEST(OptionalDivineRetributionIdentity, InstalledIdentityOrLegacyAbsenceKeepsRequiredProfilesStrict)
+{
+	const auto installed = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell",
+		"new-horizons:divineRetribution", true);
+	JsonNode empty; empty.Struct();
+	const JsonNode current(JsonPath::builtin("config/newHorizonsMagic"));
+	if(installed)
+	{
+		auto inactive = current;
+		inactive["spells"]["new-horizons:divineRetribution"]["active"].Bool() = false;
+		for(const auto & rules : {JsonNode(), empty, current, inactive})
+			EXPECT_EQ(newHorizonsDivineRetribution::spellId(rules), SpellID(*installed));
+	}
+	else
+	{
+		ASSERT_FALSE(hydraModuleLoaded());
+		EXPECT_FALSE(newHorizonsDivineRetribution::spellId(JsonNode()).hasValue());
+		EXPECT_FALSE(newHorizonsDivineRetribution::spellId(empty).hasValue());
+		EXPECT_THROW(newHorizonsDivineRetribution::spellId(current), std::runtime_error);
+		EXPECT_THROW(newHorizonsDivineRetribution::spellId(JsonNode(false)), std::runtime_error);
+	}
+}
+
+TEST_F(OptionalHydraBattleTest, OrdinaryMeleeAndNextRoundNeedNoOptionalDivineRetribution)
+{
+	ASSERT_FALSE(newHorizonsDivineRetribution::spellId(battle()->getMagicRules()).hasValue());
+	const auto before = subject->save();
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*battle(), subject, 150), 150);
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*battle(), subject, 0), 0);
+	EXPECT_EQ(subject->save(), before);
+	const auto * enemy = battle()->battleGetStackByPos(BattleHex(rightHex));
+	ASSERT_NE(enemy, nullptr);
+	const auto enemyHealth = enemy->getAvailableHealth();
+	ASSERT_NO_THROW(beginCombat());
+	ASSERT_EQ(battle()->getRound(), 1);
+	ASSERT_TRUE(attack(subject, enemy->getPosition()));
+	EXPECT_LT(enemy->getAvailableHealth(), enemyHealth);
+	ASSERT_TRUE(enemy->alive());
+	ASSERT_NO_THROW(endRound());
+	EXPECT_EQ(battle()->getRound(), 2);
+	EXPECT_NE(battle()->battleActiveUnit(), nullptr);
 }
