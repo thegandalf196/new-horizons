@@ -114,6 +114,7 @@ private:
 	TConstBonusListPtr mergeBonusesImpl(const CSelector & selector, const std::string & cachingStr,
 		bool unstacked, const ProjectedAdjacencyQuery * adjacency) const;
 	bool hasStableInheritedBonusList() const;
+	void replacePhysicalAfflictionMarker(Bonus marker);
 	void removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState,
 		HypotheticLifecycleTiming::EffectWorkTiming * timing);
 	TConstBonusListPtr mergeBonuses(const CSelector & selector, const std::string & cachingStr,

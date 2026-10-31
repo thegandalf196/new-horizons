@@ -6,11 +6,16 @@
 #pragma once
 #include "../../lib/battle/IBattleInfoCallback.h"
 #include "../../lib/battle/HeroCommand.h"
+#include <cstdint>
 #include <memory>
+#include <vector>
 #include <optional>
 
 class CBattleInfoCallback;
 class HypotheticBattle;
+class AttackPossibility;
+class DamageCache;
+class PhysicalStrikeProjection;
 
 namespace attackPreview
 {
@@ -18,6 +23,22 @@ namespace attackPreview
 /// primary footprint and unchanged health/hex/identity tie order.
 const battle::Unit * rainSecondary(const CBattleInfoCallback & battle,
 	const battle::Unit * attacker, const battle::Unit * primary, const BattleHexArray & rainPrimaryFootprint);
+
+/// Synchronous borrowed facts for the already admitted automatic Rain hit.
+struct RainCollateralInput
+{
+	const battle::Unit * primary;
+	const BattleHexArray & primaryFootprint;
+	int64_t primaryDamage;
+	bool physicalDamage;
+	bool projectsTactics;
+	bool rootMayHaveSerpents;
+};
+/// Complete the existing selected collateral hit and journal its damage/death.
+void completeRainCollateral(AttackPossibility & candidate,
+	const std::shared_ptr<CBattleInfoCallback> & state, const std::shared_ptr<HypotheticBattle> & preview,
+	DamageCache & cache, PhysicalStrikeProjection & tactics, std::vector<uint32_t> & serpentDeaths,
+	const RainCollateralInput & input);
 
 struct Targets
 {

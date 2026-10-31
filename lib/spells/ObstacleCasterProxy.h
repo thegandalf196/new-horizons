@@ -45,6 +45,10 @@ public:
 	int64_t getEffectRange(const Spell * spell) const override;
 	/// Snapshot from the obstacle's original accepted cast, including its token.
 	const JsonNode & getCapturedMdrPenetration() const;
+	/// Borrowed only during the existing synchronous obstacle-trigger cast.
+	const SpellCreatedObstacle & sourceObstacle() const noexcept;
+	/// Exact borrowed delegate identity; a Hero-shaped wrapper is not that Hero.
+	const Caster * delegatedCaster() const noexcept;
 
 private:
 	const SpellCreatedObstacle & obs;

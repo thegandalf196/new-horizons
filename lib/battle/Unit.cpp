@@ -11,6 +11,8 @@
 
 #include "Unit.h"
 #include "SummonLifetime.h"
+#include "UnitCreatureResolver.h"
+#include <stdexcept>
 
 #include "../CCreatureHandler.h"
 #include "../GameLibrary.h"
@@ -296,8 +298,22 @@ int Unit::getRawSurrenderCost() const
 ///UnitInfo
 void UnitInfo::serializeJson(JsonSerializeFormat & handler)
 {
+	serializeFields(handler, nullptr);
+}
+void UnitInfo::serializeFields(JsonSerializeFormat & handler, const UnitCreatureResolver * resolver)
+{
 	handler.serializeInt("count", count);
-	handler.serializeId("type", type, CreatureID(CreatureID::NONE));
+	if(resolver)
+		handler.serializeId("type", type, CreatureID(CreatureID::NONE),
+			[resolver](const std::string & key)
+			{
+				const auto id = resolver->decode(key);
+				if(id < 0) throw std::logic_error("Owned unit addition creature was not captured");
+				return id; // Never retry another scope or silently default a missing owned ID.
+			},
+			[resolver](int32_t id) { return resolver->encode(id); });
+	else
+		handler.serializeId("type", type, CreatureID(CreatureID::NONE));
 	handler.serializeInt("side", side);
 	si16 positionValue = position.toInt();
 	handler.serializeInt("position", positionValue);
@@ -330,6 +346,19 @@ void UnitInfo::load(uint32_t id_, const JsonNode & data)
 	id = id_;
 	JsonDeserializer deser(nullptr, data);
 	serializeJson(deser);
+}
+void UnitInfo::save(JsonNode & data, const UnitCreatureResolver & resolver)
+{
+	data.clear();
+	JsonSerializer ser(nullptr, data);
+	serializeFields(ser, &resolver);
+}
+void UnitInfo::load(uint32_t id_, const JsonNode & data, const UnitCreatureResolver & resolver)
+{
+	summonLifetimeFromJson(data);
+	id = id_;
+	JsonDeserializer deser(nullptr, data);
+	serializeFields(deser, &resolver);
 }
 
 }

@@ -20,6 +20,18 @@ public:
 	};
 	static std::unique_ptr<OwnedRecipientBonusGraph> fromOwnedInputs(std::vector<NodeInput> inputs, size_t root,
 		std::vector<std::shared_ptr<const Bonus>> extraRecords = std::vector<std::shared_ptr<const Bonus>>());
+	static std::unique_ptr<OwnedRecipientBonusGraph> fromOwnedInputs(std::vector<NodeInput> inputs, size_t root,
+		std::vector<std::shared_ptr<const Bonus>> extraRecords, const OwnedBonusCaptureCodec & codec);
+	struct CaptureInput
+	{
+		std::vector<NodeInput> nodes;
+		size_t root = 0;
+		std::vector<std::shared_ptr<const Bonus>> extraRecords;
+	};
+	/// One deep alias pool, separate graph-local entitlements. Pure owned input, not live authority.
+	static std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> fromOwnedBatchInputs(std::vector<CaptureInput> inputs);
+	static std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> fromOwnedBatchInputs(
+		std::vector<CaptureInput> inputs, const OwnedBonusCaptureCodec & codec);
 	struct RootQuery
 	{
 		OwnedBonusEvaluationFacts facts;
@@ -46,7 +58,8 @@ private:
 	friend class battle::OwnedUnitBonusFrame;
 	BonusList queryRootRecords(const CSelector & selector, bool unstacked, const RootQuery & query, const BonusList & records, const battle::Unit * ownedUnit = nullptr) const;
 	struct Node;
-	std::unique_ptr<ownedBonusPayloads::Captured> payloads; // Retires after all node lists.
+	std::shared_ptr<ownedBonusPayloads::Captured> payloads; // Last graph retires the one nested alias pool.
+	std::vector<std::shared_ptr<Bonus>> recordValues; // This graph's ordered slice, not other roots' query handles.
 	std::vector<std::unique_ptr<Node>> nodes;
 	std::unordered_map<const CBonusSystemNode *, size_t> indices;
 	TNodesVector emptyEdges;
@@ -55,6 +68,9 @@ private:
 	size_t rootPayloadStart = 0;
 	size_t localPayloadCount = 0;
 	OwnedRecipientBonusGraph() = default;
+	static std::unique_ptr<OwnedRecipientBonusGraph> build(CaptureInput input,
+		std::shared_ptr<ownedBonusPayloads::Captured> payloads, size_t start, size_t localCount, size_t recordCount);
+	void validateRecord(size_t index) const;
 	const Node & entry(const CBonusSystemNode & node) const;
 	const CBonusSystemNode & queryNode(size_t index) const;
 };

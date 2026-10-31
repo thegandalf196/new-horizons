@@ -2,6 +2,8 @@
 #include "StdInc.h"
 #include "GameStatePackVisitor.h"
 #include "../battle/GraveDustEffectChanges.h"
+#include "../battle/GraveDustNativePreflight.h"
+#include "../battle/BattleInfo.h"
 #include "../battle/IBattleState.h"
 #include "../battle/Unit.h"
 #include "../battle/CUnitState.h"
@@ -21,7 +23,13 @@ void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 		battleState.exchangeBattleEffects(*pack.exchange);
 		return;
 	}
-	newHorizonsGraveDust::validateEffectChanges(battleState, pack);
+	if(newHorizonsGraveDust::containsEffect(pack))
+	{
+		if(const auto * native = dynamic_cast<const BattleInfo *>(&battleState))
+			newHorizonsGraveDust::validateNativeEffectChanges(*native, pack);
+		else
+			newHorizonsGraveDust::validateEffectChanges(battleState, pack);
+	}
 	pack.validateConfusionMarkers();
 	pack.validateGazeApplication(battleState);
 	// Validate the entire new-restraint batch before any removal or update.

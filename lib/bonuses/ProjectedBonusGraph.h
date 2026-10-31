@@ -49,6 +49,9 @@ public:
 	/// Failure poisons this private owner; originals stay unchanged. Discard it.
 	void addExported(const CBonusSystemNode & source, const std::shared_ptr<Bonus> & bonus);
 	void removeExported(const CBonusSystemNode & source, const std::shared_ptr<Bonus> & bonus);
+	/// Canonical source-local status refresh, copied aliases only; no native pointee writes.
+	/// Old returned list/value observations must retire before this ordered mutation.
+	void refreshExported(const CBonusSystemNode & source, const Bonus & value);
 	/// Forecast value receipts, NOT a native publication/invalidation journal.
 	std::vector<ProjectedDurationChange> reduceDurationsRecording(const CBonusSystemNode & source, const CSelector & selector);
 	void replayDurationChanges(const std::vector<ProjectedDurationChange> & changes);

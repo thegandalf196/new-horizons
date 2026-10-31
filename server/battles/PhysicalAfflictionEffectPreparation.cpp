@@ -12,7 +12,9 @@
 
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/PhysicalAffliction.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "../../lib/battle/GraveDustEffectChanges.h"
+#include "../../lib/battle/GraveDustNativePreflight.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 
@@ -27,7 +29,18 @@ void CGameHandler::stampPhysicalAfflictionEffects(SetStackEffect & effects)
 	{
 		const auto * battle = gameState().getBattle(effects.battleID);
 		if(!battle) throw std::invalid_argument("Grave Dust effect change requires a battle");
-		newHorizonsGraveDust::validateEffectChanges(*battle->getBattle(), effects);
+		// Match the replica's initial-batch checks before ordered replay or publication.
+		effects.validateExchange();
+		effects.validateConfusionMarkers();
+		effects.validateGazeApplication(*battle->getBattle());
+		for(const auto * changes : {&effects.toAdd, &effects.toUpdate})
+			for(const auto & [target, bonuses] : *changes)
+				for(const auto & bonus : bonuses)
+					newHorizonsSerpentsEmbrace::validateApplication(*battle->getBattle(), target, bonus);
+		if(const auto * native = dynamic_cast<const BattleInfo *>(battle))
+			newHorizonsGraveDust::validateNativeEffectChanges(*native, effects);
+		else
+			newHorizonsGraveDust::validateEffectChanges(*battle->getBattle(), effects);
 	}
 	// Stamp accepted effect applications in the outgoing packet, so replicas
 	// and detached forecasts receive the same ordering. Unmarked packets

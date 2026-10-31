@@ -9,6 +9,9 @@
 #include "../../lib/GameSettings.h"
 #include "../../lib/IGameSettings.h"
 #include <cmath>
+#include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/combatScripts/IDamageCalculatorScript.h"
+#include "../../lib/scripting/ScriptService.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/MeleeReturnDestination.h"
@@ -22,6 +25,18 @@ class NewHorizonsCoordinatedMarkTest : public NewHorizonsCoordinatedMarkFixture,
 	public ::testing::WithParamInterface<int>
 {
 protected:
+	bool uncappedProtection = false;
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsCoordinatedMarkFixture::mapLoaded(map);
+		if(uncappedProtection)
+		{
+			JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+			magic.Struct().erase("physicalDamageReductionCapPercent");
+			magic.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+		}
+	}
 	void prepare(const char * hero, bool upgraded = false)
 	{
 		NewHorizonsCoordinatedMarkFixture::prepare(hero, GetParam(), upgraded);
@@ -72,6 +87,76 @@ protected:
 		EXPECT_EQ(marked.damageBeforeDefense.min, 100); EXPECT_EQ(marked.damageBeforeDefense.max, 100);
 		EXPECT_EQ(friendUnit->getAttack(false), 10); EXPECT_EQ(friendUnit->getDefense(false), 8);
 		EXPECT_EQ(victim->getDefense(false), defense);
+	}
+	void protectionConsumer(bool capped, bool shooting)
+	{
+		uncappedProtection = !capped;
+		prepare("core:lorelei");
+		ASSERT_NO_THROW(newHorizonsMagic::validateRules(battle()->getMagicRules()));
+		EXPECT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(battle()->getMagicRules()) >= 0, capped);
+		auto * next = addStack(BattleSide::ATTACKER, creatureByName(shooting ? "core:archer" : "core:swordsman"), BattleHex(9, 5), 10);
+		for(const auto bound : {BonusValueType::INDEPENDENT_MIN, BonusValueType::INDEPENDENT_MAX})
+		{
+			next->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::PRIMARY_SKILL,
+				BonusSource::OTHER, 10, BonusSourceID(), BonusSubtypeID(PrimarySkill::ATTACK), bound));
+			victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::PRIMARY_SKILL,
+				BonusSource::OTHER, 10, BonusSourceID(), BonusSubtypeID(PrimarySkill::DEFENSE), bound));
+			for(const auto subtype : {BonusCustomSubtype::creatureDamageMin, BonusCustomSubtype::creatureDamageMax})
+				next->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::CREATURE_DAMAGE,
+					BonusSource::OTHER, 100, BonusSourceID(), subtype, bound));
+		}
+		const BattleAttackInfo hit(next, victim, 0, shooting);
+		ASSERT_TRUE(hit.physicalDamage);
+		const auto raw = battle()->calculateDmgRange(hit);
+		ASSERT_EQ(raw.damage.min, raw.damage.max);
+		victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::GENERAL_DAMAGE_REDUCTION,
+			BonusSource::OTHER, 50, BonusSourceID(), BonusCustomSubtype::damageTypeAll));
+		victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::GENERAL_DAMAGE_REDUCTION,
+			BonusSource::SPELL_EFFECT, 20, BonusSourceID(SpellID(shooting ? SpellID::AIR_SHIELD : SpellID::SHIELD)),
+			shooting ? BonusCustomSubtype::damageTypeRanged : BonusCustomSubtype::damageTypeMelee));
+		const auto protectedHit = battle()->calculateDmgRange(hit);
+		EXPECT_EQ(protectedHit.damage.min, static_cast<int64_t>(std::floor(raw.damage.min * .4)));
+		publishReturn(); ASSERT_EQ(marks::hasMark(*victim), GetParam() == 0);
+		const auto marked = battle()->calculateDmgRange(hit);
+		const double fraction = GetParam() == 0 ? .52 : .4;
+		EXPECT_EQ(marked.damage.min, static_cast<int64_t>(std::floor(raw.damage.min * fraction)));
+		EXPECT_EQ(marked.damage.max, marked.damage.min);
+		EXPECT_EQ(marked.damageBeforeDefense.min, raw.damageBeforeDefense.min);
+		EXPECT_EQ(victim->getDefense(false), 10);
+		battlePrimaryStrikeAftermath::applyOrdinaryEffect(*gameHandler, *battle(), newHorizonsOrdinaryStrike::plan(*battle(), hit, 1));
+		EXPECT_FALSE(marks::hasMark(*victim));
+		EXPECT_EQ(battle()->calculateDmgRange(hit).damage.min, protectedHit.damage.min);
+	}
+	void mixedLegacyPayload(int existingIgnore)
+	{
+		prepare("core:lorelei"); auto * next = ally();
+		for(const auto bound : {BonusValueType::INDEPENDENT_MIN, BonusValueType::INDEPENDENT_MAX})
+			for(const auto subtype : {BonusCustomSubtype::creatureDamageMin, BonusCustomSubtype::creatureDamageMax})
+				next->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::CREATURE_DAMAGE,
+					BonusSource::OTHER, 100, BonusSourceID(), subtype, bound));
+		victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::GENERAL_DAMAGE_REDUCTION,
+			BonusSource::OTHER, 50, BonusSourceID(), BonusCustomSubtype::damageTypeAll));
+		victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::GENERAL_DAMAGE_REDUCTION,
+			BonusSource::SPELL_EFFECT, 20, BonusSourceID(SpellID(SpellID::SHIELD)), BonusCustomSubtype::damageTypeMelee));
+		publishReturn();
+		DamageAttackInfo payload;
+		payload.attacker = next; payload.defender = victim;
+		payload.attackerHex = next->getPosition(); payload.defenderHex = victim->getPosition();
+		payload.intrinsicPhysicalDamageReductionPercent = 20;
+		payload.runicEnduranceReductionPercent = 10; payload.ironHideReductionPercent = 30;
+		payload.coordinatedPhysicalProtectionIgnorePercent = marks::physicalProtectionIgnorePercent(*battle(), BattleAttackInfo(next, victim, 0, false));
+		// Exercise the transient calculator contract, without inventing a learned hero grant.
+		payload.legacyPhysicalDamageReductionIgnorePercent = existingIgnore;
+		payload.physicalDamageReductionIgnorePercent = std::min(100, existingIgnore + payload.coordinatedPhysicalProtectionIgnorePercent);
+		const auto * calculator = LIBRARY->scriptTypes()->getDamageCalculator(); ASSERT_NE(calculator, nullptr);
+		const auto actual = calculator->calculate(*battle(), payload);
+		const double remaining = 1 - std::clamp(existingIgnore, 0, 100) / 100.0;
+		const double protectedFraction = .4 * (1 - .2 * remaining) * (1 - .1 * remaining) * (1 - .3 * remaining);
+		const double lorelei = payload.coordinatedPhysicalProtectionIgnorePercent / 100.0;
+		const auto expected = static_cast<int64_t>(std::floor(1000 * (1 - (1 - protectedFraction) * (1 - lorelei))));
+		EXPECT_EQ(actual.damage.min, expected); EXPECT_EQ(actual.damage.max, expected);
+		EXPECT_EQ(actual.damageBeforeDefense.min, 1000);
+		EXPECT_EQ(payload.physicalDamageReductionIgnorePercent, std::min(100, existingIgnore + (GetParam() == 0 ? 20 : 0)));
 	}
 	CStack * ally() { return addStack(BattleSide::ATTACKER, creatureByName("core:swordsman"), BattleHex(9, 5), 10); }
 };
@@ -292,5 +377,50 @@ TEST_P(NewHorizonsCoordinatedMarkTest, ConsecratedTargetRealDamageConsumerFloors
 TEST_P(NewHorizonsCoordinatedMarkTest, ConsecratedTargetDoesNotPenetrateFrenzyOwnDefenseTrade)
 {
 	ASSERT_NO_FATAL_FAILURE(controlledDefenseConsumer(true));
+}
+TEST_P(NewHorizonsCoordinatedMarkTest, HistoricalUncappedMeleePenetratesShieldAndGeneralProtectionOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(protectionConsumer(false, false));
+}
+TEST_P(NewHorizonsCoordinatedMarkTest, HistoricalUncappedPhysicalShotPenetratesAirShieldAndGeneralProtectionOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(protectionConsumer(false, true));
+}
+TEST_P(NewHorizonsCoordinatedMarkTest, CappedMeleeProtectionConsumerRetainsItsExistingResult)
+{
+	ASSERT_NO_FATAL_FAILURE(protectionConsumer(true, false));
+}
+TEST_P(NewHorizonsCoordinatedMarkTest, CappedPhysicalShotProtectionConsumerRetainsItsExistingResult)
+{
+	ASSERT_NO_FATAL_FAILURE(protectionConsumer(true, true));
+}
+TEST_P(NewHorizonsCoordinatedMarkTest, HistoricalRealLichMagicalShotDoesNotUseOrConsumeFeatheredFeint)
+{
+	uncappedProtection = true;
+	prepare("core:lorelei");
+	ASSERT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(battle()->getMagicRules()), -1);
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(battle()->getMagicRules()));
+	auto * lich = addStack(BattleSide::ATTACKER, creatureByName("core:lich"), BattleHex(9, 5), 10);
+	const BattleAttackInfo shot(lich, victim, 0, true); ASSERT_FALSE(shot.physicalDamage);
+	victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::GENERAL_DAMAGE_REDUCTION,
+		BonusSource::OTHER, 50, BonusSourceID(), BonusCustomSubtype::damageTypeAll));
+	const auto before = battle()->calculateDmgRange(shot);
+	publishReturn();
+	const auto after = battle()->calculateDmgRange(shot);
+	EXPECT_EQ(after.damage.min, before.damage.min); EXPECT_EQ(after.damage.max, before.damage.max);
+	EXPECT_TRUE(marks::consumed(*battle(), shot).empty());
+	EXPECT_EQ(marks::hasMark(*victim), GetParam() == 0);
+}
+TEST_P(NewHorizonsCoordinatedMarkTest, LegacyCalculatorPayloadKeepsExisting37ScopeBeforeNewMark20)
+{
+	ASSERT_NO_FATAL_FAILURE(mixedLegacyPayload(37));
+}
+TEST_P(NewHorizonsCoordinatedMarkTest, LegacyCalculatorPayloadKeepsExisting90IdentityWhenCappedSumOverflows)
+{
+	ASSERT_NO_FATAL_FAILURE(mixedLegacyPayload(90));
+}
+TEST_P(NewHorizonsCoordinatedMarkTest, LegacyCalculatorPayloadClampsExistingIgnoreWithoutLosingMarkScope)
+{
+	ASSERT_NO_FATAL_FAILURE(mixedLegacyPayload(137));
 }
 INSTANTIATE_TEST_SUITE_P(CurrentHistoricalZero, NewHorizonsCoordinatedMarkTest, ::testing::Values(0, 1, 2));

@@ -9,6 +9,9 @@ set(battleAI_SRCS
 		PhysicalPoisonValue.cpp
 		ToxicStingValue.cpp
 		PrismaticVanguardProjection.cpp
+		GraveDustProjection.cpp
+		ProjectedInjuryLifecycle.cpp
+		CreatureBurnOwnedProjection.cpp
 	MeleeSpecialtyProjection.cpp
 		SylvanTacticsProjection.cpp
 		AttackValue.cpp
@@ -66,6 +69,7 @@ set(battleAI_SRCS
 		InitialExportBattleSubject.cpp
 		InitialExportLifecycle.cpp
 		InitialExportSequenceBonuses.cpp
+		OwnedStackEffectPreflight.cpp
 		InitialExportWorld.cpp
 		InitialExportLegacyMovement.cpp
 		ProjectedHeroBonusQueries.cpp
@@ -92,6 +96,7 @@ set(battleAI_SRCS
 		StackWithBonuses.cpp
 		StackWithBonusesEffects.cpp
 		HypotheticBattle.cpp
+		HypotheticFortifications.cpp
 		HypotheticNecromancy.cpp
 		HypotheticHeroActions.cpp
 		HypotheticOrderActions.cpp
@@ -114,6 +119,7 @@ set(battleAI_SRCS
 		BattleExchangeBloodValue.cpp
 		EnemyBypassReachability.cpp
 		BattleExchangeFutureAttack.cpp
+		BattleExchangeMembership.cpp
 		BattleShroudStrike.cpp
 		PrimaryFortuneReceipt.cpp
 )
@@ -131,6 +137,9 @@ set(battleAI_HEADERS
 		PhysicalPoisonValue.h
 		ToxicStingValue.h
 		PrismaticVanguardProjection.h
+		GraveDustProjection.h
+		ProjectedInjuryLifecycle.h
+		CreatureBurnOwnedProjection.h
 	MeleeSpecialtyProjection.h
 		SylvanTacticsProjection.h
 		AerialRetaliationProjection.h
@@ -179,6 +188,8 @@ set(battleAI_HEADERS
 		HeroActionTiming.h
 		HypotheticBonusApplication.h
 		InitialExportBattleSubject.h
+		OwnedStackEffectPreflight.h
+		InitialExportEffectQueries.h
 		InitialExportWorld.h
 		AttackCount.h
 		VisibleCandidateWorld.h

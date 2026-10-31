@@ -153,7 +153,8 @@ bool canApply(const battle::CUnitState & unit, int32_t round)
 std::vector<Bonus> removalPlan(const battle::Unit & unit)
 {
 	std::vector<Bonus> result;
-	for(const auto & bonus : *unit.getAllBonuses(CSelector(isMarker)))
+	const auto markers = unit.getAllBonuses(CSelector(isMarker));
+	for(const auto & bonus : *markers)
 		result.push_back(*bonus);
 	return result;
 }

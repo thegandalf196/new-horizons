@@ -19,7 +19,7 @@
 SelectedAttackReceipt::SelectedAttackReceipt(const AttackPossibility & preview)
 	: queryOwner(preview.queryWorld), effectOwner(preview.effectPreview),
 	actorSnapshot(preview.attackerState), recipients(preview.affectedUnits),
-	soulHarvestHealthGained(preview.soulHarvestHealthGained)
+	soulHarvestHealthGained(preview.soulHarvestHealthGained), returnLandingHealthLoss(preview.returnLandingHealthLoss)
 {
 }
 
@@ -35,6 +35,8 @@ void SelectedAttackReceipt::captureDamage(HypotheticBattle & branch)
 		finalDamage[id = unitToUpdate->unitId()] = std::max<int64_t>(0,
 			(before = unitToUpdate->getAvailableHealth()) - (projected = affectedUnit->getAvailableHealth())
 			+ (unitToUpdate->unitId() == actorSnapshot->unitId() ? soulHarvestHealthGained : 0));
+		if(const auto landing = returnLandingHealthLoss.find(id); landing != returnLandingHealthLoss.end())
+			finalDamage[id] = std::max<int64_t>(0, finalDamage[id] - landing->second);
 		observations.push_back({id, before, projected});
 	}
 }
@@ -164,6 +166,29 @@ int64_t selectedAttackReceipt::grantSoulHarvest(battle::CUnitState & actor, int6
 	const auto before = actor.getAvailableHealth();
 	return newHorizonsSoulHarvest::grant(actor, killedCreatures)
 		? actor.getAvailableHealth() - before : 0;
+}
+
+void SelectedAttackReceipt::applyFallbackDamage(HypotheticBattle & branch)
+{
+	for(const auto & affectedUnit : recipients)
+	{
+		auto unitToUpdate = branch.getForUpdate(affectedUnit->unitId());
+		auto damageDealt = finalDamage[unitToUpdate->unitId()];
+		if(damageDealt > 0)
+		{
+			const bool wasAlive = unitToUpdate->alive();
+			const auto rebirthSource = wasAlive
+				? branch.captureElementalRebirthSource(*unitToUpdate) : std::nullopt;
+			const bool nativeRebirth = branch.hasReadyNativeRebirth(unitToUpdate.get());
+			unitToUpdate->damage(damageDealt);
+			if(wasAlive && !unitToUpdate->alive())
+				branch.releaseSerpentBindingsForDeath(*unitToUpdate);
+			branch.recordBloodrageTransition(unitToUpdate, wasAlive);
+			if(rebirthSource)
+				branch.projectElementalRebirth(unitToUpdate.get(), *rebirthSource,
+					wasAlive && !unitToUpdate->alive(), unitToUpdate->isClone(), nativeRebirth);
+		}
+	}
 }
 
 std::unique_ptr<AttackPossibility> selectedAttackReceipt::refreshForestAmbush(

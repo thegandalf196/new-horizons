@@ -14,7 +14,7 @@ struct DLL_LINKAGE OwnedBonusEvaluationFacts
 	{
 		CreatureID creature;
 		FactionID faction;
-		int level;
+		std::optional<int> level; // Null/random placeholder: unknown; only required after canonical filters.
 		int count;
 	};
 	BonusNodeType nodeType = BonusNodeType::UNKNOWN;

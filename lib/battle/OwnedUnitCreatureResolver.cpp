@@ -34,7 +34,11 @@ public:
 	TConstBonusListPtr getUnstackedBonuses(const CSelector &) const override { missing(); }
 	int32_t getAdvMapAmountMin() const override { missing(); }
 	int32_t getAdvMapAmountMax() const override { missing(); }
-	int32_t getAIValue() const override { missing(); }
+	int32_t getAIValue() const override
+	{
+		if(!value.aiValue) missing();
+		return *value.aiValue;
+	}
 	int32_t getFightValue() const override { missing(); }
 	int32_t getGrowth() const override { missing(); }
 	int32_t getHorde() const override { missing(); }
@@ -42,7 +46,11 @@ public:
 	int32_t getBaseDefense() const override { missing(); }
 	int32_t getBaseDamageMin() const override { missing(); }
 	int32_t getBaseDamageMax() const override { missing(); }
-	int32_t getBaseHitPoints() const override { missing(); }
+	int32_t getBaseHitPoints() const override
+	{
+		if(!value.baseHitPoints) missing();
+		return *value.baseHitPoints;
+	}
 	int32_t getBaseSpellPoints() const override { missing(); }
 	int32_t getBaseSpeed() const override { missing(); }
 	int32_t getBaseInitiative() const override { missing(); }

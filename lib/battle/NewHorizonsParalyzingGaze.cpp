@@ -50,16 +50,24 @@ bool captured(const IBattleInfo & battle)
 	return newHorizonsHeroes::paralyzingGazeEnabled(battle.getSideHero(BattleSide::ATTACKER))
 		|| newHorizonsHeroes::paralyzingGazeEnabled(battle.getSideHero(BattleSide::DEFENDER));
 }
-void validateApplication(const IBattleInfo & battle, uint32_t target, const Bonus & bonus)
+bool validateApplicationRecord(const Bonus & bonus)
 {
-	if(!validateMarker(bonus))
-		return;
+	if(!validateMarker(bonus)) return false;
 	validateLoadedMarker(bonus);
-	const auto units = battle.getUnitsIf([target](const battle::Unit * unit)
-		{ return unit && unit->unitId() == target; });
+	return true;
+}
+void validateApplicationTargets(const IBattleInfo & battle, const battle::Units & units)
+{
 	if(!captured(battle) || units.size() != 1 || !units.front()->alive()
 		|| units.front()->isGhost() || units.front()->isTimeStopped())
 		throw std::runtime_error("Gaze application requires supported captured battle and available recipient");
+}
+void validateApplication(const IBattleInfo & battle, uint32_t target, const Bonus & bonus)
+{
+	validateApplicationWithLookup(battle, target, bonus, [&battle](uint32_t id)
+	{
+		return battle.getUnitsIf([id](const battle::Unit * unit) { return unit && unit->unitId() == id; });
+	});
 }
 Bonus marker()
 {

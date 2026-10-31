@@ -261,7 +261,8 @@ std::vector<int> collectMagicalDamageReductionSources(const CSpell & spell, cons
 std::vector<int> targetMdrPenetrations(const battle::Unit & target)
 {
 	std::vector<int> result;
-	for(const auto & bonus : *target.getBonusesOfType(BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION))
+	const auto penetrationBonuses = target.getBonusesOfType(BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION);
+	for(const auto & bonus : *penetrationBonuses)
 		if(bonus->val > 0)
 			result.push_back(std::clamp(bonus->val, 0, 100));
 	return result;

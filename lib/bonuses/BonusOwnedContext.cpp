@@ -34,7 +34,12 @@ struct ArmySlotView
 	const OwnedBonusEvaluationFacts::ArmySlot * owned = nullptr;
 	CreatureID creature() const { return native ? native->getCreatureID() : owned->creature; }
 	FactionID faction() const { return native ? native->getFactionID() : owned->faction; }
-	int level() const { return native ? native->getLevel() : owned->level; }
+	int level() const
+	{
+		if(native) return native->getLevel(); // Preserve native lazy getter/short-circuit order.
+		if(!owned->level) throw std::logic_error("Owned army slot level is unknown");
+		return *owned->level;
+	}
 	int count() const { return native ? native->getCount() : owned->count; }
 };
 }

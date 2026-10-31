@@ -131,7 +131,7 @@ public:
 private:
 	/// Finish one selected sequence only after its strikes/counters have replayed.
 	void completeSelectedAttack(const AttackPossibility & ap,
-		const std::shared_ptr<HypotheticBattle> & hb, StackWithBonuses & attacker, BattleHex originalPosition,
+		const std::shared_ptr<HypotheticBattle> & hb, StackWithBonuses & attacker, BattleHex originalPosition, bool returnCommitted,
 		const std::optional<HypotheticBattle::ManaLeechReplay> & manaLeechReplay,
 		const std::set<uint32_t> & rebirthSpawnIdsBefore, size_t primalBurstFirstNewHit,
 		PlayerColor referenceController, DamageCache & damageCache);
@@ -279,6 +279,11 @@ private:
 		BattleMovementTiming::ExchangeTiming * timing = nullptr) const;
 
 	bool canBeHitThisTurn(const AttackPossibility & ap);
+	std::shared_ptr<HypotheticBattle> prepareReturnGateReachability(const AttackPossibility & ap,
+		const std::shared_ptr<HypotheticBattle> & source, ReachabilityMapCache & cache) const;
+	ReachabilityData getExchangeUnitsWithGeometry(const AttackPossibility & ap, uint8_t turn,
+		PotentialTargets & targets, std::shared_ptr<HypotheticBattle> hb, const battle::Units & additionalUnits,
+		ReachabilityMapCache * returnCache, const std::shared_ptr<HypotheticBattle> & returnGeometry) const;
 
 public:
 	BattleExchangeEvaluator(

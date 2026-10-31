@@ -7,6 +7,7 @@
 #include "StdInc.h"
 #include "UnitAdditionRules.h"
 #include "NewHorizonsOffense.h"
+#include "UnitCreatureResolver.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../spells/NewHorizonsSorcery.h"
 #include <limits>
@@ -19,13 +20,18 @@ uint32_t battle::nextUnitAdditionId(size_t size, const JsonNode & rules)
 	return static_cast<uint32_t>(size);
 }
 
-battle::UnitInfo battle::decodeUnitAddition(uint32_t id, const JsonNode & data,
-	const JsonNode & rules, size_t size)
+namespace battle
+{
+namespace
+{
+UnitInfo decodeAddition(uint32_t id, const JsonNode & data, const JsonNode & rules, size_t size,
+	const UnitCreatureResolver * resolver)
 {
 	if(heroCommands::supportedByRules(rules, HeroCommand::FOCUS_FIRE) && id != nextUnitAdditionId(size, rules))
 		throw std::runtime_error("Invalid New Horizons targeted unit allocation");
 	battle::UnitInfo info;
-	info.load(id, data);
+	if(resolver) info.load(id, data, *resolver);
+	else info.load(id, data);
 	if(info.rebirthOriginalAggregateHP < 0)
 		throw std::runtime_error("Invalid Rebirth output original HP");
 	if(info.summonRoundsRemaining > 0 && info.phantomIntegrity > 0)
@@ -38,10 +44,22 @@ battle::UnitInfo battle::decodeUnitAddition(uint32_t id, const JsonNode & data,
 			|| !newHorizonsSorcery::phantomArmyDurationSupported(info.phantomDuration)))
 		throw std::runtime_error("Invalid Phantom Army spawn profile");
 	if(info.rebirthOriginalAggregateHP > 0
-		&& (info.count <= 0 || !info.type.hasValue() || !info.type.toCreature()
+		&& (info.count <= 0 || !info.type.hasValue() || !(resolver ? resolver->creature(info.type) : info.type.toCreature())
 			|| !info.summoned || info.natureSummoned || info.phantomIntegrity > 0))
 		throw std::runtime_error("Invalid Rebirth output spawn metadata");
 	return info;
+}
+
+}
+}
+battle::UnitInfo battle::decodeUnitAddition(uint32_t id, const JsonNode & data, const JsonNode & rules, size_t size)
+{
+	return decodeAddition(id, data, rules, size, nullptr);
+}
+battle::UnitInfo battle::decodeUnitAddition(uint32_t id, const JsonNode & data, const JsonNode & rules, size_t size,
+	const UnitCreatureResolver & resolver)
+{
+	return decodeAddition(id, data, rules, size, &resolver);
 }
 
 void battle::validateUnitAdditionCapacity(const UnitInfo & info, int32_t effectiveMaxHP)

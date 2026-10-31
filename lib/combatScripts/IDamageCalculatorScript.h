@@ -43,6 +43,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int physicalDamageReductionCapPercent = -1;
 	/// Percentage of the already-combined and capped physical damage reduction ignored by this attack.
 	int physicalDamageReductionIgnorePercent = 0;
+	/// Transient mark fact; enables penetration of the existing uncapped protection aggregate.
+	int coordinatedPhysicalProtectionIgnorePercent = 0;
+	/// Existing historical supplement penetration, captured before capped Lorelei addition.
+	int legacyPhysicalDamageReductionIgnorePercent = 0;
 	/// Independent captured unit passive, separate from Armorer, Orders and bonus-source groups.
 	int intrinsicPhysicalDamageReductionPercent = 0;
 	int coordinatedMeleeDefenseIgnorePercent = 0; // One consumed ordinary allied melee mark.
@@ -192,6 +196,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("physicalDamage", physicalDamage, "Whether this attack deals physical creature damage.");
 		s("physicalDamageReductionCapPercent", physicalDamageReductionCapPercent,
 			"Combined independent physical reduction cap; -1 preserves legacy calculations.");
+		s("legacyPhysicalDamageReductionIgnorePercent", legacyPhysicalDamageReductionIgnorePercent, "Existing ignore scope retained for historical intrinsic/runic/Iron Hide supplements.");
+		s("coordinatedPhysicalProtectionIgnorePercent", coordinatedPhysicalProtectionIgnorePercent, "One-use Feathered Feint entitlement, including historical uncapped physical protection.");
 		s("coordinatedMeleeDefenseIgnorePercent", coordinatedMeleeDefenseIgnorePercent, "One-use allied melee mark penetration of target Creature Defense.");
 		s("stormWingsDefenseIgnorePercent", stormWingsDefenseIgnorePercent, "Exact voluntary-flight penetration of target Creature Defense.");
 		s("physicalDamageReductionIgnorePercent", physicalDamageReductionIgnorePercent,

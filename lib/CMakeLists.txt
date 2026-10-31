@@ -106,6 +106,8 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsToxicSting.cpp
 	battle/NewHorizonsToxicSting.h
 	battle/BodyHealthLoss.cpp
+	battle/BattleActivationPredicate.cpp
+	battle/CurrentFireBasis.cpp
 	battle/NewHorizonsGraveDustStrike.cpp
 	battle/BodyHealthLoss.h
 	battle/NewHorizonsGraveDustStrike.h
@@ -113,9 +115,14 @@ set(lib_MAIN_SRCS
 	gameState/CombatDestructionAftermath.h
 	battle/ProjectedDestructionAftermath.cpp
 	battle/GraveDustEffectChanges.cpp
+	battle/GraveDustNativePreflight.cpp
+	battle/ScopedStackEffectReplay.cpp
 	battle/GraveDustApplication.cpp
 	battle/GraveDustBodyCleanup.cpp
 	battle/GraveDustEffectChanges.h
+	battle/GraveDustOrderedPreflight.h
+	battle/GraveDustNativePreflight.h
+	battle/ScopedStackEffectReplay.h
 	battle/GraveDustApplication.h
 	battle/GraveDustBodyCleanup.h
 	battle/MeleeReturnDestination.cpp
@@ -186,6 +193,8 @@ set(lib_MAIN_SRCS
 	battle/BattleProxy.cpp
 	battle/BattleStateInfoForRetreat.cpp
 	battle/CBattleInfoCallback.cpp
+	battle/BattleObstacleTriggers.cpp
+	battle/BattleSpellCastPermissions.cpp
 	battle/BattleMeleeContactGeometry.cpp
 	battle/NewHorizonsFirstAid.cpp
 	battle/VisibleHeroBonusQueries.cpp
@@ -202,8 +211,12 @@ set(lib_MAIN_SRCS
 		battle/UnitStatePreparationFacts.cpp
 		battle/UnitStateCreature.cpp
 		battle/OwnedUnitCreatureResolver.cpp
+		battle/OwnedProspectiveCreatureDomain.cpp
+		battle/OwnedProspectiveCreatureDomain.h
 		battle/OwnedUnitEnvironment.cpp
+	battle/OwnedUnitOrderWindows.cpp
 		battle/OwnedUnitEnvironment.h
+	battle/OwnedUnitOrderWindows.h
 		battle/OwnedUnitCreatureResolver.h
 		battle/UnitCreatureResolver.h
 	battle/CUnitStateRoundReceipts.cpp
@@ -257,10 +270,14 @@ set(lib_MAIN_SRCS
 	battle/OrdinaryMeleeRetaliation.cpp
 	battle/ProjectedBattleWorldArenaDurations.cpp
 	battle/ProjectedBattleWorldArenaExports.cpp
+	battle/ProjectedBattleWorldArenaEffectQueries.cpp
 	battle/ProjectedBattleWorldArenaForecast.cpp
 	battle/ProjectedBattleWorldArenaRecipientOverlay.cpp
 	battle/RoundBonusDuration.cpp
 	battle/StackEffectRemoval.cpp
+	battle/StackEffectRefresh.cpp
+	battle/StackEffectRecordRules.cpp
+	battle/StackEffectVectorRules.cpp
 	battle/UnitTransitionSidecars.cpp
 	battle/CrisisCommandReferences.cpp
 	battle/CrisisCommandLiveReferences.cpp
@@ -285,18 +302,33 @@ set(lib_MAIN_SRCS
 	bonuses/BonusOwnedContext.cpp
 	bonuses/OwnedBonusEvaluationFacts.cpp
 	bonuses/OwnedBonusPayloads.cpp
+	bonuses/OwnedRuntimeBonusPayloads.cpp
+	bonuses/PeerBonusDependencyClosure.cpp
+	bonuses/OwnedBonusCaptureCodec.cpp
 	bonuses/OwnedRecipientBonusGraph.cpp
 		bonuses/OwnedRecipientRootQuery.cpp
 		battle/OwnedUnitBonusFrame.cpp
 		battle/UnitStateEnvironment.cpp
 		battle/OwnedUnitBonusFrameQuery.cpp
+		battle/OwnedRecipientPeer.cpp
+		battle/OwnedUnitBonusFrameBatch.cpp
+		battle/StackFormSourceIdentity.cpp
 		battle/OwnedUnitBonusFrame.h
 		battle/OwnedUnitBonusFrameData.h
+		battle/OwnedUnitBonusFrameBatch.h
+		battle/StackFormSourceIdentity.h
+		battle/ScopedStackEffectQueries.h
+		battle/ScopedStackEffectQueryData.h
+		battle/ScopedStackEffectQueries.cpp
+		battle/ScopedStackEffectQueryGraph.cpp
+		battle/ScopedStackEffectQueryState.cpp
 	bonuses/BonusTypeContext.cpp
 	bonuses/BonusBattleContext.cpp
 	bonuses/BonusAdjacencyContext.cpp
 	bonuses/BonusGraphQuery.cpp
+	bonuses/BonusSourceRelationRecipe.cpp
 	bonuses/ProjectedBonusGraph.cpp
+	bonuses/ProjectedBonusGraphRefresh.cpp
 	bonuses/ProjectedBonusRecipientOverlay.cpp
 	bonuses/RecipientBonusOverlay.cpp
 	bonuses/ProjectedBonusGraphBindings.cpp
@@ -325,6 +357,7 @@ set(lib_MAIN_SRCS
 	bonuses/PreparedBonusGraphStorage.cpp
 	bonuses/IBonusBearer.cpp
 	bonuses/Limiters.cpp
+	bonuses/HasAnotherBonusLimiter.cpp
 	bonuses/LimiterSerialization.cpp
 	bonuses/TerrainBonusLimiter.cpp
 	bonuses/Propagators.cpp
@@ -699,6 +732,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsCrossSchoolFormula.cpp
 	spells/ExternalCaster.cpp
 	spells/ISpellMechanics.cpp
+	spells/SpellCreatureDomain.cpp
 	spells/SummonedCreatureHealth.cpp
 	spells/ObstacleCasterProxy.cpp
 	spells/Problem.cpp
@@ -889,6 +923,7 @@ set(lib_MAIN_HEADERS
 	battle/BattleDisplacementCause.h
 	battle/BattleAttackInfo.h
 	battle/BattleHex.h
+	battle/GateDrawbridgeFootprint.h
 	battle/BattleHexArray.h
 	battle/HeroCommand.h
 	battle/HeroCommandRevision.h
@@ -976,6 +1011,8 @@ set(lib_MAIN_HEADERS
 	battle/BattleStateInfoForRetreat.h
 	battle/BattleProxy.h
 	battle/BattleUnitTurnReason.h
+	battle/BattleActivationPredicate.h
+	battle/CurrentFireBasis.h
 	battle/CBattleInfoCallback.h
 	battle/DamageCalculationTiming.h
 	battle/CBattleInfoEssentials.h
@@ -1029,6 +1066,9 @@ set(lib_MAIN_HEADERS
 	battle/OrdinaryMeleeRetaliation.h
 	battle/RoundBonusDuration.h
 	battle/StackEffectRemoval.h
+	battle/StackEffectRefresh.h
+	battle/StackEffectRecordRules.h
+	battle/StackEffectVectorRules.h
 	battle/PreparedBattleUnitSidecars.h
 	battle/BattleUnitSidecarFields.h
 	battle/UnitTransitionSidecars.h
@@ -1044,9 +1084,12 @@ set(lib_MAIN_HEADERS
 	bonuses/BonusEvaluationContext.h
 	bonuses/OwnedBonusEvaluationFacts.h
 	bonuses/OwnedBonusPayloads.h
+	bonuses/PeerBonusDependencyClosure.h
+	bonuses/OwnedBonusCaptureCodec.h
 	bonuses/OwnedRecipientBonusGraph.h
 	bonuses/BonusLimitation.h
 	bonuses/BonusGraphQuery.h
+	bonuses/BonusSourceRelationRecipe.h
 	bonuses/ProjectedBonusGraph.h
 	bonuses/RecipientBonusOverlay.h
 	bonuses/ProjectedBonusInvalidations.h

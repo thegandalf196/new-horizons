@@ -6,6 +6,7 @@
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/Updaters.h"
 #include <stdexcept>
+#include "../../lib/GameLibrary.h"
 namespace
 {
 using Input = OwnedRecipientBonusGraph::NodeInput;
@@ -22,6 +23,12 @@ std::shared_ptr<Bonus> speed(int value)
 	return std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_SPEED,
 		BonusSource::OTHER, value, BonusSourceID());
 }
+struct WithoutLibrary
+{
+	GameLibrary * saved = LIBRARY;
+	WithoutLibrary() { LIBRARY = nullptr; }
+	~WithoutLibrary() { LIBRARY = saved; }
+};
 CSelector all() { return CSelector([](const Bonus *) { return true; }); }
 }
 TEST(OwnedRecipientBonusGraphTest, DiamondVisitsEveryCanonicalUpdaterPathInParentOrder)
@@ -202,4 +209,54 @@ TEST(OwnedRecipientBonusGraphTest, ConstructQueryRepeatAndRetireDoNotInvalidateN
 	EXPECT_EQ(sentinel.getTreeVersion(), version);
 	EXPECT_EQ(sentinel.getAllBonuses(selector, "owned-storage-generation-sentinel"), native);
 	EXPECT_EQ(native->valOfBonuses(selector), 7);
+}
+
+TEST(OwnedRecipientBonusGraphTest, BatchCapturePreservesCrossRootBonusAndUpdaterIdentityWithoutFlatteningQueries)
+{
+	auto raw = speed(3); raw->updater = std::make_shared<TimesHeroLevelUpdater>();
+	auto left = hero(2), right = hero(4); left.local = {raw}; right.local = {raw};
+	auto graphs = OwnedRecipientBonusGraph::fromOwnedBatchInputs({{{left}, 0, {}}, {{right}, 0, {}}});
+	WithoutLibrary absent;
+	ASSERT_EQ(graphs.size(), 2u); EXPECT_EQ(graphs[0]->payload(0), graphs[1]->payload(0));
+	EXPECT_EQ(graphs[0]->payload(0)->updater, graphs[1]->payload(0)->updater);
+	EXPECT_NE(graphs[0]->payload(0).get(), raw.get());
+	EXPECT_EQ(graphs[0]->query(all()).totalValue(), 6); EXPECT_EQ(graphs[1]->query(all()).totalValue(), 12);
+	raw->val = 999; graphs[0].reset();
+	EXPECT_EQ(graphs[1]->query(all()).totalValue(), 12); EXPECT_EQ(graphs[1]->payload(0)->val, 3);
+}
+TEST(OwnedRecipientBonusGraphTest, BatchSharedPoolKeepsRootLocalBoundsAndInheritedOnlyAliasRefusal)
+{
+	auto inherited = speed(2); auto parent = hero(3); parent.local = {inherited};
+	Input root; root.parents = {1};
+	auto own = hero(2); own.local = {inherited};
+	auto graphs = OwnedRecipientBonusGraph::fromOwnedBatchInputs({{{root, parent}, 0, {inherited}}, {{own}, 0, {}}});
+	EXPECT_EQ(graphs[0]->payload(0), graphs[1]->payload(0));
+	OwnedRecipientBonusGraph::RootQuery query; query.facts = root.facts; query.records = {1};
+	EXPECT_THROW(graphs[0]->validateRootQuery(query), std::invalid_argument);
+	EXPECT_THROW(graphs[1]->payload(1), std::out_of_range); // Another graph's slice is not an address here.
+	EXPECT_THROW(OwnedRecipientBonusGraph::fromOwnedBatchInputs({}), std::invalid_argument);
+}
+
+TEST(OwnedRecipientBonusGraphTest, BatchPoolRetiresNestedParameterCycleOnlyAfterLastGraph)
+{
+	auto root = speed(1), first = speed(2), second = speed(3);
+	const auto connect = [](const std::shared_ptr<Bonus> & from, const std::shared_ptr<Bonus> & to)
+	{
+		BonusParametersOnCombatEvent effects;
+		effects.effects.emplace_back(BonusParametersOnCombatEvent::CombatEffectBonus{to, false});
+		from->parameters = std::make_shared<BonusParameters>(effects);
+	};
+	connect(root, first); connect(first, second); connect(second, first);
+	Input left, right; left.local = right.local = {root};
+	auto graphs = OwnedRecipientBonusGraph::fromOwnedBatchInputs({{{left}, 0, {}}, {{right}, 0, {}}});
+	std::weak_ptr<const Bonus> weak;
+	{
+		const auto & nested = std::get<BonusParametersOnCombatEvent::CombatEffectBonus>(
+			graphs[0]->payload(0)->parameters->combatEffects()->effects.front()).bonus;
+		weak = nested;
+	}
+	graphs[0].reset(); EXPECT_FALSE(weak.expired());
+	EXPECT_NE(graphs[1]->payload(0)->parameters, nullptr);
+	graphs[1].reset(); EXPECT_TRUE(weak.expired());
+	root->parameters.reset(); first->parameters.reset(); second->parameters.reset();
 }

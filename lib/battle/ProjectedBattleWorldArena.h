@@ -71,6 +71,11 @@ public:
 	void addExportedBonusAt(size_t occurrence, const std::shared_ptr<Bonus> & record);
 	void removeExportedBonusAt(size_t occurrence, const std::shared_ptr<Bonus> & record);
 	void expireExportedBonusesAt(size_t occurrence, const CSelector & selector);
+	/// Internal disposable record-replay fork only. All references borrow this owner.
+	/// Caller validates exact source/origin; do not publish or journal unrecorded edits.
+	CUnitState & effectQueryStateAt(size_t occurrence);
+	const BonusList & exportedBonusesAt(size_t occurrence) const;
+	void refreshExportedBonusesAt(size_t occurrence, const Bonus & value);
 	std::vector<ProjectedExportRemoval> removeExportedBonusesRecordingAt(size_t occurrence, const CSelector & selector);
 	void replayExportedRemovals(const std::vector<ProjectedExportRemoval> & receipts);
 	/// Query-only value synchronization: no packet, expiry or lifecycle is run.

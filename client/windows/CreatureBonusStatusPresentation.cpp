@@ -6,6 +6,7 @@
 #include "../../lib/mapObjects/army/CStackInstance.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/spells/HydrasVitalityIdentity.h"
 #include "../../lib/callback/CCallback.h"
 #include <algorithm>
 
@@ -33,12 +34,11 @@ std::string hydrasVitalityText(const CStack * battleStack, const Bonus & marker)
 std::vector<Row> supplementalRows(const CStack * battleStack, const CStackInstance * stackNode,
 	const BonusList & visibleBonuses, CCallback * callback)
 {
-	if(!battleStack)
+	if(!battleStack || !battleStack->getBattle())
 		return {};
 	std::vector<Row> rows;
-	const SpellID hydrasVitalityId = SpellID::decode("new-horizons:hydrasVitality");
 	const auto hydrasVitalityMarkers = battleStack->getBonuses(
-		Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(hydrasVitalityId))
+		newHorizonsMagic::hydrasVitalitySource(battleStack->getBattle()->getMagicRules())
 			.And(Selector::type()(BonusType::HP_REGENERATION)));
 	const bool hydraMarkerAlreadySelected = std::any_of(visibleBonuses.begin(), visibleBonuses.end(), [](const auto & bonus)
 	{

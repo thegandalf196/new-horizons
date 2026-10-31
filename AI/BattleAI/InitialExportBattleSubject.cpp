@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "InitialExportBattleSubject.h"
+#include "InitialExportEffectQueries.h"
 #include "HypotheticBattle.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/BattleLayout.h"
@@ -292,10 +293,10 @@ battle::Units InitialExportBattleSubject::getUnitsIf(const battle::UnitFilter & 
 	return result;
 }
 
-void InitialExportBattleSubject::copyValuesFrom(const HypotheticBattle & branch,
+void InitialExportBattleSubject::copyValuesTo(InitialExportWorld & destination, const HypotheticBattle & branch,
 	const InitialExportBattleSubject & source) const
 {
-	owned->copyEnvironmentValues(battle::ProjectedUnitEnvironmentState::capture(branch));
+	destination.copyEnvironmentValues(battle::ProjectedUnitEnvironmentState::capture(branch));
 	// The inventory performs value assignment only: no save, bonus query, provider
 	// transfer, callback, expiry or lifecycle. ALL current scalar inputs are copied
 	// before a graph query, including other recipients used by adjacency limiters.
@@ -304,12 +305,26 @@ void InitialExportBattleSubject::copyValuesFrom(const HypotheticBattle & branch,
 		const auto index = occurrence(id), origin = source.occurrence(id);
 		if(typeid(*state) != typeid(StackWithBonuses) || state->owner != &branch
 			|| state->origBearer != source.owned->unitAt(origin).getBonusBearer()
-			|| owned->sourceAt(index).original != source.owned->sourceAt(origin).original)
+			|| destination.sourceAt(index).original != source.owned->sourceAt(origin).original)
 			throw std::invalid_argument("Query values require their actual branch and canonical source provider");
 		if(!state->bonusesToAdd.empty() || !state->bonusesToUpdate.empty() || !state->bonusesToRemove.empty())
 			throw std::invalid_argument("Unrecorded legacy bonus edits have no originating graph operation");
-		owned->copyQueryValues(owned->sourceAt(index), *state);
+		destination.copyQueryValues(destination.sourceAt(index), *state);
 	}
+}
+
+void InitialExportBattleSubject::copyValuesFrom(const HypotheticBattle & branch,
+	const InitialExportBattleSubject & source) const
+{
+	copyValuesTo(*owned, branch, source);
+}
+std::unique_ptr<InitialExportWorld::EffectQueries> InitialExportBattleSubject::effectQueries(const HypotheticBattle & branch) const
+{
+	if(branch.initialExportSubject().get() != this)
+		throw std::invalid_argument("Effect queries require their actual owned branch source");
+	auto queries = owned->effectQueries();
+	copyValuesTo(*queries->world, branch, *this);
+	return queries;
 }
 
 void InitialExportBattleSubject::synchronizeValues(const HypotheticBattle & branch) const

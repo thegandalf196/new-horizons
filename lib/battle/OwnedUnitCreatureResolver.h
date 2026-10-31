@@ -20,6 +20,9 @@ public:
 		ArtifactID warMachine;
 		TResources cost;
 		std::string key, pluralTextID, singularTextID;
+		// Prototype facts only; absence stays unknown, including in old callers.
+		std::optional<int32_t> baseHitPoints;
+		std::optional<int32_t> aiValue;
 	};
 	/// Inputs are owned values, not a callback-admission certificate. Finish construction before loans.
 	explicit OwnedUnitCreatureResolver(std::vector<Creature> inputs);

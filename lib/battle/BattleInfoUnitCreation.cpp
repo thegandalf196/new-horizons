@@ -2,8 +2,10 @@
 #include "StdInc.h"
 #include "BattleInfo.h"
 #include "UnitAdditionRules.h"
+#include "UnitTransitionSidecars.h"
 #include "NewHorizonsElementalRebirth.h"
 #include "NewHorizonsOffense.h"
+#include "NewHorizonsSerpentsEmbrace.h"
 #include "../CStack.h"
 #include "../mapObjects/army/CArmedInstance.h"
 #include "NewHorizonsPrismaticVanguard.h"
@@ -63,5 +65,59 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 	const auto * hero = battleGetFightingHero(info.side);
 	if(battle::unitAdditionNeedsVengeance(*stacks.back(), orderState, round, hero))
 		stacks.back()->addNewBonus(std::make_shared<Bonus>(newHorizonsOffense::vengeanceRetaliationBonus()));
-	stacks.back()->nodeHasChanged();
+	// Existing recipients may have cached limiters that inspect the roster.
+	nodeHasChanged();
+}
+
+void BattleInfo::removeUnit(uint32_t id)
+{
+	bool rosterChanged = false;
+	std::set<uint32_t> ids;
+	ids.insert(id);
+
+	while(!ids.empty())
+	{
+		auto toRemoveId = *ids.begin();
+		auto * toRemove = getStack(toRemoveId, false);
+
+		if(!toRemove)
+		{
+			logGlobal->error("Cannot find stack %d", toRemoveId);
+			if(rosterChanged)
+				nodeHasChanged();
+			return;
+		}
+
+		newHorizonsSerpentsEmbrace::releaseDeathBindings(*this, *toRemove);
+		if(!toRemove->ghost)
+		{
+			toRemove->onRemoved();
+			toRemove->detachFromAll();
+			rosterChanged = true;
+
+			//stack may be removed instantly (not being killed first)
+			//handle clone remove also here
+			if(toRemove->cloneID >= 0)
+			{
+				ids.insert(toRemove->cloneID);
+				toRemove->cloneID = -1;
+			}
+
+			//cleanup remaining clone links if any
+			for(const auto & s : stacks)
+			{
+				if(s->cloneID == toRemoveId)
+					s->cloneID = -1;
+			}
+		}
+
+		ids.erase(toRemoveId);
+	}
+	if(rosterChanged)
+		nodeHasChanged();
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		battle::clearReducedActivationForUnit(sides.at(side).reducedExtraActivation, id);
+	}
+	expireSeparatedHeroOrderProtect();
 }

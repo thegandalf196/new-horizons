@@ -5,6 +5,7 @@
 #include "NewHorizonsMagicalAbilityDamage.h"
 #include "NewHorizonsCombatSkills.h"
 #include "BattleAttackInfo.h"
+#include "BattleActivationPredicate.h"
 #include "CBattleInfoCallback.h"
 #include "Unit.h"
 #include "../CCreatureHandler.h"
@@ -17,10 +18,25 @@ namespace newHorizonsCreatureBurn
 {
 namespace
 {
-bool burnHero(HeroTypeID hero)
+struct NativeIdentities
 {
-	return hero == HeroTypeID(HeroTypeID::decode("core:rashka"))
-		|| hero == HeroTypeID(HeroTypeID::decode("core:ignissa"));
+	HeroTypeID rashka() const { return HeroTypeID(HeroTypeID::decode("core:rashka")); }
+	HeroTypeID ignissa() const { return HeroTypeID(HeroTypeID::decode("core:ignissa")); }
+};
+struct CapturedIdentities
+{
+	const IdentityFacts & values;
+	void require() const
+	{
+		if(!values.rashka.hasValue() || !values.ignissa.hasValue() || values.rashka == values.ignissa)
+			throw std::logic_error("Captured creature burn identities are incomplete");
+	}
+	HeroTypeID rashka() const { require(); return values.rashka; }
+	HeroTypeID ignissa() const { require(); return values.ignissa; }
+};
+template<class Identities> bool burnHero(HeroTypeID hero, const Identities & identities)
+{
+	return hero == identities.rashka() || hero == identities.ignissa();
 }
 int coefficient(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
@@ -51,12 +67,12 @@ int coefficient(const CBattleInfoCallback & battle, const BattleAttackInfo & att
 	return 0;
 }
 }
-bool isBurn(const Bonus * bonus)
+template<class Identities> bool validateBurn(const Bonus * bonus, const Identities & identities)
 {
 	if(!bonus || (bonus->stacking != IDENTITY && bonus->statusIdentity != "ordinaryCreatureBurn"))
 		return false;
 	if(bonus->stacking != IDENTITY || bonus->statusIdentity != "ordinaryCreatureBurn"
-		|| bonus->source != BonusSource::HERO_SPECIAL || !burnHero(bonus->sid.as<HeroTypeID>())
+		|| bonus->source != BonusSource::HERO_SPECIAL || !burnHero(bonus->sid.as<HeroTypeID>(), identities)
 		|| bonus->type != BonusType::NONE || bonus->subtype != BonusSubtypeID()
 		|| bonus->duration != BonusDuration::ONE_BATTLE || bonus->turnsRemain != 0
 		|| bonus->val <= 0 || bonus->valType != BonusValueType::BASE_NUMBER
@@ -70,9 +86,19 @@ bool isBurn(const Bonus * bonus)
 		throw std::runtime_error("Invalid ordinary creature burn provenance");
 	return true;
 }
+IdentityFacts captureIdentityFacts()
+{
+	const NativeIdentities native;
+	const IdentityFacts result{native.rashka(), native.ignissa()};
+	CapturedIdentities{result}.require();
+	return result;
+}
+bool isBurn(const Bonus * bonus) { return validateBurn(bonus, NativeIdentities{}); }
+bool isBurnCaptured(const Bonus * bonus, const IdentityFacts & identities) { return validateBurn(bonus, CapturedIdentities{identities}); }
+
 Bonus marker(HeroTypeID hero, uint32_t source, int32_t rawDamage)
 {
-	if(!burnHero(hero) || source > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) || rawDamage <= 0)
+	if(!burnHero(hero, NativeIdentities{}) || source > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) || rawDamage <= 0)
 		throw std::invalid_argument("Invalid ordinary creature burn source or budget");
 	Bonus result(BonusDuration::ONE_BATTLE, BonusType::NONE, BonusSource::HERO_SPECIAL,
 		rawDamage, BonusSourceID(hero), BonusSubtypeID(), BonusValueType::BASE_NUMBER);
@@ -111,7 +137,8 @@ newHorizonsOrdinaryStrike::EffectPlan plan(const CBattleInfoCallback & battle,
 		&& newHorizonsHeroes::ordinaryCreatureSpecialtyValue(battle, *attack.attacker, "core:rashka") > 0
 		? "core:rashka" : "core:ignissa"));
 	Bonus next = marker(hero, attack.attacker->unitId(), budget);
-	for(const auto & existing : *attack.defender->getUnstackedBonuses(CSelector(isBurn)))
+	const auto existingBurns = attack.defender->getUnstackedBonuses(CSelector([](const Bonus * bonus) { return isBurn(bonus); }));
+	for(const auto & existing : *existingBurns)
 	{
 		result.remove.push_back(*existing);
 		// Equal budgets keep the previous application and its captured source.
@@ -122,14 +149,17 @@ newHorizonsOrdinaryStrike::EffectPlan plan(const CBattleInfoCallback & battle,
 	result.add.push_back(std::move(next));
 	return result;
 }
-Tick activationTick(const CBattleInfoCallback & battle, const battle::Unit & target, BattleUnitTurnReason reason)
+template<class Classifier, class ActivationQuery, class FireQuery>
+Tick activationTickWith(const battle::Unit & target, BattleUnitTurnReason reason, const Classifier & classify,
+	const ActivationQuery & begins, const FireQuery & fireDamage)
 {
 	Tick result;
-	if(!target.alive() || target.isGhost() || !battle.battleBeginsActivation(&target, reason)
+	if(!target.alive() || target.isGhost() || !begins()
 		|| ((reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION) && target.waited()))
 		return result;
 	int32_t strongest = 0;
-	for(const auto & existing : *target.getUnstackedBonuses(CSelector(isBurn)))
+	const auto existingBurns = target.getUnstackedBonuses(CSelector(classify));
+	for(const auto & existing : *existingBurns)
 	{
 		result.remove.push_back(*existing);
 		if(existing->val > strongest)
@@ -139,7 +169,29 @@ Tick activationTick(const CBattleInfoCallback & battle, const battle::Unit & tar
 		}
 	}
 	if(!result.remove.empty())
-		result.damage = newHorizonsMagicalAbilityDamage::adjustFireDamage(battle, target, strongest);
+		result.damage = fireDamage(strongest);
 	return result;
+}
+
+Tick activationTick(const CBattleInfoCallback & battle, const battle::Unit & target, BattleUnitTurnReason reason)
+{
+	return activationTickWith(target, reason, [](const Bonus * bonus) { return isBurn(bonus); },
+		[&] { return battle.battleBeginsActivation(&target, reason); },
+		[&](int32_t damage) { return newHorizonsMagicalAbilityDamage::adjustFireDamage(battle, target, damage); });
+}
+Tick activationTickCaptured(const CBattleInfoCallback & battle, const battle::Unit & target,
+	BattleUnitTurnReason reason, const IdentityFacts & identities)
+{
+	return activationTickWith(target, reason, [&identities](const Bonus * bonus) { return isBurnCaptured(bonus, identities); },
+		[&] { return battle.battleBeginsActivation(&target, reason); },
+		[&](int32_t damage) { return newHorizonsMagicalAbilityDamage::adjustFireDamage(battle, target, damage); });
+}
+Tick activationTickCaptured(const battle::Unit & target, BattleUnitTurnReason reason,
+	const IdentityFacts & identities, const battle::ActivationContext & activation,
+	const newHorizonsMagicalAbilityDamage::FireDamageContext & fire)
+{
+	return activationTickWith(target, reason, [&identities](const Bonus * bonus) { return isBurnCaptured(bonus, identities); },
+		[&] { return battle::beginsActivation(activation, &target, reason); },
+		[&](int32_t damage) { return newHorizonsMagicalAbilityDamage::adjustFireDamage(fire, target, damage); });
 }
 }

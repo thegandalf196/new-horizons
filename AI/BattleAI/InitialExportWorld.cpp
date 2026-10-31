@@ -5,6 +5,8 @@
  */
 #include "StdInc.h"
 #include "InitialExportWorld.h"
+#include "InitialExportEffectQueries.h"
+#include "../../lib/battle/BattleAccessibilityQuery.h"
 #include "MovementBonusProvenance.h"
 #include "../../lib/CStack.h"
 #include <optional>
@@ -48,6 +50,7 @@ struct InitialExportWorld::Data
 	bool unrecordedProgramInputs = false;
 	std::unique_ptr<battle::ProjectedBattleWorldArena> arena;
 	bool failed = false;
+	bool effectQueriesOnly = false;
 
 	explicit Data(BattleInfo & original) : original(original), arena(std::make_unique<battle::ProjectedBattleWorldArena>(original)) {}
 	void requireUsable() const
@@ -136,6 +139,7 @@ struct InitialExportWorld::Data
 		requireUsable();
 		try
 		{
+			if(effectQueriesOnly) throw std::logic_error("Disposable effect queries cannot append a replay program");
 			if(program.size() >= 512)
 				throw std::length_error("Initial export forecast program exceeds its bounded scope");
 			if(!std::holds_alternative<Snapshot>(operation) && !std::holds_alternative<EnvironmentSnapshot>(operation))
@@ -285,6 +289,7 @@ battle::ProjectedBattleWorldArena::UpdateDecision InitialExportWorld::updateUnit
 std::unique_ptr<InitialExportWorld> InitialExportWorld::fork() const
 {
 	impl->requireUsable();
+	if(impl->effectQueriesOnly) throw std::logic_error("Disposable effect queries cannot fork unrecorded changes");
 	auto result = std::make_unique<InitialExportWorld>(impl->original);
 	for(const auto & operation : impl->program)
 		result->impl->append(operation);
@@ -322,4 +327,71 @@ TConstBonusListPtr InitialExportWorld::projectedHeroBonuses(BattleSide side, boo
 {
 	impl->requireUsable();
 	return impl->arena->projectedHeroBonuses(side, unstacked);
+}
+
+std::unique_ptr<InitialExportWorld::EffectQueries> InitialExportWorld::effectQueries() const
+{
+	auto copy = fork();
+	copy->impl->effectQueriesOnly = true;
+	return std::unique_ptr<EffectQueries>(new EffectQueries(std::move(copy)));
+}
+InitialExportWorld::EffectQueries::EffectQueries(std::unique_ptr<InitialExportWorld> value) : world(std::move(value))
+{
+	std::set<uint32_t> identities;
+	for(size_t index = 0; index < world->size(); ++index)
+	{
+		const auto source = world->sourceAt(index);
+		if(!identities.insert(source.unitId).second) throw std::invalid_argument("Effect queries require unique ledger identities");
+		sources.push_back(source);
+	}
+}
+InitialExportWorld::EffectQueries::~EffectQueries() = default;
+InitialExportWorld::Source InitialExportWorld::EffectQueries::target(uint32_t id) const
+{
+	world->impl->requireUsable();
+	for(const auto & source : sources)
+		if(source.unitId == id)
+		{
+			world->impl->requireSource(source);
+			return source;
+		}
+	throw std::invalid_argument("Effect query target is outside its actual ledger");
+}
+const battle::Unit * InitialExportWorld::EffectQueries::find(uint32_t id) const
+{
+	for(const auto & source : sources)
+		if(source.unitId == id) return &current(id);
+	return nullptr;
+}
+const battle::Unit & InitialExportWorld::EffectQueries::current(uint32_t id) const
+{
+	return world->unitAt(target(id).occurrence);
+}
+battle::CUnitState & InitialExportWorld::EffectQueries::state(uint32_t id)
+{
+	return world->impl->arena->effectQueryStateAt(target(id).occurrence);
+}
+const BonusList & InitialExportWorld::EffectQueries::exportedRecords(uint32_t id) const
+{
+	return world->impl->arena->exportedBonusesAt(target(id).occurrence);
+}
+void InitialExportWorld::EffectQueries::appendExported(uint32_t id, const std::shared_ptr<Bonus> & value)
+{
+	world->impl->arena->addExportedBonusAt(target(id).occurrence, value);
+}
+void InitialExportWorld::EffectQueries::removeExported(uint32_t id, const std::shared_ptr<Bonus> & value)
+{
+	world->impl->arena->removeExportedBonusAt(target(id).occurrence, value);
+}
+void InitialExportWorld::EffectQueries::removeMatchingExports(uint32_t id, const CSelector & selector)
+{
+	world->impl->arena->expireExportedBonusesAt(target(id).occurrence, selector);
+}
+void InitialExportWorld::EffectQueries::refreshMatchingExports(uint32_t id, const Bonus & value)
+{
+	world->impl->arena->refreshExportedBonusesAt(target(id).occurrence, value);
+}
+AccessibilityInfo InitialExportWorld::EffectQueries::accessibility(uint32_t id) const
+{
+	return battle::withAccessibleHexes(world->impl->arena->accessibility(), current(id).getHexes());
 }

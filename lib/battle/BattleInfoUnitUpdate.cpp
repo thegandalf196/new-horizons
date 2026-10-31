@@ -12,6 +12,42 @@
 #include "../bonuses/BonusSelector.h"
 #include <stdexcept>
 
+namespace
+{
+// Only changes to a provider's identity, footprint or presence invalidate peers.
+struct AdjacencyProvider
+{
+	BattleHex position;
+	CreatureID creature;
+	const CCreature * type;
+	bool alive;
+	bool ghost;
+	bool operator==(const AdjacencyProvider &) const = default;
+};
+
+AdjacencyProvider adjacencyProvider(const CStack & unit)
+{
+	return {unit.getPosition(), unit.creatureId(), unit.unitType(), unit.alive(), unit.isGhost()};
+}
+
+void retireKilledUnitsClone(BattleInfo & battle, CStack & unit, bool sourceRetired)
+{
+	if(unit.cloneID < 0)
+		return;
+	auto * clone = battle.getStack(unit.cloneID);
+	if(clone)
+	{
+		if(!sourceRetired)
+			newHorizonsSerpentsEmbrace::releaseBindings(battle, clone->unitId());
+		const auto previous = adjacencyProvider(*clone);
+		clone->makeGhost();
+		if(adjacencyProvider(*clone) != previous)
+			battle.nodeHasChanged();
+	}
+	unit.cloneID = -1;
+}
+}
+
 void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta)
 {
 	CStack * changedStack = getStack(id, false);
@@ -45,20 +81,19 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 		}
 	}
 
-	const bool serpentSourceWasAlive = changedStack->alive();
+	const auto previousProvider = adjacencyProvider(*changedStack);
 	bool killed = (-healthDelta) >= changedStack->getAvailableHealth();//todo: check using alive state once rebirth will be handled separately
 
 	bool resurrected = !changedStack->alive() && healthDelta > 0;
 
 	//applying changes
-	const auto previousPosition = changedStack->getPosition();
 	changedStack->load(data);
 	const bool serpentSourceRetired = (killed && healthDelta < 0)
-		|| (serpentSourceWasAlive && !changedStack->alive());
+		|| (previousProvider.alive && !changedStack->alive());
 	if(serpentSourceRetired)
 		newHorizonsSerpentsEmbrace::releaseDeathBindings(*this, *changedStack);
-	// Placement limiters can depend on this unit from any battle recipient.
-	if(changedStack->getPosition() != previousPosition)
+	// Adjacency limiters can depend on this provider from any battle recipient.
+	if(adjacencyProvider(*changedStack) != previousProvider)
 		nodeHasChanged();
 	expireSeparatedHeroOrderProtect();
 
@@ -76,21 +111,7 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 	resurrected = resurrected || (killed && changedStack->alive());
 
 	if(killed)
-	{
-		if(changedStack->cloneID >= 0)
-		{
-			//remove clone as well
-			CStack * clone = getStack(changedStack->cloneID);
-			if(clone)
-			{
-				if(!serpentSourceRetired)
-					newHorizonsSerpentsEmbrace::releaseBindings(*this, clone->unitId());
-				clone->makeGhost();
-			}
-
-			changedStack->cloneID = -1;
-		}
-	}
+		retireKilledUnitsClone(*this, *changedStack, serpentSourceRetired);
 
 	if(resurrected || killed)
 	{

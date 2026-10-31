@@ -308,6 +308,8 @@ public:
 	EWallState getWallState(EWallPart part) const override;
 	int32_t getWallStructuralHP(EWallPart part) const override;
 	EGateState getGateState() const override;
+	/// The existing intact defender gate opens before a committed flying return.
+	void openGateForReturn();
 
 	int32_t getActiveStackID() const override;
 	int32_t getRound() const override;

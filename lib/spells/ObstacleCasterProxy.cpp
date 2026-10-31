@@ -22,6 +22,16 @@ ObstacleCasterProxy::ObstacleCasterProxy(PlayerColor owner_, const Caster * hero
 {
 }
 
+const SpellCreatedObstacle & ObstacleCasterProxy::sourceObstacle() const noexcept
+{
+	return obs;
+}
+
+const Caster * ObstacleCasterProxy::delegatedCaster() const noexcept
+{
+	return actualCaster;
+}
+
 int32_t ObstacleCasterProxy::getSpellSchoolLevel(const Spell * spell, SpellSchool * outSelectedSchool) const
 {
 	return obs.spellLevel;

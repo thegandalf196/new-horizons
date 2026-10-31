@@ -7,21 +7,75 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## 0.88 — in development
+## 0.88.1 — in development
 
-- Focus Magic moves to Level 1 and replaces Haste in ordinary Sorcery spell
-  availability. Slow moves to Level 3 and reduces both Speed and Initiative.
-- Summon Living Armor is a new Level 1 Sorcery spell: a temporary blue armored
-  Skeleton summon with strong physical protection and increased vulnerability
+### Heroes and army pacing
+
+- Adds new specialties for **34 creature-specialist heroes**. These include
+  Valeska's full-strength Archer melee, Wystan's long-range Lizardman shooting,
+  Dace's stronger Minotaur retaliation, Ryland's Dendroid defense aura, and
+  distinct maintenance, war-machine and attack-sequence specialties.
+- Restores the earlier starting Leadership values, reversing the 0.87.1
+  increase. Per-level Leadership and independent capacity for each army slot
+  retain their existing rules.
+- New scenarios default to **50% neutral army size** and **50% recruitment
+  growth**. A new-game slider lets you choose neutral army size independently
+  of recruitment. Recruitment growth rounds up after its ordinary modifiers;
+  existing armies and recruitment stock retain their counts.
+- Updates supported adventure-map Primary Attribute rewards to match the new
+  attribute scale. Creature-bank troop rewards handle Leadership limits and
+  full armies while retaining eligible unclaimed troops.
+- Iona's **Wheel of Fortune** gives her Genies and Master Genies Bestow Luck
+  (+3 friendly Luck); Master Genies also gain Turn of Fate (−3 enemy Luck).
+  These choices share the stack's three Wishes charges.
+- Thane becomes **Sage of the Ages**, starts with Historian, and gains an
+  additional +1 Spell Power and +1 Knowledge on each level gained.
+- Vidomina unlocks Ghosts as a Wraith upgrade. Soul Harvest temporarily grows
+  their stack from the enemy creatures they kill; those gains end with combat.
+
+### Skills, Orders and magic
+
+- Rampart's **Sylvan Tactics** grants +1/+2/+3 Initiative by rank, with perks
+  built around waiting, positioning, protection and battlefield opportunities.
+- **Perfect Moment** makes a positive creature Lucky Strike deal **3.5× total
+  normal physical damage**. It does not grant Luck or guarantee a Lucky Strike.
+- Dungeon's faction Skill is now displayed as **Shroud of Nighon**.
+- **Focus Magic** moves to Level 1 and replaces Haste in ordinary Sorcery
+  availability. **Slow** moves to Level 3 and reduces both Speed and Initiative.
+- **Summon Living Armor** is a new Level 1 Sorcery spell: a temporary blue
+  armored Skeleton with strong physical protection and increased vulnerability
   to magical damage. Its base duration is three rounds.
 - Adds dedicated Feint!, Vanguard! and Summon Living Armor icons.
-- Grave Knowledge recovers 35% of eligible own Skeleton losses; Bone Collector
-  raises 25% more Skeletons. Soul Harvester retains 1 Mana per newly raised
-  Skeleton, with a reduced maximum of 30 Mana per battle.
-- Corrects Slow applying twice to creatures whose Initiative falls back to
-  Speed, and Focus Magic parameter validation warnings.
-- Existing saves retain their captured rules and balance values. Start a new
-  scenario to use the revised spell roster and Necromancy values.
+- **Grave Knowledge** recovers 35% of eligible own Skeleton losses;
+  **Bone Collector** raises 25% more Skeletons. The Mana-recovery perk is named
+  **Soul Drinker** and restores 1 Mana per newly raised Skeleton, up to 30 Mana
+  per battle and the hero's Normal Mana capacity.
+
+### Interface and reporting
+
+- Spellbook entries show names, costs and hero-adjusted effect summaries;
+  right-click descriptions provide requirements and formulas.
+- Adds dedicated quick-save and quick-load controls and revised specialty,
+  spell and Order artwork. Selected new artwork remains provisional.
+- In-game bug reporting offers an editable description and optional reviewed,
+  sanitized log before opening a GitHub issue draft. Unexpected-exit reports
+  use the same review and consent steps. See the
+  [bug-reporting guide](players/Bug_Reporting_Guidelines.md).
+- Optional main-menu release notifications link to a newer Windows or Linux
+  player download. Downloads and installation remain under your control.
+
+### Corrections and compatibility
+
+- Corrects Slow applying twice when Initiative falls back to Speed, and Focus
+  Magic parameter-validation warnings.
+- Improves Poison and Hex targeting and status handling, Frozen/Cure/Purify
+  interactions, and physical-protection handling for mixed damage types.
+- Refines combat AI handling of the enabled specialties, Orders, status effects
+  and visible battlefield obstacles.
+- Existing saves retain their captured rules and values. Start a new scenario
+  to use the revised defaults, spell roster and hero profiles.
+
+Thanks to **Matrix4767** for playtesting feedback on Necromancy pacing.
 
 ## 0.87.1 Early Access
 

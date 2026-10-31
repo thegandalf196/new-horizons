@@ -62,6 +62,9 @@ DLL_LINKAGE int64_t echoDamage(int64_t actualSecondaryDamage, int32_t echoBasisP
 
 /// Reads the serializable relationship marker stored on a secondary stack.
 DLL_LINKAGE std::optional<Link> linkFor(const battle::Unit * secondary);
+/// Passive readback: registered historical effects remain visible; only an
+/// absent identity in an empty legacy profile without the module is optional.
+DLL_LINKAGE std::optional<Link> passiveLinkFor(const battle::Unit * secondary, const JsonNode & savedMagicRules);
 
 /// Identifies an echo packet so it cannot trigger any Soul Chain relationship.
 DLL_LINKAGE bool isEchoHit(const BattleStackAttacked & hit);

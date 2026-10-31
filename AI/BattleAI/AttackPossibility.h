@@ -259,6 +259,11 @@ public:
 	std::shared_ptr<HypotheticBattle> effectPreview;
 	/// Local receipt distinguishes a newly completed return from a pre-existing target mark.
 	std::optional<uint32_t> completedReturnMarkTarget;
+	/// Native return entitlement is captured before landing; publication follows Blood.
+	bool coordinatedReturnHandled = false;
+	std::optional<BattleHex> completedReturnDestination;
+	newHorizonsOrdinaryStrike::EffectPlan preparedReturnMark;
+	std::map<uint32_t, int64_t> returnLandingHealthLoss;
 	std::shared_ptr<battle::CUnitState> attackerState;
 
 	std::vector<std::shared_ptr<battle::CUnitState>> affectedUnits;

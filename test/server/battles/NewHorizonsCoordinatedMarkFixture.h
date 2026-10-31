@@ -5,6 +5,8 @@
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/CPlayerState.h"
+#include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 class CoordinatedMarkRecordingServer : public RecordingGameServer
 {
@@ -60,7 +62,7 @@ protected:
 		obstacle->passable = true; obstacle->trap = true; obstacle->customSize.insert(origin);
 		battle()->obstacles.push_back(obstacle);
 	}
-	void prepare(const char * hero, int captureMode = 0, bool upgraded = false)
+	void prepare(const char * hero, int captureMode = 0, bool upgraded = false, bool defendingSiege = false)
 	{
 		mode = captureMode;
 		const bool shot = std::string_view(hero) == "core:ingham";
@@ -68,16 +70,25 @@ protected:
 			: (upgraded ? "core:harpyHag" : "core:harpy"));
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
-			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(hero)), PlayerColor(0)).heroExperience(0)
-			.heroGarrison({{creature, 20}})
-			.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(1)).heroExperience(0)
-			.heroGarrison({{creatureByName("core:pikeman"), 100}});
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(defendingSiege ? "core:orrin" : hero)), PlayerColor(0)).heroExperience(0)
+			.heroGarrison({{defendingSiege ? creatureByName("core:pikeman") : creature, defendingSiege ? 100 : 20}})
+			.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode(defendingSiege ? hero : "core:orrin")), PlayerColor(1)).heroExperience(0)
+			.heroGarrison({{defendingSiege ? creature : creatureByName("core:pikeman"), defendingSiege ? 20 : 100}});
+		if(defendingSiege) builder.town({12, 12, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({});
 		startWithMap(std::move(builder)); server.gameState = gameState(); observed.gameState = gameState();
 		gameHandler = std::make_shared<CGameHandler>(observed, gameState());
 		attackerSideHero = findHeroByOwner(PlayerColor(0)); defenderSideHero = findHeroByOwner(PlayerColor(1));
-		startBattle();
+		if(defendingSiege)
+		{
+			const auto towns = gameState()->getPlayerState(PlayerColor(1))->getTowns(); ASSERT_EQ(towns.size(), 1u);
+			for(const auto resource : {GameResID(GameResID::WOOD), GameResID(GameResID::ORE), GameResID(GameResID::GOLD)})
+				grantResources(PlayerColor(1), resource, 100000);
+			ASSERT_TRUE(gameHandler->buildStructure(towns.front()->id, BuildingID::CITADEL));
+			startBattle(towns.front());
+		}
+		else startBattle();
 		for(const auto & unit : battle()->stacks)
-			if(unit->unitSlot() == SlotID(0)) (unit->unitSide() == BattleSide::ATTACKER ? actor : victim) = unit.get();
+			if(unit->unitSlot() == SlotID(0)) ((unit->unitSide() == BattleSide::DEFENDER) == defendingSiege ? actor : victim) = unit.get();
 		ASSERT_NE(actor, nullptr); ASSERT_NE(victim, nullptr);
 		actor->setPosition(BattleHex(3, 5)); victim->setPosition(BattleHex(shot ? 10 : 5, 5));
 		for(auto * unit : {actor, victim})

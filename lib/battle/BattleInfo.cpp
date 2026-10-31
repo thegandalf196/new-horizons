@@ -1752,53 +1752,6 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 	nodeHasChanged();
 }
 
-void BattleInfo::removeUnit(uint32_t id)
-{
-	std::set<uint32_t> ids;
-	ids.insert(id);
-
-	while(!ids.empty())
-	{
-		auto toRemoveId = *ids.begin();
-		auto * toRemove = getStack(toRemoveId, false);
-
-		if(!toRemove)
-		{
-			logGlobal->error("Cannot find stack %d", toRemoveId);
-			return;
-		}
-
-		newHorizonsSerpentsEmbrace::releaseDeathBindings(*this, *toRemove);
-		if(!toRemove->ghost)
-		{
-			toRemove->onRemoved();
-			toRemove->detachFromAll();
-
-			//stack may be removed instantly (not being killed first)
-			//handle clone remove also here
-			if(toRemove->cloneID >= 0)
-			{
-				ids.insert(toRemove->cloneID);
-				toRemove->cloneID = -1;
-			}
-
-			//cleanup remaining clone links if any
-			for(const auto & s : stacks)
-			{
-				if(s->cloneID == toRemoveId)
-					s->cloneID = -1;
-			}
-		}
-
-		ids.erase(toRemoveId);
-	}
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		battle::clearReducedActivationForUnit(sides.at(side).reducedExtraActivation, id);
-	}
-	expireSeparatedHeroOrderProtect();
-}
-
 battle::BattleEffectSnapshot BattleInfo::captureBattleEffects(uint32_t id) const
 {
 	const auto candidates = getStacksIf([id](const CStack * candidate) { return candidate->unitId() == id; });

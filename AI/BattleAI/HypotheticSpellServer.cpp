@@ -8,6 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "ProjectedInjuryLifecycle.h"
+#include "../../lib/battle/GraveDustEffectChanges.h"
+#include "../../lib/battle/GraveDustBodyCleanup.h"
 #include "StackWithBonuses.h"
 #include "PhysicalStrikeProjection.h"
 
@@ -143,12 +146,14 @@ void HypotheticBattle::HypotheticServerCallback::apply(BattleUnitsChanged & pack
 
 void HypotheticBattle::HypotheticServerCallback::apply(SetStackEffect & pack)
 {
+	newHorizonsGraveDust::validateEffectChanges(*owner, pack);
 	BattleStatePackVisitor visitor(*owner);
 	pack.visit(visitor);
 }
 
 void HypotheticBattle::HypotheticServerCallback::apply(StacksInjured & pack)
 {
+	newHorizonsGraveDust::validateBodyChanges(*owner, pack.stacks);
 	const auto destroyed = PhysicalStrikeProjection::captureDamagePacket(*owner, std::span<const BattleStackAttacked>(pack.stacks));
 	std::vector<ProjectedPlagueHit> plagueHits;
 	static const SpellID plagueSpell(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)));
@@ -186,8 +191,10 @@ void HypotheticBattle::HypotheticServerCallback::apply(StacksInjured & pack)
 			*snapshot, unit->isClone(), nativeRebirth});
 	}
 
+	projectedInjuryLifecycle::before(*owner, pack.stacks);
 	BattleStatePackVisitor visitor(*owner);
 	pack.visit(visitor);
+	projectedInjuryLifecycle::after(*owner, pack.stacks);
 	PhysicalStrikeProjection::completeDamagePacket(*owner, destroyed);
 	for(const auto & [unitId, pending] : pendingRebirths)
 	{

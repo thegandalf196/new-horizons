@@ -14,6 +14,8 @@
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "CBattleInfoCallback.h"
+#include "BattleActivationPredicate.h"
+#include "CurrentFireBasis.h"
 #include "NewHorizonsParalyzingGaze.h"
 #include "../spells/IncomingMagicalDamage.h"
 #include "HeroCommandAdjacency.h"
@@ -76,10 +78,6 @@ constexpr int EXECUTIONER_DAMAGE_PERCENT = 20;
 constexpr int ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT = 20;
 constexpr int BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT = 50;
 constexpr int PIERCING_BOLTS_DEFENSE_IGNORE_PERCENT = 50;
-constexpr auto HOLY_ARMOR_SAVED_ROSTER_KEY = "new-horizons:holyArmor";
-constexpr auto WARCASTING_SKILL_ID = "new-horizons:warcasting";
-constexpr auto SPELLWARD_PERK_ID = "new-horizons:warcasting.spellward";
-constexpr int SPELLWARD_REDUCTION_BASIS_POINTS = 1000;
 constexpr int RANDOM_CREATURE_HOSTILE_ENCHANTMENTS_POLICY = 1;
 
 bool admitsBerserkTarget(const CBattleInfoCallback & callback, const battle::Unit * berserker,
@@ -602,23 +600,7 @@ std::optional<FocusFireState> CBattleInfoCallback::battleGetFocusFireState(Battl
 
 bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const
 {
-	if(reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
-		return false;
-	if(!unit || unit->isTimeStopped() || reason == BattleUnitTurnReason::ACTION_REJECTED
-		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
-		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
-		|| reason == BattleUnitTurnReason::DREAD_CAVALRY_CONTINUATION
-		|| reason == BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION
-		|| reason == BattleUnitTurnReason::HERO_SPELLCAST || reason == BattleUnitTurnReason::UNIT_SPELLCAST)
-		return false;
-	if(reason != BattleUnitTurnReason::HERO_COMMAND)
-		return true;
-	const auto controllerSide = playerToSide(battleGetOwner(unit));
-	if(controllerSide != BattleSide::ATTACKER && controllerSide != BattleSide::DEFENDER)
-		return false;
-	const auto order = battleGetHeroOrderState(controllerSide, HeroCommand::SECOND_WIND);
-	return order && order->secondWindActive
-		&& order->primaryTargetUnitId == unit->unitId();
+	return battle::beginsActivation(*this, unit, reason);
 }
 
 std::vector<uint32_t> CBattleInfoCallback::battleFortuneAdjacentFriends(const battle::Unit * unit) const
@@ -1482,12 +1464,8 @@ bool CBattleInfoCallback::battleCanForciblyDisplace(const battle::Unit * unit,
 bool CBattleInfoCallback::battleIsHoldTheLineRecipient(const HeroOrderState & state,
 	const battle::Unit * unit) const
 {
-	if(!getBattle() || !unit || !unit->alive() || unit->isGhost() || unit->isTurret()
-		|| unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-		|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
-		return false;
-	return state.isHoldTheLineRecipient(unit->unitId(), static_cast<int16_t>(unit->getPosition().toInt()),
-		battleGetRound());
+	if(!getBattle()) return false;
+	return newHorizonsMagicalAbilityDamage::holdTheLineRecipient(state, unit, [&] { return battleGetRound(); });
 }
 
 int CBattleInfoCallback::battleGetHoldTheLineMagicalReductionBasisPoints(const battle::Unit * unit) const
@@ -1498,9 +1476,8 @@ int CBattleInfoCallback::battleGetHoldTheLineMagicalReductionBasisPoints(const b
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return 0;
 	const auto state = battleGetHeroOrderState(side, HeroCommand::HOLD_THE_LINE);
-	return state && battleIsHoldTheLineRecipient(*state, unit)
-		? (state->crownAndAltarAppliesTo(unit->unitId())
-			? state->crownAndAltarHoldReductionBasisPoints : state->holdMagicalReductionBasisPoints) : 0;
+	return newHorizonsMagicalAbilityDamage::holdTheLineReductionBasisPoints(state ? &*state : nullptr, unit,
+		[&](const HeroOrderState & current, const battle::Unit * target) { return battleIsHoldTheLineRecipient(current, target); });
 }
 
 bool CBattleInfoCallback::battleUsesNewHorizonsMultiplicativeMDR() const
@@ -1509,10 +1486,7 @@ bool CBattleInfoCallback::battleUsesNewHorizonsMultiplicativeMDR() const
 	if(!battleState)
 		return false;
 
-	const auto & magicRules = battleState->getMagicRules();
-	return newHorizonsMagic::rulesActive(magicRules)
-		&& magicRules["spells"].isStruct()
-		&& magicRules["spells"].Struct().contains(HOLY_ARMOR_SAVED_ROSTER_KEY);
+	return newHorizonsMagicalAbilityDamage::usesMultiplicativeMDR(battleState->getMagicRules());
 }
 
 int CBattleInfoCallback::battleGetPerkMagicalReductionBasisPoints(const battle::Unit * unit) const
@@ -1524,9 +1498,7 @@ int CBattleInfoCallback::battleGetPerkMagicalReductionBasisPoints(const battle::
 	// inheritance. Mind control, summoned stacks, gated stacks, and detached AI
 	// units all use the same current-controller query.
 	const auto * controllerHero = battleGetOwnerHero(unit);
-	return controllerHero && controllerHero->hasActivePerk(WARCASTING_SKILL_ID, SPELLWARD_PERK_ID)
-		? SPELLWARD_REDUCTION_BASIS_POINTS
-			+ controllerHero->getMasterSpellwardExtraBasisPoints(SPELLWARD_REDUCTION_BASIS_POINTS) : 0;
+	return newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(controllerHero);
 }
 
 bool CBattleInfoCallback::battleCanTriggerHeroOrderBrace(const battle::Unit * attacker,
@@ -1634,72 +1606,6 @@ int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide si
 		return heroCommands::coefficient(formula, *hero, warcastingBonusPercent,
 			divineMandateEfficiencyBonusPercent);
 	return heroCommands::coefficient(formula, 0, 0);
-}
-
-ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const
-{
-	RETURN_IF_NOT_BATTLE(ESpellCastProblem::INVALID);
-	if(caster == nullptr)
-	{
-		logGlobal->error("CBattleInfoCallback::battleCanCastSpell: no spellcaster.");
-		return ESpellCastProblem::INVALID;
-	}
-	const PlayerColor player = caster->getCasterOwner();
-	const auto side = playerToSide(player);
-	if(side == BattleSide::NONE)
-		return ESpellCastProblem::INVALID;
-	if(!battleDoWeKnowAbout(side))
-	{
-		logGlobal->warn("You can't check if enemy can cast given spell!");
-		return ESpellCastProblem::INVALID;
-	}
-
-	if(battleTacticDist())
-		return ESpellCastProblem::ONGOING_TACTIC_PHASE;
-
-	switch(mode)
-	{
-	case spells::Mode::HERO:
-	{
-		const auto * hero = caster->getHeroCaster();
-		const bool metamagicFollowup = battleCanUseMetamagicFollowup(side);
-		if(getBattle()->getPreCombatOrderState(side).isUnresolved())
-			return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
-
-		if(!hero)
-			return ESpellCastProblem::NO_HERO_TO_CAST_SPELL;
-		if(battleUsesHeroCommands())
-		{
-			const auto round = battleGetRound();
-			const auto & allowances = getBattle()->getHeroActionAllowances(side);
-			if(round < 0 || allowances.currentRound != round || !allowances.eligibleAllowance(
-				HeroActionAllowanceState::ActionKind::SPELL, round))
-				return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
-		}
-		if(!hero->hasSpellbook())
-			return ESpellCastProblem::NO_SPELLBOOK;
-		if(!battleUsesHeroCommands() && !metamagicFollowup
-			&& battleCastSpells(side) >= hero->valOfBonuses(BonusType::HERO_SPELL_CASTS_PER_COMBAT_TURN))
-			return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
-	}
-		break;
-	default:
-		break;
-	}
-
-	//Orb of Inhibition blocks active spellcasting (hero and creature active abilities),
-	//but not passive/triggered casts such as SPELL_BEFORE_ATTACK / SPELL_AFTER_ATTACK.
-	//Level-0 creature abilities are excluded from this block in BattleSpellMechanics::canBeCast (spell level known there)
-	if(mode == spells::Mode::HERO || mode == spells::Mode::CREATURE_ACTIVE)
-	{
-		const IBonusBearer * casterBonuses = caster->getHeroCaster();
-		if(!casterBonuses)
-			casterBonuses = battleGetUnitByID(caster->getCasterUnitId());
-		if(casterBonuses && casterBonuses->hasBonusOfType(BonusType::BLOCK_ALL_MAGIC))
-			return ESpellCastProblem::MAGIC_IS_BLOCKED;
-	}
-
-	return ESpellCastProblem::OK;
 }
 
 std::pair< BattleHexArray, int > CBattleInfoCallback::getPath(const BattleHex & start, const BattleHex & dest, const battle::Unit * stack) const
@@ -3974,112 +3880,6 @@ std::vector<std::shared_ptr<const CObstacleInstance>> CBattleInfoCallback::getAf
 	return affectedObstacles;
 }
 
-bool CBattleInfoCallback::handleObstacleTriggersForUnit(SpellCastEnvironment & spellEnv, const battle::Unit & unit, const BattleHexArray & passed) const
-{
-	return handleObstacleTriggersForUnitWithObstacles(spellEnv, unit, getAllAffectedObstaclesByStack(&unit, passed));
-}
-
-bool CBattleInfoCallback::handleObstacleTriggersForUnitAtPositions(SpellCastEnvironment & spellEnv,
-	const battle::Unit & unit, const BattleHexArray & positions, const BattleHexArray & passed) const
-{
-	// Crossed footprints are transit positions, not committed landings. The
-	// normal flying movement path calls the grounded helper only at its end.
-	return handleObstacleTriggersForUnitWithObstacles(spellEnv, unit,
-		getAffectedObstaclesAtPositions(&unit, positions, passed), unit.hasBonusOfType(BonusType::FLYING));
-}
-
-bool CBattleInfoCallback::handleObstacleTriggersForUnitWithObstacles(SpellCastEnvironment & spellEnv,
-	const battle::Unit & unit, const std::vector<std::shared_ptr<const CObstacleInstance>> & obstacles, bool airborneTransit) const
-{
-	if(!unit.alive() || unit.isTimeStopped())
-		return false;
-	bool movementStopped = false;
-	for(const auto & obstacle : obstacles)
-	{
-		//helper info
-		const SpellCreatedObstacle * spellObstacle = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get());
-
-		if(spellObstacle)
-		{
-			// Canonical NH Land Mine is a hidden, hostile-ground-only trap.  Do
-			// this gate before visibility/reveal/removal so allied or airborne
-			// units neither consume the mine nor leak its position.
-			const bool canonicalLandMine = newHorizonsMagic::rulesActive(getBattle()->getMagicRules())
-				&& newHorizonsMagic::isLandMine(SpellID(spellObstacle->ID));
-			const bool canonicalFireWall = newHorizonsMagic::rulesActive(getBattle()->getMagicRules())
-				&& newHorizonsMagic::isFireWall(SpellID(spellObstacle->ID));
-			const bool alreadyTriggeredThisActivation = canonicalFireWall
-				&& spellObstacle->lastTriggerUnit == static_cast<si32>(unit.unitId())
-				&& spellObstacle->lastTriggerActivation == getBattle()->getActivationSerial();
-			if(canonicalLandMine
-				&& (unit.hasBonusOfType(BonusType::FLYING)
-					|| battleGetOwner(&unit) == getBattle()->getSidePlayer(spellObstacle->casterSide)))
-				continue;
-			const bool flyingImmune = unit.hasBonusOfType(BonusType::FLYING)
-				&& (airborneTransit || !newHorizonsFireWall::groundedFlyersBurn(getBattle()->getMagicRules()));
-			if(canonicalFireWall && (flyingImmune || alreadyTriggeredThisActivation))
-				continue;
-
-			auto revealObstacles = [&](const SpellCreatedObstacle & spellObstacle) -> void
-			{
-				// For the hidden spell created obstacles, e.g. QuickSand, it should be revealed after taking damage
-				auto operation = ObstacleChanges::EOperation::UPDATE;
-				if (spellObstacle.removeOnTrigger)
-					operation = ObstacleChanges::EOperation::REMOVE;
-
-				SpellCreatedObstacle changedObstacle = spellObstacle;
-				changedObstacle.uniqueID = spellObstacle.uniqueID;
-				changedObstacle.revealed = true;
-				if(canonicalFireWall)
-				{
-					changedObstacle.lastTriggerUnit = static_cast<si32>(unit.unitId());
-					changedObstacle.lastTriggerActivation = getBattle()->getActivationSerial();
-				}
-
-				BattleObstaclesChanged bocp;
-				bocp.battleID = getBattle()->getBattleID();
-				bocp.change = ObstacleChanges(spellObstacle.uniqueID, operation);
-				changedObstacle.toInfo(bocp.change, operation);
-				spellEnv.apply(bocp);
-			};
-			const auto side = unit.unitSide();
-			auto shouldReveal = !spellObstacle->hidden || !battleIsObstacleVisibleForSide(*obstacle, side);
-			// A neutral obstacle (casterSide == NONE) belongs to no side and must impede units of both sides;
-			// treat it as hostile to whichever unit triggered it so its effect still applies (and to avoid an invalid side lookup)
-			const bool neutralObstacle = spellObstacle->casterSide != BattleSide::ATTACKER && spellObstacle->casterSide != BattleSide::DEFENDER;
-			const auto casterSide = neutralObstacle ? otherSide(side) : spellObstacle->casterSide;
-			const auto * hero = neutralObstacle ? nullptr : battleGetFightingHero(casterSide);
-			auto caster = spells::ObstacleCasterProxy(getBattle()->getSidePlayer(casterSide), hero, *spellObstacle);
-
-			if(obstacle->triggersEffects() && obstacle->getTrigger().hasValue())
-			{
-				const auto * sp = obstacle->getTrigger().toSpell();
-				auto cast = spells::BattleCast(this, &caster, spells::Mode::PASSIVE, sp);
-				if(canonicalFireWall)
-					cast.setForceNonSmartTargeting(true);
-				spells::detail::ProblemImpl ignored;
-				auto target = spells::Target(1, spells::Destination(&unit));
-				if(sp->battleMechanics(&cast)->canBeCastAt(target, ignored)) // Obstacles should not be revealed by immune creatures
-				{
-					if(shouldReveal) { //hidden obstacle triggers effects after revealed
-						revealObstacles(*spellObstacle);
-						cast.cast(&spellEnv, target);
-					}
-				}
-			}
-			else if(shouldReveal)
-				revealObstacles(*spellObstacle);
-		}
-
-		if(!unit.alive())
-			return false;
-
-		if(obstacle->stopsMovement() && !unit.hasBonusOfType(BonusType::FLYING))
-			movementStopped = true;
-	}
-
-	return unit.alive() && !movementStopped;
-}
 
 AccessibilityInfo CBattleInfoCallback::getAccessibility(const battle::Unit * stack) const
 {

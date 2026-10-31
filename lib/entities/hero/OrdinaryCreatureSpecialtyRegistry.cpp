@@ -119,7 +119,7 @@ const std::array<OrdinaryCreatureSpecialty, 48> ordinaryCreatureSpecialties{{
 		BonusValueType::BASE_NUMBER, "Monk and Zealot shots mark a surviving enemy until this round ends. The next allied primary melee strike ignores %VALUE%% of its Creature Defense, then consumes the mark. Ordinary retaliation qualifies.",
 		"newHorizons/heroSpecialties/InghamConsecratedTarget"},
 	{"core:lorelei", "core:harpy", "Feathered Feint", "featheredFeintPhysicalReductionIgnorePercent", BonusType::NONE,
-		BonusValueType::BASE_NUMBER, "A completed Harpy or Harpy Hag attack-and-return marks the surviving victim until this round ends. The next different allied primary physical attacker ignores %VALUE%% of capped physical protection, then consumes the mark. This does not reduce Creature Defense or grant a return.",
+		BonusValueType::BASE_NUMBER, "A completed Harpy or Harpy Hag attack-and-return marks the surviving victim until this round ends. The next different allied primary physical attacker ignores %VALUE%% of physical protection, then consumes the mark. This does not reduce Creature Defense or grant a return.",
 		"newHorizons/heroSpecialties/LoreleiFeatheredFeint"},
 	{"core:tyris", "core:cavalier", "Lance Formation", "lanceFormationDefensePerHex", BonusType::NONE,
 		BonusValueType::BASE_NUMBER, "A completed Cavalier or Champion charge grants the attacker temporary Creature Defense based on actual charge distance, until its next genuine activation. This is distinct from the Charge! Order and grants no additional attack or movement.",

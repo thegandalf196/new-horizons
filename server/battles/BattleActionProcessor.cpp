@@ -25,7 +25,7 @@
 #include "../../lib/battle/NewHorizonsMachineSpecialties.h"
 #include "BattlecraftMasteryAward.h"
 #include "BattleCreatureKillRewards.h"
-#include "GateDrawbridgeFootprint.h"
+#include "../../lib/battle/GateDrawbridgeFootprint.h"
 #include "DreadCavalryAction.h"
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "NewHorizonsManaLeeches.h"

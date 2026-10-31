@@ -31,6 +31,7 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/callback/CCallback.h"
@@ -447,12 +448,12 @@ std::vector<SoulChainIncomingStatus> soulChainIncomingLinks(
 	const CStack * primary, const CPlayerBattleCallback * battleCallback)
 {
 	std::vector<SoulChainIncomingStatus> result;
-	if(!primary || !battleCallback)
+	if(!primary || !battleCallback || !primary->getBattle())
 		return result;
 
 	for(const auto * candidate : battleCallback->battleGetAllStacks())
 	{
-		const auto link = newHorizonsSoulChain::linkFor(candidate);
+		const auto link = newHorizonsSoulChain::passiveLinkFor(candidate, primary->getBattle()->getMagicRules());
 		if(!link || link->primaryUnitId != primary->unitId())
 			continue;
 
@@ -466,7 +467,8 @@ std::string soulChainSecondaryTooltip(
 	std::string_view spellDescription, const CStack * secondary, const CPlayerBattleCallback * battleCallback)
 {
 	std::string result(spellDescription);
-	const auto link = newHorizonsSoulChain::linkFor(secondary);
+	if(!secondary || !secondary->getBattle()) return result;
+	const auto link = newHorizonsSoulChain::passiveLinkFor(secondary, secondary->getBattle()->getMagicRules());
 	if(!link)
 		return result;
 
@@ -494,11 +496,11 @@ std::string soulChainPrimaryTooltip(const std::vector<SoulChainIncomingStatus> &
 
 std::string soulChainStatusSignature(const CStack * stack, const CPlayerBattleCallback * battleCallback)
 {
-	if(!stack)
+	if(!stack || !stack->getBattle())
 		return {};
 
 	std::string result;
-	if(const auto link = newHorizonsSoulChain::linkFor(stack))
+	if(const auto link = newHorizonsSoulChain::passiveLinkFor(stack, stack->getBattle()->getMagicRules()))
 	{
 		result = "secondary:" + std::to_string(link->primaryUnitId) + ":"
 			+ std::to_string(static_cast<int>(link->casterSide)) + ":"

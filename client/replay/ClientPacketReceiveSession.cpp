@@ -19,6 +19,7 @@ ClientPacketReceiveSession::ClientPacketReceiveSession(CServerHandler & handler,
 	: handler(handler), engine(engine), connection(connection), logic(handler.logicConnection),
 	  client(handler.client.get()), predictions(handler.networkLagCompensator.get()),
 	  world(client ? client->gameStatePtr().get() : nullptr),
+	  sourceWorld(client ? client->gameStatePtr() : std::shared_ptr<CGameState>()),
 	  access(std::move(heldAccess), engine ? &engine->interfaceMutex : nullptr)
 {
 }

@@ -42,14 +42,18 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 			+ newHorizonsHeroes::ordinaryCreatureProtectionPercent(*this, info) : 0;
 	const auto coordinatedPenetration = newHorizonsCoordinatedMarks::penetration(*this, info);
 	payload.coordinatedMeleeDefenseIgnorePercent = coordinatedPenetration.creatureDefensePercent;
+	payload.coordinatedPhysicalProtectionIgnorePercent = coordinatedPenetration.physicalProtectionPercent;
 	payload.stormWingsDefenseIgnorePercent = newHorizonsChargeSpecialties::stormWingsDefenseIgnorePercent(*this, info);
+	const int existingProtectionIgnore = payload.physicalDamageReductionIgnorePercent;
 	if(coordinatedPenetration.physicalProtectionPercent > 0)
 		payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent
 			+ coordinatedPenetration.physicalProtectionPercent);
 	payload.runicEnduranceReductionPercent = newHorizonsSequenceProtection::runicEndurancePercent(*this, info);
 	payload.ironHideReductionPercent = newHorizonsReactiveDefense::ironHidePercent(*this, info);
+	const int sequenceProtectionIgnore = newHorizonsSequenceProtection::cyclopeanBreachPercent(*this, info);
+	payload.legacyPhysicalDamageReductionIgnorePercent = std::min(100, existingProtectionIgnore + sequenceProtectionIgnore);
 	payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent
-		+ newHorizonsSequenceProtection::cyclopeanBreachPercent(*this, info));
+		+ sequenceProtectionIgnore);
 	const bool finalLuckPolicy = getBattle()->getRawFinalDirectPhysicalLuckPolicy();
 	const bool luckEligible = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(info.attacker, info.physicalDamage);
 	payload.luckyStrike = info.luckyStrike && (!finalLuckPolicy || luckEligible);

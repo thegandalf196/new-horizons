@@ -87,7 +87,6 @@ set(vcmiservercommon_HEADERS
 
 		battles/BattleActionProcessor.h
 		battles/BattlePetrifyingBlood.h
-		battles/GateDrawbridgeFootprint.h
 		battles/BattleSylvanStrikeAftermath.h
 		battles/BattleCreatureKillRewards.h
 		battles/BattleWaitState.h

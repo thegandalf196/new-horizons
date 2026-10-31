@@ -42,11 +42,14 @@ private:
 	std::vector<RecipientObservation> observations;
 	std::map<uint32_t, int64_t> finalDamage;
 	int64_t soulHarvestHealthGained = 0;
+	std::map<uint32_t, int64_t> returnLandingHealthLoss;
 public:
 	explicit SelectedAttackReceipt(const AttackPossibility & preview);
 	/// Existing replay collection point: append actor AFTER collateral victims,
 	/// preserving duplicate occurrences and last-write-wins damage-map behavior.
 	void captureDamage(HypotheticBattle & branch);
+	/// Legacy no-strike receipt lowering only; preserves ordered damage/death/rebirth transitions.
+	void applyFallbackDamage(HypotheticBattle & branch);
 	const auto & affectedUnits() const { return recipients; }
 	const auto & healthObservations() const { return observations; }
 	const auto & sourceOwner() const { return queryOwner; }

@@ -17,6 +17,7 @@
 #include "AerialRetaliationProjection.h"
 #include "AttackPossibility.h"
 #include "MeleeSpecialtyProjection.h"
+#include "CoordinatedMarkProjection.h"
 #include "PetrifyingBloodValue.h"
 #include "SerpentBindingDeathPreview.h"
 #include "AttackHealthAftermath.h"
@@ -1908,39 +1909,9 @@ AttackPossibility AttackPossibility::evaluate(
 		}
 		dreadCavalryAI::finish(ap, dreadCandidate, vanishKill);
 		if(projectsRainOfArrows && projectedRainPrimaryDamage > 0 && fortunePreview)
-		{
-			const auto * secondary = attackPreview::rainSecondary(*fortunePreview,
-				ap.attackerState.get(), requestedDefender, rainPrimaryFootprint);
-			const int64_t proposedDamage = projectedRainPrimaryDamage
-				* newHorizonsArchery::RAIN_OF_ARROWS_DAMAGE_PERCENT / 100;
-			if(secondary && proposedDamage > 0)
-			{
-				auto secondaryState = fortunePreview->getForUpdate(secondary->unitId());
-				int64_t actualDamage = proposedDamage;
-				const auto rainProvenance = battleAIDamageProvenance(
-					ap.attackerState.get(), attackInfo.physicalDamage);
-				const auto projectedRainDamage = battleAIProjectDamage(
-					secondaryState.get(), actualDamage, rainProvenance);
-				ap.defenderDamageReduce += calculateDamageReduce(ap.attackerState.get(), secondaryState.get(),
-					projectedRainDamage.healthLoss, damageCache, state);
-				const bool serpentWasAlive = mayReleaseSerpents() && secondaryState->alive();
-				if(projectsSylvanTactics && rainProvenance == battle::DamageProvenance::PHYSICAL_CREATURE)
-				{
-					BattleAttackInfo collateral(ap.attackerState.get(), secondaryState.get(), 0, true);
-					collateral.secondaryAttack = true;
-					tactics.damage(*state, collateral, *secondaryState, actualDamage, rainProvenance);
-					tactics.finish(ap.attackerState->unitId());
-					ap.tacticsSecondaryHits.push_back({ap.attackerState->unitId(), secondaryState->unitId(), proposedDamage});
-				}
-				else
-					newHorizonsForestAmbush::damageFromAttack(*state, *secondaryState, actualDamage, rainProvenance);
-				serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *secondaryState,
-					serpentWasAlive, serpentSourceDeaths);
-				if(!vstd::contains_if(ap.affectedUnits, [secondaryState](const auto & affected)
-					{ return affected->unitId() == secondaryState->unitId(); }))
-					ap.affectedUnits.push_back(std::move(secondaryState));
-			}
-		}
+			attackPreview::completeRainCollateral(ap, state, fortunePreview, damageCache, tactics, serpentSourceDeaths,
+				{requestedDefender, rainPrimaryFootprint, projectedRainPrimaryDamage, attackInfo.physicalDamage,
+					projectsSylvanTactics, rootMayHaveSerpents});
 
 #if BATTLE_TRACE_LEVEL>=2
 		logAi->trace("BattleAI AP: %s -> %s at %d from %d, affects %d units: d:%lld a:%lld c:%lld s:%lld",
@@ -1954,6 +1925,9 @@ AttackPossibility AttackPossibility::evaluate(
 			serpentBindingAI::completeDeathPreview(state, *serpentParent, ap, serpentSourceDeaths, fortunePreview);
 
 		stingOpportunities.complete(ap, fortunePreview ? fortunePreview : state, damageCache);
+		coordinatedMarkAI::prepareReturn(ap, dreadAction.before.pending
+			? std::max(0, dreadAction.movementBudget - dreadAction.movementCost)
+			: std::numeric_limits<int>::max(), damageCache);
 		petrifyingBloodAI::complete(ap, state, petrifyingBloodPending, aerial.has_value(), damageCache);
 		meleeSpecialtyAI::complete(ap);
 

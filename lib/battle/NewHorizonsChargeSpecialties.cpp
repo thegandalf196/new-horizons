@@ -95,7 +95,8 @@ newHorizonsOrdinaryStrike::EffectPlan lanceFormation(const CBattleInfoCallback &
 		return result;
 	const int maximum = companion(battle, *attack.attacker, "lanceFormationMaximumDefense", 100);
 	int amount = defenseFromCharge(attack.chargeDistance, perHex, maximum);
-	for(const auto & existing : *attack.attacker->getUnstackedBonuses(CSelector(isLanceFormation)))
+	const auto formations = attack.attacker->getUnstackedBonuses(CSelector(isLanceFormation));
+	for(const auto & existing : *formations)
 	{
 		result.remove.push_back(*existing);
 		amount = std::max(amount, existing->val);

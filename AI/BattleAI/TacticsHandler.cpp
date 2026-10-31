@@ -96,7 +96,8 @@ bool TacticsHandler::canHandle() const
 			if(static_cast<float>(CalcStackValue(stack)) / myArmyValue < settings.vipThreshold)
 				return false;
 
-			for(const auto & bonus : *stack->getBonusesOfType(BonusType::SPELL_LIKE_ATTACK))
+			const auto spellLikeAttacks = stack->getBonusesOfType(BonusType::SPELL_LIKE_ATTACK);
+			for(const auto & bonus : *spellLikeAttacks)
 			{
 				const auto spellID = bonus->subtype.as<SpellID>();
 				if(spellID == SpellID::FIREBALL || (spellID == SpellID::DEATH_CLOUD && !immuneToDeathCloud))

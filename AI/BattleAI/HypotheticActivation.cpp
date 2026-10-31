@@ -91,7 +91,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	{
 		auto forUpdate = getForUpdate(unit->unitId());
 		// Capture pauses before timed bonuses age, matching the live round hook.
-		const bool formPaused = battle::battleFormDurationPaused(*forUpdate);
+		const bool formPaused = forUpdate->hasBattleForm() && battle::battleFormDurationPaused(*forUpdate);
 		if(!firstRound && !formPaused && forUpdate->hasBattleForm()
 			&& forUpdate->getBattleFormRoundsRemaining() <= 1)
 			pendingFormRestoration.push_back(unit->unitId());

@@ -6,6 +6,7 @@
  */
 #include "StdInc.h"
 #include "ProjectedBonusGraph.h"
+#include "BonusSourceRelationRecipe.h"
 #include <stdexcept>
 
 void ProjectedBonusGraph::prepareRelation(const CBonusSystemNode & node, const CBonusSystemNode & parent)
@@ -22,15 +23,9 @@ void ProjectedBonusGraph::prepareRelation(const CBonusSystemNode & node, const C
 void ProjectedBonusGraph::redDescendantRelation(const CBonusSystemNode & source,
 	const CBonusSystemNode & destination, bool attach)
 {
-	for(const auto & bonus : values(source).exported)
-		if(bonus->propagator)
-			propagate(destination, source, bonus, !attach);
-	TCNodes ancestors;
-	bonusRedAncestors(*this, source, ancestors);
-	for(const auto * ancestor : ancestors)
-		for(const auto & bonus : values(*ancestor).exported)
-			if(bonus->propagator)
-				propagate(destination, source, bonus, !attach);
+	forEachPropagatingSourceRecord(*this, source,
+		[this](const CBonusSystemNode & node) -> const BonusList & { return values(node).exported; },
+		[&](const auto & bonus) { propagate(destination, source, bonus, !attach); });
 }
 
 void ProjectedBonusGraph::sourceRelation(const CBonusSystemNode & node, const CBonusSystemNode & source, bool attach)

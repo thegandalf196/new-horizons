@@ -18,6 +18,31 @@
 #include "HypotheticBattle.h"
 #include "StackWithBonuses.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
+BattleScore battleExchangeAftermath::finalizeExchangeScore(BattleScore score,
+	int simulationTurnsCount, int totalTurnsCount, int turn)
+{
+	if(simulationTurnsCount < totalTurnsCount)
+	{
+		float scalingRatio = simulationTurnsCount / static_cast<float>(totalTurnsCount);
+
+		score.enemyDamageReduce *= scalingRatio;
+		score.ourDamageReduce *= scalingRatio;
+	}
+
+	if(turn > 0)
+	{
+		auto turnMultiplier = 1 - std::min(0.2, 0.05 * turn);
+
+		score.enemyDamageReduce *= turnMultiplier;
+	}
+
+#if BATTLE_TRACE_LEVEL>=1
+	logAi->trace("Exchange score: enemy: %2f, our -%2f", score.enemyDamageReduce, score.ourDamageReduce);
+#endif
+
+	return score;
+}
+
 void BattleExchangeVariant::accountForNewElementalRebirthSpawns(
 	const std::set<uint32_t> & idsBefore, const battle::Unit * referenceActor,
 	const bool referenceActorIsOurs, DamageCache & damageCache,
@@ -204,13 +229,13 @@ void battleExchangeAftermath::applyPrimaryStatuses(HypotheticBattle & battle,
 }
 
 void BattleExchangeVariant::completeSelectedAttack(const AttackPossibility & ap,
-	const std::shared_ptr<HypotheticBattle> & hb, StackWithBonuses & attacker, BattleHex originalPosition,
+	const std::shared_ptr<HypotheticBattle> & hb, StackWithBonuses & attacker, BattleHex originalPosition, bool returnCommitted,
 	const std::optional<HypotheticBattle::ManaLeechReplay> & manaLeechReplay,
 	const std::set<uint32_t> & rebirthSpawnIdsBefore, size_t primalBurstFirstNewHit,
 	PlayerColor referenceController, DamageCache & damageCache)
 {
-	bool returned = false;
-	if(!ap.attack.shooting && ap.from.isValid() && attacker.alive()
+	bool returned = returnCommitted;
+	if(!ap.coordinatedReturnHandled && !ap.attack.shooting && ap.from.isValid() && attacker.alive()
 		&& attacker.hasBonusOfType(BonusType::RETURN_AFTER_STRIKE)
 		&& !attacker.hasBonusOfType(BonusType::NOT_ACTIVE)
 		&& !attacker.hasBonusOfType(BonusType::BIND_EFFECT))

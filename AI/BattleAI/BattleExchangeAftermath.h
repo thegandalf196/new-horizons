@@ -14,8 +14,11 @@ struct FortuneStrikeProjection;
 #include <vector>
 #include <utility>
 struct BattleAttackInfo;
+struct BattleScore;
 namespace battleExchangeAftermath
 {
+/// Existing post-exchange horizon/turn scoring, after all round/lifecycle work.
+BattleScore finalizeExchangeScore(BattleScore score, int simulationTurnsCount, int totalTurnsCount, int turn);
 void replayPrimaryStatuses(HypotheticBattle & battle, const BattleAttackInfo & attack,
 	const FortuneStrikeProjection & strike, const std::vector<std::pair<uint32_t, int64_t>> & actualHits,
 	bool binding, bool gaze, int64_t primaryBodyHealthLoss);

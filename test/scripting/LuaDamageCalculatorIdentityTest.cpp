@@ -19,7 +19,7 @@ using Identity = scripting::LuaImplementationIdentity;
 Patches canonicalPatches()
 {
 	Patches result;
-	for(const auto & path : {"damage/siegeWeapon", "damage/magicElemental", "damage/psychicElemental",
+	for(const auto & path : {"damage/physicalProtection", "damage/siegeWeapon", "damage/magicElemental", "damage/psychicElemental",
 		"damage/vulnerableFromBack", "damage/hatesTrait", "damage/revenge",
 		"damage/enemyAttackReduction", "damage/damageReceivedCap"})
 		result.emplace_back("core", path);
@@ -48,12 +48,12 @@ public:
 };
 }
 
-TEST(LuaDamageCalculatorIdentity, CompleteOrderedNineLayerChainRequiresSuccessfulInitialization)
+TEST(LuaDamageCalculatorIdentity, CompleteOrderedTenLayerChainRequiresSuccessfulInitialization)
 {
 	scripting::LuaModule host;
 	const auto script = calculator(host, canonicalPatches());
-	ASSERT_EQ(script->layers.size(), 9);
-	ASSERT_EQ(script->getPatchDeclarations().size(), 8);
+	ASSERT_EQ(script->layers.size(), 10);
+	ASSERT_EQ(script->getPatchDeclarations().size(), 9);
 	auto identity = Identity::fromScript(*script);
 	EXPECT_FALSE(identity.hasCanonicalDamageCalculator());
 	identity.finish(true);
@@ -64,7 +64,7 @@ TEST(LuaDamageCalculatorIdentity, CompleteOrderedNineLayerChainRequiresSuccessfu
 TEST(LuaDamageCalculatorIdentity, AnyChangedLayerFailsClosedIncludingWhitespace)
 {
 	scripting::LuaModule host;
-	for(size_t index = 0; index < 9; ++index)
+	for(size_t index = 0; index < 10; ++index)
 	{
 		auto script = calculator(host, canonicalPatches());
 		script->layers[index].sourceText += "\n";
@@ -76,7 +76,7 @@ TEST(LuaDamageCalculatorIdentity, MissingExtraReorderedOrRelabeledLoadedLayersRe
 {
 	scripting::LuaModule host;
 	auto missing = calculator(host, canonicalPatches());
-	missing->layers.erase(missing->layers.begin() + 3);
+	missing->layers.erase(missing->layers.begin() + 1);
 	EXPECT_FALSE(attests(*missing));
 	auto extra = calculator(host, canonicalPatches());
 	extra->layers.push_back(extra->layers.back());
@@ -85,7 +85,7 @@ TEST(LuaDamageCalculatorIdentity, MissingExtraReorderedOrRelabeledLoadedLayersRe
 	std::swap(reordered->layers[1], reordered->layers[2]);
 	EXPECT_FALSE(attests(*reordered));
 	auto relabeled = calculator(host, canonicalPatches());
-	relabeled->layers[1].identifier = "mod:SCRIPTS/DAMAGE/SIEGEWEAPON";
+	relabeled->layers[1].identifier = "mod:SCRIPTS/DAMAGE/PHYSICALPROTECTION";
 	EXPECT_FALSE(attests(*relabeled));
 }
 
@@ -119,8 +119,8 @@ TEST(LuaDamageCalculatorIdentity, MissingDeclaredPatchCannotBeHiddenBySkippedLoa
 	auto patches = canonicalPatches();
 	patches.emplace_back("core", "forecastIdentityDeliberatelyMissingPatch");
 	auto script = calculator(host, patches);
-	ASSERT_EQ(script->layers.size(), 9);
-	ASSERT_EQ(script->getPatchDeclarations().size(), 9);
+	ASSERT_EQ(script->layers.size(), 10);
+	ASSERT_EQ(script->getPatchDeclarations().size(), 10);
 	EXPECT_FALSE(attests(*script));
 }
 

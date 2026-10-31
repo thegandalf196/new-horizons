@@ -45,7 +45,12 @@ void ProjectedBonusGraph::capture(const CBonusSystemNode & node)
 				continue;
 			auto value = PreparedBonusGraphStorage::read(*next);
 			PreparedBonusGraphStorage::validate(value);
-			entries.emplace(next, Entry{value, value, next->getTreeVersion()});
+			auto current = value;
+			if(!durationAliases.empty()) // Ordinary capture retains its old copy-only path.
+				for(auto * list : {&current.accepted, &current.exported})
+					for(size_t i = 0; i < list->size(); ++i)
+						(*list)[i] = currentDurationRecord((*list)[i]);
+			entries.emplace(next, Entry{value, std::move(current), next->getTreeVersion()});
 			pending.insert(pending.end(), value.parents.begin(), value.parents.end());
 			pending.insert(pending.end(), value.propagatingParents.begin(), value.propagatingParents.end());
 			pending.insert(pending.end(), value.children.begin(), value.children.end());

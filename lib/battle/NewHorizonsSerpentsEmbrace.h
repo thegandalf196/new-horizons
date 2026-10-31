@@ -4,6 +4,7 @@
  */
 #pragma once
 #include "../bonuses/Bonus.h"
+#include "Unit.h"
 #include <optional>
 #include <vector>
 namespace battle { class Unit; class CUnitState; }
@@ -16,6 +17,18 @@ DLL_LINKAGE bool qualifiesAttack(const CBattleInfoCallback & battle, const battl
 	const battle::Unit * primary, bool ranged, bool physical, bool secondary);
 /// New packet applications require both living, distinct unit identities.
 DLL_LINKAGE void validateApplication(const IBattleInfo & battle, uint32_t targetId, const Bonus & bonus);
+DLL_LINKAGE std::optional<uint32_t> validatedApplicationSource(const Bonus & bonus);
+DLL_LINKAGE void validateApplicationUnits(const IBattleInfo & battle, uint32_t sourceId, uint32_t targetId,
+	const battle::Units & sources, const battle::Units & targets);
+template<typename UnitLookup>
+void validateApplicationWithLookup(const IBattleInfo & battle, uint32_t targetId, const Bonus & bonus, UnitLookup && lookup)
+{
+	const auto source = validatedApplicationSource(bonus);
+	if(!source) return;
+	const auto sources = lookup(*source);
+	const auto targets = lookup(targetId);
+	validateApplicationUnits(battle, *source, targetId, sources, targets);
+}
 /// Recognition is cheap; sourceId validates structure/provenance without library access.
 /// Exact registered hero identity is checked only at loaded battle admission.
 DLL_LINKAGE bool isMarker(const Bonus & bonus) noexcept;

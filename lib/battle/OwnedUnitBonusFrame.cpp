@@ -20,14 +20,20 @@ namespace battle
 OwnedUnitBonusFrame::Data::Data(Identity id, std::shared_ptr<const OwnedUnitCreatureResolver> types,
 	std::shared_ptr<const OwnedRecipientBonusGraph> raw, std::map<CreatureID, FormSources> sources,
 	std::vector<size_t> spells, OwnedUnitEnvironment::Facts metadata,
-	std::vector<std::shared_ptr<const Unit>> units, size_t position, recipientBonusOverlay::Layer effects)
+	std::vector<std::shared_ptr<const Unit>> units, size_t position, recipientBonusOverlay::Layer effects, const std::optional<std::vector<PeerInput>> & peerSources, const Data * inheritedPeers)
 	: creatures(std::move(types)), identity(id), graph(std::move(raw)), forms(std::move(sources)),
 	 sourceLocalSpells(std::move(spells)), environment(std::move(metadata)), peers(std::move(units)),
-	 recipientPosition(position), ledger(std::move(effects)), info(*this), view(*this)
+	 recipientPosition(position), ledger(std::move(effects)),
+	 peerQueries((peerSources || (inheritedPeers && inheritedPeers->peerQueries)) ? std::make_optional<std::vector<std::shared_ptr<Peer>>>() : std::nullopt),
+	 info(identity, creatures), view(*this)
 {
 	validate();
 	subject = std::make_shared<CUnitStateDetached>(&info, &view);
-	auto roster = peers; roster.at(recipientPosition) = subject;
+	if(peerSources && inheritedPeers) throw std::invalid_argument("Peer construction cannot mix native inputs and an owned fork");
+	auto roster = peerSources ? buildPeers(*peerSources)
+		: inheritedPeers && inheritedPeers->peerQueries ? copyPeers(*inheritedPeers) : peers;
+	if(peerQueries) roster.insert(roster.begin() + recipientPosition, subject);
+	else roster.at(recipientPosition) = subject;
 	env = std::make_unique<OwnedUnitEnvironment>(std::move(roster), environment);
 	for(const auto index : graph->rootLocalRecords())
 	{
@@ -43,17 +49,20 @@ void OwnedUnitBonusFrame::Data::validate() const
 		|| (identity.side != BattleSide::ATTACKER && identity.side != BattleSide::DEFENDER))
 		throw std::invalid_argument("Incomplete owned unit frame identity/context");
 	if(!environment.colors.at(identity.side) || *environment.colors.at(identity.side) != identity.owner
-		|| recipientPosition >= peers.size() || peers[recipientPosition])
+		|| (!peerQueries && (recipientPosition >= peers.size() || peers[recipientPosition])))
 		throw std::invalid_argument("Owned frame requires explicit exact affiliation/recipient roster slot");
 	for(size_t i = 0; i < peers.size(); ++i)
 		if(i != recipientPosition && !peers[i]) throw std::invalid_argument("Missing owned environment peer occurrence");
 	for(const auto & [id, sources] : forms)
 	{
 		const auto * type = creatures->creature(id);
-		for(const auto * query : {&sources.full, &sources.native})
+		for(const bool native : {false, true})
 		{
-			graph->validateRootQuery(*query);
-			const auto & facts = query->facts;
+			const auto & selected = sourceGraph(sources, native);
+			if(!samePayloadOwner(*graph, selected)) throw std::invalid_argument("Owned form variants require one captured alias pool");
+			const auto & query = native ? sources.native : sources.full;
+			selected.validateRootQuery(query);
+			const auto & facts = query.facts;
 			if(facts.nodeType != BonusNodeType::STACK_BATTLE || !facts.acceptance || !facts.creatureContext
 				|| !facts.creatureContext->creature || facts.creatureContext->creature->id != id
 				|| facts.creatureContext->creature->level != type->getLevel()
@@ -64,7 +73,7 @@ void OwnedUnitBonusFrame::Data::validate() const
 	}
 	for(const auto index : sourceLocalSpells)
 	{
-		auto query = forms.at(identity.originalCreature).full; query.records = {index}; graph->validateRootQuery(query);
+		OwnedUnitBonusFrame::validateRecord(*graph, index);
 		if(graph->payload(index)->source != BonusSource::SPELL_EFFECT)
 			throw std::invalid_argument("Owned spell export handle is not a raw spell record");
 	}
@@ -86,16 +95,47 @@ void OwnedUnitBonusFrame::Data::validateSnapshot(const JsonNode & snapshot) cons
 }
 std::shared_ptr<OwnedUnitBonusFrame> OwnedUnitBonusFrame::fromOwnedInputs(Inputs inputs)
 {
-	if(!inputs.state.isStruct() || !inputs.state["state"].isStruct() || !inputs.state["state"]["health"].isStruct())
+	return build(std::move(inputs), nullptr);
+}
+std::shared_ptr<OwnedUnitBonusFrame> OwnedUnitBonusFrame::fromOwnedInputs(Inputs inputs, const CUnitState & values)
+{
+	return build(std::move(inputs), &values);
+}
+std::shared_ptr<OwnedUnitBonusFrame> OwnedUnitBonusFrame::build(Inputs inputs, const CUnitState * values,
+	std::shared_ptr<const OwnedRecipientBonusGraph> capturedRoot)
+{
+	if(!values && (!inputs.state.isStruct() || !inputs.state["state"].isStruct() || !inputs.state["state"]["health"].isStruct()))
 		throw std::invalid_argument("Owned frame requires a full captured state snapshot");
 	auto result = std::shared_ptr<OwnedUnitBonusFrame>(new OwnedUnitBonusFrame);
-	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs(std::move(inputs.nodes), inputs.root, std::move(inputs.extraRecords));
+	if(capturedRoot && (!inputs.nodes.empty() || !inputs.extraRecords.empty() || inputs.captureCodec))
+		throw std::invalid_argument("Captured batch root cannot mix raw or codec inputs");
+	std::shared_ptr<const OwnedRecipientBonusGraph> graph = std::move(capturedRoot);
+	if(!graph) graph = inputs.captureCodec
+		? OwnedRecipientBonusGraph::fromOwnedInputs(std::move(inputs.nodes), inputs.root, std::move(inputs.extraRecords), *inputs.captureCodec)
+		: OwnedRecipientBonusGraph::fromOwnedInputs(std::move(inputs.nodes), inputs.root, std::move(inputs.extraRecords));
 	result->data = std::make_unique<Data>(inputs.identity, std::move(inputs.creatures), std::move(graph),
 		std::move(inputs.forms), std::move(inputs.sourceLocalSpells), std::move(inputs.environment),
-		std::move(inputs.environmentUnits), inputs.recipientPosition, emptyLedger());
-	result->data->validateSnapshot(inputs.state);
-	result->data->subject->load(inputs.state);
+		std::move(inputs.environmentUnits), inputs.recipientPosition, emptyLedger(), inputs.peerInputs);
+	if(values)
+	{
+		result->data->validateValues(*values);
+		*result->data->subject = *values; // Existing canonical scalar inventory only; never copy provider/env/cache owners.
+	}
+	else
+	{
+		result->data->validateSnapshot(inputs.state);
+		result->data->subject->load(inputs.state);
+	}
 	return result;
+}
+bool OwnedUnitBonusFrame::samePayloadOwner(const OwnedRecipientBonusGraph & left, const OwnedRecipientBonusGraph & right)
+{
+	return left.payloads.get() == right.payloads.get() && !left.payloads.owner_before(right.payloads)
+		&& !right.payloads.owner_before(left.payloads);
+}
+void OwnedUnitBonusFrame::validateRecord(const OwnedRecipientBonusGraph & graph, size_t index)
+{
+	graph.validateRecord(index);
 }
 OwnedUnitBonusFrame::~OwnedUnitBonusFrame() = default;
 const CUnitState & OwnedUnitBonusFrame::unit() const { return *data->subject; }
@@ -107,7 +147,7 @@ void OwnedUnitBonusFrame::load(const JsonNode & snapshot)
 }
 void OwnedUnitBonusFrame::Data::requireRecord(size_t index) const
 {
-	auto query = forms.at(identity.originalCreature).full; query.records = {index}; graph->validateRootQuery(query);
+	OwnedUnitBonusFrame::validateRecord(*graph, index);
 	const auto & record = graph->payload(index);
 	if(record->propagator || record->propagationUpdater)
 		throw std::invalid_argument("Recipient-local edits cannot invent propagation changes");
@@ -127,9 +167,32 @@ std::shared_ptr<OwnedUnitBonusFrame> OwnedUnitBonusFrame::fork() const
 {
 	auto result = std::shared_ptr<OwnedUnitBonusFrame>(new OwnedUnitBonusFrame);
 	result->data = std::make_unique<Data>(data->identity, data->creatures, data->graph, data->forms,
-		data->sourceLocalSpells, data->environment, data->peers, data->recipientPosition, data->ledger);
+		data->sourceLocalSpells, data->environment, data->peers, data->recipientPosition, data->ledger, std::nullopt, data.get());
 	*result->data->subject = static_cast<const CUnitState &>(*data->subject); // Canonical value copy; owners remain private/exact.
 	return result;
+}
+bool OwnedUnitBonusFrame::hasSameQueryState(const OwnedUnitBonusFrame & other) const
+{
+	const auto & left = *data; const auto & right = *other.data;
+	// Opaque peer recipes/scalars are private and copied exactly by fork; legacy external peers are not.
+	if(bool(left.peerQueries) != bool(right.peerQueries)) return false;
+	if(left.peerQueries)
+	{
+		if(left.recipientPosition != right.recipientPosition || left.peerQueries->size() != right.peerQueries->size()) return false;
+	}
+	else if(left.peers.size() != 1 || right.peers.size() != 1 || left.recipientPosition != 0 || right.recipientPosition != 0
+		|| left.peers.front() || right.peers.front()) return false;
+	if(left.graph.get() != right.graph.get() || left.graph.owner_before(right.graph) || right.graph.owner_before(left.graph)
+		|| left.creatures.get() != right.creatures.get() || left.creatures.owner_before(right.creatures)
+		|| right.creatures.owner_before(left.creatures)) return false;
+	const auto supported = [](const recipientBonusOverlay::Layer & layer)
+	{
+		return layer.added.empty() && layer.updated.empty() && !layer.stackedSnapshot && !layer.unstackedSnapshot
+			&& !layer.veteranCohesionEarned;
+	};
+	if(!supported(left.ledger) || !supported(right.ledger)) return false;
+	return left.ledger.removed == right.ledger.removed && left.ledger.capturedGroups == right.ledger.capturedGroups
+		&& save() == other.save();
 }
 OwnedUnitBonusFrame::Scratch::Scratch(std::shared_ptr<const OwnedUnitBonusFrame> frame,
 	std::unique_ptr<OwnedUnitEnvironment> env, std::shared_ptr<CUnitState> unit)

@@ -20,6 +20,7 @@
 #include "mapObjects/CGHeroInstance.h" // for commander serialization
 
 #include "battle/CUnitState.h"
+#include "battle/StackFormSourceIdentity.h"
 #include "battle/UnitQueryTerrain.h"
 #include "battle/NewHorizonsBloodrage.h"
 
@@ -34,6 +35,7 @@ class DLL_LINKAGE CStack : public CBonusSystemNode, public battle::CUnitState, p
 {
 private:
 	friend class ProjectedBonusGraph;
+	friend battle::StackFormSourceIdentity battle::stackFormSourceIdentity(const CStack & stack);
 	friend class battle::PreparedStackStateTransfer;
 	friend class battle::PreparedBattleUnitRoots;
 	ui32 ID = -1; //unique ID of stack

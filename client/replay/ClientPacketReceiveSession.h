@@ -6,6 +6,7 @@
 #pragma once
 #include "ClientReceiveAccess.h"
 #include "ClientReplaySessionReadiness.h"
+#include "../../lib/constants/EntityIdentifiers.h"
 
 class CServerHandler;
 class CClient;
@@ -13,6 +14,7 @@ class GameEngine;
 class GameConnection;
 class INetworkConnection;
 struct CPackForClient;
+struct OwnedRecipientCaptureMetadata;
 
 /// Native receive-stack owner, created ONLY at onPacketReceived's real lock site.
 /// Captured identities are not an arbitrary lifetime lease: actual ENGINE and
@@ -30,6 +32,7 @@ class ClientPacketReceiveSession final : private ClientReplaySessionReadiness
 	CClient * const client;
 	NetworkLagCompensator * const predictions;
 	CGameState * const world;
+	std::weak_ptr<CGameState> sourceWorld; // Original ownership identity, not a long world lease.
 	CPackForClient * activePacket = nullptr;
 	// LAST: child/native/state retirement then interface unlock BEFORE identities.
 	ClientReceiveAccess access;
@@ -38,6 +41,8 @@ class ClientPacketReceiveSession final : private ClientReplaySessionReadiness
 public:
 	~ClientPacketReceiveSession() override;
 	void visitForClient(CPackForClient & packet);
+	/// UNUSED partial capture: owned observable metadata only, never a query/dispatch permit.
+	OwnedRecipientCaptureMetadata captureRecipientMetadata(PlayerColor observer, BattleID battle, uint32_t unit);
 	bool ready(const BattleUnitsChanged & packet) const noexcept override;
 	/// Opt-in only; normal dispatch below is unchanged until all lag programs exist.
 	/// Borrowed result stays owned by this receive stack, not an escaping unique_ptr.

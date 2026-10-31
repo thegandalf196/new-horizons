@@ -128,6 +128,16 @@ void requireModifierDAG(const Inventory & source)
 				if(child) edges[i].push_back(source.limiterIndex.at(child.get()));
 	requireAcyclic(edges);
 }
+Inventory inspect(const std::vector<std::shared_ptr<const Bonus>> & roots)
+{
+	Inventory source;
+	for(const auto & root : roots) source.add(root);
+	source.inspectBonuses();
+	source.inspectUpdaters();
+	source.inspectLimiters();
+	requireModifierDAG(source); // Before AggregateLimiter codec preflights can recurse.
+	return source;
+}
 template<typename T>
 void requireSame(const std::vector<std::shared_ptr<const T>> & source, const std::vector<std::shared_ptr<T>> & clone)
 {
@@ -141,16 +151,22 @@ void requireSame(const std::vector<std::shared_ptr<const T>> & source, const std
 			throw std::logic_error("Owned payload clone identity mismatch");
 }
 }
+void ownedBonusPayloads::validateTypesAndTopology(const std::vector<std::shared_ptr<const Bonus>> & roots)
+{
+	(void)inspect(roots);
+}
 std::unique_ptr<ownedBonusPayloads::Captured> ownedBonusPayloads::copy(
 	const std::vector<std::shared_ptr<const Bonus>> & roots)
 {
-	Inventory source;
-	for(const auto & root : roots) source.add(root);
-	source.inspectBonuses();
-	source.inspectUpdaters();
-	source.inspectLimiters();
-	requireModifierDAG(source); // Before AggregateLimiter codec preflights can recurse.
+	return copy(roots, OwnedBonusCaptureCodec::current());
+}
+std::unique_ptr<ownedBonusPayloads::Captured> ownedBonusPayloads::copy(
+	const std::vector<std::shared_ptr<const Bonus>> & roots, const OwnedBonusCaptureCodec & codec)
+{
+	const auto source = inspect(roots);
 	CMemorySerializer memory; // One identity map for every raw list and nested payload; no callback.
+	memory.oser.version = codec.version();
+	memory.iser.version = codec.version();
 	memory.oser & source.bonuses;
 	memory.oser & source.updaters;
 	memory.oser & source.limiters;

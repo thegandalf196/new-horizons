@@ -58,6 +58,34 @@ void requireCapturedLimiterDomain(const TLimiterPtr & root)
 			throw std::invalid_argument("Owned current position/adjacency frame is not bound");
 	}
 }
+struct RawInput
+{
+	std::vector<std::shared_ptr<const Bonus>> records;
+	size_t localCount;
+};
+RawInput inspectInput(const OwnedRecipientBonusGraph::CaptureInput & input)
+{
+	validateTopology(input.nodes, input.root);
+	std::vector<std::shared_ptr<const Bonus>> raw;
+	for(const auto & node : input.nodes)
+	{
+		node.facts.validate();
+		for(const auto & value : node.local)
+		{
+			if(!value) throw std::invalid_argument("Null owned bonus local record");
+			requireCapturedLimiterDomain(value->limiter);
+			raw.push_back(value);
+		}
+	}
+	const auto localCount = raw.size();
+	for(const auto & value : input.extraRecords)
+	{
+		if(!value) throw std::invalid_argument("Null owned extra bonus record");
+		requireCapturedLimiterDomain(value->limiter);
+		raw.push_back(value);
+	}
+	return {std::move(raw), localCount};
+}
 }
 struct OwnedRecipientBonusGraph::Node final : CBonusSystemNode
 {
@@ -73,29 +101,52 @@ OwnedRecipientBonusGraph::~OwnedRecipientBonusGraph() = default;
 std::unique_ptr<OwnedRecipientBonusGraph> OwnedRecipientBonusGraph::fromOwnedInputs(
 	std::vector<NodeInput> inputs, size_t root, std::vector<std::shared_ptr<const Bonus>> extraRecords)
 {
-	validateTopology(inputs, root);
+	return fromOwnedInputs(std::move(inputs), root, std::move(extraRecords), OwnedBonusCaptureCodec::current());
+}
+std::unique_ptr<OwnedRecipientBonusGraph> OwnedRecipientBonusGraph::fromOwnedInputs(
+	std::vector<NodeInput> inputs, size_t root, std::vector<std::shared_ptr<const Bonus>> extraRecords,
+	const OwnedBonusCaptureCodec & codec)
+{
+	std::vector<CaptureInput> batch;
+	batch.push_back({std::move(inputs), root, std::move(extraRecords)});
+	auto result = fromOwnedBatchInputs(std::move(batch), codec);
+	return std::move(result.front());
+}
+std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> OwnedRecipientBonusGraph::fromOwnedBatchInputs(std::vector<CaptureInput> inputs)
+{
+	return fromOwnedBatchInputs(std::move(inputs), OwnedBonusCaptureCodec::current());
+}
+std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> OwnedRecipientBonusGraph::fromOwnedBatchInputs(
+	std::vector<CaptureInput> inputs, const OwnedBonusCaptureCodec & codec)
+{
+	if(inputs.empty()) throw std::invalid_argument("Missing owned graph capture batch");
 	std::vector<std::shared_ptr<const Bonus>> raw;
+	std::vector<std::pair<size_t, size_t>> sizes;
 	for(const auto & input : inputs)
 	{
-		input.facts.validate();
-		for(const auto & value : input.local)
-		{
-			if(!value) throw std::invalid_argument("Null owned bonus local record");
-			requireCapturedLimiterDomain(value->limiter);
-			raw.push_back(value);
-		}
+		auto value = inspectInput(input); sizes.emplace_back(value.localCount, value.records.size());
+		raw.insert(raw.end(), value.records.begin(), value.records.end());
 	}
-	const auto localCount = raw.size();
-	for(const auto & value : extraRecords)
+	std::shared_ptr<ownedBonusPayloads::Captured> pool(ownedBonusPayloads::copy(raw, codec));
+	std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> result;
+	size_t start = 0;
+	for(size_t i = 0; i < inputs.size(); ++i)
 	{
-		if(!value) throw std::invalid_argument("Null owned extra bonus record");
-		requireCapturedLimiterDomain(value->limiter);
-		raw.push_back(value);
+		result.push_back(build(std::move(inputs[i]), pool, start, sizes[i].first, sizes[i].second));
+		start += sizes[i].second;
 	}
+	return result;
+}
+std::unique_ptr<OwnedRecipientBonusGraph> OwnedRecipientBonusGraph::build(CaptureInput input,
+	std::shared_ptr<ownedBonusPayloads::Captured> pool, size_t start, size_t localCount, size_t recordCount)
+{
 	auto result = std::unique_ptr<OwnedRecipientBonusGraph>(new OwnedRecipientBonusGraph);
-	result->payloads = ownedBonusPayloads::copy(raw);
+	result->payloads = std::move(pool);
+	const auto & records = result->payloads->roots();
+	result->recordValues.assign(records.begin() + start, records.begin() + start + recordCount);
 	result->localPayloadCount = localCount;
-	result->rootIndex = root;
+	result->rootIndex = input.root;
+	const auto root = input.root; const auto & inputs = input.nodes;
 	for(const auto & input : inputs) result->nodes.push_back(std::make_unique<Node>(input));
 	size_t offset = 0;
 	for(size_t i = 0; i < inputs.size(); ++i)
@@ -103,7 +154,7 @@ std::unique_ptr<OwnedRecipientBonusGraph> OwnedRecipientBonusGraph::fromOwnedInp
 		auto & node = *result->nodes[i];
 		if(i == root) result->rootPayloadStart = offset;
 		result->indices.emplace(&node, i);
-		for(size_t j = 0; j < inputs[i].local.size(); ++j) node.values.push_back(result->payloads->roots().at(offset++));
+		for(size_t j = 0; j < inputs[i].local.size(); ++j) node.values.push_back(result->recordValues.at(offset++));
 		for(const auto parent : inputs[i].parents) node.inheritance.push_back(result->nodes.at(parent).get());
 	}
 	for(size_t i = 0; i < result->nodes.size(); ++i)
@@ -156,8 +207,8 @@ std::vector<size_t> OwnedRecipientBonusGraph::rootLocalRecords() const
 	for(size_t i = 0; i < local(root()).size(); ++i) result.push_back(rootPayloadStart + i);
 	return result;
 }
-size_t OwnedRecipientBonusGraph::payloadCount() const { return payloads->roots().size(); }
-const std::shared_ptr<Bonus> & OwnedRecipientBonusGraph::payload(size_t index) const { return payloads->roots().at(index); }
+size_t OwnedRecipientBonusGraph::payloadCount() const { return recordValues.size(); }
+const std::shared_ptr<Bonus> & OwnedRecipientBonusGraph::payload(size_t index) const { return recordValues.at(index); }
 const CBonusSystemNode & OwnedRecipientBonusGraph::queryNode(size_t index) const { return *nodes.at(index); }
 void OwnedRecipientBonusGraph::validateRootQuery(const RootQuery & query) const
 {
@@ -171,11 +222,13 @@ void OwnedRecipientBonusGraph::validateRootQuery(const RootQuery & query) const
 		if(next == captured.end()) throw std::invalid_argument("Owned query parents must preserve captured order and multiplicity");
 		++next;
 	}
-	for(const auto index : query.records)
-	{
-		payload(index); // Bounds first; no foreign or dangling raw identities.
-		if((index < localPayloadCount && (index < rootPayloadStart || index >= rootPayloadStart + local(root()).size()))
-			|| inheritedOnlyRecords.contains(payload(index).get()))
-			throw std::invalid_argument("Inherited source record cannot become recipient-local raw input");
-	}
+	for(const auto index : query.records) validateRecord(index);
+}
+
+void OwnedRecipientBonusGraph::validateRecord(size_t index) const
+{
+	payload(index); // Bounds first; no foreign or dangling raw identities.
+	if((index < localPayloadCount && (index < rootPayloadStart || index >= rootPayloadStart + local(root()).size()))
+		|| inheritedOnlyRecords.contains(payload(index).get()))
+		throw std::invalid_argument("Inherited source record cannot become recipient-local raw input");
 }

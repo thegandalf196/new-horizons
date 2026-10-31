@@ -32,6 +32,7 @@ class CGHeroInstance;
 class CStack;
 class ISpellCaster;
 class SpellCastEnvironment;
+class ServerCallback;
 class CSpell;
 struct CObstacleInstance;
 class IBonusBearer;
@@ -317,6 +318,8 @@ public:
 	std::vector<std::shared_ptr<const CObstacleInstance>> getAllAffectedObstaclesByStack(const battle::Unit * unit, const BattleHexArray & passed) const override;
 	//Handle obstacle damage here, requires SpellCastEnvironment
 	bool handleObstacleTriggersForUnit(SpellCastEnvironment & spellEnv, const battle::Unit & unit, const BattleHexArray & passed = {}) const;
+	/// Existing visible landing hazards, evaluated through the supplied hypothetical callback.
+	bool evaluateLandingObstacleTriggersForUnit(ServerCallback & server, const battle::Unit & unit) const;
 	/// Trigger hazards on crossed footprints while the stack remains at its last
 	/// legal position (used when a friendly occupied transit tile cannot be a
 	/// committed movement segment endpoint).
@@ -437,6 +440,8 @@ public:
 	SpellCostBreakdown battleGetSpellCostBreakdown(const spells::Spell * sp, const CGHeroInstance * caster,
 		int32_t listedCostMultiplier = 1, bool metamagicFollowup = false) const;
 	ESpellCastProblem battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const; //returns true if there are no general issues preventing from casting a spell
+	/// Explicit spell identity admits only its exact callback-visible environmental trigger.
+	ESpellCastProblem battleCanCastSpell(const spells::Caster * caster, spells::Mode mode, SpellID requestedSpell) const;
 
 	/// Complete, uniformly weighted random-beneficial pool, without selecting an outcome or using RNG.
 	std::vector<SpellID> getAvailableBeneficialSpells(const battle::Unit * caster, const battle::Unit * target) const;
@@ -538,6 +543,7 @@ protected:
 	BattleHexArray getStoppers(BattleSide whichSidePerspective) const; //get hexes with stopping obstacles (quicksands)
 	std::vector<std::shared_ptr<const CObstacleInstance>> getAffectedObstaclesAtPositions(
 		const battle::Unit * unit, const BattleHexArray & positions, const BattleHexArray & passed) const;
-	bool handleObstacleTriggersForUnitWithObstacles(SpellCastEnvironment & spellEnv, const battle::Unit & unit,
+	bool handleObstacleTriggersForUnitWithObstacles(ServerCallback & server, SpellCastEnvironment * nativeEnvironment,
+		const battle::Unit & unit,
 		const std::vector<std::shared_ptr<const CObstacleInstance>> & obstacles, bool airborneTransit = false) const;
 };

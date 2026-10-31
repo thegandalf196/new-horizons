@@ -88,7 +88,8 @@ EffectPlan plan(const CBattleInfoCallback & battle, const BattleAttackInfo & att
 		return result;
 	if(auto spent = newHorizonsReactiveDefense::ironHideSpending(battle, attack))
 	{
-		for(const auto & old : *attack.defender->getUnstackedBonuses(CSelector(newHorizonsReactiveDefense::isIronHideSpent)))
+		const auto spentMarkers = attack.defender->getUnstackedBonuses(CSelector(newHorizonsReactiveDefense::isIronHideSpent));
+		for(const auto & old : *spentMarkers)
 			result.remove.push_back(*old);
 		result.add.push_back(std::move(*spent));
 	}
@@ -114,7 +115,8 @@ EffectPlan plan(const CBattleInfoCallback & battle, const BattleAttackInfo & att
 		return isStrikeEffect(existing) && existing->source == effect->source && existing->sid == effect->sid
 			&& existing->type == effect->type && existing->statusIdentity == effect->statusIdentity;
 	});
-	for(const auto & existing : *attack.defender->getUnstackedBonuses(identity))
+	const auto existingEffects = attack.defender->getUnstackedBonuses(identity);
+	for(const auto & existing : *existingEffects)
 	{
 		result.remove.push_back(*existing);
 		if(std::abs(static_cast<int64_t>(existing->val)) > std::abs(static_cast<int64_t>(effect->val)))

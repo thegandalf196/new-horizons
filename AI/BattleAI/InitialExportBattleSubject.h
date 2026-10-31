@@ -16,6 +16,7 @@ class InitialExportBattleSubject final : public BattleProxy
 {
 	std::unique_ptr<InitialExportWorld> owned;
 	InitialExportBattleSubject(Subject subject, std::unique_ptr<InitialExportWorld> world);
+	void copyValuesTo(InitialExportWorld & destination, const HypotheticBattle & branch, const InitialExportBattleSubject & source) const;
 	void copyValuesFrom(const HypotheticBattle & branch, const InitialExportBattleSubject & source) const;
 	void captureBranchValuesFrom(const HypotheticBattle & branch, const InitialExportBattleSubject & source);
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
@@ -87,5 +88,7 @@ public:
 	void remove(const HypotheticBattle & branch, uint32_t id, const CSelector & selector);
 	void recordState(const HypotheticBattle & branch, uint32_t id, int64_t delta, const JsonNode * before = nullptr);
 	void captureBranchValues(const HypotheticBattle & branch);
+	/// Explicit existing owned source only; no player-view promotion or live mutation.
+	std::unique_ptr<InitialExportWorld::EffectQueries> effectQueries(const HypotheticBattle & branch) const;
 	void advanceTimedRound(const HypotheticBattle & branch, uint32_t id, const CSelector & roundSelector);
 };

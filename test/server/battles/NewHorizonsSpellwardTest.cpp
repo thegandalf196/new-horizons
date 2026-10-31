@@ -13,6 +13,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../../lib/battle/BattleLayout.h"
 #include "../../../lib/modding/IdentifierStorage.h"
 #include "../../../lib/modding/ModScope.h"
@@ -530,6 +531,35 @@ protected:
 class MasterSpellwardAbsentTest : public MasterSpellwardTest
 {
 protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		MasterSpellwardTest::mapLoaded(loaded);
+		// This preceding-epoch world predates the separate economy captures.
+		loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
+		loaded->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
+
+		// Complete the pre-Master Spellward profile before world/hero capture.
+		auto heroes = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+		for(const auto key : {"chosenSpecialties", "ghostSpecialty", "petrifyingBloodSpecialty",
+			"livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties"})
+			heroes.Struct().erase(key);
+		heroes.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
+
+		auto magic = loaded->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+		for(const auto & [spell, clause] : {std::pair{"new-horizons:focusMagic", "focusMagic"},
+			std::pair{"core:slow", "slow"}, std::pair{"new-horizons:summonLivingArmor", "livingArmor"}})
+			magic["spells"][spell].Struct().erase(clause);
+		magic["spells"].Struct().erase("new-horizons:theChosen");
+		magic.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+
+		auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+		for(const auto key : {"sylvanTacticsPolicy", "necromancyPolicy"})
+			perks.Struct().erase(key);
+		perks.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+	}
 	bool captureMasterSpellward() const override { return false; }
 };
 }
@@ -776,4 +806,120 @@ TEST_F(MasterSpellwardAbsentTest, OlderWorldAbsenceRemainsOrdinarySpellwardWitho
 	ASSERT_NE(target, nullptr);
 	ASSERT_EQ(restoredBattle->battleGetOwnerHero(target), hero);
 	EXPECT_EQ(restoredBattle->battleGetPerkMagicalReductionBasisPoints(target), 1000);
+}
+
+namespace
+{
+class FireDamageContextProbe final : public newHorizonsMagicalAbilityDamage::FireDamageContext
+{
+	const CBattleInfoCallback & callback;
+public:
+	mutable std::vector<std::string> calls;
+	mutable std::vector<const battle::Unit *> recipients;
+	bool refuseHold = false;
+	explicit FireDamageContextProbe(const CBattleInfoCallback & source) : callback(source) {}
+	bool usesMultiplicativeMDR() const override
+	{
+		calls.push_back("mode");
+		return callback.battleUsesNewHorizonsMultiplicativeMDR();
+	}
+	int holdTheLineReductionBasisPoints(const battle::Unit & target) const override
+	{
+		calls.push_back("hold"); recipients.push_back(&target);
+		if(refuseHold) throw std::logic_error("Unsupported current Hold domain");
+		return callback.battleGetHoldTheLineMagicalReductionBasisPoints(&target);
+	}
+	int perkReductionBasisPoints(const battle::Unit & target) const override
+	{
+		calls.push_back("perk"); recipients.push_back(&target);
+		return callback.battleGetPerkMagicalReductionBasisPoints(&target);
+	}
+	void clear() const { calls.clear(); recipients.clear(); }
+};
+}
+TEST_F(NewHorizonsSpellwardTest, CurrentFireContextReadsPrivatePositionOrdersAndControllerAtEachQuery)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	(void)protectedStack->counterAttacks.total();
+	const auto nativeBefore = protectedStack->save();
+	CMemorySerializer randomBefore; randomBefore.oser & *gameHandler->randomizer;
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	SpellwardPredictionEnvironment environment(gameState()); HypotheticBattle projected(&environment, callback);
+	const auto target = projected.getForUpdate(protectedStack->unitId()); ASSERT_NE(target, nullptr);
+	FireDamageContextProbe context(projected);
+	const auto check = [&](int64_t expected)
+	{
+		context.clear();
+		EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustFireDamage(context, *target, 100), expected);
+		EXPECT_THAT(context.calls, ::testing::ElementsAre("mode", "hold", "perk"));
+		ASSERT_EQ(context.recipients.size(), 2u);
+		for(const auto * recipient : context.recipients) EXPECT_EQ(recipient, target.get());
+		EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustFireDamage(projected, *target, 100), expected);
+	};
+	ASSERT_EQ(projected.battleGetPerkMagicalReductionBasisPoints(target.get()), 1000);
+	check(90);
+	const auto originalPosition = target->getPosition();
+	HeroOrderState hold; hold.command = HeroCommand::HOLD_THE_LINE; hold.issuedRound = projected.getRound();
+	hold.holdMagicalReductionBasisPoints = 2000;
+	hold.anchors.push_back({target->unitId(), static_cast<int16_t>(originalPosition.toInt())});
+	projected.setHeroOrderState(BattleSide::DEFENDER, hold); check(72);
+	target->setPosition(BattleHex(11, 5)); check(90);
+	target->setPosition(originalPosition);
+	hold.holdBrokenUnitIds = {target->unitId()};
+	projected.setHeroOrderState(BattleSide::DEFENDER, hold); check(90);
+	hold.holdBrokenUnitIds.clear();
+	projected.setHeroOrderState(BattleSide::DEFENDER, hold); projected.nextRound(); check(90);
+	projected.setHeroOrderState(BattleSide::DEFENDER, std::nullopt);
+	target->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID())});
+	ASSERT_EQ(projected.battleGetOwnerHero(target.get()), attackerSideHero); check(100);
+	target->removeUnitBonus(Selector::type()(BonusType::HYPNOTIZED)); check(90);
+	EXPECT_FALSE(protectedStack->isHypnotized()); EXPECT_EQ(protectedStack->save(), nativeBefore);
+	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::DEFENDER, HeroCommand::HOLD_THE_LINE));
+	CMemorySerializer randomAfter; randomAfter.oser & *gameHandler->randomizer;
+	EXPECT_EQ(randomAfter.extractBuffer(), randomBefore.extractBuffer());
+}
+TEST_F(NewHorizonsSpellwardTest, CurrentFireContextKeepsZeroImmunityAndUnsupportedQueriesLazy)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	SpellwardPredictionEnvironment environment(gameState()); HypotheticBattle projected(&environment, callback);
+	const auto target = projected.getForUpdate(protectedStack->unitId()); ASSERT_NE(target, nullptr);
+	FireDamageContextProbe context(projected); context.refuseHold = true;
+	EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustFireDamage(context, *target, 0), 0);
+	EXPECT_TRUE(context.calls.empty());
+	target->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::INVINCIBLE, BonusSource::OTHER, 1, BonusSourceID())});
+	EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustFireDamage(context, *target, 100), 0);
+	EXPECT_THAT(context.calls, ::testing::ElementsAre("mode"));
+	target->removeUnitBonus(Selector::type()(BonusType::INVINCIBLE)); context.clear();
+	target->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::SPELL_SCHOOL_IMMUNITY,
+		BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(SpellSchool::FIRE))});
+	EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustFireDamage(context, *target, 100), 0);
+	EXPECT_THAT(context.calls, ::testing::ElementsAre("mode"));
+	target->removeUnitBonus(Selector::type()(BonusType::SPELL_SCHOOL_IMMUNITY)); context.clear();
+	const auto before = target->save();
+	EXPECT_THROW(newHorizonsMagicalAbilityDamage::adjustFireDamage(context, *target, 100), std::logic_error);
+	EXPECT_THAT(context.calls, ::testing::ElementsAre("mode", "hold"));
+	EXPECT_EQ(target->save(), before); EXPECT_FALSE(protectedStack->isInvincible());
+	EXPECT_FALSE(protectedStack->hasBonusOfType(BonusType::SPELL_SCHOOL_IMMUNITY));
+}
+TEST_F(MasterSpellwardTest, CurrentFireContextReadsCanonicalLevelAndRankInsteadOfCapturedReduction)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareMaster());
+	FireDamageContextProbe context(*battle());
+	(void)protectedStack->counterAttacks.total(); const auto before = protectedStack->save();
+	CMemorySerializer randomBefore; randomBefore.oser & *gameHandler->randomizer;
+	for(const auto & [level, expected] : {std::pair{1u, 8950}, {10u, 8500}, {20u, 8000}, {40u, 8000}})
+	{
+		defenderSideHero->level = level; context.clear();
+		EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustFireDamage(context, *protectedStack, 10000), expected);
+		EXPECT_THAT(context.calls, ::testing::ElementsAre("mode", "hold", "perk"));
+		EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustFireDamage(*battle(), *protectedStack, 10000), expected);
+	}
+	setThorgrimWarcasting(MasteryLevel::NONE); context.clear();
+	EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustFireDamage(context, *protectedStack, 10000), 10000);
+	setThorgrimWarcasting(MasteryLevel::ADVANCED); context.clear();
+	EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustFireDamage(context, *protectedStack, 10000), 8000);
+	EXPECT_EQ(protectedStack->save(), before);
+	CMemorySerializer randomAfter; randomAfter.oser & *gameHandler->randomizer;
+	EXPECT_EQ(randomAfter.extractBuffer(), randomBefore.extractBuffer());
 }

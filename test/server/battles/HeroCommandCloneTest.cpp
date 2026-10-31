@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../../lib/IGameSettings.h"
 #include "../../../lib/battle/BattleInfo.h"
 #include "../../../lib/entities/hero/CHeroClass.h"
 #include "../../../lib/spells/CSpell.h"
@@ -22,6 +23,16 @@ protected:
 		// This test exercises core Clone's command-expiry interaction. The
 		// installed New Horizons roster intentionally disables core:clone.
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		// Preserve the effective hero profile, except the optional starting-book
+		// table whose current-roster prerequisite is absent in this Clone fixture.
+		JsonNode heroes = map->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+		if(heroes.isStruct() && heroes["startingSkills"].isStruct()
+			&& heroes["startingSkills"].Struct().contains("startingBookReplacements"))
+		{
+			heroes["startingSkills"].Struct().erase("startingBookReplacements");
+			heroes.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroes));
+		}
 	}
 };
 

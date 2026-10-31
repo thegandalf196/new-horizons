@@ -24,7 +24,9 @@ bool eventScriptsSupported(const CBattleInfoCallback & battle)
 	// These are the two Lua event families invoked by physical forecast strikes.
 	// Certify a superset of reachable bearers, including currently dead units.
 	for(const auto * unit : battle.battleGetAllUnits(false))
-		for(const auto & bonus : *unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER))
+	{
+		const auto eventTriggers = unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+		for(const auto & bonus : *eventTriggers)
 		{
 			if(!bonus || bonus->source != BonusSource::SPELL_EFFECT || !bonus->parameters)
 				continue;
@@ -45,6 +47,7 @@ bool eventScriptsSupported(const CBattleInfoCallback & battle)
 				return false; // Unknown content retains the ordinary evaluation path.
 			}
 		}
+	}
 	return true;
 }
 }

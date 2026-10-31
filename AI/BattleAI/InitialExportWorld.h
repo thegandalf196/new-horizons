@@ -16,6 +16,7 @@ class InitialExportWorld final
 	struct Data;
 	std::unique_ptr<Data> impl;
 public:
+	class EffectQueries;
 	struct Source
 	{
 		size_t occurrence = 0;
@@ -65,6 +66,8 @@ public:
 	/// Replays the ENTIRE ordered program from the same immutable native origin.
 	/// A branch-local new handle cannot be used in a sibling missing its ADD.
 	std::unique_ptr<InitialExportWorld> fork() const;
+	/// One disposable ledger fork; unrecorded effect edits cannot be replayed or published.
+	std::unique_ptr<EffectQueries> effectQueries() const;
 	/// Borrowed provider-bound view: must not outlive this owner/source lease.
 	const battle::CUnitStateDetached & unitAt(size_t occurrence) const;
 	JsonNode snapshotAt(size_t occurrence);

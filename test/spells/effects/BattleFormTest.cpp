@@ -96,7 +96,19 @@ protected:
 		// The test creates an ordinary clone through the real spell action. Clone
 		// is intentionally inactive in the installed New Horizons spell roster.
 		if(allowLegacyCloneSpell)
+		{
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+			// Pair legacy magic with absence of its current-roster starting-book table.
+			// Preserve every other effective captured hero rule, including current profiles.
+			JsonNode heroes = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+			if(heroes.isStruct() && heroes["startingSkills"].isStruct()
+				&& heroes["startingSkills"].Struct().contains("startingBookReplacements"))
+			{
+				heroes["startingSkills"].Struct().erase("startingBookReplacements");
+				heroes.setOverrideFlag(true);
+				loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroes));
+			}
+		}
 	}
 
 	void prepareBattle(bool prepareCloneCast = false)

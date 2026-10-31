@@ -6,6 +6,8 @@
 #include "../../../lib/battle/NewHorizonsFrozen.h"
 #include "../../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
+#include "../../../lib/battle/BattleActivationPredicate.h"
+#include "../../../lib/battle/CurrentFireBasis.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/bonuses/RecipientBonusOverlay.h"
@@ -338,3 +340,141 @@ TEST_F(NewHorizonsCreatureBurnTest, MaterializedBranchesKeepIndependentBurnAfter
 	EXPECT_FALSE(hasBurn(*childTarget)); EXPECT_TRUE(hasBurn(*siblingTarget));
 }
 #endif
+
+namespace
+{
+class BurnCurrentContextProbe final : public battle::ActivationContext, public fire::FireDamageContext
+{
+	const CBattleInfoCallback & callback;
+public:
+	mutable std::vector<std::string> calls;
+	bool forbidFire = false;
+	explicit BurnCurrentContextProbe(const CBattleInfoCallback & source) : callback(source) {}
+	BattleSide controllerSide(const battle::Unit & unit) const override
+	{
+		calls.push_back("controller");
+		return callback.playerToSide(callback.battleGetOwner(&unit));
+	}
+	bool secondWindApplies(BattleSide side, const battle::Unit & unit) const override
+	{
+		calls.push_back("secondWind");
+		const auto order = callback.battleGetHeroOrderState(side, HeroCommand::SECOND_WIND);
+		return battle::isSecondWindRecipient(order ? &*order : nullptr, unit);
+	}
+	bool usesMultiplicativeMDR() const override
+	{
+		calls.push_back("mode");
+		if(forbidFire) throw std::logic_error("Fire basis must not be queried");
+		return callback.battleUsesNewHorizonsMultiplicativeMDR();
+	}
+	int holdTheLineReductionBasisPoints(const battle::Unit & unit) const override
+	{
+		calls.push_back("hold"); return callback.battleGetHoldTheLineMagicalReductionBasisPoints(&unit);
+	}
+	int perkReductionBasisPoints(const battle::Unit & unit) const override
+	{
+		calls.push_back("perk"); return callback.battleGetPerkMagicalReductionBasisPoints(&unit);
+	}
+};
+}
+TEST_F(NewHorizonsCreatureBurnTest, CurrentContextTickKeepsReasonWaitStasisAndNoMarkerQueriesCanonical)
+{
+	setup(); const auto identities = burn::captureIdentityFacts(); BurnCurrentContextProbe context(*battle());
+	context.forbidFire = true;
+	EXPECT_FALSE(battle::beginsActivation(context, nullptr, BattleUnitTurnReason::TURN_QUEUE));
+	EXPECT_TRUE(context.calls.empty());
+	EXPECT_TRUE(burn::activationTickCaptured(*victim, BattleUnitTurnReason::TURN_QUEUE, identities, context, context).remove.empty());
+	EXPECT_TRUE(context.calls.empty()); context.forbidFire = false; add(pending());
+	const auto before = victim->save();
+	for(const auto & [reason, expected] : {
+		std::pair{BattleUnitTurnReason::TURN_QUEUE, 20}, {BattleUnitTurnReason::MORALE, 20},
+		{BattleUnitTurnReason::AUTOMATIC_ACTION, 20}, {BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION, 20},
+		{BattleUnitTurnReason::HERO_COMMAND, 0}, {BattleUnitTurnReason::ACTION_REJECTED, 0},
+		{BattleUnitTurnReason::MASTER_GATE_CONTINUATION, 0}, {BattleUnitTurnReason::PURSUIT_CONTINUATION, 0},
+		{BattleUnitTurnReason::DREAD_CAVALRY_CONTINUATION, 0}, {BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION, 0},
+		{BattleUnitTurnReason::HERO_SPELLCAST, 0}, {BattleUnitTurnReason::UNIT_SPELLCAST, 0},
+		{BattleUnitTurnReason::CRISIS_ORDER, 0}, {BattleUnitTurnReason::CRISIS_RESUME, 0}})
+	{
+		context.calls.clear();
+		const auto result = burn::activationTickCaptured(*victim, reason, identities, context, context);
+		const auto native = burn::activationTickCaptured(*battle(), *victim, reason, identities);
+		EXPECT_EQ(result.damage, expected); EXPECT_EQ(result.damage, native.damage); EXPECT_EQ(result.source, native.source);
+		ASSERT_EQ(result.remove.size(), native.remove.size()); EXPECT_EQ(result.remove.size(), expected ? 1u : 0u);
+		if(expected) { EXPECT_EQ(result.remove.front().toJsonNode(), native.remove.front().toJsonNode());
+			EXPECT_THAT(context.calls, ::testing::ElementsAre("mode", "hold", "perk")); }
+		else if(reason == BattleUnitTurnReason::HERO_COMMAND)
+			EXPECT_THAT(context.calls, ::testing::ElementsAre("controller", "secondWind"));
+		else EXPECT_TRUE(context.calls.empty());
+	}
+	victim->waiting = true; context.calls.clear(); context.forbidFire = true;
+	for(const auto reason : {BattleUnitTurnReason::TURN_QUEUE, BattleUnitTurnReason::AUTOMATIC_ACTION})
+		EXPECT_TRUE(burn::activationTickCaptured(*victim, reason, identities, context, context).remove.empty());
+	EXPECT_TRUE(context.calls.empty()); context.forbidFire = false;
+	EXPECT_EQ(burn::activationTickCaptured(*victim, BattleUnitTurnReason::MORALE, identities, context, context).damage, 20);
+	victim->waiting = false; context.calls.clear(); context.forbidFire = true;
+	add(Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
+	EXPECT_TRUE(burn::activationTickCaptured(*victim, BattleUnitTurnReason::MORALE, identities, context, context).remove.empty());
+	EXPECT_TRUE(context.calls.empty()); victim->removeBonuses(Selector::type()(BonusType::TIME_STOP));
+	EXPECT_EQ(victim->save(), before); EXPECT_TRUE(hasBurn(*victim));
+}
+TEST_F(NewHorizonsCreatureBurnTest, CurrentContextHeroCommandReevaluatesSecondWindAndHypnotizedController)
+{
+	setup(); beginCombat(); add(pending());
+	const auto identities = burn::captureIdentityFacts(); BurnCurrentContextProbe context(*battle());
+	HeroOrderState order; order.command = HeroCommand::SECOND_WIND; order.issuedRound = battle()->getRound();
+	order.primaryTargetUnitId = victim->unitId(); order.secondWindActive = true;
+	battle()->setHeroOrderState(BattleSide::DEFENDER, order);
+	const auto check = [&](int expected)
+	{
+		context.calls.clear();
+		const auto result = burn::activationTickCaptured(*victim, BattleUnitTurnReason::HERO_COMMAND, identities, context, context);
+		EXPECT_EQ(result.damage, expected);
+		EXPECT_EQ(result.damage, burn::activationTickCaptured(*battle(), *victim, BattleUnitTurnReason::HERO_COMMAND, identities).damage);
+		if(expected) EXPECT_THAT(context.calls, ::testing::ElementsAre("controller", "secondWind", "mode", "hold", "perk"));
+		else EXPECT_THAT(context.calls, ::testing::ElementsAre("controller", "secondWind"));
+	};
+	check(20);
+	order.secondWindActive = false; battle()->setHeroOrderState(BattleSide::DEFENDER, order); check(0);
+	order.secondWindActive = true; order.primaryTargetUnitId = actor->unitId();
+	battle()->setHeroOrderState(BattleSide::DEFENDER, order); check(0);
+	order.primaryTargetUnitId = victim->unitId(); battle()->setHeroOrderState(BattleSide::DEFENDER, order); check(20);
+	add(Bonus(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
+	check(0); battle()->setHeroOrderState(BattleSide::ATTACKER, order); check(20);
+	EXPECT_TRUE(hasBurn(*victim));
+}
+
+TEST_F(NewHorizonsCreatureBurnTest, SharedFireBasisKeepsHistoricalModeAndZeroDamageWithoutInstalledFallback)
+{
+	legacyMagic = true; setup();
+	EXPECT_FALSE(fire::usesMultiplicativeMDR(battle()->getMagicRules()));
+	EXPECT_FALSE(battle()->battleUsesNewHorizonsMultiplicativeMDR());
+	EXPECT_EQ(fire::spellwardReductionBasisPoints(nullptr), 0);
+	EXPECT_EQ(fire::adjustFireDamage(*battle(), *victim, 0), 0);
+	EXPECT_THROW(fire::adjustFireDamage(*battle(), *victim, 1), std::runtime_error);
+}
+TEST_F(NewHorizonsCreatureBurnTest, SharedHoldBasisKeepsCurrentRoundLazyAndCrownSelectionCanonical)
+{
+	setup(); HeroOrderState hold; hold.command = HeroCommand::HOLD_THE_LINE; hold.issuedRound = 1;
+	hold.anchors.push_back({victim->unitId(), static_cast<int16_t>(victim->getPosition().toInt())});
+	hold.holdMagicalReductionBasisPoints = 2000; hold.validateShape();
+	int round = 1, queries = 0;
+	const auto currentRound = [&] { ++queries; return round; };
+	const auto recipient = [&](const HeroOrderState & state, const battle::Unit * unit)
+	{
+		return fire::holdTheLineRecipient(state, unit, currentRound);
+	};
+	EXPECT_EQ(fire::holdTheLineReductionBasisPoints(nullptr, victim, recipient), 0); EXPECT_EQ(queries, 0);
+	EXPECT_FALSE(fire::holdTheLineRecipient(hold, nullptr, currentRound)); EXPECT_EQ(queries, 0);
+	auto ghost = victim->acquireState(); ghost->makeGhost();
+	EXPECT_FALSE(fire::holdTheLineRecipient(hold, ghost.get(), currentRound)); EXPECT_EQ(queries, 0);
+	EXPECT_EQ(fire::holdTheLineReductionBasisPoints(&hold, victim, recipient), 2000); EXPECT_EQ(queries, 1);
+	queries = 0; hold.crownAndAltarRecipientUnitIds = {victim->unitId()};
+	hold.crownAndAltarHoldReductionBasisPoints = 3000; hold.validateShape();
+	EXPECT_EQ(fire::holdTheLineReductionBasisPoints(&hold, victim, recipient), 3000); EXPECT_EQ(queries, 1);
+	queries = 0; hold.holdBrokenUnitIds = {victim->unitId()}; hold.validateShape();
+	EXPECT_EQ(fire::holdTheLineReductionBasisPoints(&hold, victim, recipient), 0); EXPECT_EQ(queries, 1);
+	queries = 0; hold.holdBrokenUnitIds.clear(); round = 2;
+	EXPECT_EQ(fire::holdTheLineReductionBasisPoints(&hold, victim, recipient), 0); EXPECT_EQ(queries, 1);
+	queries = 0; round = 1;
+	EXPECT_EQ(fire::holdTheLineReductionBasisPoints(&hold, actor, recipient), 0); EXPECT_EQ(queries, 1);
+}

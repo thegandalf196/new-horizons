@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "../../lib/battle/StackEffectRemoval.h"
 #include "StackWithBonuses.h"
+#include "GraveDustProjection.h"
+#include "../../lib/battle/GraveDustEffectChanges.h"
 #include "HypotheticBonusApplication.h"
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
@@ -79,6 +81,7 @@ void restoreGuardianSpiritFromExistingBonuses(StackWithBonuses & unit)
 
 void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 {
+	newHorizonsGraveDust::validateMutation(*owner, *this, bonus, newHorizonsGraveDust::EffectOperation::REMOVE);
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
 			newHorizonsConfusionControl::validateMarker(entry);
@@ -89,7 +92,7 @@ void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 			return battle::matchesStackEffectRemoval(one, *b);
 		});
 
-		removeUnitBonus(selector);
+		removeUnitBonusImpl(selector, true, nullptr);
 	}
 }
 
@@ -148,6 +151,7 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 void StackWithBonuses::removeUnitBonus(const CSelector & selector,
 	HypotheticLifecycleTiming::EffectWorkTiming * timing)
 {
+	graveDustAI::validateSelectorRemoval(*owner, *this, selector);
 	removeUnitBonusImpl(selector, true, timing);
 }
 
@@ -166,17 +170,18 @@ void StackWithBonuses::removeGamblerLuckPenalty(HypotheticLifecycleTiming::Effec
 void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState,
 	HypotheticLifecycleTiming::EffectWorkTiming * timing)
 {
+	const auto protectedRemoval = graveDustAI::protectedRemovalSelector(*this, selector);
 	if(const auto subject = owner->initialExportSubject())
 	{
-		subject->remove(*owner, id, selector);
+		subject->remove(*owner, id, protectedRemoval);
 		++treeVersionLocal;
 		return;
 	}
 	captureLocalSpellEffects();
 	const bool timeStopped = mayAffectControlState && isTimeStopped();
-	const CSelector effectiveSelector([&selector, timeStopped](const Bonus * bonus)
+	const CSelector effectiveSelector([&protectedRemoval, timeStopped](const Bonus * bonus)
 	{
-		return selector(bonus) && !(timeStopped && bonus
+		return protectedRemoval(bonus) && !(timeStopped && bonus
 			&& (bonus->type == BonusType::CONFUSION_PENDING || battle::isPolymorphMarker(bonus)));
 	});
 	bool removesConfusion = false;

@@ -16,6 +16,7 @@
 #include "Limiters.h"
 #include "BonusLimitation.h"
 #include "BonusGraphQuery.h"
+#include "BonusSourceRelationRecipe.h"
 #include "Updaters.h"
 #include "Propagators.h"
 
@@ -262,9 +263,8 @@ bool CBonusSystemNode::actsAsBonusSourceOnly() const
 
 void CBonusSystemNode::propagateBonus(const std::shared_ptr<Bonus> & b, const CBonusSystemNode & source)
 {
-	if(auto propagated = propagatedBonus(b, *this, source))
+	if(auto propagated = appendPropagatedArrival(bonuses, b, *this, source))
 	{
-		bonuses.push_back(propagated);
 		logBonus->trace("Bonus (type=%d, val=%d) propagated to %s", static_cast<int>(propagated->type), propagated->val, nodeName());
 		nodeHasChanged();
 	}
@@ -277,15 +277,12 @@ void CBonusSystemNode::propagateBonus(const std::shared_ptr<Bonus> & b, const CB
 
 void CBonusSystemNode::unpropagateBonus(const std::shared_ptr<Bonus> & b)
 {
-	if(b->propagator->shouldBeAttached(this))
+	const auto removal = removePropagatedArrival(bonuses, b, *this);
+	if(removal.accepted)
 	{
-		if (b->propagationUpdater)
+		if(!b->propagationUpdater)
 		{
-			removePropagatedBonus(bonuses, b);
-		}
-		else
-		{
-			if (removePropagatedBonus(bonuses, b))
+			if(removal.removed)
 				logBonus->trace("Bonus (type=%d, val=%d) is no longer propagated to %s", static_cast<int>(b->type), b->val, nodeName());
 			else
 				logBonus->warn("Attempt to remove bonus (type=%d, val=%d), which is not propagated to %s", static_cast<int>(b->type), b->val, nodeName());
@@ -342,39 +339,16 @@ void CBonusSystemNode::getRedChildren(TNodes &out)
 
 void CBonusSystemNode::newRedDescendant(CBonusSystemNode & descendant) const
 {
-	for(const auto & b : exportedBonuses)
-	{
-		if(b->propagator)
-			descendant.propagateBonus(b, *this);
-	}
-	TCNodes redParents;
-	getRedAncestors(redParents); //get all red parents recursively
-
-	for(const auto * parent : redParents)
-	{
-		for(const auto & b : parent->exportedBonuses)
-		{
-			if(b->propagator)
-				descendant.propagateBonus(b, *this);
-		}
-	}
+	forEachPropagatingSourceRecord(liveBonusGraph(), *this,
+		[](const CBonusSystemNode & node) -> const BonusList & { return node.getExportedBonusList(); },
+		[&](const auto & bonus) { descendant.propagateBonus(bonus, *this); });
 }
 
 void CBonusSystemNode::removedRedDescendant(CBonusSystemNode & descendant) const
 {
-	for(const auto & b : exportedBonuses)
-		if(b->propagator)
-			descendant.unpropagateBonus(b);
-
-	TCNodes redParents;
-	getRedAncestors(redParents); //get all red parents recursively
-
-	for(auto * parent : redParents)
-	{
-		for(const auto & b : parent->exportedBonuses)
-			if(b->propagator)
-				descendant.unpropagateBonus(b);
-	}
+	forEachPropagatingSourceRecord(liveBonusGraph(), *this,
+		[](const CBonusSystemNode & node) -> const BonusList & { return node.getExportedBonusList(); },
+		[&](const auto & bonus) { descendant.unpropagateBonus(bonus); });
 }
 
 void CBonusSystemNode::getRedAncestors(TCNodes &out) const

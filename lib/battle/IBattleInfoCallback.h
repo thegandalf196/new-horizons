@@ -10,6 +10,8 @@
 
 #pragma once
 #include <algorithm>
+#include <optional>
+#include <memory>
 
 #include "GameConstants.h"
 #include "BattleHexArray.h"
@@ -24,12 +26,14 @@
 
 struct CObstacleInstance;
 class BattleField;
+class CreatureService;
 class IBattleInfo;
 
 namespace battle
 {
 	class IUnitInfo;
 	class Unit;
+	class CUnitState;
 	using Units = boost::container::small_vector<const Unit *, 4>;
 	using UnitFilter = std::function<bool(const Unit *)>;
 }
@@ -87,6 +91,12 @@ public:
 
 	virtual const scripting::Pool & getScriptContextPool() const = 0;
 	virtual const IBattleInfo * getBattle() const = 0;
+	/// nullopt: legacy service; engaged null: owned domain UNKNOWN, never native fallback.
+	/// Provider retains its actual source-bound owned service through every query.
+	virtual std::optional<const CreatureService *> battleOwnedCreatureService() const { return std::nullopt; }
+	/// Same current bound occurrence only; alias retains its whole Scratch/provider/environment.
+	/// nullopt: legacy; engaged null: owned UNKNOWN, never a native acquireState fallback.
+	virtual std::optional<std::shared_ptr<battle::CUnitState>> battleAcquireOwnedUnitState(const battle::Unit &) const { return std::nullopt; }
 	virtual std::optional<PlayerColor> getPlayerID() const = 0;
 
 	virtual TerrainId battleTerrainType() const = 0;

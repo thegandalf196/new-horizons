@@ -60,7 +60,8 @@ newHorizonsOrdinaryStrike::EffectPlan completion(const CBattleInfoCallback & bat
 	int percent = reduction(battle, actor);
 	if(percent <= 0)
 		return result;
-	for(const auto & existing : *actor.getUnstackedBonuses(CSelector(isProtection)))
+	const auto protections = actor.getUnstackedBonuses(CSelector(isProtection));
+	for(const auto & existing : *protections)
 	{
 		result.remove.push_back(*existing);
 		percent = std::max(percent, existing->val);

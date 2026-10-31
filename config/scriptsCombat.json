@@ -77,6 +77,7 @@
 		"implements" : "damageCalculator",
 		"script" : "damage/damageCalculator",
 		"patches" : [
+			"damage/physicalProtection",
 			// special cases for H3 scenarios
 			"damage/siegeWeapon",
 			"damage/magicElemental",

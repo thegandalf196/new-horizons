@@ -1120,7 +1120,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		|| casterSide == BattleSide::NONE || battle()->battleWasTemporalFieldUsed(casterSide)))
 		return adaptGenericProblem(problem);
 
-	auto genProblem = battle()->battleCanCastSpell(caster, mode);
+	auto genProblem = battle()->battleCanCastSpell(caster, mode, owner->getId());
 	// Orb of Inhibition (BLOCK_ALL_MAGIC) must not block level-0 creature abilities (stone gaze, death stare, ...)
 	if(genProblem == ESpellCastProblem::MAGIC_IS_BLOCKED && getSpellLevel() <= 0)
 		genProblem = ESpellCastProblem::OK;

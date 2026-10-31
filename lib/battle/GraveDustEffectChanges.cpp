@@ -18,6 +18,22 @@ void invalidChange()
 {
 	throw std::invalid_argument("Invalid Grave Dust effect change");
 }
+std::vector<Bonus> installedGroup(const battle::Unit & unit)
+{
+	std::vector<Bonus> result;
+	const auto actual = unit.getUnstackedBonuses(CSelector([](const Bonus * bonus)
+	{
+		return bonus && isReservedSource(*bonus);
+	}));
+	if(!actual) invalidChange();
+	for(const auto & bonus : *actual)
+	{
+		if(!bonus) invalidChange();
+		result.push_back(*bonus);
+	}
+	if(!result.empty()) validateSourceGroup(result);
+	return result;
+}
 class ApplicationState
 {
 	const IBattleInfo & battle;
@@ -47,19 +63,9 @@ class ApplicationState
 		else current.push_back(record); // Native force-ADD never replaces an identified companion.
 	}
 public:
-	ApplicationState(const IBattleInfo & battle, const battle::Unit & unit) : battle(battle), unit(unit)
+	ApplicationState(const IBattleInfo & battle, const battle::Unit & unit)
+		: battle(battle), unit(unit), current(installedGroup(unit))
 	{
-		const auto actual = unit.getUnstackedBonuses(CSelector([](const Bonus * bonus)
-		{
-			return bonus && isReservedSource(*bonus);
-		}));
-		if(!actual) invalidChange();
-		for(const auto & bonus : *actual)
-		{
-			if(!bonus) invalidChange();
-			current.push_back(*bonus);
-		}
-		checkComplete();
 	}
 	void apply(const std::vector<Bonus> & records, const EffectOperation operation)
 	{
@@ -106,6 +112,10 @@ void validateMutation(const IBattleInfo & battle, const battle::Unit & unit,
 	if(!containsEffect(records)) return;
 	ApplicationState state(battle, unit);
 	state.apply(records, operation);
+}
+void validateInstalledGroup(const battle::Unit & unit)
+{
+	static_cast<void>(installedGroup(unit));
 }
 void validateEffectChanges(const IBattleInfo & battle, const SetStackEffect & effects)
 {

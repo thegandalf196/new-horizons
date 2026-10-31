@@ -6,6 +6,7 @@
  */
 #include "StdInc.h"
 #include "ProjectedBonusGraph.h"
+#include "BonusSourceRelationRecipe.h"
 #include "Propagators.h"
 #include "../CStack.h"
 #include "../CCreatureHandler.h"
@@ -17,15 +18,13 @@ void ProjectedBonusGraph::propagate(const CBonusSystemNode & destination, const 
 	auto & accepted = entries.at(&destination).current.accepted;
 	if(remove)
 	{
-		if(bonus->propagator->shouldBeAttached(const_cast<CBonusSystemNode *>(&destination)))
+		if(removePropagatedArrival(accepted, bonus, destination).accepted)
 		{
-			removePropagatedBonus(accepted, bonus);
 			invalidations.record(true, &destination, *this);
 		}
 	}
-	else if(auto propagated = propagatedBonus(bonus, destination, evaluation(source)))
+	else if(appendPropagatedArrival(accepted, bonus, destination, evaluation(source)))
 	{
-		accepted.push_back(propagated);
 		invalidations.record(true, &destination, *this);
 	}
 	TCNodes next;

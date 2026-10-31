@@ -15,6 +15,7 @@
 #include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/battle/PhysicalAffliction.h"
+#include "../../lib/battle/GraveDustEffectChanges.h"
 
 namespace hypotheticBonusApplication
 {
@@ -43,7 +44,10 @@ void applyGuardianSpiritBonuses(StackWithBonuses & unit, const std::vector<Bonus
 		applyGuardianSpiritBonus(unit, bonus);
 }
 
-void replacePhysicalAfflictionMarker(StackWithBonuses & unit, Bonus marker)
+
+
+}
+void StackWithBonuses::replacePhysicalAfflictionMarker(Bonus marker)
 {
 	physicalAfflictions::markerMetadata(marker);
 	const CSelector selector([&marker](const Bonus * bonus)
@@ -52,20 +56,20 @@ void replacePhysicalAfflictionMarker(StackWithBonuses & unit, Bonus marker)
 			&& bonus->source == marker.source && bonus->sid == marker.sid;
 	});
 
-	const auto current = unit.getBonuses(selector);
+	const auto current = getBonuses(selector);
 	if(current && !current->empty())
 	{
 		for(const auto & existing : *current)
 			if(existing && existing->duration == marker.duration && Bonus::NTurns(existing.get()))
 				marker.turnsRemain = std::max(marker.turnsRemain, existing->turnsRemain);
-		unit.removeUnitBonus(selector);
+		removeUnitBonusImpl(selector, true, nullptr);
 	}
-	unit.bonusesToAdd.push_back(std::make_shared<Bonus>(std::move(marker)));
+	bonusesToAdd.push_back(std::make_shared<Bonus>(std::move(marker)));
 }
 
-}
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
+	newHorizonsGraveDust::validateMutation(*owner, *this, bonus, newHorizonsGraveDust::EffectOperation::ADD);
 	for(const auto & entry : bonus)
 	{
 		newHorizonsSerpentsEmbrace::validateApplication(*owner, id, entry);
@@ -116,7 +120,7 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 			confusionState = next;
 		}
 		else if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
-			replacePhysicalAfflictionMarker(*this, stamped);
+			replacePhysicalAfflictionMarker(stamped);
 		else
 			bonusesToAdd.push_back(std::make_shared<Bonus>(stamped));
 		if(stamped.source == BonusSource::SPELL_EFFECT)
@@ -130,6 +134,7 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 {
+	newHorizonsGraveDust::validateMutation(*owner, *this, bonus, newHorizonsGraveDust::EffectOperation::UPDATE);
 	for(const auto & entry : bonus)
 	{
 		newHorizonsSerpentsEmbrace::validateApplication(*owner, id, entry);
@@ -181,7 +186,7 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 			confusionState = next;
 		}
 		else if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
-			replacePhysicalAfflictionMarker(*this, stamped);
+			replacePhysicalAfflictionMarker(stamped);
 		else
 			bonusesToUpdate.push_back(std::make_shared<Bonus>(stamped));
 		if(stamped.source == BonusSource::SPELL_EFFECT)

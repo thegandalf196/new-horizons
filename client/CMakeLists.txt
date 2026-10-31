@@ -109,6 +109,7 @@ set(vcmiclientcommon_SRCS
 	replay/GameplayReplayer.cpp
 	replay/ReplayPlanner.cpp
 	replay/ClientPacketReceiveSession.cpp
+	replay/ClientOwnedRecipientCapture.cpp
 	replay/ClientReceiveAccess.cpp
 	replay/ClientReceiveConsumedFactory.cpp
 	replay/PreparedClientBattleReplay.cpp
@@ -390,6 +391,7 @@ set(vcmiclientcommon_HEADERS
 
 	replay/GameplayReplayer.h
 	replay/ClientPacketReceiveSession.h
+	replay/OwnedRecipientCaptureMetadata.h
 	replay/ClientReceiveAccess.h
 	replay/ClientReplaySessionReadiness.h
 	replay/PreparedClientBattleReplay.h

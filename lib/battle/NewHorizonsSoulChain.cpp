@@ -11,6 +11,11 @@
 #include "IBattleState.h"
 #include "Unit.h"
 #include "../CStack.h"
+#include "../GameLibrary.h"
+#include "../constants/StringConstants.h"
+#include "../modding/CModHandler.h"
+#include "../modding/IdentifierStorage.h"
+#include "../modding/ModScope.h"
 #include "../bonuses/Bonus.h"
 #include "../bonuses/BonusParameters.h"
 #include "../spells/CSpell.h"
@@ -21,6 +26,7 @@
 #include "../networkPacks/PacksForClientBattle.h"
 
 #include <cmath>
+#include <stdexcept>
 
 namespace
 {
@@ -28,6 +34,21 @@ SpellID soulChainSpellId()
 {
 	static const SpellID value(SpellID::decode(std::string(newHorizonsSoulChain::SPELL_ID)));
 	return value;
+}
+
+bool passiveIdentityAvailable(const JsonNode & savedRules)
+{
+	if(!LIBRARY || !LIBRARY->modh)
+		throw std::runtime_error("Soul Chain readback requires an initialized library");
+	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell",
+		std::string(newHorizonsSoulChain::SPELL_ID), true);
+	if(id)
+		return true;
+	const bool legacy = savedRules.isNull() || (savedRules.isStruct() && savedRules.Struct().empty());
+	const bool moduleLoaded = vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	if(!legacy || moduleLoaded)
+		throw std::runtime_error("Soul Chain readback is missing required New Horizons content");
+	return false;
 }
 
 bool validBattleSide(const BattleSide side)
@@ -152,6 +173,13 @@ std::optional<Link> linkFor(const battle::Unit * secondary)
 		}
 	}
 	return std::nullopt;
+}
+
+std::optional<Link> passiveLinkFor(const battle::Unit * secondary, const JsonNode & savedMagicRules)
+{
+	if(!secondary || !passiveIdentityAvailable(savedMagicRules))
+		return std::nullopt;
+	return linkFor(secondary);
 }
 
 bool isEchoHit(const BattleStackAttacked & hit)

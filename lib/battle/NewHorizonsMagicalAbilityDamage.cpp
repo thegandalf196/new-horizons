@@ -76,35 +76,39 @@ bool fireImmune(const battle::Unit & target)
 		|| target.hasBonusOfType(BonusType::NEGATIVE_EFFECTS_IMMUNITY, fire)
 		|| target.hasBonusOfType(BonusType::NEGATIVE_EFFECTS_IMMUNITY, BonusSubtypeID(SpellSchool::ANY)))
 		return true;
-	for(const auto & bonus : *target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, fire))
+	const auto percentReductions = target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, fire);
+	for(const auto & bonus : *percentReductions)
 		if(bonus->val >= 100)
 			return true;
-	for(const auto & bonus : *target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, fire))
+	const auto fractionalReductions = target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, fire);
+	for(const auto & bonus : *fractionalReductions)
 		if(bonus->val >= 10'000)
 			return true;
 	return false;
 }
-int64_t adjustFireDamage(const CBattleInfoCallback & battle, const battle::Unit & target, int64_t rawDamage)
+int64_t adjustFireDamage(const FireDamageContext & context, const battle::Unit & target, int64_t rawDamage)
 {
 	if(rawDamage <= 0)
 		return 0;
-	if(!battle.battleUsesNewHorizonsMultiplicativeMDR())
+	if(!context.usesMultiplicativeMDR())
 		throw std::runtime_error("Creature burn requires captured multiplicative magical damage reduction");
 	if(target.isInvincible() || fireImmune(target))
 		return 0;
 	std::vector<int> reductions;
 	for(const auto school : {SpellSchool::FIRE, SpellSchool::ANY})
 	{
-		for(const auto & bonus : *target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(school)))
+		const auto percentReductions = target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(school));
+		for(const auto & bonus : *percentReductions)
 			if(bonus->val > 0)
 				reductions.push_back(std::clamp(bonus->val, 0, 100) * 100);
-		for(const auto & bonus : *target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSubtypeID(school)))
+		const auto fractionalReductions = target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSubtypeID(school));
+		for(const auto & bonus : *fractionalReductions)
 			if(bonus->val > 0)
 				reductions.push_back(std::clamp(bonus->val, 0, 10'000));
 	}
 	for(const int value : {target.intrinsicMagicalDamageReductionPercent() * 100,
-		battle.battleGetHoldTheLineMagicalReductionBasisPoints(&target),
-		battle.battleGetPerkMagicalReductionBasisPoints(&target)})
+		context.holdTheLineReductionBasisPoints(target),
+		context.perkReductionBasisPoints(target)})
 		if(value > 0)
 			reductions.push_back(std::clamp(value, 0, 10'000));
 	int64_t result = spells::calculateMagicalDamageReductionBasisPoints(rawDamage, reductions,
@@ -116,5 +120,28 @@ int64_t adjustFireDamage(const CBattleInfoCallback & battle, const battle::Unit 
 	result = spells::applyIncomingMagicalDamageModifier(target, result);
 	const int cap = target.valOfBonuses(BonusType::DAMAGE_RECEIVED_CAP);
 	return cap > 0 ? std::min<int64_t>(result, static_cast<int64_t>(target.getMaxHealth()) * cap / 100) : result;
+}
+int64_t adjustFireDamage(const CBattleInfoCallback & battle, const battle::Unit & target, int64_t rawDamage)
+{
+	class CallbackContext final : public FireDamageContext
+	{
+		const CBattleInfoCallback & callback;
+	public:
+		explicit CallbackContext(const CBattleInfoCallback & source) : callback(source) {}
+		bool usesMultiplicativeMDR() const override
+		{
+			return callback.battleUsesNewHorizonsMultiplicativeMDR();
+		}
+		int holdTheLineReductionBasisPoints(const battle::Unit & unit) const override
+		{
+			return callback.battleGetHoldTheLineMagicalReductionBasisPoints(&unit);
+		}
+		int perkReductionBasisPoints(const battle::Unit & unit) const override
+		{
+			return callback.battleGetPerkMagicalReductionBasisPoints(&unit);
+		}
+	};
+	const CallbackContext context(battle);
+	return adjustFireDamage(context, target, rawDamage);
 }
 }

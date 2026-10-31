@@ -38,6 +38,8 @@ struct SpecialtySerializationContext
 	bool ordinaryCombatSpecialties = false;
 	bool extendedOrdinarySpecialties = false;
 
+	bool operator==(const SpecialtySerializationContext &) const = default;
+
 	template<class Handler>
 	static SpecialtySerializationContext fromHandler(const Handler & h)
 	{

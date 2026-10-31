@@ -170,3 +170,18 @@ TEST(OwnedBonusEvaluationFactsTest, LiveFilteredPlaceholderSkipsUnsafeLevelGette
 	updater.filteredFaction = FactionID(0);
 	EXPECT_EQ(updater.createUpdatedBonus(input(), live)->val, 0);
 }
+
+TEST(OwnedBonusEvaluationFactsTest, CapturedPlaceholderLevelIsRequiredOnlyAfterEarlierCanonicalFilters)
+{
+	CBonusSystemNode shell(BonusNodeType::ARMY, true);
+	OwnedBonusEvaluationFacts facts; facts.nodeType = BonusNodeType::ARMY;
+	facts.armySlots = std::vector<OwnedBonusEvaluationFacts::ArmySlot>{{CreatureID(), FactionID(2), std::nullopt, 7}};
+	BonusEvaluationContext context(shell, facts);
+	WithoutLibrary absent;
+	EXPECT_EQ(context.filteredArmySize(CreatureID(1), FactionID(), 3), 0);
+	EXPECT_EQ(context.filteredArmySize(CreatureID(), FactionID(1), 3), 0);
+	EXPECT_THROW(context.filteredArmySize(CreatureID(), FactionID(2), 3), std::logic_error);
+	EXPECT_EQ(context.filteredArmySize(CreatureID(), FactionID(2), -1), 7); // No level filter never reads unknown level.
+	facts.armySlots->front().level = 0;
+	EXPECT_EQ(context.filteredArmySize(CreatureID(), FactionID(2), 0), 7); // Captured zero is concrete, not unknown.
+}

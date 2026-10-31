@@ -2007,11 +2007,6 @@ std::vector<AimType> BaseMechanics::getTargetTypes() const
 	return ret;
 }
 
-const CreatureService * BaseMechanics::creatures() const
-{
-	return LIBRARY->creatures(); //todo: redirect
-}
-
 const scripting::Service * BaseMechanics::scripts() const
 {
 	return LIBRARY->scripts(); //todo: redirect

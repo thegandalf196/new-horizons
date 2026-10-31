@@ -91,7 +91,8 @@ newHorizonsOrdinaryStrike::EffectPlan solidarityProtection(const battle::Unit & 
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(&unit) || !family(unit, "core:demon"))
 		return effect;
 	effect.target = unit.unitId();
-	for(const auto & existing : *unit.getUnstackedBonuses(CSelector(isSolidarityProtection)))
+	const auto protections = unit.getUnstackedBonuses(CSelector(isSolidarityProtection));
+	for(const auto & existing : *protections)
 	{
 		effect.remove.push_back(*existing);
 		percent = std::max(percent, existing->val);
@@ -152,7 +153,8 @@ int ironHidePercent(const CBattleInfoCallback & battle, const BattleAttackInfo &
 	if(percent <= 0 || !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
 		|| battle.battleGetOwner(attack.attacker) == battle.battleGetOwner(attack.defender))
 		return 0;
-	for(const auto & marker : *attack.defender->getUnstackedBonuses(CSelector(isIronHideSpent)))
+	const auto spentMarkers = attack.defender->getUnstackedBonuses(CSelector(isIronHideSpent));
+	for(const auto & marker : *spentMarkers)
 		if(marker->val == battle.battleGetRound())
 			return 0;
 	return percent;

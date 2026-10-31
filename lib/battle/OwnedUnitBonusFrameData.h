@@ -17,19 +17,23 @@ public:
 	std::vector<std::shared_ptr<const Unit>> peers;
 	size_t recipientPosition;
 	recipientBonusOverlay::Layer ledger; // Single pending recipient-effect source.
+	class Peer;
+	std::optional<std::vector<std::shared_ptr<Peer>>> peerQueries; // Retire after env/subject/view/info, before descriptors.
 	class Info final : public IUnitInfo
 	{
-		const Data & data;
+		const Identity & identity;
+		const std::shared_ptr<const OwnedUnitCreatureResolver> & creatures;
 	public:
-		explicit Info(const Data & data) : data(data) {}
-		int32_t unitBaseAmount() const override { return data.identity.baseAmount; }
-		uint32_t unitId() const override { return data.identity.id; }
-		BattleSide unitSide() const override { return data.identity.side; }
-		PlayerColor unitOwner() const override { return data.identity.owner; }
-		SlotID unitSlot() const override { return data.identity.slot; }
-		const CCreature * unitType() const override { return data.creatures->creature(data.identity.originalCreature); }
-		const UnitCreatureResolver * unitCreatureResolver() const override { return data.creatures.get(); }
-		std::optional<UnitPreparationHealthBasis> unitPreparationHealthBasis() const override { return data.identity.healthBasis; }
+		Info(const Identity & identity, const std::shared_ptr<const OwnedUnitCreatureResolver> & creatures)
+			: identity(identity), creatures(creatures) {}
+		int32_t unitBaseAmount() const override { return identity.baseAmount; }
+		uint32_t unitId() const override { return identity.id; }
+		BattleSide unitSide() const override { return identity.side; }
+		PlayerColor unitOwner() const override { return identity.owner; }
+		SlotID unitSlot() const override { return identity.slot; }
+		const CCreature * unitType() const override { return creatures->creature(identity.originalCreature); }
+		const UnitCreatureResolver * unitCreatureResolver() const override { return creatures.get(); }
+		std::optional<UnitPreparationHealthBasis> unitPreparationHealthBasis() const override { return identity.healthBasis; }
 	} info;
 	class View final : public ProjectedBonusView
 	{
@@ -50,11 +54,16 @@ public:
 	Data(Identity identity, std::shared_ptr<const OwnedUnitCreatureResolver> creatures,
 		std::shared_ptr<const OwnedRecipientBonusGraph> graph, std::map<CreatureID, FormSources> forms,
 		std::vector<size_t> spells, OwnedUnitEnvironment::Facts environment,
-		std::vector<std::shared_ptr<const Unit>> peers, size_t recipientPosition, recipientBonusOverlay::Layer ledger);
+		std::vector<std::shared_ptr<const Unit>> peers, size_t recipientPosition, recipientBonusOverlay::Layer ledger, const std::optional<std::vector<PeerInput>> & peerSources, const Data * inheritedPeers = nullptr);
+	std::vector<std::shared_ptr<const Unit>> buildPeers(const std::vector<PeerInput> & inputs);
+	std::vector<std::shared_ptr<const Unit>> copyPeers(const Data & source);
+	void validateValues(const CUnitState & values) const;
 	void validate() const;
 	void validateSnapshot(const JsonNode & snapshot) const;
-	OwnedRecipientBonusGraph::RootQuery context(const CUnitState & unit, bool native) const;
-	BonusList raw(const std::vector<size_t> & records) const;
+	OwnedRecipientBonusGraph::RootQuery decorate(OwnedRecipientBonusGraph::RootQuery query, const CUnitState & unit) const;
+	OwnedRecipientBonusGraph::RootQuery context(const CUnitState & unit, const FormSources & source, bool native) const;
+	const OwnedRecipientBonusGraph & sourceGraph(const FormSources & source, bool native) const;
+	BonusList raw(const OwnedRecipientBonusGraph & graph, const std::vector<size_t> & records) const;
 	TConstBonusListPtr query(const CSelector & selector, bool unstacked) const;
 	void requireRecord(size_t index) const;
 };

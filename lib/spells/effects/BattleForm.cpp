@@ -19,6 +19,7 @@
 #include "../../battle/CUnitState.h"
 #include "../../battle/Unit.h"
 #include "../../battle/BattleForm.h"
+#include "../../battle/OwnedProspectiveCreatureDomain.h"
 #include "../../CCreatureHandler.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../entities/creature/NewHorizonsCreatureCategoryRules.h"
@@ -59,24 +60,41 @@ bool isBasicTarget(const Mechanics * mechanics, const battle::Unit * unit)
 CreatureForms getForms(const Mechanics * mechanics, const battle::Unit * unit)
 {
 	CreatureForms result;
-	if(!mechanics || !mechanics->battle() || !mechanics->creatures() || !unit)
+	if(!mechanics) return result;
+	const auto * callback = mechanics->battle();
+	if(!callback) return result;
+	const auto service = callback->battleOwnedCreatureService();
+	if(service || (unit && unit->unitCreatureResolver()))
+	{
+		if(!unit) return result;
+		const auto * domain = service && *service
+			? dynamic_cast<const battle::OwnedProspectiveCreatureDomain *>(*service) : nullptr;
+		if(!domain || !unit->unitCreatureResolver() || domain->creatures().get() != unit->unitCreatureResolver())
+			throw std::logic_error("Owned form pool is missing or belongs to another descriptor source");
+		return domain->formsFor(unit->creatureId());
+	}
+	if(!mechanics->creatures() || !unit)
 		return result;
 
 	const auto category = mechanics->battle()->battleGetCreatureCategory(unit->creatureId());
 	if(!category)
 		return result;
 
-	mechanics->creatures()->forEach([&](const Creature * creature, bool & stop)
-	{
-		(void)stop;
-		if(!creature || creature->getBaseHitPoints() <= 0)
-			return;
+	return battle::battleFormSpeciesPool(*mechanics->creatures(), category->category,
+		[mechanics](CreatureID id) -> std::optional<battle::BattleFormCategory>
+		{
+			const auto candidate = mechanics->battle()->battleGetCreatureCategory(id);
+			return candidate ? std::optional<battle::BattleFormCategory>(candidate->category) : std::nullopt;
+		});
+}
 
-		const auto candidateCategory = mechanics->battle()->battleGetCreatureCategory(creature->getId());
-		if(candidateCategory && candidateCategory->category == category->category)
-			result.push_back(creature);
-	});
-	return result;
+std::optional<std::shared_ptr<battle::CUnitState>> formStateLoan(
+	const CBattleInfoCallback & callback, const battle::Unit & unit)
+{
+	const auto owned = callback.battleAcquireOwnedUnitState(unit);
+	if((owned && !*owned) || (!owned && unit.unitCreatureResolver()))
+		throw std::logic_error("Owned form simulation state was not captured for this occurrence");
+	return owned;
 }
 
 void addNoLegalPlacementProblem(Problem & problem)
@@ -239,11 +257,14 @@ std::vector<BattleFormEffect::WeightedBattleFormCandidate> BattleFormEffect::wei
 	std::vector<std::pair<uint64_t, size_t>> ranked;
 	for(size_t index = 0; index < forms.size(); ++index)
 	{
-		auto state = unit->acquireState();
+		const auto owned = formStateLoan(*mechanics->battle(), *unit);
+		auto state = owned ? *owned : unit->acquireState();
 		if(!state)
 			return {};
 		state->beginBattleForm(forms[index].creature, durationWithExtend(duration, mechanics->getExtendSpellBonusRounds()));
-		const uint64_t armyValue = static_cast<uint64_t>(std::max(0, forms[index].creature.toCreature()->getAIValue()))
+		const auto * resolver = unit->unitCreatureResolver();
+		const auto * form = resolver ? resolver->creature(forms[index].creature) : forms[index].creature.toCreature();
+		const uint64_t armyValue = static_cast<uint64_t>(std::max(0, form->getAIValue()))
 			* static_cast<uint64_t>(state->getCount());
 		ranked.emplace_back(armyValue, index);
 	}
@@ -334,6 +355,10 @@ void BattleFormEffect::apply(ServerCallback * server, const Mechanics * mechanic
 		if(candidates.empty())
 			continue;
 
+		// Owned admission must complete before any representative choice. Legacy stays nullopt.
+		const auto owned = formStateLoan(*mechanics->battle(), *unit);
+		if(owned && !(*owned)->alive())
+			throw std::logic_error("Owned form application requires its current living simulation state");
 		const auto * selected = &*RandomGeneratorUtil::nextItem(candidates, *rng);
 		if(usesShapeshifter(mechanics))
 		{
@@ -343,7 +368,7 @@ void BattleFormEffect::apply(ServerCallback * server, const Mechanics * mechanic
 		}
 		const auto & selectedCandidate = selected->form;
 
-		auto state = unit->acquireState();
+		auto state = owned ? *owned : unit->acquireState();
 		if(!state || !state->alive())
 		{
 			server->complain("Battle-form effect cannot apply to a dead or unavailable stack");

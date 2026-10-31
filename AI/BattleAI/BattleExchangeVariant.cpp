@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "PhysicalStrikeProjection.h"
+#include "CoordinatedMarkProjection.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "AerialRetaliationProjection.h"
@@ -303,6 +304,7 @@ float BattleExchangeVariant::trackAttack(
 	// Reapply the selected preview strike-by-strike.  This is intentionally
 	// separate from the final-state snapshots: Fortune aftermath belongs
 	// between strikes (and between retaliation and the triggering strike).
+	bool returnCommitted = false;
 	if(!ap.fortuneStrikes.empty())
 	{
 		int64_t projectedAttackerDamage = 0;
@@ -479,6 +481,8 @@ float BattleExchangeVariant::trackAttack(
 				break;
 		}
 
+		returnCommitted = coordinatedMarkAI::replayMovement(ap, *hb, originalPosition);
+
 		// A preview can contain damage sources which are not represented by a
 		// physical strike (for example, a reaction). Apply that residual only
 		// after replaying the known strikes so it cannot move a defender's
@@ -491,25 +495,7 @@ float BattleExchangeVariant::trackAttack(
 	{
 		// Older/partial previews may not carry strike metadata. Preserve their
 		// health projection, but do not invent Fortune transitions for them.
-		for(const auto & affectedUnit : affectedUnits)
-		{
-			auto unitToUpdate = hb->getForUpdate(affectedUnit->unitId());
-			auto damageDealt = finalDamage[unitToUpdate->unitId()];
-			if(damageDealt > 0)
-			{
-				const bool wasAlive = unitToUpdate->alive();
-				const auto rebirthSource = wasAlive
-					? hb->captureElementalRebirthSource(*unitToUpdate) : std::nullopt;
-				const bool nativeRebirth = hb->hasReadyNativeRebirth(unitToUpdate.get());
-				unitToUpdate->damage(damageDealt);
-				if(wasAlive && !unitToUpdate->alive())
-					hb->releaseSerpentBindingsForDeath(*unitToUpdate);
-				hb->recordBloodrageTransition(unitToUpdate, wasAlive);
-				if(rebirthSource)
-					hb->projectElementalRebirth(unitToUpdate.get(), *rebirthSource,
-						wasAlive && !unitToUpdate->alive(), unitToUpdate->isClone(), nativeRebirth);
-			}
-		}
+		selected.applyFallbackDamage(*hb);
 	}
 
 	for(const auto & hit : ap.tacticsSecondaryHits)
@@ -577,7 +563,7 @@ float BattleExchangeVariant::trackAttack(
 			}
 		}
 	}
-	completeSelectedAttack(ap, hb, *attacker, originalPosition, manaLeechReplay,
+	completeSelectedAttack(ap, hb, *attacker, originalPosition, returnCommitted, manaLeechReplay,
 		rebirthSpawnIdsBefore, primalBurstFirstNewHit, referenceController, damageCache);
 
 	return attackValue;
@@ -1323,143 +1309,6 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 	return result;
 }
 
-battle::Units BattleExchangeEvaluator::getAdjacentUnits(const battle::Unit * blockerUnit) const
-{
-	std::queue<const battle::Unit *> queue;
-	battle::Units checkedStacks;
-
-	queue.push(blockerUnit);
-
-	while(!queue.empty())
-	{
-		auto stack = queue.front();
-
-		queue.pop();
-		checkedStacks.push_back(stack);
-
-		auto const & hexes = stack->getSurroundingHexes();
-		for(const auto & hex : hexes)
-		{
-			auto neighbour = cb->battleGetUnitByPos(hex);
-
-			if(neighbour && neighbour->unitSide() == stack->unitSide() && !vstd::contains(checkedStacks, neighbour))
-			{
-				queue.push(neighbour);
-				checkedStacks.push_back(neighbour);
-			}
-		}
-	}
-
-	return checkedStacks;
-}
-
-ReachabilityData BattleExchangeEvaluator::getExchangeUnits(
-	const AttackPossibility & ap,
-	uint8_t turn,
-	PotentialTargets & targets,
-	std::shared_ptr<HypotheticBattle> hb,
-	const battle::Units & additionalUnits) const
-{
-	ReachabilityData result;
-
-	auto hexes = ap.attack.defender->getSurroundingHexes();
-
-	if(!ap.attack.shooting) 
-		hexes.insert(ap.from);
-
-	battle::Units allReachableUnits = additionalUnits;
-	
-	for(const auto & hex : hexes)
-	{
-		vstd::concatenate(allReachableUnits, getOneTurnReachableUnits(turn, hex));
-	}
-
-	if(!ap.attack.attacker->isTurret())
-	{
-		for(const auto & hex : ap.attack.attacker->getHexes())
-		{
-			auto unitsReachingAttacker = getOneTurnReachableUnits(turn, hex);
-			for(auto unit : unitsReachingAttacker)
-			{
-				if(unit->unitSide() != ap.attack.attacker->unitSide())
-				{
-					allReachableUnits.push_back(unit);
-					result.enemyUnitsReachingAttacker.insert(unit->unitId());
-				}
-			}
-		}
-	}
-
-	vstd::removeDuplicates(allReachableUnits);
-
-	auto copy = allReachableUnits;
-	for(auto unit : copy)
-	{
-		for(auto adjacentUnit : getAdjacentUnits(unit))
-		{
-			auto unitWithBonuses = hb->battleGetUnitByID(adjacentUnit->unitId());
-
-			if(vstd::contains(targets.unreachableEnemies, adjacentUnit)
-				&& !vstd::contains(allReachableUnits, unitWithBonuses))
-			{
-				allReachableUnits.push_back(unitWithBonuses);
-			}
-		}
-	}
-
-	vstd::removeDuplicates(allReachableUnits);
-
-	if(!vstd::contains(allReachableUnits, ap.attack.attacker))
-	{
-		allReachableUnits.push_back(ap.attack.attacker);
-	}
-
-	if(allReachableUnits.size() < 2)
-	{
-#if BATTLE_TRACE_LEVEL>=1
-		logAi->trace("Reachability map contains only %d stacks", allReachableUnits.size());
-#endif
-
-		return result;
-	}
-
-	for(auto unit : allReachableUnits)
-	{
-		auto accessible = !unit->canShoot() || vstd::contains(additionalUnits, unit);
-
-		if(!accessible)
-		{
-			for(const auto & hex : unit->getSurroundingHexes())
-			{
-				if(ap.attack.defender->coversPos(hex))
-				{
-					accessible = true;
-				}
-			}
-		}
-
-		if(accessible)
-			result.melleeAccessible.push_back(unit);
-		else
-			result.shooters.push_back(unit);
-	}
-
-	for(int turn = 0; turn < turnOrder.size(); turn++)
-	{
-		for(auto unit : turnOrder[turn])
-		{
-			if(vstd::contains(allReachableUnits, unit))
-				result.units[turn].push_back(unit);
-		}
-
-		vstd::erase_if(result.units[turn], [&](const battle::Unit * u) -> bool
-			{
-				return !hb->battleGetUnitByID(u->unitId())->alive();
-			});
-	}
-
-	return result;
-}
 
 float BattleExchangeEvaluator::evaluateExchange(
 	const AttackPossibility & ap,
@@ -1510,9 +1359,13 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 	if(hb->battleGetUnitByID(ap.attack.defender->unitId())->alive())
 		enemyStacks.push_back(ap.attack.defender);
 
+	ReachabilityMapCache returnGateCache;
+	const auto returnGeometry = prepareReturnGateReachability(ap, hb, returnGateCache);
+
 	ReachabilityData exchangeUnits = measurement.measure(&BattleMovementTiming::ExchangeTiming::membership, [&]()
 	{
-		return getExchangeUnits(ap, turn, targets, hb, additionalUnits);
+		return getExchangeUnitsWithGeometry(ap, turn, targets, hb, additionalUnits,
+			returnGeometry ? &returnGateCache : nullptr, returnGeometry);
 	});
 
 	if(exchangeUnits.units.empty())
@@ -1707,7 +1560,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				}
 				else
 				{
-					auto reachable = exchangeBattle->battleGetUnitsIf([this, &exchangeBattle, &attacker](const battle::Unit * u) -> bool
+					auto reachable = exchangeBattle->battleGetUnitsIf([this, &exchangeBattle, &attacker, &returnGeometry, &returnGateCache](const battle::Unit * u) -> bool
 						{
 							if(u->unitSide() == attacker->unitSide())
 								return false;
@@ -1718,7 +1571,9 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 							if(!u->getPosition().isValid())
 								return false; // e.g. tower shooters
 
-							const auto & reachableUnits = getOneTurnReachableUnits(0, u->getPosition());
+							const auto & reachableUnits = returnGeometry
+								? returnGateCache.getOneTurnReachableUnits(returnGeometry, env, turnOrder, 0, u->getPosition())
+								: getOneTurnReachableUnits(0, u->getPosition());
 
 							return vstd::contains_if(reachableUnits, [&attacker](const battle::Unit * other) -> bool
 								{
@@ -1811,28 +1666,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 		});
 	}
 
-	auto score = v.getScore();
-
-	if(simulationTurnsCount < totalTurnsCount)
-	{
-		float scalingRatio = simulationTurnsCount / static_cast<float>(totalTurnsCount);
-
-		score.enemyDamageReduce *= scalingRatio;
-		score.ourDamageReduce *= scalingRatio;
-	}
-
-	if(turn > 0)
-	{
-		auto turnMultiplier = 1 - std::min(0.2, 0.05 * turn);
-
-		score.enemyDamageReduce *= turnMultiplier;
-	}
-
-#if BATTLE_TRACE_LEVEL>=1
-	logAi->trace("Exchange score: enemy: %2f, our -%2f", score.enemyDamageReduce, score.ourDamageReduce);
-#endif
-
-	return score;
+	return battleExchangeAftermath::finalizeExchangeScore(v.getScore(), simulationTurnsCount, totalTurnsCount, turn);
 }
 
 bool BattleExchangeEvaluator::canBeHitThisTurn(const AttackPossibility & ap)

@@ -289,6 +289,9 @@ public:
 
 	void save(JsonNode & data);
 	void load(uint32_t id_, const JsonNode & data);
+	/// Owned metadata only; no native identifier fallback when the domain is absent.
+	void save(JsonNode & data, const UnitCreatureResolver & resolver);
+	void load(uint32_t id_, const JsonNode & data, const UnitCreatureResolver & resolver);
 
 	template<typename Serializer>
 	void serializeScript(Serializer & s)
@@ -303,6 +306,8 @@ public:
 		s("phantomIntegrity", phantomIntegrity, "Initial separate durability pool for a Phantom Army stack; zero for other stacks.");
 		s("phantomDuration", phantomDuration, "Number of battle rounds the Phantom Army profile lasts.");
 	}
+private:
+	void serializeFields(JsonSerializeFormat & handler, const UnitCreatureResolver * resolver);
 };
 
 }

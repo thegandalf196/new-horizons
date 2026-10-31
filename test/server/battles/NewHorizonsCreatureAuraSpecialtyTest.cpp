@@ -47,6 +47,21 @@ protected:
 		return std::string(std::get<0>(GetParam())) == "core:charna"
 			? unit->valOfBonuses(BonusType::GENERAL_ATTACK_REDUCTION) : unit->getDefense(false);
 	}
+	void publish(CStack * unit, battle::CUnitState & state, int64_t healthDelta = 0)
+	{
+		BattleUnitsChanged change;
+		change.battleID = BattleID(0);
+		change.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::UPDATE);
+		change.changedStacks.back().data = state.save();
+		change.changedStacks.back().healthDelta = healthDelta;
+		gameHandler->sendAndApply(change);
+	}
+	void injure(CStack * unit, int64_t amount)
+	{
+		auto state = unit->acquireState();
+		state->damage(amount);
+		publish(unit, *state, -amount);
+	}
 	static void control(CStack * unit)
 	{
 		unit->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED,
@@ -73,15 +88,88 @@ TEST_P(NewHorizonsCreatureAuraSpecialtyTest, SameArmyAuraUsesLivingNeighborsAndD
 	auto * second = addStack(BattleSide::ATTACKER, creatureByName(sourceCreature), BattleHex(leftHex + 17), 1);
 	EXPECT_EQ(value(subject) - baseline, coefficient);
 	int64_t firstHealth = source->getAvailableHealth();
-	source->health.damage(firstHealth);
-	source->nodeHasChanged();
+	injure(source, firstHealth);
 	EXPECT_EQ(value(subject) - baseline, coefficient);
 	int64_t secondHealth = second->getAvailableHealth();
-	second->health.damage(secondHealth);
-	second->nodeHasChanged();
+	injure(second, secondHealth);
 	EXPECT_EQ(value(subject), baseline);
 	auto * otherArmy = addStack(BattleSide::DEFENDER, creatureByName(sourceCreature), BattleHex(sourceHex), 1);
 	ASSERT_NE(otherArmy, nullptr);
+	EXPECT_EQ(value(subject), baseline);
+}
+TEST_P(NewHorizonsCreatureAuraSpecialtyTest, WarmRecipientTracksProviderLifeAndRemovalWithoutInvalidatingOnNonlethalDamage)
+{
+	prepare();
+	startBattle();
+	const auto & [hero, recipient, sourceCreature, title, coefficient] = GetParam();
+	const auto side = std::string(hero) == "core:charna" ? BattleSide::DEFENDER : BattleSide::ATTACKER;
+	auto * subject = addStack(side, creatureByName(recipient), BattleHex(leftHex), 10);
+	const int baseline = value(subject);
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName(sourceCreature), BattleHex(leftHex + 1), 2);
+	ASSERT_EQ(value(subject) - baseline, coefficient);
+	const auto recipientVersion = subject->getTreeVersion();
+	injure(source, 1);
+	EXPECT_EQ(subject->getTreeVersion(), recipientVersion);
+	EXPECT_EQ(value(subject) - baseline, coefficient);
+	const auto health = source->getAvailableHealth();
+	injure(source, health);
+	ASSERT_FALSE(source->alive());
+	EXPECT_EQ(value(subject), baseline);
+
+	auto restored = source->acquireState();
+	int64_t healing = health;
+	restored->heal(healing, EHealLevel::RESURRECT, EHealPower::PERMANENT);
+	const auto restoredHealth = restored->getAvailableHealth();
+	ASSERT_GT(restoredHealth, 0);
+	publish(source, *restored, restoredHealth);
+	ASSERT_TRUE(source->alive());
+	EXPECT_EQ(value(subject) - baseline, coefficient);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	remove.changedStacks.emplace_back(source->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	EXPECT_EQ(value(subject), baseline);
+}
+TEST_P(NewHorizonsCreatureAuraSpecialtyTest, WarmRecipientTracksProviderFormAndRestoration)
+{
+	prepare();
+	startBattle();
+	const auto & [hero, recipient, sourceCreature, title, coefficient] = GetParam();
+	const auto side = std::string(hero) == "core:charna" ? BattleSide::DEFENDER : BattleSide::ATTACKER;
+	auto * subject = addStack(side, creatureByName(recipient), BattleHex(leftHex), 10);
+	const int baseline = value(subject);
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName(sourceCreature), BattleHex(leftHex + 1), 2);
+	ASSERT_EQ(value(subject) - baseline, coefficient);
+	auto formed = source->acquireState();
+	formed->beginBattleForm(creatureByName("core:peasant"), 2);
+	publish(source, *formed);
+	EXPECT_EQ(value(subject), baseline);
+	auto restored = source->acquireState();
+	restored->endBattleForm();
+	publish(source, *restored);
+	EXPECT_EQ(value(subject) - baseline, coefficient);
+}
+TEST_P(NewHorizonsCreatureAuraSpecialtyTest, LethalOriginalUpdateRetiresLinkedCloneProviderEvenWhenOriginalSurvives)
+{
+	prepare();
+	startBattle();
+	const auto & [hero, recipient, sourceCreature, title, coefficient] = GetParam();
+	const auto side = std::string(hero) == "core:charna" ? BattleSide::DEFENDER : BattleSide::ATTACKER;
+	auto * subject = addStack(side, creatureByName(recipient), BattleHex(leftHex), 10);
+	const int baseline = value(subject);
+	auto * original = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex + 4), 2);
+	auto * clone = addStack(BattleSide::ATTACKER, creatureByName(sourceCreature), BattleHex(leftHex + 1), 2);
+	original->cloneID = clone->unitId();
+	clone->cloned = true;
+	ASSERT_EQ(value(subject) - baseline, coefficient);
+	// The canonical UPDATE accepts post-Rebirth state plus pre-Rebirth lethality.
+	// Retiring the implied clone must invalidate peers even if the original lives.
+	auto surviving = original->acquireState();
+	publish(original, *surviving, -original->getAvailableHealth());
+	ASSERT_TRUE(original->alive());
+	EXPECT_TRUE(clone->ghostPending);
+	EXPECT_FALSE(clone->alive());
+	EXPECT_EQ(original->cloneID, -1);
 	EXPECT_EQ(value(subject), baseline);
 }
 TEST_P(NewHorizonsCreatureAuraSpecialtyTest, HistoricalAndCurrentIdentityCapturesRemainSeparate)

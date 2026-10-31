@@ -23,6 +23,7 @@ class GameConnectionPackReader;
 class GameConnectionPackWriter;
 class CGameState;
 class IGameInfoCallback;
+namespace newHorizonsHeroes { struct SpecialtySerializationContext; }
 
 /// Wrapper class for game connection
 /// Handles serialization and deserialization of data received from network
@@ -59,4 +60,8 @@ public:
 	void enterLobbyConnectionMode();
 	void setCallback(IGameInfoCallback & cb);
 	void setSerializationVersion(ESerializationVersion version);
+	/// Value-only negotiated capabilities; caller separately proves established gameplay/current world.
+	/// Take BEFORE state/native locks. Does not retain a source or grant future graph access.
+	newHorizonsHeroes::SpecialtySerializationContext captureSpecialtySerializationContext(
+		const std::shared_ptr<INetworkConnection> & expectedConnection);
 };

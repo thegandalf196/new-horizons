@@ -75,23 +75,29 @@ std::optional<uint32_t> sourceId(const Bonus & bonus)
 		throw std::runtime_error("Serpent's Embrace source identity disagrees with provenance");
 	return source;
 }
-void validateApplication(const IBattleInfo & battle, uint32_t targetId, const Bonus & bonus)
+std::optional<uint32_t> validatedApplicationSource(const Bonus & bonus)
 {
 	const auto source = sourceId(bonus);
-	if(!source)
-		return;
-	validateLoadedIdentity(bonus);
-	const auto sources = battle.getUnitsIf([source](const battle::Unit * unit)
-		{ return unit && unit->unitId() == *source; });
-	const auto targets = battle.getUnitsIf([targetId](const battle::Unit * unit)
-		{ return unit && unit->unitId() == targetId; });
-	if(sources.size() != 1 || targets.size() != 1 || *source == targetId
+	if(source) validateLoadedIdentity(bonus);
+	return source;
+}
+void validateApplicationUnits(const IBattleInfo & battle, uint32_t sourceId, uint32_t targetId,
+	const battle::Units & sources, const battle::Units & targets)
+{
+	if(sources.size() != 1 || targets.size() != 1 || sourceId == targetId
 		|| !sources.front()->alive() || sources.front()->isGhost()
 		|| !targets.front()->alive() || targets.front()->isGhost())
 		throw std::runtime_error("Serpent's Embrace application references unavailable source or target");
 	const auto * context = dynamic_cast<const CBattleInfoCallback *>(&battle);
 	if(!context || !qualifiesAttack(*context, sources.front(), targets.front(), false, true, false))
 		throw std::runtime_error("Serpent's Embrace application lacks its captured source entitlement");
+}
+void validateApplication(const IBattleInfo & battle, uint32_t targetId, const Bonus & bonus)
+{
+	validateApplicationWithLookup(battle, targetId, bonus, [&battle](uint32_t id)
+	{
+		return battle.getUnitsIf([id](const battle::Unit * unit) { return unit && unit->unitId() == id; });
+	});
 }
 Bonus marker(uint32_t sourceUnitId, CreatureID sourceCreature)
 {

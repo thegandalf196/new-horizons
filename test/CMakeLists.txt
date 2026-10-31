@@ -137,6 +137,7 @@ set(test_SRCS
 		battle/HealingReceiptTest.cpp
 		battle/IncomingHealingTest.cpp
 		battle/GraveDustIdentityTest.cpp
+		battle/StackEffectRefreshTest.cpp
 		battle/CUnitStateLifecycleTest.cpp
 		battle/UnitStateValueExchangeTest.cpp
 		battle/PreparedStackStateTransferTest.cpp
@@ -179,6 +180,7 @@ set(test_SRCS
 		battle/NewHorizonsMachineSpecialtyTest.cpp
 		battle/NewHorizonsSequenceProtectionTest.cpp
 		server/battles/NewHorizonsCreatureBurnTest.cpp
+		battle/CreatureBurnIdentityFactsTest.cpp
 		server/battles/NewHorizonsBurnProducerTest.cpp
 		server/battles/NewHorizonsStingHarriersTest.cpp
 		server/battles/BodyHealthLossTest.cpp
@@ -212,14 +214,23 @@ set(test_SRCS
 		bonus/BonusEvaluationContextTest.cpp
 	bonus/OwnedBonusEvaluationFactsTest.cpp
 	bonus/OwnedBonusPayloadsTest.cpp
+	bonus/OwnedRuntimeBonusPayloadsTest.cpp
+	bonus/OwnedBonusCaptureCodecTest.cpp
 	bonus/OwnedRecipientBonusGraphTest.cpp
+	bonus/PeerBonusDependencyClosureTest.cpp
 		bonus/OwnedRecipientRootQueryTest.cpp
 		battle/OwnedUnitBonusFrameTest.cpp
+		battle/StackFormSourceIdentityTest.cpp
+		battle/ScopedStackEffectQueriesTest.cpp
 	bonus/BonusTypedContextSeamsTest.cpp
 	bonus/OwnedTypedBonusFactsTest.cpp
 		battle/UnitPreparationHealthBasisTest.cpp
 		battle/OwnedUnitCreatureResolverTest.cpp
+		battle/OwnedProspectiveCreatureMetadataTest.cpp
+		battle/OwnedProspectiveCreatureDomainTest.cpp
+		battle/OwnedUnitAdditionResolverTest.cpp
 		battle/OwnedUnitEnvironmentTest.cpp
+	battle/OwnedUnitOrderWindowsTest.cpp
 		bonus/ProjectedBonusLimitationTest.cpp
 		bonus/TerrainAuthorityTest.cpp
 		bonus/TerrainLimiterSerializationTest.cpp
@@ -244,6 +255,8 @@ set(test_SRCS
 		bonus/ProjectedUnitEnvironmentHeroInputsTest.cpp
 		bonus/ProjectedUnitEnvironmentFixture.h
 		bonus/ProjectedBonusGraphTest.cpp
+		bonus/ProjectedEffectRefreshTest.cpp
+		bonus/BonusSourceRelationRecipeTest.cpp
 		bonus/ProjectedDurationHistoryTest.cpp
 		bonus/ProjectedFormTransitionTest.cpp
 		bonus/PreparedBonusGraphFinalizationTest.cpp
@@ -405,6 +418,7 @@ set(test_SRCS
 
 		spells/effects/EffectFixture.cpp
 		spells/effects/BattleFormTest.cpp
+		spells/effects/OwnedBattleFormQueryTest.cpp
  		spells/effects/CatapultTest.cpp
  		spells/effects/CloneTest.cpp
  		spells/effects/DamageTest.cpp
@@ -446,6 +460,7 @@ set(test_SRCS
 		client/PreparedNetworkLagRetirementTest.cpp
 		network/BattleUnitsChangedInputTest.cpp
 		network/PreparedRecipientPublicationTest.cpp
+		network/GameConnectionSourceCapabilitiesTest.cpp
 		network/PreparedWriteFailureTest.cpp
 		server/battles/CombatEventTriggerTest.cpp
 		server/battles/DamageCalculatorTest.cpp
@@ -1022,6 +1037,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsMachineSpecialtyAITest.cpp
 		battleAI/NewHorizonsMeleeSpecialtyAITest.cpp
 		battleAI/GraveDustSnapshotTest.cpp
+		battleAI/OwnedBurnProjectionTest.cpp
 		battleAI/NewHorizonsParalyzingGazeAITest.cpp
 		battleAI/NewHorizonsPetrifyingBloodAITest.cpp
 		battleAI/OwnedExportBranchQueryTest.cpp

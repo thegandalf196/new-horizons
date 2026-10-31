@@ -2,7 +2,7 @@
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
 #include "BattleVoluntaryMovementHistory.h"
-#include "GateDrawbridgeFootprint.h"
+#include "../../lib/battle/GateDrawbridgeFootprint.h"
 #include "../../lib/battle/NewHorizonsLivingInferno.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"

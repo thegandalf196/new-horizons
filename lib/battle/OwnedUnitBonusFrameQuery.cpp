@@ -5,15 +5,19 @@
 #include <stdexcept>
 namespace battle
 {
-OwnedRecipientBonusGraph::RootQuery OwnedUnitBonusFrame::Data::context(const CUnitState & unit, bool native) const
+OwnedRecipientBonusGraph::RootQuery OwnedUnitBonusFrame::Data::context(const CUnitState & unit, const FormSources & source, bool native) const
 {
-	const auto & source = forms.at(unit.battleFormCreature());
-	auto query = native ? source.native : source.full;
-	query.facts.stackCount = unit.getCount(); query.facts.owner = unit.unitOwner();
+	auto query = decorate(native ? source.native : source.full, unit);
 	auto & acceptance = query.facts.acceptance->state;
 	acceptance.hasForm = unit.hasBattleForm(); acceptance.currentForm = unit.battleFormCreature();
 	acceptance.originalForm = unit.battleFormOriginalCreature(); acceptance.ghost = unit.isGhost();
 	acceptance.summoned = unit.summoned; acceptance.natureSummoned = unit.natureSummoned;
+	return query;
+}
+OwnedRecipientBonusGraph::RootQuery OwnedUnitBonusFrame::Data::decorate(
+	OwnedRecipientBonusGraph::RootQuery query, const CUnitState & unit) const
+{
+	query.facts.stackCount = unit.getCount(); query.facts.owner = unit.unitOwner();
 	if(query.facts.adjacencyUnits)
 	{
 		query.facts.adjacencyUnits->clear();
@@ -22,10 +26,15 @@ OwnedRecipientBonusGraph::RootQuery OwnedUnitBonusFrame::Data::context(const CUn
 	}
 	return query;
 }
-BonusList OwnedUnitBonusFrame::Data::raw(const std::vector<size_t> & records) const
+const OwnedRecipientBonusGraph & OwnedUnitBonusFrame::Data::sourceGraph(const FormSources & source, bool native) const
+{
+	const auto & selected = native ? source.nativeGraph : source.fullGraph;
+	return selected ? *selected : *graph;
+}
+BonusList OwnedUnitBonusFrame::Data::raw(const OwnedRecipientBonusGraph & owner, const std::vector<size_t> & records) const
 {
 	BonusList original, result;
-	for(const auto index : records) original.push_back(graph->payload(index));
+	for(const auto index : records) original.push_back(owner.payload(index));
 	// All inputs here are RAW source/owned pending records. No effective snapshots are promoted.
 	recipientBonusOverlay::copyInherited(result, original, ledger.view(), true);
 	recipientBonusOverlay::append(result, ledger.view(), Selector::all, true);
@@ -33,8 +42,10 @@ BonusList OwnedUnitBonusFrame::Data::raw(const std::vector<size_t> & records) co
 }
 TConstBonusListPtr OwnedUnitBonusFrame::Data::query(const CSelector & selector, bool unstacked) const
 {
-	const auto query = context(*subject, false);
-	return std::make_shared<BonusList>(OwnedUnitBonusFrame::queryGraph(*graph, query, raw(query.records), selector, unstacked, *subject));
+	const auto & source = forms.at(subject->battleFormCreature());
+	const auto & selected = sourceGraph(source, false);
+	const auto query = context(*subject, source, false);
+	return std::make_shared<BonusList>(OwnedUnitBonusFrame::queryGraph(selected, query, raw(selected, query.records), selector, unstacked, *subject));
 }
 void OwnedUnitBonusFrame::Data::View::onBattleFormChanged(const CUnitState & unit) const
 {
@@ -57,14 +68,16 @@ TConstBonusListPtr OwnedUnitBonusFrame::Data::View::ownedNativeFormBonuses(
 		|| (&form != data.subject.get() && (!detached || !detached->hasUnitInfoAncestor(data.info)
 			|| !detached->hasBonusProviderAncestor(*data.subject))))
 		throw std::logic_error("Owned native-form query is outside its retained recipient ancestry");
-	const auto query = data.context(form, true);
+	const auto & source = data.forms.at(form.battleFormCreature());
+	const auto & selected = data.sourceGraph(source, true);
+	const auto query = data.context(form, source, true);
 	BonusList raw;
-	for(const auto index : query.records) raw.push_back(data.graph->payload(index));
+	for(const auto index : query.records) raw.push_back(selected.payload(index));
 	const CSelector nativeSelector([&](const Bonus * record)
 	{
 		return isBattleFormNativeBonus(record, form.battleFormCreature()) && selector(record);
 	});
-	return std::make_shared<BonusList>(OwnedUnitBonusFrame::queryGraph(*data.graph, query, raw, nativeSelector, unstacked, form));
+	return std::make_shared<BonusList>(OwnedUnitBonusFrame::queryGraph(selected, query, raw, nativeSelector, unstacked, form));
 }
 std::vector<Bonus> OwnedUnitBonusFrame::Data::View::sourceLocalSpellEffects() const
 {

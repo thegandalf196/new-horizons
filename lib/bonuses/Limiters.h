@@ -19,6 +19,7 @@
 
 struct Bonus;
 class BonusList;
+class CSelector;
 class CBonusSystemNode;
 class CCreature;
 class JsonNode;
@@ -153,6 +154,9 @@ public:
 
 	void validateAdjacencySerialization(bool supported) const override;
 	void validateBonusTypeSerialization(bool adjacencySupported, bool healingReductionSupported) const override;
+
+	/// Canonical raw identity predicate; updater values/owner do not alter these selector fields.
+	CSelector dependencySelector() const;
 
 	HasAnotherBonusLimiter(BonusType bonus = BonusType::NONE);
 	HasAnotherBonusLimiter(BonusType bonus, BonusSubtypeID _subtype);

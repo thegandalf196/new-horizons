@@ -49,8 +49,9 @@ constexpr std::array<ReviewedLayer, 3> TIMED_LAYERS = {{
 	{"spells/patches/timedBind", "227ff8633628dc42f827a1c15a72be9fed770af93c0499adcd85a9c335c6336a"}
 }};
 
-constexpr std::array<ReviewedLayer, 9> CALCULATOR_LAYERS = {{
-	{"damage/damageCalculator", "403340e1d0794736971478d9e0cc58d2f3efa4e8056cfcd3b138406012de2058"},
+constexpr ReviewedLayer HISTORICAL_CALCULATOR_ROOT = {
+	"damage/damageCalculator", "403340e1d0794736971478d9e0cc58d2f3efa4e8056cfcd3b138406012de2058"};
+constexpr std::array<ReviewedLayer, 8> CALCULATOR_PATCHES = {{
 	{"damage/siegeWeapon", "e81a2555552e38c46826532e126bc8d17e205c2ee0147afcf52b10e6770b6240"},
 	{"damage/magicElemental", "887c15857c72dc2c4c5d3b5d6ce4589257e97aadd714f64c290ca1672a74bda5"},
 	{"damage/psychicElemental", "1535506d256fbe06f68e14388688eaf452717712e88d0017ab2b1fe16fad7884"},
@@ -60,6 +61,27 @@ constexpr std::array<ReviewedLayer, 9> CALCULATOR_LAYERS = {{
 	{"damage/enemyAttackReduction", "8206cfc48b88c449a127d8a5fb4dd9afaf5ddd4ac372ce15aa1669d1b634c55b"},
 	{"damage/damageReceivedCap", "f1d6fbe1fe25fc58ab6e0f67b6d24c441430a3e93742b5bf4dad2bedcc27aab5"}
 }};
+
+// Retain the exact historical root and its existing eight ordered patches.
+constexpr auto CALCULATOR_LAYERS = []
+{
+	std::array<ReviewedLayer, 9> result{};
+	result[0] = HISTORICAL_CALCULATOR_ROOT;
+	for(size_t index = 0; index < CALCULATOR_PATCHES.size(); ++index)
+		result[index + 1] = CALCULATOR_PATCHES[index];
+	return result;
+}();
+
+// The extracted physical stage is an exact first patch, not an arbitrary import.
+constexpr auto PHYSICAL_PROTECTION_CALCULATOR_LAYERS = []
+{
+	std::array<ReviewedLayer, 10> result{};
+	result[0] = {"damage/damageCalculator", "a44dcb1ffce9a7f5300f2026a1e3b1ca72ae30b88c21a3c11f269aeafdf75a93"};
+	result[1] = {"damage/physicalProtection", "f8821b7c9ae90ad1a95b7cf048cbce23fc3180f1ccc8ca4999a9cb31204d318c"};
+	for(size_t index = 0; index < CALCULATOR_PATCHES.size(); ++index)
+		result[index + 2] = CALCULATOR_PATCHES[index];
+	return result;
+}();
 
 std::string digest(std::string_view source)
 {
@@ -125,11 +147,12 @@ LuaImplementationIdentity LuaImplementationIdentity::fromScript(const LuaScriptI
 		return LuaImplementationIdentity(script.layers.front().sourceText, false);
 
 	LuaImplementationIdentity result;
-	// Only these two shipping layer chains are reviewed. Arbitrary patches remain
-	// unknown, even when a failed load leaves apparently canonical source layers.
+	// Only these exact shipping/historical chains are reviewed. Arbitrary patches
+	// remain unknown even when a failed load leaves canonical-looking layers.
 	if(matchesReviewedLayers(script, TIMED_LAYERS))
 		result.implementation = Implementation::CANONICAL_TIMED;
-	else if(matchesReviewedLayers(script, CALCULATOR_LAYERS))
+	else if(matchesReviewedLayers(script, CALCULATOR_LAYERS)
+		|| matchesReviewedLayers(script, PHYSICAL_PROTECTION_CALCULATOR_LAYERS))
 		result.canonicalDamageCalculator = true;
 	return result;
 }
